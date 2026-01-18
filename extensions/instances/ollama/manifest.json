@@ -1,0 +1,108 @@
+{
+  "id": "ollama",
+  "version": "0.2.0",
+  "name": "Ollama",
+  "description": "Computes the caption features of an image through Vision Languages (VL) through Ollama.",
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "execution": {
+        "executable": "${node}",
+        "arguments": ["./dist/main.js"]
+      },
+      "events": ["process.started", "image.created", "image.updated", "image.computeFeatures", "image.runCommand"],
+      "throttlingPolicies": [
+        {
+          "events": ["image.created", "image.updated", "image.computeFeatures", "image.runCommand"],
+          "durationInMilliseconds": 200,
+          "maximumCount": 2
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "image.features"
+        }
+      ],
+      "commands": [
+        {
+          "id": "askQuestion",
+          "on": {
+            "entity": "Image"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "title": "Model",
+                "description": "The Vision Languages (VL) model to use for answering the question.",
+                "enum": [
+                  "llava", "qwen2.5vl", "minicpm-v", "granite3.2-vision", "gemma3", "mistral-small3.2", "moondream",
+                  "bakllava", "llava-phi3"
+                ],
+                "default": "llava"
+              },
+              "question": {
+                "type": "string",
+                "title": "Question?",
+                "description": "The question you want the Vision Language model to answer, for the selected image",
+                "default": "What are the dominant colors?"
+              }
+            },
+            "required": ["model", "question"]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Ask question",
+              "description": "Proposes to ask question to a Vision Language model."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "ollamaUrl": {
+        "type": "string",
+        "title": "Ollama URL",
+        "description": "The URL of the Ollama server which is running on the same computer.",
+        "default": "http://127.0.0.1:11434"
+      },
+      "models": {
+        "type": "array",
+        "title": "Models",
+        "description": "The Vision Languages (VL) models to use for computing the image features.",
+        "items": {
+          "type": "string",
+          "description": "A Vision Language model.",
+          "enum": [
+            "llava", "qwen2.5vl", "minicpm-v", "granite3.2-vision", "gemma3", "mistral-small3.2", "moondream",
+            "bakllava", "llava-phi3"
+          ],
+          "default": ["llava"]
+        },
+        "default": ["llava"]
+      },
+      "questions": {
+        "type": "array",
+        "title": "Questions",
+        "description": "The questions which will be used to request the VL models",
+        "items": {
+          "type": "string",
+          "description": "A question that will be asked to the VL model to compute the image caption."
+        },
+        "default": [
+          "Describe in details through nominal or noun sentences the image. Your sentences should not mention the fact that the image was provided, and you should not start your sentences with \"the image is\" or \"the image displays\" or the \"the image shows\"."
+        ]
+      }
+    },
+    "required": ["ollamaUrl", "models"]
+  }
+}

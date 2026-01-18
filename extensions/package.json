@@ -1,0 +1,92 @@
+{
+  "name": "@picteus/extension",
+  "version": "0.2.4",
+  "productName": "Picteus",
+  "description": "The Picteus extensions.",
+  "keywords": [
+    "picture",
+    "image",
+    "lens",
+    "voyager",
+    "explorer",
+    "search",
+    "Odysseus"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "Copyright (C) 2024 KoppaSoft. The code hereby is the private full property of the KoppaSoft company, Paris, France. You have no right to re-use or modify it. There are no open-source, nor free license attached to it!",
+  "private": true,
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "homepage": "https://github.com/picteus/Picteus.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/Picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "config": {
+    "referenceRelativePath": ".",
+    "buildRelativePath": "../build",
+    "sdkRelativePath": "../extensions/sdk"
+  },
+  "scripts": {
+    ".env": "cross-var node -e \"const referenceDirectoryPath = path.resolve(process.cwd(), ...('$npm_package_config_referenceRelativePath'.split('/'))); const workDirectoryPath = path.resolve(process.cwd()); const temporaryDirectoryPath = path.resolve(referenceDirectoryPath, '..', 'tmp'); const generatedDirectoryPath = path.resolve(referenceDirectoryPath, '..', 'generated'); const buildDirectoryPath = path.join(workDirectoryPath, ...('$npm_package_config_buildRelativePath'.split('/'))); const sdkDirectoryPath = path.join(workDirectoryPath, ...('$npm_package_config_sdkRelativePath'.split('/'))); fs.writeFileSync('.env', 'OPENAPI_DIRECTORY_PATH=' + path.resolve(generatedDirectoryPath, 'openapi') + '\\n' + 'SDK_DIRECTORY_PATH=' + sdkDirectoryPath + '\\n' + 'TYPESCRIPT_SDK_DIRECTORY_PATH=' + path.join(sdkDirectoryPath, 'typescript') + '\\n' + 'PYTHON_SDK_DIRECTORY_PATH=' + path.join(sdkDirectoryPath, 'python') + '\\n' + 'BUILD_SDK_DIRECTORY_PATH=' + path.resolve(buildDirectoryPath, 'sdk') +'\\n' + 'BUILD_EXTENSIONS_DIRECTORY_PATH=' + path.resolve(buildDirectoryPath, 'extensions') +'\\n' + 'PYTHON_EXECUTABLE=' + (process.platform === 'win32' ? 'python' : 'python3') + '\\n' + 'PYTHON_VENV_PIP_FILE_PATH=' + '.venv' + path.sep + (process.platform === 'win32' ? 'Scripts' : 'bin') + path.sep + 'pip' + '\\n' + 'PYTHON_VENV_PYTHON_FILE_PATH=' + '.venv' + path.sep + (process.platform === 'win32' ? 'Scripts' : 'bin') + path.sep + 'python' + '\\nPYTHON_VENV_NAME=.venv' + '\\n'+ 'TEMPORARY_DIRECTORY_PATH=' + temporaryDirectoryPath + '\\n', { encoding: 'utf8'});\"",
+    "reset:typescript:dotenv": "cross-var shx rm -rf $TYPESCRIPT_SDK_DIRECTORY_PATH/node_modules $TYPESCRIPT_SDK_DIRECTORY_PATH/package-lock.json",
+    "reset:python:dotenv": "cross-var shx rm -rf $PYTHON_SDK_DIRECTORY_PATH/.venv",
+    "reset:dotenv": "cross-var \"npm run clean && npm run reset:typescript:dotenv && npm run reset:python:dotenv && shx rm -rf ./node_modules $BUILD_SDK_DIRECTORY_PATH $BUILD_EXTENSIONS_DIRECTORY_PATH\"",
+    "reset": "dotenv -- npm run reset:dotenv",
+    "clean:this": "shx rm -rf .env",
+    "clean:typescript:dotenv": "cross-var shx rm -rf $TYPESCRIPT_SDK_DIRECTORY_PATH/src/picteus-ws-client $TYPESCRIPT_SDK_DIRECTORY_PATH/dist",
+    "clean:typescript": "dotenv -- npm run clean:typescript:dotenv",
+    "clean:python:dotenv": "cross-var shx rm -rf $PYTHON_SDK_DIRECTORY_PATH/picteus_extension_sdk.egg-info $PYTHON_SDK_DIRECTORY_PATH/picteus_ws_client",
+    "clean:python": "dotenv -- npm run clean:python:dotenv",
+    "clean:instances": "gulp -f instances/gulpfile.mjs clean",
+    "preclean": "npm run .env",
+    "clean": "npm run clean:this && npm run clean:typescript && npm run clean:python && npm run clean:instances",
+    "updateVersion": "npm run sdk:updateVersion && npm run instances:updateVersion",
+    "sdk:updateVersion": "gulp -f sdk/gulpfile.mjs updateVersion",
+    "sdk:typescript:prepare:dotenv": "cross-var \"shx rm -rf $TYPESCRIPT_SDK_DIRECTORY_PATH/src/picteus-ws-client && symlink-dir $OPENAPI_DIRECTORY_PATH/typescript-fetch/src $TYPESCRIPT_SDK_DIRECTORY_PATH/src/picteus-ws-client && cd $TYPESCRIPT_SDK_DIRECTORY_PATH && npm install\"",
+    "sdk:typescript:prepare": "dotenv -- npm run sdk:typescript:prepare:dotenv",
+    "sdk:typescript:build:dotenv": "cross-var \"npm run sdk:typescript:prepare && mkdirp $BUILD_SDK_DIRECTORY_PATH/typescript && cd $TYPESCRIPT_SDK_DIRECTORY_PATH && npm run compile && npm pack --pack-destination=$BUILD_SDK_DIRECTORY_PATH/typescript\"",
+    "presdk:typescript:build": "npm run .env",
+    "sdk:typescript:build": "dotenv -- npm run sdk:typescript:build:dotenv",
+    "sdk:python:prepare:dotenv": "cross-var \"shx rm -rf $PYTHON_SDK_DIRECTORY_PATH/picteus_ws_client $PYTHON_SDK_DIRECTORY_PATH/dist && symlink-dir $OPENAPI_DIRECTORY_PATH/python/picteus_ws_client $PYTHON_SDK_DIRECTORY_PATH/picteus_ws_client && cd $PYTHON_SDK_DIRECTORY_PATH && $PYTHON_EXECUTABLE -m venv $PYTHON_VENV_NAME && $PYTHON_VENV_PIP_FILE_PATH install -r requirements.txt\"",
+    "sdk:python:prepare": "dotenv -- npm run sdk:python:prepare:dotenv",
+    "sdk:python:build:dotenv": "cross-var \"npm run sdk:python:prepare && mkdirp $BUILD_SDK_DIRECTORY_PATH/python && cd $PYTHON_SDK_DIRECTORY_PATH && $PYTHON_VENV_PYTHON_FILE_PATH -m build --sdist --outdir $BUILD_SDK_DIRECTORY_PATH/python\"",
+    "presdk:python:build": "npm run .env",
+    "sdk:python:build": "dotenv -- npm run sdk:python:build:dotenv",
+    "presdk:build": "npm run .env",
+    "sdk:build": "npm run sdk:typescript:build && npm run sdk:python:build",
+    "sdk:public:build:dotenv": "cross-var \"shx rm -rf $TEMPORARY_DIRECTORY_PATH/publicsdk && mkdirp $TEMPORARY_DIRECTORY_PATH/publicsdk && shx cp -r $SDK_DIRECTORY_PATH $TEMPORARY_DIRECTORY_PATH/publicsdk/sdk && shx cp -r package.json node_modules $TEMPORARY_DIRECTORY_PATH/publicsdk && cd $TEMPORARY_DIRECTORY_PATH/publicsdk && npm run .env && gulp -f sdk/gulpfile.mjs tweakForPublicSdk --environmentFileName .env --npmScript sdk:build\"",
+    "sdk:public:build": "dotenv -- npm run sdk:public:build:dotenv",
+    "sdk:typescript:publish:dotenv": "cd $TYPESCRIPT_SDK_DIRECTORY_PATH && npm publish --access=public",
+    "sdk:typescript:publish": "dotenv -- npm run sdk:typescript:publish:dotenv",
+    "sdk:python:publish:dotenv": "cross-var \"cd $BUILD_SDK_DIRECTORY_PATH/python && pip install twine && twine upload -r pypi './*'\"",
+    "sdk:python:publish": "dotenv -- npm run sdk:python:publish:dotenv",
+    "presdk:publish": "npm run .env",
+    "sdk:publish": "npm run sdk:typescript:publish && npm run sdk:python:publish",
+    "instances:updateVersion": "gulp -f instances/gulpfile.mjs updateVersion",
+    "instances:build:dotenv": "cross-var gulp -f instances/gulpfile.mjs buildAll --targetDirectoryPath \"$BUILD_EXTENSIONS_DIRECTORY_PATH\"",
+    "preinstances:build": "npm run .env",
+    "instances:build": "dotenv -- npm run instances:build:dotenv --",
+    "build": "npm run sdk:build && npm run instances:build"
+  },
+  "devDependencies": {
+    "gulp": "4.0.2",
+    "gulp-run": "1.7.1",
+    "gulp-zip": "6.0.0",
+    "shx": "0.4.0",
+    "dotenv-cli": "10.0.0",
+    "cross-var": "1.1.0",
+    "symlink-dir": "6.0.5",
+    "mkdirp": "3.0.1"
+  },
+  "dependencies": {
+  }
+}

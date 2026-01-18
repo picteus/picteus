@@ -1,0 +1,67 @@
+name: Server CI
+run-name: Manages the server dependencies installation, compilation and tests
+
+on:
+  push:
+    branches: [ 'master' ]
+    paths-ignore:
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ 'master' ]
+  workflow_dispatch:
+    inputs:
+      os:
+        description: 'OS to run against?'
+        type: choice
+        required: true
+        options:
+          - '["windows-latest"]'
+          - '["macos-latest"]'
+          - '["ubuntu-latest"]'
+        default: '["macos-latest"]'
+
+jobs:
+  build:
+    name: Build
+    strategy:
+      matrix:
+        os: ${{ (github.event_name == 'push' && fromJson('["macos-latest"]')) || fromJson(inputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - id: java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - name: Check-out on "${{ matrix.os }}" OS and Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - id: install
+        if: ${{ env.skip != 'true' }}
+        name: Installs the prerequisites and server dependencies
+        run: npm install && npm run this:prerequisites && npm run shared-back-end:prerequisites && npm run server:prerequisites && npm run extensions:prerequisites && npm run extensions:sdk:build
+      # The way to trigger a process depending on the OS is taken from https://stackoverflow.com/questions/57946173/github-actions-run-step-on-specific-os
+      - id: install-sharp-linux
+        if: ${{ env.sharp == 'true' && (runner.os == 'Linux' && env.skip != 'true') }}
+        name: Installs the "sharp" dependency on Linux
+        run: npm --prefix server install --no-package-lock --include=optional --os=linux --cpu=x64 sharp
+      - id: install-sharp-windows
+        if: ${{ env.sharp == 'true' && (runner.os == 'Windows' && env.skip != 'true') }}
+        name: Installs the "sharp" dependency on Windows
+        run: npm --prefix server install --no-package-lock --include=optional --os=win32 --cpu=x64 sharp
+      - id: install-sharp-macos
+        if: ${{ env.sharp == 'true' && (runner.os == 'macOS' && env.skip != 'true') }}
+        name: Installs the "sharp" dependency on macOS
+        run: npm --prefix server install --no-package-lock --include=optional --os=darwin --cpu=x64 sharp
+      - id: compile
+        name: Generates some code and compiles the code
+        run: npm --prefix server run prisma:generate && npm --prefix server run compile
+      - id: tests
+        name: Runs the tests
+        run: npm --prefix server run ci:test

@@ -1,0 +1,6 @@
+.dropdownContainer {
+  max-height: 400px;
+  overflow-y: scroll;
+  overflow-x :hidden;
+  @extend .scrollbar-custom;
+}

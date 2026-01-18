@@ -1,0 +1,54 @@
+{
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "${description}",
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "events": [
+        "process.started", "image.created", "image.updated", "image.deleted", "image.runCommand"
+      ],
+      "throttlingPolicies": [
+        {
+          "events": ["image.created", "image.updated", "image.runCommand"],
+          "maximumCount": 4
+        }
+      ],
+      "execution": {
+        "executable": "${node}",
+        "arguments": ["./dist/main.js"]
+      },
+      "commands": [
+        {
+          "id": "logDimensions",
+          "on": {
+            "entity": "Images"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Logs the image dimensions",
+              "description": "Sends a notification in the application regarding the image dimensions."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "parameter": {
+        "type": "string",
+        "title": "Parameter",
+        "description": "A parameter which enables to tune the extension."
+      }
+    },
+    "required": ["parameter"]
+  }
+}

@@ -1,0 +1,27 @@
+
+.masonry {
+  margin: 0 !important;
+}
+
+.galleryContent {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-gap: 5px;
+  margin-bottom: 80px;
+  width: 100%;
+}
+
+.bottomBar {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  bottom: 0;
+  padding: $content-padding;
+  border-top: 1px solid var(--mantine-color-gray-3);
+  background-color: var(--mantine-color-body);
+  width: 100%;
+  .scale {
+    width: 300px;
+  }
+}

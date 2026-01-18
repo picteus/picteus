@@ -1,0 +1,92 @@
+{
+  "id": "comfyui",
+  "version": "0.1.0",
+  "name": "ComfyUI",
+  "description": "Interacts with ComfyUI.",
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "events": [
+        "process.started", "image.created", "image.updated", "image.computeTags", "image.computeFeatures",
+        "image.runCommand"
+      ],
+      "throttlingPolicies": [
+        {
+          "events": ["image.created", "image.updated", "image.computeTags", "image.computeFeatures"],
+          "maximumCount": 10
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "image.tags"
+        },
+        {
+          "id": "image.features"
+        }
+      ],
+      "execution": {
+        "executable": "${node}",
+        "arguments": ["./dist/back-end/main.js"]
+      },
+      "commands": [
+        {
+          "id": "editComfyUiWorkflow",
+          "on": {
+            "entity": "Image",
+            "withTags": ["comfyui"]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Edit ComfyUI workflow",
+              "description": "Loads in the ComfyUI instance the workflow that has been used to generate the image."
+            }
+          ]
+        },
+        {
+          "id": "analyzeComfyUiWorkflow",
+          "on": {
+            "entity": "Image",
+            "withTags": ["comfyui"]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Analyze ComfyUI workflow",
+              "description": "Analyzes the ComfyUI workflow of the image and shows the result to the user."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "format": "uri",
+        "title": "URL",
+        "description": "The URL of the ComfyUI interface."
+      },
+      "directoryPath": {
+        "type": "string",
+        "title": "Directory path",
+        "description": "The path of the root directory where ComfyUI is installed."
+      }
+    },
+    "required": ["url"]
+  },
+  "ui": {
+    "elements": [
+      {
+        "anchor": "sidebar",
+        "url": "/dist/front-end/index.html"
+      }
+    ]
+  }
+}

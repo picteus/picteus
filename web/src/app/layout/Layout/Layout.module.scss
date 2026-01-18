@@ -1,0 +1,42 @@
+.mainContainer {
+  height: 100%;
+}
+.contentWrapper {
+  position: relative;
+  height: 100%;
+  margin-left: $sidebar-width;
+  margin-right: $rightSidebar-width;
+
+  background: var(--mantine-color-body);
+  display: flex;
+  flex-direction: column;
+  .mainContent {
+    padding-bottom: $bottombar-width;
+    height: 100%;
+  }
+  .bottomBar {
+    height : $bottombar-width;
+    display: flex;
+    align-items: center;
+    padding : 0 10px;
+    border-top: solid 1px var(--override-divider-color);
+    background: var(--mantine-color-body);
+    position:  fixed;
+    bottom: 0;
+    width: 100%;
+  }
+}
+
+.rightSidebar {
+  position: fixed;
+  z-index: 1;
+  padding : 10px 0;
+  width: $rightSidebar-width;
+  height:100%;
+  border-left: solid 1px var(--override-divider-color);
+  background: var(--mantine-color-body);
+  display: flex;
+  justify-content: center;
+  right : 0;
+  top : 0;
+}

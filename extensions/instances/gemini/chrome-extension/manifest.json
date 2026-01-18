@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Picteus",
+  "version": "0.1.1",
+  "description": "A companion for image generation via Gemini.",
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
+  "permissions": [
+    "webRequest", "scripting", "storage", "offscreen", "contextMenus", "pageCapture", "debugger"
+  ],
+  "host_permissions": [
+    "https://gemini.google.com/*",
+    "https://lh3.googleusercontent.com/*",
+    "https://lh3.google.com/*"
+  ],
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+  "action": {
+    "default_title": "Settings",
+    "default_popup": "settings.html"
+  }
+}

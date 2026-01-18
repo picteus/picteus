@@ -1,0 +1,35 @@
+
+.title {
+  font-weight: 400;
+  font-size: 60px;
+  color : light-dark(var(--mantine-color-gray-8), var(--mantine-color-dark-1));
+  span {
+    color: var(--mantine-primary-color-6);
+  }
+}
+.logsContainer {
+  position: relative;
+  width: 900px;
+  height: 100px;
+  text-align: left;
+  overflow-y: hidden;
+}
+.blurGradient {  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 30%;
+  pointer-events: none;
+
+    background: linear-gradient(
+      to bottom,
+      rgba(var(--mantine-color-body), 1) 0%,
+      rgba(var(--mantine-color-body), 0.9) 20%,
+      rgba(var(--mantine-color-body), 0.6) 50%,
+      rgba(var(--mantine-color-body), 0.3) 80%,
+      rgba(var(--mantine-color-body), 0) 100%
+    );
+
+  z-index: 1;
+}
+

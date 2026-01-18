@@ -1,0 +1,51 @@
+.container {
+  position: relative;
+}
+.contentContainer {
+  position: relative;
+  .alertContainer {
+    position: fixed;
+    left : $sidebar-width;
+    width: calc(100% - $sidebar-width - $rightSidebar-width);
+    z-index: 2;
+    cursor : pointer;
+  }
+  .galleryContainer{
+    padding-top: $content-padding-vertical;
+    padding-left: $content-padding-horizontal;
+    padding-right: $content-padding-horizontal;
+    padding-bottom:$bottombar-width + 10px;
+  }
+}
+.topBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position : relative;
+}
+.contextualTopBar {
+  position : absolute;
+  z-index:3;
+}
+.contextualContent {
+  position : absolute;
+  backdrop-filter: blur(100px);
+
+  z-index:1;
+  top:0;
+  width : 100%;
+  height : 100%;
+}
+
+.displayModes {
+  display: flex;
+  gap : 5px;
+}
+
+.pagination {
+  padding: $content-padding;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+}

@@ -1,0 +1,113 @@
+{
+  "id": "replicate",
+  "version": "0.1.0",
+  "name": "Replicate",
+  "description": "Wraps the Replicate image generation features.",
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "events": [
+        "process.started",
+        "process.runCommand",
+        "image.runCommand"
+      ],
+      "execution": {
+        "executable": "${node}",
+        "arguments": [
+          "./dist/main.js"
+        ]
+      },
+      "commands": [
+        {
+          "id": "synchronize",
+          "on": {
+            "entity": "Process"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Synchronize the predictions",
+              "description": "Synchronizes the Replicate predictions by downloading their output and storing them into the extension repository."
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "on": {
+            "entity": "Process"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "modelIdentifier": {
+                "type": "string",
+                "title": "Model Identifier",
+                "description": "The identifier of the model to run, taken from Replicate.",
+                "default": "bytedance/seedream-4"
+              }
+            },
+            "required": ["modelIdentifier"]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Run a Replicate model",
+              "description": "Extracts the Replicate model metadata, asks the user for the required inputs, runs the model, and saves the outputs in the extension repository with all its metadata and recipe."
+            }
+          ]
+        },
+        {
+          "id": "generate",
+          "on": {
+            "entity": "Process"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Generate via Flux Pro",
+              "description": "Asks for generation instructions, generates an image via the 'black-forest-labs/flux-kontext-pro' Flux Pro model through Replicate, saves the image in the extension repository with all its metadata, and eventually shows the generated image."
+            }
+          ]
+        },
+        {
+          "id": "modify",
+          "on": {
+            "entity": "Image"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Generate via Flux Pro",
+              "description": "Takes a reference image, asks for generation instructions, generates an image via the 'black-forest-labs/flux-kontext-pro' Flux Pro model through Replicate, saves the image in the extension repository with all its metadata, and eventually shows the generated image."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "ui": {
+    "elements": [
+      {
+        "anchor": "window",
+        "url": "https://replicate.com"
+      }
+    ]
+  },
+  "settings": {
+    "type": "object",
+    "properties": {
+      "apiToken": {
+        "type": "string",
+        "title": "API token",
+        "description": "The API token extracted from Replicate."
+      }
+    },
+    "required": [
+      "apiToken"
+    ]
+  }
+}

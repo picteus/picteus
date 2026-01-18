@@ -1,0 +1,52 @@
+{
+  "name": "@picteus/ollama",
+  "version": "0.2.0",
+  "productName": "Pictueus Llava extension",
+  "description": "A Picteus extension wrapping Llava.",
+  "keywords": [
+    "picteus",
+    "extension",
+    "ollama",
+    "llava",
+    "qwen",
+    "minicpm"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "Copyright (C) 2024 KoppaSoft. The code hereby is the private full property of the KoppaSoft company, Paris, France. You have no right to re-use or modify it. There are no open-source, nor free license attached to it!",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "homepage": "https://github.com/picteus/Picteus.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/Picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "type": "module",
+  "main": "./dist/main.js",
+  "files": [
+    "dist",
+    "manifest.json",
+    "icon.png"
+  ],
+  "scripts": {
+    "prerequisites": "npm --no-save link ../../sdk/typescript",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2",
+    "@types/node": "20.19.0"
+  },
+  "dependencies": {
+    "async-await-queue": "2.1.4",
+    "ollama": "0.6.3",
+    "@picteus/internal-extension-sdk": "0.8.0"
+  }
+}

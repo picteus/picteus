@@ -1,0 +1,86 @@
+{
+  "id": "image-commons",
+  "version": "1.0.0",
+  "name": "Image Commons",
+  "description": "Proposes common operations on images",
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "execution": {
+        "executable": "${node}",
+        "arguments": ["./dist/main.js"]
+      },
+      "events": [
+        "process.started", "image.runCommand"
+      ],
+      "throttlingPolicies": [
+        {
+          "events": ["image.runCommand"],
+          "durationInMilliseconds": 50,
+          "maximumCount": 20
+        }
+      ],
+      "capabilities": [],
+      "commands": [
+        {
+          "id": "convert",
+          "on": {
+            "entity": "Images"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "format": {
+                "type": "string",
+                "title": "Format",
+                "description": "What is the format of the image?",
+                "enum": ["jpeg", "png", "webp", "gif", "avif", "heif"],
+                "default": "jpeg"
+              },
+              "stripMetadata": {
+                "type": "boolean",
+                "title": "Strip metadata?",
+                "description": "Whether the metadata should be stripped from the converted images",
+                "default": true
+              },
+              "width": {
+                "type": "number",
+                "title": "Width",
+                "description": "The width of the converted image in pixels. If not set, the original width is kept.",
+                "minimum": 1
+              },
+              "height": {
+                "type": "number",
+                "title": "Height",
+                "description": "The height of the converted image in pixels. If not set, the original height is kept.",
+                "minimum": 1
+              },
+              "resizeRender": {
+                "type": "string",
+                "title": "Resize Render",
+                "description": "If the 'width' or 'height' parameter is provided, whether the final image dimensions should be within the box defined by those parameters.",
+                "enum": ["inbox", "outbox"],
+                "default": "inbox"
+              }
+            },
+            "required": ["format", "stripMetadata"]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Convert",
+              "description": "Given a format, converts the provided images into the desired format and stores them in the same repository."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "type": "object"
+  }
+}

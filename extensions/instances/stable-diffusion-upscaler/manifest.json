@@ -1,0 +1,58 @@
+{
+  "id": "stable-diffusion-upscaler",
+  "version": "0.1.0",
+  "name": "Stable Diffusion Upscaler",
+  "description": "Upscales an image.",
+  "runtimes": [
+    {
+      "environment": "python"
+    }
+  ],
+  "instructions": [
+    {
+      "events": [
+        "process.started", "image.runCommand"
+      ],
+      "throttlingPolicies": [
+        {
+          "events": ["image.runCommand"],
+          "maximumCount": 1
+        }
+      ],
+      "execution": {
+        "executable": "${venvPython}",
+        "arguments": ["./main.py"]
+      },
+      "commands": [
+        {
+          "id": "upscaleImage",
+          "on": {
+            "entity": "Images"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Upscale an image",
+              "description": "Upscales the provided images via the Stable Diffusion ML model and stores them into the same repository."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "maximumPixels": {
+        "type": "number",
+        "title": "Maximum image dimension",
+        "description": "The number of pixels that the image should not exceed for being eligible to upscaling.",
+        "default": 25000,
+        "minimum": 100
+      }
+    },
+    "required": [
+      "maximumPixels"
+    ]
+  }
+}

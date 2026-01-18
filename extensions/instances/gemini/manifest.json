@@ -1,0 +1,137 @@
+{
+  "id": "gemini",
+  "version": "1.0.0",
+  "name": "Google Gemini",
+  "description": "Accesses to all sorts of Google Gemini image-related features.",
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "events": [
+        "process.started", "process.runCommand", "image.created", "image.updated", "image.computeTags",
+        "image.runCommand"
+      ],
+      "throttlingPolicies": [
+        {
+          "events": ["image.created", "image.updated", "image.computeTags"],
+          "maximumCount": 4
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "image.tags"
+        }
+      ],
+      "execution": {
+        "executable": "${node}",
+        "arguments": [
+          "./dist/main.js"
+        ]
+      },
+      "commands": [
+        {
+          "id": "generate",
+          "on": {
+            "entity": "Process"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "title": "Model",
+                "description": "The Machine Learning model to use for image generation.",
+                "enum": ["gemini-3-pro-image-preview", "gemini-2.5-flash-image"],
+                "default": "gemini-3-pro-image-preview"
+              },
+              "aspectRatio": {
+                "type": "string",
+                "title": "Aspect Ratio",
+                "description": "The aspect ratio of the generated image.",
+                "enum": ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+                "default": "1:1"
+              },
+              "prompt": {
+                "type": "string",
+                "title": "Prompt",
+                "description": "What do you want to generate?",
+                "default": "a cat eating a nano-banana in a fancy restaurant under the Gemini constellation"
+              }
+            },
+            "required": ["model", "aspectRatio", "prompt"]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Generate an image from text",
+              "description": "Asks the user a textual prompt and an aspect ratio and then sends a request to Google Gemini to generate an image with that prompt, saves the image in the extension repository with all its metadata, and eventually shows the generated image."
+            }
+          ]
+        },
+        {
+          "id": "modify",
+          "on": {
+            "entity": "Images"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "title": "Model",
+                "description": "The Machine Learning model to use for image generation.",
+                "enum": ["gemini-2.5-flash-image", "gemini-3-pro-image-preview"],
+                "default": "gemini-3-pro-image-preview"
+              },
+              "aspectRatio": {
+                "type": "string",
+                "title": "Aspect Ratio",
+                "description": "The aspect ratio of the generated image.",
+                "enum": ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+                "default": "1:1"
+              },
+              "prompt": {
+                "type": "string",
+                "title": "Prompt",
+                "description": "What do you want to generate?",
+                "default": "a cat eating a nano-banana in a fancy restaurant under the Gemini constellation"
+              }
+            },
+            "required": ["model", "aspectRatio", "prompt"]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Generate via Nano Banana",
+              "description": "Takes reference images and a prompt, generates an image via Google Gemini, saves the image in the extension repository with all its metadata, and eventually shows the generated image."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "ui": {
+    "elements": [
+      {
+        "anchor": "window",
+        "url": "https://gemini.google.com"
+      }
+    ]
+  },
+  "settings": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "title": "API Key",
+        "description": "The Google Gemini API key used when interacting with Gemini."
+      }
+    },
+    "required": [
+      "apiKey"
+    ]
+  }
+}

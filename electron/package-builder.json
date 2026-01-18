@@ -1,0 +1,61 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/77f977435c99247d5db395895618b150f5006e8f/packages/app-builder-lib/scheme.json",
+  "appId": "com.koppasoft.picteus",
+  "electronLanguages": ["en"],
+  "asar": true,
+  "compression": "maximum",
+  "copyright": "Copyright © 2024-2025 KoppaSoft",
+  "afterPack": "./package-builder-afterPack.mjs",
+  "asarUnpack": [
+    "**/node_modules/sharp/**/*",
+    "**/node_modules/@img/**/*",
+    "**/node_modules/onnxruntime-node/**/*",
+    "**/prisma-client/libquery_engine-*.node",
+    "build/sdk/**/*"
+  ],
+  "files": [
+    "build",
+    "!build/server/node_modules",
+    "${extraElectronFilter}",
+    {
+      "from": "build/server/node_modules",
+      "to": "build/server/node_modules",
+      "filter": [
+        "**/*",
+        "${extraServerFilter}"
+      ]
+    }
+  ],
+  "directories": {
+    "output": "../dist"
+  },
+  "mac": {
+    "category": "public.app-category.graphics-design",
+    "target": ["dir", "dmg"],
+    "identity": "${appleIdentityCompany}",
+    "icon": "electron/assets/icon.icns",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": true,
+    "entitlements": "${entitlementFilePath}",
+    "entitlementsInherit": "${entitlementFilePath}"
+  },
+  "win": {
+    "target": [
+      "nsis"
+    ],
+    "icon": "electron/assets/icon.ico",
+    "artifactName": "${productName}-v${version}-win32-${arch}.${ext}"
+  },
+  "msi": {
+    "oneClick": false,
+    "perMachine": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "menuCategory": false
+  },
+  "linux": {
+    "target": ["deb"],
+    "artifactName": "picteus",
+    "icon": "electron/assets/icon.png"
+  }
+}

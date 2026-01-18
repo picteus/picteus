@@ -1,0 +1,46 @@
+{
+  "id": "mcp-server",
+  "version": "1.0.0",
+  "name": "Picteus MCP Server",
+  "description": "Exposes a MCP server over the Picteus API.",
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "events": [
+        "process.started"
+      ],
+      "execution": {
+        "executable": "${node}",
+        "arguments": [
+          "./dist/src/main.js"
+        ]
+      },
+      "commands": []
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "portNumber": {
+        "type": "integer",
+        "title": "Port number",
+        "description": "The port number on which the MCP server will listen.",
+        "minimum": 1,
+        "maximum": 65535,
+        "default": 3004
+      },
+      "apiKey": {
+        "type": "string",
+        "title": "API Key",
+        "description": "The Picteus API key that will be transmitted to the MCP server."
+      }
+    },
+    "required": [
+      "portNumber", "apiKey"
+    ]
+  }
+}

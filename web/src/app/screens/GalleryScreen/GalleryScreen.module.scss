@@ -1,0 +1,9 @@
+.closeIcon {
+  padding: 1px;
+  border-radius: 4px;
+  transition: background-color 0.1s ease-in-out;
+}
+
+.closeIcon:hover {
+  background-color: rgba(128, 128, 128, 0.2);
+}

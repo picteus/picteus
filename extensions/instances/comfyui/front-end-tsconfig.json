@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "baseUrl": "./src/front-end",
+    "jsx": "react",
+    "paths": {
+      "~*": [
+        "./*"
+      ]
+    },
+    "strict": true,
+    "declaration": false
+  },
+  "include": [
+    "src/front-end/**/*"
+  ]
+}

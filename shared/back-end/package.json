@@ -1,0 +1,57 @@
+{
+  "name": "@picteus/shared-back-end",
+  "version": "0.2.3",
+  "productName": "Picteus",
+  "description": "The Picteus back-end common code.",
+  "keywords": [
+    "picture",
+    "image",
+    "lens",
+    "voyager",
+    "explorer",
+    "search",
+    "Odysseus"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "Copyright (C) 2024 KoppaSoft. The code hereby is the private full property of the KoppaSoft company, Paris, France. You have no right to re-use or modify it. There are no open-source, nor free license attached to it!",
+  "private": true,
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "homepage": "https://github.com/picteus/Picteus.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/Picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["./dist"],
+  "scripts": {
+    "reset": "npm run clean && shx rm -rf node_modules",
+    "clean": "shx rm -rf ./dist",
+    "compile": "tsc && tsc-alias --resolve-full-paths",
+    "compileWithTsup": "tsup src/index.ts --tsconfig tsconfig.json --format cjs,esm --dts --clean --minify-whitespace --minify-identifiers --minify-syntax --out-dir ./dist",
+    "build": "npm run compile"
+  },
+  "devDependencies": {
+    "shx": "0.4.0",
+    "cross-var": "1.1.0",
+    "typescript": "5.9.2",
+    "tsc-alias": "1.8.16",
+    "@types/node": "22.17.1",
+    "tsup": "8.5.0"
+  },
+  "dependencies": {
+    "winston": "3.15.0",
+    "@caporal/core": "3.1.5"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "@pictues/gemini",
+  "version": "1.0.0",
+  "productName": "Google Gemini",
+  "description": "Accesses to all sorts of Google Gemini image-related features.",
+  "keywords": [
+    "picteus",
+    "extension",
+    "google",
+    "gemini",
+    "nano banana"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "type": "module",
+  "main": "./dist/main.js",
+  "files": [
+    "dist",
+    "ui",
+    "manifest.json",
+    "icon.png"
+  ],
+  "scripts": {
+    "chrome-extension:prerequisites": "npm --prefix chrome-extension install",
+    "chrome-extension:build": "npm --prefix chrome-extension run package && mkdirp -p dist && shx mv chrome-extension/*.tgz dist && cd dist && tar2zip *.tgz && rm -rf *.tgz",
+    "self:build": "tsc",
+    "build": "npm run chrome-extension:prerequisites && npm run chrome-extension:build && npm run self:build"
+  },
+  "devDependencies": {
+    "shx": "0.4.0",
+    "tar-to-zip": "3.0.0",
+    "typescript": "5.9.2",
+    "@types/node": "22.17.1",
+    "@types/adm-zip": "0.5.5",
+    "mkdirp": "3.0.1"
+  },
+  "dependencies": {
+    "@google/genai": "1.25.0",
+    "adm-zip": "0.5.16",
+    "@picteus/internal-extension-sdk": "0.8.0"
+  }
+}

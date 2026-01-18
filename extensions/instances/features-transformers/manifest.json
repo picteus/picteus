@@ -1,0 +1,38 @@
+{
+  "id": "features-transformers",
+  "version": "0.1.0",
+  "name": "Features Transformers",
+  "description": "Computes the caption features of an image through transformers.",
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "events": ["process.started", "image.created", "image.updated", "image.computeFeatures"],
+      "throttlingPolicies": [
+        {
+          "events": ["image.created", "image.updated", "image.computeFeatures"],
+          "durationInMilliseconds": 1500,
+          "maximumCount": 2
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "image.features"
+        }
+      ],
+      "execution": {
+        "executable": "${node}",
+        "arguments": ["./dist/main.js"]
+      }
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+    },
+    "required": []
+  }
+}

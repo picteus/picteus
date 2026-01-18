@@ -1,0 +1,59 @@
+{
+  "name": "@picteus/mcp-server",
+  "version": "1.0.0",
+  "productName": "Picteus MCP Server",
+  "description": "Exposes a MCP server over the Picteus API.",
+  "keywords": [
+    "picteus",
+    "extension",
+    "mcp",
+    "server",
+    "ia"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "Copyright (C) 2024 KoppaSoft. The code hereby is the private full property of the KoppaSoft company, Paris, France. You have no right to re-use or modify it. There are no open-source, nor free license attached to it!",
+  "private": true,
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "homepage": "https://github.com/picteus/Picteus.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/Picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "type": "module",
+  "main": "./dist/main.js",
+  "files": [
+    "dist",
+    "manifest.json",
+    "icon.png"
+  ],
+  "scripts": {
+    "mcp:generate": "openapi-mcp-generator --input ../../../server/openapi.json --output ./generated --server-name \"picteus-mcp-server\" --transport web --force",
+    "compile": "tsc",
+    "build": "npm run compile"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2",
+    "@types/node": "22.17.1",
+    "openapi-mcp-generator": "3.2.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.18.1",
+    "axios": "1.12.2",
+    "dotenv": "17.2.2",
+    "zod": "3.25.76",
+    "json-schema-to-zod": "2.6.1",
+    "hono": "4.9.8",
+    "@hono/node-server": "1.19.4",
+    "uuid": "13.0.0",
+    "@picteus/internal-extension-sdk": "0.8.0"
+  }
+}

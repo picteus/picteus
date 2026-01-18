@@ -1,0 +1,78 @@
+{
+  "name": "@picteus/main",
+  "version": "0.2.3",
+  "productName": "Picteus",
+  "description": "An advanced pictures explorer application.",
+  "keywords": [
+    "picture",
+    "image",
+    "lens",
+    "voyager",
+    "explorer",
+    "search",
+    "Odysseus"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "Copyright (C) 2024 KoppaSoft. The code hereby is the private full property of the KoppaSoft company, Paris, France. You have no right to re-use or modify it. There are no open-source, nor free license attached to it!",
+  "private": true,
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "homepage": "https://github.com/picteus/Picteus.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/Picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "config": {
+    "applicationVersion": "0.6.0",
+    "apiVersion": "0.9.0",
+    "sdkVersion": "0.8.0"
+  },
+  "scripts": {
+    "//": "A bunch of useful tips and ticks on npm worth reading are available at https://github.com/jeffbader/Npm-Tips-and-Tricks and https://2ality.com/2022/08/npm-package-scripts.html",
+    "this:reset": "npm run this:clean && shx rm -rf node_modules",
+    "reset": "npm --prefix shared/back-end run reset && npm --prefix server run reset && npm --prefix web run reset && npm --prefix extensions run reset && npm --prefix electron run reset && npm run this:reset",
+    "this:clean": "shx rm -rf generated build dist tmp",
+    "clean": "npm --prefix shared/back-end run clean && npm --prefix server run clean && npm --prefix web run clean && npm --prefix extensions run clean && npm --prefix electron run clean && npm run this:clean",
+    "updateVersion": "npm --prefix server run updateVersion && npm --prefix extensions run updateVersion && npm --prefix web run updateVersion && npm --prefix electron run updateVersion",
+    "shared-back-end:prerequisites": "npm --prefix shared/back-end install --no-save && npm --prefix shared/back-end run build && gulp fixCaporalModule --directoryPath shared/back-end/node_modules/@caporal/core && shx rm -rf server/node_modules/@picteus/shared-back-end electron/node_modules/@picteus/shared-back-end",
+    "server:prerequisites:install": "npm --prefix server install --no-save --install-link",
+    "server:prerequisites:shared": "npm run server:prerequisites:install && gulp fixCaporalModule --directoryPath server/node_modules/@caporal/core",
+    "server:prerequisites:openapi": "npm --prefix server run openApi:generateAndPackage && npm run server:prerequisites:install",
+    "server:prerequisites": "npm-run-all server:prerequisites:shared server:prerequisites:openapi",
+    "extensions:prerequisites": "npm --prefix extensions install --no-save",
+    "web:prerequisites": "npm --prefix web install --no-save",
+    "electron:prerequisites": "npm --prefix electron install --no-save --install-link && gulp fixCaporalModule --directoryPath electron/node_modules/@caporal/core",
+    "this:prerequisites": "mkdirp generated electron/build && symlink-dir electron/build build",
+    "prerequisites": "npm-run-all this:prerequisites shared-back-end:prerequisites server:prerequisites extensions:prerequisites web:prerequisites electron:prerequisites",
+    "shared-back-end:build": "npm run shared-back-end:prerequisites",
+    "server:build": "npm --prefix server run build",
+    "extensions:sdk:build": "npm --prefix extensions run sdk:build",
+    "extensions:build": "npm --prefix extensions run build",
+    "web:build": "cross-env BUILD_PATH=\"../build/web\" npm --prefix web run build",
+    "electron:build": "npm --prefix electron run build",
+    "docker:build": "npm-run-all shared-back-end:build server:prerequisites extensions:build web:build && docker build -t koppasoft/picteus:latest .",
+    "build": "npm-run-all server:build extensions:build web:build electron:build",
+    "start": "npm --prefix electron run start",
+    "package": "npm --prefix electron run package",
+    "distribute": "npm --prefix electron run distribute",
+    "deploy": "npm --prefix electron run deploy"
+  },
+  "devDependencies": {
+    "npm-run-all": "4.1.5",
+    "shx": "0.4.0",
+    "cross-env": "10.0.0",
+    "mkdirp": "3.0.1",
+    "symlink-dir": "6.0.5",
+    "gulp": "4.0.2"
+  },
+  "dependencies": {
+  }
+}
