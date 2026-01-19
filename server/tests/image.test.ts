@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
+import { buffer as streamBuffer } from "node:stream/consumers";
 import { randomUUID } from "node:crypto";
 
 import { plainToInstance } from "class-transformer";
@@ -601,7 +602,7 @@ describe("Image with module", () =>
                 const actuallyRequestedImageFormat = requestedImageFormat ?? toImageFormat(originalImageFormat);
                 expect(streamableFile.getHeaders().type).toEqual(toMimeType(actuallyRequestedImageFormat));
                 expect(streamableFile.getHeaders().disposition).toEqual(computeAttachmentDisposition(summary.name.substring(0, summary.name.lastIndexOf(".") + 1) + toFileExtension(actuallyRequestedImageFormat)));
-                const downloadedBuffer = await buffer(streamableFile.getStream());
+                const downloadedBuffer = await streamBuffer(streamableFile.getStream());
                 const originalBuffer = fs.readFileSync(summary.url.substring(fileWithProtocol.length));
                 if (requestedImageFormat === undefined || requestedImageFormat === originalImageFormat)
                 {
@@ -1212,7 +1213,7 @@ describe("Image with module", () =>
       const streamableFile = await base.getImageAttachmentController().download(attachmentUri);
       expect(streamableFile.getHeaders().type).toEqual(toMimeType(format));
       expect(streamableFile.getHeaders().disposition).toEqual(computeAttachmentDisposition(`${attachmentUri.substring(attachmentPrefix.length)}.${toFileExtension(format)}`));
-      const returnedBuffer = await buffer(streamableFile.getStream());
+      const returnedBuffer = await streamBuffer(streamableFile.getStream());
       const base64 = "base64";
       expect(returnedBuffer.toString(base64)).toEqual(attachmentBuffer.toString(base64));
     }
@@ -1384,7 +1385,7 @@ describe("Image with module", () =>
         for (const quality of qualities)
         {
           const streamableFile = await base.getImageController().convert(format, quality, imageFeeder.readImage(imageCase.fileName));
-          const downloadedBuffer = await buffer(streamableFile.getStream());
+          const downloadedBuffer = await streamBuffer(streamableFile.getStream());
           expect(await computeFormat(downloadedBuffer)).toEqual(format === ImageFormat.HEIF ? ImageFormat.AVIF : format);
           if (lengths.length > 0)
           {
