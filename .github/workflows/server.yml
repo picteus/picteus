@@ -46,21 +46,8 @@ jobs:
         if: ${{ env.skip != 'true' }}
         name: Installs the prerequisites and server dependencies
         run: npm install && npm run this:prerequisites && npm run shared-back-end:prerequisites && npm run server:prerequisites && npm run extensions:prerequisites && npm run extensions:sdk:build
-      # The way to trigger a process depending on the OS is taken from https://stackoverflow.com/questions/57946173/github-actions-run-step-on-specific-os
-      - id: install-sharp-linux
-        if: ${{ env.sharp == 'true' && (runner.os == 'Linux' && env.skip != 'true') }}
-        name: Installs the "sharp" dependency on Linux
-        run: npm --prefix server install --no-package-lock --include=optional --os=linux --cpu=x64 sharp
-      - id: install-sharp-windows
-        if: ${{ env.sharp == 'true' && (runner.os == 'Windows' && env.skip != 'true') }}
-        name: Installs the "sharp" dependency on Windows
-        run: npm --prefix server install --no-package-lock --include=optional --os=win32 --cpu=x64 sharp
-      - id: install-sharp-macos
-        if: ${{ env.sharp == 'true' && (runner.os == 'macOS' && env.skip != 'true') }}
-        name: Installs the "sharp" dependency on macOS
-        run: npm --prefix server install --no-package-lock --include=optional --os=darwin --cpu=x64 sharp
       - id: compile
-        name: Generates some code and compiles the code
+        name: Generates some code and compiles
         run: npm --prefix server run prisma:generate && npm --prefix server run compile
       - id: tests
         name: Runs the tests

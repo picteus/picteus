@@ -16,6 +16,8 @@ The application is made of 6 components:
 
 ## Prerequisites
 
+- Node.js v22.7.1+ with npm (tested) or pnpm or yarn for building the application's components and the extensions.
+- Python v3.11+ for building the Python extensions.
 - The server module requires Java v17+, which should be accessible as a first Java runtime through the `PATH`, when generating the OpenAPI client code.
 - When building the container image, a Docker-like application should be up and running.
 
@@ -25,13 +27,13 @@ The following command should be run from the root `package.json` file.
 
 - Run the traditional `npm run install` script for resolving the hereby package dependencies.
 - Run the `npm run prerequisites` script for resolving all submodules' dependencies: do not run individually the `npm install` script on every module, because it will not properly install the "server" and "electron" components since the  `prerequisites` npm script resorts to the `--install-link` option, which installed the "shared/back-end" module dependencies.
-- Run the `npm run build` script for building all dependencies.
+- Run the `npm run build` script for building all artifacts.
 - Run the `npm run start` script for starting the Electron application.
 - Run the `npm run package` script for building the Electron package application.
 - Run the `npm run clean` script for cleaning all artifacts coming from compilation and previous builds.
 - Run the `npm run reset` script for resetting the state of the project's files to their git initial state — in particular, this deletes the `node_modules` directories.
 
-Most of the artifact files are located under the `build` directory, which is a symbolic pointing to the `electron/build` directory.
+Most of the artifact files are located under the `build` directory, which is a symbolic link pointing to the `electron/build` directory.
 
 ## Versions
 
@@ -73,7 +75,7 @@ To start the server, run the `npm run start` script. The environment variables w
 
 ### Extensions
 
-The SDKs and extensions and scripts are located in the `extensions` directory and the commands in rest of this section should be run from that directory:
+The SDKs and extensions and scripts are located in the `extensions` directory and the commands in the rest of this section should be run from that directory:
 - the SDKs are in the `sdk` subdirectory ;
 - the extensions are in the `instances` subdirectory.
 
@@ -114,12 +116,12 @@ The Electron application:
 2. is distributed via the `npm run distribute` script — which also invokes the previous one —, which signs, zips and notarize the application distribution package on macOS, which should be executed with the following environment variables set, when run on macOS:
   - `MACOS_APPLICATION_CERTIFICATE_BASE64_CONTENT`: the base64 encoded content of the application certificate. This content is obtained via the `base64 -i <certificate.p12>` command, where `<certificate.p12>` is the path of the "Developer ID Application" certificate file in P12 format ;
   - `MACOS_APPLICATION_CERTIFICATE_PASSWORD`: the password of the previous certificate ;
-  - `MACOS_NOTARIZE_APPLICATION_PASSWORD`: the [Apple application-specific](https://discussions.apple.com/thread/254805086?sortBy=rank) password related to the `Picteus`enty, used to notarize the application package ;
+  - `MACOS_NOTARIZE_APPLICATION_PASSWORD`: the [Apple application-specific](https://discussions.apple.com/thread/254805086?sortBy=rank) password related to the `Picteus` entry, used to notarize the application package ;
 3. is deployed via the `npm run deploy` script, which uploads the previously generated application distribution package: the `gcloud login` command should have been run beforehand, with GCP credentials having permissions over the destination GCS bucket.
 
 ### Docker image
 
-The container image specifications are classicly defined through the `Dockerfile` file and the ignored files through the `.dockerignore` file.
+The container image specifications are classically defined through the `Dockerfile` file and the ignored files through the `.dockerignore` file.
 
 To build the container image of the server application via Docker, run the `npm run docker:build` script from the root directory, which creates an image with the `koppasoft/picteus:latest` tag.
 
@@ -127,7 +129,7 @@ To build the container image of the server application via Docker, run the `npm 
 
 The project is configured with GitHub Actions for CI. For simulating locally what the CI does, you can install [act](https://github.com/nektos/act) and resort to the following command lines, on macOS:
 - for the "Server CI" chain: `act --workflows .github/workflows/server.yml --container-architecture linux/amd64 -P macos-latest=catthehacker/ubuntu:act-latest` ;
-- for the "Electron CI" chain: `act --workflows .github/workflows/elctron.yml --container-architecture linux/amd64 -P macos-latest=catthehacker/ubuntu:act-latest`.
+- for the "Electron CI" chain: `act --workflows .github/workflows/electron.yml --container-architecture linux/amd64 -P macos-latest=catthehacker/ubuntu:act-latest`.
 
 - Use the `--bind` option if you wish to prevent act from copying the files to the container, which takes time because of the large number of files.
 - Only for the `.github/workflows/server.yml` workflow, use the `--env skip="true` to skip the installation steps.
@@ -152,5 +154,5 @@ You may fine-tune the container with the following additional environment variab
 - `apiServerPort`: the port number of the API server, which defaults to `3001` ; if you change it, think of changing the port mapping accordingly ;
 - `webServerPort`: the port number of the web server exposing the UI, which defaults to `2999` ; if you change it, think of changing the port mapping accordingly ;
 - `vectorDatabasePort`: the port number of the vector database server, which defaults to `3002` ; if you change it, think of changing the port mapping accordingly ;
-- `useSsl`: a boolean indicating whether the API server should use TLS / TLS, which defaults to `true` ;
+- `useSsl`: a boolean indicating whether the API server should use SSL / TLS, which defaults to `true` ;
 - `requiresApiKeys`: a boolean indicating whether the API server only works with API keys, which defaults to `false`.
