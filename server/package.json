@@ -44,7 +44,7 @@
     "reset": "npm run clean && shx rm -rf node_modules",
     "clean": "shx rm -rf \"src/generated\"",
     "updateVersion": "gulp updateVersion",
-    "compile": "tsc && tsc-alias --resolve-full-paths && shx mkdir -p \"$npm_package_config_buildDirectoryPath/server/src/generated/prisma-client\" && shx cp \"src/generated/prisma-client/*.node\" \"$npm_package_config_buildDirectoryPath/server/src/generated/prisma-client\" && cross-var node -e \"const object = {}; object.type = 'module'; fs.writeFileSync(path.join('$npm_package_config_buildDirectoryPath', 'server', 'package.json'), JSON.stringify(object), { encoding: 'utf8'});\"",
+    "compile": "tsc && tsc-alias --resolve-full-paths && cross-var shx mkdir -p \"$npm_package_config_buildDirectoryPath/server/src/generated/prisma-client\" && cross-var shx cp \"src/generated/prisma-client/*.node\" \"$npm_package_config_buildDirectoryPath/server/src/generated/prisma-client\" && cross-var node -e \"const object = {}; object.type = 'module'; fs.writeFileSync(path.join('$npm_package_config_buildDirectoryPath', 'server', 'package.json'), JSON.stringify(object), { encoding: 'utf8'});\"",
     "obfuscate": "cross-var javascript-obfuscator \"$npm_package_config_buildDirectoryPath/server/src\" --output \"$npm_package_config_buildDirectoryPath/server/src\" --compact true --options-preset high-obfuscation --rename-globals true --self-defending true -- target node && shx rm -rf \"$npm_package_config_buildDirectoryPath/server/src/**/*.map\"",
     "generateMetadata": "ts-node generate-metadata.ts src",
     "installNodeModulesForElectron": "gulp installNodeModulesForElectron",
