@@ -574,6 +574,13 @@ describe("Miscellaneous bare", () =>
 
       {
         // We assess with invalid values
+        for (const value of [".", "..", "./name", "../name", "path/name", "nameWith<", "nameWith>", "nameWith:", "nameWith\\", "nameWith*", "nameWith|", "nameWith?", "nameWith\"", "nameWith" + String.fromCodePoint(0)])
+        {
+          await expect(async () =>
+          {
+            parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemFileName);
+          }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it contains illegal characters`, BAD_REQUEST, errorCode));
+        }
         for (const value of [filePath, validSymbolicLinkFilePath])
         {
           await expect(async () =>
@@ -597,6 +604,14 @@ describe("Miscellaneous bare", () =>
               parametersChecker.checkString(name, value, StringLengths.Length256, nature);
             }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it corresponds to a broken symbolic link`, BAD_REQUEST, errorCode));
           }
+        }
+        for (const nature of Object.keys(StringNature) as StringNature [])
+        {
+          const value = "a".repeat(256 + 1);
+          await expect(async () =>
+          {
+            parametersChecker.checkString(name, value, StringLengths.Length256, nature);
+          }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it exceeds 256 characters`, BAD_REQUEST, errorCode));
         }
       }
       {

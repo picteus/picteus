@@ -132,12 +132,9 @@ export class ParametersChecker
               isValidValue = false;
             }
           }
-          else
+          if (value === "." || value === "..")
           {
-            if (value === "." || value === "..")
-            {
-              isValidValue = false;
-            }
+            isValidValue = false;
           }
         }
         if (isValidValue === false)
