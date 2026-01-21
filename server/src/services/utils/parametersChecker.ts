@@ -123,7 +123,7 @@ export class ParametersChecker
           if (process.platform === "win32")
           {
             const forbiddenPrefixes = ["CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"];
-            if (forbiddenPrefixes.filter(prefix => value.startsWith(prefix) === true) !== undefined)
+            if (forbiddenPrefixes.filter(prefix => value.startsWith(prefix) === true).length > 0)
             {
               isValidValue = false;
             }
@@ -160,7 +160,8 @@ export class ParametersChecker
       }
       else if (nature === StringNature.FileSystemDirectoryPath || nature === StringNature.FileSystemFilePath)
       {
-        const returnType = z.string().regex(/^[^<>:,?"*|]+$/).safeParse(value);
+        const prefix =  process.platform === "win32" ? "[a-zA-Z]:[\\\\\\/]" : "/";
+        const returnType = z.string().regex(new RegExp(`^${prefix}[^<>:,?"*|]+$`, "")).safeParse(value);
         if (returnType.success === false)
         {
           this.throwBadParameter(name, value, "it contains illegal characters");
