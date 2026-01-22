@@ -956,7 +956,7 @@ describe("Repository", () =>
         }
       }
       {
-        const relativeDirectoryPaths = ["path\\directory", "path/directory", "path/../directory", "path\\..\\directory"];
+        const relativeDirectoryPaths = ["path\\directory1", "path/directory2", "path/../directory3", "path\\..\\directory4"];
         const nameWithoutExtension = "name";
         for (const relativeDirectoryPath of relativeDirectoryPaths)
         {
