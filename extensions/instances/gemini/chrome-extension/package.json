@@ -52,7 +52,7 @@
     "package": "npm run build && npm pack"
   },
   "dependencies": {
-    "@picteus/ws-client": "file:../../../../generated/openapi/typescript-fetch/picteus-ws-client-0.7.0.tgz"
+    "@picteus/ws-client": "file:../../../../generated/openapi/typescript-fetch/picteus-ws-client-0.9.0.tgz"
   },
   "devDependencies": {
     "cross-var": "1.1.0",

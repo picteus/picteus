@@ -28,7 +28,7 @@
   ],
   "scripts": {
     "chrome-extension:prerequisites": "npm --prefix chrome-extension install",
-    "chrome-extension:build": "npm --prefix chrome-extension run package && mkdirp -p dist && shx mv chrome-extension/*.tgz dist && cd dist && tar2zip *.tgz && rm -rf *.tgz",
+    "chrome-extension:build": "npm --prefix chrome-extension run package && mkdirp -p dist && shx mv chrome-extension/*.tgz dist && cd dist && tar2zip picteus-chrome-extension-0.1.0.tgz && shx rm -rf *.tgz",
     "self:build": "tsc",
     "build": "npm run chrome-extension:prerequisites && npm run chrome-extension:build && npm run self:build"
   },
