@@ -161,7 +161,7 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
     if (this.enabled === true)
     {
       const chromaDirectoryPath = paths.vectorDatabaseDirectoryPath;
-      const chromaBinaryFileName = "chroma";
+      const chromaBinaryFileName = "chroma" + (process.platform === "win32" ? ".exe" : "");
       const vectorDatabaseDirectoryPath = await this.installChroma(chromaDirectoryPath, chromaBinaryFileName);
       const portNumber = paths.vectorDatabasePortNumber;
       logger.info(`Starting the Chroma server on port ${portNumber} and waiting for it to be ready`);
