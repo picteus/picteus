@@ -377,7 +377,7 @@ class MidjourneyExtension extends PicteusExtension
   {
     if (metadata.all !== undefined)
     {
-      return MidjourneyInstructions.parseMetadata(metadata);
+      return MidjourneyInstructions.parseMetadata(JSON.parse(metadata.all));
     }
     return undefined;
   }
