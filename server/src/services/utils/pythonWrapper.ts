@@ -11,17 +11,7 @@ import { execute, spawn, spawnAndWait, waitFor, which } from "./processWrapper";
 import { downloadAndStoreFile, getTemporaryDirectoryPath, inflateGzippedTarball, move } from "./downloader";
 
 
-export const pythonExecutable = process.platform != "win32" ? "python3" : "python.exe";
-
 const acceptedPython3MajorVersion = 3;
-
-export const publicPythonSdkIdentifier = "picteus-extension-sdk";
-
-export const internalPythonSdkIdentifier = "picteus-internal-extension-sdk";
-
-export const acceptedPython3MinorVersions = [8, 9, 10, 11, 12, 13, 14];
-
-export const pythonVersion = "3.11.14";
 
 const runtimePythonDirectoryName = "python";
 
@@ -37,7 +27,7 @@ const isWindows = os.platform() === "win32";
 
 const pyenvPythonExecutable = "python";
 
-const minicondaPythonExecutable = "python";
+const minicondaPythonExecutable = isWindows === false ? "python" : "python.exe";
 
 const pythonBinaryDirectoryName = "bin";
 
@@ -46,6 +36,16 @@ const homeBrewVersion = "4.3.23";
 const xzModuleName = "xz";
 
 const useMinicondaOrPyenv = Math.random() <= 1;
+
+export const pythonExecutable = isWindows === false ? "python3" : "python.exe";
+
+export const publicPythonSdkIdentifier = "pictedus-extension-sdk";
+
+export const internalPythonSdkIdentifier = "picteus-internal-extension-sdk";
+
+export const acceptedPython3MinorVersions = [8, 9, 10, 11, 12, 13, 14];
+
+export const pythonVersion = "3.11.14";
 
 function computeHomebrewPaths(): {
   brewDirectoryPath: string,
