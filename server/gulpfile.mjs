@@ -184,7 +184,9 @@ const pruneNodeModulesForProduction = () =>
     const isDebug = (Math.random() > 1);
     const allNodePaths = walk(directoryPath, null);
     const relativeNodePaths = allNodePaths.map(filePath => path.relative(directoryPath, filePath));
-    const matchedRelativeNodePaths = new Set(micromatch(relativeNodePaths, patterns, { dot: true, contains: true }));
+    const matchedRelativeNodePaths = new Set(micromatch(relativeNodePaths, patterns, { dot: true, contains: true })
+      // On Windows, the matched paths resort to the "/" separator: hence, we need to translate it into the platform separator
+      .map(nodePath => nodePath.replaceAll("/", path.sep)));
     if (isDebug === true)
     {
       for (const nodePath of matchedRelativeNodePaths)
@@ -279,14 +281,14 @@ const computePruneElectronDuplicates = () =>
   };
   const removeDuplicates = () =>
   {
-    console.log(`The Node.js modules of the 'server' modules are [${serverDirectoryNames.join(", ")}]`);
-    console.log(`The Node.js modules of the 'electron' modules are [${electronDirectoryNames.join(", ")}]`);
-    const alreadyAvailableInElectronDirectoryPaths = serverDirectoryNames
-      .filter((value) =>
-      {
-        return electronDirectoryNames.includes(value) === true && toBeKeptPackages.indexOf(value) === -1;
-      })
-      .concat([".bin"])
+    console.log(`The Node.js modules of the 'server' are [${serverDirectoryNames.join(", ")}]`);
+    console.log(`The Node.js modules of the 'electron' are [${electronDirectoryNames.join(", ")}]`);
+    const alreadyAvailableModuleNames = serverDirectoryNames.filter((value) =>
+    {
+      return electronDirectoryNames.includes(value) === true && toBeKeptPackages.indexOf(value) === -1;
+    });
+    console.log(`The Node.js duplicated folders to delete are [${alreadyAvailableModuleNames.join(", ")}]`);
+    const alreadyAvailableInElectronDirectoryPaths = alreadyAvailableModuleNames.concat([".bin"])
       .map((value) =>
       {
         return path.join(buildServerDirectoryPath, nodeModulesDirectoryName, value);
