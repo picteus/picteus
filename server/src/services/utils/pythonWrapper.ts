@@ -39,7 +39,7 @@ const useMinicondaOrPyenv = Math.random() <= 1;
 
 export const pythonExecutable = isWindows === false ? "python3" : "python.exe";
 
-export const publicPythonSdkIdentifier = "pictedus-extension-sdk";
+export const publicPythonSdkIdentifier = "picteus-extension-sdk";
 
 export const internalPythonSdkIdentifier = "picteus-internal-extension-sdk";
 
