@@ -205,7 +205,8 @@ export class Paths
     {
       outputEntries.push({
         name: inputEntry.name,
-        path: this.getValueOrThrow(inputEntry.name),
+        // We make sure that the paths are absolute to prevent from any further parameter's checking violations
+        path: path.resolve(this.getValueOrThrow(inputEntry.name)),
         isFile: inputEntry.isFile
       });
     }
