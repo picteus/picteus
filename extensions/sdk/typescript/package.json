@@ -13,8 +13,8 @@
     "email": "edouard@koppasoft.com",
     "url": "https://github.com/edouardmercier"
   },
-  "license": "Copyright (C) 2024 KoppaSoft. The code hereby is the private full property of the KoppaSoft company, Paris, France. You have no right to re-use or modify it. There are no open-source, nor free license attached to it!",
-  "private": true,
+  "license": "GNU Affero General Public License",
+  "private": false,
   "engines": {
     "node": ">=22.17.1"
   },
