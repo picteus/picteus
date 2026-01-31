@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import process from "node:process";
+import { exec } from "node:child_process";
 
 import gulp from "gulp";
 import gulpRun from "gulp-run";
@@ -123,17 +124,43 @@ async function runGulpRun(command, execOptions)
   await new Promise((resolve, reject) =>
   {
     console.info(`Running the command '${command}' in the directory '${execOptions.cwd}'`);
-    gulpRun(command, execOptions).exec(undefined, (error) =>
+    const useGulpForExec = process.platform !== "win32";
+    if (useGulpForExec === true)
     {
-      if (error !== null)
+      gulpRun(command, execOptions).exec(undefined, (error) =>
       {
-        reject(error);
-      }
-      else
+        if (error !== null)
+        {
+          reject(error);
+        }
+        else
+        {
+          resolve();
+        }
+      });
+    }
+    else
+    {
+      exec(command, { cwd: execOptions.cwd, env: { ...process.env, ...execOptions.env } }, (error, stdout, stderr) =>
       {
-        resolve();
-      }
-    });
+        if (stdout != null)
+        {
+          console.info(stdout);
+        }
+        if (stderr != null)
+        {
+          console.error(stderr);
+        }
+        if (error !== null)
+        {
+          reject(error);
+        }
+        else
+        {
+          resolve();
+        }
+      });
+    }
   });
 }
 

@@ -49,7 +49,7 @@ const runGulpRun = async (command, execOptions) =>
 {
   await new Promise((resolve, reject) =>
   {
-    console.info(`Running the following command '${command}'`);
+    console.info(`Running the command '${command}' in the directory '${execOptions.cwd}'`);
     if (useGulpForExec === true)
     {
       gulpRun(command, execOptions).exec(undefined, (error) =>
