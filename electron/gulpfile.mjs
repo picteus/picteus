@@ -12,13 +12,13 @@ const packageJsonFilePath = path.join(rootDirectoryPath, packageJsonFileName);
 
 function getPackageJson()
 {
-  return JSON.parse(fs.readFileSync(packageJsonFilePath, {encoding: "utf8"}));
+  return JSON.parse(fs.readFileSync(packageJsonFilePath, { encoding: "utf8" }));
 }
 
 // noinspection JSUnusedGlobalSymbols
 export const updateVersion = async () =>
 {
-  const version = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", packageJsonFileName), {encoding: "utf8"}))["config"]["applicationVersion"];
+  const version = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", packageJsonFileName), { encoding: "utf8" }))["config"]["applicationVersion"];
   {
     const packageJson = getPackageJson();
     packageJson.version = version;
@@ -31,16 +31,17 @@ export const updateVersion = async () =>
 export const preparePackageBuilder = async () =>
 {
   const cliArguments = process.argv;
-  const entitlementFilePath = path.resolve(cliArguments[cliArguments.indexOf("--entitlementFilePath") + 1]);
-  const outputDirectoryPath = path.resolve(cliArguments[cliArguments.indexOf("--directoryPath") + 1]);
-  const appleIdentityCompany = cliArguments[cliArguments.indexOf("--appleIdentityCompany") + 1];
+  const entitlementFilePath = cliArguments.indexOf("--entitlementFilePath") === -1 ? "" : path.resolve(cliArguments[cliArguments.indexOf("--entitlementFilePath") + 1]);
+  const outputDirectoryPath = cliArguments.indexOf("--directoryPath") === -1 ? "" : path.resolve(cliArguments[cliArguments.indexOf("--directoryPath") + 1]);
+  const appleIdentityCompany = cliArguments.indexOf("--appleIdentityCompany") === -1 ? "" : cliArguments[cliArguments.indexOf("--appleIdentityCompany") + 1];
+  // noinspection JSUnusedLocalSymbols
   const architecture = cliArguments[cliArguments.indexOf("--architecture") + 1];
   const packageBuilderFileName = "package-builder.json";
   if (fs.existsSync(outputDirectoryPath) === false)
   {
-    fs.mkdirSync(outputDirectoryPath, {recursive: true});
+    fs.mkdirSync(outputDirectoryPath, { recursive: true });
   }
-  const electronReplaceValue = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", "server", "package-pruning.json"), {encoding: "utf8"})).map(entry =>
+  const electronReplaceValue = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", "server", "package-pruning.json"), { encoding: "utf8" })).map(entry =>
   {
     const isExclude = entry.startsWith("!") === true;
     const prefix = isExclude === true ? "!" : "";
@@ -50,20 +51,20 @@ export const preparePackageBuilder = async () =>
   const serverReplaceValue = "";
   const keysAndValues =
     [
-      {key: "extraElectronFilter", value: electronReplaceValue.substring(1, electronReplaceValue.length - 2)},
-      {key: "extraServerFilter", value: serverReplaceValue},
-      {key: "entitlementFilePath", value: entitlementFilePath},
-      {key: "appleIdentityCompany", value: appleIdentityCompany}
+      { key: "extraElectronFilter", value: electronReplaceValue.substring(1, electronReplaceValue.length - 2) },
+      { key: "extraServerFilter", value: serverReplaceValue },
+      { key: "entitlementFilePath", value: entitlementFilePath },
+      { key: "appleIdentityCompany", value: appleIdentityCompany }
     ];
-  let replacedString = fs.readFileSync(path.join(rootDirectoryPath, packageBuilderFileName), {encoding: "utf8"});
+  let replacedString = fs.readFileSync(path.join(rootDirectoryPath, packageBuilderFileName), { encoding: "utf8" });
   for (const keysAndValue of keysAndValues)
   {
-    replacedString = replacedString.replaceAll(`$\{${keysAndValue.key}}`, keysAndValue.value);
+    replacedString = replacedString.replaceAll(`$\{${keysAndValue.key}}`, keysAndValue.value.replaceAll("\\", "\\\\"));
   }
   // const replacedString = string.replaceAll("${extraElectronFilter}", electronReplaceValue.substring(1, electronReplaceValue.length - 2)).replaceAll("${extraServerFilter}", serverReplaceValue);
   const filePath = path.join(outputDirectoryPath, packageBuilderFileName);
   console.debug(`Writing the electron-builder overwritten content to the the file '${filePath}'`);
-  fs.writeFileSync(filePath, replacedString, {encoding: "utf8"});
+  fs.writeFileSync(filePath, replacedString, { encoding: "utf8" });
   return Promise.resolve();
 };
 
@@ -86,7 +87,7 @@ export const generateUpdateFeed = async () =>
   const outputDirectoryPath = path.resolve(cliArguments[cliArguments.indexOf("--directoryPath") + 1]);
   const inputFilePath = path.resolve(cliArguments[cliArguments.indexOf("--inputFilePath") + 1]);
   const gcsBucketCoordinates = cliArguments[cliArguments.indexOf("--bucket") + 1];
-  const yamlFeed = YAML.parse(fs.readFileSync(inputFilePath, {encoding: "utf8"}));
+  const yamlFeed = YAML.parse(fs.readFileSync(inputFilePath, { encoding: "utf8" }));
   const feed =
     {
       version: packageJson.version,
@@ -97,7 +98,7 @@ export const generateUpdateFeed = async () =>
       sha512: yamlFeed.sha512
     };
   const outputFilePath = computeUpdateFeedFilePath(outputDirectoryPath);
-  fs.writeFileSync(outputFilePath, JSON.stringify(feed, undefined, 2), {encoding: "utf8"});
+  fs.writeFileSync(outputFilePath, JSON.stringify(feed, undefined, 2), { encoding: "utf8" });
   console.info(`Generated the application update feed file '${outputFilePath}'`);
   return Promise.resolve();
 };
