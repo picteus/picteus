@@ -78,5 +78,6 @@ jobs:
         with:
           version: '>= 363.0.0'
       - id: deploy
+        if: ${{ inputs.deploy == 'true' }}
         name: Deploys the Electron application
         run: npm run deploy
