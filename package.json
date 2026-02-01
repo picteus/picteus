@@ -22,10 +22,10 @@
   "engines": {
     "node": ">=22.17.1"
   },
-  "homepage": "https://github.com/picteus/Picteus.git",
+  "homepage": "https://github.com/picteus/picteus.git",
   "repository": {
     "type": "git",
-    "url": "https://github.com/picteus/Picteus.git"
+    "url": "https://github.com/picteus/picteus.git"
   },
   "bugs": {
     "url": "https://github.com/picteus/Picteus/issues"
