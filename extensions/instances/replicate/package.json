@@ -1,5 +1,5 @@
 {
-  "name": "@pictues/replicate",
+  "name": "@picteus/replicate",
   "version": "0.1.0",
   "productName": "Replicate",
   "description": "Wraps the Replicate image generation features.",

@@ -1,5 +1,5 @@
 {
-  "name": "@pictues/gemini",
+  "name": "@picteus/gemini",
   "version": "1.0.0",
   "productName": "Google Gemini",
   "description": "Accesses to all sorts of Google Gemini image-related features.",
