@@ -3,7 +3,7 @@ FROM node:22-slim
 
 LABEL org.opencontainers.image.authors="Édouard Mercier, KoppaSoft"
 LABEL description="An image of the Picteus API server and its UI."
-LABEL version="0.1.0"
+LABEL version="0.6.0"
 
 # Installs OpenSSL
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/* -rf /tmp/*
@@ -15,14 +15,16 @@ WORKDIR /app
 COPY gulpfile.mjs ./
 COPY shared ./shared
 WORKDIR /app/server
-COPY server/package.json server/package-lock.json server/gulpfile.mjs server/tsconfig.json server/package-pruning.json ./
+COPY server/package.json server/package-lock.json server/gulpfile.mjs server/tsconfig.json server/package-pruning.json server/database.db ./
+COPY server/assets ./assets
+COPY server/secrets ./secrets
 COPY server/prisma ./prisma
 COPY server/src ./src
 
 # Installs the "server" dependencies
 RUN npm install --no-save --install-link \
     # Generates and compiles the "server" files \
-    && npm run prisma:generate && npm run prisma:fix && npm run compile && cp src/generated/prisma-client/libquery_engine-linux-arm64-openssl-3.0.x.so.node ../build/server/src/generated/prisma-client/ && npm run obfuscate \
+    && npm run build:copy && npm run prisma:generate && npm run prisma:fix && npm run compile && cp src/generated/prisma-client/libquery_engine-linux-arm64-openssl-3.0.x.so.node ../build/server/src/generated/prisma-client/ && npm run obfuscate \
     # Installs the server runtime "node_modules" \
     && ./node_modules/.bin/gulp --gulpfile gulpfile.mjs installNodeModulesForDockerfile \
     && cp ../gulpfile.mjs gulpfile.mjs && ./node_modules/.bin/gulp --gulpfile gulpfile.mjs fixCaporalModule --directoryPath ../build/server/node_modules/@caporal/core \
@@ -34,7 +36,6 @@ WORKDIR /app/build
 COPY electron/build/sdk ./sdk
 COPY electron/build/extensions ./extensions
 COPY electron/build/web ./web
-COPY electron/build/server ./server
 
 ENV apiServerPort=3001
 ENV webServerPort=2999
