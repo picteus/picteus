@@ -31,7 +31,9 @@
     "url": "https://github.com/picteus/Picteus/issues"
   },
   "config": {
-    "applicationVersion": "0.6.0",
+    "applicationVersion": "0.6.1",
+    "serverVersion": "0.6.1",
+    "webVersion": "0.2.4",
     "apiVersion": "0.9.0",
     "sdkVersion": "0.8.0"
   },
@@ -42,7 +44,7 @@
     "this:clean": "shx rm -rf generated build dist tmp",
     "clean": "npm --prefix shared/back-end run clean && npm --prefix server run clean && npm --prefix web run clean && npm --prefix extensions run clean && npm --prefix electron run clean && npm run this:clean",
     "updateVersion": "npm --prefix server run updateVersion && npm --prefix extensions run updateVersion && npm --prefix web run updateVersion && npm --prefix electron run updateVersion",
-    "shared-back-end:prerequisites": "npm --prefix shared/back-end install --no-save && npm --prefix shared/back-end run build && gulp fixCaporalModule --directoryPath shared/back-end/node_modules/@caporal/core && shx rm -rf server/node_modules/@picteus/shared-back-end electron/node_modules/@picteus/shared-back-end",
+    "shared-back-end:prerequisites": "npm --prefix shared/back-end install --no-save && npm --prefix shared/back-end run build && gulp fixCaporalModule --directoryPath shared/back-end/node_modules/@caporal/core && shx rm -rf server/node_modules/@picteus/shared-back-end  electron/node_modules/@picteus/shared-back-end",
     "server:prerequisites:install": "npm --prefix server install --no-save --install-link",
     "server:prerequisites:shared": "npm run server:prerequisites:install && gulp fixCaporalModule --directoryPath server/node_modules/@caporal/core",
     "server:prerequisites:openapi": "npm --prefix server run openApi:generateAndPackage && npm run server:prerequisites:install",

@@ -590,7 +590,7 @@ export const packagePythonOpenApiClient = () =>
 export const updateVersion = async () =>
 {
   const rootConfig = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, packageJsonFileName), { encoding: "utf8" }))["config"];
-  const applicationVersion = rootConfig["applicationVersion"];
+  const applicationVersion = rootConfig["serverVersion"];
   {
     const filePath = path.join(serverDirectoryPath, packageJsonFileName);
     const packageJson = JSON.parse(fs.readFileSync(filePath, { encoding: "utf8" }));

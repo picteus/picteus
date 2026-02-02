@@ -11,10 +11,11 @@ const packageJsonFilePath = path.join(rootDirectoryPath, packageJsonFileName);
 // noinspection JSUnusedGlobalSymbols
 export const updateVersion = gulp.series(async () =>
   {
-    const version = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", packageJsonFileName), { encoding: "utf8" }))["config"]["apiVersion"];
+    const rootConfig = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", packageJsonFileName), { encoding: "utf8" }))["config"];
     {
       const packageJson = JSON.parse(fs.readFileSync(packageJsonFilePath, { encoding: "utf8" }));
-      packageJson.dependencies["@picteus/ws-client"] = `file:../generated/openapi/typescript-fetch/picteus-ws-client-${version}.tgz`;
+      packageJson.version = rootConfig["webVersion"];
+      packageJson.dependencies["@picteus/ws-client"] = `file:../generated/openapi/typescript-fetch/picteus-ws-client-${rootConfig["apiVersion"]}.tgz`;
       fs.writeFileSync(packageJsonFilePath, JSON.stringify(packageJson, undefined, 2) + "\n");
     }
     return Promise.resolve();

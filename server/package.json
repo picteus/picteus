@@ -1,6 +1,6 @@
 {
   "name": "@picteus/server",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "productName": "Picteus server",
   "description": "The Picteus back-end server.",
   "keywords": [

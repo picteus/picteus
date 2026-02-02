@@ -39,7 +39,9 @@ Most of the artifact files are located under the `build` directory, which is a s
 
 The versions of the various components are specified through the root `package.json` file via the `config.applicationVersion`, `config.apiVersion` and `config.sdkVersion` properties:
 - `config.applicationVersion`: the version of the Electron application ;
-- `config.apiVersion`: the version of the server API and its OpenAPI web services contract ;
+- `config.serverVersion`: the version of the server ;
+- `config.webVersion`: the version of the front-end application ;
+- `config.apiVersion`: the version of the API and its OpenAPI web services contract ;
 - `config.sdkVersion`: the version of the SDK.
 
 Whenever changing any of those versions, think of running the `npm run updateVersion` script from the root directory to propagate the version changes to the relevant submodules, which updates the `src/constants.ts` file accordingly and the SDK version and the extensions' dependency version accordingly.
