@@ -171,7 +171,6 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
         throw new Error("The Chroma server stdout is null");
       }
       this.childProcess = childProcess;
-      const stdout = childProcess.stdout!;
 
       await new Promise<void>((resolve, reject) =>
       {
@@ -199,10 +198,12 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
             }
           }
         });
+        const stdout = childProcess.stdout!;
+        const stderr = childProcess.stderr!;
         const listener = (chunk: any) =>
         {
           const log = chunk.toString();
-          if (log.indexOf("address already in use") !== -1)
+          if (log.indexOf("is not available") !== -1)
           {
             if (resolvedOrRejected === false)
             {
@@ -214,6 +215,7 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
           {
             logger.info("The Chroma server is up and running");
             stdout.removeListener("data", listener);
+            stderr.removeListener("data", listener);
             if (resolvedOrRejected === false)
             {
               resolvedOrRejected = true;
@@ -222,6 +224,7 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
           }
         };
         stdout.addListener("data", listener);
+        stderr.addListener("data", listener);
       });
     }
   }

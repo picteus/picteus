@@ -33,6 +33,7 @@ import {
   defaultCommand,
   HostCommandType,
   InstallChromeExtensionHostCommand,
+  ShowDialogHostCommand,
   UninstallChromeExtensionHostCommand
 } from "@picteus/shared-back-end";
 
@@ -380,6 +381,19 @@ export class ApplicationWrapper
       logger.debug("The application is ready");
 
       await this.onVersion(version);
+
+      // This handles dialog commands
+      CommandsManager.instance.on(HostCommandType.ShowDialog, async (command: ShowDialogHostCommand) =>
+      {
+        if (command.nature === "error")
+        {
+          dialog.showErrorBox(command.title, command.message);
+        }
+        else
+        {
+          dialog.showMessageBoxSync({ type: command.nature, message: command.title, detail: command.message });
+        }
+      });
 
       try
       {

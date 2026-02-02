@@ -486,6 +486,12 @@ async function run(): Promise<void>
       catch (error)
       {
         logger.error("The server could not start properly", error);
+        HostService.sendCommand({
+          type: HostCommandType.ShowDialog,
+          nature: "error",
+          title: "The server could not start properly",
+          message: (error as Error).message
+        }, true);
         return process.exit(1);
       }
       let alreadyReceived = false;

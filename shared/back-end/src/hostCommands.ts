@@ -3,6 +3,7 @@ export enum HostCommandType
   ApiKey = "apiKey",
   InstallChromeExtension = "installChromeExtension",
   UninstallChromeExtension = "uninstallChromeExtension",
+  ShowDialog = "showDialog"
 }
 
 interface NamedCommand<T extends HostCommandType>
@@ -26,4 +27,15 @@ export interface UninstallChromeExtensionHostCommand extends NamedCommand<HostCo
   name: string;
 }
 
-export type HostCommand = ApiKeyHostCommand | InstallChromeExtensionHostCommand | UninstallChromeExtensionHostCommand;
+export interface ShowDialogHostCommand extends NamedCommand<HostCommandType.ShowDialog>
+{
+  nature: "info" | "warning" | "error";
+  title: string;
+  message: string;
+}
+
+export type HostCommand =
+  ApiKeyHostCommand
+  | InstallChromeExtensionHostCommand
+  | UninstallChromeExtensionHostCommand
+  | ShowDialogHostCommand;

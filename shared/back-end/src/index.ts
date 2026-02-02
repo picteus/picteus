@@ -6,6 +6,7 @@ import {
   HostCommand,
   HostCommandType,
   InstallChromeExtensionHostCommand,
+  ShowDialogHostCommand,
   UninstallChromeExtensionHostCommand
 } from "./hostCommands";
 
@@ -17,5 +18,6 @@ export {
   HostCommand,
   ApiKeyHostCommand,
   InstallChromeExtensionHostCommand,
+  ShowDialogHostCommand,
   UninstallChromeExtensionHostCommand
 };

@@ -10,6 +10,7 @@ import {
   HostCommand,
   HostCommandType,
   InstallChromeExtensionHostCommand,
+  ShowDialogHostCommand,
   UninstallChromeExtensionHostCommand,
   WebCoordinates,
   WebServer
@@ -126,6 +127,9 @@ export class CommandsManager
             break;
           case HostCommandType.UninstallChromeExtension:
             await callback(command as UninstallChromeExtensionHostCommand);
+            break;
+          case HostCommandType.ShowDialog:
+            await callback(command as ShowDialogHostCommand);
             break;
           default:
             logger.error(`The host command type '${commandType}' is not supported`);
