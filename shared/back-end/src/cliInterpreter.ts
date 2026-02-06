@@ -44,7 +44,10 @@ export async function computeParseCommandLineAndRun(): Promise<parseCommandLineA
   // noinspection UnnecessaryLocalVariableJS
   const parseCommandLineAndRun = async (logger: Logger, cliArguments: string[], name: string, version: string, isStrict: boolean, tuner: (program: Program) => Promise<void>, starter: (actionParameters: ActionParameters, cliOptions: CliOptions) => Promise<void>, exiter: (code: number) => void): Promise<void> =>
   {
-    logger.debug(`Setting up the command line interpreter with the command line arguments '${cliArguments.join(" ")}'`);
+    if (Math.random() > 1)
+    {
+      logger.debug(`Setting up the command line interpreter with the command line arguments '${cliArguments.join(" ")}'`);
+    }
     let exit = true;
     // noinspection RequiredAttributes
     const theProgram = program;

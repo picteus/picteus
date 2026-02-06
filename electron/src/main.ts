@@ -365,7 +365,10 @@ export class ApplicationWrapper
 
   tweakCommandLine(): ApplicationWrapper
   {
-    logger.debug("Tweaking the Electron command line");
+    if (Math.random() > 1)
+    {
+      logger.debug("Tweaking the Electron command line");
+    }
     // This redirects the Chromium log to the standard error, see https://www.electronjs.org/docs/latest/api/command-line-switches#--enable-loggingfile
     app.commandLine.appendSwitch("enable-logging", "");
     return this;
@@ -373,14 +376,18 @@ export class ApplicationWrapper
 
   start(useSsl: boolean = defaultCliOptions.useSsl, apiServerPortNumber: number = defaultCliOptions.apiServerPortNumber, webServerPortNumber: number = defaultCliOptions.webServerPortNumber, requiresApiKeys: boolean | undefined = defaultCliOptions.requiresApiKeys, unpackedExtensionsDirectoryPath: string | undefined = defaultCliOptions.unpackedExtensionsDirectoryPath): void
   {
-    const version = app.getVersion();
-    logger.info(`Running the application v${version} in the ${environment} environment`);
+    const gotTheLock = app.requestSingleInstanceLock({});
+    if (gotTheLock === false)
+    {
+      logger.error("Quitting the application because another instance is running");
+      app.quit();
+    }
 
     app.on("ready", async () =>
     {
       logger.debug("The application is ready");
 
-      await this.onVersion(version);
+      await this.onVersion(app.getVersion());
 
       // This handles dialog commands
       CommandsManager.instance.on(HostCommandType.ShowDialog, async (command: ShowDialogHostCommand) =>
@@ -827,7 +834,7 @@ export class ApplicationWrapper
 
 async function main(): Promise<void>
 {
-  logger.info(`Starting the application v${app.getVersion()} running under Node.js ${process.version}, Electron v${process.versions.electron}, with working directory set to '${process.cwd()}'`);
+  logger.info(`Starting the application v${app.getVersion()} running under Node.js ${process.version}, Electron v${process.versions.electron}, with working directory set to '${process.cwd()}', in the ${environment} environment`);
   const applicationWrapper = ApplicationWrapper.instance().tweakCommandLine();
 
   if (environment === "production")
