@@ -10,7 +10,7 @@ const config: Config =
     organizationName: "picteus",
     projectName: "picteus",
     url: "https://picteus.github.io",
-    baseUrl: "/",
+    baseUrl: "/picteus",
     deploymentBranch: "gh-pages",
     favicon: "img/favicon.ico",
     trailingSlash: false,
