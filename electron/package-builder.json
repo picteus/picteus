@@ -1,10 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/77f977435c99247d5db395895618b150f5006e8f/packages/app-builder-lib/scheme.json",
   "appId": "com.koppasoft.picteus",
-  "electronLanguages": ["en"],
   "asar": true,
   "compression": "maximum",
-  "copyright": "2024-2026 Picteus Team",
+  "copyright": "Picteus Team",
   "afterPack": "./package-builder-afterPack.mjs",
   "asarUnpack": [
     "**/node_modules/sharp/**/*",
