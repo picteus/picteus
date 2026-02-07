@@ -49,7 +49,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
 {
 
   // The identifiers of the currently synchronizing repositories
-  private static synchronizingRepositoryIds: string [] = [];
+  private static synchronizingRepositoryIds: Set<string> = new Set<string>();
 
   private readonly perPathFileRepositories: Map<string, Repository> = new Map<string, Repository>();
 
@@ -73,7 +73,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   {
     logger.debug("Destroying a RepositoryService");
     await this.startOrStopAll(false);
-    RepositoryService.synchronizingRepositoryIds.length = 0;
+    RepositoryService.synchronizingRepositoryIds.clear();
     await ImageDeclarationManager.destroyAll();
     this.notifier.destroy();
     logger.debug("Destroyed a RepositoryService");
@@ -263,14 +263,14 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       // We do nothing if the repository is synchronizing, and it is asked to stop
       if (isStart === true)
       {
-        if (RepositoryService.synchronizingRepositoryIds.indexOf(id) !== -1)
+        if (RepositoryService.synchronizingRepositoryIds.has(id) === true)
         {
           parametersChecker.throwBadParameterError(`The repository with id '${id}' is already synchronizing`);
         }
         // We resume the synchronization
-        await this.synchronize(repository, async () =>
+        await this.synchronize(repository, async (updatedRepository) =>
         {
-          await this.watch(repository, isStart);
+          await this.watch(updatedRepository, isStart);
         });
       }
     }
@@ -280,7 +280,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
   }
 
-  async synchronize(repositoryOrId: string | Repository, onSuccess?: () => Promise<void>): Promise<void>
+  async synchronize(repositoryOrId: string | Repository, onSuccess?: (repository: Repository) => Promise<void>): Promise<void>
   {
     let wasWatching: boolean = false;
     return this.internalSynchronize(repositoryOrId, async (repository: Repository): Promise<void> =>
@@ -298,11 +298,11 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
         // We resume the watching, in case the synchronization was successful
         await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifier, this.extensionTaskExecutor);
       }
+      const updatedRepository = await updateStatus();
       if (onSuccess !== undefined)
       {
-        await onSuccess();
+        await onSuccess(updatedRepository);
       }
-      await updateStatus();
     });
   }
 
@@ -340,7 +340,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   {
     const id = repository.id;
     logger.info(`Deleting the repository with id '${id}'`);
-    if (repository.status === RepositoryStatus.INDEXING && RepositoryService.synchronizingRepositoryIds.indexOf(id) !== -1)
+    if (repository.status === RepositoryStatus.INDEXING && RepositoryService.synchronizingRepositoryIds.has(id) === true)
     {
       parametersChecker.throwBadParameterError("Cannot delete a repository which is synchronizing");
     }
@@ -601,7 +601,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is not available`);
     }
     const wasAlreadyIndexing = repository.status === RepositoryStatus.INDEXING;
-    if (wasAlreadyIndexing === true && RepositoryService.synchronizingRepositoryIds.indexOf(repositoryId) !== -1)
+    if (wasAlreadyIndexing === true && RepositoryService.synchronizingRepositoryIds.has(repositoryId) === true)
     {
       parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is already synchronizing`);
     }
@@ -619,7 +619,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
           data: { status: RepositoryStatus.INDEXING }
         });
       }
-      RepositoryService.synchronizingRepositoryIds.push(repositoryId);
+      RepositoryService.synchronizingRepositoryIds.add(repositoryId);
       const imageDeclarationManager = new ImageDeclarationManager();
       let caughtError: Error | undefined;
       imageDeclarationManager.listFiles(repository.type as RepositoryLocationType, repository.url).then((filePaths: string[]): {
@@ -696,11 +696,12 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       {
         async function terminate(service: RepositoryService): Promise<void>
         {
-          RepositoryService.synchronizingRepositoryIds.splice(RepositoryService.synchronizingRepositoryIds.indexOf(repositoryId), 1);
+          RepositoryService.synchronizingRepositoryIds.delete(repositoryId);
           await imageDeclarationManager.destroy();
           // We let the caller update the repository status at the right moment
           const updateStatus = async (): Promise<Repository> =>
           {
+            logger.debug(`Setting the repository with id '${repositoryId}' to the '${RepositoryStatus.READY}' status`);
             await service.entitiesProvider.repositories.update({
               where: { id: repositoryId },
               data:

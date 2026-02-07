@@ -729,6 +729,25 @@ describe("Repository", () =>
     expect(RepositoryWatcher.get(id)).toBeUndefined();
   });
 
+  test("resume indexing", async () =>
+  {
+    const { repository } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
+    // We stop the repositories
+    await base.getRepositoryController().startOrStop(false);
+    // We indicate that it is indexing
+    await base.getEntitiesProvider().repositories.update({
+      where: { id: repository.id },
+      data:
+        {
+          status: RepositoryStatus.INDEXING
+        }
+    });
+    // We resume them
+    await base.getRepositoryController().startOrStop(true);
+    // And we make sure that it becomes ready again
+    await base.waitUntilRepositoryReady(repository.id);
+  });
+
   test("unavailable", async () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
