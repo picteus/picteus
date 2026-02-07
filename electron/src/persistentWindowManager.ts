@@ -57,6 +57,7 @@ export class PersistentWindowManager
     }
 
     const window = new BrowserWindow(options);
+    window.setMenuBarVisibility(false);
     this.windows.set(url, window);
 
     const actualUrl = savedState?.currentUrl || url;
