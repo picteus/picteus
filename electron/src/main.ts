@@ -363,18 +363,7 @@ export class ApplicationWrapper
   {
   }
 
-  tweakCommandLine(): ApplicationWrapper
-  {
-    if (Math.random() > 1)
-    {
-      logger.debug("Tweaking the Electron command line");
-    }
-    // This redirects the Chromium log to the standard error, see https://www.electronjs.org/docs/latest/api/command-line-switches#--enable-loggingfile
-    app.commandLine.appendSwitch("enable-logging", "");
-    return this;
-  }
-
-  start(useSsl: boolean = defaultCliOptions.useSsl, apiServerPortNumber: number = defaultCliOptions.apiServerPortNumber, webServerPortNumber: number = defaultCliOptions.webServerPortNumber, requiresApiKeys: boolean | undefined = defaultCliOptions.requiresApiKeys, unpackedExtensionsDirectoryPath: string | undefined = defaultCliOptions.unpackedExtensionsDirectoryPath): void
+  start(useSsl: boolean = defaultCliOptions.useSsl, apiServerPortNumber: number = defaultCliOptions.apiServerPortNumber, webServerPortNumber: number = defaultCliOptions.webServerPortNumber, requiresApiKeys: boolean | undefined = defaultCliOptions.requiresApiKeys, unpackedExtensionsDirectoryPath: string | undefined = defaultCliOptions.unpackedExtensionsDirectoryPath, logBrowser: boolean = false): void
   {
     const gotTheLock = app.requestSingleInstanceLock({});
     if (gotTheLock === false)
@@ -383,10 +372,13 @@ export class ApplicationWrapper
       app.quit();
     }
 
+    this.tweakCommandLine(logBrowser);
+
     app.on("ready", async () =>
     {
       logger.debug("The application is ready");
 
+      this.setMenu();
       await this.onVersion(app.getVersion());
 
       // This handles dialog commands
@@ -406,7 +398,6 @@ export class ApplicationWrapper
       {
         this.mainWindow = this.createMainWindow(useSsl, apiServerPortNumber, webServerPortNumber);
         await this.listenToChromeExtensionInstructions();
-        this.setMenu(this.mainWindow);
         new TrayGenerator(this.mainWindow);
         await this.handleAutoUpdate(this.mainWindow);
 
@@ -451,17 +442,7 @@ export class ApplicationWrapper
           }
         });
 
-        const url: URL = await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, apiKey);
-
-        app.on("activate", async () =>
-        {
-          if (BrowserWindow.getAllWindows().length === 0)
-          {
-            this.mainWindow = this.createMainWindow(useSsl, apiServerPortNumber, webServerPortNumber);
-            await this.loadUrl(this.mainWindow, url);
-            this.setMenu(this.mainWindow);
-          }
-        });
+        await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, apiKey);
 
         // We restore the windows previous states
         this.persistentWindowManager.initialize();
@@ -511,6 +492,21 @@ export class ApplicationWrapper
     await this.persistentWindowManager.open(url, true);
   }
 
+  private tweakCommandLine(logBrowser: boolean): void
+  {
+    if (Math.random() > 1)
+    {
+      logger.debug("Tweaking the Electron command line");
+    }
+    if (logBrowser === true)
+    {
+      // This redirects the Chromium log to the standard error, see https://www.electronjs.org/docs/latest/api/command-line-switches#--enable-loggingfile
+      app.commandLine.appendSwitch("enable-logging", "");
+    }
+    // We only support the "en-US" locale for now
+    app.commandLine.appendSwitch("lang", "en-US");
+  }
+
   private async listenToChromeExtensionInstructions(): Promise<void>
   {
     await this.chromeExtensionManager.listenToChromeExtensionEvents();
@@ -556,7 +552,7 @@ export class ApplicationWrapper
       minimizable: true,
       maximizable: true,
       fullscreenable: true,
-      autoHideMenuBar: true,
+      autoHideMenuBar: process.platform === "darwin",
       webPreferences:
         {
           // We disable the access to the DevTools in production mode
@@ -573,19 +569,17 @@ export class ApplicationWrapper
   private createMainWindow(useSsl: boolean, apiServerPortNumber: number, webServerPortNumber: number): Electron.BrowserWindow
   {
     const store: Store = new Store("windows");
-    const fullScreen: boolean = store.get<boolean>("fullScreen", false);
-    const commonOptions: Electron.BrowserWindowConstructorOptions = this.computeWindowOptions();
+    const commonOptions: Electron.BrowserWindowConstructorOptions = { ...this.computeWindowOptions(), closable: false };
     const size: Size = screen.getPrimaryDisplay().workAreaSize;
     const bounds: Rectangle = store.get<Rectangle>("bounds", { x: 0, y: 0, width: size.width, height: size.height });
     const isWindows = os.platform() === "win32";
     const window: BrowserWindow = new BrowserWindow(isWindows === true ? commonOptions : {
       ...commonOptions,
-      closable: false,
-      fullscreen: fullScreen, ...bounds
+      ...bounds
     });
-    if (fullScreen === true)
+    if (store.get<boolean>("fullScreen", false) === true)
     {
-      window.fullScreen = fullScreen;
+      window.fullScreen = true;
     }
     else if (isWindows === true)
     {
@@ -693,43 +687,47 @@ export class ApplicationWrapper
     await window.loadURL(url.toString(), options);
   }
 
-  private async loadWebApplication(window: BrowserWindow, useSsl: boolean, processServerPortNumber: number, socketCoordinates: SocketCoordinates, apiKey?: string): Promise<URL>
+  private setMenu(): void
   {
-    // We load the web application
-    const webServicesBaseUrl = `http${useSsl === true ? "s" : ""}://${this.localhost}:${processServerPortNumber}`;
-    // const url = new URL(`${fileWithProtocol}${path.join(applicationRootDirectoryPath, "web", "index.html")}`);
-    const url = new URL(`${socketCoordinates.webCoordinates.baseUrl}/index.html`);
-    url.searchParams.set("webServicesBaseUrl", webServicesBaseUrl);
-    if (apiKey !== undefined)
+    const template: Array<MenuItemConstructorOptions | MenuItem> =
+      [
+        { role: "fileMenu" },
+        { role: "editMenu" },
+        { role: "viewMenu" },
+        { role: "windowMenu" },
+        {
+          role: "help",
+          submenu: [
+            {
+              label: "Learn More",
+              click: async () =>
+              {
+                await shell.openExternal(JSON.parse(fs.readFileSync(path.join(referenceDirectoryPath, "..", "package.json"), "utf8"))["homepage"]);
+              }
+            }
+          ]
+        }
+      ];
+    const isDarwin = process.platform === "darwin";
+    if (isDarwin === true)
     {
-      // When the API key is not provided, we are supposed to be running the web application in bootstrap mode, which means that the commands' socket coordinates are not necessary
-      url.searchParams.set("apiKey", apiKey);
-      url.searchParams.set("commandsSocketBaseUrl", socketCoordinates.webCoordinates.baseUrl);
-      url.searchParams.set("commandsSocketSecret", socketCoordinates.secret);
+      template.splice(0, 0, { role: "appMenu" });
     }
-    await this.loadUrl(window, url);
-    return url;
-  }
-
-  private setMenu(window: BrowserWindow): void
-  {
-    const defaultMenu = Menu.getApplicationMenu()!;
-    const newMenu: Menu = new Menu();
-    defaultMenu.items.filter((item) =>
-    {
-      return item.role !== "help";
-    }).forEach((item) =>
+    const menu = Menu.buildFromTemplate(template);
+    menu.items.forEach((item) =>
     {
       // @ts-ignore
-      if (item.role === "appmenu")
+      if ((isDarwin === true && item.role === "appmenu") || (isDarwin === false && item.role === "filemenu"))
       {
         const subMenu: Menu | undefined = item.submenu;
         subMenu?.items.find((subItem, index) =>
         {
-          if (subItem.role === "services")
+          if ((isDarwin === true && subItem.role === "services") || (isDarwin === false && index === 0))
           {
-            subMenu.insert(index++, new MenuItem({ type: "separator" }
-            ));
+            if (isDarwin === true)
+            {
+              subMenu.insert(index++, new MenuItem({ type: "separator" }));
+            }
             subMenu.insert(index++, new MenuItem({
                 type: "normal",
                 id: "applicationFolder",
@@ -740,7 +738,7 @@ export class ApplicationWrapper
                   const result = await shell.openPath(directoryPath);
                   if (result !== "")
                   {
-                    await dialog.showMessageBox(window, {
+                    await dialog.showMessageBox({
                       type: "error",
                       title: app.getName(),
                       message: `Cannot open the application folder located at '${directoryPath}'`,
@@ -752,6 +750,7 @@ export class ApplicationWrapper
             ));
             if (environment !== "production")
             {
+              subMenu.insert(index++, new MenuItem({ type: "separator" }));
               subMenu.insert(index++, new MenuItem({
                   type: "normal",
                   id: "test1",
@@ -775,8 +774,7 @@ export class ApplicationWrapper
                 }
               ));
             }
-            subMenu.insert(index++, new MenuItem({ type: "separator" }
-            ));
+            subMenu.insert(index++, new MenuItem({ type: "separator" }));
             return true;
           }
           return false;
@@ -797,9 +795,26 @@ export class ApplicationWrapper
           return false;
         });
       }
-      newMenu.append(item);
     });
-    Menu.setApplicationMenu(newMenu);
+    Menu.setApplicationMenu(menu);
+  }
+
+  private async loadWebApplication(window: BrowserWindow, useSsl: boolean, processServerPortNumber: number, socketCoordinates: SocketCoordinates, apiKey?: string): Promise<URL>
+  {
+    // We load the web application
+    const webServicesBaseUrl = `http${useSsl === true ? "s" : ""}://${this.localhost}:${processServerPortNumber}`;
+    // const url = new URL(`${fileWithProtocol}${path.join(applicationRootDirectoryPath, "web", "index.html")}`);
+    const url = new URL(`${socketCoordinates.webCoordinates.baseUrl}/index.html`);
+    url.searchParams.set("webServicesBaseUrl", webServicesBaseUrl);
+    if (apiKey !== undefined)
+    {
+      // When the API key is not provided, we are supposed to be running the web application in bootstrap mode, which means that the commands' socket coordinates are not necessary
+      url.searchParams.set("apiKey", apiKey);
+      url.searchParams.set("commandsSocketBaseUrl", socketCoordinates.webCoordinates.baseUrl);
+      url.searchParams.set("commandsSocketSecret", socketCoordinates.secret);
+    }
+    await this.loadUrl(window, url);
+    return url;
   }
 
   private async startHttpProxyServer(portNumber: number, useSsl: boolean, webDirectoryPath: string, serverDirectoryPath: string): Promise<SocketCoordinates>
@@ -835,7 +850,7 @@ export class ApplicationWrapper
 async function main(): Promise<void>
 {
   logger.info(`Starting the application v${app.getVersion()} running under Node.js ${process.version}, Electron v${process.versions.electron}, with working directory set to '${process.cwd()}', in the ${environment} environment`);
-  const applicationWrapper = ApplicationWrapper.instance().tweakCommandLine();
+  const applicationWrapper = ApplicationWrapper.instance();
 
   if (environment === "production")
   {
@@ -849,6 +864,8 @@ async function main(): Promise<void>
   // @ts-ignore
   type Program = Caporal.Program;
   // @ts-ignore
+  const CaporalValidator = Caporal.CaporalValidator;
+  // @ts-ignore
   type ActionParameters = Caporal.ActionParameters;
 
   const cliArguments: string[] = process.argv.slice(2);
@@ -858,11 +875,24 @@ async function main(): Promise<void>
     cliArguments.push(defaultCommand);
   }
   const parseCommandLineAndRun = await computeParseCommandLineAndRun();
-  await parseCommandLineAndRun(logger, cliArguments, app.getName(), app.getVersion(), environment === "production", async (_program: Program): Promise<void> =>
+  const logBrowserOption = "logBrowser";
+  await parseCommandLineAndRun(logger, cliArguments, app.getName(), app.getVersion(), environment === "production", async (program: Program): Promise<void> =>
   {
-  }, async (_actionParameters: ActionParameters, cliOptions: CliOptions): Promise<void> =>
+    const commands = await program.getAllCommands();
+    for (const command of commands)
+    {
+      if (command.name === defaultCommand)
+      {
+        command.option(`--${logBrowserOption} <enabled>`, "Indicates whether the internal browser logs should be output", {
+          validator: CaporalValidator.BOOLEAN,
+          default: "false"
+        });
+      }
+    }
+  }, async (actionParameters: ActionParameters, cliOptions: CliOptions): Promise<void> =>
   {
-    applicationWrapper.start(cliOptions.useSsl, cliOptions.apiServerPortNumber, cliOptions.webServerPortNumber, cliOptions.requiresApiKeys, cliOptions.unpackedExtensionsDirectoryPath);
+    const logBrowser = actionParameters.options[logBrowserOption] as boolean;
+    applicationWrapper.start(cliOptions.useSsl, cliOptions.apiServerPortNumber, cliOptions.webServerPortNumber, cliOptions.requiresApiKeys, cliOptions.unpackedExtensionsDirectoryPath, logBrowser);
   }, (code: number): void =>
   {
     app.exit(code);
