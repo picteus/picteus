@@ -4,7 +4,7 @@
   "electronLanguages": ["en"],
   "asar": true,
   "compression": "maximum",
-  "copyright": "Copyright © 2024-2025 KoppaSoft",
+  "copyright": "2024-2026 Picteus Team",
   "afterPack": "./package-builder-afterPack.mjs",
   "asarUnpack": [
     "**/node_modules/sharp/**/*",
@@ -40,18 +40,21 @@
     "entitlementsInherit": "${entitlementFilePath}"
   },
   "win": {
-    "target": [
-      "nsis"
-    ],
+    "target": ["nsis"],
     "icon": "electron/assets/icon.ico",
     "artifactName": "${productName}-v${version}-win32-${arch}.${ext}"
   },
-  "msi": {
+  "nsis": {
     "oneClick": false,
     "perMachine": false,
+    "selectPerMachineByDefault": true,
+    "allowToChangeInstallationDirectory": true,
+    "allowElevation": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "menuCategory": false
+    "deleteAppDataOnUninstall": false,
+    "menuCategory": false,
+    "runAfterFinish": true
   },
   "linux": {
     "target": ["deb"],
