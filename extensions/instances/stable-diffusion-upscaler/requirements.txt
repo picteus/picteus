@@ -1,5 +1,0 @@
-torch == 2.5.1
-accelerate == 1.2.1
-transformers == 4.44.0
-diffusers == 0.32.1
-picteus-internal-extension-sdk

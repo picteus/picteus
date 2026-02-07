@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunk_picteus_docs=globalThis.webpackChunk_picteus_docs||[]).push([[235],{8552(s){s.exports=JSON.parse('{"name":"docusaurus-plugin-content-pages","id":"default"}')}}]);

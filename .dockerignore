@@ -1,8 +1,0 @@
-**/.gitignore
-**/.env
-**/.venv
-**/*.js.map
-**/.DS_Store
-electron/build/server/node_modules
-electron/build/server/src
-shared/back-end/node_modules

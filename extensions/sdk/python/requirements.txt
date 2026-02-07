@@ -1,6 +1,0 @@
-build
-python-socketio[asyncio_client] == 5.16.0
-aiohttp == 3.13.2
-requests == 2.32.5
-# This is necessary to work around the issue https://github.com/OpenAPITools/openapi-generator/issues/20826
-urllib3 >= 2.1.0, < 3.0.0
