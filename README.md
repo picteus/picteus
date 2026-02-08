@@ -2,13 +2,17 @@
 
 ## Disclaimer
 
-Please, have a look at the [Disclaimer](DISCLAIMER.md) if you want to better understand what this project is about.
+Please have a look at the [Disclaimer](DISCLAIMER.md) if you want to better understand what this project is about.
+
+## Download
+
+If you do not want to build the application, you may install it after having downloaded its installation package from the "Assets" section of the [Releases](/releases). Currently, only Windows x64 and macOS ARM 64 (Apple Silicon) are supported.
 
 ## Architecture
 
-The application is made of 6 components:
+The application is made of six components:
 1. "shared": a Node.js module which is injected as a dependency to both the "server" and "electron" components ;
-2. "server": the Node.js HTTP server back-end application ;
+2. "server": the Node.js HTTP server back-end application, capable of running extensions ;
 3. "extensions/sdk": the Python and TypeScript SDKs ;
 4. "extensions/instances": the built-in extensions for the server ;
 5. "web": the React.js web front-end application ;
@@ -23,17 +27,20 @@ The application is made of 6 components:
 
 ## Compiling and building
 
-The following command should be run from the root `package.json` file.
+The following commands will install dependencies and build the components. They should be run from the root `package.json` file.
 
 - Run the traditional `npm run install` script for resolving the hereby package dependencies.
 - Run the `npm run prerequisites` script for resolving all submodules' dependencies: do not run individually the `npm install` script on every module, because it will not properly install the "server" and "electron" components since the  `prerequisites` npm script resorts to the `--install-link` option, which installed the "shared/back-end" module dependencies.
 - Run the `npm run build` script for building all artifacts.
-- Run the `npm run start` script for starting the Electron application.
-- Run the `npm run package` script for building the Electron package application.
-- Run the `npm run clean` script for cleaning all artifacts coming from compilation and previous builds.
-- Run the `npm run reset` script for resetting the state of the project's files to their git initial state — in particular, this deletes the `node_modules` directories.
 
 Most of the artifact files are located under the `build` directory, which is a symbolic link pointing to the `electron/build` directory.
+
+## Cleaning
+
+The following commands enable cleaning up the project. They should be run from the root `package.json` file.
+
+- Run the `npm run clean` script for cleaning all artifacts coming from compilation and previous builds.
+- Run the `npm run reset` script for resetting the state of the project's files to their git initial state — in particular, this deletes the `node_modules` directories.
 
 ## Versions
 
@@ -46,7 +53,7 @@ The versions of the various components are specified through the root `package.j
 
 Whenever changing any of those versions, think of running the `npm run updateVersion` script from the root directory to propagate the version changes to the relevant submodules, which updates the `src/constants.ts` file accordingly and the SDK version and the extensions' dependency version accordingly.
 
-### Server
+### Server (back-end)
 
 Its source-code and scripts are located under the `server` directory.
 
@@ -56,9 +63,11 @@ All the commands specified in that section should be run from the `server` subdi
 
 To build the server from scratch, run the following command from the root folder: `npm run server:prerequisites && npm run server:build`.
 
-#### Start
+#### Run
 
-To start the server, run the `npm run start` script. The environment variables which have an impact over the execution are described by running the `npm run start:help` script.
+To run the server, run the `npm run start` script. The environment variables which have an impact over the execution as well as the commands and parameters are described by running the `npm run start:help` script.
+
+You may access to the SwaggerUI relative the OpenAPI specifications, captured through the JSON `openapi.json` file, open the browser to the [http://localhost:3001/swaggerui](http://localhost:3001/swaggerui) URL, 3001 being the server default port.
 
 #### Development
 
@@ -90,7 +99,7 @@ To publish a new version of the SDKs or extensions, run the `npm run sdk:publish
 - for publishing the Node.js SDK package on npm, use the `npm login --scope=@koppasoft` command to log in first ;
 - for publishing the Python SDK package on PyPi, declare an API token at https://pypi.org/manage/account/token/ beforehand.
 
-### Web
+### Web (front-end)
 
 Its source-code and scripts are located under the `web` directory.
 
@@ -111,34 +120,15 @@ Its source-code and scripts are located under the `electron` directory.
 - Run the `npm run build` script to build it for the same target OS as the hosting machine, which outputs a runnable artifact inside the `dist` directory.
 - Run the `npm run package` script to package it for the same target OS as the hosting machine.
 
-## Packaging and distributing
-
-The Electron application:
-1. is packaged via the `npm run package` script: this invokes the previously mentioned Electron `package` npm script ;
-2. is distributed via the `npm run distribute` script — which also invokes the previous one —, which signs, zips and notarize the application distribution package on macOS, which should be executed with the following environment variables set, when run on macOS:
-  - `MACOS_APPLICATION_CERTIFICATE_BASE64_CONTENT`: the base64 encoded content of the application certificate. This content is obtained via the `base64 -i <certificate.p12>` command, where `<certificate.p12>` is the path of the "Developer ID Application" certificate file in P12 format ;
-  - `MACOS_APPLICATION_CERTIFICATE_PASSWORD`: the password of the previous certificate ;
-  - `MACOS_NOTARIZE_APPLICATION_PASSWORD`: the [Apple application-specific](https://discussions.apple.com/thread/254805086?sortBy=rank) password related to the `Picteus` entry, used to notarize the application package ;
-3. is deployed via the `npm run deploy` script, which uploads the previously generated application distribution package: the `gcloud login` command should have been run beforehand, with GCP credentials having permissions over the destination GCS bucket.
-
-### Docker image
+### Container image
 
 The container image specifications are classically defined through the `Dockerfile` file and the ignored files through the `.dockerignore` file.
 
-To build the container image of the server application via Docker, run the `npm run docker:build` script from the root directory, which creates an image with the `koppasoft/picteus:latest` tag.
+#### Build
 
-## Continuous Integration (CI)
+To build the container image of the server application via Docker, which also embeds the web application, run the `npm run docker:build` script from the root directory, which creates an image with the `koppasoft/picteus:latest` tag.
 
-The project is configured with GitHub Actions for CI. For simulating locally what the CI does, you can install [act](https://github.com/nektos/act) and resort to the following command lines, on macOS:
-- for the "Server CI" chain: `act --workflows .github/workflows/server.yml --container-architecture linux/amd64 -P macos-latest=catthehacker/ubuntu:act-latest` ;
-- for the "Electron CI" chain: `act --workflows .github/workflows/electron.yml --container-architecture linux/amd64 -P macos-latest=catthehacker/ubuntu:act-latest`.
-
-- Use the `--bind` option if you wish to prevent act from copying the files to the container, which takes time because of the large number of files.
-- Only for the `.github/workflows/server.yml` workflow, use the `--env skip="true` to skip the installation steps.
-
-## Running
-
-### Container image
+#### Run
 
 When running the container image through Docker, you should beforehand declare a volume so that the application data are persisted beyond the container execution, use the `docker volume create picteus` command to create a Docker volume named `picteus`.
 
@@ -158,3 +148,22 @@ You may fine-tune the container with the following additional environment variab
 - `vectorDatabasePort`: the port number of the vector database server, which defaults to `3002` ; if you change it, think of changing the port mapping accordingly ;
 - `useSsl`: a boolean indicating whether the API server should use SSL / TLS, which defaults to `true` ;
 - `requiresApiKeys`: a boolean indicating whether the API server only works with API keys, which defaults to `false`.
+
+## Packaging and distributing
+
+The Electron application:
+1. is packaged via the `npm run package` script: this invokes the previously mentioned Electron `package` npm script ;
+2. is distributed via the `npm run distribute` script — which also invokes the previous one —, which signs, zips and notarize the application distribution package on macOS, which should be executed with the following environment variables set, when run on macOS:
+  - `MACOS_APPLICATION_CERTIFICATE_BASE64_CONTENT`: the base64 encoded content of the application certificate. This content is obtained via the `base64 -i <certificate.p12>` command, where `<certificate.p12>` is the path of the "Developer ID Application" certificate file in P12 format ;
+  - `MACOS_APPLICATION_CERTIFICATE_PASSWORD`: the password of the previous certificate ;
+  - `MACOS_NOTARIZE_APPLICATION_PASSWORD`: the [Apple application-specific](https://discussions.apple.com/thread/254805086?sortBy=rank) password related to the `Picteus` entry, used to notarize the application package ;
+3. is deployed via the `npm run deploy` script, which uploads the previously generated application distribution package: the `gcloud login` command should have been run beforehand, with GCP credentials having permissions over the destination GCS bucket, or with the `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE` environment variable set with the contents of a GCP account service key with writing permissions over the GCS bucket.
+
+## Continuous Integration (CI)
+
+The project is configured with GitHub Actions for CI. For simulating locally what the CI does, you can install [act](https://github.com/nektos/act) and resort to the following command lines, on macOS:
+- for the "Server CI" chain: `act --workflows .github/workflows/server.yml --container-architecture linux/amd64 -P macos-latest=catthehacker/ubuntu:act-latest` ;
+- for the "Electron CI" chain: `act --workflows .github/workflows/electron.yml --container-architecture linux/amd64 -P macos-latest=catthehacker/ubuntu:act-latest`.
+
+- Use the `--bind` option if you wish to prevent "act" from copying the files to the container, which takes time because of the large number of files.
+- Only for the `.github/workflows/server.yml` workflow, use the `--env skip="true` to skip the installation steps.
