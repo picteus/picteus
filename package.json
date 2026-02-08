@@ -1,6 +1,6 @@
 {
   "name": "@picteus/main",
-  "version": "0.2.3",
+  "version": "0.9.0",
   "productName": "Picteus",
   "description": "An advanced pictures explorer application.",
   "keywords": [
@@ -22,7 +22,7 @@
   "engines": {
     "node": ">=22.17.1"
   },
-  "homepage": "https://github.com/picteus/picteus.git",
+  "homepage": "https://github.com/picteus/picteus",
   "repository": {
     "type": "git",
     "url": "https://github.com/picteus/picteus.git"
