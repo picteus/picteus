@@ -6,7 +6,7 @@ Please have a look at the [Disclaimer](DISCLAIMER.md) if you want to better unde
 
 ## Download
 
-If you do not want to build the application, you may install it after having downloaded its installation package from the "Assets" section of the [Releases](/releases). Currently, only Windows x64 and macOS ARM 64 (Apple Silicon) are supported.
+If you do not want to build the application, you may install it after having downloaded its installation package from the "Assets" section of the [Releases](/picteus/picteus/releases). Currently, only Windows x64 and macOS ARM 64 (Apple Silicon) are supported.
 
 ## Architecture
 
@@ -61,7 +61,8 @@ All the commands specified in that section should be run from the `server` subdi
 
 #### Build
 
-To build the server from scratch, run the following command from the root folder: `npm run server:prerequisites && npm run server:build`.
+- To build the server from scratch, run the following command from the root folder: `npm run server:prerequisites && npm run server:build`.
+- To recompile it after having changed its code, run the `npm run build` script.
 
 #### Run
 
@@ -103,8 +104,16 @@ To publish a new version of the SDKs or extensions, run the `npm run sdk:publish
 
 Its source-code and scripts are located under the `web` directory.
 
-- Run the `npm run start` script to start it on the local machine.
-- Run the `npm run build` script to build it.
+All the commands specified in that section should be run from the `web` subdirectory and all resource locations are expressed from that directory, unless stated otherwise explicitly.
+
+#### Build
+
+- To build the web component from scratch, run the following command from the root folder: `npm run web:prerequisites && npm run web:build`.
+- To recompile it after having changed its code, run the `npm run build` script.
+
+#### Run
+
+To run the web component, run the `npm run start` script.
 
 ### Shared
 

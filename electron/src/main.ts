@@ -59,12 +59,40 @@ interface HttpServerApplicationCoordinator
 
 }
 
+class LocalhostComputer
+{
+
+  private static _instance: LocalhostComputer = new LocalhostComputer();
+
+  static get instance(): LocalhostComputer
+  {
+    return LocalhostComputer._instance;
+  }
+
+  public readonly localhost = "localhost";
+
+  public readonly loopBackIpAddress = "127.0.0.1";
+
+  computeHostAndPort(portNumber: number): string
+  {
+    return `${this.localhost}:${portNumber}`;
+  }
+
+  computeUrl(portNumber: number, useSsl: boolean, relativePath?: string): string
+  {
+    return `http${useSsl === true ? "s" : ""}://${this.computeHostAndPort(portNumber)}${relativePath === undefined ? "" : `/${relativePath}`}`;
+  }
+
+}
+
 class HttpServer
 {
 
   private static _instance: HttpServer = new HttpServer();
 
   private serverProcess?: ChildProcess;
+
+  private _swaggerUiUrl ?: string;
 
   static get instance(): HttpServer
   {
@@ -81,6 +109,7 @@ class HttpServer
     const filePath = path.join(serverSourceDirectoryPath, "main.js");
     logger.info(`Starting the process server from the main file '${filePath}'`);
 
+    this._swaggerUiUrl = LocalhostComputer.instance.computeUrl(portNumber, useSsl === undefined ? false : useSsl, "swaggerui");
     const environmentVariables: Record<string, string> =
       {
         NODE_ENV: environment,
@@ -156,6 +185,11 @@ class HttpServer
         definedProcess.kill("SIGINT");
       });
     }
+  }
+
+  get swaggerUiUrl(): string | undefined
+  {
+    return this._swaggerUiUrl;
   }
 
 }
@@ -347,10 +381,6 @@ export class ApplicationWrapper
   private readonly chromeExtensionManager: ChromeExtensionManager = new ChromeExtensionManager();
 
   private readonly persistentWindowManager: PersistentWindowManager = new PersistentWindowManager(path.join(applicationDirectoryPath, "window-states.json"), this.computeWindowOptions());
-
-  private readonly localhost = "localhost";
-
-  private readonly loopBackIpAddress = "127.0.0.1";
 
   private mainWindow?: BrowserWindow;
 
@@ -595,11 +625,11 @@ export class ApplicationWrapper
     if (applyContentSecurityPolicy === true)
     {
       // We augment the "Content-Security-Policy", which addresses the Electron Security Warning
-      const apiServerHostAndPortNumber = `${this.localhost}:${apiServerPortNumber}`;
+      const apiServerHostAndPortNumber = LocalhostComputer.instance.computeHostAndPort(apiServerPortNumber);
       const httpPrefix = `http${useSsl === true ? "s" : ""}://`;
       const wsPrefix = `ws${useSsl === true ? "s" : ""}://`;
       const apiServerBaseUrl = `${httpPrefix}${apiServerHostAndPortNumber}`;
-      const webServerHostAndPortNumber = `${this.localhost}:${webServerPortNumber}`;
+      const webServerHostAndPortNumber = LocalhostComputer.instance.computeHostAndPort(webServerPortNumber);
       const webServerBaseUrl = `${httpPrefix}${webServerHostAndPortNumber}`;
       const styleSrcSha256s = ["sha256-AkGc/9SiOd74zk72UnCdLs+k10sM4iy2uKmgoXkaHe0="];
       const contentSecurityPolicy = `default-src 'none'; connect-src ${apiServerBaseUrl} ${wsPrefix}${apiServerHostAndPortNumber} ${wsPrefix}${webServerHostAndPortNumber}; script-src 'self' 'unsafe-eval'; script-src-elem 'self'; frame-src ${apiServerBaseUrl}; style-src 'self' ${styleSrcSha256s.map(string => `'${string}'`).join(" ")}; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.googleapis.com https://fonts.gstatic.com; img-src ${apiServerHostAndPortNumber};`;
@@ -626,7 +656,7 @@ export class ApplicationWrapper
 
       const issuer = certificate.issuer;
       let result: number;
-      if (errorCode !== -202 || verificationResult !== "net::ERR_CERT_AUTHORITY_INVALID" || (hostname !== this.localhost && hostname !== this.loopBackIpAddress) || (issuer.commonName !== this.localhost && issuer.commonName !== this.loopBackIpAddress) || issuer.organizations.length !== 1 || issuer.organizations[0] !== "KoppaSoft")
+      if (errorCode !== -202 || verificationResult !== "net::ERR_CERT_AUTHORITY_INVALID" || (hostname !== LocalhostComputer.instance.localhost && hostname !== LocalhostComputer.instance.loopBackIpAddress) || (issuer.commonName !== LocalhostComputer.instance.localhost && issuer.commonName !== LocalhostComputer.instance.loopBackIpAddress) || issuer.organizations.length !== 1 || issuer.organizations[0] !== "KoppaSoft")
       {
         result = errorCode;
       }
@@ -748,6 +778,16 @@ export class ApplicationWrapper
                 }
               }
             ));
+            subMenu.insert(index++, new MenuItem({
+                type: "normal",
+                id: "swaggerUI",
+                label: "Swagger UI",
+                click: async (): Promise<void> =>
+                {
+                  await this.openWindow(HttpServer.instance.swaggerUiUrl!);
+                }
+              }
+            ));
             if (environment !== "production")
             {
               subMenu.insert(index++, new MenuItem({ type: "separator" }));
@@ -802,7 +842,7 @@ export class ApplicationWrapper
   private async loadWebApplication(window: BrowserWindow, useSsl: boolean, processServerPortNumber: number, socketCoordinates: SocketCoordinates, apiKey?: string): Promise<URL>
   {
     // We load the web application
-    const webServicesBaseUrl = `http${useSsl === true ? "s" : ""}://${this.localhost}:${processServerPortNumber}`;
+    const webServicesBaseUrl = LocalhostComputer.instance.computeUrl(processServerPortNumber, useSsl);
     // const url = new URL(`${fileWithProtocol}${path.join(applicationRootDirectoryPath, "web", "index.html")}`);
     const url = new URL(`${socketCoordinates.webCoordinates.baseUrl}/index.html`);
     url.searchParams.set("webServicesBaseUrl", webServicesBaseUrl);
