@@ -11,11 +11,11 @@
   "instructions": [
     {
       "events": [
-        "process.started", "process.runCommand", "image.created", "image.updated", "image.computeTags"
+        "process.started", "image.created", "image.updated", "image.computeTags", "image.runCommand"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.created", "image.updated", "image.computeTags"],
+          "events": ["image.created", "image.updated", "image.computeTags", "image.runCommand"],
           "maximumCount": 4
         }
       ],
@@ -32,15 +32,83 @@
       },
       "commands": [
         {
-          "id": "synchronize",
+          "id": "magnifyImage",
           "on": {
-            "entity": "Process"
+            "entity": "Images"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "engine": {
+                "type": "string",
+                "title": "Engine",
+                "description": "The Magnific model engine.",
+                "enum": ["automatic", "magnific_illusio", "magnific_sharpy", "magnific_sparkle"],
+                "default": "automatic"
+              },
+              "scaleFactor": {
+                "type": "string",
+                "title": "Scale factor",
+                "description": "Indicates the scale factor of the image. For higher scales, the image will take longer to process.",
+                "enum": ["2x", "4x", "8x", "16x"],
+                "default": "2x"
+              },
+              "optimizedFor": {
+                "type": "string",
+                "title": "Optimize for",
+                "description": "Set the styles to optimize the upscale process.",
+                "enum": [
+                  "standard", "soft_portraits", "hard_portraits", "art_n_illustration", "videogame_assets",
+                  "nature_n_landscapes", "films_n_photography", "3d_renders", "science_fiction_n_horror"
+                ],
+                "default": "standard"
+              },
+              "creativity": {
+                "type": "integer",
+                "title": "Creativity",
+                "description": "Indicates the AI's creativity.",
+                "minimum": -10,
+                "maximum": 10,
+                "default": 0
+              },
+              "hdr": {
+                "type": "integer",
+                "title": "Creativity",
+                "description": "Increases or decreases the level of definition and detail.",
+                "minimum": -10,
+                "maximum": 10,
+                "default": 0
+              },
+              "resemblance": {
+                "type": "integer",
+                "title": "Creativity",
+                "description": "Adjusts the level of resemblance to the original image.",
+                "minimum": -10,
+                "maximum": 10,
+                "default": 0
+              },
+              "fractality": {
+                "type": "integer",
+                "title": "Creativity",
+                "description": "Controls the strength of the prompt and intricacy per square pixel.",
+                "minimum": -10,
+                "maximum": 10,
+                "default": 0
+              },
+              "prompt": {
+                "type": "string",
+                "title": "Prompt",
+                "description": "The additional prompt to add.",
+                "default": null
+              }
+            },
+            "required": ["engine", "scaleFactor", "optimizedFor", "creativity", "hdr", "resemblance", "fractality"]
           },
           "specifications": [
             {
               "locale": "en",
-              "label": "Synchronize the images",
-              "description": "Synchronizes the Freepik images by downloading their output and storing them into the extension repository."
+              "label": "Magnify an image",
+              "description": "Upscales the provided images via Magnific and store it into the same repository."
             }
           ]
         }

@@ -13,7 +13,7 @@ const rootDirectoryPath = path.join(import.meta.dirname, ".");
 
 const extensionSdk = "extension-sdk";
 const nodeSdkScope = "picteus";
-const excludedPackagedExtensionIds = ["example-python", "example-typescript", "c2pa", "freepik", "flux"];
+const excludedPackagedExtensionIds = ["example-python", "example-typescript", "c2pa", "flux"];
 
 async function crawl(extensionId, callback)
 {

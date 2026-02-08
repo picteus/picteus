@@ -167,6 +167,14 @@
       ]
     }
   ],
+  "ui": {
+    "elements": [
+      {
+        "anchor": "sidebar",
+        "url": "/ui/sidebar/index.html"
+      }
+    ]
+  },
   "settings": {
     "type": "object",
     "properties": {
@@ -177,13 +185,5 @@
       }
     },
     "required": ["parameter"]
-  },
-  "ui": {
-    "elements": [
-      {
-        "anchor": "sidebar",
-        "url": "/ui/sidebar/index.html"
-      }
-    ]
   }
 }
