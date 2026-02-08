@@ -107,8 +107,59 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Magnify an image",
+              "label": "Magnify image",
               "description": "Upscales the provided images via Magnific and store it into the same repository."
+            }
+          ]
+        },
+        {
+          "id": "expandImage",
+          "on": {
+            "entity": "Images"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "left": {
+                "type": "integer",
+                "title": "Left",
+                "description": "Indicates the number of pixels to expand the image on the left.",
+                "minimum": 0,
+                "maximum": 2048,
+                "default": 0
+              },
+              "right": {
+                "type": "integer",
+                "title": "Right",
+                "description": "Indicates the number of pixels to expand the image on the right.",
+                "minimum": 0,
+                "maximum": 2048,
+                "default": 0
+              },
+              "top": {
+                "type": "integer",
+                "title": "Top",
+                "description": "Indicates the number of pixels to expand the image on the top.",
+                "minimum": 0,
+                "maximum": 2048,
+                "default": 0
+              },
+              "bottom": {
+                "type": "integer",
+                "title": "Bottom",
+                "description": "Indicates the number of pixels to expand the image on the bottom.",
+                "minimum": 0,
+                "maximum": 2048,
+                "default": 0
+              }
+            },
+            "required": ["left", "right", "top", "bottom"]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Expands image",
+              "description": "Expands the provided images via Magnific and store it into the same repository."
             }
           ]
         }

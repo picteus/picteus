@@ -6,7 +6,7 @@ Please have a look at the [Disclaimer](DISCLAIMER.md) if you want to better unde
 
 ## Download
 
-If you do not want to build the application, you may install it after having downloaded its installation package from the "Assets" section of the [Releases](/picteus/picteus/releases). Currently, only Windows x64 and macOS ARM 64 (Apple Silicon) are supported.
+If you do not want to build the application, you may install it after having downloaded its installation package from the "Assets" section of the [Releases](../../releases). Currently, only Windows x64 and macOS ARM 64 (Apple Silicon) are supported.
 
 ## Architecture
 

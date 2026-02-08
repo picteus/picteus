@@ -18,13 +18,148 @@ import {
 
 import {
   Configuration,
-  type GetStyleTransferTaskStatus200Response,
+  GetStyleTransferTaskStatus200Response,
+  ImageExpandApi,
   ImageUpscalerApi,
   ImageUpscaleRequestContentEngineEnum,
   ImageUpscaleRequestContentOptimizedForEnum,
   ImageUpscaleRequestContentScaleFactorEnum
 } from "./generated";
 
+
+interface FreepikGenerationParameters
+{
+  model: string;
+  prompt?: string;
+}
+
+interface FreepikApiInvoker
+{
+
+  computeGenerationParameters(parameters: Record<string, any>): FreepikGenerationParameters;
+
+  post(generationParameters: FreepikGenerationParameters, buffer: Buffer): Promise<GetStyleTransferTaskStatus200Response>;
+
+  idGet(taskId: string): Promise<GetStyleTransferTaskStatus200Response>;
+
+}
+
+class UpscaleInvoker
+  implements FreepikApiInvoker
+{
+
+  private readonly api: ImageUpscalerApi;
+
+  constructor(freepikApiKey: string)
+  {
+    this.api = new ImageUpscalerApi(new Configuration({ apiKey: freepikApiKey }));
+  }
+
+  computeGenerationParameters(parameters: Record<string, any>): FreepikGenerationParameters
+  {
+    const engine: ImageUpscaleRequestContentEngineEnum = parameters["engine"];
+    const scaleFactor: ImageUpscaleRequestContentScaleFactorEnum = parameters["scaleFactor"];
+    const optimizedFor: ImageUpscaleRequestContentOptimizedForEnum = parameters["optimizedFor"];
+    const creativity: number = parameters["creativity"];
+    const hdr: number = parameters["hdr"];
+    const resemblance: number = parameters["resemblance"];
+    const fractality: number = parameters["fractality"];
+    const prompt: string | undefined = parameters["prompt"] === "" ? undefined : parameters["prompt"];
+
+    interface UpscaleGenerationParameters
+      extends FreepikGenerationParameters
+    {
+      engine?: ImageUpscaleRequestContentEngineEnum;
+      scaleFactor?: ImageUpscaleRequestContentScaleFactorEnum;
+      optimizedFor?: ImageUpscaleRequestContentOptimizedForEnum;
+      creativity?: number;
+      hdr?: number;
+      resemblance?: number;
+      fractality?: number;
+    }
+
+    return {
+      prompt,
+      model: `magnifik/${engine}`,
+      engine,
+      scaleFactor,
+      optimizedFor,
+      creativity,
+      hdr,
+      resemblance,
+      fractality
+    } as UpscaleGenerationParameters;
+  }
+
+  async post(generationParameters: FreepikGenerationParameters, buffer: Buffer): Promise<GetStyleTransferTaskStatus200Response>
+  {
+    return await this.api.v1AiImageUpscalerPost({
+      imageUpscaleRequestContent: {
+        image: buffer.toString("base64"), ...generationParameters
+      }
+    });
+  }
+
+  async idGet(taskId: string): Promise<GetStyleTransferTaskStatus200Response>
+  {
+    return await this.api.v1AiImageUpscalerTaskIdGet({ taskId });
+  }
+
+}
+
+class ExpandInvoker
+  implements FreepikApiInvoker
+{
+
+  private readonly api: ImageExpandApi;
+
+  constructor(freepikApiKey: string)
+  {
+    this.api = new ImageExpandApi(new Configuration({ apiKey: freepikApiKey }));
+  }
+
+  computeGenerationParameters(parameters: Record<string, any>): FreepikGenerationParameters
+  {
+    const left: number = parameters["left"];
+    const right: number = parameters["right"];
+    const top: number = parameters["top"];
+    const bottom: number = parameters["bottom"];
+    const prompt: string | undefined = parameters["prompt"] === "" ? undefined : parameters["prompt"];
+
+    interface ExpandGenerationParameters
+      extends FreepikGenerationParameters
+    {
+      left: number;
+      right: number;
+      top: number;
+      bottom: number;
+    }
+
+    return {
+      prompt,
+      model: `black-forest-labs/fluxpro`,
+      left,
+      right,
+      top,
+      bottom
+    } as ExpandGenerationParameters;
+  }
+
+  async post(generationParameters: FreepikGenerationParameters, buffer: Buffer): Promise<GetStyleTransferTaskStatus200Response>
+  {
+    return await this.api.v1AiImageExpandFluxProPost({
+      imageExpandRequest: {
+        image: buffer.toString("base64"), ...generationParameters
+      }
+    });
+  }
+
+  async idGet(taskId: string): Promise<GetStyleTransferTaskStatus200Response>
+  {
+    return await this.api.v1AiImageExpandFluxProTaskIdGet({ taskId });
+  }
+
+}
 
 class FreepikExtension extends PicteusExtension
 {
@@ -70,7 +205,11 @@ class FreepikExtension extends PicteusExtension
       const parameters: Record<string, any> = value["parameters"];
       if (commandId === "magnifyImage")
       {
-        await this.magnifyImages(communicator, parameters, imageIds);
+        await this.processImages(communicator, parameters, imageIds, new UpscaleInvoker(this.freepikApiKey));
+      }
+      else if (commandId === "expandImage")
+      {
+        await this.processImages(communicator, parameters, imageIds, new ExpandInvoker(this.freepikApiKey));
       }
     }
   }
@@ -89,13 +228,111 @@ class FreepikExtension extends PicteusExtension
     });
   }
 
-  private async magnifyImages(communicator: Communicator, parameters: Record<string, any>, imageIds: string[]): Promise<void>
+  private async processImages(communicator: Communicator, parameters: Record<string, any>, imageIds: string[], invoker: FreepikApiInvoker): Promise<void>
   {
     if ((await this.checkFreepikApiKey(communicator)) === false)
     {
       return;
     }
-    const upscalerApi = new ImageUpscalerApi(new Configuration({ apiKey: this.freepikApiKey }));
+    const processImageUrls = async (imageId: string, taskId: string, generationParameters: FreepikGenerationParameters, urls: string[] | null): Promise<void> =>
+    {
+      if (urls === null)
+      {
+        // The processing generated an error
+        await communicator.launchIntent<boolean>({
+          dialog:
+            {
+              type: NotificationsDialogType.Error,
+              title: "Generation error",
+              description: "The image generation failed for an unknown error",
+              details: "If this extension is not buggy, the issue comes the Freepik API server.",
+              buttons: { yes: "OK" }
+            }
+        });
+      }
+      else
+      {
+        const downloadImageUrl = async (url: string): Promise<Blob> =>
+        {
+          // We fetch the generated image
+          const response = await fetch(url);
+          const arrayBuffer = await response.arrayBuffer();
+          return new Blob([arrayBuffer], {});
+
+        };
+        const handleImageUrl = async (index: number | undefined, url: string): Promise<void> =>
+        {
+          const blob = await downloadImageUrl(url);
+          const recipe: GenerationRecipe =
+            {
+              schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
+              modelTags: [generationParameters.model],
+              software: "picteus",
+              inputAssets: [imageId],
+              url,
+              prompt:
+                {
+                  kind: PromptKind.Instructions,
+                  value: generationParameters
+                }
+
+            };
+          const applicationMetadata: ApplicationMetadata =
+            {
+              items: [
+                {
+                  extensionId: this.extensionId,
+                  value: recipe
+                }
+              ]
+            };
+          const image = await this.getRepositoryApi().repositoryStoreImage({
+            id: this.repository!.id,
+            nameWithoutExtension: `${taskId}${index === undefined ? "" : `-${index}`}`,
+            parentId: imageId,
+            applicationMetadata: JSON.stringify(applicationMetadata),
+            sourceUrl: url,
+            body: blob
+          });
+          await this.getImageApi().imageSetTags({
+            id: image.id,
+            extensionId: this.extensionId,
+            requestBody: [this.extensionId]
+          });
+          const imageFeature: Array<ImageFeature> =
+            [
+              {
+                type: ImageFeatureType.Recipe,
+                format: ImageFeatureFormat.Json,
+                value: JSON.stringify(recipe)
+              }
+            ];
+          if (prompt !== undefined)
+          {
+            imageFeature.push(
+              {
+                type: ImageFeatureType.Description,
+                format: ImageFeatureFormat.String,
+                name: "prompt",
+                value: generationParameters.prompt
+              }
+            );
+          }
+          await this.getImageApi().imageSetFeatures({
+            id: image.id,
+            extensionId: this.extensionId,
+            imageFeature
+          });
+        };
+
+        for (let index = 0; index < urls.length; index++)
+        {
+          const url = urls[index];
+          this.logger.info(`Handling the generated image with URL '${url}'`);
+          await handleImageUrl(urls.length === 1 ? undefined : index, url);
+        }
+      }
+    };
     for (const imageId of imageIds)
     {
       // We retrieve the original image
@@ -104,38 +341,8 @@ class FreepikExtension extends PicteusExtension
         stripMetadata: true
       });
 
-      interface GenerationParameters
-      {
-        engine?: ImageUpscaleRequestContentEngineEnum;
-        scaleFactor?: ImageUpscaleRequestContentScaleFactorEnum;
-        optimizedFor?: ImageUpscaleRequestContentOptimizedForEnum;
-        creativity?: number;
-        hdr?: number;
-        resemblance?: number;
-        fractality?: number;
-        prompt?: string;
-      }
-
       const buffer = Buffer.from(await blob.arrayBuffer());
-      const engine: ImageUpscaleRequestContentEngineEnum | undefined = parameters["engine"];
-      const scaleFactor: ImageUpscaleRequestContentScaleFactorEnum | undefined = parameters["scaleFactor"];
-      const optimizedFor: ImageUpscaleRequestContentOptimizedForEnum | undefined = parameters["optimizedFor"];
-      const creativity: number | undefined = parameters["creativity"];
-      const hdr: number | undefined = parameters["hdr"];
-      const resemblance: number | undefined = parameters["resemblance"];
-      const fractality: number | undefined = parameters["fractality"];
-      const prompt: string | undefined = parameters["prompt"] === "" ? undefined : parameters["prompt"];
-      const generationParameters: GenerationParameters =
-        {
-          engine,
-          scaleFactor,
-          optimizedFor,
-          creativity,
-          hdr,
-          resemblance,
-          fractality,
-          prompt
-        };
+      const generationParameters: FreepikGenerationParameters = invoker.computeGenerationParameters(parameters);
       const extractGeneratedUrls = (response: GetStyleTransferTaskStatus200Response): string[] =>
       {
         const status = response.data.status;
@@ -148,130 +355,34 @@ class FreepikExtension extends PicteusExtension
           return status === "FAILED" ? null : response.data.generated;
         }
       };
-      const processImageUrls = async (taskId: string, urls: string[] | null): Promise<void> =>
-      {
-        if (urls === null)
-        {
-          // The processing generated an error
-          await communicator.launchIntent<boolean>({
-            dialog:
-              {
-                type: NotificationsDialogType.Error,
-                title: "Generation error",
-                description: "The image generation failed for an unknown error",
-                details: "If this extension is not buggy, the issue comes the Freepik API server.",
-                buttons: { yes: "OK" }
-              }
-          });
-        }
-        else
-        {
-          const downloadImageUrl = async (url: string): Promise<Blob> =>
-          {
-            // We fetch the generated image
-            const response = await fetch(url);
-            const arrayBuffer = await response.arrayBuffer();
-            return new Blob([arrayBuffer], {});
 
-          };
-          const handleImageUrl = async (index: number | undefined, url: string): Promise<void> =>
-          {
-            const blob = await downloadImageUrl(url);
-            const recipe: GenerationRecipe =
-              {
-                schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-                modelTags: [`magnifik/${engine}`],
-                software: "picteus",
-                inputAssets: [imageId],
-                url,
-                prompt:
-                  {
-                    kind: PromptKind.Instructions,
-                    value: generationParameters
-                  }
-
-              };
-            const applicationMetadata: ApplicationMetadata =
-              {
-                items: [
-                  {
-                    extensionId: this.extensionId,
-                    value: recipe
-                  }
-                ]
-              };
-            const image = await this.getRepositoryApi().repositoryStoreImage({
-              id: this.repository!.id,
-              nameWithoutExtension: `${taskId}${index === undefined ? "" : `-${index}`}`,
-              parentId: imageId,
-              applicationMetadata: JSON.stringify(applicationMetadata),
-              sourceUrl: url,
-              body: blob
-            });
-            await this.getImageApi().imageSetTags({
-              id: image.id,
-              extensionId: this.extensionId,
-              requestBody: [this.extensionId]
-            });
-            const imageFeature: Array<ImageFeature> =
-              [
-                {
-                  type: ImageFeatureType.Recipe,
-                  format: ImageFeatureFormat.Json,
-                  value: JSON.stringify(recipe)
-                }
-              ];
-            if (prompt !== undefined)
-            {
-              imageFeature.push(
-                {
-                  type: ImageFeatureType.Description,
-                  format: ImageFeatureFormat.String,
-                  name: "prompt",
-                  value: prompt
-                }
-              );
-            }
-            await this.getImageApi().imageSetFeatures({
-              id: image.id,
-              extensionId: this.extensionId,
-              imageFeature
-            });
-          };
-
-          for (let index = 0; index < urls.length; index++)
-          {
-            const url = urls[index];
-            this.logger.info(`Handling the generated image with URL '${url}'`);
-            await handleImageUrl(urls.length === 1 ? undefined : index, url);
-          }
-        }
-      };
-
-      this.logger.info("Running the Magnific model on the image with id '${imageId}'");
-      const postResponse: GetStyleTransferTaskStatus200Response = await upscalerApi.v1AiImageUpscalerPost({
-        imageUpscaleRequestContent: {
-          image: buffer.toString("base64"), ...generationParameters
-        }
-      });
+      communicator.sendLog(`Running a processing via Freepik on the image with id '${imageId}'`, "info");
+      const postResponse: GetStyleTransferTaskStatus200Response = await invoker.post(generationParameters, buffer);
       {
         const urls = extractGeneratedUrls(postResponse);
+        const taskId = postResponse.data.taskId;
         if (urls !== undefined)
         {
-          await processImageUrls(postResponse.data.taskId, urls);
+          await processImageUrls(imageId, taskId, generationParameters, urls);
         }
         else
         {
-          const interval = setInterval(async () =>
+
+          const checkAndProcess = async () =>
           {
-            const idGetResponse: GetStyleTransferTaskStatus200Response = await upscalerApi.v1AiImageUpscalerTaskIdGet({ taskId: postResponse.data.taskId });
+            communicator.sendLog(`Checking for the Freepik processing with id '${taskId}'`, "debug");
+            const idGetResponse: GetStyleTransferTaskStatus200Response = await invoker.idGet(taskId);
             const urls = extractGeneratedUrls(idGetResponse);
             if (urls !== undefined)
             {
-              clearInterval(interval);
-              await processImageUrls(idGetResponse.data.taskId, urls);
+              await processImageUrls(imageId, taskId, generationParameters, urls);
             }
-          }, 1_000);
+            else
+            {
+              setTimeout(checkAndProcess, 1_000);
+            }
+          };
+          await checkAndProcess();
         }
       }
     }
