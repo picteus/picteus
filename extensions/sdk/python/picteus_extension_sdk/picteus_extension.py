@@ -309,7 +309,6 @@ SettingsValue = Dict[str, Any]
 
 
 class PicteusExtension:
-    __notifications = "notifications"
 
     @staticmethod
     def get_manifest() -> Manifest:
@@ -328,6 +327,8 @@ class PicteusExtension:
     @staticmethod
     def get_extension_home_directory_path() -> str:
         return os.path.abspath(os.path.join(os.getcwd(), "."))
+
+    SOFTWARE: str = "picteus"
 
     def __init__(self) -> None:
         self.logger: logging.Logger = getLogger(__name__)

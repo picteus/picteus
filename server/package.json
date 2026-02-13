@@ -1,6 +1,6 @@
 {
   "name": "@picteus/server",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "productName": "Picteus server",
   "description": "The Picteus back-end server.",
   "keywords": [
@@ -22,7 +22,7 @@
   "engines": {
     "node": ">=22.17.1"
   },
-  "homepage": "https://github.com/picteus/picteus.git",
+  "homepage": "https://github.com/picteus/picteus",
   "repository": {
     "type": "git",
     "url": "https://github.com/picteus/picteus.git"
@@ -67,7 +67,7 @@
     "build": "npm-run-all installNodeModulesForElectron build:copy prisma:generate compile obfuscate",
     "start": "cross-var cross-env NODE_PATH=\"$NO_DE_MODULES_DIRECTORY_PATH\" REFERENCE_DATABASE_FILE_PATH=\"./database.db\" SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" node --max-http-header-size=131072 $npm_package_config_buildDirectoryPath/server/src/main.js --storageDirectoryPath \"$npm_package_config_storageDirectoryPath\" --webDirectoryPath \"$npm_package_config_buildDirectoryPath/web\"",
     "start:help": "cross-var cross-env NODE_PATH=\"$NO_DE_MODULES_DIRECTORY_PATH\" REFERENCE_DATABASE_FILE_PATH=\"./database.db\" SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" node $npm_package_config_buildDirectoryPath/server/src/main.js run --help",
-    "start:custom": "cross-var cross-env NODE_PATH=\"$NO_DE_MODULES_DIRECTORY_PATH\" REFERENCE_DATABASE_FILE_PATH=\"./database.db\" SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" node --max-http-header-size=131072 $npm_package_config_buildDirectoryPath/server/src/main.js --storageDirectoryPath \"$npm_package_config_storageDirectoryPath\" --unpackedExtensionsDirectoryPath ../extensions/instances --webDirectoryPath \"$npm_package_config_buildDirectoryPath/web\" --useSsl false --requiresApiKeys true",
+    "start:custom": "cross-var cross-env NODE_PATH=\"$NO_DE_MODULES_DIRECTORY_PATH\" REFERENCE_DATABASE_FILE_PATH=\"./database.db\" SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" node --max-http-header-size=131072 $npm_package_config_buildDirectoryPath/server/src/main.js --storageDirectoryPath \"$npm_package_config_storageDirectoryPath\" --unpackedExtensionsDirectoryPath ../extensions/instances --webDirectoryPath \"$npm_package_config_buildDirectoryPath/web\" --useSsl false --requiresApiKeys false",
     "compileAndStart": "npm-run-all compile start",
     "ci:test:dotenv": "cd tests && cross-var cross-env NODE_OPTIONS=\"--experimental-vm-modules\" NODE_PATH=\"$NO_DE_MODULES_DIRECTORY_PATH\" jest --verbose --ci --runInBand --forceExit --colors --testPathIgnorePatterns \"inexistentSuite\" --testNamePattern \"^.*$\"",
     "preci:test": "npm run .env",

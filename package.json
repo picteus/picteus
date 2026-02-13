@@ -31,11 +31,11 @@
     "url": "https://github.com/picteus/Picteus/issues"
   },
   "config": {
-    "applicationVersion": "0.6.1",
-    "serverVersion": "0.6.1",
-    "webVersion": "0.2.4",
-    "apiVersion": "0.9.0",
-    "sdkVersion": "0.8.0"
+    "applicationVersion": "0.7.0",
+    "serverVersion": "0.7.0",
+    "webVersion": "0.3.0",
+    "apiVersion": "0.10.0",
+    "sdkVersion": "0.9.0"
   },
   "scripts": {
     "//": "A bunch of useful tips and ticks on npm worth reading are available at https://github.com/jeffbader/Npm-Tips-and-Tricks and https://2ality.com/2022/08/npm-package-scripts.html",

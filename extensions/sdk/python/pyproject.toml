@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "picteus-internal-extension-sdk"
-version = "0.8.0"
+version = "0.9.0"
 description = "The Picteus extension Python SDK."
 license = "AGPL-3.0-or-later"
 authors = [

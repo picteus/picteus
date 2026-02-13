@@ -44,6 +44,7 @@ import {
   ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
+  ImageFeatureValue,
   ImageFormat,
   ImageFormats,
   ImageMediaUrl,
@@ -411,10 +412,7 @@ export class ImageService
       where: { imageId: id, value: { not: ImageService.emptyImageFeatureValue } },
       orderBy: { id: "asc" }
     });
-    return entities.map((entity) =>
-    {
-      return new ExtensionImageFeature(entity.extensionId ?? undefined, entity.type as ImageFeatureType, entity.format as ImageFeatureFormat, entity.name === null ? undefined : entity.name, entity.value);
-    });
+    return entities.map(this.featureToDto);
   }
 
   async setFeatures(id: string, extensionId: string, features: ImageFeature[]): Promise<void>
@@ -430,29 +428,74 @@ export class ImageService
     {
       const imageFeature = features[index];
       parametersChecker.checkString(`features[${index}].name`, imageFeature.name, FieldLengths.technical, StringNature.Technical, true);
-      parametersChecker.checkString(`features[${index}].value`, imageFeature.value, FieldLengths.value, StringNature.Free);
+      if (typeof imageFeature.value === "string")
+      {
+        parametersChecker.checkString(`features[${index}].value`, imageFeature.value, FieldLengths.value, StringNature.Free);
+      }
     }
 
+    const checkIsString = (index: number, feature: ImageFeature): string =>
+    {
+      if (typeof feature.value !== "string")
+      {
+        parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be a string");
+      }
+      return feature.value as string;
+    };
     const toKeepAttachmentIds: number[] = [];
     for (let index = 0; index < features.length; index++)
     {
       const feature = features[index];
+      const type = feature.type;
+      const format = feature.format;
+
       // We first check that the feature type is compatible with the provided format
-      if (feature.type === ImageFeatureType.CAPTION && feature.format !== ImageFeatureFormat.STRING)
+      if (type === ImageFeatureType.CAPTION && format !== ImageFeatureFormat.STRING)
       {
-        parametersChecker.throwBadParameter(`[${index}].format`, feature.format, `it should be equal to '${ImageFeatureFormat.STRING}' when the feature type is '${feature.type}'`);
+        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be equal to '${ImageFeatureFormat.STRING}' when the feature type is '${type}'`);
       }
-      else if ((feature.type === ImageFeatureType.DESCRIPTION || feature.type === ImageFeatureType.COMMENT) && ImageService.DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS.includes(feature.format) == false)
+      else if ((type === ImageFeatureType.DESCRIPTION || type === ImageFeatureType.COMMENT) && ImageService.DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS.includes(format) == false)
       {
-        parametersChecker.throwBadParameter(`[${index}].format`, feature.format, `it should be one of [${ImageService.DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS.map(item => `'${item}'`).join(", ")}] when the feature type is '${feature.type}'`);
+        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be one of [${ImageService.DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS.map(item => `'${item}'`).join(", ")}] when the feature type is '${type}'`);
       }
-      else if (feature.type === ImageFeatureType.RECIPE && ImageService.RECIPE_FEATURES_ALLOWED_FORMATS.includes(feature.format) == false)
+      else if (type === ImageFeatureType.RECIPE && ImageService.RECIPE_FEATURES_ALLOWED_FORMATS.includes(format) == false)
       {
-        parametersChecker.throwBadParameter(`[${index}].format`, feature.format, `it should be one of [${ImageService.RECIPE_FEATURES_ALLOWED_FORMATS.map(item => `'${item}'`).join(", ")}] when the feature type is '${feature.type}'`);
+        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be one of [${ImageService.RECIPE_FEATURES_ALLOWED_FORMATS.map(item => `'${item}'`).join(", ")}] when the feature type is '${type}'`);
       }
+
       // Then, we check that the feature value is compatible with the declared format
-      if (feature.format === ImageFeatureFormat.MARKDOWN)
+      const value = feature.value;
+      if (format === ImageFeatureFormat.INTEGER)
       {
+        if (typeof value !== "number" || Number.isInteger(value) === false)
+        {
+          parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be an integer");
+        }
+      }
+      else if (format === ImageFeatureFormat.FLOAT)
+      {
+        if (typeof value !== "number")
+        {
+          parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be a float");
+        }
+      }
+      else if (format === ImageFeatureFormat.BOOLEAN)
+      {
+        if (typeof value !== "boolean")
+        {
+          parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be a boolean");
+        }
+      }
+      else if (format === ImageFeatureFormat.STRING)
+      {
+        if (typeof value !== "string")
+        {
+          parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be a string");
+        }
+      }
+      else if (format === ImageFeatureFormat.MARKDOWN)
+      {
+        checkIsString(index, feature);
         // TODO: find a way to validate the Markdown content
         // try
         // {
@@ -463,21 +506,23 @@ export class ImageService
         //   parametersChecker.throwBadParameter(`[${index}].value`, feature.value, "it should be a well-formed Markdown content");
         // }
       }
-      else if (feature.format === ImageFeatureFormat.JSON)
+      else if (format === ImageFeatureFormat.JSON)
       {
+        const string = checkIsString(index, feature);
         let json: Json;
         try
         {
           // We make sure that the string is a valid JSON content
-          json = JSON.parse(feature.value);
+          json = JSON.parse(string);
         }
         catch (error)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, feature.value, "it should be a well-formed JSON content");
+          parametersChecker.throwBadParameter(`[${index}].value`, string, "it should be a well-formed JSON content");
         }
-        if (feature.type === ImageFeatureType.RECIPE)
+        if (type === ImageFeatureType.RECIPE)
         {
           // In the case of a recipe, we check that the value respects the expected schema
+          const string = checkIsString(index, feature);
           const generationRecipe = plainToInstance(GenerationRecipe, json, {
             excludeExtraneousValues: true,
             ignoreDecorators: true
@@ -485,35 +530,37 @@ export class ImageService
           const validationErrors = await validate(generationRecipe, { forbidUnknownValues: true });
           if (validationErrors.length > 0)
           {
-            parametersChecker.throwBadParameter(`[${index}].value`, feature.value, "because it does not comply with the recipe schema");
+            parametersChecker.throwBadParameter(`[${index}].value`, string, "because it does not comply with the recipe schema");
           }
         }
       }
-      else if (feature.format === ImageFeatureFormat.XML)
+      else if (format === ImageFeatureFormat.XML)
       {
-        if (XMLValidator.validate(feature.value) !== true)
+        const string = checkIsString(index, feature);
+        if (XMLValidator.validate(string) !== true)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, feature.value, "it should be a well-formed XML content");
+          parametersChecker.throwBadParameter(`[${index}].value`, string, "it should be a well-formed XML content");
         }
       }
-      else if (feature.format === ImageFeatureFormat.BINARY)
+      else if (format === ImageFeatureFormat.BINARY)
       {
+        const string = checkIsString(index, feature);
         let entity: { id: number, imageId: string, extensionId: string };
         try
         {
-          entity = (await this.moduleRef.get(ImageAttachmentService).checkAttachmentUri(feature.value, true)).entity;
+          entity = (await this.moduleRef.get(ImageAttachmentService).checkAttachmentUri(string, true)).entity;
         }
         catch (error)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, feature.value, (error as Error).message);
+          parametersChecker.throwBadParameter(`[${index}].value`, string, (error as Error).message);
         }
         if (entity.imageId !== id)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, feature.value, `the attachment with that URI is not bound to the image with id '${id}'`);
+          parametersChecker.throwBadParameter(`[${index}].value`, string, `the attachment with that URI is not bound to the image with id '${id}'`);
         }
         else if (entity.extensionId !== extensionId)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, feature.value, `the attachment with that URI is not bound to the extension with id '${extensionId}'`);
+          parametersChecker.throwBadParameter(`[${index}].value`, string, `the attachment with that URI is not bound to the extension with id '${extensionId}'`);
         }
         toKeepAttachmentIds.push(entity.id);
       }
@@ -535,13 +582,14 @@ export class ImageService
     const createFeatures = this.entitiesProvider.imageFeature.createMany({
       data: actualFeatures.map((feature) =>
       {
+        const value: string = typeof feature.value === "string" ? feature.value : (typeof feature.value === "number" ? feature.value.toString() : (feature.value as boolean).toString());
         return {
           imageId: id,
           type: feature.type,
           format: feature.format,
           name: feature.name,
           extensionId: extensionId,
-          value: feature.value
+          value: value
         };
       })
     });
@@ -829,10 +877,7 @@ export class ImageService
       metadata: metadata === undefined ? [] : this.metadataToDto(metadata)
     });
     Object.assign(entity, {
-      features: features === undefined ? [] : features.filter(feature => feature.value !== ImageService.emptyImageFeatureValue).map((feature) =>
-      {
-        return new ExtensionImageFeature(feature.extensionId, feature.type as ImageFeatureType, feature.format as ImageFeatureFormat, feature.name === null ? undefined : feature.name, feature.value);
-      })
+      features: features === undefined ? [] : features.filter(feature => feature.value !== ImageService.emptyImageFeatureValue).map(this.featureToDto)
     });
     Object.assign(entity, {
       tags: tags === undefined ? [] : tags.filter(tag => tag.value !== ImageService.emptyImageTag).map((tag) =>
@@ -842,6 +887,28 @@ export class ImageService
     });
     // @ts-ignore
     return entity;
+  }
+
+  private featureToDto(feature: PersistedImageFeature): ExtensionImageFeature
+  {
+    const format = feature.format as ImageFeatureFormat;
+    let value: ImageFeatureValue;
+    switch (format)
+    {
+      case ImageFeatureFormat.INTEGER:
+        value = parseInt(feature.value);
+        break;
+      case ImageFeatureFormat.FLOAT:
+        value = parseFloat(feature.value);
+        break;
+      case ImageFeatureFormat.BOOLEAN:
+        value = feature.value === "true";
+        break;
+      default:
+        value = feature.value;
+        break;
+    }
+    return new ExtensionImageFeature(feature.extensionId, feature.type as ImageFeatureType, format, feature.name === null ? undefined : feature.name, value);
   }
 
   private metadataToDto(entity: PersistedImageMetadata): ImageMetadata

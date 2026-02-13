@@ -1,6 +1,6 @@
 {
   "name": "@picteus/electron",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "productName": "Picteus",
   "description": "The Picteus Electron application.",
   "keywords": [
@@ -22,7 +22,7 @@
   "engines": {
     "node": ">=22.17.1"
   },
-  "homepage": "https://github.com/picteus/picteus.git",
+  "homepage": "https://github.com/picteus/picteus",
   "repository": {
     "type": "git",
     "url": "https://github.com/picteus/picteus.git"

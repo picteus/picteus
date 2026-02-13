@@ -350,16 +350,17 @@ export default function ImageVisualizer({
                         <Table.Tbody>
                           {imageFeatures?.map((imageFeature, index) =>
                           {
-                            // We need to handle the specific case the linebreak "<br>", because the library does not handle it properly by default
-                            const value = imageFeature.format === "json" ?
+                            const value = imageFeature.value;
+                            const tableValue = imageFeature.format === "json" ?
                               <CodeViewer code={imageFeature.value} /> : (imageFeature.format === "markdown" ?
-                                <Markdown>{imageFeature.value.replace(/<br>/ig, "\n \n")}</Markdown> : capitalizeText(imageFeature.value));
+                                // We need to handle the specific case the linebreak "<br>", because the library does not handle it properly by default
+                                <Markdown>{(value as string).replace(/<br>/ig, "\n \n")}</Markdown> : (typeof value === "string" ? capitalizeText(value) : (typeof value === "number" ? value.toString() : (typeof value === "boolean" ? value.toString() : value))));
                             return (
                               <TableComponent
                                 key={`feature-${index}`}
                                 data={{
                                   label: `${capitalizeText(imageFeature.type)} (${imageFeature.id}${imageFeature.name === undefined ? "" : (`:${imageFeature.name}`)})`,
-                                  value
+                                  value: tableValue
                                 }}
                               />
                             );

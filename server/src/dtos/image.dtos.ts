@@ -20,6 +20,7 @@ import {
   ValidateNested
 } from "class-validator";
 import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from "@nestjs/swagger";
+
 import {
   alphaNumericPlusPattern,
   computeIdPattern,
@@ -36,6 +37,7 @@ import {
   uriPathPattern,
   urlPattern
 } from "./common.dtos";
+import { TypeBasedValidation } from "./validators.dtos";
 
 
 /**
@@ -573,6 +575,7 @@ export enum ImageFeatureType
   CAPTION = "caption",
   DESCRIPTION = "description",
   COMMENT = "comment",
+  ANNOTATION = "annotation",
   METADATA = "metadata",
   RECIPE = "recipe",
   OTHER = "other"
@@ -584,6 +587,9 @@ export enum ImageFeatureType
 export enum ImageFeatureFormat
 {
   STRING = "string",
+  INTEGER = "integer",
+  FLOAT = "float",
+  BOOLEAN = "boolean",
   JSON = "json",
   XML = "xml",
   MARKDOWN = "markdown",
@@ -591,16 +597,17 @@ export enum ImageFeatureFormat
   BINARY = "binary"
 }
 
-/**
- * The image feature.
- */
+export type ImageFeatureValue = string | number | boolean;
 
+/**
+ * An image feature.
+ */
 @ApiExtraModels(GenerationRecipe)
-@ApiSchema({ description: "The image features" })
+@ApiSchema({ description: "An image feature" })
 export class ImageFeature
 {
 
-  constructor(type: ImageFeatureType, format: ImageFeatureFormat, name: string | undefined, value: string)
+  constructor(type: ImageFeatureType, format: ImageFeatureFormat, name: string | undefined, value: ImageFeatureValue)
   {
     this.type = type;
     this.format = format;
@@ -664,20 +671,26 @@ export class ImageFeature
   @ApiProperty(
     {
       description: "The image feature value",
-      type: String,
-      minLength: 1,
-      maxLength: FieldLengths.value,
+      oneOf:
+        [
+          { type: "string", minLength: 1, maxLength: FieldLengths.value },
+          { type: "number", format: "int64" },
+          { type: "number", format: "double" },
+          { type: "boolean" }
+        ],
       required: true,
       example: "Three women in a flower arrangement"
     }
   )
-  @IsString()
-  @MinLength(1)
-  @MaxLength(FieldLengths.value)
+  @TypeBasedValidation({
+    "string": [MinLength(1), MaxLength(FieldLengths.value)],
+    "number": [],
+    "boolean": []
+  })
   @IsDefined()
   @NotEquals(null)
   @Expose()
-  readonly value: string;
+  readonly value: ImageFeatureValue;
 
 }
 
@@ -694,11 +707,11 @@ export enum ImageResizeRender
  * An image feature for an extension.
  */
 @ApiExtraModels(ImageFeature)
-@ApiSchema({ description: "The image features, along with its extension identifier" })
+@ApiSchema({ description: "An image feature, along with its extension identifier" })
 export class ExtensionImageFeature extends ImageFeature
 {
 
-  constructor(id: string, type: ImageFeatureType, format: ImageFeatureFormat, name: string | undefined, value: string)
+  constructor(id: string, type: ImageFeatureType, format: ImageFeatureFormat, name: string | undefined, value: ImageFeatureValue)
   {
     super(type, format, name, value);
     this.id = id;

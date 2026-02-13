@@ -147,7 +147,7 @@ class GeminiExtension extends PicteusExtension
           {
             schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
             modelTags: [`google/${model}`],
-            software: "picteus",
+            software: PicteusExtension.SOFTWARE,
             aspectRatio: Number.parseFloat(numericAspectRatio.toFixed(4)),
             prompt: { kind: PromptKind.Textual, text: prompt }
           };

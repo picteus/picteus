@@ -19,7 +19,7 @@
   "engines": {
     "node": ">=22.17.1"
   },
-  "homepage": "https://github.com/picteus/Picteus.git",
+  "homepage": "https://github.com/picteus/Picteus",
   "repository": {
     "type": "git",
     "url": "https://github.com/picteus/Picteus.git"
@@ -43,6 +43,6 @@
     "@types/node": "22.17.1"
   },
   "dependencies": {
-    "@picteus/internal-extension-sdk": "0.8.0"
+    "@picteus/internal-extension-sdk": "0.9.0"
   }
 }

@@ -195,7 +195,7 @@ class ReplicateExtension extends PicteusExtension
       {
         schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
         modelTags: [prediction.model],
-        software: "picteus",
+        software: PicteusExtension.SOFTWARE,
         url: prediction.urls.get,
         prompt: { kind: PromptKind.Instructions, value: input }
       };

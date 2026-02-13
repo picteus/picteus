@@ -369,6 +369,8 @@ export class PicteusExtension
     return path.resolve(process.cwd());
   }
 
+  public static readonly SOFTWARE: string = "picteus";
+
   protected readonly logger: Logger = new Logger();
 
   protected readonly parameters: ExtensionParameters;

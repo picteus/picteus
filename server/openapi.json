@@ -3163,7 +3163,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.9.0",
+    "version": "0.10.0",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",
@@ -4832,6 +4832,7 @@
           "caption",
           "description",
           "comment",
+          "annotation",
           "metadata",
           "recipe",
           "other"
@@ -4843,6 +4844,9 @@
         "default": "string",
         "enum": [
           "string",
+          "integer",
+          "float",
+          "boolean",
           "json",
           "xml",
           "markdown",
@@ -4877,14 +4881,29 @@
             "example": "field"
           },
           "value": {
-            "type": "string",
             "description": "The image feature value",
-            "minLength": 1,
-            "maxLength": 524288,
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 524288
+              },
+              {
+                "type": "number",
+                "format": "int64"
+              },
+              {
+                "type": "number",
+                "format": "double"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
             "example": "Three women in a flower arrangement"
           }
         },
-        "description": "The image features",
+        "description": "An image feature",
         "required": [
           "type",
           "format",
@@ -4918,10 +4937,25 @@
             "example": "field"
           },
           "value": {
-            "type": "string",
             "description": "The image feature value",
-            "minLength": 1,
-            "maxLength": 524288,
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 524288
+              },
+              {
+                "type": "number",
+                "format": "int64"
+              },
+              {
+                "type": "number",
+                "format": "double"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
             "example": "Three women in a flower arrangement"
           },
           "id": {
@@ -4932,7 +4966,7 @@
             "maxLength": 32
           }
         },
-        "description": "The image features, along with its extension identifier",
+        "description": "An image feature, along with its extension identifier",
         "required": [
           "type",
           "format",

@@ -14,7 +14,6 @@ import {
   ApplicationMetadata,
   ApplicationMetadataItem,
   CommandEntity,
-  ExtensionImageFeature,
   FieldLengths,
   fileWithProtocol,
   GenerationRecipe,
@@ -880,9 +879,27 @@ describe("Image with module", () =>
         const validationError = errors[0];
         expect(validationError.property).toEqual("value");
         expect(validationError.constraints).toBeDefined();
-        expect(validationError.constraints!.maxLength).toEqual("value must be shorter than or equal to " + maximumCharactersCount + " characters");
+        expect(validationError.constraints!.typeBasedValidator).toEqual("value must be shorter than or equal to " + maximumCharactersCount + " characters");
       }
       {
+        {
+          // We assess with a mismatching "integer", "float", "boolean" and "string"
+          const cases =
+            [
+              { type: ImageFeatureFormat.INTEGER, value: "notInteger", errorSuffix: "an integer" },
+              { type: ImageFeatureFormat.FLOAT, value: "notFloat", errorSuffix: "a float" },
+              { type: ImageFeatureFormat.BOOLEAN, value: "notBoolean", errorSuffix: "a boolean" },
+              { type: ImageFeatureFormat.STRING, value: 3.14, errorSuffix: "a string" }
+            ];
+          for (const aCase of cases)
+          {
+            await expect(async () =>
+            {
+              await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.ANNOTATION, aCase.type, undefined, aCase.value)]);
+            }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it should be ${aCase.errorSuffix}`, BAD_REQUEST, base.badParameterCode));
+          }
+        }
+
         // We assess with a mismatching between the "type" and the "format" for the "caption" type
         for (const featureFormat of [ImageFeatureFormat.JSON, ImageFeatureFormat.XML, ImageFeatureFormat.BINARY])
         {
@@ -995,25 +1012,26 @@ describe("Image with module", () =>
       {
         // We assess with a valid content
         const stringImageFeature = imageFeature;
+        const integerImageFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.INTEGER, "integer", 11);
+        const floatImageFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.FLOAT, "float", 3.14);
+        const booleanImageFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.BOOLEAN, "boolean", true);
         const markdownImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.MARKDOWN, undefined, `# Title\n##Subtitle\nHere is some **markdown** _content!`);
         const jsonImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.JSON, undefined, `{"key":"value"}`);
         const xmlImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.XML, "xml", `<element attribute="value"></element>`);
-        const imageFeatures = [stringImageFeature, markdownImageFeature, jsonImageFeature, xmlImageFeature];
+        const imageFeatures = [stringImageFeature, integerImageFeature, floatImageFeature, booleanImageFeature, markdownImageFeature, jsonImageFeature, xmlImageFeature];
         await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, imageFeatures);
         const image = await base.getImageController().get(imageId);
         expect(image.features.length).toBe(imageFeatures.length);
-        let index = 0;
-        expect(image.features[index++]).toEqual({ id: extensionId, ...stringImageFeature });
-        expect(image.features[index++]).toEqual({ id: extensionId, ...markdownImageFeature });
-        expect(image.features[index++]).toEqual({ id: extensionId, ...jsonImageFeature });
-        expect(image.features[index++]).toEqual({ id: extensionId, ...xmlImageFeature });
+        for (let index = 0; index < image.features.length; index++)
+        {
+          expect(image.features[index]).toEqual({ id: extensionId, ...imageFeatures[index] });
+        }
         const allImageFeatures = await base.getImageController().getAllFeatures(imageId);
         expect(allImageFeatures.length).toBe(imageFeatures.length);
-        index = 0;
-        expect(allImageFeatures[index++]).toEqual(new ExtensionImageFeature(extensionId, stringImageFeature.type, stringImageFeature.format, stringImageFeature.name, stringImageFeature.value));
-        expect(allImageFeatures[index++]).toEqual(new ExtensionImageFeature(extensionId, markdownImageFeature.type, markdownImageFeature.format, markdownImageFeature.name, markdownImageFeature.value));
-        expect(allImageFeatures[index++]).toEqual(new ExtensionImageFeature(extensionId, jsonImageFeature.type, jsonImageFeature.format, jsonImageFeature.name, jsonImageFeature.value));
-        expect(allImageFeatures[index++]).toEqual(new ExtensionImageFeature(extensionId, xmlImageFeature.type, xmlImageFeature.format, xmlImageFeature.name, xmlImageFeature.value));
+        for (let index = 0; index < image.features.length; index++)
+        {
+          expect(allImageFeatures[index]).toEqual({ id: extensionId, ...imageFeatures[index] });
+        }
       }
       {
         // We assess with a valid recipe

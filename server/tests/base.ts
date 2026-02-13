@@ -51,35 +51,42 @@ import { writeMetadata } from "../src/services/utils/images";
 import { ExtensionService } from "../src/services/extensionServices";
 import { Type } from "@nestjs/common/interfaces";
 import { ApiScope } from "../src/app.guards";
+import { ControllerProxy } from "./controllerProxy";
 
 
-let directoryPath: string;
-try
+function computePaths(): { directoryPath: string; rootDirectoryPath: string }
 {
-  directoryPath = dirname(fileURLToPath(import.meta.url));
-}
-catch (error)
-{
-  // This is expected when the runtime uses CommonJS
-  directoryPath = __dirname;
-}
-const rootDirectoryPath = path.resolve(path.join(directoryPath, "..", ".."));
-const buildServerDirectoryPath = path.join(rootDirectoryPath, "build", "server");
-const nodePathEnvironmentVariableName = "NODE_PATH";
-const nodePathEnvironmentVariableValue = process.env[nodePathEnvironmentVariableName];
-logger.info(`\n+++++\nRunning the tests with ` + (nodePathEnvironmentVariableValue === undefined ? `no '${nodePathEnvironmentVariableName} environment variable set'` : `the '${nodePathEnvironmentVariableName}' environment variable set to '${nodePathEnvironmentVariableValue}'\n+++++`));
-{
-  // We fix an issue with the "NODE_PATH" environment variable which is not taken into account when using the Node.js "--experimental-vm-modules" option
-  const serverBuildNodeModulesDirectoryPath = path.join(buildServerDirectoryPath, "node_modules");
-  if (nodePathEnvironmentVariableValue !== undefined && fs.existsSync(serverBuildNodeModulesDirectoryPath) === false)
+  let directoryPath: string;
+  try
   {
-    const tokens = nodePathEnvironmentVariableValue.split(path.delimiter);
-    const nodePath = path.resolve(tokens[tokens.length - 1]);
-    logger.warn(`Creating a symbolic link to fix the '${nodePathEnvironmentVariableName}' environment variable from '${nodePath}' to '${serverBuildNodeModulesDirectoryPath}'`);
-    fs.symlinkSync(nodePath, serverBuildNodeModulesDirectoryPath, "dir");
+    directoryPath = dirname(fileURLToPath(import.meta.url));
   }
+  catch (error)
+  {
+    // This is expected when the runtime uses CommonJS
+    directoryPath = __dirname;
+  }
+  const rootDirectoryPath = path.resolve(path.join(directoryPath, "..", ".."));
+  const buildServerDirectoryPath = path.join(rootDirectoryPath, "build", "server");
+  const nodePathEnvironmentVariableName = "NODE_PATH";
+  const nodePathEnvironmentVariableValue = process.env[nodePathEnvironmentVariableName];
+  logger.info(`\n+++++\nRunning the tests with ` + (nodePathEnvironmentVariableValue === undefined ? `no '${nodePathEnvironmentVariableName} environment variable set'` : `the '${nodePathEnvironmentVariableName}' environment variable set to '${nodePathEnvironmentVariableValue}'\n+++++`));
+  {
+    // We fix an issue with the "NODE_PATH" environment variable which is not taken into account when using the Node.js "--experimental-vm-modules" option
+    const serverBuildNodeModulesDirectoryPath = path.join(buildServerDirectoryPath, "node_modules");
+    if (nodePathEnvironmentVariableValue !== undefined && fs.existsSync(serverBuildNodeModulesDirectoryPath) === false)
+    {
+      const tokens = nodePathEnvironmentVariableValue.split(path.delimiter);
+      const nodePath = path.resolve(tokens[tokens.length - 1]);
+      logger.warn(`Creating a symbolic link to fix the '${nodePathEnvironmentVariableName}' environment variable from '${nodePath}' to '${serverBuildNodeModulesDirectoryPath}'`);
+      fs.symlinkSync(nodePath, serverBuildNodeModulesDirectoryPath, "dir");
+    }
+  }
+  paths.workersDirectoryPath = path.join(buildServerDirectoryPath, "src", "workers");
+  return { directoryPath, rootDirectoryPath };
 }
-paths.workersDirectoryPath = path.join(buildServerDirectoryPath, "src", "workers");
+
+const { directoryPath, rootDirectoryPath } = computePaths();
 
 export class Defaults
 {
@@ -342,6 +349,10 @@ export class Base extends Core
 
   private moduleRef?: TestingModule;
 
+  private readonly resortToProxy: boolean = false;
+
+  private controllerProxy?: ControllerProxy;
+
   private application?: INestApplication;
 
   public readonly originalDatabaseDirectoryPath = path.resolve(path.join(Base.rootDirectoryPath, "server", "database.db"));
@@ -453,6 +464,7 @@ export class Base extends Core
   {
     logger.debug("Creating a Nest module");
     this.moduleRef = await this.createTestingModule();
+    this.controllerProxy = new ControllerProxy(this.moduleRef);
     await this.moduleRef.init();
   }
 
@@ -494,6 +506,7 @@ export class Base extends Core
       await this.moduleRef.close();
       this.isTerminating = false;
       this.moduleRef = undefined;
+      this.controllerProxy = undefined;
       logger.debug("The Nest module is now destroyed");
     }
   }
@@ -536,54 +549,53 @@ export class Base extends Core
     return await Test.createTestingModule({ imports: [MainModule] }).compile();
   }
 
-  private getModuleRef(): TestingModule
-  {
-    return this.moduleRef!;
-  }
-
   setSdkDirectoryPath(): void
   {
     paths.sdkDirectoryPath = path.join(Base.rootDirectoryPath, "build", "sdk");
   }
 
+  getModuleProvider<Provider extends object>(type: Type<Provider>, notViaProxy: boolean = false): Provider
+  {
+    if (this.resortToProxy === false || notViaProxy === true)
+    {
+      return this.moduleRef!.get<Provider, Provider>(type);
+    }
+    return this.controllerProxy!.createProxy(type);
+  }
+
   getEntitiesProvider(): EntitiesProvider
   {
-    return this.getModuleRef().get<EntitiesProvider, EntitiesProvider>(EntitiesProvider)!;
+    return this.getModuleProvider(EntitiesProvider);
   }
 
   getAdministrationController(): AdministrationController
   {
-    return this.getModuleRef().get<AdministrationController, AdministrationController>(AdministrationController)!;
+    return this.getModuleProvider(AdministrationController);
   }
 
   getApiSecretController(): ApiSecretController
   {
-    return this.getModuleRef().get<ApiSecretController, ApiSecretController>(ApiSecretController)!;
+    return this.getModuleProvider(ApiSecretController);
   }
 
   getExtensionController(): ExtensionController
   {
-    return this.getModuleRef().get<ExtensionController, ExtensionController>(ExtensionController)!;
+    return this.getModuleProvider(ExtensionController);
   }
 
   getRepositoryController(): RepositoryController
   {
-    return this.getModuleRef().get<RepositoryController, RepositoryController>(RepositoryController)!;
+    return this.getModuleProvider(RepositoryController);
   }
 
   getImageController(): ImageController
   {
-    return this.getModuleRef().get<ImageController, ImageController>(ImageController)!;
+    return this.getModuleProvider(ImageController);
   }
 
   getImageAttachmentController(): ImageAttachmentController
   {
-    return this.getModuleRef().get<ImageAttachmentController, ImageAttachmentController>(ImageAttachmentController)!;
-  }
-
-  getModuleProvider<Provider = any>(type: Type<Provider>): Provider
-  {
-    return this.getModuleRef().get<Provider, Provider>(type)!;
+    return this.getModuleProvider(ImageAttachmentController);
   }
 
   getSearchService(): SearchService
@@ -603,7 +615,7 @@ export class Base extends Core
 
   getEventEmitter(): EventEmitter2
   {
-    return this.getModuleProvider(EventEmitter2);
+    return this.getModuleProvider(EventEmitter2, true);
   }
 
   getNotifier(): Notifier

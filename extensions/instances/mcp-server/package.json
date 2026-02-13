@@ -20,7 +20,7 @@
   "engines": {
     "node": ">=22.17.1"
   },
-  "homepage": "https://github.com/picteus/Picteus.git",
+  "homepage": "https://github.com/picteus/Picteus",
   "repository": {
     "type": "git",
     "url": "https://github.com/picteus/Picteus.git"
@@ -54,6 +54,6 @@
     "hono": "4.9.8",
     "@hono/node-server": "1.19.4",
     "uuid": "13.0.0",
-    "@picteus/internal-extension-sdk": "0.8.0"
+    "@picteus/internal-extension-sdk": "0.9.0"
   }
 }
