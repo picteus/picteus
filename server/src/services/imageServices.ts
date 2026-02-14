@@ -116,6 +116,7 @@ export class ImageService
   {
     const keyword = criteria?.keyword;
     const tags = criteria?.tags;
+    const features = criteria?.features;
     const properties = criteria?.properties;
     const text = keyword?.text;
     const widthRange = properties?.width;
@@ -190,6 +191,10 @@ export class ImageService
     {
       tagsFilter.some = { value: { in: tags.values } };
     }
+    const featuresFilter: Prisma.ImageFeatureListRelationFilter | undefined = features === undefined ? undefined : {};
+    if (features !== undefined && featuresFilter !== undefined)
+    {
+    }
     const [widthFilter, heightFilter, weightInBytesFilter] = [widthRange, heightRange, weightInBytesRange].map((range) =>
     {
       const filter: Prisma.IntFilter<"Image"> | undefined = range === undefined ? undefined : {};
@@ -227,6 +232,7 @@ export class ImageService
         repositoryId: repositoryIds === undefined ? undefined : { in: repositoryIds },
         format: criteria?.formats === undefined ? undefined : { in: criteria?.formats },
         tags: tagsFilter,
+        features: featuresFilter,
         width: widthFilter,
         height: heightFilter,
         sizeInBytes: weightInBytesFilter,

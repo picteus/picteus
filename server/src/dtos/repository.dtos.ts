@@ -19,16 +19,21 @@ import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 
 import { deepObjectTransform, forceArray, transformBoolean } from "./transformers.dtos";
 import {
+  alphaNumericPlusPattern,
   computeIdPattern,
   Dates,
   FieldLengths,
   fileUrlPattern,
   fileWithProtocol,
+  ImageFeatureFormat,
+  ImageFeatureType,
+  ImageFeatureValue,
   ImageFormat,
   namePattern,
   uniqueIdPattern,
   urlPattern
 } from "./common.dtos";
+import { TypeBasedValidation } from "./validators.dtos";
 
 
 /**
@@ -426,10 +431,7 @@ export class SearchKeyword
 
 }
 
-/**
- * How an image search should operate regarding the image tags.
- */
-@ApiSchema({ description: "The matching values of tags to match when searching for images" })
+@ApiSchema({ description: "The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags" })
 export class SearchTags
 {
 
@@ -440,8 +442,11 @@ export class SearchTags
 
   @ApiProperty(
     {
-      description: "The tags to search for",
+      description: "The tags to search for, i.e. images matching at least of the tags will be included in the result",
       type: String,
+      pattern: alphaNumericPlusPattern,
+      minLength: 1,
+      maxLength: FieldLengths.technical,
       isArray: true,
       required: true,
       example: ["nature"]
@@ -456,8 +461,175 @@ export class SearchTags
 }
 
 /**
- * The minimum and maximum value of a technical property when searching for images.
+ * All the search feature operators.
  */
+export enum SearchFeatureOperator
+{
+  EQUALS = "equals",
+  DIFFERENT = "different",
+  CONTAINS = "contains",
+  GREATER_THAN = "greaterThan",
+  GREATER_THAN_OR_EQUAL = "greaterThanOrEqual",
+  LESS_THAN = "lessThan",
+  LESS_THAN_OR_EQUAL = "lessThanOrEqual"
+}
+
+@ApiSchema({ description: "A condition expression for filtering image features" })
+export class SearchFeatureCondition
+{
+
+  constructor(type: ImageFeatureType | undefined, format: ImageFeatureFormat, name: string | undefined, operator: SearchFeatureOperator, value: ImageFeatureValue)
+  {
+    this.type = type;
+    this.format = format;
+    this.name = name;
+    this.operator = operator;
+    this.value = value;
+  }
+
+  @ApiProperty(
+    {
+      description: "The image feature type",
+      enum: ImageFeatureType,
+      enumName: "ImageFeatureType",
+      required: false,
+      example: "nature"
+    }
+  )
+  @IsOptional()
+  @Expose()
+  readonly type?: ImageFeatureType;
+
+  @ApiProperty(
+    {
+      description: "The image feature format",
+      enum: ImageFeatureFormat,
+      enumName: "ImageFeatureFormat",
+      required: true
+    }
+  )
+  @IsEnum(ImageFeatureFormat)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly format: ImageFeatureFormat;
+
+  @ApiProperty(
+    {
+      description: "The image feature name",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.technical,
+      required: false,
+      example: "field"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.technical)
+  @IsOptional()
+  @Expose()
+  readonly name?: string;
+
+  @ApiProperty(
+    {
+      description: "The image feature operator",
+      enum: SearchFeatureOperator,
+      enumName: "SearchFeatureOperator",
+      required: true
+    }
+  )
+  @IsEnum(SearchFeatureOperator)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly operator: SearchFeatureOperator;
+
+  @ApiProperty(
+    {
+      description: "The image feature value",
+      oneOf:
+        [
+          { type: "string", minLength: 1, maxLength: FieldLengths.value },
+          { type: "number", format: "int64" },
+          { type: "number", format: "double" },
+          { type: "boolean" }
+        ],
+      required: true,
+      example: "Three women in a flower arrangement"
+    }
+  )
+  @TypeBasedValidation({
+    "string": [MinLength(1), MaxLength(FieldLengths.value)],
+    "number": [],
+    "boolean": []
+  })
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly value: ImageFeatureValue;
+
+}
+
+/**
+ * All the search feature types.
+ */
+export enum SearchFeatureType
+{
+  OR = "or",
+  AND = "and"
+}
+
+@ApiSchema({ description: "The expression for filtering image features" })
+export class SearchFeatures
+{
+
+  constructor(type: SearchFeatureType, condition: SearchFeatureCondition, features: SearchFeatures[] | undefined)
+  {
+    this.type = type;
+    this.condition = condition;
+    this.features = features;
+  }
+
+  @ApiProperty(
+    {
+      description: "The statement type",
+      enum: SearchFeatureType,
+      enumName: "SearchFeatureType",
+      required: true,
+      example: "or"
+    }
+  )
+  @IsDefined()
+  @Expose()
+  readonly type: SearchFeatureType;
+
+  @ApiProperty(
+    {
+      description: "The search condition",
+      type: SearchFeatureCondition,
+      required: true
+    }
+  )
+  @IsDefined()
+  @Expose()
+  readonly condition: SearchFeatureCondition;
+
+  @ApiProperty(
+    {
+      description: "Other search features",
+      type: SearchFeatures,
+      isArray: true,
+      required: false
+    }
+  )
+  @IsArray()
+  @IsOptional()
+  @Expose()
+  readonly features?: SearchFeatures[];
+
+}
+
 @ApiSchema({ description: "The minimal and maximal value of a technical property when searching for images" })
 export class SearchPropertyRange
 {
@@ -507,10 +679,7 @@ export class SearchPropertyRange
 
 }
 
-/**
- * How an image search should operate regarding the image technical properties.
- */
-@ApiSchema({ description: "Technical properties to match when searching for images" })
+@ApiSchema({ description: "Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties" })
 export class SearchProperties
 {
 
@@ -585,18 +754,16 @@ export class SearchProperties
 
 }
 
-/**
- * Criteria used when performing a search in images.
- */
 @ApiSchema({ description: "Criteria when searching for images" })
 export class SearchCriteria
 {
 
-  constructor(formats?: ImageFormat[], keyword?: SearchKeyword, tags?: SearchTags, properties?: SearchProperties)
+  constructor(formats?: ImageFormat[], keyword?: SearchKeyword, tags?: SearchTags, features?: SearchFeatures, properties?: SearchProperties)
   {
     this.formats = formats;
     this.keyword = keyword;
     this.tags = tags;
+    this.features = features;
     this.properties = properties;
   }
 
@@ -647,6 +814,20 @@ export class SearchCriteria
 
   @ApiProperty(
     {
+      description: "A filter which limits the result entities with the provided features specifications",
+      type: SearchFeatures,
+      required: false
+    }
+  )
+  @ValidateNested()
+  @Transform(deepObjectTransform(SearchFeatures))
+  @Type(() => SearchFeatures)
+  @IsOptional()
+  @Expose()
+  readonly features?: SearchFeatures;
+
+  @ApiProperty(
+    {
       description: "A filter which limits the result entities with the provided technical properties",
       type: SearchProperties,
       required: false
@@ -676,9 +857,6 @@ export enum SearchSortingProperty
   Height = "height"
 }
 
-/**
- * The sorting of images following a search.
- */
 @ApiSchema({ description: "Sorting instructions when searching for images" })
 export class SearchSorting
 {
@@ -720,10 +898,7 @@ export class SearchSorting
 
 }
 
-/**
- * Indicates how to restrict the number of entities following a search.
- */
-@ApiSchema({ description: "A range of images to return when searching for images" })
+@ApiSchema({ description: "A range of images to return when searching for images, i.e. how to restrict the number of entities following a search" })
 export class SearchRange
 {
 
@@ -773,9 +948,6 @@ export class SearchRange
 
 }
 
-/**
- * The criteria, sorting order and range when performing a search in images.
- */
 @ApiSchema({ description: "Criteria, sorting and range parameter when searching for images" })
 export class SearchParameters
 {

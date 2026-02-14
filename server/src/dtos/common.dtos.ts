@@ -186,6 +186,36 @@ export enum ImageFormat
   HEIF = "HEIF"
 }
 
+/**
+ * All feature formats.
+ */
+export enum ImageFeatureFormat
+{
+  STRING = "string",
+  INTEGER = "integer",
+  FLOAT = "float",
+  BOOLEAN = "boolean",
+  JSON = "json",
+  XML = "xml",
+  MARKDOWN = "markdown",
+  HTML = "html",
+  BINARY = "binary"
+}
+
+/**
+ * All feature types.
+ */
+export enum ImageFeatureType
+{
+  CAPTION = "caption",
+  DESCRIPTION = "description",
+  COMMENT = "comment",
+  ANNOTATION = "annotation",
+  METADATA = "metadata",
+  RECIPE = "recipe",
+  OTHER = "other"
+}
+
 export const ImageFormats: ImageFormat[] = Object.keys(ImageFormat) as ImageFormat [];
 
 export function toFileExtension(format: ImageFormat): string
@@ -274,5 +304,7 @@ export const computeImageFormatsExtensions = (imageFormats: ImageFormat[]): stri
     }
   }).flat(1);
 };
+
+export type ImageFeatureValue = string | number | boolean;
 
 export type ImageTag = string;

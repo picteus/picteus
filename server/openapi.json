@@ -4263,19 +4263,172 @@
         "type": "object",
         "properties": {
           "values": {
-            "description": "The tags to search for",
+            "description": "The tags to search for, i.e. images matching at least of the tags will be included in the result",
             "example": [
               "nature"
             ],
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "a-z0-9A-Z-_."
             }
           }
         },
-        "description": "The matching values of tags to match when searching for images",
+        "description": "The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags",
         "required": [
           "values"
+        ]
+      },
+      "SearchFeatureType": {
+        "type": "string",
+        "enum": [
+          "or",
+          "and"
+        ],
+        "description": "The statement type"
+      },
+      "ImageFeatureType": {
+        "type": "string",
+        "enum": [
+          "caption",
+          "description",
+          "comment",
+          "annotation",
+          "metadata",
+          "recipe",
+          "other"
+        ],
+        "description": "All the possible types for an image feature.",
+        "default": "other"
+      },
+      "ImageFeatureFormat": {
+        "type": "string",
+        "enum": [
+          "string",
+          "integer",
+          "float",
+          "boolean",
+          "json",
+          "xml",
+          "markdown",
+          "html",
+          "binary"
+        ],
+        "description": "All the possible formats for an image feature.",
+        "default": "string"
+      },
+      "SearchFeatureOperator": {
+        "type": "string",
+        "enum": [
+          "equals",
+          "different",
+          "contains",
+          "greaterThan",
+          "greaterThanOrEqual",
+          "lessThan",
+          "lessThanOrEqual"
+        ],
+        "description": "The image feature operator"
+      },
+      "SearchFeatureCondition": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The image feature type",
+            "example": "nature",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageFeatureType"
+              }
+            ]
+          },
+          "format": {
+            "description": "The image feature format",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageFeatureFormat"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "The image feature name",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "field"
+          },
+          "operator": {
+            "description": "The image feature operator",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatureOperator"
+              }
+            ]
+          },
+          "value": {
+            "description": "The image feature value",
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 524288
+              },
+              {
+                "type": "number",
+                "format": "int64"
+              },
+              {
+                "type": "number",
+                "format": "double"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "example": "Three women in a flower arrangement"
+          }
+        },
+        "description": "A condition expression for filtering image features",
+        "required": [
+          "format",
+          "operator",
+          "value"
+        ]
+      },
+      "SearchFeatures": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The statement type",
+            "example": "or",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatureType"
+              }
+            ]
+          },
+          "condition": {
+            "description": "The search condition",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatureCondition"
+              }
+            ]
+          },
+          "features": {
+            "description": "Other search features",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchFeatures"
+            }
+          }
+        },
+        "description": "The expression for filtering image features",
+        "required": [
+          "type",
+          "condition"
         ]
       },
       "SearchPropertyRange": {
@@ -4341,7 +4494,7 @@
             ]
           }
         },
-        "description": "Technical properties to match when searching for images"
+        "description": "Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"
       },
       "SearchCriteria": {
         "type": "object",
@@ -4378,6 +4531,14 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/SearchTags"
+              }
+            ]
+          },
+          "features": {
+            "description": "A filter which limits the result entities with the provided features specifications",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatures"
               }
             ]
           },
@@ -4450,7 +4611,7 @@
             "example": 0
           }
         },
-        "description": "A range of images to return when searching for images"
+        "description": "A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"
       },
       "ImageDimensions": {
         "type": "object",
@@ -4822,36 +4983,6 @@
         "required": [
           "schemaVersion",
           "modelTags"
-        ]
-      },
-      "ImageFeatureType": {
-        "type": "string",
-        "description": "All the possible types for an image feature.",
-        "default": "other",
-        "enum": [
-          "caption",
-          "description",
-          "comment",
-          "annotation",
-          "metadata",
-          "recipe",
-          "other"
-        ]
-      },
-      "ImageFeatureFormat": {
-        "type": "string",
-        "description": "All the possible formats for an image feature.",
-        "default": "string",
-        "enum": [
-          "string",
-          "integer",
-          "float",
-          "boolean",
-          "json",
-          "xml",
-          "markdown",
-          "html",
-          "binary"
         ]
       },
       "ImageFeature": {

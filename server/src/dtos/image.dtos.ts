@@ -27,6 +27,9 @@ import {
   Dates,
   FieldLengths,
   fileUrlPattern,
+  ImageFeatureFormat,
+  ImageFeatureType,
+  ImageFeatureValue,
   ImageFormat,
   imageIdSchema,
   ImageTag,
@@ -568,38 +571,6 @@ export class ApplicationMetadata
 }
 
 /**
- * All feature types.
- */
-export enum ImageFeatureType
-{
-  CAPTION = "caption",
-  DESCRIPTION = "description",
-  COMMENT = "comment",
-  ANNOTATION = "annotation",
-  METADATA = "metadata",
-  RECIPE = "recipe",
-  OTHER = "other"
-}
-
-/**
- * All feature formats.
- */
-export enum ImageFeatureFormat
-{
-  STRING = "string",
-  INTEGER = "integer",
-  FLOAT = "float",
-  BOOLEAN = "boolean",
-  JSON = "json",
-  XML = "xml",
-  MARKDOWN = "markdown",
-  HTML = "html",
-  BINARY = "binary"
-}
-
-export type ImageFeatureValue = string | number | boolean;
-
-/**
  * An image feature.
  */
 @ApiExtraModels(GenerationRecipe)
@@ -621,10 +592,11 @@ export class ImageFeature
       required: true,
       enum: ImageFeatureType,
       enumName: "ImageFeatureType",
-      enumSchema: {
-        description: "All the possible types for an image feature.",
-        default: ImageFeatureType.OTHER
-      }
+      enumSchema:
+        {
+          description: "All the possible types for an image feature.",
+          default: ImageFeatureType.OTHER
+        }
     }
   )
   @IsEnum(ImageFeatureType)
