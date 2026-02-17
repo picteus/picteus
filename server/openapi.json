@@ -4259,7 +4259,7 @@
           "inFeatures"
         ]
       },
-      "SearchTags": {
+      "SearchTag": {
         "type": "object",
         "properties": {
           "values": {
@@ -4281,13 +4281,14 @@
           "values"
         ]
       },
-      "SearchFeatureType": {
+      "SearchFeatureLogicalOperator": {
         "type": "string",
         "enum": [
           "or",
-          "and"
+          "and",
+          "not"
         ],
-        "description": "The statement type"
+        "description": "The logical operator"
       },
       "ImageFeatureType": {
         "type": "string",
@@ -4298,6 +4299,7 @@
           "annotation",
           "metadata",
           "recipe",
+          "identity",
           "other"
         ],
         "description": "All the possible types for an image feature.",
@@ -4319,7 +4321,7 @@
         "description": "All the possible formats for an image feature.",
         "default": "string"
       },
-      "SearchFeatureOperator": {
+      "SearchFeatureComparisonOperator": {
         "type": "string",
         "enum": [
           "equals",
@@ -4330,7 +4332,7 @@
           "lessThan",
           "lessThanOrEqual"
         ],
-        "description": "The image feature operator"
+        "description": "The image feature comparison operator"
       },
       "SearchFeatureCondition": {
         "type": "object",
@@ -4360,10 +4362,10 @@
             "example": "field"
           },
           "operator": {
-            "description": "The image feature operator",
+            "description": "The image feature comparison operator",
             "allOf": [
               {
-                "$ref": "#/components/schemas/SearchFeatureOperator"
+                "$ref": "#/components/schemas/SearchFeatureComparisonOperator"
               }
             ]
           },
@@ -4397,15 +4399,15 @@
           "value"
         ]
       },
-      "SearchFeatures": {
+      "SearchFeature": {
         "type": "object",
         "properties": {
-          "type": {
-            "description": "The statement type",
+          "operator": {
+            "description": "The logical operator",
             "example": "or",
             "allOf": [
               {
-                "$ref": "#/components/schemas/SearchFeatureType"
+                "$ref": "#/components/schemas/SearchFeatureLogicalOperator"
               }
             ]
           },
@@ -4421,13 +4423,13 @@
             "description": "Other search features",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SearchFeatures"
+              "$ref": "#/components/schemas/SearchFeature"
             }
           }
         },
         "description": "The expression for filtering image features",
         "required": [
-          "type",
+          "operator",
           "condition"
         ]
       },
@@ -4526,19 +4528,19 @@
               }
             ]
           },
-          "tags": {
+          "tag": {
             "description": "A filter which limits the result entities with the provided tags specifications",
             "allOf": [
               {
-                "$ref": "#/components/schemas/SearchTags"
+                "$ref": "#/components/schemas/SearchTag"
               }
             ]
           },
-          "features": {
+          "feature": {
             "description": "A filter which limits the result entities with the provided features specifications",
             "allOf": [
               {
-                "$ref": "#/components/schemas/SearchFeatures"
+                "$ref": "#/components/schemas/SearchFeature"
               }
             ]
           },

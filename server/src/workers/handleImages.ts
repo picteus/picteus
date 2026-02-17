@@ -53,7 +53,7 @@ async function computeImageEntities(_ports: DualPorts, repositoryIdAndFileDetail
         type: ImageFeatureType.RECIPE,
         format: ImageFeatureFormat.JSON,
         extensionId: item.extensionId,
-        value: JSON.stringify(item.value)
+        stringValue: JSON.stringify(item.value)
       };
     })
   };

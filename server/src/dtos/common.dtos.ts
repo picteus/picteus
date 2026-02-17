@@ -213,6 +213,7 @@ export enum ImageFeatureType
   ANNOTATION = "annotation",
   METADATA = "metadata",
   RECIPE = "recipe",
+  IDENTITY = "identity",
   OTHER = "other"
 }
 

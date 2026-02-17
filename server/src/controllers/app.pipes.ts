@@ -1,5 +1,5 @@
-import { ClassTransformOptions, instanceToPlain, plainToInstance } from "class-transformer";
-import { ValidationError } from "class-validator";
+import { ClassConstructor, ClassTransformOptions, instanceToPlain, plainToInstance } from "class-transformer";
+import { validateSync, ValidationError, ValidatorOptions } from "class-validator";
 
 import {
   ArgumentMetadata,
@@ -13,6 +13,17 @@ import {
 import { jsonContentClassMetadata } from "./tech.controllers";
 import { parametersChecker } from "../services/utils/parametersChecker";
 
+
+function plainToInstanceAndValidate<R extends object>(metatype: ClassConstructor<R>, object: Record<string, any>): R
+{
+  const instance = plainToInstance<R, any>(metatype, object);
+  const validationErrors = validateSync(instance);
+  if (validationErrors.length > 0)
+  {
+    throw exceptionFactory(validationErrors);
+  }
+  return instance;
+}
 
 /**
  * Turns any query parameter into an array.
@@ -40,16 +51,15 @@ export class ArrayValidationPipe<T> implements PipeTransform<any, T[] | undefine
 }
 
 @Injectable()
-export class StringifiedJsonPipeTransform<R = any> implements PipeTransform<any, R | unknown>
+export class StringifiedJsonPipeTransform<R> implements PipeTransform<unknown, R | unknown>
 {
 
-  transform(value: any, metadata: ArgumentMetadata): R | unknown
+  transform(value: unknown, metadata: ArgumentMetadata): R | unknown
   {
     if (metadata.type === "query" && value !== undefined && typeof value === "string" && metadata.metatype !== undefined)
     {
-      const object: unknown = JSON.parse(value);
-      type typeOfR = R;
-      return plainToInstance<typeOfR, unknown>(metadata.metatype, object);
+      const object: Record<string, any> = JSON.parse(value);
+      return plainToInstanceAndValidate<typeof metadata.metatype>(metadata.metatype, object);
     }
     return value;
   }
@@ -60,19 +70,18 @@ export class StringifiedJsonPipeTransform<R = any> implements PipeTransform<any,
  * Turns any query parameter serialized as a JSON into an object.
  */
 @Injectable()
-export class JsonPipeTransform<R = any> implements PipeTransform<any, R | unknown>
+export class JsonPipeTransform<R> implements PipeTransform<unknown, R | unknown>
 {
 
-  transform(value: any, metadata: ArgumentMetadata): R | unknown
+  transform(value: unknown, metadata: ArgumentMetadata): R | unknown
   {
     if (metadata.type === "query" && value !== undefined && typeof value === "string" && metadata.metatype !== undefined)
     {
       const metatypeMetadata = Reflect.getMetadata(jsonContentClassMetadata, metadata.metatype);
       if (metatypeMetadata === true)
       {
-        const object: unknown = JSON.parse(value);
-        type typeOfR = R;
-        return plainToInstance<typeOfR, unknown>(metadata.metatype, object);
+        const object: Record<string, any> = JSON.parse(value);
+        return plainToInstanceAndValidate<typeof metadata.metatype>(metadata.metatype, object);
       }
     }
     return value;
@@ -84,18 +93,17 @@ export class JsonPipeTransform<R = any> implements PipeTransform<any, R | unknow
  * Turns a query with deep object query parameters into its corresponding object.
  */
 @Injectable()
-export class DeepObjectPipeTransform<R = any> implements PipeTransform<any, R | unknown>
+export class DeepObjectPipeTransform<R> implements PipeTransform<unknown, R | unknown>
 {
 
   private readonly regexp: RegExp = /^(.*)\[(\w+)]$/;
 
-  transform(value: any, metadata: ArgumentMetadata): R | unknown
+  transform(value: unknown, metadata: ArgumentMetadata): R | unknown
   {
     if (metadata.metatype !== undefined && typeof value === "object")
     {
-      const object = this.parseBracketNotation(value);
-      type typeOfR = typeof metadata.metatype;
-      return plainToInstance<typeOfR, any>(metadata.metatype, object, {});
+      const object: Record<string, any> = this.parseBracketNotation(value as Record<string, any>);
+      return plainToInstanceAndValidate<typeof metadata.metatype>(metadata.metatype, object);
     }
     return value;
   }
@@ -174,13 +182,29 @@ export function exceptionFactory(errors: ValidationError[]): any
   {
     throw new Error("Cannot handle a validation issue with no error");
   }
-  const error: ValidationError = errors[0];
-  if (error.constraints === undefined || Object.values(error.constraints).length === 0)
+  const firstError: ValidationError = errors[0];
+  const searchConstraint = (error: ValidationError, propertyPrefix: string): {
+    property: string,
+    value: string,
+    reason: string
+  } =>
   {
-    throw new Error("Cannot handle a validation issue with no constraint violation");
-  }
-  const constraint = Object.values(error.constraints)[0];
-  return parametersChecker.computeBadParameter(error.property, error.value, constraint);
+    const property = `${propertyPrefix}${propertyPrefix.length === 0 ? "" : "."}${error.property}`;
+    if (error.constraints === undefined || Object.values(error.constraints).length === 0)
+    {
+      if (error.children === undefined || error.children.length === 0)
+      {
+        throw new Error(`Cannot handle a validation issue on property '${firstError.property}' with no constraint violation`);
+      }
+      return searchConstraint(error.children[0], property);
+    }
+    else
+    {
+      return { property, value: error.value, reason: Object.values(error.constraints)[0] };
+    }
+  };
+  const { property, value, reason } = searchConstraint(firstError, "");
+  return parametersChecker.computeBadParameter(property, value, reason);
 }
 
 // It does nothing special compared to the default ValidationPipe, but it is defined to be able to override its methods if needed
@@ -195,6 +219,11 @@ class CustomValidationPipe extends ValidationPipe
   public async transform(value: any, metadata: ArgumentMetadata): Promise<any>
   {
     return super.transform(value, metadata);
+  }
+
+  protected validate(object: object, validatorOptions?: ValidatorOptions): Promise<ValidationError[]> | ValidationError[]
+  {
+    return super.validate(object, validatorOptions);
   }
 
   protected toValidate(metadata: ArgumentMetadata): boolean

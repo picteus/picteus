@@ -57,6 +57,10 @@ import {
   RepositoryLocation,
   RepositoryLocationType,
   SearchCriteria,
+  SearchFeatureComparisonOperator,
+  SearchFeatureCondition,
+  SearchFeatureLogicalOperator,
+  SearchFeatures,
   SearchRange,
   SearchSorting,
   SearchSortingProperty,
@@ -87,6 +91,7 @@ import {
   supportsApplicationMedata
 } from "./utils/images";
 import { ImageAttachmentService } from "./imageAttachmentService";
+import { ImageFeatureWhereInput } from ".prisma/models/ImageFeature";
 
 export { EntitiesProvider, VectorDatabaseProvider, VectorDatabaseAccessor, RepositoryService };
 
@@ -94,6 +99,10 @@ export { EntitiesProvider, VectorDatabaseProvider, VectorDatabaseAccessor, Repos
 const imageWithIncludes = { include: { metadata: true, features: true, tags: true } } satisfies Prisma.ImageDefaultArgs;
 
 type ImageWithIncludes = Prisma.ImageGetPayload<typeof imageWithIncludes>
+
+const featureFieldStringValue = "stringValue";
+const featureFieldNumericValue = "numericValue";
+type ImageFeatureValueField = "stringValue" | "numericValue";
 
 @Injectable()
 export class ImageService
@@ -183,7 +192,7 @@ export class ImageService
       }
       if (keyword.inFeatures === true)
       {
-        keyworkInput.push({ features: { some: { value: { contains: text } } } });
+        keyworkInput.push({ features: { some: { stringValue: { contains: text } } } });
       }
     }
     const tagsFilter: Prisma.ImageTagListRelationFilter | undefined = tags === undefined ? undefined : {};
@@ -194,6 +203,77 @@ export class ImageService
     const featuresFilter: Prisma.ImageFeatureListRelationFilter | undefined = features === undefined ? undefined : {};
     if (features !== undefined && featuresFilter !== undefined)
     {
+      const computeLogicalOperator = (operator: SearchFeatureLogicalOperator): "OR" | "AND" | "NOT" => operator === SearchFeatureLogicalOperator.OR ? "OR" : (operator === SearchFeatureLogicalOperator.NOT ? "NOT" : "AND");
+
+      const computeConditionInput = (condition: SearchFeatureCondition): ImageFeatureWhereInput =>
+      {
+        const format = condition.format;
+        const operator = condition.operator;
+        const whereInputs: Prisma.ImageFeatureWhereInput[] = [];
+        if (condition.type !== undefined)
+        {
+          whereInputs.push({ type: { equals: condition.type } });
+        }
+        whereInputs.push({ format: { equals: format } });
+        if (condition.name !== undefined)
+        {
+          whereInputs.push({ name: { equals: condition.name } });
+        }
+        let comparisonOperator;
+        switch (operator)
+        {
+          default:
+            throw parametersChecker.computeBadParameter("features.condition.operator", operator, "it is not supported");
+          case SearchFeatureComparisonOperator.EQUALS:
+            comparisonOperator = "equals";
+            break;
+          case SearchFeatureComparisonOperator.DIFFERENT:
+            comparisonOperator = "not";
+            break;
+          case SearchFeatureComparisonOperator.CONTAINS:
+            if (format !== ImageFeatureFormat.STRING && format !== ImageFeatureFormat.JSON && format !== ImageFeatureFormat.XML && format !== ImageFeatureFormat.MARKDOWN && format !== ImageFeatureFormat.HTML)
+            {
+              parametersChecker.throwBadParameterError(`The '${operator}' operator is not compatible with the '${format}' format`);
+            }
+            comparisonOperator = "contains";
+            break;
+          case SearchFeatureComparisonOperator.GREATER_THAN:
+          case SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL:
+          case SearchFeatureComparisonOperator.LESS_THAN:
+          case SearchFeatureComparisonOperator.LESS_THAN_OR_EQUAL:
+            if (format !== ImageFeatureFormat.INTEGER && format !== ImageFeatureFormat.FLOAT)
+            {
+              parametersChecker.throwBadParameterError(`The '${operator}' operator is not compatible with the '${format}' format`);
+            }
+            comparisonOperator = operator === SearchFeatureComparisonOperator.GREATER_THAN ? "gt" : (operator === SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL ? "gte" : (operator === SearchFeatureComparisonOperator.LESS_THAN ? "lt" : "lte"));
+            break;
+        }
+        const fieldName: ImageFeatureValueField = typeof condition.value === "string" ? featureFieldStringValue : featureFieldNumericValue;
+        const value: string | number = this.fromDtoToPersistentFeatureValue(condition.value);
+        whereInputs.push({ [fieldName]: { [comparisonOperator]: value } });
+        return { AND: whereInputs };
+      };
+      const computeFeaturesInputs = (searchFeatures: SearchFeatures): Prisma.ImageFeatureWhereInput =>
+      {
+        const whereInputs = searchFeatures.conditions.map(condition => computeConditionInput(condition));
+        const logicalOperator = computeLogicalOperator(searchFeatures.operator);
+        if (searchFeatures.features !== undefined)
+        {
+          whereInputs.push(computeFeaturesInputs(searchFeatures.features));
+        }
+        return { [logicalOperator]: whereInputs };
+      };
+
+      const inputs = computeFeaturesInputs(features);
+      if (inputs.NOT !== undefined)
+      {
+        featuresFilter.none = { AND: inputs.NOT };
+      }
+      else
+      {
+        featuresFilter.some = inputs;
+      }
+      console.dir(JSON.stringify(featuresFilter, undefined, 2));
     }
     const [widthFilter, heightFilter, weightInBytesFilter] = [widthRange, heightRange, weightInBytesRange].map((range) =>
     {
@@ -415,10 +495,10 @@ export class ImageService
     logger.info(`Getting the features for the image with id '${id}' for all extensions`);
     await this.getPersistedImage(id, false, false, false);
     const entities = await this.entitiesProvider.imageFeature.findMany({
-      where: { imageId: id, value: { not: ImageService.emptyImageFeatureValue } },
+      where: { imageId: id, NOT: { AND: { stringValue: ImageService.emptyImageFeatureValue, numericValue: null } } },
       orderBy: { id: "asc" }
     });
-    return entities.map(this.featureToDto);
+    return entities.map(this.featureToDto.bind(this));
   }
 
   async setFeatures(id: string, extensionId: string, features: ImageFeature[]): Promise<void>
@@ -588,14 +668,15 @@ export class ImageService
     const createFeatures = this.entitiesProvider.imageFeature.createMany({
       data: actualFeatures.map((feature) =>
       {
-        const value: string = typeof feature.value === "string" ? feature.value : (typeof feature.value === "number" ? feature.value.toString() : (feature.value as boolean).toString());
+        const value: string | number = typeof feature.value !== "boolean" ? feature.value : (feature.value === true ? 1 : 0);
+        let fieldName: ImageFeatureValueField = typeof feature.value === "string" ? featureFieldStringValue : featureFieldNumericValue;
         return {
           imageId: id,
           type: feature.type,
           format: feature.format,
           name: feature.name,
           extensionId: extensionId,
-          value: value
+          [fieldName]: value
         };
       })
     });
@@ -883,7 +964,7 @@ export class ImageService
       metadata: metadata === undefined ? [] : this.metadataToDto(metadata)
     });
     Object.assign(entity, {
-      features: features === undefined ? [] : features.filter(feature => feature.value !== ImageService.emptyImageFeatureValue).map(this.featureToDto)
+      features: features === undefined ? [] : features.filter(feature => !(feature.stringValue == ImageService.emptyImageFeatureValue && feature.numericValue === null)).map(this.featureToDto.bind(this))
     });
     Object.assign(entity, {
       tags: tags === undefined ? [] : tags.filter(tag => tag.value !== ImageService.emptyImageTag).map((tag) =>
@@ -897,29 +978,31 @@ export class ImageService
 
   private featureToDto(feature: PersistedImageFeature): ExtensionImageFeature
   {
-    const format = feature.format as ImageFeatureFormat;
-    let value: ImageFeatureValue;
-    switch (format)
-    {
-      case ImageFeatureFormat.INTEGER:
-        value = parseInt(feature.value);
-        break;
-      case ImageFeatureFormat.FLOAT:
-        value = parseFloat(feature.value);
-        break;
-      case ImageFeatureFormat.BOOLEAN:
-        value = feature.value === "true";
-        break;
-      default:
-        value = feature.value;
-        break;
-    }
-    return new ExtensionImageFeature(feature.extensionId, feature.type as ImageFeatureType, format, feature.name === null ? undefined : feature.name, value);
+    return new ExtensionImageFeature(feature.extensionId, feature.type as ImageFeatureType, feature.format as ImageFeatureFormat, feature.name === null ? undefined : feature.name, this.fromPersistentToDtoFeatureValue(feature));
   }
 
   private metadataToDto(entity: PersistedImageMetadata): ImageMetadata
   {
     return new ImageMetadata(entity?.all ?? undefined, entity?.exif ?? undefined, entity?.icc ?? undefined, entity?.iptc ?? undefined, entity?.xmp ?? undefined, entity?.tiffTagPhotoshop ?? undefined, entity?.others ?? undefined);
+  }
+
+  private fromDtoToPersistentFeatureValue(value: ImageFeatureValue): string | number
+  {
+    return typeof value === "boolean" ? (value === true ? 1 : 0) : value;
+  }
+
+  private fromPersistentToDtoFeatureValue(feature: PersistedImageFeature): ImageFeatureValue
+  {
+    switch (feature.format as ImageFeatureFormat)
+    {
+      case ImageFeatureFormat.INTEGER:
+      case ImageFeatureFormat.FLOAT:
+        return feature.numericValue!;
+      case ImageFeatureFormat.BOOLEAN:
+        return feature.numericValue === 1;
+      default:
+        return feature.stringValue!;
+    }
   }
 
 }

@@ -149,7 +149,9 @@ where:
 - `<filesPath>` is the host path to the directory where you want the application to scan files ;
 - `<externalPath>` is the host path to the directory where you want the application to store database files.
 
-This will create a container with the name `picteus`, using the previously created `picteus` volume.
+This will build an image and create a container with the name `picteus`, using the previously created `picteus` volume:
+- its API server Swagger UI URL is http://localhost:3001/swaggerui# (adapt the port number according to your configuration, see below);
+- its front-end application URL is http://localhost:2999/?webServicesBaseUrl=http://localhost:3001#/ (adapt the port numbers according to your configuration, see below) ; notice the `webServicesBaseUrl` URI query parameter, which indicates the URL of the API web services, which is http://localhost:3001.
 
 You may fine-tune the container with the following additional environment variables:
 - `apiServerPort`: the port number of the API server, which defaults to `3001` ; if you change it, think of changing the port mapping accordingly ;

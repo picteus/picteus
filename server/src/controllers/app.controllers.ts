@@ -1158,7 +1158,7 @@ export class RepositoryController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
-  async searchImages(@Param("id") id: string, @Query(DeepObjectPipeTransform) parameters: SearchParameters): Promise<ImageSummaryList>
+  async searchImages(@Param("id") id: string, @Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<ImageSummaryList>
   {
     const repository = await this.repositoryService.get(id);
     return await this.imageService.search([repository.id], parameters.criteria, parameters.sorting, parameters.range);
@@ -1335,7 +1335,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async search(@Query(DeepObjectPipeTransform) parameters: ImageSearchParameters): Promise<ImageSummaryList>
+  async search(@Query(DeepObjectPipeTransform<ImageSearchParameters>) parameters: ImageSearchParameters): Promise<ImageSummaryList>
   {
     const repositories = parameters?.ids === undefined ? undefined : await this.repositoryService.list(parameters?.ids);
     return await this.imageService.search(repositories === undefined ? undefined : repositories.map((repository) =>

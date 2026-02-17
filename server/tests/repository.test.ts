@@ -478,14 +478,14 @@ describe("Repository", () =>
         {
           const facetAsNumber = Number.parseInt(facet);
           const withFacetNumber = perFacetSummariesMap[facet]!.length;
-          expect((await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, undefined, aCase.factory(facetAsNumber, facetAsNumber)) })).entities.length).toBe(withFacetNumber);
+          expect((await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(facetAsNumber, facetAsNumber)) })).entities.length).toBe(withFacetNumber);
           const lowerFacets = increasingFacets.filter(facet => Number.parseInt(facet) <= facetAsNumber);
           const lessThanOrEqualToSum = lowerFacets.reduce((previousValue, facet) =>
           {
             return previousValue + perFacetSummariesMap[facet]!.length;
           }, 0);
-          expect((await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, undefined, aCase.factory(undefined, facetAsNumber)) })).entities.length).toBe(lessThanOrEqualToSum);
-          expect((await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, undefined, aCase.factory(facetAsNumber, undefined)) })).entities.length).toBe(sum - lessThanOrEqualToSum + withFacetNumber);
+          expect((await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(undefined, facetAsNumber)) })).entities.length).toBe(lessThanOrEqualToSum);
+          expect((await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(facetAsNumber, undefined)) })).entities.length).toBe(sum - lessThanOrEqualToSum + withFacetNumber);
         }
       }
     }

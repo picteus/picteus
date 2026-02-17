@@ -29,6 +29,9 @@ import {
   ManifestCapabilityId,
   ManifestEvent,
   NumericRange,
+  SearchFeatureComparisonOperator,
+  SearchFeatureCondition,
+  SearchFeatureLogicalOperator,
   TextualPrompt,
   toFileExtension,
   toMimeType
@@ -402,12 +405,22 @@ describe("Image with module", () =>
     await Base.afterAll();
   });
 
-  test("list", async () =>
+  test("search", async () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName);
     const preexistingFilePath = path.join(directoryPath, base.imageFeeder.pngImageFileName);
+    const fileName = base.imageFeeder.pngImageFileName;
     await base.imageFeeder.prepareComfyUiImage(preexistingFilePath);
     const repository = await base.prepareEmptyRepository(directoryPath);
+    const image = await base.getRepositoryController().getImageByUrl(fileWithProtocol + preexistingFilePath);
+    const extension = await base.prepareExtension();
+    const stringFeatureValue = "123456789";
+    const stringFeature = new ImageFeature(ImageFeatureType.IDENTITY, ImageFeatureFormat.STRING, "identity", stringFeatureValue);
+    const integerFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.INTEGER, "rating", 5);
+    const floatFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.FLOAT, "popularity", 3.14);
+    const booleanFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.BOOLEAN, "validated", false);
+    const features = [stringFeature, integerFeature, floatFeature, booleanFeature];
+    await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension.manifest.id, features);
 
     const totalCount = 1;
     const zero = 0;
@@ -416,42 +429,175 @@ describe("Image with module", () =>
     const inFeatures = { inName: false, inMetadata: false, inFeatures: true };
     const inAll = { inName: true, inMetadata: true, inFeatures: true };
     const inNone = { inName: false, inMetadata: false, inFeatures: false };
-    expect((await base.getImageController().search({ criteria: { keyword: { text: base.imageFeeder.pngImageFileName, ...inName } } })).entities.length).toBe(totalCount);
-    expect((await base.getImageController().search({ criteria: { keyword: { text: base.imageFeeder.pngImageFileName.toUpperCase(), ...inName } } })).entities.length).toBe(totalCount);
-    // We make sure that the image "metadata" are searched in
-    const metadataKeyword = "Deflate/Inflate";
-    expect((await base.getImageController().search({ criteria: { keyword: { text: metadataKeyword, ...inMetadata } } })).entities.length).toBe(totalCount);
-    expect((await base.getImageController().search({ criteria: { keyword: { text: metadataKeyword.toUpperCase(), ...inMetadata } } })).entities.length).toBe(totalCount);
     {
-      // We make sure that the image "features" are searched in
-      const featureKeyword = computeExpectedCaption("painting");
-      const image = await base.getRepositoryController().getImageByUrl(fileWithProtocol + preexistingFilePath);
-      const extension = await base.prepareExtension();
-      await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension.manifest.id, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, undefined, featureKeyword)]);
-      expect((await base.getImageController().search({ criteria: { keyword: { text: featureKeyword, ...inFeatures } } })).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search({ criteria: { keyword: { text: featureKeyword.toLowerCase(), ...inFeatures } } })).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search({ criteria: { keyword: { text: "dummy" + base.imageFeeder.pngImageFileName, ...inAll } } })).entities.length).toBe(zero);
-    }
-    // This is an edge case
-    expect((await base.getImageController().search({ criteria: { keyword: { text: "", ...inAll } } })).entities.length).toBe(totalCount);
-    expect((await base.getImageController().search({ ids: [repository.id] })).entities.length).toBe(totalCount);
-    expect((await base.getImageController().search({})).entities.length).toBe(totalCount);
-    await expect(async () =>
-    {
-      await base.getImageController().search({ criteria: { keyword: { text: "text", ...inNone } } });
-    }).rejects.toThrow(new ServiceError(`The parameter 'keyword' is invalid because it contains only false properties`, BAD_REQUEST, base.badParameterCode));
-    {
-      const { repository: newRepository } = await base.prepareRepositoryWithImage(base.imageFeeder.webpImageFileName, "new");
-      expect((await base.getImageController().search({ ids: [repository.id, newRepository.id] })).entities.length).toBe(totalCount * 2);
-      expect((await base.getImageController().search({ ids: [repository.id] })).entities.length).toBe(totalCount);
-    }
-
-    {
-      const dummyId = "dummyId";
+      // We assess with invalid parameters
       await expect(async () =>
       {
-        await base.getImageController().search({ ids: [dummyId] });
-      }).rejects.toThrow(new ServiceError(`The parameter 'ids' with value '${dummyId}' is invalid because some of those identifiers do not correspond to an existing repository`, BAD_REQUEST, base.badParameterCode));
+        await base.getImageController().search({ criteria: { keyword: { text: "text", ...inNone } } });
+      }).rejects.toThrow(new ServiceError(`The parameter 'keyword' is invalid because it contains only false properties`, BAD_REQUEST, base.badParameterCode));
+      {
+        // We assess with a non-existing repository
+        const dummyId = "dummyId";
+        await expect(async () =>
+        {
+          await base.getImageController().search({ ids: [dummyId] });
+        }).rejects.toThrow(new ServiceError(`The parameter 'ids' with value '${dummyId}' is invalid because some of those identifiers do not correspond to an existing repository`, BAD_REQUEST, base.badParameterCode));
+      }
+    }
+    {
+      // We assess with no filter
+      expect((await base.getImageController().search({})).entities.length).toBe(totalCount);
+      // We assess only with the repository identifier filter
+      expect((await base.getImageController().search({ ids: [repository.id] })).entities.length).toBe(totalCount);
+    }
+    {
+      // We make sure that the image file name is searched in
+      expect((await base.getImageController().search({ criteria: { keyword: { text: fileName, ...inName } } })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search({ criteria: { keyword: { text: fileName.toUpperCase(), ...inName } } })).entities.length).toBe(totalCount);
+    }
+    {
+      // We make sure that the image "metadata" are searched in
+      const metadataKeyword = "Deflate/Inflate";
+      expect((await base.getImageController().search({ criteria: { keyword: { text: metadataKeyword, ...inMetadata } } })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search({ criteria: { keyword: { text: metadataKeyword.toUpperCase(), ...inMetadata } } })).entities.length).toBe(totalCount);
+    }
+    {
+      // We make sure that the string-based image "features" are searched in
+      expect((await base.getImageController().search({ criteria: { keyword: { text: stringFeatureValue, ...inFeatures } } })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search({ criteria: { keyword: { text: stringFeatureValue.toLowerCase(), ...inFeatures } } })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search({ criteria: { keyword: { text: "dummy" + fileName, ...inAll } } })).entities.length).toBe(zero);
+      // This is an edge case with an empty text
+      expect((await base.getImageController().search({ criteria: { keyword: { text: "", ...inAll } } })).entities.length).toBe(totalCount);
+    }
+    {
+      // We assess the image "features"
+      for (const feature of features)
+      {
+        const comparisonOperators: SearchFeatureComparisonOperator[] = Object.values(SearchFeatureComparisonOperator).filter(key => isNaN(Number(key))) as SearchFeatureComparisonOperator [];
+        for (const comparisonOperator of comparisonOperators)
+        {
+          const condition: SearchFeatureCondition =
+            {
+              type: feature.type,
+              format: feature.format,
+              name: feature.name,
+              operator: comparisonOperator,
+              value: feature.value
+            };
+          if ((comparisonOperator === SearchFeatureComparisonOperator.CONTAINS && feature.format !== ImageFeatureFormat.STRING) || ((comparisonOperator === SearchFeatureComparisonOperator.GREATER_THAN || comparisonOperator === SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL || comparisonOperator === SearchFeatureComparisonOperator.LESS_THAN || comparisonOperator === SearchFeatureComparisonOperator.LESS_THAN_OR_EQUAL) && feature.format !== ImageFeatureFormat.INTEGER && feature.format !== ImageFeatureFormat.FLOAT))
+          {
+            await expect(async () =>
+            {
+              await base.getImageController().search({
+                criteria: {
+                  features: {
+                    operator: SearchFeatureLogicalOperator.AND,
+                    conditions: [condition]
+                  }
+                }
+              });
+            }).rejects.toThrow(new ServiceError(`The '${condition.operator}' operator is not compatible with the '${condition.format}' format`, BAD_REQUEST, base.badParameterCode));
+          }
+          else
+          {
+            if (condition.operator === SearchFeatureComparisonOperator.DIFFERENT)
+            {
+              continue;
+            }
+
+            async function checkCondition(condition: SearchFeatureCondition)
+            {
+              const shouldNotMatch = condition.operator === SearchFeatureComparisonOperator.DIFFERENT || condition.operator === SearchFeatureComparisonOperator.GREATER_THAN || condition.operator === SearchFeatureComparisonOperator.LESS_THAN;
+              expect((await base.getImageController().search({
+                criteria: { features: { operator: SearchFeatureLogicalOperator.AND, conditions: [condition] } }
+              })).entities.length).toBe(shouldNotMatch === true ? zero : totalCount);
+              expect((await base.getImageController().search({
+                criteria: { features: { operator: SearchFeatureLogicalOperator.NOT, conditions: [condition] } }
+              })).entities.length).toBe(shouldNotMatch === false ? zero : totalCount);
+            }
+
+            await checkCondition(condition);
+            await checkCondition({
+              format: condition.format,
+              name: condition.name,
+              operator: condition.operator,
+              value: condition.value
+            });
+            await checkCondition({ format: condition.format, operator: condition.operator, value: condition.value });
+          }
+        }
+      }
+
+      // We assess with advanced image "features" requests
+      expect((await base.getImageController().search({
+        criteria: {
+          features: {
+            operator: SearchFeatureLogicalOperator.OR,
+            conditions: [
+              {
+                format: stringFeature.format,
+                operator: SearchFeatureComparisonOperator.EQUALS,
+                value: stringFeature.value
+              }
+            ],
+            features:
+              {
+                operator: SearchFeatureLogicalOperator.OR,
+                conditions: [
+                  {
+                    format: integerFeature.format,
+                    operator: SearchFeatureComparisonOperator.EQUALS,
+                    value: integerFeature.value
+                  },
+                  {
+                    format: floatFeature.format,
+                    operator: SearchFeatureComparisonOperator.GREATER_THAN,
+                    value: floatFeature.value
+                  }
+                ]
+              }
+          }
+        }
+      })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search({
+        criteria: {
+          features: {
+            operator: SearchFeatureLogicalOperator.AND,
+            conditions: [
+              {
+                format: stringFeature.format,
+                operator: SearchFeatureComparisonOperator.EQUALS,
+                value: stringFeature.value
+              },
+              {
+                format: integerFeature.format,
+                operator: SearchFeatureComparisonOperator.EQUALS,
+                value: integerFeature.value
+              }
+            ]
+          }
+        }
+      })).entities.length).toBe(zero);
+      expect((await base.getImageController().search({
+        criteria: {
+          features: {
+            operator: SearchFeatureLogicalOperator.NOT,
+            conditions: [
+              {
+                format: stringFeature.format,
+                operator: SearchFeatureComparisonOperator.EQUALS,
+                value: stringFeature.value
+              }
+            ]
+          }
+        }
+      })).entities.length).toBe(zero);
+    }
+    {
+      // We add a repository and an image on it
+      const { repository: newRepository } = await base.prepareRepositoryWithImage(base.imageFeeder.webpImageFileName, "new");
+      expect((await base.getImageController().search({ ids: [repository.id, newRepository.id] })).entities.length).toBe(totalCount + 1);
+      expect((await base.getImageController().search({ ids: [repository.id] })).entities.length).toBe(totalCount);
     }
   }, base.largeTimeoutInMilliseconds);
 
@@ -1004,7 +1150,7 @@ describe("Image with module", () =>
         expect((await base.getImageController().get(imageId)).features.length).toEqual(0);
         const persistedFeatures = await base.getEntitiesProvider().imageFeature.findMany({ where: { imageId } });
         expect(persistedFeatures.length).toEqual(1);
-        expect(persistedFeatures[0].value).toEqual("");
+        expect(persistedFeatures[0].stringValue).toEqual("");
         expect(persistedFeatures[0].name).toEqual(null);
         expect(persistedFeatures[0].type).toEqual("other");
         expect(persistedFeatures[0].format).toEqual("string");

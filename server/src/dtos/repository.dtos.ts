@@ -463,7 +463,7 @@ export class SearchTags
 /**
  * All the search feature operators.
  */
-export enum SearchFeatureOperator
+export enum SearchFeatureComparisonOperator
 {
   EQUALS = "equals",
   DIFFERENT = "different",
@@ -478,7 +478,7 @@ export enum SearchFeatureOperator
 export class SearchFeatureCondition
 {
 
-  constructor(type: ImageFeatureType | undefined, format: ImageFeatureFormat, name: string | undefined, operator: SearchFeatureOperator, value: ImageFeatureValue)
+  constructor(type: ImageFeatureType | undefined, format: ImageFeatureFormat, name: string | undefined, operator: SearchFeatureComparisonOperator, value: ImageFeatureValue)
   {
     this.type = type;
     this.format = format;
@@ -496,6 +496,7 @@ export class SearchFeatureCondition
       example: "nature"
     }
   )
+  @IsEnum(ImageFeatureType)
   @IsOptional()
   @Expose()
   readonly type?: ImageFeatureType;
@@ -533,17 +534,17 @@ export class SearchFeatureCondition
 
   @ApiProperty(
     {
-      description: "The image feature operator",
-      enum: SearchFeatureOperator,
-      enumName: "SearchFeatureOperator",
+      description: "The image feature comparison operator",
+      enum: SearchFeatureComparisonOperator,
+      enumName: "SearchFeatureComparisonOperator",
       required: true
     }
   )
-  @IsEnum(SearchFeatureOperator)
+  @IsEnum(SearchFeatureComparisonOperator)
   @IsDefined()
   @NotEquals(null)
   @Expose()
-  readonly operator: SearchFeatureOperator;
+  readonly operator: SearchFeatureComparisonOperator;
 
   @ApiProperty(
     {
@@ -574,59 +575,67 @@ export class SearchFeatureCondition
 /**
  * All the search feature types.
  */
-export enum SearchFeatureType
+export enum SearchFeatureLogicalOperator
 {
   OR = "or",
-  AND = "and"
+  AND = "and",
+  NOT = "not"
 }
 
 @ApiSchema({ description: "The expression for filtering image features" })
 export class SearchFeatures
 {
 
-  constructor(type: SearchFeatureType, condition: SearchFeatureCondition, features: SearchFeatures[] | undefined)
+  constructor(operator: SearchFeatureLogicalOperator, conditions: SearchFeatureCondition[], features: SearchFeatures | undefined)
   {
-    this.type = type;
-    this.condition = condition;
+    this.operator = operator;
+    this.conditions = conditions;
     this.features = features;
   }
 
   @ApiProperty(
     {
-      description: "The statement type",
-      enum: SearchFeatureType,
-      enumName: "SearchFeatureType",
+      description: "The logical operator",
+      enum: SearchFeatureLogicalOperator,
+      enumName: "SearchFeatureLogicalOperator",
       required: true,
       example: "or"
     }
   )
+  @IsEnum(SearchFeatureLogicalOperator)
   @IsDefined()
+  @NotEquals(null)
   @Expose()
-  readonly type: SearchFeatureType;
+  readonly operator: SearchFeatureLogicalOperator;
 
   @ApiProperty(
     {
-      description: "The search condition",
+      description: "The search conditions",
       type: SearchFeatureCondition,
+      isArray: true,
       required: true
     }
   )
+  @Type(() => SearchFeatureCondition)
+  @ValidateNested({ each: true })
+  @IsArray()
   @IsDefined()
+  @NotEquals(null)
   @Expose()
-  readonly condition: SearchFeatureCondition;
+  readonly conditions: SearchFeatureCondition[];
 
   @ApiProperty(
     {
-      description: "Other search features",
+      description: "Other nested search features",
       type: SearchFeatures,
-      isArray: true,
       required: false
     }
   )
-  @IsArray()
+  @Type(() => SearchFeatures)
+  @ValidateNested()
   @IsOptional()
   @Expose()
-  readonly features?: SearchFeatures[];
+  readonly features?: SearchFeatures;
 
 }
 

@@ -92,14 +92,15 @@ model ImageMetadata {
 }
 
 model ImageFeature {
-  id          Int     @id @default(autoincrement())
-  type        String
-  format      String  @default("string")
-  extensionId String
-  name        String?
-  value       String
-  image       Image   @relation(fields: [imageId], references: [id], onDelete: Cascade)
-  imageId     String
+  id           Int     @id @default(autoincrement())
+  type         String
+  format       String
+  extensionId  String
+  name         String?
+  stringValue  String?
+  numericValue Float?
+  image        Image   @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  imageId      String
 
   @@index([type])
   @@index([format])
