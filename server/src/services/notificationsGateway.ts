@@ -28,6 +28,7 @@ import {
   fromTextEventActionToManifestEvent,
   Json
 } from "../bos";
+import { stringify } from "../utils";
 import {
   ActivityAction,
   EventAction,
@@ -590,7 +591,7 @@ export class NotificationsGateway
       }
       if (isOk === false || action === undefined)
       {
-        logger.error(`Cannot handle the message from extension with id '${extensionId}' with value ${JSON.stringify(notificationValue)}`);
+        logger.error(`Cannot handle the message from extension with id '${extensionId}' with value ${stringify(notificationValue)}`);
         return;
       }
       logger.debug(`Received a ${messageLogChunk!} message coming from channel '${paths.notifications}' through the socket client with id '${socketId}' related to the extension with id '${extensionId}'${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}`);
@@ -647,7 +648,7 @@ export class NotificationsGateway
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {
-        logger.debug(`Received the intent returned value '${JSON.stringify(value)}' from the master socket`);
+        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
         if (value.value !== undefined)
         {
           try
@@ -683,7 +684,7 @@ export class NotificationsGateway
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {
-        logger.debug(`Received the intent returned value '${JSON.stringify(value)}' from the master socket`);
+        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
         resolve(value);
       };
     }
@@ -706,7 +707,7 @@ export class NotificationsGateway
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {
-        logger.debug(`Received the intent returned value '${JSON.stringify(value)}' from the master socket`);
+        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
         resolve(value);
       };
     }
@@ -730,7 +731,7 @@ export class NotificationsGateway
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {
-        logger.debug(`Received the intent returned value '${JSON.stringify(value)}' from the master socket`);
+        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
         resolve(value);
       };
     }
@@ -747,7 +748,7 @@ export class NotificationsGateway
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {
-        logger.debug(`Received the intent returned value '${JSON.stringify(value)}' from the master socket`);
+        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
         resolve(value);
       };
     }

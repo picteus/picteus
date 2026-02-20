@@ -191,7 +191,7 @@ export class ExtensionGenerator
           delete dependencies[publicNodeSdkIdentifier];
           dependencies[internalNodeSdkIdentifier] = sdkVersion;
         }
-        fs.writeFileSync(packageJsonFilePath, JSON.stringify(packageJson, undefined, 2));
+        fs.writeFileSync(packageJsonFilePath, stringify(packageJson));
         break;
       case ManifestRuntimeEnvironment.Python:
         const requirementsFilePath = path.join(moduleDirectoryPath, "requirements.txt");

@@ -21,7 +21,7 @@ import { HostCommandType } from "@picteus/shared-back-end";
 
 import { logger } from "../logger";
 import { paths } from "../paths";
-import { plainToInstanceViaJSON } from "../utils";
+import { plainToInstanceViaJSON, stringify } from "../utils";
 import {
   EventAction,
   EventEntity,
@@ -561,9 +561,9 @@ export class ExtensionService
     }
     catch (error)
     {
-      parametersChecker.throwBadParameter("settings", JSON.stringify(settings), `because it does not comply with the settings JSON schema. Reason: '${(error as Error).message}'`);
+      parametersChecker.throwBadParameter("settings", stringify(settings), `because it does not comply with the settings JSON schema. Reason: '${(error as Error).message}'`);
     }
-    const settingsValue = JSON.stringify(value);
+    const settingsValue = stringify(value);
     const objectValue = { extensionId: id, value: settingsValue };
     await this.entitiesProvider.extensionSettings.upsert({
       where: { extensionId: id },
@@ -697,13 +697,14 @@ export class ExtensionService
     {
       const schema = command.parameters;
       addJsonSchemaAdditionalProperties(schema);
+      const interpretedParameters = parameters || {};
       try
       {
-        validateSchema(computeAjv(), schema, parameters || {});
+        validateSchema(computeAjv(), schema, interpretedParameters);
       }
       catch (error)
       {
-        parametersChecker.throwBadParameter("parameters", JSON.stringify(parameters), `it does not comply with the command with id '${commandId}' expected parameters. Reason: '${(error as Error).message}'`);
+        parametersChecker.throwBadParameter("parameters", stringify(interpretedParameters, false), `it does not comply with the command with id '${commandId}' expected parameters. Reason: '${(error as Error).message}'`);
       }
     }
     if (entity === CommandEntity.Images)

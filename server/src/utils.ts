@@ -10,9 +10,9 @@ export function plainToInstanceViaJSON<T>(aClass: ClassConstructor<T>, entity: o
   return plainToInstance(aClass, entity);
 }
 
-export function stringify(object: Record<string, any>): string
+export function stringify(object: Record<string, any>, indent: boolean = false): string
 {
-  return JSON.stringify(object, (_key, value) => value, 2);
+  return indent === false ? JSON.stringify(object) : JSON.stringify(object, (_key, value) => value, 2);
 }
 
 export function checkIsMainThread(): void

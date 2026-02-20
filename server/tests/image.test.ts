@@ -25,10 +25,10 @@ import {
   ImageFormat,
   ImageFormats,
   ImageResizeRender,
-  InstructionsPrompt,
   ManifestCapabilityId,
   ManifestEvent,
   NumericRange,
+  PromptKind,
   SearchFeatureComparisonOperator,
   SearchFeatureCondition,
   SearchFeatureLogicalOperator,
@@ -813,172 +813,6 @@ describe("Image with module", () =>
     }
   });
 
-  test("tags", async () =>
-  {
-    const {
-      repository,
-      image
-    } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName, Defaults.emptyDirectoryName, false);
-    const extension = await base.prepareExtension();
-    const extensionId = extension.manifest.id;
-
-    {
-      // We assess with invalid parameters
-      {
-        const inexistentExtensionId = randomUUID();
-        await expect(async () =>
-        {
-          await base.getImageController().setTags(Base.allPolicyContext, image.id, inexistentExtensionId, []);
-        }).rejects.toThrow(new ServiceError(`The parameter 'extensionId' with value '${inexistentExtensionId}' is invalid because that extension is not installed`, BAD_REQUEST, base.badParameterCode));
-      }
-      {
-        const inexistentImageId = randomUUID();
-        await expect(async () =>
-        {
-          await base.getImageController().setTags(Base.allPolicyContext, inexistentImageId, extensionId, []);
-        }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${inexistentImageId}' is invalid because there is no image with that identifier`, BAD_REQUEST, base.badParameterCode));
-      }
-      {
-        const tag = "";
-        await expect(async () =>
-        {
-          await base.getImageController().setTags(Base.allPolicyContext, image.id, extensionId, [tag]);
-        }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
-      }
-      {
-        const tag = "a".repeat(64 + 1);
-        await expect(async () =>
-        {
-          await base.getImageController().setTags(Base.allPolicyContext, image.id, extensionId, [tag]);
-        }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it exceeds 64 characters`, BAD_REQUEST, base.badParameterCode));
-      }
-      {
-        const tag = "/";
-        await expect(async () =>
-        {
-          await base.getImageController().setTags(Base.allPolicyContext, image.id, extensionId, [tag]);
-        }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it contains illegal characters`, BAD_REQUEST, base.badParameterCode));
-      }
-
-      await expect(async () =>
-      {
-        await base.getImageController().setTags(Base.allPolicyContext, image.id, extensionId, [""]);
-      }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
-
-      await expect(async () =>
-      {
-        await base.getImageController().setTags(Base.allPolicyContext, image.id, extensionId, Array(256 + 1).fill("tag").map((tag, index) =>
-        {
-          return tag + index;
-        }));
-      }).rejects.toThrow(new ServiceError("The parameter 'tags' is invalid because it exceeds the maximum amount of items, which is 256", BAD_REQUEST, base.badParameterCode));
-
-      await expect(async () =>
-      {
-        await base.getImageController().setTags(Base.allPolicyContext, image.id, extensionId, ["tag", "tag"]);
-      }).rejects.toThrow(new ServiceError("The parameter 'tags' is invalid because it contains duplicate values", BAD_REQUEST, base.badParameterCode));
-    }
-
-    const checkTags = async (expectedTags: string[]) =>
-    {
-      const extensionImageTags = (await base.getImageController().getAllTags(image.id)).sort();
-      expect(extensionImageTags.length).toEqual(expectedTags.length);
-      const sortedExpectedTags = expectedTags.sort();
-      sortedExpectedTags.forEach((expectedTag, index) =>
-      {
-        expect(extensionImageTags[index].id).toEqual(extensionId);
-        expect(extensionImageTags[index].value).toEqual(expectedTag);
-      });
-      const persistedImage = await base.getEntitiesProvider().images.findUnique({
-        where: { id: image.id },
-        include: { tags: true }
-      });
-      const persistedTags = persistedImage!.tags.filter((tag) => tag.extensionId === extensionId);
-      expect(persistedTags.length).toEqual(expectedTags.length == 0 ? 1 : expectedTags.length);
-      expect(persistedTags.map(persistedTag => persistedTag.value).sort()).toEqual(expectedTags.length === 0 ? [""] : sortedExpectedTags);
-    };
-
-    const firstTags = ["tag4"];
-    {
-      const tag1 = "tag.1";
-      const secondTags = ["tag-2", tag1];
-      const thirdTags = [tag1, "tag_3"];
-      {
-        const emptyTags: string[] = [];
-        {
-          await base.getImageController().setTags(Base.allPolicyContext, image.id, extensionId, emptyTags);
-          await checkTags(emptyTags);
-          expect((await base.getImageController().get(image.id)).tags).toEqual(emptyTags);
-        }
-        {
-          await base.getImageController().ensureTags(Base.allPolicyContext, image.id, extensionId, [tag1]);
-          await checkTags([tag1]);
-        }
-        {
-          await base.getImageController().setTags(Base.allPolicyContext, image.id, extensionId, emptyTags);
-          await base.getImageController().ensureTags(Base.allPolicyContext, image.id, extensionId, firstTags);
-          await checkTags(firstTags);
-        }
-        {
-          await base.getImageController().ensureTags(Base.allPolicyContext, image.id, extensionId, secondTags);
-          await checkTags(firstTags.concat(secondTags).sort((tag1, tag2) =>
-          {
-            return tag1.localeCompare(tag2);
-          }));
-        }
-        {
-          const allTags = Array.from(new Set(firstTags.concat(secondTags).concat(thirdTags))).sort((tag1, tag2) =>
-          {
-            return tag1.localeCompare(tag2);
-          });
-          await base.getImageController().ensureTags(Base.allPolicyContext, image.id, extensionId, thirdTags);
-          await checkTags(allTags);
-        }
-        {
-          await base.getImageController().setTags(Base.allPolicyContext, image.id, extensionId, firstTags);
-          await checkTags(firstTags);
-        }
-      }
-    }
-    {
-      // We install a second extension and set a tag on the image
-      const extensionTag = "newExtensionTag";
-      const commandId = "commandId";
-      const secondExtension = await base.prepareExtension("second", [ManifestEvent.ProcessStarted, ManifestEvent.ImageRunCommand], [
-          {
-            id: commandId,
-            on: { entity: CommandEntity.Images, withTags: [extensionTag] },
-            specifications: [{ locale: "en", label: "Command" }]
-          }
-        ]
-      );
-      const secondExtensionId = secondExtension.manifest.id;
-      // We check that it is not possible to run an image command, which expects a tag to be defined while the image does not have it
-      const imageIds = [image.id];
-      await expect(async () =>
-      {
-        await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, [], imageIds);
-      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageIds.join(",")}]' is invalid because because one or more image do not have the required tags`, BAD_REQUEST, base.badParameterCode));
-      // We set the missing tag
-      await base.getImageController().ensureTags(Base.allPolicyContext, image.id, secondExtensionId, [extensionTag]);
-      // We check that it is now possible to run the previous image command
-      await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, [], imageIds);
-      await base.getExtensionController().uninstall(secondExtensionId);
-      await checkTags(firstTags);
-    }
-    {
-      // We delete the image and make sure that the tags are deleted along with it
-      await base.getRepositoryController().watch(repository.id, true);
-      await base.waitUntilRepositoryWatching(repository.id);
-      const filePath = image.url.substring(fileWithProtocol.length);
-      await base.waitUntilImage(repository.id, filePath, false, () =>
-      {
-        fs.rmSync(filePath);
-      });
-      expect((await base.getEntitiesProvider().imageTag.findMany({ where: { extensionId: extensionId } })).length).toEqual(0);
-    }
-  });
-
   test("features", async () =>
   {
     const { image, extensionId } = await preparedRepositoryAndExtension();
@@ -1186,25 +1020,54 @@ describe("Image with module", () =>
         const version = "1-_.5";
         for (const modelTag of [model, `${company}/${model}`, `${model}:${version}`, `${company}/${model}:${version}`])
         {
-          const textualPrompt = new TextualPrompt("a beautiful photo");
-          const instructionsPrompt = new InstructionsPrompt({ key1: "value1" });
-          for (const prompt of [textualPrompt, instructionsPrompt])
+          for (const kind of [PromptKind.TEXTUAL, PromptKind.INSTRUCTIONS])
           {
-            const recipe = new GenerationRecipe([modelTag], prompt, "id", "https//generated.image/id", "google/gemini", [], 1.25);
+            const recipe = base.imageFeeder.computeRecipe(kind, modelTag);
             await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(recipe))]);
             const features = await base.getImageController().getAllFeatures(imageId);
             expect(features.length).toEqual(1);
             const feature = features[0];
+            expect(feature.id).toEqual(extensionId);
             expect(feature.type).toEqual(ImageFeatureType.RECIPE);
             expect(feature.format).toEqual(ImageFeatureFormat.JSON);
             expect(feature.value).toEqual(JSON.stringify(recipe));
           }
         }
       }
+      const secondExtension = await base.prepareExtension("second");
+      const secondExtensionId = secondExtension.manifest.id;
+      {
+        // We assess the single extension features retrieval
+        await base.getImageController().setFeatures(Base.allPolicyContext, imageId, secondExtensionId, [new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.STRING, undefined, "string")]);
+        const allFeatures = await base.getImageController().getAllFeatures(imageId);
+        for (const anExtensionId of [extensionId, secondExtensionId])
+        {
+          const features = await base.getImageController().getFeatures(imageId, anExtensionId);
+          const expectedExtensionFeatures = allFeatures.filter(feature => feature.id === anExtensionId);
+          expect(features.length).toEqual(expectedExtensionFeatures.length);
+          for (let index = 0; index < features.length; index++)
+          {
+            const { id, ...extensionImageFeature } = expectedExtensionFeatures[index];
+            expect(features[index]).toEqual(extensionImageFeature);
+          }
+        }
+      }
+      {
+        // We uninstall the second extension and make sure that its features have been deleted
+        await base.getExtensionController().uninstall(secondExtensionId);
+        const features = await base.getImageController().getAllFeatures(imageId);
+        const extensionIds = new Set<string>(features.map(feature => feature.id));
+        expect(extensionIds.size).toEqual(1);
+        expect(extensionIds.values().next().value).toEqual(extensionId);
+        await expect(async () =>
+        {
+          await base.getImageController().getFeatures(imageId, secondExtensionId);
+        }).rejects.toThrow(new ServiceError(`The parameter 'extensionId' with value '${secondExtensionId}' is invalid because that extension is not installed`, BAD_REQUEST, base.badParameterCode));
+      }
       {
         // We delete the image and check that the features are deleted
         const filePath = image.url.substring(fileWithProtocol.length);
-        // We wait for the image to be considered deleted by the server
+        // We wait for the image to be considered as deleted by the server
         await base.waitUntilImage(image.repositoryId, filePath, false, () =>
         {
           fs.rmSync(filePath);
@@ -1212,6 +1075,212 @@ describe("Image with module", () =>
         expect((await base.getModuleProvider(ImageAttachmentService).list(imageId)).length).toEqual(0);
       }
     }
+  });
+
+  test("tags", async () =>
+  {
+    const {
+      repository,
+      image
+    } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName, Defaults.emptyDirectoryName, false);
+    const extension = await base.prepareExtension();
+    const extensionId = extension.manifest.id;
+
+    const imageId = image.id;
+    {
+      // We assess with invalid parameters
+      {
+        const inexistentExtensionId = randomUUID();
+        await expect(async () =>
+        {
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, inexistentExtensionId, []);
+        }).rejects.toThrow(new ServiceError(`The parameter 'extensionId' with value '${inexistentExtensionId}' is invalid because that extension is not installed`, BAD_REQUEST, base.badParameterCode));
+      }
+      {
+        const inexistentImageId = randomUUID();
+        await expect(async () =>
+        {
+          await base.getImageController().setTags(Base.allPolicyContext, inexistentImageId, extensionId, []);
+        }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${inexistentImageId}' is invalid because there is no image with that identifier`, BAD_REQUEST, base.badParameterCode));
+      }
+      {
+        const tag = "";
+        await expect(async () =>
+        {
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [tag]);
+        }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
+      }
+      {
+        const tag = "a".repeat(64 + 1);
+        await expect(async () =>
+        {
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [tag]);
+        }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it exceeds 64 characters`, BAD_REQUEST, base.badParameterCode));
+      }
+      {
+        const tag = "/";
+        await expect(async () =>
+        {
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [tag]);
+        }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it contains illegal characters`, BAD_REQUEST, base.badParameterCode));
+      }
+
+      await expect(async () =>
+      {
+        await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [""]);
+      }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
+
+      await expect(async () =>
+      {
+        await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, Array(256 + 1).fill("tag").map((tag, index) =>
+        {
+          return tag + index;
+        }));
+      }).rejects.toThrow(new ServiceError("The parameter 'tags' is invalid because it exceeds the maximum amount of items, which is 256", BAD_REQUEST, base.badParameterCode));
+
+      await expect(async () =>
+      {
+        await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, ["tag", "tag"]);
+      }).rejects.toThrow(new ServiceError("The parameter 'tags' is invalid because it contains duplicate values", BAD_REQUEST, base.badParameterCode));
+    }
+
+    const checkTags = async (expectedTags: string[]) =>
+    {
+      const extensionImageTags = (await base.getImageController().getAllTags(imageId)).sort();
+      expect(extensionImageTags.length).toEqual(expectedTags.length);
+      const sortedExpectedTags = expectedTags.sort();
+      sortedExpectedTags.forEach((expectedTag, index) =>
+      {
+        expect(extensionImageTags[index].id).toEqual(extensionId);
+        expect(extensionImageTags[index].value).toEqual(expectedTag);
+      });
+      const persistedImage = await base.getEntitiesProvider().images.findUnique({
+        where: { id: imageId },
+        include: { tags: true }
+      });
+      const persistedTags = persistedImage!.tags.filter((tag) => tag.extensionId === extensionId);
+      expect(persistedTags.length).toEqual(expectedTags.length == 0 ? 1 : expectedTags.length);
+      expect(persistedTags.map(persistedTag => persistedTag.value).sort()).toEqual(expectedTags.length === 0 ? [""] : sortedExpectedTags);
+    };
+
+    const firstTags = ["tag4"];
+    {
+      const tag1 = "tag.1";
+      const secondTags = ["tag-2", tag1];
+      const thirdTags = [tag1, "tag_3"];
+      {
+        const emptyTags: string[] = [];
+        {
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, emptyTags);
+          await checkTags(emptyTags);
+          expect((await base.getImageController().get(imageId)).tags).toEqual(emptyTags);
+        }
+        {
+          await base.getImageController().ensureTags(Base.allPolicyContext, imageId, extensionId, [tag1]);
+          await checkTags([tag1]);
+        }
+        {
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, emptyTags);
+          await base.getImageController().ensureTags(Base.allPolicyContext, imageId, extensionId, firstTags);
+          await checkTags(firstTags);
+        }
+        {
+          await base.getImageController().ensureTags(Base.allPolicyContext, imageId, extensionId, secondTags);
+          await checkTags(firstTags.concat(secondTags).sort((tag1, tag2) =>
+          {
+            return tag1.localeCompare(tag2);
+          }));
+        }
+        {
+          const allTags = Array.from(new Set(firstTags.concat(secondTags).concat(thirdTags))).sort((tag1, tag2) =>
+          {
+            return tag1.localeCompare(tag2);
+          });
+          await base.getImageController().ensureTags(Base.allPolicyContext, imageId, extensionId, thirdTags);
+          await checkTags(allTags);
+        }
+        {
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, firstTags);
+          await checkTags(firstTags);
+        }
+      }
+    }
+    // We install a second extension
+    const extensionTag = "newExtensionTag";
+    const commandId = "commandId";
+    const secondExtension = await base.prepareExtension("second", [ManifestEvent.ProcessStarted, ManifestEvent.ImageRunCommand], [
+        {
+          id: commandId,
+          on: { entity: CommandEntity.Images, withTags: [extensionTag] },
+          specifications: [{ locale: "en", label: "Command" }]
+        }
+      ]
+    );
+    const secondExtensionId = secondExtension.manifest.id;
+    {
+      // We check that it is not possible to run an image command, which expects a tag to be defined while the image does not have it
+      const imageIds = [imageId];
+      await expect(async () =>
+      {
+        await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, [], imageIds);
+      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageIds.join(",")}]' is invalid because because one or more image do not have the required tags`, BAD_REQUEST, base.badParameterCode));
+      // We set the missing tag
+      await base.getImageController().ensureTags(Base.allPolicyContext, imageId, secondExtensionId, [extensionTag]);
+      // We check that it is now possible to run the previous image command
+      await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, [], imageIds);
+    }
+    {
+      // We assess the single extension features retrieval
+      await base.getImageController().setTags(Base.allPolicyContext, imageId, secondExtensionId, ["secondExtensionTag"]);
+      const allTags = await base.getImageController().getAllTags(imageId);
+      for (const anExtensionId of [extensionId, secondExtensionId])
+      {
+        const tags = await base.getImageController().getTags(imageId, anExtensionId);
+        const expectedExtensionTags = allTags.filter(tag => tag.id === anExtensionId).map(tag => tag.value);
+        expect(tags.length).toEqual(expectedExtensionTags.length);
+        for (let index = 0; index < tags.length; index++)
+        {
+          expect(tags[index]).toEqual(expectedExtensionTags[index]);
+        }
+      }
+    }
+    {
+      // We uninstall the second extension and check that the corresponding tags are not available anymore
+      await base.getExtensionController().uninstall(secondExtensionId);
+      await checkTags(firstTags);
+      await expect(async () =>
+      {
+        await base.getImageController().getTags(imageId, secondExtensionId);
+      }).rejects.toThrow(new ServiceError(`The parameter 'extensionId' with value '${secondExtensionId}' is invalid because that extension is not installed`, BAD_REQUEST, base.badParameterCode));
+    }
+    {
+      // We delete the image and make sure that the tags are deleted along with it
+      await base.getRepositoryController().watch(repository.id, true);
+      await base.waitUntilRepositoryWatching(repository.id);
+      const filePath = image.url.substring(fileWithProtocol.length);
+      await base.waitUntilImage(repository.id, filePath, false, () =>
+      {
+        fs.rmSync(filePath);
+      });
+      expect((await base.getEntitiesProvider().imageTag.findMany({ where: { extensionId: extensionId } })).length).toEqual(0);
+    }
+  });
+
+  test("recipes", async () =>
+  {
+    const { image, extensionId } = await preparedRepositoryAndExtension();
+    const imageId = image.id;
+    const secondExtension = await base.prepareExtension("second");
+    const secondExtensionId = secondExtension.manifest.id;
+    const extensionRecipe = base.imageFeeder.computeRecipe(PromptKind.TEXTUAL);
+    await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(extensionRecipe))]);
+    const secondExtensionRecipe = base.imageFeeder.computeRecipe(PromptKind.INSTRUCTIONS);
+    await base.getImageController().setFeatures(Base.allPolicyContext, imageId, secondExtensionId, [new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(secondExtensionRecipe))]);
+
+    const recipes = await base.getImageController().getAllRecipes(imageId);
+    expect(recipes.length).toEqual(2);
+    expect(recipes[0]).toEqual(extensionRecipe);
+    expect(recipes[1]).toEqual(secondExtensionRecipe);
   });
 
   test("embeddings", async () =>

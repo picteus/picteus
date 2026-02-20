@@ -2167,6 +2167,59 @@
         ]
       }
     },
+    "/image/{id}/getFeatures": {
+      "get": {
+        "description": "Returns the features of an image given an extension.",
+        "operationId": "image_getFeatures",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The image identifier",
+            "schema": {
+              "description": "An image identifier",
+              "type": "string",
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+              "minLength": 36,
+              "maxLength": 36,
+              "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+            }
+          },
+          {
+            "name": "extensionId",
+            "required": true,
+            "in": "query",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "example": "extension-id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image features for the extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImageFeature"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets all the features of an image for an extension",
+        "tags": [
+          "image"
+        ]
+      }
+    },
     "/image/{id}/getAllFeatures": {
       "get": {
         "description": "Returns the features of an image for all extensions.",
@@ -2262,6 +2315,59 @@
           }
         },
         "summary": "Sets the features of an image",
+        "tags": [
+          "image"
+        ]
+      }
+    },
+    "/image/{id}/getTags": {
+      "get": {
+        "description": "Returns the tags of an image given an extension.",
+        "operationId": "image_getTags",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The image identifier",
+            "schema": {
+              "description": "An image identifier",
+              "type": "string",
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+              "minLength": 36,
+              "maxLength": 36,
+              "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+            }
+          },
+          {
+            "name": "extensionId",
+            "required": true,
+            "in": "query",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "example": "extension-id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image tags for the extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the tags of an image for an extension",
         "tags": [
           "image"
         ]
@@ -2364,7 +2470,7 @@
             "description": ""
           }
         },
-        "summary": "Sets the tags of an image if necessary",
+        "summary": "Sets the tags of an image",
         "tags": [
           "image"
         ]
@@ -2427,6 +2533,47 @@
           }
         },
         "summary": "Ensures that the tags are set on an image",
+        "tags": [
+          "image"
+        ]
+      }
+    },
+    "/image/{id}/getAllRecipes": {
+      "get": {
+        "description": "Returns the recipes of an image for all extensions.",
+        "operationId": "image_getAllRecipes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The image identifier",
+            "schema": {
+              "description": "An image identifier",
+              "type": "string",
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+              "minLength": 36,
+              "maxLength": 36,
+              "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image recipes for all extensions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GenerationRecipe"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets all the recipes of an image",
         "tags": [
           "image"
         ]
@@ -4259,7 +4406,7 @@
           "inFeatures"
         ]
       },
-      "SearchTag": {
+      "SearchTags": {
         "type": "object",
         "properties": {
           "values": {
@@ -4399,7 +4546,7 @@
           "value"
         ]
       },
-      "SearchFeature": {
+      "SearchFeatures": {
         "type": "object",
         "properties": {
           "operator": {
@@ -4411,26 +4558,26 @@
               }
             ]
           },
-          "condition": {
-            "description": "The search condition",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchFeatureCondition"
-              }
-            ]
-          },
-          "features": {
-            "description": "Other search features",
+          "conditions": {
+            "description": "The search conditions",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SearchFeature"
+              "$ref": "#/components/schemas/SearchFeatureCondition"
             }
+          },
+          "features": {
+            "description": "Other nested search features",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatures"
+              }
+            ]
           }
         },
         "description": "The expression for filtering image features",
         "required": [
           "operator",
-          "condition"
+          "conditions"
         ]
       },
       "SearchPropertyRange": {
@@ -4528,19 +4675,19 @@
               }
             ]
           },
-          "tag": {
+          "tags": {
             "description": "A filter which limits the result entities with the provided tags specifications",
             "allOf": [
               {
-                "$ref": "#/components/schemas/SearchTag"
+                "$ref": "#/components/schemas/SearchTags"
               }
             ]
           },
-          "feature": {
+          "features": {
             "description": "A filter which limits the result entities with the provided features specifications",
             "allOf": [
               {
-                "$ref": "#/components/schemas/SearchFeature"
+                "$ref": "#/components/schemas/SearchFeatures"
               }
             ]
           },
@@ -4984,7 +5131,8 @@
         "description": "The image generation recipe",
         "required": [
           "schemaVersion",
-          "modelTags"
+          "modelTags",
+          "prompt"
         ]
       },
       "ImageFeature": {

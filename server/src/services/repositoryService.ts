@@ -515,7 +515,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       const applicationMetadataParameterName = "applicationMetadata";
       if (supportsApplicationMedata(imageFormat) === false)
       {
-        parametersChecker.throwBadParameter(applicationMetadataParameterName, JSON.stringify(applicationMetadata), "because only PNG and JPEG images are supported for application metadata");
+        parametersChecker.throwBadParameter(applicationMetadataParameterName, applicationMetadata, "because only PNG and JPEG images are supported for application metadata");
       }
       let json: Json;
       try

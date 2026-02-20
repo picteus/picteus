@@ -1,5 +1,6 @@
 import { Expose, Type } from "class-transformer";
 import {
+  Allow,
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
@@ -8,6 +9,7 @@ import {
   IsInt,
   IsJSON,
   IsNumber,
+  IsObject,
   IsOptional,
   IsPositive,
   IsString,
@@ -279,6 +281,8 @@ export class InstructionsPrompt extends BasisPrompt
       required: true
     }
   )
+  @IsObject()
+  @Allow({ always: false })
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -301,12 +305,12 @@ export class GenerationRecipe
   constructor(modelTags: string[], prompt: TextualPrompt | InstructionsPrompt, id?: string | undefined, url?: string | undefined, software?: string | undefined, inputAssets?: string[] | undefined, aspectRatio?: number | undefined)
   {
     this.modelTags = modelTags;
-    this.prompt = prompt;
     this.id = id;
     this.url = url;
     this.software = software;
     this.inputAssets = inputAssets;
     this.aspectRatio = aspectRatio;
+    this.prompt = prompt;
   }
 
   @ApiProperty(
@@ -463,12 +467,26 @@ export class GenerationRecipe
               [PromptKind.INSTRUCTIONS]: getSchemaPath(InstructionsPrompt)
             }
         },
-      required: false
+      required: true
     }
   )
-  @IsOptional()
+  @Type(() => BasisPrompt,
+    {
+      discriminator:
+        {
+          property: "kind",
+          subTypes:
+            [
+              { value: TextualPrompt, name: "textual" },
+              { value: InstructionsPrompt, name: PromptKind.INSTRUCTIONS }
+            ]
+        },
+      keepDiscriminatorProperty: true
+    })
+  @IsDefined()
+  @NotEquals(null)
   @Expose()
-  readonly prompt?: TextualPrompt | InstructionsPrompt;
+  readonly prompt: TextualPrompt | InstructionsPrompt;
 
 }
 

@@ -125,7 +125,6 @@ class DiscardNullTransformerPackage implements TransformerPackage
 
   plainToInstance<T>(aClass: Type<T>, plain: unknown, options?: ClassTransformOptions): T[] | T
   {
-    // noinspection TypeScriptValidateTypes
     const instance = plainToInstance<T, unknown>(aClass, plain, options);
     return this.cleanEmpty(instance, [null]);
   }
@@ -134,6 +133,12 @@ class DiscardNullTransformerPackage implements TransformerPackage
   {
     if (Array.isArray(object) === true || Buffer.isBuffer(object) === true)
     {
+      return object;
+    }
+    // Unfortunately, primitives such as a string can reach that point
+    if (typeof object !== "object")
+    {
+      // @ts-ignore
       return object;
     }
     const plain = instanceToPlain(object, options);
@@ -170,13 +175,10 @@ class DiscardNullTransformerPackage implements TransformerPackage
 class DiscardNullClassSerializerInterceptor extends ClassSerializerInterceptor
 {
 
-  constructor(reflector: any, _defaultOptions: ClassSerializerInterceptorOptions)
+  constructor(reflector: any, defaultOptions: ClassSerializerInterceptorOptions)
   {
     super(reflector, {
-        strategy: "excludeAll",
-        enableImplicitConversion: true,
-        excludeExtraneousValues: true,
-        exposeUnsetFields: false,
+        ...defaultOptions,
         // This enables to recursively discard the "null" properties from the responses
         transformerPackage: new DiscardNullTransformerPackage()
       }

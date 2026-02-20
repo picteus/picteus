@@ -68,6 +68,7 @@ import {
   ExtensionsConfiguration,
   ExtensionSettings,
   FieldLengths,
+  GenerationRecipe,
   Image,
   ImageDistance,
   ImageDistances,
@@ -1560,6 +1561,29 @@ export class ImageController
     return await this.imageService.getMetadata(id);
   }
 
+  @Get(":id/getFeatures")
+  @ApiOperation(
+    {
+      summary: "Gets all the features of an image for an extension",
+      description: "Returns the features of an image given an extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
+  @ApiQuery({ name: "extensionId", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The image features for the extension",
+      type: ImageFeature,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  async getFeatures(@Param("id") id: string, @Query("extensionId") extensionId: string): Promise<ImageFeature[]>
+  {
+    return await this.imageService.getFeatures(id, extensionId);
+  }
+
   @Get(":id/getAllFeatures")
   @ApiOperation(
     {
@@ -1627,6 +1651,29 @@ export class ImageController
     return await this.imageService.setFeatures(id, extensionId, features);
   }
 
+  @Get(":id/getTags")
+  @ApiOperation(
+    {
+      summary: "Gets the tags of an image for an extension",
+      description: "Returns the tags of an image given an extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
+  @ApiQuery({ name: "extensionId", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The image tags for the extension",
+      type: String,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  async getTags(@Param("id") id: string, @Query("extensionId") extensionId: string): Promise<ImageTag []>
+  {
+    return await this.imageService.getTags(id, extensionId);
+  }
+
   @Get(":id/getAllTags")
   @ApiOperation(
     {
@@ -1652,7 +1699,7 @@ export class ImageController
   @Put(":id/setTags")
   @ApiOperation(
     {
-      summary: "Sets the tags of an image if necessary",
+      summary: "Sets the tags of an image",
       description: "Sets the tags of an image for a given extension."
     }
   )
@@ -1736,6 +1783,28 @@ export class ImageController
       throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
     }
     return await this.imageService.setTags(id, extensionId, tags, true);
+  }
+
+  @Get(":id/getAllRecipes")
+  @ApiOperation(
+    {
+      summary: "Gets all the recipes of an image",
+      description: "Returns the recipes of an image for all extensions."
+    }
+  )
+  @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The image recipes for all extensions",
+      type: GenerationRecipe,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  async getAllRecipes(@Param("id") id: string): Promise<GenerationRecipe[]>
+  {
+    return await this.imageService.getAllRecipes(id);
   }
 
   @Get(":id/getAllEmbeddings")

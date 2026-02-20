@@ -70,6 +70,7 @@ import {
   ImageSummary,
   ImageSummaryList,
   InstructionsPrompt,
+  PromptKind,
   TextualPrompt
 } from "./image.dtos";
 import {
@@ -169,6 +170,7 @@ export {
   ManifestRuntimeEnvironment,
   ManifestUserInterface,
   NumericRange,
+  PromptKind,
   Repository,
   RepositoryActivity,
   RepositoryActivityKind,

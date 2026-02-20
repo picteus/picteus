@@ -273,7 +273,6 @@ export class ImageService
       {
         featuresFilter.some = inputs;
       }
-      console.dir(JSON.stringify(featuresFilter, undefined, 2));
     }
     const [widthFilter, heightFilter, weightInBytesFilter] = [widthRange, heightRange, weightInBytesRange].map((range) =>
     {
@@ -490,6 +489,22 @@ export class ImageService
     return plainToInstanceViaJSON(ImageMetadata, this.metadataToDto(entity.metadata!));
   }
 
+  async getFeatures(id: string, extensionId: string): Promise<ImageFeature[]>
+  {
+    logger.info(`Getting the features for the image with id '${id}' and the extension with id '${extensionId}'`);
+    this.checkExtension(extensionId);
+    await this.getPersistedImage(id, false, false, false);
+    const entities = await this.entitiesProvider.imageFeature.findMany({
+      where: {
+        extensionId,
+        imageId: id,
+        NOT: { AND: { stringValue: ImageService.emptyImageFeatureValue, numericValue: null } }
+      },
+      orderBy: { id: "asc" }
+    });
+    return entities.map(this.featureToDto.bind(this));
+  }
+
   async getAllFeatures(id: string): Promise<AllImageFeatures>
   {
     logger.info(`Getting the features for the image with id '${id}' for all extensions`);
@@ -498,7 +513,7 @@ export class ImageService
       where: { imageId: id, NOT: { AND: { stringValue: ImageService.emptyImageFeatureValue, numericValue: null } } },
       orderBy: { id: "asc" }
     });
-    return entities.map(this.featureToDto.bind(this));
+    return entities.map(this.extensionFeatureToDto.bind(this));
   }
 
   async setFeatures(id: string, extensionId: string, features: ImageFeature[]): Promise<void>
@@ -683,6 +698,21 @@ export class ImageService
     await this.entitiesProvider.prisma.$transaction([deleteAttachments, deleteFeatures, createFeatures]);
   }
 
+  async getTags(id: string, extensionId: string): Promise<ImageTag []>
+  {
+    logger.info(`Getting the tags for the image with id '${id}' and for the extension with id ${extensionId}`);
+    this.checkExtension(extensionId);
+    await this.getPersistedImage(id, false, false, false);
+    const entities = await this.entitiesProvider.imageTag.findMany({
+      where: { AND: [{ extensionId, imageId: id }, { value: { not: ImageService.emptyImageTag } }] },
+      orderBy: { value: "asc" }
+    });
+    return entities.map((entity) =>
+    {
+      return entity.value;
+    });
+  }
+
   async getAllTags(id: string): Promise<AllExtensionImageTags>
   {
     logger.info(`Getting the tags for the image with id '${id}' for all extensions`);
@@ -764,6 +794,17 @@ export class ImageService
       // We remove the extraneous tags
       await this.entitiesProvider.imageTag.deleteMany({ where: { id: { in: extraneousEntitiesIds } } });
     }
+  }
+
+  async getAllRecipes(id: string): Promise<GenerationRecipe []>
+  {
+    logger.info(`Getting the recipes for the image with id '${id}' for all extensions`);
+    await this.getPersistedImage(id, false, false, false);
+    const entities = await this.entitiesProvider.imageFeature.findMany({
+      where: { imageId: id, type: ImageFeatureType.RECIPE },
+      orderBy: { id: "asc" }
+    });
+    return entities.map(feature => JSON.parse(feature.stringValue!)).map(feature => plainToInstanceViaJSON(GenerationRecipe, feature));
   }
 
   async getAllEmbeddings(id: string): Promise<AllImageEmbeddings>
@@ -964,7 +1005,7 @@ export class ImageService
       metadata: metadata === undefined ? [] : this.metadataToDto(metadata)
     });
     Object.assign(entity, {
-      features: features === undefined ? [] : features.filter(feature => !(feature.stringValue == ImageService.emptyImageFeatureValue && feature.numericValue === null)).map(this.featureToDto.bind(this))
+      features: features === undefined ? [] : features.filter(feature => !(feature.stringValue == ImageService.emptyImageFeatureValue && feature.numericValue === null)).map(this.extensionFeatureToDto.bind(this))
     });
     Object.assign(entity, {
       tags: tags === undefined ? [] : tags.filter(tag => tag.value !== ImageService.emptyImageTag).map((tag) =>
@@ -976,7 +1017,12 @@ export class ImageService
     return entity;
   }
 
-  private featureToDto(feature: PersistedImageFeature): ExtensionImageFeature
+  private featureToDto(feature: PersistedImageFeature): ImageFeature
+  {
+    return new ImageFeature(feature.type as ImageFeatureType, feature.format as ImageFeatureFormat, feature.name === null ? undefined : feature.name, this.fromPersistentToDtoFeatureValue(feature));
+  }
+
+  private extensionFeatureToDto(feature: PersistedImageFeature): ExtensionImageFeature
   {
     return new ExtensionImageFeature(feature.extensionId, feature.type as ImageFeatureType, feature.format as ImageFeatureFormat, feature.name === null ? undefined : feature.name, this.fromPersistentToDtoFeatureValue(feature));
   }

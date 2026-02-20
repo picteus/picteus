@@ -33,18 +33,22 @@ import { MainModule } from "../src/app.module";
 import {
   Extension,
   fileWithProtocol,
+  GenerationRecipe,
   Image,
   ImageFormat,
   ImageSummary,
+  InstructionsPrompt,
   Manifest,
   ManifestCapability,
   ManifestEvent,
   ManifestExtensionCommand,
   ManifestRuntimeEnvironment,
+  PromptKind,
   Repository,
   RepositoryActivityKind,
   RepositoryLocationType,
-  RepositoryStatus
+  RepositoryStatus,
+  TextualPrompt
 } from "../src/dtos/app.dtos";
 import { EventEntity, ExtensionEventProcess, Notifier, RepositoryEventAction } from "../src/notifier";
 import { writeMetadata } from "../src/services/utils/images";
@@ -173,6 +177,13 @@ export class ImageFeeder
   {
     const buffer = await writeMetadata(filePath, imageFormat, metadata);
     fs.writeFileSync(filePath, buffer);
+  }
+
+  computeRecipe(kind: PromptKind, modelTag: string = "google/gemini"): GenerationRecipe
+  {
+    const textualPrompt = new TextualPrompt("a beautiful photo");
+    const instructionsPrompt = new InstructionsPrompt({ key1: "value1" });
+    return new GenerationRecipe([modelTag], kind === PromptKind.TEXTUAL ? textualPrompt : instructionsPrompt, "id", "https//generated.image/id", "picteus", [], 1.25);
   }
 
 }

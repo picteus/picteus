@@ -15,7 +15,15 @@ import { Prisma } from ".prisma/client";
 import { paths } from "../src/paths";
 import { logger } from "../src/logger";
 import { Base, Core } from "./base";
-import { ImageSearchParameters, Manifest, toMimeType } from "../src/dtos/app.dtos";
+import {
+  GenerationRecipe,
+  ImageSearchParameters,
+  InstructionsPrompt,
+  Manifest,
+  PromptKind,
+  TextualPrompt,
+  toMimeType
+} from "../src/dtos/app.dtos";
 import { plainToInstanceViaJSON } from "../src/utils";
 import { ServiceError } from "../src/app.exceptions";
 import { EventEntity, ImageEventAction, Notifier, RepositoryEventAction, TextEventAction } from "../src/notifier";
@@ -405,21 +413,47 @@ describe("Miscellaneous bare", () =>
     expect(isProcessAlive(childProcess.pid!)).toBe(false);
   });
 
-  test("Manifest", async () =>
+  test("serialize", async () =>
   {
-    const id = "id";
-    const executable = "echo";
-    const argument1 = "dummy";
-    const string = `{ "id": "${id}", "instructions": [ { "execution": { "executable": "${executable}", "arguments": ["${argument1}"] } } ] }`;
-    const object = JSON.parse(string);
-    const manifest: Manifest = plainToInstanceViaJSON(Manifest, object);
-    expect(manifest.id).toBe(id);
-    expect(manifest.instructions).toBeDefined();
-    expect(manifest.instructions.length).toEqual(1);
-    const instruction = manifest.instructions[0];
-    expect(instruction.execution).toBeDefined();
-    expect(instruction.execution.executable).toBe(executable);
-    expect(instruction.execution.arguments[0]).toBe(argument1);
+    {
+      // We assess the "Manifest"
+      const id = "id";
+      const executable = "echo";
+      const argument1 = "dummy";
+      const string = `{ "id": "${id}", "instructions": [ { "execution": { "executable": "${executable}", "arguments": ["${argument1}"] } } ] }`;
+      const object = JSON.parse(string);
+      const manifest: Manifest = plainToInstanceViaJSON(Manifest, object);
+      expect(manifest.id).toBe(id);
+      expect(manifest.instructions).toBeDefined();
+      expect(manifest.instructions.length).toEqual(1);
+      const instruction = manifest.instructions[0];
+      expect(instruction.execution).toBeDefined();
+      expect(instruction.execution.executable).toBe(executable);
+      expect(instruction.execution.arguments[0]).toBe(argument1);
+    }
+    {
+      // We assess the "GenerationRecipe"
+      const id = `id`;
+      const url = `http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia`;
+      const aspectRatio = 1;
+      const modelTag = "google/gemini-3-pro-image-preview";
+      const inputAsset = "b9fa5182-0a9f-4c3c-a74c-70d860939651";
+      const text = "Closeup body, a hyper-stylistic,, extremely detailed image is a breathtaking painting created from a combination of smeared black and gold metallic colors. the silhouette of a young woman is captured in streaks as if they were moving rapidly in the same direction. the black paint is applied in bold, dynamic strokes, creating a sense of energy and movement that contrasts beautifully with the gold accents. gold paint is used to highlight the female silhouette, adding a sense of depth and dimension to the image. the overall effect is an exciting, surreal dynamism, as if the viewer has captured a fleeting moment in time. every detail of the image is meticulously detailed, from the subtle, swirling patterns of the gold paint to the complex, textural patterns of the black paint. the contrasts between light and dark, color and texture create a sense of tension and energy that draws the viewer in, inviting them to explore the kinetic world of the painting. the highest quality, intricate detail, visually stunning, masterpiece, black and gold street backdrop";
+      const instructions = `{"id":98780806,"url":"https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/13744eea-8388-41c5-9f34-2fb155df2bea/original=true/13744eea-8388-41c5-9f34-2fb155df2bea.jpeg","hash":"UHB{Y{9#NHxZ~UEQRkxZ%LxFE4bb-oxY9vxY","width":768,"height":1344,"nsfwLevel":"None","type":"image","nsfw":false,"browsingLevel":1,"createdAt":"2025-09-07T19:58:26.745Z","postId":21918779,"stats":{"cryCount":333,"laughCount":588,"likeCount":4816,"dislikeCount":0,"heartCount":1832,"commentCount":7},"meta":{"seed":3971715163,"vaes":["ae.sft"],"comfy":"{\\"prompt\\": {\\"10005\\": {\\"class_type\\": \\"UnetLoaderGGUF\\", \\"inputs\\": {\\"unet_name\\": \\"EMS-1085410-EMS.gguf\\"}, \\"_properties\\": null}, \\"10019\\": {\\"class_type\\": \\"CLIPLoader\\", \\"inputs\\": {\\"clip_name\\": \\"t5xxl_fp8_e4m3fn.safetensors\\", \\"device\\": \\"default\\", \\"type\\": \\"chroma\\"}, \\"_properties\\": null}, \\"10021\\": {\\"class_type\\": \\"T5TokenizerOptions\\", \\"inputs\\": {\\"clip\\": [\\"10019\\", 0], \\"min_length\\": 3, \\"min_padding\\": 0}, \\"_properties\\": null}, \\"10022\\": {\\"class_type\\": \\"LoraTagLoader\\", \\"inputs\\": {\\"clip\\": [\\"10021\\", 0], \\"model\\": [\\"10005\\", 0], \\"text\\": \\"ECHO_EMPTY\\"}, \\"_properties\\": null}, \\"10023\\": {\\"class_type\\": \\"VAELoader\\", \\"inputs\\": {\\"vae_name\\": \\"ae.sft\\"}, \\"_properties\\": null}, \\"10038\\": {\\"class_type\\": \\"CLIPTextEncode\\", \\"inputs\\": {\\"clip\\": [\\"10022\\", 1], \\"text\\": \\"Closeup body, A hyper-stylistic,, extremely detailed image is a breathtaking painting created from a combination of smeared black and gold metallic colors. The silhouette of a young  woman is captured in streaks as if they were moving rapidly in the same direction. The black paint is applied in bold, dynamic strokes, creating a sense of energy and movement that contrasts beautifully with the gold accents. Gold paint is used to highlight the female silhouette, adding a sense of depth and dimension to the image. The overall effect is an exciting, surreal dynamism, as if the viewer has captured a fleeting moment in time. Every detail of the image is meticulously detailed, from the subtle, swirling patterns of the gold paint to the complex, textural patterns of the black paint. The contrasts between light and dark, color and texture create a sense of tension and energy that draws the viewer in, inviting them to explore the kinetic world of the painting. the highest quality, intricate detail, visually stunning, masterpiece, black and gold street backdrop\\", \\"token_normalization\\": \\"none\\", \\"weight_interpretation\\": \\"comfy\\"}, \\"_properties\\": null}, \\"10039\\": {\\"class_type\\": \\"CLIPTextEncode\\", \\"inputs\\": {\\"clip\\": [\\"10022\\", 1], \\"text\\": \\"neck,(worst quality:1.2), (low quality:1.2), (normal quality:1.2), lowres, bad anatomy, bad hands, (Integration of fingers and fingers, melting fingers), signature, watermarks, ugly, imperfect eyes, error, extra limb, missing limbs, painting by , 3d art\\\\n\\\\nembedding:bad-artist\\", \\"token_normalization\\": \\"none\\", \\"weight_interpretation\\": \\"comfy\\"}, \\"_properties\\": null}, \\"10064\\": {\\"class_type\\": \\"EmptySD3LatentImage\\", \\"inputs\\": {\\"batch_size\\": 2, \\"height\\": 1344, \\"width\\": 768}, \\"_properties\\": null}, \\"11002\\": {\\"class_type\\": \\"KSampler\\", \\"inputs\\": {\\"cfg\\": 3.5, \\"denoise\\": 1, \\"ensd\\": 31337, \\"latent_image\\": [\\"10064\\", 0], \\"model\\": [\\"10022\\", 0], \\"negative\\": [\\"10039\\", 0], \\"positive\\": [\\"10038\\", 0], \\"sampler_name\\": \\"dpmpp_2m\\", \\"scheduler\\": \\"sgm_uniform\\", \\"seed\\": 3971715163, \\"seed_mode\\": \\"A1111\\", \\"steps\\": 25}, \\"_properties\\": null}, \\"11021\\": {\\"class_type\\": \\"VAEDecode\\", \\"inputs\\": {\\"samples\\": [\\"11002\\", 0], \\"vae\\": [\\"10023\\", 0]}, \\"_properties\\": null}, \\"12005\\": {\\"class_type\\": \\"SaveImage\\", \\"inputs\\": {\\"filename_prefix\\": \\"903908994664570572\\", \\"images\\": [\\"11021\\", 0]}, \\"_properties\\": null}}, \\"workflow\\": undefined}","steps":25,"width":768,"height":1344,"prompt":"Closeup body, A hyper-stylistic,, extremely detailed image is a breathtaking painting created from a combination of smeared black and gold metallic colors. The silhouette of a young  woman is captured in streaks as if they were moving rapidly in the same direction. The black paint is applied in bold, dynamic strokes, creating a sense of energy and movement that contrasts beautifully with the gold accents. Gold paint is used to highlight the female silhouette, adding a sense of depth and dimension to the image. The overall effect is an exciting, surreal dynamism, as if the viewer has captured a fleeting moment in time. Every detail of the image is meticulously detailed, from the subtle, swirling patterns of the gold paint to the complex, textural patterns of the black paint. The contrasts between light and dark, color and texture create a sense of tension and energy that draws the viewer in, inviting them to explore the kinetic world of the painting. the highest quality, intricate detail, visually stunning, masterpiece, black and gold street backdrop","denoise":1,"sampler":"DPM++ 2M","cfgScale":3.5,"scheduler":"sgm_uniform","negativePrompt":"neck,(worst quality:1.2), (low quality:1.2), (normal quality:1.2), lowres, bad anatomy, bad hands, (Integration of fingers and fingers, melting fingers), signature, watermarks, ugly, imperfect eyes, error, extra limb, missing limbs, painting by , 3d art\\n\\nembedding:bad-artist"},"username":"Sheat13","baseModel":"Chroma","modelVersionIds":[]}`;
+      const prompts = [`{"kind":"textual","text":"${text}"}`, `{"kind":"instructions","value":${instructions}}`];
+      for (const prompt of prompts)
+      {
+        const string = `{"schemaVersion":1,"id":"${id}","url":"${url}","modelTags":["${modelTag}"],"software":"picteus","inputAssets":["${inputAsset}"],"aspectRatio":${aspectRatio},"prompt":${prompt}}`;
+        const object = JSON.parse(string);
+        const recipe: GenerationRecipe = plainToInstanceViaJSON(GenerationRecipe, object);
+        expect(recipe.id).toBe(id);
+        expect(recipe.url).toBe(url);
+        expect(recipe.aspectRatio).toBe(aspectRatio);
+        expect(recipe.modelTags[0]).toBe(modelTag);
+        expect(recipe.inputAssets![0]).toBe(inputAsset);
+        expect(recipe.prompt).toEqual(recipe.prompt.kind === PromptKind.TEXTUAL ? new TextualPrompt(text) : new InstructionsPrompt(JSON.parse(instructions)));
+      }
+    }
   });
 
   test("ensureDirectory", async () =>
