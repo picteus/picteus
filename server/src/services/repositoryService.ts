@@ -12,11 +12,15 @@ import { Prisma, Repository as PersistedRepository } from ".prisma/client";
 import { logger } from "../logger";
 import { paths } from "../paths";
 import {
+  AllExtensionImageFeatureNames,
   AllExtensionImageTags,
   ApplicationMetadata,
+  ExtensionImageFeatureName,
   ExtensionImageTag,
   fileWithProtocol,
   Image,
+  ImageFeatureFormat,
+  ImageFeatureType,
   Repository,
   RepositoryActivities,
   RepositoryActivity,
@@ -394,9 +398,23 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     });
   }
 
+  async getFeatureNames(): Promise<AllExtensionImageFeatureNames>
+  {
+    logger.info("Getting all the extensions image feature names");
+    const features = await this.entitiesProvider.imageFeature.findMany({
+      distinct: ["extensionId", "format", "type", "name"],
+      where: { name: { not: null } },
+      orderBy: [{ extensionId: "asc" }, { name: "asc" }]
+    });
+    return features.map((feature) =>
+    {
+      return new ExtensionImageFeatureName(feature.extensionId, feature.type as ImageFeatureType, feature.format as ImageFeatureFormat, feature.name!);
+    });
+  }
+
   async getTags(): Promise<AllExtensionImageTags>
   {
-    logger.info("Getting the tags");
+    logger.info("Getting all the extensions image tags");
     const tags = await this.entitiesProvider.imageTag.findMany({
       distinct: ["extensionId", "value"],
       where: { value: { not: ImageService.emptyImageTag } },

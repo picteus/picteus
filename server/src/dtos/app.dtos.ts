@@ -50,6 +50,7 @@ import {
   UserInterfaceAnchor
 } from "./extension.dtos";
 import {
+  AllExtensionImageFeatureNames,
   AllExtensionImageTags,
   AllImageEmbeddings,
   AllImageFeatures,
@@ -59,6 +60,7 @@ import {
   ComputedImageFormat,
   ExtensionImageEmbeddings,
   ExtensionImageFeature,
+  ExtensionImageFeatureName,
   ExtensionImageTag,
   GenerationRecipe,
   Image,
@@ -135,6 +137,7 @@ class ConstantsRegistry
 }
 
 export {
+  AllExtensionImageFeatureNames,
   AllExtensionImageTags,
   AllImageEmbeddings,
   AllImageFeatures,
@@ -166,6 +169,7 @@ export {
   extensionIdSchema,
   ExtensionImageEmbeddings,
   ExtensionImageFeature,
+  ExtensionImageFeatureName,
   ExtensionImageTag,
   ExtensionManual,
   ExtensionStatus,

@@ -1315,6 +1315,32 @@
         ]
       }
     },
+    "/repository/featureNames": {
+      "get": {
+        "description": "Returns the feature names of all images extensions.",
+        "operationId": "repository_getFeatureNames",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The feature names for all extensions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExtensionImageFeatureName"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets all the feature names",
+        "tags": [
+          "repository"
+        ]
+      }
+    },
     "/repository/tags": {
       "get": {
         "description": "Returns the tags of all images extensions.",
@@ -4341,6 +4367,80 @@
           "kind"
         ]
       },
+      "ImageFeatureType": {
+        "type": "string",
+        "enum": [
+          "caption",
+          "description",
+          "comment",
+          "annotation",
+          "metadata",
+          "recipe",
+          "identity",
+          "other"
+        ],
+        "description": "All the possible types for an image feature.",
+        "default": "other"
+      },
+      "ImageFeatureFormat": {
+        "type": "string",
+        "enum": [
+          "string",
+          "integer",
+          "float",
+          "boolean",
+          "json",
+          "xml",
+          "markdown",
+          "html",
+          "binary"
+        ],
+        "description": "All the possible formats for an image feature.",
+        "default": "string"
+      },
+      "ExtensionImageFeatureName": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The extension identifier",
+            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "extension-id"
+          },
+          "type": {
+            "description": "The image feature type",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageFeatureType"
+              }
+            ]
+          },
+          "format": {
+            "description": "The image feature format",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageFeatureFormat"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "The image feature name",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "field"
+          }
+        },
+        "description": "A feature name set on an image for a given extension",
+        "required": [
+          "id",
+          "type",
+          "format",
+          "name"
+        ]
+      },
       "ExtensionImageTag": {
         "type": "object",
         "properties": {
@@ -4359,7 +4459,7 @@
             "maxLength": 64
           }
         },
-        "description": "A tag on an image for a given extension",
+        "description": "A tag set on an image for a given extension",
         "required": [
           "id",
           "value"
@@ -4436,37 +4536,6 @@
           "not"
         ],
         "description": "The logical operator"
-      },
-      "ImageFeatureType": {
-        "type": "string",
-        "enum": [
-          "caption",
-          "description",
-          "comment",
-          "annotation",
-          "metadata",
-          "recipe",
-          "identity",
-          "other"
-        ],
-        "description": "All the possible types for an image feature.",
-        "default": "other"
-      },
-      "ImageFeatureFormat": {
-        "type": "string",
-        "enum": [
-          "string",
-          "integer",
-          "float",
-          "boolean",
-          "json",
-          "xml",
-          "markdown",
-          "html",
-          "binary"
-        ],
-        "description": "All the possible formats for an image feature.",
-        "default": "string"
       },
       "SearchFeatureComparisonOperator": {
         "type": "string",
@@ -5093,6 +5162,9 @@
           },
           "inputAssets": {
             "description": "The identifiers or URLs of the input assets",
+            "example": [
+              "fb6af249-1061-48a0-9e47-026d7428d709"
+            ],
             "type": "array",
             "items": {
               "type": "string",

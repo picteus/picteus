@@ -417,7 +417,8 @@ export class GenerationRecipe
       isArray: true,
       minLength: 1,
       maxLength: FieldLengths.url,
-      required: false
+      required: false,
+      example: [imageIdSchema.example]
     }
   )
   @IsString({ each: true })
@@ -735,10 +736,81 @@ export class ExtensionImageFeature extends ImageFeature
 
 export type AllImageFeatures = ExtensionImageFeature[];
 
-/**
- * An image tag for an extension.
- */
-@ApiSchema({ description: "A tag on an image for a given extension" })
+@ApiSchema({ description: "A feature name set on an image for a given extension" })
+export class ExtensionImageFeatureName
+{
+
+  constructor(id: string, type: ImageFeatureType, format: ImageFeatureFormat, name: string)
+  {
+    this.id = id;
+    this.type = type;
+    this.format = format;
+    this.name = name;
+  }
+
+  @ApiProperty(
+    {
+      description: "The extension identifier",
+      type: String,
+      pattern: computeIdPattern(FieldLengths.shortTechnical),
+      minLength: 1,
+      maxLength: FieldLengths.shortTechnical,
+      required: true,
+      example: "extension-id"
+    }
+  )
+  @IsString()
+  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @MinLength(1)
+  @MaxLength(FieldLengths.shortTechnical)
+  @Expose()
+  readonly id: string;
+
+  @ApiProperty(
+    {
+      description: "The image feature type",
+      required: true,
+      enum: ImageFeatureType,
+      enumName: "ImageFeatureType"
+    }
+  )
+  @IsEnum(ImageFeatureType)
+  @Expose()
+  readonly type: ImageFeatureType;
+
+  @ApiProperty(
+    {
+      description: "The image feature format",
+      enum: ImageFeatureFormat,
+      enumName: "ImageFeatureFormat",
+      required: true
+    }
+  )
+  @IsEnum(ImageFeatureFormat)
+  @Expose()
+  readonly format: ImageFeatureFormat;
+
+  @ApiProperty(
+    {
+      description: "The image feature name",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.technical,
+      required: true,
+      example: "field"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.technical)
+  @Expose()
+  readonly name: string;
+
+}
+
+export type AllExtensionImageFeatureNames = ExtensionImageFeatureName[];
+
+@ApiSchema({ description: "A tag set on an image for a given extension" })
 export class ExtensionImageTag
 {
 

@@ -44,6 +44,7 @@ import {
   withOneOfPolicies
 } from "../app.guards";
 import {
+  AllExtensionImageFeatureNames,
   AllExtensionImageTags,
   AllImageEmbeddings,
   AllImageFeatures,
@@ -64,6 +65,7 @@ import {
   extensionIdSchema,
   ExtensionImageEmbeddings,
   ExtensionImageFeature,
+  ExtensionImageFeatureName,
   ExtensionImageTag,
   ExtensionsConfiguration,
   ExtensionSettings,
@@ -1119,6 +1121,27 @@ export class RepositoryController
   async activities(): Promise<RepositoryActivities>
   {
     return await this.repositoryService.activities();
+  }
+
+  @Get("featureNames")
+  @ApiOperation(
+    {
+      summary: "Gets all the feature names",
+      description: "Returns the feature names of all images extensions."
+    }
+  )
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The feature names for all extensions",
+      type: ExtensionImageFeatureName,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryRead]))
+  async getFeatureNames(): Promise<AllExtensionImageFeatureNames>
+  {
+    return await this.repositoryService.getFeatureNames();
   }
 
   @Get("tags")

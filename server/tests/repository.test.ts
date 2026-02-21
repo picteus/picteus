@@ -491,13 +491,33 @@ describe("Repository", () =>
     }
   });
 
+  test("getFeatureNames", async () =>
+  {
+    const { images } = await base.prepareRepositoryWithImages([base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName, base.imageFeeder.webpImageFileName]);
+    const extension1 = await base.prepareExtension("extension1");
+    const extension2 = await base.prepareExtension("extension2");
+    const commonImages = [images[0], images[1]];
+    const featureName = "string";
+    for (const image of commonImages)
+    {
+      await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension1.manifest.id, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, featureName, "string"), new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.FLOAT, "float", 3.14)]);
+      await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension2.manifest.id, [new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.STRING, featureName, "string"), new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.JSON, undefined, JSON.stringify({ key: "value" }))]);
+    }
+    await base.getImageController().setFeatures(Base.allPolicyContext, images[2].id, extension1.manifest.id, [new ImageFeature(ImageFeatureType.IDENTITY, ImageFeatureFormat.INTEGER, "integer", 42)]);
+
+    const featureNames = await base.getRepositoryController().getFeatureNames();
+    expect(featureNames.length).toEqual(4);
+    const sortedTags = featureNames.sort((object1, object2) => object1.id.localeCompare(object2.id));
+    expect(sortedTags).toEqual(featureNames);
+  });
+
   test("getTags", async () =>
   {
     const { images } = await base.prepareRepositoryWithImages([base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName, base.imageFeeder.webpImageFileName]);
     const extension1 = await base.prepareExtension("extension1");
     const extension2 = await base.prepareExtension("extension2");
-    const toTagImages = [images[0], images[1]];
-    for (const image of toTagImages)
+    const commonImages = [images[0], images[1]];
+    for (const image of commonImages)
     {
       await base.getImageController().setTags(Base.allPolicyContext, image.id, extension1.manifest.id, ["tag1", image.id]);
       await base.getImageController().setTags(Base.allPolicyContext, image.id, extension2.manifest.id, ["tag2", image.name]);
@@ -505,7 +525,7 @@ describe("Repository", () =>
     await base.getImageController().setTags(Base.allPolicyContext, images[2].id, extension1.manifest.id, []);
 
     const tags = await base.getRepositoryController().getTags();
-    expect(tags.length).toEqual(toTagImages.length * 2 + 2);
+    expect(tags.length).toEqual(commonImages.length * 2 + 2);
     const sortedTags = tags.sort((object1, object2) => object1.id.localeCompare(object2.id));
     expect(sortedTags).toEqual(tags);
   });
