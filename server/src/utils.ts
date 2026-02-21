@@ -10,7 +10,7 @@ export function plainToInstanceViaJSON<T>(aClass: ClassConstructor<T>, entity: o
   return plainToInstance(aClass, entity);
 }
 
-export function stringify(object: Record<string, any>, indent: boolean = false): string
+export function stringify(object: Record<string, any>, indent: boolean = true): string
 {
   return indent === false ? JSON.stringify(object) : JSON.stringify(object, (_key, value) => value, 2);
 }

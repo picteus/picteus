@@ -561,7 +561,7 @@ export class ExtensionService
     }
     catch (error)
     {
-      parametersChecker.throwBadParameter("settings", stringify(settings), `because it does not comply with the settings JSON schema. Reason: '${(error as Error).message}'`);
+      parametersChecker.throwBadParameter("settings", stringify(settings, false), `because it does not comply with the settings JSON schema. Reason: '${(error as Error).message}'`);
     }
     const settingsValue = stringify(value);
     const objectValue = { extensionId: id, value: settingsValue };

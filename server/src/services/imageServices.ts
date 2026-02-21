@@ -43,6 +43,7 @@ import {
   ImageEmbeddings,
   ImageFeature,
   ImageFeatureFormat,
+  ImageFeatureNullValue,
   ImageFeatureType,
   ImageFeatureValue,
   ImageFormat,
@@ -248,9 +249,10 @@ export class ImageService
             comparisonOperator = operator === SearchFeatureComparisonOperator.GREATER_THAN ? "gt" : (operator === SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL ? "gte" : (operator === SearchFeatureComparisonOperator.LESS_THAN ? "lt" : "lte"));
             break;
         }
-        const fieldName: ImageFeatureValueField = typeof condition.value === "string" ? featureFieldStringValue : featureFieldNumericValue;
+        const fieldName: ImageFeatureValueField = (format !== ImageFeatureFormat.INTEGER && format !== ImageFeatureFormat.FLOAT && format !== ImageFeatureFormat.BOOLEAN) ? featureFieldStringValue : featureFieldNumericValue;
         const value: string | number = this.fromDtoToPersistentFeatureValue(condition.value);
-        whereInputs.push({ [fieldName]: { [comparisonOperator]: value } });
+        const withNullValue = (operator === SearchFeatureComparisonOperator.DIFFERENT && value === ImageFeatureNullValue.Null) ? null : value;
+        whereInputs.push({ [fieldName]: { [comparisonOperator]: withNullValue } });
         return { AND: whereInputs };
       };
       const computeFeaturesInputs = (searchFeatures: SearchFeatures): Prisma.ImageFeatureWhereInput =>

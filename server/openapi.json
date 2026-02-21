@@ -5574,6 +5574,46 @@
         "required": [
           "value"
         ]
+      },
+      "Software": {
+        "type": "string",
+        "enum": [
+          "picteus"
+        ],
+        "description": "The application name"
+      },
+      "ImageFeatureNullValue": {
+        "type": "string",
+        "enum": [
+          ""
+        ],
+        "description": "The value to pass to the image search web services to designate a 'non-null' feature value"
+      },
+      "ConstantsRegistry": {
+        "type": "object",
+        "properties": {
+          "applicationName": {
+            "description": "The application name",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Software"
+              }
+            ]
+          },
+          "imageFeatureNullValue": {
+            "description": "The value to pass to the image search web services to designate a 'non-null' feature value",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageFeatureNullValue"
+              }
+            ]
+          }
+        },
+        "description": "Contains the definition of all the application constants",
+        "required": [
+          "applicationName",
+          "imageFeatureNullValue"
+        ]
       }
     }
   },

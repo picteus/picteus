@@ -32,7 +32,7 @@ import { getBootstrapLogs, logger, stopBootstrapLogs } from "./logger";
 import { product } from "./constants";
 import { paths } from "./paths";
 import { environmentVariableChecker, StringLengths, StringNature } from "./services/utils/parametersChecker";
-import { ManifestRuntimeEnvironment } from "./dtos/app.dtos";
+import { ConstantsRegistry, ManifestRuntimeEnvironment } from "./dtos/app.dtos";
 import { stringify } from "./utils";
 import { apiKeyHeaderName, AuthenticationGuard } from "./app.guards";
 import { MainModule } from "./app.module";
@@ -250,6 +250,8 @@ class InternalServer
 
     const document: OpenAPIObject = SwaggerModule.createDocument(application, documentBuilder.build(),
       {
+        // We add an extra model which exposes all the constants
+        extraModels: [ConstantsRegistry],
         // We change the generated Open API "operationId" property
         operationIdFactory: (controllerKey, methodKey) =>
         {

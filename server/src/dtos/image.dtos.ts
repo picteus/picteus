@@ -685,6 +685,14 @@ export class ImageFeature
 }
 
 /**
+ * The definition of the "null" value of a feature value.
+ */
+export enum ImageFeatureNullValue
+{
+  Null = ""
+}
+
+/**
  * The different ways an image should be resized.
  */
 export enum ImageResizeRender

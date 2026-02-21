@@ -1,3 +1,5 @@
+import { ApiProperty, ApiSchema } from "@nestjs/swagger";
+
 import {
   alphaNumericPlusPattern,
   applicationXGzipMimeType,
@@ -65,6 +67,7 @@ import {
   ImageDistances,
   ImageEmbeddings,
   ImageFeature,
+  ImageFeatureNullValue,
   ImageMetadata,
   ImageResizeRender,
   ImageSummary,
@@ -100,6 +103,37 @@ import {
 import { apiScopesSeparator, ApiSecret, ApiSecretSummary, ApiSecretType } from "./apiSecret.dtos";
 import { Settings } from "./miscellaneous.dtos";
 
+
+/**
+ * The name of the software.
+ */
+enum Software
+{
+  picteus = "picteus"
+}
+
+@ApiSchema({ description: "Contains the definition of all the application constants" })
+class ConstantsRegistry
+{
+
+  @ApiProperty({
+    description: "The application name",
+    enum: Software,
+    enumName: "Software",
+    required: true
+  })
+  applicationName: Software = Software.picteus;
+
+  @ApiProperty({
+    description: "The value to pass to the image search web services to designate a 'non-null' feature value",
+    enum: ImageFeatureNullValue,
+    enumName: "ImageFeatureNullValue",
+    required: true
+  })
+  imageFeatureNullValue: ImageFeatureNullValue = ImageFeatureNullValue.Null;
+
+}
+
 export {
   AllExtensionImageTags,
   AllImageEmbeddings,
@@ -120,6 +154,7 @@ export {
   computeImageFormatsExtensions,
   ConfigurationCapability,
   ConfigurationExtensionCommand,
+  ConstantsRegistry,
   Dates,
   Extension,
   ExtensionActivities,
@@ -146,6 +181,7 @@ export {
   ImageEmbeddings,
   ImageFeature,
   ImageFeatureFormat,
+  ImageFeatureNullValue,
   ImageFeatureType,
   ImageFeatureValue,
   ImageFormat,
@@ -193,6 +229,7 @@ export {
   SearchSortingProperty,
   SearchTags,
   Settings,
+  Software,
   TextualPrompt,
   toFileExtension,
   toMimeType,

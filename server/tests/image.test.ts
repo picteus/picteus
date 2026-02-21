@@ -21,6 +21,7 @@ import {
   ImageEmbeddings,
   ImageFeature,
   ImageFeatureFormat,
+  ImageFeatureNullValue,
   ImageFeatureType,
   ImageFormat,
   ImageFormats,
@@ -414,8 +415,7 @@ describe("Image with module", () =>
     const repository = await base.prepareEmptyRepository(directoryPath);
     const image = await base.getRepositoryController().getImageByUrl(fileWithProtocol + preexistingFilePath);
     const extension = await base.prepareExtension();
-    const stringFeatureValue = "123456789";
-    const stringFeature = new ImageFeature(ImageFeatureType.IDENTITY, ImageFeatureFormat.STRING, "identity", stringFeatureValue);
+    const stringFeature = new ImageFeature(ImageFeatureType.IDENTITY, ImageFeatureFormat.STRING, "identity", "123456789");
     const integerFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.INTEGER, "rating", 5);
     const floatFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.FLOAT, "popularity", 3.14);
     const booleanFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.BOOLEAN, "validated", false);
@@ -451,6 +451,59 @@ describe("Image with module", () =>
       expect((await base.getImageController().search({ ids: [repository.id] })).entities.length).toBe(totalCount);
     }
     {
+      for (const feature of features)
+      {
+        const useCases =
+          [
+            {
+              logicalOperator: SearchFeatureLogicalOperator.AND,
+              comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
+              value: ImageFeatureNullValue.Null,
+              count: totalCount
+            },
+            {
+              logicalOperator: SearchFeatureLogicalOperator.NOT,
+              comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
+              value: ImageFeatureNullValue.Null,
+              count: zero
+            },
+            {
+              logicalOperator: SearchFeatureLogicalOperator.AND,
+              comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
+              value: feature.value,
+              count: zero
+            },
+            {
+              logicalOperator: SearchFeatureLogicalOperator.AND,
+              comparisonOperator: SearchFeatureComparisonOperator.EQUALS,
+              value: typeof feature.value === "boolean" ? !feature.value : (typeof feature.value === "number" ? (feature.value + 1) : (`${feature.value}other`)),
+              count: zero
+            }
+          ];
+        for (const useCase of useCases)
+        {
+          expect((await base.getImageController().search({
+            criteria:
+              {
+                features:
+                  {
+                    operator: useCase.logicalOperator,
+                    conditions:
+                      [
+                        {
+                          format: feature.format,
+                          name: feature.name,
+                          operator: useCase.comparisonOperator,
+                          value: useCase.value
+                        }
+                      ]
+                  }
+              }
+          })).entities.length).toBe(useCase.count);
+        }
+      }
+    }
+    {
       // We make sure that the image file name is searched in
       expect((await base.getImageController().search({ criteria: { keyword: { text: fileName, ...inName } } })).entities.length).toBe(totalCount);
       expect((await base.getImageController().search({ criteria: { keyword: { text: fileName.toUpperCase(), ...inName } } })).entities.length).toBe(totalCount);
@@ -463,8 +516,8 @@ describe("Image with module", () =>
     }
     {
       // We make sure that the string-based image "features" are searched in
-      expect((await base.getImageController().search({ criteria: { keyword: { text: stringFeatureValue, ...inFeatures } } })).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search({ criteria: { keyword: { text: stringFeatureValue.toLowerCase(), ...inFeatures } } })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search({ criteria: { keyword: { text: stringFeature.value as string, ...inFeatures } } })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search({ criteria: { keyword: { text: (stringFeature.value as string).toLowerCase(), ...inFeatures } } })).entities.length).toBe(totalCount);
       expect((await base.getImageController().search({ criteria: { keyword: { text: "dummy" + fileName, ...inAll } } })).entities.length).toBe(zero);
       // This is an edge case with an empty text
       expect((await base.getImageController().search({ criteria: { keyword: { text: "", ...inAll } } })).entities.length).toBe(totalCount);
