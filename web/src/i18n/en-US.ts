@@ -42,6 +42,7 @@ export default {
     repositoryId: "Repository ID",
     size: "Size",
     formats: "Formats",
+    features: "Features",
     tags: "Tags",
     location: "Location",
     entity: "Entity",

@@ -1,6 +1,8 @@
 import {
   Extension,
   Image,
+  ImageFeatureFormat,
+  ImageFeatureType,
   ImageFormat,
   ImageSummary,
   SearchSortingProperty,
@@ -168,10 +170,13 @@ export type AdditionalUi = {
   extensionId: string;
 };
 
+export type LocalFiltersTypeFeature = { category: string, format: ImageFeatureFormat, type: ImageFeatureType, name?: string };
+
 export type LocalFiltersType = {
   keyword?: string;
   searchIn?: string[];
   formats?: ImageFormat[];
+  features?: LocalFiltersTypeFeature[];
   tags?: string[];
   repositories?: string[];
   sortBy?: SearchSortingProperty;

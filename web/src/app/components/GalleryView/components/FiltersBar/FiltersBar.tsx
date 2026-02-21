@@ -15,12 +15,14 @@ import {
   TextInput
 } from "@mantine/core";
 import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
-import { ImageFormat, Repository } from "@picteus/ws-client";
+import { ImageFeatureFormat, ImageFeatureType, ImageFormat, Repository } from "@picteus/ws-client";
 
 import { useDebouncedCallback } from "app/hooks";
 import { FiltersService, RepositoriesService, StorageService } from "app/services";
 import { FilterSelect } from "app/components";
-import { LocalFiltersType } from "types";
+import { LocalFiltersType, LocalFiltersTypeFeature } from "types";
+import { FeaturesNamesOption } from "../../../../services/FiltersService.ts";
+import { capitalizeText } from "../../../../../utils";
 
 export default function FiltersBar({
   initialFilters,
@@ -31,7 +33,8 @@ export default function FiltersBar({
 }) {
   const [t] = useTranslation();
   const [searchText, setSearchText] = useState(undefined);
-  const [tagOptions, setTagOptions] = useState<{ value: string, label: string }[]>([]);
+  const [featuresOptions, setFeaturesOptions] = useState<FeaturesNamesOption []>([]);
+  const [tagsOptions, setTagsOptions] = useState<{ value: string, label: string }[]>([]);
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [popoverOpened, setPopoverOpened] = useState(false);
 
@@ -41,6 +44,7 @@ export default function FiltersBar({
     sortOrderOptions,
     searchInOptions,
     formatsOptions,
+    computeFeaturesNamesOptions,
     computeTagsOptions,
   } = FiltersService;
 
@@ -73,11 +77,31 @@ export default function FiltersBar({
   }, []);
 
   useEffect(() => {
-    async function loadTagOptions() {
-      setTagOptions(await computeTagsOptions());
+    async function load() {
+      {
+        const options = await computeFeaturesNamesOptions();
+        const builtInOptions: FeaturesNamesOption[] = [];
+        const types: ImageFeatureType[] = [ImageFeatureType.Recipe, ImageFeatureType.Annotation, ImageFeatureType.Comment, ImageFeatureType.Description, ImageFeatureType.Caption];
+        const formats: ImageFeatureFormat[] = [ImageFeatureFormat.Json, ImageFeatureFormat.Markdown, ImageFeatureFormat.Html, ImageFeatureFormat.Xml, ImageFeatureFormat.String];
+        for (const type of types)
+        {
+          for (const format of formats)
+          {
+            builtInOptions.push({
+              value: type,
+              category: capitalizeText(type),
+              format: format,
+              type: type
+            });
+          }
+        }
+        const allOptions = builtInOptions.concat(...options);
+        setFeaturesOptions(allOptions);
+      }
+      setTagsOptions(await computeTagsOptions());
     }
 
-    loadTagOptions().catch(console.error);
+    load().catch(console.error);
   }, []);
 
   // Removing repositories that no longer exist
@@ -101,6 +125,10 @@ export default function FiltersBar({
 
   function handleOnClearAll() {
     setFilters(initialFilters);
+  }
+
+  function computeFeatureOptionValue(feature: LocalFiltersTypeFeature): string {
+    return feature.category;
   }
 
   function renderFiltersDropdown() {
@@ -136,8 +164,8 @@ export default function FiltersBar({
             label={t("filters.searchTextIn")}
             selectedValues={filters.searchIn}
             options={searchInOptions}
-            onChange={(value: string[]) =>
-              handleOnChangeFilter("searchIn", value)
+            onChange={(values: string[]) =>
+              handleOnChangeFilter("searchIn", values)
             }
           />
         </Stack>
@@ -149,8 +177,8 @@ export default function FiltersBar({
               value: repository.id,
               label: repository.name,
             }))}
-            onChange={(value: string[]) =>
-              handleOnChangeFilter("repositories", value)
+            onChange={(values: string[]) =>
+              handleOnChangeFilter("repositories", values)
             }
           />
         </Stack>
@@ -159,8 +187,20 @@ export default function FiltersBar({
             label={t("field.formats")}
             selectedValues={filters.formats}
             options={formatsOptions}
-            onChange={(value: string[]) =>
-              handleOnChangeFilter("formats", value)
+            onChange={(values: string[]) =>
+              handleOnChangeFilter("formats", values)
+            }
+          />
+        </Stack>
+        <Stack mt="xs">
+          <FilterSelect
+            label={t("field.features")}
+            selectedValues={filters.features?.map(feature => computeFeatureOptionValue(feature)).filter((feature, index, array) => array.indexOf(feature) == index) || []}
+            options={featuresOptions.filter((option, index, array) => array.map(item => item.category).indexOf(option.category) == index).map(option => { return { value: computeFeatureOptionValue(option), label: option.category }; })}
+            onChange={(values: string[]) => {
+              const matchingOptions = featuresOptions.filter(option => values.indexOf(option.category) !== -1);
+              handleOnChangeFilter("features", matchingOptions);
+            }
             }
           />
         </Stack>
@@ -168,9 +208,9 @@ export default function FiltersBar({
           <FilterSelect
             label={t("field.tags")}
             selectedValues={filters.tags}
-            options={tagOptions}
-            onChange={(value: string[]) =>
-              handleOnChangeFilter("tags", value)
+            options={tagsOptions}
+            onChange={(values: string[]) =>
+              handleOnChangeFilter("tags", values)
             }
           />
         </Stack>
@@ -193,7 +233,7 @@ export default function FiltersBar({
     return `${t("sort.sortedBy")} "${sortBy.label}" - ${sortOrder.label}`;
   }
 
-  function handleOnChangeFilter(filterKey: string, value?: string | string[]) {
+  function handleOnChangeFilter(filterKey: string, value?: any) {
     setFilters({
       ...filters,
       [filterKey]: value,
@@ -302,6 +342,14 @@ export default function FiltersBar({
               onRemove={() => handleOnChangeFilter("formats")}
             >
               {`${t("field.formats")} : ${[...filters.formats]?.join(", ")}`}
+            </Pill>
+          )}
+        {filters.features?.length && (
+            <Pill
+              {...commonPillProps}
+              onRemove={() => handleOnChangeFilter("features")}
+            >
+              {`${t("field.features")} : ${[...filters.features]?.map(feature => feature.category).filter((feature, index, array) => array.indexOf(feature) == index).join(", ")}`}
             </Pill>
           )}
         {filters.tags?.length && (

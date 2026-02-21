@@ -1,8 +1,21 @@
 import i18n from "i18n/i18n.ts";
 
 import { RepositoriesService } from "app/services";
-import { ImageApiImageSearchRequest, ImageFormat, SearchSortingProperty } from "@picteus/ws-client";
-import { LocalFiltersType } from "types";
+import {
+  ImageApiImageSearchRequest,
+  ImageFeatureNullValue,
+  ImageFormat,
+  SearchFeatureComparisonOperator,
+  SearchFeatureLogicalOperator,
+  SearchFeatures,
+  SearchSortingProperty,
+  SearchTags
+} from "@picteus/ws-client";
+import { LocalFiltersType, LocalFiltersTypeFeature } from "types";
+
+export type WithValue = { value: string };
+
+export type WithValueAndLabel = WithValue & { label: string };
 
 const sortByOptions = [
   { value: SearchSortingProperty.Name, label: i18n.t("field.name") },
@@ -27,25 +40,32 @@ const sortByOptions = [
     label: i18n.t("field.binarySize"),
   },
   { value: SearchSortingProperty.Width, label: i18n.t("field.width") },
-  { value: SearchSortingProperty.Height, label: i18n.t("field.height") },
+  { value: SearchSortingProperty.Height, label: i18n.t("field.height") }
 ];
 
-const formatsOptions = Object.keys(ImageFormat).map((key) => ({
+const formatsOptions: WithValueAndLabel[] = Object.keys(ImageFormat).map((key) => ({
   value: ImageFormat[key],
-  label: ImageFormat[key],
+  label: ImageFormat[key]
 }));
 
-const computeTagsOptions = async ()=>{
+export type FeaturesNamesOption = WithValue & LocalFiltersTypeFeature;
+
+const computeFeaturesNamesOptions: () => Promise<FeaturesNamesOption []> = async ()=> {
+  const featureNames = await RepositoriesService.getFeatureNames();
+  return featureNames.map(name => ({value: name.name, label: name.name, category: name.name, format: name.format, type: name.type, name: name.name}));
+};
+
+const computeTagsOptions: () => Promise<WithValueAndLabel[]> = async ()=>{
   const tags = await RepositoriesService.getTags();
   return tags.map(tag => ({value: tag.value, label: tag.value}));
 };
 
-const sortOrderOptions = [
+const sortOrderOptions: WithValueAndLabel[] = [
   { value: "1", label: i18n.t("sort.asc") },
   { value: "-1", label: i18n.t("sort.desc") },
 ];
 
-const searchInOptions = [
+const searchInOptions: WithValueAndLabel[] = [
   { value: "inName", label: i18n.t("filters.inName") },
   { value: "inMetadata", label: i18n.t("filters.inMetadata") },
   { value: "inFeatures", label: i18n.t("filters.inFeatures") },
@@ -74,10 +94,28 @@ function filtersToCriteria(
     return { inName, inMetadata, inFeatures };
   }
 
-  function computeSearchTags(): { tags: { values: string[] } }
+  function computeFeatureNames(): { features: SearchFeatures } | object {
+    if (filters.features?.length)
+    {
+      const searchFeatures: SearchFeatures = {
+        operator: SearchFeatureLogicalOperator.Or, conditions: filters.features.map(feature =>
+        {
+          return {
+            format: feature.format,
+            type: feature.type,
+            name: feature.name,
+            operator: SearchFeatureComparisonOperator.Different,
+            value: ImageFeatureNullValue.Empty
+          };
+        })
+      };
+      return { features: JSON.stringify(searchFeatures) };
+    }
+    return {};
+  }
+
+  function computeSearchTags(): { tags: SearchTags } | object
   {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     return filters.tags?.length ? { tags: JSON.stringify({ values: filters.tags }) } : {};
   }
 
@@ -85,18 +123,19 @@ function filtersToCriteria(
     criteria: {
       keyword: {
         text: filters.keyword || "",
-        ...computeSearchInValues(),
+        ...computeSearchInValues()
       },
       formats: filters.formats?.length
         ? filters.formats
-        : formatsOptions.map((format) => format.value),
-      ...computeSearchTags(),
+        : formatsOptions.map((format) => format.value as ImageFormat),
+      ...computeFeatureNames(),
+      ...computeSearchTags()
     },
     ...(filters.repositories?.length ? { ids: filters.repositories } : {}),
     sorting: {
       property: filters.sortBy,
-      isAscending: filters.sortOrder === "1",
-    },
+      isAscending: filters.sortOrder === "1"
+    }
   };
 }
 
@@ -106,6 +145,7 @@ export default {
   sortOrderOptions,
   searchInOptions,
   formatsOptions,
+  computeFeaturesNamesOptions,
   computeTagsOptions,
   filtersToCriteria,
 };

@@ -1,4 +1,5 @@
 import {
+  ExtensionImageFeatureName,
   ExtensionImageTag,
   Repository,
   RepositoryApi,
@@ -47,6 +48,10 @@ async function synchronize(
   return repositoryApi.repositorySynchronize(parameters);
 }
 
+async function getFeatureNames(): Promise<ExtensionImageFeatureName[]> {
+  return repositoryApi.repositoryGetFeatureNames();
+}
+
 async function getTags(): Promise<ExtensionImageTag[]> {
   return repositoryApi.repositoryGetTags();
 }
@@ -65,6 +70,7 @@ export default {
   add,
   getRepositoryInformation,
   synchronize,
+  getFeatureNames,
   getTags,
   remove,
 };
