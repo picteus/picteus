@@ -551,7 +551,7 @@ export class SearchFeatureCondition
       description: "The image feature value",
       oneOf:
         [
-          { type: "string", minLength: 1, maxLength: FieldLengths.value },
+          { type: "string", maxLength: FieldLengths.value },
           { type: "number", format: "int64" },
           { type: "number", format: "double" },
           { type: "boolean" }
@@ -561,7 +561,7 @@ export class SearchFeatureCondition
     }
   )
   @TypeBasedValidation({
-    "string": [MinLength(1), MaxLength(FieldLengths.value)],
+    "string": [MaxLength(FieldLengths.value)],
     "number": [],
     "boolean": []
   })
