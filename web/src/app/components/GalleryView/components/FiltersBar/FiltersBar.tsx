@@ -124,7 +124,7 @@ export default function FiltersBar({
   }
 
   function handleOnClearAll() {
-    setFilters(initialFilters);
+    setFilters(defaultFilters);
   }
 
   function computeFeatureOptionValue(feature: LocalFiltersTypeFeature): string {
