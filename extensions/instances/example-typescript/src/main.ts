@@ -108,7 +108,14 @@ class TypeScriptExtension extends PicteusExtension
           };
         try
         {
-          const userParameters: Record<string, any> = await communicator.launchIntent<Record<string, any>>({ parameters: intentParameters });
+          const userParameters: Record<string, any> = await communicator.launchIntent<Record<string, any>>({
+            parameters: intentParameters,
+            dialogContent: {
+              title: "Favorite color and chocolate",
+              description: "This shows how an extension can input parameters from the user.",
+              details: "This dialog box has been dynamically generated from the extension source code."
+            }
+          });
           communicator.sendLog(`Received the intent result '${JSON.stringify(userParameters)}'`, "info");
           if (userParameters.likeChocolate === true)
           {

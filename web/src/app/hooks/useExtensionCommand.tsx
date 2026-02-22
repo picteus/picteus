@@ -82,6 +82,9 @@ export default function useExtensionCommand() {
               modalId,
             )
           }
+          onCancel={() => {
+            removeModal(modalId);
+          }}
         />
       ),
       title: command.label,

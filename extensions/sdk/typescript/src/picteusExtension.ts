@@ -37,14 +37,21 @@ export class NotificationReturnedError extends Error
 
 }
 
+export interface NotificationDialogContent
+{
+  readonly title: string;
+  readonly description: string;
+  readonly details?: string;
+}
+
 export interface NotificationsParametersIntent
 {
   readonly parameters: Json;
+  readonly dialogContent?: NotificationDialogContent;
 }
 
 export enum NotificationsUiAnchor
 {
-  // noinspection JSUnusedGlobalSymbols
   Modal = "modal",
   Sidebar = "sidebar",
   ImageDetail = "imageDetail"
@@ -68,12 +75,9 @@ export enum NotificationsDialogType
   Question = "Question"
 }
 
-export interface NotificationsDialog
+export interface NotificationsDialog extends NotificationDialogContent
 {
   readonly type: NotificationsDialogType;
-  readonly title: string;
-  readonly description: string;
-  readonly details?: string;
   readonly buttons: { yes: string, no?: string };
 }
 

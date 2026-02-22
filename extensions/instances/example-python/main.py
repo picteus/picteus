@@ -7,8 +7,9 @@ from picteus_extension_sdk.picteus_extension import NotificationEvent, Notificat
     NotificationsUiAnchor, NotificationsDialogType, NotificationsParametersIntent, NotificationsUiIntent, \
     NotificationsUi, NotificationsDialogIntent, NotificationsDialog, NotificationsDialogButtons, NotificationsImage, \
     NotificationsImagesIntent, NotificationsImages, NotificationsShowIntent, NotificationsShow, NotificationsShowType, \
-    SettingsValue
-from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat
+    SettingsValue, NotificationDialogContent
+from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
+    ImageFeatureValue
 
 
 class PythonExtension(PicteusExtension):
@@ -31,7 +32,7 @@ class PythonExtension(PicteusExtension):
             f"The extension with id '{self.extension_id}' was notified that the settings have been set", "debug")
 
     async def on_event(self, communicator: Communicator, event: str, value: Dict[str, Any]) -> Any | None:
-        if event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED or event == NotificationEvent.IMAGE_DELETED or NotificationEvent.IMAGE_COMPUTE_TAGS or NotificationEvent.IMAGE_COMPUTE_FEATURES:
+        if event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED or event == NotificationEvent.IMAGE_DELETED or event == NotificationEvent.IMAGE_COMPUTE_TAGS or event == NotificationEvent.IMAGE_COMPUTE_FEATURES:
             image_id: str = value["id"]
             is_created_or_updated: bool = event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED
             if is_created_or_updated or event == NotificationEvent.IMAGE_DELETED:
@@ -44,7 +45,8 @@ class PythonExtension(PicteusExtension):
             self.get_image_api().image_set_features(image_id, self.extension_id,
                                                     [ImageFeature(type=ImageFeatureType.OTHER,
                                                                   format=ImageFeatureFormat.STRING,
-                                                                  name="example", value="This is a string")])
+                                                                  name="example",
+                                                                  value=ImageFeatureValue("This is a string"))])
         elif event == NotificationEvent.PROCESS_RUN_COMMAND:
             command_id: str = value["commandId"]
             parameters: Dict[str, Any] = value["parameters"]
@@ -75,7 +77,11 @@ class PythonExtension(PicteusExtension):
                     }
                 try:
                     user_parameters: Dict[str, Any] = await communicator.launch_intent(
-                        NotificationsParametersIntent(intent_parameters))
+                        NotificationsParametersIntent(parameters=intent_parameters,
+                                                      dialogContent=NotificationDialogContent(
+                                                          "Favorite color and chocolate",
+                                                          "This shows how an extension can input parameters from the user.",
+                                                          "This dialog box has been dynamically generated from the extension source code.")))
                     communicator.send_log(f"Received the intent result '{json.dumps(user_parameters)}'", "info")
                     if user_parameters["likeChocolate"]:
                         await communicator.launch_intent(
@@ -86,8 +92,10 @@ class PythonExtension(PicteusExtension):
                         "error")
             elif command_id == "dialog":
                 result = await communicator.launch_intent(NotificationsDialogIntent(
-                    NotificationsDialog(NotificationsDialogType.QUESTION, "Dialog", "This is a dialog question",
-                                        "Please, click the right button.", NotificationsDialogButtons("Yes", "No"))))
+                    NotificationsDialog(type=NotificationsDialogType.QUESTION, title="Dialog",
+                                        description="This is a dialog question",
+                                        details="Please, click the right button.",
+                                        buttons=NotificationsDialogButtons("Yes", "No"))))
                 button = "Yes" if result == True else "No"
                 communicator.send_log(f"The user clicked the '{button}' button", "info")
             elif command_id == "show":
@@ -131,9 +139,10 @@ class PythonExtension(PicteusExtension):
                     resize_render: ImageResizeRender | None = parameters["resizeRender"]
                     if (width is not None or height is not None) and strip_metadata is False:
                         await communicator.launch_intent(NotificationsDialogIntent(
-                            NotificationsDialog(NotificationsDialogType.ERROR, "Image Conversion",
-                                                "When a dimension is specified, the metadata must be stripped.", None,
-                                                NotificationsDialogButtons("OK"))))
+                            NotificationsDialog(type=NotificationsDialogType.ERROR, title="Image Conversion",
+                                                description="When a dimension is specified, the metadata must be stripped.",
+                                                details=None,
+                                                buttons=NotificationsDialogButtons("OK"))))
                         return None
 
                     communicator.send_log(f"Converting the image with id '{image.id}' and URL '{image.url}'", "debug")

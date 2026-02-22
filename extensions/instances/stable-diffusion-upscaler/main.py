@@ -1,6 +1,5 @@
 import asyncio
 import io
-import json
 import os
 from typing import Any, List, Optional
 
@@ -14,7 +13,7 @@ from picteus_extension_sdk.picteus_extension import NotificationEvent, Communica
     NotificationsImagesIntent, NotificationsImages, Helper
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
-    GenerationRecipePrompt, InstructionsPrompt, PromptKind
+    GenerationRecipePrompt, InstructionsPrompt, PromptKind, ImageFeatureValue
 
 os.environ["HF_HOME"] = PicteusExtension.get_cache_directory_path()
 from transformers import Pipeline
@@ -89,7 +88,7 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
         self.get_image_api().image_set_features(stored_image.id, self.extension_id,
                                                 [ImageFeature(type=ImageFeatureType.RECIPE,
                                                               format=ImageFeatureFormat.JSON,
-                                                              value=recipe.to_json())])
+                                                              value=ImageFeatureValue(recipe.to_json()))])
         return stored_image
 
     def _upscale_image(self, pil_image: ImageFile, prompt: str = "") -> ImageFile:

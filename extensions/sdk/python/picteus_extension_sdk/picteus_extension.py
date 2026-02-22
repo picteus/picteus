@@ -68,8 +68,16 @@ class SuperDataClass:
 
 
 @dataclass
+class NotificationDialogContent(SuperDataClass):
+    title: str
+    description: str
+    details: Optional[str]
+
+
+@dataclass
 class NotificationsParametersIntent(SuperDataClass):
     parameters: Json
+    dialogContent: Optional[NotificationDialogContent]
 
 
 class NotificationsUiAnchor(StrEnum):
@@ -102,11 +110,8 @@ class NotificationsDialogButtons(SuperDataClass):
 
 
 @dataclass
-class NotificationsDialog(SuperDataClass):
+class NotificationsDialog(NotificationDialogContent):
     type: NotificationsDialogType
-    title: str
-    description: str
-    details: Optional[str]
     buttons: NotificationsDialogButtons
 
 

@@ -44,6 +44,11 @@ export default function IntentCenter() {
     removeModal(modalId);
   }
 
+  function cancel()
+  {
+    eventData.onResult({ cancel: "Cancelled" });
+  }
+
   function handleOnSend(onResult: any, parameters: any, modalId: string) {
     try {
       onResult({ value: parameters });
@@ -105,12 +110,16 @@ export default function IntentCenter() {
               onSend={(extensionId, commandId, parameters) =>
                 handleOnSend(eventData.onResult, parameters, modalId)
               }
+              onCancel={() => {
+                cancel();
+                removeModal(modalId);
+              }}
             />
           ),
-          title: t("extensionIntent.modalTitle", {
+          title: value.intent.dialogContent?.title || t("extensionIntent.modalTitle", {
             extension: extensionName,
           }),
-          onBeforeClose: () => eventData.onResult({ cancel: "Cancelled" }),
+          onBeforeClose: cancel,
         });
 
       const addFullscreenURLModal = () =>
@@ -118,7 +127,7 @@ export default function IntentCenter() {
           fullScreen: true,
           component: <FullscreenURLModal url={value.intent.ui.url} />,
           title: "",
-          onBeforeClose: () => eventData.onResult({ cancel: "Cancelled" }),
+          onBeforeClose: cancel,
         });
 
       const addDialogFormModal = () =>
@@ -133,7 +142,7 @@ export default function IntentCenter() {
             />
           ),
           title: value.intent.dialog.title,
-          onBeforeClose: () => eventData.onResult({ cancel: "Cancelled" }),
+          onBeforeClose: cancel,
         });
 
       const addImagesTab = () => {

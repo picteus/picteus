@@ -299,7 +299,7 @@ export default {
   },
   extensionIntent: {
     backToPicteus: "",
-    modalTitle: "Extension '{{extension}}' prompts",
+    modalTitle: "Extension '{{extension}}'",
     onResultSuccess: "Information has been successfully sent to the extension",
     onResultError:
       "An error occurred while sending information to the extension",

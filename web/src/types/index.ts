@@ -75,11 +75,14 @@ export enum ImageItemMode {
   VIEW = "VIEW",
 }
 
-export type DialogType = {
-  type: "Error" | "Info" | "Question";
+export type DialogContent = {
   title: string;
   description: string;
   details?: string;
+};
+
+export type DialogType = DialogContent & {
+  type: "Error" | "Info" | "Question";
   buttons: { yes: string; no?: string };
 };
 
@@ -98,6 +101,7 @@ export type UiCommandType = {
   id?: string;
   label?: string;
   parameters?: RJSFSchema;
+  dialogContent?: DialogContent;
   withTags?: string[];
   ui?: {
     anchor: "modal";

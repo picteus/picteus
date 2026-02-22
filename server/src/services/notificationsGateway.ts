@@ -44,6 +44,17 @@ import { addJsonSchemaAdditionalProperties, computeAjv, validateJsonSchema, vali
 import { ExtensionService } from "./extensionServices";
 import { ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
+import {
+  NotificationsDialogIntent,
+  NotificationsDialogType,
+  NotificationsImagesIntent,
+  NotificationsIntent,
+  NotificationsParametersIntent,
+  NotificationsShowIntent,
+  NotificationsShowType,
+  NotificationsUiAnchor,
+  NotificationsUiIntent
+} from "./notificationsIntents";
 
 
 type SocketMessageValue = { apiKey?: string, extensionId?: string, contextId?: string }
@@ -56,95 +67,13 @@ type NotificationsAcknowledgment = { contextId: string, success: boolean }
 type NotificationsLog = { log: string, level: string }
 type NotificationsNotification = Record<string, any>
 
-interface NotificationsParametersIntent
-{
-  readonly parameters: Json;
+type NotificationsValue = SocketMessageValue & {
+  log?: NotificationsLog,
+  notification?: NotificationsNotification,
+  acknowledgment?: NotificationsAcknowledgment,
+  intent?: NotificationsIntent
 }
-
-enum NotificationsUiAnchor
-{
-  Modal = "modal",
-  Sidebar = "sidebar",
-  ImageDetail = "imageDetail"
-}
-
-interface NotificationsUi
-{
-  readonly anchor: NotificationsUiAnchor;
-  readonly url: string;
-}
-
-interface NotificationsUiIntent
-{
-  readonly ui: NotificationsUi;
-}
-
-enum NotificationsDialogType
-{
-  Error = "Error",
-  Info = "Info",
-  Question = "Question"
-}
-
-interface NotificationsDialog
-{
-  readonly type: NotificationsDialogType;
-  readonly title: string;
-  readonly description: string;
-  readonly details?: string;
-  readonly buttons: { yes: string, no?: string };
-}
-
-interface NotificationsDialogIntent
-{
-  readonly dialog: NotificationsDialog;
-}
-
-interface NotificationsImage
-{
-  readonly imageId: string;
-  readonly title?: string;
-  readonly description?: string;
-  readonly details?: string;
-}
-
-interface NotificationsImages
-{
-  readonly images: NotificationsImage[];
-  readonly title?: string;
-  readonly description?: string;
-  readonly details?: string;
-}
-
-interface NotificationsImagesIntent
-{
-  readonly images: NotificationsImages;
-}
-
-enum NotificationsShowType
-{
-  ExtensionSettings = "ExtensionSettings",
-  Image = "Image",
-  Repository = "Repository"
-}
-
-interface NotificationsShow
-{
-  readonly type: NotificationsShowType;
-  readonly id: string;
-}
-
-interface NotificationsShowIntent
-{
-  readonly show: NotificationsShow;
-}
-
-type NotificationsIntent =
-  NotificationsParametersIntent
-  | NotificationsUiIntent
-  | NotificationsDialogIntent
-  | NotificationsImagesIntent
-  | NotificationsShowIntent
+export type NotificationsReturnedValue = { value?: any, cancel?: string, error?: string }
 
 const isNotificationsParametersIntent = (intent: NotificationsIntent): intent is NotificationsParametersIntent =>
 {
@@ -166,14 +95,6 @@ const isNotificationsShowIntent = (intent: NotificationsIntent): intent is Notif
 {
   return (intent as NotificationsShowIntent).show !== undefined;
 };
-
-type NotificationsValue = SocketMessageValue & {
-  log?: NotificationsLog,
-  notification?: NotificationsNotification,
-  acknowledgment?: NotificationsAcknowledgment,
-  intent?: NotificationsIntent
-}
-export type NotificationsReturnedValue = { value?: any, cancel?: string, error?: string }
 
 @WebSocketGateway<GatewayMetadata>({ transports: ["websocket"] })
 export class NotificationsGateway

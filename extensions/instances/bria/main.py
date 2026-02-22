@@ -10,7 +10,7 @@ from picteus_extension_sdk.picteus_extension import NotificationEvent, Communica
     NotificationsImagesIntent, NotificationsImages, Helper
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
-    InstructionsPrompt, PromptKind, GenerationRecipePrompt
+    InstructionsPrompt, PromptKind, GenerationRecipePrompt, ImageFeatureValue
 
 os.environ["HF_HOME"] = PicteusExtension.get_cache_directory_path()
 from transformers import pipeline, Pipeline
@@ -79,7 +79,7 @@ class BriaExtension(PicteusExtension):
         self.get_image_api().image_set_features(stored_image.id, self.extension_id,
                                                 [ImageFeature(type=ImageFeatureType.RECIPE,
                                                               format=ImageFeatureFormat.JSON,
-                                                              value=recipe.to_json())])
+                                                              value=ImageFeatureValue(recipe.to_json()))])
         return stored_image
 
     def _remove_image_background(self, pil_image: ImageFile) -> ImageFile:
