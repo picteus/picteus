@@ -563,7 +563,7 @@ export class NotificationsGateway
       try
       {
         validateJsonSchema(computeAjv(), withStrippedUiPropertiesParameters);
-        addJsonSchemaAdditionalProperties(specificParameters);
+        addJsonSchemaAdditionalProperties(withStrippedUiPropertiesParameters);
         checkUiProperties(uiProperties);
       }
       catch (error)
@@ -577,7 +577,7 @@ export class NotificationsGateway
         {
           try
           {
-            validateSchema(computeAjv(), specificParameters, value.value);
+            validateSchema(computeAjv(), withStrippedUiPropertiesParameters, value.value);
           }
           catch (error)
           {

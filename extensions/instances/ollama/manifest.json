@@ -50,7 +50,10 @@
                 "type": "string",
                 "title": "Question?",
                 "description": "The question you want the Vision Language model to answer, for the selected image",
-                "default": "What are the dominant colors?"
+                "default": "What are the dominant colors?",
+                "ui": {
+                  "widget": "textarea"
+                }
               }
             },
             "required": ["model", "question"]

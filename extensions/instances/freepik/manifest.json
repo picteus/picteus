@@ -78,8 +78,8 @@
                 "minimum": -10,
                 "maximum": 10,
                 "default": 0,
-                ui: {
-                  widget: "range"
+                "ui": {
+                  "widget": "range"
                 }
               },
               "hdr": {
@@ -89,8 +89,8 @@
                 "minimum": -10,
                 "maximum": 10,
                 "default": 0,
-                ui: {
-                  widget: "range"
+                "ui": {
+                  "widget": "range"
                 }
               },
               "resemblance": {
@@ -100,8 +100,8 @@
                 "minimum": -10,
                 "maximum": 10,
                 "default": 0,
-                ui: {
-                  widget: "range"
+                "ui": {
+                  "widget": "range"
                 }
               },
               "fractality": {
@@ -111,8 +111,8 @@
                 "minimum": -10,
                 "maximum": 10,
                 "default": 0,
-                ui: {
-                  widget: "range"
+                "ui": {
+                  "widget": "range"
                 }
               },
               "prompt": {
@@ -150,8 +150,8 @@
                 "minimum": 0,
                 "maximum": 2048,
                 "default": 0,
-                ui: {
-                  widget: "range"
+                "ui": {
+                  "widget": "range"
                 }
               },
               "right": {
@@ -161,8 +161,8 @@
                 "minimum": 0,
                 "maximum": 2048,
                 "default": 0,
-                ui: {
-                  widget: "range"
+                "ui": {
+                  "widget": "range"
                 }
               },
               "top": {
@@ -172,8 +172,8 @@
                 "minimum": 0,
                 "maximum": 2048,
                 "default": 0,
-                ui: {
-                  widget: "range"
+                "ui": {
+                  "widget": "range"
                 }
               },
               "bottom": {
@@ -183,8 +183,8 @@
                 "minimum": 0,
                 "maximum": 2048,
                 "default": 0,
-                ui: {
-                  widget: "range"
+                "ui": {
+                  "widget": "range"
                 }
               }
             },
