@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { withTheme } from "@rjsf/core";
 import { Theme as MantineTheme } from "@aokiapp/rjsf-mantine-theme";
 import validator from "@rjsf/validator-ajv8";
-import { RJSFSchema, UiSchema } from "@rjsf/utils";
+import { RegistryWidgetsType, RJSFSchema, UiSchema } from "@rjsf/utils";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/dropzone/styles.css";
+
+import RepositoryWidget from "./widgets/RepositoryWidget";
+
 
 type RsfjFormType = {
   initialFormData?: object;
@@ -13,6 +16,42 @@ type RsfjFormType = {
   uiSchema?: UiSchema;
   onChange: (formData: object) => void;
 };
+
+type UIProperty = { property: string, ui: Record<string, any> };
+const uiPropertyName = "ui";
+
+function stripAndExtractParametersUiProperties(parameters: Record<string, any>): UIProperty[] {
+  const uis: UIProperty [] = [];
+  const properties = parameters.properties;
+  if (properties !== undefined)
+  {
+    for (const property in properties)
+    {
+      const childProperty = properties[property];
+      const ui: Record<string, any> = childProperty[uiPropertyName];
+      delete childProperty[uiPropertyName];
+      if (ui !== undefined)
+      {
+        uis.push({ property, ui });
+      }
+    }
+  }
+  return uis;
+}
+
+export function extractSchemaAndUiSchema(parameters: object): {
+  schema: RJSFSchema,
+  uiSchema: UiSchema
+} {
+  const deepCopiedParameters: RJSFSchema = JSON.parse(JSON.stringify(parameters));
+  const uiProperties = stripAndExtractParametersUiProperties(deepCopiedParameters);
+  const uiSchema: UiSchema = {};
+  uiProperties.forEach((uiProperty: UIProperty) =>
+  {
+    uiSchema[uiProperty.property] = { "ui:options": uiProperty.ui };
+  });
+  return { schema:deepCopiedParameters, uiSchema };
+}
 
 const Form = withTheme(MantineTheme);
 
@@ -30,82 +69,6 @@ export default function RjsfForm({
       onChange(formData);
     }
   }, [formData]);
-
-  // TODO keep this code for future use (overriding fields if needed)
-  /*
-  const StringField = useCallback((props: FieldProps) => {
-    return (
-      <TextInput
-        mb="lg"
-        withAsterisk
-        label={props.schema.title}
-        placeholder={props.schema.description}
-        value={props.formData}
-        onChange={({ target }) => props.onChange(target.value)}
-      />
-    );
-  }, []);
-
-  const BooleanField = useCallback((props: FieldProps) => {
-    return (
-      <Checkbox
-        description={props.schema.description}
-        label={props.schema.title}
-      />
-    );
-  }, []);
-
-  const FieldTemplate = useCallback((props: FieldTemplateProps) => {
-    const {
-      id,
-      classNames,
-      style,
-      label,
-      help,
-      required,
-      description,
-      errors,
-      children,
-    } = props;
-    if (props.schema.type === "string" || props.schema.type === "boolean") {
-      return (
-        <div className={classNames} style={style}>
-          {children}
-          {errors}
-          {help}
-        </div>
-      );
-    }
-    return (
-      <div className={classNames} style={style}>
-        <label htmlFor={id}>
-          {label}
-          {required ? "*" : null}
-        </label>
-        {description}
-        {children}
-        {errors}
-        {help}
-      </div>
-    );
-  }, []);
-
-  function TitleFieldTemplate(props: TitleFieldProps) {
-    const { id, title } = props;
-    return <h1 id={id}>{title}</h1>;
-  }
-
-  const fields: RegistryFieldsType = {
-    StringField,
-    BooleanField,
-  };*/
-
-  /*  useEffect(() => {
-    if (formRef.current) {
-      console.log(formRef.current);
-
-    }
-  }, [formRef]);*/
 
   useEffect(() => {
     const firstInput = formRef?.current?.formElement?.current?.querySelector(
@@ -132,6 +95,10 @@ export default function RjsfForm({
     }
     return schema;
   }
+  const widgets: RegistryWidgetsType = {
+    repository: RepositoryWidget,
+  };
+
   return (
     <Form
       ref={formRef}
@@ -140,11 +107,7 @@ export default function RjsfForm({
       validator={validator}
       uiSchema={uiSchema}
       onChange={(event) => setFormData(event.formData)}
-      /*templates={{
-        FieldTemplate,
-        TitleFieldTemplate,
-      }}
-      fields={fields}*/
+      widgets={widgets}
     >
       <div></div>
     </Form>

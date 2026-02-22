@@ -127,14 +127,16 @@ class ImageCommonsExtension extends PicteusExtension
                     type: "integer",
                     title: "Rating",
                     enum: [1, 2, 3, 4, 5],
-                    default: previousRating?.value as number ?? 3
+                    default: previousRating?.value as number ?? 3,
+                    ui: { widget: "radio", inline: true }
                   },
                   comment: {
                     type: "string",
                     title: "Comment",
                     minLength: 0,
                     maxLength: 1_024,
-                    default: previousComment?.value as string ?? ""
+                    default: previousComment?.value as string ?? "",
+                    ui: { widget: "textarea" }
                   }
                 },
               required: ["rating"]

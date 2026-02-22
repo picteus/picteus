@@ -7,7 +7,7 @@ import { Alert, Button, Flex, Modal, Title } from "@mantine/core";
 
 import { notifyError, notifySuccess } from "utils";
 import { ExtensionsService } from "app/services";
-import { RjsfForm } from "app/components";
+import { extractSchemaAndUiSchema, RjsfForm } from "app/components";
 
 type ExtensionSettingsModalType = {
   opened: boolean;
@@ -15,6 +15,12 @@ type ExtensionSettingsModalType = {
   onClose: () => void;
   onSuccess: () => void;
 };
+
+const propertiesName = "properties";
+
+function hasSettings(extension: Extension, extensionSettings: ExtensionSettings): boolean  {
+  return extension?.manifest.settings?.[propertiesName] !== undefined && Object.keys(extension?.manifest.settings?.[propertiesName]).length > 0 && extensionSettings !== undefined;
+}
 
 export default function ExtensionSettingsModal({
   opened,
@@ -24,8 +30,7 @@ export default function ExtensionSettingsModal({
 }: ExtensionSettingsModalType) {
   const [t] = useTranslation();
   const [loading, setLoading] = useState<boolean>(false);
-  const [extensionSettings, setExtensionSettings] =
-    useState<ExtensionSettings>();
+  const [extensionSettings, setExtensionSettings] = useState<ExtensionSettings>();
 
   async function load() {
     setLoading(true);
@@ -72,39 +77,39 @@ export default function ExtensionSettingsModal({
   }, [opened]);
 
   function renderForm() {
-    return (
-      extension?.manifest.settings?.["properties"] &&
-      extensionSettings && (
-        <>
-          <Alert mb="sm" icon={<IconInfoCircle />}>
-            <Trans
-              i18nKey="extensionSettingsModal.warning"
-              components={{ strong: <b /> }}
-              values={{ name: extension.manifest.id }}
-            />
-          </Alert>
-          <RjsfForm
-            initialFormData={extensionSettings?.value}
-            schema={extension?.manifest.settings}
-            onChange={(value) => setExtensionSettings({ value })}
-          />
-          <Flex justify="flex-end" mt="md">
-            <Button
-              onClick={handleOnSaveSettings}
-              loading={loading}
-              disabled={loading}
-              type="submit"
-            >
-              {t("button.save")}
-            </Button>
-          </Flex>
-        </>
-      )
-    );
+    if (hasSettings(extension, extensionSettings) === false) {
+      return undefined;
+    }
+    const { schema, uiSchema } = extractSchemaAndUiSchema(extension?.manifest.settings);
+    return <>
+      <Alert mb="sm" icon={<IconInfoCircle />}>
+        <Trans
+          i18nKey="extensionSettingsModal.warning"
+          components={{ strong: <b /> }}
+          values={{ name: extension.manifest.id }}
+        />
+      </Alert>
+      <RjsfForm
+        initialFormData={extensionSettings?.value}
+        schema={schema}
+        uiSchema={uiSchema}
+        onChange={(value) => setExtensionSettings({ value })}
+      />
+      <Flex justify="flex-end" mt="md">
+        <Button
+          onClick={handleOnSaveSettings}
+          loading={loading}
+          disabled={loading}
+          type="submit"
+        >
+          {t("button.save")}
+        </Button>
+      </Flex>
+    </>;
   }
   function renderError() {
     return (
-      !extension?.manifest?.settings?.["properties"] && (
+      hasSettings(extension, extensionSettings) === false && (
         <>
           <Alert color="red" mb="sm" icon={<IconCircleX />}>
             <Trans

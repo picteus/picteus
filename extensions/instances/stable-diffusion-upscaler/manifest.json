@@ -48,7 +48,10 @@
         "title": "Maximum image dimension",
         "description": "The number of pixels that the image should not exceed for being eligible to upscaling.",
         "default": 25000,
-        "minimum": 100
+        "minimum": 100,
+        "ui": {
+          "widget": "updown"
+        }
       }
     },
     "required": [

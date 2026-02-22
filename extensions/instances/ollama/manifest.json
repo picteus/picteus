@@ -71,6 +71,7 @@
     "properties": {
       "ollamaUrl": {
         "type": "string",
+        "format": "uri",
         "title": "Ollama URL",
         "description": "The URL of the Ollama server which is running on the same computer.",
         "default": "http://127.0.0.1:11434"

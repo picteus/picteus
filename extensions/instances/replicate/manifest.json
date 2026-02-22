@@ -103,7 +103,10 @@
       "apiToken": {
         "type": "string",
         "title": "API token",
-        "description": "The API token extracted from Replicate."
+        "description": "The API token extracted from Replicate.",
+        "ui": {
+          "widget": "password"
+        }
       }
     },
     "required": [

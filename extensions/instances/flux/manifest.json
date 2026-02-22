@@ -72,7 +72,10 @@
       "accessToken": {
         "type": "string",
         "title": "Hugging Face Access Token",
-        "description": "The Hugging Face access token that will be used to retrieve the Flux tensor file."
+        "description": "The Hugging Face access token that will be used to retrieve the Flux tensor file.",
+        "ui": {
+          "widget": "password"
+        }
       }
     },
     "required": [

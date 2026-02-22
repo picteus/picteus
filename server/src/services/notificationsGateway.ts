@@ -28,7 +28,7 @@ import {
   fromTextEventActionToManifestEvent,
   Json
 } from "../bos";
-import { stringify } from "../utils";
+import { deepCopy, stringify } from "../utils";
 import {
   ActivityAction,
   EventAction,
@@ -41,7 +41,7 @@ import {
 } from "../notifier";
 import { AuthenticationGuard } from "../app.guards";
 import { addJsonSchemaAdditionalProperties, computeAjv, validateJsonSchema, validateSchema } from "./utils/ajvWrapper";
-import { ExtensionService } from "./extensionServices";
+import { checkUiProperties, ExtensionService, stripAndExtractParametersUiProperties } from "./extensionServices";
 import { ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import {
@@ -558,10 +558,13 @@ export class NotificationsGateway
       intentName = "parameters";
       const specificIntent: NotificationsParametersIntent = intent;
       const specificParameters = specificIntent.parameters;
+      const withStrippedUiPropertiesParameters = deepCopy(specificParameters);
+      const uiProperties = stripAndExtractParametersUiProperties(withStrippedUiPropertiesParameters);
       try
       {
-        validateJsonSchema(computeAjv(), specificParameters);
+        validateJsonSchema(computeAjv(), withStrippedUiPropertiesParameters);
         addJsonSchemaAdditionalProperties(specificParameters);
+        checkUiProperties(uiProperties);
       }
       catch (error)
       {

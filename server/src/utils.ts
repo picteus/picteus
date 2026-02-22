@@ -15,6 +15,11 @@ export function stringify(object: Record<string, any>, indent: boolean = true): 
   return indent === false ? JSON.stringify(object) : JSON.stringify(object, (_key, value) => value, 2);
 }
 
+export function deepCopy<T = Record<string, any>>(object: Record<string, any>): T
+{
+  return JSON.parse(JSON.stringify(object));
+}
+
 export function checkIsMainThread(): void
 {
   if (isMainThread === false)

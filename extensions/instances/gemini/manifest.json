@@ -45,20 +45,31 @@
                 "title": "Model",
                 "description": "The Machine Learning model to use for image generation.",
                 "enum": ["gemini-3-pro-image-preview", "gemini-2.5-flash-image"],
-                "default": "gemini-3-pro-image-preview"
+                "default": "gemini-3-pro-image-preview",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
               },
               "aspectRatio": {
                 "type": "string",
                 "title": "Aspect Ratio",
                 "description": "The aspect ratio of the generated image.",
                 "enum": ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
-                "default": "1:1"
+                "default": "1:1",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
               },
               "prompt": {
                 "type": "string",
                 "title": "Prompt",
                 "description": "What do you want to generate?",
-                "default": "a cat eating a nano-banana in a fancy restaurant under the Gemini constellation"
+                "default": "a cat eating a nano-banana in a fancy restaurant under the Gemini constellation",
+                "ui": {
+                  "widget": "textarea"
+                }
               }
             },
             "required": ["model", "aspectRatio", "prompt"]
@@ -84,20 +95,31 @@
                 "title": "Model",
                 "description": "The Machine Learning model to use for image generation.",
                 "enum": ["gemini-2.5-flash-image", "gemini-3-pro-image-preview"],
-                "default": "gemini-3-pro-image-preview"
+                "default": "gemini-3-pro-image-preview",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
               },
               "aspectRatio": {
                 "type": "string",
                 "title": "Aspect Ratio",
                 "description": "The aspect ratio of the generated image.",
                 "enum": ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
-                "default": "1:1"
+                "default": "1:1",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
               },
               "prompt": {
                 "type": "string",
                 "title": "Prompt",
                 "description": "What do you want to generate?",
-                "default": "a cat eating a nano-banana in a fancy restaurant under the Gemini constellation"
+                "default": "a cat eating a nano-banana in a fancy restaurant under the Gemini constellation",
+                "ui": {
+                  "widget": "textarea"
+                }
               }
             },
             "required": ["model", "aspectRatio", "prompt"]
@@ -127,7 +149,10 @@
       "apiKey": {
         "type": "string",
         "title": "API Key",
-        "description": "The Google Gemini API key used when interacting with Gemini."
+        "description": "The Google Gemini API key used when interacting with Gemini.",
+        "ui": {
+          "widget": "password"
+        }
       }
     },
     "required": [

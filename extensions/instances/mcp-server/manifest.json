@@ -31,12 +31,18 @@
         "description": "The port number on which the MCP server will listen.",
         "minimum": 1,
         "maximum": 65535,
-        "default": 3004
+        "default": 3004,
+        "ui": {
+          "widget": "updown"
+        }
       },
       "apiKey": {
         "type": "string",
         "title": "API Key",
-        "description": "The Picteus API key that will be transmitted to the MCP server."
+        "description": "The Picteus API key that will be transmitted to the MCP server.",
+        "ui": {
+          "widget": "password"
+        }
       }
     },
     "required": [

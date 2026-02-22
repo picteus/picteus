@@ -1,6 +1,5 @@
-import { Expose, Type } from "class-transformer";
+import { Expose, Transform, Type } from "class-transformer";
 import {
-  Allow,
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
@@ -43,6 +42,7 @@ import {
   urlPattern
 } from "./common.dtos";
 import { TypeBasedValidation } from "./validators.dtos";
+import { jsonTransform } from "./transformers.dtos";
 
 
 /**
@@ -282,7 +282,7 @@ export class InstructionsPrompt extends BasisPrompt
     }
   )
   @IsObject()
-  @Allow({ always: false })
+  @Transform(jsonTransform)
   @IsDefined()
   @NotEquals(null)
   @Expose()

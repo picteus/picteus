@@ -236,6 +236,7 @@ export class ManifestExtensionCommand
       required: false
     }
   )
+  @IsObject()
   @Transform(jsonTransform)
   @IsOptional()
   @Expose()

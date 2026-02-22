@@ -33,7 +33,7 @@ import { product } from "./constants";
 import { paths } from "./paths";
 import { environmentVariableChecker, StringLengths, StringNature } from "./services/utils/parametersChecker";
 import { ConstantsRegistry, ManifestRuntimeEnvironment } from "./dtos/app.dtos";
-import { stringify } from "./utils";
+import { deepCopy, stringify } from "./utils";
 import { apiKeyHeaderName, AuthenticationGuard } from "./app.guards";
 import { MainModule } from "./app.module";
 import { HostService } from "./services/hostService";
@@ -60,7 +60,7 @@ class InternalServer
   {
     logger.info(`Generating the function calling into file '${filePath}'`);
     const openApiDocument = await this.createOpenApiDocument();
-    const originalOpenApiDocument: | SwaggerV2.IDocument | OpenApiV3.IDocument | OpenApiV3_1.IDocument = JSON.parse(JSON.stringify(openApiDocument));
+    const originalOpenApiDocument: SwaggerV2.IDocument | OpenApiV3.IDocument | OpenApiV3_1.IDocument = deepCopy(openApiDocument);
     const document: OpenApi.IDocument = OpenApi.convert(originalOpenApiDocument);
     const application: IHttpLlmApplication<"3.1"> = HttpLlm.application({ model: "3.1", document });
 

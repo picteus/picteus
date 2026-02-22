@@ -9,7 +9,8 @@
     "emitDecoratorMetadata": false,
     "experimentalDecorators": false,
     "noImplicitAny": true,
-    "sourceMap": false
+    "sourceMap": false,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["./src"]
 }

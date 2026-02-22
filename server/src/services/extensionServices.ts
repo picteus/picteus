@@ -21,7 +21,7 @@ import { HostCommandType } from "@picteus/shared-back-end";
 
 import { logger } from "../logger";
 import { paths } from "../paths";
-import { plainToInstanceViaJSON, stringify } from "../utils";
+import { deepCopy, plainToInstanceViaJSON, stringify } from "../utils";
 import {
   EventAction,
   EventEntity,
@@ -178,6 +178,49 @@ export class ExtensionsUiServer
 type Runnable = () => Promise<void>;
 
 export type CapabilityResult<T> = { extensionId: string, value: T };
+
+export type UIProperty = { property: string, ui: Record<string, any> };
+const uiPropertyName = "ui";
+
+export function stripAndExtractParametersUiProperties(parameters: Record<string, any>): UIProperty[]
+{
+  const uis: UIProperty [] = [];
+  const properties = parameters.properties;
+  if (properties !== undefined)
+  {
+    for (const property in properties)
+    {
+      const childProperty = properties[property];
+      const ui: Record<string, any> = childProperty[uiPropertyName];
+      delete childProperty[uiPropertyName];
+      if (ui !== undefined)
+      {
+        uis.push({ property, ui });
+      }
+    }
+  }
+  return uis;
+}
+
+export function checkUiProperties(uiProperties: UIProperty[]): void
+{
+  for (const uiProperty of uiProperties)
+  {
+    const ui = uiProperty.ui;
+    for (const property in ui)
+    {
+      switch (property)
+      {
+        case "widget":
+          break;
+        case "inline":
+          break;
+        default:
+          parametersChecker.throwBadParameter("ui", property, "this property is not supported");
+      }
+    }
+  }
+}
 
 @Injectable()
 export class ExtensionService
@@ -467,7 +510,7 @@ export class ExtensionService
     const extensionAndManual = await this.get(id);
     if (this.extensionsRegistry.isPaused(id) === isPause)
     {
-      parametersChecker.throwBadParameter("isPause", isPause === true ? "true" : "false", `because the extension with id '${id}' is already ${isPause === true ? "paused" : "resumed"}`);
+      parametersChecker.throwBadParameter("isPause", isPause === true ? "true" : "false", `the extension with id '${id}' is already ${isPause === true ? "paused" : "resumed"}`);
     }
     this.extensionsRegistry.pauseOrResume(id, isPause);
     this.uninstallChromeExtensions(id);
@@ -553,15 +596,17 @@ export class ExtensionService
     this.checkExtensionExists(id);
     const extension = this.extensionsRegistry.get(id)!;
     const value = settings.value;
-    const extensionSettings = extension.settings;
-    addJsonSchemaAdditionalProperties(extensionSettings);
+    const withStrippedUiPropertiesExtensionSettings = deepCopy(extension.settings);
+    const uiProperties = stripAndExtractParametersUiProperties(withStrippedUiPropertiesExtensionSettings);
+    addJsonSchemaAdditionalProperties(withStrippedUiPropertiesExtensionSettings);
     try
     {
-      validateSchema(computeAjv(), extensionSettings, value);
+      validateSchema(computeAjv(), withStrippedUiPropertiesExtensionSettings, value);
+      checkUiProperties(uiProperties);
     }
     catch (error)
     {
-      parametersChecker.throwBadParameter("settings", stringify(settings, false), `because it does not comply with the settings JSON schema. Reason: '${(error as Error).message}'`);
+      parametersChecker.throwBadParameter("settings", stringify(settings, false), `it does not comply with the settings JSON schema. Reason: '${(error as Error).message}'`);
     }
     const settingsValue = stringify(value);
     const objectValue = { extensionId: id, value: settingsValue };
@@ -585,7 +630,7 @@ export class ExtensionService
     }
     if (this.extensionsRegistry.isPaused(id) === true)
     {
-      parametersChecker.throwBadParameter("id", id, "because the extension is paused");
+      parametersChecker.throwBadParameter("id", id, "the extension is paused");
     }
     for (const instructions of manifest.instructions)
     {
@@ -687,20 +732,22 @@ export class ExtensionService
     const command = this.extensionsRegistry.getCommand(extension, commandId);
     if (command === undefined)
     {
-      parametersChecker.throwBadParameter("commandId", commandId, `because the extension with id '${id}' has no command with id '${commandId}'`);
+      parametersChecker.throwBadParameter("commandId", commandId, `the extension with id '${id}' has no command with id '${commandId}'`);
     }
     if (!(entity === CommandEntity.Images && (command.on.entity === CommandEntity.Images || command.on.entity === CommandEntity.Image)) && command.on.entity !== entity)
     {
-      parametersChecker.throwBadParameter("commandId", commandId, `because the command is not attached to the entity '${entity}'`);
+      parametersChecker.throwBadParameter("commandId", commandId, `the command is not attached to the entity '${entity}'`);
     }
     if (command.parameters !== undefined)
     {
-      const schema = command.parameters;
-      addJsonSchemaAdditionalProperties(schema);
+      const withStrippedUiPropertiesSchema = deepCopy(command.parameters);
+      const uiProperties = stripAndExtractParametersUiProperties(withStrippedUiPropertiesSchema);
+      addJsonSchemaAdditionalProperties(withStrippedUiPropertiesSchema);
       const interpretedParameters = parameters || {};
       try
       {
-        validateSchema(computeAjv(), schema, interpretedParameters);
+        validateSchema(computeAjv(), withStrippedUiPropertiesSchema, interpretedParameters);
+        checkUiProperties(uiProperties);
       }
       catch (error)
       {
@@ -711,15 +758,15 @@ export class ExtensionService
     {
       if (imageIds === undefined)
       {
-        parametersChecker.throwBadParameter("imageIds", "undefined", "because it is undefined");
+        parametersChecker.throwBadParameter("imageIds", "undefined", "it is undefined");
       }
       if (new Set(imageIds).size !== imageIds.length)
       {
-        parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, "because an image identifier is repeated");
+        parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, "an image identifier is repeated");
       }
       if (command.on.entity === CommandEntity.Image && imageIds.length > 1)
       {
-        parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, `because the command with id '${commandId}' can only be run on a single image`);
+        parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, `the command with id '${commandId}' can only be run on a single image`);
       }
       const entities = await this.entitiesProvider.images.findMany({
         where: { id: { in: imageIds } },
@@ -735,7 +782,7 @@ export class ExtensionService
             return command.on.withTags!.indexOf(tag.value) !== -1;
           }) === undefined)
           {
-            parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, "because one or more image do not have the required tags");
+            parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, "one or more image do not have the required tags");
           }
         }
       }
@@ -749,7 +796,7 @@ export class ExtensionService
       });
       if (notFoundImageIds.length > 0)
       {
-        parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, "because one or more image do not exist");
+        parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, "one or more image do not exist");
       }
     }
     let eventEntity: EventEntity;
@@ -1255,11 +1302,13 @@ export class ExtensionService
       }
       else
       {
+        const withStrippedUiPropertiesParameters = deepCopy(manifest.settings);
+        stripAndExtractParametersUiProperties(withStrippedUiPropertiesParameters);
         // We check that the manifest settings are valid
         const ajv = computeAjv();
         try
         {
-          validateJsonSchema(ajv, manifest.settings);
+          validateJsonSchema(ajv, withStrippedUiPropertiesParameters);
         }
         catch (error)
         {
@@ -1275,9 +1324,11 @@ export class ExtensionService
             {
               if (command.parameters !== undefined)
               {
+                const withStrippedUiPropertiesParameters = deepCopy(command.parameters);
+                stripAndExtractParametersUiProperties(withStrippedUiPropertiesParameters);
                 try
                 {
-                  validateJsonSchema(ajv, command.parameters);
+                  validateJsonSchema(ajv, withStrippedUiPropertiesParameters);
                 }
                 catch (error)
                 {

@@ -3,7 +3,7 @@ export { default as Container } from "./Container/Container.tsx";
 export { default as Loader } from "./Loader/Loader.tsx";
 export { default as Spinner } from "./Spinner/Spinner.tsx";
 export { default as ImageLoadingPlaceholder } from "./ImageLoadingPlaceholder/ImageLoadingPlaceholder.tsx";
-export { default as RjsfForm } from "./RjsfForm/RjsfForm.tsx";
+export { default as RjsfForm, extractSchemaAndUiSchema } from "./RjsfForm/RjsfForm.tsx";
 export { default as CodeViewer } from "./CodeViewer/CodeViewer.tsx";
 export { default as ExternalLink } from "./ExternalLink/ExternalLink.tsx";
 export { default as EmptyResults } from "./EmptyResults/EmptyResults.tsx";

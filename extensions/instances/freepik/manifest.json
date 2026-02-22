@@ -44,14 +44,22 @@
                 "title": "Engine",
                 "description": "The Magnific model engine.",
                 "enum": ["automatic", "magnific_illusio", "magnific_sharpy", "magnific_sparkle"],
-                "default": "automatic"
+                "default": "automatic",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
               },
               "scaleFactor": {
                 "type": "string",
                 "title": "Scale factor",
                 "description": "Indicates the scale factor of the image. For higher scales, the image will take longer to process.",
                 "enum": ["2x", "4x", "8x", "16x"],
-                "default": "2x"
+                "default": "2x",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
               },
               "optimizedFor": {
                 "type": "string",
@@ -69,37 +77,52 @@
                 "description": "Indicates the AI's creativity.",
                 "minimum": -10,
                 "maximum": 10,
-                "default": 0
+                "default": 0,
+                ui: {
+                  widget: "range"
+                }
               },
               "hdr": {
                 "type": "integer",
-                "title": "Creativity",
+                "title": "HDR",
                 "description": "Increases or decreases the level of definition and detail.",
                 "minimum": -10,
                 "maximum": 10,
-                "default": 0
+                "default": 0,
+                ui: {
+                  widget: "range"
+                }
               },
               "resemblance": {
                 "type": "integer",
-                "title": "Creativity",
+                "title": "Resemblance",
                 "description": "Adjusts the level of resemblance to the original image.",
                 "minimum": -10,
                 "maximum": 10,
-                "default": 0
+                "default": 0,
+                ui: {
+                  widget: "range"
+                }
               },
               "fractality": {
                 "type": "integer",
-                "title": "Creativity",
+                "title": "Fractality",
                 "description": "Controls the strength of the prompt and intricacy per square pixel.",
                 "minimum": -10,
                 "maximum": 10,
-                "default": 0
+                "default": 0,
+                ui: {
+                  widget: "range"
+                }
               },
               "prompt": {
                 "type": "string",
                 "title": "Prompt",
                 "description": "The additional prompt to add.",
-                "default": null
+                "default": null,
+                "ui": {
+                  "widget": "textarea"
+                }
               }
             },
             "required": ["engine", "scaleFactor", "optimizedFor", "creativity", "hdr", "resemblance", "fractality"]
@@ -126,7 +149,10 @@
                 "description": "Indicates the number of pixels to expand the image on the left.",
                 "minimum": 0,
                 "maximum": 2048,
-                "default": 0
+                "default": 0,
+                ui: {
+                  widget: "range"
+                }
               },
               "right": {
                 "type": "integer",
@@ -134,7 +160,10 @@
                 "description": "Indicates the number of pixels to expand the image on the right.",
                 "minimum": 0,
                 "maximum": 2048,
-                "default": 0
+                "default": 0,
+                ui: {
+                  widget: "range"
+                }
               },
               "top": {
                 "type": "integer",
@@ -142,7 +171,10 @@
                 "description": "Indicates the number of pixels to expand the image on the top.",
                 "minimum": 0,
                 "maximum": 2048,
-                "default": 0
+                "default": 0,
+                ui: {
+                  widget: "range"
+                }
               },
               "bottom": {
                 "type": "integer",
@@ -150,7 +182,10 @@
                 "description": "Indicates the number of pixels to expand the image on the bottom.",
                 "minimum": 0,
                 "maximum": 2048,
-                "default": 0
+                "default": 0,
+                ui: {
+                  widget: "range"
+                }
               }
             },
             "required": ["left", "right", "top", "bottom"]
@@ -180,7 +215,10 @@
       "apiKey": {
         "type": "string",
         "title": "API Key",
-        "description": "The API key used when interacting with Freepik."
+        "description": "The API key used when interacting with Freepik.",
+        "ui": {
+          "widget": "password"
+        }
       }
     },
     "required": [

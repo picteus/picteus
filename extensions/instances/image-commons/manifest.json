@@ -39,32 +39,47 @@
                 "title": "Format",
                 "description": "What is the format of the image?",
                 "enum": ["jpeg", "png", "webp", "gif", "avif", "heif"],
-                "default": "jpeg"
+                "default": "jpeg",
+                "ui": {
+                  "widget": "radio", "inline": true
+                }
               },
               "stripMetadata": {
                 "type": "boolean",
                 "title": "Strip metadata?",
                 "description": "Whether the metadata should be stripped from the converted images",
-                "default": true
+                "default": true,
+                "ui": {
+                  "widget": "updown"
+                }
               },
               "width": {
                 "type": "integer",
                 "title": "Width",
                 "description": "The width of the converted image in pixels. If not set, the original width is kept.",
-                "minimum": 1
+                "minimum": 1,
+                "ui": {
+                  "widget": "updown"
+                }
               },
               "height": {
                 "type": "integer",
                 "title": "Height",
                 "description": "The height of the converted image in pixels. If not set, the original height is kept.",
-                "minimum": 1
+                "minimum": 1,
+                "ui": {
+                  "widget": "updown"
+                }
               },
               "resizeRender": {
                 "type": "string",
                 "title": "Resize Render",
                 "description": "If the 'width' or 'height' parameter is provided, whether the final image dimensions should be within the box defined by those parameters.",
                 "enum": ["inbox", "outbox"],
-                "default": "inbox"
+                "default": "inbox",
+                "ui": {
+                  "widget": "radio", "inline": true
+                }
               }
             },
             "required": ["format", "stripMetadata"]

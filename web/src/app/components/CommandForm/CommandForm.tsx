@@ -8,6 +8,7 @@ import { useEnterKey } from "app/hooks";
 import { IconInfoCircle } from "@tabler/icons-react";
 
 import style from "./CommandForm.module.scss";
+import { extractSchemaAndUiSchema } from "../RjsfForm/RjsfForm.tsx";
 
 type CommandFormType = {
   command: UiCommandType;
@@ -27,6 +28,7 @@ export default function CommandForm({
 
   useEnterKey(() => onSend(extensionId, command.id, commandParameters));
 
+  const { schema, uiSchema } = extractSchemaAndUiSchema(command.parameters);
   return (
     <>
       {command.dialogContent && (<Flex mt={"md"} direction={"column"} gap={15}>
@@ -36,7 +38,7 @@ export default function CommandForm({
         {command.dialogContent.details && (
           <div className={style.details}><Markdown content={command.dialogContent.details} /></div>)}
       </Flex>)}
-      <RjsfForm schema={command.parameters} onChange={setCommandParameters} />
+      <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setCommandParameters} />
       <Flex mt={"md"} align="flex-end" justify="flex-end" gap={5}>
         {<Button variant="subtle" onClick={onCancel}>
           {t("button.cancel")}

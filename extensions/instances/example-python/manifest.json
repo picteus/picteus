@@ -21,8 +21,8 @@
       "throttlingPolicies": [
         {
           "events": ["image.created", "image.updated", "image.deleted", "image.computeTags", "image.computeFeatures"],
-          "durationInMilliseconds": 200,
-          "maximumCount": 5
+          "durationInMilliseconds": 50,
+          "maximumCount": 20
         }
       ],
       "capabilities": [
@@ -60,7 +60,11 @@
                 "title": "Format",
                 "description": "What is the format of the image?",
                 "enum": ["jpeg", "png", "webp"],
-                "default": "jpeg"
+                "default": "jpeg",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
               },
               "stripMetadata": {
                 "type": "boolean",
@@ -69,23 +73,33 @@
                 "default": false
               },
               "width": {
-                "type": "number",
+                "type": "integer",
                 "title": "Width",
                 "description": "The width of the converted image in pixels. If not set, the original width is kept.",
-                "minimum": 1
+                "minimum": 1,
+                "ui": {
+                  "widget": "updown"
+                }
               },
               "height": {
-                "type": "number",
+                "type": "integer",
                 "title": "Height",
                 "description": "The height of the converted image in pixels. If not set, the original height is kept.",
-                "minimum": 1
+                "minimum": 1,
+                "ui": {
+                  "widget": "updown"
+                }
               },
               "resizeRender": {
                 "type": "string",
                 "title": "Resize Render",
                 "description": "If the 'width' or 'height' parameter is provided, whether the final image dimensions should be within the box defined by those parameters.",
                 "enum": ["inbox", "outbox"],
-                "default": "inbox"
+                "default": "inbox",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
               }
             },
             "required": ["format", "stripMetadata"]
@@ -112,7 +126,10 @@
                 "description": "What is your age?",
                 "minimum": 1,
                 "maximum": 128,
-                "default": 35
+                "default": 35,
+                "ui": {
+                  "widget": "range"
+                }
               }
             },
             "required": ["age"]
@@ -181,7 +198,10 @@
       "parameter": {
         "type": "string",
         "title": "Parameter",
-        "description": "A parameter which enables to tune the extension."
+        "description": "A parameter which enables to tune the extension.",
+        "ui": {
+          "widget": "textarea"
+        }
       }
     },
     "required": ["parameter"]
