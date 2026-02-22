@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import Markdown from "react-markdown";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconX } from "@tabler/icons-react";
 import {
   ExtensionImageFeature,
@@ -13,7 +12,7 @@ import {
 } from "@picteus/ws-client";
 import { Accordion, ActionIcon, Button, Divider, Flex, Menu, Overlay, Table, Text } from "@mantine/core";
 import { ImageService, RepositoriesService, StorageService } from "app/services";
-import { CodeViewer, CopyText, ExternalLink } from "app/components";
+import { CodeViewer, CopyText, ExternalLink, Markdown } from "app/components";
 import { capitalizeText, formatDate, formatSize } from "utils";
 import style from "./ImageVisualizer.module.scss";
 import { TableComponent } from "./components";
@@ -354,7 +353,7 @@ export default function ImageVisualizer({
                             const tableValue = imageFeature.format === "json" ?
                               <CodeViewer code={imageFeature.value} /> : (imageFeature.format === "markdown" ?
                                 // We need to handle the specific case the linebreak "<br>", because the library does not handle it properly by default
-                                <Markdown>{(value as string).replace(/<br>/ig, "\n \n")}</Markdown> : (typeof value === "string" ? capitalizeText(value) : (typeof value === "number" ? value.toString() : (typeof value === "boolean" ? value.toString() : value))));
+                                <Markdown content={value as string}/> : (typeof value === "string" ? capitalizeText(value) : (typeof value === "number" ? value.toString() : (typeof value === "boolean" ? value.toString() : value))));
                             return (
                               <TableComponent
                                 key={`feature-${index}`}

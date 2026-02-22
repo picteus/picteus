@@ -21,4 +21,5 @@ export { default as DialogForm } from "./DialogForm/DialogForm.tsx";
 export { default as GeneralCommands } from "./GeneralCommands/GeneralCommands.tsx";
 export { default as NotificationToolbar } from "./NotificationToolbar/NotificationToolbar.tsx";
 export { default as CopyText } from "./CopyText/CopyText.tsx";
+export { default as Markdown } from "./Markdown/Markdown.tsx";
 export { CaptionDistance } from "./ImageMasonry/components";

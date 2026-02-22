@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Alert, Button, Flex } from "@mantine/core";
 
 import { UiCommandType } from "types";
-import { RjsfForm } from "app/components";
+import { Markdown, RjsfForm } from "app/components";
 import { useEnterKey } from "app/hooks";
 import { IconInfoCircle } from "@tabler/icons-react";
 
@@ -31,9 +31,10 @@ export default function CommandForm({
     <>
       {command.dialogContent && (<Flex mt={"md"} direction={"column"} gap={15}>
         <Alert icon={<IconInfoCircle />}>
-          {command.dialogContent.description}
+          <Markdown content={command.dialogContent.description} />
         </Alert>
-        {command.dialogContent.details && (<div className={style.details}>{command.dialogContent.details}</div>)}
+        {command.dialogContent.details && (
+          <div className={style.details}><Markdown content={command.dialogContent.details} /></div>)}
       </Flex>)}
       <RjsfForm schema={command.parameters} onChange={setCommandParameters} />
       <Flex mt={"md"} align="flex-end" justify="flex-end" gap={5}>

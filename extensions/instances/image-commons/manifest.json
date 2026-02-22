@@ -48,13 +48,13 @@
                 "default": true
               },
               "width": {
-                "type": "number",
+                "type": "integer",
                 "title": "Width",
                 "description": "The width of the converted image in pixels. If not set, the original width is kept.",
                 "minimum": 1
               },
               "height": {
-                "type": "number",
+                "type": "integer",
                 "title": "Height",
                 "description": "The height of the converted image in pixels. If not set, the original height is kept.",
                 "minimum": 1
@@ -74,6 +74,19 @@
               "locale": "en",
               "label": "Convert",
               "description": "Given a format, converts the provided images into the desired format and stores them in the same repository."
+            }
+          ]
+        },
+        {
+          "id": "rateAndComment",
+          "on": {
+            "entity": "Images"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Rate and comment",
+              "description": "Enables to rate and comment the selected images and stores them into the image features."
             }
           ]
         }

@@ -3,10 +3,14 @@ import {
   ApplicationMetadataItem,
   Communicator,
   GenerationRecipeFromJSON,
+  ImageFeature,
+  ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
   ImageResizeRender,
   NotificationEvent,
+  NotificationReturnedError,
+  NotificationReturnedErrorCause,
   NotificationsDialogType,
   NotificationsImage,
   NotificationValue,
@@ -27,6 +31,10 @@ class ImageCommonsExtension extends PicteusExtension
       if (commandId === "convert")
       {
         await this.convertImages(communicator, imageIds, parameters);
+      }
+      else if (commandId === "rateAndComment")
+      {
+        await this.rateAndCommentImages(imageIds, communicator);
       }
     }
   }
@@ -85,6 +93,92 @@ class ImageCommonsExtension extends PicteusExtension
         description: "These are the converted images"
       }
     });
+  }
+
+  private async rateAndCommentImages(imageIds: string[], communicator: Communicator): Promise<void>
+  {
+    for (const imageId of imageIds)
+    {
+      const existingFeatures = await this.getImageApi().imageGetFeatures({
+        id: imageId,
+        extensionId: this.extensionId
+      });
+      const imageMediaUrl = await this.getImageApi().imageMediaUrl({ id: imageId, height: 75 });
+      const ratingName = "Rating";
+      const commentName = "Comment";
+      const previousRating = existingFeatures.find(feature => feature.name === ratingName && feature.format === ImageFeatureFormat.Integer && feature.type === ImageFeatureType.Annotation);
+      const previousComment = existingFeatures.find(feature => feature.name === commentName && feature.format === ImageFeatureFormat.String && feature.type === ImageFeatureType.Comment);
+      let result: Record<string, any>;
+      try
+      {
+        result = await communicator.launchIntent<Record<string, any>>({
+          dialogContent:
+            {
+              title: "Rate and comment",
+              description: `Please rate and comment the image.<br>![Image thumbnail](${imageMediaUrl.url} "Image thumbnail")`,
+              details: "The values will be recorded as features of the image."
+            },
+          parameters:
+            {
+              type: "object",
+              properties:
+                {
+                  rating: {
+                    type: "integer",
+                    title: "Rating",
+                    enum: [1, 2, 3, 4, 5],
+                    default: previousRating?.value as number ?? 3
+                  },
+                  comment: {
+                    type: "string",
+                    title: "Comment",
+                    minLength: 0,
+                    maxLength: 1_024,
+                    default: previousComment?.value as string ?? ""
+                  }
+                },
+              required: ["rating"]
+            }
+        });
+      }
+      catch (error)
+      {
+        const intentError: NotificationReturnedError = error as NotificationReturnedError;
+        if (intentError.reason === NotificationReturnedErrorCause.Cancel)
+        {
+          return;
+        }
+        else
+        {
+          throw error;
+        }
+      }
+      const features: ImageFeature[] = existingFeatures.filter(feature => feature.name !== ratingName && feature.name !== commentName);
+      const rating: number = result.rating;
+      const comment: string | undefined = result.comment;
+      features.push(
+        {
+          type: ImageFeatureType.Annotation,
+          name: ratingName,
+          value: rating,
+          format: ImageFeatureFormat.Integer
+        });
+      if (comment !== undefined && comment.length > 0)
+      {
+        features.push(
+          {
+            type: ImageFeatureType.Comment,
+            name: commentName,
+            value: comment,
+            format: ImageFeatureFormat.String
+          });
+      }
+      await this.getImageApi().imageSetFeatures({
+        id: imageId,
+        extensionId: this.extensionId,
+        imageFeature: features
+      });
+    }
   }
 
 }
