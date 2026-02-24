@@ -533,7 +533,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       const applicationMetadataParameterName = "applicationMetadata";
       if (supportsApplicationMedata(imageFormat) === false)
       {
-        parametersChecker.throwBadParameter(applicationMetadataParameterName, applicationMetadata, "because only PNG and JPEG images are supported for application metadata");
+        parametersChecker.throwBadParameter(applicationMetadataParameterName, applicationMetadata, "only PNG and JPEG images are supported for application metadata");
       }
       let json: Json;
       try
@@ -550,7 +550,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       }
       catch (error)
       {
-        parametersChecker.throwBadParameter(applicationMetadataParameterName, applicationMetadata, "because it does not comply with the application metadata schema");
+        parametersChecker.throwBadParameter(applicationMetadataParameterName, applicationMetadata, "it does not comply with the application metadata schema");
       }
 
       // We check that the referenced extensions exist

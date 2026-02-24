@@ -633,7 +633,7 @@ export class ImageService
           const validationErrors = await validate(generationRecipe, { forbidUnknownValues: true });
           if (validationErrors.length > 0)
           {
-            parametersChecker.throwBadParameter(`[${index}].value`, string, "because it does not comply with the recipe schema");
+            parametersChecker.throwBadParameter(`[${index}].value`, string, "it does not comply with the recipe schema");
           }
         }
       }

@@ -1035,7 +1035,7 @@ describe("Extensions", () =>
     await expect(async () =>
     {
       await base.getExtensionController().synchronize(manifest.id);
-    }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${manifest.id}' is invalid because because the extension is paused`, BAD_REQUEST, base.badParameterCode));
+    }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${manifest.id}' is invalid because the extension is paused`, BAD_REQUEST, base.badParameterCode));
 
     {
       // We make sure that no tags nor features' computation event is processed when the extension is paused
@@ -1427,21 +1427,21 @@ describe("Extensions", () =>
       await expect(async () =>
       {
         await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, [image.id]);
-      }).rejects.toThrow(new ServiceError(`The parameter 'commandId' with value '${commandId}' is invalid because because the extension with id '${manifest.id}' has no command with id '${commandId}'`, BAD_REQUEST, base.badParameterCode));
+      }).rejects.toThrow(new ServiceError(`The parameter 'commandId' with value '${commandId}' is invalid because the extension with id '${manifest.id}' has no command with id '${commandId}'`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const imageId = "nonExistentImageId";
       await expect(async () =>
       {
         await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, [imageId]);
-      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageId}]' is invalid because because one or more image do not exist`, BAD_REQUEST, base.badParameterCode));
+      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageId}]' is invalid because one or more image do not exist`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const imageIds = [image.id, images[1].id];
       await expect(async () =>
       {
         await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, imageIds);
-      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageIds.join(", ")}]' is invalid because because the command with id '${commandId}' can only be run on a single image`, BAD_REQUEST, base.badParameterCode));
+      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageIds.join(", ")}]' is invalid because the command with id '${commandId}' can only be run on a single image`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const parameters = { key: "value" };
@@ -1731,7 +1731,7 @@ describe("Extensions", () =>
           await expect(async () =>
           {
             await base.getExtensionController().setSettings(Base.allPolicyContext, manifest.id, new ExtensionSettings(aCase.value));
-          }).rejects.toThrow(new ServiceError(`The parameter 'settings' with value '{"value":${JSON.stringify(aCase.value)}}' is invalid because because it does not comply with the settings JSON schema. Reason: '` + aCase.reason + "'", BAD_REQUEST, base.badParameterCode));
+          }).rejects.toThrow(new ServiceError(`The parameter 'settings' with value '{"value":${JSON.stringify(aCase.value)}}' is invalid because it does not comply with the settings JSON schema. Reason: '` + aCase.reason + "'", BAD_REQUEST, base.badParameterCode));
         }
       }
     });

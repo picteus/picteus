@@ -563,7 +563,7 @@ export class NotificationsGateway
       try
       {
         validateJsonSchema(computeAjv(), withStrippedUiPropertiesParameters);
-        addJsonSchemaAdditionalProperties(withStrippedUiPropertiesParameters);
+        addJsonSchemaAdditionalProperties(specificIntent.parameters);
         checkUiProperties(uiProperties);
       }
       catch (error)

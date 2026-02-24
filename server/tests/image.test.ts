@@ -991,7 +991,7 @@ describe("Image with module", () =>
           await expect(async () =>
           {
             await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, format, undefined, value)]);
-          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
+          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
         }
         const prompt = new TextualPrompt("prompt");
         for (const modelTag of ["", "a model", "model:version1:version2", "model!", "model?"])
@@ -1000,7 +1000,7 @@ describe("Image with module", () =>
           await expect(async () =>
           {
             await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, format, undefined, value)]);
-          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
+          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
         }
         {
           for (const recipe of [new GenerationRecipe([], prompt, "a".repeat(FieldLengths.technical + 1)), new GenerationRecipe([], prompt, undefined, "malformed URL"), new GenerationRecipe([], prompt, undefined, undefined, "malformed software"), new GenerationRecipe([], prompt, undefined, undefined, undefined, [""]), new GenerationRecipe([], prompt, undefined, undefined, undefined, undefined, -1)])
@@ -1009,7 +1009,7 @@ describe("Image with module", () =>
             await expect(async () =>
             {
               await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, format, undefined, value)]);
-            }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
+            }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
           }
         }
       }
@@ -1276,7 +1276,7 @@ describe("Image with module", () =>
       await expect(async () =>
       {
         await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, [], imageIds);
-      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageIds.join(",")}]' is invalid because because one or more image do not have the required tags`, BAD_REQUEST, base.badParameterCode));
+      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageIds.join(",")}]' is invalid because one or more image do not have the required tags`, BAD_REQUEST, base.badParameterCode));
       // We set the missing tag
       await base.getImageController().ensureTags(Base.allPolicyContext, imageId, secondExtensionId, [extensionTag]);
       // We check that it is now possible to run the previous image command
