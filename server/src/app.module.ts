@@ -40,6 +40,7 @@ import { RepositoryStatus } from "./dtos/repository.dtos";
 import {
   AdministrationController,
   ApiSecretController,
+  CollectionController,
   ExtensionController,
   ImageAttachmentController,
   ImageController,
@@ -52,6 +53,7 @@ import {
 import {
   AdministrationService,
   ApiSecretService,
+  CollectionService,
   EntitiesProvider,
   ExtensionRegistry,
   ExtensionService,
@@ -299,7 +301,7 @@ class ExtensionsUserInterfaceMiddleware implements NestMiddleware, OnModuleInit,
 
 }
 
-const controllers = [MiscellaneousController, AdministrationController, SettingsController, ApiSecretController, ExtensionController, RepositoryController, ImageController, ImageAttachmentController, SearchController];
+const controllers = [MiscellaneousController, AdministrationController, SettingsController, ApiSecretController, ExtensionController, RepositoryController, CollectionController, ImageController, ImageAttachmentController, SearchController];
 
 // This module is defined in order to initialize its providers first
 @Module({
@@ -353,7 +355,7 @@ class MigrationModule implements OnModuleInit, OnModuleDestroy
 }
 
 // The orders in which the providers matter, because we want their "onModuleInit()" method invoked in the following order: "AdministrationService" => "RepositoryService"
-const providers = [unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, throttlerGuardProvider, VectorDatabaseAccessor, HostService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, ExtensionTaskExecutor, RepositoryService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService];
+const providers = [unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, throttlerGuardProvider, VectorDatabaseAccessor, HostService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService];
 
 @Module({
   imports:

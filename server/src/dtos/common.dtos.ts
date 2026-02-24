@@ -1,4 +1,4 @@
-import { IsInt } from "class-validator";
+import { IsDefined, IsInt, IsOptional, IsString, MaxLength, MinLength, NotEquals } from "class-validator";
 import { Expose, Type } from "class-transformer";
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import { SchemaObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
@@ -116,6 +116,15 @@ export const imageUrlSchema: SchemaObject =
     example: "file:///Users/me/image//path/fileName.png"
   };
 
+export const integerIdSchema: SchemaObject =
+  {
+    description: "An integer identifier",
+    type: "number",
+    format: "int32",
+    minimum: 0,
+    example: 123
+  };
+
 export const attachmentUriSchema: SchemaObject =
   {
     description: "An attachment URI",
@@ -169,6 +178,83 @@ export class Dates
   @Type(() => Number)
   @Expose()
   readonly modificationDate: number;
+
+}
+
+@ApiSchema({ description: "An entity which has an identifier, a creation date, a name and a comment property" })
+export class WithIdCreationDateNameComment
+{
+
+  constructor(id: number, creationDate: number, name: string, comment?: string)
+  {
+    this.id = id;
+    this.creationDate = creationDate;
+    this.name = name;
+    this.comment = comment;
+  }
+
+  @ApiProperty(
+    {
+      ...integerIdSchema,
+      description: "The entity identifier",
+      type: Number,
+      required: true
+    }
+  )
+  @IsInt()
+  @IsDefined()
+  @Expose()
+  readonly id: number;
+
+  @ApiProperty(
+    {
+      description: "The entity creation date",
+      type: Number,
+      format: "int64",
+      required: true,
+      example: 1761384334302
+    }
+  )
+  @IsInt()
+  @Type(() => Number)
+  @IsDefined()
+  @Expose()
+  readonly creationDate: number;
+
+  @ApiProperty(
+    {
+      description: "The entity name",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.name,
+      required: true,
+      example: "My entity name"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.name)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly name: string;
+
+  @ApiProperty(
+    {
+      description: "The entity comment",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.comment,
+      required: false,
+      example: "My comment on the entity"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.comment)
+  @IsOptional()
+  @Expose()
+  readonly comment?: string;
 
 }
 

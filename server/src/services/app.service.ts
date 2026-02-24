@@ -3,6 +3,7 @@ import { NotificationsGateway } from "./notificationsGateway";
 import { MiscellaneousService } from "./miscellaneousService";
 import { HostService } from "./hostService";
 import { RepositoryService } from "./repositoryService";
+import { CollectionService } from "./collectionService";
 import {
   ExtendedManifest,
   ExtensionArchiveReader,
@@ -20,32 +21,33 @@ import { SettingsService } from "./settingsService";
 import { ApiSecretService } from "./apiSecretService";
 
 export {
-  EntitiesProvider,
-  VectorDatabaseProvider,
-  VectorDatabaseAccessor,
-  HostService,
-  NotificationsGateway,
-  MiscellaneousService,
   AdministrationService,
-  SettingsService,
   ApiSecretService,
-  RepositoryService,
-  ExtensionRegistry,
+  CapabilityResult,
+  CollectionService,
+  EntitiesProvider,
+  ExtendedManifest,
   ExtensionArchiveReader,
+  ExtensionMessage,
+  ExtensionRegistry,
   ExtensionService,
   ExtensionTaskExecutor,
   ExtensionsUiServer,
-  ExtendedManifest,
-  ImageEvent,
-  ExtensionMessage,
-  CapabilityResult,
+  GenerativeAIService,
   ImageService,
+  HostService,
+  ImageAnalyzerService,
+  ImageAttachmentService,
+  ImageEvent,
+  NotificationsGateway,
+  MiscellaneousService,
+  RepositoryService,
   SearchFileStats,
   SearchService,
-  ImageAttachmentService,
-  ImageAnalyzerService,
-  GenerativeAIService,
+  SettingsService,
   TextEmbedding,
-  TextEmbeddings
+  TextEmbeddings,
+  VectorDatabaseAccessor,
+  VectorDatabaseProvider
 };
 

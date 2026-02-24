@@ -2,7 +2,7 @@ import { Expose, Type } from "class-transformer";
 import { IsDefined, IsEnum, IsInt, IsOptional, IsString, MaxLength, MinLength, NotEquals } from "class-validator";
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 
-import { FieldLengths } from "./common.dtos";
+import { FieldLengths, WithIdCreationDateNameComment } from "./common.dtos";
 
 
 export enum ApiSecretType
@@ -11,35 +11,16 @@ export enum ApiSecretType
   Token = "token"
 }
 
-/**
- * The API secret summary.
- */
-@ApiSchema({ description: "Basic information about an API secret" })
-export class ApiSecretSummary
+@ApiSchema({ description: "Basic information about an API secret, i.e. the API secret summary" })
+export class ApiSecretSummary extends WithIdCreationDateNameComment
 {
 
-  constructor(id: number, type: ApiSecretType, creationDate: number, expirationDate: number | undefined, name: string, comment: string | undefined)
+  constructor(id: number, type: ApiSecretType, creationDate: number, expirationDate: number | undefined, name: string, comment?: string)
   {
-    this.id = id;
+    super(id, creationDate, name, comment);
     this.type = type;
-    this.creationDate = creationDate;
     this.expirationDate = expirationDate;
-    this.name = name;
-    this.comment = comment;
   }
-
-  @ApiProperty(
-    {
-      description: "The secret identifier",
-      type: Number,
-      required: true,
-      example: 123
-    }
-  )
-  @IsInt()
-  @IsDefined()
-  @Expose()
-  readonly id: number;
 
   @ApiProperty(
     {
@@ -58,21 +39,6 @@ export class ApiSecretSummary
 
   @ApiProperty(
     {
-      description: "The entity creation date",
-      type: Number,
-      format: "int64",
-      required: true,
-      example: 1761384334302
-    }
-  )
-  @IsDefined()
-  @IsInt()
-  @Type(() => Number)
-  @Expose()
-  readonly creationDate: number;
-
-  @ApiProperty(
-    {
       description: "The entity expiration date",
       type: Number,
       format: "int64",
@@ -86,49 +52,11 @@ export class ApiSecretSummary
   @Expose()
   readonly expirationDate?: number;
 
-  @ApiProperty(
-    {
-      description: "The secret name",
-      type: String,
-      minLength: 1,
-      maxLength: FieldLengths.name,
-      required: true,
-      example: "My key"
-    }
-  )
-  @IsString()
-  @MinLength(1)
-  @MaxLength(FieldLengths.name)
-  @IsDefined()
-  @NotEquals(null)
-  @Expose()
-  readonly name: string;
-
-  @ApiProperty(
-    {
-      description: "The secret comment",
-      type: String,
-      minLength: 1,
-      maxLength: FieldLengths.comment,
-      required: false,
-      example: "For the xxx application"
-    }
-  )
-  @IsString()
-  @MinLength(1)
-  @MaxLength(FieldLengths.comment)
-  @IsOptional()
-  @Expose()
-  readonly comment?: string;
-
 }
 
 export const apiScopesSeparator = ",";
 
-/**
- * The API secret.
- */
-@ApiSchema({ description: "Detailed information about an API secret" })
+@ApiSchema({ description: "Detailed information about an API secret, including its secret and its scope" })
 export class ApiSecret extends ApiSecretSummary
 {
 

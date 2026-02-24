@@ -366,10 +366,7 @@ export class ImageMediaUrl
 
 }
 
-/**
- * How an image search should operate regarding the images multiple texts.
- */
-@ApiSchema({ description: "The textual specifications to match when searching for images" })
+@ApiSchema({ description: "The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts" })
 export class SearchKeyword
 {
 
@@ -452,9 +449,9 @@ export class SearchTags
       example: ["nature"]
     }
   )
-  @IsArray()
-  @ValidateNested({ each: true })
+  @IsString({ each: true })
   @IsDefined()
+  @NotEquals(null)
   @Expose()
   readonly values: string[];
 

@@ -49,6 +49,8 @@ export enum ApiScope
   ExtensionSettingsRead = "extension:settings:read",
   ExtensionSettingsWrite = "extension:settings:write",
   ExtensionWrite = "extension:write",
+  CollectionRead = "collection:write",
+  CollectionWrite = "collection:write",
   ImageAttachmentWrite = "image:attachment:write",
   ImageDelete = "image:delete",
   ImageEmbeddingsWrite = "image:embeddings:write",

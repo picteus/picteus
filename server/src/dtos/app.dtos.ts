@@ -19,6 +19,7 @@ import {
   imageIdSchema,
   ImageTag,
   imageUrlSchema,
+  integerIdSchema,
   NumericRange,
   repositoryIdSchema,
   toFileExtension,
@@ -50,6 +51,31 @@ import {
   UserInterfaceAnchor
 } from "./extension.dtos";
 import {
+  ImageMediaUrl,
+  ImageSearchParameters,
+  Repository,
+  RepositoryActivities,
+  RepositoryActivity,
+  RepositoryActivityKind,
+  RepositoryList,
+  RepositoryLocation,
+  RepositoryLocationType,
+  RepositoryStatus,
+  SearchCriteria,
+  SearchFeatureComparisonOperator,
+  SearchFeatureCondition,
+  SearchFeatureLogicalOperator,
+  SearchFeatures,
+  SearchParameters,
+  SearchProperties,
+  SearchPropertyRange,
+  SearchRange,
+  SearchSorting,
+  SearchSortingProperty,
+  SearchTags
+} from "./repository.dtos";
+import { Collection, CollectionFilter } from "./collection.dtos";
+import {
   AllExtensionImageFeatureNames,
   AllExtensionImageTags,
   AllImageEmbeddings,
@@ -78,30 +104,6 @@ import {
   PromptKind,
   TextualPrompt
 } from "./image.dtos";
-import {
-  ImageMediaUrl,
-  ImageSearchParameters,
-  Repository,
-  RepositoryActivities,
-  RepositoryActivity,
-  RepositoryActivityKind,
-  RepositoryList,
-  RepositoryLocation,
-  RepositoryLocationType,
-  RepositoryStatus,
-  SearchCriteria,
-  SearchFeatureComparisonOperator,
-  SearchFeatureCondition,
-  SearchFeatureLogicalOperator,
-  SearchFeatures,
-  SearchParameters,
-  SearchProperties,
-  SearchPropertyRange,
-  SearchRange,
-  SearchSorting,
-  SearchSortingProperty,
-  SearchTags
-} from "./repository.dtos";
 import { apiScopesSeparator, ApiSecret, ApiSecretSummary, ApiSecretType } from "./apiSecret.dtos";
 import { Settings } from "./miscellaneous.dtos";
 
@@ -152,6 +154,8 @@ export {
   applicationXGzipMimeType,
   attachmentUriPrefix,
   attachmentUriSchema,
+  Collection,
+  CollectionFilter,
   CommandEntity,
   ComputedImageFormat,
   computeImageFormatsExtensions,
@@ -200,6 +204,7 @@ export {
   ImageTag,
   imageUrlSchema,
   InstructionsPrompt,
+  integerIdSchema,
   Manifest,
   ManifestCapability,
   ManifestCapabilityId,
