@@ -21,6 +21,7 @@ import { jsonTransform } from "./transformers.dtos";
 import {
   computeIdPattern,
   extensionIdPattern,
+  extensionIdSchema,
   FieldLengths,
   ImageTag,
   Json,
@@ -664,13 +665,10 @@ class ExtensionBasis
 
   @ApiProperty(
     {
+      ...extensionIdSchema,
       description: "The identifier of the extension",
       type: String,
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
-      minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
-      required: true,
-      example: "extension-id"
+      required: true
     }
   )
   @Matches(computeIdPattern(FieldLengths.shortTechnical))
@@ -908,6 +906,7 @@ export class ExtensionActivity
 
   @ApiProperty(
     {
+      ...extensionIdSchema,
       description: "The identifier of the extension",
       type: String,
       required: true

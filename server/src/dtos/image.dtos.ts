@@ -26,6 +26,7 @@ import {
   alphaNumericPlusPattern,
   computeIdPattern,
   Dates,
+  extensionIdSchema,
   FieldLengths,
   fileUrlPattern,
   ImageFeatureFormat,
@@ -510,13 +511,10 @@ export class ApplicationMetadataItem
 
   @ApiProperty(
     {
+      ...extensionIdSchema,
       description: "The identifier of the extension",
       type: String,
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
-      minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
-      required: true,
-      example: "extension-id"
+      required: true
     }
   )
   @Matches(computeIdPattern(FieldLengths.shortTechnical))
@@ -718,11 +716,9 @@ export class ExtensionImageFeature extends ImageFeature
 
   @ApiProperty(
     {
+      ...extensionIdSchema,
       description: "The extension identifier",
       type: String,
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
-      minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
       required: true
     }
   )
@@ -750,13 +746,10 @@ export class ExtensionImageFeatureName
 
   @ApiProperty(
     {
+      ...extensionIdSchema,
       description: "The extension identifier",
       type: String,
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
-      minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
-      required: true,
-      example: "extension-id"
+      required: true
     }
   )
   @IsString()
@@ -828,13 +821,10 @@ export class ExtensionImageTag
 
   @ApiProperty(
     {
+      ...extensionIdSchema,
       description: "The extension identifier",
       type: String,
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
-      minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
-      required: true,
-      example: "extension-id"
+      required: true
     }
   )
   @IsString()
@@ -918,11 +908,9 @@ export class ExtensionImageEmbeddings extends ImageEmbeddings
 
   @ApiProperty(
     {
+      ...extensionIdSchema,
       description: "The extension identifier",
       type: String,
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
-      minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
       required: true
     }
   )
@@ -961,13 +949,10 @@ export class ImageSummary extends Dates
 
   @ApiProperty(
     {
+      ...imageIdSchema,
       description: "The unique identifier of the image",
       type: String,
-      pattern: uniqueIdPattern,
-      minLength: FieldLengths.uid,
-      maxLength: FieldLengths.uid,
-      required: true,
-      example: imageIdSchema.example
+      required: true
     }
   )
   @Expose()

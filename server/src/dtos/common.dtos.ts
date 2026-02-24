@@ -102,6 +102,8 @@ export const extensionIdSchema: SchemaObject =
     description: "An extension identifier",
     type: "string",
     pattern: computeIdPattern(FieldLengths.shortTechnical),
+    minLength: 1,
+    maxLength: FieldLengths.shortTechnical,
     example: "extension-id"
   };
 

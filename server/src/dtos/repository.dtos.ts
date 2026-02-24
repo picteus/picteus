@@ -30,6 +30,7 @@ import {
   ImageFeatureValue,
   ImageFormat,
   namePattern,
+  repositoryIdSchema,
   uniqueIdPattern,
   urlPattern
 } from "./common.dtos";
@@ -128,13 +129,10 @@ export class Repository extends Dates
 
   @ApiProperty(
     {
+      ...repositoryIdSchema,
       description: "The unique identifier of the repository",
       type: String,
-      pattern: uniqueIdPattern,
-      minLength: FieldLengths.uid,
-      maxLength: FieldLengths.uid,
-      required: true,
-      example: "9aa0820f-6405-4b54-a01a-a6b56489a77f"
+      required: true
     }
   )
   @IsString()
@@ -282,13 +280,10 @@ export class RepositoryActivity
 
   @ApiProperty(
     {
+      ...repositoryIdSchema,
       description: "The unique identifier of the repository",
       type: String,
-      pattern: uniqueIdPattern,
-      minLength: FieldLengths.uid,
-      maxLength: FieldLengths.uid,
-      required: true,
-      example: "9aa0820f-6405-4b54-a01a-a6b56489a77f"
+      required: true
     }
   )
   @IsString()
@@ -334,13 +329,10 @@ export class ImageMediaUrl
 
   @ApiProperty(
     {
+      ...repositoryIdSchema,
       description: "The unique identifier of the repository",
       type: String,
-      pattern: uniqueIdPattern,
-      minLength: FieldLengths.uid,
-      maxLength: FieldLengths.uid,
-      required: true,
-      example: "9aa0820f-6405-4b54-a01a-a6b56489a77f"
+      required: true
     }
   )
   @IsString()
@@ -1018,6 +1010,7 @@ export class ImageSearchParameters extends SearchParameters
 
   @ApiProperty(
     {
+      ...repositoryIdSchema,
       description: "The repository identifiers the images should belong to",
       type: String,
       isArray: true,
