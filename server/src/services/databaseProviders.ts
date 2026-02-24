@@ -93,6 +93,11 @@ export class EntitiesProvider implements OnModuleInit, OnModuleDestroy, Persiste
     return this.persistence.repositories;
   }
 
+  get collections(): Prisma.CollectionDelegate
+  {
+    return this.persistence.collections;
+  }
+
   get images(): Prisma.ImageDelegate
   {
     return this.persistence.images;

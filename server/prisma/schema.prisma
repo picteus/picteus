@@ -45,6 +45,15 @@ model Repository {
   Image            Image[]
 }
 
+model Collection {
+  id               Int      @id @default(autoincrement())
+  name             String   @unique
+  comment          String?
+  creationDate     DateTime @default(now())
+  modificationDate DateTime @updatedAt
+  filter           String
+}
+
 model Image {
   id                   String            @id @default(uuid())
   name                 String

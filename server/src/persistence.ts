@@ -29,6 +29,8 @@ export interface PersistenceProvider
 
   get repositories(): Prisma.RepositoryDelegate;
 
+  get collections(): Prisma.CollectionDelegate;
+
   get images(): Prisma.ImageDelegate;
 
   get imageMetadata(): Prisma.ImageMetadataDelegate;
@@ -157,6 +159,11 @@ export class Persistence implements PersistenceProvider
   get repositories(): Prisma.RepositoryDelegate
   {
     return this.prisma["repository"];
+  }
+
+  get collections(): Prisma.CollectionDelegate
+  {
+    return this.prisma["collection"];
   }
 
   get images(): Prisma.ImageDelegate
