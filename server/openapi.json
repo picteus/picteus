@@ -388,6 +388,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -474,6 +476,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -537,6 +541,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -566,6 +572,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           },
@@ -604,6 +612,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -640,6 +650,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -680,6 +692,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -709,6 +723,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           },
@@ -758,6 +774,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           },
@@ -819,6 +837,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           },
@@ -1002,6 +1022,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -1967,9 +1989,13 @@
             "in": "query",
             "description": "The repository identifiers the images should belong to",
             "schema": {
+              "minLength": 36,
+              "maxLength": 36,
+              "example": "9aa0820f-6405-4b54-a01a-a6b56489a77f",
               "type": "array",
               "items": {
-                "type": "string"
+                "type": "string",
+                "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
               }
             }
           }
@@ -2449,6 +2475,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -2543,6 +2571,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -2602,6 +2632,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -2696,6 +2728,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -2758,6 +2792,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -2902,6 +2938,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -2952,6 +2990,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           }
@@ -3006,6 +3046,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           },
@@ -3056,6 +3098,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           },
@@ -3125,6 +3169,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           },
@@ -3389,6 +3435,8 @@
               "description": "An extension identifier",
               "type": "string",
               "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
               "example": "extension-id"
             }
           },
@@ -4314,7 +4362,11 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "The identifier of the extension"
+            "description": "The identifier of the extension",
+            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "extension-id"
           },
           "kind": {
             "description": "The kind of activity of the extension",
@@ -5550,7 +5602,8 @@
             "description": "The extension identifier",
             "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
             "minLength": 1,
-            "maxLength": 32
+            "maxLength": 32,
+            "example": "extension-id"
           }
         },
         "description": "An image feature, along with its extension identifier",
@@ -5891,7 +5944,8 @@
             "description": "The extension identifier",
             "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
             "minLength": 1,
-            "maxLength": 32
+            "maxLength": 32,
+            "example": "extension-id"
           }
         },
         "description": "Multiple vectorial representations of an image",
