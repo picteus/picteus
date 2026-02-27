@@ -37,6 +37,7 @@ import {
   GenerationRecipe,
   Image,
   ImageFormat,
+  ImageSearchParameters,
   ImageSummary,
   InstructionsPrompt,
   Manifest,
@@ -773,7 +774,7 @@ export class Base extends Core
     {
       const interval = Timers.setInterval(async () =>
       {
-        const imageSummaries = await this.getRepositoryController().searchImages(repositoryId, {});
+        const imageSummaries = await this.getImageController().search(ImageSearchParameters.withRepositoryIdAndSearchCriteria(repositoryId));
         const imageSummary: ImageSummary | undefined = imageSummaries.entities.find((summary) =>
         {
           return summary.url === url;

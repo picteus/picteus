@@ -1002,6 +1002,11 @@ export class SearchParameters
 export class ImageSearchParameters extends SearchParameters
 {
 
+  static withRepositoryIdAndSearchCriteria(id: string, criteria?: SearchCriteria): ImageSearchParameters
+  {
+    return new ImageSearchParameters(criteria, undefined, undefined, [id]);
+  }
+
   constructor(criteria?: SearchCriteria, sorting?: SearchSorting, range?: SearchRange, ids?: string[])
   {
     super(criteria, sorting, range);

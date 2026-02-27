@@ -95,7 +95,6 @@ import {
   repositoryIdSchema,
   RepositoryList,
   RepositoryLocationType,
-  SearchParameters,
   Settings
 } from "../dtos/app.dtos";
 import {
@@ -926,7 +925,7 @@ export class RepositoryController
       description: "Returns a single repository."
     }
   )
-  @ApiParam({ name: "id", description: "The repository identifier", schema: extensionIdSchema, required: true })
+  @ApiParam({ name: "id", description: "The repository identifier", schema: repositoryIdSchema, required: true })
   @ApiResponse(
     {
       status: OK,
@@ -1117,7 +1116,7 @@ export class RepositoryController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
+  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryRead]))
   async activities(): Promise<RepositoryActivities>
   {
     return await this.repositoryService.activities();
@@ -1165,29 +1164,6 @@ export class RepositoryController
     return await this.repositoryService.getTags();
   }
 
-  @Get(":id/searchImages")
-  @ApiOperation(
-    {
-      summary: "Searches for images within the repository",
-      description: "Searches images within the repository with the provided criteria."
-    }
-  )
-  @ApiParam({ name: "id", description: "The repository identifier", schema: repositoryIdSchema, required: true })
-  @DeepObjectApiQuery(SearchParameters)
-  @ApiResponse(
-    {
-      status: OK,
-      description: "The list of images corresponding to the criteria",
-      type: ImageSummaryList
-    }
-  )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
-  async searchImages(@Param("id") id: string, @Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<ImageSummaryList>
-  {
-    const repository = await this.repositoryService.get(id);
-    return await this.imageService.search([repository.id], parameters.criteria, parameters.sorting, parameters.range);
-  }
-
   @Get("getImageByUrl")
   @ApiOperation(
     {
@@ -1207,7 +1183,7 @@ export class RepositoryController
       type: Image
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
+  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryRead]))
   async getImageByUrl(@Query("url") url: string): Promise<Image>
   {
     return await this.imageService.getImageByUrl(url);
