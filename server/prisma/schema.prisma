@@ -51,7 +51,7 @@ model Collection {
   comment          String?
   creationDate     DateTime @default(now())
   modificationDate DateTime @updatedAt
-  filter           String
+  filter           Json
 }
 
 model Image {

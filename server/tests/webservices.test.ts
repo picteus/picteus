@@ -7,6 +7,7 @@ import { HttpStatus } from "@nestjs/common";
 import {
   ApiSecretApi,
   ApiSecretType,
+  CollectionApi,
   Configuration,
   DefaultConfig,
   FetchError,
@@ -15,58 +16,19 @@ import {
   ImageFeatureType,
   RepositoryApi
 } from "@picteus/ws-client";
+import { ApiCallError } from "@picteus/internal-extension-sdk";
 
+import { logger } from "../src/logger";
 import { paths } from "../src/paths";
 import { Base, Core, Defaults } from "./base";
 import { AuthenticationGuard } from "../src/app.guards";
-import { logger } from "../src/logger";
+import { WebServicesWrapper } from "./webServicesWrapper";
 
 
 describe("WebServices", () =>
 {
 
   const base = new Base(true);
-
-  interface ApiCallErrorDetails
-  {
-    status: number;
-    code: number;
-    message: string;
-  }
-
-  class ApiCallError extends Error
-  {
-
-    constructor(public readonly details: ApiCallErrorDetails)
-    {
-      super();
-    }
-
-  }
-
-  const fetchApi = async (input: RequestInfo | URL, init?: RequestInit | undefined): Promise<Response> =>
-  {
-    const response = await fetch(input, init);
-    if (response.status < 400)
-    {
-      return Promise.resolve(response);
-    }
-    let code: number = -1;
-    let message: string;
-    const contentType = response.headers.get("content-type");
-    if (contentType !== null && contentType.includes("application/json") === true)
-    {
-      const json = await response.json();
-      code = json.code;
-      message = json.message;
-    }
-    else
-    {
-      // The result is not a JSON content
-      message = await response.text();
-    }
-    return Promise.reject(new ApiCallError({ status: response.status, code, message }));
-  };
 
   beforeAll(async () =>
   {
@@ -104,10 +66,7 @@ describe("WebServices", () =>
 
     await expect(async () =>
     {
-      await new ApiSecretApi(new Configuration({
-        basePath: paths.webServicesBaseUrl,
-        fetchApi
-      })).apisecretCreate({
+      await new ApiSecretApi(new WebServicesWrapper(undefined).configuration).apisecretCreate({
         name: "second",
         type: ApiSecretType.Key,
         scope
@@ -119,11 +78,7 @@ describe("WebServices", () =>
     }), additionalMessage));
     await expect(async () =>
     {
-      await new ApiSecretApi(new Configuration({
-        basePath: paths.webServicesBaseUrl,
-        apiKey: apiSecret.value,
-        fetchApi
-      })).apisecretCreate({
+      await new ApiSecretApi(new WebServicesWrapper(apiSecret.value).configuration).apisecretCreate({
         name: "second",
         type: ApiSecretType.Key,
         scope
@@ -135,24 +90,33 @@ describe("WebServices", () =>
     }), additionalMessage));
   });
 
+  test("Collections", async () =>
+  {
+    const apiKey = AuthenticationGuard.generateApiKey();
+    AuthenticationGuard.masterApiKey = apiKey;
+    const collectionApi = await new WebServicesWrapper(apiKey).computeController<CollectionApi>(CollectionApi);
+    const name = "name";
+    const collection = await collectionApi.collectionCreate({
+      name,
+      comment: "comment",
+      collectionFilter: { criteria: {} }
+    });
+    expect(collection.name).toEqual(name);
+  });
+
   test("Extension permissions", async () =>
   {
     paths.repositoriesDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName);
-    const { repository, image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName, "initial");
+    const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName, "initial");
     const extension = await base.prepareExtension();
     const extensionDirectoryPath = path.join(paths.installedExtensionsDirectoryPath, extension.manifest.id);
-
-    const configuration = new Configuration({
-      basePath: paths.webServicesBaseUrl,
-      apiKey: JSON.parse(fs.readFileSync(path.join(extensionDirectoryPath, Base.extensionParametersFileName), "utf-8"))["apiKey"],
-      fetchApi
-    });
-    const repositoryApi = new RepositoryApi(configuration);
+    const webServicesWrapper = new WebServicesWrapper(JSON.parse(fs.readFileSync(path.join(extensionDirectoryPath, Base.extensionParametersFileName), "utf-8"))["apiKey"]);
+    const repositoryApi = await webServicesWrapper.computeController<RepositoryApi>(RepositoryApi);
     const newRepository = await repositoryApi.repositoryEnsure({
       technicalId: extension.manifest.id,
       name: "name"
     });
-    const imageApi = new ImageApi(configuration);
+    const imageApi = await webServicesWrapper.computeController<ImageApi>(ImageApi);
     await imageApi.imageSetTags({ id: image.id, extensionId: extension.manifest.id, requestBody: ["tag1"] });
     await imageApi.imageSetFeatures({
       id: image.id,

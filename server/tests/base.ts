@@ -18,6 +18,7 @@ import { stringify } from "../src/utils";
 import {
   AdministrationController,
   ApiSecretController,
+  CollectionController,
   ExtensionController,
   ImageAttachmentController,
   ImageController,
@@ -597,6 +598,11 @@ export class Base extends Core
   getRepositoryController(): RepositoryController
   {
     return this.getModuleProvider(RepositoryController);
+  }
+
+  getCollectionController(): CollectionController
+  {
+    return this.getModuleProvider(CollectionController);
   }
 
   getImageController(): ImageController

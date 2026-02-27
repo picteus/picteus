@@ -29,7 +29,7 @@ Start-Process "C:\Program Files\Picteus\Picteus.exe" "--help" -Wait
 ```
 - macOS:
 ```bash title="macOS shell"
-/Applications/Picteus.app/Contents/MacOS/Picteus/Contents/MacOS/Picteus --help
+/Applications/Picteus.app/Contents/MacOS/Picteus --help
 ```
 
 For now, there is only one `run` command, which starts the application and to get the documentation of its options, run the following command:
@@ -42,7 +42,7 @@ Start-Process "C:\Program Files\Picteus\Picteus.exe" "run --help" -Wait
 ```
 - macOS:
 ```bash title="macOS shell"
-/Applications/Picteus.app/Contents/MacOS/Picteus/Contents/MacOS/Picteus run --help
+/Applications/Picteus.app/Contents/MacOS/Picteus run --help
 ```
 
 Simply use the following command if you do not need to set options:
@@ -55,7 +55,7 @@ Start-Process "C:\Program Files\Picteus\Picteus.exe" -Wait
 ```
 - macOS:
 ```bash title="macOS shell"
-/Applications/Picteus.app/Contents/MacOS/Picteus/Contents/MacOS/Picteus
+/Applications/Picteus.app/Contents/MacOS/Picteus
 ```
 
 Starting the application from the command line enables you to access to its execution logs, which enable to understand what it is doing. The application is verbose and provides a wealth of details about its internal state, which allows following its execution steps.

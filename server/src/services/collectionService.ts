@@ -1,8 +1,13 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { instanceToPlain } from "class-transformer";
+
+import { Collection as PersistedCollection } from ".prisma/client";
 
 import { logger } from "../logger";
+import { Collection, CollectionFilter, FieldLengths } from "../dtos/app.dtos";
 import { EntitiesProvider } from "./databaseProviders";
-import { Collection, CollectionFilter } from "../dtos/collection.dtos";
+import { parametersChecker } from "./utils/parametersChecker";
+import { plainToInstanceViaJSON } from "../utils";
 
 
 @Injectable()
@@ -28,34 +33,85 @@ export class CollectionService
 
   async list(): Promise<Collection[]>
   {
-    // TODO: to implement
-    return [];
+    logger.debug("Listing all the collections");
+    const entities = await this.entitiesProvider.collections.findMany({
+      orderBy: { name: "asc" }
+    });
+    return entities.map(entity => this.toDto(entity));
   }
 
-  async create(name: string, comment: string, filter: CollectionFilter): Promise<Collection>
+  async create(name: string, comment: string | undefined, filter: CollectionFilter): Promise<Collection>
   {
-    // TODO: to implement
-    // @ts-ignore
-    return undefined;
+    logger.debug(`Creating a collection with name '${name}${comment === undefined ? "" : (` and comment '${comment}'`)}'`);
+
+    parametersChecker.checkString("name", name, FieldLengths.name);
+    parametersChecker.checkString("comment", comment, FieldLengths.comment, undefined, true);
+
+    if (await this.entitiesProvider.collections.findFirst({ where: { name } }) !== null)
+    {
+      parametersChecker.throwBadParameter("name", name, "a collection with the same name already exists");
+    }
+
+    const entity = await this.entitiesProvider.collections.create({
+      data: { name, comment, filter: instanceToPlain(filter) }
+    });
+    return this.toDto(entity);
   }
 
   async get(id: number): Promise<Collection>
   {
-    // TODO: to implement
-    // @ts-ignore
-    return undefined;
+    logger.debug(`Getting the collection with id '${id}'`);
+    const entity = await this.getPersistedCollection(id);
+    return this.toDto(entity);
   }
 
   async update(id: number, name: string | undefined, comment: string | undefined, filter: CollectionFilter | undefined): Promise<Collection>
   {
-    // TODO: to implement
-    // @ts-ignore
-    return undefined;
+    logger.debug(`Updating the collection with id '${id}'`);
+    const entity = await this.getPersistedCollection(id);
+
+    parametersChecker.checkString("name", name, FieldLengths.name, undefined, true);
+    parametersChecker.checkString("comment", comment, FieldLengths.comment, undefined, true);
+    if (name !== undefined)
+    {
+      if (name !== entity.name && await this.entitiesProvider.collections.findFirst({ where: { name } }) !== null)
+      {
+        parametersChecker.throwBadParameter("name", name, "a collection with the same name already exists");
+      }
+    }
+
+    const updatedEntity = await this.entitiesProvider.collections.update({
+      where: { id: entity.id },
+      data: {
+        name: name,
+        comment: comment,
+        filter: filter === undefined ? undefined : instanceToPlain(filter)
+      }
+    });
+    return this.toDto(updatedEntity);
   }
 
   async delete(id: number): Promise<void>
   {
-    // TODO: to implement
+    logger.debug(`Deleting the collection with id '${id}'`);
+    const entity = await this.getPersistedCollection(id);
+    await this.entitiesProvider.collections.delete({ where: { id: entity.id } });
+  }
+
+  private async getPersistedCollection(id: number): Promise<PersistedCollection>
+  {
+    const entity = await this.entitiesProvider.collections.findUnique({ where: { id } });
+    if (entity === null)
+    {
+      parametersChecker.throwBadParameter("id", id.toString(), "there is no collection with that identifier");
+    }
+    return entity;
+  }
+
+  private toDto(entity: PersistedCollection): Collection
+  {
+    // return plainToInstanceViaJSON(Collection, { ...entity, filter: JSON.parse(entity.filter) });
+    return plainToInstanceViaJSON(Collection, entity);
   }
 
 }

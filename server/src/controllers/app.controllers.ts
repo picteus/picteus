@@ -1402,7 +1402,7 @@ export class CollectionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.CollectionWrite]))
-  async create(@Query("name") name: string, @Query("comment") comment: string, @Body() filter: CollectionFilter): Promise<Collection>
+  async create(@Query("name") name: string, @Query("comment") comment: string | undefined, @Body() filter: CollectionFilter): Promise<Collection>
   {
     return this.collectionService.create(name, comment, filter);
   }
@@ -1878,7 +1878,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async getTags(@Param("id") id: string, @Query("extensionId") extensionId: string): Promise<ImageTag []>
+  async getTags(@Param("id") id: string, @Query("extensionId") extensionId: string): Promise<ImageTag[]>
   {
     return await this.imageService.getTags(id, extensionId);
   }

@@ -74,7 +74,7 @@ You may access to the SwaggerUI relative the OpenAPI specifications, captured th
 
 - When changing the database Prisma schema:
   - run the `npm run prisma:generate` script to regenerate the Prisma client code,
-  - then run the `npm run prisma:update` script to update the schema of the startup database file `database.db` and to add the new SQL migration script in the `prisma/migrations` directory,
+  - then run the `npm run prisma:update` script to update the schema of the startup database file `database.db` and to add the new SQL migration script in the `prisma/migrations` directory (in case of a synchronization issue with the schema migration, read this article [Make Prisma Ignore a Migration Change](https://echobind.com/post/make-prisma-ignore-a-migration-change)),
   - and then run the `npm run prisma:seed` script to update the `settings` table value startup database file `database.db` with its settings set to the latest version of the migration.
 
 - When changing the OpenAPI contract, run the `openApi:generateOpenApi` script to regenerate the `openapi.json` file.

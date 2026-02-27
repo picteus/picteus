@@ -408,23 +408,23 @@ describe("Repository", () =>
       const extension = await base.prepareExtension();
       const commandTag = "tag";
       const specificTagPrefix = "specific";
-      let entities: ImageSummary[];
+      let summaries: ImageSummary[];
       {
-        entities = (await base.getRepositoryController().searchImages(repository.id, {})).entities;
+        summaries = (await base.getRepositoryController().searchImages(repository.id, {})).entities;
         let index = 0;
-        for (const entity of entities)
+        for (const summary of summaries)
         {
-          await base.getImageController().setTags(Base.allPolicyContext, entity.id, extension.manifest.id, [commandTag, `${specificTagPrefix}${index++}`]);
+          await base.getImageController().setTags(Base.allPolicyContext, summary.id, extension.manifest.id, [commandTag, `${specificTagPrefix}${index++}`]);
         }
       }
-      expect((await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, new SearchTags([commandTag])) })).entities.length).toBe(entities.length);
+      expect((await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, new SearchTags([commandTag])) })).entities.length).toBe(summaries.length);
       expect((await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, new SearchTags(["inexistentTag"])) })).entities.length).toBe(0);
-      for (let index = 0; index < entities.length; index++)
+      for (let index = 0; index < summaries.length; index++)
       {
-        const entity = entities[index];
+        const summary = summaries[index];
         const list = await base.getRepositoryController().searchImages(repository.id, { criteria: new SearchCriteria(undefined, undefined, new SearchTags([`${specificTagPrefix}${index}`])) });
         expect(list.entities.length).toBe(1);
-        expect(list.entities[0].id).toBe(entity.id);
+        expect(list.entities[0].id).toBe(summary.id);
       }
     }
     {
