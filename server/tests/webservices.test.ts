@@ -99,7 +99,7 @@ describe("WebServices", () =>
     const collection = await collectionApi.collectionCreate({
       name,
       comment: "comment",
-      collectionFilter: { criteria: {} }
+      searchFilter: { criteria: {} }
     });
     expect(collection.name).toEqual(name);
   });

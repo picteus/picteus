@@ -51,8 +51,23 @@ import {
   UserInterfaceAnchor
 } from "./extension.dtos";
 import {
-  ImageMediaUrl,
-  ImageSearchParameters,
+  SearchCriteria,
+  SearchFeatureComparisonOperator,
+  SearchFeatureCondition,
+  SearchFeatureLogicalOperator,
+  SearchFeatures,
+  SearchFilter,
+  SearchImagesOrigin,
+  SearchKeyword,
+  SearchOriginType,
+  SearchProperties,
+  SearchPropertyRange,
+  SearchRepositoriesOrigin,
+  SearchSorting,
+  SearchSortingProperty,
+  SearchTags
+} from "./search.dtos";
+import {
   Repository,
   RepositoryActivities,
   RepositoryActivity,
@@ -60,22 +75,9 @@ import {
   RepositoryList,
   RepositoryLocation,
   RepositoryLocationType,
-  RepositoryStatus,
-  SearchCriteria,
-  SearchFeatureComparisonOperator,
-  SearchFeatureCondition,
-  SearchFeatureLogicalOperator,
-  SearchFeatures,
-  SearchKeyword,
-  SearchParameters,
-  SearchProperties,
-  SearchPropertyRange,
-  SearchRange,
-  SearchSorting,
-  SearchSortingProperty,
-  SearchTags
+  RepositoryStatus
 } from "./repository.dtos";
-import { Collection, CollectionFilter } from "./collection.dtos";
+import { Collection } from "./collection.dtos";
 import {
   AllExtensionImageFeatureNames,
   AllExtensionImageTags,
@@ -97,12 +99,15 @@ import {
   ImageEmbeddings,
   ImageFeature,
   ImageFeatureNullValue,
+  ImageMediaUrl,
   ImageMetadata,
   ImageResizeRender,
   ImageSummary,
   ImageSummaryList,
   InstructionsPrompt,
   PromptKind,
+  SearchParameters,
+  SearchRange,
   TextualPrompt
 } from "./image.dtos";
 import { apiScopesSeparator, ApiSecret, ApiSecretSummary, ApiSecretType } from "./apiSecret.dtos";
@@ -156,7 +161,6 @@ export {
   attachmentUriPrefix,
   attachmentUriSchema,
   Collection,
-  CollectionFilter,
   CommandEntity,
   ComputedImageFormat,
   computeImageFormatsExtensions,
@@ -199,7 +203,6 @@ export {
   ImageMediaUrl,
   ImageMetadata,
   ImageResizeRender,
-  ImageSearchParameters,
   ImageSummary,
   ImageSummaryList,
   ImageTag,
@@ -231,11 +234,15 @@ export {
   SearchFeatureComparisonOperator,
   SearchFeatureLogicalOperator,
   SearchFeatures,
+  SearchFilter,
+  SearchImagesOrigin,
   SearchKeyword,
+  SearchOriginType,
   SearchParameters,
   SearchProperties,
   SearchPropertyRange,
   SearchRange,
+  SearchRepositoriesOrigin,
   SearchSorting,
   SearchSortingProperty,
   SearchTags,

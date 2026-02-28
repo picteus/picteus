@@ -40,7 +40,12 @@ export const forceArray: (transformFnParams: TransformFnParams) => any = (transf
   return Array(value);
 };
 
-export const transformBoolean: (transformFnParams: TransformFnParams) => any = (transformFnParams: TransformFnParams): any =>
+export const forceInteger: (transformFnParams: TransformFnParams) => any = (transformFnParams: TransformFnParams): any =>
+{
+  return transformFnParams.value === undefined ? undefined : Number.parseInt(transformFnParams.value);
+};
+
+export const forceBoolean: (transformFnParams: TransformFnParams) => any = (transformFnParams: TransformFnParams): any =>
 {
   return transformFnParams.value === true || transformFnParams.value === "true";
 };

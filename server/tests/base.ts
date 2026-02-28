@@ -37,7 +37,6 @@ import {
   GenerationRecipe,
   Image,
   ImageFormat,
-  ImageSearchParameters,
   ImageSummary,
   InstructionsPrompt,
   Manifest,
@@ -50,6 +49,7 @@ import {
   RepositoryActivityKind,
   RepositoryLocationType,
   RepositoryStatus,
+  SearchParameters,
   TextualPrompt
 } from "../src/dtos/app.dtos";
 import { EventEntity, ExtensionEventProcess, Notifier, RepositoryEventAction } from "../src/notifier";
@@ -774,7 +774,7 @@ export class Base extends Core
     {
       const interval = Timers.setInterval(async () =>
       {
-        const imageSummaries = await this.getImageController().search(ImageSearchParameters.withRepositoryIdAndSearchCriteria(repositoryId));
+        const imageSummaries = await this.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repositoryId));
         const imageSummary: ImageSummary | undefined = imageSummaries.entities.find((summary) =>
         {
           return summary.url === url;

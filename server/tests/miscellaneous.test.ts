@@ -17,10 +17,10 @@ import { logger } from "../src/logger";
 import { Base, Core } from "./base";
 import {
   GenerationRecipe,
-  ImageSearchParameters,
   InstructionsPrompt,
   Manifest,
   PromptKind,
+  SearchParameters,
   TextualPrompt,
   toMimeType
 } from "../src/dtos/app.dtos";
@@ -959,43 +959,47 @@ describe("Miscellaneous bare", () =>
 
   test("DeepObjectPipeTransform", async () =>
   {
-    const object: ImageSearchParameters | unknown = new DeepObjectPipeTransform<ImageSearchParameters>().transform({
-        criteria: undefined,
-        sorting: undefined,
+    const object: SearchParameters | unknown = new DeepObjectPipeTransform<SearchParameters>().transform({
+        filter:
+          {
+            criteria: undefined,
+            sorting: undefined
+          },
+        "filter[criteria][keyword][text]": "man",
+        "filter[criteria][keyword][inName]": "true",
+        "filter[criteria][keyword][inMetadata]": "true",
+        "filter[criteria][keyword][inFeatures]": "false",
+        "filter[criteria][formats]": "WEBP",
+        "filter[sorting][property]": "creationDate",
+        "filter[sorting][isAscending]": "false",
         range: undefined,
-        ids: undefined,
-        "criteria[keyword][text]": "man",
-        "criteria[keyword][inName]": "true",
-        "criteria[keyword][inMetadata]": "true",
-        "criteria[keyword][inFeatures]": "false",
-        "criteria[formats]": "WEBP",
-        "sorting[property]": "creationDate",
-        "sorting[isAscending]": "false",
         "range[take]": "40",
         "range[skip]": "0"
-      }, { type: "query", metatype: ImageSearchParameters, data: undefined }
+      }, { type: "query", metatype: SearchParameters, data: undefined }
     );
     expect(object).toBeDefined();
-    const imageSearchParameters: ImageSearchParameters = object!;
+    const imageSearchParameters: SearchParameters = object!;
     expect(imageSearchParameters).toEqual({
-      "criteria": {
-        "formats": [
-          "WEBP"
-        ],
-        "keyword": {
-          "inFeatures": false,
-          "inMetadata": true,
-          "inName": true,
-          "text": "man"
+      "filter": {
+        "criteria": {
+          "formats": [
+            "WEBP"
+          ],
+          "keyword": {
+            "inFeatures": false,
+            "inMetadata": true,
+            "inName": true,
+            "text": "man"
+          }
+        },
+        "sorting": {
+          "isAscending": false,
+          "property": "creationDate"
         }
       },
       "range": {
         "skip": 0,
         "take": 40
-      },
-      "sorting": {
-        "isAscending": false,
-        "property": "creationDate"
       }
     });
   });

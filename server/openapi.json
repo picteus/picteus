@@ -1712,7 +1712,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CollectionFilter"
+                "$ref": "#/components/schemas/SearchFilter"
               }
             }
           }
@@ -1821,7 +1821,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CollectionFilter"
+                "$ref": "#/components/schemas/SearchFilter"
               }
             }
           }
@@ -1880,25 +1880,26 @@
         "operationId": "image_search",
         "parameters": [
           {
-            "name": "criteria",
+            "name": "filter",
             "required": false,
             "in": "query",
-            "description": "The criteria that will be applied to the search as a filter",
+            "description": "The filter which will be used to narrow down the returned items",
             "explode": true,
             "style": "deepObject",
             "schema": {
-              "$ref": "#/components/schemas/SearchCriteria"
+              "$ref": "#/components/schemas/SearchFilter"
             }
           },
           {
-            "name": "sorting",
+            "name": "collectionId",
             "required": false,
             "in": "query",
-            "description": "Indicates how the search results should be sorted",
-            "explode": true,
-            "style": "deepObject",
+            "description": "The collection identifier to filter with to narrow down the returned items",
             "schema": {
-              "$ref": "#/components/schemas/SearchSorting"
+              "minimum": 0,
+              "format": "int32",
+              "example": 123,
+              "type": "number"
             }
           },
           {
@@ -1910,22 +1911,6 @@
             "style": "deepObject",
             "schema": {
               "$ref": "#/components/schemas/SearchRange"
-            }
-          },
-          {
-            "name": "ids",
-            "required": false,
-            "in": "query",
-            "description": "The repository identifiers the images should belong to",
-            "schema": {
-              "minLength": 36,
-              "maxLength": 36,
-              "example": "9aa0820f-6405-4b54-a01a-a6b56489a77f",
-              "type": "array",
-              "items": {
-                "type": "string",
-                "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-              }
             }
           }
         ],
@@ -2735,10 +2720,12 @@
               "schema": {
                 "type": "array",
                 "items": {
+                  "description": "A technical identifier",
                   "type": "string",
-                  "pattern": "a-z0-9A-Z-_.",
+                  "pattern": "^[a-z0-9A-Z-_. ]{1,64}$",
                   "minLength": 1,
-                  "maxLength": 64
+                  "maxLength": 64,
+                  "example": "technical-id"
                 },
                 "minItems": 1,
                 "maxItems": 256
@@ -4671,8 +4658,10 @@
           "value": {
             "type": "string",
             "description": "The image tag value",
+            "pattern": "^[a-z0-9A-Z-_. ]{1,64}$",
             "minLength": 1,
-            "maxLength": 64
+            "maxLength": 64,
+            "example": "technical-id"
           }
         },
         "description": "A tag set on an image for a given extension",
@@ -5244,6 +5233,74 @@
           "items"
         ]
       },
+      "SearchOriginNature": {
+        "type": "string",
+        "enum": [
+          "repositories",
+          "images"
+        ],
+        "description": "Indicates how the search result entities should be sorted"
+      },
+      "SearchRepositoriesOrigin": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Indicates how the search result entities should be sorted",
+            "example": "repositories",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchOriginNature"
+              }
+            ]
+          },
+          "ids": {
+            "description": "The repository identifiers",
+            "example": "9aa0820f-6405-4b54-a01a-a6b56489a77f",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 36,
+              "minLength": 36,
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+            }
+          }
+        },
+        "description": "A repositories-based search origin, involving that the images should belong to the designed repositories",
+        "required": [
+          "kind",
+          "ids"
+        ]
+      },
+      "SearchImagesOrigin": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Indicates how the search result entities should be sorted",
+            "example": "repositories",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchOriginNature"
+              }
+            ]
+          },
+          "ids": {
+            "description": "The image identifiers",
+            "example": "fb6af249-1061-48a0-9e47-026d7428d709",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 36,
+              "minLength": 36,
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+            }
+          }
+        },
+        "description": "A images-based search origin, involving that the images should be part of the designed image identifiers",
+        "required": [
+          "kind",
+          "ids"
+        ]
+      },
       "SearchKeyword": {
         "type": "object",
         "properties": {
@@ -5286,7 +5343,7 @@
               "type": "string",
               "maxLength": 64,
               "minLength": 1,
-              "pattern": "a-z0-9A-Z-_."
+              "pattern": "^[a-z0-9A-Z-_. ]{1,64}$"
             }
           }
         },
@@ -5574,7 +5631,7 @@
           "property"
         ]
       },
-      "CollectionFilter": {
+      "SearchFilter": {
         "type": "object",
         "properties": {
           "criteria": {
@@ -5585,6 +5642,26 @@
               }
             ]
           },
+          "origin": {
+            "description": "The origin of the images to search in",
+            "oneOf": [
+              {
+                "description": "In case of a repositories-based origin",
+                "$ref": "#/components/schemas/SearchRepositoriesOrigin"
+              },
+              {
+                "description": "In case of a images-based origin",
+                "$ref": "#/components/schemas/SearchImagesOrigin"
+              }
+            ],
+            "discriminator": {
+              "propertyName": "kind",
+              "mapping": {
+                "repositories": "#/components/schemas/SearchRepositoriesOrigin",
+                "images": "#/components/schemas/SearchImagesOrigin"
+              }
+            }
+          },
           "sorting": {
             "description": "Indicates how the images should be sorted",
             "allOf": [
@@ -5594,10 +5671,7 @@
             ]
           }
         },
-        "description": "The filter of a collection",
-        "required": [
-          "criteria"
-        ]
+        "description": "A search criteria combined to sorting specifications"
       },
       "Collection": {
         "type": "object",
@@ -5639,7 +5713,7 @@
             "description": "The filter which applies for the collection",
             "allOf": [
               {
-                "$ref": "#/components/schemas/CollectionFilter"
+                "$ref": "#/components/schemas/SearchFilter"
               }
             ]
           }

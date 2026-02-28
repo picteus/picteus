@@ -28,6 +28,7 @@ import {
   AllImageEmbeddings,
   AllImageFeatures,
   ApplicationMetadata,
+  Collection,
   computeImageFormatsExtensions,
   Dates,
   ExtensionImageEmbeddings,
@@ -62,6 +63,9 @@ import {
   SearchFeatureCondition,
   SearchFeatureLogicalOperator,
   SearchFeatures,
+  SearchFilter,
+  SearchOriginType,
+  SearchParameters,
   SearchRange,
   SearchSorting,
   SearchSortingProperty,
@@ -122,8 +126,28 @@ export class ImageService
     logger.debug("Instantiating an ImageService");
   }
 
-  async search(repositoryIds?: string[], criteria?: SearchCriteria, sorting?: SearchSorting, range?: SearchRange): Promise<ImageSummaryList>
+  async search(parameters: SearchParameters): Promise<ImageSummaryList>
   {
+    let filter: SearchFilter | undefined;
+    if (parameters?.filter !== undefined)
+    {
+      filter = parameters?.filter;
+    }
+    else if (parameters?.collectionId !== undefined)
+    {
+      const collection = await this.entitiesProvider.collections.findUnique({ where: { id: parameters?.collectionId } });
+      if (collection === null)
+      {
+        parametersChecker.throwBadParameter("collectionId", parameters?.collectionId.toString(), "the collection with that id does not exist");
+      }
+      filter = plainToInstanceViaJSON(Collection, collection).filter;
+    }
+    const origin = filter?.origin;
+    const sorting: SearchSorting | undefined = filter?.sorting;
+    const repositoryIds = origin?.kind === SearchOriginType.Repositories ? (await this.moduleRef.get(RepositoryService).list(origin.ids)).map(repository => repository.id) : undefined;
+    const imageIds = origin?.kind === SearchOriginType.Images ? origin.ids : undefined;
+    const criteria: SearchCriteria | undefined = filter !== undefined ? filter?.criteria : undefined;
+    const range: SearchRange | undefined = parameters?.range;
     const keyword = criteria?.keyword;
     const tags = criteria?.tags;
     const features = criteria?.features;
@@ -310,6 +334,7 @@ export class ImageService
     });
     const where: Prisma.ImageWhereInput =
       {
+        id: imageIds === undefined ? undefined : { in: imageIds },
         repositoryId: repositoryIds === undefined ? undefined : { in: repositoryIds },
         format: criteria?.formats === undefined ? undefined : { in: criteria?.formats },
         tags: tagsFilter,

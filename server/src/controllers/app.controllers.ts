@@ -56,7 +56,6 @@ import {
   applicationXGzipMimeType,
   attachmentUriSchema,
   Collection,
-  CollectionFilter,
   CommandEntity,
   ComputedImageFormat,
   Extension,
@@ -83,7 +82,6 @@ import {
   ImageMediaUrl,
   ImageMetadata,
   ImageResizeRender,
-  ImageSearchParameters,
   ImageSummaryList,
   ImageTag,
   imageUrlSchema,
@@ -95,6 +93,8 @@ import {
   repositoryIdSchema,
   RepositoryList,
   RepositoryLocationType,
+  SearchFilter,
+  SearchParameters,
   Settings
 } from "../dtos/app.dtos";
 import {
@@ -117,6 +117,7 @@ import {
   imageContent,
   imageSupportedMimeTypes
 } from "./tech.controllers";
+import { technicalSchema } from "../dtos/common.dtos";
 
 const { CREATED, NO_CONTENT, OK } = HttpCodes;
 
@@ -1367,7 +1368,7 @@ export class CollectionController
   })
   @ApiBody({
     description: "The filter",
-    type: CollectionFilter,
+    type: SearchFilter,
     required: true
   })
   @ApiResponse(
@@ -1378,7 +1379,7 @@ export class CollectionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.CollectionWrite]))
-  async create(@Query("name") name: string, @Query("comment") comment: string | undefined, @Body() filter: CollectionFilter): Promise<Collection>
+  async create(@Query("name") name: string, @Query("comment") comment: string | undefined, @Body() filter: SearchFilter): Promise<Collection>
   {
     return this.collectionService.create(name, comment, filter);
   }
@@ -1442,7 +1443,7 @@ export class CollectionController
   })
   @ApiBody({
     description: "The filter",
-    type: CollectionFilter,
+    type: SearchFilter,
     required: false
   })
   @ApiResponse(
@@ -1453,7 +1454,7 @@ export class CollectionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.CollectionWrite]))
-  async update(@Param("id") id: number, @Query("name") name?: string, @Query("comment") comment?: string, @Body() filter?: CollectionFilter): Promise<Collection>
+  async update(@Param("id") id: number, @Query("name") name?: string, @Query("comment") comment?: string, @Body() filter?: SearchFilter): Promise<Collection>
   {
     return this.collectionService.update(id, name, comment, filter);
   }
@@ -1500,7 +1501,7 @@ const imageResourceName: string = "image";
 export class ImageController
 {
 
-  constructor(private readonly repositoryService: RepositoryService, private readonly imageService: ImageService)
+  constructor(private readonly imageService: ImageService)
   {
     logger.debug("Instantiating an ImageController");
   }
@@ -1509,10 +1510,10 @@ export class ImageController
   @ApiOperation(
     {
       summary: "Searches images",
-      description: "Searches images, given criteria."
+      description: "Searches for images, given criteria."
     }
   )
-  @DeepObjectApiQuery(ImageSearchParameters)
+  @DeepObjectApiQuery(SearchParameters)
   @ApiResponse(
     {
       status: OK,
@@ -1521,13 +1522,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async search(@Query(DeepObjectPipeTransform<ImageSearchParameters>) parameters: ImageSearchParameters): Promise<ImageSummaryList>
+  async search(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<ImageSummaryList>
   {
-    const repositories = parameters?.ids === undefined ? undefined : await this.repositoryService.list(parameters?.ids);
-    return await this.imageService.search(repositories === undefined ? undefined : repositories.map((repository) =>
-    {
-      return repository.id;
-    }), parameters?.criteria, parameters?.sorting, parameters?.range);
+    return await this.imageService.search(parameters);
   }
 
   @Get(":id/get")
@@ -1947,7 +1944,7 @@ export class ImageController
     schema:
       {
         type: "array",
-        items: { type: "string", pattern: alphaNumericPlusPattern, minLength: 1, maxLength: FieldLengths.technical },
+        items: technicalSchema,
         minItems: 1,
         maxItems: ExtensionImageTag.PER_EXTENSION_TAGS_MAXIMUM
       },

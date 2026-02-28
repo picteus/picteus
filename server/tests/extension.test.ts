@@ -45,6 +45,7 @@ import {
   ManifestRuntimeEnvironment,
   ManifestUserInterface,
   Repository,
+  SearchParameters,
   toMimeType,
   UserInterfaceAnchor
 } from "../src/dtos/app.dtos";
@@ -262,7 +263,7 @@ describe("Extensions", () =>
     }>
     {
       const repository = await this.createRepository(watch);
-      const summaries = await base.getRepositoryController().searchImages(repository.id, {});
+      const summaries = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
       return { repository, images: summaries.entities };
     }
 
@@ -2013,7 +2014,7 @@ describe("Extensions", () =>
         expect(fs.existsSync(path.join(builder.extensionDirectoryPath, "image.created"))).toEqual(true);
       });
 
-      const summary = (await base.getRepositoryController().searchImages(repository.id, {})).entities[0];
+      const summary = (await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).entities[0];
 
       const now = new Date();
       const filePath = summary.url.substring(fileWithProtocol.length);

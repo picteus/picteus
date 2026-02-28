@@ -22,6 +22,8 @@ import {
 } from "class-validator";
 import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from "@nestjs/swagger";
 
+import { TypeBasedValidation } from "./validators.dtos";
+import { forceInteger, jsonTransform } from "./transformers.dtos";
 import {
   alphaNumericPlusPattern,
   computeIdPattern,
@@ -35,15 +37,16 @@ import {
   ImageFormat,
   imageIdSchema,
   ImageTag,
+  integerIdSchema,
   Json,
   repositoryIdSchema,
+  technicalSchema,
   toMimeType,
   uniqueIdPattern,
   uriPathPattern,
   urlPattern
 } from "./common.dtos";
-import { TypeBasedValidation } from "./validators.dtos";
-import { jsonTransform } from "./transformers.dtos";
+import { SearchCriteria, SearchFilter, SearchRepositoriesOrigin } from "./search.dtos";
 
 
 /**
@@ -295,9 +298,6 @@ const modelAndSoftwareTagPattern = `^(([${alphaNumericPlusPattern}]{1,})/)?([${a
 
 export const generationRecipeSchemaVersion = 1;
 
-/**
- * The image generation recipe.
- */
 @ApiExtraModels(TextualPrompt, InstructionsPrompt)
 @ApiSchema({ description: "The image generation recipe" })
 export class GenerationRecipe
@@ -479,7 +479,7 @@ export class GenerationRecipe
           property: "kind",
           subTypes:
             [
-              { value: TextualPrompt, name: "textual" },
+              { value: TextualPrompt, name: PromptKind.TEXTUAL },
               { value: InstructionsPrompt, name: PromptKind.INSTRUCTIONS }
             ]
         },
@@ -836,10 +836,9 @@ export class ExtensionImageTag
 
   @ApiProperty(
     {
+      ...technicalSchema,
       description: "The image tag value",
       type: String,
-      minLength: 1,
-      maxLength: FieldLengths.technical,
       required: true
     }
   )
@@ -1145,6 +1144,47 @@ export class ImageSummaryList
 
 }
 
+@ApiSchema({ description: "The medial URL of an image" })
+export class ImageMediaUrl
+{
+
+  constructor(id: string, url: string)
+  {
+    this.id = id;
+    this.url = url;
+  }
+
+  @ApiProperty(
+    {
+      ...repositoryIdSchema,
+      description: "The unique identifier of the repository",
+      type: String,
+      required: true
+    }
+  )
+  @IsString()
+  @Matches(uniqueIdPattern)
+  @MinLength(FieldLengths.uid)
+  @MaxLength(FieldLengths.uid)
+  @Expose()
+  readonly id: string;
+
+  @ApiProperty(
+    {
+      description: "The URL of the image that may be used to display it",
+      type: String,
+      pattern: urlPattern,
+      required: true,
+      example: "https://localhost:3001/resize/?u=file%3A%2F%2F%2FUsers%2Fuser%2Fimage.jpg&w=320"
+    }
+  )
+  @IsString()
+  @Matches(urlPattern)
+  @Expose()
+  readonly url: string;
+
+}
+
 /**
  * The distances of an image given an embedding.
  */
@@ -1261,5 +1301,118 @@ export class ComputedImageFormat
   @IsEnum(ImageFormat)
   @Expose()
   value: ImageFormat;
+
+}
+
+@ApiSchema({ description: "A range of images to return when searching for images, i.e. how to restrict the number of entities following a search" })
+export class SearchRange
+{
+
+  constructor(take?: number, skip?: number)
+  {
+    this.take = take;
+    this.skip = skip;
+  }
+
+  @ApiProperty(
+    {
+      description: "The number of items to return",
+      type: Number,
+      format: "int64",
+      minimum: 1,
+      maximum: 1_000,
+      required: false,
+      default: 20,
+      example: 20
+    }
+  )
+  @IsInt()
+  @Type(() => Number)
+  @Min(1)
+  @Max(1_000)
+  @IsOptional()
+  @Expose()
+  readonly take?: number;
+
+  @ApiProperty(
+    {
+      description: "The number of items to skip",
+      type: Number,
+      format: "int64",
+      minimum: 0,
+      required: false,
+      default: 0,
+      example: 0
+    }
+  )
+  @IsInt()
+  @Type(() => Number)
+  @Min(0)
+  @IsOptional()
+  @Expose()
+  readonly skip?: number;
+
+}
+
+@ApiSchema({ description: "Criteria, sorting and range parameters when searching for images" })
+export class SearchParameters
+{
+
+  static withSearchCriteria(criteria?: SearchCriteria): SearchParameters
+  {
+    return SearchParameters.withRepositoryIdAndSearchCriteria(undefined, criteria);
+  }
+
+  static withRepositoryIdAndSearchCriteria(id?: string, criteria?: SearchCriteria): SearchParameters
+  {
+    return new SearchParameters(new SearchFilter(criteria || {}, id === undefined ? undefined : new SearchRepositoriesOrigin([id])), undefined);
+  }
+
+  constructor(filter?: SearchFilter, collectionId?: number, range?: SearchRange)
+  {
+    this.filter = filter;
+    this.collectionId = collectionId;
+    this.range = range;
+  }
+
+  @ApiProperty(
+    {
+      description: "The filter which will be used to narrow down the returned items",
+      type: SearchFilter,
+      required: false
+    }
+  )
+  @ValidateNested()
+  @Type(() => SearchFilter)
+  @IsOptional()
+  @Expose()
+  readonly filter?: SearchFilter;
+
+  @ApiProperty(
+    {
+      ...integerIdSchema,
+      description: "The collection identifier to filter with to narrow down the returned items",
+      type: Number,
+      required: false
+    }
+  )
+  @Transform(forceInteger)
+  @IsInt()
+  @IsOptional()
+  @Expose()
+  readonly collectionId?: number;
+
+  @ApiProperty(
+    {
+      description: "The range of items to consider following the search",
+      type: SearchRange,
+      required: false
+    }
+  )
+  @ValidateNested()
+  @Type(() => SearchRange)
+  @IsOptional()
+  @Expose()
+  readonly range?: SearchRange;
 
 }

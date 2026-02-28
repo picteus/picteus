@@ -5,7 +5,6 @@ import { Base, Core } from "./base";
 import { ServiceError } from "../src/app.exceptions";
 import {
   Collection,
-  CollectionFilter,
   FieldLengths,
   ImageFeatureFormat,
   ImageFeatureType,
@@ -15,6 +14,7 @@ import {
   SearchFeatureCondition,
   SearchFeatureLogicalOperator,
   SearchFeatures,
+  SearchFilter,
   SearchKeyword,
   SearchProperties,
   SearchPropertyRange,
@@ -50,7 +50,7 @@ describe("Collections", () =>
     await Base.afterAll();
   });
 
-  const filter: CollectionFilter = new CollectionFilter(new SearchCriteria([ImageFormat.PNG], new SearchKeyword("keyword", true, false, true), new SearchTags(["tag"]), new SearchFeatures(SearchFeatureLogicalOperator.AND, [new SearchFeatureCondition(ImageFeatureType.IDENTITY, ImageFeatureFormat.STRING, "id", SearchFeatureComparisonOperator.EQUALS, "id")], undefined), new SearchProperties(new SearchPropertyRange(100, 200))));
+  const filter: SearchFilter = new SearchFilter(new SearchCriteria([ImageFormat.PNG], new SearchKeyword("keyword", true, false, true), new SearchTags(["tag"]), new SearchFeatures(SearchFeatureLogicalOperator.AND, [new SearchFeatureCondition(ImageFeatureType.IDENTITY, ImageFeatureFormat.STRING, "id", SearchFeatureComparisonOperator.EQUALS, "id")], undefined), new SearchProperties(new SearchPropertyRange(100, 200))));
 
   const name = "name";
 
@@ -167,7 +167,7 @@ describe("Collections", () =>
       // We assess with valid parameters
       const newName = name + "bis";
       const newComment = comment + "bis";
-      const newFilter = new CollectionFilter(new SearchCriteria());
+      const newFilter = new SearchFilter(new SearchCriteria());
       const updatedCollection = await base.getCollectionController().update(collection.id, newName, newComment, newFilter);
       expect(updatedCollection.name).toEqual(newName);
       expect(updatedCollection.comment).toEqual(newComment);

@@ -30,9 +30,14 @@ import {
   ManifestEvent,
   NumericRange,
   PromptKind,
+  SearchCriteria,
   SearchFeatureComparisonOperator,
   SearchFeatureCondition,
   SearchFeatureLogicalOperator,
+  SearchFilter,
+  SearchImagesOrigin,
+  SearchParameters,
+  SearchRepositoriesOrigin,
   TextualPrompt,
   toFileExtension,
   toMimeType
@@ -433,14 +438,14 @@ describe("Image with module", () =>
       // We assess with invalid parameters
       await expect(async () =>
       {
-        await base.getImageController().search({ criteria: { keyword: { text: "text", ...inNone } } });
+        await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: "text", ...inNone } }));
       }).rejects.toThrow(new ServiceError(`The parameter 'keyword' is invalid because it contains only false properties`, BAD_REQUEST, base.badParameterCode));
       {
         // We assess with a non-existing repository
         const dummyId = "dummyId";
         await expect(async () =>
         {
-          await base.getImageController().search({ ids: [dummyId] });
+          await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(dummyId));
         }).rejects.toThrow(new ServiceError(`The parameter 'ids' with value '${dummyId}' is invalid because some of those identifiers do not correspond to an existing repository`, BAD_REQUEST, base.badParameterCode));
       }
     }
@@ -448,7 +453,7 @@ describe("Image with module", () =>
       // We assess with no filter
       expect((await base.getImageController().search({})).entities.length).toBe(totalCount);
       // We assess only with the repository identifier filter
-      expect((await base.getImageController().search({ ids: [repository.id] })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).entities.length).toBe(totalCount);
     }
     {
       for (const feature of features)
@@ -483,20 +488,23 @@ describe("Image with module", () =>
         for (const useCase of useCases)
         {
           expect((await base.getImageController().search({
-            criteria:
+            filter:
               {
-                features:
+                criteria:
                   {
-                    operator: useCase.logicalOperator,
-                    conditions:
-                      [
-                        {
-                          format: feature.format,
-                          name: feature.name,
-                          operator: useCase.comparisonOperator,
-                          value: useCase.value
-                        }
-                      ]
+                    features:
+                      {
+                        operator: useCase.logicalOperator,
+                        conditions:
+                          [
+                            {
+                              format: feature.format,
+                              name: feature.name,
+                              operator: useCase.comparisonOperator,
+                              value: useCase.value
+                            }
+                          ]
+                      }
                   }
               }
           })).entities.length).toBe(useCase.count);
@@ -505,22 +513,22 @@ describe("Image with module", () =>
     }
     {
       // We make sure that the image file name is searched in
-      expect((await base.getImageController().search({ criteria: { keyword: { text: fileName, ...inName } } })).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search({ criteria: { keyword: { text: fileName.toUpperCase(), ...inName } } })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: fileName, ...inName } }))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: fileName.toUpperCase(), ...inName } }))).entities.length).toBe(totalCount);
     }
     {
       // We make sure that the image "metadata" are searched in
       const metadataKeyword = "Deflate/Inflate";
-      expect((await base.getImageController().search({ criteria: { keyword: { text: metadataKeyword, ...inMetadata } } })).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search({ criteria: { keyword: { text: metadataKeyword.toUpperCase(), ...inMetadata } } })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword, ...inMetadata } }))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword.toUpperCase(), ...inMetadata } }))).entities.length).toBe(totalCount);
     }
     {
       // We make sure that the string-based image "features" are searched in
-      expect((await base.getImageController().search({ criteria: { keyword: { text: stringFeature.value as string, ...inFeatures } } })).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search({ criteria: { keyword: { text: (stringFeature.value as string).toLowerCase(), ...inFeatures } } })).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search({ criteria: { keyword: { text: "dummy" + fileName, ...inAll } } })).entities.length).toBe(zero);
+      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: stringFeature.value as string, ...inFeatures } }))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: (stringFeature.value as string).toLowerCase(), ...inFeatures } }))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: "dummy" + fileName, ...inAll } }))).entities.length).toBe(zero);
       // This is an edge case with an empty text
-      expect((await base.getImageController().search({ criteria: { keyword: { text: "", ...inAll } } })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: "", ...inAll } }))).entities.length).toBe(totalCount);
     }
     {
       // We assess the image "features"
@@ -542,12 +550,18 @@ describe("Image with module", () =>
             await expect(async () =>
             {
               await base.getImageController().search({
-                criteria: {
-                  features: {
-                    operator: SearchFeatureLogicalOperator.AND,
-                    conditions: [condition]
+                filter:
+                  {
+                    criteria:
+                      {
+                        features:
+                          {
+                            operator: SearchFeatureLogicalOperator.AND,
+                            conditions: [condition]
+                          }
+                      }
+
                   }
-                }
               });
             }).rejects.toThrow(new ServiceError(`The '${condition.operator}' operator is not compatible with the '${condition.format}' format`, BAD_REQUEST, base.badParameterCode));
           }
@@ -561,12 +575,18 @@ describe("Image with module", () =>
             async function checkCondition(condition: SearchFeatureCondition)
             {
               const shouldNotMatch = condition.operator === SearchFeatureComparisonOperator.DIFFERENT || condition.operator === SearchFeatureComparisonOperator.GREATER_THAN || condition.operator === SearchFeatureComparisonOperator.LESS_THAN;
-              expect((await base.getImageController().search({
-                criteria: { features: { operator: SearchFeatureLogicalOperator.AND, conditions: [condition] } }
-              })).entities.length).toBe(shouldNotMatch === true ? zero : totalCount);
-              expect((await base.getImageController().search({
-                criteria: { features: { operator: SearchFeatureLogicalOperator.NOT, conditions: [condition] } }
-              })).entities.length).toBe(shouldNotMatch === false ? zero : totalCount);
+              expect((await base.getImageController().search(SearchParameters.withSearchCriteria({
+                features: {
+                  operator: SearchFeatureLogicalOperator.AND,
+                  conditions: [condition]
+                }
+              }))).entities.length).toBe(shouldNotMatch === true ? zero : totalCount);
+              expect((await base.getImageController().search(SearchParameters.withSearchCriteria({
+                features: {
+                  operator: SearchFeatureLogicalOperator.NOT,
+                  conditions: [condition]
+                }
+              }))).entities.length).toBe(shouldNotMatch === false ? zero : totalCount);
             }
 
             await checkCondition(condition);
@@ -583,74 +603,102 @@ describe("Image with module", () =>
 
       // We assess with advanced image "features" requests
       expect((await base.getImageController().search({
-        criteria: {
-          features: {
-            operator: SearchFeatureLogicalOperator.OR,
-            conditions: [
+        filter:
+          {
+            criteria:
               {
-                format: stringFeature.format,
-                operator: SearchFeatureComparisonOperator.EQUALS,
-                value: stringFeature.value
-              }
-            ],
-            features:
-              {
-                operator: SearchFeatureLogicalOperator.OR,
-                conditions: [
+                features:
                   {
-                    format: integerFeature.format,
-                    operator: SearchFeatureComparisonOperator.EQUALS,
-                    value: integerFeature.value
-                  },
-                  {
-                    format: floatFeature.format,
-                    operator: SearchFeatureComparisonOperator.GREATER_THAN,
-                    value: floatFeature.value
+                    operator: SearchFeatureLogicalOperator.OR,
+                    conditions:
+                      [
+                        {
+                          format: stringFeature.format,
+                          operator: SearchFeatureComparisonOperator.EQUALS,
+                          value: stringFeature.value
+                        }
+                      ],
+                    features:
+                      {
+                        operator: SearchFeatureLogicalOperator.OR,
+                        conditions:
+                          [
+                            {
+                              format: integerFeature.format,
+                              operator: SearchFeatureComparisonOperator.EQUALS,
+                              value: integerFeature.value
+                            },
+                            {
+                              format: floatFeature.format,
+                              operator: SearchFeatureComparisonOperator.GREATER_THAN,
+                              value: floatFeature.value
+                            }
+                          ]
+                      }
                   }
-                ]
               }
           }
-        }
       })).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search({
-        criteria: {
-          features: {
-            operator: SearchFeatureLogicalOperator.AND,
-            conditions: [
-              {
-                format: stringFeature.format,
-                operator: SearchFeatureComparisonOperator.EQUALS,
-                value: stringFeature.value
-              },
-              {
-                format: integerFeature.format,
-                operator: SearchFeatureComparisonOperator.EQUALS,
-                value: integerFeature.value
-              }
-            ]
-          }
-        }
-      })).entities.length).toBe(zero);
-      expect((await base.getImageController().search({
-        criteria: {
-          features: {
-            operator: SearchFeatureLogicalOperator.NOT,
-            conditions: [
-              {
-                format: stringFeature.format,
-                operator: SearchFeatureComparisonOperator.EQUALS,
-                value: stringFeature.value
-              }
-            ]
-          }
-        }
-      })).entities.length).toBe(zero);
+      expect((await base.getImageController().search(
+        {
+          filter:
+            {
+              criteria:
+                {
+                  features:
+                    {
+                      operator: SearchFeatureLogicalOperator.AND,
+                      conditions:
+                        [
+                          {
+                            format: stringFeature.format,
+                            operator: SearchFeatureComparisonOperator.EQUALS,
+                            value: stringFeature.value
+                          },
+                          {
+                            format: integerFeature.format,
+                            operator: SearchFeatureComparisonOperator.EQUALS,
+                            value: integerFeature.value
+                          }
+                        ]
+                    }
+                }
+            }
+        })).entities.length).toBe(zero);
+      expect((await base.getImageController().search(
+        {
+          filter:
+            {
+              criteria:
+                {
+                  features:
+                    {
+                      operator: SearchFeatureLogicalOperator.NOT,
+                      conditions:
+                        [
+                          {
+                            format: stringFeature.format,
+                            operator: SearchFeatureComparisonOperator.EQUALS,
+                            value: stringFeature.value
+                          }
+                        ]
+                    }
+
+                }
+            }
+        })).entities.length).toBe(zero);
     }
     {
       // We add a repository and an image on it
       const { repository: newRepository } = await base.prepareRepositoryWithImage(base.imageFeeder.webpImageFileName, "new");
-      expect((await base.getImageController().search({ ids: [repository.id, newRepository.id] })).entities.length).toBe(totalCount + 1);
-      expect((await base.getImageController().search({ ids: [repository.id] })).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(new SearchParameters(new SearchFilter(new SearchCriteria(), new SearchRepositoriesOrigin([repository.id, newRepository.id]))))).entities.length).toBe(totalCount + 1);
+      expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().search(new SearchParameters(new SearchFilter(new SearchCriteria(), new SearchImagesOrigin([image.id]))))).entities.length).toBe(totalCount);
+    }
+    {
+      // We assess via a collection
+      const collection = await base.getCollectionController().create("name", undefined, {});
+      expect((await base.getImageController().search(new SearchParameters(undefined, collection.id))).entities.length).toBe(totalCount + 1);
     }
   }, base.largeTimeoutInMilliseconds);
 

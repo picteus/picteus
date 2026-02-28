@@ -8,6 +8,7 @@ import {
   SearchFeatureComparisonOperator,
   SearchFeatureLogicalOperator,
   SearchFeatures,
+  SearchOriginNature,
   SearchSortingProperty,
   SearchTags
 } from "@picteus/ws-client";
@@ -120,22 +121,24 @@ function filtersToCriteria(
   }
 
   return {
-    criteria: {
-      keyword: {
-        text: filters.keyword || "",
-        ...computeSearchInValues()
-      },
-      formats: filters.formats?.length
-        ? filters.formats
-        : formatsOptions.map((format) => format.value as ImageFormat),
-      ...computeFeatureNames(),
-      ...computeSearchTags()
-    },
-    ...(filters.repositories?.length ? { ids: filters.repositories } : {}),
-    sorting: {
-      property: filters.sortBy,
-      isAscending: filters.sortOrder === "1"
-    }
+   filter: {
+     criteria: {
+       keyword: {
+         text: filters.keyword || "",
+         ...computeSearchInValues()
+       },
+       formats: filters.formats?.length
+         ? filters.formats
+         : formatsOptions.map((format) => format.value as ImageFormat),
+       ...computeFeatureNames(),
+       ...computeSearchTags()
+     },
+     ...(filters.repositories?.length ? { origin: { kind: SearchOriginNature.Repositories, ids: filters.repositories }} : {}),
+     sorting: {
+       property: filters.sortBy,
+       isAscending: filters.sortOrder === "1"
+     }
+   }
   };
 }
 
