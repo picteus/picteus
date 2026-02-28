@@ -1,4 +1,14 @@
-/node_modules
+node_modules
 /tmp
-/.idea
-/build
+.idea
+/.vscode
+generated
+build
+dist
+/docker
+/storage
+.env
+.venv
+.cache
+.paused
+parameters.json
