@@ -208,8 +208,8 @@ export class ImageMetadata
  */
 export enum PromptKind
 {
-  TEXTUAL = "textual",
-  INSTRUCTIONS = "instructions"
+  Textual = "textual",
+  Instructions = "instructions"
 }
 
 @ApiSchema({ description: "The basis prompt of an AI-based generated image" })
@@ -227,7 +227,7 @@ export class BasisPrompt
       enum: PromptKind,
       enumName: "PromptKind",
       required: true,
-      example: PromptKind.INSTRUCTIONS
+      example: PromptKind.Instructions
     }
   )
   @IsEnum(PromptKind)
@@ -244,7 +244,7 @@ export class TextualPrompt extends BasisPrompt
 
   constructor(text: string)
   {
-    super(PromptKind.TEXTUAL);
+    super(PromptKind.Textual);
     this.text = text;
   }
 
@@ -274,7 +274,7 @@ export class InstructionsPrompt extends BasisPrompt
 
   constructor(value: Json)
   {
-    super(PromptKind.INSTRUCTIONS);
+    super(PromptKind.Instructions);
     this.value = value;
   }
 
@@ -465,8 +465,8 @@ export class GenerationRecipe
           propertyName: "kind",
           mapping:
             {
-              [PromptKind.TEXTUAL]: getSchemaPath(TextualPrompt),
-              [PromptKind.INSTRUCTIONS]: getSchemaPath(InstructionsPrompt)
+              [PromptKind.Textual]: getSchemaPath(TextualPrompt),
+              [PromptKind.Instructions]: getSchemaPath(InstructionsPrompt)
             }
         },
       required: true
@@ -479,8 +479,8 @@ export class GenerationRecipe
           property: "kind",
           subTypes:
             [
-              { value: TextualPrompt, name: PromptKind.TEXTUAL },
-              { value: InstructionsPrompt, name: PromptKind.INSTRUCTIONS }
+              { value: TextualPrompt, name: PromptKind.Textual },
+              { value: InstructionsPrompt, name: PromptKind.Instructions }
             ]
         },
       keepDiscriminatorProperty: true

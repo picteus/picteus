@@ -451,7 +451,7 @@ describe("Miscellaneous bare", () =>
         expect(recipe.aspectRatio).toBe(aspectRatio);
         expect(recipe.modelTags[0]).toBe(modelTag);
         expect(recipe.inputAssets![0]).toBe(inputAsset);
-        expect(recipe.prompt).toEqual(recipe.prompt.kind === PromptKind.TEXTUAL ? new TextualPrompt(text) : new InstructionsPrompt(JSON.parse(instructions)));
+        expect(recipe.prompt).toEqual(recipe.prompt.kind === PromptKind.Textual ? new TextualPrompt(text) : new InstructionsPrompt(JSON.parse(instructions)));
       }
     }
   });

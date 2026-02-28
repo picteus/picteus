@@ -1876,7 +1876,7 @@
     },
     "/image/search": {
       "get": {
-        "description": "Searches images, given criteria.",
+        "description": "Searches for images, given criteria.",
         "operationId": "image_search",
         "parameters": [
           {

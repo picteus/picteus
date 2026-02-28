@@ -185,7 +185,7 @@ export class ImageFeeder
   {
     const textualPrompt = new TextualPrompt("a beautiful photo");
     const instructionsPrompt = new InstructionsPrompt({ key1: "value1" });
-    return new GenerationRecipe([modelTag], kind === PromptKind.TEXTUAL ? textualPrompt : instructionsPrompt, "id", "https//generated.image/id", "picteus", [], 1.25);
+    return new GenerationRecipe([modelTag], kind === PromptKind.Textual ? textualPrompt : instructionsPrompt, "id", "https//generated.image/id", "picteus", [], 1.25);
   }
 
 }

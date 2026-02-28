@@ -1121,7 +1121,7 @@ describe("Image with module", () =>
         const version = "1-_.5";
         for (const modelTag of [model, `${company}/${model}`, `${model}:${version}`, `${company}/${model}:${version}`])
         {
-          for (const kind of [PromptKind.TEXTUAL, PromptKind.INSTRUCTIONS])
+          for (const kind of [PromptKind.Textual, PromptKind.Instructions])
           {
             const recipe = base.imageFeeder.computeRecipe(kind, modelTag);
             await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(recipe))]);
@@ -1373,9 +1373,9 @@ describe("Image with module", () =>
     const imageId = image.id;
     const secondExtension = await base.prepareExtension("second");
     const secondExtensionId = secondExtension.manifest.id;
-    const extensionRecipe = base.imageFeeder.computeRecipe(PromptKind.TEXTUAL);
+    const extensionRecipe = base.imageFeeder.computeRecipe(PromptKind.Textual);
     await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(extensionRecipe))]);
-    const secondExtensionRecipe = base.imageFeeder.computeRecipe(PromptKind.INSTRUCTIONS);
+    const secondExtensionRecipe = base.imageFeeder.computeRecipe(PromptKind.Instructions);
     await base.getImageController().setFeatures(Base.allPolicyContext, imageId, secondExtensionId, [new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(secondExtensionRecipe))]);
 
     const recipes = await base.getImageController().getAllRecipes(imageId);
