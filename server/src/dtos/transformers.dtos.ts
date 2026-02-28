@@ -1,4 +1,5 @@
 import { ClassConstructor, plainToInstance, TransformFnParams } from "class-transformer";
+import { TransformOptions } from "class-transformer/types/interfaces";
 
 
 export const forceArray: (transformFnParams: TransformFnParams) => any = (transformFnParams: TransformFnParams): any =>
@@ -50,10 +51,22 @@ export const forceBoolean: (transformFnParams: TransformFnParams) => any = (tran
   return transformFnParams.value === true || transformFnParams.value === "true";
 };
 
-export const transformStringifyJson: (transformFnParams: TransformFnParams) => any = (transformFnParams: TransformFnParams): any =>
+export function transformStringifyJson<T>(type?: ClassConstructor<T>, factory?: ((object: any) => ClassConstructor<T>), options?: TransformOptions): (transformFnParams: TransformFnParams, options?: TransformOptions) => any
 {
-  return JSON.stringify(transformFnParams.value);
-};
+  return (transformFnParams: TransformFnParams, methodOptions?: TransformOptions): any =>
+  {
+    if (typeof transformFnParams.value === "string")
+    {
+      const object = JSON.parse(transformFnParams.value);
+      const actualType: ClassConstructor<T> = type !== undefined ? type : factory!(object);
+      return plainToInstance<T, Record<string, any>>(actualType, object, { ...methodOptions, ...options });
+    }
+    else
+    {
+      return transformFnParams.value;
+    }
+  };
+}
 
 export const jsonTransform: (transformFnParams: TransformFnParams) => any = (transformFnParams: TransformFnParams): any =>
 {

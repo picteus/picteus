@@ -1,4 +1,4 @@
-import { Expose, plainToInstance, Transform, Type } from "class-transformer";
+import { Expose, Transform, Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
@@ -16,7 +16,7 @@ import {
 import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from "@nestjs/swagger";
 
 import { TypeBasedValidation } from "./validators.dtos";
-import { deepObjectTransform, forceArray, forceBoolean } from "./transformers.dtos";
+import { deepObjectTransform, forceArray, forceBoolean, transformStringifyJson } from "./transformers.dtos";
 import {
   FieldLengths,
   ImageFeatureFormat,
@@ -27,7 +27,6 @@ import {
   repositoryIdSchema,
   technicalSchema
 } from "./common.dtos";
-import { TransformFnParams, TransformOptions } from "class-transformer/types/interfaces";
 
 
 @ApiSchema({ description: "The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts" })
@@ -676,10 +675,7 @@ export class SearchFilter
       required: false
     }
   )
-  @Transform((params: TransformFnParams, options?: TransformOptions) =>
-  {
-    return typeof params.value === "string" ? plainToInstance<SearchCriteria, Record<string, any>>(SearchCriteria, JSON.parse(params.value), options) : params.value;
-  })
+  @Transform(transformStringifyJson<SearchCriteria>(SearchCriteria))
   @ValidateNested()
   @Type(() => SearchCriteria)
   @IsOptional()
@@ -712,6 +708,10 @@ export class SearchFilter
       required: false
     }
   )
+  @Transform(transformStringifyJson<SearchRepositoriesOrigin | SearchImagesOrigin>(undefined, (object: any) =>
+  {
+    return object["kind"] === SearchOriginType.Repositories ? SearchRepositoriesOrigin : SearchImagesOrigin;
+  }))
   @ValidateNested()
   @Type(() => BasisSearchOrigin,
     {
@@ -737,6 +737,7 @@ export class SearchFilter
       required: false
     }
   )
+  @Transform(transformStringifyJson<SearchSorting>(SearchSorting))
   @ValidateNested()
   @Type(() => SearchSorting)
   @IsOptional()
