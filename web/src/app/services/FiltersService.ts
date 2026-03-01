@@ -8,6 +8,7 @@ import {
   SearchFeatureComparisonOperator,
   SearchFeatureLogicalOperator,
   SearchFeatures,
+  SearchFilter,
   SearchOriginNature,
   SearchSortingProperty,
   SearchTags
@@ -51,14 +52,14 @@ const formatsOptions: WithValueAndLabel[] = Object.keys(ImageFormat).map((key) =
 
 export type FeaturesNamesOption = WithValue & LocalFiltersTypeFeature;
 
-const computeFeaturesNamesOptions: () => Promise<FeaturesNamesOption []> = async ()=> {
+const computeFeaturesNamesOptions: () => Promise<FeaturesNamesOption[]> = async () => {
   const featureNames = await RepositoriesService.getFeatureNames();
-  return featureNames.map(name => ({value: name.name, label: name.name, category: name.name, format: name.format, type: name.type, name: name.name}));
+  return featureNames.map(name => ({ value: name.name, label: name.name, category: name.name, format: name.format, type: name.type, name: name.name }));
 };
 
-const computeTagsOptions: () => Promise<WithValueAndLabel[]> = async ()=>{
+const computeTagsOptions: () => Promise<WithValueAndLabel[]> = async () => {
   const tags = await RepositoriesService.getTags();
-  return tags.map(tag => ({value: tag.value, label: tag.value}));
+  return tags.map(tag => ({ value: tag.value, label: tag.value }));
 };
 
 const sortOrderOptions: WithValueAndLabel[] = [
@@ -81,7 +82,7 @@ const defaultFilters: LocalFiltersType = {
   sortOrder: "-1",
 };
 
-function filtersToCriteria(
+function filtersToSearchRequest(
   filters: LocalFiltersType,
 ): ImageApiImageSearchRequest {
   function computeSearchInValues() {
@@ -96,11 +97,9 @@ function filtersToCriteria(
   }
 
   function computeFeatureNames(): { features: SearchFeatures } | object {
-    if (filters.features?.length)
-    {
+    if (filters.features?.length) {
       const searchFeatures: SearchFeatures = {
-        operator: SearchFeatureLogicalOperator.Or, conditions: filters.features.map(feature =>
-        {
+        operator: SearchFeatureLogicalOperator.Or, conditions: filters.features.map(feature => {
           return {
             format: feature.format,
             type: feature.type,
@@ -115,31 +114,93 @@ function filtersToCriteria(
     return {};
   }
 
-  function computeSearchTags(): { tags: SearchTags } | object
-  {
+  function computeSearchTags(): { tags: SearchTags } | object {
     return filters.tags?.length ? { tags: JSON.stringify({ values: filters.tags }) } : {};
   }
 
   return {
-   filter: {
-     criteria: {
-       keyword: {
-         text: filters.keyword || "",
-         ...computeSearchInValues()
-       },
-       formats: filters.formats?.length
-         ? filters.formats
-         : formatsOptions.map((format) => format.value as ImageFormat),
-       ...computeFeatureNames(),
-       ...computeSearchTags()
-     },
-     ...(filters.repositories?.length ? { origin: { kind: SearchOriginNature.Repositories, ids: filters.repositories }} : {}),
-     sorting: {
-       property: filters.sortBy,
-       isAscending: filters.sortOrder === "1"
-     }
-   }
+    filter: {
+      criteria: {
+        keyword: {
+          text: filters.keyword || "",
+          ...computeSearchInValues()
+        },
+        formats: filters.formats?.length
+          ? filters.formats
+          : formatsOptions.map((format) => format.value as ImageFormat),
+        ...computeFeatureNames(),
+        ...computeSearchTags()
+      },
+      ...(filters.repositories?.length ? { origin: { kind: SearchOriginNature.Repositories, ids: filters.repositories } } : {}),
+      sorting: {
+        property: filters.sortBy,
+        isAscending: filters.sortOrder === "1"
+      }
+    }
   };
+}
+
+function searchFilterToFilters(searchFilter: SearchFilter): LocalFiltersType {
+  const criteria = searchFilter.criteria;
+  const origin = searchFilter.origin;
+  const sorting = searchFilter.sorting;
+
+  const filters: LocalFiltersType = {
+    ...defaultFilters,
+  };
+
+  if (criteria) {
+    if (criteria.keyword) {
+      filters.keyword = criteria.keyword.text;
+      const searchIn: string[] = [];
+      if (criteria.keyword.inName) searchIn.push("inName");
+      if (criteria.keyword.inMetadata) searchIn.push("inMetadata");
+      if (criteria.keyword.inFeatures) searchIn.push("inFeatures");
+      filters.searchIn = searchIn.length > 0 ? searchIn : undefined;
+    }
+
+    if (criteria.formats) {
+      filters.formats = criteria.formats as ImageFormat[];
+    }
+
+    if (criteria.features) {
+      try {
+        const parsedFeatures: SearchFeatures = JSON.parse(criteria.features as unknown as string);
+        if (parsedFeatures.conditions) {
+          filters.features = parsedFeatures.conditions.map((condition) => ({
+            format: condition.format,
+            type: condition.type,
+            name: condition.name,
+            category: condition.name || ""
+          }));
+        }
+      } catch (e) {
+        console.warn("Failed to parse search filter features", e);
+      }
+    }
+
+    if (criteria.tags) {
+      try {
+        const parsedTags = JSON.parse(criteria.tags as unknown as string);
+        if (parsedTags.values) {
+          filters.tags = parsedTags.values;
+        }
+      } catch (e) {
+        console.warn("Failed to parse search filter tags", e);
+      }
+    }
+  }
+
+  if (origin && origin.kind === SearchOriginNature.Repositories && origin.ids) {
+    filters.repositories = origin.ids;
+  }
+
+  if (sorting) {
+    filters.sortBy = sorting.property;
+    filters.sortOrder = sorting.isAscending ? "1" : "-1";
+  }
+
+  return filters;
 }
 
 export default {
@@ -150,5 +211,6 @@ export default {
   formatsOptions,
   computeFeaturesNamesOptions,
   computeTagsOptions,
-  filtersToCriteria,
+  filtersToCriteria: filtersToSearchRequest,
+  searchFilterToFilters,
 };

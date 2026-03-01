@@ -179,6 +179,7 @@ export default function ExtensionsScreen() {
           size="md"
           variant="default"
           onClick={() => setExtensionToSetSettings(extension)}
+          disabled={extension.status === ExtensionStatus.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
         >
           <Tooltip label={t("button.settings")} position="top-end" offset={10}>
             <IconAdjustmentsHorizontal {...iconSizeAndStroke} />

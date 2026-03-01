@@ -15,11 +15,12 @@ import {
   TextInput
 } from "@mantine/core";
 import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
-import { ImageFeatureFormat, ImageFeatureType, ImageFormat, Repository } from "@picteus/ws-client";
+import { Collection, ImageFeatureFormat, ImageFeatureType, ImageFormat, Repository } from "@picteus/ws-client";
 
 import { useDebouncedCallback } from "app/hooks";
 import { FiltersService, RepositoriesService, StorageService } from "app/services";
 import { FilterSelect } from "app/components";
+import { CollectionsDropdown } from "../CollectionsDropdown";
 import { LocalFiltersType, LocalFiltersTypeFeature } from "types";
 import { FeaturesNamesOption } from "../../../../services/FiltersService.ts";
 import { capitalizeText } from "../../../../../utils";
@@ -33,7 +34,7 @@ export default function FiltersBar({
 }) {
   const [t] = useTranslation();
   const [searchText, setSearchText] = useState(undefined);
-  const [featuresOptions, setFeaturesOptions] = useState<FeaturesNamesOption []>([]);
+  const [featuresOptions, setFeaturesOptions] = useState<FeaturesNamesOption[]>([]);
   const [tagsOptions, setTagsOptions] = useState<{ value: string, label: string }[]>([]);
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [popoverOpened, setPopoverOpened] = useState(false);
@@ -53,6 +54,7 @@ export default function FiltersBar({
       ? { ...defaultFilters, ...initialFilters }
       : StorageService.getSearchFilters() || defaultFilters,
   );
+  const [selectedCollection, setSelectedCollection] = useState<Collection | undefined>(undefined);
 
   const debouncedSearchCallback = useDebouncedCallback(async () => {
     setFilters({
@@ -83,10 +85,8 @@ export default function FiltersBar({
         const builtInOptions: FeaturesNamesOption[] = [];
         const types: ImageFeatureType[] = [ImageFeatureType.Recipe, ImageFeatureType.Annotation, ImageFeatureType.Comment, ImageFeatureType.Description, ImageFeatureType.Caption];
         const formats: ImageFeatureFormat[] = [ImageFeatureFormat.Json, ImageFeatureFormat.Markdown, ImageFeatureFormat.Html, ImageFeatureFormat.Xml, ImageFeatureFormat.String];
-        for (const type of types)
-        {
-          for (const format of formats)
-          {
+        for (const type of types) {
+          for (const format of formats) {
             builtInOptions.push({
               value: type,
               category: capitalizeText(type),
@@ -125,6 +125,7 @@ export default function FiltersBar({
 
   function handleOnClearAll() {
     setFilters(defaultFilters);
+    setSelectedCollection(undefined);
   }
 
   function computeFeatureOptionValue(feature: LocalFiltersTypeFeature): string {
@@ -297,16 +298,30 @@ export default function FiltersBar({
               }
               size="lg"
               variant="default"
+              title={t("filters.title")}
             >
               <IconFilter stroke={1.3} />
             </ActionIcon>
           </Popover.Target>
           <Popover.Dropdown>{renderFiltersDropdown()}</Popover.Dropdown>
         </Popover>
+        <CollectionsDropdown
+          currentFilters={filters}
+          selectedCollection={selectedCollection}
+          onApplyCollection={(col) => {
+            setFilters(FiltersService.searchFilterToFilters(col.filter));
+            setSelectedCollection(col);
+          }}
+        />
       </Flex>
 
       <Space h="sm" />
       <Group>
+        {selectedCollection && (
+          <Pill {...commonPillProps} onRemove={() => setSelectedCollection(undefined)}>
+            {`${t("collections.current", { defaultValue: "Collection" })} : ${selectedCollection.name}`}
+          </Pill>
+        )}
         <Pill {...commonPillProps} withRemoveButton={false}>
           {computeSortingLabelDisplay()}
         </Pill>
@@ -336,7 +351,7 @@ export default function FiltersBar({
           )}
         {filters.formats?.length &&
           filters.formats?.length !==
-            Object.keys(ImageFormat).length && (
+          Object.keys(ImageFormat).length && (
             <Pill
               {...commonPillProps}
               onRemove={() => handleOnChangeFilter("formats")}
@@ -345,21 +360,21 @@ export default function FiltersBar({
             </Pill>
           )}
         {filters.features?.length && (
-            <Pill
-              {...commonPillProps}
-              onRemove={() => handleOnChangeFilter("features")}
-            >
-              {`${t("field.features")} : ${[...filters.features]?.map(feature => feature.category).filter((feature, index, array) => array.indexOf(feature) == index).join(", ")}`}
-            </Pill>
-          )}
+          <Pill
+            {...commonPillProps}
+            onRemove={() => handleOnChangeFilter("features")}
+          >
+            {`${t("field.features")} : ${[...filters.features]?.map(feature => feature.category).filter((feature, index, array) => array.indexOf(feature) == index).join(", ")}`}
+          </Pill>
+        )}
         {filters.tags?.length && (
-            <Pill
-              {...commonPillProps}
-              onRemove={() => handleOnChangeFilter("tags")}
-            >
-              {`${t("field.tags")} : ${[...filters.tags]?.join(", ")}`}
-            </Pill>
-          )}
+          <Pill
+            {...commonPillProps}
+            onRemove={() => handleOnChangeFilter("tags")}
+          >
+            {`${t("field.tags")} : ${[...filters.tags]?.join(", ")}`}
+          </Pill>
+        )}
       </Group>
     </div>
   );
