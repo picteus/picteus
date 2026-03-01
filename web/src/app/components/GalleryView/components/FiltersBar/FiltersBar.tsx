@@ -15,7 +15,7 @@ import {
   TextInput
 } from "@mantine/core";
 import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
-import { Collection, ImageFeatureFormat, ImageFeatureType, ImageFormat, Repository } from "@picteus/ws-client";
+import { Collection, ImageFeatureFormat, ImageFeatureType, Repository } from "@picteus/ws-client";
 
 import { useDebouncedCallback } from "app/hooks";
 import { FiltersService, RepositoriesService, StorageService } from "app/services";
@@ -125,6 +125,7 @@ export default function FiltersBar({
 
   function handleOnClearAll() {
     setFilters(defaultFilters);
+    setSearchText("");
     setSelectedCollection(undefined);
   }
 
@@ -242,13 +243,6 @@ export default function FiltersBar({
   }
 
   function computeSearchInLabelDisplay() {
-    if (
-      searchInOptions.every((option) =>
-        filters.searchIn?.includes(option.value),
-      )
-    ) {
-      return;
-    }
     return searchInOptions
       .filter((option) => filters.searchIn?.includes(option.value)) // Only selected
       .map((option) => option.label) // Map to label
@@ -308,9 +302,11 @@ export default function FiltersBar({
         <CollectionsDropdown
           currentFilters={filters}
           selectedCollection={selectedCollection}
-          onApplyCollection={(col) => {
-            setFilters(FiltersService.searchFilterToFilters(col.filter));
-            setSelectedCollection(col);
+          onApplyCollection={(collection) => {
+            const localFilters = FiltersService.searchFilterToLocalFilters(collection.filter);
+            setFilters(localFilters);
+            setSearchText(localFilters.keyword ?? "");
+            setSelectedCollection(collection);
           }}
         />
       </Flex>
@@ -319,15 +315,14 @@ export default function FiltersBar({
       <Group>
         {selectedCollection && (
           <Pill {...commonPillProps} onRemove={() => setSelectedCollection(undefined)}>
-            {`${t("collections.current", { defaultValue: "Collection" })} : ${selectedCollection.name}`}
+            {`${t("filters.collection")} : ${selectedCollection.name}`}
           </Pill>
         )}
         <Pill {...commonPillProps} withRemoveButton={false}>
           {computeSortingLabelDisplay()}
         </Pill>
 
-        {filters.searchIn?.length &&
-          filters.searchIn.length !== searchInOptions.length && (
+        {filters.searchIn?.length > 0 && (
             <Pill
               size="md"
               withRemoveButton
@@ -337,8 +332,7 @@ export default function FiltersBar({
             </Pill>
           )}
 
-        {filters.repositories?.length &&
-          repositories.length !== filters.repositories?.length && (
+        {filters.repositories?.length > 0 && (
             <Pill
               {...commonPillProps}
               onRemove={() => handleOnChangeFilter("repositories")}
@@ -349,9 +343,7 @@ export default function FiltersBar({
                 .join(", ")}`}
             </Pill>
           )}
-        {filters.formats?.length &&
-          filters.formats?.length !==
-          Object.keys(ImageFormat).length && (
+        {filters.formats?.length > 0 && (
             <Pill
               {...commonPillProps}
               onRemove={() => handleOnChangeFilter("formats")}
@@ -359,7 +351,7 @@ export default function FiltersBar({
               {`${t("field.formats")} : ${[...filters.formats]?.join(", ")}`}
             </Pill>
           )}
-        {filters.features?.length && (
+        {filters.features?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => handleOnChangeFilter("features")}
@@ -367,7 +359,7 @@ export default function FiltersBar({
             {`${t("field.features")} : ${[...filters.features]?.map(feature => feature.category).filter((feature, index, array) => array.indexOf(feature) == index).join(", ")}`}
           </Pill>
         )}
-        {filters.tags?.length && (
+        {filters.tags?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => handleOnChangeFilter("tags")}

@@ -16,7 +16,7 @@ class CollectionService {
         return collectionApi.collectionCreate({
             name,
             searchFilter,
-            comment,
+            comment: comment === "" ? undefined : comment
         });
     }
 
@@ -30,7 +30,7 @@ class CollectionService {
             id,
             name,
             searchFilter,
-            comment,
+            comment: comment === "" ? undefined : comment
         });
     }
 

@@ -68,6 +68,7 @@ export default {
     inName: "Image name",
     inMetadata: "Image metadata",
     inFeatures: "Image features",
+    collection: "Collection",
     selectAll: "Select all",
     clearAll: "Clear all"
   },
@@ -89,8 +90,8 @@ export default {
     saveCurrent: "Save current filters as collection",
     updateCurrent: "Update {{name}} with current filters",
     savedCollections: "Saved collections",
-    createSuccess: "Successfully created collection",
-    updateSuccess: "Successfully updated collection"
+    createSuccess: "Collection created",
+    updateSuccess: "Collection updated"
   },
   button: {
     add: "Add",

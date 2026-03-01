@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ImageApiImageSearchRequest, SearchRange } from "@picteus/ws-client";
+import { SearchRange } from "@picteus/ws-client";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Flex } from "@mantine/core";
 import { IconPhotoSearch, IconPin } from "@tabler/icons-react";
@@ -92,10 +92,9 @@ export default function GalleryView({ initialFilters }: GalleryViewType) {
     }
     setLoading(true);
     try {
-      const searCriteria: ImageApiImageSearchRequest =
-        FiltersService.filtersToCriteria(filters);
+      const filter = FiltersService.localFiltersToSearchFilter(filters);
       const apiResponse = await ImageService.listAll({
-        ...searCriteria,
+        filter,
         range: {
           take: pagination.take,
           skip: pagination.skip,

@@ -43,7 +43,7 @@ export default function CollectionsDropdown({
     }
 
     function handleOnSaveCurrent() {
-        const searchFilter = FiltersService.filtersToCriteria(currentFilters).filter;
+        const searchFilter = FiltersService.localFiltersToSearchFilter(currentFilters);
         addModal({
             title: t("collections.create"),
             component: (
@@ -58,7 +58,7 @@ export default function CollectionsDropdown({
     }
 
     async function handleOnUpdateCurrent() {
-        const searchFilter = FiltersService.filtersToCriteria(currentFilters).filter;
+        const searchFilter = FiltersService.localFiltersToSearchFilter(currentFilters);
         try {
             await CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment);
             notifySuccess(t("collections.updateSuccess"));

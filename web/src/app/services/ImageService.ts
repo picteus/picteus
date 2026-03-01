@@ -17,27 +17,38 @@ import { BASE_PATH } from "utils";
 
 const imageApi = new ImageApi();
 
-const defaultSearchCriteria = {
-  criteria: {
-    formats: [
-      ImageFormat.Png,
-      ImageFormat.Jpeg,
-      ImageFormat.Webp,
-      ImageFormat.Gif,
-      ImageFormat.Avif,
-      ImageFormat.Heif
-    ]
+const defaultSearchCriteria: ImageApiImageSearchRequest = {
+  filter:{
+    criteria: {
+      formats: [
+        ImageFormat.Png,
+        ImageFormat.Jpeg,
+        ImageFormat.Webp,
+        ImageFormat.Gif,
+        ImageFormat.Avif,
+        ImageFormat.Heif
+      ]
+    }
   },
   range: { take: 1000 },
 };
 
 async function listAll(
-  criteria?: ImageApiImageSearchRequest,
+  request?: ImageApiImageSearchRequest,
 ): Promise<ImageSummaryList> {
-  if (!criteria) {
-    criteria = defaultSearchCriteria;
+  if (!request) {
+    request = defaultSearchCriteria;
   }
-  return await imageApi.imageSearch(criteria);
+  const copiedRequest = JSON.parse(JSON.stringify(request));
+  if (request.filter?.criteria?.tags !== undefined)
+  {
+    copiedRequest.filter.criteria.tags = JSON.stringify(request.filter.criteria.tags);
+  }
+  if (request.filter?.criteria?.features !== undefined)
+  {
+    copiedRequest.filter.criteria.features = JSON.stringify(request.filter.criteria.features);
+  }
+  return await imageApi.imageSearch(copiedRequest);
 }
 
 async function get(parameters: ImageApiImageGetRequest) {
