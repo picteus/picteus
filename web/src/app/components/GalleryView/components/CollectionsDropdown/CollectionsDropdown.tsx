@@ -75,8 +75,9 @@ export default function CollectionsDropdown({
                 <CollectionModal
                     collection={collection}
                     searchFilter={collection.filter}
-                    onSuccess={() => {
+                    onSuccess={(updatedCollection) => {
                         void loadCollections();
+                        onApplyCollection(updatedCollection);
                     }}
                 />
             ),
@@ -117,15 +118,15 @@ export default function CollectionsDropdown({
                 <Divider my="sm" />
                 <Menu.Label>{t("collections.savedCollections")}</Menu.Label>
                 {loading && <Box p="sm"><Center><Loader size="sm" /></Center></Box>}
-                {!loading && collections.map((col) => (
-                    <Menu.Item key={col.id} onClick={() => onApplyCollection(col)}>
+                {!loading && collections.map((collection) => (
+                    <Menu.Item key={collection.id} onClick={() => onApplyCollection(collection)}>
                         <Flex justify="space-between" align="center">
-                            <Text size="sm">{col.name}</Text>
+                            <Text size="sm">{collection.name}</Text>
                             <Flex gap="xs">
-                                <ActionIcon variant="subtle" size="xs" onClick={(event) => { event.stopPropagation(); handleOnEdit(col); }}>
+                                <ActionIcon variant="subtle" size="xs" onClick={(event) => { event.stopPropagation(); handleOnEdit(collection); }}>
                                     <IconEdit size={12} />
                                 </ActionIcon>
-                                <ActionIcon variant="subtle" size="xs" color="red" onClick={(event) => { event.stopPropagation(); void handleOnDelete(col); }}>
+                                <ActionIcon variant="subtle" size="xs" color="red" onClick={(event) => { event.stopPropagation(); void handleOnDelete(collection); }}>
                                     <IconTrash size={12} />
                                 </ActionIcon>
                             </Flex>

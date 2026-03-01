@@ -10,7 +10,7 @@ import { notifyError, notifySuccess } from "utils";
 type CollectionModalProps = {
     collection?: Collection; // If provided, we are editing.
     searchFilter?: SearchFilter; // If not provided but we are editing, we can get it from the collection API
-    onSuccess: () => void;
+    onSuccess: (collection: Collection) => void;
     onClose?: () => void;
 };
 
@@ -36,9 +36,10 @@ export default function CollectionModal({
     async function handleOnSubmit(values: typeof form.values) {
         setLoading(true);
         try {
+            let newCollection: Collection;
             if (collection) {
                 // Update existing collection
-                await CollectionService.update(
+                newCollection = await CollectionService.update(
                     collection.id,
                     values.name,
                     searchFilter,
@@ -47,14 +48,14 @@ export default function CollectionModal({
                 notifySuccess(t("collections.updateSuccess"));
             } else {
                 // Create new collection
-                await CollectionService.create(
+                newCollection = await CollectionService.create(
                     values.name,
                     searchFilter,
                     values.comment
                 );
                 notifySuccess(t("collections.createSuccess"));
             }
-            onSuccess();
+            onSuccess(newCollection);
             onClose?.();
         } catch (error) {
             notifyError((error as Error).message);
