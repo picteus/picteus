@@ -83,15 +83,18 @@ export default {
   },
   collections: {
     title: "Collections",
-    create: "Create collection",
+    create: "New collection",
     edit: "Edit collection",
     namePlaceholder: "My collection",
     commentPlaceholder: "All the Midjourney images",
     saveCurrent: "Save current filters as collection",
-    updateCurrent: "Update {{name}} with current filters",
+    updateCurrent: "Update '{{name}}' with current filters",
     savedCollections: "Saved collections",
     createSuccess: "Collection created",
-    updateSuccess: "Collection updated"
+    updateSuccess: "Collection updated",
+    confirmDeleteTitle: "Delete collection",
+    confirmDeleteMessage:
+      "Are you sure you want to delete the collection '{{name}}' ?",
   },
   button: {
     add: "Add",

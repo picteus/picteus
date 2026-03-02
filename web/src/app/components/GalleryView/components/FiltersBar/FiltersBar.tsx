@@ -20,7 +20,7 @@ import { Collection, ImageFeatureFormat, ImageFeatureType, Repository } from "@p
 import { useDebouncedCallback } from "app/hooks";
 import { FiltersService, RepositoriesService, StorageService } from "app/services";
 import { FilterSelect } from "app/components";
-import { CollectionsDropdown } from "../CollectionsDropdown";
+import CollectionsBar from "../CollectionsBar/CollectionsBar.tsx";
 import { LocalFiltersType, LocalFiltersTypeFeature } from "types";
 import { FeaturesNamesOption } from "../../../../services/FiltersService.ts";
 import { capitalizeText } from "../../../../../utils";
@@ -299,11 +299,11 @@ export default function FiltersBar({
           </Popover.Target>
           <Popover.Dropdown>{renderFiltersDropdown()}</Popover.Dropdown>
         </Popover>
-        <CollectionsDropdown
+        <CollectionsBar
           currentFilters={filters}
           selectedCollection={selectedCollection}
           onApplyCollection={(collection) => {
-            const localFilters = FiltersService.searchFilterToLocalFilters(collection.filter);
+            const localFilters = collection === undefined ? defaultFilters : FiltersService.searchFilterToLocalFilters(collection.filter);
             setFilters(localFilters);
             setSearchText(localFilters.keyword ?? "");
             setSelectedCollection(collection);
@@ -313,44 +313,39 @@ export default function FiltersBar({
 
       <Space h="sm" />
       <Group>
-        {selectedCollection && (
-          <Pill {...commonPillProps} onRemove={() => setSelectedCollection(undefined)}>
-            {`${t("filters.collection")} : ${selectedCollection.name}`}
-          </Pill>
-        )}
         <Pill {...commonPillProps} withRemoveButton={false}>
           {computeSortingLabelDisplay()}
         </Pill>
 
         {filters.searchIn?.length > 0 && (
-            <Pill
-              size="md"
-              withRemoveButton
-              onRemove={() => handleOnChangeFilter("searchIn")}
-            >
-              {`${t("filters.searchTextIn")} : ${computeSearchInLabelDisplay()}`}
-            </Pill>
-          )}
+          <Pill
+            size="md"
+            withRemoveButton
+            onRemove={() => handleOnChangeFilter("searchIn")}
+          >
+            {`${t("filters.searchTextIn")} : ${computeSearchInLabelDisplay()}`}
+          </Pill>
+        )}
 
         {filters.repositories?.length > 0 && (
-            <Pill
-              {...commonPillProps}
-              onRemove={() => handleOnChangeFilter("repositories")}
-            >
-              {`${t("field.repositories")} : ${repositories
-                .filter((r) => filters.repositories?.includes(r.id))
-                .map((r) => r.name)
-                .join(", ")}`}
-            </Pill>
-          )}
+          <Pill
+            {...commonPillProps}
+            onRemove={() => handleOnChangeFilter("repositories")}
+          >
+            {`${t("field.repositories")} : ${repositories
+              .filter((r) => filters.repositories?.includes(r.id))
+              .map((r) => r.name)
+              .join(", ")}`}
+          </Pill>
+        )}
         {filters.formats?.length > 0 && (
-            <Pill
-              {...commonPillProps}
-              onRemove={() => handleOnChangeFilter("formats")}
-            >
-              {`${t("field.formats")} : ${[...filters.formats]?.join(", ")}`}
-            </Pill>
-          )}
+          <Pill
+            {...commonPillProps}
+            onRemove={() => handleOnChangeFilter("formats")}
+          >
+            {`${t("field.formats")} : ${[...filters.formats]?.join(", ")}`}
+          </Pill>
+        )}
         {filters.features?.length > 0 && (
           <Pill
             {...commonPillProps}
