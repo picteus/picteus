@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 import { ActionIcon, Flex } from "@mantine/core";
 import { IconPhotoSearch, IconPin } from "@tabler/icons-react";
 
-import { ChannelEnum, EventInformationType, ImageMasonryDataType, LocalFiltersType } from "types";
+import { ChannelEnum, EventInformationType, FilterOrCollectionId, ImageMasonryDataType } from "types";
 import { EmptyResults, ImageMasonry, RefreshButton, TopBar } from "app/components";
-import { FiltersService, ImageService, RepositoriesService } from "app/services";
+import { ImageService, RepositoriesService } from "app/services";
 import { useContainerDimensions } from "app/hooks";
 import { useEventSocket, useGalleryTabsContext } from "app/context";
 import { notifyError, ROUTES } from "utils";
@@ -22,10 +22,10 @@ type PaginationType = SearchRange & {
 };
 
 type GalleryViewType = {
-  initialFilters?: LocalFiltersType;
+  initialFilterOrCollectionId?: FilterOrCollectionId;
 };
 
-export default function GalleryView({ initialFilters }: GalleryViewType) {
+export default function GalleryView({ initialFilterOrCollectionId }: GalleryViewType) {
   const [, addTab] = useGalleryTabsContext();
   const initialPagination: PaginationType = {
     currentPage: 1,
@@ -43,7 +43,7 @@ export default function GalleryView({ initialFilters }: GalleryViewType) {
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const containerWidth = useContainerDimensions(containerRef);
-  const [filters, setFilters] = useState<LocalFiltersType>();
+  const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(initialFilterOrCollectionId);
   const [showAlertNewImages, setShowAlertNewImages] = useState<boolean>(false);
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -75,7 +75,7 @@ export default function GalleryView({ initialFilters }: GalleryViewType) {
 
   useEffect(() => {
     resetPaginationAndReload();
-  }, [filters]);
+  }, [filterOrCollectionId]);
 
   useEffect(() => {
     if (
@@ -87,14 +87,14 @@ export default function GalleryView({ initialFilters }: GalleryViewType) {
   }, [lastEvent]);
 
   async function load() {
-    if (!filters) {
+    if (!filterOrCollectionId) {
       return;
     }
     setLoading(true);
     try {
-      const filter = FiltersService.localFiltersToSearchFilter(filters);
       const apiResponse = await ImageService.listAll({
-        filter,
+        filter: filterOrCollectionId.filter,
+        collectionId: filterOrCollectionId.filter !== undefined ? undefined : filterOrCollectionId.collectionId,
         range: {
           take: pagination.take,
           skip: pagination.skip,
@@ -124,7 +124,7 @@ export default function GalleryView({ initialFilters }: GalleryViewType) {
       type: "View",
       label: "New tab",
       data: {
-        criteria: filters,
+        filterOrCollectionId: filterOrCollectionId,
       },
     });
   }
@@ -133,7 +133,7 @@ export default function GalleryView({ initialFilters }: GalleryViewType) {
     return (
       <TopBar>
         <Flex align="start" justify="space-between">
-          <FiltersBar initialFilters={initialFilters} onChange={setFilters} />
+          <FiltersBar initialFilterOrCollectionId={initialFilterOrCollectionId} onChange={setFilterOrCollectionId} />
           <Flex gap="xs">
             <RefreshButton
               alert={showAlertNewImages}

@@ -18,75 +18,97 @@ import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
 import { Collection, ImageFeatureFormat, ImageFeatureType, Repository } from "@picteus/ws-client";
 
 import { useDebouncedCallback } from "app/hooks";
-import { FiltersService, RepositoriesService, StorageService } from "app/services";
+import {
+  CollectionService,
+  FeaturesNamesOption,
+  FiltersService,
+  RepositoriesService,
+  StorageService
+} from "app/services";
 import { FilterSelect } from "app/components";
 import CollectionsBar from "../CollectionsBar/CollectionsBar.tsx";
-import { LocalFiltersType, LocalFiltersTypeFeature } from "types";
-import { FeaturesNamesOption } from "../../../../services/FiltersService.ts";
-import { capitalizeText } from "../../../../../utils";
+import { FilterOrCollectionId, LocalFiltersType, LocalFiltersTypeFeature } from "types";
+import { capitalizeText } from "utils";
 
 export default function FiltersBar({
-  initialFilters,
-  onChange,
+  initialFilterOrCollectionId,
+  onChange
 }: {
-  initialFilters: LocalFiltersType;
-  onChange: (filters: LocalFiltersType) => void;
-}) {
+  initialFilterOrCollectionId: FilterOrCollectionId;
+  onChange: (filterOrCollectionId: FilterOrCollectionId) => void;
+})
+{
   const [t] = useTranslation();
-  const [searchText, setSearchText] = useState(undefined);
+  const [searchText, setSearchText] = useState<string>();
   const [featuresOptions, setFeaturesOptions] = useState<FeaturesNamesOption[]>([]);
   const [tagsOptions, setTagsOptions] = useState<{ value: string, label: string }[]>([]);
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [popoverOpened, setPopoverOpened] = useState(false);
 
   const {
-    defaultFilters,
+    defaultFilter,
     sortByOptions,
     sortOrderOptions,
     searchInOptions,
     formatsOptions,
     computeFeaturesNamesOptions,
-    computeTagsOptions,
+    computeTagsOptions
   } = FiltersService;
 
-  const [filters, setFilters] = useState<LocalFiltersType>(
-    initialFilters
-      ? { ...defaultFilters, ...initialFilters }
-      : StorageService.getSearchFilters() || defaultFilters,
-  );
-  const [selectedCollection, setSelectedCollection] = useState<Collection | undefined>(undefined);
+  const [filters, setFilters] = useState<LocalFiltersType>();
+  const [selectedCollection, setSelectedCollection] = useState<Collection>();
 
-  const debouncedSearchCallback = useDebouncedCallback(async () => {
-    setFilters({
-      ...filters,
-      keyword: searchText,
-    });
+  const debouncedSearchCallback = useDebouncedCallback(async () =>
+  {
+    setFilters({...filters, keyword: searchText, searchIn: filters.searchIn ?? ["inName"]});
   }, 400);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
+    const filterOrCollectionId = initialFilterOrCollectionId !== undefined ? initialFilterOrCollectionId : StorageService.getSearchFilterOrCollectionId();
+    if (filterOrCollectionId !== null)
+    {
+      if (filterOrCollectionId.collectionId !== undefined)
+      {
+        CollectionService.get(filterOrCollectionId.collectionId).then(collection =>
+        {
+          setSelectedCollection(collection);
+          setFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
+        }).catch((_error) =>
+        {
+          // In case the collection does not exist anymore, we do nothing
+        });
+      }
+      else
+      {
+        setSelectedCollection(undefined);
+        setFilters(FiltersService.searchFilterToLocalFilters(filterOrCollectionId.filter));
+      }
+    }
+    else {
+      setFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
+    }
+  }, [initialFilterOrCollectionId]);
+
+  useEffect(() =>
+  {
     if (searchText !== undefined) {
       debouncedSearchCallback(searchText);
     }
   }, [searchText]);
 
   useEffect(() => {
-    StorageService.setSearchFilters(filters);
-    onChange(filters);
-  }, [filters]);
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  useEffect(() => {
     async function load() {
+      setRepositories(RepositoriesService.list());
       {
         const options = await computeFeaturesNamesOptions();
         const builtInOptions: FeaturesNamesOption[] = [];
         const types: ImageFeatureType[] = [ImageFeatureType.Recipe, ImageFeatureType.Annotation, ImageFeatureType.Comment, ImageFeatureType.Description, ImageFeatureType.Caption];
         const formats: ImageFeatureFormat[] = [ImageFeatureFormat.Json, ImageFeatureFormat.Markdown, ImageFeatureFormat.Html, ImageFeatureFormat.Xml, ImageFeatureFormat.String];
-        for (const type of types) {
-          for (const format of formats) {
+        for (const type of types)
+        {
+          for (const format of formats)
+          {
             builtInOptions.push({
               value: type,
               category: capitalizeText(type),
@@ -104,27 +126,41 @@ export default function FiltersBar({
     load().catch(console.error);
   }, []);
 
-  // Removing repositories that no longer exist
   useEffect(() => {
-    if (repositories.length) {
-      const repositoriesStillExisting = filters.repositories?.filter(
-        (repositoryId) =>
-          repositories.find((repository) => repository.id === repositoryId),
+    if (filters !== undefined && filters.repositories !== undefined) {
+      // We remove the repositories that no longer exist
+      const existingRepositories = filters.repositories.filter(repositoryId =>
+        repositories.find((repository) => repository.id === repositoryId)
       );
-      setFilters({
-        ...filters,
-        repositories: repositoriesStillExisting,
-      });
+      if (existingRepositories.length !== filters.repositories.length) {
+        setFilters({ ...filters, repositories: existingRepositories });
+      }
     }
-  }, [repositories]);
+  }, [repositories, filters]);
 
-  function load() {
-    const _repositories = RepositoriesService.list();
-    setRepositories(_repositories);
-  }
+  useEffect(() => {
+    let chooseCollection:boolean;
+    if (filters !== undefined) {
+      if (selectedCollection === undefined || JSON.stringify(FiltersService.searchFilterToLocalFilters(selectedCollection.filter)) !== JSON.stringify(filters)) {
+        chooseCollection = false;
+        const filterOrCollectionId = { filter: FiltersService.localFiltersToSearchFilter(filters) };
+        StorageService.setSearchFilterOrCollectionId(filterOrCollectionId);
+        onChange(filterOrCollectionId);
+      }
+      else if (selectedCollection !== undefined) {
+        chooseCollection = true;
+      }
+    }
+    if (chooseCollection === true || (chooseCollection !== false && selectedCollection !== undefined)) {
+      const updatedFilterOrCollectionId = { collectionId: selectedCollection.id };
+      StorageService.setSearchFilterOrCollectionId(updatedFilterOrCollectionId);
+      onChange({ collectionId: selectedCollection.id });
+    }
+  }, [selectedCollection, filters]);
 
-  function handleOnClearAll() {
-    setFilters(defaultFilters);
+  function handleOnClearAll()
+  {
+    setFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
     setSearchText("");
     setSelectedCollection(undefined);
   }
@@ -177,7 +213,7 @@ export default function FiltersBar({
             selectedValues={filters.repositories}
             options={repositories.map((repository) => ({
               value: repository.id,
-              label: repository.name,
+              label: repository.name
             }))}
             onChange={(values: string[]) =>
               handleOnChangeFilter("repositories", values)
@@ -198,8 +234,11 @@ export default function FiltersBar({
           <FilterSelect
             label={t("field.features")}
             selectedValues={filters.features?.map(feature => computeFeatureOptionValue(feature)).filter((feature, index, array) => array.indexOf(feature) == index) || []}
-            options={featuresOptions.filter((option, index, array) => array.map(item => item.category).indexOf(option.category) == index).map(option => { return { value: computeFeatureOptionValue(option), label: option.category }; })}
-            onChange={(values: string[]) => {
+            options={featuresOptions.filter((option, index, array) => array.map(item => item.category).indexOf(option.category) == index).map(option => {
+              return { value: computeFeatureOptionValue(option), label: option.category };
+            })}
+            onChange={(values: string[]) =>
+            {
               const matchingOptions = featuresOptions.filter(option => values.indexOf(option.category) !== -1);
               handleOnChangeFilter("features", matchingOptions);
             }
@@ -225,21 +264,24 @@ export default function FiltersBar({
     );
   }
 
-  function computeSortingLabelDisplay() {
+  function computeSortingLabelDisplay()
+  {
     const sortBy = sortByOptions.find(
-      (option) => option.value === filters.sortBy,
+      (option) => option.value === filters.sortBy
     );
     const sortOrder = sortOrderOptions.find(
-      (option) => option.value === filters.sortOrder,
+      (option) => option.value === filters.sortOrder
     );
     return `${t("sort.sortedBy")} "${sortBy.label}" - ${sortOrder.label}`;
   }
 
   function handleOnChangeFilter(filterKey: string, value?: any) {
-    setFilters({
-      ...filters,
-      [filterKey]: value,
-    });
+    const updatedFilter = { ...filters, [filterKey]: value };
+    if (filterKey === "searchIn" && value === undefined) {
+      delete updatedFilter.keyword;
+      setSearchText("");
+    }
+    setFilters(updatedFilter);
   }
 
   function computeSearchInLabelDisplay() {
@@ -252,7 +294,7 @@ export default function FiltersBar({
   const commonPillProps = {
     size: "md" as MantineSize,
     onClick: () => setPopoverOpened(true),
-    withRemoveButton: true,
+    withRemoveButton: true
   };
 
   return (
@@ -297,22 +339,23 @@ export default function FiltersBar({
               <IconFilter stroke={1.3} />
             </ActionIcon>
           </Popover.Target>
-          <Popover.Dropdown>{renderFiltersDropdown()}</Popover.Dropdown>
+          <Popover.Dropdown>{filters !== undefined && renderFiltersDropdown()}</Popover.Dropdown>
         </Popover>
         <CollectionsBar
           currentFilters={filters}
           selectedCollection={selectedCollection}
           onApplyCollection={(collection) => {
-            const localFilters = collection === undefined ? defaultFilters : FiltersService.searchFilterToLocalFilters(collection.filter);
-            setFilters(localFilters);
-            setSearchText(localFilters.keyword ?? "");
+            const filter = collection === undefined ? defaultFilter : collection.filter;
+            const updatedFilters = FiltersService.searchFilterToLocalFilters(filter);
+            setFilters(updatedFilters);
+            setSearchText(updatedFilters.keyword ?? "");
             setSelectedCollection(collection);
           }}
         />
       </Flex>
 
       <Space h="sm" />
-      <Group>
+      {filters !== undefined && <Group>
         <Pill {...commonPillProps} withRemoveButton={false}>
           {computeSortingLabelDisplay()}
         </Pill>
@@ -363,6 +406,7 @@ export default function FiltersBar({
           </Pill>
         )}
       </Group>
+      }
     </div>
   );
 }

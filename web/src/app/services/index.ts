@@ -5,4 +5,5 @@ export { default as ApplicationService } from "./ApplicationService.ts";
 export { default as ExtensionsService } from "./ExtensionsService.ts";
 export { default as EventService } from "./EventService.ts";
 export { default as FiltersService } from "./FiltersService.ts";
+export type { FeaturesNamesOption } from "./FiltersService.ts";
 export { default as CollectionService } from "./CollectionService.ts";

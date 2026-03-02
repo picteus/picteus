@@ -74,13 +74,8 @@ const searchInOptions: WithValueAndLabel[] = [
   { value: "inFeatures", label: i18n.t("filters.inFeatures") },
 ];
 
-const defaultFilters: LocalFiltersType = {
-  keyword: undefined,
-  searchIn: undefined,
-  formats: undefined,
-  repositories: undefined,
-  sortBy: "modificationDate",
-  sortOrder: "-1",
+const defaultFilter: SearchFilter = {
+  sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false }
 };
 
 function localFiltersToSearchFilter(
@@ -134,9 +129,7 @@ function localFiltersToSearchFilter(
 }
 
 function searchFilterToLocalFilters(searchFilter: SearchFilter): LocalFiltersType {
-  const localFilters: LocalFiltersType = {
-    ...defaultFilters,
-  };
+  const localFilters: LocalFiltersType = {};
 
   const criteria = searchFilter.criteria;
   const origin = searchFilter.origin;
@@ -186,7 +179,7 @@ function searchFilterToLocalFilters(searchFilter: SearchFilter): LocalFiltersTyp
 }
 
 export default {
-  defaultFilters,
+  defaultFilter,
   sortByOptions,
   sortOrderOptions,
   searchInOptions,

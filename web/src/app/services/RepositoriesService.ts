@@ -7,7 +7,6 @@ import {
   RepositoryApiRepositoryDeleteRequest,
   RepositoryApiRepositorySynchronizeRequest
 } from "@picteus/ws-client";
-import { StorageService } from "./index.ts";
 
 const repositoryApi = new RepositoryApi();
 
@@ -32,14 +31,6 @@ async function remove(
   parameters: RepositoryApiRepositoryDeleteRequest,
 ): Promise<void> {
   await repositoryApi.repositoryDelete(parameters);
-  const searchFilters = StorageService.getSearchFilters();
-  StorageService.setSearchFilters({
-    ...searchFilters,
-    repositories: searchFilters?.repositories?.filter(
-      (id) => id !== parameters.id,
-    ),
-  });
-  return;
 }
 
 async function synchronize(

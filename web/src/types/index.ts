@@ -5,6 +5,7 @@ import {
   ImageFeatureType,
   ImageFormat,
   ImageSummary,
+  SearchFilter,
   SearchSortingProperty,
   UserInterfaceAnchor
 } from "@picteus/ws-client";
@@ -123,11 +124,13 @@ type BaseTab = {
   description?: string;
 };
 
+export type FilterOrCollectionId = { filter?: SearchFilter, collectionId?: number };
+
 type ViewTab = BaseTab & {
   type: "View";
   data: {
     images?: never;
-    criteria: LocalFiltersType;
+    filterOrCollectionId: FilterOrCollectionId;
   };
 };
 
@@ -135,7 +138,7 @@ type MasonryTab = BaseTab & {
   type: "Masonry";
   data: {
     imageIds: Array<{ imageId: string }>;
-    criteria?: never;
+    filterOrCollectionId?: never;
   };
 };
 

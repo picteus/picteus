@@ -118,9 +118,7 @@ export default function GalleryScreen() {
               </Container>
             ) : (
               <GalleryView
-                initialFilters={{
-                  ...tab.data.criteria,
-                }}
+                initialFilterOrCollectionId={tab.data.filterOrCollectionId}
               />
             )}
           </Tabs.Panel>

@@ -1,7 +1,8 @@
-import { FolderTypes, LocalFiltersType, TabsType } from "types";
+import { FilterOrCollectionId, FolderTypes, TabsType } from "types";
 import { VISUALIZER_DEFAULT_PANEL_SIZES } from "utils";
 
 const prefix = "picteus_";
+const TABS_KEY = prefix + "tabs";
 const SEARCH_FILTERS_KEY: string = prefix + "searchFilters";
 const ACTIVITY_FILTERS_KEY: string = prefix + "activityFilters";
 const VISUALIZER_PANEL_SIZES_KEY: string = prefix + "visualizerPanelSizes";
@@ -26,16 +27,18 @@ export default {
     field: string;
     value: string;
   }> => JSON.parse(localStorage.getItem(ACTIVITY_FILTERS_KEY) || "null"),
-  setSearchFilters: (filters: LocalFiltersType) =>
-    localStorage.setItem(SEARCH_FILTERS_KEY, JSON.stringify(filters)),
-  getSearchFilters: (): LocalFiltersType | null => {
-    const filters = JSON.parse(
+  setSearchFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId | undefined) => {
+    if (filterOrCollectionId === undefined) {
+      localStorage.removeItem(SEARCH_FILTERS_KEY);
+    }
+    else {
+      localStorage.setItem(SEARCH_FILTERS_KEY, JSON.stringify(filterOrCollectionId));
+    }
+  },
+  getSearchFilterOrCollectionId: (): FilterOrCollectionId | null => {
+    return JSON.parse(
       localStorage.getItem(SEARCH_FILTERS_KEY) || "null",
     );
-    if (filters?.criteria) {
-      return null;
-    }
-    return filters;
   },
 
   getVisualizerPanelSizes: (): number[] =>
@@ -89,10 +92,10 @@ export default {
     );
   },
   setGalleryTabs(tabs: TabsType[]) {
-    localStorage.setItem("tabs", JSON.stringify(tabs));
+    localStorage.setItem(TABS_KEY, JSON.stringify(tabs));
   },
   getGalleryTabs(): TabsType[] {
-    const tabs = localStorage.getItem("tabs");
+    const tabs = localStorage.getItem(TABS_KEY);
     if (tabs) {
       return JSON.parse(tabs);
     }
