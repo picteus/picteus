@@ -16,15 +16,16 @@ type CollectionsBarProps = {
 };
 
 export default function CollectionsBar({
-                                           currentFilter,
-                                           selectedCollection,
-                                           onApplyCollection,
-                                       }: CollectionsBarProps) {
+    currentFilter,
+    selectedCollection,
+    onApplyCollection,
+}: CollectionsBarProps) {
     const [t] = useTranslation();
     const [, addModal] = useActionModalContext();
     const confirmAction = useConfirmAction();
     const [loading, setLoading] = useState(false);
     const [collections, setCollections] = useState<Collection[]>([]);
+    const [menuOpened, setMenuOpened] = useState(false);
 
     useEffect(() => {
         void loadCollections();
@@ -46,13 +47,13 @@ export default function CollectionsBar({
         addModal({
             title: t("collections.create"),
             component: (
-              <CollectionModal
-                searchFilter={currentFilter}
-                onSuccess={(collection) => {
-                    void loadCollections();
-                    onApplyCollection(collection);
-                }}
-              />
+                <CollectionModal
+                    searchFilter={currentFilter}
+                    onSuccess={(collection) => {
+                        void loadCollections();
+                        onApplyCollection(collection);
+                    }}
+                />
             ),
         });
     }
@@ -69,36 +70,38 @@ export default function CollectionsBar({
     }
 
     function handleOnEdit(collection: Collection) {
+        setMenuOpened(false);
         addModal({
             title: t("collections.edit"),
             component: (
-              <CollectionModal
-                collection={collection}
-                searchFilter={collection.filter}
-                onSuccess={(updatedCollection) => {
-                    void loadCollections();
-                    onApplyCollection(updatedCollection);
-                }}
-              />
+                <CollectionModal
+                    collection={collection}
+                    searchFilter={collection.filter}
+                    onSuccess={(updatedCollection) => {
+                        void loadCollections();
+                        onApplyCollection(updatedCollection);
+                    }}
+                />
             ),
         });
     }
 
     function handleOnDelete(collection: Collection) {
+        setMenuOpened(false);
         confirmAction(
-          async () => {
-              try {
-                  await CollectionService.delete(collection.id);
-                  void loadCollections();
-                  onApplyCollection(undefined);
-              } catch (error) {
-                  notifyError((error as Error).message);
-              }
-          },
-          {
-              title: t("collections.confirmDeleteTitle", { defaultValue: "Delete Collection" }),
-              message: t("collections.deleteConfirmation", { defaultValue: "Are you sure you want to delete this collection?" })
-          }
+            async () => {
+                try {
+                    await CollectionService.delete(collection.id);
+                    void loadCollections();
+                    onApplyCollection(undefined);
+                } catch (error) {
+                    notifyError((error as Error).message);
+                }
+            },
+            {
+                title: t("collections.confirmDeleteTitle", { defaultValue: "Delete Collection" }),
+                message: t("collections.deleteConfirmation", { defaultValue: "Are you sure you want to delete this collection?" })
+            }
         );
     }
 
@@ -107,48 +110,48 @@ export default function CollectionsBar({
     }
 
     return (
-      <Button.Group>
-          <Menu shadow="md" width={250} position="bottom-end">
-              <Menu.Target>
-                  <Button variant="default" leftSection={<IconBookmark size={14} />} rightSection={<IconChevronDown size={14} />}>
-                      {selectedCollection ? truncateName(selectedCollection.name) : t("collections.title")}
-                  </Button>
-              </Menu.Target>
+        <Button.Group>
+            <Menu shadow="md" width={340} position="bottom-end" opened={menuOpened} onChange={setMenuOpened}>
+                <Menu.Target>
+                    <Button variant="default" leftSection={<IconBookmark size={14} />} rightSection={<IconChevronDown size={14} />}>
+                        {selectedCollection ? truncateName(selectedCollection.name) : t("collections.title")}
+                    </Button>
+                </Menu.Target>
 
-              <Menu.Dropdown>
-                  <Menu.Label>{t("collections.savedCollections")}</Menu.Label>
-                  {loading && <Box p="sm"><Center><Loader size="sm" /></Center></Box>}
-                  {!loading && collections.map((collection) => (
-                    <Menu.Item key={collection.id} onClick={() => onApplyCollection(collection)}>
-                        <Flex justify="space-between" align="center">
-                            <Text size="sm">{truncateName(collection.name)}</Text>
-                            <Flex gap="xs">
-                                <ActionIcon variant="subtle" size="xs" onClick={(event) => { event.stopPropagation(); handleOnEdit(collection); }}>
-                                    <IconEdit size={12} />
-                                </ActionIcon>
-                                <ActionIcon variant="subtle" size="xs" color="red" onClick={(event) => { event.stopPropagation(); handleOnDelete(collection); }}>
-                                    <IconTrash size={12} />
-                                </ActionIcon>
+                <Menu.Dropdown>
+                    <Menu.Label>{t("collections.savedCollections")}</Menu.Label>
+                    {loading && <Box p="sm"><Center><Loader size="sm" /></Center></Box>}
+                    {!loading && collections.map((collection) => (
+                        <Menu.Item key={collection.id} onClick={() => onApplyCollection(collection)}>
+                            <Flex justify="space-between" align="center">
+                                <Text size="sm">{truncateName(collection.name)}</Text>
+                                <Flex gap="xs">
+                                    <ActionIcon variant="subtle" size="xs" onClick={(event) => { event.stopPropagation(); handleOnEdit(collection); }}>
+                                        <IconEdit size={12} />
+                                    </ActionIcon>
+                                    <ActionIcon variant="subtle" size="xs" color="red" onClick={(event) => { event.stopPropagation(); handleOnDelete(collection); }}>
+                                        <IconTrash size={12} />
+                                    </ActionIcon>
+                                </Flex>
                             </Flex>
-                        </Flex>
-                    </Menu.Item>
-                  ))}
-              </Menu.Dropdown>
-          </Menu>
+                        </Menu.Item>
+                    ))}
+                </Menu.Dropdown>
+            </Menu>
 
-          {selectedCollection && (
-            <Tooltip label={t("collections.updateCurrent", { name: selectedCollection.name })}>
-                <Button variant="default" disabled={currentFilter !== undefined && JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(currentFilter))} onClick={() => void handleOnUpdateCurrent()} px="xs">
-                    <IconDeviceFloppy size={16} />
+            {selectedCollection && (
+                <Tooltip label={t("collections.updateCurrent", { name: selectedCollection.name })}>
+                    <Button variant="default" disabled={currentFilter !== undefined && JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(currentFilter))} onClick={() => void handleOnUpdateCurrent()} px="xs">
+                        <IconDeviceFloppy size={16} />
+                    </Button>
+                </Tooltip>
+            )}
+
+            <Tooltip label={t("collections.saveCurrent")}>
+                <Button variant="default" onClick={handleOnSaveCurrent} px="xs">
+                    <IconPlus size={16} />
                 </Button>
             </Tooltip>
-          )}
-
-          <Tooltip label={t("collections.saveCurrent")}>
-              <Button variant="default" onClick={handleOnSaveCurrent} px="xs">
-                  <IconPlus size={16} />
-              </Button>
-          </Tooltip>
-      </Button.Group>
+        </Button.Group>
     );
 }
