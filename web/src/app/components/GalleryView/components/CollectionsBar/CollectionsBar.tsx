@@ -2,22 +2,21 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Box, Button, Center, Flex, Loader, Menu, Text, Tooltip } from "@mantine/core";
 import { IconBookmark, IconChevronDown, IconDeviceFloppy, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
-import { Collection } from "@picteus/ws-client";
+import { Collection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
 
-import { CollectionService, FiltersService } from "app/services";
-import { LocalFiltersType } from "types";
+import { CollectionService } from "app/services";
 import { useActionModalContext, useConfirmAction } from "app/context";
 import { CollectionModal } from "app/components/ActionModal";
 import { notifyError, notifySuccess } from "utils";
 
 type CollectionsBarProps = {
-    currentFilters: LocalFiltersType;
+    currentFilter: SearchFilter;
     selectedCollection?: Collection;
     onApplyCollection: (collection: Collection | undefined) => void;
 };
 
 export default function CollectionsBar({
-                                           currentFilters,
+                                           currentFilter,
                                            selectedCollection,
                                            onApplyCollection,
                                        }: CollectionsBarProps) {
@@ -44,12 +43,11 @@ export default function CollectionsBar({
     }
 
     function handleOnSaveCurrent() {
-        const searchFilter = FiltersService.localFiltersToSearchFilter(currentFilters);
         addModal({
             title: t("collections.create"),
             component: (
               <CollectionModal
-                searchFilter={searchFilter}
+                searchFilter={currentFilter}
                 onSuccess={(collection) => {
                     void loadCollections();
                     onApplyCollection(collection);
@@ -60,11 +58,11 @@ export default function CollectionsBar({
     }
 
     async function handleOnUpdateCurrent() {
-        const searchFilter = FiltersService.localFiltersToSearchFilter(currentFilters);
         try {
-            await CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment);
+            const collection = await CollectionService.update(selectedCollection.id, selectedCollection.name, currentFilter, selectedCollection.comment);
             notifySuccess(t("collections.updateSuccess"));
             void loadCollections();
+            onApplyCollection(collection);
         } catch (error) {
             notifyError((error as Error).message);
         }
@@ -140,7 +138,7 @@ export default function CollectionsBar({
 
           {selectedCollection && (
             <Tooltip label={t("collections.updateCurrent", { name: selectedCollection.name })}>
-                <Button variant="default" onClick={() => void handleOnUpdateCurrent()} px="xs">
+                <Button variant="default" disabled={currentFilter !== undefined && JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(currentFilter))} onClick={() => void handleOnUpdateCurrent()} px="xs">
                     <IconDeviceFloppy size={16} />
                 </Button>
             </Tooltip>

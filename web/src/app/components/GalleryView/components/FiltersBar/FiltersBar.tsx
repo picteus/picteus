@@ -15,7 +15,14 @@ import {
   TextInput
 } from "@mantine/core";
 import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
-import { Collection, ImageFeatureFormat, ImageFeatureType, Repository } from "@picteus/ws-client";
+import {
+  Collection,
+  ImageFeatureFormat,
+  ImageFeatureType,
+  Repository,
+  SearchFilter,
+  SearchFilterFromJSON
+} from "@picteus/ws-client";
 
 import { useDebouncedCallback } from "app/hooks";
 import {
@@ -29,6 +36,17 @@ import { FilterSelect } from "app/components";
 import CollectionsBar from "../CollectionsBar/CollectionsBar.tsx";
 import { FilterOrCollectionId, LocalFiltersType, LocalFiltersTypeFeature } from "types";
 import { capitalizeText } from "utils";
+
+const {
+  defaultFilter,
+  sortByOptions,
+  sortOrderOptions,
+  searchInOptions,
+  formatsOptions,
+  computeFeaturesNamesOptions,
+  computeTagsOptions
+} = FiltersService;
+
 
 export default function FiltersBar({
   initialFilterOrCollectionId,
@@ -44,49 +62,34 @@ export default function FiltersBar({
   const [tagsOptions, setTagsOptions] = useState<{ value: string, label: string }[]>([]);
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [popoverOpened, setPopoverOpened] = useState(false);
-
-  const {
-    defaultFilter,
-    sortByOptions,
-    sortOrderOptions,
-    searchInOptions,
-    formatsOptions,
-    computeFeaturesNamesOptions,
-    computeTagsOptions
-  } = FiltersService;
-
-  const [filters, setFilters] = useState<LocalFiltersType>();
+  const [localFilters, setLocalFilters] = useState<LocalFiltersType>();
+  const [searchFilter, setSearchFilter] = useState<SearchFilter>();
   const [selectedCollection, setSelectedCollection] = useState<Collection>();
 
   const debouncedSearchCallback = useDebouncedCallback(async () =>
   {
-    setFilters({...filters, keyword: searchText, searchIn: filters.searchIn ?? ["inName"]});
+    setLocalFilters({...localFilters, keyword: searchText, searchIn: localFilters.searchIn ?? ((searchText === undefined || searchText === "") ? undefined : ["inName"])});
   }, 400);
 
   useEffect(() =>
   {
     const filterOrCollectionId = initialFilterOrCollectionId !== undefined ? initialFilterOrCollectionId : StorageService.getSearchFilterOrCollectionId();
-    if (filterOrCollectionId !== null)
-    {
-      if (filterOrCollectionId.collectionId !== undefined)
-      {
-        CollectionService.get(filterOrCollectionId.collectionId).then(collection =>
-        {
+    if (filterOrCollectionId !== null) {
+      if (filterOrCollectionId.collectionId !== undefined) {
+        CollectionService.get(filterOrCollectionId.collectionId).then(collection => {
           setSelectedCollection(collection);
-          setFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
-        }).catch((_error) =>
-        {
+          setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
+        }).catch((_error) => {
           // In case the collection does not exist anymore, we do nothing
         });
       }
-      else
-      {
+      else {
         setSelectedCollection(undefined);
-        setFilters(FiltersService.searchFilterToLocalFilters(filterOrCollectionId.filter));
+        setLocalFilters(FiltersService.searchFilterToLocalFilters(filterOrCollectionId.filter));
       }
     }
     else {
-      setFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
+      setLocalFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
     }
   }, [initialFilterOrCollectionId]);
 
@@ -127,23 +130,25 @@ export default function FiltersBar({
   }, []);
 
   useEffect(() => {
-    if (filters !== undefined && filters.repositories !== undefined) {
+    if (localFilters !== undefined && localFilters.repositories !== undefined) {
       // We remove the repositories that no longer exist
-      const existingRepositories = filters.repositories.filter(repositoryId =>
+      const existingRepositories = localFilters.repositories.filter(repositoryId =>
         repositories.find((repository) => repository.id === repositoryId)
       );
-      if (existingRepositories.length !== filters.repositories.length) {
-        setFilters({ ...filters, repositories: existingRepositories });
+      if (existingRepositories.length !== localFilters.repositories.length) {
+        setLocalFilters({ ...localFilters, repositories: existingRepositories });
       }
     }
-  }, [repositories, filters]);
+  }, [repositories, localFilters]);
 
   useEffect(() => {
-    let chooseCollection:boolean;
-    if (filters !== undefined) {
-      if (selectedCollection === undefined || JSON.stringify(FiltersService.searchFilterToLocalFilters(selectedCollection.filter)) !== JSON.stringify(filters)) {
+    const updatedSearchFilter = localFilters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(localFilters);
+    setSearchFilter(updatedSearchFilter);
+    let chooseCollection: boolean;
+    if (localFilters !== undefined) {
+      if (selectedCollection === undefined || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) !== JSON.stringify(SearchFilterFromJSON(updatedSearchFilter))) {
         chooseCollection = false;
-        const filterOrCollectionId = { filter: FiltersService.localFiltersToSearchFilter(filters) };
+        const filterOrCollectionId = { filter: updatedSearchFilter };
         StorageService.setSearchFilterOrCollectionId(filterOrCollectionId);
         onChange(filterOrCollectionId);
       }
@@ -156,11 +161,10 @@ export default function FiltersBar({
       StorageService.setSearchFilterOrCollectionId(updatedFilterOrCollectionId);
       onChange({ collectionId: selectedCollection.id });
     }
-  }, [selectedCollection, filters]);
+  }, [selectedCollection, localFilters]);
 
-  function handleOnClearAll()
-  {
-    setFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
+  function handleOnClearAll() {
+    setLocalFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
     setSearchText("");
     setSelectedCollection(undefined);
   }
@@ -177,7 +181,7 @@ export default function FiltersBar({
             <Text size="sm">{t("sort.sortBy")}</Text>
             <Select
               onChange={(value) => handleOnChangeFilter("sortBy", value)}
-              value={filters.sortBy}
+              value={localFilters.sortBy}
               placeholder={t("sort.sortByPlaceholder")}
               comboboxProps={{ withinPortal: false }}
               width={200}
@@ -189,7 +193,7 @@ export default function FiltersBar({
             <Text size="sm">{t("sort.sortOrder")}</Text>
             <Select
               onChange={(value) => handleOnChangeFilter("sortOrder", value)}
-              value={filters.sortOrder}
+              value={localFilters.sortOrder}
               placeholder={t("sort.sortOrderPlaceholder")}
               data={sortOrderOptions}
               comboboxProps={{ withinPortal: false }}
@@ -200,7 +204,7 @@ export default function FiltersBar({
         <Stack mt="xs">
           <FilterSelect
             label={t("filters.searchTextIn")}
-            selectedValues={filters.searchIn}
+            selectedValues={localFilters.searchIn}
             options={searchInOptions}
             onChange={(values: string[]) =>
               handleOnChangeFilter("searchIn", values)
@@ -210,7 +214,7 @@ export default function FiltersBar({
         <Stack mt="xs">
           <FilterSelect
             label={t("field.repositories")}
-            selectedValues={filters.repositories}
+            selectedValues={localFilters.repositories}
             options={repositories.map((repository) => ({
               value: repository.id,
               label: repository.name
@@ -223,7 +227,7 @@ export default function FiltersBar({
         <Stack mt="xs">
           <FilterSelect
             label={t("field.formats")}
-            selectedValues={filters.formats}
+            selectedValues={localFilters.formats}
             options={formatsOptions}
             onChange={(values: string[]) =>
               handleOnChangeFilter("formats", values)
@@ -233,7 +237,7 @@ export default function FiltersBar({
         <Stack mt="xs">
           <FilterSelect
             label={t("field.features")}
-            selectedValues={filters.features?.map(feature => computeFeatureOptionValue(feature)).filter((feature, index, array) => array.indexOf(feature) == index) || []}
+            selectedValues={localFilters.features?.map(feature => computeFeatureOptionValue(feature)).filter((feature, index, array) => array.indexOf(feature) == index) || []}
             options={featuresOptions.filter((option, index, array) => array.map(item => item.category).indexOf(option.category) == index).map(option => {
               return { value: computeFeatureOptionValue(option), label: option.category };
             })}
@@ -248,7 +252,7 @@ export default function FiltersBar({
         <Stack mt="xs">
           <FilterSelect
             label={t("field.tags")}
-            selectedValues={filters.tags}
+            selectedValues={localFilters.tags}
             options={tagsOptions}
             onChange={(values: string[]) =>
               handleOnChangeFilter("tags", values)
@@ -267,26 +271,26 @@ export default function FiltersBar({
   function computeSortingLabelDisplay()
   {
     const sortBy = sortByOptions.find(
-      (option) => option.value === filters.sortBy
+      (option) => option.value === localFilters.sortBy
     );
     const sortOrder = sortOrderOptions.find(
-      (option) => option.value === filters.sortOrder
+      (option) => option.value === localFilters.sortOrder
     );
     return `${t("sort.sortedBy")} "${sortBy.label}" - ${sortOrder.label}`;
   }
 
   function handleOnChangeFilter(filterKey: string, value?: any) {
-    const updatedFilter = { ...filters, [filterKey]: value };
+    const updatedFilter = { ...localFilters, [filterKey]: value };
     if (filterKey === "searchIn" && value === undefined) {
       delete updatedFilter.keyword;
       setSearchText("");
     }
-    setFilters(updatedFilter);
+    setLocalFilters(updatedFilter);
   }
 
   function computeSearchInLabelDisplay() {
     return searchInOptions
-      .filter((option) => filters.searchIn?.includes(option.value)) // Only selected
+      .filter((option) => localFilters.searchIn?.includes(option.value)) // Only selected
       .map((option) => option.label) // Map to label
       .join(", ");
   }
@@ -301,7 +305,7 @@ export default function FiltersBar({
     <div>
       <Flex gap={10} align="center">
         <TextInput
-          defaultValue={filters?.keyword}
+          defaultValue={localFilters?.keyword}
           leftSectionPointerEvents="none"
           leftSection={<IconSearch stroke={1.5} />}
           rightSection={
@@ -339,28 +343,27 @@ export default function FiltersBar({
               <IconFilter stroke={1.3} />
             </ActionIcon>
           </Popover.Target>
-          <Popover.Dropdown>{filters !== undefined && renderFiltersDropdown()}</Popover.Dropdown>
+          <Popover.Dropdown>{localFilters !== undefined && renderFiltersDropdown()}</Popover.Dropdown>
         </Popover>
         <CollectionsBar
-          currentFilters={filters}
+          currentFilter={searchFilter}
           selectedCollection={selectedCollection}
           onApplyCollection={(collection) => {
-            const filter = collection === undefined ? defaultFilter : collection.filter;
-            const updatedFilters = FiltersService.searchFilterToLocalFilters(filter);
-            setFilters(updatedFilters);
-            setSearchText(updatedFilters.keyword ?? "");
+            const updatedLocalFilters = FiltersService.searchFilterToLocalFilters(collection === undefined ? defaultFilter : collection.filter);
+            setLocalFilters(updatedLocalFilters);
+            setSearchText(updatedLocalFilters.keyword ?? "");
             setSelectedCollection(collection);
           }}
         />
       </Flex>
 
       <Space h="sm" />
-      {filters !== undefined && <Group>
+      {localFilters !== undefined && <Group>
         <Pill {...commonPillProps} withRemoveButton={false}>
           {computeSortingLabelDisplay()}
         </Pill>
 
-        {filters.searchIn?.length > 0 && (
+        {localFilters.searchIn?.length > 0 && (
           <Pill
             size="md"
             withRemoveButton
@@ -370,39 +373,39 @@ export default function FiltersBar({
           </Pill>
         )}
 
-        {filters.repositories?.length > 0 && (
+        {localFilters.repositories?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => handleOnChangeFilter("repositories")}
           >
             {`${t("field.repositories")} : ${repositories
-              .filter((r) => filters.repositories?.includes(r.id))
+              .filter((r) => localFilters.repositories?.includes(r.id))
               .map((r) => r.name)
               .join(", ")}`}
           </Pill>
         )}
-        {filters.formats?.length > 0 && (
+        {localFilters.formats?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => handleOnChangeFilter("formats")}
           >
-            {`${t("field.formats")} : ${[...filters.formats]?.join(", ")}`}
+            {`${t("field.formats")} : ${[...localFilters.formats]?.join(", ")}`}
           </Pill>
         )}
-        {filters.features?.length > 0 && (
+        {localFilters.features?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => handleOnChangeFilter("features")}
           >
-            {`${t("field.features")} : ${[...filters.features]?.map(feature => feature.category).filter((feature, index, array) => array.indexOf(feature) == index).join(", ")}`}
+            {`${t("field.features")} : ${[...localFilters.features]?.map(feature => feature.category).filter((feature, index, array) => array.indexOf(feature) == index).join(", ")}`}
           </Pill>
         )}
-        {filters.tags?.length > 0 && (
+        {localFilters.tags?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => handleOnChangeFilter("tags")}
           >
-            {`${t("field.tags")} : ${[...filters.tags]?.join(", ")}`}
+            {`${t("field.tags")} : ${[...localFilters.tags]?.join(", ")}`}
           </Pill>
         )}
       </Group>

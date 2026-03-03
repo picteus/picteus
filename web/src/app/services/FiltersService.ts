@@ -8,6 +8,7 @@ import {
   SearchFeatureLogicalOperator,
   SearchFeatures,
   SearchFilter,
+  SearchFilterFromJSON,
   SearchKeyword,
   SearchOriginNature,
   SearchSortingProperty,
@@ -86,7 +87,7 @@ function localFiltersToSearchFilter(
     const inMetadata = filters.searchIn?.includes("inMetadata") || false;
     const inFeatures = filters.searchIn?.includes("inFeatures") || false;
 
-    if ((filters.keyword === undefined || filters.keyword === "") && !inName && !inMetadata && !inFeatures) {
+    if ((filters.keyword === undefined || filters.keyword === "") || (!inName && !inMetadata && !inFeatures)) {
       return {};
     }
     return { keyword : { text: filters.keyword || "", inName, inMetadata, inFeatures } };
@@ -113,7 +114,7 @@ function localFiltersToSearchFilter(
     return filters.tags?.length ? { tags: { values: filters.tags } } : {};
   }
 
-  return {
+  return SearchFilterFromJSON({
     criteria: {
       ...computeSearchKeyword(),
       formats: filters.formats?.length > 0 ? filters.formats : undefined,
@@ -125,7 +126,7 @@ function localFiltersToSearchFilter(
       property: filters.sortBy,
       isAscending: filters.sortOrder === "1"
     }
-  };
+  });
 }
 
 function searchFilterToLocalFilters(searchFilter: SearchFilter): LocalFiltersType {
@@ -139,9 +140,15 @@ function searchFilterToLocalFilters(searchFilter: SearchFilter): LocalFiltersTyp
     if (criteria.keyword) {
       localFilters.keyword = criteria.keyword.text;
       const searchIn: string[] = [];
-      if (criteria.keyword.inName) searchIn.push("inName");
-      if (criteria.keyword.inMetadata) searchIn.push("inMetadata");
-      if (criteria.keyword.inFeatures) searchIn.push("inFeatures");
+      if (criteria.keyword.inName) {
+        searchIn.push("inName");
+      }
+      if (criteria.keyword.inMetadata) {
+        searchIn.push("inMetadata");
+      }
+      if (criteria.keyword.inFeatures) {
+        searchIn.push("inFeatures");
+      }
       localFilters.searchIn = searchIn.length > 0 ? searchIn : undefined;
     }
 
