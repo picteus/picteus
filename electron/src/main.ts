@@ -693,7 +693,8 @@ export class ApplicationWrapper
   private async handleAutoUpdate(window: Electron.CrossProcessExports.BrowserWindow): Promise<void>
   {
     const checkForUpdate = environment === "production" && (process.platform === "win32" || process.platform === "darwin");
-    if (checkForUpdate === true)
+    // TODO: we disable the auto-update temporarily
+    if (Math.random() > 1 && checkForUpdate === true)
     {
       // We check whether there is a newer version of the application
       try
