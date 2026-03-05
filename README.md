@@ -145,6 +145,10 @@ The container image specifications are classically defined through the `Dockerfi
 
 To build the container image of the server application via Docker, which also embeds the web application, run the `npm run docker:build` script from the root directory, which creates an image with the `koppasoft/picteus:latest` tag.
 
+#### Publish
+
+To publish a new version of the container image, run the `npm run docker:publish` script from the root directory, which pushes it against Docker Hub.
+
 #### Run
 
 When running the container image through Docker, you should beforehand declare a volume so that the application data are persisted beyond the container execution, use the `docker volume create picteus` command to create a Docker volume named `picteus`.
