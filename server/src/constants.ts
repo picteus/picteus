@@ -10,6 +10,11 @@ export const product =
         email: "edouard@koppasoft.com",
         url: "https://www.linkedin.com/in/edouardmercier"
       },
+    license:
+      {
+        name: "GNU Affero General Public License",
+        url: "https://en.wikipedia.org/wiki/GNU_Affero_General_Public_License"
+      },
     company:
       {
         name: "KoppaSoft",

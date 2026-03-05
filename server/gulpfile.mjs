@@ -363,9 +363,9 @@ export const copyAssets = gulp.series(() =>
 
 const packageId = "picteus-ws-client";
 const npmPackageId = "@picteus/ws-client";
-// const packageName = "Picteus client library";
 const packageDescription = "The Picteus client library";
 const packageUrl = "https://github.com/picteus/Picteus";
+const npmRegistry = "https://registry.npmjs.org";
 const gitUrl = "git@github.com:picteus/Picteus.git";
 const dottedPackageName = "com.koppasoft.picteus.client";
 const openApiFileName = "openapi.json";
@@ -410,7 +410,7 @@ const generateOpenApiClient = (languageAndVariant) =>
     languageAndVariant === LanguageAndVariants.Python
       ? ""
       : `,modelPackage="${packagePrefix}model",apiPackage="${packagePrefix}api"`;
-  const licenseName = info.license === undefined ? undefined : `${languageAndVariant === LanguageAndVariants.Python ? "LicenseRef-" : ""}${info.license.name}`;
+  const licenseName = info.license === undefined ? undefined : `${languageAndVariant === LanguageAndVariants.Python ? "AGPL-3.0-or-later" : info.license.name}`;
 
   const actualOpenApiFilePath = path.join(openApiGeneratedDirectoryPath, openApiFileName);
   if (fs.existsSync(openApiGeneratedDirectoryPath) === false)
@@ -450,14 +450,17 @@ const generateOpenApiClient = (languageAndVariant) =>
     generators = {};
     generatorCli["generators"] = generators;
   }
+  const gitRepoId = "picteus";
+  const gitUserId = "picteus";
   const additionalProperties =
     {
       "packageName": actualPackageName,
-      "gitRepoId": "koppasoft/Picteus",
-      "gitUserId": "koppasoft",
+      "gitHost": "github.com",
+      "gitRepoId": gitRepoId,
+      "gitUserId": gitUserId,
       "npmName": npmPackageId,
       "npmVersion": packageVersion,
-      "npmRepository": packageUrl,
+      "npmRepository": npmRegistry,
       "projectDescription": packageDescription,
       "moduleName": npmPackageId,
       "projectName": languageAndVariant === LanguageAndVariants.JavaScript || languageAndVariant === LanguageAndVariants.TypeScript ? npmPackageId : packageId,
@@ -510,14 +513,17 @@ const generateOpenApiClient = (languageAndVariant) =>
       "generatorName": generatorName,
       "inputSpec": inputSpec,
       "output": computeOpenApiTargetDirectoryPath(languageAndVariant),
-      "additionalProperties": additionalProperties
+      "additionalProperties": additionalProperties,
       // Those options cause the generator process to fail
       // "globalProperties":
       //   {
       //     "apiTests": true,
       //     "modelTests": true,
       //     "modelDocs": true
-      //   }
+      //   },
+      // We define the 2 following properties outside from the 'additionalProperties' property, because of a bug
+      gitUserId,
+      gitRepoId
     };
 
   const resortToConfigurationFile = Math.random() <= 1;
@@ -532,7 +538,7 @@ const generateOpenApiClient = (languageAndVariant) =>
   else
   {
     fs.rmSync(openApiToolsFilePath);
-    const openApiCommand = `openapi-generator-cli generate -g ${languageAndVariant} -i "${actualOpenApiFilePath}" -o "${computeOpenApiTargetDirectoryPath(languageAndVariant)}" --additional-properties=packageName="${actualPackageName}"${packagesFragment},gitRepoId="koppasoft/Picteus",gitUserId="koppasoft",npmName=${npmPackageId},npmVersion=${packageVersion},npmRepository="${packageUrl}",projectDescription="'${packageDescription}'",moduleName="${npmPackageId}",projectName="${languageAndVariant === LanguageAndVariants.JavaScript || languageAndVariant === LanguageAndVariants.TypeScript ? npmPackageId : packageId}",groupId="${dottedPackageName}",artifactId="${packageId}",artifactVersion="${packageVersion}",withInterfaces=true,paramNaming=camelCase,enumPropertyNaming=PascalCase,prefixParameterInterfaces=true,removeOperationIdPrefix=false,useSingleRequestParameter=true,supportsES6=false,legacyDiscriminatorBehavior=false,importFileExtension=,platform=node,packageVersion="${packageVersion}",packageUrl="${packageUrl}",artifactUrl="${packageUrl}",artifactDescription="'${packageDescription}'",scmConnection="${gitUrl}",scmDeveloperConnection="${gitUrl}",scmUrl="${packageUrl}"` + (info.license === undefined ? "" : `,licenseName="'${licenseName}'",licenseInfo="'${licenseName}'"`) + `,developerEmail="${info.contact.email}",developerName="'${info.contact.name}'"` + (info.license === undefined ? "" : `,developerOrganization="${info.license.name}"`) + (info.license === undefined ? "" : `,developerOrganizationUrl="${info.license.url}"`) + ` --global-property=apiTests=true,modelTests=true,modelDocs=true`;
+    const openApiCommand = `openapi-generator-cli generate -g ${languageAndVariant} -i "${actualOpenApiFilePath}" -o "${computeOpenApiTargetDirectoryPath(languageAndVariant)}" --additional-properties=packageName="${actualPackageName}"${packagesFragment},gitRepoId="${gitRepoId}",gitUserId="${gitRepoId}",npmName=${npmPackageId},npmVersion=${packageVersion},npmRepository="${packageUrl}",projectDescription="'${packageDescription}'",moduleName="${npmPackageId}",projectName="${languageAndVariant === LanguageAndVariants.JavaScript || languageAndVariant === LanguageAndVariants.TypeScript ? npmPackageId : packageId}",groupId="${dottedPackageName}",artifactId="${packageId}",artifactVersion="${packageVersion}",withInterfaces=true,paramNaming=camelCase,enumPropertyNaming=PascalCase,prefixParameterInterfaces=true,removeOperationIdPrefix=false,useSingleRequestParameter=true,supportsES6=false,legacyDiscriminatorBehavior=false,importFileExtension=,platform=node,packageVersion="${packageVersion}",packageUrl="${packageUrl}",artifactUrl="${packageUrl}",artifactDescription="'${packageDescription}'",scmConnection="${gitUrl}",scmDeveloperConnection="${gitUrl}",scmUrl="${packageUrl}"` + (info.license === undefined ? "" : `,licenseName="'${licenseName}'",licenseInfo="'${licenseName}'"`) + `,developerEmail="${info.contact.email}",developerName="'${info.contact.name}'"` + (info.license === undefined ? "" : `,developerOrganization="${info.license.name}"`) + (info.license === undefined ? "" : `,developerOrganizationUrl="${info.license.url}"`) + ` --global-property=apiTests=true,modelTests=true,modelDocs=true`;
     return runGulpRun(openApiCommand, { cwd: serverDirectoryPath });
   }
 };

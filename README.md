@@ -79,11 +79,17 @@ You may access to the SwaggerUI relative the OpenAPI specifications, captured th
 
 - When changing the OpenAPI contract, run the `openApi:generateOpenApi` script to regenerate the `openapi.json` file.
   - Think of updating the `config.apiVersion` property.
-  - The `npm run openApi:typeScript:generateAndPackage` script generates the TypeScript OpenAPI client library into the directory `../tmp/openapi/typescript-fetch`.
-  - The `npm run openApi:python:generateAndPackage` script generates the Python OpenAPI client library into the directory `../tmp/openapi/python`.
+  - The `npm run openApi:typeScript:generateAndPackage` script generates the TypeScript OpenAPI client library into the directory `../generated/openapi/typescript-fetch`.
+  - The `npm run openApi:python:generateAndPackage` script generates the Python OpenAPI client library into the directory `../generated/openapi/python`.
   - The `npm run openApi:generateAndPackage` script generates the 2 previous packages.
 
 - Whenever the database schema changes, a file in the `secrets` or `assets` directory changes, run the `npm run build:copy` script to update the Electron application `dist` directory.
+
+#### API web services client library publication
+
+To publish a new version of the API web services client library, run the `npm run wsClient:publish` script, after having built the libraries via the previous `openApi:generateAndPackage` script:
+- for publishing the Node.js package on npm, use the `npm login --scope=@koppasoft` command to log in first ;
+- for publishing the Python package on PyPi, declare an API token at https://pypi.org/manage/account/token/ beforehand.
 
 ### Extensions
 
@@ -96,7 +102,9 @@ For building the SDKs and extensions:
 - run the `npm run instances:build` script to build the extensions ;
 - run the `npm run build` script to build both.
 
-To publish a new version of the SDKs or extensions, run the `npm run sdk:publish` script, after having built the SDKs via the `sdk:public:build` script:
+### SDKs publication
+
+To publish a new version of the SDKs, run the `npm run sdk:publish` script, after having built the SDKs via the `sdk:public:build` script:
 - for publishing the Node.js SDK package on npm, use the `npm login --scope=@koppasoft` command to log in first ;
 - for publishing the Python SDK package on PyPi, declare an API token at https://pypi.org/manage/account/token/ beforehand.
 

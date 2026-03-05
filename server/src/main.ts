@@ -246,7 +246,7 @@ class InternalServer
         description: "Forces the caller to be authenticated.",
         in: "header"
       };
-    const documentBuilder: DocumentBuilder = new DocumentBuilder().setOpenAPIVersion("3.1.0").setTitle(product.name).setDescription(`The ${product.name} API`).setVersion(product.apiVersion).setLicense(product.company.name, product.company.url).setContact(product.author.name, product.author.url, product.author.email).addServer(paths.webServicesBaseUrl, `The ${product.name} local HTTP server`).addApiKey(apiKeyOptions, name).addSecurityRequirements(name, []);
+    const documentBuilder: DocumentBuilder = new DocumentBuilder().setOpenAPIVersion("3.1.0").setTitle(product.name).setDescription(`The ${product.name} API`).setVersion(product.apiVersion).setLicense(product.license.name, product.license.url).setContact(product.author.name, product.author.url, product.author.email).addServer(paths.webServicesBaseUrl, `The ${product.name} local HTTP server`).addApiKey(apiKeyOptions, name).addSecurityRequirements(name, []);
 
     const document: OpenAPIObject = SwaggerModule.createDocument(application, documentBuilder.build(),
       {
@@ -393,6 +393,7 @@ async function run(): Promise<void>
         }
       }
 
+      // noinspection RequiredAttributes
       program.command("generateOpenApi", "Generates the OAS OpenAPI JSON specifications file").option("--filePath <path>", "Indicates the path of the JSON file to produce", {
         validator: CaporalValidator.STRING,
         default: undefined
@@ -403,6 +404,7 @@ async function run(): Promise<void>
         return server.writeOpenApi(filePath);
       });
 
+      // noinspection RequiredAttributes
       program.command("generateFunctionCalling", "Generates the function calling specifications file").option("--filePath <path>", "Indicates the path of the JSON file to produce", {
         validator: CaporalValidator.STRING,
         default: undefined
@@ -413,6 +415,7 @@ async function run(): Promise<void>
         return server.writeFunctionCalling(filePath);
       });
 
+      // noinspection RequiredAttributes
       program.command("generateExtension", "Generates the scaffolding of an extension")
         .option("--directoryPath <path>", "Indicates the path where the extension should be generated", {
           validator: CaporalValidator.STRING,

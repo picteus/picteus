@@ -86,7 +86,10 @@
     "openApi:javaScript:generateAndPackage": "npm-run-all openApi:javaScript:generate openApi:javaScript:package",
     "openApi:python:generateAndPackage": "npm-run-all openApi:python:generate openApi:python:package",
     "openApi:generateAndPackage": "npm-run-all openApi:typeScript:generateAndPackage openApi:python:generateAndPackage",
-    "openApi:typeScript:install": "gulp installTypeScriptOpenApiClient"
+    "openApi:typeScript:install": "gulp installTypeScriptOpenApiClient",
+    "wsClient:typescript:publish": "cd ../generated/openapi/typescript-fetch && npm publish --access=public",
+    "wsClient:python:publish": "cd ../generated/openapi/python && pip install twine && twine upload -r pypi './dist/*'",
+    "wsClient:publish": "npm-run-all wsClient:typescript:publish wsClient:python:publish"
   },
   "devDependencies": {
     "npm-run-all": "4.1.5",
@@ -97,7 +100,7 @@
     "@nestjs/cli": "11.0.10",
     "@nestjs/testing": "11.1.9",
     "javascript-obfuscator": "4.1.1",
-    "@openapitools/openapi-generator-cli": "2.25.0",
+    "@openapitools/openapi-generator-cli": "2.30.1",
     "del": "5.1.0",
     "gulp": "4.0.2",
     "gulp-run": "1.7.1",

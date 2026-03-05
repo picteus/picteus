@@ -3535,8 +3535,8 @@
       "email": "edouard@koppasoft.com"
     },
     "license": {
-      "name": "KoppaSoft",
-      "url": "https://www.koppasoft.com"
+      "name": "GNU Affero General Public License",
+      "url": "https://en.wikipedia.org/wiki/GNU_Affero_General_Public_License"
     }
   },
   "tags": [
