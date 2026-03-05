@@ -15,6 +15,7 @@ import {
   PicteusExtension,
   PromptKind,
   type Repository,
+  SearchOriginNature,
   SettingsValue
 } from "@picteus/extension-sdk";
 
@@ -103,15 +104,19 @@ class ReplicateExtension extends PicteusExtension
       const output = this.computeOutput(prediction.output);
       if (output !== undefined)
       {
-        const summaryList = await this.getRepositoryApi().repositorySearchImages({
-          id: this.repository.id, criteria:
+        const summaryList = await this.getImageApi().imageSearch({
+          filter:
             {
-              keyword:
+              origin: { kind: SearchOriginNature.Repositories, ids: [this.repository.id] },
+              criteria:
                 {
-                  text: prediction.id + "." + output.extension,
-                  inName: true,
-                  inMetadata: false,
-                  inFeatures: false
+                  keyword:
+                    {
+                      text: prediction.id + "." + output.extension,
+                      inName: true,
+                      inMetadata: false,
+                      inFeatures: false
+                    }
                 }
             }
         });
