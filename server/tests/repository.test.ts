@@ -26,6 +26,7 @@ import {
   RepositoryStatus,
   SearchCriteria,
   SearchFilter,
+  SearchOriginType,
   SearchParameters,
   SearchProperties,
   SearchPropertyRange,
@@ -862,6 +863,16 @@ describe("Repository", () =>
     await base.getImageController().setTags(Base.allPolicyContext, imageSummary.id, extension.manifest.id, ["tag"]);
     await base.getImageController().setFeatures(Base.allPolicyContext, imageSummary.id, extension.manifest.id, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "name", "string")]);
     await base.getImageController().setEmbeddings(Base.allPolicyContext, imageSummary.id, extension.manifest.id, new ImageEmbeddings([1, 2, 3]));
+    const filter =
+      {
+        criteria: { formats: [ImageFormat.PNG] },
+        origin:
+          {
+            kind: SearchOriginType.Repositories,
+            ids: [repositoryId]
+          }
+      };
+    const collection = await base.getCollectionController().create("name", undefined, filter);
 
     const notifier = base.getNotifier();
     const repositoryListener = base.computeEventListener();
@@ -875,6 +886,12 @@ describe("Repository", () =>
     expect((await base.getEntitiesProvider().imageTag.findMany()).length).toBe(0);
     expect((await base.getEntitiesProvider().imageFeature.findMany()).length).toBe(0);
     expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageSummary.id, extension.manifest.id)).toBeUndefined();
+    {
+      // We check that the repository has been removed from the collection, leaving the rest of the filter intact
+      const updatedCollection = await base.getCollectionController().get(collection.id);
+      expect(updatedCollection.filter.origin?.ids).toEqual([]);
+      expect(updatedCollection.filter.criteria).toEqual(filter.criteria);
+    }
     await waitForExpect(() =>
     {
       expect(imageListener).toHaveBeenCalledTimes(1);

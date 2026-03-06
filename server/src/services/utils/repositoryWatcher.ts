@@ -6,7 +6,8 @@ import {
   fileWithProtocol,
   ImageFormat,
   ImageFormats,
-  Repository
+  Repository,
+  SearchOriginType
 } from "../../dtos/app.dtos";
 import { logger } from "../../logger";
 import { parametersChecker } from "./parametersChecker";
@@ -15,8 +16,8 @@ import { ImageDeclarationManager } from "../../threads/managers";
 import { VectorDatabaseAccessor } from "../databaseProviders";
 import { PersistenceProvider } from "../../persistence";
 import { SearchFileStats, SearchService } from "../imageServices";
-import { ExtensionTaskExecutor } from "../extensionTaskExecutor";
 import { WatcherEvent, WatcherTerminator, watchPath } from "./pathWatcher";
+import { CollectionService } from "../collectionService";
 
 
 export class RepositoryWatcher
@@ -35,7 +36,7 @@ export class RepositoryWatcher
     return RepositoryWatcher.instances[repositoryId];
   }
 
-  static async start(repository: Repository, persistenceProvider: PersistenceProvider, vectorDatabaseAccessor: VectorDatabaseAccessor, notifier: Notifier, extensionTaskExecutor: ExtensionTaskExecutor): Promise<void>
+  static async start(repository: Repository, persistenceProvider: PersistenceProvider, vectorDatabaseAccessor: VectorDatabaseAccessor, notifier: Notifier, collectionService: CollectionService): Promise<void>
   {
     const id = repository.id;
     if (RepositoryWatcher.get(id) !== undefined)
@@ -43,7 +44,7 @@ export class RepositoryWatcher
       parametersChecker.throwInternalError(`There is already a watcher for the repository with id '${id}'`);
     }
     logger.info(`Starting a watcher for the repository with id '${id}'`);
-    const watcher = new RepositoryWatcher(id, repository.getLocation().toFilePath(), ImageFormats, vectorDatabaseAccessor);
+    const watcher = new RepositoryWatcher(id, repository.getLocation().toFilePath(), ImageFormats, vectorDatabaseAccessor, collectionService);
     RepositoryWatcher.instances[id] = watcher;
     RepositoryWatcher.startedRepositories.push(repository);
     await watcher.start(persistenceProvider, notifier);
@@ -89,7 +90,7 @@ export class RepositoryWatcher
 
   private ignoredRelativeFilePaths: string[] = [];
 
-  private constructor(private readonly repositoryId: string, private readonly directoryPath: string, private readonly imageFormats: ImageFormat[], private readonly vectorDatabaseAccessor: VectorDatabaseAccessor)
+  private constructor(private readonly repositoryId: string, private readonly directoryPath: string, private readonly imageFormats: ImageFormat[], private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly collectionService: CollectionService)
   {
   }
 
@@ -226,7 +227,10 @@ export class RepositoryWatcher
               logger.debug(`The file '${filePath}' has been deleted${image !== undefined ? "" : " but it was not indexed"}`);
               if (image !== undefined)
               {
+                // We delete the image embeddings
                 await this.vectorDatabaseAccessor.deleteImagesEmbeddings([image.id]);
+                // We remove the image from collections
+                await this.collectionService.clearFromOrigin(SearchOriginType.Images, image.id);
                 await imageDelegate.delete({ where: { id: image.id } });
                 notifier.emit(EventEntity.Image, ImageEventAction.Deleted, undefined, { id: image.id });
               }

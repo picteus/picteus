@@ -36,6 +36,7 @@ import {
   SearchFeatureLogicalOperator,
   SearchFilter,
   SearchImagesOrigin,
+  SearchOriginType,
   SearchParameters,
   SearchRepositoriesOrigin,
   TextualPrompt,
@@ -764,6 +765,16 @@ describe("Image with module", () =>
     await base.getImageController().setTags(Base.allPolicyContext, image.id, extension.manifest.id, ["tag"]);
     await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension.manifest.id, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "name", "string")]);
     await base.getImageController().setEmbeddings(Base.allPolicyContext, image.id, extension.manifest.id, new ImageEmbeddings([1, 2, 3]));
+    const filter =
+      {
+        criteria: { formats: [ImageFormat.PNG] },
+        origin:
+          {
+            kind: SearchOriginType.Images,
+            ids: [image.id]
+          }
+      };
+    const collection = await base.getCollectionController().create("name", undefined, filter);
 
     {
       // We assess with an inexistent image
@@ -790,6 +801,12 @@ describe("Image with module", () =>
       expect((await base.getEntitiesProvider().imageTag.findMany()).length).toBe(0);
       expect((await base.getEntitiesProvider().imageFeature.findMany()).length).toBe(0);
       expect(await base.getVectorDatabaseAccessor().getEmbeddings(image.id, extension.manifest.id)).toBeUndefined();
+      {
+        // We check that the image has been removed from the collection, leaving the rest of the filter intact
+        const updatedCollection = await base.getCollectionController().get(collection.id);
+        expect(updatedCollection.filter.origin?.ids).toEqual([]);
+        expect(updatedCollection.filter.criteria).toEqual(filter.criteria);
+      }
     }
   });
 

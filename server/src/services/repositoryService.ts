@@ -28,6 +28,7 @@ import {
   RepositoryList,
   RepositoryLocationType,
   RepositoryStatus,
+  SearchOriginType,
   toFileExtension
 } from "../dtos/app.dtos";
 import { Json } from "../bos";
@@ -44,8 +45,8 @@ import {
 } from "./utils/images";
 import { plainToInstanceViaJSON } from "../utils";
 import { ExtensionRegistry } from "./extensionRegistry";
-import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import { ImageService, SearchService } from "./imageServices";
+import { CollectionService } from "./collectionService";
 
 
 @Injectable()
@@ -60,7 +61,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   // @ts-ignore
   private notifier: Notifier;
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly eventEmitter: EventEmitter2, private readonly moduleRef: ModuleRef)
+  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly collectionService: CollectionService, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly eventEmitter: EventEmitter2, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating a RepositoryService");
   }
@@ -300,7 +301,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       if (wasWatching === true)
       {
         // We resume the watching, in case the synchronization was successful
-        await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifier, this.extensionTaskExecutor);
+        await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifier, this.collectionService);
       }
       const updatedRepository = await updateStatus();
       if (onSuccess !== undefined)
@@ -329,7 +330,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     if (isStart === true)
     {
-      await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifier, this.extensionTaskExecutor);
+      await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifier, this.collectionService);
     }
     else
     {
@@ -357,6 +358,8 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       // We stop any pending watcher
       await RepositoryWatcher.stop(repository, this.notifier);
     }
+    // We remove the repository from the collections
+    await this.collectionService.clearFromOrigin(SearchOriginType.Repositories, id);
     const imageIds: string[] = (await this.entitiesProvider.images.findMany({
       where: { repositoryId: id },
       select: { id: true }

@@ -4,7 +4,7 @@ import { instanceToPlain } from "class-transformer";
 import { Collection as PersistedCollection } from ".prisma/client";
 
 import { logger } from "../logger";
-import { Collection, FieldLengths, SearchFilter } from "../dtos/app.dtos";
+import { Collection, FieldLengths, SearchFilter, SearchOriginType } from "../dtos/app.dtos";
 import { EntitiesProvider } from "./databaseProviders";
 import { parametersChecker } from "./utils/parametersChecker";
 import { plainToInstanceViaJSON } from "../utils";
@@ -96,6 +96,32 @@ export class CollectionService
     logger.debug(`Deleting the collection with id '${id}'`);
     const entity = await this.getPersistedCollection(id);
     await this.entitiesProvider.collections.delete({ where: { id: entity.id } });
+  }
+
+  async clearFromOrigin(type: SearchOriginType, id: string): Promise<void>
+  {
+    await Promise.all((await this.entitiesProvider.collections.findMany()).map(persistedCollection =>
+    {
+      const collection = plainToInstanceViaJSON(Collection, persistedCollection);
+      const kind = collection.filter.origin?.kind;
+      if (kind === type)
+      {
+        const origin = collection.filter.origin!;
+        const index = origin?.ids.indexOf(id);
+        if (index !== -1)
+        {
+          origin.ids.splice(index, 1);
+          return this.entitiesProvider.collections.update({
+            where: { id: persistedCollection.id },
+            data: { filter: instanceToPlain(collection.filter) }
+          });
+        }
+        else
+        {
+          return Promise.resolve();
+        }
+      }
+    }));
   }
 
   private async getPersistedCollection(id: number): Promise<PersistedCollection>
