@@ -8,6 +8,7 @@ import "@mantine/dates/styles.css";
 import "@mantine/dropzone/styles.css";
 
 import RepositoryWidget from "./widgets/RepositoryWidget";
+import CollectionWidget from "./widgets/CollectionWidget";
 
 
 type RsfjFormType = {
@@ -21,17 +22,14 @@ type UIProperty = { property: string, ui: Record<string, any> };
 const uiPropertyName = "ui";
 
 function stripAndExtractParametersUiProperties(parameters: Record<string, any>): UIProperty[] {
-  const uis: UIProperty [] = [];
+  const uis: UIProperty[] = [];
   const properties = parameters.properties;
-  if (properties !== undefined)
-  {
-    for (const property in properties)
-    {
+  if (properties !== undefined) {
+    for (const property in properties) {
       const childProperty = properties[property];
       const ui: Record<string, any> = childProperty[uiPropertyName];
       delete childProperty[uiPropertyName];
-      if (ui !== undefined)
-      {
+      if (ui !== undefined) {
         uis.push({ property, ui });
       }
     }
@@ -46,11 +44,10 @@ export function extractSchemaAndUiSchema(parameters: object): {
   const deepCopiedParameters: RJSFSchema = JSON.parse(JSON.stringify(parameters));
   const uiProperties = stripAndExtractParametersUiProperties(deepCopiedParameters);
   const uiSchema: UiSchema = {};
-  uiProperties.forEach((uiProperty: UIProperty) =>
-  {
+  uiProperties.forEach((uiProperty: UIProperty) => {
     uiSchema[uiProperty.property] = { "ui:options": uiProperty.ui };
   });
-  return { schema:deepCopiedParameters, uiSchema };
+  return { schema: deepCopiedParameters, uiSchema };
 }
 
 const Form = withTheme(MantineTheme);
@@ -97,6 +94,7 @@ export default function RjsfForm({
   }
   const widgets: RegistryWidgetsType = {
     repository: RepositoryWidget,
+    collection: CollectionWidget,
   };
 
   return (
