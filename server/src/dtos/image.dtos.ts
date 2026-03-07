@@ -20,6 +20,7 @@ import {
   NotEquals,
   ValidateNested
 } from "class-validator";
+import { Type as NestType } from "@nestjs/common";
 import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from "@nestjs/swagger";
 
 import { TypeBasedValidation } from "./validators.dtos";
@@ -31,6 +32,7 @@ import {
   extensionIdSchema,
   FieldLengths,
   fileUrlPattern,
+  generateItemsResultClass,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFeatureValue,
@@ -857,10 +859,7 @@ export type AllExtensionImageTags = ExtensionImageTag[];
  */
 export type ImageEmbedding = number;
 
-/**
- * An image embeddings vector.
- */
-@ApiSchema({ description: "A vectorial representation of an image" })
+@ApiSchema({ description: "A vectorial representation of an image, i.e. an image embeddings vector" })
 export class ImageEmbeddings
 {
 
@@ -892,10 +891,7 @@ export class ImageEmbeddings
 
 }
 
-/**
- * The image embeddings vectors computed by an extension.
- */
-@ApiSchema({ description: "Multiple vectorial representations of an image" })
+@ApiSchema({ description: "The image embeddings vectors computed by an extension" })
 export class ExtensionImageEmbeddings extends ImageEmbeddings
 {
 
@@ -923,10 +919,7 @@ export class ExtensionImageEmbeddings extends ImageEmbeddings
 
 export type AllImageEmbeddings = ExtensionImageEmbeddings[];
 
-/**
- * A summary of an image.
- */
-@ApiSchema({ description: "Basic information about an image" })
+@ApiSchema({ description: "Basic information about an image, i.e. a summary information about an image" })
 export class ImageSummary extends Dates
 {
 
@@ -1104,43 +1097,14 @@ export class ImageSummary extends Dates
 
 }
 
-/**
- * A list of images following a filtered query.
- */
-@ApiSchema({ description: "a list of basic information about images" })
-export class ImageSummaryList
+@ApiSchema({ description: "The result of an image summaries search" })
+export class ImageSummaryResult extends generateItemsResultClass(ImageSummary)
 {
 
-  constructor(entities: ImageSummary[], totalCount: number)
+  constructor(items: ImageSummary[], totalCount: number)
   {
-    this.entities = entities;
-    this.totalCount = totalCount;
+    super(items, totalCount);
   }
-
-  @ApiProperty(
-    {
-      description: "The image entities",
-      type: ImageSummary,
-      isArray: true,
-      required: true
-    }
-  )
-  @Expose()
-  readonly entities: ImageSummary[];
-
-  @ApiProperty(
-    {
-      description: "The total number of image entities",
-      type: Number,
-      format: "int64",
-      minimum: 0,
-      required: true
-    }
-  )
-  @IsInt()
-  @Type(() => Number)
-  @Expose()
-  readonly totalCount: number;
 
 }
 
@@ -1185,10 +1149,7 @@ export class ImageMediaUrl
 
 }
 
-/**
- * The distances of an image given an embedding.
- */
-@ApiSchema({ description: "The vectorial distance with a reference image" })
+@ApiSchema({ description: "The vectorial distance with a reference image, or given an embedding" })
 export class ImageDistance
 {
 
@@ -1227,10 +1188,7 @@ export class ImageDistance
 
 export type ImageDistances = ImageDistance[];
 
-/**
- * All the information about an image.
- */
-@ApiSchema({ description: "Comprehensive information about an image" })
+@ApiSchema({ description: "Comprehensive information about an image, i.e. all the information about an image" })
 export class Image extends ImageSummary
 {
 
@@ -1277,6 +1235,17 @@ export class Image extends ImageSummary
   )
   @Expose()
   readonly tags: ExtensionImageTag[];
+
+}
+
+@ApiSchema({ description: "The result of an images search" })
+export class ImageResult extends generateItemsResultClass(Image)
+{
+
+  constructor(items: Image[], totalCount: number)
+  {
+    super(items, totalCount);
+  }
 
 }
 
@@ -1354,7 +1323,7 @@ export class SearchRange
 
 }
 
-@ApiSchema({ description: "Criteria, sorting and range parameters when searching for images" })
+@ApiSchema({ description: "Filtering and range parameters when searching for images" })
 export class SearchParameters
 {
 
@@ -1414,5 +1383,91 @@ export class SearchParameters
   @IsOptional()
   @Expose()
   readonly range?: SearchRange;
+
+}
+
+export function generateImageAttributeClass<T, A>(type: NestType<T>, isArray: boolean): NestType<{
+  id: string,
+  attribute: A
+}>
+{
+  @ApiSchema({ description: "A list of items resulting from a search" })
+  class ImageAttribute
+  {
+
+    constructor(id: string, attribute: A)
+    {
+      this.id = id;
+      this.attribute = attribute;
+    }
+
+    @ApiProperty(
+      {
+        ...imageIdSchema,
+        description: "The unique identifier of the image",
+        type: String,
+        required: true
+      }
+    )
+    @Expose()
+    readonly id: string;
+
+    @ApiProperty(
+      {
+        description: "The attribute attached to the image",
+        type,
+        isArray,
+        required: true
+      }
+    )
+    @Expose()
+    readonly attribute: A;
+
+  }
+
+  return ImageAttribute;
+}
+
+@ApiSchema({ description: "Per image extension image features" })
+export class ExtensionImageFeaturesAttribute extends generateImageAttributeClass<ExtensionImageFeature, ExtensionImageFeature[]>(ExtensionImageFeature, true)
+{
+
+  constructor(id: string, attribute: ExtensionImageFeature[])
+  {
+    super(id, attribute);
+  }
+
+}
+
+@ApiSchema({ description: "The result of an image features search" })
+export class SearchFeaturesResult extends generateItemsResultClass(ExtensionImageFeaturesAttribute)
+{
+
+  constructor(items: ExtensionImageFeaturesAttribute[], totalCount: number)
+  {
+    super(items, totalCount);
+  }
+
+}
+
+@ApiSchema({ description: "Per image extension image tags" })
+export class ExtensionImageTagsAttribute extends generateImageAttributeClass<ExtensionImageTag, ExtensionImageTag[]>(ExtensionImageTag, true)
+{
+
+  constructor(id: string, attribute: ExtensionImageTag[])
+  {
+    super(id, attribute);
+  }
+
+}
+
+@ApiSchema({ description: "The result of an image tags search" })
+export class SearchTagsResult extends generateItemsResultClass(ExtensionImageTagsAttribute)
+{
+
+  constructor(items: ExtensionImageTagsAttribute[], totalCount: number)
+  {
+    super(items, totalCount);
+  }
 
 }

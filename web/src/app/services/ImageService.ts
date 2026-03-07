@@ -10,7 +10,7 @@ import {
   ImageDimensions,
   ImageDistance,
   ImageFormat,
-  ImageSummaryList
+  ImageResult
 } from "@picteus/ws-client";
 
 import { BASE_PATH } from "utils";
@@ -35,7 +35,7 @@ const defaultSearchCriteria: ImageApiImageSearchRequest = {
 
 async function listAll(
   request?: ImageApiImageSearchRequest,
-): Promise<ImageSummaryList> {
+): Promise<ImageResult> {
   if (!request) {
     request = defaultSearchCriteria;
   }
@@ -48,7 +48,7 @@ async function listAll(
   {
     copiedRequest.filter.criteria.features = JSON.stringify(request.filter.criteria.features);
   }
-  return await imageApi.imageSearch(copiedRequest);
+  return await imageApi.imageSearchImages(copiedRequest);
 }
 
 async function get(parameters: ImageApiImageGetRequest) {

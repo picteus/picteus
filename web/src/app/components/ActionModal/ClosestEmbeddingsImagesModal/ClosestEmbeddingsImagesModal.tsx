@@ -7,7 +7,7 @@ import { Form, useForm } from "@mantine/form";
 import { ImageApiImageClosestImagesRequest } from "@picteus/ws-client/src/apis/ImageApi.ts";
 
 import { notifyError, Validators } from "utils";
-import { ImageSummaryWithCaption } from "types";
+import { ImageWithCaption } from "types";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImageMasonry } from "app/components";
 import { useContainerDimensions } from "app/hooks";
@@ -29,7 +29,7 @@ export default function ClosestEmbeddingsImagesModal({
 }: ClosestEmbeddingsImagesModalType) {
   const [t] = useTranslation();
   const [imageSummaries, setImageSummaries] = useState<
-    ImageSummaryWithCaption[]
+    ImageWithCaption[]
   >([]);
   const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
@@ -181,7 +181,7 @@ export default function ClosestEmbeddingsImagesModal({
           keyPrefix="closestEmbeddingsImages"
           containerWidth={containerWidth}
           data={{
-            imageSummaries,
+            images: imageSummaries,
             currentPage: 1,
             total: imageSummaries.length,
           }}

@@ -56,14 +56,14 @@ export type EventInformationType = {
   onResult?: (result: any) => void;
 };
 
-export type ImageSummaryWithCaption = ImageSummary & {
+export type ImageWithCaption = (Image | ImageSummary) & {
   caption?: ReactNode;
 };
 
 export type ImageMasonryDataType = {
   currentPage: number;
   total: number;
-  imageSummaries: Image[] | ImageSummary[] | ImageSummaryWithCaption[];
+  images: Image[] | ImageSummary[] | ImageWithCaption[];
 };
 
 export enum FolderTypes {

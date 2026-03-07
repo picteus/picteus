@@ -1874,10 +1874,10 @@
         ]
       }
     },
-    "/image/search": {
+    "/image/search/summaries": {
       "get": {
-        "description": "Searches for images, given criteria.",
-        "operationId": "image_search",
+        "description": "Retrieves image summaries following search parameters.",
+        "operationId": "image_searchSummaries",
         "parameters": [
           {
             "name": "filter",
@@ -1916,17 +1916,235 @@
         ],
         "responses": {
           "200": {
-            "description": "The images matching the criteria",
+            "description": "The image summaries matching the parameters and the extension identifiers",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImageSummaryList"
+                  "$ref": "#/components/schemas/ImageSummaryResult"
                 }
               }
             }
           }
         },
-        "summary": "Searches images",
+        "summary": "Retrieves image summaries",
+        "tags": [
+          "image"
+        ]
+      }
+    },
+    "/image/search/images": {
+      "get": {
+        "description": "Retrieves image details following search parameters.",
+        "operationId": "image_searchImages",
+        "parameters": [
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "The filter which will be used to narrow down the returned items",
+            "explode": true,
+            "style": "deepObject",
+            "schema": {
+              "$ref": "#/components/schemas/SearchFilter"
+            }
+          },
+          {
+            "name": "collectionId",
+            "required": false,
+            "in": "query",
+            "description": "The collection identifier to filter with to narrow down the returned items",
+            "schema": {
+              "minimum": 0,
+              "format": "int32",
+              "example": 123,
+              "type": "number"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "The range of items to consider following the search",
+            "explode": true,
+            "style": "deepObject",
+            "schema": {
+              "$ref": "#/components/schemas/SearchRange"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image details matching the parameters and the extension identifiers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageResult"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Retrieves image details",
+        "tags": [
+          "image"
+        ]
+      }
+    },
+    "/image/search/features": {
+      "get": {
+        "description": "Retrieves image features following search parameters.",
+        "operationId": "image_searchFeatures",
+        "parameters": [
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "The filter which will be used to narrow down the returned items",
+            "explode": true,
+            "style": "deepObject",
+            "schema": {
+              "$ref": "#/components/schemas/SearchFilter"
+            }
+          },
+          {
+            "name": "collectionId",
+            "required": false,
+            "in": "query",
+            "description": "The collection identifier to filter with to narrow down the returned items",
+            "schema": {
+              "minimum": 0,
+              "format": "int32",
+              "example": 123,
+              "type": "number"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "The range of items to consider following the search",
+            "explode": true,
+            "style": "deepObject",
+            "schema": {
+              "$ref": "#/components/schemas/SearchRange"
+            }
+          },
+          {
+            "name": "extensionIds",
+            "required": false,
+            "in": "query",
+            "description": "The extension identifiers the features must belong to",
+            "schema": {
+              "items": {
+                "description": "An extension identifier",
+                "type": "string",
+                "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+                "minLength": 1,
+                "maxLength": 32,
+                "example": "extension-id"
+              },
+              "type": "array"
+            },
+            "explode": true,
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image features matching the parameters and the extension identifiers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchFeaturesResult"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Retrieves image features",
+        "tags": [
+          "image"
+        ]
+      }
+    },
+    "/image/search/tags": {
+      "get": {
+        "description": "Retrieves image tags following search parameters.",
+        "operationId": "image_searchTags",
+        "parameters": [
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "description": "The filter which will be used to narrow down the returned items",
+            "explode": true,
+            "style": "deepObject",
+            "schema": {
+              "$ref": "#/components/schemas/SearchFilter"
+            }
+          },
+          {
+            "name": "collectionId",
+            "required": false,
+            "in": "query",
+            "description": "The collection identifier to filter with to narrow down the returned items",
+            "schema": {
+              "minimum": 0,
+              "format": "int32",
+              "example": 123,
+              "type": "number"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "The range of items to consider following the search",
+            "explode": true,
+            "style": "deepObject",
+            "schema": {
+              "$ref": "#/components/schemas/SearchRange"
+            }
+          },
+          {
+            "name": "extensionIds",
+            "required": false,
+            "in": "query",
+            "description": "The extension identifiers the tags must belong to",
+            "schema": {
+              "items": {
+                "description": "An extension identifier",
+                "type": "string",
+                "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+                "minLength": 1,
+                "maxLength": 32,
+                "example": "extension-id"
+              },
+              "type": "array"
+            },
+            "explode": true,
+            "style": "deepObject"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image tags matching the parameters and the extension identifiers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchTagsResult"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Retrieves image tags",
         "tags": [
           "image"
         ]
@@ -3528,7 +3746,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",
@@ -5162,7 +5380,7 @@
             }
           }
         },
-        "description": "Comprehensive information about an image",
+        "description": "Comprehensive information about an image, i.e. all the information about an image",
         "required": [
           "creationDate",
           "modificationDate",
@@ -5859,7 +6077,7 @@
             ]
           }
         },
-        "description": "Basic information about an image",
+        "description": "Basic information about an image, i.e. a summary information about an image",
         "required": [
           "creationDate",
           "modificationDate",
@@ -5875,11 +6093,11 @@
           "fileDates"
         ]
       },
-      "ImageSummaryList": {
+      "ImageSummaryResult": {
         "type": "object",
         "properties": {
-          "entities": {
-            "description": "The image entities",
+          "items": {
+            "description": "The items corresponding to the search filter and to the range",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ImageSummary"
@@ -5887,14 +6105,133 @@
           },
           "totalCount": {
             "type": "number",
-            "description": "The total number of image entities",
+            "description": "The total number of items",
             "format": "int64",
             "minimum": 0
           }
         },
-        "description": "a list of basic information about images",
+        "description": "The result of an image summaries search",
         "required": [
-          "entities",
+          "items",
+          "totalCount"
+        ]
+      },
+      "ImageResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "The items corresponding to the search filter and to the range",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Image"
+            }
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "The total number of items",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "description": "The result of an images search",
+        "required": [
+          "items",
+          "totalCount"
+        ]
+      },
+      "ExtensionImageFeaturesAttribute": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the image",
+            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+            "minLength": 36,
+            "maxLength": 36,
+            "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+          },
+          "attribute": {
+            "description": "The attribute attached to the image",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExtensionImageFeature"
+            }
+          }
+        },
+        "description": "Per image extension image features",
+        "required": [
+          "id",
+          "attribute"
+        ]
+      },
+      "SearchFeaturesResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "The items corresponding to the search filter and to the range",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExtensionImageFeaturesAttribute"
+            }
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "The total number of items",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "description": "The result of an image features search",
+        "required": [
+          "items",
+          "totalCount"
+        ]
+      },
+      "ExtensionImageTagsAttribute": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the image",
+            "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+            "minLength": 36,
+            "maxLength": 36,
+            "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+          },
+          "attribute": {
+            "description": "The attribute attached to the image",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExtensionImageTag"
+            }
+          }
+        },
+        "description": "Per image extension image tags",
+        "required": [
+          "id",
+          "attribute"
+        ]
+      },
+      "SearchTagsResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "The items corresponding to the search filter and to the range",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExtensionImageTagsAttribute"
+            }
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "The total number of items",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "description": "The result of an image tags search",
+        "required": [
+          "items",
           "totalCount"
         ]
       },
@@ -5951,7 +6288,7 @@
             "example": "extension-id"
           }
         },
-        "description": "Multiple vectorial representations of an image",
+        "description": "The image embeddings vectors computed by an extension",
         "required": [
           "values",
           "id"
@@ -5971,7 +6308,7 @@
             }
           }
         },
-        "description": "A vectorial representation of an image",
+        "description": "A vectorial representation of an image, i.e. an image embeddings vector",
         "required": [
           "values"
         ]
@@ -5994,7 +6331,7 @@
             ]
           }
         },
-        "description": "The vectorial distance with a reference image",
+        "description": "The vectorial distance with a reference image, or given an embedding",
         "required": [
           "distance",
           "image"

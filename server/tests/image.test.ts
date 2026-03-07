@@ -3,12 +3,12 @@ import fs from "node:fs";
 import { buffer as streamBuffer } from "node:stream/consumers";
 import { randomUUID } from "node:crypto";
 
-import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "@jest/globals";
 import HttpCodes from "http-codes";
 
 import { paths } from "../src/paths";
+import { plainToInstanceViaJSON } from "../src/utils";
 import { computeAttachmentDisposition } from "../src/services/utils/downloader";
 import {
   ApplicationMetadata,
@@ -36,7 +36,7 @@ import {
   SearchFeatureLogicalOperator,
   SearchFilter,
   SearchImagesOrigin,
-  SearchOriginType,
+  SearchOriginKind,
   SearchParameters,
   SearchRepositoriesOrigin,
   TextualPrompt,
@@ -439,22 +439,22 @@ describe("Image with module", () =>
       // We assess with invalid parameters
       await expect(async () =>
       {
-        await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: "text", ...inNone } }));
+        await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: "text", ...inNone } }));
       }).rejects.toThrow(new ServiceError(`The parameter 'keyword' is invalid because it contains only false properties`, BAD_REQUEST, base.badParameterCode));
       {
         // We assess with a non-existing repository
         const dummyId = "dummyId";
         await expect(async () =>
         {
-          await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(dummyId));
+          await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(dummyId));
         }).rejects.toThrow(new ServiceError(`The parameter 'ids' with value '${dummyId}' is invalid because some of those identifiers do not correspond to an existing repository`, BAD_REQUEST, base.badParameterCode));
       }
     }
     {
       // We assess with no filter
-      expect((await base.getImageController().search({})).entities.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries({})).items.length).toBe(totalCount);
       // We assess only with the repository identifier filter
-      expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items.length).toBe(totalCount);
     }
     {
       for (const feature of features)
@@ -488,7 +488,7 @@ describe("Image with module", () =>
           ];
         for (const useCase of useCases)
         {
-          expect((await base.getImageController().search({
+          expect((await base.getImageController().searchSummaries({
             filter:
               {
                 criteria:
@@ -508,28 +508,28 @@ describe("Image with module", () =>
                       }
                   }
               }
-          })).entities.length).toBe(useCase.count);
+          })).items.length).toBe(useCase.count);
         }
       }
     }
     {
       // We make sure that the image file name is searched in
-      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: fileName, ...inName } }))).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: fileName.toUpperCase(), ...inName } }))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: fileName, ...inName } }))).items.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: fileName.toUpperCase(), ...inName } }))).items.length).toBe(totalCount);
     }
     {
       // We make sure that the image "metadata" are searched in
       const metadataKeyword = "Deflate/Inflate";
-      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword, ...inMetadata } }))).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword.toUpperCase(), ...inMetadata } }))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword, ...inMetadata } }))).items.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword.toUpperCase(), ...inMetadata } }))).items.length).toBe(totalCount);
     }
     {
       // We make sure that the string-based image "features" are searched in
-      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: stringFeature.value as string, ...inFeatures } }))).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: (stringFeature.value as string).toLowerCase(), ...inFeatures } }))).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: "dummy" + fileName, ...inAll } }))).entities.length).toBe(zero);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: stringFeature.value as string, ...inFeatures } }))).items.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: (stringFeature.value as string).toLowerCase(), ...inFeatures } }))).items.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: "dummy" + fileName, ...inAll } }))).items.length).toBe(zero);
       // This is an edge case with an empty text
-      expect((await base.getImageController().search(SearchParameters.withSearchCriteria({ keyword: { text: "", ...inAll } }))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: "", ...inAll } }))).items.length).toBe(totalCount);
     }
     {
       // We assess the image "features"
@@ -550,7 +550,7 @@ describe("Image with module", () =>
           {
             await expect(async () =>
             {
-              await base.getImageController().search({
+              await base.getImageController().searchSummaries({
                 filter:
                   {
                     criteria:
@@ -576,18 +576,18 @@ describe("Image with module", () =>
             async function checkCondition(condition: SearchFeatureCondition)
             {
               const shouldNotMatch = condition.operator === SearchFeatureComparisonOperator.DIFFERENT || condition.operator === SearchFeatureComparisonOperator.GREATER_THAN || condition.operator === SearchFeatureComparisonOperator.LESS_THAN;
-              expect((await base.getImageController().search(SearchParameters.withSearchCriteria({
+              expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({
                 features: {
                   operator: SearchFeatureLogicalOperator.AND,
                   conditions: [condition]
                 }
-              }))).entities.length).toBe(shouldNotMatch === true ? zero : totalCount);
-              expect((await base.getImageController().search(SearchParameters.withSearchCriteria({
+              }))).items.length).toBe(shouldNotMatch === true ? zero : totalCount);
+              expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({
                 features: {
                   operator: SearchFeatureLogicalOperator.NOT,
                   conditions: [condition]
                 }
-              }))).entities.length).toBe(shouldNotMatch === false ? zero : totalCount);
+              }))).items.length).toBe(shouldNotMatch === false ? zero : totalCount);
             }
 
             await checkCondition(condition);
@@ -603,7 +603,7 @@ describe("Image with module", () =>
       }
 
       // We assess with advanced image "features" requests
-      expect((await base.getImageController().search({
+      expect((await base.getImageController().searchSummaries({
         filter:
           {
             criteria:
@@ -639,8 +639,8 @@ describe("Image with module", () =>
                   }
               }
           }
-      })).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search(
+      })).items.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(
         {
           filter:
             {
@@ -665,8 +665,8 @@ describe("Image with module", () =>
                     }
                 }
             }
-        })).entities.length).toBe(zero);
-      expect((await base.getImageController().search(
+        })).items.length).toBe(zero);
+      expect((await base.getImageController().searchSummaries(
         {
           filter:
             {
@@ -687,19 +687,19 @@ describe("Image with module", () =>
 
                 }
             }
-        })).entities.length).toBe(zero);
+        })).items.length).toBe(zero);
     }
     {
       // We add a repository and an image on it
       const { repository: newRepository } = await base.prepareRepositoryWithImage(base.imageFeeder.webpImageFileName, "new");
-      expect((await base.getImageController().search(new SearchParameters(new SearchFilter(new SearchCriteria(), new SearchRepositoriesOrigin([repository.id, newRepository.id]))))).entities.length).toBe(totalCount + 1);
-      expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).entities.length).toBe(totalCount);
-      expect((await base.getImageController().search(new SearchParameters(new SearchFilter(new SearchCriteria(), new SearchImagesOrigin([image.id]))))).entities.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(new SearchParameters(new SearchFilter(new SearchCriteria(), new SearchRepositoriesOrigin([repository.id, newRepository.id]))))).items.length).toBe(totalCount + 1);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items.length).toBe(totalCount);
+      expect((await base.getImageController().searchSummaries(new SearchParameters(new SearchFilter(new SearchCriteria(), new SearchImagesOrigin([image.id]))))).items.length).toBe(totalCount);
     }
     {
       // We assess via a collection
       const collection = await base.getCollectionController().create("name", undefined, {});
-      expect((await base.getImageController().search(new SearchParameters(undefined, collection.id))).entities.length).toBe(totalCount + 1);
+      expect((await base.getImageController().searchSummaries(new SearchParameters(undefined, collection.id))).items.length).toBe(totalCount + 1);
     }
   }, base.largeTimeoutInMilliseconds);
 
@@ -770,7 +770,7 @@ describe("Image with module", () =>
         criteria: { formats: [ImageFormat.PNG] },
         origin:
           {
-            kind: SearchOriginType.Images,
+            kind: SearchOriginKind.Images,
             ids: [image.id]
           }
       };
@@ -796,7 +796,7 @@ describe("Image with module", () =>
         return listener.mock.calls.length === 1;
       });
       expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Deleted, { id: image.id });
-      expect((await base.getImageController().search({})).entities.length).toBe(0);
+      expect((await base.getImageController().searchSummaries({})).items.length).toBe(0);
       expect((await base.getEntitiesProvider().imageMetadata.findMany()).length).toBe(0);
       expect((await base.getEntitiesProvider().imageTag.findMany()).length).toBe(0);
       expect((await base.getEntitiesProvider().imageFeature.findMany()).length).toBe(0);
@@ -825,7 +825,7 @@ describe("Image with module", () =>
     // await base.imageFeeder.writeImageMetadata(webpImageFilePath, ImageFormat.WEBP, metadata);
     await base.prepareEmptyRepository(directoryPath);
 
-    const summaries = (await base.getImageController().search({})).entities;
+    const summaries = (await base.getImageController().searchSummaries({})).items;
     for (const summary of summaries)
     {
       const stripMetadatas = [undefined, true, false];
@@ -972,7 +972,7 @@ describe("Image with module", () =>
       {
         // We assess with a too long value
         const maximumCharactersCount = 512 * 1_024;
-        const errors = await validate(plainToInstance(ImageFeature, new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, name, "a".repeat(maximumCharactersCount + 1))));
+        const errors = await validate(plainToInstanceViaJSON(ImageFeature, new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, name, "a".repeat(maximumCharactersCount + 1))));
         expect(errors.length).toEqual(1);
         const validationError = errors[0];
         expect(validationError.property).toEqual("value");

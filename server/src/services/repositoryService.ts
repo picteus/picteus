@@ -2,8 +2,6 @@ import path from "node:path";
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import Timers from "node:timers";
-
-import { plainToInstance } from "class-transformer";
 import { ModuleRef } from "@nestjs/core";
 import { forwardRef, Inject, Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
@@ -28,7 +26,7 @@ import {
   RepositoryList,
   RepositoryLocationType,
   RepositoryStatus,
-  SearchOriginType,
+  SearchOriginKind,
   toFileExtension
 } from "../dtos/app.dtos";
 import { Json } from "../bos";
@@ -359,7 +357,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       await RepositoryWatcher.stop(repository, this.notifier);
     }
     // We remove the repository from the collections
-    await this.collectionService.clearFromOrigin(SearchOriginType.Repositories, id);
+    await this.collectionService.clearFromOrigin(SearchOriginKind.Repositories, id);
     const imageIds: string[] = (await this.entitiesProvider.images.findMany({
       where: { repositoryId: id },
       select: { id: true }
@@ -388,7 +386,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       parametersChecker.throwBadParameter("ids", ids.join(","), "some of those identifiers do not correspond to an existing repository");
     }
-    return plainToInstance(Repository, entities);
+    return entities.map(entity => plainToInstanceViaJSON(Repository, entity));
   }
 
   async activities(): Promise<RepositoryActivities>

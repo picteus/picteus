@@ -143,7 +143,7 @@ export default function SelectedImagesAffix() {
                     loadMore={() => {}}
                     keyPrefix="selectedImages"
                     data={{
-                      imageSummaries: selectedImages.map((imageSummary) => ({
+                      images: selectedImages.map((imageSummary) => ({
                         ...imageSummary,
                         caption: undefined,
                       })),

@@ -1,5 +1,6 @@
 import { IsDefined, IsInt, IsOptional, IsString, MaxLength, MinLength, NotEquals } from "class-validator";
 import { Expose, Type } from "class-transformer";
+import { Type as NestType } from "@nestjs/common";
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import { SchemaObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
 
@@ -268,6 +269,46 @@ export class WithIdCreationDateNameComment
   @Expose()
   readonly comment?: string;
 
+}
+
+export function generateItemsResultClass<T>(type: NestType<T>): NestType<{ items: T[], totalCount: number }>
+{
+  @ApiSchema({ description: "A list of items resulting from a search" })
+  class ItemsResult
+  {
+
+    constructor(items: T[], totalCount: number)
+    {
+      this.items = items;
+      this.totalCount = totalCount;
+    }
+
+    @ApiProperty(
+      {
+        description: "The items corresponding to the search filter and to the range",
+        type,
+        isArray: true,
+        required: true
+      }
+    )
+    @Expose()
+    readonly items: T[];
+
+    @ApiProperty(
+      {
+        description: "The total number of items",
+        type: Number,
+        format: "int64",
+        minimum: 0,
+        required: true
+      }
+    )
+    @Expose()
+    readonly totalCount: number;
+
+  }
+
+  return ItemsResult;
 }
 
 /**

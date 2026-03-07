@@ -38,6 +38,7 @@ import {
   Image,
   ImageFormat,
   ImageSummary,
+  ImageSummaryResult,
   InstructionsPrompt,
   Manifest,
   ManifestCapability,
@@ -774,17 +775,17 @@ export class Base extends Core
     {
       const interval = Timers.setInterval(async () =>
       {
-        const imageSummaries = await this.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repositoryId));
-        const imageSummary: ImageSummary | undefined = imageSummaries.entities.find((summary) =>
+        const result: ImageSummaryResult = await this.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repositoryId));
+        const summary: ImageSummary | undefined = result.items.find((summary) =>
         {
           return summary.url === url;
         });
-        if (imageSummary !== undefined && isAvailable === true)
+        if (summary !== undefined && isAvailable === true)
         {
           Timers.clearInterval(interval);
-          resolve(imageSummary);
+          resolve(summary);
         }
-        else if (imageSummary === undefined && isAvailable === false)
+        else if (summary === undefined && isAvailable === false)
         {
           Timers.clearInterval(interval);
           resolve(initialImageSummary!);

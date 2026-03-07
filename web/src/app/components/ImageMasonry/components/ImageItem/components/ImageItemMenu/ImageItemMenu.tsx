@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Menu, Text } from "@mantine/core";
 import { IconBolt, IconRefresh, IconTopologyRing3 } from "@tabler/icons-react";
-import { CommandEntity, ExtensionImageTag, ImageSummary, ManifestCapabilityId } from "@picteus/ws-client";
+import { CommandEntity, ExtensionImageTag, Image, ImageSummary, ManifestCapabilityId } from "@picteus/ws-client";
 
 import { ClosestEmbeddingsImagesModal } from "app/components/ActionModal";
 import { ExtensionsService, ImageService } from "app/services";
@@ -10,17 +10,17 @@ import { useExtensionCommand } from "app/hooks";
 import { useActionModalContext } from "app/context";
 
 type ImageItemMenu = {
-  imageSummary: ImageSummary;
+  image: ImageSummary;
 };
 
-export default function ImageItemMenu({ imageSummary }: ImageItemMenu) {
+export default function ImageItemMenu({ image }: ImageItemMenu) {
   const [, addModal] = useActionModalContext();
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>([]);
   const callCommand = useExtensionCommand();
   const [t] = useTranslation();
 
   async function load() {
-    const tags = await ImageService.getAllTags(imageSummary.id);
+    const tags = "tags" in image ? (image as Image).tags : await ImageService.getAllTags(image.id);
     setImageTags(tags);
   }
 
@@ -32,8 +32,8 @@ export default function ImageItemMenu({ imageSummary }: ImageItemMenu) {
     addModal({
       component: (
         <ClosestEmbeddingsImagesModal
-          key={"ClosestEmbeddingsImagesModal" + imageSummary.id}
-          imageId={imageSummary.id}
+          key={"ClosestEmbeddingsImagesModal" + image.id}
+          imageId={image.id}
           extensionId={extensionId}
         />
       ),
@@ -42,7 +42,7 @@ export default function ImageItemMenu({ imageSummary }: ImageItemMenu) {
   }
 
   async function handleOnClickSynchronize() {
-    await ImageService.synchronize(imageSummary.id)
+    await ImageService.synchronize(image.id)
   }
 
   const menu = useMemo(() => {
@@ -126,7 +126,7 @@ export default function ImageItemMenu({ imageSummary }: ImageItemMenu) {
                     callCommand(
                       extensionCommand.extension.manifest.id,
                       extensionCommand.command,
-                      [imageSummary.id],
+                      [image.id],
                     )
                   }
                   leftSection={<IconBolt style={{ width: 14, height: 14 }} />}
@@ -148,7 +148,7 @@ export default function ImageItemMenu({ imageSummary }: ImageItemMenu) {
         {extensionsImageCommands && renderExtensionsCommands()}
       </>
     );
-  }, [imageSummary, imageTags]);
+  }, [image, imageTags]);
 
   return (
     <>

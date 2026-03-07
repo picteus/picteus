@@ -71,8 +71,7 @@ export function transformStringifyJson<T>(type?: ClassConstructor<T>, factory?: 
 export const jsonTransform: (transformFnParams: TransformFnParams) => any = (transformFnParams: TransformFnParams): any =>
 {
   // This is a hack, which enables the JSON object to be fully exported
-  transformFnParams.options.strategy = "exposeAll";
-  return transformFnParams.value;
+  return transformFnParams.obj[transformFnParams.key];
 };
 
 // This is necessary to work around an issue with SwaggerUI which stringifies the query parameters with a "style" set to "deepObject" and an "explode" set to true, see https://github.com/OAI/OpenAPI-Specification/issues/1502 and https://github.com/OAI/OpenAPI-Specification/issues/1706

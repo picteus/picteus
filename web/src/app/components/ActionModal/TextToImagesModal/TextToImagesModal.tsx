@@ -7,7 +7,7 @@ import { Form, useForm } from "@mantine/form";
 import { useFocusTrap } from "@mantine/hooks";
 
 import { notifyError, Validators } from "utils";
-import { ImageSummaryWithCaption } from "types";
+import { ImageWithCaption } from "types";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImageMasonry } from "app/components";
 import { useContainerDimensions } from "app/hooks";
@@ -28,7 +28,7 @@ export default function TextToImagesModal({
 }: TextToImageModalType) {
   const [t] = useTranslation();
   const [imageSummaries, setImageSummaries] = useState<
-    ImageSummaryWithCaption[]
+    ImageWithCaption[]
   >([]);
   const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -147,7 +147,7 @@ export default function TextToImagesModal({
           keyPrefix="textToImagesImages"
           containerWidth={containerWidth}
           data={{
-            imageSummaries,
+            images: imageSummaries,
             currentPage: 1,
             total: imageSummaries.length,
           }}

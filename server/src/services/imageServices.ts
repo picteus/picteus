@@ -1,8 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
 import stream from "node:stream";
-
-import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { ModuleRef } from "@nestjs/core";
 import { forwardRef, Inject, Injectable, StreamableFile } from "@nestjs/common";
@@ -53,7 +51,7 @@ import {
   ImageMetadata,
   ImageResizeRender,
   ImageSummary,
-  ImageSummaryList,
+  ImageSummaryResult,
   ImageTag,
   NumericRange,
   RepositoryLocation,
@@ -64,7 +62,7 @@ import {
   SearchFeatureLogicalOperator,
   SearchFeatures,
   SearchFilter,
-  SearchOriginType,
+  SearchOriginKind,
   SearchParameters,
   SearchRange,
   SearchSorting,
@@ -73,12 +71,7 @@ import {
   toMimeType
 } from "../dtos/app.dtos";
 import { Json, toImageFormat } from "../bos";
-import {
-  EntitiesProvider,
-  ImageIdAndDistance,
-  VectorDatabaseAccessor,
-  VectorDatabaseProvider
-} from "./databaseProviders";
+import { EntitiesProvider, ImageIdAndDistance, VectorDatabaseAccessor } from "./databaseProviders";
 import { ExtendedManifest, ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionService } from "./extensionServices";
 import { RepositoryService } from "./repositoryService";
@@ -97,8 +90,14 @@ import {
 } from "./utils/images";
 import { ImageAttachmentService } from "./imageAttachmentService";
 import { ImageFeatureWhereInput } from ".prisma/models/ImageFeature";
-
-export { EntitiesProvider, VectorDatabaseProvider, VectorDatabaseAccessor, RepositoryService };
+import {
+  ExtensionImageFeaturesAttribute,
+  ExtensionImageTagsAttribute,
+  ImageResult,
+  SearchFeaturesResult,
+  SearchTagsResult
+} from "../dtos/image.dtos";
+import { ClassConstructor } from "class-transformer/types/interfaces";
 
 
 const imageWithIncludes = { include: { metadata: true, features: true, tags: true } } satisfies Prisma.ImageDefaultArgs;
@@ -126,246 +125,95 @@ export class ImageService
     logger.debug("Instantiating an ImageService");
   }
 
-  async search(parameters: SearchParameters): Promise<ImageSummaryList>
+  async searchForImageSummaries(parameters: SearchParameters): Promise<ImageSummaryResult>
   {
-    let filter: SearchFilter | undefined;
-    if (parameters?.filter !== undefined)
-    {
-      filter = parameters?.filter;
-    }
-    else if (parameters?.collectionId !== undefined)
-    {
-      const collection = await this.entitiesProvider.collections.findUnique({ where: { id: parameters?.collectionId } });
-      if (collection === null)
-      {
-        parametersChecker.throwBadParameter("collectionId", parameters?.collectionId.toString(), "the collection with that id does not exist");
-      }
-      filter = plainToInstanceViaJSON(Collection, collection).filter;
-    }
-    const origin = filter?.origin;
-    const sorting: SearchSorting | undefined = filter?.sorting;
-    const repositoryIds = origin?.kind === SearchOriginType.Repositories ? (await this.moduleRef.get(RepositoryService).list(origin.ids)).map(repository => repository.id) : undefined;
-    const imageIds = origin?.kind === SearchOriginType.Images ? origin.ids : undefined;
-    const criteria: SearchCriteria | undefined = filter !== undefined ? filter?.criteria : undefined;
-    const range: SearchRange | undefined = parameters?.range;
-    const keyword = criteria?.keyword;
-    const tags = criteria?.tags;
-    const features = criteria?.features;
-    const properties = criteria?.properties;
-    const text = keyword?.text;
-    const widthRange = properties?.width;
-    const heightRange = properties?.height;
-    const weightInBytesRange = properties?.weightInBytes;
-    const creationDateRange = properties?.creationDate;
-    const modificationDateRange = properties?.modificationDate;
-    logger.info(`Listing the images${repositoryIds === undefined ? "" : ` with a repository id in list [${repositoryIds.map(id => `'${id}'`).join(",")}]`}` + `${keyword === undefined ? "" : (` containing the text '${text}'` + " present in the [" + ([keyword.inName === false ? "" : "file name", keyword.inFeatures === false ? "" : "features", keyword.inMetadata === false ? "" : "metadata"].filter(string => string.length > 0).join(", ")) + "]")}` + `${tags === undefined ? "" : (`, with the tags [${tags.values.map(value => `'${value}'`).join(", ")}]`)}` + `${widthRange === undefined ? "" : (", with " + widthRange.toEntityString("width"))}` + `${heightRange === undefined ? "" : (", with " + heightRange.toEntityString("height"))}` + `${weightInBytesRange === undefined ? "" : (", with " + weightInBytesRange.toEntityString("binary weight"))}` + `${creationDateRange === undefined ? "" : (", with " + creationDateRange.toEntityString("creation date"))}` + `${modificationDateRange === undefined ? "" : (", with " + modificationDateRange.toEntityString("modification date"))}` + (sorting === undefined ? "" : ` sorted by '${sorting.property}' in ${sorting.isAscending === true ? "ascending" : "descending"} order`) + ((range === undefined || range.take === undefined) ? "" : ` with a range of [${range.skip}, ${range.take}]`));
+    const {
+      where,
+      orderBy,
+      take,
+      skip
+    } = await this.computeRequestParameters("Retrieving the image summaries", parameters);
+    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+      this.entitiesProvider.images.findMany({ orderBy, where, take, skip }),
+      this.entitiesProvider.images.count({ where })
+    ]);
+    return new ImageSummaryResult(entities.map((entity) =>
+      this.toDto(ImageSummary, entity, undefined, undefined, undefined)), totalCount);
+  }
 
-    if (keyword !== undefined && (keyword.inName === false && keyword.inMetadata === false && keyword.inFeatures === false))
-    {
-      parametersChecker.throwBadParameter("keyword", undefined, "it contains only false properties");
-    }
-    let orderProperty: keyof Prisma.ImageOrderByWithRelationInput;
-    if (sorting === undefined)
-    {
-      orderProperty = "name";
-    }
-    else
-    {
-      const sortingProperty = sorting.property;
-      // noinspection FallThroughInSwitchStatementJS
-      switch (sortingProperty)
-      {
-        default:
-          parametersChecker.throwBadParameter("sorting.property", sortingProperty, "its value is not handled");
-        case SearchSortingProperty.Name:
-          orderProperty = "name";
-          break;
-        case SearchSortingProperty.CreationDate:
-          orderProperty = "fileCreationDate";
-          break;
-        case SearchSortingProperty.ModificationDate:
-          orderProperty = "fileModificationDate";
-          break;
-        case SearchSortingProperty.ImportDate:
-          orderProperty = "creationDate";
-          break;
-        case SearchSortingProperty.UpdateDate:
-          orderProperty = "modificationDate";
-          break;
-        case SearchSortingProperty.BinarySize:
-          orderProperty = "sizeInBytes";
-          break;
-        case SearchSortingProperty.Width:
-          orderProperty = "width";
-          break;
-        case SearchSortingProperty.Height:
-          orderProperty = "height";
-          break;
-      }
-    }
-    const orderBy = { [orderProperty]: (sorting === undefined || sorting.isAscending === undefined || sorting.isAscending === true) ? Prisma.SortOrder.asc : Prisma.SortOrder.desc };
-    const keyworkInput: Prisma.ImageWhereInput [] | undefined = (keyword === undefined || text === undefined || text === "") ? undefined : [];
-    if (keyword !== undefined && keyworkInput !== undefined)
-    {
-      if (keyword.inName === true)
-      {
-        keyworkInput.push({ name: { contains: text } });
-      }
-      if (keyword.inMetadata === true)
-      {
-        keyworkInput.push({ metadata: { all: { contains: text } } });
-      }
-      if (keyword.inFeatures === true)
-      {
-        keyworkInput.push({ features: { some: { stringValue: { contains: text } } } });
-      }
-    }
-    const tagsFilter: Prisma.ImageTagListRelationFilter | undefined = tags === undefined ? undefined : {};
-    if (tags !== undefined && tagsFilter !== undefined)
-    {
-      tagsFilter.some = { value: { in: tags.values } };
-    }
-    const featuresFilter: Prisma.ImageFeatureListRelationFilter | undefined = features === undefined ? undefined : {};
-    if (features !== undefined && featuresFilter !== undefined)
-    {
-      const computeLogicalOperator = (operator: SearchFeatureLogicalOperator): "OR" | "AND" | "NOT" => operator === SearchFeatureLogicalOperator.OR ? "OR" : (operator === SearchFeatureLogicalOperator.NOT ? "NOT" : "AND");
-
-      const computeConditionInput = (condition: SearchFeatureCondition): ImageFeatureWhereInput =>
-      {
-        const format = condition.format;
-        const operator = condition.operator;
-        const whereInputs: Prisma.ImageFeatureWhereInput[] = [];
-        if (condition.type !== undefined)
-        {
-          whereInputs.push({ type: { equals: condition.type } });
-        }
-        whereInputs.push({ format: { equals: format } });
-        if (condition.name !== undefined)
-        {
-          whereInputs.push({ name: { equals: condition.name } });
-        }
-        let comparisonOperator;
-        switch (operator)
-        {
-          default:
-            throw parametersChecker.computeBadParameter("features.condition.operator", operator, "it is not supported");
-          case SearchFeatureComparisonOperator.EQUALS:
-            comparisonOperator = "equals";
-            break;
-          case SearchFeatureComparisonOperator.DIFFERENT:
-            comparisonOperator = "not";
-            break;
-          case SearchFeatureComparisonOperator.CONTAINS:
-            if (format !== ImageFeatureFormat.STRING && format !== ImageFeatureFormat.JSON && format !== ImageFeatureFormat.XML && format !== ImageFeatureFormat.MARKDOWN && format !== ImageFeatureFormat.HTML)
-            {
-              parametersChecker.throwBadParameterError(`The '${operator}' operator is not compatible with the '${format}' format`);
-            }
-            comparisonOperator = "contains";
-            break;
-          case SearchFeatureComparisonOperator.GREATER_THAN:
-          case SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL:
-          case SearchFeatureComparisonOperator.LESS_THAN:
-          case SearchFeatureComparisonOperator.LESS_THAN_OR_EQUAL:
-            if (format !== ImageFeatureFormat.INTEGER && format !== ImageFeatureFormat.FLOAT)
-            {
-              parametersChecker.throwBadParameterError(`The '${operator}' operator is not compatible with the '${format}' format`);
-            }
-            comparisonOperator = operator === SearchFeatureComparisonOperator.GREATER_THAN ? "gt" : (operator === SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL ? "gte" : (operator === SearchFeatureComparisonOperator.LESS_THAN ? "lt" : "lte"));
-            break;
-        }
-        const fieldName: ImageFeatureValueField = (format !== ImageFeatureFormat.INTEGER && format !== ImageFeatureFormat.FLOAT && format !== ImageFeatureFormat.BOOLEAN) ? featureFieldStringValue : featureFieldNumericValue;
-        const value: string | number = this.fromDtoToPersistentFeatureValue(condition.value);
-        const withNullValue = (operator === SearchFeatureComparisonOperator.DIFFERENT && value === ImageFeatureNullValue.Null) ? null : value;
-        whereInputs.push({ [fieldName]: { [comparisonOperator]: withNullValue } });
-        return { AND: whereInputs };
-      };
-      const computeFeaturesInputs = (searchFeatures: SearchFeatures): Prisma.ImageFeatureWhereInput =>
-      {
-        const whereInputs = searchFeatures.conditions.map(condition => computeConditionInput(condition));
-        const logicalOperator = computeLogicalOperator(searchFeatures.operator);
-        if (searchFeatures.features !== undefined)
-        {
-          whereInputs.push(computeFeaturesInputs(searchFeatures.features));
-        }
-        return { [logicalOperator]: whereInputs };
-      };
-
-      const inputs = computeFeaturesInputs(features);
-      if (inputs.NOT !== undefined)
-      {
-        featuresFilter.none = { AND: inputs.NOT };
-      }
-      else
-      {
-        featuresFilter.some = inputs;
-      }
-    }
-    const [widthFilter, heightFilter, weightInBytesFilter] = [widthRange, heightRange, weightInBytesRange].map((range) =>
-    {
-      const filter: Prisma.IntFilter<"Image"> | undefined = range === undefined ? undefined : {};
-      if (range !== undefined && filter !== undefined)
-      {
-        if (range.minimum !== undefined)
-        {
-          filter.gte = range.minimum;
-        }
-        if (range.maximum !== undefined)
-        {
-          filter.lte = range.maximum;
-        }
-      }
-      return filter;
-    });
-    const [creationDateFilter, modificationDateFilter] = [creationDateRange, modificationDateRange].map((range) =>
-    {
-      const filter: Prisma.DateTimeFilter<"Image"> | undefined = range === undefined ? undefined : {};
-      if (range !== undefined && filter !== undefined)
-      {
-        if (range.minimum !== undefined)
-        {
-          filter.gte = new Date(range.minimum);
-        }
-        if (range.maximum !== undefined)
-        {
-          filter.lte = new Date(range.maximum);
-        }
-      }
-      return filter;
-    });
-    const where: Prisma.ImageWhereInput =
-      {
-        id: imageIds === undefined ? undefined : { in: imageIds },
-        repositoryId: repositoryIds === undefined ? undefined : { in: repositoryIds },
-        format: criteria?.formats === undefined ? undefined : { in: criteria?.formats },
-        tags: tagsFilter,
-        features: featuresFilter,
-        width: widthFilter,
-        height: heightFilter,
-        sizeInBytes: weightInBytesFilter,
-        creationDate: creationDateFilter,
-        modificationDate: modificationDateFilter,
-        AND: { OR: keyworkInput }
-      };
+  async searchForImages(parameters: SearchParameters): Promise<ImageResult>
+  {
+    const {
+      where,
+      orderBy,
+      take,
+      skip
+    } = await this.computeRequestParameters("Retrieving the images", parameters);
     const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({
+        orderBy,
         where,
-        take: range?.take,
-        skip: range?.skip,
-        orderBy
+        take,
+        skip,
+        include: { metadata: true, features: true, tags: true }
       }),
       this.entitiesProvider.images.count({ where })
     ]);
-    return new ImageSummaryList(plainToInstance(ImageSummary, entities.map((entity) =>
+    return new ImageResult(entities.map((entity) => this.toDto(Image, entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags)), totalCount);
+  }
+
+  async searchForImageFeatures(extensionIds: string[] | undefined, parameters: SearchParameters): Promise<SearchFeaturesResult>
+  {
+    const {
+      where,
+      orderBy,
+      take,
+      skip
+    } = await this.computeRequestParameters("Retrieving the image features", parameters);
+    extensionIds = this.checkExtensions(extensionIds);
+    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+      this.entitiesProvider.images.findMany({
+        where, orderBy, take, skip, include: { features: true }
+      }),
+      this.entitiesProvider.images.count({ where })
+    ]);
+    const allFeatures: PersistedImageFeature[] = entities.map(entity => entity.features).reduce((previousValue, currentValue) =>
+      previousValue.concat(currentValue), []);
+    const groupedByImageIdFeaturesMap = Map.groupBy(allFeatures, (feature) => feature.imageId);
+    return new SearchFeaturesResult([...groupedByImageIdFeaturesMap.entries()].map(([imageId, features]) =>
     {
-      return this.toDto(entity, undefined, undefined, undefined);
-    })), totalCount);
+      return new ExtensionImageFeaturesAttribute(imageId, features.filter(feature => extensionIds === undefined || extensionIds.indexOf(feature.extensionId) !== -1).map(entity => this.extensionFeatureToDto(entity)));
+    }), totalCount);
+  }
+
+  async searchForImageTags(extensionIds: string[] | undefined, parameters: SearchParameters): Promise<SearchTagsResult>
+  {
+    const {
+      where,
+      orderBy,
+      take,
+      skip
+    } = await this.computeRequestParameters("Retrieving the image tags", parameters);
+    extensionIds = this.checkExtensions(extensionIds);
+    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+      this.entitiesProvider.images.findMany({
+        where, orderBy, take, skip, include: { tags: true }
+      }),
+      this.entitiesProvider.images.count({ where })
+    ]);
+    const allTags: PersistedImageTag[] = entities.map(entity => entity.tags).reduce((previousValue, currentValue) => previousValue.concat(currentValue), []);
+    const groupedByImageIdTagsMap = Map.groupBy(allTags, (tag) => tag.imageId);
+    return new SearchTagsResult([...groupedByImageIdTagsMap.entries()].map(([imageId, tags]) =>
+    {
+      return new ExtensionImageTagsAttribute(imageId, tags.filter(tag => extensionIds === undefined || extensionIds.indexOf(tag.extensionId) !== -1).filter(tag => tag.value !== ImageService.emptyImageTag).map(tag => this.extensionTagToDto(tag)));
+    }), totalCount);
   }
 
   async get(id: string): Promise<Image>
   {
     logger.info(`Getting the image with id '${id}'`);
     const entity: ImageWithIncludes = await this.getPersistedImage(id, true, true, true);
-    return plainToInstanceViaJSON(Image, this.toDto(entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags));
+    return this.toDto(Image, entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags);
   }
 
   async getImageByUrl(url: string): Promise<Image>
@@ -379,7 +227,7 @@ export class ImageService
     {
       parametersChecker.throwBadParameter("url", url, `there is no image with id '${url}'`);
     }
-    return plainToInstanceViaJSON(Image, this.toDto(entity as PersistedImage, entity.metadata as PersistedImageMetadata, entity.features, entity.tags));
+    return this.toDto(Image, entity as PersistedImage, entity.metadata as PersistedImageMetadata, entity.features, entity.tags);
   }
 
   async synchronize(id: string): Promise<Image>
@@ -393,7 +241,7 @@ export class ImageService
       await extensionService.synchronizeImage(manifest, id);
     }
     const entity: ImageWithIncludes = await this.getPersistedImage(id, true, true, true);
-    return plainToInstanceViaJSON(Image, this.toDto(entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags));
+    return this.toDto(Image, entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags);
   }
 
   async modify(id: string, buffer: Buffer): Promise<Image>
@@ -651,10 +499,7 @@ export class ImageService
         {
           // In the case of a recipe, we check that the value respects the expected schema
           const string = checkIsString(index, feature);
-          const generationRecipe = plainToInstance(GenerationRecipe, json, {
-            excludeExtraneousValues: true,
-            ignoreDecorators: true
-          });
+          const generationRecipe = plainToInstanceViaJSON(GenerationRecipe, json);
           const validationErrors = await validate(generationRecipe, { forbidUnknownValues: true });
           if (validationErrors.length > 0)
           {
@@ -748,10 +593,7 @@ export class ImageService
       where: { AND: [{ imageId: id }, { value: { not: ImageService.emptyImageTag } }] },
       orderBy: { value: "asc" }
     });
-    return entities.map((entity) =>
-    {
-      return new ExtensionImageTag(entity.extensionId, entity.value);
-    });
+    return entities.map(entity => this.extensionTagToDto(entity));
   }
 
   async setTags(id: string, extensionId: string, tags: ImageTag[], isEnsure: boolean): Promise<void>
@@ -924,13 +766,10 @@ export class ImageService
     return entities.sort((entity1, entity2) =>
     {
       return imageIds.indexOf(entity1.id) - imageIds.indexOf(entity2.id);
-    }).map((entity, index) =>
-    {
-      return plainToInstanceViaJSON(ImageDistance, {
-        distance: imageIdAndDistances[index].distance,
-        image: this.toDto(entity, undefined, undefined, undefined)
-      });
-    });
+    }).map((entity, index) => plainToInstanceViaJSON(ImageDistance, {
+      distance: imageIdAndDistances[index].distance,
+      image: this.toDto(ImageSummary, entity, undefined, undefined, undefined)
+    }));
   }
 
   async textToImages(text: string, extensionId: string, count: number): Promise<ImageDistances>
@@ -979,6 +818,234 @@ export class ImageService
     });
   }
 
+  async computeRequestParameters(logPrefix: string, parameters: SearchParameters): Promise<{
+    where: Prisma.ImageWhereInput,
+    orderBy: Prisma.ImageOrderByWithRelationInput,
+    take: number | undefined,
+    skip: number | undefined
+  }>
+  {
+    let filter: SearchFilter | undefined;
+    if (parameters?.filter !== undefined)
+    {
+      filter = parameters?.filter;
+    }
+    else if (parameters?.collectionId !== undefined)
+    {
+      const collection = await this.entitiesProvider.collections.findUnique({ where: { id: parameters?.collectionId } });
+      if (collection === null)
+      {
+        parametersChecker.throwBadParameter("collectionId", parameters?.collectionId.toString(), "the collection with that id does not exist");
+      }
+      filter = plainToInstanceViaJSON(Collection, collection).filter;
+    }
+    const origin = filter?.origin;
+    const sorting: SearchSorting | undefined = filter?.sorting;
+    const repositoryIds = origin?.kind === SearchOriginKind.Repositories ? (await this.moduleRef.get(RepositoryService).list(origin.ids)).map(repository => repository.id) : undefined;
+    const imageIds = origin?.kind === SearchOriginKind.Images ? origin.ids : undefined;
+    const criteria: SearchCriteria | undefined = filter !== undefined ? filter?.criteria : undefined;
+    const range: SearchRange | undefined = parameters?.range;
+    const keyword = criteria?.keyword;
+    const tags = criteria?.tags;
+    const features = criteria?.features;
+    const properties = criteria?.properties;
+    const text = keyword?.text;
+    const widthRange = properties?.width;
+    const heightRange = properties?.height;
+    const weightInBytesRange = properties?.weightInBytes;
+    const creationDateRange = properties?.creationDate;
+    const modificationDateRange = properties?.modificationDate;
+    logger.info(`${logPrefix}${repositoryIds === undefined ? "" : ` with a repository id in list [${repositoryIds.map(id => `'${id}'`).join(",")}]`}` + `${keyword === undefined ? "" : (` containing the text '${text}'` + " present in the [" + ([keyword.inName === false ? "" : "file name", keyword.inFeatures === false ? "" : "features", keyword.inMetadata === false ? "" : "metadata"].filter(string => string.length > 0).join(", ")) + "]")}` + `${tags === undefined ? "" : (`, with the tags [${tags.values.map(value => `'${value}'`).join(", ")}]`)}` + `${widthRange === undefined ? "" : (", with " + widthRange.toEntityString("width"))}` + `${heightRange === undefined ? "" : (", with " + heightRange.toEntityString("height"))}` + `${weightInBytesRange === undefined ? "" : (", with " + weightInBytesRange.toEntityString("binary weight"))}` + `${creationDateRange === undefined ? "" : (", with " + creationDateRange.toEntityString("creation date"))}` + `${modificationDateRange === undefined ? "" : (", with " + modificationDateRange.toEntityString("modification date"))}` + (sorting === undefined ? "" : ` sorted by '${sorting.property}' in ${sorting.isAscending === true ? "ascending" : "descending"} order`) + ((range === undefined || range.take === undefined) ? "" : ` with a range of [${range.skip}, ${range.take}]`));
+
+    if (keyword !== undefined && (keyword.inName === false && keyword.inMetadata === false && keyword.inFeatures === false))
+    {
+      parametersChecker.throwBadParameter("keyword", undefined, "it contains only false properties");
+    }
+    let orderProperty: keyof Prisma.ImageOrderByWithRelationInput;
+    if (sorting === undefined)
+    {
+      orderProperty = "name";
+    }
+    else
+    {
+      const sortingProperty = sorting.property;
+      // noinspection FallThroughInSwitchStatementJS
+      switch (sortingProperty)
+      {
+        default:
+          parametersChecker.throwBadParameter("sorting.property", sortingProperty, "its value is not handled");
+        case SearchSortingProperty.Name:
+          orderProperty = "name";
+          break;
+        case SearchSortingProperty.CreationDate:
+          orderProperty = "fileCreationDate";
+          break;
+        case SearchSortingProperty.ModificationDate:
+          orderProperty = "fileModificationDate";
+          break;
+        case SearchSortingProperty.ImportDate:
+          orderProperty = "creationDate";
+          break;
+        case SearchSortingProperty.UpdateDate:
+          orderProperty = "modificationDate";
+          break;
+        case SearchSortingProperty.BinarySize:
+          orderProperty = "sizeInBytes";
+          break;
+        case SearchSortingProperty.Width:
+          orderProperty = "width";
+          break;
+        case SearchSortingProperty.Height:
+          orderProperty = "height";
+          break;
+      }
+    }
+    const orderBy: Prisma.ImageOrderByWithRelationInput = { [orderProperty]: (sorting === undefined || sorting.isAscending === undefined || sorting.isAscending === true) ? Prisma.SortOrder.asc : Prisma.SortOrder.desc };
+    const keyworkInput: Prisma.ImageWhereInput [] | undefined = (keyword === undefined || text === undefined || text === "") ? undefined : [];
+    if (keyword !== undefined && keyworkInput !== undefined)
+    {
+      if (keyword.inName === true)
+      {
+        keyworkInput.push({ name: { contains: text } });
+      }
+      if (keyword.inMetadata === true)
+      {
+        keyworkInput.push({ metadata: { all: { contains: text } } });
+      }
+      if (keyword.inFeatures === true)
+      {
+        keyworkInput.push({ features: { some: { stringValue: { contains: text } } } });
+      }
+    }
+    const tagsFilter: Prisma.ImageTagListRelationFilter | undefined = tags === undefined ? undefined : {};
+    if (tags !== undefined && tagsFilter !== undefined)
+    {
+      tagsFilter.some = { value: { in: tags.values } };
+    }
+    const featuresFilter: Prisma.ImageFeatureListRelationFilter | undefined = features === undefined ? undefined : {};
+    if (features !== undefined && featuresFilter !== undefined)
+    {
+      const computeLogicalOperator = (operator: SearchFeatureLogicalOperator): "OR" | "AND" | "NOT" => operator === SearchFeatureLogicalOperator.OR ? "OR" : (operator === SearchFeatureLogicalOperator.NOT ? "NOT" : "AND");
+
+      const computeConditionInput = (condition: SearchFeatureCondition): ImageFeatureWhereInput =>
+      {
+        const format = condition.format;
+        const operator = condition.operator;
+        const whereInputs: Prisma.ImageFeatureWhereInput[] = [];
+        if (condition.type !== undefined)
+        {
+          whereInputs.push({ type: { equals: condition.type } });
+        }
+        whereInputs.push({ format: { equals: format } });
+        if (condition.name !== undefined)
+        {
+          whereInputs.push({ name: { equals: condition.name } });
+        }
+        let comparisonOperator;
+        switch (operator)
+        {
+          default:
+            throw parametersChecker.computeBadParameter("features.condition.operator", operator, "it is not supported");
+          case SearchFeatureComparisonOperator.EQUALS:
+            comparisonOperator = "equals";
+            break;
+          case SearchFeatureComparisonOperator.DIFFERENT:
+            comparisonOperator = "not";
+            break;
+          case SearchFeatureComparisonOperator.CONTAINS:
+            if (format !== ImageFeatureFormat.STRING && format !== ImageFeatureFormat.JSON && format !== ImageFeatureFormat.XML && format !== ImageFeatureFormat.MARKDOWN && format !== ImageFeatureFormat.HTML)
+            {
+              parametersChecker.throwBadParameterError(`The '${operator}' operator is not compatible with the '${format}' format`);
+            }
+            comparisonOperator = "contains";
+            break;
+          case SearchFeatureComparisonOperator.GREATER_THAN:
+          case SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL:
+          case SearchFeatureComparisonOperator.LESS_THAN:
+          case SearchFeatureComparisonOperator.LESS_THAN_OR_EQUAL:
+            if (format !== ImageFeatureFormat.INTEGER && format !== ImageFeatureFormat.FLOAT)
+            {
+              parametersChecker.throwBadParameterError(`The '${operator}' operator is not compatible with the '${format}' format`);
+            }
+            comparisonOperator = operator === SearchFeatureComparisonOperator.GREATER_THAN ? "gt" : (operator === SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL ? "gte" : (operator === SearchFeatureComparisonOperator.LESS_THAN ? "lt" : "lte"));
+            break;
+        }
+        const fieldName: ImageFeatureValueField = (format !== ImageFeatureFormat.INTEGER && format !== ImageFeatureFormat.FLOAT && format !== ImageFeatureFormat.BOOLEAN) ? featureFieldStringValue : featureFieldNumericValue;
+        const value: string | number = this.fromDtoToPersistentFeatureValue(condition.value);
+        const withNullValue = (operator === SearchFeatureComparisonOperator.DIFFERENT && value === ImageFeatureNullValue.Null) ? null : value;
+        whereInputs.push({ [fieldName]: { [comparisonOperator]: withNullValue } });
+        return { AND: whereInputs };
+      };
+      const computeFeaturesInputs = (searchFeatures: SearchFeatures): Prisma.ImageFeatureWhereInput =>
+      {
+        const whereInputs = searchFeatures.conditions.map(condition => computeConditionInput(condition));
+        const logicalOperator = computeLogicalOperator(searchFeatures.operator);
+        if (searchFeatures.features !== undefined)
+        {
+          whereInputs.push(computeFeaturesInputs(searchFeatures.features));
+        }
+        return { [logicalOperator]: whereInputs };
+      };
+
+      const inputs = computeFeaturesInputs(features);
+      if (inputs.NOT !== undefined)
+      {
+        featuresFilter.none = { AND: inputs.NOT };
+      }
+      else
+      {
+        featuresFilter.some = inputs;
+      }
+    }
+    const [widthFilter, heightFilter, weightInBytesFilter] = [widthRange, heightRange, weightInBytesRange].map((range) =>
+    {
+      const filter: Prisma.IntFilter<"Image"> | undefined = range === undefined ? undefined : {};
+      if (range !== undefined && filter !== undefined)
+      {
+        if (range.minimum !== undefined)
+        {
+          filter.gte = range.minimum;
+        }
+        if (range.maximum !== undefined)
+        {
+          filter.lte = range.maximum;
+        }
+      }
+      return filter;
+    });
+    const [creationDateFilter, modificationDateFilter] = [creationDateRange, modificationDateRange].map((range) =>
+    {
+      const filter: Prisma.DateTimeFilter<"Image"> | undefined = range === undefined ? undefined : {};
+      if (range !== undefined && filter !== undefined)
+      {
+        if (range.minimum !== undefined)
+        {
+          filter.gte = new Date(range.minimum);
+        }
+        if (range.maximum !== undefined)
+        {
+          filter.lte = new Date(range.maximum);
+        }
+      }
+      return filter;
+    });
+    const where: Prisma.ImageWhereInput =
+      {
+        id: imageIds === undefined ? undefined : { in: imageIds },
+        repositoryId: repositoryIds === undefined ? undefined : { in: repositoryIds },
+        format: criteria?.formats === undefined ? undefined : { in: criteria?.formats },
+        tags: tagsFilter,
+        features: featuresFilter,
+        width: widthFilter,
+        height: heightFilter,
+        sizeInBytes: weightInBytesFilter,
+        creationDate: creationDateFilter,
+        modificationDate: modificationDateFilter,
+        AND: { OR: keyworkInput }
+      };
+    return { where, orderBy, take: range?.take, skip: range?.skip };
+  }
+
   private async getPersistedImage(id: string, withMetadata: boolean = true, withFeatures: boolean = true, withTags: boolean = true): Promise<ImageWithIncludes>
   {
     const entity: ImageWithIncludes | null = await this.entitiesProvider.images.findUnique({
@@ -1000,6 +1067,25 @@ export class ImageService
     }
   }
 
+  private checkExtensions(extensionIds: string[] | undefined): string[] | undefined
+  {
+    if (extensionIds !== undefined && extensionIds.length === 0)
+    {
+      extensionIds = undefined;
+    }
+    if (extensionIds !== undefined)
+    {
+      for (const extensionId of extensionIds)
+      {
+        if (this.extensionsRegistry.exists(extensionId) === false)
+        {
+          parametersChecker.throwBadParameter("extensionIds", undefined, `the extension with id '${extensionId}' does not exist`);
+        }
+      }
+    }
+    return extensionIds;
+  }
+
   private checkImageBinaryWeight(buffer: Buffer<ArrayBufferLike>): void
   {
     if (buffer.length > Image.IMAGE_MAXIMUM_BINARY_WEIGHT_IN_BYTES)
@@ -1008,7 +1094,7 @@ export class ImageService
     }
   }
 
-  private toDto(entity: PersistedImage, metadata: PersistedImageMetadata | undefined, features: PersistedImageFeature[] | undefined, tags: PersistedImageTag[] | undefined): Image | ImageSummary
+  private toDto<T extends ImageSummary>(type: ClassConstructor<T>, entity: PersistedImage, metadata: PersistedImageMetadata | undefined, features: PersistedImageFeature[] | undefined, tags: PersistedImageTag[] | undefined): T
   {
     let url: string = entity.url;
     {
@@ -1029,19 +1115,15 @@ export class ImageService
       url
     });
     Object.assign(entity, {
-      metadata: metadata === undefined ? [] : this.metadataToDto(metadata)
+      metadata: metadata === undefined ? undefined : this.metadataToDto(metadata)
     });
     Object.assign(entity, {
-      features: features === undefined ? [] : features.filter(feature => !(feature.stringValue == ImageService.emptyImageFeatureValue && feature.numericValue === null)).map(this.extensionFeatureToDto.bind(this))
+      features: features === undefined ? undefined : features.filter(feature => !(feature.stringValue == ImageService.emptyImageFeatureValue && feature.numericValue === null)).map(this.extensionFeatureToDto.bind(this))
     });
     Object.assign(entity, {
-      tags: tags === undefined ? [] : tags.filter(tag => tag.value !== ImageService.emptyImageTag).map((tag) =>
-      {
-        return new ExtensionImageTag(tag.extensionId, tag.value);
-      })
+      tags: tags === undefined ? undefined : tags.filter(tag => tag.value !== ImageService.emptyImageTag).map(tag => new ExtensionImageTag(tag.extensionId, tag.value))
     });
-    // @ts-ignore
-    return entity;
+    return plainToInstanceViaJSON(type, entity);
   }
 
   private featureToDto(feature: PersistedImageFeature): ImageFeature
@@ -1052,6 +1134,11 @@ export class ImageService
   private extensionFeatureToDto(feature: PersistedImageFeature): ExtensionImageFeature
   {
     return new ExtensionImageFeature(feature.extensionId, feature.type as ImageFeatureType, feature.format as ImageFeatureFormat, feature.name === null ? undefined : feature.name, this.fromPersistentToDtoFeatureValue(feature));
+  }
+
+  private extensionTagToDto(tag: PersistedImageTag): ExtensionImageTag
+  {
+    return new ExtensionImageTag(tag.extensionId, tag.value);
   }
 
   private metadataToDto(entity: PersistedImageMetadata): ImageMetadata
@@ -1205,10 +1292,7 @@ export class SearchService
 
   public async computeApplicationMetadata(applicationMetadataJson: Json, validateMetadata: boolean): Promise<ApplicationMetadata>
   {
-    const applicationMetadata: ApplicationMetadata = plainToInstance(ApplicationMetadata, applicationMetadataJson, {
-      excludeExtraneousValues: true,
-      ignoreDecorators: true
-    });
+    const applicationMetadata: ApplicationMetadata = plainToInstanceViaJSON(ApplicationMetadata, applicationMetadataJson);
     if (validateMetadata === true)
     {
       const validationErrors = await validate(applicationMetadata, { forbidUnknownValues: true });
@@ -1217,7 +1301,7 @@ export class SearchService
         throw validationErrors[0];
       }
     }
-    // We set back property the "ApplicationMetadataItemFreeValue" items, which have been damaged by the "plainToInstance()" call
+    // We set back property the "ApplicationMetadataItemFreeValue" items, which have been damaged by the "plainToInstanceViaJSON()" call
     for (let index = 0; index < applicationMetadata.items.length; index++)
     {
       const item = applicationMetadata.items[index];

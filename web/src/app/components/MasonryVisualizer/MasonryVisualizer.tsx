@@ -42,7 +42,7 @@ export default function MasonryVisualizer({
             keyPrefix="masonryVisualizerImages"
             containerWidth={containerWidth}
             data={{
-              imageSummaries: images,
+              images,
               currentPage: 1,
               total: images.length,
             }}

@@ -7,7 +7,7 @@ import {
   ImageFormat,
   ImageFormats,
   Repository,
-  SearchOriginType
+  SearchOriginKind
 } from "../../dtos/app.dtos";
 import { logger } from "../../logger";
 import { parametersChecker } from "./parametersChecker";
@@ -230,7 +230,7 @@ export class RepositoryWatcher
                 // We delete the image embeddings
                 await this.vectorDatabaseAccessor.deleteImagesEmbeddings([image.id]);
                 // We remove the image from collections
-                await this.collectionService.clearFromOrigin(SearchOriginType.Images, image.id);
+                await this.collectionService.clearFromOrigin(SearchOriginKind.Images, image.id);
                 await imageDelegate.delete({ where: { id: image.id } });
                 notifier.emit(EventEntity.Image, ImageEventAction.Deleted, undefined, { id: image.id });
               }

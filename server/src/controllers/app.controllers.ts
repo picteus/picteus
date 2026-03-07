@@ -82,7 +82,8 @@ import {
   ImageMediaUrl,
   ImageMetadata,
   ImageResizeRender,
-  ImageSummaryList,
+  ImageResult,
+  ImageSummaryResult,
   ImageTag,
   imageUrlSchema,
   integerIdSchema,
@@ -93,8 +94,10 @@ import {
   repositoryIdSchema,
   RepositoryList,
   RepositoryLocationType,
+  SearchFeaturesResult,
   SearchFilter,
   SearchParameters,
+  SearchTagsResult,
   Settings
 } from "../dtos/app.dtos";
 import {
@@ -1506,25 +1509,106 @@ export class ImageController
     logger.debug("Instantiating an ImageController");
   }
 
-  @Get("search")
+  @Get("search/summaries")
   @ApiOperation(
     {
-      summary: "Searches images",
-      description: "Searches for images, given criteria."
+      summary: "Retrieves image summaries",
+      description: "Retrieves image summaries following search parameters."
     }
   )
   @DeepObjectApiQuery(SearchParameters)
   @ApiResponse(
     {
       status: OK,
-      description: "The images matching the criteria",
-      type: ImageSummaryList
+      description: "The image summaries matching the parameters and the extension identifiers",
+      type: ImageSummaryResult
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async search(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<ImageSummaryList>
+  async searchSummaries(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<ImageSummaryResult>
   {
-    return await this.imageService.search(parameters);
+    return await this.imageService.searchForImageSummaries(parameters);
+  }
+
+  @Get("search/images")
+  @ApiOperation(
+    {
+      summary: "Retrieves image details",
+      description: "Retrieves image details following search parameters."
+    }
+  )
+  @DeepObjectApiQuery(SearchParameters)
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The image details matching the parameters and the extension identifiers",
+      type: ImageResult
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  async searchImages(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<ImageResult>
+  {
+    return await this.imageService.searchForImages(parameters);
+  }
+
+  @Get("search/features")
+  @ApiOperation(
+    {
+      summary: "Retrieves image features",
+      description: "Retrieves image features following search parameters."
+    }
+  )
+  @ApiQuery({
+    name: "extensionIds",
+    description: "The extension identifiers the features must belong to",
+    schema: { items: extensionIdSchema, type: "array" },
+    explode: true,
+    style: "deepObject",
+    required: false
+  })
+  @DeepObjectApiQuery(SearchParameters)
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The image features matching the parameters and the extension identifiers",
+      type: SearchFeaturesResult,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  async searchFeatures(@Query("extensionIds", new ArrayValidationPipe<String>()) extensionIds: string[] | undefined, @Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<SearchFeaturesResult>
+  {
+    return await this.imageService.searchForImageFeatures(extensionIds, parameters);
+  }
+
+  @Get("search/tags")
+  @ApiOperation(
+    {
+      summary: "Retrieves image tags",
+      description: "Retrieves image tags following search parameters."
+    }
+  )
+  @ApiQuery({
+    name: "extensionIds",
+    description: "The extension identifiers the tags must belong to",
+    schema: { items: extensionIdSchema, type: "array" },
+    explode: true,
+    style: "deepObject",
+    required: false
+  })
+  @DeepObjectApiQuery(SearchParameters)
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The image tags matching the parameters and the extension identifiers",
+      type: SearchTagsResult,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  async searchTags(@Query("extensionIds", new ArrayValidationPipe<String>()) extensionIds: string[] | undefined, @Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<SearchTagsResult>
+  {
+    return await this.imageService.searchForImageTags(extensionIds, parameters);
   }
 
   @Get(":id/get")

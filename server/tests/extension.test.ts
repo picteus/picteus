@@ -263,8 +263,8 @@ describe("Extensions", () =>
     }>
     {
       const repository = await this.createRepository(watch);
-      const summaries = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
-      return { repository, images: summaries.entities };
+      const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
+      return { repository, images: result.items };
     }
 
     async waitUntilExtensionInstalled(): Promise<void>
@@ -1060,11 +1060,11 @@ describe("Extensions", () =>
       fs.rmSync(tagsEventFilePath);
       fs.rmSync(featuresEventFilePath);
       await base.getExtensionController().pauseOrResume(builder.extensionId, true);
-      const images = (await base.getImageController().search({})).entities;
-      for (const image of images)
+      const summaries = (await base.getImageController().searchSummaries({})).items;
+      for (const summary of summaries)
       {
-        await base.getImageController().setTags(Base.allPolicyContext, image.id, manifest.id, ["tag"]);
-        await base.getImageController().setFeatures(Base.allPolicyContext, image.id, manifest.id, [new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.STRING, undefined, "string")]);
+        await base.getImageController().setTags(Base.allPolicyContext, summary.id, manifest.id, ["tag"]);
+        await base.getImageController().setFeatures(Base.allPolicyContext, summary.id, manifest.id, [new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.STRING, undefined, "string")]);
       }
       await base.getExtensionController().pauseOrResume(builder.extensionId, false);
       await base.wait();
@@ -2014,7 +2014,7 @@ describe("Extensions", () =>
         expect(fs.existsSync(path.join(builder.extensionDirectoryPath, "image.created"))).toEqual(true);
       });
 
-      const summary = (await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).entities[0];
+      const summary = (await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items[0];
 
       const now = new Date();
       const filePath = summary.url.substring(fileWithProtocol.length);

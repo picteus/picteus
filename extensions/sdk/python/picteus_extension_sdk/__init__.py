@@ -1,4 +1,4 @@
-__version__: str = "0.9.0"
+__version__: str = "0.10.0"
 
 
 def get_version() -> str:

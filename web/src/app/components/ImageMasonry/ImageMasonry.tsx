@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ImageSummary } from "@picteus/ws-client";
 import MasonryLayout, { MasonrySizing } from "react-fast-masonry";
 
-import { ImageItemMode, ImageMasonryDataType, ImageSummaryWithCaption } from "types";
+import { ImageItemMode, ImageMasonryDataType, ImageWithCaption } from "types";
 import { useImageVisualizerContext } from "app/context"; // Import context
 import { ImageItem } from "./components";
 import style from "./ImageMasonry.module.scss";
@@ -25,7 +25,7 @@ export default function ImageMasonry({
   containerWidth,
 }: ImageMasonryType) {
   const [localData, setLocalData] = useState<
-    ImageSummary[] | ImageSummaryWithCaption[]
+    ImageSummary[] | ImageWithCaption[]
   >([]);
   const queueRef = useRef<ImageSummary[][]>([]); // Queue for holding image summaries
   const [isProcessing, setIsProcessing] = useState(false); // To track if an update is being processed
@@ -55,8 +55,8 @@ export default function ImageMasonry({
   }
 
   useEffect(() => {
-    if (data.imageSummaries?.length) {
-      queueRef.current.push(data.imageSummaries);
+    if (data.images?.length) {
+      queueRef.current.push(data.images);
 
       if (!isProcessing) {
         processQueue();
@@ -94,8 +94,8 @@ export default function ImageMasonry({
                   imageSummary: localData[index],
                 })
               }
-              imageSummary={localData[index]}
-              caption={(localData[index] as ImageSummaryWithCaption).caption}
+              image={localData[index]}
+              caption={(localData[index] as ImageWithCaption).caption}
             />
           );
         }}

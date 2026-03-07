@@ -39,7 +39,7 @@ export default function GalleryView({ initialFilterOrCollectionId }: GalleryView
   const [data, setData] = useState<ImageMasonryDataType>({
     currentPage: initialPagination.currentPage,
     total: 0,
-    imageSummaries: [],
+    images: [],
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const containerWidth = useContainerDimensions(containerRef);
@@ -104,7 +104,7 @@ export default function GalleryView({ initialFilterOrCollectionId }: GalleryView
       setData({
         total: apiResponse.totalCount,
         currentPage: pagination.currentPage,
-        imageSummaries: apiResponse?.entities,
+        images: apiResponse.items,
       });
     } catch (error) {
       console.warn("Can't fetch images", error);

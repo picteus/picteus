@@ -4,7 +4,7 @@ import { instanceToPlain } from "class-transformer";
 import { Collection as PersistedCollection } from ".prisma/client";
 
 import { logger } from "../logger";
-import { Collection, FieldLengths, SearchFilter, SearchOriginType } from "../dtos/app.dtos";
+import { Collection, FieldLengths, SearchFilter, SearchOriginKind } from "../dtos/app.dtos";
 import { EntitiesProvider } from "./databaseProviders";
 import { parametersChecker } from "./utils/parametersChecker";
 import { plainToInstanceViaJSON } from "../utils";
@@ -98,7 +98,7 @@ export class CollectionService
     await this.entitiesProvider.collections.delete({ where: { id: entity.id } });
   }
 
-  async clearFromOrigin(type: SearchOriginType, id: string): Promise<void>
+  async clearFromOrigin(type: SearchOriginKind, id: string): Promise<void>
   {
     await Promise.all((await this.entitiesProvider.collections.findMany()).map(persistedCollection =>
     {

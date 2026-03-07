@@ -56,7 +56,7 @@ export default function ImageVisualizerWrapper({
 
   return (
     <ImageVisualizer
-      imageSummary={state.imageSummary}
+      image={state.imageSummary}
       hasPrev={computeHas("prev")}
       hasNext={computeHas("next")}
       onPrev={handlePrev}

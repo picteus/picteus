@@ -512,7 +512,7 @@ export class SearchCriteria
 /**
  * All the search origin types.
  */
-export enum SearchOriginType
+export enum SearchOriginKind
 {
   Repositories = "repositories",
   Images = "images"
@@ -522,7 +522,7 @@ export enum SearchOriginType
 export class BasisSearchOrigin
 {
 
-  constructor(kind: SearchOriginType)
+  constructor(kind: SearchOriginKind)
   {
     this.kind = kind;
   }
@@ -530,17 +530,17 @@ export class BasisSearchOrigin
   @ApiProperty(
     {
       description: "Indicates how the search result entities should be sorted",
-      enum: SearchOriginType,
+      enum: SearchOriginKind,
       enumName: "SearchOriginNature",
       required: true,
-      example: SearchOriginType.Repositories
+      example: SearchOriginKind.Repositories
     }
   )
-  @IsEnum(SearchOriginType)
+  @IsEnum(SearchOriginKind)
   @IsDefined()
   @NotEquals(null)
   @Expose()
-  readonly kind: SearchOriginType;
+  readonly kind: SearchOriginKind;
 
 }
 
@@ -550,7 +550,7 @@ export class SearchRepositoriesOrigin extends BasisSearchOrigin
 
   constructor(ids: string[])
   {
-    super(SearchOriginType.Repositories);
+    super(SearchOriginKind.Repositories);
     this.ids = ids;
   }
 
@@ -578,7 +578,7 @@ export class SearchImagesOrigin extends BasisSearchOrigin
 
   constructor(ids: string[])
   {
-    super(SearchOriginType.Images);
+    super(SearchOriginKind.Images);
     this.ids = ids;
   }
 
@@ -701,8 +701,8 @@ export class SearchFilter
           propertyName: "kind",
           mapping:
             {
-              [SearchOriginType.Repositories]: getSchemaPath(SearchRepositoriesOrigin),
-              [SearchOriginType.Images]: getSchemaPath(SearchImagesOrigin)
+              [SearchOriginKind.Repositories]: getSchemaPath(SearchRepositoriesOrigin),
+              [SearchOriginKind.Images]: getSchemaPath(SearchImagesOrigin)
             }
         },
       required: false
@@ -710,7 +710,7 @@ export class SearchFilter
   )
   @Transform(transformStringifyJson<SearchRepositoriesOrigin | SearchImagesOrigin>(undefined, (object: any) =>
   {
-    return object["kind"] === SearchOriginType.Repositories ? SearchRepositoriesOrigin : SearchImagesOrigin;
+    return object["kind"] === SearchOriginKind.Repositories ? SearchRepositoriesOrigin : SearchImagesOrigin;
   }))
   @ValidateNested()
   @Type(() => BasisSearchOrigin,
@@ -720,8 +720,8 @@ export class SearchFilter
           property: "kind",
           subTypes:
             [
-              { value: SearchRepositoriesOrigin, name: SearchOriginType.Repositories },
-              { value: SearchImagesOrigin, name: SearchOriginType.Images }
+              { value: SearchRepositoriesOrigin, name: SearchOriginKind.Repositories },
+              { value: SearchImagesOrigin, name: SearchOriginKind.Images }
             ]
         },
       keepDiscriminatorProperty: true

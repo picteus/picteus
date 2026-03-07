@@ -1,5 +1,5 @@
 import React, { ReactNode, useMemo, useState } from "react";
-import { ImageSummary } from "@picteus/ws-client";
+import { Image, ImageSummary } from "@picteus/ws-client";
 import { IconDots } from "@tabler/icons-react";
 import { ActionIcon, Checkbox, Flex, Menu } from "@mantine/core";
 
@@ -12,15 +12,15 @@ import style from "./ImageItem.module.scss";
 
 type ImageItemType = {
   width: number;
-  imageSummary: ImageSummary;
+  image: Image | ImageSummary;
   mode?: ImageItemMode;
-  onClick: (data: ImageSummary) => void;
+  onClick: (data: Image | ImageSummary) => void;
   caption?: ReactNode;
 };
 
 export default function ImageItem({
   width,
-  imageSummary,
+  image,
   onClick,
   mode = ImageItemMode.VIEW,
   caption,
@@ -38,7 +38,7 @@ export default function ImageItem({
     }
 
     if (target.getAttribute("data-action")) {
-      onClick(imageSummary);
+      onClick(image);
     }
   }
 
@@ -47,29 +47,29 @@ export default function ImageItem({
   }
 
   function handleOnSelectImage() {
-    if (selectedImages.find((i) => i.id === imageSummary.id)) {
-      setSelectedImages(selectedImages.filter((i) => i.id !== imageSummary.id));
+    if (selectedImages.find((i) => i.id === image.id)) {
+      setSelectedImages(selectedImages.filter((i) => i.id !== image.id));
     } else {
-      setSelectedImages([...selectedImages, imageSummary]);
+      setSelectedImages([...selectedImages, image]);
     }
   }
 
   const isSelected = useMemo(
     () =>
-      selectedImages.find((value) => value.id === imageSummary.id) !==
+      selectedImages.find((value) => value.id === image.id) !==
       undefined,
-    [selectedImages, imageSummary],
+    [selectedImages, image],
   );
 
-  return imageSummary ? (
+  return image ? (
     <div
       className={`${style.imageWrapper} ${isSelected ? style.hover : ""}`}
       onClick={handleOnClick}
       style={{
         width: width + "px",
         height:
-          (width * imageSummary.dimensions.height) /
-            imageSummary.dimensions.width +
+          (width * image.dimensions.height) /
+            image.dimensions.width +
           "px",
       }}
     >
@@ -103,7 +103,7 @@ export default function ImageItem({
                 </ActionIcon>
               </Menu.Target>
 
-              <ImageItemMenu imageSummary={imageSummary} />
+              <ImageItemMenu image={image} />
             </Menu>
           )}
         </Flex>
@@ -115,8 +115,8 @@ export default function ImageItem({
         }}
         loading="lazy"
         className={`${style.image} ${hidePlaceholder ? style.loaded : ""}`}
-        src={ImageService.getImageSrc(imageSummary.uri, width)}
-        alt={imageSummary.name}
+        src={ImageService.getImageSrc(image.uri, width)}
+        alt={image.name}
       />
       {!hidePlaceholder && <div className={style.placeholder}></div>}
     </div>

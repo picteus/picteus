@@ -20,14 +20,14 @@ import { ImageItemMenu } from "../ImageMasonry/components/ImageItem/components";
 
 
 export default function ImageVisualizer({
-  imageSummary,
+  image,
   onClose,
   hasPrev,
   hasNext,
   onPrev,
   onNext,
 }: {
-  imageSummary: ImageSummary;
+  image: Image | ImageSummary;
   onClose: () => void;
   hasPrev: boolean;
   hasNext: boolean;
@@ -53,7 +53,7 @@ export default function ImageVisualizer({
   }
 
   async function loadImageData() {
-    const imageData: Image = await ImageService.get({ id: imageSummary.id });
+    const imageData: Image = await ImageService.get({ id: image.id });
     setImageTags(imageData.tags);
     setImageFeatures(imageData.features);
     setImageData(imageData);
@@ -61,14 +61,14 @@ export default function ImageVisualizer({
 
   useEffect(() => {
     void loadImageData();
-  }, [imageSummary]);
+  }, [image]);
 
   const dimensions = useMemo(() => {
     return ImageService.getFittedDimensionsToScreen(
-      imageSummary.dimensions,
+      image.dimensions,
       panelSizes,
     );
-  }, [imageSummary, panelSizes]);
+  }, [image, panelSizes]);
 
   useEffect(() => {
     if (imageRef?.current) {
@@ -115,20 +115,20 @@ export default function ImageVisualizer({
   }, [imageRef]);
 
   const repository: Repository = RepositoriesService.getRepositoryInformation(
-    imageSummary.repositoryId,
+    image.repositoryId,
   );
 
   const informationData = useMemo(() => {
     return [
       {
         label: t("field.id"),
-        value: <CopyText text={imageSummary.id} />,
+        value: <CopyText text={image.id} />,
       },
-      ...(imageSummary.parentId
+      ...(image.parentId
         ? [
             {
               label: t("field.parentId"),
-              value: <CopyText text={imageSummary.parentId} />,
+              value: <CopyText text={image.parentId} />,
             },
           ]
         : []),
@@ -138,28 +138,28 @@ export default function ImageVisualizer({
       },
       {
         label: t("field.repositoryId"),
-        value: <CopyText text={imageSummary.repositoryId} />,
+        value: <CopyText text={image.repositoryId} />,
       },
       {
         label: t("field.createdOn"),
-        value: formatDate(imageSummary.fileDates.creationDate),
+        value: formatDate(image.fileDates.creationDate),
       },
       {
         label: t("field.modifiedOn"),
-        value: formatDate(imageSummary.fileDates.modificationDate),
+        value: formatDate(image.fileDates.modificationDate),
       },
       {
         label: t("field.dimensions"),
-        value: `${imageSummary.dimensions.width}x${imageSummary.dimensions.height}`,
+        value: `${image.dimensions.width}x${image.dimensions.height}`,
       },
-      ...(imageSummary.sourceUrl
+      ...(image.sourceUrl
         ? [
             {
               label: t("field.sourceUrl"),
               value: (
                 <ExternalLink
-                  label={imageSummary.sourceUrl}
-                  url={imageSummary.sourceUrl}
+                  label={image.sourceUrl}
+                  url={image.sourceUrl}
                 />
               ),
             },
@@ -167,10 +167,10 @@ export default function ImageVisualizer({
         : []),
       {
         label: t("field.location"),
-        value: <ExternalLink label={imageSummary.url} url={imageSummary.url} />,
+        value: <ExternalLink label={image.url} url={image.url} />,
       },
     ];
-  }, [imageSummary]);
+  }, [image]);
 
   const imageMetadata = useMemo(() => {
     if (!imageData) {
@@ -221,7 +221,7 @@ export default function ImageVisualizer({
               <img
                 ref={imageRef}
                 src={ImageService.getImageSrc(
-                  imageSummary.uri,
+                  image.uri,
                   dimensions.width,
                   dimensions.height,
                 )}
@@ -247,10 +247,10 @@ export default function ImageVisualizer({
                 <div className={style.titleContainer}>
                   <div className={style.titleBox}>
                     <div className={style.title}>
-                      <CopyText size="md" text={imageSummary.name} />
+                      <CopyText size="md" text={image.name} />
                       <Text c="dimmed" size="sm">
-                        {imageSummary.format} —{" "}
-                        {formatSize(imageSummary.sizeInBytes)}
+                        {image.format} —{" "}
+                        {formatSize(image.sizeInBytes)}
                       </Text>
                     </div>
                   </div>
@@ -279,7 +279,7 @@ export default function ImageVisualizer({
                         {t("menu.imageCommands")}
                       </Button>
                     </Menu.Target>
-                    <ImageItemMenu imageSummary={imageSummary} />
+                    <ImageItemMenu image={image} />
                   </Menu>
                 </Flex>
                 <Divider my="md" />

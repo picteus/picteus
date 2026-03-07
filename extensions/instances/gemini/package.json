@@ -53,6 +53,6 @@
   "dependencies": {
     "@google/genai": "1.25.0",
     "adm-zip": "0.5.16",
-    "@picteus/internal-extension-sdk": "0.9.0"
+    "@picteus/internal-extension-sdk": "0.10.0"
   }
 }

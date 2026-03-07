@@ -26,7 +26,7 @@ import {
   RepositoryStatus,
   SearchCriteria,
   SearchFilter,
-  SearchOriginType,
+  SearchOriginKind,
   SearchParameters,
   SearchProperties,
   SearchPropertyRange,
@@ -116,11 +116,11 @@ describe("Repository", () =>
     }
     await checkActivity(repository.id, watch === true ? RepositoryActivityKind.Watching : RepositoryActivityKind.None);
 
-    const imageSummaries = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
+    const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
     const expectedTotalCount = includedFileNames.length - 1;
-    expect(imageSummaries.entities.length).toBe(expectedTotalCount);
-    expect(imageSummaries.totalCount).toBe(expectedTotalCount);
-    for (const imageSummary of imageSummaries.entities)
+    expect(result.items.length).toBe(expectedTotalCount);
+    expect(result.totalCount).toBe(expectedTotalCount);
+    for (const imageSummary of result.items)
     {
       expect(imageSummary.repositoryId).toBe(id);
     }
@@ -205,8 +205,8 @@ describe("Repository", () =>
     const repository = await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + symbolicDirectoryPath, undefined, Defaults.repositoryName, undefined, true);
     expect(repository.url).toBe(fileWithProtocol + declaredDirectoryPath);
     await base.waitUntilRepositoryReady(repository.id);
-    const list = await base.getImageController().search({});
-    const summary = list.entities[0];
+    const list = await base.getImageController().searchSummaries({});
+    const summary = list.items[0];
     expect(summary.uri).toBe(fileWithProtocol + path.join(declaredDirectoryPath, fileName));
     expect(summary.url).toBe(fileWithProtocol + path.join(symbolicDirectoryPath, fileName));
   });
@@ -348,9 +348,9 @@ describe("Repository", () =>
     await base.waitUntilRepositoryReady(repository.id);
 
     {
-      const list = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria([ImageFormat.JPEG])));
+      const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria([ImageFormat.JPEG])));
       const count = 2;
-      expect(list.entities.length).toBe(count);
+      expect(list.items.length).toBe(count);
       expect(list.totalCount).toBe(count);
     }
     {
@@ -359,24 +359,24 @@ describe("Repository", () =>
         return summary.name;
       };
       {
-        const list = await base.getImageController().search(new SearchParameters(
+        const result = await base.getImageController().searchSummaries(new SearchParameters(
           new SearchFilter(new SearchCriteria([ImageFormat.JPEG]), new SearchRepositoriesOrigin([repository.id]), new SearchSorting(SearchSortingProperty.Name))));
-        expect(list.entities.map(mapFunction)).toEqual(list.entities.map(mapFunction).sort());
+        expect(result.items.map(mapFunction)).toEqual(result.items.map(mapFunction).sort());
       }
       {
-        const list = await base.getImageController().search(new SearchParameters(
+        const list = await base.getImageController().searchSummaries(new SearchParameters(
           new SearchFilter(new SearchCriteria([ImageFormat.JPEG]), new SearchRepositoriesOrigin([repository.id]), new SearchSorting(SearchSortingProperty.Name, false))));
-        expect(list.entities.map(mapFunction)).toEqual(list.entities.map(mapFunction).sort().reverse());
+        expect(list.items.map(mapFunction)).toEqual(list.items.map(mapFunction).sort().reverse());
       }
     }
     {
-      const list = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria([ImageFormat.PNG])));
+      const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria([ImageFormat.PNG])));
       const count = 1;
-      expect(list.entities.length).toBe(count);
+      expect(list.items.length).toBe(count);
       expect(list.totalCount).toBe(count);
     }
     {
-      const list = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, {
+      const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, {
           text: "Dali",
           inName: true,
           inFeatures: false,
@@ -384,19 +384,19 @@ describe("Repository", () =>
         })
       ));
       const count = 1;
-      expect(list.entities.length).toBe(count);
+      expect(list.items.length).toBe(count);
       expect(list.totalCount).toBe(count);
     }
     {
-      const list = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined)));
+      const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined)));
       const count = 7;
-      expect(list.entities.length).toBe(count);
+      expect(list.items.length).toBe(count);
       expect(list.totalCount).toBe(count);
     }
     {
       const take = 2;
-      const list = await base.getImageController().search(new SearchParameters(new SearchFilter(new SearchCriteria([ImageFormat.PNG, ImageFormat.JPEG, ImageFormat.WEBP, ImageFormat.GIF]), new SearchRepositoriesOrigin([repository.id])), undefined, new SearchRange(take)));
-      expect(list.entities.length).toBe(take);
+      const list = await base.getImageController().searchSummaries(new SearchParameters(new SearchFilter(new SearchCriteria([ImageFormat.PNG, ImageFormat.JPEG, ImageFormat.WEBP, ImageFormat.GIF]), new SearchRepositoriesOrigin([repository.id])), undefined, new SearchRange(take)));
+      expect(list.items.length).toBe(take);
       expect(list.totalCount).toBe(5);
     }
     {
@@ -406,26 +406,26 @@ describe("Repository", () =>
       const specificTagPrefix = "specific";
       let summaries: ImageSummary[];
       {
-        summaries = (await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).entities;
+        summaries = (await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items;
         let index = 0;
         for (const summary of summaries)
         {
           await base.getImageController().setTags(Base.allPolicyContext, summary.id, extension.manifest.id, [commandTag, `${specificTagPrefix}${index++}`]);
         }
       }
-      expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags([commandTag]))))).entities.length).toBe(summaries.length);
-      expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags(["inexistentTag"]))))).entities.length).toBe(0);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags([commandTag]))))).items.length).toBe(summaries.length);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags(["inexistentTag"]))))).items.length).toBe(0);
       for (let index = 0; index < summaries.length; index++)
       {
         const summary = summaries[index];
-        const list = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags([`${specificTagPrefix}${index}`]))));
-        expect(list.entities.length).toBe(1);
-        expect(list.entities[0].id).toBe(summary.id);
+        const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags([`${specificTagPrefix}${index}`]))));
+        expect(list.items.length).toBe(1);
+        expect(list.items[0].id).toBe(summary.id);
       }
     }
     {
       // We assess the properties
-      const list = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
+      const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
 
       interface Case
       {
@@ -464,7 +464,7 @@ describe("Repository", () =>
         ];
       for (const aCase of cases)
       {
-        const perFacetSummariesMap = Object.groupBy(list.entities, summary => aCase.groupBy(summary).toString());
+        const perFacetSummariesMap = Object.groupBy(list.items, summary => aCase.groupBy(summary).toString());
         const increasingFacets = Object.keys(perFacetSummariesMap).sort();
         const sum = increasingFacets.reduce((previousValue, facet) =>
         {
@@ -474,14 +474,14 @@ describe("Repository", () =>
         {
           const facetAsNumber = Number.parseInt(facet);
           const withFacetNumber = perFacetSummariesMap[facet]!.length;
-          expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(facetAsNumber, facetAsNumber))))).entities.length).toBe(withFacetNumber);
+          expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(facetAsNumber, facetAsNumber))))).items.length).toBe(withFacetNumber);
           const lowerFacets = increasingFacets.filter(facet => Number.parseInt(facet) <= facetAsNumber);
           const lessThanOrEqualToSum = lowerFacets.reduce((previousValue, facet) =>
           {
             return previousValue + perFacetSummariesMap[facet]!.length;
           }, 0);
-          expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(undefined, facetAsNumber))))).entities.length).toBe(lessThanOrEqualToSum);
-          expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(facetAsNumber, undefined))))).entities.length).toBe(sum - lessThanOrEqualToSum + withFacetNumber);
+          expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(undefined, facetAsNumber))))).items.length).toBe(lessThanOrEqualToSum);
+          expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(facetAsNumber, undefined))))).items.length).toBe(sum - lessThanOrEqualToSum + withFacetNumber);
         }
       }
     }
@@ -533,9 +533,9 @@ describe("Repository", () =>
     const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName, undefined, true);
     await base.waitUntilRepositoryReady(repository.id);
     await base.waitUntilRepositoryWatching(repository.id);
-    const imageSummaries = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
-    expect(imageSummaries.entities.length).toBe(1);
-    const imageSummary = imageSummaries.entities[0];
+    const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
+    expect(result.items.length).toBe(1);
+    const imageSummary = result.items[0];
 
     const notifier = base.getNotifier();
     const listener = base.computeEventListener();
@@ -569,8 +569,8 @@ describe("Repository", () =>
     let preexistingImage: Image | undefined;
     {
       await base.waitUntilRepositoryReady(id);
-      const imageSummaries = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(id));
-      preexistingImage = await base.getImageController().get(imageSummaries.entities[0].id);
+      const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(id));
+      preexistingImage = await base.getImageController().get(result.items[0].id);
     }
     const notifier = base.getNotifier();
     {
@@ -583,14 +583,14 @@ describe("Repository", () =>
       await base.waitUntilRepositoryReady(id);
       await checkActivity(id, RepositoryActivityKind.None);
 
-      const imageSummaries = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(id));
-      expect(imageSummaries.entities.length).toBe(2);
+      const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(id));
+      expect(result.items.length).toBe(2);
       await waitForExpect(() =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
       });
       expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Created, {
-        id: (imageSummaries.entities.find((imageSummary) =>
+        id: (result.items.find((imageSummary) =>
         {
           return imageSummary.url === fileWithProtocol + newlyAddedFilePath;
         }))!.id
@@ -606,8 +606,8 @@ describe("Repository", () =>
       fs.rmSync(preexistingFilePath);
       await base.getRepositoryController().synchronize(id);
       await base.waitUntilRepositoryReady(id);
-      const imageSummaries = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(id));
-      expect(imageSummaries.entities.length).toBe(1);
+      const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(id));
+      expect(result.items.length).toBe(1);
       await waitForExpect(() =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
@@ -639,8 +639,8 @@ describe("Repository", () =>
       fs.utimesSync(filePath, accessDate, now);
       await base.getRepositoryController().synchronize(id);
       await base.waitUntilRepositoryReady(id);
-      const imageSummaries = await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(id));
-      const image = await base.getImageController().get(imageSummaries.entities[0].id);
+      const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(id));
+      const image = await base.getImageController().get(result.items[0].id);
       expect(image.fileDates.modificationDate).toBe(now.getTime());
       expect(image.modificationDate).toBeGreaterThan(now.getTime());
       expect(image.metadata.exif).toBeDefined();
@@ -857,7 +857,7 @@ describe("Repository", () =>
       await base.getRepositoryController().delete(repositoryId);
     }).rejects.toThrow(new ServiceError(`Cannot delete a repository which is synchronizing`, BAD_REQUEST, base.badParameterCode));
     await base.waitUntilRepositoryReady(repositoryId);
-    const imageSummary = (await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repositoryId))).entities[0];
+    const imageSummary = (await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repositoryId))).items[0];
 
     const extension = await base.prepareExtension();
     await base.getImageController().setTags(Base.allPolicyContext, imageSummary.id, extension.manifest.id, ["tag"]);
@@ -868,7 +868,7 @@ describe("Repository", () =>
         criteria: { formats: [ImageFormat.PNG] },
         origin:
           {
-            kind: SearchOriginType.Repositories,
+            kind: SearchOriginKind.Repositories,
             ids: [repositoryId]
           }
       };
@@ -881,7 +881,7 @@ describe("Repository", () =>
     notifier.on(EventEntity.Image, ImageEventAction.Deleted, undefined, imageListener);
     await base.getRepositoryController().delete(repositoryId);
 
-    expect((await base.getImageController().search({})).entities.length).toBe(0);
+    expect((await base.getImageController().searchSummaries({})).items.length).toBe(0);
     expect((await base.getEntitiesProvider().imageMetadata.findMany()).length).toBe(0);
     expect((await base.getEntitiesProvider().imageTag.findMany()).length).toBe(0);
     expect((await base.getEntitiesProvider().imageFeature.findMany()).length).toBe(0);
@@ -1096,7 +1096,7 @@ describe("Repository", () =>
           expect(image.url).toBe(`${repository.url}${pathSeparator}${fileName}`);
           expect(image.sourceUrl).toBe(sourceUrl);
           expect(image.parentId).toBe(parentImageId);
-          expect((await base.getImageController().search(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).totalCount).toBe(imagesCount);
+          expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).totalCount).toBe(imagesCount);
           const newApplicationMetadata = await readApplicationMetadata(fs.readFileSync(image.url.substring(fileWithProtocol.length)), imageFormat);
           expect(newApplicationMetadata).toEqual(metadata);
         }

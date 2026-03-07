@@ -1,6 +1,6 @@
 {
   "name": "@picteus/electron",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "productName": "Picteus",
   "description": "The Picteus Electron application.",
   "keywords": [
