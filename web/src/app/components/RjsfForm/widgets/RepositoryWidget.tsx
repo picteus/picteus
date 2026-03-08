@@ -5,6 +5,7 @@ import { WidgetProps } from "@rjsf/utils";
 import { Repository } from "@picteus/ws-client";
 
 import { RepositoriesService } from "../../../services";
+import { t } from "i18next";
 
 
 export default function RepositoryWidget(props: WidgetProps) {
@@ -56,7 +57,7 @@ export default function RepositoryWidget(props: WidgetProps) {
             data={selectData}
             renderOption={renderSelectOption}
             searchable
-            placeholder="Select a repository"
+            placeholder={t("widgets.repositoryPlaceHolder")}
             clearable
             mb="md"
         />

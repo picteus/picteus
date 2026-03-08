@@ -5,6 +5,7 @@ import { WidgetProps } from "@rjsf/utils";
 import { Collection } from "@picteus/ws-client";
 
 import { CollectionService } from "../../../services";
+import { t } from "i18next";
 
 
 export default function CollectionWidget(props: WidgetProps) {
@@ -59,7 +60,7 @@ export default function CollectionWidget(props: WidgetProps) {
             data={selectData}
             renderOption={renderSelectOption}
             searchable
-            placeholder="Select a collection"
+            placeholder={t("widgets.collectionPlaceHolder")}
             clearable
             mb="md"
         />

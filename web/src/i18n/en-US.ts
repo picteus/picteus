@@ -94,7 +94,7 @@ export default {
     updateSuccess: "Collection updated",
     confirmDeleteTitle: "Delete collection",
     confirmDeleteMessage:
-      "Are you sure you want to delete the collection '{{name}}' ?",
+      "Are you sure you want to delete the collection '{{name}}' ?"
   },
   button: {
     add: "Add",
@@ -115,6 +115,12 @@ export default {
     cancel: "Cancel",
     refresh: "Refresh"
   },
+  widgets:
+    {
+      collectionPlaceHolder: "Select a collection",
+      repositoryPlaceHolder: "Select a repository",
+      tagsPlaceHolder: "Select tags"
+    },
   emptyResults: {
     title: "No Results Available",
     description: "There are currently no results",

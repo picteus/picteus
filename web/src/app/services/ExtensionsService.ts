@@ -160,12 +160,12 @@ function getAdditionalUi(
   );
 }
 
-function buildSidebarAnchorURL(url, extensionId) {
+function buildSidebarAnchorURL(url: string, extensionId: string) {
   return BASE_PATH + "/ui/" + extensionId + url;
 }
 
-function getSidebarAnchorIconURL(extensionId) {
-  return BASE_PATH + "/ui/" + extensionId + "/icon.png";
+function getSidebarAnchorIconURL(extensionId: string) {
+  return buildSidebarAnchorURL(extensionId, "/icon.png");
 }
 
 export default {
@@ -173,6 +173,7 @@ export default {
   list,
   add,
   buildSidebarAnchorURL,
+  getSidebarAnchorIconURL,
   update,
   uninstall,
   synchronize,

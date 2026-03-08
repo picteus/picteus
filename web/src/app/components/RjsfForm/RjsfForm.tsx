@@ -9,6 +9,7 @@ import "@mantine/dropzone/styles.css";
 
 import RepositoryWidget from "./widgets/RepositoryWidget";
 import CollectionWidget from "./widgets/CollectionWidget";
+import TagsWidget from "./widgets/TagsWidget";
 
 
 type RsfjFormType = {
@@ -95,6 +96,7 @@ export default function RjsfForm({
   const widgets: RegistryWidgetsType = {
     repository: RepositoryWidget,
     collection: CollectionWidget,
+    tags: TagsWidget,
   };
 
   return (
