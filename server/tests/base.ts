@@ -38,7 +38,6 @@ import {
   Image,
   ImageFormat,
   ImageSummary,
-  ImageSummaryResult,
   InstructionsPrompt,
   Manifest,
   ManifestCapability,
@@ -50,6 +49,7 @@ import {
   RepositoryActivityKind,
   RepositoryLocationType,
   RepositoryStatus,
+  SearchImageSummaryResult,
   SearchParameters,
   TextualPrompt
 } from "../src/dtos/app.dtos";
@@ -775,7 +775,7 @@ export class Base extends Core
     {
       const interval = Timers.setInterval(async () =>
       {
-        const result: ImageSummaryResult = await this.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repositoryId));
+        const result: SearchImageSummaryResult = await this.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repositoryId));
         const summary: ImageSummary | undefined = result.items.find((summary) =>
         {
           return summary.url === url;

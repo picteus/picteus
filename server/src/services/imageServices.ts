@@ -51,7 +51,6 @@ import {
   ImageMetadata,
   ImageResizeRender,
   ImageSummary,
-  ImageSummaryResult,
   ImageTag,
   NumericRange,
   RepositoryLocation,
@@ -62,6 +61,7 @@ import {
   SearchFeatureLogicalOperator,
   SearchFeatures,
   SearchFilter,
+  SearchImageSummaryResult,
   SearchOriginKind,
   SearchParameters,
   SearchRange,
@@ -93,8 +93,8 @@ import { ImageFeatureWhereInput } from ".prisma/models/ImageFeature";
 import {
   ExtensionImageFeaturesAttribute,
   ExtensionImageTagsAttribute,
-  ImageResult,
   SearchFeaturesResult,
+  SearchImageResult,
   SearchTagsResult
 } from "../dtos/image.dtos";
 import { ClassConstructor } from "class-transformer/types/interfaces";
@@ -125,7 +125,7 @@ export class ImageService
     logger.debug("Instantiating an ImageService");
   }
 
-  async searchForImageSummaries(parameters: SearchParameters): Promise<ImageSummaryResult>
+  async searchForImageSummaries(parameters: SearchParameters): Promise<SearchImageSummaryResult>
   {
     const {
       where,
@@ -137,11 +137,11 @@ export class ImageService
       this.entitiesProvider.images.findMany({ orderBy, where, take, skip }),
       this.entitiesProvider.images.count({ where })
     ]);
-    return new ImageSummaryResult(entities.map((entity) =>
+    return new SearchImageSummaryResult(entities.map((entity) =>
       this.toDto(ImageSummary, entity, undefined, undefined, undefined)), totalCount);
   }
 
-  async searchForImages(parameters: SearchParameters): Promise<ImageResult>
+  async searchForImages(parameters: SearchParameters): Promise<SearchImageResult>
   {
     const {
       where,
@@ -159,10 +159,10 @@ export class ImageService
       }),
       this.entitiesProvider.images.count({ where })
     ]);
-    return new ImageResult(entities.map((entity) => this.toDto(Image, entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags)), totalCount);
+    return new SearchImageResult(entities.map((entity) => this.toDto(Image, entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags)), totalCount);
   }
 
-  async searchForImageFeatures(extensionIds: string[] | undefined, parameters: SearchParameters): Promise<SearchFeaturesResult>
+  async searchForImageFeatures(parameters: SearchParameters, extensionIds?: string[]): Promise<SearchFeaturesResult>
   {
     const {
       where,
@@ -173,20 +173,14 @@ export class ImageService
     extensionIds = this.checkExtensions(extensionIds);
     const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({
-        where, orderBy, take, skip, include: { features: true }
+        where, orderBy, take, skip, select: { id: true, features: true }
       }),
       this.entitiesProvider.images.count({ where })
     ]);
-    const allFeatures: PersistedImageFeature[] = entities.map(entity => entity.features).reduce((previousValue, currentValue) =>
-      previousValue.concat(currentValue), []);
-    const groupedByImageIdFeaturesMap = Map.groupBy(allFeatures, (feature) => feature.imageId);
-    return new SearchFeaturesResult([...groupedByImageIdFeaturesMap.entries()].map(([imageId, features]) =>
-    {
-      return new ExtensionImageFeaturesAttribute(imageId, features.filter(feature => extensionIds === undefined || extensionIds.indexOf(feature.extensionId) !== -1).map(entity => this.extensionFeatureToDto(entity)));
-    }), totalCount);
+    return new SearchFeaturesResult(entities.map(entity => new ExtensionImageFeaturesAttribute(entity.id, entity.features.filter(feature => extensionIds === undefined || extensionIds.indexOf(feature.extensionId) !== -1).map(entity => this.extensionFeatureToDto(entity)))), totalCount);
   }
 
-  async searchForImageTags(extensionIds: string[] | undefined, parameters: SearchParameters): Promise<SearchTagsResult>
+  async searchForImageTags(parameters: SearchParameters, extensionIds?: string[]): Promise<SearchTagsResult>
   {
     const {
       where,
@@ -197,16 +191,11 @@ export class ImageService
     extensionIds = this.checkExtensions(extensionIds);
     const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({
-        where, orderBy, take, skip, include: { tags: true }
+        where, orderBy, take, skip, select: { id: true, tags: true }
       }),
       this.entitiesProvider.images.count({ where })
     ]);
-    const allTags: PersistedImageTag[] = entities.map(entity => entity.tags).reduce((previousValue, currentValue) => previousValue.concat(currentValue), []);
-    const groupedByImageIdTagsMap = Map.groupBy(allTags, (tag) => tag.imageId);
-    return new SearchTagsResult([...groupedByImageIdTagsMap.entries()].map(([imageId, tags]) =>
-    {
-      return new ExtensionImageTagsAttribute(imageId, tags.filter(tag => extensionIds === undefined || extensionIds.indexOf(tag.extensionId) !== -1).filter(tag => tag.value !== ImageService.emptyImageTag).map(tag => this.extensionTagToDto(tag)));
-    }), totalCount);
+    return new SearchTagsResult(entities.map(entity => new ExtensionImageTagsAttribute(entity.id, entity.tags.filter(tag => extensionIds === undefined || extensionIds.indexOf(tag.extensionId) !== -1).map(entity => this.extensionTagToDto(entity)))), totalCount);
   }
 
   async get(id: string): Promise<Image>

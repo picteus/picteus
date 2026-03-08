@@ -104,7 +104,7 @@ class ReplicateExtension extends PicteusExtension
       const output = this.computeOutput(prediction.output);
       if (output !== undefined)
       {
-        const summaryList = await this.getImageApi().imageSearch({
+        const result = await this.getImageApi().imageSearchImages({
           filter:
             {
               origin: { kind: SearchOriginNature.Repositories, ids: [this.repository.id] },
@@ -120,7 +120,7 @@ class ReplicateExtension extends PicteusExtension
                 }
             }
         });
-        if (summaryList.totalCount === 0)
+        if (result.totalCount === 0)
         {
           await this.storeImage(communicator, prediction);
         }

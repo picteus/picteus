@@ -82,8 +82,6 @@ import {
   ImageMediaUrl,
   ImageMetadata,
   ImageResizeRender,
-  ImageResult,
-  ImageSummaryResult,
   ImageTag,
   imageUrlSchema,
   integerIdSchema,
@@ -96,6 +94,8 @@ import {
   RepositoryLocationType,
   SearchFeaturesResult,
   SearchFilter,
+  SearchImageResult,
+  SearchImageSummaryResult,
   SearchParameters,
   SearchTagsResult,
   Settings
@@ -1521,11 +1521,11 @@ export class ImageController
     {
       status: OK,
       description: "The image summaries matching the parameters and the extension identifiers",
-      type: ImageSummaryResult
+      type: SearchImageSummaryResult
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async searchSummaries(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<ImageSummaryResult>
+  async searchSummaries(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<SearchImageSummaryResult>
   {
     return await this.imageService.searchForImageSummaries(parameters);
   }
@@ -1542,11 +1542,11 @@ export class ImageController
     {
       status: OK,
       description: "The image details matching the parameters and the extension identifiers",
-      type: ImageResult
+      type: SearchImageResult
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async searchImages(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<ImageResult>
+  async searchImages(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<SearchImageResult>
   {
     return await this.imageService.searchForImages(parameters);
   }
@@ -1558,6 +1558,7 @@ export class ImageController
       description: "Retrieves image features following search parameters."
     }
   )
+  @DeepObjectApiQuery(SearchParameters)
   @ApiQuery({
     name: "extensionIds",
     description: "The extension identifiers the features must belong to",
@@ -1566,7 +1567,6 @@ export class ImageController
     style: "deepObject",
     required: false
   })
-  @DeepObjectApiQuery(SearchParameters)
   @ApiResponse(
     {
       status: OK,
@@ -1576,9 +1576,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async searchFeatures(@Query("extensionIds", new ArrayValidationPipe<String>()) extensionIds: string[] | undefined, @Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<SearchFeaturesResult>
+  async searchFeatures(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<String>()) extensionIds?: string[]): Promise<SearchFeaturesResult>
   {
-    return await this.imageService.searchForImageFeatures(extensionIds, parameters);
+    return await this.imageService.searchForImageFeatures(parameters, extensionIds);
   }
 
   @Get("search/tags")
@@ -1588,6 +1588,7 @@ export class ImageController
       description: "Retrieves image tags following search parameters."
     }
   )
+  @DeepObjectApiQuery(SearchParameters)
   @ApiQuery({
     name: "extensionIds",
     description: "The extension identifiers the tags must belong to",
@@ -1596,7 +1597,6 @@ export class ImageController
     style: "deepObject",
     required: false
   })
-  @DeepObjectApiQuery(SearchParameters)
   @ApiResponse(
     {
       status: OK,
@@ -1606,9 +1606,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async searchTags(@Query("extensionIds", new ArrayValidationPipe<String>()) extensionIds: string[] | undefined, @Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters): Promise<SearchTagsResult>
+  async searchTags(@Query(DeepObjectPipeTransform<SearchParameters>) parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<String>()) extensionIds?: string[]): Promise<SearchTagsResult>
   {
-    return await this.imageService.searchForImageTags(extensionIds, parameters);
+    return await this.imageService.searchForImageTags(parameters, extensionIds);
   }
 
   @Get(":id/get")

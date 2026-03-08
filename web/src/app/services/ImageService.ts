@@ -5,19 +5,19 @@ import {
   ImageApiImageClosestImagesRequest,
   ImageApiImageGetAllFeaturesRequest,
   ImageApiImageGetRequest,
-  ImageApiImageSearchRequest,
+  ImageApiImageSearchImagesRequest,
   ImageApiImageTextToImagesRequest,
   ImageDimensions,
   ImageDistance,
   ImageFormat,
-  ImageResult
+  SearchImageResult
 } from "@picteus/ws-client";
 
 import { BASE_PATH } from "utils";
 
 const imageApi = new ImageApi();
 
-const defaultSearchCriteria: ImageApiImageSearchRequest = {
+const defaultSearchCriteria: ImageApiImageSearchImagesRequest = {
   filter:{
     criteria: {
       formats: [
@@ -34,8 +34,8 @@ const defaultSearchCriteria: ImageApiImageSearchRequest = {
 };
 
 async function listAll(
-  request?: ImageApiImageSearchRequest,
-): Promise<ImageResult> {
+  request?: ImageApiImageSearchImagesRequest,
+): Promise<SearchImageResult> {
   if (!request) {
     request = defaultSearchCriteria;
   }

@@ -167,7 +167,7 @@ class TypeScriptExtension extends PicteusExtension
             break;
           case "image":
             showType = NotificationsShowType.Image;
-            showId = (await this.getImageApi().imageSearch()).entities[0].id;
+            showId = (await this.getImageApi().imageSearchImages({ range: { take: 1 } })).items[0].id;
             break;
           case "repository":
             showType = NotificationsShowType.Repository;

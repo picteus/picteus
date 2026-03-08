@@ -30,15 +30,17 @@ import {
   ManifestEvent,
   NumericRange,
   PromptKind,
-  SearchCriteria,
   SearchFeatureComparisonOperator,
   SearchFeatureCondition,
   SearchFeatureLogicalOperator,
+  SearchFeaturesResult,
   SearchFilter,
   SearchImagesOrigin,
   SearchOriginKind,
   SearchParameters,
   SearchRepositoriesOrigin,
+  SearchSortingProperty,
+  SearchTagsResult,
   TextualPrompt,
   toFileExtension,
   toMimeType
@@ -415,291 +417,362 @@ describe("Image with module", () =>
   test("search", async () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName);
-    const preexistingFilePath = path.join(directoryPath, base.imageFeeder.pngImageFileName);
     const fileName = base.imageFeeder.pngImageFileName;
-    await base.imageFeeder.prepareComfyUiImage(preexistingFilePath);
+    const imageFilePath = path.join(directoryPath, fileName);
+    await base.imageFeeder.prepareComfyUiImage(imageFilePath);
     const repository = await base.prepareEmptyRepository(directoryPath);
-    const image = await base.getRepositoryController().getImageByUrl(fileWithProtocol + preexistingFilePath);
+    const withFeaturesAndTagsImageFilePath = base.imageFeeder.copyImage(directoryPath, base.imageFeeder.webpImageFileName);
+    await base.waitUntilImage(repository.id, withFeaturesAndTagsImageFilePath, true);
+    const otherImageFilePath = base.imageFeeder.copyImage(directoryPath, base.imageFeeder.jpegImageFileName);
+    await base.waitUntilImage(repository.id, otherImageFilePath, true);
+    const image = await base.getRepositoryController().getImageByUrl(fileWithProtocol + imageFilePath);
+    const withFeaturesAndTagsImage = await base.getRepositoryController().getImageByUrl(fileWithProtocol + withFeaturesAndTagsImageFilePath);
+    const otherImage = await base.getRepositoryController().getImageByUrl(fileWithProtocol + otherImageFilePath);
     const extension = await base.prepareExtension();
+    const otherExtension = await base.prepareExtension("other");
     const stringFeature = new ImageFeature(ImageFeatureType.IDENTITY, ImageFeatureFormat.STRING, "identity", "123456789");
     const integerFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.INTEGER, "rating", 5);
     const floatFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.FLOAT, "popularity", 3.14);
     const booleanFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.BOOLEAN, "validated", false);
     const features = [stringFeature, integerFeature, floatFeature, booleanFeature];
     await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension.manifest.id, features);
+    await base.getImageController().setFeatures(Base.allPolicyContext, image.id, otherExtension.manifest.id, features);
+    await base.getImageController().setFeatures(Base.allPolicyContext, withFeaturesAndTagsImage.id, extension.manifest.id, features);
+    const tags = ["tag1", "tag2"];
+    await base.getImageController().setTags(Base.allPolicyContext, image.id, extension.manifest.id, tags);
+    await base.getImageController().setTags(Base.allPolicyContext, image.id, otherExtension.manifest.id, tags);
+    await base.getImageController().setTags(Base.allPolicyContext, withFeaturesAndTagsImage.id, extension.manifest.id, tags);
+    const collection = await base.getCollectionController().create("name", undefined, {
+      origin: new SearchRepositoriesOrigin([repository.id])
+    });
 
-    const totalCount = 1;
+    const imagesCount = 3;
+    const withFeaturesAndTagsCount = 2;
+    const onlyOne = 1;
     const zero = 0;
     const inName = { inName: true, inMetadata: false, inFeatures: false };
     const inMetadata = { inName: false, inMetadata: true, inFeatures: false };
     const inFeatures = { inName: false, inMetadata: false, inFeatures: true };
     const inAll = { inName: true, inMetadata: true, inFeatures: true };
     const inNone = { inName: false, inMetadata: false, inFeatures: false };
+    const searchFeatures = base.getImageController().searchFeatures;
+    const searchTags = base.getImageController().searchTags;
+    const webServices = [base.getImageController().searchSummaries, base.getImageController().searchImages, searchFeatures, searchTags];
+    for (const unboundWebService of webServices)
     {
-      // We assess with invalid parameters
-      await expect(async () =>
+      const webService = unboundWebService.bind(base.getImageController());
       {
-        await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: "text", ...inNone } }));
-      }).rejects.toThrow(new ServiceError(`The parameter 'keyword' is invalid because it contains only false properties`, BAD_REQUEST, base.badParameterCode));
-      {
-        // We assess with a non-existing repository
-        const dummyId = "dummyId";
+        // We assess with invalid parameters
         await expect(async () =>
         {
-          await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(dummyId));
-        }).rejects.toThrow(new ServiceError(`The parameter 'ids' with value '${dummyId}' is invalid because some of those identifiers do not correspond to an existing repository`, BAD_REQUEST, base.badParameterCode));
-      }
-    }
-    {
-      // We assess with no filter
-      expect((await base.getImageController().searchSummaries({})).items.length).toBe(totalCount);
-      // We assess only with the repository identifier filter
-      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items.length).toBe(totalCount);
-    }
-    {
-      for (const feature of features)
-      {
-        const useCases =
-          [
-            {
-              logicalOperator: SearchFeatureLogicalOperator.AND,
-              comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
-              value: ImageFeatureNullValue.Null,
-              count: totalCount
-            },
-            {
-              logicalOperator: SearchFeatureLogicalOperator.NOT,
-              comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
-              value: ImageFeatureNullValue.Null,
-              count: zero
-            },
-            {
-              logicalOperator: SearchFeatureLogicalOperator.AND,
-              comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
-              value: feature.value,
-              count: zero
-            },
-            {
-              logicalOperator: SearchFeatureLogicalOperator.AND,
-              comparisonOperator: SearchFeatureComparisonOperator.EQUALS,
-              value: typeof feature.value === "boolean" ? !feature.value : (typeof feature.value === "number" ? (feature.value + 1) : (`${feature.value}other`)),
-              count: zero
-            }
-          ];
-        for (const useCase of useCases)
+          await webService(SearchParameters.withSearchCriteria({ keyword: { text: "text", ...inNone } }));
+        }).rejects.toThrow(new ServiceError(`The parameter 'keyword' is invalid because it contains only false properties`, BAD_REQUEST, base.badParameterCode));
         {
-          expect((await base.getImageController().searchSummaries({
+          // We assess with a non-existing repository
+          const dummyId = "dummyId";
+          await expect(async () =>
+          {
+            await webService(SearchParameters.withRepositoryIdAndSearchCriteria(dummyId));
+          }).rejects.toThrow(new ServiceError(`The parameter 'ids' with value '${dummyId}' is invalid because some of those identifiers do not correspond to an existing repository`, BAD_REQUEST, base.badParameterCode));
+        }
+      }
+      {
+        // We assess with no filter
+        expect((await webService({})).items.length).toBe(imagesCount);
+        // We assess only with the repository identifier filter
+        expect((await webService(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items.length).toBe(imagesCount);
+      }
+      {
+        for (const feature of features)
+        {
+          const useCases =
+            [
+              {
+                logicalOperator: SearchFeatureLogicalOperator.AND,
+                comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
+                value: ImageFeatureNullValue.Null,
+                count: withFeaturesAndTagsCount
+              },
+              {
+                logicalOperator: SearchFeatureLogicalOperator.NOT,
+                comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
+                value: ImageFeatureNullValue.Null,
+                count: onlyOne
+              },
+              {
+                logicalOperator: SearchFeatureLogicalOperator.AND,
+                comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
+                value: feature.value,
+                count: zero
+              },
+              {
+                logicalOperator: SearchFeatureLogicalOperator.AND,
+                comparisonOperator: SearchFeatureComparisonOperator.EQUALS,
+                value: typeof feature.value === "boolean" ? !feature.value : (typeof feature.value === "number" ? (feature.value + 1) : (`${feature.value}other`)),
+                count: zero
+              }
+            ];
+          for (const useCase of useCases)
+          {
+            expect((await webService({
+              filter:
+                {
+                  criteria:
+                    {
+                      features:
+                        {
+                          operator: useCase.logicalOperator,
+                          conditions:
+                            [
+                              {
+                                format: feature.format,
+                                name: feature.name,
+                                operator: useCase.comparisonOperator,
+                                value: useCase.value
+                              }
+                            ]
+                        }
+                    }
+                }
+            })).items.length).toBe(useCase.count);
+          }
+        }
+      }
+      {
+        // We make sure that the image file name is searched in
+        expect((await webService(SearchParameters.withSearchCriteria({ keyword: { text: fileName, ...inName } }))).items.length).toBe(onlyOne);
+        expect((await webService(SearchParameters.withSearchCriteria({ keyword: { text: fileName.toUpperCase(), ...inName } }))).items.length).toBe(onlyOne);
+      }
+      {
+        // We make sure that the image "metadata" are searched in
+        const metadataKeyword = "Deflate/Inflate";
+        expect((await webService(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword, ...inMetadata } }))).items.length).toBe(onlyOne);
+        expect((await webService(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword.toUpperCase(), ...inMetadata } }))).items.length).toBe(onlyOne);
+      }
+      {
+        // We make sure that the string-based image "features" are searched in
+        expect((await webService(SearchParameters.withSearchCriteria({ keyword: { text: stringFeature.value as string, ...inFeatures } }))).items.length).toBe(withFeaturesAndTagsCount);
+        expect((await webService(SearchParameters.withSearchCriteria({ keyword: { text: (stringFeature.value as string).toLowerCase(), ...inFeatures } }))).items.length).toBe(withFeaturesAndTagsCount);
+        expect((await webService(SearchParameters.withSearchCriteria({ keyword: { text: "dummy" + fileName, ...inAll } }))).items.length).toBe(zero);
+        // This is an edge case with an empty text
+        expect((await webService(SearchParameters.withSearchCriteria({ keyword: { text: "", ...inAll } }))).items.length).toBe(imagesCount);
+      }
+      {
+        // We assess the image "features"
+        for (const feature of features)
+        {
+          const comparisonOperators: SearchFeatureComparisonOperator[] = Object.values(SearchFeatureComparisonOperator).filter(key => isNaN(Number(key))) as SearchFeatureComparisonOperator [];
+          for (const comparisonOperator of comparisonOperators)
+          {
+            const condition: SearchFeatureCondition =
+              {
+                type: feature.type,
+                format: feature.format,
+                name: feature.name,
+                operator: comparisonOperator,
+                value: feature.value
+              };
+            if ((comparisonOperator === SearchFeatureComparisonOperator.CONTAINS && feature.format !== ImageFeatureFormat.STRING) || ((comparisonOperator === SearchFeatureComparisonOperator.GREATER_THAN || comparisonOperator === SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL || comparisonOperator === SearchFeatureComparisonOperator.LESS_THAN || comparisonOperator === SearchFeatureComparisonOperator.LESS_THAN_OR_EQUAL) && feature.format !== ImageFeatureFormat.INTEGER && feature.format !== ImageFeatureFormat.FLOAT))
+            {
+              await expect(async () =>
+              {
+                await webService({
+                  filter:
+                    {
+                      criteria:
+                        {
+                          features:
+                            {
+                              operator: SearchFeatureLogicalOperator.AND,
+                              conditions: [condition]
+                            }
+                        }
+
+                    }
+                });
+              }).rejects.toThrow(new ServiceError(`The '${condition.operator}' operator is not compatible with the '${condition.format}' format`, BAD_REQUEST, base.badParameterCode));
+            }
+            else
+            {
+              if (condition.operator === SearchFeatureComparisonOperator.DIFFERENT)
+              {
+                continue;
+              }
+
+              async function checkCondition(condition: SearchFeatureCondition)
+              {
+                const shouldNotMatch = condition.operator === SearchFeatureComparisonOperator.DIFFERENT || condition.operator === SearchFeatureComparisonOperator.GREATER_THAN || condition.operator === SearchFeatureComparisonOperator.LESS_THAN;
+                expect((await webService(SearchParameters.withSearchCriteria({
+                  features: {
+                    operator: SearchFeatureLogicalOperator.AND,
+                    conditions: [condition]
+                  }
+                }))).items.length).toBe(shouldNotMatch === true ? zero : withFeaturesAndTagsCount);
+                expect((await webService(SearchParameters.withSearchCriteria({
+                  features: {
+                    operator: SearchFeatureLogicalOperator.NOT,
+                    conditions: [condition]
+                  }
+                }))).items.length).toBe(shouldNotMatch === false ? onlyOne : imagesCount);
+              }
+
+              await checkCondition(condition);
+              await checkCondition({
+                format: condition.format,
+                name: condition.name,
+                operator: condition.operator,
+                value: condition.value
+              });
+              await checkCondition({ format: condition.format, operator: condition.operator, value: condition.value });
+            }
+          }
+        }
+
+        // We assess with advanced image "features" requests
+        expect((await webService({
+          filter:
+            {
+              criteria:
+                {
+                  features:
+                    {
+                      operator: SearchFeatureLogicalOperator.OR,
+                      conditions:
+                        [
+                          {
+                            format: stringFeature.format,
+                            operator: SearchFeatureComparisonOperator.EQUALS,
+                            value: stringFeature.value
+                          }
+                        ],
+                      features:
+                        {
+                          operator: SearchFeatureLogicalOperator.OR,
+                          conditions:
+                            [
+                              {
+                                format: integerFeature.format,
+                                operator: SearchFeatureComparisonOperator.EQUALS,
+                                value: integerFeature.value
+                              },
+                              {
+                                format: floatFeature.format,
+                                operator: SearchFeatureComparisonOperator.GREATER_THAN,
+                                value: floatFeature.value
+                              }
+                            ]
+                        }
+                    }
+                }
+            }
+        })).items.length).toBe(withFeaturesAndTagsCount);
+        expect((await webService(
+          {
             filter:
               {
                 criteria:
                   {
                     features:
                       {
-                        operator: useCase.logicalOperator,
+                        operator: SearchFeatureLogicalOperator.AND,
                         conditions:
                           [
                             {
-                              format: feature.format,
-                              name: feature.name,
-                              operator: useCase.comparisonOperator,
-                              value: useCase.value
-                            }
-                          ]
-                      }
-                  }
-              }
-          })).items.length).toBe(useCase.count);
-        }
-      }
-    }
-    {
-      // We make sure that the image file name is searched in
-      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: fileName, ...inName } }))).items.length).toBe(totalCount);
-      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: fileName.toUpperCase(), ...inName } }))).items.length).toBe(totalCount);
-    }
-    {
-      // We make sure that the image "metadata" are searched in
-      const metadataKeyword = "Deflate/Inflate";
-      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword, ...inMetadata } }))).items.length).toBe(totalCount);
-      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: metadataKeyword.toUpperCase(), ...inMetadata } }))).items.length).toBe(totalCount);
-    }
-    {
-      // We make sure that the string-based image "features" are searched in
-      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: stringFeature.value as string, ...inFeatures } }))).items.length).toBe(totalCount);
-      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: (stringFeature.value as string).toLowerCase(), ...inFeatures } }))).items.length).toBe(totalCount);
-      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: "dummy" + fileName, ...inAll } }))).items.length).toBe(zero);
-      // This is an edge case with an empty text
-      expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({ keyword: { text: "", ...inAll } }))).items.length).toBe(totalCount);
-    }
-    {
-      // We assess the image "features"
-      for (const feature of features)
-      {
-        const comparisonOperators: SearchFeatureComparisonOperator[] = Object.values(SearchFeatureComparisonOperator).filter(key => isNaN(Number(key))) as SearchFeatureComparisonOperator [];
-        for (const comparisonOperator of comparisonOperators)
-        {
-          const condition: SearchFeatureCondition =
-            {
-              type: feature.type,
-              format: feature.format,
-              name: feature.name,
-              operator: comparisonOperator,
-              value: feature.value
-            };
-          if ((comparisonOperator === SearchFeatureComparisonOperator.CONTAINS && feature.format !== ImageFeatureFormat.STRING) || ((comparisonOperator === SearchFeatureComparisonOperator.GREATER_THAN || comparisonOperator === SearchFeatureComparisonOperator.GREATER_THAN_OR_EQUAL || comparisonOperator === SearchFeatureComparisonOperator.LESS_THAN || comparisonOperator === SearchFeatureComparisonOperator.LESS_THAN_OR_EQUAL) && feature.format !== ImageFeatureFormat.INTEGER && feature.format !== ImageFeatureFormat.FLOAT))
-          {
-            await expect(async () =>
-            {
-              await base.getImageController().searchSummaries({
-                filter:
-                  {
-                    criteria:
-                      {
-                        features:
-                          {
-                            operator: SearchFeatureLogicalOperator.AND,
-                            conditions: [condition]
-                          }
-                      }
-
-                  }
-              });
-            }).rejects.toThrow(new ServiceError(`The '${condition.operator}' operator is not compatible with the '${condition.format}' format`, BAD_REQUEST, base.badParameterCode));
-          }
-          else
-          {
-            if (condition.operator === SearchFeatureComparisonOperator.DIFFERENT)
-            {
-              continue;
-            }
-
-            async function checkCondition(condition: SearchFeatureCondition)
-            {
-              const shouldNotMatch = condition.operator === SearchFeatureComparisonOperator.DIFFERENT || condition.operator === SearchFeatureComparisonOperator.GREATER_THAN || condition.operator === SearchFeatureComparisonOperator.LESS_THAN;
-              expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({
-                features: {
-                  operator: SearchFeatureLogicalOperator.AND,
-                  conditions: [condition]
-                }
-              }))).items.length).toBe(shouldNotMatch === true ? zero : totalCount);
-              expect((await base.getImageController().searchSummaries(SearchParameters.withSearchCriteria({
-                features: {
-                  operator: SearchFeatureLogicalOperator.NOT,
-                  conditions: [condition]
-                }
-              }))).items.length).toBe(shouldNotMatch === false ? zero : totalCount);
-            }
-
-            await checkCondition(condition);
-            await checkCondition({
-              format: condition.format,
-              name: condition.name,
-              operator: condition.operator,
-              value: condition.value
-            });
-            await checkCondition({ format: condition.format, operator: condition.operator, value: condition.value });
-          }
-        }
-      }
-
-      // We assess with advanced image "features" requests
-      expect((await base.getImageController().searchSummaries({
-        filter:
-          {
-            criteria:
-              {
-                features:
-                  {
-                    operator: SearchFeatureLogicalOperator.OR,
-                    conditions:
-                      [
-                        {
-                          format: stringFeature.format,
-                          operator: SearchFeatureComparisonOperator.EQUALS,
-                          value: stringFeature.value
-                        }
-                      ],
-                    features:
-                      {
-                        operator: SearchFeatureLogicalOperator.OR,
-                        conditions:
-                          [
+                              format: stringFeature.format,
+                              operator: SearchFeatureComparisonOperator.EQUALS,
+                              value: stringFeature.value
+                            },
                             {
                               format: integerFeature.format,
                               operator: SearchFeatureComparisonOperator.EQUALS,
                               value: integerFeature.value
-                            },
-                            {
-                              format: floatFeature.format,
-                              operator: SearchFeatureComparisonOperator.GREATER_THAN,
-                              value: floatFeature.value
                             }
                           ]
                       }
                   }
               }
-          }
-      })).items.length).toBe(totalCount);
-      expect((await base.getImageController().searchSummaries(
-        {
-          filter:
-            {
-              criteria:
-                {
-                  features:
-                    {
-                      operator: SearchFeatureLogicalOperator.AND,
-                      conditions:
-                        [
-                          {
-                            format: stringFeature.format,
-                            operator: SearchFeatureComparisonOperator.EQUALS,
-                            value: stringFeature.value
-                          },
-                          {
-                            format: integerFeature.format,
-                            operator: SearchFeatureComparisonOperator.EQUALS,
-                            value: integerFeature.value
-                          }
-                        ]
-                    }
-                }
-            }
-        })).items.length).toBe(zero);
-      expect((await base.getImageController().searchSummaries(
-        {
-          filter:
-            {
-              criteria:
-                {
-                  features:
-                    {
-                      operator: SearchFeatureLogicalOperator.NOT,
-                      conditions:
-                        [
-                          {
-                            format: stringFeature.format,
-                            operator: SearchFeatureComparisonOperator.EQUALS,
-                            value: stringFeature.value
-                          }
-                        ]
-                    }
+          })).items.length).toBe(zero);
+        expect((await webService(
+          {
+            filter:
+              {
+                criteria:
+                  {
+                    features:
+                      {
+                        operator: SearchFeatureLogicalOperator.NOT,
+                        conditions:
+                          [
+                            {
+                              format: stringFeature.format,
+                              operator: SearchFeatureComparisonOperator.EQUALS,
+                              value: stringFeature.value
+                            }
+                          ]
+                      }
 
-                }
-            }
-        })).items.length).toBe(zero);
-    }
-    {
-      // We add a repository and an image on it
-      const { repository: newRepository } = await base.prepareRepositoryWithImage(base.imageFeeder.webpImageFileName, "new");
-      expect((await base.getImageController().searchSummaries(new SearchParameters(new SearchFilter(new SearchCriteria(), new SearchRepositoriesOrigin([repository.id, newRepository.id]))))).items.length).toBe(totalCount + 1);
-      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items.length).toBe(totalCount);
-      expect((await base.getImageController().searchSummaries(new SearchParameters(new SearchFilter(new SearchCriteria(), new SearchImagesOrigin([image.id]))))).items.length).toBe(totalCount);
-    }
-    {
-      // We assess via a collection
-      const collection = await base.getCollectionController().create("name", undefined, {});
-      expect((await base.getImageController().searchSummaries(new SearchParameters(undefined, collection.id))).items.length).toBe(totalCount + 1);
+                  }
+              }
+          })).items.length).toBe(onlyOne);
+      }
+      {
+        // We add a repository and an image on it
+        const { repository: newRepository } = await base.prepareRepositoryWithImage(base.imageFeeder.webpImageFileName, "new");
+        expect((await webService(new SearchParameters(new SearchFilter(undefined, new SearchRepositoriesOrigin([repository.id, newRepository.id]))))).items.length).toBe(imagesCount + 1);
+        expect((await webService(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items.length).toBe(imagesCount);
+        expect((await webService(new SearchParameters(new SearchFilter(undefined, new SearchImagesOrigin([image.id]))))).items.length).toBe(onlyOne);
+        await base.getRepositoryController().delete(newRepository.id);
+      }
+      {
+        // We assess via a collection
+        expect((await webService(new SearchParameters(undefined, collection.id))).items.length).toBe(imagesCount);
+      }
+      if (unboundWebService === searchFeatures || unboundWebService === searchTags)
+      {
+        const extensionIdsArray = [[extension.manifest.id], [], undefined];
+        for (const extensionIds of extensionIdsArray)
+        {
+          const rawResult = await webService({
+            filter:
+              {
+                sorting: { property: SearchSortingProperty.ImportDate, isAscending: true }
+              }
+          }, extensionIds);
+          expect(rawResult.totalCount).toEqual(imagesCount);
+          expect(rawResult.items.length).toEqual(imagesCount);
+          const result: SearchFeaturesResult | SearchTagsResult = rawResult as SearchFeaturesResult | SearchTagsResult;
+          expect(rawResult.items[0].id).toEqual(image.id);
+          expect(rawResult.items[1].id).toEqual(withFeaturesAndTagsImage.id);
+          expect(rawResult.items[2].id).toEqual(otherImage.id);
+          if (unboundWebService === searchFeatures)
+          {
+            const extensionFeatures = features.map(attribute =>
+            {
+              return { ...attribute, id: extension.manifest.id };
+            });
+            const otherExtensionFeatures = features.map(attribute =>
+            {
+              return { ...attribute, id: otherExtension.manifest.id };
+            });
+            expect(result.items[0].attribute).toEqual((extensionIds === undefined || extensionIds.length === 0) ? extensionFeatures.concat(otherExtensionFeatures) : extensionFeatures);
+            expect(result.items[1].attribute).toEqual(extensionFeatures);
+          }
+          if (unboundWebService === searchTags)
+          {
+            const extensionTags = tags.map(attribute =>
+            {
+              return { value: attribute, id: extension.manifest.id };
+            });
+            const otherExtensionTags = tags.map(attribute =>
+            {
+              return { value: attribute, id: otherExtension.manifest.id };
+            });
+            expect(result.items[0].attribute).toEqual((extensionIds === undefined || extensionIds.length === 0) ? extensionTags.concat(otherExtensionTags) : extensionTags);
+            expect(result.items[1].attribute).toEqual(extensionTags);
+          }
+          expect(result.items[2].attribute).toEqual([]);
+        }
+      }
     }
   }, base.largeTimeoutInMilliseconds);
 

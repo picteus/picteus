@@ -9,7 +9,7 @@ from picteus_extension_sdk.picteus_extension import NotificationEvent, Notificat
     NotificationsImagesIntent, NotificationsImages, NotificationsShowIntent, NotificationsShow, NotificationsShowType, \
     SettingsValue, NotificationDialogContent
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
-    ImageFeatureValue
+    ImageFeatureValue, SearchRange
 
 
 class PythonExtension(PicteusExtension):
@@ -108,7 +108,7 @@ class PythonExtension(PicteusExtension):
                         show_id = self.extension_id
                     case "image":
                         show_type = NotificationsShowType.IMAGE
-                        show_id = self.get_image_api().image_search().entities[0].id
+                        show_id = self.get_image_api().image_search_images(range=SearchRange(take=1)).items[0].id
                     case "repository":
                         show_type = NotificationsShowType.REPOSITORY
                         show_id = self.get_repository_api().repository_list()[0].id

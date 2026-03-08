@@ -1920,7 +1920,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImageSummaryResult"
+                  "$ref": "#/components/schemas/SearchImageSummaryResult"
                 }
               }
             }
@@ -1978,7 +1978,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImageResult"
+                  "$ref": "#/components/schemas/SearchImageResult"
                 }
               }
             }
@@ -2035,15 +2035,10 @@
             "in": "query",
             "description": "The extension identifiers the features must belong to",
             "schema": {
+              "type": "array",
               "items": {
-                "description": "An extension identifier",
-                "type": "string",
-                "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
-                "minLength": 1,
-                "maxLength": 32,
-                "example": "extension-id"
-              },
-              "type": "array"
+                "type": "string"
+              }
             },
             "explode": true,
             "style": "deepObject"
@@ -2115,15 +2110,10 @@
             "in": "query",
             "description": "The extension identifiers the tags must belong to",
             "schema": {
+              "type": "array",
               "items": {
-                "description": "An extension identifier",
-                "type": "string",
-                "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
-                "minLength": 1,
-                "maxLength": 32,
-                "example": "extension-id"
-              },
-              "type": "array"
+                "type": "string"
+              }
             },
             "explode": true,
             "style": "deepObject"
@@ -6093,7 +6083,7 @@
           "fileDates"
         ]
       },
-      "ImageSummaryResult": {
+      "SearchImageSummaryResult": {
         "type": "object",
         "properties": {
           "items": {
@@ -6116,7 +6106,7 @@
           "totalCount"
         ]
       },
-      "ImageResult": {
+      "SearchImageResult": {
         "type": "object",
         "properties": {
           "items": {

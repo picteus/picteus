@@ -1098,7 +1098,7 @@ export class ImageSummary extends Dates
 }
 
 @ApiSchema({ description: "The result of an image summaries search" })
-export class ImageSummaryResult extends generateItemsResultClass(ImageSummary)
+export class SearchImageSummaryResult extends generateItemsResultClass(ImageSummary)
 {
 
   constructor(items: ImageSummary[], totalCount: number)
@@ -1239,7 +1239,7 @@ export class Image extends ImageSummary
 }
 
 @ApiSchema({ description: "The result of an images search" })
-export class ImageResult extends generateItemsResultClass(Image)
+export class SearchImageResult extends generateItemsResultClass(Image)
 {
 
   constructor(items: Image[], totalCount: number)
