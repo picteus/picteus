@@ -92,7 +92,7 @@ export default function GalleryView({ initialFilterOrCollectionId }: GalleryView
     }
     setLoading(true);
     try {
-      const apiResponse = await ImageService.listAll({
+      const apiResponse = await ImageService.searchImages({
         filter: filterOrCollectionId.filter,
         collectionId: filterOrCollectionId.filter !== undefined ? undefined : filterOrCollectionId.collectionId,
         range: {

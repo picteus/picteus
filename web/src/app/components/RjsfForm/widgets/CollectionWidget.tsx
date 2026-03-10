@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { Select, SelectProps, Stack, Text } from "@mantine/core";
 import { WidgetProps } from "@rjsf/utils";
+import { useTranslation } from "react-i18next";
 
 import { Collection } from "@picteus/ws-client";
 
 import { CollectionService } from "../../../services";
-import { t } from "i18next";
 
 
 export default function CollectionWidget(props: WidgetProps) {
     const { id, value, required, disabled, readonly, onChange, onBlur, onFocus, schema } = props;
     const [collections, setCollections] = useState<Collection[]>([]);
+    const [t] = useTranslation();
 
     useEffect(() => {
         CollectionService.listAll().then((colls) => {

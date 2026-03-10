@@ -72,6 +72,7 @@ export enum FolderTypes {
 }
 
 export enum ImageItemMode {
+  PASSIVE = "PASSIVE",
   SELECT = "SELECT",
   VIEW = "VIEW",
 }

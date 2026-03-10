@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { Select, SelectProps, Stack, Text } from "@mantine/core";
 import { WidgetProps } from "@rjsf/utils";
+import { useTranslation } from "react-i18next";
 
 import { Repository } from "@picteus/ws-client";
 
 import { RepositoriesService } from "../../../services";
-import { t } from "i18next";
 
 
 export default function RepositoryWidget(props: WidgetProps) {
     const { id, value, required, disabled, readonly, onChange, onBlur, onFocus, schema } = props;
     const [repositories, setRepositories] = useState<Repository[]>([]);
+    const [t] = useTranslation();
 
     useEffect(() => {
         RepositoriesService.fetchAll().then((repos) => {

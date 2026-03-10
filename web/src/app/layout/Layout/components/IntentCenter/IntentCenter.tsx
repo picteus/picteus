@@ -44,14 +44,18 @@ export default function IntentCenter() {
     removeModal(modalId);
   }
 
-  function cancel()
-  {
+  function respondWithValue(value:any) {
+    eventData.onResult({ value });
+  }
+
+  function respondWithCancel() {
     eventData.onResult({ cancel: "Cancelled" });
   }
 
-  function handleOnSend(onResult: any, parameters: any, modalId: string) {
+  function handleOnSend(parameters: any, modalId: string)
+  {
     try {
-      onResult({ value: parameters });
+      respondWithValue(parameters);
       onCloseActionModal(modalId);
     } catch (error) {
       console.error(error);
@@ -64,7 +68,7 @@ export default function IntentCenter() {
 
     if (show.type === "ExtensionSettings") {
       const action = () => {
-        eventData.onResult({ value: show.id });
+        respondWithValue(show.id);
         return navigate(`/extensions?settings=${show.id}`);
       };
       if (shouldConfirm) {
@@ -110,10 +114,10 @@ export default function IntentCenter() {
               extensionId={value.id}
               command={value.intent}
               onSend={(extensionId, commandId, parameters) =>
-                handleOnSend(eventData.onResult, parameters, modalId)
+                handleOnSend(parameters, modalId)
               }
               onCancel={() => {
-                cancel();
+                respondWithCancel();
                 removeModal(modalId);
               }}
             />
@@ -121,16 +125,18 @@ export default function IntentCenter() {
           title: value.intent.dialogContent?.title || t("extensionIntent.modalTitle", {
             extension: extensionName,
           }),
-          onBeforeClose: cancel,
+          onBeforeClose: respondWithCancel,
         });
 
-      const addFullscreenURLModal = () =>
+      const addFullscreenURLModal = () => {
         addModal({
           fullScreen: true,
           component: <FullscreenURLModal url={value.intent.ui.url} />,
           title: "",
-          onBeforeClose: cancel,
+          onBeforeClose: respondWithCancel
         });
+        respondWithValue({});
+      };
 
       const addDialogFormModal = () =>
         addModal({
@@ -139,13 +145,13 @@ export default function IntentCenter() {
           component: (
             <DialogForm
               onSend={(isYes) =>
-                handleOnSend(eventData.onResult, isYes, modalId)
+                handleOnSend(isYes, modalId)
               }
               dialog={value.intent.dialog}
             />
           ),
           title: value.intent.dialog.title,
-          onBeforeClose: cancel,
+          onBeforeClose: respondWithCancel,
         });
 
       const addImagesTab = () => {
@@ -158,11 +164,10 @@ export default function IntentCenter() {
             imageIds: data.images,
           },
         });
-        eventData.onResult({ value: {} });
+        respondWithValue({});
       };
 
       // Determine which modal to show
-      //TODO return eventData.onResult when the command is done.
       if (value.intent.parameters) {
         addCommandFormModal();
       } else if (value.intent.ui) {

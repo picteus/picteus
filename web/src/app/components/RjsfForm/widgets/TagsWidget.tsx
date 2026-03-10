@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { Group, Image, MultiSelect, MultiSelectProps, Stack, Text } from "@mantine/core";
 import { WidgetProps } from "@rjsf/utils";
+import { useTranslation } from "react-i18next";
 
 import { Extension, ExtensionImageTag } from "@picteus/ws-client";
 
 import { ExtensionsService, RepositoriesService } from "../../../services";
-import { t } from "i18next";
 
 
 export default function TagsWidget(props: WidgetProps) {
     const { id, value, required, disabled, readonly, onChange, onBlur, onFocus, schema } = props;
     const [tags, setTags] = useState<ExtensionImageTag[]>([]);
     const [extensions, setExtensions] = useState<Extension[]>([]);
+    const [t] = useTranslation();
 
     useEffect(() => {
         RepositoriesService.getTags().then((remoteTags) => {

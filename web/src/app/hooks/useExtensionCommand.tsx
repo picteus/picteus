@@ -73,6 +73,7 @@ export default function useExtensionCommand() {
       component: (
         <CommandForm
           extensionId={extensionId}
+          imageIds={imageIds}
           command={command}
           onSend={(extensionId, commandId, commandParameters) =>
             handleOnSendCommand(

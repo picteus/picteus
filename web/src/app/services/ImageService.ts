@@ -10,7 +10,8 @@ import {
   ImageDimensions,
   ImageDistance,
   ImageFormat,
-  SearchImageResult
+  SearchImageResult,
+  SearchImageSummaryResult
 } from "@picteus/ws-client";
 
 import { BASE_PATH } from "utils";
@@ -33,22 +34,33 @@ const defaultSearchCriteria: ImageApiImageSearchImagesRequest = {
   range: { take: 1000 },
 };
 
-async function listAll(
+function fixSearchRequest(request: ImageApiImageSearchImagesRequest) {
+  const copiedRequest = JSON.parse(JSON.stringify(request));
+  if (request.filter?.criteria?.tags !== undefined) {
+    copiedRequest.filter.criteria.tags = JSON.stringify(request.filter.criteria.tags);
+  }
+  if (request.filter?.criteria?.features !== undefined) {
+    copiedRequest.filter.criteria.features = JSON.stringify(request.filter.criteria.features);
+  }
+  return copiedRequest;
+}
+
+async function searchImages(
   request?: ImageApiImageSearchImagesRequest,
 ): Promise<SearchImageResult> {
   if (!request) {
     request = defaultSearchCriteria;
   }
-  const copiedRequest = JSON.parse(JSON.stringify(request));
-  if (request.filter?.criteria?.tags !== undefined)
-  {
-    copiedRequest.filter.criteria.tags = JSON.stringify(request.filter.criteria.tags);
+  return await imageApi.imageSearchImages(fixSearchRequest(request));
+}
+
+async function searchSummaries(
+  request?: ImageApiImageSearchImagesRequest,
+): Promise<SearchImageSummaryResult> {
+  if (!request) {
+    request = defaultSearchCriteria;
   }
-  if (request.filter?.criteria?.features !== undefined)
-  {
-    copiedRequest.filter.criteria.features = JSON.stringify(request.filter.criteria.features);
-  }
-  return await imageApi.imageSearchImages(copiedRequest);
+  return await imageApi.imageSearchSummaries(fixSearchRequest(request));
 }
 
 async function get(parameters: ImageApiImageGetRequest) {
@@ -119,7 +131,8 @@ async function getAllTags(imageId: string): Promise<ExtensionImageTag[]> {
 }
 
 export default {
-  listAll,
+  searchImages,
+  searchSummaries,
   get,
   getImageSrc,
   getAllFeatures,

@@ -80,11 +80,12 @@ export default function ImageItem({
         data-action={true}
       >
         <Flex data-action={true} p="sm" align="center" justify="space-between">
-          <Checkbox
+          {mode !== ImageItemMode.PASSIVE && <Checkbox
             checked={isSelected}
             size={width < 200 ? "sm" : "md"}
             onChange={handleOnSelectImage}
           />
+          }
           {mode === ImageItemMode.VIEW && (
             <Menu
               withinPortal={false}
