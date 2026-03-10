@@ -72,7 +72,7 @@ export default function ModalComponent({
       size="xl"
       {...(modal.title
         ? { title: computeTitle() }
-        : { withCloseButton: false })}
+        : { withCloseButton: true })}
       padding="lg"
     >
       {modal.fullScreen && <Divider mb="md" />}

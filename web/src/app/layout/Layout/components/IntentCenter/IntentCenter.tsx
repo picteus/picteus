@@ -132,7 +132,6 @@ export default function IntentCenter() {
         addModal({
           fullScreen: true,
           component: <FullscreenURLModal url={value.intent.ui.url} />,
-          title: "",
           onBeforeClose: respondWithCancel
         });
         respondWithValue({});
