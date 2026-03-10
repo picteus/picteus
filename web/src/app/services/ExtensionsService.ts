@@ -160,7 +160,7 @@ function getAdditionalUi(
   );
 }
 
-function buildSidebarAnchorURL(url: string, extensionId: string) {
+function buildSidebarAnchorURL(extensionId: string, url: string) {
   return BASE_PATH + "/ui/" + extensionId + url;
 }
 

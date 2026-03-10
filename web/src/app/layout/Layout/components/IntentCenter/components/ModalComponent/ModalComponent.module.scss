@@ -5,3 +5,13 @@
 .fullScreenBody {
   flex :1
 }
+
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.icon {
+  margin-right: 10px;
+}
+

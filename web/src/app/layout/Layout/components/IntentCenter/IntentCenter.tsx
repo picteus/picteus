@@ -100,9 +100,11 @@ export default function IntentCenter() {
 
       const modalId = randomId();
 
+      const iconUrl = ExtensionsService.getSidebarAnchorIconURL(value.id);
       const addCommandFormModal = () =>
         addModal({
           id: modalId,
+          iconUrl,
           component: (
             <CommandForm
               extensionId={value.id}
@@ -133,6 +135,7 @@ export default function IntentCenter() {
       const addDialogFormModal = () =>
         addModal({
           id: modalId,
+          iconUrl,
           component: (
             <DialogForm
               onSend={(isYes) =>

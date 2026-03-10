@@ -33,17 +33,19 @@ export default function ModalComponent({
   }
 
   function computeTitle() {
+    const title = <Title className={style.title} order={3}>{modal.iconUrl &&
+      <img className={style.icon} src={modal.iconUrl} alt="icon" />}{modal.title}</Title>;
     if (modal.fullScreen) {
       return (
         <Flex align="center" gap="md">
           <ActionIcon onClick={handleOnCloseActionModal} variant="default">
             <IconChevronLeft />
           </ActionIcon>
-          <Title order={3}>{modal.title}</Title>
+          {title}
         </Flex>
       );
     }
-    return <Title order={3}>{modal.title}</Title>;
+    return title;
   }
 
   const WrappedComponent = React.cloneElement(modal.component, {

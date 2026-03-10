@@ -193,6 +193,7 @@ export type LocalFiltersType = {
 export type ActionModalValue = {
   id?: string;
   title?: string;
+  iconUrl?: string;
   fullScreen?: boolean;
   component: ReactElement | undefined;
   onBeforeClose?: () => void;

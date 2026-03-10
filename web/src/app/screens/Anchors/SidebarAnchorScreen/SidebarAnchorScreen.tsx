@@ -11,8 +11,8 @@ export default function SidebarAnchorScreen({
     <div className={style.container}>
       <iframe
         src={ExtensionsService.buildSidebarAnchorURL(
-          element.url,
           element.extensionId,
+          element.url,
         )}
       />
     </div>

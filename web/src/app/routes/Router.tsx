@@ -1,6 +1,8 @@
 import { FunctionComponent, useEffect, useMemo, useRef } from "react";
 import { HashRouter, useLocation } from "react-router-dom";
 
+import { UserInterfaceAnchor } from "@picteus/ws-client";
+
 import { ROUTES } from "utils";
 import {
   ActivityScreen,
@@ -8,7 +10,7 @@ import {
   GalleryScreen,
   RepositoriesScreen,
   SettingsScreen,
-  SidebarAnchorScreen,
+  SidebarAnchorScreen
 } from "app/screens";
 import { Layout } from "app/layout";
 import { AdditionalUi } from "types";
@@ -56,7 +58,7 @@ function RouterContent() {
   }
 
   const additionalRoutes = useMemo(() => {
-    return additionalUi.sidebar?.map((element: AdditionalUi) => {
+    return additionalUi.sidebar?.filter(element => element.anchor === UserInterfaceAnchor.Sidebar).map((element: AdditionalUi) => {
       const isActive =
         location.pathname ===
         ROUTES.extension_sidebar_suffix + element.extensionId;
