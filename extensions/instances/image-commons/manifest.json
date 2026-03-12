@@ -15,11 +15,11 @@
         "arguments": ["./dist/main.js"]
       },
       "events": [
-        "process.started", "image.runCommand"
+        "process.started", "process.runCommand", "image.runCommand"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.runCommand"],
+          "events": ["process.runCommand", "image.runCommand"],
           "durationInMilliseconds": 50,
           "maximumCount": 20
         }
@@ -104,6 +104,45 @@
               "locale": "en",
               "label": "Rate and comment",
               "description": "Enables to rate and comment the selected images and stores them into the image features."
+            }
+          ]
+        },
+        {
+          "id": "analytics",
+          "on": {
+            "entity": "Process"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "collectionId": {
+                "type": "integer",
+                "title": "Collection",
+                "description": "What is the collection the images the analytics are computed should be belong to?",
+                "ui": {
+                  "widget": "collection"
+                }
+              },
+              "tags": {
+                "type": "array",
+                "title": "Tags",
+                "description": "What are the tags to compute the analytics breakdown?",
+                "items": {
+                  "type": "string",
+                  "description": "The tag to include."
+                },
+                "ui": {
+                  "widget": "tags"
+                }
+              }
+            },
+            "required": ["collectionId", "tags"]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Analytics",
+              "description": "Asks to select an images collection and some tags, computes and exposes an analytics breakdown of images by tags."
             }
           ]
         }

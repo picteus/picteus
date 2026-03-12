@@ -17,7 +17,6 @@ import {
   PicteusExtension
 } from "@picteus/extension-sdk";
 
-
 class ImageCommonsExtension extends PicteusExtension
 {
 
@@ -35,6 +34,15 @@ class ImageCommonsExtension extends PicteusExtension
       else if (commandId === "rateAndComment")
       {
         await this.rateAndCommentImages(imageIds, communicator);
+      }
+    }
+    else if (event === NotificationEvent.ProcessRunCommand)
+    {
+      const commandId: string = value["commandId"];
+      const parameters: Record<string, any> = value["parameters"];
+      if (commandId === "analytics")
+      {
+        await this.analyzeImages(parameters["collectionId"], parameters["tags"], communicator);
       }
     }
   }
@@ -185,6 +193,217 @@ class ImageCommonsExtension extends PicteusExtension
         imageFeature: features
       });
     }
+  }
+
+  private async analyzeImages(collectionId: number, tags: string[], communicator: Communicator): Promise<void>
+  {
+    const images = (await this.getImageApi().imageSearchImages({ searchParameters: { collectionId } })).items;
+    const providedTagsSet = new Set(tags);
+    const pieDataMap: Record<string, number> = {};
+    const timelineDataMap: Record<string, Record<string, number>> = {};
+
+    for (const tag of tags)
+    {
+      pieDataMap[tag] = 0;
+    }
+
+    for (const image of images)
+    {
+      const date = new Date(image.creationDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const period = `${year}-${month}`;
+
+      if (!timelineDataMap[period])
+      {
+        timelineDataMap[period] = {};
+        for (const tag of tags)
+        {
+          timelineDataMap[period][tag] = 0;
+        }
+      }
+
+      if (image.tags && image.tags.length > 0)
+      {
+        for (const tag of image.tags)
+        {
+          const tagValue = tag.value;
+          if (providedTagsSet.has(tagValue))
+          {
+            pieDataMap[tagValue]++;
+            timelineDataMap[period][tagValue]++;
+          }
+        }
+      }
+    }
+
+    const periods = Object.keys(timelineDataMap).sort((a, b) => a.localeCompare(b));
+    const pieData = tags.map(tag => ({ label: tag, value: pieDataMap[tag] }));
+
+
+    function generatePieChartSVG(data: { label: string, value: number }[]): string
+    {
+      let svg = `<svg viewBox="-1 -1 2 2" style="transform: rotate(-90deg); width: 250px; height: 250px; flex-shrink: 0;">`;
+      const total = data.reduce((sum, d) => sum + d.value, 0);
+      if (total === 0)
+      {
+        return `<div><svg width="250" height="250"><text x="125" y="125" text-anchor="middle">No data</text></svg></div>`;
+      }
+
+      let cumulativeValue = 0;
+      const colors = ["#4e79a7", "#f28e2c", "#e15759", "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7", "#9c755f", "#bab0ab"];
+
+      data.forEach((d, i) =>
+      {
+        if (d.value === 0) return;
+        const color = colors[i % colors.length];
+
+        if (d.value === total)
+        {
+          svg += `<circle cx="0" cy="0" r="1" fill="${color}" />`;
+          return;
+        }
+
+        const startAngle = (cumulativeValue / total) * Math.PI * 2;
+        cumulativeValue += d.value;
+        const endAngle = (cumulativeValue / total) * Math.PI * 2;
+
+        const x1 = Math.cos(startAngle);
+        const y1 = Math.sin(startAngle);
+        const x2 = Math.cos(endAngle);
+        const y2 = Math.sin(endAngle);
+
+        const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
+
+        const pathData = [
+          `M 0 0`,
+          `L ${x1} ${y1}`,
+          `A 1 1 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+          `Z`
+        ].join(" ");
+
+        svg += `<path d="${pathData}" fill="${color}" />`;
+      });
+
+      svg += `</svg>`;
+
+      let legendHtml = `<div style="display: flex; flex-direction: column; justify-content: center; margin-left: 20px;">`;
+      data.forEach((d, i) =>
+      {
+        const color = colors[i % colors.length];
+        legendHtml += `<div style="display: flex; align-items: center; margin-bottom: 5px;">
+      <div style="width: 15px; height: 15px; background-color: ${color}; margin-right: 10px; flex-shrink: 0;"></div>
+      <span>${d.label}: ${d.value}</span>
+    </div>`;
+      });
+      legendHtml += `</div>`;
+
+      return `<div style="display: flex; align-items: center; margin-bottom: 20px;">${svg}${legendHtml}</div>`;
+    }
+
+    function generateLineChartSVG(periods: string[], tags: string[], data: Record<string, Record<string, number>>): string
+    {
+      if (periods.length === 0)
+      {
+        return `<div><svg width="400" height="300"><text x="200" y="150" text-anchor="middle">No data</text></svg></div>`;
+      }
+
+      const width = 600;
+      const height = 300;
+      const padding = 40;
+
+      let maxCount = 0;
+      periods.forEach(p =>
+      {
+        tags.forEach(t =>
+        {
+          const val = data[p][t] || 0;
+          if (val > maxCount) maxCount = val;
+        });
+      });
+      if (maxCount === 0) maxCount = 1;
+
+      maxCount = Math.ceil(maxCount / 5) * 5;
+
+      const colors = ["#4e79a7", "#f28e2c", "#e15759", "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7", "#9c755f", "#bab0ab"];
+
+      let svg = `<svg viewBox="0 0 ${width} ${height}" style="width: 100%; max-width: ${width}; height: auto;">`;
+
+      svg += `<line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#333" />`;
+      svg += `<line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#333" />`;
+
+      const xStep = periods.length === 1 ? (width - 2 * padding) / 2 : (width - 2 * padding) / (periods.length - 1);
+
+      const yTicks = 5;
+      for (let i = 0; i <= yTicks; i++)
+      {
+        const val = (maxCount / yTicks) * i;
+        const y = (height - padding) - (val / maxCount) * (height - 2 * padding);
+        svg += `<line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="#ddd" />`;
+        svg += `<text x="${padding - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="#333">${val}</text>`;
+      }
+
+      periods.forEach((p, i) =>
+      {
+        const x = padding + i * xStep;
+        svg += `<text x="${x}" y="${height - padding + 20}" text-anchor="middle" font-size="12" fill="#333">${p}</text>`;
+      });
+
+      tags.forEach((tag, tIdx) =>
+      {
+        const color = colors[tIdx % colors.length];
+        let points = "";
+        periods.forEach((p, i) =>
+        {
+          const val = data[p][tag] || 0;
+          const x = padding + i * xStep;
+          const y = (height - padding) - (val / maxCount) * (height - 2 * padding);
+          points += `${x},${y} `;
+          svg += `<circle cx="${x}" cy="${y}" r="4" fill="${color}" />`;
+        });
+        if (periods.length > 1)
+        {
+          svg += `<polyline points="${points.trim()}" fill="none" stroke="${color}" stroke-width="2" />`;
+        }
+      });
+
+      svg += `</svg>`;
+
+      let legendHtml = `<div style="display: flex; flex-wrap: wrap; justify-content: center; margin-top: 10px;">`;
+      tags.forEach((tag, tIdx) =>
+      {
+        const color = colors[tIdx % colors.length];
+        legendHtml += `<div style="display: flex; align-items: center; margin-right: 15px; margin-bottom: 5px;">
+      <div style="width: 15px; height: 15px; background-color: ${color}; margin-right: 5px; flex-shrink: 0;"></div>
+      <span style="font-size: 14px;">${tag}</span>
+    </div>`;
+      });
+      legendHtml += `</div>`;
+
+      return `<div>${svg}${legendHtml}</div>`;
+    }
+
+    const pieSvg = generatePieChartSVG(pieData);
+    const lineSvg = generateLineChartSVG(periods, tags, timelineDataMap);
+
+    const html = `
+      <div style="font-family: sans-serif;">
+        <h3 style="margin-top: 0;">Tag Distribution</h3>
+        ${pieSvg}
+        <h3>Historical Breakdown</h3>
+        ${lineSvg}
+      </div>
+    `;
+
+    await communicator.launchIntent({
+      dialog: {
+        type: NotificationsDialogType.Info,
+        title: "Analytics",
+        description: "Breakdown of provided tags within the collection over time.",
+        details: html,
+        buttons: { yes: "OK" }
+      }
+    });
   }
 
 }
