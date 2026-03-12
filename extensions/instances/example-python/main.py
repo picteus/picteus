@@ -107,14 +107,19 @@ class PythonExtension(PicteusExtension):
                         f"Received the intent error '{str(exception)}' with reason '{exception.reason}'",
                         "error")
             elif command_id == "dialog":
-                result = await communicator.launch_intent(NotificationsDialogIntent(dialog=
-                NotificationsDialog(
-                    type=NotificationsDialogType.QUESTION,
-                    title="Dialog",
-                    description="This is a dialog question",
-                    details="Please, click the right button.",
-                    buttons=NotificationsDialogButtons(
-                        "Yes", "No"))))
+                result = await communicator.launch_intent(NotificationsDialogIntent(
+                    context=NotificationContext(
+                        imageIds=[image.id for image in self.get_image_api().image_search_summaries(
+                            search_parameters=SearchParameters(filter=SearchFilter(
+                                sorting=SearchSorting(property=SearchSortingProperty.IMPORTDATE, isAscending=False)),
+                                range=SearchRange(take=3))).items]),
+                    dialog=NotificationsDialog(
+                        type=NotificationsDialogType.QUESTION,
+                        title="Dialog",
+                        description="This is a dialog question",
+                        details="Please, click the right button.",
+                        buttons=NotificationsDialogButtons(
+                            "Yes", "No"))))
                 button = "Yes" if result == True else "No"
                 communicator.send_log(f"The user clicked the '{button}' button", "info")
             elif command_id == "show":
