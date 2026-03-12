@@ -67,22 +67,43 @@ class SuperDataClass:
         return json.dumps(self.__dict__)
 
 
+@dataclass(kw_only=True)
+class NotificationIdentity(SuperDataClass):
+    id: str
+
+
+@dataclass(kw_only=True)
+class NotificationContext(SuperDataClass):
+    imageIds: Optional[List[str]] = None
+
+
+@dataclass
+class NotificationsBasisIntent(SuperDataClass):
+    identity: Optional[NotificationIdentity] = None
+
+
+@dataclass
+class NotificationsWithContextIntent(NotificationsBasisIntent):
+    context: Optional[NotificationContext] = None
+
+
 @dataclass
 class NotificationDialogContent(SuperDataClass):
     title: str
     description: str
-    details: Optional[str]
+    details: Optional[str] = None
 
 
-@dataclass
-class NotificationsParametersIntent(SuperDataClass):
+@dataclass(kw_only=True)
+class NotificationsParametersIntent(NotificationsWithContextIntent):
     parameters: Json
-    dialogContent: Optional[NotificationDialogContent]
+    dialogContent: Optional[NotificationDialogContent] = None
 
 
 class NotificationsUiAnchor(StrEnum):
     MODAL = "modal",
     SIDEBAR = "sidebar",
+    WINDOW = "window",
     IMAGE_DETAILS = "imageDetail"
 
 
@@ -90,10 +111,11 @@ class NotificationsUiAnchor(StrEnum):
 class NotificationsUi(SuperDataClass):
     anchor: NotificationsUiAnchor
     url: str
+    dialogContent: Optional[NotificationDialogContent]
 
 
-@dataclass
-class NotificationsUiIntent(SuperDataClass):
+@dataclass(kw_only=True)
+class NotificationsUiIntent(NotificationsWithContextIntent):
     ui: NotificationsUi
 
 
@@ -109,35 +131,31 @@ class NotificationsDialogButtons(SuperDataClass):
     no: Optional[str] = None
 
 
-@dataclass
+@dataclass(kw_only=True)
 class NotificationsDialog(NotificationDialogContent):
     type: NotificationsDialogType
     buttons: NotificationsDialogButtons
 
 
-@dataclass
-class NotificationsDialogIntent(SuperDataClass):
+@dataclass(kw_only=True)
+class NotificationsDialogIntent(NotificationsWithContextIntent):
     dialog: NotificationsDialog
 
 
 @dataclass
 class NotificationsImage(SuperDataClass):
     imageId: str
-    title: Optional[str] = None
-    description: Optional[str] = None
-    details: Optional[str] = None
+    dialogContent: Optional[NotificationDialogContent] = None
 
 
 @dataclass
 class NotificationsImages(SuperDataClass):
     images: List[NotificationsImage]
-    title: Optional[str] = None
-    description: Optional[str] = None
-    details: Optional[str] = None
+    dialogContent: Optional[NotificationDialogContent] = None
 
 
-@dataclass
-class NotificationsImagesIntent(SuperDataClass):
+@dataclass(kw_only=True)
+class NotificationsImagesIntent(NotificationsWithContextIntent):
     images: NotificationsImages
 
 
@@ -153,8 +171,8 @@ class NotificationsShow(SuperDataClass):
     id: str
 
 
-@dataclass
-class NotificationsShowIntent(SuperDataClass):
+@dataclass(kw_only=True)
+class NotificationsShowIntent(NotificationsBasisIntent):
     show: NotificationsShow
 
 

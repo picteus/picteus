@@ -95,7 +95,13 @@ class TypeScriptExtension extends PicteusExtension
                     title: "Favorite color",
                     description: "What is your favorite color?",
                     type: "string",
-                    default: "pink"
+                    enum: ["pink", "blue", "yellow", "green"],
+                    default: "pink",
+                    ui:
+                      {
+                        widget: "radio",
+                        inline: true
+                      }
                   },
                 likeChocolate:
                   {
@@ -108,7 +114,11 @@ class TypeScriptExtension extends PicteusExtension
           };
         try
         {
+          const imageIds = (await this.getImageApi().imageSearchSummaries({
+            searchParameters: { range: { take: 3 } }
+          })).items.map(summary => summary.id);
           const userParameters: Record<string, any> = await communicator.launchIntent<Record<string, any>>({
+            context: { imageIds },
             parameters: intentParameters,
             dialogContent: {
               title: "Favorite color and chocolate",
@@ -123,7 +133,13 @@ class TypeScriptExtension extends PicteusExtension
               ui:
                 {
                   anchor: NotificationsUiAnchor.Modal,
-                  url: "https://www.milka.fr"
+                  url: "https://www.milka.fr",
+                  dialogContent:
+                    {
+                      title: "Website",
+                      description: "A web site with some chocolate",
+                      details: "This is to showcase that a modal window may be opened with some title, description and details."
+                    }
                 }
             });
           }
@@ -142,7 +158,18 @@ class TypeScriptExtension extends PicteusExtension
       }
       else if (commandId === "dialog")
       {
+        const imageIds = (await this.getImageApi().imageSearchSummaries({
+          searchParameters:
+            {
+              filter:
+                {
+                  sorting: { property: "importDate", isAscending: false }
+                },
+              range: { take: 3 }
+            }
+        })).items.map(summary => summary.id);
         const result = await communicator.launchIntent<boolean>({
+          context: { imageIds },
           dialog:
             {
               type: NotificationsDialogType.Question,
@@ -167,7 +194,16 @@ class TypeScriptExtension extends PicteusExtension
             break;
           case "image":
             showType = NotificationsShowType.Image;
-            showId = (await this.getImageApi().imageSearchImages({ range: { take: 1 } })).items[0].id;
+            showId = (await this.getImageApi().imageSearchSummaries({
+              searchParameters: {
+                filter: {
+                  sorting: {
+                    property: "importDate",
+                    isAscending: false
+                  }
+                }, range: { take: 1 }
+              }
+            })).items[0].id;
             break;
           case "repository":
             showType = NotificationsShowType.Repository;
@@ -238,8 +274,11 @@ class TypeScriptExtension extends PicteusExtension
         await communicator.launchIntent({
           images: {
             images: newImages,
-            title: "Converted images",
-            description: "These are the converted images"
+            dialogContent:
+              {
+                title: "Converted images",
+                description: "These are the converted images"
+              }
           }
         });
       }

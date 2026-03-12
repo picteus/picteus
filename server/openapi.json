@@ -1875,45 +1875,20 @@
       }
     },
     "/image/search/summaries": {
-      "get": {
+      "post": {
         "description": "Retrieves image summaries following search parameters.",
         "operationId": "image_searchSummaries",
-        "parameters": [
-          {
-            "name": "filter",
-            "required": false,
-            "in": "query",
-            "description": "The filter which will be used to narrow down the returned items",
-            "explode": true,
-            "style": "deepObject",
-            "schema": {
-              "$ref": "#/components/schemas/SearchFilter"
-            }
-          },
-          {
-            "name": "collectionId",
-            "required": false,
-            "in": "query",
-            "description": "The collection identifier to filter with to narrow down the returned items",
-            "schema": {
-              "minimum": 0,
-              "format": "int32",
-              "example": 123,
-              "type": "number"
-            }
-          },
-          {
-            "name": "range",
-            "required": false,
-            "in": "query",
-            "description": "The range of items to consider following the search",
-            "explode": true,
-            "style": "deepObject",
-            "schema": {
-              "$ref": "#/components/schemas/SearchRange"
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchParameters"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "The image summaries matching the parameters and the extension identifiers",
@@ -1933,45 +1908,20 @@
       }
     },
     "/image/search/images": {
-      "get": {
+      "post": {
         "description": "Retrieves image details following search parameters.",
         "operationId": "image_searchImages",
-        "parameters": [
-          {
-            "name": "filter",
-            "required": false,
-            "in": "query",
-            "description": "The filter which will be used to narrow down the returned items",
-            "explode": true,
-            "style": "deepObject",
-            "schema": {
-              "$ref": "#/components/schemas/SearchFilter"
-            }
-          },
-          {
-            "name": "collectionId",
-            "required": false,
-            "in": "query",
-            "description": "The collection identifier to filter with to narrow down the returned items",
-            "schema": {
-              "minimum": 0,
-              "format": "int32",
-              "example": 123,
-              "type": "number"
-            }
-          },
-          {
-            "name": "range",
-            "required": false,
-            "in": "query",
-            "description": "The range of items to consider following the search",
-            "explode": true,
-            "style": "deepObject",
-            "schema": {
-              "$ref": "#/components/schemas/SearchRange"
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchParameters"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "The image details matching the parameters and the extension identifiers",
@@ -1991,44 +1941,10 @@
       }
     },
     "/image/search/features": {
-      "get": {
+      "post": {
         "description": "Retrieves image features following search parameters.",
         "operationId": "image_searchFeatures",
         "parameters": [
-          {
-            "name": "filter",
-            "required": false,
-            "in": "query",
-            "description": "The filter which will be used to narrow down the returned items",
-            "explode": true,
-            "style": "deepObject",
-            "schema": {
-              "$ref": "#/components/schemas/SearchFilter"
-            }
-          },
-          {
-            "name": "collectionId",
-            "required": false,
-            "in": "query",
-            "description": "The collection identifier to filter with to narrow down the returned items",
-            "schema": {
-              "minimum": 0,
-              "format": "int32",
-              "example": 123,
-              "type": "number"
-            }
-          },
-          {
-            "name": "range",
-            "required": false,
-            "in": "query",
-            "description": "The range of items to consider following the search",
-            "explode": true,
-            "style": "deepObject",
-            "schema": {
-              "$ref": "#/components/schemas/SearchRange"
-            }
-          },
           {
             "name": "extensionIds",
             "required": false,
@@ -2039,11 +1955,19 @@
               "items": {
                 "type": "string"
               }
-            },
-            "explode": true,
-            "style": "deepObject"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchParameters"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "The image features matching the parameters and the extension identifiers",
@@ -2066,44 +1990,10 @@
       }
     },
     "/image/search/tags": {
-      "get": {
+      "post": {
         "description": "Retrieves image tags following search parameters.",
         "operationId": "image_searchTags",
         "parameters": [
-          {
-            "name": "filter",
-            "required": false,
-            "in": "query",
-            "description": "The filter which will be used to narrow down the returned items",
-            "explode": true,
-            "style": "deepObject",
-            "schema": {
-              "$ref": "#/components/schemas/SearchFilter"
-            }
-          },
-          {
-            "name": "collectionId",
-            "required": false,
-            "in": "query",
-            "description": "The collection identifier to filter with to narrow down the returned items",
-            "schema": {
-              "minimum": 0,
-              "format": "int32",
-              "example": 123,
-              "type": "number"
-            }
-          },
-          {
-            "name": "range",
-            "required": false,
-            "in": "query",
-            "description": "The range of items to consider following the search",
-            "explode": true,
-            "style": "deepObject",
-            "schema": {
-              "$ref": "#/components/schemas/SearchRange"
-            }
-          },
           {
             "name": "extensionIds",
             "required": false,
@@ -2114,11 +2004,19 @@
               "items": {
                 "type": "string"
               }
-            },
-            "explode": true,
-            "style": "deepObject"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchParameters"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "The image tags matching the parameters and the extension identifiers",
@@ -5957,6 +5855,35 @@
           }
         },
         "description": "A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"
+      },
+      "SearchParameters": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "description": "The filter which will be used to narrow down the returned items",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFilter"
+              }
+            ]
+          },
+          "collectionId": {
+            "type": "number",
+            "description": "The collection identifier to filter with to narrow down the returned items",
+            "format": "int32",
+            "minimum": 0,
+            "example": 123
+          },
+          "range": {
+            "description": "The range of items to consider following the search",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchRange"
+              }
+            ]
+          }
+        },
+        "description": "Filtering and range parameters when searching for images"
       },
       "ImageSummary": {
         "type": "object",

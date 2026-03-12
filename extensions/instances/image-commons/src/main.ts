@@ -87,11 +87,15 @@ class ImageCommonsExtension extends PicteusExtension
       newImages.push({ imageId: newImage.id });
     }
     await communicator.launchIntent({
-      images: {
-        images: newImages,
-        title: "Converted images",
-        description: "These are the converted images"
-      }
+      images:
+        {
+          images: newImages,
+          dialogContent:
+            {
+              title: "Converted images",
+              description: "These are the converted images"
+            }
+        }
     });
   }
 
@@ -103,7 +107,6 @@ class ImageCommonsExtension extends PicteusExtension
         id: imageId,
         extensionId: this.extensionId
       });
-      const imageMediaUrl = await this.getImageApi().imageMediaUrl({ id: imageId, height: 75 });
       const ratingName = "Rating";
       const commentName = "Comment";
       const previousRating = existingFeatures.find(feature => feature.name === ratingName && feature.format === ImageFeatureFormat.Integer && feature.type === ImageFeatureType.Annotation);
@@ -112,10 +115,11 @@ class ImageCommonsExtension extends PicteusExtension
       try
       {
         result = await communicator.launchIntent<Record<string, any>>({
+          context: { imageIds: [imageId] },
           dialogContent:
             {
               title: "Rate and comment",
-              description: `Please rate and comment the image.<br>![Image thumbnail](${imageMediaUrl.url} "Image thumbnail")`,
+              description: "Please rate and comment the image",
               details: "The values will be recorded as features of the image."
             },
           parameters:

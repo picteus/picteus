@@ -1,6 +1,26 @@
 import { Json } from "../bos";
 
 
+export interface NotificationIdentity
+{
+  readonly id: string;
+}
+
+export interface NotificationContext
+{
+  readonly imageIds?: string[];
+}
+
+export interface NotificationsBasisIntent
+{
+  readonly identity?: NotificationIdentity;
+}
+
+export interface NotificationsWithContextIntent extends NotificationsBasisIntent
+{
+  readonly context?: NotificationContext;
+}
+
 export interface NotificationDialogContent
 {
   readonly title: string;
@@ -8,7 +28,7 @@ export interface NotificationDialogContent
   readonly details?: string;
 }
 
-export interface NotificationsParametersIntent
+export interface NotificationsParametersIntent extends NotificationsWithContextIntent
 {
   readonly parameters: Json;
   readonly dialogContent?: NotificationDialogContent;
@@ -18,6 +38,7 @@ export enum NotificationsUiAnchor
 {
   Modal = "modal",
   Sidebar = "sidebar",
+  Window = "window",
   ImageDetail = "imageDetail"
 }
 
@@ -25,9 +46,10 @@ export interface NotificationsUi
 {
   readonly anchor: NotificationsUiAnchor;
   readonly url: string;
+  readonly dialogContent?: NotificationDialogContent;
 }
 
-export interface NotificationsUiIntent
+export interface NotificationsUiIntent extends NotificationsWithContextIntent
 {
   readonly ui: NotificationsUi;
 }
@@ -45,7 +67,7 @@ export interface NotificationsDialog extends NotificationDialogContent
   readonly buttons: { yes: string, no?: string };
 }
 
-export interface NotificationsDialogIntent
+export interface NotificationsDialogIntent extends NotificationsWithContextIntent
 {
   readonly dialog: NotificationsDialog;
 }
@@ -53,20 +75,16 @@ export interface NotificationsDialogIntent
 export interface NotificationsImage
 {
   readonly imageId: string;
-  readonly title?: string;
-  readonly description?: string;
-  readonly details?: string;
+  readonly dialogContent?: NotificationDialogContent;
 }
 
 export interface NotificationsImages
 {
   readonly images: NotificationsImage[];
-  readonly title?: string;
-  readonly description?: string;
-  readonly details?: string;
+  readonly dialogContent?: NotificationDialogContent;
 }
 
-export interface NotificationsImagesIntent
+export interface NotificationsImagesIntent extends NotificationsWithContextIntent
 {
   readonly images: NotificationsImages;
 }
@@ -84,7 +102,7 @@ export interface NotificationsShow
   readonly id: string;
 }
 
-export interface NotificationsShowIntent
+export interface NotificationsShowIntent extends NotificationsBasisIntent
 {
   readonly show: NotificationsShow;
 }

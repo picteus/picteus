@@ -7,9 +7,9 @@ from picteus_extension_sdk.picteus_extension import NotificationEvent, Notificat
     NotificationsUiAnchor, NotificationsDialogType, NotificationsParametersIntent, NotificationsUiIntent, \
     NotificationsUi, NotificationsDialogIntent, NotificationsDialog, NotificationsDialogButtons, NotificationsImage, \
     NotificationsImagesIntent, NotificationsImages, NotificationsShowIntent, NotificationsShow, NotificationsShowType, \
-    SettingsValue, NotificationDialogContent
+    SettingsValue, NotificationDialogContent, NotificationContext
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
-    ImageFeatureValue, SearchRange
+    ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
 
 class PythonExtension(PicteusExtension):
@@ -39,14 +39,16 @@ class PythonExtension(PicteusExtension):
                 communicator.send_log(f"The image with id '{image_id}' was touched", "info")
             if is_created_or_updated or event == NotificationEvent.IMAGE_COMPUTE_TAGS:
                 communicator.send_log(f"Setting the tags for the image with id '{image_id}'", "debug")
-            self.get_image_api().image_set_tags(image_id, self.extension_id, [self.extension_id])
+            self.get_image_api().image_set_tags(id=image_id, extension_id=self.extension_id,
+                                                request_body=[self.extension_id])
             if is_created_or_updated or event == NotificationEvent.IMAGE_COMPUTE_FEATURES:
                 communicator.send_log(f"Setting the features for the image with id '{image_id}'", "debug")
-            self.get_image_api().image_set_features(image_id, self.extension_id,
-                                                    [ImageFeature(type=ImageFeatureType.OTHER,
-                                                                  format=ImageFeatureFormat.STRING,
-                                                                  name="example",
-                                                                  value=ImageFeatureValue("This is a string"))])
+            self.get_image_api().image_set_features(id=image_id, extension_id=self.extension_id,
+                                                    image_feature=[ImageFeature(type=ImageFeatureType.OTHER,
+                                                                                format=ImageFeatureFormat.STRING,
+                                                                                name="example",
+                                                                                value=ImageFeatureValue(
+                                                                                    "This is a string"))])
         elif event == NotificationEvent.PROCESS_RUN_COMMAND:
             command_id: str = value["commandId"]
             parameters: Dict[str, Any] = value["parameters"]
@@ -64,7 +66,13 @@ class PythonExtension(PicteusExtension):
                                         "title": "Favorite color",
                                         "description": "What is your favorite color?",
                                         "type": "string",
-                                        "default": "pink"
+                                        "enum": ["pink", "blue", "yellow", "green"],
+                                        "default": "pink",
+                                        "ui":
+                                            {
+                                                "widget": "radio",
+                                                "inline": True
+                                            }
                                     },
                                 "likeChocolate":
                                     {
@@ -75,27 +83,38 @@ class PythonExtension(PicteusExtension):
                             },
                         "required": ["favoriteColor"]
                     }
+                image_ids = [image.id for image in self.get_image_api().image_search_summaries(
+                    search_parameters=SearchParameters(range=SearchRange(take=3))).items]
                 try:
                     user_parameters: Dict[str, Any] = await communicator.launch_intent(
-                        NotificationsParametersIntent(parameters=intent_parameters,
+                        NotificationsParametersIntent(context=NotificationContext(imageIds=image_ids),
+                                                      parameters=intent_parameters,
                                                       dialogContent=NotificationDialogContent(
-                                                          "Favorite color and chocolate",
-                                                          "This shows how an extension can input parameters from the user.",
-                                                          "This dialog box has been dynamically generated from the extension source code.")))
+                                                          title="Favorite color and chocolate",
+                                                          description="This shows how an extension can input parameters from the user.",
+                                                          details="This dialog box has been dynamically generated from the extension source code.")))
                     communicator.send_log(f"Received the intent result '{json.dumps(user_parameters)}'", "info")
                     if user_parameters["likeChocolate"]:
                         await communicator.launch_intent(
-                            NotificationsUiIntent(NotificationsUi(NotificationsUiAnchor.MODAL, "https://www.milka.fr")))
+                            NotificationsUiIntent(ui=NotificationsUi(anchor=NotificationsUiAnchor.MODAL,
+                                                                     url="https://www.milka.fr",
+                                                                     dialogContent=NotificationDialogContent(
+                                                                         title="Website",
+                                                                         description="A web site with some chocolate",
+                                                                         details="This is to showcase that a modal window may be opened with some title, description and details."))))
                 except NotificationReturnedError as exception:
                     communicator.send_log(
                         f"Received the intent error '{str(exception)}' with reason '{exception.reason}'",
                         "error")
             elif command_id == "dialog":
-                result = await communicator.launch_intent(NotificationsDialogIntent(
-                    NotificationsDialog(type=NotificationsDialogType.QUESTION, title="Dialog",
-                                        description="This is a dialog question",
-                                        details="Please, click the right button.",
-                                        buttons=NotificationsDialogButtons("Yes", "No"))))
+                result = await communicator.launch_intent(NotificationsDialogIntent(dialog=
+                NotificationsDialog(
+                    type=NotificationsDialogType.QUESTION,
+                    title="Dialog",
+                    description="This is a dialog question",
+                    details="Please, click the right button.",
+                    buttons=NotificationsDialogButtons(
+                        "Yes", "No"))))
                 button = "Yes" if result == True else "No"
                 communicator.send_log(f"The user clicked the '{button}' button", "info")
             elif command_id == "show":
@@ -108,7 +127,10 @@ class PythonExtension(PicteusExtension):
                         show_id = self.extension_id
                     case "image":
                         show_type = NotificationsShowType.IMAGE
-                        show_id = self.get_image_api().image_search_images(range=SearchRange(take=1)).items[0].id
+                        show_id = self.get_image_api().image_search_summaries(
+                            search_parameters=SearchParameters(filter=SearchFilter(
+                                sorting=SearchSorting(property=SearchSortingProperty.IMPORTDATE, isAscending=False)),
+                                range=SearchRange(take=1))).items[0].id
                     case "repository":
                         show_type = NotificationsShowType.REPOSITORY
                         show_id = self.get_repository_api().repository_list()[0].id
@@ -116,7 +138,7 @@ class PythonExtension(PicteusExtension):
                         communicator.send_log(f"Unhandled type '{raw_type}'", "error")
                         return None
                 await communicator.launch_intent(
-                    NotificationsShowIntent(NotificationsShow(type=show_type, id=show_id)))
+                    NotificationsShowIntent(show=NotificationsShow(type=show_type, id=show_id)))
         elif event == NotificationEvent.IMAGE_RUN_COMMAND:
             command_id: str = value["commandId"]
             image_ids: List[str] = value["imageIds"]
@@ -126,7 +148,7 @@ class PythonExtension(PicteusExtension):
                 "debug")
             new_images: List[NotificationsImage] = []
             for image_id in image_ids:
-                image: Image = self.get_image_api().image_get(image_id)
+                image: Image = self.get_image_api().image_get(id=image_id)
                 if command_id == "logDimensions":
                     communicator.send_log(
                         f"The image with id '{image.id}', URL '{image.url}' has dimensions {image.dimensions.width}x{image.dimensions.height}",
@@ -138,25 +160,30 @@ class PythonExtension(PicteusExtension):
                     height: int | None = parameters["height"]
                     resize_render: ImageResizeRender | None = parameters["resizeRender"]
                     if (width is not None or height is not None) and strip_metadata is False:
-                        await communicator.launch_intent(NotificationsDialogIntent(
-                            NotificationsDialog(type=NotificationsDialogType.ERROR, title="Image Conversion",
-                                                description="When a dimension is specified, the metadata must be stripped.",
-                                                details=None,
-                                                buttons=NotificationsDialogButtons("OK"))))
+                        await communicator.launch_intent(NotificationsDialogIntent(dialog=NotificationsDialog(
+                            type=NotificationsDialogType.ERROR,
+                            title="Image Conversion",
+                            description="When a dimension is specified, the metadata must be stripped.",
+                            buttons=NotificationsDialogButtons(
+                                "OK"))))
                         return None
 
                     communicator.send_log(f"Converting the image with id '{image.id}' and URL '{image.url}'", "debug")
-                    image_bytes: bytearray = self.get_image_api().image_download(image_id, image_format, width, height,
-                                                                                 resize_render,
-                                                                                 strip_metadata)
-                    new_image: Image = self.get_repository_api().repository_store_image(image.repository_id,
-                                                                                        image_bytes,
+                    image_bytes: bytearray = self.get_image_api().image_download(id=image_id, format=image_format,
+                                                                                 width=width, height=height,
+                                                                                 resize_render=resize_render,
+                                                                                 strip_metadata=strip_metadata)
+                    new_image: Image = self.get_repository_api().repository_store_image(id=image.repository_id,
+                                                                                        body=image_bytes,
                                                                                         parent_id=image.id)
-                    new_images.append(NotificationsImage(new_image.id))
+                    new_images.append(NotificationsImage(imageId=new_image.id))
 
             if command_id == "convert":
-                await communicator.launch_intent(NotificationsImagesIntent(
-                    NotificationsImages(new_images, "Converted images", "These are the converted images")))
+                await communicator.launch_intent(NotificationsImagesIntent(images=
+                                                                           NotificationsImages(images=new_images,
+                                                                                               dialogContent=NotificationDialogContent(
+                                                                                                   title="Converted images",
+                                                                                                   description="These are the converted images"))))
 
         return None
 

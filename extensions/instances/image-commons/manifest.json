@@ -41,7 +41,8 @@
                 "enum": ["jpeg", "png", "webp", "gif", "avif", "heif"],
                 "default": "jpeg",
                 "ui": {
-                  "widget": "radio", "inline": true
+                  "widget": "radio",
+                  "inline": true
                 }
               },
               "stripMetadata": {
@@ -78,7 +79,8 @@
                 "enum": ["inbox", "outbox"],
                 "default": "inbox",
                 "ui": {
-                  "widget": "radio", "inline": true
+                  "widget": "radio",
+                  "inline": true
                 }
               }
             },
