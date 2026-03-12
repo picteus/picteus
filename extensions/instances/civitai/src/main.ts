@@ -147,7 +147,14 @@ class CivitaiExtension extends PicteusExtension
           applicationMetadata: JSON.stringify(applicationMetadata),
           body: blob
         });
-        newImages.push({ imageId: image.id, title: `Image with id '${image.id}'` });
+        newImages.push({
+          imageId: image.id,
+          dialogContent:
+            {
+              title: `Image with id '${image.id}'`,
+              description: prompt === undefined ? "" : `With prompt '${prompt}`
+            }
+        });
         await this.getImageApi().imageSetTags({
           id: image.id,
           extensionId: this.extensionId,
@@ -206,11 +213,15 @@ class CivitaiExtension extends PicteusExtension
       }
     }
     await communicator.launchIntent({
-      images: {
-        images: newImages,
-        title: "Retrieved Images",
-        description: "These are the retrieved images"
-      }
+      images:
+        {
+          images: newImages,
+          dialogContent:
+            {
+              title: "Retrieved Images",
+              description: "These are the retrieved images"
+            }
+        }
     });
   };
 

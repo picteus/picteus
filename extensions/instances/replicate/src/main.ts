@@ -105,17 +105,20 @@ class ReplicateExtension extends PicteusExtension
       if (output !== undefined)
       {
         const result = await this.getImageApi().imageSearchImages({
-          filter:
+          searchParameters:
             {
-              origin: { kind: SearchOriginNature.Repositories, ids: [this.repository.id] },
-              criteria:
+              filter:
                 {
-                  keyword:
+                  origin: { kind: SearchOriginNature.Repositories, ids: [this.repository.id] },
+                  criteria:
                     {
-                      text: prediction.id + "." + output.extension,
-                      inName: true,
-                      inMetadata: false,
-                      inFeatures: false
+                      keyword:
+                        {
+                          text: prediction.id + "." + output.extension,
+                          inName: true,
+                          inMetadata: false,
+                          inFeatures: false
+                        }
                     }
                 }
             }
@@ -257,13 +260,21 @@ class ReplicateExtension extends PicteusExtension
       imageFeature: features
     });
     await communicator.launchIntent({
-      images: {
-        images: [{ imageId: image.id, description: input.prompt === undefined ? "Image" : input.prompt }],
-        title: "Generated Images",
-        description: "These are generated images",
-        // TODO: fulfill this
-        details: ``
-      }
+      images:
+        {
+          images: [
+            {
+              imageId: image.id,
+              dialogContent: { title: image.name, description: input.prompt === undefined ? "Image" : input.prompt }
+            }],
+          dialogContent:
+            {
+              title: "Generated Images",
+              description: "These are generated images",
+              // TODO: fulfill this
+              details: ``
+            }
+        }
     });
     return true;
   }

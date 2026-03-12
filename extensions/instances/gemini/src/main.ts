@@ -188,10 +188,13 @@ class GeminiExtension extends PicteusExtension
         });
         await communicator.launchIntent({
           images: {
-            images: [{ imageId: image.id, description: prompt }],
-            title: "Generated Images",
-            description: "These are generated images",
-            details: `part.text=${part.text}\npart.inlineData.displayName=${part.inlineData.displayName}\npart.inlineData.mimeType=${part.inlineData.mimeType}\n`
+            images: [{ imageId: image.id, dialogContent: { title: image.name, description: prompt } }],
+            dialogContent:
+              {
+                title: "Generated Images",
+                description: "These are generated images",
+                details: `part.text=${part.text}\npart.inlineData.displayName=${part.inlineData.displayName}\npart.inlineData.mimeType=${part.inlineData.mimeType}\n`
+              }
           }
         });
       }
