@@ -97,7 +97,7 @@ class PythonExtension(PicteusExtension):
                     if user_parameters["likeChocolate"]:
                         await communicator.launch_intent(
                             NotificationsUiIntent(ui=NotificationsUi(anchor=NotificationsUiAnchor.MODAL,
-                                                                     url="https://www.milka.fr",
+                                                                     url=self.web_services_base_url + "/swaggerui",
                                                                      dialogContent=NotificationDialogContent(
                                                                          title="Website",
                                                                          description="A web site with some chocolate",

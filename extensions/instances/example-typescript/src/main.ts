@@ -133,7 +133,7 @@ class TypeScriptExtension extends PicteusExtension
               ui:
                 {
                   anchor: NotificationsUiAnchor.Modal,
-                  url: "https://www.milka.fr",
+                  url: `${this.webServicesBaseUrl}/swaggerui`,
                   dialogContent:
                     {
                       title: "Website",
