@@ -2,13 +2,13 @@ import { DialogType } from "types";
 import { Alert, Button, Flex } from "@mantine/core";
 import { IconCircleX, IconInfoCircle, IconQuestionMark } from "@tabler/icons-react";
 import { useEnterKey } from "app/hooks";
-import { CopyText } from "app/components";
+import { CopyText, ImageCollection } from "app/components";
 
 import style from "./DialogForm.module.scss";
 
-type DialogFormType = { dialog: DialogType; onSend(isYes: boolean): void };
+type DialogFormType = { dialog: DialogType; imageIds?:string[]; onSend(isYes: boolean): void };
 
-export default function DialogForm({ dialog, onSend }: DialogFormType) {
+export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType) {
   useEnterKey(() => onSend(true));
 
   const Buttons = () => {
@@ -41,6 +41,7 @@ export default function DialogForm({ dialog, onSend }: DialogFormType) {
     <div>
       <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }}/></Alert>
       <CopyText size="md" style={style.text} text={dialog.details} />
+      {imageIds && <ImageCollection imageIds={imageIds} />}
       <Flex mt="md" align="center" justify="flex-end" gap={10}>
         <Buttons />
       </Flex>

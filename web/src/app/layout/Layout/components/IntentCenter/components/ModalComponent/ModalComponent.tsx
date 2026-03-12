@@ -70,9 +70,8 @@ export default function ModalComponent({
       opened={actionModalOpened}
       fullScreen={modal.fullScreen}
       size="xl"
-      {...(modal.title
-        ? { title: computeTitle() }
-        : { withCloseButton: true })}
+      title={modal.title === undefined ? undefined : computeTitle() }
+      withCloseButton={modal.withCloseButton === undefined ? true : modal.withCloseButton}
       padding="lg"
     >
       {modal.fullScreen && <Divider mb="md" />}

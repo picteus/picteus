@@ -100,6 +100,7 @@ export default function RjsfForm({
   };
 
   return (
+    // TODO: handle the case when the "widgets" property is not compatible with the type, like when the "ui.widget" property is to "updown" while the type is a "boolean".
     <Form
       ref={formRef}
       schema={ensureSchemaDefaultValues(schema)}

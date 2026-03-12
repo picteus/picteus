@@ -98,6 +98,7 @@ export default function IntentCenter() {
   useEffect(() => {
     if (eventData?.rawData?.channel === ChannelEnum.EXTENSION_INTENT) {
       const value = eventData.rawData.value as ExtensionIntent;
+      const intent = value.intent;
       const extensionName = ExtensionsService.list().find(
         (extension) => extension.manifest.id === value.id,
       )?.manifest.name;
@@ -111,8 +112,9 @@ export default function IntentCenter() {
           iconUrl,
           component: (
             <CommandForm
+              command={intent}
               extensionId={value.id}
-              command={value.intent}
+              imageIds={intent.context?.imageIds}
               onSend={(extensionId, commandId, parameters) =>
                 handleOnSend(parameters, modalId)
               }
@@ -122,7 +124,7 @@ export default function IntentCenter() {
               }}
             />
           ),
-          title: value.intent.dialogContent?.title || t("extensionIntent.modalTitle", {
+          title: intent.dialogContent?.title || t("extensionIntent.modalTitle", {
             extension: extensionName,
           }),
           onBeforeClose: respondWithCancel,
@@ -131,7 +133,8 @@ export default function IntentCenter() {
       const addFullscreenURLModal = () => {
         addModal({
           fullScreen: true,
-          component: <FullscreenURLModal url={value.intent.ui.url} />,
+          component: <FullscreenURLModal url={intent.ui.url} />,
+          title: intent.ui.dialogContent?.title,
           onBeforeClose: respondWithCancel
         });
         respondWithValue({});
@@ -146,15 +149,16 @@ export default function IntentCenter() {
               onSend={(isYes) =>
                 handleOnSend(isYes, modalId)
               }
-              dialog={value.intent.dialog}
+              dialog={intent.dialog}
+              imageIds={intent.context?.imageIds}
             />
           ),
-          title: value.intent.dialog.title,
+          title: intent.dialog.title,
           onBeforeClose: respondWithCancel,
         });
 
       const addImagesTab = () => {
-        const data = value.intent.images;
+        const data = intent.images;
         addTab({
           label: data.title,
           description: data.description,
@@ -167,15 +171,15 @@ export default function IntentCenter() {
       };
 
       // Determine which modal to show
-      if (value.intent.parameters) {
+      if (intent.parameters) {
         addCommandFormModal();
-      } else if (value.intent.ui) {
+      } else if (intent.ui) {
         addFullscreenURLModal();
-      } else if (value.intent.dialog) {
+      } else if (intent.dialog) {
         addDialogFormModal();
-      } else if (value.intent.show) {
-        void handleOnIntentShow(value.intent.show);
-      } else if (value.intent.images) {
+      } else if (intent.show) {
+        void handleOnIntentShow(intent.show);
+      } else if (intent.images) {
         addImagesTab();
       }
     }
@@ -190,6 +194,7 @@ export default function IntentCenter() {
             onClose={handleOnCloseVisualizer}
           />
         ),
+        withCloseButton: false,
         onBeforeClose: handleOnCloseVisualizer,
         fullScreen: true,
       });

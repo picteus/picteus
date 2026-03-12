@@ -99,15 +99,21 @@ export type ImagesType = {
   images: Array<{ imageId: string }>;
 };
 
+export type ContextType = {
+  imageIds?: string[];
+};
+
 export type UiCommandType = {
+  context?: ContextType;
   id?: string;
   label?: string;
   parameters?: RJSFSchema;
   dialogContent?: DialogContent;
   withTags?: string[];
   ui?: {
-    anchor: "modal";
+    anchor: "modal" | "window";
     url: string;
+    dialogContent?: DialogContent;
   };
   dialog?: DialogType;
   show?: ShowType;
@@ -194,6 +200,7 @@ export type LocalFiltersType = {
 export type ActionModalValue = {
   id?: string;
   title?: string;
+  withCloseButton?: boolean;
   iconUrl?: string;
   fullScreen?: boolean;
   component: ReactElement | undefined;

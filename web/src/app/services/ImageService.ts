@@ -5,20 +5,20 @@ import {
   ImageApiImageClosestImagesRequest,
   ImageApiImageGetAllFeaturesRequest,
   ImageApiImageGetRequest,
-  ImageApiImageSearchImagesRequest,
   ImageApiImageTextToImagesRequest,
   ImageDimensions,
   ImageDistance,
   ImageFormat,
   SearchImageResult,
-  SearchImageSummaryResult
+  SearchImageSummaryResult,
+  SearchParameters
 } from "@picteus/ws-client";
 
 import { BASE_PATH } from "utils";
 
 const imageApi = new ImageApi();
 
-const defaultSearchCriteria: ImageApiImageSearchImagesRequest = {
+const defaultSearchCriteria: SearchParameters = {
   filter:{
     criteria: {
       formats: [
@@ -34,33 +34,16 @@ const defaultSearchCriteria: ImageApiImageSearchImagesRequest = {
   range: { take: 1000 },
 };
 
-function fixSearchRequest(request: ImageApiImageSearchImagesRequest) {
-  const copiedRequest = JSON.parse(JSON.stringify(request));
-  if (request.filter?.criteria?.tags !== undefined) {
-    copiedRequest.filter.criteria.tags = JSON.stringify(request.filter.criteria.tags);
-  }
-  if (request.filter?.criteria?.features !== undefined) {
-    copiedRequest.filter.criteria.features = JSON.stringify(request.filter.criteria.features);
-  }
-  return copiedRequest;
-}
-
 async function searchImages(
-  request?: ImageApiImageSearchImagesRequest,
+  parameters?: SearchParameters,
 ): Promise<SearchImageResult> {
-  if (!request) {
-    request = defaultSearchCriteria;
-  }
-  return await imageApi.imageSearchImages(fixSearchRequest(request));
+  return await imageApi.imageSearchImages({ searchParameters: parameters ?? defaultSearchCriteria });
 }
 
 async function searchSummaries(
-  request?: ImageApiImageSearchImagesRequest,
+  parameters?: SearchParameters,
 ): Promise<SearchImageSummaryResult> {
-  if (!request) {
-    request = defaultSearchCriteria;
-  }
-  return await imageApi.imageSearchSummaries(fixSearchRequest(request));
+  return await imageApi.imageSearchSummaries({ searchParameters: parameters ?? defaultSearchCriteria });
 }
 
 async function get(parameters: ImageApiImageGetRequest) {
