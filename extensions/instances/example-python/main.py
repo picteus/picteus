@@ -162,9 +162,7 @@ class PythonExtension(PicteusExtension):
             content_types: bytes = file.read()
         result: str = await communicator.launch_intent(NotificationsServeBundleIntent(
             serveBundle=NotificationsServeBundle(content=bytearray(content_types),
-                                                 settings={"imageIds": [
-                                                     self.web_services_base_url + "/resize/?u=" + image.url for
-                                                     image in summaries.items]})))
+                                                 settings={"imageIds": [image.id for image in summaries.items]})))
         await communicator.launch_intent(NotificationsDialogIntent(
             dialog=NotificationsDialog(
                 type=NotificationsDialogType.INFO,

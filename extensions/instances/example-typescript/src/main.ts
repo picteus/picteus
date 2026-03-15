@@ -236,7 +236,7 @@ class TypeScriptExtension extends PicteusExtension
       serveBundle:
         {
           content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "application.zip")),
-          settings: { imageIds: summaries.map(summary => this.webServicesBaseUrl + "/resize/?u=" + summary.url) }
+          settings: { imageIds: summaries.map(summary => summary.id) }
         }
     });
     await communicator.launchIntent({

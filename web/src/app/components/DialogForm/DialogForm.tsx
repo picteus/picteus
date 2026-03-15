@@ -6,13 +6,16 @@ import { CopyText, ImageCollection } from "app/components";
 
 import style from "./DialogForm.module.scss";
 
-type DialogFormType = { dialog: DialogType; imageIds?:string[]; onSend(isYes: boolean): void };
+type DialogFormType = { dialog: DialogType; imageIds?: string[]; onSend(isYes: boolean): void };
 
-export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType) {
+export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
+{
   useEnterKey(() => onSend(true));
 
-  const Buttons = () => {
-    return Object.entries(dialog.buttons).map(([key, label]) => {
+  const Buttons = () =>
+  {
+    return Object.entries(dialog.buttons).map(([key, label]) =>
+    {
       const isYes = key === "yes";
       return (
         <Button
@@ -26,8 +29,10 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
     });
   };
 
-  function computeAlertProps() {
-    switch (dialog.type) {
+  function computeAlertProps()
+  {
+    switch (dialog.type)
+    {
       case "Error":
         return { color: "red", icon: <IconCircleX /> };
       case "Info":
@@ -38,8 +43,8 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
   }
 
   return (
-    <div>
-      <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }}/></Alert>
+    <Flex direction="column" gap="xs">
+      <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }} /></Alert>
       {dialog.details && <CopyText size="md" style={style.text} text={dialog.details} />}
       {imageIds && <ImageCollection imageIds={imageIds} />}
       {dialog.frame && <iframe className={style.iframe} style={{ height: `${dialog.frame.height}vh` }} {...{
@@ -49,6 +54,6 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
       <Flex mt="md" align="center" justify="flex-end" gap={10}>
         <Buttons />
       </Flex>
-    </div>
+    </Flex>
   );
 }
