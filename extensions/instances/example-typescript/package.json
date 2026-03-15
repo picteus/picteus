@@ -32,7 +32,8 @@
     "dist",
     "manifest.json",
     "icon.png",
-    "ui/**/*"
+    "ui/**/*",
+    "application.zip"
   ],
   "scripts": {
     "prerequisites": "npm --no-save link ../../sdk/typescript",

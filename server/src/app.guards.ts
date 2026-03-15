@@ -27,13 +27,9 @@ export const noSecurity = "none";
 
 const IS_PUBLIC_KEY = "isPublic";
 
-type ExtensionApiPermission = { id: string, key: string };
+export type ExtensionApiKey = { id: string, key: string };
 
-type ExtensionsApiPermissions = ExtensionApiPermission [];
-
-type ExtensionsApiKey = ExtensionApiPermission;
-
-export type ExtensionsApiKeys = ExtensionsApiPermissions;
+export type ExtensionsApiKeys = ExtensionApiKey[];
 
 export enum ApiScope
 {
@@ -139,9 +135,7 @@ export class AuthenticationGuard implements CanActivate
 
   private static _masterApiKey?: string;
 
-  private static readonly extensionsApiKeys: string[] = [];
-
-  private static readonly extensionsApiPermissions: ExtensionsApiPermissions = [];
+  private static readonly extensionsApiPermissions: ExtensionsApiKeys = [];
 
   // This acts as a cache of API secret values
   private static readonly perSecretValueSecretsMap: Map<string, ApiSecret> = new Map<string, ApiSecret>();
@@ -168,8 +162,7 @@ export class AuthenticationGuard implements CanActivate
 
   static isExtensionApiKey(apiKey: string, extensionId: string): boolean
   {
-    const index = this.extensionsApiKeys.indexOf(apiKey);
-    return index !== -1 && this.extensionsApiPermissions[index].id === extensionId;
+    return AuthenticationGuard.getExtensionsApiKey(apiKey, extensionId) !== undefined;
   }
 
   static registerExtensionsApiKeys(extensionIds: string[]): ExtensionsApiKeys
@@ -181,25 +174,12 @@ export class AuthenticationGuard implements CanActivate
     return AuthenticationGuard.extensionsApiPermissions;
   }
 
-  static getExtensionsApiKey(extensionId: string): ExtensionsApiKey
-  {
-    for (const extensionsApiPermission of AuthenticationGuard.extensionsApiPermissions)
-    {
-      if (extensionsApiPermission.id === extensionId)
-      {
-        return extensionsApiPermission;
-      }
-    }
-    throw new Error(`There is no API key for the extension '${extensionId}'`);
-  }
-
-  static registerExtensionsApiKey(extensionId: string): ExtensionsApiKey
+  static registerExtensionsApiKey(extensionId: string): ExtensionApiKey
   {
     logger.debug(`Registering an API key for the extension '${extensionId}'`);
     const apiKey = AuthenticationGuard.generateApiKey();
-    const extensionsApiKey: ExtensionsApiKey = { id: extensionId, key: apiKey };
+    const extensionsApiKey: ExtensionApiKey = { id: extensionId, key: apiKey };
     AuthenticationGuard.extensionsApiPermissions.push(extensionsApiKey);
-    AuthenticationGuard.extensionsApiKeys.push(apiKey);
     return extensionsApiKey;
   }
 
@@ -210,9 +190,8 @@ export class AuthenticationGuard implements CanActivate
     {
       if (extensionApiKey.id === extensionId)
       {
-        logger.debug(`Unregistering the API key '${AuthenticationGuard.extensionsApiKeys[index]}' for the extension '${extensionId}'`);
+        logger.debug(`Unregistering the API key '${extensionApiKey.key}' for the extension '${extensionId}'`);
         AuthenticationGuard.extensionsApiPermissions.splice(index, 1);
-        AuthenticationGuard.extensionsApiKeys.splice(index, 1);
         break;
       }
       index++;
@@ -221,8 +200,12 @@ export class AuthenticationGuard implements CanActivate
 
   static resetExtensionsApiKeys(): void
   {
-    AuthenticationGuard.extensionsApiKeys.length = 0;
     AuthenticationGuard.extensionsApiPermissions.length = 0;
+  }
+
+  private static getExtensionsApiKey(apiKey: string, extensionId?: string): ExtensionApiKey | undefined
+  {
+    return AuthenticationGuard.extensionsApiPermissions.find(permission => permission.key === apiKey && (extensionId === undefined || permission.id === extensionId));
   }
 
   constructor(private readonly reflector: Reflector, private readonly entitiesProvider: EntitiesProvider)
@@ -276,11 +259,11 @@ export class AuthenticationGuard implements CanActivate
     {
       return { scopes: [ApiScope.All] };
     }
-    const index = AuthenticationGuard.extensionsApiKeys.indexOf(apiKey);
-    if (index !== -1)
+    const extensionsApiKey = AuthenticationGuard.getExtensionsApiKey(apiKey);
+    if (extensionsApiKey !== undefined)
     {
       return {
-        extensionId: AuthenticationGuard.extensionsApiPermissions[index].id,
+        extensionId: extensionsApiKey.id,
         scopes: [ApiScope.ExtensionChromeExtensionInstall, ApiScope.ExtensionRun, ApiScope.ExtensionSettingsRead, ApiScope.ExtensionSettingsWrite, ApiScope.ImageAttachmentWrite, ApiScope.ImageEmbeddingsWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageRead, ApiScope.ImageTagWrite, ApiScope.RepositoryEnsure, ApiScope.RepositoryRead, ApiScope.RepositoryStoreImage]
       };
     }

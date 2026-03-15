@@ -40,8 +40,12 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
   return (
     <div>
       <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }}/></Alert>
-      <CopyText size="md" style={style.text} text={dialog.details} />
+      {dialog.details && <CopyText size="md" style={style.text} text={dialog.details} />}
       {imageIds && <ImageCollection imageIds={imageIds} />}
+      {dialog.frame && <iframe className={style.iframe} style={{ height: `${dialog.frame.height}vh` }} {...{
+        src: "url" in dialog.frame.content ? dialog.frame.content.url : undefined,
+        srcDoc: "html" in dialog.frame.content ? dialog.frame.content.html : undefined
+      }} />}
       <Flex mt="md" align="center" justify="flex-end" gap={10}>
         <Buttons />
       </Flex>

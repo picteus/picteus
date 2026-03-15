@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import Timers from "node:timers";
+import { randomUUID } from "node:crypto";
+
 import { fdir } from "fdir";
 import AdmZip from "adm-zip";
 import semver from "semver";
@@ -33,7 +35,7 @@ import {
   TextEventAction
 } from "../notifier";
 import { ExtensionsManager } from "../threads/managers";
-import { AuthenticationGuard } from "../app.guards";
+import { AuthenticationGuard, ExtensionApiKey } from "../app.guards";
 import {
   applicationXGzipMimeType,
   CommandEntity,
@@ -79,7 +81,7 @@ import {
   inflateZip,
   move
 } from "./utils/downloader";
-import { fromCapacityToImageEventAction } from "../bos";
+import { fromCapacityToImageEventAction, Json } from "../bos";
 import { resize } from "./utils/images";
 import { WatcherEvent, WatcherTerminator, watchPath } from "./utils/pathWatcher";
 import { EntitiesProvider, VectorDatabaseAccessor } from "./databaseProviders";
@@ -90,6 +92,8 @@ import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import { HostService } from "./hostService";
 
 
+type ExtensionBundleServe = { extensionApiKey: ExtensionApiKey, settings?: Json, directoryPath: string };
+
 @Injectable()
 export class ExtensionsUiServer
 {
@@ -98,7 +102,13 @@ export class ExtensionsUiServer
 
   private static readonly textPlain = types.txt;
 
+  private static readonly extensionPathFragment = "extension";
+
+  private static readonly bundlePathFragment = "bundle";
+
   private readonly defaultIconFilePath: string;
+
+  private readonly perIdServedBundles: Map<string, ExtensionBundleServe> = new Map<string, ExtensionBundleServe>();
 
   constructor(private readonly extensionsRegistry: ExtensionRegistry)
   {
@@ -113,39 +123,94 @@ export class ExtensionsUiServer
   {
     const pathSeparator = "/";
     const pathTokens = request.path.split(pathSeparator);
-    if (pathTokens.length < 3)
+    if (pathTokens.length < 2)
     {
-      response.status(HttpStatus.NOT_FOUND).type(ExtensionsUiServer.textPlain).send("Invalid path");
+      this.sendInvalidPathResponse(response);
       return;
     }
-    const extensionId = pathTokens[1];
-    const uiPath = `${pathTokens.slice(2).join(pathSeparator)}`;
+    const fragment = pathTokens[1];
+    let pathIndex = 2;
+    let uiPath: string;
+    let filePath: string;
+    let logFragment: string;
+    if (fragment === ExtensionsUiServer.extensionPathFragment)
+    {
+      if (pathTokens.length < 4)
+      {
+        this.sendInvalidPathResponse(response);
+        return;
+      }
+      const extensionId = pathTokens[pathIndex++];
+      uiPath = pathTokens.slice(pathIndex).join(pathSeparator);
 
-    const manifest: ExtendedManifest | undefined = this.extensionsRegistry.get(extensionId);
-    if (manifest === undefined)
-    {
-      response.status(HttpStatus.NOT_FOUND).type(ExtensionsUiServer.textPlain).send(`Non-existent extension with id '${extensionId}'`);
-      return;
-    }
-    else if (this.extensionsRegistry.isPaused(extensionId) === true)
-    {
-      response.status(HttpStatus.FORBIDDEN).type(ExtensionsUiServer.textPlain).send(`The extension with id '${extensionId}' is paused`);
-      return;
-    }
+      const manifest: ExtendedManifest | undefined = this.extensionsRegistry.get(extensionId);
+      if (manifest === undefined)
+      {
+        response.status(HttpStatus.NOT_FOUND).type(ExtensionsUiServer.textPlain).send(`Non-existent extension with id '${extensionId}'`);
+        return;
+      }
+      else if (this.checkExtensionState(response, extensionId) === false)
+      {
+        return;
+      }
 
-    const filePath = path.join(manifest.directoryPath, uiPath);
-    // We handle the special elements
-    if (uiPath === "icon.png")
+      filePath = path.join(manifest.directoryPath, uiPath);
+      logFragment = `the extension with id '${extensionId}'`;
+      // We handle the special elements
+      if (uiPath === "icon.png")
+      {
+        const actualFilePath = fs.existsSync(filePath) === false ? this.defaultIconFilePath : filePath;
+        const edgeInPixels = 24;
+        const formatAndBuffer = await resize("extension icon", actualFilePath, "PNG", edgeInPixels, edgeInPixels, "inbox", undefined, undefined, true, false);
+        response.status(HttpStatus.OK).type(types.png).send(formatAndBuffer.buffer);
+        return;
+      }
+    }
+    else if (fragment === ExtensionsUiServer.bundlePathFragment)
     {
-      const actualFilePath = fs.existsSync(filePath) === false ? this.defaultIconFilePath : filePath;
-      const edgeInPixels = 24;
-      const formatAndBuffer = await resize("extension icon", actualFilePath, "PNG", edgeInPixels, edgeInPixels, "inbox", undefined, undefined, true, false);
-      response.status(HttpStatus.OK).type(types.png).send(formatAndBuffer.buffer);
+      if (pathTokens.length < 3)
+      {
+        this.sendInvalidPathResponse(response);
+        return;
+      }
+      const bundleId = pathTokens[pathIndex++];
+      const extensionBundleServe = this.perIdServedBundles.get(bundleId);
+      if (extensionBundleServe === undefined)
+      {
+        this.sendInvalidPathResponse(response);
+        return;
+      }
+      const extensionId = extensionBundleServe.extensionApiKey.id;
+      if (this.checkExtensionState(response, extensionId) === false)
+      {
+        return;
+      }
+      uiPath = pathTokens.length < 4 ? "" : pathTokens.slice(pathIndex).join(pathSeparator);
+      // We handle the parameters case
+      if (uiPath === "")
+      {
+        response.status(HttpStatus.OK).type(types.json).send({
+          parameters:
+            {
+              extensionId,
+              webServicesBaseUrl: paths.webServicesBaseUrl,
+              apiKey: extensionBundleServe.extensionApiKey.key
+            },
+          settings: extensionBundleServe.settings
+        });
+        return;
+      }
+      filePath = path.join(extensionBundleServe.directoryPath, uiPath);
+      logFragment = `the bundle with id '${bundleId}'`;
+    }
+    else
+    {
+      this.sendInvalidPathResponse(response);
       return;
     }
     if (fs.existsSync(filePath) === false)
     {
-      response.status(HttpStatus.NOT_FOUND).type(ExtensionsUiServer.textPlain).send(`Non-existent file '${uiPath}' related to the extension with id '${extensionId}'`);
+      response.status(HttpStatus.NOT_FOUND).type(ExtensionsUiServer.textPlain).send(`Non-existent file '${uiPath}' related to ${logFragment}`);
       return;
     }
     const rawExtension = path.extname(filePath);
@@ -169,8 +234,32 @@ export class ExtensionsUiServer
         mimeType = types.json;
         break;
     }
-    logger.debug(`Serving the file with path '${uiPath}' with MIME type '${mimeType}' related to the extension with id '${extensionId}'`);
+    logger.debug(`Serving the file with path '${uiPath}' with MIME type '${mimeType}' related to ${logFragment}`);
     response.status(HttpStatus.OK).type(mimeType).sendFile(filePath);
+  }
+
+  async serveBundle(extensionApiKey: ExtensionApiKey, settings: Json | undefined, archive: Buffer): Promise<string>
+  {
+    const bundleId = randomUUID();
+    const directoryPath = path.join(getTemporaryDirectoryPath(), bundleId);
+    await inflateZip(archive, directoryPath, "archive");
+    this.perIdServedBundles.set(bundleId, { extensionApiKey, settings, directoryPath });
+    return `${paths.webServicesBaseUrl}/${ExtensionsUiServer.webServerBasePath}/${ExtensionsUiServer.bundlePathFragment}/${bundleId}`;
+  }
+
+  private checkExtensionState(response: Response, extensionId: string): boolean
+  {
+    if (this.extensionsRegistry.isPaused(extensionId) === true)
+    {
+      response.status(HttpStatus.FORBIDDEN).type(ExtensionsUiServer.textPlain).send(`The extension with id '${extensionId}' is paused`);
+      return false;
+    }
+    return true;
+  }
+
+  private sendInvalidPathResponse(response: Response): void
+  {
+    response.status(HttpStatus.NOT_FOUND).type(ExtensionsUiServer.textPlain).send("Invalid path");
   }
 
 }

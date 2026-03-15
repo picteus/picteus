@@ -41,7 +41,12 @@ import {
 } from "../notifier";
 import { AuthenticationGuard } from "../app.guards";
 import { addJsonSchemaAdditionalProperties, computeAjv, validateJsonSchema, validateSchema } from "./utils/ajvWrapper";
-import { checkUiProperties, ExtensionService, stripAndExtractParametersUiProperties } from "./extensionServices";
+import {
+  checkUiProperties,
+  ExtensionService,
+  ExtensionsUiServer,
+  stripAndExtractParametersUiProperties
+} from "./extensionServices";
 import { ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import {
@@ -50,6 +55,7 @@ import {
   NotificationsImagesIntent,
   NotificationsIntent,
   NotificationsParametersIntent,
+  NotificationsServeBundleIntent,
   NotificationsShowIntent,
   NotificationsShowType,
   NotificationsUiAnchor,
@@ -95,6 +101,10 @@ const isNotificationsShowIntent = (intent: NotificationsIntent): intent is Notif
 {
   return (intent as NotificationsShowIntent).show !== undefined;
 };
+const isNotificationsServeBundleIntent = (intent: NotificationsIntent): intent is NotificationsServeBundleIntent =>
+{
+  return (intent as NotificationsServeBundleIntent).serveBundle !== undefined;
+};
 
 @WebSocketGateway<GatewayMetadata>({ transports: ["websocket"] })
 export class NotificationsGateway
@@ -117,7 +127,7 @@ export class NotificationsGateway
   // @ts-ignore
   private notifier: Notifier;
 
-  constructor(private readonly eventEmitter: EventEmitter2, private readonly extensionTaskExecutor: ExtensionTaskExecutor, private readonly moduleRef: ModuleRef)
+  constructor(private readonly eventEmitter: EventEmitter2, private readonly extensionTaskExecutor: ExtensionTaskExecutor, private readonly uiServer: ExtensionsUiServer, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating a NotificationsGateway");
   }
@@ -338,7 +348,7 @@ export class NotificationsGateway
     {
       // It is possible that the server is running headless
       // There is no rejection case, the master's socket error response is handled as a response
-      return this.handleNotification(socketId, masterSocket, notificationValue, extensionId, contextId);
+      return this.handleNotification(socketId, masterSocket, notificationValue, extensionId!, contextId);
     }
   }
 
@@ -463,7 +473,7 @@ export class NotificationsGateway
     return true;
   }
 
-  private handleNotification(socketId: string, masterSocket: Socket, notificationValue: NotificationsValue, extensionId: string | undefined, contextId: string | undefined): Promise<NotificationsReturnedValue | undefined>
+  private handleNotification(socketId: string, masterSocket: Socket, notificationValue: NotificationsValue, extensionId: string, contextId: string | undefined): Promise<NotificationsReturnedValue | undefined>
   {
     return new Promise<NotificationsReturnedValue | undefined>(async (resolve) =>
     {
@@ -477,7 +487,7 @@ export class NotificationsGateway
       let isOk = true;
       let messageLogChunk: string;
       let action: ExtensionEventAction | undefined;
-      let onAcknowledged: ((result: any) => void) | undefined;
+      let onAcknowledged: ((result: any) => void) | null | undefined;
       if (log !== undefined)
       {
         messageLogChunk = "log";
@@ -492,7 +502,7 @@ export class NotificationsGateway
       }
       else if (intent !== undefined)
       {
-        const result = await this.handleIntent(intent, resolve);
+        const result = await this.handleIntent(extensionId, intent, resolve);
         if (result === undefined)
         {
           isOk = false;
@@ -516,6 +526,10 @@ export class NotificationsGateway
         return;
       }
       logger.debug(`Received a ${messageLogChunk!} message coming from channel '${paths.notifications}' through the socket client with id '${socketId}' related to the extension with id '${extensionId}'${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}`);
+      if (onAcknowledged === null)
+      {
+        return;
+      }
       this.emitEventToSocket(masterSocket, Notifier.buildEvent(EventEntity.Extension, action), contextId ?? randomUUID(), Date.now(), value, undefined, onAcknowledged);
       if (onAcknowledged === undefined)
       {
@@ -524,13 +538,13 @@ export class NotificationsGateway
     });
   }
 
-  private async handleIntent(intent: NotificationsIntent, resolve: (value: NotificationsReturnedValue) => void): Promise<{
+  private async handleIntent(extensionId: string, intent: NotificationsIntent, resolve: (value: NotificationsReturnedValue) => void): Promise<{
     intentName: string;
-    onAcknowledged: ((result: any) => void)
+    onAcknowledged: ((result: any) => void) | null
   } | undefined>
   {
     let intentName: string;
-    let onAcknowledged: ((result: any) => void);
+    let onAcknowledged: ((result: any) => void) | null;
     const resolveWithError = (message: string): undefined =>
     {
       resolve({ error: message });
@@ -597,7 +611,11 @@ export class NotificationsGateway
       const specificIntent: NotificationsUiIntent = intent;
       if (await checkSchema(z.object({
         anchor: z.enum(NotificationsUiAnchor),
-        url: z.url()
+        frameContent: z.object({
+          url: z.string().optional(),
+          html: z.string().optional()
+        })
+
       }), specificIntent.ui) === false)
       {
         return resolveWithInvalidIntentSchema("NotificationsUiIntent");
@@ -621,6 +639,13 @@ export class NotificationsGateway
         title: z.string(),
         description: z.string(),
         details: z.string().optional(),
+        frame: z.object({
+          content: z.object({
+            url: z.string().optional(),
+            html: z.string().optional()
+          }),
+          height: z.int32().min(0).max(100)
+        }).optional(),
         buttons: z.object({
           yes: z.string(),
           no: z.string().optional()
@@ -675,6 +700,29 @@ export class NotificationsGateway
         logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
         resolve(value);
       };
+    }
+    else if (isNotificationsServeBundleIntent(intent) === true)
+    {
+      intentName = "serveBundle";
+      const specificIntent: NotificationsServeBundleIntent = intent;
+      if (await checkSchema(z.object({
+        content: z.instanceof(Buffer),
+        settings: z.object().optional()
+      }), specificIntent.serveBundle) === false)
+      {
+        return resolveWithInvalidIntentSchema("NotificationsServeBundleIntent");
+      }
+      onAcknowledged = null;
+      const extensionApiKey = AuthenticationGuard.registerExtensionsApiKey(extensionId);
+      try
+      {
+        const value = await this.uiServer.serveBundle(extensionApiKey, specificIntent.serveBundle.settings, specificIntent.serveBundle.content);
+        resolve({ value });
+      }
+      catch (error)
+      {
+        resolveWithError(`Could not inflate the provided bundle archive. Reason:'${(error as Error).message}'`);
+      }
     }
     else
     {

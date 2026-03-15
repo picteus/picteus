@@ -14,6 +14,8 @@ import {
   PicteusExtension,
   SettingsValue
 } from "@picteus/extension-sdk";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 
 class TypeScriptExtension extends PicteusExtension
@@ -133,7 +135,7 @@ class TypeScriptExtension extends PicteusExtension
               ui:
                 {
                   anchor: NotificationsUiAnchor.Modal,
-                  url: `${this.webServicesBaseUrl}/swaggerui`,
+                  frameContent: { url: `${this.webServicesBaseUrl}/swaggerui` },
                   dialogContent:
                     {
                       title: "Website",
@@ -176,10 +178,44 @@ class TypeScriptExtension extends PicteusExtension
               title: "Dialog",
               description: "This is a dialog question",
               details: "Please, click the right button.",
+              frame: parameters["type"] !== "With HTML" ? undefined : {
+                content: { html: `<html lang="en"><body>This is an <b>HTML</b> content within a dialog box.</body></html>` },
+                height: 50
+              },
               buttons: { yes: "Yes", no: "No" }
             }
         });
         communicator.sendLog(`The user clicked the '${result === true ? "Yes" : "No"}' button`, "info");
+      }
+      else if (commandId === "application")
+      {
+        const summaries = (await this.getImageApi().imageSearchSummaries({
+          searchParameters:
+            {
+              filter:
+                {
+                  sorting: { property: "importDate", isAscending: false }
+                },
+              range: { take: 20 }
+            }
+        })).items;
+        const result = await communicator.launchIntent<string>({
+          serveBundle:
+            {
+              content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "application.zip")),
+              settings: { imageIds: summaries.map(summary => this.webServicesBaseUrl + "/resize/?u=" + summary.url) }
+            }
+        });
+        await communicator.launchIntent({
+          dialog:
+            {
+              type: NotificationsDialogType.Info,
+              title: "Application",
+              description: "This dialog box integrates an iframe application.",
+              frame: { content: { url: result + "/index.html" }, height: 70 },
+              buttons: { yes: "Close" }
+            }
+        });
       }
       else if (commandId === "show")
       {
@@ -268,7 +304,6 @@ class TypeScriptExtension extends PicteusExtension
           newImages.push({ imageId: newImage.id });
         }
       }
-
       if (commandId === "convert")
       {
         await communicator.launchIntent({

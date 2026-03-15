@@ -147,11 +147,41 @@
           "on": {
             "entity": "Process"
           },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "title": "Type",
+                "description": "What kind of dialog box do you want to open?",
+                "enum": ["Simple", "With HTML"],
+                "default": "Simple",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
+              }
+            },
+            "required": ["type"]
+          },
           "specifications": [
             {
               "locale": "en",
               "label": "Open a dialog",
               "description": "Opens a question dialog box to the user."
+            }
+          ]
+        },
+        {
+          "id": "application",
+          "on": {
+            "entity": "Process"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Open application",
+              "description": "Opens an application in a dialog box."
             }
           ]
         },

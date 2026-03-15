@@ -133,7 +133,7 @@ export default function IntentCenter() {
       const addFullscreenURLModal = () => {
         addModal({
           fullScreen: true,
-          component: <FullscreenURLModal url={intent.ui.url} />,
+          component: <FullscreenURLModal content={intent.ui.frameContent} />,
           title: intent.ui.dialogContent?.title,
           onBeforeClose: respondWithCancel
         });

@@ -42,10 +42,22 @@ export enum NotificationsUiAnchor
   ImageDetail = "imageDetail"
 }
 
+export interface NotificationsUrlContent
+{
+  readonly url: string;
+}
+
+export interface NotificationsHtmlContent
+{
+  readonly html: string;
+}
+
+export type NotificationFrameContent = NotificationsUrlContent | NotificationsHtmlContent;
+
 export interface NotificationsUi
 {
   readonly anchor: NotificationsUiAnchor;
-  readonly url: string;
+  readonly frameContent: NotificationFrameContent;
   readonly dialogContent?: NotificationDialogContent;
 }
 
@@ -61,10 +73,23 @@ export enum NotificationsDialogType
   Question = "Question"
 }
 
+export interface NotificationsFrame
+{
+  readonly content: NotificationFrameContent;
+  readonly height: number;
+}
+
+export interface NotificationsDialogButtons
+{
+  yes: string;
+  no?: string;
+}
+
 export interface NotificationsDialog extends NotificationDialogContent
 {
   readonly type: NotificationsDialogType;
-  readonly buttons: { yes: string, no?: string };
+  readonly frame?: NotificationsFrame;
+  readonly buttons: NotificationsDialogButtons;
 }
 
 export interface NotificationsDialogIntent extends NotificationsWithContextIntent
@@ -107,9 +132,21 @@ export interface NotificationsShowIntent extends NotificationsBasisIntent
   readonly show: NotificationsShow;
 }
 
+export interface NotificationsServeBundle
+{
+  readonly content: Buffer;
+  readonly settings?: Json;
+}
+
+export interface NotificationsServeBundleIntent extends NotificationsBasisIntent
+{
+  readonly serveBundle: NotificationsServeBundle;
+}
+
 export type NotificationsIntent =
   NotificationsParametersIntent
   | NotificationsUiIntent
   | NotificationsDialogIntent
   | NotificationsImagesIntent
   | NotificationsShowIntent
+  | NotificationsServeBundleIntent

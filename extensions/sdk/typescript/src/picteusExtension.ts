@@ -78,10 +78,22 @@ export enum NotificationsUiAnchor
   ImageDetail = "imageDetail"
 }
 
+export interface NotificationsUrlContent
+{
+  readonly url: string;
+}
+
+export interface NotificationsHtmlContent
+{
+  readonly html: string;
+}
+
+export type NotificationFrameContent = NotificationsUrlContent | NotificationsHtmlContent;
+
 export interface NotificationsUi
 {
   readonly anchor: NotificationsUiAnchor;
-  readonly url: string;
+  readonly frameContent: NotificationFrameContent;
   readonly dialogContent?: NotificationDialogContent;
 }
 
@@ -97,10 +109,23 @@ export enum NotificationsDialogType
   Question = "Question"
 }
 
+export interface NotificationsFrame
+{
+  readonly content: NotificationFrameContent;
+  readonly height: number;
+}
+
+export interface NotificationsDialogButtons
+{
+  yes: string;
+  no?: string;
+}
+
 export interface NotificationsDialog extends NotificationDialogContent
 {
   readonly type: NotificationsDialogType;
-  readonly buttons: { yes: string, no?: string };
+  readonly frame?: NotificationsFrame;
+  readonly buttons: NotificationsDialogButtons;
 }
 
 export interface NotificationsDialogIntent extends NotificationsWithContextIntent
@@ -143,12 +168,24 @@ export interface NotificationsShowIntent extends NotificationsBasisIntent
   readonly show: NotificationsShow;
 }
 
+export interface NotificationsServeBundle
+{
+  readonly content: Buffer;
+  readonly settings?: Json;
+}
+
+export interface NotificationsServeBundleIntent extends NotificationsBasisIntent
+{
+  readonly serveBundle: NotificationsServeBundle;
+}
+
 export type NotificationsIntent =
   NotificationsParametersIntent
   | NotificationsUiIntent
   | NotificationsDialogIntent
   | NotificationsImagesIntent
   | NotificationsShowIntent
+  | NotificationsServeBundleIntent
 
 export enum NotificationEvent
 {
@@ -254,6 +291,25 @@ class ExtensionParameters
 
 }
 
+const stringifyWithStrippedBuffers = (object: object): string =>
+{
+  const bufferReplacement = "<bytes>";
+  return JSON.stringify(object, (_key, value) =>
+  {
+    // We check if the value is a Buffer
+    if (value !== undefined && value.type === "Buffer" && Array.isArray(value.data) === true)
+    {
+      return bufferReplacement;
+    }
+    // We also check for native Buffer instances if they haven't been pre-processed
+    if (Buffer.isBuffer(value) === true)
+    {
+      return bufferReplacement;
+    }
+    return value;
+  }, 0);
+};
+
 class MessageSender
 {
 
@@ -279,7 +335,7 @@ class MessageSender
   sendMessage(channel: string, body: Record<string, any>, callback?: (result: any) => Promise<void>): void
   {
     const contextId = this.contextId;
-    this.logger.debug(`Sending the message '${JSON.stringify(body)}' on channel '${channel}' for ${this.toString()}${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}${callback === undefined ? "" : " and waiting for a callback"}`);
+    this.logger.debug(`Sending the message '${stringifyWithStrippedBuffers(body)}' on channel '${channel}' for ${this.toString()}${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}${callback === undefined ? "" : " and waiting for a callback"}`);
     const value: Record<string, any> =
       {
         extensionId: this.parameters.extensionId,
@@ -342,7 +398,7 @@ export class Communicator
         error: string | undefined
       }) =>
       {
-        this.logger.debug(`Received a result related to the intent '${JSON.stringify(intent)}' for ${this.sender.toString()}`);
+        this.logger.debug(`Received a result related to the intent '${stringifyWithStrippedBuffers(intent)}' for ${this.sender.toString()}`);
         if (cancel !== undefined)
         {
           reject(new NotificationReturnedError(cancel, NotificationReturnedErrorCause.Cancel));

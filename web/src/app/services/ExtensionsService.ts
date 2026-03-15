@@ -161,7 +161,7 @@ function getAdditionalUi(
 }
 
 function buildSidebarAnchorURL(extensionId: string, url: string) {
-  return BASE_PATH + "/ui/" + extensionId + url;
+  return `${BASE_PATH}/ui/extension/${extensionId}${url}`;
 }
 
 function getSidebarAnchorIconURL(extensionId: string) {

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from typing import Dict, Any, List, Optional
 
 from picteus_extension_sdk import PicteusExtension
@@ -7,7 +8,8 @@ from picteus_extension_sdk.picteus_extension import NotificationEvent, Notificat
     NotificationsUiAnchor, NotificationsDialogType, NotificationsParametersIntent, NotificationsUiIntent, \
     NotificationsUi, NotificationsDialogIntent, NotificationsDialog, NotificationsDialogButtons, NotificationsImage, \
     NotificationsImagesIntent, NotificationsImages, NotificationsShowIntent, NotificationsShow, NotificationsShowType, \
-    SettingsValue, NotificationDialogContent, NotificationContext
+    SettingsValue, NotificationDialogContent, NotificationContext, NotificationsServeBundleIntent, \
+    NotificationsServeBundle, NotificationsFrame, NotificationsFrameUrlContent, NotificationsFrameHtmlContent
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -118,10 +120,36 @@ class PythonExtension(PicteusExtension):
                         title="Dialog",
                         description="This is a dialog question",
                         details="Please, click the right button.",
+                        frame=None if parameters.get("type") != "With HTML" else NotificationsFrame(
+                            content=NotificationsFrameHtmlContent(
+                                html="""<html lang="en"><body>This is an <b>HTML</b> content within a dialog box.</body></html>"""),
+                            height=50),
                         buttons=NotificationsDialogButtons(
-                            "Yes", "No"))))
+                            yes="Yes", no="No"))))
                 button = "Yes" if result == True else "No"
                 communicator.send_log(f"The user clicked the '{button}' button", "info")
+            elif command_id == "application":
+                summaries = self.get_image_api().image_search_summaries(search_parameters=SearchParameters(
+                    filter=SearchFilter(
+                        sorting=SearchSorting(property=SearchSortingProperty.IMPORTDATE, isAscending=False)),
+                    range=SearchRange(take=20)))
+                with open(
+                        os.path.join(PicteusExtension.get_extension_home_directory_path(), "application.zip"),
+                        mode="rb") as file:
+                    content_types: bytes = file.read()
+                result: str = await communicator.launch_intent(NotificationsServeBundleIntent(
+                    serveBundle=NotificationsServeBundle(content=bytearray(content_types),
+                                                         settings={"imageIds": [
+                                                             self.web_services_base_url + "/resize/?u=" + image.url for
+                                                             image in summaries.items]})))
+                await communicator.launch_intent(NotificationsDialogIntent(
+                    dialog=NotificationsDialog(
+                        type=NotificationsDialogType.INFO,
+                        title="Application",
+                        description="This dialog box integrates an iframe application.",
+                        frame=NotificationsFrame(content=NotificationsFrameUrlContent(url=result + "/index.html"),
+                                                 height=70),
+                        buttons=NotificationsDialogButtons(yes="Close"))))
             elif command_id == "show":
                 raw_type = parameters["type"]
                 show_type: NotificationsShowType
@@ -170,7 +198,7 @@ class PythonExtension(PicteusExtension):
                             title="Image Conversion",
                             description="When a dimension is specified, the metadata must be stripped.",
                             buttons=NotificationsDialogButtons(
-                                "OK"))))
+                                yes="OK"))))
                         return None
 
                     communicator.send_log(f"Converting the image with id '{image.id}' and URL '{image.url}'", "debug")

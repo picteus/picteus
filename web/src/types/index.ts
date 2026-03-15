@@ -83,8 +83,11 @@ export type DialogContent = {
   details?: string;
 };
 
+type FrameContent = ({ url: string }) | ({ html: string });
+
 export type DialogType = DialogContent & {
   type: "Error" | "Info" | "Question";
+  frame?: { content: FrameContent; height: number };
   buttons: { yes: string; no?: string };
 };
 
@@ -112,7 +115,7 @@ export type UiCommandType = {
   withTags?: string[];
   ui?: {
     anchor: "modal" | "window";
-    url: string;
+    frameContent: FrameContent;
     dialogContent?: DialogContent;
   };
   dialog?: DialogType;

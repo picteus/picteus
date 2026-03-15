@@ -72,6 +72,8 @@ describe("Extensions", () =>
 
   const eventsChannelName = "events";
 
+  const uiExtensionPathFragment = "ui/extension";
+
   beforeAll(async () =>
   {
     await Base.beforeAll();
@@ -767,7 +769,7 @@ describe("Extensions", () =>
     {
       for (const aCase of cases)
       {
-        const url = `${paths.webServicesBaseUrl}/ui/${manifest.id}/${elementBasePath + aCase.path}`;
+        const url = `${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${manifest.id}/${elementBasePath + aCase.path}`;
         const response = await fetch(url);
         expect(response.ok).toBeTruthy();
         expect(await response.text()).toEqual(aCase.content);
@@ -2146,7 +2148,7 @@ describe("Extensions", () =>
 
   async function checkIcon(extension: Extension)
   {
-    const response = await fetch(`${paths.webServicesBaseUrl}/ui/${extension.manifest.id}/icon.png`);
+    const response = await fetch(`${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${extension.manifest.id}/icon.png`);
     const blob = await response.blob();
     expect(blob.type).toEqual("image/png");
     const buffer = Buffer.from((await blob.arrayBuffer()));
