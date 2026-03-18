@@ -1471,3 +1471,14 @@ export class SearchTagsResult extends generateItemsResultClass(ExtensionImageTag
   }
 
 }
+
+@ApiSchema({ description: "The result of an image media URLs search" })
+export class SearchMediaUrlResult extends generateItemsResultClass(ImageMediaUrl)
+{
+
+  constructor(items: ImageMediaUrl[], totalCount: number)
+  {
+    super(items, totalCount);
+  }
+
+}

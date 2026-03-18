@@ -14,7 +14,7 @@ export function computeControllerPath(resourceName: string): string
 
 // It changes the way the query parameters are serialized in the OpenAPI specification, by resorting to the "deepObject" style
 // Inspired from https://gist.github.com/MarZab/c6311f83dec6401966e847c55d81a9bb
-export function DeepObjectApiQuery(query: Type): MethodDecorator
+export function DeepObjectApiQuery(query: Type, withDeepObject: boolean = true): MethodDecorator
 {
   const constructor = query.prototype;
   const parentMetadata: any[] = Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES_ARRAY, constructor);
@@ -25,11 +25,14 @@ export function DeepObjectApiQuery(query: Type): MethodDecorator
     const childQueryOptions: ApiQueryOptions = Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES, constructor, property);
     // @ts-ignore
     const { type } = childQueryOptions;
-    if ([Number, Boolean, String].includes(type) === false)
+    if ([Number, Boolean, String, "string"].includes(type) === false)
     {
-      // The "explode" and "style" specifications are documented at https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#style-examples
-      childQueryOptions.explode = true;
-      childQueryOptions.style = "deepObject";
+      if (withDeepObject === true)
+      {
+        // The "explode" and "style" specifications are documented at https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#style-examples
+        childQueryOptions.explode = true;
+        childQueryOptions.style = "deepObject";
+      }
       // @ts-ignore
       childQueryOptions.type = "object";
       const propertyType = Reflect.getMetadata("design:type", constructor, property);

@@ -95,6 +95,7 @@ import {
   ExtensionImageTagsAttribute,
   SearchFeaturesResult,
   SearchImageResult,
+  SearchMediaUrlResult,
   SearchTagsResult
 } from "../dtos/image.dtos";
 import { ClassConstructor } from "class-transformer/types/interfaces";
@@ -107,6 +108,37 @@ type ImageWithIncludes = Prisma.ImageGetPayload<typeof imageWithIncludes>
 const featureFieldStringValue = "stringValue";
 const featureFieldNumericValue = "numericValue";
 type ImageFeatureValueField = "stringValue" | "numericValue";
+
+export class ImageMediaUrlParameters
+{
+  format?: ImageFormat;
+  width?: number;
+  height?: number;
+  resizeRender?: ImageResizeRender;
+}
+
+class ImageMediaUrlComputer
+{
+
+
+  constructor(private readonly parameters: ImageMediaUrlParameters)
+  {
+  }
+
+  log(): string
+  {
+    const resizeRender = this.parameters.resizeRender ?? ImageResizeRender.Inbox;
+    return `${this.parameters.format === undefined ? "" : ` in '${this.parameters.format}' format`}${this.parameters.width === undefined ? "" : ` with a width of ${this.parameters.width} pixels`}${this.parameters.height === undefined ? "" : ` with a height of ${this.parameters.height} pixels`}${resizeRender === undefined ? "" : ` with a resize render set to '${resizeRender}`}`;
+  }
+
+  computeUrl(url: string): string
+  {
+    const resizeRender = this.parameters.resizeRender ?? ImageResizeRender.Inbox;
+    return `${paths.webServicesBaseUrl}/${Resizer.webServerBasePath}?u=${encodeURIComponent(url)}${this.parameters.width === undefined ? "" : ("&w=" + this.parameters.width)}${this.parameters.height === undefined ? "" : ("&h=" + this.parameters.height)}${resizeRender === undefined ? "" : ("&r=" + resizeRender)}${this.parameters.format === undefined ? "" : ("&f=" + this.parameters.format)}`;
+  }
+
+}
+
 
 @Injectable()
 export class ImageService
@@ -196,6 +228,22 @@ export class ImageService
       this.entitiesProvider.images.count({ where })
     ]);
     return new SearchTagsResult(entities.map(entity => new ExtensionImageTagsAttribute(entity.id, entity.tags.filter(tag => extensionIds === undefined || extensionIds.indexOf(tag.extensionId) !== -1).map(entity => this.extensionTagToDto(entity)))), totalCount);
+  }
+
+  async searchForMediaUrls(parameters: SearchParameters, imageMediaUrlParameters: ImageMediaUrlParameters): Promise<SearchMediaUrlResult>
+  {
+    const computer = new ImageMediaUrlComputer(imageMediaUrlParameters);
+    const {
+      where,
+      orderBy,
+      take,
+      skip
+    } = await this.computeRequestParameters(`Getting the media URLs of the images${computer.log()}`, parameters);
+    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+      this.entitiesProvider.images.findMany({ orderBy, where, take, skip }),
+      this.entitiesProvider.images.count({ where })
+    ]);
+    return new SearchMediaUrlResult(entities.map(entity => new ImageMediaUrl(entity.id, computer.computeUrl(entity.url))), totalCount);
   }
 
   async get(id: string): Promise<Image>
@@ -339,11 +387,12 @@ export class ImageService
     return new StreamableFile(readable, { type: mimeType, disposition: computeAttachmentDisposition(fileName) });
   }
 
-  async mediaUrl(id: string, format: ImageFormat | undefined = undefined, width: number | undefined = undefined, height: number | undefined = undefined, resizeRender: ImageResizeRender = ImageResizeRender.Inbox): Promise<ImageMediaUrl>
+  async mediaUrl(id: string, imageMediaUrlParameters: ImageMediaUrlParameters): Promise<ImageMediaUrl>
   {
-    logger.info(`Getting the media URL of the image with id '${id}'${format === undefined ? "" : ` in '${format}' format`}${width === undefined ? "" : ` with a width of ${width} pixels`}${height === undefined ? "" : ` with a height of ${height} pixels`}${resizeRender === undefined ? "" : ` with a resize render set to '${resizeRender}`}`);
+    const computer = new ImageMediaUrlComputer(imageMediaUrlParameters);
+    logger.info(`Getting the media URL of the image with id '${id}'${computer.log()}`);
     const entity = await this.getPersistedImage(id, false, false, false);
-    return new ImageMediaUrl(entity.id, `${paths.webServicesBaseUrl}/${Resizer.webServerBasePath}?u=${encodeURIComponent(entity.url)}${width === undefined ? "" : ("&w=" + width)}${height === undefined ? "" : ("&h=" + height)}${resizeRender === undefined ? "" : ("&r=" + resizeRender)}${format === undefined ? "" : ("&f=" + format)}`);
+    return new ImageMediaUrl(entity.id, computer.computeUrl(entity.url));
   }
 
   async getMetadata(id: string): Promise<ImageMetadata>

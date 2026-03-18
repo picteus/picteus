@@ -2032,6 +2032,78 @@
         ]
       }
     },
+    "/image/search/mediaUrls": {
+      "post": {
+        "description": "Retrieves image media URLs following search parameters.",
+        "operationId": "image_searchMediaUrl",
+        "parameters": [
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "The image format",
+            "schema": {
+              "$ref": "#/components/schemas/ImageFormat"
+            }
+          },
+          {
+            "name": "width",
+            "required": false,
+            "in": "query",
+            "description": "The image maximum width ; if not defined, the original width is used",
+            "schema": {
+              "format": "int32",
+              "type": "number"
+            }
+          },
+          {
+            "name": "height",
+            "required": false,
+            "in": "query",
+            "description": "The image maximum height ; if not defined, the original height is used",
+            "schema": {
+              "format": "int32",
+              "type": "number"
+            }
+          },
+          {
+            "name": "resizeRender",
+            "required": false,
+            "in": "query",
+            "description": "The way the image should be resized",
+            "schema": {
+              "$ref": "#/components/schemas/ImageResizeRender"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchParameters"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The image media URLs matching the parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchMediaUrlResult"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Retrieves image media URLs",
+        "tags": [
+          "image"
+        ]
+      }
+    },
     "/image/{id}/get": {
       "get": {
         "description": "Returns the details about an image.",
@@ -2349,7 +2421,7 @@
     },
     "/image/{id}/mediaUrl": {
       "get": {
-        "description": "Returns the URL of the image, given for some given dimensions and format, which may used to display it.",
+        "description": "Returns the URL of the image, given some given dimensions and format, which may used to display it.",
         "operationId": "image_mediaUrl",
         "parameters": [
           {
@@ -3628,7 +3700,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.11.1",
+    "version": "0.12.0",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",
@@ -6175,6 +6247,29 @@
         "required": [
           "id",
           "url"
+        ]
+      },
+      "SearchMediaUrlResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "The items corresponding to the search filter and to the range",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageMediaUrl"
+            }
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "The total number of items",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "description": "The result of an image media URLs search",
+        "required": [
+          "items",
+          "totalCount"
         ]
       },
       "ExtensionImageEmbeddings": {

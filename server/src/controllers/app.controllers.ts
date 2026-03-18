@@ -1,5 +1,6 @@
 import HttpCodes from "http-codes";
 import { headers, types } from "http-constants";
+import { IsOptional } from "class-validator";
 import {
   Body,
   Controller,
@@ -24,6 +25,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
+  ApiProperty,
   ApiQuery,
   ApiResponse,
   ApiSecurity,
@@ -96,9 +98,11 @@ import {
   SearchFilter,
   SearchImageResult,
   SearchImageSummaryResult,
+  SearchMediaUrlResult,
   SearchParameters,
   SearchTagsResult,
-  Settings
+  Settings,
+  technicalSchema
 } from "../dtos/app.dtos";
 import {
   AdministrationService,
@@ -111,15 +115,15 @@ import {
   RepositoryService,
   SettingsService
 } from "../services/app.service";
-import { ArrayValidationPipe, exceptionFactory, validationPipeFactory } from "./app.pipes";
+import { ArrayValidationPipe, DeepObjectPipeTransform, exceptionFactory, validationPipeFactory } from "./app.pipes";
 import {
   applicationGzipMimeType,
   binarySchemaWithMaxLength,
   computeControllerPath,
+  DeepObjectApiQuery,
   imageContent,
   imageSupportedMimeTypes
 } from "./tech.controllers";
-import { technicalSchema } from "../dtos/common.dtos";
 
 const { CREATED, NO_CONTENT, OK } = HttpCodes;
 
@@ -1493,6 +1497,55 @@ export class CollectionController
 
 const imageResourceName: string = "image";
 
+class ImageMediaUrlQuery
+{
+
+  @ApiProperty(
+    {
+      name: "format",
+      description: "The image format",
+      enum: ImageFormat,
+      enumName: "ImageFormat",
+      required: false
+    }
+  )
+  @IsOptional()
+  readonly format?: ImageFormat;
+
+  @ApiProperty(
+    {
+      name: "width",
+      description: "The image maximum width ; if not defined, the original width is used",
+      type: Number,
+      format: "int32",
+      required: false
+    }
+  )
+  @IsOptional()
+  readonly width?: number;
+
+  @ApiProperty({
+    name: "height",
+    description: "The image maximum height ; if not defined, the original height is used",
+    type: Number,
+    format: "int32",
+    required: false
+  })
+  @IsOptional()
+  readonly height?: number;
+
+  @ApiProperty({
+    name: "resizeRender",
+    description: "The way the image should be resized",
+    enum: ImageResizeRender,
+    enumName: "ImageResizeRender",
+    required: false
+  })
+  @IsOptional()
+  readonly resizeRender?: ImageResizeRender;
+
+}
+
 /**
  * Manages the images.
  */
@@ -1602,6 +1655,32 @@ export class ImageController
   async searchTags(@Body() parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<String>()) extensionIds?: string[]): Promise<SearchTagsResult>
   {
     return await this.imageService.searchForImageTags(parameters, extensionIds);
+  }
+
+  @Post("search/mediaUrls")
+  @ApiOperation(
+    {
+      summary: "Retrieves image media URLs",
+      description: "Retrieves image media URLs following search parameters."
+    }
+  )
+  @DeepObjectApiQuery(ImageMediaUrlQuery, false)
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The image media URLs matching the parameters",
+      type: SearchMediaUrlResult
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  async searchMediaUrl(@Body() parameters: SearchParameters, @Query(DeepObjectPipeTransform<ImageMediaUrlQuery>) query?: ImageMediaUrlQuery): Promise<SearchMediaUrlResult>
+  {
+    return await this.imageService.searchForMediaUrls(parameters, {
+      format: query?.format,
+      width: query?.width,
+      height: query?.height,
+      resizeRender: query?.resizeRender
+    });
   }
 
   @Get(":id/get")
@@ -1754,38 +1833,11 @@ export class ImageController
   @ApiOperation(
     {
       summary: "Gets an URL of the image",
-      description: "Returns the URL of the image, given for some given dimensions and format, which may used to display it."
+      description: "Returns the URL of the image, given some given dimensions and format, which may used to display it."
     }
   )
   @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
-  @ApiQuery({
-    name: "format",
-    description: "The image format",
-    enum: ImageFormat,
-    enumName: "ImageFormat",
-    required: false
-  })
-  @ApiQuery({
-    name: "width",
-    description: "The image maximum width ; if not defined, the original width is used",
-    type: Number,
-    format: "int32",
-    required: false
-  })
-  @ApiQuery({
-    name: "height",
-    description: "The image maximum height ; if not defined, the original height is used",
-    type: Number,
-    format: "int32",
-    required: false
-  })
-  @ApiQuery({
-    name: "resizeRender",
-    description: "The way the image should be resized",
-    enum: ImageResizeRender,
-    enumName: "ImageResizeRender",
-    required: false
-  })
+  @DeepObjectApiQuery(ImageMediaUrlQuery, false)
   @ApiResponse(
     {
       status: OK,
@@ -1794,9 +1846,14 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async mediaUrl(@Param("id") id: string, @Query("format") format?: ImageFormat, @Query("width", new ParseIntPipe({ optional: true })) width?: number, @Query("height", new ParseIntPipe({ optional: true })) height?: number, @Query("resizeRender") resizeRender?: ImageResizeRender): Promise<ImageMediaUrl>
+  async mediaUrl(@Param("id") id: string, @Query(DeepObjectPipeTransform<ImageMediaUrlQuery>) query?: ImageMediaUrlQuery): Promise<ImageMediaUrl>
   {
-    return await this.imageService.mediaUrl(id, format, width, height, resizeRender);
+    return await this.imageService.mediaUrl(id, {
+      format: query?.format,
+      width: query?.width,
+      height: query?.height,
+      resizeRender: query?.resizeRender
+    });
   }
 
   @Get(":id/metadata")

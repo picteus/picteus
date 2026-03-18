@@ -1895,9 +1895,14 @@ describe("Image with application", () =>
       {
         for (const requestedHeight of sizes)
         {
-          for (const requestedRender of [undefined, ImageResizeRender.Inbox, ImageResizeRender.Outbox])
+          for (const requestedResizeRender of [undefined, ImageResizeRender.Inbox, ImageResizeRender.Outbox])
           {
-            const mediaUrl = await base.getImageController().mediaUrl(image.id, requestedFormat, requestedWidth, requestedHeight, requestedRender);
+            const mediaUrl = await base.getImageController().mediaUrl(image.id, {
+              format: requestedFormat,
+              width: requestedWidth,
+              height: requestedHeight,
+              resizeRender: requestedResizeRender
+            });
             expect(mediaUrl.id).toEqual(image.id);
             const url = mediaUrl.url;
             if (requestedFormat !== undefined)
@@ -1912,9 +1917,9 @@ describe("Image with application", () =>
             {
               expect(url).toContain(`h=${requestedHeight}`);
             }
-            if (requestedRender !== undefined)
+            if (requestedResizeRender !== undefined)
             {
-              expect(url).toContain(`r=${requestedRender}`);
+              expect(url).toContain(`r=${requestedResizeRender}`);
             }
             const response = await fetch(url);
             expect(response.status).toEqual(OK);
@@ -1941,7 +1946,7 @@ describe("Image with application", () =>
                 const originalRatio = width / height;
                 const requestedRatio = requestedWidth / requestedHeight;
                 const isOriginalRatioGreater = originalRatio >= requestedRatio;
-                const condition = (requestedRender === undefined || requestedRender === ImageResizeRender.Inbox) ? isOriginalRatioGreater : !isOriginalRatioGreater;
+                const condition = (requestedResizeRender === undefined || requestedResizeRender === ImageResizeRender.Inbox) ? isOriginalRatioGreater : !isOriginalRatioGreater;
                 expect(miscellaneousMetadata.width).toEqual(condition === true ? requestedWidth : Math.round(requestedHeight * originalRatio));
                 expect(miscellaneousMetadata.height).toEqual(condition === true ? Math.round(requestedWidth / originalRatio) : requestedHeight);
               }

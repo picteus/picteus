@@ -22,6 +22,7 @@ import {
   integerIdSchema,
   NumericRange,
   repositoryIdSchema,
+  technicalSchema,
   toFileExtension,
   toMimeType
 } from "./common.dtos";
@@ -108,6 +109,7 @@ import {
   SearchFeaturesResult,
   SearchImageResult,
   SearchImageSummaryResult,
+  SearchMediaUrlResult,
   SearchParameters,
   SearchRange,
   SearchTagsResult,
@@ -242,6 +244,7 @@ export {
   SearchFilter,
   SearchImagesOrigin,
   SearchKeyword,
+  SearchMediaUrlResult,
   SearchOriginKind,
   SearchParameters,
   SearchProperties,
@@ -254,6 +257,7 @@ export {
   SearchTags,
   Settings,
   Software,
+  technicalSchema,
   TextualPrompt,
   toFileExtension,
   toMimeType,

@@ -20,6 +20,7 @@ import { ApiCallError } from "@picteus/internal-extension-sdk";
 
 import { logger } from "../src/logger";
 import { paths } from "../src/paths";
+import { Resizer } from "../src/resizer";
 import { Base, Core, Defaults } from "./base";
 import { AuthenticationGuard } from "../src/app.guards";
 import { WebServicesWrapper } from "./webServicesWrapper";
@@ -29,6 +30,13 @@ describe("WebServices", () =>
 {
 
   const base = new Base(true);
+
+  function computeWrapper(): WebServicesWrapper
+  {
+    const apiKey = AuthenticationGuard.generateApiKey();
+    AuthenticationGuard.masterApiKey = apiKey;
+    return new WebServicesWrapper(apiKey);
+  }
 
   beforeAll(async () =>
   {
@@ -92,9 +100,7 @@ describe("WebServices", () =>
 
   test("Collections", async () =>
   {
-    const apiKey = AuthenticationGuard.generateApiKey();
-    AuthenticationGuard.masterApiKey = apiKey;
-    const collectionApi = await new WebServicesWrapper(apiKey).computeController<CollectionApi>(CollectionApi);
+    const collectionApi = await computeWrapper().computeController<CollectionApi>(CollectionApi);
     const name = "name";
     const collection = await collectionApi.collectionCreate({
       name,
@@ -102,6 +108,36 @@ describe("WebServices", () =>
       searchFilter: { criteria: {} }
     });
     expect(collection.name).toEqual(name);
+  });
+
+  test("searchMediaUrls", async () =>
+  {
+    const imageApi = await computeWrapper().computeController<ImageApi>(ImageApi);
+    paths.repositoriesDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName);
+    const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
+    const width = 111;
+    const height = 113;
+    const resizeRender = "outbox";
+    const format = "PNG";
+    const result = await imageApi.imageSearchMediaUrl({
+      searchParameters: {
+        filter: {
+          origin: {
+            kind: "images",
+            ids: [image.id]
+          }
+        }
+      },
+      format,
+      width,
+      height,
+      resizeRender
+    });
+    expect(result.totalCount).toEqual(1);
+    expect(result.items.length).toEqual(1);
+    const imageMediaUrl = result.items[0];
+    expect(imageMediaUrl.id).toEqual(image.id);
+    expect(imageMediaUrl.url).toEqual(`${paths.webServicesBaseUrl}/${Resizer.webServerBasePath}?u=${encodeURIComponent(image.url)}&w=${width}&h=${height}&r=${resizeRender}&f=${format}`);
   });
 
   test("Extension permissions", async () =>
