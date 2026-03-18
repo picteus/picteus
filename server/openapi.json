@@ -1974,10 +1974,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SearchFeaturesResult"
-                  }
+                  "$ref": "#/components/schemas/SearchFeaturesResult"
                 }
               }
             }
@@ -2023,10 +2020,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SearchTagsResult"
-                  }
+                  "$ref": "#/components/schemas/SearchTagsResult"
                 }
               }
             }
@@ -3634,7 +3628,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.11.0",
+    "version": "0.11.1",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",

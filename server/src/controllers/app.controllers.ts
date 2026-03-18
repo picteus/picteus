@@ -1568,8 +1568,7 @@ export class ImageController
     {
       status: OK,
       description: "The image features matching the parameters and the extension identifiers",
-      type: SearchFeaturesResult,
-      isArray: true
+      type: SearchFeaturesResult
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
@@ -1596,8 +1595,7 @@ export class ImageController
     {
       status: OK,
       description: "The image tags matching the parameters and the extension identifiers",
-      type: SearchTagsResult,
-      isArray: true
+      type: SearchTagsResult
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
