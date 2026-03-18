@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 import {
   Communicator,
   ImageFeatureFormat,
@@ -14,8 +17,6 @@ import {
   PicteusExtension,
   SettingsValue
 } from "@picteus/extension-sdk";
-import * as fs from "node:fs";
-import * as path from "node:path";
 
 
 class TypeScriptExtension extends PicteusExtension
@@ -207,6 +208,7 @@ class TypeScriptExtension extends PicteusExtension
       dialog:
         {
           type: NotificationsDialogType.Question,
+          size: "m",
           title: "Dialog",
           description: "This is a dialog question",
           details: "Please, click the right button.",

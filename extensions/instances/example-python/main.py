@@ -139,6 +139,7 @@ class PythonExtension(PicteusExtension):
                         range=SearchRange(take=3))).items]),
             dialog=NotificationsDialog(
                 type=NotificationsDialogType.QUESTION,
+                size="m",
                 title="Dialog",
                 description="This is a dialog question",
                 details="Please, click the right button.",

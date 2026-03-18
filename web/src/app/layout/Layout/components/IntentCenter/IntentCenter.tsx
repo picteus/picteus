@@ -154,6 +154,7 @@ export default function IntentCenter() {
             />
           ),
           title: intent.dialog.title,
+          size: intent.dialog.size,
           onBeforeClose: respondWithCancel,
         });
 

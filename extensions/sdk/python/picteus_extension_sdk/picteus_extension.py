@@ -153,6 +153,7 @@ class NotificationsDialogButtons(SuperDataClass):
 @dataclass(kw_only=True)
 class NotificationsDialog(NotificationDialogContent):
     type: NotificationsDialogType
+    size: Optional[Literal["auto", "xs", "s", "m", "l", "xl"]] = None
     frame: Optional[NotificationsFrame] = None
     buttons: NotificationsDialogButtons
 

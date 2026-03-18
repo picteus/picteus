@@ -88,6 +88,7 @@ export interface NotificationsDialogButtons
 export interface NotificationsDialog extends NotificationDialogContent
 {
   readonly type: NotificationsDialogType;
+  readonly size?: "auto" | "xs" | "s" | "m" | "l" | "xl";
   readonly frame?: NotificationsFrame;
   readonly buttons: NotificationsDialogButtons;
 }

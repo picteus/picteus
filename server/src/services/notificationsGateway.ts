@@ -636,6 +636,7 @@ export class NotificationsGateway
       const specificIntent: NotificationsDialogIntent = intent;
       if (await checkSchema(z.object({
         type: z.enum(NotificationsDialogType),
+        size: z.enum(["auto", "xs", "s", "m", "l", "xl"]).optional(),
         title: z.string(),
         description: z.string(),
         details: z.string().optional(),

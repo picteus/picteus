@@ -1,3 +1,6 @@
+import { ReactElement, ReactNode } from "react";
+import { RJSFSchema } from "@rjsf/utils";
+
 import {
   Extension,
   Image,
@@ -9,8 +12,6 @@ import {
   SearchSortingProperty,
   UserInterfaceAnchor
 } from "@picteus/ws-client";
-import { RJSFSchema } from "@rjsf/utils";
-import { ReactElement, ReactNode } from "react";
 
 export type SocketResponseType =
   | {
@@ -85,8 +86,11 @@ export type DialogContent = {
 
 type FrameContent = ({ url: string }) | ({ html: string });
 
+type SizeType = "auto" | "xs" | "s" | "m" | "l" | "xl";
+
 export type DialogType = DialogContent & {
   type: "Error" | "Info" | "Question";
+  size?: SizeType;
   frame?: { content: FrameContent; height: number };
   buttons: { yes: string; no?: string };
 };
@@ -206,6 +210,7 @@ export type ActionModalValue = {
   withCloseButton?: boolean;
   iconUrl?: string;
   fullScreen?: boolean;
+  size?: SizeType;
   component: ReactElement | undefined;
   onBeforeClose?: () => void;
 };

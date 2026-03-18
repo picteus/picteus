@@ -69,7 +69,7 @@ export default function ModalComponent({
       onClose={handleOnCloseActionModal}
       opened={actionModalOpened}
       fullScreen={modal.fullScreen}
-      size="xl"
+      size={modal.fullScreen === true ? undefined : ((modal.size === undefined || modal.size === "auto") ? "auto" : ((modal.size === "xs" ? 30 : (modal.size === "s" ? 40 : (modal.size === "m" ? 50 : (modal.size === "l" ? 80 : 100)))) + "%"))}
       title={modal.title === undefined ? undefined : computeTitle() }
       withCloseButton={modal.withCloseButton === undefined ? true : modal.withCloseButton}
       padding="lg"
