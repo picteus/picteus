@@ -71,7 +71,7 @@
     "serialize-javascript": "^6.0.2",
     "socket.io-client": "4.8.1",
     "vite-plugin-eslint": "^1.8.1",
-    "@picteus/ws-client": "file:../generated/openapi/typescript-fetch/picteus-ws-client-0.11.0.tgz"
+    "@picteus/ws-client": "file:../generated/openapi/typescript-fetch/picteus-ws-client-0.11.1.tgz"
   },
   "devDependencies": {
     "shx": "0.4.0",
