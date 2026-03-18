@@ -8,8 +8,8 @@ import Timers from "node:timers";
 import { expect, jest } from "@jest/globals";
 import { pickPort } from "pick-port";
 import AdmZip from "adm-zip";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 
 import { logger } from "../src/logger";
@@ -367,7 +367,7 @@ export class Base extends Core
 
   private controllerProxy?: ControllerProxy;
 
-  private application?: INestApplication;
+  private application?: NestExpressApplication;
 
   public readonly originalDatabaseDirectoryPath = path.resolve(path.join(Base.rootDirectoryPath, "server", "database.db"));
 
@@ -529,7 +529,8 @@ export class Base extends Core
   {
     logger.debug("Creating the Nest application");
     this.moduleRef = await this.createTestingModule();
-    this.application = this.moduleRef.createNestApplication<INestApplication>();
+    this.application = this.moduleRef.createNestApplication<NestExpressApplication>();
+    MainModule.fineTuneApplication(this.application);
     const portNumber = await pickPort({ type: "tcp", minPort: 7000, maxPort: 8000 });
     paths.setSecureAndPortNumber(undefined, portNumber);
     logger.debug(`The Nest application is listening incoming requests on port ${portNumber}`);

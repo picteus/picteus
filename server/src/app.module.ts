@@ -25,6 +25,7 @@ import {
   Type,
   UnauthorizedException
 } from "@nestjs/common";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import { TransformerPackage } from "@nestjs/common/interfaces/external/transformer-package.interface";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
@@ -32,6 +33,7 @@ import { Request as ExpressRequest, Response as ExpressResponse } from "express"
 import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
 import HttpCodes from "http-codes";
 import { headers, types } from "http-constants";
+import compression from "compression";
 
 
 import { logger } from "./logger";
@@ -378,6 +380,20 @@ const providers = [unexpectedExceptionFilterProvider, classSerializerInterceptor
 })
 export class MainModule implements OnModuleInit, OnApplicationBootstrap, OnModuleDestroy, OnApplicationShutdown, NestModule
 {
+
+  static fineTuneApplication(application: NestExpressApplication): void
+  {
+    // We do not use the "setGlobalPrefix()" function on purpose, by prefixing every controller, instead
+    // application.setGlobalPrefix("prefix");
+    // We want to compress the network output
+    application.use(compression());
+    // 64 MB. of body payload should be enough
+    const limit = "64mb";
+    application.useBodyParser("urlencoded", { limit, extended: true });
+    application.useBodyParser("json", { limit });
+    application.useBodyParser("text", { limit });
+    application.useBodyParser("raw", { limit, type: "*/*" });
+  }
 
   constructor()
   {

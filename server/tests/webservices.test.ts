@@ -17,8 +17,6 @@ import {
   RepositoryApi
 } from "@picteus/ws-client";
 import { ApiCallError } from "@picteus/internal-extension-sdk";
-
-import { logger } from "../src/logger";
 import { paths } from "../src/paths";
 import { Resizer } from "../src/resizer";
 import { Base, Core, Defaults } from "./base";
@@ -165,15 +163,7 @@ describe("WebServices", () =>
       imageEmbeddings: { values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] }
     });
     const blob = await imageApi.imageDownload({ id: image.id });
-    try
-    {
-      await repositoryApi.repositoryStoreImage({ id: newRepository.id, body: blob });
-    }
-    catch (error)
-    {
-      // TODO: reactivate this call
-      logger.error(error);
-    }
+    await repositoryApi.repositoryStoreImage({ id: newRepository.id, body: blob });
   });
 
 });

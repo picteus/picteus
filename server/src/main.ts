@@ -16,7 +16,6 @@ import {
 } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
 import { SwaggerCustomOptions } from "@nestjs/swagger/dist/interfaces";
 import { WinstonModule } from "nest-winston";
-import compression from "compression";
 import { types } from "http-constants";
 import { HttpLlm, IHttpLlmApplication, OpenApi, OpenApiV3, OpenApiV3_1, SwaggerV2 } from "@samchon/openapi";
 
@@ -76,22 +75,14 @@ class InternalServer
     logger.info(`Starting the HTTP server ${secretsDirectoryPath !== undefined ? "with SSL " : ""}available at '${baseUrl}'${enableSwaggerUi === false ? "" : ` and Swagger UI available at '${baseUrl}/${swaggerUiPrefix}'`}`);
     this.checkEnvironmentVariables();
     const application = await this.createApplication(secretsDirectoryPath, portNumber);
-    const httpAdapter: ExpressAdapter = application.getHttpAdapter() as ExpressAdapter;
-    const instance: Express = httpAdapter.getInstance();
 
-    // We disable the "etag" generation
-    instance.set("etag", false);
-
-    // We do not use the "setGlobalPrefix()" function on purpose, by prefixing every controller, instead
-    // application.setGlobalPrefix("prefix");
-    // We want to compress the network output
-    application.use(compression());
-    // 64 MB. of body payload should be enough
-    const limit = "64mb";
-    application.useBodyParser("urlencoded", { limit, extended: true });
-    application.useBodyParser("json", { limit });
-    application.useBodyParser("text", { limit });
-    application.useBodyParser("raw", { limit, type: "*/*" });
+    MainModule.fineTuneApplication(application);
+    {
+      const httpAdapter: ExpressAdapter = application.getHttpAdapter() as ExpressAdapter;
+      const instance: Express = httpAdapter.getInstance();
+      // We disable the "etag" generation
+      instance.set("etag", false);
+    }
     {
       // We set an empty blank favicon, taken from https://github.com/KEINOS/blank_favicon_ico
       const directoryPath = getTemporaryDirectoryPath();
