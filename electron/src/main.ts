@@ -141,7 +141,11 @@ class HttpServer
     {
       forkArguments.push("--unpackedExtensionsDirectoryPath", unpackedExtensionsDirectoryPath);
     }
-    const serverProcess = fork(filePath, [...forkArguments], { env: { ...process.env, ...environmentVariables } });
+    const serverProcess = fork(filePath, [...forkArguments], {
+      // TODO: add a CLI option to enable remote debugging of the server
+      // execArgv: ["--inspect-brk=5858", "--trace-warnings"],
+      env: { ...process.env, ...environmentVariables }
+    });
     this.serverProcess = serverProcess;
     CommandsManager.instance.listenToServerProcess(serverProcess);
     serverProcess.once("exit", (code: number | null) =>
