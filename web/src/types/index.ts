@@ -118,7 +118,8 @@ export type UiCommandType = {
   dialogContent?: DialogContent;
   withTags?: string[];
   ui?: {
-    anchor: "modal" | "window";
+    // TODO: handle the "window"
+    anchor: "modal" | "sidebar";
     frameContent: FrameContent;
     dialogContent?: DialogContent;
   };
@@ -184,6 +185,7 @@ export enum ChannelEnum {
 }
 
 export type AdditionalUi = {
+  uuid: string,
   anchor: UserInterfaceAnchor;
   url: string;
   iconURL: string;

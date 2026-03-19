@@ -1655,6 +1655,7 @@ export class ExtensionService
 
   private async synchronizeCapabilityForImage(id: string, imageId: string, action: ImageEventAction, viaSocket: boolean, wait: boolean = false): Promise<void>
   {
+    logger.debug(`Synchronizing the image with id '${imageId} for the extension with id '${id}' via the '${action}' action`);
     if (viaSocket === true)
     {
       if (wait === false)

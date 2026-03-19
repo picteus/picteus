@@ -6,7 +6,7 @@ import { IconActivity, IconAdjustmentsHorizontal, IconBox, IconFolderOpen, IconP
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
-import { ROUTES } from "utils";
+import { computeExtensionSidebarRoute, ROUTES } from "utils";
 import style from "./Sidebar.module.scss";
 
 import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
@@ -52,14 +52,16 @@ export default function Sidebar() {
 
   const additionalElements = useMemo(() => {
     return additionalUi.sidebar?.map((element) => {
+      const routePathFragment = computeExtensionSidebarRoute(element.uuid);
       return (
+        // TODO: handle the case of the closeable items
         <NavbarLink
           key={"navbarLink-" + element.title}
           icon={<img src={element.iconURL} alt="Extension anchor" />}
           label={element.title}
-          route={ROUTES.extension_sidebar_suffix + element.extensionId}
+          route={routePathFragment}
           onClick={() =>
-            element.anchor === UserInterfaceAnchor.Sidebar ? navigate(ROUTES.extension_sidebar_suffix + element.extensionId) : (isAvailable() === false ? window.open(element.url, "_blank") : sendCommand("openWindow", {
+            element.anchor === UserInterfaceAnchor.Sidebar ? navigate(routePathFragment) : (isAvailable() === false ? window.open(element.url, "_blank") : sendCommand("openWindow", {
               url: element.url
             }))
           }

@@ -186,6 +186,19 @@
           ]
         },
         {
+          "id": "swaggerui",
+          "on": {
+            "entity": "Process"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Swagger UI",
+              "description": "Opens the Swagger UI in the sidebar."
+            }
+          ]
+        },
+        {
           "id": "show",
           "on": {
             "entity": "Process"

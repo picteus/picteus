@@ -3,7 +3,7 @@ import { HashRouter, useLocation } from "react-router-dom";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
-import { ROUTES } from "utils";
+import { computeExtensionSidebarRoute, ROUTES } from "utils";
 import {
   ActivityScreen,
   ExtensionsScreen,
@@ -59,16 +59,12 @@ function RouterContent() {
 
   const additionalRoutes = useMemo(() => {
     return additionalUi.sidebar?.filter(element => element.anchor === UserInterfaceAnchor.Sidebar).map((element: AdditionalUi) => {
-      const isActive =
-        location.pathname ===
-        ROUTES.extension_sidebar_suffix + element.extensionId;
-      const wasRendered =
-        hasBeenRendered.current[
-          ROUTES.extension_sidebar_suffix + element.extensionId
-        ];
+      const pathFragment = computeExtensionSidebarRoute(element.uuid);
+      const isActive = location.pathname === pathFragment;
+      const wasRendered = hasBeenRendered.current[pathFragment];
       return (
         <div
-          key={"route-" + element.title}
+          key={"route-" + element.uuid}
           style={{
             display: isActive ? "block" : wasRendered ? "none" : "none",
             height: "100%",

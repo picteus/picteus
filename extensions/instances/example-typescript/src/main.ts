@@ -70,6 +70,10 @@ class TypeScriptExtension extends PicteusExtension
       {
         await this.handleApplication(communicator);
       }
+      else if (commandId === "swaggerui")
+      {
+        await this.handleSwaggerUi(communicator);
+      }
       else if (commandId === "show")
       {
         await this.handleShow(communicator, parameters);
@@ -247,8 +251,25 @@ class TypeScriptExtension extends PicteusExtension
           type: NotificationsDialogType.Info,
           title: "Application",
           description: "This dialog box integrates an iframe application.",
+          size: "l",
           frame: { content: { url: result + "/index.html" }, height: 70 },
           buttons: { yes: "Close" }
+        }
+    });
+  }
+
+  private async handleSwaggerUi(communicator: Communicator): Promise<void>
+  {
+    await communicator.launchIntent({
+      ui:
+        {
+          anchor: NotificationsUiAnchor.Sidebar,
+          frameContent: { url: `${this.webServicesBaseUrl}/swaggerui` },
+          dialogContent:
+            {
+              title: "Swagger UI",
+              description: "Enables to interact with the API."
+            }
         }
     });
   }

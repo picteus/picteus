@@ -151,10 +151,11 @@ function getAdditionalUi(
             extension.status === ExtensionStatus.Enabled,
         )
         .map((element) => ({
+          uuid: `${extension.manifest.id}-${element.url}`,
           anchor: element.anchor,
-          url: element.url,
+          url: element.anchor === UserInterfaceAnchor.Window ? element.url : buildSidebarAnchorURL(extension.manifest.id, element.url),
           iconURL: getSidebarAnchorIconURL(extension.manifest.id),
-          title: extension.manifest.id,
+          title: extension.manifest.name,
           extensionId: extension.manifest.id,
         })) || [],
   );
@@ -172,7 +173,6 @@ export default {
   fetchAll,
   list,
   add,
-  buildSidebarAnchorURL,
   getSidebarAnchorIconURL,
   update,
   uninstall,

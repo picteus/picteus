@@ -48,6 +48,8 @@ class PythonExtension(PicteusExtension):
                 await self._handle_dialog(communicator, parameters)
             elif command_id == "application":
                 await self._handle_application(communicator)
+            elif command_id == "swaggerui":
+                await self._handle_swaggerui(communicator)
             elif command_id == "show":
                 await self._handle_show(communicator, parameters)
         elif event == NotificationEvent.IMAGE_RUN_COMMAND:
@@ -169,9 +171,19 @@ class PythonExtension(PicteusExtension):
                 type=NotificationsDialogType.INFO,
                 title="Application",
                 description="This dialog box integrates an iframe application.",
+                size="l",
                 frame=NotificationsFrame(content=NotificationsFrameUrlContent(url=result + "/index.html"),
                                          height=70),
                 buttons=NotificationsDialogButtons(yes="Close"))))
+
+    async def _handle_swaggerui(self, communicator: Communicator) -> None:
+        await communicator.launch_intent(
+            NotificationsUiIntent(ui=NotificationsUi(anchor=NotificationsUiAnchor.SIDEBAR,
+                                                     frameContent=NotificationsFrameUrlContent(
+                                                         url=self.web_services_base_url + "/swaggerui"),
+                                                     dialogContent=NotificationDialogContent(
+                                                         title="Swagger UI",
+                                                         description="Enables to interact with the API."))))
 
     async def _handle_show(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         raw_type = parameters["type"]

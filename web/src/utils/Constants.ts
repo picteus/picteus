@@ -4,7 +4,6 @@ export const BASE_PATH =
 export const API_KEY = urlSearchParams.get("apiKey") || "";
 
 export const ROUTES = {
-  extension_sidebar_suffix: "/extension/",
   home: "/",
   bootstrap: "/bootstrap",
   repositories: "/repositories",
@@ -13,5 +12,9 @@ export const ROUTES = {
   settings: "/settings",
   explore: "/explore",
 };
+
+export function computeExtensionSidebarRoute(uuid:string) {
+  return `/extension/${uuid}`;
+}
 
 export const VISUALIZER_DEFAULT_PANEL_SIZES: number[] = [60, 30];

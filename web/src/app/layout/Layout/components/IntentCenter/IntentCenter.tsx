@@ -3,18 +3,21 @@ import { useTranslation } from "react-i18next";
 import { randomId } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 
+import { UserInterfaceAnchor } from "@picteus/ws-client";
+
 import { ExtensionsService, ImageService, StorageService } from "app/services";
 import { CommandForm, DialogForm } from "app/components";
 import { FullscreenURLModal } from "app/components/ActionModal";
 import { ActionModalValue, ChannelEnum, ShowType, UiCommandType } from "types";
 import {
   useActionModalContext,
+  useAdditionalUiContext,
   useConfirmAction,
   useEventSocket,
   useGalleryTabsContext,
   useImageVisualizerContext
 } from "app/context";
-import { notifyError } from "utils";
+import { computeExtensionSidebarRoute, notifyError } from "utils";
 
 import { ImageVisualizerWrapper, ModalComponent } from "./components";
 
@@ -25,6 +28,7 @@ type ExtensionIntent = {
 
 export default function IntentCenter() {
   const [modalStack, addModal, removeModal] = useActionModalContext();
+  const [, , , addTransient] = useAdditionalUiContext();
   const [, addTab] = useGalleryTabsContext();
 
   const confirmAction = useConfirmAction();
@@ -63,7 +67,7 @@ export default function IntentCenter() {
     }
   }
 
-  async function handleOnIntentShow(show: ShowType) {
+  async function handleShow(show: ShowType) {
     const shouldConfirm = StorageService.getExtensionIntentShowShouldConfirm();
 
     if (show.type === "ExtensionSettings") {
@@ -99,23 +103,23 @@ export default function IntentCenter() {
     if (eventData?.rawData?.channel === ChannelEnum.EXTENSION_INTENT) {
       const value = eventData.rawData.value as ExtensionIntent;
       const intent = value.intent;
+      const extensionId = value.id;
       const extensionName = ExtensionsService.list().find(
-        (extension) => extension.manifest.id === value.id,
+        (extension) => extension.manifest.id === extensionId,
       )?.manifest.name;
-
+      const iconUrl = ExtensionsService.getSidebarAnchorIconURL(extensionId);
       const modalId = randomId();
 
-      const iconUrl = ExtensionsService.getSidebarAnchorIconURL(value.id);
-      const addCommandFormModal = () =>
+      const handleParameters = () => {
         addModal({
           id: modalId,
           iconUrl,
           component: (
             <CommandForm
               command={intent}
-              extensionId={value.id}
+              extensionId={extensionId}
               imageIds={intent.context?.imageIds}
-              onSend={(extensionId, commandId, parameters) =>
+              onSend={(_extensionId, commandId, parameters) =>
                 handleOnSend(parameters, modalId)
               }
               onCancel={() => {
@@ -125,22 +129,42 @@ export default function IntentCenter() {
             />
           ),
           title: intent.dialogContent?.title || t("extensionIntent.modalTitle", {
-            extension: extensionName,
+            extension: extensionName
           }),
-          onBeforeClose: respondWithCancel,
-        });
-
-      const addFullscreenURLModal = () => {
-        addModal({
-          fullScreen: true,
-          component: <FullscreenURLModal content={intent.ui.frameContent} />,
-          title: intent.ui.dialogContent?.title,
           onBeforeClose: respondWithCancel
         });
-        respondWithValue({});
       };
 
-      const addDialogFormModal = () =>
+      const handleUi = () => {
+        const ui = intent.ui;
+        if (ui.anchor === UserInterfaceAnchor.Sidebar) {
+          // TODO: handle the case of a transient already added
+          const uuid = `${extensionId}-${modalId}`;
+          addTransient({
+            uuid,
+            anchor: UserInterfaceAnchor.Sidebar,
+            // TODO: handle the case of the "html" attribute
+            url: "url" in ui.frameContent ? ui.frameContent.url : "",
+            iconURL: iconUrl,
+            title: ui.dialogContent?.title,
+            extensionId
+          });
+          navigate(computeExtensionSidebarRoute(uuid));
+          respondWithValue({});
+        }
+        else {
+          addModal({
+            fullScreen: true,
+            component: <FullscreenURLModal content={ui.frameContent} />,
+            title: ui.dialogContent?.title,
+            onBeforeClose: respondWithCancel
+          });
+          respondWithValue({});
+        }
+      };
+
+      const handleDialog = () => {
+        const dialog = intent.dialog;
         addModal({
           id: modalId,
           iconUrl,
@@ -149,23 +173,24 @@ export default function IntentCenter() {
               onSend={(isYes) =>
                 handleOnSend(isYes, modalId)
               }
-              dialog={intent.dialog}
+              dialog={dialog}
               imageIds={intent.context?.imageIds}
             />
           ),
-          title: intent.dialog.title,
-          size: intent.dialog.size,
-          onBeforeClose: respondWithCancel,
+          title: dialog.title,
+          size: dialog.size,
+          onBeforeClose: respondWithCancel
         });
+      };
 
-      const addImagesTab = () => {
-        const data = intent.images;
+      const handleImages = () => {
+        const images = intent.images;
         addTab({
-          label: data.title,
-          description: data.description,
+          label: images.title,
+          description: images.description,
           type: "Masonry",
           data: {
-            imageIds: data.images,
+            imageIds: images.images,
           },
         });
         respondWithValue({});
@@ -173,15 +198,15 @@ export default function IntentCenter() {
 
       // Determine which modal to show
       if (intent.parameters) {
-        addCommandFormModal();
+        handleParameters();
       } else if (intent.ui) {
-        addFullscreenURLModal();
+        handleUi();
       } else if (intent.dialog) {
-        addDialogFormModal();
+        handleDialog();
       } else if (intent.show) {
-        void handleOnIntentShow(intent.show);
+        void handleShow(intent.show);
       } else if (intent.images) {
-        addImagesTab();
+        handleImages();
       }
     }
   }, [eventData]);

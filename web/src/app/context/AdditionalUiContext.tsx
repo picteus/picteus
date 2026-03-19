@@ -11,6 +11,7 @@ type AdditionalUiContextType = [
   AdditionalUiContextValue,
   React.Dispatch<React.SetStateAction<AdditionalUiContextValue>>,
   () => void,
+  (additionalUi: AdditionalUi) => void,
 ];
 
 const AdditionalUiContext = createContext<AdditionalUiContextType | undefined>(
@@ -23,8 +24,8 @@ export function useAdditionalUiContext() {
 
 export function AdditionalUiProvider({ children }) {
 
-  function computeAdditionalUi()
-  {
+  // TODO: handle the case of the paused or uninstalled extensions
+  function computeAdditionalUi() {
     return {
       sidebar: ExtensionsService.getAdditionalUi()
     };
@@ -35,8 +36,13 @@ export function AdditionalUiProvider({ children }) {
     setValue(computeAdditionalUi());
   }, []);
 
+  // TODO: handle the case of the "refresh" callback, which deletes all the transient items
+  const addTransient = useCallback((additionalUi: AdditionalUi) => {
+    setValue({ sidebar: [...value.sidebar, additionalUi]  });
+  }, []);
+
   return (
-    <AdditionalUiContext.Provider value={[value, setValue, refresh]}>
+    <AdditionalUiContext.Provider value={[value, setValue, refresh, addTransient]}>
       {children}
     </AdditionalUiContext.Provider>
   );

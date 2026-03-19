@@ -1,5 +1,4 @@
 import { AdditionalUi } from "types";
-import { ExtensionsService } from "app/services";
 import style from "./SidebarAnchorScreen.module.scss";
 
 export default function SidebarAnchorScreen({
@@ -9,12 +8,7 @@ export default function SidebarAnchorScreen({
 }) {
   return (
     <div className={style.container}>
-      <iframe
-        src={ExtensionsService.buildSidebarAnchorURL(
-          element.extensionId,
-          element.url,
-        )}
-      />
+      <iframe src={element.url} />
     </div>
   );
 }

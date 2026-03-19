@@ -30,7 +30,7 @@
           "id": "image.tags"
         },
         {
-          "id": "image.features"  
+          "id": "image.features"
         }
       ],
       "commands": [
@@ -182,6 +182,19 @@
               "locale": "en",
               "label": "Open application",
               "description": "Opens an application in a dialog box."
+            }
+          ]
+        },
+        {
+          "id": "swaggerui",
+          "on": {
+            "entity": "Process"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Swagger UI",
+              "description": "Opens the Swagger UI in the sidebar."
             }
           ]
         },
