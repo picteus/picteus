@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "target": "ES2022",
-    "baseUrl": "./src/front-end",
+    "baseUrl": "./src",
     "jsx": "react",
     "paths": {
       "~*": [
@@ -15,6 +15,6 @@
     "declaration": false
   },
   "include": [
-    "src/front-end/**/*"
+    "src/**/*"
   ]
 }

@@ -36,14 +36,14 @@ class OllamaExtension extends PicteusExtension
     await this.setup(communicator, value);
   }
 
-  protected async onEvent(communicator: Communicator, channel: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
   {
-    if (channel === NotificationEvent.ImageCreated || channel === NotificationEvent.ImageUpdated || channel === NotificationEvent.ImageComputeFeatures)
+    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeFeatures)
     {
       const imageId = value["id"];
       await this.computeCaption(communicator, imageId);
     }
-    else if (channel === NotificationEvent.ImageRunCommand)
+    else if (event === NotificationEvent.ImageRunCommand)
     {
       const imageIds: string[] = value["imageIds"];
       const imageId = imageIds[0];

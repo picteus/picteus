@@ -1,7 +1,7 @@
 {
   "name": "@picteus/civitai",
   "version": "1.0.0",
-  "productName": "Pictueus Civitai extension",
+  "productName": "Picteus Civitai extension",
   "description": "Interacts with Civitai.com images.",
   "keywords": [
     "picteus",

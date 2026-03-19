@@ -3,10 +3,10 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 
 export default defineConfig({
-  root: "./src/front-end",
+  root: "./src",
   base: "",
   plugins: [
-    tsconfigPaths({ projects: ["../../front-end-tsconfig.json"] })
+    tsconfigPaths({ projects: ["../tsconfig.json"] })
   ],
   build: {
     outDir: "../../dist/front-end"

@@ -1,7 +1,7 @@
 {
   "name": "@picteus/c2pa",
   "version": "1.0.0",
-  "productName": "Pictueus C2PA extension",
+  "productName": "Picteus C2PA extension",
   "description": "Reveals the Content Authenticity Initiative metadata.",
   "keywords": [
     "picteus",

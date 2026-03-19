@@ -17,8 +17,7 @@ export default () =>
       const settings = await new ExtensionApi(configuration).extensionGetSettings({ id: parameters.extensionId });
       setUrl(settings.value["url"]);
     };
-    // noinspection JSIgnoredPromiseFromCall
-    run();
+    void run();
   }, []);
 
   return (
