@@ -3,7 +3,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { ActionIcon, Divider, Flex, Modal, Title } from "@mantine/core";
 import { IconChevronLeft } from "@tabler/icons-react";
 
-import { ActionModalValue } from "types";
+import { ActionModalValue, computeResourceTypeUrl } from "types";
 import style from "./ModalComponent.module.scss";
 
 export default function ModalComponent({
@@ -33,8 +33,8 @@ export default function ModalComponent({
   }
 
   function computeTitle() {
-    const title = <Title className={style.title} order={3}>{modal.iconUrl &&
-      <img className={style.icon} src={modal.iconUrl} alt="icon" />}{modal.title}</Title>;
+    const title = <Title className={style.title} order={3}>{modal.icon &&
+      <img className={style.icon} src={computeResourceTypeUrl(modal.icon)} alt="icon" />}{modal.title}</Title>;
     if (modal.fullScreen) {
       return (
         <Flex align="center" gap="md">

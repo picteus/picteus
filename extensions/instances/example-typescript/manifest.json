@@ -188,7 +188,7 @@
         {
           "id": "swaggerui",
           "on": {
-            "entity": "Process"
+              "entity": "Process"
           },
           "specifications": [
             {

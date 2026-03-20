@@ -42,14 +42,15 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
     }
   }
 
+  const content = dialog.frame?.content;
   return (
     <Flex direction="column" gap="xs">
       <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }} /></Alert>
       {dialog.details && <CopyText size="md" style={style.text} text={dialog.details} />}
       {imageIds && <ImageCollection imageIds={imageIds} />}
       {dialog.frame && <iframe className={style.iframe} style={{ height: `${dialog.frame.height}vh` }} {...{
-        src: "url" in dialog.frame.content ? dialog.frame.content.url : undefined,
-        srcDoc: "html" in dialog.frame.content ? dialog.frame.content.html : undefined
+        src: "url" in content ? content.url : undefined,
+        srcDoc: "html" in content ? content.html : undefined
       }} />}
       <Flex mt="md" align="center" justify="flex-end" gap={10}>
         <Buttons />

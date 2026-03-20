@@ -61,7 +61,8 @@ export default function useExtensionCommand() {
         "' with imageIds : " +
         imageIds?.join(", "),
     );
-    if (!command.parameters) {
+    const form = command.form;
+    if (!form.parameters) {
       return handleOnSendCommand(extensionId, command.id, undefined, imageIds);
     }
 
@@ -69,7 +70,7 @@ export default function useExtensionCommand() {
 
     addModal({
       id: modalId,
-      iconUrl: ExtensionsService.getSidebarAnchorIconURL(extensionId),
+      icon: form?.dialogContent?.icon ?? { url: ExtensionsService.getSidebarAnchorIconURL(extensionId) },
       component: (
         <CommandForm
           extensionId={extensionId}

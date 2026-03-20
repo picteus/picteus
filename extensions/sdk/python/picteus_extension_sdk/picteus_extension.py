@@ -88,16 +88,39 @@ class NotificationsWithContextIntent(NotificationsBasisIntent):
 
 
 @dataclass
+class NotificationResourceUrl(SuperDataClass):
+    url: str
+
+
+@dataclass
+class NotificationResourceContent(SuperDataClass):
+    content: bytearray
+
+
+NotificationResource = Union[NotificationResourceUrl, NotificationResourceContent]
+
+
+@dataclass(kw_only=True)
 class NotificationDialogContent(SuperDataClass):
     title: str
     description: str
     details: Optional[str] = None
 
 
-@dataclass(kw_only=True)
-class NotificationsParametersIntent(NotificationsWithContextIntent):
+@dataclass
+class NotificationDialogIconContent(NotificationDialogContent):
+    icon: Optional[NotificationResource] = None
+
+
+@dataclass
+class NotificationFormContent(SuperDataClass):
     parameters: Json
     dialogContent: Optional[NotificationDialogContent] = None
+
+
+@dataclass(kw_only=True)
+class NotificationFormIntent(NotificationsWithContextIntent):
+    form: NotificationFormContent
 
 
 class NotificationsUiAnchor(StrEnum):
@@ -124,7 +147,7 @@ NotificationFrameContent = Union[NotificationsFrameUrlContent, NotificationsFram
 class NotificationsUi(SuperDataClass):
     anchor: NotificationsUiAnchor
     frameContent: NotificationFrameContent
-    dialogContent: Optional[NotificationDialogContent]
+    dialogContent: Optional[NotificationDialogIconContent]
 
 
 @dataclass(kw_only=True)
@@ -151,7 +174,7 @@ class NotificationsDialogButtons(SuperDataClass):
 
 
 @dataclass(kw_only=True)
-class NotificationsDialog(NotificationDialogContent):
+class NotificationsDialog(NotificationDialogIconContent):
     type: NotificationsDialogType
     size: Optional[Literal["auto", "xs", "s", "m", "l", "xl"]] = None
     frame: Optional[NotificationsFrame] = None
@@ -172,7 +195,7 @@ class NotificationsImage(SuperDataClass):
 @dataclass
 class NotificationsImages(SuperDataClass):
     images: List[NotificationsImage]
-    dialogContent: Optional[NotificationDialogContent] = None
+    dialogContent: Optional[NotificationDialogIconContent] = None
 
 
 @dataclass(kw_only=True)
@@ -209,7 +232,7 @@ class NotificationsServeBundleIntent(NotificationsBasisIntent):
 
 
 NotificationsIntent = Union[
-    NotificationsParametersIntent, NotificationsUiIntent, NotificationsDialogIntent, NotificationsImagesIntent, NotificationsShowIntent, NotificationsServeBundleIntent]
+    NotificationFormIntent, NotificationsUiIntent, NotificationsDialogIntent, NotificationsImagesIntent, NotificationsShowIntent, NotificationsServeBundleIntent]
 
 
 class NotificationEvent(StrEnum):

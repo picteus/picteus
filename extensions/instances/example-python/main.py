@@ -5,11 +5,13 @@ from typing import Dict, Any, List, Optional, Literal
 
 from picteus_extension_sdk import PicteusExtension
 from picteus_extension_sdk.picteus_extension import NotificationEvent, NotificationReturnedError, Communicator, \
-    NotificationsUiAnchor, NotificationsDialogType, NotificationsParametersIntent, NotificationsUiIntent, \
+    NotificationsUiAnchor, NotificationsDialogType, NotificationsUiIntent, \
     NotificationsUi, NotificationsDialogIntent, NotificationsDialog, NotificationsDialogButtons, NotificationsImage, \
     NotificationsImagesIntent, NotificationsImages, NotificationsShowIntent, NotificationsShow, NotificationsShowType, \
     SettingsValue, NotificationDialogContent, NotificationContext, NotificationsServeBundleIntent, \
-    NotificationsServeBundle, NotificationsFrame, NotificationsFrameUrlContent, NotificationsFrameHtmlContent
+    NotificationsServeBundle, NotificationsFrame, NotificationsFrameUrlContent, NotificationsFrameHtmlContent, \
+    NotificationFormContent, NotificationDialogIconContent, NotificationFormIntent, NotificationResource, \
+    NotificationResourceContent
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -111,19 +113,20 @@ class PythonExtension(PicteusExtension):
             search_parameters=SearchParameters(range=SearchRange(take=3))).items]
         try:
             user_parameters: Dict[str, Any] = await communicator.launch_intent(
-                NotificationsParametersIntent(context=NotificationContext(imageIds=image_ids),
-                                              parameters=intent_parameters,
-                                              dialogContent=NotificationDialogContent(
-                                                  title="Favorite color and chocolate",
-                                                  description="This shows how an extension can input parameters from the user.",
-                                                  details="This dialog box has been dynamically generated from the extension source code.")))
+                NotificationFormIntent(context=NotificationContext(imageIds=image_ids),
+                                       form=NotificationFormContent(parameters=intent_parameters,
+                                                                    dialogContent=NotificationDialogContent(
+                                                                        title="Favorite color and chocolate",
+                                                                        description="This shows how an extension can input parameters from the user.",
+                                                                        details="This dialog box has been dynamically generated from the extension source code."))
+                                       ))
             communicator.send_log(f"Received the intent result '{json.dumps(user_parameters)}'", "info")
             if user_parameters["likeChocolate"]:
                 await communicator.launch_intent(
                     NotificationsUiIntent(ui=NotificationsUi(anchor=NotificationsUiAnchor.MODAL,
                                                              frameContent=NotificationsFrameUrlContent(
                                                                  url=self.web_services_base_url + "/swaggerui"),
-                                                             dialogContent=NotificationDialogContent(
+                                                             dialogContent=NotificationDialogIconContent(
                                                                  title="Website",
                                                                  description="A web site with some chocolate",
                                                                  details="This is to showcase that a modal window may be opened with some title, description and details."))))
@@ -166,24 +169,33 @@ class PythonExtension(PicteusExtension):
         result: str = await communicator.launch_intent(NotificationsServeBundleIntent(
             serveBundle=NotificationsServeBundle(content=bytearray(content_types),
                                                  settings={"imageIds": [image.id for image in summaries.items]})))
+        with open(os.path.join(PicteusExtension.get_extension_home_directory_path(), "swaggerui.png"),
+                  mode="rb") as file:
+            icon_content: bytes = file.read()
         await communicator.launch_intent(NotificationsDialogIntent(
             dialog=NotificationsDialog(
                 type=NotificationsDialogType.INFO,
                 title="Application",
                 description="This dialog box integrates an iframe application.",
+                icon=NotificationResourceContent(content=bytearray(icon_content)),
                 size="l",
                 frame=NotificationsFrame(content=NotificationsFrameUrlContent(url=result + "/index.html"),
                                          height=70),
                 buttons=NotificationsDialogButtons(yes="Close"))))
 
     async def _handle_swaggerui(self, communicator: Communicator) -> None:
+        with open(os.path.join(PicteusExtension.get_extension_home_directory_path(), "swaggerui.png"),
+                  mode="rb") as file:
+            icon_content: bytes = file.read()
         await communicator.launch_intent(
             NotificationsUiIntent(ui=NotificationsUi(anchor=NotificationsUiAnchor.SIDEBAR,
                                                      frameContent=NotificationsFrameUrlContent(
                                                          url=self.web_services_base_url + "/swaggerui"),
-                                                     dialogContent=NotificationDialogContent(
+                                                     dialogContent=NotificationDialogIconContent(
                                                          title="Swagger UI",
-                                                         description="Enables to interact with the API."))))
+                                                         description="Enables to interact with the API.",
+                                                         icon=NotificationResourceContent(
+                                                             content=bytearray(icon_content))))))
 
     async def _handle_show(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         raw_type = parameters["type"]
@@ -249,7 +261,7 @@ class PythonExtension(PicteusExtension):
         if command_id == "convert":
             await communicator.launch_intent(NotificationsImagesIntent(images=
                                                                        NotificationsImages(images=new_images,
-                                                                                           dialogContent=NotificationDialogContent(
+                                                                                           dialogContent=NotificationDialogIconContent(
                                                                                                title="Converted images",
                                                                                                description="These are the converted images"))))
         return None

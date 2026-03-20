@@ -21,6 +21,18 @@ export interface NotificationsWithContextIntent extends NotificationsBasisIntent
   readonly context?: NotificationContext;
 }
 
+export interface NotificationResourceUrl
+{
+  readonly url: string;
+}
+
+export interface NotificationResourceContent
+{
+  readonly content: Buffer;
+}
+
+export type NotificationResource = NotificationResourceUrl | NotificationResourceContent;
+
 export interface NotificationDialogContent
 {
   readonly title: string;
@@ -28,10 +40,20 @@ export interface NotificationDialogContent
   readonly details?: string;
 }
 
-export interface NotificationsParametersIntent extends NotificationsWithContextIntent
+export interface NotificationDialogIconContent extends NotificationDialogContent
+{
+  readonly icon?: NotificationResource;
+}
+
+export interface NotificationFormContent
 {
   readonly parameters: Json;
-  readonly dialogContent?: NotificationDialogContent;
+  readonly dialogContent?: NotificationDialogIconContent;
+}
+
+export interface NotificationsFormIntent extends NotificationsWithContextIntent
+{
+  readonly form: NotificationFormContent;
 }
 
 export enum NotificationsUiAnchor
@@ -58,7 +80,7 @@ export interface NotificationsUi
 {
   readonly anchor: NotificationsUiAnchor;
   readonly frameContent: NotificationFrameContent;
-  readonly dialogContent?: NotificationDialogContent;
+  readonly dialogContent?: NotificationDialogIconContent;
 }
 
 export interface NotificationsUiIntent extends NotificationsWithContextIntent
@@ -85,7 +107,7 @@ export interface NotificationsDialogButtons
   no?: string;
 }
 
-export interface NotificationsDialog extends NotificationDialogContent
+export interface NotificationsDialog extends NotificationDialogIconContent
 {
   readonly type: NotificationsDialogType;
   readonly size?: "auto" | "xs" | "s" | "m" | "l" | "xl";
@@ -107,7 +129,7 @@ export interface NotificationsImage
 export interface NotificationsImages
 {
   readonly images: NotificationsImage[];
-  readonly dialogContent?: NotificationDialogContent;
+  readonly dialogContent: NotificationDialogIconContent;
 }
 
 export interface NotificationsImagesIntent extends NotificationsWithContextIntent
@@ -145,7 +167,7 @@ export interface NotificationsServeBundleIntent extends NotificationsBasisIntent
 }
 
 export type NotificationsIntent =
-  NotificationsParametersIntent
+  NotificationsFormIntent
   | NotificationsUiIntent
   | NotificationsDialogIntent
   | NotificationsImagesIntent

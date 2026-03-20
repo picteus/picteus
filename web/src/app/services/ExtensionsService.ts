@@ -116,7 +116,7 @@ function getExtensionsCommands(
           label: entity.command.specifications.find(
             (specification) => specification.locale === language,
           ).label,
-          parameters: entity.command.parameters,
+          form: { parameters: entity.command.parameters }
         },
       };
     });
@@ -153,8 +153,8 @@ function getAdditionalUi(
         .map((element) => ({
           uuid: `${extension.manifest.id}-${element.url}`,
           anchor: element.anchor,
-          url: element.anchor === UserInterfaceAnchor.Window ? element.url : buildSidebarAnchorURL(extension.manifest.id, element.url),
-          iconURL: getSidebarAnchorIconURL(extension.manifest.id),
+          content: { url: element.anchor === UserInterfaceAnchor.Window ? element.url : buildSidebarAnchorURL(extension.manifest.id, element.url) },
+          icon: { url: getSidebarAnchorIconURL(extension.manifest.id) },
           title: extension.manifest.name,
           extensionId: extension.manifest.id,
         })) || [],

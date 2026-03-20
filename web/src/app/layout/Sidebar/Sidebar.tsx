@@ -11,7 +11,7 @@ import style from "./Sidebar.module.scss";
 
 import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
-import { ChannelEnum } from "types";
+import { ChannelEnum, computeResourceTypeUrl } from "types";
 
 interface NavbarLinkProps {
   icon: ReactNode;
@@ -57,14 +57,22 @@ export default function Sidebar() {
         // TODO: handle the case of the closeable items
         <NavbarLink
           key={"navbarLink-" + element.title}
-          icon={<img src={element.iconURL} alt="Extension anchor" />}
+          icon={<img className={style.icon} src={computeResourceTypeUrl(element.icon)} alt="Extension anchor" />}
           label={element.title}
           route={routePathFragment}
-          onClick={() =>
-            element.anchor === UserInterfaceAnchor.Sidebar ? navigate(routePathFragment) : (isAvailable() === false ? window.open(element.url, "_blank") : sendCommand("openWindow", {
-              url: element.url
-            }))
+          onClick={() => {
+            if (element.anchor === UserInterfaceAnchor.Sidebar) {
+              navigate(routePathFragment);
+            }
+            else {
+              if ("url" in element.content) {
+                const url = element.content.url;
+                isAvailable() === false ? window.open(url, "_blank") : sendCommand("openWindow", { url });
+              }
+              // TODO: hanlde the case of the "content"
+            }
           }
+        }
         />
       );
     });

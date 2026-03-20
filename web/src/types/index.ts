@@ -84,11 +84,15 @@ export type DialogContent = {
   details?: string;
 };
 
+export type DialogIconContent = DialogContent & {
+  icon?: ResourceType;
+};
+
 type FrameContent = ({ url: string }) | ({ html: string });
 
 type SizeType = "auto" | "xs" | "s" | "m" | "l" | "xl";
 
-export type DialogType = DialogContent & {
+export type DialogType = DialogIconContent & {
   type: "Error" | "Info" | "Question";
   size?: SizeType;
   frame?: { content: FrameContent; height: number };
@@ -101,9 +105,8 @@ export type ShowType = {
 };
 
 export type ImagesType = {
-  description: string;
-  title: string;
   images: Array<{ imageId: string }>;
+  dialogContent: DialogContent;
 };
 
 export type ContextType = {
@@ -114,14 +117,12 @@ export type UiCommandType = {
   context?: ContextType;
   id?: string;
   label?: string;
-  parameters?: RJSFSchema;
-  dialogContent?: DialogContent;
+  form?: { parameters: RJSFSchema, dialogContent?: DialogIconContent };
   withTags?: string[];
   ui?: {
-    // TODO: handle the "window"
-    anchor: "modal" | "sidebar";
+    anchor: "modal" | "sidebar" | "window";
     frameContent: FrameContent;
-    dialogContent?: DialogContent;
+    dialogContent?: DialogIconContent;
   };
   dialog?: DialogType;
   show?: ShowType;
@@ -184,11 +185,18 @@ export enum ChannelEnum {
   IMAGE_DELETED = "image.deleted",
 }
 
+
+export type ResourceType = ({ url: string }) | ({ content: ArrayBuffer });
+
+export function computeResourceTypeUrl(resourceType: ResourceType) {
+  return "url" in resourceType ? resourceType.url : ("data:image/png;base64," + btoa(String.fromCharCode(...new Uint8Array(resourceType.content))));
+}
+
 export type AdditionalUi = {
   uuid: string,
   anchor: UserInterfaceAnchor;
-  url: string;
-  iconURL: string;
+  content: FrameContent;
+  icon: ResourceType;
   title: string;
   extensionId: string;
 };
@@ -210,7 +218,7 @@ export type ActionModalValue = {
   id?: string;
   title?: string;
   withCloseButton?: boolean;
-  iconUrl?: string;
+  icon?: ResourceType;
   fullScreen?: boolean;
   size?: SizeType;
   component: ReactElement | undefined;

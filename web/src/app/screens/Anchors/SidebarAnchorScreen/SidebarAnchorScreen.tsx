@@ -6,9 +6,13 @@ export default function SidebarAnchorScreen({
 }: {
   element: AdditionalUi;
 }) {
+  const content = element.content;
   return (
     <div className={style.container}>
-      <iframe src={element.url} />
+      <iframe {...{
+        src: "url" in content ? content.url : undefined,
+        srcDoc: "html" in content ? content.html : undefined
+      }} />
     </div>
   );
 }

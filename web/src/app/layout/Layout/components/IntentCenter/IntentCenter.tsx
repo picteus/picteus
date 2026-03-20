@@ -8,10 +8,11 @@ import { UserInterfaceAnchor } from "@picteus/ws-client";
 import { ExtensionsService, ImageService, StorageService } from "app/services";
 import { CommandForm, DialogForm } from "app/components";
 import { FullscreenURLModal } from "app/components/ActionModal";
-import { ActionModalValue, ChannelEnum, ShowType, UiCommandType } from "types";
+import { ActionModalValue, ChannelEnum, ResourceType, ShowType, UiCommandType } from "types";
 import {
   useActionModalContext,
   useAdditionalUiContext,
+  useCommandSocket,
   useConfirmAction,
   useEventSocket,
   useGalleryTabsContext,
@@ -29,6 +30,7 @@ type ExtensionIntent = {
 export default function IntentCenter() {
   const [modalStack, addModal, removeModal] = useActionModalContext();
   const [, , , addTransient] = useAdditionalUiContext();
+  const { sendCommand } = useCommandSocket();
   const [, addTab] = useGalleryTabsContext();
 
   const confirmAction = useConfirmAction();
@@ -44,20 +46,23 @@ export default function IntentCenter() {
     });
   }
 
-  function onCloseActionModal(modalId: string) {
+  function onCloseActionModal(modalId: string): void {
     removeModal(modalId);
   }
 
-  function respondWithValue(value:any) {
+  function respondWithValue(value: any= {}): void {
     eventData.onResult({ value });
   }
 
-  function respondWithCancel() {
+  function respondWithCancel(): void {
     eventData.onResult({ cancel: "Cancelled" });
   }
 
-  function handleOnSend(parameters: any, modalId: string)
-  {
+  function respondWithError(message: string): void {
+    eventData.onResult({ error: message });
+  }
+
+  function handleOnSend(parameters: any, modalId: string): void {
     try {
       respondWithValue(parameters);
       onCloseActionModal(modalId);
@@ -67,7 +72,7 @@ export default function IntentCenter() {
     }
   }
 
-  async function handleShow(show: ShowType) {
+  async function handleShow(show: ShowType): Promise<void> {
     const shouldConfirm = StorageService.getExtensionIntentShowShouldConfirm();
 
     if (show.type === "ExtensionSettings") {
@@ -107,19 +112,22 @@ export default function IntentCenter() {
       const extensionName = ExtensionsService.list().find(
         (extension) => extension.manifest.id === extensionId,
       )?.manifest.name;
-      const iconUrl = ExtensionsService.getSidebarAnchorIconURL(extensionId);
+      const computeIcon = (resourceType: ResourceType) => {
+        return resourceType ?? { url: ExtensionsService.getSidebarAnchorIconURL(extensionId) };
+      }
       const modalId = randomId();
 
-      const handleParameters = () => {
+      const handleForm = () => {
+        const form = intent.form;
         addModal({
           id: modalId,
-          iconUrl,
+          icon: computeIcon(form?.dialogContent?.icon),
           component: (
             <CommandForm
               command={intent}
               extensionId={extensionId}
               imageIds={intent.context?.imageIds}
-              onSend={(_extensionId, commandId, parameters) =>
+              onSend={(_extensionId, _commandId, parameters) =>
                 handleOnSend(parameters, modalId)
               }
               onCancel={() => {
@@ -128,7 +136,7 @@ export default function IntentCenter() {
               }}
             />
           ),
-          title: intent.dialogContent?.title || t("extensionIntent.modalTitle", {
+          title: form.dialogContent?.title || t("extensionIntent.modalTitle", {
             extension: extensionName
           }),
           onBeforeClose: respondWithCancel
@@ -137,20 +145,30 @@ export default function IntentCenter() {
 
       const handleUi = () => {
         const ui = intent.ui;
-        if (ui.anchor === UserInterfaceAnchor.Sidebar) {
+        if (ui.anchor === UserInterfaceAnchor.Window) {
+          if ("url" in ui.frameContent) {
+            sendCommand("openWindow", { url: ui.frameContent }).then(() => {
+              respondWithValue();
+            }).catch(error=>respondWithError(error.message));
+          }
+          else {
+            // TODO: handle the case of the "html"
+            respondWithError("Cannot handle the 'ui' intent with an HTML content");
+          }
+        }
+        else if (ui.anchor === UserInterfaceAnchor.Sidebar) {
           // TODO: handle the case of a transient already added
           const uuid = `${extensionId}-${modalId}`;
           addTransient({
             uuid,
             anchor: UserInterfaceAnchor.Sidebar,
-            // TODO: handle the case of the "html" attribute
-            url: "url" in ui.frameContent ? ui.frameContent.url : "",
-            iconURL: iconUrl,
+            content: ui.frameContent,
+            icon: computeIcon(ui.dialogContent?.icon),
             title: ui.dialogContent?.title,
             extensionId
           });
           navigate(computeExtensionSidebarRoute(uuid));
-          respondWithValue({});
+          respondWithValue();
         }
         else {
           addModal({
@@ -159,7 +177,7 @@ export default function IntentCenter() {
             title: ui.dialogContent?.title,
             onBeforeClose: respondWithCancel
           });
-          respondWithValue({});
+          respondWithValue();
         }
       };
 
@@ -167,7 +185,7 @@ export default function IntentCenter() {
         const dialog = intent.dialog;
         addModal({
           id: modalId,
-          iconUrl,
+          icon: computeIcon(dialog.icon),
           component: (
             <DialogForm
               onSend={(isYes) =>
@@ -186,19 +204,19 @@ export default function IntentCenter() {
       const handleImages = () => {
         const images = intent.images;
         addTab({
-          label: images.title,
-          description: images.description,
+          label: images.dialogContent.title,
+          description: images.dialogContent.description,
           type: "Masonry",
           data: {
             imageIds: images.images,
           },
         });
-        respondWithValue({});
+        respondWithValue();
       };
 
       // Determine which modal to show
-      if (intent.parameters) {
-        handleParameters();
+      if (intent.form) {
+        handleForm();
       } else if (intent.ui) {
         handleUi();
       } else if (intent.dialog) {
@@ -207,6 +225,9 @@ export default function IntentCenter() {
         void handleShow(intent.show);
       } else if (intent.images) {
         handleImages();
+      }
+      else {
+        respondWithError(`Cannot handel the unexpected intent '${JSON.stringify(intent)}'`);
       }
     }
   }, [eventData]);

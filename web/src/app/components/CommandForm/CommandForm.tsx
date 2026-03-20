@@ -30,15 +30,16 @@ export default function CommandForm({
 
   useEnterKey(() => onSend(extensionId, command.id, commandParameters));
 
-  const { schema, uiSchema } = extractSchemaAndUiSchema(command.parameters);
+  const form = command.form;
+  const { schema, uiSchema } = extractSchemaAndUiSchema(form.parameters);
   return (
     <>
-      {command.dialogContent && (<Flex mt={"md"} direction={"column"} gap={15}>
+      {form.dialogContent && (<Flex mt={"md"} direction={"column"} gap={15}>
         <Alert icon={<IconInfoCircle />}>
-          <Markdown content={command.dialogContent.description} />
+          <Markdown content={form.dialogContent.description} />
         </Alert>
-        {command.dialogContent.details && (
-          <div className={style.details}><Markdown content={command.dialogContent.details} /></div>)}
+        {form.dialogContent.details && (
+          <div className={style.details}><Markdown content={form.dialogContent.details} /></div>)}
       </Flex>)}
       {imageIds && <ImageCollection imageIds={imageIds} />}
       <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setCommandParameters} />

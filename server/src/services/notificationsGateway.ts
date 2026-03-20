@@ -52,9 +52,9 @@ import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import {
   NotificationsDialogIntent,
   NotificationsDialogType,
+  NotificationsFormIntent,
   NotificationsImagesIntent,
   NotificationsIntent,
-  NotificationsParametersIntent,
   NotificationsServeBundleIntent,
   NotificationsShowIntent,
   NotificationsShowType,
@@ -81,9 +81,9 @@ type NotificationsValue = SocketMessageValue & {
 }
 export type NotificationsReturnedValue = { value?: any, cancel?: string, error?: string }
 
-const isNotificationsParametersIntent = (intent: NotificationsIntent): intent is NotificationsParametersIntent =>
+const isNotificationsFormIntent = (intent: NotificationsIntent): intent is NotificationsFormIntent =>
 {
-  return (intent as NotificationsParametersIntent).parameters !== undefined;
+  return (intent as NotificationsFormIntent).form !== undefined;
 };
 const isNotificationsUiIntent = (intent: NotificationsIntent): intent is NotificationsUiIntent =>
 {
@@ -105,6 +105,20 @@ const isNotificationsServeBundleIntent = (intent: NotificationsIntent): intent i
 {
   return (intent as NotificationsServeBundleIntent).serveBundle !== undefined;
 };
+
+const zodDialogContent = z.object({
+  title: z.string(),
+  description: z.string(),
+  details: z.string().optional()
+});
+const zodDialogIconContent = z.object({
+  title: z.string(),
+  description: z.string(),
+  details: z.string().optional(),
+  icon: z.object({ url: z.string().optional(), content: z.instanceof(Buffer).optional() }).optional()
+});
+
+const zodFrameContent = z.object({ url: z.string().optional(), html: z.string().optional() });
 
 @WebSocketGateway<GatewayMetadata>({ transports: ["websocket"] })
 export class NotificationsGateway
@@ -567,17 +581,24 @@ export class NotificationsGateway
       }
     };
 
-    if (isNotificationsParametersIntent(intent) === true)
+    if (isNotificationsFormIntent(intent) === true)
     {
       intentName = "parameters";
-      const specificIntent: NotificationsParametersIntent = intent;
-      const specificParameters = specificIntent.parameters;
+      const specificIntent: NotificationsFormIntent = intent;
+      if (await checkSchema(z.object({
+        parameters: z.object(),
+        dialogContent: zodDialogIconContent
+      }), intent.form) === false)
+      {
+        return resolveWithInvalidIntentSchema("NotificationsFormIntent");
+      }
+      const specificParameters = specificIntent.form.parameters;
       const withStrippedUiPropertiesParameters = deepCopy(specificParameters);
       const uiProperties = stripAndExtractParametersUiProperties(withStrippedUiPropertiesParameters);
       try
       {
         validateJsonSchema(computeAjv(), withStrippedUiPropertiesParameters);
-        addJsonSchemaAdditionalProperties(specificIntent.parameters);
+        addJsonSchemaAdditionalProperties(specificParameters);
         checkUiProperties(uiProperties);
       }
       catch (error)
@@ -611,10 +632,7 @@ export class NotificationsGateway
       const specificIntent: NotificationsUiIntent = intent;
       if (await checkSchema(z.object({
         anchor: z.enum(NotificationsUiAnchor),
-        frameContent: z.object({
-          url: z.string().optional(),
-          html: z.string().optional()
-        })
+        frameContent: zodFrameContent
 
       }), specificIntent.ui) === false)
       {
@@ -640,11 +658,9 @@ export class NotificationsGateway
         title: z.string(),
         description: z.string(),
         details: z.string().optional(),
+        icon: z.object({ url: z.string().optional(), content: z.instanceof(Buffer).optional() }).optional(),
         frame: z.object({
-          content: z.object({
-            url: z.string().optional(),
-            html: z.string().optional()
-          }),
+          content: zodFrameContent,
           height: z.int32().min(0).max(100)
         }).optional(),
         buttons: z.object({
@@ -668,13 +684,9 @@ export class NotificationsGateway
       if (await checkSchema(z.object({
         images: z.array(z.object({
           imageId: z.string(),
-          title: z.string().optional(),
-          description: z.string().optional(),
-          details: z.string().optional()
+          dialogContent: zodDialogContent.optional()
         })),
-        title: z.string().optional(),
-        description: z.string().optional(),
-        details: z.string().optional()
+        dialogContent: zodDialogIconContent.optional()
       }), specificIntent.images) === false)
       {
         return resolveWithInvalidIntentSchema("NotificationsImagesIntent");
