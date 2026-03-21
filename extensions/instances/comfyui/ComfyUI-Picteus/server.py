@@ -1,11 +1,19 @@
 import json
+
 from aiohttp import web
 
-from server import PromptServer
 import folder_paths
+from server import PromptServer
+
+picteus = "picteus"
 
 
-@PromptServer.instance.routes.post("/picteus/load_workflow")
+@PromptServer.instance.routes.get("/%s/ping" % picteus)
+async def ping(request) -> web.Response:
+    return web.Response(status=204)
+
+
+@PromptServer.instance.routes.post("/%s/load_workflow" % picteus)
 async def load_workflow(request) -> web.Response:
     try:
         workflow = await request.json()
@@ -16,7 +24,7 @@ async def load_workflow(request) -> web.Response:
         return web.Response(status=400)
 
 
-@PromptServer.instance.routes.get("/picteus/get_directory_paths")
+@PromptServer.instance.routes.get("/%s/get_directory_paths" % picteus)
 async def get_output_directory_path(request) -> web.Response:
     try:
         output_directory_path = folder_paths.get_output_directory()

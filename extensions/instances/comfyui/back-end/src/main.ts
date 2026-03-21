@@ -12,6 +12,7 @@ import {
   ImageMetadata,
   NotificationEvent,
   NotificationsDialogType,
+  NotificationsShowType,
   NotificationValue,
   PicteusExtension,
   PromptKind,
@@ -90,10 +91,7 @@ class ComfyUiExtension extends PicteusExtension
       const imageId = imageIds[0];
       if (commandId === "editComfyUiWorkflow")
       {
-        if (this.extensionCurrentlyInstalled === true && this.url !== undefined)
-        {
-          await this.openInComfyUi(communicator, imageId);
-        }
+        await this.openInComfyUi(communicator, imageId);
       }
       else if (commandId === "analyzeComfyUiWorkflow")
       {
@@ -104,7 +102,7 @@ class ComfyUiExtension extends PicteusExtension
 
   private async setup(communicator: Communicator, value: SettingsValue): Promise<void>
   {
-    this.url = value["value"];
+    this.url = value["url"];
     const directoryPath = value["directoryPath"];
     if (directoryPath !== undefined)
     {
@@ -249,6 +247,11 @@ class ComfyUiExtension extends PicteusExtension
 
   private async openInComfyUi(communicator: Communicator, imageId: string): Promise<void>
   {
+    if (!(this.extensionCurrentlyInstalled === true && this.url !== undefined))
+    {
+      communicator.sendLog("Cannot open the ComfyUI workflow, because the application is not connected to the ComfyUI server", "error");
+      return;
+    }
     const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
     const promptAndWorkflow: ComfyUiPromptAndWorkflow = this.computePromptAndWorkflow(metadata);
     const workflow = promptAndWorkflow.workflow;
@@ -265,7 +268,9 @@ class ComfyUiExtension extends PicteusExtension
     catch (error)
     {
       communicator.sendLog(`Failed to send the prompt to the extension web service at '${extensionWebServiceUrl}'. Reason: '${error.message}'`, "error");
+      return;
     }
+    await communicator.launchIntent({ show: { type: NotificationsShowType.Sidebar, id: `${this.extensionId}-main` } });
   }
 
   private computePromptAndWorkflow(metadata: ImageMetadata): ComfyUiPromptAndWorkflow | undefined
