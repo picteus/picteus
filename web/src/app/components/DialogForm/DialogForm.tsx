@@ -33,11 +33,11 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
   {
     switch (dialog.type)
     {
-      case "Error":
+      case "error":
         return { color: "red", icon: <IconCircleX /> };
-      case "Info":
+      case "info":
         return { color: "blue", icon: <IconInfoCircle /> };
-      case "Question":
+      case "question":
         return { color: "teal", icon: <IconQuestionMark /> };
     }
   }

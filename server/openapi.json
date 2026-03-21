@@ -2894,7 +2894,7 @@
                 "items": {
                   "description": "A technical identifier",
                   "type": "string",
-                  "pattern": "^[a-z0-9A-Z-_. ]{1,64}$",
+                  "pattern": "^[a-z0-9A-Z-_.]{1,64}$",
                   "minLength": 1,
                   "maxLength": 64,
                   "example": "technical-id"
@@ -3913,9 +3913,6 @@
         "properties": {
           "id": {
             "description": "The identifier of the extension capability",
-            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
-            "minLength": 1,
-            "maxLength": 32,
             "example": "image.embeddings",
             "allOf": [
               {
@@ -4275,6 +4272,14 @@
       "ManifestInterfaceElement": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "description": "The identifier of the User Interface fragment",
+            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "main"
+          },
           "anchor": {
             "description": "The location where the User Interface is anchored",
             "allOf": [
@@ -4294,6 +4299,7 @@
         },
         "description": "The definition of an extension's User Interface fragment",
         "required": [
+          "id",
           "anchor",
           "url"
         ]
@@ -4830,7 +4836,7 @@
           "value": {
             "type": "string",
             "description": "The image tag value",
-            "pattern": "^[a-z0-9A-Z-_. ]{1,64}$",
+            "pattern": "^[a-z0-9A-Z-_.]{1,64}$",
             "minLength": 1,
             "maxLength": 64,
             "example": "technical-id"
@@ -5515,7 +5521,7 @@
               "type": "string",
               "maxLength": 64,
               "minLength": 1,
-              "pattern": "^[a-z0-9A-Z-_. ]{1,64}$"
+              "pattern": "^[a-z0-9A-Z-_.]{1,64}$"
             }
           }
         },

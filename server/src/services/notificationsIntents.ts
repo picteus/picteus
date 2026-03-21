@@ -78,6 +78,7 @@ export type NotificationFrameContent = NotificationsUrlContent | NotificationsHt
 
 export interface NotificationsUi
 {
+  readonly id: string;
   readonly anchor: NotificationsUiAnchor;
   readonly frameContent: NotificationFrameContent;
   readonly dialogContent?: NotificationDialogIconContent;
@@ -90,9 +91,9 @@ export interface NotificationsUiIntent extends NotificationsWithContextIntent
 
 export enum NotificationsDialogType
 {
-  Error = "Error",
-  Info = "Info",
-  Question = "Question"
+  Error = "error",
+  Info = "info",
+  Question = "question"
 }
 
 export interface NotificationsFrame
@@ -139,9 +140,10 @@ export interface NotificationsImagesIntent extends NotificationsWithContextInten
 
 export enum NotificationsShowType
 {
-  ExtensionSettings = "ExtensionSettings",
-  Image = "Image",
-  Repository = "Repository"
+  Sidebar = "sidebar",
+  ExtensionSettings = "extensionSettings",
+  Image = "image",
+  Repository = "repository"
 }
 
 export interface NotificationsShow

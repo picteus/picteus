@@ -84,6 +84,7 @@
   "ui": {
     "elements": [
       {
+        "id": "main",
         "anchor": "sidebar",
         "url": "/dist/front-end/index.html"
       }

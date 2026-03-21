@@ -18,7 +18,7 @@ import {
   useGalleryTabsContext,
   useImageVisualizerContext
 } from "app/context";
-import { computeExtensionSidebarRoute, notifyError } from "utils";
+import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyError } from "utils";
 
 import { ImageVisualizerWrapper, ModalComponent } from "./components";
 
@@ -75,10 +75,10 @@ export default function IntentCenter() {
   async function handleShow(show: ShowType): Promise<void> {
     const shouldConfirm = StorageService.getExtensionIntentShowShouldConfirm();
 
-    if (show.type === "ExtensionSettings") {
+    if (show.type === "extensionSettings") {
       const action = () => {
+        navigate(`/extensions?settings=${show.id}`);
         respondWithValue(show.id);
-        return navigate(`/extensions?settings=${show.id}`);
       };
       if (shouldConfirm) {
         return confirmAction(action, {
@@ -88,8 +88,7 @@ export default function IntentCenter() {
       }
       return action();
     }
-
-    if (show.type === "Image") {
+    else if (show.type === "image") {
       const action = async () => {
         const image = await ImageService.get({ id: show.id });
         setImageVisualizerContext({ imageSummary: image });
@@ -101,6 +100,22 @@ export default function IntentCenter() {
         });
       }
       return action();
+    }
+    else if (show.type === "sidebar") {
+      const action = async () => {
+        navigate(computeExtensionSidebarRoute(show.id));
+        respondWithValue(show.id);
+      };
+      if (shouldConfirm) {
+        return confirmAction(action, {
+          title: t("extensionIntent.showSidebarTitle"),
+          message: t("extensionIntent.showSidebarDescription"),
+        });
+      }
+      return action();
+    }
+    else {
+      respondWithError(`Unhandled '${show}' show intent`);
     }
   }
 
@@ -158,7 +173,7 @@ export default function IntentCenter() {
         }
         else if (ui.anchor === UserInterfaceAnchor.Sidebar) {
           // TODO: handle the case of a transient already added
-          const uuid = `${extensionId}-${modalId}`;
+          const uuid = computeExtensionSidebarUuid(extensionId, ui.id);
           addTransient({
             uuid,
             anchor: UserInterfaceAnchor.Sidebar,

@@ -1,7 +1,10 @@
+import i18n from "i18next";
+
 import {
   CommandEntity,
   Extension,
   ExtensionApi,
+  ExtensionApiExtensionGetSettingsRequest,
   ExtensionApiExtensionInstallRequest,
   ExtensionApiExtensionPauseOrResumeRequest,
   ExtensionApiExtensionRunImageCommandRequest,
@@ -11,16 +14,14 @@ import {
   ExtensionApiExtensionUninstallRequest,
   ExtensionApiExtensionUpdateRequest,
   ExtensionsConfiguration,
+  ExtensionSettings,
   ExtensionStatus,
   ManifestCapabilityId,
   UserInterfaceAnchor
 } from "@picteus/ws-client";
-import i18n from "i18next";
-import { ExtensionApiExtensionGetSettingsRequest } from "@picteus/ws-client/src/apis/ExtensionApi.ts";
-import { ExtensionSettings } from "@picteus/ws-client/src/models/ExtensionSettings.ts";
 
 import { AdditionalUi, UiExtensionCommandType } from "types";
-import { BASE_PATH } from "utils";
+import { BASE_PATH, computeExtensionSidebarUuid } from "utils";
 
 const extensionApi = new ExtensionApi();
 
@@ -151,7 +152,7 @@ function getAdditionalUi(
             extension.status === ExtensionStatus.Enabled,
         )
         .map((element) => ({
-          uuid: `${extension.manifest.id}-${element.url}`,
+          uuid: computeExtensionSidebarUuid(extension.manifest.id, element.id),
           anchor: element.anchor,
           content: { url: element.anchor === UserInterfaceAnchor.Window ? element.url : buildSidebarAnchorURL(extension.manifest.id, element.url) },
           icon: { url: getSidebarAnchorIconURL(extension.manifest.id) },

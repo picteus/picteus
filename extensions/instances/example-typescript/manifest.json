@@ -188,7 +188,7 @@
         {
           "id": "swaggerui",
           "on": {
-              "entity": "Process"
+            "entity": "Process"
           },
           "specifications": [
             {
@@ -210,7 +210,7 @@
                 "type": "string",
                 "title": "Type",
                 "description": "What do you want to show?",
-                "enum": ["extensionSettings", "image", "repository"],
+                "enum": ["sidebar", "extensionSettings", "image", "repository"],
                 "default": "extensionSettings"
               }
             },
@@ -230,6 +230,7 @@
   "ui": {
     "elements": [
       {
+        "id": "main",
         "anchor": "sidebar",
         "url": "/ui/sidebar/index.html"
       }

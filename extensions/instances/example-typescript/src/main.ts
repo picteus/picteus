@@ -176,13 +176,15 @@ class TypeScriptExtension extends PicteusExtension
         await communicator.launchIntent({
           ui:
             {
+              id: "chocolate",
               anchor: NotificationsUiAnchor.Modal,
               frameContent: { url: `${this.webServicesBaseUrl}/swaggerui` },
               dialogContent:
                 {
                   title: "Website",
-                  description: "A web site with some chocolate",
-                  details: "This is to showcase that a modal window may be opened with some title, description and details."
+                  description: "A web site, which is the Swagger UI of the API",
+                  details: "This is to showcase that a modal window may be opened with some title, description and details.",
+                  icon: { content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "swaggerui.png")) }
                 }
             }
         });
@@ -257,7 +259,6 @@ class TypeScriptExtension extends PicteusExtension
           type: NotificationsDialogType.Info,
           title: "Application",
           description: "This dialog box integrates an iframe application.",
-          icon: { content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "swaggerui.png")) },
           size: "l",
           frame: { content: { url: result + "/index.html" }, height: 70 },
           buttons: { yes: "Close" }
@@ -270,13 +271,14 @@ class TypeScriptExtension extends PicteusExtension
     await communicator.launchIntent({
       ui:
         {
+          id: "swaggerui",
           anchor: NotificationsUiAnchor.Sidebar,
           frameContent: { url: `${this.webServicesBaseUrl}/swaggerui` },
           dialogContent:
             {
               title: "Swagger UI",
               description: "Enables to interact with the API.",
-              icon: { content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "swaggerui.png")) },
+              icon: { content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "swaggerui.png")) }
             }
         }
     });
@@ -289,6 +291,10 @@ class TypeScriptExtension extends PicteusExtension
     let showId: string;
     switch (rawType)
     {
+      case "sidebar":
+        showType = NotificationsShowType.Sidebar;
+        showId = `${this.extensionId}-main`;
+        break;
       case "extensionSettings":
         showType = NotificationsShowType.ExtensionSettings;
         showId = this.extensionId;

@@ -13,6 +13,10 @@ export const ROUTES = {
   explore: "/explore",
 };
 
+export function computeExtensionSidebarUuid(extensionId: string, id: string): string {
+  return `${extensionId}-${id}`;
+}
+
 export function computeExtensionSidebarRoute(uuid:string) {
   return `/extension/${uuid}`;
 }

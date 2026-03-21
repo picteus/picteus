@@ -631,8 +631,10 @@ export class NotificationsGateway
       intentName = "UI";
       const specificIntent: NotificationsUiIntent = intent;
       if (await checkSchema(z.object({
+        id: z.string(),
         anchor: z.enum(NotificationsUiAnchor),
-        frameContent: zodFrameContent
+        frameContent: zodFrameContent,
+        dialogContent: zodDialogIconContent.optional()
 
       }), specificIntent.ui) === false)
       {

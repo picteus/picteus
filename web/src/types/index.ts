@@ -93,14 +93,14 @@ type FrameContent = ({ url: string }) | ({ html: string });
 type SizeType = "auto" | "xs" | "s" | "m" | "l" | "xl";
 
 export type DialogType = DialogIconContent & {
-  type: "Error" | "Info" | "Question";
+  type: "error" | "info" | "question";
   size?: SizeType;
   frame?: { content: FrameContent; height: number };
   buttons: { yes: string; no?: string };
 };
 
 export type ShowType = {
-  type: "ExtensionSettings" | "Image" | "Repository";
+  type: "sidebar" | "extensionSettings" | "image" | "repository";
   id: string;
 };
 
@@ -120,6 +120,7 @@ export type UiCommandType = {
   form?: { parameters: RJSFSchema, dialogContent?: DialogIconContent };
   withTags?: string[];
   ui?: {
+    id: string;
     anchor: "modal" | "sidebar" | "window";
     frameContent: FrameContent;
     dialogContent?: DialogIconContent;

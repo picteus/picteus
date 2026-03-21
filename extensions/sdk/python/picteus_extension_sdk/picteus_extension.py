@@ -145,6 +145,7 @@ NotificationFrameContent = Union[NotificationsFrameUrlContent, NotificationsFram
 
 @dataclass
 class NotificationsUi(SuperDataClass):
+    id: str
     anchor: NotificationsUiAnchor
     frameContent: NotificationFrameContent
     dialogContent: Optional[NotificationDialogIconContent]
@@ -156,9 +157,9 @@ class NotificationsUiIntent(NotificationsWithContextIntent):
 
 
 class NotificationsDialogType(StrEnum):
-    ERROR = "Error",
-    INFO = "Info",
-    QUESTION = "Question"
+    ERROR = "error",
+    INFO = "info",
+    QUESTION = "question"
 
 
 @dataclass
@@ -204,9 +205,10 @@ class NotificationsImagesIntent(NotificationsWithContextIntent):
 
 
 class NotificationsShowType(StrEnum):
-    EXTENSION_SETTINGS = "ExtensionSettings"
-    IMAGE = "Image"
-    REPOSITORY = "Repository"
+    SIDEBAR = "sideBar"
+    EXTENSION_SETTINGS = "extensionSettings"
+    IMAGE = "image"
+    REPOSITORY = "repository"
 
 
 @dataclass

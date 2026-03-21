@@ -119,11 +119,21 @@ export const imageUrlSchema: SchemaObject =
     example: "file:///Users/me/image//path/fileName.png"
   };
 
+export const shortTechnicalSchema: SchemaObject =
+  {
+    description: "A technical identifier",
+    type: "string",
+    pattern: computeIdPattern(FieldLengths.shortTechnical),
+    minLength: 1,
+    maxLength: FieldLengths.shortTechnical,
+    example: "technical-id"
+  };
+
 export const technicalSchema: SchemaObject =
   {
     description: "A technical identifier",
     type: "string",
-    pattern: computeNamePattern(FieldLengths.technical),
+    pattern: computeIdPattern(FieldLengths.technical),
     minLength: 1,
     maxLength: FieldLengths.technical,
     example: "technical-id"

@@ -331,7 +331,10 @@ export default {
       "Picteus wants to redirect you to the extension settings. Do you want to proceed?",
     showImageTitle: "Picteus wants to display an image",
     showImageDescription:
-      "Picteus wants to display an image. Do you want to proceed?"
+      "Picteus wants to display an image. Do you want to proceed?",
+    showSidebarTitle: "Picteus wants to set a sidebar",
+    showSidebarDescription:
+      "Picteus wants to display an sidebar. Do you want to proceed?"
   },
   utils: {
     timeAgo: {

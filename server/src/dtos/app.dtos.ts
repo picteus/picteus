@@ -22,6 +22,7 @@ import {
   integerIdSchema,
   NumericRange,
   repositoryIdSchema,
+  shortTechnicalSchema,
   technicalSchema,
   toFileExtension,
   toMimeType
@@ -256,6 +257,7 @@ export {
   SearchTagsResult,
   SearchTags,
   Settings,
+  shortTechnicalSchema,
   Software,
   technicalSchema,
   TextualPrompt,

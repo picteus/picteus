@@ -92,6 +92,7 @@
   "ui": {
     "elements": [
       {
+        "id": "main",
         "anchor": "window",
         "url": "https://replicate.com"
       }

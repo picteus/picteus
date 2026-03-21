@@ -83,6 +83,7 @@
   "ui": {
     "elements": [
       {
+        "id": "main",
         "anchor": "window",
         "url": "https://civitai.com"
       }

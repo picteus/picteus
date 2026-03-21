@@ -27,6 +27,7 @@ import {
   Json,
   namePattern,
   semverPattern,
+  shortTechnicalSchema,
   uriPathPattern
 } from "./common.dtos";
 
@@ -199,11 +200,9 @@ export class ManifestExtensionCommand
 
   @ApiProperty(
     {
+      ...shortTechnicalSchema,
       description: "The identifier of the command",
       type: String,
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
-      minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
       required: true,
       example: "convert"
     }
@@ -291,17 +290,11 @@ export class ManifestCapability
       description: "The identifier of the extension capability",
       enum: ManifestCapabilityId,
       enumName: "ManifestCapabilityId",
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
-      minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
       required: true,
       example: ManifestCapabilityId.ImageEmbeddings
     }
   )
   @IsEnum(ManifestCapabilityId)
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
-  @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -575,11 +568,30 @@ export enum UserInterfaceAnchor
 export class ManifestInterfaceElement
 {
 
-  constructor(anchor: UserInterfaceAnchor, url: string)
+  constructor(id: string, anchor: UserInterfaceAnchor, url: string)
   {
+    this.id = id;
     this.anchor = anchor;
     this.url = url;
   }
+
+  @ApiProperty(
+    {
+      ...shortTechnicalSchema,
+      description: "The identifier of the User Interface fragment",
+      type: String,
+      required: true,
+      example: "main"
+    }
+  )
+  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @MinLength(1)
+  @MaxLength(FieldLengths.shortTechnical)
+  @IsDefined()
+  @NotEquals(null)
+  @IsString()
+  @Expose()
+  readonly id: string;
 
   @ApiProperty(
     {
@@ -1006,7 +1018,6 @@ export class ExtensionManual
       example: "To use the extension, you need to install…"
     }
   )
-  @Matches(computeIdPattern(FieldLengths.content))
   @MinLength(1)
   @MaxLength(FieldLengths.content)
   @IsDefined()
@@ -1126,13 +1137,10 @@ export class ConfigurationExtensionCommand
 
   @ApiProperty(
     {
+      ...extensionIdSchema,
       description: "The identifier of the extension",
       type: String,
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
-      minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
-      required: true,
-      example: "extension-id"
+      required: true
     }
   )
   @Matches(computeIdPattern(FieldLengths.shortTechnical))

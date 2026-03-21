@@ -121,15 +121,20 @@ class PythonExtension(PicteusExtension):
                                                                         details="This dialog box has been dynamically generated from the extension source code."))
                                        ))
             communicator.send_log(f"Received the intent result '{json.dumps(user_parameters)}'", "info")
+            with open(os.path.join(PicteusExtension.get_extension_home_directory_path(), "swaggerui.png"),
+                      mode="rb") as file:
+                icon_content: bytes = file.read()
             if user_parameters["likeChocolate"]:
                 await communicator.launch_intent(
-                    NotificationsUiIntent(ui=NotificationsUi(anchor=NotificationsUiAnchor.MODAL,
+                    NotificationsUiIntent(ui=NotificationsUi(id="chocolate",anchor=NotificationsUiAnchor.MODAL,
                                                              frameContent=NotificationsFrameUrlContent(
                                                                  url=self.web_services_base_url + "/swaggerui"),
                                                              dialogContent=NotificationDialogIconContent(
                                                                  title="Website",
-                                                                 description="A web site with some chocolate",
-                                                                 details="This is to showcase that a modal window may be opened with some title, description and details."))))
+                                                                 description="A web site, which is the Swagger UI of the API",
+                                                                 details="This is to showcase that a modal window may be opened with some title, description and details.",
+                                                                 icon=NotificationResourceContent(
+                                                                     content=bytearray(icon_content))))))
         except NotificationReturnedError as exception:
             communicator.send_log(
                 f"Received the intent error '{str(exception)}' with reason '{exception.reason}'",
@@ -169,15 +174,11 @@ class PythonExtension(PicteusExtension):
         result: str = await communicator.launch_intent(NotificationsServeBundleIntent(
             serveBundle=NotificationsServeBundle(content=bytearray(content_types),
                                                  settings={"imageIds": [image.id for image in summaries.items]})))
-        with open(os.path.join(PicteusExtension.get_extension_home_directory_path(), "swaggerui.png"),
-                  mode="rb") as file:
-            icon_content: bytes = file.read()
         await communicator.launch_intent(NotificationsDialogIntent(
             dialog=NotificationsDialog(
                 type=NotificationsDialogType.INFO,
                 title="Application",
                 description="This dialog box integrates an iframe application.",
-                icon=NotificationResourceContent(content=bytearray(icon_content)),
                 size="l",
                 frame=NotificationsFrame(content=NotificationsFrameUrlContent(url=result + "/index.html"),
                                          height=70),
@@ -188,7 +189,7 @@ class PythonExtension(PicteusExtension):
                   mode="rb") as file:
             icon_content: bytes = file.read()
         await communicator.launch_intent(
-            NotificationsUiIntent(ui=NotificationsUi(anchor=NotificationsUiAnchor.SIDEBAR,
+            NotificationsUiIntent(ui=NotificationsUi(id="swaggerui", anchor=NotificationsUiAnchor.SIDEBAR,
                                                      frameContent=NotificationsFrameUrlContent(
                                                          url=self.web_services_base_url + "/swaggerui"),
                                                      dialogContent=NotificationDialogIconContent(
@@ -202,6 +203,9 @@ class PythonExtension(PicteusExtension):
         show_type: NotificationsShowType
         show_id: str
         match raw_type:
+            case "sideBar":
+                show_type = NotificationsShowType.SIDEBAR
+                show_id = self.extension_id + "-" + "main"
             case "extensionSettings":
                 show_type = NotificationsShowType.EXTENSION_SETTINGS
                 show_id = self.extension_id
