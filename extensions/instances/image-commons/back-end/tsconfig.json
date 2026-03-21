@@ -4,7 +4,7 @@
     "module": "esnext",
     "moduleResolution": "Node",
     "target": "es2022",
-    "outDir": "./dist",
+    "outDir": "../dist/back-end",
     "declaration": false,
     "emitDecoratorMetadata": false,
     "experimentalDecorators": false,

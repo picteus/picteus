@@ -12,7 +12,7 @@
     {
       "execution": {
         "executable": "${node}",
-        "arguments": ["./dist/main.js"]
+        "arguments": ["./dist/back-end/main.js"]
       },
       "events": [
         "process.started", "process.runCommand", "image.runCommand"
@@ -49,10 +49,7 @@
                 "type": "boolean",
                 "title": "Strip metadata?",
                 "description": "Whether the metadata should be stripped from the converted images",
-                "default": true,
-                "ui": {
-                  "widget": "updown"
-                }
+                "default": true
               },
               "width": {
                 "type": "integer",
@@ -104,6 +101,19 @@
               "locale": "en",
               "label": "Rate and comment",
               "description": "Enables to rate and comment the selected images and stores them into the image features."
+            }
+          ]
+        },
+        {
+          "id": "tag",
+          "on": {
+            "entity": "Images"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Tag",
+              "description": "Enables to set the tags the selected images and stores them into the image tags."
             }
           ]
         },

@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 import {
   ApplicationMetadata,
   ApplicationMetadataItem,
@@ -34,6 +37,10 @@ class ImageCommonsExtension extends PicteusExtension
       else if (commandId === "rateAndComment")
       {
         await this.rateAndCommentImages(imageIds, communicator);
+      }
+      else if (commandId === "tag")
+      {
+        await this.tagImages(imageIds, communicator);
       }
     }
     else if (event === NotificationEvent.ProcessRunCommand)
@@ -193,6 +200,28 @@ class ImageCommonsExtension extends PicteusExtension
         imageFeature: features
       });
     }
+  }
+
+  private async tagImages(imageIds: string[], communicator: Communicator): Promise<void>
+  {
+    const result = await communicator.launchIntent<string>({
+      serveBundle:
+        {
+          content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "dist", "front-end.zip")),
+          settings: { imageIds }
+        }
+    });
+    await communicator.launchIntent({
+      dialog:
+        {
+          type: NotificationsDialogType.Info,
+          size: "xl",
+          title: "Tag",
+          description: "Please, tag the images",
+          frame: { content: { url: result + "/index.html" }, height: 50 },
+          buttons: { yes: "Close" }
+        }
+    });
   }
 
   private async analyzeImages(collectionId: number, tags: string[], communicator: Communicator): Promise<void>
