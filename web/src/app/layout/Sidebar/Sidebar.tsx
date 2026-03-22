@@ -37,7 +37,7 @@ function NavbarLink({ icon, label, route, onClick }: NavbarLinkProps) {
 
 export default function Sidebar() {
   const navigate = useNavigate();
-  const [additionalUi, , refreshAdditionalUi] = useAdditionalUiContext();
+  const [additionalUi, refreshAdditionalUi] = useAdditionalUiContext();
   const eventSocket = useEventSocket();
   const [t] = useTranslation();
 

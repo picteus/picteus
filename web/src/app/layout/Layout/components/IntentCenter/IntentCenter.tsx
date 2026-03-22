@@ -29,7 +29,7 @@ type ExtensionIntent = {
 
 export default function IntentCenter() {
   const [modalStack, addModal, removeModal] = useActionModalContext();
-  const [, , , addTransient] = useAdditionalUiContext();
+  const [, , addTransient] = useAdditionalUiContext();
   const { sendCommand } = useCommandSocket();
   const [, addTab] = useGalleryTabsContext();
 

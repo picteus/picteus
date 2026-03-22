@@ -9,7 +9,6 @@ type AdditionalUiContextValue = {
 
 type AdditionalUiContextType = [
   AdditionalUiContextValue,
-  React.Dispatch<React.SetStateAction<AdditionalUiContextValue>>,
   () => void,
   (additionalUi: AdditionalUi) => void,
 ];
@@ -24,25 +23,27 @@ export function useAdditionalUiContext() {
 
 export function AdditionalUiProvider({ children }) {
 
-  // TODO: handle the case of the paused or uninstalled extensions
   function computeAdditionalUi() {
     return {
       sidebar: ExtensionsService.getAdditionalUi()
     };
   }
-  const [value, setValue] = useState<AdditionalUiContextValue>(computeAdditionalUi());
+  const [additionalContextValue, setAdditionalContextValue] = useState<AdditionalUiContextValue>(computeAdditionalUi());
+  const [transientUis, setTransientUis] = useState<AdditionalUi[]>([]);
 
   const refresh = useCallback(() => {
-    setValue(computeAdditionalUi());
-  }, []);
+    const newAdditionalUis = transientUis.filter(transientUi => ExtensionsService.isPaused(transientUi.extensionId) === false);
+    setTransientUis(newAdditionalUis);
+    setAdditionalContextValue({ sidebar:[...computeAdditionalUi().sidebar, ...newAdditionalUis] });
+  }, [transientUis]);
 
-  // TODO: handle the case of the "refresh" callback, which deletes all the transient items
   const addTransient = useCallback((additionalUi: AdditionalUi) => {
-    setValue({ sidebar: [...value.sidebar, additionalUi]  });
-  }, []);
+    setTransientUis(transientUis.concat(additionalUi));
+    setAdditionalContextValue({ sidebar: [...additionalContextValue.sidebar, additionalUi]  });
+  }, [additionalContextValue, transientUis]);
 
   return (
-    <AdditionalUiContext.Provider value={[value, setValue, refresh, addTransient]}>
+    <AdditionalUiContext.Provider value={[additionalContextValue, refresh, addTransient]}>
       {children}
     </AdditionalUiContext.Provider>
   );

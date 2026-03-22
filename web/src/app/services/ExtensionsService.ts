@@ -41,6 +41,11 @@ function list(): Extension[] {
   return extensions;
 }
 
+function isPaused(extensionId: string): boolean | undefined {
+  const extension = list().find(extension => extension.manifest.id === extensionId);
+  return extension === undefined ? undefined : extension.status === ExtensionStatus.Paused;
+}
+
 async function add(
   parameters: ExtensionApiExtensionInstallRequest,
 ): Promise<Extension> {
@@ -173,6 +178,7 @@ function getSidebarAnchorIconURL(extensionId: string) {
 export default {
   fetchAll,
   list,
+  isPaused,
   add,
   getSidebarAnchorIconURL,
   update,
