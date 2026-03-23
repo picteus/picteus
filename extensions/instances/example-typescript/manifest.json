@@ -70,7 +70,7 @@
                 "type": "boolean",
                 "title": "Strip metadata?",
                 "description": "Whether the metadata should be stripped from the converted images",
-                "default": false
+                "default": true
               },
               "width": {
                 "type": "integer",

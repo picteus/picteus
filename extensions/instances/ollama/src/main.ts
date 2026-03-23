@@ -58,29 +58,32 @@ class OllamaExtension extends PicteusExtension
     {
       return;
     }
-    const uint8Array = await this.downloadImage(imageId);
-    const modelAndCaptions = [];
-    for (const model of this.models)
+    if (this.models !== undefined)
     {
-      if (await this.ensureOllamaModels(communicator, [model], false) === true)
+      const uint8Array = await this.downloadImage(imageId);
+      const modelAndCaptions = [];
+      for (const model of this.models)
       {
-        for (const question of this.questions)
+        if (await this.ensureOllamaModels(communicator, [model], false) === true)
         {
-          const caption: string = await this.requestOllama(communicator, model, uint8Array, question);
-          modelAndCaptions.push({ model, caption });
+          for (const question of this.questions)
+          {
+            const caption: string = await this.requestOllama(communicator, model, uint8Array, question);
+            modelAndCaptions.push({ model, caption });
+          }
         }
       }
+      await this.getImageApi().imageSetFeatures({
+        id: imageId,
+        extensionId: this.parameters.extensionId,
+        imageFeature: modelAndCaptions.map(modelAndCaption => ({
+          type: ImageFeatureType.Caption,
+          format: ImageFeatureFormat.String,
+          name: modelAndCaption.model,
+          value: modelAndCaption.caption
+        }))
+      });
     }
-    await this.getImageApi().imageSetFeatures({
-      id: imageId,
-      extensionId: this.parameters.extensionId,
-      imageFeature: modelAndCaptions.map(modelAndCaption => ({
-        type: ImageFeatureType.Caption,
-        format: ImageFeatureFormat.String,
-        name: modelAndCaption.model,
-        value: modelAndCaption.caption
-      }))
-    });
   }
 
   private async askQuestion(communicator: Communicator, imageId: string, model: string, question: string): Promise<void>
@@ -159,6 +162,7 @@ class OllamaExtension extends PicteusExtension
       }
       catch (error)
       {
+        communicator.sendLog(`The Ollama server is not running properly. Reason: '${error.message}'`, "error");
         this.ollama = undefined;
       }
     }
