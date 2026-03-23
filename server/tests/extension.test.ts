@@ -690,10 +690,14 @@ describe("Extensions", () =>
           execution: ExtensionBuilder.dummyExecution
         }
       ], undefined, undefined, undefined, undefined, {
-        elements: [{
-          anchor: UserInterfaceAnchor.Sidebar,
-          url: url
-        }]
+        elements:
+          [
+            {
+              id: "main",
+              anchor: UserInterfaceAnchor.Sidebar,
+              url
+            }
+          ]
       });
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -701,6 +705,37 @@ describe("Extensions", () =>
       {
         await base.getExtensionController().install(zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`The UI element of the extension with id '${manifest.id}', with URL '${url}' has no corresponding file`, BAD_REQUEST, base.badParameterCode));
+    }
+    {
+      const url = "/sidebar/index.html";
+      const id = "main";
+      const manifest = builder.computeWithInstructionsManifest([
+        {
+          events: [ManifestEvent.ProcessStarted],
+          capabilities: [],
+          execution: ExtensionBuilder.dummyExecution
+        }
+      ], undefined, undefined, undefined, undefined, {
+        elements:
+          [
+            {
+              id,
+              anchor: UserInterfaceAnchor.Sidebar,
+              url
+            },
+            {
+              id,
+              anchor: UserInterfaceAnchor.Sidebar,
+              url
+            }
+          ]
+      });
+      const zip = new AdmZip();
+      zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
+      await expect(async () =>
+      {
+        await base.getExtensionController().install(zip.toBuffer());
+      }).rejects.toThrow(new ServiceError(`The UI element of the extension with id '${manifest.id}' contain duplicated identifiers`, BAD_REQUEST, base.badParameterCode));
     }
   });
 
@@ -733,6 +768,7 @@ describe("Extensions", () =>
       elements:
         [
           {
+            id: "main",
             anchor: UserInterfaceAnchor.Sidebar,
             url: `/${elementBasePath}index.html`
           }
@@ -1155,22 +1191,25 @@ describe("Extensions", () =>
     const expectedFaultyCommandParametersMessage = `${expectedFaultyCommandParametersMessagePrefix(faultyCommandParameters)}. Reason: 'the entity at '/${age}' must be integer'`;
     const expectedIntentEventValue =
       {
-        parameters:
+        form:
           {
-            type: "object",
-            properties:
+            parameters:
               {
-                favoriteColor:
+                type: "object",
+                properties:
                   {
-                    title: "Favorite Color",
-                    description: "What is your favorite color?",
-                    type: "string",
-                    default: "pink"
+                    favoriteColor:
+                      {
+                        title: "Favorite Color",
+                        description: "What is your favorite color?",
+                        type: "string",
+                        default: "pink"
+                      },
+                    likeChocolate: { title: "Chocolate?", description: "Do you like chocolate?", type: "boolean" }
                   },
-                likeChocolate: { title: "Chocolate?", description: "Do you like chocolate?", type: "boolean" }
-              },
-            required: ["favoriteColor"],
-            additionalProperties: false
+                required: ["favoriteColor"],
+                additionalProperties: false
+              }
           }
       };
 

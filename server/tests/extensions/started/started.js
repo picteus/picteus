@@ -46,7 +46,7 @@ async function main()
               },
             required: ["favoriteColor"]
           };
-        const intent = value.commandId === "malformedIntent" ? { invalid: "key" } : { parameters };
+        const intent = value.commandId === "malformedIntent" ? { invalid: "key" } : { form: { parameters } };
         ioClient.emit(notifications, {
           ...commonParameters,
           contextId,

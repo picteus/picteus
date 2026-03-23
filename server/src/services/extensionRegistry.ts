@@ -141,7 +141,6 @@ export class ExtensionRegistry
         logger.warn(`The extension manifest '${filePath}' is JSON-malformed`, error);
         continue;
       }
-      logger.info(`Found in the manifest '${filePath}' the extension with id '${extendedManifest.id}'`);
       const directoryName = path.basename(extendedManifest.directoryPath);
       if (extendedManifest.id !== directoryName)
       {
@@ -168,7 +167,6 @@ export class ExtensionRegistry
 
   exists(id: string): boolean
   {
-    logger.debug(`Checking whether the extension with id '${id}' exists`);
     if (id.length === 0)
     {
       return false;

@@ -1164,7 +1164,7 @@ export class ExtensionService
 
   private throwBadParameterId(id: string): never
   {
-    parametersChecker.throwBadParameter("id", id, `there is no extension with that identifier`);
+    parametersChecker.throwBadParameter("id", id, "there is no extension with that identifier");
   }
 
   private async installUpdateOrUnpack(idWhenUpdating: string | undefined, readerOrManifest: ExtensionArchiveReader | Manifest, shouldHandleProcesses: boolean): Promise<Manifest>
@@ -1256,8 +1256,19 @@ export class ExtensionService
       }
     }
 
-    // We now check that the UI elements are valid, which we cannot perform as long as the archive is not inflated
-    await this.checkManifest(manifest, extendedManifest);
+    try
+    { // We now check that the UI elements are valid, which we cannot perform as long as the archive is not inflated
+      await this.checkManifest(manifest, extendedManifest);
+    }
+    catch (error)
+    {
+      // In case the runtime installation was not successful, we roll back the installation
+      if (idWhenUpdating === undefined)
+      {
+        this.deleteExtensionFolder(manifest.id);
+      }
+      throw error;
+    }
 
     if (useReader === true)
     {
@@ -1433,6 +1444,11 @@ export class ExtensionService
     {
       if (extendedManifest.ui !== undefined)
       {
+        const ids = extendedManifest.ui.elements.map(element => element.id);
+        if (new Set<string>(ids).size !== ids.length)
+        {
+          parametersChecker.throwBadParameterError(`The UI element of the extension with id '${manifest.id}' contain duplicated identifiers`);
+        }
         for (const element of extendedManifest.ui.elements)
         {
           if (element.url.startsWith("/") === true)

@@ -587,7 +587,7 @@ export class NotificationsGateway
       const specificIntent: NotificationsFormIntent = intent;
       if (await checkSchema(z.object({
         parameters: z.object(),
-        dialogContent: zodDialogIconContent
+        dialogContent: zodDialogIconContent.optional()
       }), intent.form) === false)
       {
         return resolveWithInvalidIntentSchema("NotificationsFormIntent");
