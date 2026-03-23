@@ -1,6 +1,5 @@
 import * as path from "node:path";
 import * as fs from "node:fs";
-import * as process from "node:process";
 
 import {
   Communicator,
@@ -48,6 +47,8 @@ class ComfyUiPromptAndWorkflow
 
 class ComfyUiExtension extends PicteusExtension
 {
+
+  private static readonly webServiceFragment = "picteus";
 
   private url: string;
 
@@ -115,7 +116,7 @@ class ComfyUiExtension extends PicteusExtension
       if (fs.existsSync(customNodesDirectoryPath) === false)
       {
         communicator.sendLog("Installing the ComfyUI extension", "info");
-        fs.symlinkSync(path.join(process.cwd(), comfyUiExtensionDirectoryName), customNodesDirectoryPath, "dir");
+        fs.symlinkSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), comfyUiExtensionDirectoryName), customNodesDirectoryPath, "dir");
         await communicator.launchIntent<boolean>({
           dialog: {
             type: NotificationsDialogType.Info,
@@ -127,7 +128,7 @@ class ComfyUiExtension extends PicteusExtension
       }
       if (this.url !== undefined)
       {
-        const extensionWebServiceUrl = `${this.url}/picteus/get_directory_paths`;
+        const extensionWebServiceUrl = `${this.url}/${ComfyUiExtension.webServiceFragment}/get_directory_paths`;
         let response: Response;
         try
         {
@@ -252,18 +253,20 @@ class ComfyUiExtension extends PicteusExtension
       communicator.sendLog("Cannot open the ComfyUI workflow, because the application is not connected to the ComfyUI server", "error");
       return;
     }
-    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    const image = await this.getImageApi().imageGet({ id: imageId });
+    const metadata = image.metadata;
     const promptAndWorkflow: ComfyUiPromptAndWorkflow = this.computePromptAndWorkflow(metadata);
     const workflow = promptAndWorkflow.workflow;
-    const extensionWebServiceUrl = `${this.url}/picteus/load_workflow`;
+    const extensionWebServiceUrl = `${this.url}/${ComfyUiExtension.webServiceFragment}/load_workflow`;
     try
     {
       await fetch(extensionWebServiceUrl,
         {
           method: "POST",
-          body: JSON.stringify(workflow),
+          body: JSON.stringify({ workflow, fileName: image.name }),
           headers: { "Content-Type": "application/json" }
         });
+      communicator.sendLog("The workflow has been sent to ComfyUI", "debug");
     }
     catch (error)
     {

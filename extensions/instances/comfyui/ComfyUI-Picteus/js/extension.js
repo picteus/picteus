@@ -1,5 +1,5 @@
-import {app} from "../../scripts/app.js";
-import {api} from "../../scripts/api.js";
+import { app } from "../../scripts/app.js";
+import { api } from "../../scripts/api.js";
 
 
 app.registerExtension(
@@ -10,9 +10,9 @@ app.registerExtension(
     {
       api.addEventListener("picteus", (event) =>
       {
-        const workflow = event.detail;
-        const blob = new Blob([JSON.stringify(workflow, undefined, 2)], {type: "application/json"});
-        app.handleFile(blob);
+        const { workflow, fileName } = event.detail;
+        const file = new File([JSON.stringify(workflow)], fileName, {type: "application/json"});
+        app.handleFile(file);
       }, false);
     }
 

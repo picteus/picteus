@@ -7,9 +7,8 @@ from server import PromptServer
 
 picteus = "picteus"
 
-
 @PromptServer.instance.routes.get("/%s/ping" % picteus)
-async def ping(request) -> web.Response:
+async def ping(_request) -> web.Response:
     return web.Response(status=204)
 
 
@@ -25,7 +24,7 @@ async def load_workflow(request) -> web.Response:
 
 
 @PromptServer.instance.routes.get("/%s/get_directory_paths" % picteus)
-async def get_output_directory_path(request) -> web.Response:
+async def get_output_directory_path(_request) -> web.Response:
     try:
         output_directory_path = folder_paths.get_output_directory()
         input_directory_path = folder_paths.get_input_directory()
