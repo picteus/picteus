@@ -131,34 +131,36 @@ class ImageCommonsExtension extends PicteusExtension
       {
         result = await communicator.launchIntent<Record<string, any>>({
           context: { imageIds: [imageId] },
-          dialogContent:
+          form:
             {
-              title: "Rate and comment",
-              description: "Please rate and comment the image",
-              details: "The values will be recorded as features of the image."
-            },
-          parameters:
-            {
-              type: "object",
-              properties:
+              parameters:
                 {
-                  rating: {
-                    type: "integer",
-                    title: "Rating",
-                    enum: [1, 2, 3, 4, 5],
-                    default: previousRating?.value as number ?? 3,
-                    ui: { widget: "radio", inline: true }
-                  },
-                  comment: {
-                    type: "string",
-                    title: "Comment",
-                    minLength: 0,
-                    maxLength: 1_024,
-                    default: previousComment?.value as string ?? "",
-                    ui: { widget: "textarea" }
-                  }
-                },
-              required: ["rating"]
+                  type: "object",
+                  properties:
+                    {
+                      rating: {
+                        type: "integer",
+                        title: "Rating",
+                        enum: [1, 2, 3, 4, 5],
+                        default: previousRating?.value as number ?? 3,
+                        ui: { widget: "radio", inline: true }
+                      },
+                      comment: {
+                        type: "string",
+                        title: "Comment",
+                        minLength: 0,
+                        maxLength: 1_024,
+                        default: previousComment?.value as string ?? "",
+                        ui: { widget: "textarea" }
+                      }
+                    },
+                  required: ["rating"]
+                }, dialogContent:
+                {
+                  title: "Rate and comment",
+                  description: "Please rate and comment the image",
+                  details: "The values will be recorded as features of the image."
+                }
             }
         });
       }

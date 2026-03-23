@@ -264,18 +264,20 @@ class GeminiExtension extends PicteusExtension
       try
       {
         intentResult = await communicator.launchIntent<Record<string, any>>({
-          parameters: {
-            "type": "object",
-            "properties": {
-              "apiKey": {
-                "type": "string",
-                "title": "API Key",
-                "description": "The Google Gemini API key used when interacting with Gemini."
-              }
-            },
-            "required": [
-              "apiKey"
-            ]
+          form: {
+            parameters: {
+              "type": "object",
+              "properties": {
+                "apiKey": {
+                  "type": "string",
+                  "title": "API Key",
+                  "description": "The Google Gemini API key used when interacting with Gemini."
+                }
+              },
+              "required": [
+                "apiKey"
+              ]
+            }
           }
         });
       }

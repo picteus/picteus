@@ -20,7 +20,6 @@
     "email": "edouard@koppasoft.com",
     "url": "https://github.com/edouardmercier"
   },
-
   "license": "GNU Affero General Public License",
   "private": false,
   "engines": {
@@ -53,7 +52,7 @@
     "package": "npm run build && npm pack"
   },
   "dependencies": {
-    "@picteus/ws-client": "0.10.0"
+    "@picteus/ws-client": "0.12.0"
   },
   "devDependencies": {
     "cross-var": "1.1.0",

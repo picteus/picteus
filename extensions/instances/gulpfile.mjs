@@ -8,12 +8,12 @@ import gulpRun from "gulp-run";
 import zip from "gulp-zip";
 
 
-const forceReinstall = Math.random() > 1;
 const rootDirectoryPath = path.join(import.meta.dirname, ".");
 
 const extensionSdk = "extension-sdk";
 const nodeSdkScope = "picteus";
 const excludedPackagedExtensionIds = ["example-python", "example-typescript", "c2pa", "flux"];
+const picteusClientPackageName = `@${nodeSdkScope}/ws-client`;
 
 async function crawl(extensionId, callback)
 {
@@ -64,7 +64,7 @@ async function inspectExtensionRuntimes(directoryName, callback)
   return manifest;
 }
 
-async function build(directoryName, targetDirectoryPath)
+async function build(directoryName, targetDirectoryPath, forceReinstall)
 {
   const directoryPath = path.join(rootDirectoryPath, directoryName);
   console.info(`Packaging the extension in directory '${directoryPath}'`);
@@ -164,6 +164,49 @@ async function runGulpRun(command, execOptions)
   });
 }
 
+function crawlNodePackages(directoryPath, callback)
+{
+  const entries = fs.readdirSync(directoryPath, { withFileTypes: true });
+  for (const entry of entries)
+  {
+    if (entry.name === "node_modules")
+    {
+      continue;
+    }
+
+    const fullPath = path.join(directoryPath, entry.name);
+    if (entry.isDirectory() === true)
+    {
+      crawlNodePackages(fullPath, callback);
+    }
+    else if (entry.name === "package.json")
+    {
+      const content = fs.readFileSync(fullPath, { encoding: "utf8" });
+      let json;
+      try
+      {
+        json = JSON.parse(content);
+      }
+      catch (error)
+      {
+        // This is not a JSON content file
+        continue;
+      }
+
+      const hasWsClient = (json.dependencies !== undefined && json.dependencies[picteusClientPackageName]) !== undefined;
+      if (hasWsClient === true)
+      {
+        console.info(`Handling the package.json file '${fullPath}' client library dependency`);
+        const save = (updatedJson) =>
+        {
+          fs.writeFileSync(fullPath, JSON.stringify(updatedJson, undefined, 2) + "\n");
+        };
+        callback(json, json.dependencies, save);
+      }
+    }
+  }
+}
+
 // noinspection JSUnusedGlobalSymbols
 export const clean = gulp.series(async () =>
   {
@@ -186,9 +229,8 @@ export const clean = gulp.series(async () =>
     };
     await crawl(undefined, async (directoryName) =>
     {
-      await inspectExtensionRuntimes(directoryName, (environment, filePath) =>
+      await inspectExtensionRuntimes(directoryName, (environment, _filePath) =>
       {
-        const options = { recursive: true, force: true };
         const directoryPath = path.join(rootDirectoryPath, directoryName);
         if (environment === "node")
         {
@@ -210,9 +252,16 @@ export const clean = gulp.series(async () =>
 // noinspection JSUnusedGlobalSymbols
 export const updateVersion = gulp.series(async () =>
   {
-    const version = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", "..", "package.json"), { encoding: "utf8" }))["config"]["sdkVersion"];
+    const configJson = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", "..", "package.json"), { encoding: "utf8" }))["config"];
+    const sdkVersion = configJson["sdkVersion"];
+    const apiVersion = configJson["apiVersion"];
     await crawl(undefined, async (directoryName) =>
     {
+      crawlNodePackages(path.join(rootDirectoryPath, directoryName), (json, dependencies, save) =>
+      {
+        dependencies[picteusClientPackageName] = apiVersion;
+        save(json);
+      });
       await inspectExtensionRuntimes(directoryName, (environment, filePath) =>
       {
         if (environment === "node")
@@ -222,12 +271,12 @@ export const updateVersion = gulp.series(async () =>
           const internalSdkIdentifier = `@${nodeSdkScope}/internal-${extensionSdk}`;
           if (dependencies[internalSdkIdentifier] !== undefined)
           {
-            dependencies[internalSdkIdentifier] = version;
+            dependencies[internalSdkIdentifier] = sdkVersion;
           }
           const publicSdkIdentifier = `@${nodeSdkScope}/${extensionSdk}`;
           if (dependencies[publicSdkIdentifier] !== undefined)
           {
-            dependencies[publicSdkIdentifier] = version;
+            dependencies[publicSdkIdentifier] = sdkVersion;
           }
           fs.writeFileSync(filePath, JSON.stringify(json, undefined, 2) + "\n");
         }
@@ -241,7 +290,9 @@ export const updateVersion = gulp.series(async () =>
 export const buildAll = gulp.series(async () =>
 {
   const cliArguments = process.argv;
-  const usage = "Usage: gulp buildAll --target-directory <target-directory> [--extensionId <extension-id>]";
+  const extensionIdOption = "--extensionId";
+  const forceReinstallOption = "--forceReinstall";
+  const usage = `Usage: gulp buildAll --target-directory <target-directory> [${extensionIdOption} <extension-id>] [${forceReinstallOption}]`;
   let targetDirectoryPath;
   {
     const index = cliArguments.indexOf("--targetDirectoryPath");
@@ -253,15 +304,19 @@ export const buildAll = gulp.series(async () =>
   }
   let extensionId;
   {
-    const index = cliArguments.indexOf("--extensionId");
+    const index = cliArguments.indexOf(extensionIdOption);
     if (index !== -1)
     {
       if (index > cliArguments.length)
       {
-        throw new Error(`Missing parameter '--extensionId'\n${usage}`);
+        throw new Error(`Missing parameter '${extensionIdOption}'\n${usage}`);
       }
       extensionId = cliArguments[index + 1];
     }
+  }
+  let forceReinstall;
+  {
+    forceReinstall = cliArguments.indexOf(forceReinstallOption) !== -1;
   }
   console.info(`Packaging ${extensionId === undefined ? "all extensions" : `the extension with id ${extensionId}`} in directory '${rootDirectoryPath}' into '${targetDirectoryPath}' with current working directory '${process.cwd()}', using Node.js ${process.version}`);
 
@@ -283,6 +338,6 @@ export const buildAll = gulp.series(async () =>
   }
   await crawl(extensionId, async (directoryName) =>
   {
-    await build(directoryName, targetDirectoryPath);
+    await build(directoryName, targetDirectoryPath, forceReinstall);
   });
 });
