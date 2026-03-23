@@ -38,8 +38,10 @@ export function AdditionalUiProvider({ children }) {
   }, [transientUis]);
 
   const addTransient = useCallback((additionalUi: AdditionalUi) => {
-    setTransientUis(transientUis.concat(additionalUi));
-    setAdditionalContextValue({ sidebar: [...additionalContextValue.sidebar, additionalUi]  });
+    if (transientUis.find(ui => ui.extensionId === additionalUi.extensionId && ui.uuid === additionalUi.uuid) === undefined) {
+      setTransientUis(transientUis.concat(additionalUi));
+      setAdditionalContextValue({ sidebar: [...additionalContextValue.sidebar, additionalUi] });
+    }
   }, [additionalContextValue, transientUis]);
 
   return (

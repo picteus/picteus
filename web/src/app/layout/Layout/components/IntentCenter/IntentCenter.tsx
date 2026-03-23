@@ -172,7 +172,6 @@ export default function IntentCenter() {
           }
         }
         else if (ui.anchor === UserInterfaceAnchor.Sidebar) {
-          // TODO: handle the case of a transient already added
           const uuid = computeExtensionSidebarUuid(extensionId, ui.id);
           addTransient({
             uuid,
