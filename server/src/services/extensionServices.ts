@@ -1392,6 +1392,7 @@ export class ExtensionService
               {
                 parametersChecker.throwBadParameterError(`The command of the extension with id '${manifest.id}', with '${command.id}' on entity '${command.on.entity}' is missing the ['${requiredEvents.join("', '")}'] events`);
               }
+              // TODO: check the "ui" property of each command parameter
             }
           }
         }

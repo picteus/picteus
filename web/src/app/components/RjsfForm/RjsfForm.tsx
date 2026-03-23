@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { withTheme } from "@rjsf/core";
 import { Theme as MantineTheme } from "@aokiapp/rjsf-mantine-theme";
 import validator from "@rjsf/validator-ajv8";
+import { ErrorBoundary } from "react-error-boundary";
 import { RegistryWidgetsType, RJSFSchema, UiSchema } from "@rjsf/utils";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
@@ -49,6 +50,14 @@ export function extractSchemaAndUiSchema(parameters: object): {
     uiSchema[uiProperty.property] = { "ui:options": uiProperty.ui };
   });
   return { schema: deepCopiedParameters, uiSchema };
+}
+
+function ErrorFallback({ error }) {
+  return (
+    <div role="alert">
+      Internal error: <span style={{ color: "red" }}>{error.message}</span>
+    </div>
+  )
 }
 
 const Form = withTheme(MantineTheme);
@@ -100,17 +109,18 @@ export default function RjsfForm({
   };
 
   return (
-    // TODO: handle the case when the "widgets" property is not compatible with the type, like when the "ui.widget" property is to "updown" while the type is a "boolean".
-    <Form
-      ref={formRef}
-      schema={ensureSchemaDefaultValues(schema)}
-      formData={formData}
-      validator={validator}
-      uiSchema={uiSchema}
-      onChange={(event) => setFormData(event.formData)}
-      widgets={widgets}
-    >
-      <div></div>
-    </Form>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <Form
+        ref={formRef}
+        schema={ensureSchemaDefaultValues(schema)}
+        formData={formData}
+        validator={validator}
+        uiSchema={uiSchema}
+        onChange={(event) => setFormData(event.formData)}
+        widgets={widgets}
+      >
+        <div></div>
+      </Form>
+    </ErrorBoundary>
   );
 }
