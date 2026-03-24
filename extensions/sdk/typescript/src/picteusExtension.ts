@@ -81,10 +81,15 @@ export interface NotificationDialogIconContent extends NotificationDialogContent
   readonly icon?: NotificationResource;
 }
 
+export interface NotificationDialogIconSizeContent extends NotificationDialogIconContent
+{
+  readonly size?: "auto" | "xs" | "s" | "m" | "l" | "xl";
+}
+
 export interface NotificationFormContent
 {
   readonly parameters: Json;
-  readonly dialogContent?: NotificationDialogIconContent;
+  readonly dialogContent?: NotificationDialogIconSizeContent;
 }
 
 export interface NotificationsFormIntent extends NotificationsWithContextIntent
@@ -144,10 +149,9 @@ export interface NotificationsDialogButtons
   no?: string;
 }
 
-export interface NotificationsDialog extends NotificationDialogIconContent
+export interface NotificationsDialog extends NotificationDialogIconSizeContent
 {
   readonly type: NotificationsDialogType;
-  readonly size?: "auto" | "xs" | "s" | "m" | "l" | "xl";
   readonly frame?: NotificationsFrame;
   readonly buttons: NotificationsDialogButtons;
 }

@@ -111,11 +111,11 @@ const zodDialogContent = z.object({
   description: z.string(),
   details: z.string().optional()
 });
-const zodDialogIconContent = z.object({
-  title: z.string(),
-  description: z.string(),
-  details: z.string().optional(),
+const zodDialogIconContent = zodDialogContent.extend({
   icon: z.object({ url: z.string().optional(), content: z.instanceof(Buffer).optional() }).optional()
+});
+const zodDialogIconSizeContent = zodDialogIconContent.extend({
+  size: z.enum(["auto", "xs", "s", "m", "l", "xl"]).optional()
 });
 
 const zodFrameContent = z.object({ url: z.string().optional(), html: z.string().optional() });
@@ -587,7 +587,7 @@ export class NotificationsGateway
       const specificIntent: NotificationsFormIntent = intent;
       if (await checkSchema(z.object({
         parameters: z.object(),
-        dialogContent: zodDialogIconContent.optional()
+        dialogContent: zodDialogIconSizeContent.optional()
       }), intent.form) === false)
       {
         return resolveWithInvalidIntentSchema("NotificationsFormIntent");
@@ -654,13 +654,8 @@ export class NotificationsGateway
     {
       intentName = "dialog";
       const specificIntent: NotificationsDialogIntent = intent;
-      if (await checkSchema(z.object({
+      if (await checkSchema(zodDialogIconSizeContent.extend({
         type: z.enum(NotificationsDialogType),
-        size: z.enum(["auto", "xs", "s", "m", "l", "xl"]).optional(),
-        title: z.string(),
-        description: z.string(),
-        details: z.string().optional(),
-        icon: z.object({ url: z.string().optional(), content: z.instanceof(Buffer).optional() }).optional(),
         frame: z.object({
           content: zodFrameContent,
           height: z.int32().min(0).max(100)

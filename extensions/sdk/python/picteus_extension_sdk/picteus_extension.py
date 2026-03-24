@@ -107,15 +107,20 @@ class NotificationDialogContent(SuperDataClass):
     details: Optional[str] = None
 
 
-@dataclass
+@dataclass(kw_only=True)
 class NotificationDialogIconContent(NotificationDialogContent):
     icon: Optional[NotificationResource] = None
 
 
 @dataclass
+class NotificationDialogIconSizeContent(NotificationDialogIconContent):
+    size: Optional[Literal["auto", "xs", "s", "m", "l", "xl"]] = None
+
+
+@dataclass
 class NotificationFormContent(SuperDataClass):
     parameters: Json
-    dialogContent: Optional[NotificationDialogContent] = None
+    dialogContent: Optional[NotificationDialogIconSizeContent] = None
 
 
 @dataclass(kw_only=True)
@@ -175,9 +180,8 @@ class NotificationsDialogButtons(SuperDataClass):
 
 
 @dataclass(kw_only=True)
-class NotificationsDialog(NotificationDialogIconContent):
+class NotificationsDialog(NotificationDialogIconSizeContent):
     type: NotificationsDialogType
-    size: Optional[Literal["auto", "xs", "s", "m", "l", "xl"]] = None
     frame: Optional[NotificationsFrame] = None
     buttons: NotificationsDialogButtons
 
@@ -205,7 +209,7 @@ class NotificationsImagesIntent(NotificationsWithContextIntent):
 
 
 class NotificationsShowType(StrEnum):
-    SIDEBAR = "sideBar"
+    SIDEBAR = "sidebar"
     EXTENSION_SETTINGS = "extensionSettings"
     IMAGE = "image"
     REPOSITORY = "repository"

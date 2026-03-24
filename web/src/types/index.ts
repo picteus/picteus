@@ -92,9 +92,12 @@ type FrameContent = ({ url: string }) | ({ html: string });
 
 type SizeType = "auto" | "xs" | "s" | "m" | "l" | "xl";
 
-export type DialogType = DialogIconContent & {
-  type: "error" | "info" | "question";
+export type DialogIconSizeContent = DialogIconContent & {
   size?: SizeType;
+};
+
+export type DialogType = DialogIconSizeContent & {
+  type: "error" | "info" | "question";
   frame?: { content: FrameContent; height: number };
   buttons: { yes: string; no?: string };
 };
@@ -117,7 +120,7 @@ export type UiCommandType = {
   context?: ContextType;
   id?: string;
   label?: string;
-  form?: { parameters: RJSFSchema, dialogContent?: DialogIconContent };
+  form?: { parameters: RJSFSchema, dialogContent?: DialogIconSizeContent };
   withTags?: string[];
   ui?: {
     id: string;

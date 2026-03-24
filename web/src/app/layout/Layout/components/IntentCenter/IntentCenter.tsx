@@ -151,9 +151,8 @@ export default function IntentCenter() {
               }}
             />
           ),
-          title: form.dialogContent?.title || t("extensionIntent.modalTitle", {
-            extension: extensionName
-          }),
+          title: form.dialogContent?.title || t("extensionIntent.modalTitle", { extension: extensionName }),
+          size: form.dialogContent?.size,
           onBeforeClose: respondWithCancel
         });
       };
