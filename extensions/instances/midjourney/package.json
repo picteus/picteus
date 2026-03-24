@@ -1,6 +1,6 @@
 {
   "name": "@picteus/midjourney",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "productName": "Midjourney",
   "description": "Accesses to all sorts of Midjourney features.",
   "keywords": [

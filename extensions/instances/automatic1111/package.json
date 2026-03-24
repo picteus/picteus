@@ -1,6 +1,6 @@
 {
   "name": "@picteus/automatic1111",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "productName": "Picteus Automatic1111 extension",
   "description": "A Picteus extension to interact with Automatic1111.",
   "keywords": [

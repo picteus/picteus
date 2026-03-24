@@ -1,6 +1,6 @@
 {
   "id": "midjourney",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Midjourney",
   "description": "Accesses to all sorts of Midjourney features.",
   "runtimes": [
@@ -11,12 +11,21 @@
   "instructions": [
     {
       "events": [
-        "process.started", "process.runCommand", "image.created", "image.updated", "image.computeTags",
+        "process.started",
+        "process.runCommand",
+        "image.created",
+        "image.updated",
+        "image.computeTags",
         "image.computeFeatures"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.created", "image.updated", "image.computeTags", "image.computeFeatures"],
+          "events": [
+            "image.created",
+            "image.updated",
+            "image.computeTags",
+            "image.computeFeatures"
+          ],
           "maximumCount": 8
         }
       ],

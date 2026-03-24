@@ -1,6 +1,6 @@
 {
   "id": "freepik",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Freepik",
   "description": "Accesses to all sorts of Google Gemini image-related features.",
   "runtimes": [
@@ -11,11 +11,20 @@
   "instructions": [
     {
       "events": [
-        "process.started", "image.created", "image.updated", "image.computeTags", "image.runCommand"
+        "process.started",
+        "image.created",
+        "image.updated",
+        "image.computeTags",
+        "image.runCommand"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.created", "image.updated", "image.computeTags", "image.runCommand"],
+          "events": [
+            "image.created",
+            "image.updated",
+            "image.computeTags",
+            "image.runCommand"
+          ],
           "maximumCount": 4
         }
       ],
@@ -43,7 +52,12 @@
                 "type": "string",
                 "title": "Engine",
                 "description": "The Magnific model engine.",
-                "enum": ["automatic", "magnific_illusio", "magnific_sharpy", "magnific_sparkle"],
+                "enum": [
+                  "automatic",
+                  "magnific_illusio",
+                  "magnific_sharpy",
+                  "magnific_sparkle"
+                ],
                 "default": "automatic",
                 "ui": {
                   "widget": "radio",
@@ -54,7 +68,12 @@
                 "type": "string",
                 "title": "Scale factor",
                 "description": "Indicates the scale factor of the image. For higher scales, the image will take longer to process.",
-                "enum": ["2x", "4x", "8x", "16x"],
+                "enum": [
+                  "2x",
+                  "4x",
+                  "8x",
+                  "16x"
+                ],
                 "default": "2x",
                 "ui": {
                   "widget": "radio",
@@ -66,8 +85,15 @@
                 "title": "Optimize for",
                 "description": "Set the styles to optimize the upscale process.",
                 "enum": [
-                  "standard", "soft_portraits", "hard_portraits", "art_n_illustration", "videogame_assets",
-                  "nature_n_landscapes", "films_n_photography", "3d_renders", "science_fiction_n_horror"
+                  "standard",
+                  "soft_portraits",
+                  "hard_portraits",
+                  "art_n_illustration",
+                  "videogame_assets",
+                  "nature_n_landscapes",
+                  "films_n_photography",
+                  "3d_renders",
+                  "science_fiction_n_horror"
                 ],
                 "default": "standard"
               },
@@ -125,7 +151,15 @@
                 }
               }
             },
-            "required": ["engine", "scaleFactor", "optimizedFor", "creativity", "hdr", "resemblance", "fractality"]
+            "required": [
+              "engine",
+              "scaleFactor",
+              "optimizedFor",
+              "creativity",
+              "hdr",
+              "resemblance",
+              "fractality"
+            ]
           },
           "specifications": [
             {
@@ -188,7 +222,12 @@
                 }
               }
             },
-            "required": ["left", "right", "top", "bottom"]
+            "required": [
+              "left",
+              "right",
+              "top",
+              "bottom"
+            ]
           },
           "specifications": [
             {

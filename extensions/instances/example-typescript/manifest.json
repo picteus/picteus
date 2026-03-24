@@ -1,6 +1,6 @@
 {
   "id": "example-typescript",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "TypeScript example",
   "description": "An example of a TypeScript extension.",
   "runtimes": [
@@ -12,15 +12,29 @@
     {
       "execution": {
         "executable": "${node}",
-        "arguments": ["./dist/main.js"]
+        "arguments": [
+          "./dist/main.js"
+        ]
       },
       "events": [
-        "process.started", "process.runCommand", "image.created", "image.updated", "image.deleted", "image.computeTags",
-        "image.computeFeatures", "image.runCommand"
+        "process.started",
+        "process.runCommand",
+        "image.created",
+        "image.updated",
+        "image.deleted",
+        "image.computeTags",
+        "image.computeFeatures",
+        "image.runCommand"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.created", "image.updated", "image.deleted", "image.computeTags", "image.computeFeatures"],
+          "events": [
+            "image.created",
+            "image.updated",
+            "image.deleted",
+            "image.computeTags",
+            "image.computeFeatures"
+          ],
           "durationInMilliseconds": 50,
           "maximumCount": 20
         }
@@ -59,7 +73,11 @@
                 "type": "string",
                 "title": "Format",
                 "description": "What is the format of the image?",
-                "enum": ["jpeg", "png", "webp"],
+                "enum": [
+                  "jpeg",
+                  "png",
+                  "webp"
+                ],
                 "default": "jpeg",
                 "ui": {
                   "widget": "radio",
@@ -94,7 +112,10 @@
                 "type": "string",
                 "title": "Resize Render",
                 "description": "If the 'width' or 'height' parameter is provided, whether the final image dimensions should be within the box defined by those parameters.",
-                "enum": ["inbox", "outbox"],
+                "enum": [
+                  "inbox",
+                  "outbox"
+                ],
                 "default": "inbox",
                 "ui": {
                   "widget": "radio",
@@ -102,7 +123,10 @@
                 }
               }
             },
-            "required": ["format", "stripMetadata"]
+            "required": [
+              "format",
+              "stripMetadata"
+            ]
           },
           "specifications": [
             {
@@ -132,7 +156,9 @@
                 }
               }
             },
-            "required": ["age"]
+            "required": [
+              "age"
+            ]
           },
           "specifications": [
             {
@@ -154,7 +180,10 @@
                 "type": "string",
                 "title": "Type",
                 "description": "What kind of dialog box do you want to open?",
-                "enum": ["Simple", "With HTML"],
+                "enum": [
+                  "Simple",
+                  "With HTML"
+                ],
                 "default": "Simple",
                 "ui": {
                   "widget": "radio",
@@ -162,7 +191,9 @@
                 }
               }
             },
-            "required": ["type"]
+            "required": [
+              "type"
+            ]
           },
           "specifications": [
             {
@@ -210,11 +241,18 @@
                 "type": "string",
                 "title": "Type",
                 "description": "What do you want to show?",
-                "enum": ["sidebar", "extensionSettings", "image", "repository"],
+                "enum": [
+                  "sidebar",
+                  "extensionSettings",
+                  "image",
+                  "repository"
+                ],
                 "default": "extensionSettings"
               }
             },
-            "required": ["type"]
+            "required": [
+              "type"
+            ]
           },
           "specifications": [
             {
@@ -248,6 +286,8 @@
         }
       }
     },
-    "required": ["parameter"]
+    "required": [
+      "parameter"
+    ]
   }
 }

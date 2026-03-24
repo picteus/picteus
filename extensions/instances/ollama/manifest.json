@@ -1,6 +1,6 @@
 {
   "id": "ollama",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "name": "Ollama",
   "description": "Computes the caption features of an image through Vision Languages (VL) through Ollama.",
   "runtimes": [
@@ -12,12 +12,25 @@
     {
       "execution": {
         "executable": "${node}",
-        "arguments": ["./dist/main.js"]
+        "arguments": [
+          "./dist/main.js"
+        ]
       },
-      "events": ["process.started", "image.created", "image.updated", "image.computeFeatures", "image.runCommand"],
+      "events": [
+        "process.started",
+        "image.created",
+        "image.updated",
+        "image.computeFeatures",
+        "image.runCommand"
+      ],
       "throttlingPolicies": [
         {
-          "events": ["image.created", "image.updated", "image.computeFeatures", "image.runCommand"],
+          "events": [
+            "image.created",
+            "image.updated",
+            "image.computeFeatures",
+            "image.runCommand"
+          ],
           "durationInMilliseconds": 200,
           "maximumCount": 2
         }
@@ -41,8 +54,15 @@
                 "title": "Model",
                 "description": "The Vision Languages (VL) model to use for answering the question.",
                 "enum": [
-                  "llava", "qwen2.5vl", "minicpm-v", "granite3.2-vision", "gemma3", "mistral-small3.2", "moondream",
-                  "bakllava", "llava-phi3"
+                  "llava",
+                  "qwen2.5vl",
+                  "minicpm-v",
+                  "granite3.2-vision",
+                  "gemma3",
+                  "mistral-small3.2",
+                  "moondream",
+                  "bakllava",
+                  "llava-phi3"
                 ],
                 "default": "llava"
               },
@@ -56,7 +76,10 @@
                 }
               }
             },
-            "required": ["model", "question"]
+            "required": [
+              "model",
+              "question"
+            ]
           },
           "specifications": [
             {
@@ -87,12 +110,23 @@
           "type": "string",
           "description": "A Vision Language model.",
           "enum": [
-            "llava", "qwen2.5vl", "minicpm-v", "granite3.2-vision", "gemma3", "mistral-small3.2", "moondream",
-            "bakllava", "llava-phi3"
+            "llava",
+            "qwen2.5vl",
+            "minicpm-v",
+            "granite3.2-vision",
+            "gemma3",
+            "mistral-small3.2",
+            "moondream",
+            "bakllava",
+            "llava-phi3"
           ],
-          "default": ["llava"]
+          "default": [
+            "llava"
+          ]
         },
-        "default": ["llava"]
+        "default": [
+          "llava"
+        ]
       },
       "questions": {
         "type": "array",
@@ -107,6 +141,9 @@
         ]
       }
     },
-    "required": ["ollamaUrl", "models"]
+    "required": [
+      "ollamaUrl",
+      "models"
+    ]
   }
 }

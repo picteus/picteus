@@ -102,6 +102,8 @@ For building the SDKs and extensions:
 - run the `npm run instances:build` script to build the extensions ;
 - run the `npm run build` script to build both.
 
+When a new version should be applied to all extension, run the `npm run incrementVersion` script to increment their version.
+
 ### SDKs publication
 
 To publish a new version of the SDKs, run the `npm run sdk:publish` script, after having built the SDKs via the `sdk:public:build` script:

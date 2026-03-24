@@ -1,6 +1,6 @@
 {
   "id": "bria",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Bria",
   "description": "Removes background from images.",
   "runtimes": [
@@ -11,17 +11,22 @@
   "instructions": [
     {
       "events": [
-        "process.started", "image.runCommand"
+        "process.started",
+        "image.runCommand"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.runCommand"],
+          "events": [
+            "image.runCommand"
+          ],
           "maximumCount": 1
         }
       ],
       "execution": {
         "executable": "${venvPython}",
-        "arguments": ["./main.py"]
+        "arguments": [
+          "./main.py"
+        ]
       },
       "commands": [
         {

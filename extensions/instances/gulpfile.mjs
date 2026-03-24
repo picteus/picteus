@@ -14,6 +14,26 @@ const extensionSdk = "extension-sdk";
 const nodeSdkScope = "picteus";
 const excludedPackagedExtensionIds = ["example-python", "example-typescript", "c2pa", "flux"];
 const picteusClientPackageName = `@${nodeSdkScope}/ws-client`;
+const packageJsonFileName = "package.json";
+const manifestFileName = "manifest.json";
+
+function parseJsonFile(filePath)
+{
+  try
+  {
+    return JSON.parse(fs.readFileSync(filePath, { encoding: "utf8" }));
+  }
+  catch (error)
+  {
+    // This is not a JSON content file
+    return undefined;
+  }
+}
+
+function writeJsonFile(filePath, json)
+{
+  fs.writeFileSync(filePath, JSON.stringify(json, undefined, 2) + "\n");
+}
 
 async function crawl(extensionId, callback)
 {
@@ -26,7 +46,7 @@ async function crawl(extensionId, callback)
       {
         continue;
       }
-      await callback(fileName);
+      await callback(fileName, path.join(rootDirectoryPath, fileName));
     }
   }
 }
@@ -35,14 +55,14 @@ async function inspectExtensionRuntimes(directoryName, callback)
 {
   const directoryPath = path.join(rootDirectoryPath, directoryName);
   console.info(`Analyzing the extension in directory '${directoryPath}'`);
-  const manifest = JSON.parse(fs.readFileSync(path.join(directoryPath, "manifest.json"), { encoding: "utf8" }));
+  const manifest = parseJsonFile(path.join(directoryPath, manifestFileName));
   for (const runtime of manifest["runtimes"])
   {
     const environment = runtime["environment"];
     if (environment === "node")
     {
       // It requires some Node.js runtime environment
-      const filePath = path.join(directoryPath, "package.json");
+      const filePath = path.join(directoryPath, packageJsonFileName);
       if (fs.existsSync(filePath) === true)
       {
         console.info(`Found a Node.js runtime environment depending on file '${filePath}'`);
@@ -179,27 +199,20 @@ function crawlNodePackages(directoryPath, callback)
     {
       crawlNodePackages(fullPath, callback);
     }
-    else if (entry.name === "package.json")
+    else if (entry.name === packageJsonFileName)
     {
-      const content = fs.readFileSync(fullPath, { encoding: "utf8" });
-      let json;
-      try
+      const json = parseJsonFile(fullPath);
+      if (json === undefined)
       {
-        json = JSON.parse(content);
-      }
-      catch (error)
-      {
-        // This is not a JSON content file
         continue;
       }
-
       const hasWsClient = (json.dependencies !== undefined && json.dependencies[picteusClientPackageName]) !== undefined;
       if (hasWsClient === true)
       {
-        console.info(`Handling the package.json file '${fullPath}' client library dependency`);
+        console.info(`Handling the ${packageJsonFileName} file '${fullPath}' client library dependency`);
         const save = (updatedJson) =>
         {
-          fs.writeFileSync(fullPath, JSON.stringify(updatedJson, undefined, 2) + "\n");
+          writeJsonFile(fullPath, updatedJson);
         };
         callback(json, json.dependencies, save);
       }
@@ -227,11 +240,10 @@ export const clean = gulp.series(async () =>
         }
       }
     };
-    await crawl(undefined, async (directoryName) =>
+    await crawl(undefined, async (directoryName, directoryPath) =>
     {
       await inspectExtensionRuntimes(directoryName, (environment, _filePath) =>
       {
-        const directoryPath = path.join(rootDirectoryPath, directoryName);
         if (environment === "node")
         {
           deleteNode(path.join(directoryPath, "node_modules"), true);
@@ -250,14 +262,57 @@ export const clean = gulp.series(async () =>
 );
 
 // noinspection JSUnusedGlobalSymbols
+export const incrementVersion = gulp.series(async () =>
+  {
+    const cliArguments = process.argv;
+    const versionComponentOption = "--component";
+    const usage = `Usage: gulp incrementVersion ${versionComponentOption} M | m | p`;
+    let versionComponent;
+    {
+      const index = cliArguments.indexOf(versionComponentOption);
+      if (index === -1 || index > cliArguments.length)
+      {
+        throw new Error(`Wrong CLI arguments\n${usage}`);
+      }
+      versionComponent = cliArguments[index + 1];
+      if (versionComponent !== "M" && versionComponent !== "m" && versionComponent !== "p")
+      {
+        throw new Error(`Wrong CLI arguments\n${usage}`);
+      }
+    }
+    await crawl(undefined, async (directoryName, directoryPath) =>
+    {
+      await inspectExtensionRuntimes(directoryName, (environment, filePath) =>
+      {
+        const manifestFilePath = path.join(directoryPath, manifestFileName);
+        const manifest = parseJsonFile(manifestFilePath);
+        const manifestVersion = manifest["version"];
+        const [, major, minor, patch] = manifestVersion.match(/^(\d+)\.(\d+)\.(\d+)$/);
+        const newVersion = versionComponent === "M" ? (`${parseInt(major) + 1}.${minor}.${patch}`) : (versionComponent === "m" ? (`${major}.${parseInt(minor) + 1}.${patch}`) : (`${major}.${minor}.${parseInt(patch) + 1}`));
+        console.info(`Updating the extension with id '${manifest.id}' with file '${manifestFilePath}' from version '${manifestVersion}' to version '${newVersion}'`);
+        manifest.version = newVersion;
+        writeJsonFile(manifestFilePath, manifest);
+        if (environment === "node")
+        {
+          const json = parseJsonFile(filePath);
+          json.version = newVersion;
+          writeJsonFile(filePath, json);
+        }
+      });
+    });
+    return Promise.resolve();
+  }
+);
+
+// noinspection JSUnusedGlobalSymbols
 export const updateVersion = gulp.series(async () =>
   {
-    const configJson = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", "..", "package.json"), { encoding: "utf8" }))["config"];
+    const configJson = parseJsonFile(path.join(rootDirectoryPath, "..", "..", packageJsonFileName))["config"];
     const sdkVersion = configJson["sdkVersion"];
     const apiVersion = configJson["apiVersion"];
-    await crawl(undefined, async (directoryName) =>
+    await crawl(undefined, async (directoryName, directoryPath) =>
     {
-      crawlNodePackages(path.join(rootDirectoryPath, directoryName), (json, dependencies, save) =>
+      crawlNodePackages(directoryPath, (json, dependencies, save) =>
       {
         dependencies[picteusClientPackageName] = apiVersion;
         save(json);
@@ -266,7 +321,7 @@ export const updateVersion = gulp.series(async () =>
       {
         if (environment === "node")
         {
-          const json = JSON.parse(fs.readFileSync(filePath, { encoding: "utf8" }));
+          const json = parseJsonFile(filePath);
           const dependencies = json["dependencies"];
           const internalSdkIdentifier = `@${nodeSdkScope}/internal-${extensionSdk}`;
           if (dependencies[internalSdkIdentifier] !== undefined)
@@ -278,7 +333,7 @@ export const updateVersion = gulp.series(async () =>
           {
             dependencies[publicSdkIdentifier] = sdkVersion;
           }
-          fs.writeFileSync(filePath, JSON.stringify(json, undefined, 2) + "\n");
+          writeJsonFile(filePath, json);
         }
       });
     });
@@ -290,12 +345,13 @@ export const updateVersion = gulp.series(async () =>
 export const buildAll = gulp.series(async () =>
 {
   const cliArguments = process.argv;
+  const targetDirectoryPathOption = "--targetDirectoryPath";
   const extensionIdOption = "--extensionId";
   const forceReinstallOption = "--forceReinstall";
-  const usage = `Usage: gulp buildAll --target-directory <target-directory> [${extensionIdOption} <extension-id>] [${forceReinstallOption}]`;
+  const usage = `Usage: gulp buildAll ${targetDirectoryPathOption} <target-directory> [${extensionIdOption} <extension-id>] [${forceReinstallOption}]`;
   let targetDirectoryPath;
   {
-    const index = cliArguments.indexOf("--targetDirectoryPath");
+    const index = cliArguments.indexOf(targetDirectoryPathOption);
     if (index === -1 || index > cliArguments.length)
     {
       throw new Error(`Wrong CLI arguments\n${usage}`);
@@ -318,7 +374,7 @@ export const buildAll = gulp.series(async () =>
   {
     forceReinstall = cliArguments.indexOf(forceReinstallOption) !== -1;
   }
-  console.info(`Packaging ${extensionId === undefined ? "all extensions" : `the extension with id ${extensionId}`} in directory '${rootDirectoryPath}' into '${targetDirectoryPath}' with current working directory '${process.cwd()}', using Node.js ${process.version}`);
+  console.info(`Packaging ${extensionId === undefined ? "all extensions" : `the extension with id '${extensionId}'`} in directory '${rootDirectoryPath}' into '${targetDirectoryPath}' with current working directory '${process.cwd()}', using Node.js ${process.version}`);
 
   if (process.platform === "darwin" || process.platform === "linux")
   {
@@ -336,7 +392,7 @@ export const buildAll = gulp.series(async () =>
   {
     fs.mkdirSync(targetDirectoryPath, { recursive: true });
   }
-  await crawl(extensionId, async (directoryName) =>
+  await crawl(extensionId, async (directoryName, _directoryPath) =>
   {
     await build(directoryName, targetDirectoryPath, forceReinstall);
   });

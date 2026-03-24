@@ -1,6 +1,6 @@
 {
   "id": "gemini",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Google Gemini",
   "description": "Accesses to all sorts of Google Gemini image-related features.",
   "runtimes": [
@@ -11,12 +11,20 @@
   "instructions": [
     {
       "events": [
-        "process.started", "process.runCommand", "image.created", "image.updated", "image.computeTags",
+        "process.started",
+        "process.runCommand",
+        "image.created",
+        "image.updated",
+        "image.computeTags",
         "image.runCommand"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.created", "image.updated", "image.computeTags"],
+          "events": [
+            "image.created",
+            "image.updated",
+            "image.computeTags"
+          ],
           "maximumCount": 4
         }
       ],
@@ -44,7 +52,10 @@
                 "type": "string",
                 "title": "Model",
                 "description": "The Machine Learning model to use for image generation.",
-                "enum": ["gemini-3-pro-image-preview", "gemini-2.5-flash-image"],
+                "enum": [
+                  "gemini-3-pro-image-preview",
+                  "gemini-2.5-flash-image"
+                ],
                 "default": "gemini-3-pro-image-preview",
                 "ui": {
                   "widget": "radio",
@@ -55,7 +66,18 @@
                 "type": "string",
                 "title": "Aspect Ratio",
                 "description": "The aspect ratio of the generated image.",
-                "enum": ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+                "enum": [
+                  "1:1",
+                  "2:3",
+                  "3:2",
+                  "3:4",
+                  "4:3",
+                  "4:5",
+                  "5:4",
+                  "9:16",
+                  "16:9",
+                  "21:9"
+                ],
                 "default": "1:1",
                 "ui": {
                   "widget": "radio",
@@ -72,7 +94,11 @@
                 }
               }
             },
-            "required": ["model", "aspectRatio", "prompt"]
+            "required": [
+              "model",
+              "aspectRatio",
+              "prompt"
+            ]
           },
           "specifications": [
             {
@@ -94,7 +120,10 @@
                 "type": "string",
                 "title": "Model",
                 "description": "The Machine Learning model to use for image generation.",
-                "enum": ["gemini-2.5-flash-image", "gemini-3-pro-image-preview"],
+                "enum": [
+                  "gemini-2.5-flash-image",
+                  "gemini-3-pro-image-preview"
+                ],
                 "default": "gemini-3-pro-image-preview",
                 "ui": {
                   "widget": "radio",
@@ -105,7 +134,18 @@
                 "type": "string",
                 "title": "Aspect Ratio",
                 "description": "The aspect ratio of the generated image.",
-                "enum": ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+                "enum": [
+                  "1:1",
+                  "2:3",
+                  "3:2",
+                  "3:4",
+                  "4:3",
+                  "4:5",
+                  "5:4",
+                  "9:16",
+                  "16:9",
+                  "21:9"
+                ],
                 "default": "1:1",
                 "ui": {
                   "widget": "radio",
@@ -122,7 +162,11 @@
                 }
               }
             },
-            "required": ["model", "aspectRatio", "prompt"]
+            "required": [
+              "model",
+              "aspectRatio",
+              "prompt"
+            ]
           },
           "specifications": [
             {

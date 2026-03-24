@@ -1,6 +1,6 @@
 {
   "id": "image-commons",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Image Commons",
   "description": "Proposes common operations on images",
   "runtimes": [
@@ -12,14 +12,21 @@
     {
       "execution": {
         "executable": "${node}",
-        "arguments": ["./dist/back-end/main.js"]
+        "arguments": [
+          "./dist/back-end/main.js"
+        ]
       },
       "events": [
-        "process.started", "process.runCommand", "image.runCommand"
+        "process.started",
+        "process.runCommand",
+        "image.runCommand"
       ],
       "throttlingPolicies": [
         {
-          "events": ["process.runCommand", "image.runCommand"],
+          "events": [
+            "process.runCommand",
+            "image.runCommand"
+          ],
           "durationInMilliseconds": 50,
           "maximumCount": 20
         }
@@ -38,7 +45,14 @@
                 "type": "string",
                 "title": "Format",
                 "description": "What is the format of the image?",
-                "enum": ["jpeg", "png", "webp", "gif", "avif", "heif"],
+                "enum": [
+                  "jpeg",
+                  "png",
+                  "webp",
+                  "gif",
+                  "avif",
+                  "heif"
+                ],
                 "default": "jpeg",
                 "ui": {
                   "widget": "radio",
@@ -73,7 +87,10 @@
                 "type": "string",
                 "title": "Resize Render",
                 "description": "If the 'width' or 'height' parameter is provided, whether the final image dimensions should be within the box defined by those parameters.",
-                "enum": ["inbox", "outbox"],
+                "enum": [
+                  "inbox",
+                  "outbox"
+                ],
                 "default": "inbox",
                 "ui": {
                   "widget": "radio",
@@ -81,7 +98,10 @@
                 }
               }
             },
-            "required": ["format", "stripMetadata"]
+            "required": [
+              "format",
+              "stripMetadata"
+            ]
           },
           "specifications": [
             {
@@ -146,7 +166,10 @@
                 }
               }
             },
-            "required": ["collectionId", "tags"]
+            "required": [
+              "collectionId",
+              "tags"
+            ]
           },
           "specifications": [
             {

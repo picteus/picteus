@@ -1,6 +1,6 @@
 {
   "id": "comfyui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "ComfyUI",
   "description": "Interacts with ComfyUI.",
   "runtimes": [
@@ -11,12 +11,21 @@
   "instructions": [
     {
       "events": [
-        "process.started", "image.created", "image.updated", "image.computeTags", "image.computeFeatures",
+        "process.started",
+        "image.created",
+        "image.updated",
+        "image.computeTags",
+        "image.computeFeatures",
         "image.runCommand"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.created", "image.updated", "image.computeTags", "image.computeFeatures"],
+          "events": [
+            "image.created",
+            "image.updated",
+            "image.computeTags",
+            "image.computeFeatures"
+          ],
           "maximumCount": 10
         }
       ],
@@ -30,14 +39,18 @@
       ],
       "execution": {
         "executable": "${node}",
-        "arguments": ["./dist/back-end/main.js"]
+        "arguments": [
+          "./dist/back-end/main.js"
+        ]
       },
       "commands": [
         {
           "id": "editComfyUiWorkflow",
           "on": {
             "entity": "Image",
-            "withTags": ["comfyui"]
+            "withTags": [
+              "comfyui"
+            ]
           },
           "specifications": [
             {
@@ -51,7 +64,9 @@
           "id": "analyzeComfyUiWorkflow",
           "on": {
             "entity": "Image",
-            "withTags": ["comfyui"]
+            "withTags": [
+              "comfyui"
+            ]
           },
           "specifications": [
             {
@@ -79,7 +94,9 @@
         "description": "The path of the root directory where ComfyUI is installed."
       }
     },
-    "required": ["url"]
+    "required": [
+      "url"
+    ]
   },
   "ui": {
     "elements": [

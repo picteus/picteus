@@ -1,6 +1,6 @@
 {
   "id": "flux",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Flux",
   "description": "Generates an image via the Flux model.",
   "runtimes": [
@@ -10,10 +10,15 @@
   ],
   "instructions": [
     {
-      "events": ["process.started", "process.runCommand"],
+      "events": [
+        "process.started",
+        "process.runCommand"
+      ],
       "throttlingPolicies": [
         {
-          "events": ["process.runCommand"],
+          "events": [
+            "process.runCommand"
+          ],
           "maximumCount": 1
         }
       ],
@@ -36,7 +41,9 @@
                 "type": "string",
                 "title": "Model",
                 "description": "The Machine Learning model to use for image generation.",
-                "enum": ["gemini-2.5-flash-image"],
+                "enum": [
+                  "gemini-2.5-flash-image"
+                ],
                 "default": "gemini-2.5-flash-image"
               },
               "description": {
@@ -49,11 +56,26 @@
                 "type": "string",
                 "title": "Aspect Ratio",
                 "description": "The aspect ratio of the generated image.",
-                "enum": ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+                "enum": [
+                  "1:1",
+                  "2:3",
+                  "3:2",
+                  "3:4",
+                  "4:3",
+                  "4:5",
+                  "5:4",
+                  "9:16",
+                  "16:9",
+                  "21:9"
+                ],
                 "default": "1:1"
               }
             },
-            "required": ["model", "description", "aspectRatio"]
+            "required": [
+              "model",
+              "description",
+              "aspectRatio"
+            ]
           },
           "specifications": [
             {

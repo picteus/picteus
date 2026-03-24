@@ -1,6 +1,6 @@
 {
   "id": "c2pa",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "C2PA",
   "description": "Reveals the Content Authenticity Initiative metadata.",
   "runtimes": [
@@ -10,10 +10,15 @@
   ],
   "instructions": [
     {
-      "events": ["process.started", "image.runCommand"],
+      "events": [
+        "process.started",
+        "image.runCommand"
+      ],
       "execution": {
         "executable": "${node}",
-        "arguments": ["./dist/main.js"]
+        "arguments": [
+          "./dist/main.js"
+        ]
       },
       "commands": [
         {

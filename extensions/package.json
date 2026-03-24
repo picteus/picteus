@@ -49,6 +49,7 @@
     "clean:instances": "gulp -f instances/gulpfile.mjs clean",
     "preclean": "npm run .env",
     "clean": "npm run clean:this && npm run clean:typescript && npm run clean:python && npm run clean:instances",
+    "incrementVersion": "gulp -f instances/gulpfile.mjs incrementVersion --component m",
     "updateVersion": "npm run sdk:updateVersion && npm run instances:updateVersion",
     "sdk:updateVersion": "gulp -f sdk/gulpfile.mjs updateVersion",
     "sdk:typescript:prepare:dotenv": "cross-var \"shx rm -rf $TYPESCRIPT_SDK_DIRECTORY_PATH/src/picteus-ws-client && symlink-dir $OPENAPI_DIRECTORY_PATH/typescript-fetch/src $TYPESCRIPT_SDK_DIRECTORY_PATH/src/picteus-ws-client && cd $TYPESCRIPT_SDK_DIRECTORY_PATH && npm install\"",

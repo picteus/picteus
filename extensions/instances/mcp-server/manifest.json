@@ -1,6 +1,6 @@
 {
   "id": "mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Picteus MCP Server",
   "description": "Exposes a MCP server over the Picteus API.",
   "runtimes": [
@@ -46,7 +46,8 @@
       }
     },
     "required": [
-      "portNumber", "apiKey"
+      "portNumber",
+      "apiKey"
     ]
   }
 }

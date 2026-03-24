@@ -1,6 +1,6 @@
 {
   "id": "stable-diffusion-upscaler",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Stable Diffusion Upscaler",
   "description": "Upscales an image.",
   "runtimes": [
@@ -11,17 +11,22 @@
   "instructions": [
     {
       "events": [
-        "process.started", "image.runCommand"
+        "process.started",
+        "image.runCommand"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.runCommand"],
+          "events": [
+            "image.runCommand"
+          ],
           "maximumCount": 1
         }
       ],
       "execution": {
         "executable": "${venvPython}",
-        "arguments": ["./main.py"]
+        "arguments": [
+          "./main.py"
+        ]
       },
       "commands": [
         {

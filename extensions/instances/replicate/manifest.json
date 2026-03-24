@@ -1,6 +1,6 @@
 {
   "id": "replicate",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Replicate",
   "description": "Wraps the Replicate image generation features.",
   "runtimes": [
@@ -50,7 +50,9 @@
                 "default": "bytedance/seedream-4"
               }
             },
-            "required": ["modelIdentifier"]
+            "required": [
+              "modelIdentifier"
+            ]
           },
           "specifications": [
             {

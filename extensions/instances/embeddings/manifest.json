@@ -1,6 +1,6 @@
 {
   "id": "embeddings",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Embeddings",
   "description": "Computes the embeddings of an image.",
   "runtimes": [
@@ -11,11 +11,20 @@
   "instructions": [
     {
       "events": [
-        "process.started", "image.created", "image.updated", "image.computeEmbeddings", "text.computeEmbeddings"
+        "process.started",
+        "image.created",
+        "image.updated",
+        "image.computeEmbeddings",
+        "text.computeEmbeddings"
       ],
       "throttlingPolicies": [
         {
-          "events": ["image.created", "image.updated", "image.computeEmbeddings", "text.computeEmbeddings"],
+          "events": [
+            "image.created",
+            "image.updated",
+            "image.computeEmbeddings",
+            "text.computeEmbeddings"
+          ],
           "durationInMilliseconds": 250,
           "maximumCount": 4
         }
@@ -30,7 +39,9 @@
       ],
       "execution": {
         "executable": "${venvPython}",
-        "arguments": ["./main.py"]
+        "arguments": [
+          "./main.py"
+        ]
       }
     }
   ],
