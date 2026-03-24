@@ -11,7 +11,7 @@ import style from "./Sidebar.module.scss";
 
 import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
-import { ChannelEnum, computeResourceTypeUrl } from "types";
+import { ChannelEnum, CommandParameters, computeResourceTypeUrl } from "types";
 
 interface NavbarLinkProps {
   icon: ReactNode;
@@ -65,12 +65,31 @@ export default function Sidebar() {
               navigate(routePathFragment);
             }
             else {
-              if ("url" in element.content) {
-                const url = element.content.url;
-                isAvailable() === false ? window.open(url, "_blank") : sendCommand("openWindow", { url });
+              const content = element.content;
+              if (isAvailable() === false){
+                if ("url" in content) {
+                  const url = content.url;
+                  window.open(url, "_blank");
+                }
+                else {
+                  console.error("Cannot handle a content with no 'url' property when no host is available");
+                }
               }
-              // TODO: hanlde the case of the "content"
-            }
+              else {
+                let parameters: CommandParameters;
+                if ("url" in content) {
+                  parameters = { url: content.url };
+                }
+                else if ("html" in content) {
+                  parameters = { html: content.html };
+                }
+                else {
+                  console.error("Cannot handle a content with no 'frameContent.url' nor 'frameContent.html' property");
+                  return;
+                }
+                 void sendCommand("openWindow", parameters)
+                }
+              }
           }
         }
         />

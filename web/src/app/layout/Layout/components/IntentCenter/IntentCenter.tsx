@@ -8,7 +8,7 @@ import { UserInterfaceAnchor } from "@picteus/ws-client";
 import { ExtensionsService, ImageService, StorageService } from "app/services";
 import { CommandForm, DialogForm } from "app/components";
 import { FullscreenURLModal } from "app/components/ActionModal";
-import { ActionModalValue, ChannelEnum, ResourceType, ShowType, UiCommandType } from "types";
+import { ActionModalValue, ChannelEnum, CommandParameters, ResourceType, ShowType, UiCommandType } from "types";
 import {
   useActionModalContext,
   useAdditionalUiContext,
@@ -160,23 +160,29 @@ export default function IntentCenter() {
 
       const handleUi = () => {
         const ui = intent.ui;
+        const frameContent = ui.frameContent;
         if (ui.anchor === UserInterfaceAnchor.Window) {
-          if ("url" in ui.frameContent) {
-            sendCommand("openWindow", { url: ui.frameContent }).then(() => {
-              respondWithValue();
-            }).catch(error=>respondWithError(error.message));
+          let parameters: CommandParameters;
+          if ("url" in frameContent) {
+            parameters = { url: frameContent.url };
+          }
+          else if ("html" in frameContent) {
+            parameters = { html: frameContent.html };
           }
           else {
-            // TODO: handle the case of the "html"
-            respondWithError("Cannot handle the 'ui' intent with an HTML content");
+            respondWithError("Cannot handle the 'ui' intent with no 'frameContent.url' nor 'frameContent.html' property");
+            return;
           }
+          sendCommand("openWindow", parameters).then(() => {
+            respondWithValue();
+          }).catch(error => respondWithError(error.message));
         }
         else if (ui.anchor === UserInterfaceAnchor.Sidebar) {
           const uuid = computeExtensionSidebarUuid(extensionId, ui.id);
           addTransient({
             uuid,
             anchor: UserInterfaceAnchor.Sidebar,
-            content: ui.frameContent,
+            content: frameContent,
             icon: computeIcon(ui.dialogContent?.icon),
             title: ui.dialogContent?.title,
             extensionId
@@ -187,7 +193,8 @@ export default function IntentCenter() {
         else {
           addModal({
             fullScreen: true,
-            component: <FullscreenURLModal content={ui.frameContent} />,
+            component: <FullscreenURLModal content={frameContent} />,
+            icon: ui.dialogContent?.icon,
             title: ui.dialogContent?.title,
             onBeforeClose: respondWithCancel
           });

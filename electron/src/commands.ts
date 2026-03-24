@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
 import { ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 
@@ -166,6 +169,7 @@ export class CommandsManager
 
   private async handleCommand(socket: Socket, id: string, command: string, parameters: Record<string, any>): Promise<void>
   {
+    logger.info(`Received the '${command}' command with id '${id}'`);
     switch (command)
     {
       default:
@@ -211,9 +215,31 @@ export class CommandsManager
         break;
       case "openWindow":
       {
-        const url = parameters.url;
-        logger.info(`Opening the window with URL '${url}'`);
-        await ApplicationWrapper.instance().openWindow(url);
+        const { url, html } = parameters;
+        if (url === undefined && html === undefined)
+        {
+          return this.sendCommandError(socket, id, "Missing 'url' or 'html' parameter");
+        }
+        else if (url !== undefined && html !== undefined)
+        {
+          return this.sendCommandError(socket, id, "The 'url' or 'html' parameters should not be defined at the same time");
+        }
+        let actualUrl: string;
+        if (html !== undefined)
+        {
+          // TODO: introduce an "id" parameter in order to reopen the same window
+          const directoryPath = fs.mkdtempSync(path.join(os.tmpdir(), "picteus-"));
+          const filePath = path.join(directoryPath, "index.html");
+          fs.writeFileSync(filePath, html);
+          actualUrl = `file://${filePath}`;
+        }
+        else
+        {
+          actualUrl = url;
+        }
+        logger.info(`Opening the window with URL '${actualUrl}'`);
+        await ApplicationWrapper.instance().openWindow(actualUrl);
+        this.sendCommandSuccess(socket, id, undefined);
       }
         break;
     }
@@ -221,11 +247,13 @@ export class CommandsManager
 
   private sendCommandSuccess(socket: Socket, id: string, value: any): void
   {
-    socket.emit("result", { id, value: value });
+    logger.info(`Sending a success response related to the command with id '${id}'`);
+    socket.emit("result", { id, value });
   }
 
   private sendCommandError(socket: Socket, id: string, error: string | Error): void
   {
+    logger.warn(`Sending an error response related to the command with id '${id}'`);
     socket.emit("result", { id, error: error instanceof Error ? error.message : error as string });
   }
 

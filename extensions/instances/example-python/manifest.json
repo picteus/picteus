@@ -163,7 +163,7 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Ask for something from the user",
+              "label": "Ask something",
               "description": "Asks questions to the user and if the answer on whether she likes chocolate, opens a modal on a website."
             }
           ]
@@ -204,6 +204,57 @@
           ]
         },
         {
+          "id": "ui",
+          "on": {
+            "entity": "Process"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "anchor": {
+                "type": "string",
+                "title": "Anchor",
+                "description": "What kind of UI do you want to open?",
+                "enum": [
+                  "Modal",
+                  "Sidebar",
+                  "Window"
+                ],
+                "default": "Modal",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
+              },
+              "nature": {
+                "type": "string",
+                "title": "Nature",
+                "description": "What nature of content do you want to open?",
+                "enum": [
+                  "URL",
+                  "HTML"
+                ],
+                "default": "URL",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
+              }
+            },
+            "required": [
+              "anchor",
+              "nature"
+            ]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Open a UI",
+              "description": "Opens a specific UI, after having asked which one."
+            }
+          ]
+        },
+        {
           "id": "application",
           "on": {
             "entity": "Process"
@@ -213,19 +264,6 @@
               "locale": "en",
               "label": "Open application",
               "description": "Opens an application in a dialog box."
-            }
-          ]
-        },
-        {
-          "id": "swaggerui",
-          "on": {
-            "entity": "Process"
-          },
-          "specifications": [
-            {
-              "locale": "en",
-              "label": "Swagger UI",
-              "description": "Opens the Swagger UI in the sidebar."
             }
           ]
         },
@@ -257,8 +295,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Show an item",
-              "description": "Asks the user…."
+              "label": "Show item",
+              "description": "Asks the user for options to show a specific item."
             }
           ]
         }

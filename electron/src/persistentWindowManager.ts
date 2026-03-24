@@ -36,14 +36,16 @@ export class PersistentWindowManager
 
   async open(url: string, focus: boolean): Promise<BrowserWindow>
   {
-    const existingWindow = this.windows.get(url);
-    if (existingWindow && existingWindow.isDestroyed() === false)
     {
-      if (focus === true)
+      const existingWindow = this.windows.get(url);
+      if (existingWindow && existingWindow.isDestroyed() === false)
       {
-        existingWindow.focus();
+        if (focus === true)
+        {
+          existingWindow.focus();
+        }
+        return existingWindow;
       }
-      return existingWindow;
     }
 
     const savedState = this.states[url];
@@ -61,7 +63,8 @@ export class PersistentWindowManager
     this.windows.set(url, window);
 
     const actualUrl = savedState?.currentUrl || url;
-    await window.loadURL(actualUrl);
+    const filePrefix = "file://";
+    actualUrl.startsWith(filePrefix) === true ? await window.loadFile(actualUrl.substring(filePrefix.length)) : await window.loadURL(actualUrl);
 
     // We save the state when the window is closed
     window.once("close", () =>

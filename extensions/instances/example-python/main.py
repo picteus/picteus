@@ -10,8 +10,7 @@ from picteus_extension_sdk.picteus_extension import NotificationEvent, Notificat
     NotificationsImagesIntent, NotificationsImages, NotificationsShowIntent, NotificationsShow, NotificationsShowType, \
     SettingsValue, NotificationDialogContent, NotificationContext, NotificationsServeBundleIntent, \
     NotificationsServeBundle, NotificationsFrame, NotificationsFrameUrlContent, NotificationsFrameHtmlContent, \
-    NotificationFormContent, NotificationDialogIconContent, NotificationFormIntent, NotificationResource, \
-    NotificationResourceContent
+    NotificationFormContent, NotificationDialogIconContent, NotificationFormIntent, NotificationResourceContent
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -45,13 +44,13 @@ class PythonExtension(PicteusExtension):
                 f"Received a process command with id '{command_id}' with parameters '{json.dumps(parameters)}'",
                 "debug")
             if command_id == "askForSomething":
-                await self._handle_ask_for_something(communicator)
+                await self._handle_ask_for_something(communicator, parameters)
             elif command_id == "dialog":
                 await self._handle_dialog(communicator, parameters)
+            elif command_id == "ui":
+                await self._handle_ui(communicator, parameters)
             elif command_id == "application":
                 await self._handle_application(communicator)
-            elif command_id == "swaggerui":
-                await self._handle_swaggerui(communicator)
             elif command_id == "show":
                 await self._handle_show(communicator, parameters)
         elif event == NotificationEvent.IMAGE_RUN_COMMAND:
@@ -81,7 +80,7 @@ class PythonExtension(PicteusExtension):
                                                                             value=ImageFeatureValue(
                                                                                 "This is a string"))])
 
-    async def _handle_ask_for_something(self, communicator: Communicator) -> None:
+    async def _handle_ask_for_something(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         intent_parameters: Dict[str, Any] = \
             {
                 "type": "object",
@@ -118,23 +117,11 @@ class PythonExtension(PicteusExtension):
                                                                     dialogContent=NotificationDialogContent(
                                                                         title="Favorite color and chocolate",
                                                                         description="This shows how an extension can input parameters from the user.",
-                                                                        details="This dialog box has been dynamically generated from the extension source code."))
+                                                                        details=f"""This dialog box has been dynamically generated from the extension source code, based on the previous dialog box answer with value '{parameters["age"]}'."""))
                                        ))
-            communicator.send_log(f"Received the intent result '{json.dumps(user_parameters)}'", "info")
-            with open(os.path.join(PicteusExtension.get_extension_home_directory_path(), "swaggerui.png"),
-                      mode="rb") as file:
-                icon_content: bytes = file.read()
-            if user_parameters["likeChocolate"]:
-                await communicator.launch_intent(
-                    NotificationsUiIntent(ui=NotificationsUi(id="chocolate",anchor=NotificationsUiAnchor.MODAL,
-                                                             frameContent=NotificationsFrameUrlContent(
-                                                                 url=self.web_services_base_url + "/swaggerui"),
-                                                             dialogContent=NotificationDialogIconContent(
-                                                                 title="Website",
-                                                                 description="A web site, which is the Swagger UI of the API",
-                                                                 details="This is to showcase that a modal window may be opened with some title, description and details.",
-                                                                 icon=NotificationResourceContent(
-                                                                     content=bytearray(icon_content))))))
+            communicator.send_log(
+                f"""You picked the '{user_parameters["favoriteColor"]}' color and {"declared that you like chocolate" if user_parameters["likeChocolate"] == True else "did not mention that you liked chocolate"}""",
+                "info")
         except NotificationReturnedError as exception:
             communicator.send_log(
                 f"Received the intent error '{str(exception)}' with reason '{exception.reason}'",
@@ -162,6 +149,29 @@ class PythonExtension(PicteusExtension):
         button = "Yes" if result == True else "No"
         communicator.send_log(f"The user clicked the '{button}' button", "info")
 
+    async def _handle_ui(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
+        anchor: str = parameters["anchor"]
+        nature: str = parameters["nature"]
+        is_url: bool = nature == "URL"
+        title: str = f"{anchor} UI"
+        with open(os.path.join(PicteusExtension.get_extension_home_directory_path(),
+                               "swaggerui.png" if is_url == True else "icon.png"),
+                  mode="rb") as file:
+            icon_content: bytes = file.read()
+        frame_content = NotificationsFrameUrlContent(
+            url=self.web_services_base_url + "/swaggerui") if is_url == True else NotificationsFrameHtmlContent(
+            html=f"""<html lang="en"><head><title>${title}</title></head><body style="border: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "{anchor}" UI element.</div></body></html>""")
+        await communicator.launch_intent(
+            NotificationsUiIntent(ui=NotificationsUi(id=f"ui-{anchor}-{nature}",
+                                                     anchor=NotificationsUiAnchor.MODAL if anchor == "Modal" else (
+                                                         NotificationsUiAnchor.SIDEBAR if anchor == "Sidebar" else NotificationsUiAnchor.WINDOW),
+                                                     frameContent=frame_content,
+                                                     dialogContent=NotificationDialogIconContent(
+                                                         title=title,
+                                                         description="Demonstrates how to open a dedicated UI.",
+                                                         icon=NotificationResourceContent(
+                                                             content=bytearray(icon_content))))))
+
     async def _handle_application(self, communicator: Communicator) -> None:
         summaries = self.get_image_api().image_search_summaries(search_parameters=SearchParameters(
             filter=SearchFilter(
@@ -183,20 +193,6 @@ class PythonExtension(PicteusExtension):
                 frame=NotificationsFrame(content=NotificationsFrameUrlContent(url=result + "/index.html"),
                                          height=70),
                 buttons=NotificationsDialogButtons(yes="Close"))))
-
-    async def _handle_swaggerui(self, communicator: Communicator) -> None:
-        with open(os.path.join(PicteusExtension.get_extension_home_directory_path(), "swaggerui.png"),
-                  mode="rb") as file:
-            icon_content: bytes = file.read()
-        await communicator.launch_intent(
-            NotificationsUiIntent(ui=NotificationsUi(id="swaggerui", anchor=NotificationsUiAnchor.SIDEBAR,
-                                                     frameContent=NotificationsFrameUrlContent(
-                                                         url=self.web_services_base_url + "/swaggerui"),
-                                                     dialogContent=NotificationDialogIconContent(
-                                                         title="Swagger UI",
-                                                         description="Enables to interact with the API.",
-                                                         icon=NotificationResourceContent(
-                                                             content=bytearray(icon_content))))))
 
     async def _handle_show(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         raw_type = parameters["type"]
