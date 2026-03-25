@@ -64,7 +64,7 @@ export class PersistentWindowManager
     }
 
     const savedState = this.perIdStates[idUrl.id];
-    const options: Electron.BrowserWindowConstructorOptions = { ...this.options };
+    const options: Electron.BrowserWindowConstructorOptions = { ...this.options, closable: true };
     if (savedState !== undefined)
     {
       options.x = savedState.x;
@@ -92,7 +92,6 @@ export class PersistentWindowManager
       {
         return;
       }
-      window.setClosable(false);
       this.saveWindowState(window, idUrl, automaticallyReopen, false);
       this.saveStates();
       this.perIdWindowWithUrls.delete(idUrl.id);
