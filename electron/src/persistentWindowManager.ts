@@ -5,22 +5,37 @@ import { BrowserWindow } from "electron";
 import { logger } from "./logger";
 
 
+interface IdUrl
+{
+  id: string;
+  url: string;
+}
+
+interface WindowWithUrl
+{
+  url: string;
+  window: BrowserWindow;
+  automaticallyReopen: boolean;
+}
+
 interface WindowState
 {
   x: number;
   y: number;
   width: number;
   height: number;
+  url: string;
   currentUrl: string;
+  automaticallyReopen: boolean;
   open: boolean;
 }
 
 export class PersistentWindowManager
 {
 
-  private states: Record<string, WindowState> = {};
+  private perIdStates: Record<string, WindowState> = {};
 
-  private readonly windows: Map<string, BrowserWindow> = new Map();
+  private readonly perIdWindowWithUrls: Map<string, WindowWithUrl> = new Map();
 
   private shouldListenToCloseEvents: boolean = true;
 
@@ -34,21 +49,21 @@ export class PersistentWindowManager
     this.loadStates();
   }
 
-  async open(url: string, focus: boolean): Promise<BrowserWindow>
+  async open(idUrl: IdUrl, automaticallyReopen: boolean, focus: boolean): Promise<BrowserWindow>
   {
     {
-      const existingWindow = this.windows.get(url);
-      if (existingWindow && existingWindow.isDestroyed() === false)
+      const existingEntry: WindowWithUrl | undefined = this.perIdWindowWithUrls.get(idUrl.id);
+      if (existingEntry !== undefined && existingEntry.window.isDestroyed() === false)
       {
         if (focus === true)
         {
-          existingWindow.focus();
+          existingEntry.window.focus();
         }
-        return existingWindow;
+        return existingEntry.window;
       }
     }
 
-    const savedState = this.states[url];
+    const savedState = this.perIdStates[idUrl.id];
     const options: Electron.BrowserWindowConstructorOptions = { ...this.options };
     if (savedState !== undefined)
     {
@@ -60,9 +75,9 @@ export class PersistentWindowManager
 
     const window = new BrowserWindow(options);
     window.setMenuBarVisibility(false);
-    this.windows.set(url, window);
+    this.perIdWindowWithUrls.set(idUrl.id, { window, url: idUrl.url, automaticallyReopen });
 
-    const actualUrl = savedState?.currentUrl || url;
+    const actualUrl = savedState?.currentUrl || idUrl.url;
     const filePrefix = "file://";
     actualUrl.startsWith(filePrefix) === true ? await window.loadFile(actualUrl.substring(filePrefix.length)) : await window.loadURL(actualUrl);
 
@@ -77,9 +92,10 @@ export class PersistentWindowManager
       {
         return;
       }
-      this.saveWindowState(window, url, false);
+      window.setClosable(false);
+      this.saveWindowState(window, idUrl, automaticallyReopen, false);
       this.saveStates();
-      this.windows.delete(url);
+      this.perIdWindowWithUrls.delete(idUrl.id);
     });
 
     return window;
@@ -87,11 +103,11 @@ export class PersistentWindowManager
 
   async restore(): Promise<void>
   {
-    for (const [url, state] of Object.entries(this.states))
+    for (const [id, state] of Object.entries(this.perIdStates))
     {
-      if (state.open === true)
+      if (state.open === true && state.automaticallyReopen === true)
       {
-        await this.open(url, false);
+        await this.open({ id, url: state.currentUrl }, state.automaticallyReopen, false);
       }
     }
   }
@@ -99,17 +115,17 @@ export class PersistentWindowManager
   quit(): void
   {
     this.shouldListenToCloseEvents = false;
-    for (const [url, window] of this.windows.entries())
+    for (const [id, { url, window, automaticallyReopen }] of this.perIdWindowWithUrls.entries())
     {
-      this.saveWindowState(window, url, true);
+      this.saveWindowState(window, { id, url }, automaticallyReopen, true);
     }
     this.saveStates();
-    for (const [, window] of this.windows.entries())
+    for (const [, entry] of this.perIdWindowWithUrls.entries())
     {
-      window.close();
+      entry.window.close();
     }
-    this.windows.clear();
-    this.states = {};
+    this.perIdWindowWithUrls.clear();
+    this.perIdStates = {};
   }
 
   private loadStates(): void
@@ -119,34 +135,36 @@ export class PersistentWindowManager
       try
       {
         const data = fs.readFileSync(this.stateFilePath, "utf8");
-        this.states = JSON.parse(data);
+        this.perIdStates = JSON.parse(data);
       }
       catch (error)
       {
         logger.error(`Could not parse as JSON content the file '${this.stateFilePath}': resetting the windows state`);
         fs.rmSync(this.stateFilePath);
-        this.states = {};
+        this.perIdStates = {};
       }
     }
   }
 
-  private saveWindowState(window: BrowserWindow, url: string, open: boolean): void
+  private saveWindowState(window: BrowserWindow, idUrl: IdUrl, automaticallyReopen: boolean, open: boolean): void
   {
     const bounds = window.getBounds();
-    this.states[url] =
+    this.perIdStates[idUrl.id] =
       {
         x: bounds.x,
         y: bounds.y,
         width: bounds.width,
         height: bounds.height,
+        url: idUrl.url,
         currentUrl: window.webContents.getURL(),
+        automaticallyReopen,
         open
       };
   }
 
   private saveStates(): void
   {
-    fs.writeFileSync(this.stateFilePath, JSON.stringify(this.states, null, 2));
+    fs.writeFileSync(this.stateFilePath, JSON.stringify(this.perIdStates, null, 2));
   }
 
 }

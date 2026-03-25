@@ -1,10 +1,8 @@
 import { useCommandSocket } from "app/context";
 
-export default function useOpenWindow(url: string) {
+export default function useOpenWindow() {
   const { sendCommand } = useCommandSocket();
-  return () => {
-    return sendCommand("openWindow", {
-      url,
-    });
+  return (id: string, content: ({ url: string } | { html: string }), automaticallyReopen: boolean) => {
+    return sendCommand("openWindow", { ...content, id, automaticallyReopen });
   };
 }

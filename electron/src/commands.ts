@@ -215,7 +215,16 @@ export class CommandsManager
         break;
       case "openWindow":
       {
-        const { url, html } = parameters;
+        const { id: parametersId, automaticallyReopen, url, html }: {
+          id?: string,
+          automaticallyReopen?: boolean,
+          url?: string,
+          html?: string
+        } = parameters;
+        if (parametersId === undefined)
+        {
+          return this.sendCommandError(socket, id, "Missing 'id' parameter");
+        }
         if (url === undefined && html === undefined)
         {
           return this.sendCommandError(socket, id, "Missing 'url' or 'html' parameter");
@@ -227,7 +236,6 @@ export class CommandsManager
         let actualUrl: string;
         if (html !== undefined)
         {
-          // TODO: introduce an "id" parameter in order to reopen the same window
           const directoryPath = fs.mkdtempSync(path.join(os.tmpdir(), "picteus-"));
           const filePath = path.join(directoryPath, "index.html");
           fs.writeFileSync(filePath, html);
@@ -235,10 +243,10 @@ export class CommandsManager
         }
         else
         {
-          actualUrl = url;
+          actualUrl = url!;
         }
-        logger.info(`Opening the window with URL '${actualUrl}'`);
-        await ApplicationWrapper.instance().openWindow(actualUrl);
+        logger.info(`Opening the window with id '${id}' and with URL '${actualUrl}'`);
+        await ApplicationWrapper.instance().openWindow(parametersId, actualUrl, automaticallyReopen ?? false);
         this.sendCommandSuccess(socket, id, undefined);
       }
         break;

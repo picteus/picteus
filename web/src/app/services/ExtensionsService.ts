@@ -163,6 +163,7 @@ function getAdditionalUi(
           icon: { url: getSidebarAnchorIconURL(extension.manifest.id) },
           title: extension.manifest.name,
           extensionId: extension.manifest.id,
+          automaticallyReopen: true,
         })) || [],
   );
 }

@@ -11,7 +11,8 @@ import style from "./Sidebar.module.scss";
 
 import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
-import { ChannelEnum, CommandParameters, computeResourceTypeUrl } from "types";
+import { useOpenWindow } from "app/hooks";
+import { ChannelEnum, computeResourceTypeUrl } from "types";
 
 interface NavbarLinkProps {
   icon: ReactNode;
@@ -39,6 +40,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [additionalUi, refreshAdditionalUi] = useAdditionalUiContext();
   const eventSocket = useEventSocket();
+  const openWindow = useOpenWindow();
   const [t] = useTranslation();
 
   useEffect(() => {
@@ -76,7 +78,7 @@ export default function Sidebar() {
                 }
               }
               else {
-                let parameters: CommandParameters;
+                let parameters;
                 if ("url" in content) {
                   parameters = { url: content.url };
                 }
@@ -87,7 +89,7 @@ export default function Sidebar() {
                   console.error("Cannot handle a content with no 'frameContent.url' nor 'frameContent.html' property");
                   return;
                 }
-                 void sendCommand("openWindow", parameters)
+                openWindow(element.uuid, parameters, false).catch(error => console.error(`Cannot open the window. Reason: '${error.message}'`));
                 }
               }
           }

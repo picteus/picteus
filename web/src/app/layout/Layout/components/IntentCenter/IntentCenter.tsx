@@ -6,13 +6,13 @@ import { useNavigate } from "react-router-dom";
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { ExtensionsService, ImageService, StorageService } from "app/services";
+import { useOpenWindow } from "app/hooks";
 import { CommandForm, DialogForm } from "app/components";
 import { FullscreenURLModal } from "app/components/ActionModal";
-import { ActionModalValue, ChannelEnum, CommandParameters, ResourceType, ShowType, UiCommandType } from "types";
+import { ActionModalValue, ChannelEnum, ResourceType, ShowType, UiCommandType } from "types";
 import {
   useActionModalContext,
   useAdditionalUiContext,
-  useCommandSocket,
   useConfirmAction,
   useEventSocket,
   useGalleryTabsContext,
@@ -30,7 +30,7 @@ type ExtensionIntent = {
 export default function IntentCenter() {
   const [modalStack, addModal, removeModal] = useActionModalContext();
   const [, , addTransient] = useAdditionalUiContext();
-  const { sendCommand } = useCommandSocket();
+  const openWindow = useOpenWindow();
   const [, addTab] = useGalleryTabsContext();
 
   const confirmAction = useConfirmAction();
@@ -161,7 +161,7 @@ export default function IntentCenter() {
         const ui = intent.ui;
         const frameContent = ui.frameContent;
         if (ui.anchor === UserInterfaceAnchor.Window) {
-          let parameters: CommandParameters;
+          let parameters;
           if ("url" in frameContent) {
             parameters = { url: frameContent.url };
           }
@@ -172,7 +172,7 @@ export default function IntentCenter() {
             respondWithError("Cannot handle the 'ui' intent with no 'frameContent.url' nor 'frameContent.html' property");
             return;
           }
-          sendCommand("openWindow", parameters).then(() => {
+          openWindow(ui.id, parameters, false).then(() => {
             respondWithValue();
           }).catch(error => respondWithError(error.message));
         }
@@ -184,7 +184,8 @@ export default function IntentCenter() {
             content: frameContent,
             icon: computeIcon(ui.dialogContent?.icon),
             title: ui.dialogContent?.title,
-            extensionId
+            extensionId,
+            automaticallyReopen: false
           });
           navigate(computeExtensionSidebarRoute(uuid));
           respondWithValue();

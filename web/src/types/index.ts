@@ -88,7 +88,7 @@ export type DialogIconContent = DialogContent & {
   icon?: ResourceType;
 };
 
-type FrameContent = ({ url: string }) | ({ html: string });
+export type FrameContent = ({ url: string }) | ({ html: string });
 
 type SizeType = "auto" | "xs" | "s" | "m" | "l" | "xl";
 
@@ -203,6 +203,7 @@ export type AdditionalUi = {
   icon: ResourceType;
   title: string;
   extensionId: string;
+  automaticallyReopen: boolean;
 };
 
 export type LocalFiltersTypeFeature = { category: string, format: ImageFeatureFormat, type: ImageFeatureType, name?: string };
