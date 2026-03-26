@@ -18,7 +18,7 @@ import {
   useGalleryTabsContext,
   useImageVisualizerContext
 } from "app/context";
-import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyError } from "utils";
+import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyError, ROUTES } from "utils";
 
 import { ImageVisualizerWrapper, ModalComponent } from "./components";
 
@@ -29,7 +29,7 @@ type ExtensionIntent = {
 
 export default function IntentCenter() {
   const [modalStack, addModal, removeModal] = useActionModalContext();
-  const [, , addTransient] = useAdditionalUiContext();
+  const [additionalUiContextValue, , addTransient] = useAdditionalUiContext();
   const openWindow = useOpenWindow();
   const [, addTab] = useGalleryTabsContext();
 
@@ -77,8 +77,8 @@ export default function IntentCenter() {
 
     if (show.type === "extensionSettings") {
       const action = () => {
-        navigate(`/extensions?settings=${show.id}`);
-        respondWithValue(show.id);
+        navigate(`${ROUTES.extensions}?settings=${show.id}`);
+        respondWithValue();
       };
       if (shouldConfirm) {
         return confirmAction(action, {
@@ -103,8 +103,21 @@ export default function IntentCenter() {
     }
     else if (show.type === "sidebar") {
       const action = async () => {
-        navigate(computeExtensionSidebarRoute(show.id));
-        respondWithValue(show.id);
+        const additionalUi = additionalUiContextValue.sidebar.find((element) => element.uuid === show.id);
+        if (additionalUi === undefined) {
+          respondWithError(`There is no sidebar element with uuid '${show.id}'`);
+        }
+        else {
+          if (additionalUi.anchor === UserInterfaceAnchor.Sidebar) {
+            navigate(computeExtensionSidebarRoute(show.id));
+            respondWithValue();
+          }
+          else {
+            openWindow(show.id, additionalUi.content, false).then(() => {
+              respondWithValue();
+            }).catch(error => respondWithError(error.message));
+          }
+        }
       };
       if (shouldConfirm) {
         return confirmAction(action, {

@@ -38,7 +38,7 @@ function NavbarLink({ icon, label, route, onClick }: NavbarLinkProps) {
 
 export default function Sidebar() {
   const navigate = useNavigate();
-  const [additionalUi, refreshAdditionalUi] = useAdditionalUiContext();
+  const [additionalUiContextValue, refreshAdditionalUi] = useAdditionalUiContext();
   const eventSocket = useEventSocket();
   const openWindow = useOpenWindow();
   const [t] = useTranslation();
@@ -53,7 +53,7 @@ export default function Sidebar() {
   const { sendCommand, isAvailable } = useCommandSocket();
 
   const additionalElements = useMemo(() => {
-    return additionalUi.sidebar?.map((element) => {
+    return additionalUiContextValue.sidebar.map((element) => {
       const routePathFragment = computeExtensionSidebarRoute(element.uuid);
       return (
         // TODO: handle the case of the closeable items
@@ -97,7 +97,7 @@ export default function Sidebar() {
         />
       );
     });
-  }, [additionalUi, sendCommand, isAvailable]);
+  }, [additionalUiContextValue, sendCommand, isAvailable]);
 
   const commonIconStyle = useMemo(
     () => ({

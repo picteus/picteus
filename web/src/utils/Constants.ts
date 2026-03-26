@@ -17,7 +17,7 @@ export function computeExtensionSidebarUuid(extensionId: string, id: string): st
   return `${extensionId}-${id}`;
 }
 
-export function computeExtensionSidebarRoute(uuid:string) {
+export function computeExtensionSidebarRoute(uuid: string) {
   return `/extension/${uuid}`;
 }
 

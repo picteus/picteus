@@ -82,7 +82,7 @@ function RouterContent() {
   const additionalRoutes = useMemo<Route []>(() => {
     return additionalUi.sidebar?.filter(element => element.anchor === UserInterfaceAnchor.Sidebar).map((element: AdditionalUi) => {
       const path = computeExtensionSidebarRoute(element.uuid);
-      return {key:`route-${element.uuid}`, path, layout: renderLayout(SidebarAnchorScreen, { element }), alwaysRender: true};
+      return { key: element.uuid, path, layout: renderLayout(SidebarAnchorScreen, { element }), alwaysRender: true};
     });
   }, [additionalUi, location.pathname]);
 
