@@ -2,6 +2,7 @@ import { Expose, Transform, Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsDefined,
   IsEnum,
   IsInt,
@@ -15,7 +16,7 @@ import {
   NotEquals,
   ValidateNested
 } from "class-validator";
-import { ApiProperty, ApiSchema } from "@nestjs/swagger";
+import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from "@nestjs/swagger";
 
 import { jsonTransform } from "./transformers.dtos";
 import {
@@ -554,31 +555,93 @@ export class ManifestRuntime
  */
 export enum UserInterfaceAnchor
 {
-  // noinspection JSUnusedGlobalSymbols
-  Modal = "modal",
   Sidebar = "sidebar",
   Window = "window",
   ImageDetail = "imageDetail"
 }
 
+@ApiSchema({ description: "The basis integration of a UI fragment" })
+export class UserInterfaceBasisIntegration
+{
+
+  protected constructor(anchor: UserInterfaceAnchor)
+  {
+    this.anchor = anchor;
+  }
+
+  @ApiProperty(
+    {
+      description: "The location where an UI fragment is anchored",
+      enum: UserInterfaceAnchor,
+      enumName: "UserInterfaceAnchor",
+      required: true,
+      example: UserInterfaceAnchor.Sidebar
+    }
+  )
+  @IsEnum(UserInterfaceAnchor)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly anchor: UserInterfaceAnchor;
+
+}
+
+@ApiSchema({ description: "Specifies how a sidebar UI element integrates" })
+export class UserInterfaceSidebarIntegration extends UserInterfaceBasisIntegration
+{
+
+  constructor(isExternal: boolean)
+  {
+    super(UserInterfaceAnchor.Sidebar);
+    this.isExternal = isExternal;
+  }
+
+  @ApiProperty(
+    {
+      description: "Whether the element should be displayed via an external window or through an internal frame",
+      type: Boolean,
+      required: true,
+      example: false
+    }
+  )
+  @IsBoolean()
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly isExternal: boolean;
+
+}
+
+@ApiSchema({ description: "Specifies how a window UI element integrates" })
+export class UserInterfaceWindowIntegration extends UserInterfaceBasisIntegration
+{
+
+  constructor()
+  {
+    super(UserInterfaceAnchor.Window);
+  }
+
+}
+
 /**
  * The definition of an extension's User Interface fragment.
  */
-@ApiSchema({ description: "The definition of an extension's User Interface fragment" })
+@ApiExtraModels(UserInterfaceSidebarIntegration, UserInterfaceWindowIntegration)
+@ApiSchema({ description: "The definition of an extension's User Interface (UI) fragment" })
 export class ManifestInterfaceElement
 {
 
-  constructor(id: string, anchor: UserInterfaceAnchor, url: string)
+  constructor(id: string, integration: UserInterfaceSidebarIntegration | UserInterfaceWindowIntegration, url: string)
   {
     this.id = id;
-    this.anchor = anchor;
+    this.integration = integration;
     this.url = url;
   }
 
   @ApiProperty(
     {
       ...shortTechnicalSchema,
-      description: "The identifier of the User Interface fragment",
+      description: "The identifier of the UI fragment",
       type: String,
       required: true,
       example: "main"
@@ -595,21 +658,51 @@ export class ManifestInterfaceElement
 
   @ApiProperty(
     {
-      description: "The location where the User Interface is anchored",
-      enum: UserInterfaceAnchor,
-      enumName: "UserInterfaceAnchor",
+      description: "The way it is integrated within the application overall UI",
+      oneOf:
+        [
+          {
+            description: "In case of a sidebar UI fragment",
+            $ref: getSchemaPath(UserInterfaceSidebarIntegration)
+          },
+          {
+            description: "In case of a window UI fragment",
+            $ref: getSchemaPath(UserInterfaceWindowIntegration)
+          }
+        ],
+      discriminator:
+        {
+          propertyName: "anchor",
+          mapping:
+            {
+              [UserInterfaceAnchor.Sidebar]: getSchemaPath(UserInterfaceSidebarIntegration),
+              [UserInterfaceAnchor.Window]: getSchemaPath(UserInterfaceWindowIntegration)
+            }
+        },
       required: true
     }
   )
-  @IsEnum(UserInterfaceAnchor)
+  @Type(() => UserInterfaceBasisIntegration,
+    {
+      discriminator:
+        {
+          property: "anchor",
+          subTypes:
+            [
+              { value: UserInterfaceSidebarIntegration, name: UserInterfaceAnchor.Sidebar },
+              { value: UserInterfaceWindowIntegration, name: UserInterfaceAnchor.Window }
+            ]
+        },
+      keepDiscriminatorProperty: true
+    })
   @IsDefined()
   @NotEquals(null)
   @Expose()
-  readonly anchor: UserInterfaceAnchor;
+  readonly integration: UserInterfaceSidebarIntegration | UserInterfaceWindowIntegration;
 
   @ApiProperty(
     {
-      description: "The URL of the User Interface",
+      description: "The URL of the content",
       type: String,
       format: "uri",
       pattern: uriPathPattern,

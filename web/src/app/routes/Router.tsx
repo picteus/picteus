@@ -80,7 +80,7 @@ function RouterContent() {
   }, [additionalUi, location.pathname]);
 
   const additionalRoutes = useMemo<Route []>(() => {
-    return additionalUi.sidebar?.filter(element => element.anchor === UserInterfaceAnchor.Sidebar).map((element: AdditionalUi) => {
+    return additionalUi.sidebar?.filter(element => element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === false).map((element: AdditionalUi) => {
       const path = computeExtensionSidebarRoute(element.uuid);
       return { key: element.uuid, path, layout: renderLayout(SidebarAnchorScreen, { element }), alwaysRender: true};
     });

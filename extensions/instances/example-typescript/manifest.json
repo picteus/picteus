@@ -307,7 +307,10 @@
     "elements": [
       {
         "id": "main",
-        "anchor": "sidebar",
+        "integration": {
+          "anchor": "sidebar",
+          "isExternal": false
+        },
         "url": "/ui/sidebar/index.html"
       }
     ]

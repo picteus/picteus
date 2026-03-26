@@ -114,7 +114,6 @@ export class ExtensionRegistry
 
   parseManifest(filePath: string): ExtendedManifest
   {
-    logger.debug(`Parsing the manifest '${filePath}'`);
     const content = fs.readFileSync(filePath, { encoding: "utf8" });
     const manifest: Manifest = JSON.parse(content);
     const directoryPath = path.resolve(filePath, "..");

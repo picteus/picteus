@@ -50,7 +50,10 @@
     "elements": [
       {
         "id": "main",
-        "anchor": "window",
+        "integration": {
+          "anchor": "sidebar",
+          "isExternal": true
+        },
         "url": "https://www.midjourney.com"
       }
     ]

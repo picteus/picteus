@@ -54,7 +54,8 @@ import {
   ManifestCapability,
   ManifestCapabilityId,
   ManifestEvent,
-  ManifestRuntimeEnvironment
+  ManifestRuntimeEnvironment,
+  UserInterfaceAnchor
 } from "../dtos/app.dtos";
 import { parametersChecker } from "./utils/parametersChecker";
 import { waitFor } from "./utils/processWrapper";
@@ -1452,11 +1453,15 @@ export class ExtensionService
         }
         for (const element of extendedManifest.ui.elements)
         {
+          if (element.integration.anchor === UserInterfaceAnchor.ImageDetail)
+          {
+            parametersChecker.throwBadParameterError(`The UI element of the extension with id '${manifest.id}', with id '${element.id}' exposes the unsupported '${element.integration.anchor}' anchor`);
+          }
           if (element.url.startsWith("/") === true)
           {
             if (fs.existsSync(path.join(extendedManifest.directoryPath, element.url)) === false)
             {
-              parametersChecker.throwBadParameterError(`The UI element of the extension with id '${manifest.id}', with URL '${element.url}' has no corresponding file`);
+              parametersChecker.throwBadParameterError(`The UI element of the extension with id '${manifest.id}', with id '${element.id}', with URL '${element.url}' has no corresponding file`);
             }
           }
         }

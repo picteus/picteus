@@ -3700,7 +3700,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.12.0",
+    "version": "0.13.0",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",
@@ -4262,45 +4262,98 @@
       "UserInterfaceAnchor": {
         "type": "string",
         "enum": [
-          "modal",
           "sidebar",
           "window",
           "imageDetail"
         ],
-        "description": "The location where the User Interface is anchored"
+        "description": "The location where an UI fragment is anchored"
       },
-      "ManifestInterfaceElement": {
+      "UserInterfaceSidebarIntegration": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "The identifier of the User Interface fragment",
-            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
-            "minLength": 1,
-            "maxLength": 32,
-            "example": "main"
-          },
           "anchor": {
-            "description": "The location where the User Interface is anchored",
+            "description": "The location where an UI fragment is anchored",
+            "example": "sidebar",
             "allOf": [
               {
                 "$ref": "#/components/schemas/UserInterfaceAnchor"
               }
             ]
           },
+          "isExternal": {
+            "type": "boolean",
+            "description": "Whether the element should be displayed via an external window or through an internal frame",
+            "example": false
+          }
+        },
+        "description": "Specifies how a sidebar UI element integrates",
+        "required": [
+          "anchor",
+          "isExternal"
+        ]
+      },
+      "UserInterfaceWindowIntegration": {
+        "type": "object",
+        "properties": {
+          "anchor": {
+            "description": "The location where an UI fragment is anchored",
+            "example": "sidebar",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserInterfaceAnchor"
+              }
+            ]
+          }
+        },
+        "description": "Specifies how a window UI element integrates",
+        "required": [
+          "anchor"
+        ]
+      },
+      "ManifestInterfaceElement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The identifier of the UI fragment",
+            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "main"
+          },
+          "integration": {
+            "description": "The way it is integrated within the application overall UI",
+            "oneOf": [
+              {
+                "description": "In case of a sidebar UI fragment",
+                "$ref": "#/components/schemas/UserInterfaceSidebarIntegration"
+              },
+              {
+                "description": "In case of a window UI fragment",
+                "$ref": "#/components/schemas/UserInterfaceWindowIntegration"
+              }
+            ],
+            "discriminator": {
+              "propertyName": "anchor",
+              "mapping": {
+                "sidebar": "#/components/schemas/UserInterfaceSidebarIntegration",
+                "window": "#/components/schemas/UserInterfaceWindowIntegration"
+              }
+            }
+          },
           "url": {
             "type": "string",
-            "description": "The URL of the User Interface",
+            "description": "The URL of the content",
             "format": "uri",
             "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
             "minLength": 1,
             "maxLength": 4096
           }
         },
-        "description": "The definition of an extension's User Interface fragment",
+        "description": "The definition of an extension's User Interface (UI) fragment",
         "required": [
           "id",
-          "anchor",
+          "integration",
           "url"
         ]
       },

@@ -681,6 +681,7 @@ describe("Extensions", () =>
         await base.getExtensionController().install(zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`The settings of the extension with id '${manifest.id}' do not respect the JSON schema. Reason: 'the 'enum' property '/type' must be equal to one of the allowed values'`, BAD_REQUEST, base.badParameterCode));
     }
+    const uiId = "main";
     {
       const url = "/sidebar/index.html";
       const manifest = builder.computeWithInstructionsManifest([
@@ -693,8 +694,8 @@ describe("Extensions", () =>
         elements:
           [
             {
-              id: "main",
-              anchor: UserInterfaceAnchor.Sidebar,
+              id: uiId,
+              integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: false },
               url
             }
           ]
@@ -704,11 +705,11 @@ describe("Extensions", () =>
       await expect(async () =>
       {
         await base.getExtensionController().install(zip.toBuffer());
-      }).rejects.toThrow(new ServiceError(`The UI element of the extension with id '${manifest.id}', with URL '${url}' has no corresponding file`, BAD_REQUEST, base.badParameterCode));
+      }).rejects.toThrow(new ServiceError(`The UI element of the extension with id '${manifest.id}', with id '${uiId}', with URL '${url}' has no corresponding file`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const url = "/sidebar/index.html";
-      const id = "main";
+      const id = uiId;
       const manifest = builder.computeWithInstructionsManifest([
         {
           events: [ManifestEvent.ProcessStarted],
@@ -720,12 +721,12 @@ describe("Extensions", () =>
           [
             {
               id,
-              anchor: UserInterfaceAnchor.Sidebar,
+              integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: true },
               url
             },
             {
               id,
-              anchor: UserInterfaceAnchor.Sidebar,
+              integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: false },
               url
             }
           ]
@@ -769,7 +770,7 @@ describe("Extensions", () =>
         [
           {
             id: "main",
-            anchor: UserInterfaceAnchor.Sidebar,
+            integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: false },
             url: `/${elementBasePath}index.html`
           }
         ]

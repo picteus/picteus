@@ -153,13 +153,13 @@ function getAdditionalUi(
       extension.manifest.ui?.elements
         ?.filter(
           (element) =>
-            (element.anchor === UserInterfaceAnchor.Sidebar || element.anchor === UserInterfaceAnchor.Window) &&
+            (element.integration.anchor === UserInterfaceAnchor.Sidebar || element.integration.anchor === UserInterfaceAnchor.Window) &&
             extension.status === ExtensionStatus.Enabled,
         )
         .map((element) => ({
           uuid: computeExtensionSidebarUuid(extension.manifest.id, element.id),
-          anchor: element.anchor,
-          content: { url: element.anchor === UserInterfaceAnchor.Window ? element.url : buildSidebarAnchorURL(extension.manifest.id, element.url) },
+          integration: element.integration,
+          content: { url: element.integration.anchor === UserInterfaceAnchor.Window ? element.url : buildSidebarAnchorURL(extension.manifest.id, element.url) },
           icon: { url: getSidebarAnchorIconURL(extension.manifest.id) },
           title: extension.manifest.name,
           extensionId: extension.manifest.id,

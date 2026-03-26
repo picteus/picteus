@@ -243,7 +243,11 @@
   "ui": {
     "elements": [
       {
-        "anchor": "window",
+        "id": "main",
+        "integration": {
+          "anchor": "sidebar",
+          "isExternal": true
+        },
         "url": "https://www.freepik.com/pikaso"
       }
     ]

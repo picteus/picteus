@@ -107,8 +107,11 @@ export default function IntentCenter() {
         if (additionalUi === undefined) {
           respondWithError(`There is no sidebar element with uuid '${show.id}'`);
         }
+        else if (additionalUi.integration.anchor === "window") {
+          respondWithError(`Cannot handle the sidebar 'window' integration with uuid '${additionalUi.uuid}'`);
+        }
         else {
-          if (additionalUi.anchor === UserInterfaceAnchor.Sidebar) {
+          if (additionalUi.integration.isExternal === false) {
             navigate(computeExtensionSidebarRoute(show.id));
             respondWithValue();
           }
@@ -193,7 +196,7 @@ export default function IntentCenter() {
           const uuid = computeExtensionSidebarUuid(extensionId, ui.id);
           addTransient({
             uuid,
-            anchor: UserInterfaceAnchor.Sidebar,
+            integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: false },
             content: frameContent,
             icon: computeIcon(ui.dialogContent?.icon),
             title: ui.dialogContent?.title,

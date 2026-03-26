@@ -8,9 +8,9 @@ import {
   ImageFeatureType,
   ImageFormat,
   ImageSummary,
+  ManifestInterfaceElementIntegration,
   SearchFilter,
-  SearchSortingProperty,
-  UserInterfaceAnchor
+  SearchSortingProperty
 } from "@picteus/ws-client";
 
 export type SocketResponseType =
@@ -198,7 +198,7 @@ export function computeResourceTypeUrl(resourceType: ResourceType) {
 
 export type AdditionalUi = {
   uuid: string,
-  anchor: UserInterfaceAnchor;
+  integration: ManifestInterfaceElementIntegration;
   content: FrameContent;
   icon: ResourceType;
   title: string;

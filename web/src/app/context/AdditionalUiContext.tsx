@@ -34,13 +34,16 @@ export function AdditionalUiProvider({ children }) {
   const refresh = useCallback(() => {
     const newAdditionalUis = transientUis.filter(transientUi => ExtensionsService.isPaused(transientUi.extensionId) === false);
     setTransientUis(newAdditionalUis);
-    setAdditionalContextValue({ sidebar:[...computeAdditionalUi().sidebar, ...newAdditionalUis] });
+    const updatedAdditionalUis = [...computeAdditionalUi().sidebar, ...newAdditionalUis];
+    setAdditionalContextValue({ sidebar:[...updatedAdditionalUis] });
   }, [transientUis]);
 
   const addTransient = useCallback((additionalUi: AdditionalUi) => {
     if (transientUis.find(ui => ui.extensionId === additionalUi.extensionId && ui.uuid === additionalUi.uuid) === undefined) {
       setTransientUis(transientUis.concat(additionalUi));
-      setAdditionalContextValue({ sidebar: [...additionalContextValue.sidebar, additionalUi] });
+      const updatedAdditionalUis = [...additionalContextValue.sidebar, additionalUi];
+      console.dir(updatedAdditionalUis);
+      setAdditionalContextValue({ sidebar: updatedAdditionalUis });
     }
   }, [additionalContextValue, transientUis]);
 

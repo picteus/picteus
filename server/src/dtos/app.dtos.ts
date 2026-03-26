@@ -50,7 +50,10 @@ import {
   ManifestInstructions,
   ManifestRuntimeEnvironment,
   ManifestUserInterface,
-  UserInterfaceAnchor
+  UserInterfaceAnchor,
+  UserInterfaceBasisIntegration,
+  UserInterfaceSidebarIntegration,
+  UserInterfaceWindowIntegration
 } from "./extension.dtos";
 import {
   SearchCriteria,
@@ -263,5 +266,8 @@ export {
   TextualPrompt,
   toFileExtension,
   toMimeType,
+  UserInterfaceBasisIntegration,
+  UserInterfaceSidebarIntegration,
+  UserInterfaceWindowIntegration,
   UserInterfaceAnchor
 };

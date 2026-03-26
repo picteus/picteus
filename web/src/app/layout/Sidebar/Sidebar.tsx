@@ -63,7 +63,7 @@ export default function Sidebar() {
           label={element.title}
           route={routePathFragment}
           onClick={() => {
-            if (element.anchor === UserInterfaceAnchor.Sidebar) {
+            if (element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === false) {
               navigate(routePathFragment);
             }
             else {
