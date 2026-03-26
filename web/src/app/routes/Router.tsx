@@ -1,5 +1,5 @@
-import { FunctionComponent, useEffect, useMemo, useRef } from "react";
-import { HashRouter, useLocation } from "react-router-dom";
+import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
+import { HashRouter, useLocation, useNavigate } from "react-router-dom";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
@@ -24,9 +24,18 @@ export default function AppRouter() {
   );
 }
 
+interface Route {
+  key: string;
+  path: string;
+  layout: JSX.Element;
+  alwaysRender: boolean;
+}
+
 function RouterContent() {
   const [additionalUi] = useAdditionalUiContext();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [routes, setRoutes] = useState<Route[]>([]);
 
   const hasBeenRendered = useRef<{ [key: string]: boolean }>({});
   const scrollPositions = useRef<{ [key: string]: number }>({});
@@ -57,54 +66,47 @@ function RouterContent() {
     return <Component {...props} />;
   }
 
-  const additionalRoutes = useMemo(() => {
+  const mainRoutes = useMemo<Route []>(()=> {
+    return Object.entries(ROUTES).map(([key, path]) => {
+      const ComponentMap: Record<string, FunctionComponent> = {
+        home: GalleryScreen,
+        repositories: RepositoriesScreen,
+        extensions: ExtensionsScreen,
+        activity: ActivityScreen,
+        settings: SettingsScreen,
+      };
+      return {key, path, layout: renderLayout(ComponentMap[key]), alwaysRender: false};
+    })
+  }, [additionalUi, location.pathname]);
+
+  const additionalRoutes = useMemo<Route []>(() => {
     return additionalUi.sidebar?.filter(element => element.anchor === UserInterfaceAnchor.Sidebar).map((element: AdditionalUi) => {
-      const pathFragment = computeExtensionSidebarRoute(element.uuid);
-      const isActive = location.pathname === pathFragment;
-      const wasRendered = hasBeenRendered.current[pathFragment];
-      return (
-        <div
-          key={"route-" + element.uuid}
-          style={{
-            display: isActive ? "block" : wasRendered ? "none" : "none",
-            height: "100%",
-          }}
-        >
-          {renderLayout(SidebarAnchorScreen, { element })}
-        </div>
-      );
+      const path = computeExtensionSidebarRoute(element.uuid);
+      return {key:`route-${element.uuid}`, path, layout: renderLayout(SidebarAnchorScreen, { element }), alwaysRender: true};
     });
   }, [additionalUi, location.pathname]);
+
+  useEffect(() => {
+    const newRoutes = mainRoutes.concat(additionalRoutes);
+    setRoutes(newRoutes);
+    if (newRoutes.find(route => route.path === location.pathname) === undefined) {
+      // In case the current navigation path does not match any route, we fall back to the "home" route
+      navigate(ROUTES.home);
+    }
+  }, [location.pathname, mainRoutes, additionalRoutes]);
 
   return (
     <Layout>
       <>
-        {Object.entries(ROUTES).map(([key, path]) => {
-          const isActive = location.pathname === path;
-          const wasRendered = hasBeenRendered.current[path];
-
-          const ComponentMap: Record<string, FunctionComponent> = {
-            home: GalleryScreen,
-            repositories: RepositoriesScreen,
-            extensions: ExtensionsScreen,
-            activity: ActivityScreen,
-            settings: SettingsScreen,
-          };
-
-          const Component = ComponentMap[key];
-
-          return (
-            <div
-              key={path}
-              style={{
-                display: isActive ? "block" : "none",
-              }}
-            >
-              {isActive || wasRendered ? renderLayout(Component) : null}
-            </div>
-          );
+        {routes.map((route) => {
+          const isActive = location.pathname === route.path;
+          return (<div
+            key={route.key}
+            style={{ display: isActive === true ? "block" : "none", height: "100%" }}
+          >
+            {(route.alwaysRender === true || isActive === true || hasBeenRendered.current[route.path]) ? route.layout : null}
+          </div>);
         })}
-        {additionalRoutes}
       </>
     </Layout>
   );
