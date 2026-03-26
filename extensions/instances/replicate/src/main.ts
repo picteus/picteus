@@ -89,7 +89,7 @@ class ReplicateExtension extends PicteusExtension
     }
   }
 
-  private async synchronize(communicator: Communicator, parameters: Record<string, any>): Promise<void>
+  private async synchronize(communicator: Communicator, _parameters: Record<string, any>): Promise<void>
   {
     this.logger.info("Listing all the predictions");
     const predictionPage = await this.computeReplicate().predictions.list({});
@@ -141,13 +141,12 @@ class ReplicateExtension extends PicteusExtension
     }
     const replicate = this.computeReplicate();
     const intentParameters = await this.computeReplicateModelInputs(communicator, replicate, model);
-    const intentResult: Record<string, any> = await communicator.launchIntent<Record<string, any>>({ parameters: intentParameters });
-    const input = intentResult;
-    const prediction = await this.runReplicateModel(communicator, replicate, model, input);
+    const intentResult: Record<string, any> = await communicator.launchIntent<Record<string, any>>({ form: { parameters: intentParameters } });
+    const prediction = await this.runReplicateModel(communicator, replicate, model, intentResult);
     await this.storeImage(communicator, prediction, imageIds);
   }
 
-  private async generateImage(communicator: Communicator, parameters: Record<string, any>, imageId?: string): Promise<void>
+  private async generateImage(communicator: Communicator, _parameters: Record<string, any>, imageId?: string): Promise<void>
   {
     const modelIdentifier: string = "black-forest-labs/flux-kontext-pro";
     const model = await this.checkModelIdentifier(communicator, modelIdentifier);
@@ -159,7 +158,7 @@ class ReplicateExtension extends PicteusExtension
     const intentParameters = await this.computeReplicateModelInputs(communicator, replicate, model);
     const inputImageParameterName = "input_image";
     delete intentParameters.properties[inputImageParameterName];
-    const intentResult: Record<string, any> = await communicator.launchIntent<Record<string, any>>({ parameters: intentParameters });
+    const intentResult: Record<string, any> = await communicator.launchIntent<Record<string, any>>({ form: { parameters: intentParameters } });
     const input = intentResult;
     if (imageId !== undefined)
     {
