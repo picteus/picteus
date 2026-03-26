@@ -14,6 +14,7 @@ import {
   app,
   BrowserWindow,
   dialog,
+  globalShortcut,
   Menu,
   MenuItem,
   MenuItemConstructorOptions,
@@ -412,6 +413,7 @@ export class ApplicationWrapper
     {
       logger.debug("The application is ready");
 
+      this.registerShortcut();
       this.setMenu();
       await this.onVersion(app.getVersion());
 
@@ -518,6 +520,11 @@ export class ApplicationWrapper
         logger.debug("The application is now quitting");
         app.quit();
       }
+    });
+
+    app.on("will-quit", () =>
+    {
+      this.unregisterShortcut();
     });
   }
 
@@ -888,6 +895,32 @@ export class ApplicationWrapper
       logger.info(`Launching the application for the very first time`);
     }
     fs.writeFileSync(versionFilePath, version);
+  }
+
+  private registerShortcut(): void
+  {
+    // We register a global "CommandOrControl+W" key shortcut, in order to close any window through this shortcut, except non-closeable ones: this is required, because when removing the default menu on a window also removes its default key shortcut mechanism
+    const success = globalShortcut.register("CommandOrControl+W", () =>
+    {
+      const focusedWindow = BrowserWindow.getFocusedWindow();
+      if (focusedWindow !== null)
+      {
+        if (focusedWindow.isClosable() === true)
+        {
+          focusedWindow.close();
+        }
+      }
+    });
+    if (success === false)
+    {
+      // Even in case of error, we do not want to stop the application its flow
+      logger.error("The shortcut registration failed");
+    }
+  }
+
+  private unregisterShortcut(): void
+  {
+    globalShortcut.unregisterAll();
   }
 
 }

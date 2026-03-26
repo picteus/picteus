@@ -74,6 +74,7 @@ export class PersistentWindowManager
     }
 
     const window = new BrowserWindow(options);
+    window.setMenu(null);
     window.setMenuBarVisibility(false);
     this.perIdWindowWithUrls.set(idUrl.id, { window, url: idUrl.url, automaticallyReopen });
 
