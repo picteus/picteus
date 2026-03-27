@@ -213,11 +213,12 @@
             "properties": {
               "anchor": {
                 "type": "string",
-                "title": "Anchor",
+                "title": "Integration",
                 "description": "What kind of UI do you want to open?",
                 "enum": [
                   "Modal",
                   "Sidebar",
+                  "SidebarExternal",
                   "Window"
                 ],
                 "default": "Modal",
@@ -255,19 +256,6 @@
           ]
         },
         {
-          "id": "application",
-          "on": {
-            "entity": "Process"
-          },
-          "specifications": [
-            {
-              "locale": "en",
-              "label": "Open application",
-              "description": "Opens an application in a dialog box."
-            }
-          ]
-        },
-        {
           "id": "show",
           "on": {
             "entity": "Process"
@@ -285,7 +273,7 @@
                   "image",
                   "repository"
                 ],
-                "default": "extensionSettings"
+                "default": "sidebar"
               }
             },
             "required": [
@@ -297,6 +285,19 @@
               "locale": "en",
               "label": "Show item",
               "description": "Asks the user for options to show a specific item."
+            }
+          ]
+        },
+        {
+          "id": "application",
+          "on": {
+            "entity": "Process"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Open application",
+              "description": "Opens an application in a dialog box."
             }
           ]
         }

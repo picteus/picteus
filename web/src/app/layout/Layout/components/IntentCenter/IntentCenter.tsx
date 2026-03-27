@@ -176,7 +176,7 @@ export default function IntentCenter() {
       const handleUi = () => {
         const ui = intent.ui;
         const frameContent = ui.frameContent;
-        if (ui.anchor === UserInterfaceAnchor.Window) {
+        const openWindowFromUi = (id: string) => {
           let parameters;
           if ("url" in frameContent) {
             parameters = { url: frameContent.url };
@@ -188,23 +188,31 @@ export default function IntentCenter() {
             respondWithError("Cannot handle the 'ui' intent with no 'frameContent.url' nor 'frameContent.html' property");
             return;
           }
-          openWindow(ui.id, parameters, false).then(() => {
+          openWindow(id, parameters, false).then(() => {
             respondWithValue();
           }).catch(error => respondWithError(error.message));
+        };
+        if (ui.integration.anchor === UserInterfaceAnchor.Window) {
+          openWindowFromUi(ui.id);
         }
-        else if (ui.anchor === UserInterfaceAnchor.Sidebar) {
+        else if (ui.integration.anchor === UserInterfaceAnchor.Sidebar) {
           const uuid = computeExtensionSidebarUuid(extensionId, ui.id);
           addTransient({
             uuid,
-            integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: false },
+            integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: ui.integration.isExternal },
             content: frameContent,
             icon: computeIcon(ui.dialogContent?.icon),
             title: ui.dialogContent?.title,
             extensionId,
             automaticallyReopen: false
           });
-          navigate(computeExtensionSidebarRoute(uuid));
-          respondWithValue();
+          if (ui.integration.isExternal === false) {
+            navigate(computeExtensionSidebarRoute(uuid));
+            respondWithValue();
+          }
+          else {
+            openWindowFromUi(uuid);
+          }
         }
         else {
           addModal({

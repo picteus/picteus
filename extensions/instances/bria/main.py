@@ -7,7 +7,7 @@ from PIL import Image
 from PIL.ImageFile import ImageFile
 from picteus_extension_sdk import PicteusExtension
 from picteus_extension_sdk.picteus_extension import NotificationEvent, Communicator, SettingsValue, NotificationsImage, \
-    NotificationsImagesIntent, NotificationsImages, Helper
+    NotificationsImagesIntent, NotificationsImages, Helper, NotificationsDialog, NotificationsDialogIconContent
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
     InstructionsPrompt, PromptKind, GenerationRecipePrompt, ImageFeatureValue
@@ -39,9 +39,11 @@ class BriaExtension(PicteusExtension):
                 if new_image is not None:
                     new_images.append(NotificationsImage(new_image.id))
             if len(new_images) > 0:
-                await communicator.launch_intent(NotificationsImagesIntent(
-                    NotificationsImages(new_images, "Background-less images",
-                                        "These are the images without background")))
+                await communicator.launch_intent(NotificationsImagesIntent(images=
+                                                                           NotificationsImages(images=new_images,
+                                                                                               dialogContent=NotificationsDialogIconContent(
+                                                                                                   title="Background-less images",
+                                                                                                   description="These are the images without background"))))
 
         return None
 

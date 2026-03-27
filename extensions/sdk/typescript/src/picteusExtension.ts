@@ -37,64 +37,64 @@ export class NotificationReturnedError extends Error
 
 }
 
-export interface NotificationIdentity
+export interface NotificationsIdentity
 {
   readonly id: string;
 }
 
-export interface NotificationContext
+export interface NotificationsContext
 {
   readonly imageIds?: string[];
 }
 
 export interface NotificationsBasisIntent
 {
-  readonly identity?: NotificationIdentity;
+  readonly identity?: NotificationsIdentity;
 }
 
 export interface NotificationsWithContextIntent extends NotificationsBasisIntent
 {
-  readonly context?: NotificationContext;
+  readonly context?: NotificationsContext;
 }
 
-export interface NotificationResourceUrl
+export interface NotificationsResourceUrl
 {
   readonly url: string;
 }
 
-export interface NotificationResourceContent
+export interface NotificationsResourceContent
 {
   readonly content: Buffer;
 }
 
-export type NotificationResource = NotificationResourceUrl | NotificationResourceContent;
+export type NotificationsResource = NotificationsResourceUrl | NotificationsResourceContent;
 
-export interface NotificationDialogContent
+export interface NotificationsDialogContent
 {
   readonly title: string;
   readonly description: string;
   readonly details?: string;
 }
 
-export interface NotificationDialogIconContent extends NotificationDialogContent
+export interface NotificationsDialogIconContent extends NotificationsDialogContent
 {
-  readonly icon?: NotificationResource;
+  readonly icon?: NotificationsResource;
 }
 
-export interface NotificationDialogIconSizeContent extends NotificationDialogIconContent
+export interface NotificationsDialogIconSizeContent extends NotificationsDialogIconContent
 {
   readonly size?: "auto" | "xs" | "s" | "m" | "l" | "xl";
 }
 
-export interface NotificationFormContent
+export interface NotificationsFormContent
 {
   readonly parameters: Json;
-  readonly dialogContent?: NotificationDialogIconSizeContent;
+  readonly dialogContent?: NotificationsDialogIconSizeContent;
 }
 
 export interface NotificationsFormIntent extends NotificationsWithContextIntent
 {
-  readonly form: NotificationFormContent;
+  readonly form: NotificationsFormContent;
 }
 
 export enum NotificationsUiAnchor
@@ -104,6 +104,27 @@ export enum NotificationsUiAnchor
   Window = "window",
   ImageDetail = "imageDetail"
 }
+
+export interface NotificationsUISidebarIntegration
+{
+  anchor: NotificationsUiAnchor.Sidebar,
+  isExternal: boolean
+}
+
+export interface NotificationsUIWindowIntegration
+{
+  anchor: NotificationsUiAnchor.Window;
+}
+
+export interface NotificationsUIModalIntegration
+{
+  anchor: NotificationsUiAnchor.Modal;
+}
+
+export type NotificationsUIIntegration =
+  NotificationsUISidebarIntegration
+  | NotificationsUIWindowIntegration
+  | NotificationsUIModalIntegration;
 
 export interface NotificationsUrlContent
 {
@@ -115,14 +136,14 @@ export interface NotificationsHtmlContent
   readonly html: string;
 }
 
-export type NotificationFrameContent = NotificationsUrlContent | NotificationsHtmlContent;
+export type NotificationsFrameContent = NotificationsUrlContent | NotificationsHtmlContent;
 
 export interface NotificationsUi
 {
   readonly id: string;
-  readonly anchor: NotificationsUiAnchor;
-  readonly frameContent: NotificationFrameContent;
-  readonly dialogContent?: NotificationDialogIconContent;
+  readonly integration: NotificationsUIIntegration;
+  readonly frameContent: NotificationsFrameContent;
+  readonly dialogContent?: NotificationsDialogIconContent;
 }
 
 export interface NotificationsUiIntent extends NotificationsWithContextIntent
@@ -139,7 +160,7 @@ export enum NotificationsDialogType
 
 export interface NotificationsFrame
 {
-  readonly content: NotificationFrameContent;
+  readonly content: NotificationsFrameContent;
   readonly height: number;
 }
 
@@ -149,7 +170,7 @@ export interface NotificationsDialogButtons
   no?: string;
 }
 
-export interface NotificationsDialog extends NotificationDialogIconSizeContent
+export interface NotificationsDialog extends NotificationsDialogIconSizeContent
 {
   readonly type: NotificationsDialogType;
   readonly frame?: NotificationsFrame;
@@ -164,13 +185,13 @@ export interface NotificationsDialogIntent extends NotificationsWithContextInten
 export interface NotificationsImage
 {
   readonly imageId: string;
-  readonly dialogContent?: NotificationDialogContent;
+  readonly dialogContent?: NotificationsDialogContent;
 }
 
 export interface NotificationsImages
 {
   readonly images: NotificationsImage[];
-  readonly dialogContent: NotificationDialogIconContent;
+  readonly dialogContent: NotificationsDialogIconContent;
 }
 
 export interface NotificationsImagesIntent extends NotificationsWithContextIntent

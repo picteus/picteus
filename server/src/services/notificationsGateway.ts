@@ -118,7 +118,7 @@ const zodDialogIconSizeContent = zodDialogIconContent.extend({
   size: z.enum(["auto", "xs", "s", "m", "l", "xl"]).optional()
 });
 
-const zodFrameContent = z.object({ url: z.string().optional(), html: z.string().optional() });
+const zodFrameContent = z.union([z.object({ url: z.string() }), z.object({ html: z.string() })]);
 
 @WebSocketGateway<GatewayMetadata>({ transports: ["websocket"] })
 export class NotificationsGateway
@@ -516,7 +516,18 @@ export class NotificationsGateway
       }
       else if (intent !== undefined)
       {
-        const result = await this.handleIntent(extensionId, intent, resolve);
+        let result;
+        try
+        {
+          result = await this.handleIntent(extensionId, intent, resolve);
+        }
+        catch (error)
+        {
+          const reasonMessage = (error as Error).message;
+          logger.error(`An unexpected error occurred during the handling of the intent from message from extension with id '${extensionId}'. Reason: '${reasonMessage}'`);
+          resolve({ error: `Could not handle properly the intent. Reason: '${reasonMessage}'` });
+          return;
+        }
         if (result === undefined)
         {
           isOk = false;
@@ -632,17 +643,20 @@ export class NotificationsGateway
       const specificIntent: NotificationsUiIntent = intent;
       if (await checkSchema(z.object({
         id: z.string(),
-        anchor: z.enum(NotificationsUiAnchor),
+        integration: z.union([
+          z.object({
+            anchor: z.string(NotificationsUiAnchor.Sidebar),
+            isExternal: z.boolean()
+          }),
+          z.object({ anchor: z.string(NotificationsUiAnchor.Window) }),
+          z.object({ anchor: z.string(NotificationsUiAnchor.Modal) })
+        ]),
         frameContent: zodFrameContent,
         dialogContent: zodDialogIconContent.optional()
 
       }), specificIntent.ui) === false)
       {
         return resolveWithInvalidIntentSchema("NotificationsUiIntent");
-      }
-      if (specificIntent.ui.anchor === NotificationsUiAnchor.ImageDetail)
-      {
-        return resolveWithError(`The '${NotificationsUiAnchor.ImageDetail}' anchor is not supported`);
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {

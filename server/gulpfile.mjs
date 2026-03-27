@@ -475,6 +475,7 @@ const generateOpenApiClient = (languageAndVariant) =>
       "useSingleRequestParameter": true,
       "supportsES6": false,
       "legacyDiscriminatorBehavior": false,
+      "useOneOfDiscriminatorLookup": true,
       "importFileExtension": "",
       "platform": "node",
       "packageVersion": packageVersion,

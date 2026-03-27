@@ -124,7 +124,7 @@ export type UiCommandType = {
   withTags?: string[];
   ui?: {
     id: string;
-    anchor: "modal" | "sidebar" | "window";
+    integration: { anchor: "modal" } | { anchor: "sidebar", isExternal: boolean } | { anchor: "window" };
     frameContent: FrameContent;
     dialogContent?: DialogIconContent;
   };

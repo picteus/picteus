@@ -70,13 +70,13 @@ class TypeScriptExtension extends PicteusExtension
       {
         await this.handleUi(communicator, parameters);
       }
-      else if (commandId === "application")
-      {
-        await this.handleApplication(communicator);
-      }
       else if (commandId === "show")
       {
         await this.handleShow(communicator, parameters);
+      }
+      else if (commandId === "application")
+      {
+        await this.handleApplication(communicator);
       }
     }
     else if (event === NotificationEvent.ImageRunCommand)
@@ -228,7 +228,15 @@ class TypeScriptExtension extends PicteusExtension
       ui:
         {
           id: `ui-${anchor}-${nature}`,
-          anchor: anchor === "Modal" ? NotificationsUiAnchor.Modal : (anchor === "Sidebar" ? NotificationsUiAnchor.Sidebar : NotificationsUiAnchor.Window),
+          integration: anchor === "Modal" ? { anchor: NotificationsUiAnchor.Modal } : ((anchor === "Sidebar" || anchor === "SidebarExternal") ?
+            {
+              anchor: NotificationsUiAnchor.Sidebar,
+              isExternal: anchor === "SidebarExternal"
+            }
+            :
+            {
+              anchor: NotificationsUiAnchor.Window
+            }),
           frameContent,
           dialogContent:
             {
@@ -236,38 +244,6 @@ class TypeScriptExtension extends PicteusExtension
               description: "Demonstrates how to open a dedicated UI.",
               icon: { content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), isUrl === true ? "swaggerui.png" : "icon.png")) }
             }
-        }
-    });
-  }
-
-  private async handleApplication(communicator: Communicator): Promise<void>
-  {
-    const summaries = (await this.getImageApi().imageSearchSummaries({
-      searchParameters:
-        {
-          filter:
-            {
-              sorting: { property: "importDate", isAscending: false }
-            },
-          range: { take: 20 }
-        }
-    })).items;
-    const result = await communicator.launchIntent<string>({
-      serveBundle:
-        {
-          content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "application.zip")),
-          settings: { imageIds: summaries.map(summary => summary.id) }
-        }
-    });
-    await communicator.launchIntent({
-      dialog:
-        {
-          type: NotificationsDialogType.Info,
-          title: "Application",
-          description: "This dialog box integrates an iframe application.",
-          size: "l",
-          frame: { content: { url: result + "/index.html" }, height: 70 },
-          buttons: { yes: "Close" }
         }
     });
   }
@@ -309,6 +285,38 @@ class TypeScriptExtension extends PicteusExtension
         return;
     }
     await communicator.launchIntent({ show: { type: showType, id: showId } });
+  }
+
+  private async handleApplication(communicator: Communicator): Promise<void>
+  {
+    const summaries = (await this.getImageApi().imageSearchSummaries({
+      searchParameters:
+        {
+          filter:
+            {
+              sorting: { property: "importDate", isAscending: false }
+            },
+          range: { take: 20 }
+        }
+    })).items;
+    const result = await communicator.launchIntent<string>({
+      serveBundle:
+        {
+          content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "application.zip")),
+          settings: { imageIds: summaries.map(summary => summary.id) }
+        }
+    });
+    await communicator.launchIntent({
+      dialog:
+        {
+          type: NotificationsDialogType.Info,
+          title: "Application",
+          description: "This dialog box integrates an iframe application.",
+          size: "l",
+          frame: { content: { url: result + "/index.html" }, height: 70 },
+          buttons: { yes: "Close" }
+        }
+    });
   }
 
   private async handleRunCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: Record<string, any>): Promise<void>

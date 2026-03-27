@@ -42,7 +42,6 @@ export function AdditionalUiProvider({ children }) {
     if (transientUis.find(ui => ui.extensionId === additionalUi.extensionId && ui.uuid === additionalUi.uuid) === undefined) {
       setTransientUis(transientUis.concat(additionalUi));
       const updatedAdditionalUis = [...additionalContextValue.sidebar, additionalUi];
-      console.dir(updatedAdditionalUis);
       setAdditionalContextValue({ sidebar: updatedAdditionalUis });
     }
   }, [additionalContextValue, transientUis]);

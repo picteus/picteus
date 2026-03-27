@@ -6,7 +6,7 @@ import os
 import signal
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, asdict, is_dataclass
+from dataclasses import dataclass, asdict, is_dataclass, field
 from enum import StrEnum
 from logging import getLogger, basicConfig
 from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Union, List
@@ -68,64 +68,64 @@ class SuperDataClass:
 
 
 @dataclass(kw_only=True)
-class NotificationIdentity(SuperDataClass):
+class NotificationsIdentity(SuperDataClass):
     id: str
 
 
 @dataclass(kw_only=True)
-class NotificationContext(SuperDataClass):
+class NotificationsContext(SuperDataClass):
     imageIds: Optional[List[str]] = None
 
 
 @dataclass
 class NotificationsBasisIntent(SuperDataClass):
-    identity: Optional[NotificationIdentity] = None
+    identity: Optional[NotificationsIdentity] = None
 
 
 @dataclass
 class NotificationsWithContextIntent(NotificationsBasisIntent):
-    context: Optional[NotificationContext] = None
+    context: Optional[NotificationsContext] = None
 
 
 @dataclass
-class NotificationResourceUrl(SuperDataClass):
+class NotificationsResourceUrl(SuperDataClass):
     url: str
 
 
 @dataclass
-class NotificationResourceContent(SuperDataClass):
+class NotificationsResourceContent(SuperDataClass):
     content: bytearray
 
 
-NotificationResource = Union[NotificationResourceUrl, NotificationResourceContent]
+NotificationsResource = Union[NotificationsResourceUrl, NotificationsResourceContent]
 
 
 @dataclass(kw_only=True)
-class NotificationDialogContent(SuperDataClass):
+class NotificationsDialogContent(SuperDataClass):
     title: str
     description: str
     details: Optional[str] = None
 
 
 @dataclass(kw_only=True)
-class NotificationDialogIconContent(NotificationDialogContent):
-    icon: Optional[NotificationResource] = None
+class NotificationsDialogIconContent(NotificationsDialogContent):
+    icon: Optional[NotificationsResource] = None
 
 
 @dataclass
-class NotificationDialogIconSizeContent(NotificationDialogIconContent):
+class NotificationsDialogIconSizeContent(NotificationsDialogIconContent):
     size: Optional[Literal["auto", "xs", "s", "m", "l", "xl"]] = None
 
 
 @dataclass
-class NotificationFormContent(SuperDataClass):
+class NotificationsFormContent(SuperDataClass):
     parameters: Json
-    dialogContent: Optional[NotificationDialogIconSizeContent] = None
+    dialogContent: Optional[NotificationsDialogIconSizeContent] = None
 
 
 @dataclass(kw_only=True)
-class NotificationFormIntent(NotificationsWithContextIntent):
-    form: NotificationFormContent
+class NotificationsFormIntent(NotificationsWithContextIntent):
+    form: NotificationsFormContent
 
 
 class NotificationsUiAnchor(StrEnum):
@@ -133,6 +133,26 @@ class NotificationsUiAnchor(StrEnum):
     SIDEBAR = "sidebar",
     WINDOW = "window",
     IMAGE_DETAILS = "imageDetail"
+
+
+@dataclass(kw_only=True)
+class NotificationsUISidebarIntegration(SuperDataClass):
+    anchor: NotificationsUiAnchor = field(default=NotificationsUiAnchor.SIDEBAR, init=False)
+    isExternal: bool
+
+
+@dataclass(kw_only=True)
+class NotificationsUIWindowIntegration(SuperDataClass):
+    anchor: NotificationsUiAnchor = field(default=NotificationsUiAnchor.WINDOW, init=False)
+
+
+@dataclass(kw_only=True)
+class NotificationsUIModalIntegration(SuperDataClass):
+    anchor: NotificationsUiAnchor = field(default=NotificationsUiAnchor.MODAL, init=False)
+
+
+NotificationsUIIntegration = Union[
+    NotificationsUISidebarIntegration, NotificationsUIWindowIntegration, NotificationsUIModalIntegration]
 
 
 @dataclass
@@ -145,15 +165,15 @@ class NotificationsFrameHtmlContent(SuperDataClass):
     html: str
 
 
-NotificationFrameContent = Union[NotificationsFrameUrlContent, NotificationsFrameHtmlContent]
+NotificationsFrameContent = Union[NotificationsFrameUrlContent, NotificationsFrameHtmlContent]
 
 
 @dataclass
 class NotificationsUi(SuperDataClass):
     id: str
-    anchor: NotificationsUiAnchor
-    frameContent: NotificationFrameContent
-    dialogContent: Optional[NotificationDialogIconContent]
+    integration: NotificationsUIIntegration
+    frameContent: NotificationsFrameContent
+    dialogContent: Optional[NotificationsDialogIconContent]
 
 
 @dataclass(kw_only=True)
@@ -169,7 +189,7 @@ class NotificationsDialogType(StrEnum):
 
 @dataclass
 class NotificationsFrame(SuperDataClass):
-    content: NotificationFrameContent
+    content: NotificationsFrameContent
     height: int
 
 
@@ -180,7 +200,7 @@ class NotificationsDialogButtons(SuperDataClass):
 
 
 @dataclass(kw_only=True)
-class NotificationsDialog(NotificationDialogIconSizeContent):
+class NotificationsDialog(NotificationsDialogIconSizeContent):
     type: NotificationsDialogType
     frame: Optional[NotificationsFrame] = None
     buttons: NotificationsDialogButtons
@@ -194,13 +214,13 @@ class NotificationsDialogIntent(NotificationsWithContextIntent):
 @dataclass
 class NotificationsImage(SuperDataClass):
     imageId: str
-    dialogContent: Optional[NotificationDialogContent] = None
+    dialogContent: Optional[NotificationsDialogContent] = None
 
 
 @dataclass
 class NotificationsImages(SuperDataClass):
     images: List[NotificationsImage]
-    dialogContent: Optional[NotificationDialogIconContent] = None
+    dialogContent: Optional[NotificationsDialogIconContent] = None
 
 
 @dataclass(kw_only=True)
@@ -238,7 +258,7 @@ class NotificationsServeBundleIntent(NotificationsBasisIntent):
 
 
 NotificationsIntent = Union[
-    NotificationFormIntent, NotificationsUiIntent, NotificationsDialogIntent, NotificationsImagesIntent, NotificationsShowIntent, NotificationsServeBundleIntent]
+    NotificationsFormIntent, NotificationsUiIntent, NotificationsDialogIntent, NotificationsImagesIntent, NotificationsShowIntent, NotificationsServeBundleIntent]
 
 
 class NotificationEvent(StrEnum):

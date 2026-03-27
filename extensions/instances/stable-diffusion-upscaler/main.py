@@ -10,7 +10,7 @@ from diffusers import StableDiffusionUpscalePipeline
 from diffusers.utils import load_image
 from picteus_extension_sdk import PicteusExtension
 from picteus_extension_sdk.picteus_extension import NotificationEvent, Communicator, SettingsValue, NotificationsImage, \
-    NotificationsImagesIntent, NotificationsImages, Helper
+    NotificationsImagesIntent, NotificationsImages, Helper, NotificationsDialogIconContent
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
     GenerationRecipePrompt, InstructionsPrompt, PromptKind, ImageFeatureValue
@@ -43,8 +43,11 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
                 if new_image is not None:
                     new_images.append(NotificationsImage(new_image.id))
             if len(new_images) > 0:
-                await communicator.launch_intent(NotificationsImagesIntent(
-                    NotificationsImages(new_images, "Upscaled images", "These are the upscaled images")))
+                await communicator.launch_intent(NotificationsImagesIntent(images=
+                                                                           NotificationsImages(images=new_images,
+                                                                                               dialogContent=NotificationsDialogIconContent(
+                                                                                                   title="Upscaled images",
+                                                                                                   description="These are the upscaled images"))))
 
         return None
 
