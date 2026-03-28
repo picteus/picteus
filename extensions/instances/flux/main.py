@@ -2,8 +2,7 @@ import asyncio
 import os
 from typing import Dict, Any, Optional
 
-from picteus_extension_sdk import PicteusExtension
-from picteus_extension_sdk.picteus_extension import NotificationEvent, Communicator, SettingsValue
+from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator, SettingsValue
 
 os.environ["TRANSFORMERS_CACHE"] = PicteusExtension.get_cache_directory_path()
 os.environ["HF_HOME"] = PicteusExtension.get_cache_directory_path()

@@ -10,8 +10,7 @@ import clip
 import torch
 from PIL import Image
 from PIL.ImageFile import ImageFile
-from picteus_extension_sdk import PicteusExtension
-from picteus_extension_sdk.picteus_extension import NotificationEvent, Communicator
+from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator
 from picteus_ws_client import ImageEmbeddings, ImageFormat
 
 

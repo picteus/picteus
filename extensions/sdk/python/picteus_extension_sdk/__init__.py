@@ -6,4 +6,5 @@ def get_version() -> str:
     return __version__
 
 
-from picteus_extension_sdk.picteus_extension import PicteusExtension
+from picteus_extension_sdk.intents import *
+from picteus_extension_sdk.picteus_extension import *

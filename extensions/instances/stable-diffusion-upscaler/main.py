@@ -8,8 +8,7 @@ from PIL import Image
 from PIL.ImageFile import ImageFile
 from diffusers import StableDiffusionUpscalePipeline
 from diffusers.utils import load_image
-from picteus_extension_sdk import PicteusExtension
-from picteus_extension_sdk.picteus_extension import NotificationEvent, Communicator, SettingsValue, NotificationsImage, \
+from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator, SettingsValue, NotificationsImage, \
     NotificationsImagesIntent, NotificationsImages, Helper, NotificationsDialogIconContent
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \

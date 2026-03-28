@@ -4,8 +4,7 @@ import json
 import os
 from typing import Dict, Any, List, Optional, Literal
 
-from picteus_extension_sdk import PicteusExtension
-from picteus_extension_sdk.picteus_extension import NotificationEvent, NotificationReturnedError, Communicator, \
+from picteus_extension_sdk import PicteusExtension, NotificationEvent, NotificationReturnedError, Communicator, \
     NotificationsDialogType, NotificationsUiIntent, \
     NotificationsUi, NotificationsDialogIntent, NotificationsDialog, NotificationsDialogButtons, NotificationsImage, \
     NotificationsImagesIntent, NotificationsImages, NotificationsShowIntent, NotificationsShow, NotificationsShowType, \
@@ -75,15 +74,15 @@ class PythonExtension(PicteusExtension):
         if is_created_or_updated or event == NotificationEvent.IMAGE_COMPUTE_TAGS:
             communicator.send_log(f"Setting the tags for the image with id '{image_id}'", "debug")
             self.get_image_api().image_set_tags(id=image_id, extension_id=self.extension_id,
-                                            request_body=[self.extension_id])
+                                                request_body=[self.extension_id])
         if is_created_or_updated or event == NotificationEvent.IMAGE_COMPUTE_FEATURES:
             communicator.send_log(f"Setting the features for the image with id '{image_id}'", "debug")
             self.get_image_api().image_set_features(id=image_id, extension_id=self.extension_id,
-                                                image_feature=[ImageFeature(type=ImageFeatureType.OTHER,
-                                                                            format=ImageFeatureFormat.STRING,
-                                                                            name="example",
-                                                                            value=ImageFeatureValue(
-                                                                                "This is a string"))])
+                                                    image_feature=[ImageFeature(type=ImageFeatureType.OTHER,
+                                                                                format=ImageFeatureFormat.STRING,
+                                                                                name="example",
+                                                                                value=ImageFeatureValue(
+                                                                                    "This is a string"))])
 
     async def _handle_ask_for_something(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         intent_parameters: Dict[str, Any] = \

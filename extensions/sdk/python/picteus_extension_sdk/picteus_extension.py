@@ -6,10 +6,10 @@ import os
 import signal
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, asdict, is_dataclass, field
+from dataclasses import asdict, is_dataclass
 from enum import StrEnum
 from logging import getLogger, basicConfig
-from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Union, List
+from typing import Dict, Any, Literal, TypeVar, Callable, Optional
 
 import aiohttp
 import requests
@@ -20,6 +20,7 @@ from socketio import SimpleClient
 
 import picteus_ws_client
 from picteus_extension_sdk import get_version
+from picteus_extension_sdk.intents import NotificationsIntent
 from picteus_ws_client import Manifest
 
 basicConfig(
@@ -42,223 +43,6 @@ class NotificationReturnedError(Exception):
     def __init__(self, message: str, reason: NotificationReturnedErrorCause) -> None:
         super().__init__(message)
         self.reason: NotificationReturnedErrorCause = reason
-
-
-Json = Dict[str, Any]
-
-
-# In order to benefit from serializable intent structures, taken from https://stackoverflow.com/questions/51286748/make-the-python-json-encoder-support-pythons-new-dataclasses
-@dataclass
-class SuperDataClass:
-
-    @property
-    def __dict__(self):
-        """
-        get a Python dictionary
-        """
-        # noinspection PyTypeChecker
-        return asdict(self)
-
-    @property
-    def json(self):
-        """
-        get the JSON formated string
-        """
-        return json.dumps(self.__dict__)
-
-
-@dataclass(kw_only=True)
-class NotificationsIdentity(SuperDataClass):
-    id: str
-
-
-@dataclass(kw_only=True)
-class NotificationsContext(SuperDataClass):
-    imageIds: Optional[List[str]] = None
-
-
-@dataclass
-class NotificationsBasisIntent(SuperDataClass):
-    identity: Optional[NotificationsIdentity] = None
-
-
-@dataclass
-class NotificationsWithContextIntent(NotificationsBasisIntent):
-    context: Optional[NotificationsContext] = None
-
-
-@dataclass
-class NotificationsResourceUrl(SuperDataClass):
-    url: str
-
-
-@dataclass
-class NotificationsResourceContent(SuperDataClass):
-    content: bytearray
-
-
-NotificationsResource = Union[NotificationsResourceUrl, NotificationsResourceContent]
-
-
-@dataclass(kw_only=True)
-class NotificationsDialogContent(SuperDataClass):
-    title: str
-    description: str
-    details: Optional[str] = None
-
-
-@dataclass(kw_only=True)
-class NotificationsDialogIconContent(NotificationsDialogContent):
-    icon: Optional[NotificationsResource] = None
-
-
-@dataclass
-class NotificationsDialogIconSizeContent(NotificationsDialogIconContent):
-    size: Optional[Literal["auto", "xs", "s", "m", "l", "xl"]] = None
-
-
-@dataclass
-class NotificationsFormContent(SuperDataClass):
-    parameters: Json
-    dialogContent: Optional[NotificationsDialogIconSizeContent] = None
-
-
-@dataclass(kw_only=True)
-class NotificationsFormIntent(NotificationsWithContextIntent):
-    form: NotificationsFormContent
-
-
-class NotificationsUiAnchor(StrEnum):
-    MODAL = "modal",
-    SIDEBAR = "sidebar",
-    WINDOW = "window",
-    IMAGE_DETAILS = "imageDetail"
-
-
-@dataclass(kw_only=True)
-class NotificationsUISidebarIntegration(SuperDataClass):
-    anchor: NotificationsUiAnchor = field(default=NotificationsUiAnchor.SIDEBAR, init=False)
-    isExternal: bool
-
-
-@dataclass(kw_only=True)
-class NotificationsUIWindowIntegration(SuperDataClass):
-    anchor: NotificationsUiAnchor = field(default=NotificationsUiAnchor.WINDOW, init=False)
-
-
-@dataclass(kw_only=True)
-class NotificationsUIModalIntegration(SuperDataClass):
-    anchor: NotificationsUiAnchor = field(default=NotificationsUiAnchor.MODAL, init=False)
-
-
-NotificationsUIIntegration = Union[
-    NotificationsUISidebarIntegration, NotificationsUIWindowIntegration, NotificationsUIModalIntegration]
-
-
-@dataclass
-class NotificationsFrameUrlContent(SuperDataClass):
-    url: str
-
-
-@dataclass
-class NotificationsFrameHtmlContent(SuperDataClass):
-    html: str
-
-
-NotificationsFrameContent = Union[NotificationsFrameUrlContent, NotificationsFrameHtmlContent]
-
-
-@dataclass
-class NotificationsUi(SuperDataClass):
-    id: str
-    integration: NotificationsUIIntegration
-    frameContent: NotificationsFrameContent
-    dialogContent: Optional[NotificationsDialogIconContent]
-
-
-@dataclass(kw_only=True)
-class NotificationsUiIntent(NotificationsWithContextIntent):
-    ui: NotificationsUi
-
-
-class NotificationsDialogType(StrEnum):
-    ERROR = "error",
-    INFO = "info",
-    QUESTION = "question"
-
-
-@dataclass
-class NotificationsFrame(SuperDataClass):
-    content: NotificationsFrameContent
-    height: int
-
-
-@dataclass
-class NotificationsDialogButtons(SuperDataClass):
-    yes: str
-    no: Optional[str] = None
-
-
-@dataclass(kw_only=True)
-class NotificationsDialog(NotificationsDialogIconSizeContent):
-    type: NotificationsDialogType
-    frame: Optional[NotificationsFrame] = None
-    buttons: NotificationsDialogButtons
-
-
-@dataclass(kw_only=True)
-class NotificationsDialogIntent(NotificationsWithContextIntent):
-    dialog: NotificationsDialog
-
-
-@dataclass
-class NotificationsImage(SuperDataClass):
-    imageId: str
-    dialogContent: Optional[NotificationsDialogContent] = None
-
-
-@dataclass
-class NotificationsImages(SuperDataClass):
-    images: List[NotificationsImage]
-    dialogContent: Optional[NotificationsDialogIconContent] = None
-
-
-@dataclass(kw_only=True)
-class NotificationsImagesIntent(NotificationsWithContextIntent):
-    images: NotificationsImages
-
-
-class NotificationsShowType(StrEnum):
-    SIDEBAR = "sidebar"
-    EXTENSION_SETTINGS = "extensionSettings"
-    IMAGE = "image"
-    REPOSITORY = "repository"
-
-
-@dataclass
-class NotificationsShow(SuperDataClass):
-    type: NotificationsShowType
-    id: str
-
-
-@dataclass(kw_only=True)
-class NotificationsShowIntent(NotificationsBasisIntent):
-    show: NotificationsShow
-
-
-@dataclass(kw_only=True)
-class NotificationsServeBundle(SuperDataClass):
-    content: bytearray
-    settings: Optional[Json] = None
-
-
-@dataclass(kw_only=True)
-class NotificationsServeBundleIntent(NotificationsBasisIntent):
-    serveBundle: NotificationsServeBundle
-
-
-NotificationsIntent = Union[
-    NotificationsFormIntent, NotificationsUiIntent, NotificationsDialogIntent, NotificationsImagesIntent, NotificationsShowIntent, NotificationsServeBundleIntent]
 
 
 class NotificationEvent(StrEnum):
@@ -294,13 +78,13 @@ class _ExtensionParameters:
         self.api_key: str = parameters.get("apiKey")
 
 
-def scrub_bytes(an_object: Any) -> Any:
+def _scrub_bytes(an_object: Any) -> Any:
     if is_dataclass(an_object) == True:
         an_object = asdict(an_object)
     if isinstance(an_object, dict):
-        return {key: scrub_bytes(value) for key, value in an_object.items()}
+        return {key: _scrub_bytes(value) for key, value in an_object.items()}
     elif isinstance(an_object, list):
-        return [scrub_bytes(index) for index in an_object]
+        return [_scrub_bytes(index) for index in an_object]
     elif isinstance(an_object, (bytes, bytearray)):
         return "<bytes>"
     return an_object
@@ -337,7 +121,7 @@ class _MessageSender:
 
     async def launch_intent(self, intent: NotificationsIntent, future: asyncio.Future) -> None:
         def callback(the_value: [Dict[str, Any]]) -> T:
-            self.logger.debug(f"Received a result related to the intent '{scrub_bytes(intent)}' for {self.to_string()}")
+            self.logger.debug(f"Received a result related to the intent '{_scrub_bytes(intent)}' for {self.to_string()}")
             if "cancel" in the_value:
                 # noinspection PyUnresolvedReferences
                 future.set_exception(
@@ -379,7 +163,7 @@ class _MessageSender:
     async def send_message(self, channel: str, body: Dict[str, Any],
                            callback: Callable[[Dict[str, Any]], T] = None) -> None:
         context_id = self.context_id
-        self.logger.debug(f"Sending the message {scrub_bytes(body)} on channel '{channel}' for {self.to_string()}" + (
+        self.logger.debug(f"Sending the message {_scrub_bytes(body)} on channel '{channel}' for {self.to_string()}" + (
             f" attached to the context with id '{context_id}'" if context_id is not None else "") + (
                               " and waiting for a callback" if callback is not None else ""))
         value: Dict[str, Any] = {"apiKey": self.parameters.api_key, "extensionId": self.parameters.extension_id,
