@@ -4,7 +4,6 @@ import { randomUUID } from "node:crypto";
 import Timers from "node:timers";
 import { ModuleRef } from "@nestjs/core";
 import { forwardRef, Inject, Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { EventEmitter2 } from "@nestjs/event-emitter";
 
 import { Prisma, Repository as PersistedRepository } from ".prisma/client";
 import { logger } from "../logger";
@@ -32,7 +31,7 @@ import {
 import { Json } from "../bos";
 import { EntitiesProvider, VectorDatabaseAccessor } from "./databaseProviders";
 import { ImageDeclarationManager } from "../threads/managers";
-import { EventEntity, ImageEventAction, Notifier, RepositoryEventAction } from "../notifier";
+import { EventEntity, ImageEventAction, NotifierService, RepositoryEventAction } from "./notifierService";
 import { parametersChecker, StringLengths, StringNature } from "./utils/parametersChecker";
 import { RepositoryWatcher } from "./utils/repositoryWatcher";
 import {
@@ -56,17 +55,13 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
 
   private readonly perPathFileRepositories: Map<string, Repository> = new Map<string, Repository>();
 
-  // @ts-ignore
-  private notifier: Notifier;
-
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly collectionService: CollectionService, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly eventEmitter: EventEmitter2, private readonly moduleRef: ModuleRef)
+  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly collectionService: CollectionService, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating a RepositoryService");
   }
 
   async onModuleInit(): Promise<void>
   {
-    this.notifier = new Notifier(this.eventEmitter);
     // We start the repositories
     await this.startOrStopAll(true);
     logger.debug("The initializing of a RepositoryService is over");
@@ -78,7 +73,6 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     await this.startOrStopAll(false);
     RepositoryService.synchronizingRepositoryIds.clear();
     await ImageDeclarationManager.destroyAll();
-    this.notifier.destroy();
     logger.debug("Destroyed a RepositoryService");
   }
 
@@ -185,7 +179,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     const persistedRepository = await this.entitiesProvider.repositories.create({ data: repositoryObject });
 
     const repository = plainToInstanceViaJSON(Repository, persistedRepository);
-    this.notifier.emit(EventEntity.Repository, RepositoryEventAction.Created, undefined, { id: repository.id });
+    this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Created, undefined, { id: repository.id });
     await this.internalSynchronize(repository, undefined, doNotWatch === true ? undefined : async (repository: Repository, updateStatus: () => Promise<Repository>): Promise<void> =>
     {
       repository = await updateStatus();
@@ -292,14 +286,14 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       if (wasWatching === true)
       {
         // The repository is being watched
-        await RepositoryWatcher.stop(repository, this.notifier);
+        await RepositoryWatcher.stop(repository, this.notifierService);
       }
     }, async (repository: Repository, updateStatus: () => Promise<Repository>): Promise<void> =>
     {
       if (wasWatching === true)
       {
         // We resume the watching, in case the synchronization was successful
-        await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifier, this.collectionService);
+        await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifierService, this.collectionService);
       }
       const updatedRepository = await updateStatus();
       if (onSuccess !== undefined)
@@ -328,13 +322,13 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     if (isStart === true)
     {
-      await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifier, this.collectionService);
+      await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifierService, this.collectionService);
     }
     else
     {
       if (checkState === true || RepositoryWatcher.get(repository.id) !== undefined)
       {
-        await RepositoryWatcher.stop(repository, this.notifier);
+        await RepositoryWatcher.stop(repository, this.notifierService);
       }
     }
   }
@@ -354,7 +348,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     if (RepositoryWatcher.get(id) !== undefined)
     {
       // We stop any pending watcher
-      await RepositoryWatcher.stop(repository, this.notifier);
+      await RepositoryWatcher.stop(repository, this.notifierService);
     }
     // We remove the repository from the collections
     await this.collectionService.clearFromOrigin(SearchOriginKind.Repositories, id);
@@ -372,9 +366,9 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     await this.entitiesProvider.prisma.$transaction([deleteRepository]);
     for (const imageId of imageIds)
     {
-      this.notifier.emit(EventEntity.Image, RepositoryEventAction.Deleted, undefined, { id: imageId });
+      this.notifierService.emit(EventEntity.Image, RepositoryEventAction.Deleted, undefined, { id: imageId });
     }
-    this.notifier.emit(EventEntity.Repository, RepositoryEventAction.Deleted, undefined, { id });
+    this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Deleted, undefined, { id });
   }
 
   async list(ids?: string[]): Promise<RepositoryList>
@@ -473,7 +467,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       {
         reject(new Error(`The image rename event did not occur after a time-out of ${timeoutInMilliseconds} ms`));
       }, timeoutInMilliseconds);
-      this.notifier.once(EventEntity.Image, ImageEventAction.Renamed, undefined, async (_event: string, value: Record<string, any>) =>
+      this.notifierService.once(EventEntity.Image, ImageEventAction.Renamed, undefined, async (_event: string, value: Record<string, any>) =>
       {
         if (value.id === imageId)
         {
@@ -590,7 +584,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
           parentId,
           sourceUrl
         })).id;
-        this.notifier.emit(EventEntity.Image, ImageEventAction.Created, undefined, { id: imageId });
+        this.notifierService.emit(EventEntity.Image, ImageEventAction.Created, undefined, { id: imageId });
         return await this.moduleRef.get(ImageService).get(imageId);
       }
       finally
@@ -624,7 +618,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is already synchronizing`);
     }
-    this.notifier.emit(EventEntity.Repository, RepositoryEventAction.Synchronize, "started", { id: repositoryId });
+    this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Synchronize, "started", { id: repositoryId });
     if (onRepository !== undefined)
     {
       await onRepository(repository);
@@ -655,7 +649,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
             const { id, action } = event;
             if (action !== undefined)
             {
-              this.notifier.emit(EventEntity.Image, action, undefined, { id });
+              this.notifierService.emit(EventEntity.Image, action, undefined, { id });
             }
             return id;
           }
@@ -701,7 +695,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
               {
                 for (const imageId of toDeletedImageIds)
                 {
-                  this.notifier.emit(EventEntity.Image, ImageEventAction.Deleted, undefined, { id: imageId });
+                  this.notifierService.emit(EventEntity.Image, ImageEventAction.Deleted, undefined, { id: imageId });
                 }
               });
             });
@@ -739,7 +733,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
           {
             await onSuccess(repository, updateStatus);
           }
-          service.notifier.emit(EventEntity.Repository, RepositoryEventAction.Synchronize, "stopped", { id: repositoryId });
+          service.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Synchronize, "stopped", { id: repositoryId });
         }
 
         return new Promise((resolve, reject) =>

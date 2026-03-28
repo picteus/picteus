@@ -8,6 +8,7 @@ import Timers from "node:timers";
 import { expect, jest } from "@jest/globals";
 import { pickPort } from "pick-port";
 import AdmZip from "adm-zip";
+import { Type } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Test, TestingModule } from "@nestjs/testing";
@@ -53,10 +54,14 @@ import {
   SearchParameters,
   TextualPrompt
 } from "../src/dtos/app.dtos";
-import { EventEntity, ExtensionEventProcess, Notifier, RepositoryEventAction } from "../src/notifier";
-import { writeMetadata } from "../src/services/utils/images";
+import {
+  EventEntity,
+  ExtensionEventProcess,
+  NotifierService,
+  RepositoryEventAction
+} from "../src/services/notifierService";
 import { ExtensionService } from "../src/services/extensionServices";
-import { Type } from "@nestjs/common/interfaces";
+import { writeMetadata } from "../src/services/utils/images";
 import { ApiScope } from "../src/app.guards";
 import { ControllerProxy } from "./controllerProxy";
 
@@ -638,9 +643,9 @@ export class Base extends Core
     return this.getModuleProvider(EventEmitter2, true);
   }
 
-  getNotifier(): Notifier
+  getNotifierService(): NotifierService
   {
-    return new Notifier(this.getEventEmitter());
+    return this.getModuleProvider(NotifierService, true);
   }
 
   async createRepository(url: string, name: string = Defaults.repositoryName, comment: string | undefined = undefined, watch: boolean | undefined = undefined): Promise<Repository>
@@ -725,10 +730,10 @@ export class Base extends Core
 
   async waitUntilRepositoryReady(repositoryId: string): Promise<void>
   {
-    const notifier = this.getNotifier();
+    const notifierService = this.getNotifierService();
     await new Promise(async (resolve) =>
     {
-      const offListener = notifier.on(EventEntity.Repository, RepositoryEventAction.Synchronize, ExtensionEventProcess.Stopped, async (_event: string, value: object) =>
+      const offListener = notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, ExtensionEventProcess.Stopped, async (_event: string, value: object) =>
       {
         if ("id" in value && value.id === repositoryId)
         {

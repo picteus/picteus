@@ -68,6 +68,7 @@ import {
   ImageService,
   MiscellaneousService,
   NotificationsGateway,
+  NotifierService,
   RepositoryService,
   SearchService,
   SettingsService,
@@ -76,7 +77,6 @@ import {
 } from "./services/app.service";
 import { ControllerError, ServiceError } from "./app.exceptions";
 import { Resizer } from "./resizer";
-import { Notifier } from "./notifier";
 
 const { INTERNAL_SERVER_ERROR } = HttpCodes;
 
@@ -357,12 +357,12 @@ class MigrationModule implements OnModuleInit, OnModuleDestroy
 }
 
 // The orders in which the providers matter, because we want their "onModuleInit()" method invoked in the following order: "AdministrationService" => "RepositoryService"
-const providers = [unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, throttlerGuardProvider, VectorDatabaseAccessor, HostService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService];
+const providers = [unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, throttlerGuardProvider, VectorDatabaseAccessor, HostService, NotifierService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService];
 
 @Module({
   imports:
     [
-      EventEmitterModule.forRoot({ wildcard: true, delimiter: Notifier.delimiter }),
+      EventEmitterModule.forRoot({ wildcard: true, delimiter: NotifierService.delimiter }),
       ThrottlerModule.forRoot({
         throttlers:
           [

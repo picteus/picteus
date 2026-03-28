@@ -1,7 +1,12 @@
 import { MessagePort } from "node:worker_threads";
 
 import { ImageFormat, ManifestCapability, ManifestCapabilityId, ManifestEvent } from "./dtos/app.dtos";
-import { ExtensionEventAction, ImageEventAction, ProcessEventAction, TextEventAction } from "./notifier";
+import {
+  ExtensionEventAction,
+  ImageEventAction,
+  ProcessEventAction,
+  TextEventAction
+} from "./services/notifierService";
 
 
 // Taken from https://github.com/microsoft/TypeScript/issues/1897
@@ -76,6 +81,8 @@ export function fromImageEventActionToManifestEvent(action: ImageEventAction): M
       return ManifestEvent.ImageCreated;
     case ImageEventAction.Updated:
       return ManifestEvent.ImageUpdated;
+    case ImageEventAction.TagsUpdated:
+    case ImageEventAction.FeaturesUpdated:
     case ImageEventAction.Renamed:
       return null;
     case ImageEventAction.Deleted:

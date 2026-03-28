@@ -11,11 +11,17 @@ import {
 } from "../../dtos/app.dtos";
 import { logger } from "../../logger";
 import { parametersChecker } from "./parametersChecker";
-import { EventEntity, ExtensionEventProcess, ImageEventAction, Notifier, RepositoryEventAction } from "../../notifier";
 import { ImageDeclarationManager } from "../../threads/managers";
 import { VectorDatabaseAccessor } from "../databaseProviders";
 import { PersistenceProvider } from "../../persistence";
 import { SearchFileStats, SearchService } from "../imageServices";
+import {
+  EventEntity,
+  ExtensionEventProcess,
+  ImageEventAction,
+  NotifierService,
+  RepositoryEventAction
+} from "../notifierService";
 import { WatcherEvent, WatcherTerminator, watchPath } from "./pathWatcher";
 import { CollectionService } from "../collectionService";
 
@@ -36,7 +42,7 @@ export class RepositoryWatcher
     return RepositoryWatcher.instances[repositoryId];
   }
 
-  static async start(repository: Repository, persistenceProvider: PersistenceProvider, vectorDatabaseAccessor: VectorDatabaseAccessor, notifier: Notifier, collectionService: CollectionService): Promise<void>
+  static async start(repository: Repository, persistenceProvider: PersistenceProvider, vectorDatabaseAccessor: VectorDatabaseAccessor, notifier: NotifierService, collectionService: CollectionService): Promise<void>
   {
     const id = repository.id;
     if (RepositoryWatcher.get(id) !== undefined)
@@ -51,7 +57,7 @@ export class RepositoryWatcher
     notifier.emit(EventEntity.Repository, RepositoryEventAction.Watch, ExtensionEventProcess.Started, { id });
   }
 
-  static async stop(repository: Repository, notifier: Notifier): Promise<void>
+  static async stop(repository: Repository, notifierService: NotifierService): Promise<void>
   {
     const id = repository.id;
     const watcher = RepositoryWatcher.get(id);
@@ -63,7 +69,7 @@ export class RepositoryWatcher
     await watcher.stop();
     delete RepositoryWatcher.instances[id];
     RepositoryWatcher.startedRepositories.splice(RepositoryWatcher.startedRepositories.indexOf(repository), 1);
-    notifier.emit(EventEntity.Repository, RepositoryEventAction.Watch, ExtensionEventProcess.Stopped, { id });
+    notifierService.emit(EventEntity.Repository, RepositoryEventAction.Watch, ExtensionEventProcess.Stopped, { id });
   }
 
   static async ignore<T>(id: string, relativeFilePath: string, callback: () => Promise<T>): Promise<T>
@@ -94,7 +100,7 @@ export class RepositoryWatcher
   {
   }
 
-  private async start(persistenceProvider: PersistenceProvider, notifier: Notifier): Promise<void>
+  private async start(persistenceProvider: PersistenceProvider, notifierService: NotifierService): Promise<void>
   {
     const extensions = computeImageFormatsExtensions(this.imageFormats).map((extension) =>
     {
@@ -195,7 +201,7 @@ export class RepositoryWatcher
                     where: { id: unlinkedImage.id },
                     data: { name: path.basename(filePath), url: fileWithProtocol + filePath }
                   });
-                  notifier.emit(EventEntity.Image, ImageEventAction.Renamed, undefined, { id: unlinkedImage.id });
+                  notifierService.emit(EventEntity.Image, ImageEventAction.Renamed, undefined, { id: unlinkedImage.id });
                 }
                 else
                 {
@@ -232,7 +238,7 @@ export class RepositoryWatcher
                 // We remove the image from collections
                 await this.collectionService.clearFromOrigin(SearchOriginKind.Images, image.id);
                 await imageDelegate.delete({ where: { id: image.id } });
-                notifier.emit(EventEntity.Image, ImageEventAction.Deleted, undefined, { id: image.id });
+                notifierService.emit(EventEntity.Image, ImageEventAction.Deleted, undefined, { id: image.id });
               }
             }
             else if (events.length === 1 && events[0] === WatcherEvent.Changed)
@@ -258,7 +264,7 @@ export class RepositoryWatcher
                 {
                   promises.push(imageDeclarationManager.updateImage({ repositoryId, filePath }).then(({ id }) =>
                   {
-                    notifier.emit(EventEntity.Image, ImageEventAction.Updated, undefined, { id });
+                    notifierService.emit(EventEntity.Image, ImageEventAction.Updated, undefined, { id });
                   }));
                 }
                 catch (error)
@@ -272,7 +278,7 @@ export class RepositoryWatcher
                 {
                   promises.push(imageDeclarationManager.declareImage({ repositoryId, filePath }).then(async ({ id }) =>
                   {
-                    notifier.emit(EventEntity.Image, ImageEventAction.Created, undefined, { id });
+                    notifierService.emit(EventEntity.Image, ImageEventAction.Created, undefined, { id });
                   }));
                 }
                 catch (error)

@@ -16,7 +16,6 @@ import {
   OnModuleInit,
   StreamableFile
 } from "@nestjs/common";
-import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Request, Response } from "express";
 
 import { HostCommandType } from "@picteus/shared-back-end";
@@ -30,10 +29,10 @@ import {
   ExtensionEventAction,
   ExtensionEventProcess,
   ImageEventAction,
-  Notifier,
+  NotifierService,
   ProcessEventAction,
   TextEventAction
-} from "../notifier";
+} from "./notifierService";
 import { ExtensionsManager } from "../threads/managers";
 import { AuthenticationGuard, ExtensionApiKey } from "../app.guards";
 import {
@@ -320,9 +319,6 @@ export class ExtensionService
   // @ts-ignore
   private extensionsManager: ExtensionsManager;
 
-  // @ts-ignore
-  private notifier: Notifier;
-
   private readonly perExtensionIdConnections: Map<string, boolean> = new Map<string, boolean>();
 
   private readonly perExtensionIdRunnables: Map<string, Runnable[]> = new Map<string, Runnable[]>();
@@ -335,7 +331,7 @@ export class ExtensionService
 
   private readonly perExtensionIdChromeExtensionNames: Map<string, string[]> = new Map<string, string[]>();
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionsRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly eventEmitter: EventEmitter2)
+  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionsRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifier: NotifierService)
   {
     logger.debug("Instantiating an ExtensionService");
   }
@@ -349,11 +345,10 @@ export class ExtensionService
     logger.debug(`Ensuring that the models cache directory '${modelsCacheDirectoryPath}' exists'`);
     ensureDirectory(modelsCacheDirectoryPath);
 
-    this.notifier = new Notifier(this.eventEmitter);
     // We listen to all the image events and propagate them to the extensions
     this.notifier.onAll(async (event: string, value: object) =>
     {
-      const parsedEvent = Notifier.parseEvent(event);
+      const parsedEvent = NotifierService.parseEvent(event);
       const action: ImageEventAction = parsedEvent.action as ImageEventAction;
       if (parsedEvent.eventEntity === EventEntity.Image && action !== ImageEventAction.RunCommand)
       {
@@ -416,7 +411,6 @@ export class ExtensionService
     await this.extensionsManager.destroy();
     AuthenticationGuard.resetExtensionsApiKeys();
     await this.unregisterUnpackedExtensions();
-    this.notifier.destroy();
     this.perExtensionIdConnections.clear();
     this.perExtensionIdRunnables.clear();
     this.errorExtensionIds.clear();

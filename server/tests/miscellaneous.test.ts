@@ -26,7 +26,13 @@ import {
 } from "../src/dtos/app.dtos";
 import { plainToInstanceViaJSON } from "../src/utils";
 import { ServiceError } from "../src/app.exceptions";
-import { EventEntity, ImageEventAction, Notifier, RepositoryEventAction, TextEventAction } from "../src/notifier";
+import {
+  EventEntity,
+  ImageEventAction,
+  NotifierService,
+  RepositoryEventAction,
+  TextEventAction
+} from "../src/services/notifierService";
 import { AuthenticationGuard } from "../src/app.guards";
 import {
   execute,
@@ -1160,7 +1166,7 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
     });
     emitter.on(eventName, listener);
     // The event listener with wildcards does not work
-    emitter.on(eventPrefixName + Notifier.eventWildcardSuffix, listener);
+    emitter.on(eventPrefixName + NotifierService.eventWildcardSuffix, listener);
     emitter.emit(eventName, value);
     expect(listener).toHaveBeenCalledTimes(1);
     expect(listener).toHaveBeenCalledWith(value);
@@ -1176,20 +1182,20 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
     const entityName = EventEntity.Image;
     const action = ImageEventAction.Created;
     {
-      const event = Notifier.parseEvent(Notifier.buildEvent(entityName, action));
+      const event = NotifierService.parseEvent(NotifierService.buildEvent(entityName, action));
       expect(event.eventEntity).toBe(entityName);
       expect(event.action).toBe(action);
     }
     {
       const state = "state";
-      const event = Notifier.parseEvent(Notifier.buildEvent(entityName, action, state));
+      const event = NotifierService.parseEvent(NotifierService.buildEvent(entityName, action, state));
       expect(event.eventEntity).toBe(entityName);
       expect(event.action).toBe(action);
       expect(event.state).toBe(state);
     }
     {
       // We assess with and without a marker
-      const notifier = base.getNotifier();
+      const notifier = base.getNotifierService();
       const eventEntity = EventEntity.Extension;
       const action = RepositoryEventAction.Created;
       const state = "state";
@@ -1209,7 +1215,7 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
           await listener(event, value, marker);
         });
         const value = { key: "value" };
-        const event = eventEntity + Notifier.delimiter + action + Notifier.delimiter + state;
+        const event = eventEntity + NotifierService.delimiter + action + NotifierService.delimiter + state;
         const expectedCallTimes = 2;
         {
           notifier.emit(eventEntity, action, state, value, marker);
@@ -1228,7 +1234,7 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
     }
     {
       // We assess with a callback
-      const notifier = base.getNotifier();
+      const notifierService = base.getNotifierService();
       const eventEntity = EventEntity.Text;
       const action = TextEventAction.ComputeEmbeddings;
       const state = "state";
@@ -1239,7 +1245,7 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
       });
       const returnedValue = "returnedValue";
       const resultValue = { value: returnedValue };
-      notifier.on(eventEntity, action, state, async (event: string, value: object, marker?: string, onResult?: (value: object) => void) =>
+      notifierService.on(eventEntity, action, state, async (event: string, value: object, marker?: string, onResult?: (value: object) => void) =>
       {
         await onListener(event, value, marker);
         if (onResult !== undefined)
@@ -1251,15 +1257,15 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
       {
         return Promise.resolve();
       });
-      notifier.onAll(allListener);
+      notifierService.onAll(allListener);
       const callbackListener = jest.fn((_value: string) =>
       {
       });
       const value = { key: "value" };
-      const result = notifier.emit<string>(eventEntity, action, state, value, marker, callbackListener);
+      const result = notifierService.emit<string>(eventEntity, action, state, value, marker, callbackListener);
       expect(result).toEqual(true);
       expect(onListener).toHaveBeenCalledTimes(1);
-      expect(onListener).toHaveBeenCalledWith(eventEntity + Notifier.delimiter + action + Notifier.delimiter + state, value, marker);
+      expect(onListener).toHaveBeenCalledWith(eventEntity + NotifierService.delimiter + action + NotifierService.delimiter + state, value, marker);
       await waitForExpect(async () =>
       {
         expect(callbackListener).toHaveBeenCalledTimes(1);
@@ -1342,17 +1348,17 @@ describe("Miscellaneous via application", () =>
     let index = 0;
     {
       const notification = notifications[index++];
-      expect(notification.channel).toBe(EventEntity.Repository + Notifier.delimiter + RepositoryEventAction.Created);
+      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Created);
       expect(notification.value).toEqual({ id: repository.id });
     }
     {
       const notification = notifications[index++];
-      expect(notification.channel).toBe(EventEntity.Repository + Notifier.delimiter + RepositoryEventAction.Synchronize + Notifier.delimiter + "started");
+      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + "started");
       expect(notification.value).toEqual({ id: repository.id });
     }
     {
       const notification = notifications[index++];
-      expect(notification.channel).toBe(EventEntity.Repository + Notifier.delimiter + RepositoryEventAction.Synchronize + Notifier.delimiter + "stopped");
+      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + "stopped");
       expect(notification.value).toEqual({ id: repository.id });
     }
 

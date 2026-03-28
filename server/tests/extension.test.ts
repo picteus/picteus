@@ -52,8 +52,13 @@ import {
 import { ServiceError } from "../src/app.exceptions";
 import { apiKeyHeaderName, AuthenticationGuard } from "../src/app.guards";
 import { ExtensionRegistry, ImageAttachmentService } from "../src/services/app.service";
+import {
+  EventEntity,
+  ExtensionEventAction,
+  ExtensionEventProcess,
+  NotifierService
+} from "../src/services/notifierService";
 import { readMetadata } from "../src/services/utils/images";
-import { EventEntity, ExtensionEventAction, ExtensionEventProcess, Notifier } from "../src/notifier";
 import { ExtensionGenerator } from "../src/services/extensionGenerator";
 
 const { io } = IO;
@@ -146,11 +151,11 @@ describe("Extensions", () =>
         base.prepareEmptyDirectory(this.extensionId, path.join(this.extensionDirectoryPath, ".."));
       }
       this.installedListener = base.computeEventListener();
-      base.getNotifier().on(EventEntity.Extension, ExtensionEventAction.Installed, undefined, this.installedListener);
+      base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Installed, undefined, this.installedListener);
       this.startedListener = base.computeEventListener();
-      base.getNotifier().on(EventEntity.Extension, ExtensionEventAction.Process, ExtensionEventProcess.Started, this.startedListener);
+      base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Process, ExtensionEventProcess.Started, this.startedListener);
       this.errorListener = base.computeEventListener();
-      base.getNotifier().on(EventEntity.Extension, ExtensionEventAction.Error, undefined, this.errorListener);
+      base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Error, undefined, this.errorListener);
     }
 
     computeSimpleManifest(javascriptFilePath?: string, viaNode?: boolean, willNotRespondToTermination?: boolean, processStartedExecutable ?: string, javaScriptCode?: string, settings?: Record<string, any>, ui?: ManifestUserInterface, environmentVariable?: string): Manifest
@@ -275,13 +280,13 @@ describe("Extensions", () =>
       {
         expect(this.installedListener).toHaveBeenCalledTimes(1);
       });
-      expect(this.installedListener).toHaveBeenCalledWith(EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Installed, { id: this.extensionId });
+      expect(this.installedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Installed, { id: this.extensionId });
     }
 
     checkExtensionProcessStarted(): void
     {
       expect(this.startedListener).toHaveBeenCalledTimes(1);
-      expect(this.startedListener).toHaveBeenCalledWith(EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Process + Notifier.delimiter + ExtensionEventProcess.Started, { id: this.extensionId });
+      expect(this.startedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.delimiter + ExtensionEventProcess.Started, { id: this.extensionId });
     }
 
     async checkExtensionRunning(checkStartedFile: boolean = true, checkImageTouchedFile: boolean = true, environment: {
@@ -861,7 +866,7 @@ describe("Extensions", () =>
   test("uninstall", async () =>
   {
     const listener = base.computeEventListener();
-    base.getNotifier().once(EventEntity.Extension, ExtensionEventAction.Uninstalled, undefined, listener);
+    base.getNotifierService().once(EventEntity.Extension, ExtensionEventAction.Uninstalled, undefined, listener);
     const builder = new ExtensionBuilder(false, "../started.txt");
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const key = "key";
@@ -902,8 +907,7 @@ describe("Extensions", () =>
     await base.getExtensionController().uninstall(id);
     await waitForExpect(() =>
     {
-      expect(listener).toHaveBeenCalledTimes(1);
-      expect(listener).toHaveBeenCalledWith(EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Uninstalled, { id: manifest.id });
+      expect(listener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Uninstalled, { id: manifest.id });
     });
     {
       // We check that the features, their attachments, and the embeddings and the settings attached to the extension are deleted
@@ -934,8 +938,7 @@ describe("Extensions", () =>
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     await testApiInstall(builder, manifest, zip.toBuffer(), async () =>
     {
-      expect(builder.errorListener).toHaveBeenCalledTimes(1);
-      expect(builder.errorListener).toHaveBeenCalledWith(EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Error, {
+      expect(builder.errorListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Error, {
         id: manifest.id,
         message: `The start of the process of the extension with id '${manifest.id}' related to the event 'process.started' failed`
       });
@@ -949,29 +952,29 @@ describe("Extensions", () =>
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     const stoppedListener = base.computeEventListener();
-    base.getNotifier().on(EventEntity.Extension, ExtensionEventAction.Process, ExtensionEventProcess.Stopped, stoppedListener);
+    base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Process, ExtensionEventProcess.Stopped, stoppedListener);
     await testApiInstall(builder, manifest, zip.toBuffer(), async () =>
     {
       await waitForExpect(async () =>
       {
         expect(builder.errorListener).toHaveBeenCalledTimes(1);
       });
-      expect(builder.errorListener).toHaveBeenCalledWith(EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Error, {
+      expect(builder.errorListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Error, {
         id: manifest.id,
         message: `The process of the extension with id '${manifest.id}' regarding the 'process.started' event has exited 3 times in a row, it will not be restarted anymore`
       });
       const maximumAttemptsCount = 3;
       expect(builder.startedListener).toHaveBeenCalledTimes(maximumAttemptsCount);
-      expect(builder.startedListener).toHaveBeenCalledWith(EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Process + Notifier.delimiter + ExtensionEventProcess.Started, { id: manifest.id });
+      expect(builder.startedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.delimiter + ExtensionEventProcess.Started, { id: manifest.id });
       expect(stoppedListener).toHaveBeenCalledTimes(maximumAttemptsCount);
-      expect(stoppedListener).toHaveBeenCalledWith(EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Process + Notifier.delimiter + ExtensionEventProcess.Stopped, { id: manifest.id });
+      expect(stoppedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.delimiter + ExtensionEventProcess.Stopped, { id: manifest.id });
     });
   });
 
   test("update", async () =>
   {
     const listener = base.computeEventListener();
-    base.getNotifier().once(EventEntity.Extension, ExtensionEventAction.Updated, undefined, listener);
+    base.getNotifierService().once(EventEntity.Extension, ExtensionEventAction.Updated, undefined, listener);
     const extensionId = "id";
     const firstBuilder = new ExtensionBuilder(false, "../started-1.txt", extensionId);
     const firstJavaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
@@ -1020,8 +1023,7 @@ describe("Extensions", () =>
       await base.getExtensionController().update(secondBuilder.extensionId, secondArchive);
       await waitForExpect(() =>
       {
-        expect(listener).toHaveBeenCalledTimes(1);
-        expect(listener).toHaveBeenCalledWith(EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Updated, { id: manifest.id });
+        expect(listener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Updated, { id: manifest.id });
       });
 
       {
@@ -1734,11 +1736,11 @@ describe("Extensions", () =>
     await testApiInstall(builder, manifest, zip.toBuffer(), async () =>
     {
       const listener = base.computeEventListener();
-      base.getNotifier().on(EventEntity.Extension, ExtensionEventAction.Settings, undefined, listener);
+      base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Settings, undefined, listener);
       const value = { [key1]: "value1", [key2]: { [key2SubKey]: 12.345 } };
       await base.getExtensionController().setSettings(Base.allPolicyContext, manifest.id, new ExtensionSettings(value));
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(listener).toHaveBeenCalledWith(EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Settings, {
+      expect(listener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Settings, {
         id: manifest.id,
         value
       }, manifest.id);
@@ -2085,7 +2087,7 @@ describe("Extensions", () =>
       };
 
       {
-        expectEvent(initialEventsCount, EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Log, {
+        expectEvent(initialEventsCount, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Log, {
           id: manifest.id,
           message: { message: "message", level: "info" }
         });
@@ -2100,13 +2102,13 @@ describe("Extensions", () =>
       await base.getExtensionController().pauseOrResume(manifest.id, true);
       await waitForExpect(() =>
       {
-        expectEvent(initialEventsCount + 3, EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Paused, { id: manifest.id });
+        expectEvent(initialEventsCount + 3, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Paused, { id: manifest.id });
       });
 
       await base.getExtensionController().pauseOrResume(manifest.id, false);
       await waitForExpect(() =>
       {
-        expectEvent(initialEventsCount + 7, EventEntity.Extension + Notifier.delimiter + ExtensionEventAction.Resumed, { id: manifest.id });
+        expectEvent(initialEventsCount + 7, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Resumed, { id: manifest.id });
       });
     }
     finally

@@ -10,19 +10,18 @@ import { WinstonModule } from "nest-winston";
 import { logger } from "../logger";
 import { paths } from "../paths";
 import { stringify } from "../utils";
-import { Image, ManifestEvent, ManifestRuntimeEnvironment } from "../dtos/app.dtos";
+import { ManifestEvent, ManifestRuntimeEnvironment } from "../dtos/app.dtos";
 import { fromImageEventActionToManifestEvent } from "../bos";
 import { ensureDirectory } from "../services/utils/downloader";
 import { fork, spawn, stopProcessGracefully } from "../services/utils/processWrapper";
 import { computeVirtualEnvironmentPythonFilePath } from "../services/utils/pythonWrapper";
 import { EntitiesProvider, VectorDatabaseAccessor } from "../services/databaseProviders";
 import { ExtensionsApiKeys } from "../app.guards";
-import { ImageService } from "../services/imageServices";
 import { ExtendedManifest, ExtensionMessage, ExtensionRegistry, ImageEvent } from "../services/extensionRegistry";
 
 
 @Module({
-  providers: [EntitiesProvider, VectorDatabaseAccessor, ImageService, ExtensionRegistry]
+  providers: [EntitiesProvider, VectorDatabaseAccessor, ExtensionRegistry]
 })
 class ExtensionsRunnerModule implements OnModuleInit, OnModuleDestroy
 {
@@ -80,7 +79,7 @@ class ExtensionsRunner
         logger: WinstonModule.createLogger({ instance: logger })
       };
     const applicationContext = await NestFactory.createApplicationContext(ExtensionsRunnerModule, options);
-    ExtensionsRunner.instance = new ExtensionsRunner(applicationContext, applicationContext.get(ImageService), applicationContext.get(ExtensionRegistry));
+    ExtensionsRunner.instance = new ExtensionsRunner(applicationContext, applicationContext.get(ExtensionRegistry));
     return ExtensionsRunner.instance;
   }
 
@@ -107,7 +106,7 @@ class ExtensionsRunner
     return ExtensionsRunner.instance;
   }
 
-  private constructor(private readonly applicationContext: INestApplicationContext, private readonly imageService: ImageService, private readonly extensionsRegistry: ExtensionRegistry)
+  private constructor(private readonly applicationContext: INestApplicationContext, private readonly extensionsRegistry: ExtensionRegistry)
   {
     logger.debug("Instantiating the ExtensionsRunner");
   }
@@ -191,8 +190,7 @@ class ExtensionsRunner
         }
         if (manifestEvent !== null)
         {
-          // We need to handle the special case of the image deletion, because we do not have the image object anymore
-          this.runProcess(manifest, manifestEvent, manifestEvent === ManifestEvent.ImageDeleted ? event.imageId : (await this.imageService.get(event.imageId)));
+          this.runProcess(manifest, manifestEvent, event.imageId);
         }
       }
     }
@@ -217,7 +215,7 @@ class ExtensionsRunner
     };
   }
 
-  private computeCommandProperties(manifest: ExtendedManifest, imageOrId: Image | string | undefined): Record<string, string | undefined>
+  private computeCommandProperties(manifest: ExtendedManifest, imageId?: string): Record<string, string | undefined>
   {
     const map: Record<string, string | undefined> = this.computeParametersProperties(manifest);
     map["extensionDirectoryPath"] = manifest.directoryPath;
@@ -235,11 +233,7 @@ class ExtensionsRunner
     {
       map[ExtensionRegistry.venvPythonVariableName] = computeVirtualEnvironmentPythonFilePath(manifest.directoryPath);
     }
-    map.imageId = typeof imageOrId === "string" ? imageOrId : imageOrId?.id;
-    if (imageOrId !== undefined && typeof imageOrId !== "string")
-    {
-      map.imageUrl = imageOrId?.url;
-    }
+    map.imageId = imageId;
     return map;
   }
 
@@ -286,7 +280,7 @@ class ExtensionsRunner
     this.runProcess(manifest, ManifestEvent.ProcessStarted);
   }
 
-  private runProcess(manifest: ExtendedManifest, event: ManifestEvent, imageOrId?: Image | string): void
+  private runProcess(manifest: ExtendedManifest, event: ManifestEvent, imageId?: string): void
   {
     const instructions = manifest.instructions.find((instruction) =>
     {
@@ -296,7 +290,7 @@ class ExtensionsRunner
     {
       this.checkState([RunnerState.Starting, RunnerState.Started], "run a process");
       logger.debug(`Starting for the extension with id '${manifest.id}' the process related to the '${event}' event`);
-      const map: Record<string, string | undefined> = this.computeCommandProperties(manifest, imageOrId);
+      const map: Record<string, string | undefined> = this.computeCommandProperties(manifest, imageId);
       const execution = instructions.execution;
       const resolvedParameters = execution.arguments.map((argument) =>
       {
@@ -364,7 +358,7 @@ class ExtensionsRunner
               }
               else
               {
-                this.runProcess(manifest, event, imageOrId);
+                this.runProcess(manifest, event, imageId);
               }
             }
           }

@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs";
 import stream from "node:stream";
 import { validate } from "class-validator";
+import { ClassConstructor } from "class-transformer";
 import { ModuleRef } from "@nestjs/core";
 import { forwardRef, Inject, Injectable, StreamableFile } from "@nestjs/common";
 import { fdir } from "fdir";
@@ -14,6 +15,7 @@ import {
   ImageTag as PersistedImageTag,
   Prisma
 } from ".prisma/client";
+import { ImageFeatureWhereInput } from ".prisma/models/ImageFeature";
 import { logger } from "../logger";
 import { paths } from "../paths";
 import { plainToInstanceViaJSON } from "../utils";
@@ -31,7 +33,9 @@ import {
   Dates,
   ExtensionImageEmbeddings,
   ExtensionImageFeature,
+  ExtensionImageFeaturesAttribute,
   ExtensionImageTag,
+  ExtensionImageTagsAttribute,
   FieldLengths,
   fileWithProtocol,
   GenerationRecipe,
@@ -60,18 +64,23 @@ import {
   SearchFeatureCondition,
   SearchFeatureLogicalOperator,
   SearchFeatures,
+  SearchFeaturesResult,
   SearchFilter,
+  SearchImageResult,
   SearchImageSummaryResult,
+  SearchMediaUrlResult,
   SearchOriginKind,
   SearchParameters,
   SearchRange,
   SearchSorting,
   SearchSortingProperty,
+  SearchTagsResult,
   toFileExtension,
   toMimeType
 } from "../dtos/app.dtos";
 import { Json, toImageFormat } from "../bos";
 import { EntitiesProvider, ImageIdAndDistance, VectorDatabaseAccessor } from "./databaseProviders";
+import { EventEntity, ImageEventAction, NotifierService } from "./notifierService";
 import { ExtendedManifest, ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionService } from "./extensionServices";
 import { RepositoryService } from "./repositoryService";
@@ -89,16 +98,6 @@ import {
   supportsApplicationMedata
 } from "./utils/images";
 import { ImageAttachmentService } from "./imageAttachmentService";
-import { ImageFeatureWhereInput } from ".prisma/models/ImageFeature";
-import {
-  ExtensionImageFeaturesAttribute,
-  ExtensionImageTagsAttribute,
-  SearchFeaturesResult,
-  SearchImageResult,
-  SearchMediaUrlResult,
-  SearchTagsResult
-} from "../dtos/image.dtos";
-import { ClassConstructor } from "class-transformer/types/interfaces";
 
 
 const imageWithIncludes = { include: { metadata: true, features: true, tags: true } } satisfies Prisma.ImageDefaultArgs;
@@ -152,7 +151,7 @@ export class ImageService
 
   private static readonly emptyImageFeatureValue = "";
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly moduleRef: ModuleRef)
+  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly notifierService: NotifierService, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating an ImageService");
   }
@@ -606,6 +605,7 @@ export class ImageService
       })
     });
     await this.entitiesProvider.prisma.$transaction([deleteAttachments, deleteFeatures, createFeatures]);
+    this.notifierService.emit(EventEntity.Image, ImageEventAction.FeaturesUpdated, undefined, { id });
   }
 
   async getTags(id: string, extensionId: string): Promise<ImageTag []>
@@ -701,6 +701,7 @@ export class ImageService
       // We remove the extraneous tags
       await this.entitiesProvider.imageTag.deleteMany({ where: { id: { in: extraneousEntitiesIds } } });
     }
+    this.notifierService.emit(EventEntity.Image, ImageEventAction.TagsUpdated, undefined, { id });
   }
 
   async getAllRecipes(id: string): Promise<GenerationRecipe []>

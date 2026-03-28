@@ -10,7 +10,7 @@ import {
   RepositoryLocationType
 } from "../dtos/app.dtos";
 import { DualPorts, ImageIdAndFormat, RepositoryIdAndFilePath, toImageFormat } from "../bos";
-import { ImageEventAction } from "../notifier";
+import { ImageEventAction } from "../services/notifierService";
 import { EntitiesProvider } from "../services/databaseProviders";
 import { SearchService } from "../services/imageServices";
 import { ImageDeclarationManagerEvent } from "../threads/managers";

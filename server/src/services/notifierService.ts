@@ -2,9 +2,10 @@ import { randomUUID } from "node:crypto";
 
 import { EventAndListener, Listener, ListenerFn } from "eventemitter2";
 import { EventEmitter2 } from "@nestjs/event-emitter";
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 
-import { logger } from "./logger";
-import { checkIsMainThread } from "./utils";
+import { logger } from "../logger";
+import { checkIsMainThread } from "../utils";
 
 
 export enum EventEntity
@@ -59,6 +60,8 @@ export enum ImageEventAction
 {
   Created = "created",
   Updated = "updated",
+  TagsUpdated = "tagsUpdated",
+  FeaturesUpdated = "featuresUpdated",
   Deleted = "deleted",
   Renamed = "renamed",
   ComputeFeatures = "computeFeatures",
@@ -104,7 +107,9 @@ export interface CallbackObject<T>
   value: T;
 }
 
-export class Notifier
+@Injectable()
+export class NotifierService
+  implements OnModuleInit, OnModuleDestroy
 {
 
   static readonly delimiter = ".";
@@ -123,12 +128,12 @@ export class Notifier
 
   static buildEvent(eventEntity: EventEntity, action: EventAction, state?: string): string
   {
-    return `${eventEntity}${Notifier.delimiter}${action}${state === undefined ? "" : (`${Notifier.delimiter}${state}`)}`;
+    return `${eventEntity}${NotifierService.delimiter}${action}${state === undefined ? "" : (`${NotifierService.delimiter}${state}`)}`;
   }
 
   static parseEvent(event: string): NotifierEvent
   {
-    const tokens = event.split(Notifier.delimiter);
+    const tokens = event.split(NotifierService.delimiter);
     return {
       eventEntity: tokens[0] as EventEntity,
       action: tokens[1] as EventAction,
@@ -138,26 +143,38 @@ export class Notifier
 
   private static buildBroadcastEvent(event: string): string
   {
-    return `${Notifier.broadcastEvenPrefix}${event}`;
+    return `${NotifierService.broadcastEvenPrefix}${event}`;
   }
 
   constructor(private readonly eventEmitter: EventEmitter2)
   {
     checkIsMainThread();
-    this.id = (Notifier.count++).toString();
+    this.id = (NotifierService.count++).toString();
     logger.debug(`Instantiating a Notifier with id '${this.id}'`);
+  }
+
+  async onModuleInit(): Promise<void>
+  {
+    logger.debug("The initializing of a NotifierService is over");
+  }
+
+  async onModuleDestroy(): Promise<void>
+  {
+    logger.debug("Destroying a NotifierService");
+    this.destroy();
+    logger.debug("Destroyed a NotifierService");
   }
 
   emit<T = void>(eventEntity: EventEntity, action: EventAction, state: string | undefined, value: object, marker?: string | undefined, onResult?: (value: T) => void): boolean
   {
-    const event = Notifier.buildBroadcastEvent(Notifier.buildEvent(eventEntity, action, state));
+    const event = NotifierService.buildBroadcastEvent(NotifierService.buildEvent(eventEntity, action, state));
     logger.debug(`The notifier with id '${this.id}' emits the event '${event}'${marker === undefined ? "" : (` with the marker '${marker}'`)}` + (onResult === undefined ? "" : " with a callback"));
     const wrapperEvent: WrapperEvent = { value, marker };
     if (onResult !== undefined)
     {
       // The EventEmitter2 documentation https://github.com/EventEmitter2/EventEmitter2?tab=readme-ov-file#emitteremitasyncevent--eventns-arg1-arg2- states that the "emit()" method could be given a callback function, but this does not seem to work
       wrapperEvent.callbackId = randomUUID();
-      const returnEvent = Notifier.returnEvenPrefix + wrapperEvent.callbackId;
+      const returnEvent = NotifierService.returnEvenPrefix + wrapperEvent.callbackId;
       const wrappedListener = async (object: CallbackObject<T>) =>
       {
         logger.debug(`The notifier with id '${this.id}' received the callback event '${event}'`);
@@ -172,7 +189,7 @@ export class Notifier
 
   on(eventEntity: EventEntity, action: EventAction, state: string | undefined, listener: EventListener): OffListener
   {
-    const event = Notifier.buildBroadcastEvent(Notifier.buildEvent(eventEntity, action, state));
+    const event = NotifierService.buildBroadcastEvent(NotifierService.buildEvent(eventEntity, action, state));
     logger.debug(`The notifier with id '${this.id}' subscribes to the event '${event}'`);
     const wrappedListener = async (value: object) =>
     {
@@ -187,7 +204,7 @@ export class Notifier
 
   once(eventEntity: EventEntity, action: EventAction, state: string | undefined, listener: EventListener): OffListener
   {
-    const event = Notifier.buildBroadcastEvent(Notifier.buildEvent(eventEntity, action, state));
+    const event = NotifierService.buildBroadcastEvent(NotifierService.buildEvent(eventEntity, action, state));
     logger.debug(`The notifier with id '${this.id}' subscribes once to the event '${event}'`);
     const returnedListener = this.eventEmitter.once(event, async (value: object) =>
     {
@@ -201,13 +218,13 @@ export class Notifier
 
   onAll(listener: EventListener): OffListener
   {
-    logger.debug(`The notifier with id '${this.id}' subscribes to all events with the prefix '${Notifier.broadcastEvenPrefix}'`);
+    logger.debug(`The notifier with id '${this.id}' subscribes to all events with the prefix '${NotifierService.broadcastEvenPrefix}'`);
     const wrappedListener: EventAndListener = async (event: string | string[], value: object) =>
     {
       const events: string[] = Array.isArray(event) === false ? [event as string] : (event as string[]);
       for (const anEvent of events)
       {
-        if (anEvent.startsWith(Notifier.broadcastEvenPrefix) === true)
+        if (anEvent.startsWith(NotifierService.broadcastEvenPrefix) === true)
         {
           // We ignore non-broadcast events
           await this.notifyListener(listener, anEvent, value);
@@ -226,7 +243,7 @@ export class Notifier
     return off;
   }
 
-  destroy(): void
+  private destroy(): void
   {
     logger.debug(`Removing from the notifier with id '${this.id}' ${this.offs.length} remaining listener(s)`);
     for (const off of this.offs)
@@ -255,7 +272,7 @@ export class Notifier
   private async notifyListener(listener: EventListener, event: string, value: object): Promise<void>
   {
     const wrapperEvent: WrapperEvent = value as WrapperEvent;
-    const broadcastEvent = event.substring(Notifier.broadcastEvenPrefix.length);
+    const broadcastEvent = event.substring(NotifierService.broadcastEvenPrefix.length);
     // We need to provide exactly the same number of arguments and not just use "undefined" for undefined arguments, so that the listener's expected signature is respected
     if (wrapperEvent.callbackId === undefined)
     {
@@ -272,7 +289,7 @@ export class Notifier
     {
       await listener(broadcastEvent, wrapperEvent.value, wrapperEvent.marker, (value: any) =>
       {
-        const returnEvent = Notifier.returnEvenPrefix + wrapperEvent.callbackId;
+        const returnEvent = NotifierService.returnEvenPrefix + wrapperEvent.callbackId;
         logger.debug(`The notifier with id '${this.id}' emits the callback event '${returnEvent}'`);
         this.eventEmitter.emit(returnEvent, value);
       });

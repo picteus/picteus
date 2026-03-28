@@ -10,7 +10,7 @@ import { paths } from "../paths";
 import { checkIsMainThread } from "../utils";
 import { RepositoryLocationType } from "../dtos/app.dtos";
 import { ImageIdAndFormat, RepositoryIdAndFilePath } from "../bos";
-import { ImageEventAction } from "../notifier";
+import { ImageEventAction } from "../services/notifierService";
 import { ExtensionsApiKeys } from "../app.guards";
 import { ExtensionMessage, ImageEvent } from "../services/extensionRegistry";
 

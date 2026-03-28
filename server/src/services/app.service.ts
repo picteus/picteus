@@ -19,6 +19,7 @@ import { GenerativeAIService, ImageAnalyzerService, TextEmbedding, TextEmbedding
 import { AdministrationService } from "./administrationService";
 import { SettingsService } from "./settingsService";
 import { ApiSecretService } from "./apiSecretService";
+import { NotifierService } from "./notifierService";
 
 export {
   AdministrationService,
@@ -40,6 +41,7 @@ export {
   ImageAttachmentService,
   ImageEvent,
   NotificationsGateway,
+  NotifierService,
   MiscellaneousService,
   RepositoryService,
   SearchFileStats,

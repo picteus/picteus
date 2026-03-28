@@ -11,7 +11,6 @@ import {
   WebSocketGateway,
   WebSocketServer
 } from "@nestjs/websockets";
-import { EventEmitter2 } from "@nestjs/event-emitter";
 import { GatewayMetadata } from "@nestjs/websockets/interfaces";
 import { ModuleRef } from "@nestjs/core";
 import { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
@@ -35,10 +34,10 @@ import {
   EventEntity,
   ExtensionEventAction,
   ImageEventAction,
-  Notifier,
+  NotifierService,
   ProcessEventAction,
   TextEventAction
-} from "../notifier";
+} from "./notifierService";
 import { AuthenticationGuard } from "../app.guards";
 import { addJsonSchemaAdditionalProperties, computeAjv, validateJsonSchema, validateSchema } from "./utils/ajvWrapper";
 import {
@@ -138,10 +137,7 @@ export class NotificationsGateway
 
   private readonly perEventContextId: Map<string, string> = new Map();
 
-  // @ts-ignore
-  private notifier: Notifier;
-
-  constructor(private readonly eventEmitter: EventEmitter2, private readonly extensionTaskExecutor: ExtensionTaskExecutor, private readonly uiServer: ExtensionsUiServer, private readonly moduleRef: ModuleRef)
+  constructor(private readonly notifierService: NotifierService, private readonly extensionTaskExecutor: ExtensionTaskExecutor, private readonly uiServer: ExtensionsUiServer, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating a NotificationsGateway");
   }
@@ -181,8 +177,7 @@ export class NotificationsGateway
 
   async onModuleInit(): Promise<void>
   {
-    this.notifier = new Notifier(this.eventEmitter);
-    this.notifier.onAll(this.onNotifierEvent.bind(this));
+    this.notifierService.onAll(this.onNotifierEvent.bind(this));
     logger.debug("The initializing of a NotificationsGateway is over");
   }
 
@@ -198,7 +193,6 @@ export class NotificationsGateway
       }
     }
     this.io = undefined;
-    this.notifier.destroy();
     this.activeSocketIds.clear();
     this.perExtensionsSocketSupportedEvents.clear();
     this.perEventContextId.clear();
@@ -224,7 +218,7 @@ export class NotificationsGateway
           if ((isExtensionSocket === false && marker === undefined) || (isExtensionSocket === true && supportedEvents.indexOf(event) !== -1 && (marker === undefined || marker === extensionId)))
           {
             const contextId = randomUUID();
-            if (event === Notifier.buildEvent(EventEntity.Process, ProcessEventAction.RunCommand) || event === Notifier.buildEvent(EventEntity.Image, ImageEventAction.RunCommand))
+            if (event === NotifierService.buildEvent(EventEntity.Process, ProcessEventAction.RunCommand) || event === NotifierService.buildEvent(EventEntity.Image, ImageEventAction.RunCommand))
             {
               this.perEventContextId.set(event, contextId);
             }
@@ -345,7 +339,7 @@ export class NotificationsGateway
       if (this.perEventContextId.delete(theContextId) === true && masterSocket !== undefined)
       {
         // We notify the master socket of the command achievement
-        this.emitEventToSocket(masterSocket, Notifier.buildEvent(EventEntity.Extension, ActivityAction.Acknowledgment), theContextId, Date.now(), {
+        this.emitEventToSocket(masterSocket, NotifierService.buildEvent(EventEntity.Extension, ActivityAction.Acknowledgment), theContextId, Date.now(), {
           id: extensionId,
           contextId: theContextId,
           success
@@ -403,7 +397,7 @@ export class NotificationsGateway
         }
       }).map((action: T) =>
       {
-        return Notifier.buildEvent(eventEntity, action);
+        return NotifierService.buildEvent(eventEntity, action);
       });
     };
     const processEvents = computeEvents<ProcessEventAction>(Object.values(ProcessEventAction), EventEntity.Process, (action: ProcessEventAction) =>
@@ -555,7 +549,7 @@ export class NotificationsGateway
       {
         return;
       }
-      this.emitEventToSocket(masterSocket, Notifier.buildEvent(EventEntity.Extension, action), contextId ?? randomUUID(), Date.now(), value, undefined, onAcknowledged);
+      this.emitEventToSocket(masterSocket, NotifierService.buildEvent(EventEntity.Extension, action), contextId ?? randomUUID(), Date.now(), value, undefined, onAcknowledged);
       if (onAcknowledged === undefined)
       {
         resolve(undefined);

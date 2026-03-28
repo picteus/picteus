@@ -23,7 +23,7 @@ import {
 } from "../dtos/app.dtos";
 import { CompressedType, computeCompressedType, getTemporaryDirectoryPath } from "./utils/downloader";
 import { parametersChecker } from "./utils/parametersChecker";
-import { ImageEventAction } from "../notifier";
+import { ImageEventAction } from "./notifierService";
 
 
 export type ExtendedManifest = Manifest & { directoryPath: string };

@@ -63,7 +63,8 @@ import {
 import { ServiceError } from "../src/app.exceptions";
 import { ImageAttachmentService } from "../src/services/app.service";
 import { Base, Core, Defaults, ImageFeeder } from "./base";
-import { EventEntity, ImageEventAction, Notifier } from "../src/notifier";
+import { EventEntity, ImageEventAction, NotifierService } from "../src/services/notifierService";
+import waitForExpect from "wait-for-expect";
 
 const { OK, BAD_REQUEST } = HttpCodes;
 
@@ -859,7 +860,7 @@ describe("Image with module", () =>
     }
     {
       // We assess with an existing image
-      const notifier = base.getNotifier();
+      const notifier = base.getNotifierService();
       const listener = base.computeEventListener();
       notifier.once(EventEntity.Image, ImageEventAction.Deleted, undefined, listener);
       await base.getImageController().delete(image.id);
@@ -868,7 +869,7 @@ describe("Image with module", () =>
       {
         return listener.mock.calls.length === 1;
       });
-      expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Deleted, { id: image.id });
+      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Deleted, { id: image.id });
       expect((await base.getImageController().searchSummaries({})).items.length).toBe(0);
       expect((await base.getEntitiesProvider().imageMetadata.findMany()).length).toBe(0);
       expect((await base.getEntitiesProvider().imageTag.findMany()).length).toBe(0);
@@ -1190,7 +1191,13 @@ describe("Image with module", () =>
         const jsonImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.JSON, undefined, `{"key":"value"}`);
         const xmlImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.XML, "xml", `<element attribute="value"></element>`);
         const imageFeatures = [stringImageFeature, integerImageFeature, floatImageFeature, booleanImageFeature, markdownImageFeature, jsonImageFeature, xmlImageFeature];
+        const listener = base.computeEventListener();
+        base.getNotifierService().once(EventEntity.Image, ImageEventAction.FeaturesUpdated, undefined, listener);
         await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, imageFeatures);
+        await waitForExpect(() =>
+        {
+          expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.FeaturesUpdated, { id: imageId });
+        });
         const image = await base.getImageController().get(imageId);
         expect(image.features.length).toBe(imageFeatures.length);
         for (let index = 0; index < image.features.length; index++)
@@ -1367,8 +1374,14 @@ describe("Image with module", () =>
           expect((await base.getImageController().get(imageId)).tags).toEqual(emptyTags);
         }
         {
+          const listener = base.computeEventListener();
+          base.getNotifierService().once(EventEntity.Image, ImageEventAction.TagsUpdated, undefined, listener);
           await base.getImageController().ensureTags(Base.allPolicyContext, imageId, extensionId, [tag1]);
           await checkTags([tag1]);
+          await waitForExpect(() =>
+          {
+            expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.TagsUpdated, { id: imageId });
+          });
         }
         {
           await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, emptyTags);

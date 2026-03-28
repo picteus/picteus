@@ -41,7 +41,7 @@ import {
 import { ServiceError } from "../src/app.exceptions";
 import { Base, Core, Defaults } from "./base";
 import { RepositoryWatcher } from "../src/services/utils/repositoryWatcher";
-import { EventEntity, ImageEventAction, Notifier, RepositoryEventAction } from "../src/notifier";
+import { EventEntity, ImageEventAction, NotifierService, RepositoryEventAction } from "../src/services/notifierService";
 import { computeFormat, readApplicationMetadata, writeMetadata } from "../src/services/utils/images";
 
 const { BAD_REQUEST } = HttpCodes;
@@ -90,9 +90,9 @@ describe("Repository", () =>
       fs.copyFileSync(filePath, path.join(directoryPath, path.basename(filePath)));
     }
 
-    const notifier = base.getNotifier();
+    const notifierService = base.getNotifierService();
     const listener = base.computeEventListener();
-    notifier.once(EventEntity.Repository, RepositoryEventAction.Created, undefined, listener);
+    notifierService.once(EventEntity.Repository, RepositoryEventAction.Created, undefined, listener);
     const url = fileWithProtocol + directoryPath + "/";
     const name = "name-" + randomUUID();
     const comment = "An interesting repository";
@@ -102,7 +102,7 @@ describe("Repository", () =>
     {
       expect(listener).toHaveBeenCalledTimes(1);
     });
-    expect(listener).toHaveBeenCalledWith(EventEntity.Repository + Notifier.delimiter + RepositoryEventAction.Created, { id: repository.id });
+    expect(listener).toHaveBeenCalledWith(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Created, { id: repository.id });
 
     expect(repository.type).toBe(Defaults.locationType);
     expect(repository.url).toBe(url.substring(0, url.length - 1));
@@ -537,7 +537,7 @@ describe("Repository", () =>
     expect(result.items.length).toBe(1);
     const imageSummary = result.items[0];
 
-    const notifier = base.getNotifier();
+    const notifier = base.getNotifierService();
     const listener = base.computeEventListener();
     notifier.once(EventEntity.Image, ImageEventAction.Renamed, undefined, listener);
     const newFilePath = path.join(path.join(imageFilePath, ".."), `${path.basename(imageFilePath)}.${toFileExtension(imageSummary.format)}`);
@@ -546,7 +546,7 @@ describe("Repository", () =>
     {
       expect(listener).toHaveBeenCalledTimes(1);
     });
-    expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Renamed, { id: imageSummary.id });
+    expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Renamed, { id: imageSummary.id });
   });
 
   test("Synchronize", async () =>
@@ -572,7 +572,7 @@ describe("Repository", () =>
       const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(id));
       preexistingImage = await base.getImageController().get(result.items[0].id);
     }
-    const notifier = base.getNotifier();
+    const notifier = base.getNotifierService();
     {
       // We add a file
       const listener = base.computeEventListener();
@@ -589,7 +589,7 @@ describe("Repository", () =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
       });
-      expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Created, {
+      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Created, {
         id: (result.items.find((imageSummary) =>
         {
           return imageSummary.url === fileWithProtocol + newlyAddedFilePath;
@@ -612,7 +612,7 @@ describe("Repository", () =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
       });
-      expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Deleted, {
+      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Deleted, {
         id: preexistingImage.id
       });
       expect(await base.getVectorDatabaseAccessor().getEmbeddings(preexistingImage.id, extensionId)).toBeUndefined();
@@ -651,7 +651,7 @@ describe("Repository", () =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
       });
-      expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Updated, { id: image.id });
+      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Updated, { id: image.id });
     }
   }, base.largeTimeoutInMilliseconds);
 
@@ -669,19 +669,19 @@ describe("Repository", () =>
     await base.getRepositoryController().watch(id, true);
     await checkActivity(id, RepositoryActivityKind.Watching);
 
-    const notifier = base.getNotifier();
+    const notifierService = base.getNotifierService();
     let newlyAddedImageSummary: ImageSummary;
     {
       // We add a file
       const listener = base.computeEventListener();
-      notifier.once(EventEntity.Image, ImageEventAction.Created, undefined, listener);
+      notifierService.once(EventEntity.Image, ImageEventAction.Created, undefined, listener);
       fs.copyFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName), newlyAddedFilePath);
       newlyAddedImageSummary = await base.waitUntilImage(id, newlyAddedFilePath, true);
       await waitForExpect(() =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
       });
-      expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Created, { id: newlyAddedImageSummary.id });
+      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Created, { id: newlyAddedImageSummary.id });
     }
     {
       // We delete a file
@@ -690,7 +690,7 @@ describe("Repository", () =>
       // We introduce fake embeddings for a supposedly existing extension
       await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, extensionId, [1, 2, 3]);
       const listener = base.computeEventListener();
-      notifier.once(EventEntity.Image, RepositoryEventAction.Deleted, undefined, listener);
+      notifierService.once(EventEntity.Image, RepositoryEventAction.Deleted, undefined, listener);
       const imageSummary = await base.waitUntilImage(id, preexistingFilePath, false, () =>
       {
         fs.rmSync(preexistingFilePath);
@@ -699,13 +699,13 @@ describe("Repository", () =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
       });
-      expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Deleted, { id: imageSummary.id });
+      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Deleted, { id: imageSummary.id });
       expect(await base.getVectorDatabaseAccessor().getEmbeddings(preexistingImage.id, extensionId)).toBeUndefined();
     }
     {
       // We update a file
       const listener = base.computeEventListener();
-      notifier.once(EventEntity.Image, ImageEventAction.Updated, undefined, listener);
+      notifierService.once(EventEntity.Image, ImageEventAction.Updated, undefined, listener);
       const now = new Date();
       fs.utimesSync(newlyAddedFilePath, now, now);
 
@@ -723,7 +723,7 @@ describe("Repository", () =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
       });
-      expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Updated, { id: image.id });
+      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Updated, { id: image.id });
     }
   }, base.largeTimeoutInMilliseconds);
 
@@ -874,11 +874,11 @@ describe("Repository", () =>
       };
     const collection = await base.getCollectionController().create("name", undefined, filter);
 
-    const notifier = base.getNotifier();
+    const notifierService = base.getNotifierService();
     const repositoryListener = base.computeEventListener();
-    notifier.once(EventEntity.Repository, RepositoryEventAction.Deleted, undefined, repositoryListener);
+    notifierService.once(EventEntity.Repository, RepositoryEventAction.Deleted, undefined, repositoryListener);
     const imageListener = base.computeEventListener();
-    notifier.on(EventEntity.Image, ImageEventAction.Deleted, undefined, imageListener);
+    notifierService.on(EventEntity.Image, ImageEventAction.Deleted, undefined, imageListener);
     await base.getRepositoryController().delete(repositoryId);
 
     expect((await base.getImageController().searchSummaries({})).items.length).toBe(0);
@@ -896,9 +896,9 @@ describe("Repository", () =>
     {
       expect(imageListener).toHaveBeenCalledTimes(1);
     });
-    expect(imageListener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Deleted, { id: imageSummary.id });
+    expect(imageListener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Deleted, { id: imageSummary.id });
     expect(repositoryListener).toHaveBeenCalledTimes(1);
-    expect(repositoryListener).toHaveBeenCalledWith(EventEntity.Repository + Notifier.delimiter + RepositoryEventAction.Deleted, { id: repositoryId });
+    expect(repositoryListener).toHaveBeenCalledWith(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Deleted, { id: repositoryId });
 
     await expect(async () =>
     {
@@ -927,10 +927,10 @@ describe("Repository", () =>
       values.push(value);
       return Promise.resolve();
     };
-    const notifier = base.getNotifier();
-    const listener = notifier.on(EventEntity.Repository, RepositoryEventAction.Created, undefined, commonListener);
-    notifier.on(EventEntity.Repository, RepositoryEventAction.Synchronize, started, commonListener);
-    notifier.on(EventEntity.Repository, RepositoryEventAction.Synchronize, stopped, commonListener);
+    const notifierService = base.getNotifierService();
+    const listener = notifierService.on(EventEntity.Repository, RepositoryEventAction.Created, undefined, commonListener);
+    notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, started, commonListener);
+    notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, stopped, commonListener);
 
     const directoryPath = base.getWorkingDirectoryPath();
     const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName);
@@ -942,9 +942,9 @@ describe("Repository", () =>
     {
       expect(events.length).toBe(3);
     });
-    expect(events[0]).toBe(EventEntity.Repository + Notifier.delimiter + RepositoryEventAction.Created);
-    expect(events[1]).toBe(EventEntity.Repository + Notifier.delimiter + RepositoryEventAction.Synchronize + Notifier.delimiter + started);
-    expect(events[2]).toBe(EventEntity.Repository + Notifier.delimiter + RepositoryEventAction.Synchronize + Notifier.delimiter + stopped);
+    expect(events[0]).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Created);
+    expect(events[1]).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + started);
+    expect(events[2]).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + stopped);
     for (const value of values)
     {
       expect(value).toEqual({ id: repositoryId });
@@ -1086,9 +1086,9 @@ describe("Repository", () =>
           const originalApplicationMetadata = await readApplicationMetadata(buffer, imageFormat);
           expect(originalApplicationMetadata).toBeUndefined();
           const listener = base.computeEventListener();
-          base.getNotifier().once(EventEntity.Image, ImageEventAction.Created, undefined, listener);
+          base.getNotifierService().once(EventEntity.Image, ImageEventAction.Created, undefined, listener);
           const image = await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, stringifiedMetadata, parentImageId, sourceUrl, buffer);
-          expect(listener).toHaveBeenCalledWith(EventEntity.Image + Notifier.delimiter + ImageEventAction.Created, { id: image.id });
+          expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Created, { id: image.id });
           imagesCount++;
           expect(image.repositoryId).toBe(repository.id);
           expect(image.format).toBe(imageFormat);
