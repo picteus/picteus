@@ -29,67 +29,67 @@ class SuperDataClass:
 
 
 @dataclass(kw_only=True)
-class NotificationsIdentity(SuperDataClass):
+class IntentIdentity(SuperDataClass):
     id: str
 
 
 @dataclass(kw_only=True)
-class NotificationsContext(SuperDataClass):
+class IntentContext(SuperDataClass):
     imageIds: Optional[List[str]] = None
 
 
 @dataclass
-class NotificationsBasisIntent(SuperDataClass):
-    identity: Optional[NotificationsIdentity] = None
+class BasisIntent(SuperDataClass):
+    identity: Optional[IntentIdentity] = None
 
 
 @dataclass
-class NotificationsWithContextIntent(NotificationsBasisIntent):
-    context: Optional[NotificationsContext] = None
+class WithContextIntent(BasisIntent):
+    context: Optional[IntentContext] = None
 
 
 @dataclass
-class NotificationsResourceUrl(SuperDataClass):
+class IntentResourceUrl(SuperDataClass):
     url: str
 
 
 @dataclass
-class NotificationsResourceContent(SuperDataClass):
+class IntentResourceContent(SuperDataClass):
     content: bytearray
 
 
-NotificationsResource = Union[NotificationsResourceUrl, NotificationsResourceContent]
+IntentResource = Union[IntentResourceUrl, IntentResourceContent]
 
 
 @dataclass(kw_only=True)
-class NotificationsDialogContent(SuperDataClass):
+class IntentDialogContent(SuperDataClass):
     title: str
     description: str
     details: Optional[str] = None
 
 
 @dataclass(kw_only=True)
-class NotificationsDialogIconContent(NotificationsDialogContent):
-    icon: Optional[NotificationsResource] = None
+class IntentDialogIconContent(IntentDialogContent):
+    icon: Optional[IntentResource] = None
 
 
 @dataclass
-class NotificationsDialogIconSizeContent(NotificationsDialogIconContent):
+class IntentDialogIconSizeContent(IntentDialogIconContent):
     size: Optional[Literal["auto", "xs", "s", "m", "l", "xl"]] = None
 
 
 @dataclass
-class NotificationsFormContent(SuperDataClass):
+class IntentFormContent(SuperDataClass):
     parameters: Json
-    dialogContent: Optional[NotificationsDialogIconSizeContent] = None
+    dialogContent: Optional[IntentDialogIconSizeContent] = None
 
 
 @dataclass(kw_only=True)
-class NotificationsFormIntent(NotificationsWithContextIntent):
-    form: NotificationsFormContent
+class FormIntent(WithContextIntent):
+    form: IntentFormContent
 
 
-class NotificationsUiAnchor(StrEnum):
+class IntentUiAnchor(StrEnum):
     MODAL = "modal",
     SIDEBAR = "sidebar",
     WINDOW = "window",
@@ -97,99 +97,99 @@ class NotificationsUiAnchor(StrEnum):
 
 
 @dataclass(kw_only=True)
-class NotificationsUISidebarIntegration(SuperDataClass):
-    anchor: NotificationsUiAnchor = field(default=NotificationsUiAnchor.SIDEBAR, init=False)
+class IntentUISidebarIntegration(SuperDataClass):
+    anchor: IntentUiAnchor = field(default=IntentUiAnchor.SIDEBAR, init=False)
     isExternal: bool
 
 
 @dataclass(kw_only=True)
-class NotificationsUIWindowIntegration(SuperDataClass):
-    anchor: NotificationsUiAnchor = field(default=NotificationsUiAnchor.WINDOW, init=False)
+class IntentUIWindowIntegration(SuperDataClass):
+    anchor: IntentUiAnchor = field(default=IntentUiAnchor.WINDOW, init=False)
 
 
 @dataclass(kw_only=True)
-class NotificationsUIModalIntegration(SuperDataClass):
-    anchor: NotificationsUiAnchor = field(default=NotificationsUiAnchor.MODAL, init=False)
+class IntentUIModalIntegration(SuperDataClass):
+    anchor: IntentUiAnchor = field(default=IntentUiAnchor.MODAL, init=False)
 
 
-NotificationsUIIntegration = Union[
-    NotificationsUISidebarIntegration, NotificationsUIWindowIntegration, NotificationsUIModalIntegration]
+IntentUIIntegration = Union[
+    IntentUISidebarIntegration, IntentUIWindowIntegration, IntentUIModalIntegration]
 
 
 @dataclass
-class NotificationsFrameUrlContent(SuperDataClass):
+class IntentFrameUrlContent(SuperDataClass):
     url: str
 
 
 @dataclass
-class NotificationsFrameHtmlContent(SuperDataClass):
+class IntentFrameHtmlContent(SuperDataClass):
     html: str
 
 
-NotificationsFrameContent = Union[NotificationsFrameUrlContent, NotificationsFrameHtmlContent]
+IntentFrameContent = Union[IntentFrameUrlContent, IntentFrameHtmlContent]
 
 
 @dataclass
-class NotificationsUi(SuperDataClass):
+class IntentUi(SuperDataClass):
     id: str
-    integration: NotificationsUIIntegration
-    frameContent: NotificationsFrameContent
-    dialogContent: Optional[NotificationsDialogIconContent]
+    integration: IntentUIIntegration
+    frameContent: IntentFrameContent
+    dialogContent: Optional[IntentDialogIconContent]
 
 
 @dataclass(kw_only=True)
-class NotificationsUiIntent(NotificationsWithContextIntent):
-    ui: NotificationsUi
+class UiIntent(WithContextIntent):
+    ui: IntentUi
 
 
-class NotificationsDialogType(StrEnum):
+class IntentDialogType(StrEnum):
     ERROR = "error",
     INFO = "info",
     QUESTION = "question"
 
 
 @dataclass
-class NotificationsFrame(SuperDataClass):
-    content: NotificationsFrameContent
+class IntentFrame(SuperDataClass):
+    content: IntentFrameContent
     height: int
 
 
 @dataclass
-class NotificationsDialogButtons(SuperDataClass):
+class IntentDialogButtons(SuperDataClass):
     yes: str
     no: Optional[str] = None
 
 
 @dataclass(kw_only=True)
-class NotificationsDialog(NotificationsDialogIconSizeContent):
-    type: NotificationsDialogType
-    frame: Optional[NotificationsFrame] = None
-    buttons: NotificationsDialogButtons
+class IntentDialog(IntentDialogIconSizeContent):
+    type: IntentDialogType
+    frame: Optional[IntentFrame] = None
+    buttons: IntentDialogButtons
 
 
 @dataclass(kw_only=True)
-class NotificationsDialogIntent(NotificationsWithContextIntent):
-    dialog: NotificationsDialog
+class DialogIntent(WithContextIntent):
+    dialog: IntentDialog
 
 
 @dataclass
-class NotificationsImage(SuperDataClass):
+class IntentImage(SuperDataClass):
     imageId: str
-    dialogContent: Optional[NotificationsDialogContent] = None
+    dialogContent: Optional[IntentDialogContent] = None
 
 
 @dataclass
-class NotificationsImages(SuperDataClass):
-    images: List[NotificationsImage]
-    dialogContent: Optional[NotificationsDialogIconContent] = None
+class IntentImages(SuperDataClass):
+    images: List[IntentImage]
+    dialogContent: Optional[IntentDialogIconContent] = None
 
 
 @dataclass(kw_only=True)
-class NotificationsImagesIntent(NotificationsWithContextIntent):
-    images: NotificationsImages
+class ImagesIntent(WithContextIntent):
+    images: IntentImages
 
 
-class NotificationsShowType(StrEnum):
+class IntentShowType(StrEnum):
     SIDEBAR = "sidebar"
     EXTENSION_SETTINGS = "extensionSettings"
     IMAGE = "image"
@@ -197,26 +197,26 @@ class NotificationsShowType(StrEnum):
 
 
 @dataclass
-class NotificationsShow(SuperDataClass):
-    type: NotificationsShowType
+class IntentShow(SuperDataClass):
+    type: IntentShowType
     id: str
 
 
 @dataclass(kw_only=True)
-class NotificationsShowIntent(NotificationsBasisIntent):
-    show: NotificationsShow
+class ShowIntent(BasisIntent):
+    show: IntentShow
 
 
 @dataclass(kw_only=True)
-class NotificationsServeBundle(SuperDataClass):
+class IntentServeBundle(SuperDataClass):
     content: bytearray
     settings: Optional[Json] = None
 
 
 @dataclass(kw_only=True)
-class NotificationsServeBundleIntent(NotificationsBasisIntent):
-    serveBundle: NotificationsServeBundle
+class ServeBundleIntent(BasisIntent):
+    serveBundle: IntentServeBundle
 
 
-NotificationsIntent = Union[
-    NotificationsFormIntent, NotificationsUiIntent, NotificationsDialogIntent, NotificationsImagesIntent, NotificationsShowIntent, NotificationsServeBundleIntent]
+Intent = Union[
+    FormIntent, UiIntent, DialogIntent, ImagesIntent, ShowIntent, ServeBundleIntent]

@@ -17,7 +17,7 @@ import {
   MiscellaneousApi,
   RepositoryApi
 } from "./index";
-import { NotificationsIntent } from "./intents";
+import { Intent } from "./intents";
 
 
 export type NotificationValue = Record<string, any>;
@@ -240,7 +240,7 @@ export class Communicator
     this.sendMessage(notificationsChannel, { notification: value });
   }
 
-  async launchIntent<T>(intent: NotificationsIntent): Promise<T>
+  async launchIntent<T>(intent: Intent): Promise<T>
   {
     return await new Promise<T>((resolve, reject) =>
     {

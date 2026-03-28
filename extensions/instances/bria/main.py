@@ -5,8 +5,8 @@ from typing import Any, List, Optional
 
 from PIL import Image
 from PIL.ImageFile import ImageFile
-from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator, SettingsValue, NotificationsImage, \
-    NotificationsImagesIntent, NotificationsImages, Helper, NotificationsDialogIconContent
+from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator, SettingsValue, IntentImage, \
+    ImagesIntent, IntentImages, Helper, IntentDialogIconContent
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
     InstructionsPrompt, PromptKind, GenerationRecipePrompt, ImageFeatureValue
@@ -32,15 +32,15 @@ class BriaExtension(PicteusExtension):
     async def on_event(self, communicator: Communicator, event, value) -> Any | None:
         if event == NotificationEvent.IMAGE_RUN_COMMAND:
             image_ids: List[str] = value["imageIds"]
-            new_images: List[NotificationsImage] = []
+            new_images: List[IntentImage] = []
             for image_id in image_ids:
                 new_image = await self._handle_image(communicator, image_id)
                 if new_image is not None:
-                    new_images.append(NotificationsImage(new_image.id))
+                    new_images.append(IntentImage(new_image.id))
             if len(new_images) > 0:
-                await communicator.launch_intent(NotificationsImagesIntent(images=
-                                                                           NotificationsImages(images=new_images,
-                                                                                               dialogContent=NotificationsDialogIconContent(
+                await communicator.launch_intent(ImagesIntent(images=
+                                                                           IntentImages(images=new_images,
+                                                                                               dialogContent=IntentDialogIconContent(
                                                                                                    title="Background-less images",
                                                                                                    description="These are the images without background"))))
 

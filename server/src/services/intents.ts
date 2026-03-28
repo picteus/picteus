@@ -1,4 +1,5 @@
-type Json = Record<string, any>;
+import { Json } from "../bos";
+
 
 export interface IntentIdentity
 {

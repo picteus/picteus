@@ -9,8 +9,8 @@ import {
   type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
+  IntentImage,
   NotificationEvent,
-  NotificationsImage,
   NotificationValue,
   PicteusExtension,
   PromptKind,
@@ -71,7 +71,7 @@ class CivitaiExtension extends PicteusExtension
       options.username = userNameOrPostId;
     }
     const civitaiImages = await client.default.getImages(options);
-    const newImages: NotificationsImage[] = [];
+    const newImages: IntentImage[] = [];
     for (const item of civitaiImages.items)
     {
       const id = item.id.toString(10);

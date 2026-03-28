@@ -7,8 +7,8 @@ import {
   ImageFeatureFormat,
   ImageFeatureType,
   ImageMetadata,
+  IntentDialogType,
   NotificationEvent,
-  NotificationsDialogType,
   NotificationValue,
   PicteusExtension,
   PromptKind,
@@ -242,7 +242,7 @@ class FreepikExtension extends PicteusExtension
         await communicator.launchIntent<boolean>({
           dialog:
             {
-              type: NotificationsDialogType.Error,
+              type: IntentDialogType.Error,
               title: "Generation error",
               description: "The image generation failed for an unknown error",
               details: "If this extension is not buggy, the issue comes the Freepik API server.",

@@ -5,8 +5,8 @@ import {
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
+  IntentDialogType,
   NotificationEvent,
-  NotificationsDialogType,
   NotificationValue,
   PicteusExtension,
   SettingsValue
@@ -99,7 +99,7 @@ class OllamaExtension extends PicteusExtension
     const answer = await this.requestOllama(communicator, model, imageId, question);
     await communicator.launchIntent<void>({
       dialog: {
-        type: NotificationsDialogType.Info,
+        type: IntentDialogType.Info,
         title: `Response from the '${model}' model`,
         description: `After having analyzed the image, here is the answer to your question <b>"${question}"</b>.`,
         details: `${answer}`,

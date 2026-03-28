@@ -7,12 +7,12 @@ import {
   ImageFeatureType,
   ImageFormat,
   ImageResizeRender,
+  IntentDialogType,
+  IntentImage,
+  IntentShowType,
+  IntentUiAnchor,
   NotificationEvent,
   NotificationReturnedError,
-  NotificationsDialogType,
-  NotificationsImage,
-  NotificationsShowType,
-  NotificationsUiAnchor,
   NotificationValue,
   PicteusExtension,
   SettingsValue
@@ -206,7 +206,7 @@ class TypeScriptExtension extends PicteusExtension
       context: { imageIds },
       dialog:
         {
-          type: NotificationsDialogType.Question,
+          type: IntentDialogType.Question,
           size: "m",
           title: "Dialog",
           description: "This is a dialog question",
@@ -232,14 +232,14 @@ class TypeScriptExtension extends PicteusExtension
       ui:
         {
           id: `ui-${anchor}-${nature}`,
-          integration: anchor === "Modal" ? { anchor: NotificationsUiAnchor.Modal } : ((anchor === "Sidebar" || anchor === "SidebarExternal") ?
+          integration: anchor === "Modal" ? { anchor: IntentUiAnchor.Modal } : ((anchor === "Sidebar" || anchor === "SidebarExternal") ?
             {
-              anchor: NotificationsUiAnchor.Sidebar,
+              anchor: IntentUiAnchor.Sidebar,
               isExternal: anchor === "SidebarExternal"
             }
             :
             {
-              anchor: NotificationsUiAnchor.Window
+              anchor: IntentUiAnchor.Window
             }),
           frameContent,
           dialogContent:
@@ -255,20 +255,20 @@ class TypeScriptExtension extends PicteusExtension
   private async handleShow(communicator: Communicator, parameters: Record<string, any>): Promise<void>
   {
     const rawType = parameters["type"];
-    let showType: NotificationsShowType;
+    let showType: IntentShowType;
     let showId: string;
     switch (rawType)
     {
       case "sidebar":
-        showType = NotificationsShowType.Sidebar;
+        showType = IntentShowType.Sidebar;
         showId = `${this.extensionId}-main`;
         break;
       case "extensionSettings":
-        showType = NotificationsShowType.ExtensionSettings;
+        showType = IntentShowType.ExtensionSettings;
         showId = this.extensionId;
         break;
       case "image":
-        showType = NotificationsShowType.Image;
+        showType = IntentShowType.Image;
         showId = (await this.getImageApi().imageSearchSummaries({
           searchParameters: {
             filter: {
@@ -281,7 +281,7 @@ class TypeScriptExtension extends PicteusExtension
         })).items[0].id;
         break;
       case "repository":
-        showType = NotificationsShowType.Repository;
+        showType = IntentShowType.Repository;
         showId = (await this.getRepositoryApi().repositoryList())[0].id;
         break;
       default:
@@ -313,7 +313,7 @@ class TypeScriptExtension extends PicteusExtension
     await communicator.launchIntent({
       dialog:
         {
-          type: NotificationsDialogType.Info,
+          type: IntentDialogType.Info,
           title: "Application",
           description: "This dialog box integrates an iframe application.",
           size: "l",
@@ -326,7 +326,7 @@ class TypeScriptExtension extends PicteusExtension
   private async handleRunCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: Record<string, any>): Promise<void>
   {
     communicator.sendLog(`Received an image command with id '${commandId}' for the image with ids '${imageIds}'`, "debug");
-    const newImages: NotificationsImage[] = [];
+    const newImages: IntentImage[] = [];
     for (const imageId of imageIds)
     {
       const image = await this.getImageApi().imageGet({ id: imageId });
@@ -347,7 +347,7 @@ class TypeScriptExtension extends PicteusExtension
           await communicator.launchIntent<boolean>({
             dialog:
               {
-                type: NotificationsDialogType.Error,
+                type: IntentDialogType.Error,
                 title: "Image Conversion",
                 description: "When a dimension is specified, the metadata must be stripped.",
                 buttons: { yes: "OK" }

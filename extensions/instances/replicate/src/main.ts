@@ -9,8 +9,8 @@ import {
   ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
+  IntentDialogType,
   NotificationEvent,
-  NotificationsDialogType,
   NotificationValue,
   PicteusExtension,
   PromptKind,
@@ -428,7 +428,7 @@ class ReplicateExtension extends PicteusExtension
       await communicator.launchIntent<boolean>({
         dialog:
           {
-            type: NotificationsDialogType.Error,
+            type: IntentDialogType.Error,
             title: "Replicate",
             description: `The model identifier '${modelIdentifier}' is incorrect, because it should have the form 'owner/name'. You may copy that value from Replicate.`,
             buttons: { yes: "OK" }

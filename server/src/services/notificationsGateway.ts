@@ -49,17 +49,17 @@ import {
 import { ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import {
-  NotificationsDialogIntent,
-  NotificationsDialogType,
-  NotificationsFormIntent,
-  NotificationsImagesIntent,
-  NotificationsIntent,
-  NotificationsServeBundleIntent,
-  NotificationsShowIntent,
-  NotificationsShowType,
-  NotificationsUiAnchor,
-  NotificationsUiIntent
-} from "./notificationsIntents";
+  BundleIntent,
+  DialogIntent,
+  FormIntent,
+  ImagesIntent,
+  Intent,
+  IntentDialogType,
+  IntentShowType,
+  IntentUiAnchor,
+  ShowIntent,
+  UiIntent
+} from "./intents";
 
 
 type SocketMessageValue = { apiKey?: string, extensionId?: string, contextId?: string }
@@ -76,33 +76,33 @@ type NotificationsValue = SocketMessageValue & {
   log?: NotificationsLog,
   notification?: NotificationsNotification,
   acknowledgment?: NotificationsAcknowledgment,
-  intent?: NotificationsIntent
+  intent?: Intent
 }
 export type NotificationsReturnedValue = { value?: any, cancel?: string, error?: string }
 
-const isNotificationsFormIntent = (intent: NotificationsIntent): intent is NotificationsFormIntent =>
+const isFormIntent = (intent: Intent): intent is FormIntent =>
 {
-  return (intent as NotificationsFormIntent).form !== undefined;
+  return (intent as FormIntent).form !== undefined;
 };
-const isNotificationsUiIntent = (intent: NotificationsIntent): intent is NotificationsUiIntent =>
+const isUiIntent = (intent: Intent): intent is UiIntent =>
 {
-  return (intent as NotificationsUiIntent).ui !== undefined;
+  return (intent as UiIntent).ui !== undefined;
 };
-const isNotificationsDialogIntent = (intent: NotificationsIntent): intent is NotificationsDialogIntent =>
+const isDialogIntent = (intent: Intent): intent is DialogIntent =>
 {
-  return (intent as NotificationsDialogIntent).dialog !== undefined;
+  return (intent as DialogIntent).dialog !== undefined;
 };
-const isNotificationsImagesIntent = (intent: NotificationsIntent): intent is NotificationsImagesIntent =>
+const isImagesIntent = (intent: Intent): intent is ImagesIntent =>
 {
-  return (intent as NotificationsImagesIntent).images !== undefined;
+  return (intent as ImagesIntent).images !== undefined;
 };
-const isNotificationsShowIntent = (intent: NotificationsIntent): intent is NotificationsShowIntent =>
+const isShowIntent = (intent: Intent): intent is ShowIntent =>
 {
-  return (intent as NotificationsShowIntent).show !== undefined;
+  return (intent as ShowIntent).show !== undefined;
 };
-const isNotificationsServeBundleIntent = (intent: NotificationsIntent): intent is NotificationsServeBundleIntent =>
+const isBundleIntent = (intent: Intent): intent is BundleIntent =>
 {
-  return (intent as NotificationsServeBundleIntent).serveBundle !== undefined;
+  return (intent as BundleIntent).serveBundle !== undefined;
 };
 
 const zodDialogContent = z.object({
@@ -489,7 +489,7 @@ export class NotificationsGateway
         {
           log?: NotificationsLog,
           notification?: NotificationsNotification,
-          intent?: NotificationsIntent
+          intent?: Intent
         } = notificationValue;
       const value: Json = { id: extensionId };
       let isOk = true;
@@ -557,7 +557,7 @@ export class NotificationsGateway
     });
   }
 
-  private async handleIntent(extensionId: string, intent: NotificationsIntent, resolve: (value: NotificationsReturnedValue) => void): Promise<{
+  private async handleIntent(extensionId: string, intent: Intent, resolve: (value: NotificationsReturnedValue) => void): Promise<{
     intentName: string;
     onAcknowledged: ((result: any) => void) | null
   } | undefined>
@@ -586,16 +586,16 @@ export class NotificationsGateway
       }
     };
 
-    if (isNotificationsFormIntent(intent) === true)
+    if (isFormIntent(intent) === true)
     {
       intentName = "parameters";
-      const specificIntent: NotificationsFormIntent = intent;
+      const specificIntent: FormIntent = intent;
       if (await checkSchema(z.object({
         parameters: z.object(),
         dialogContent: zodDialogIconSizeContent.optional()
       }), intent.form) === false)
       {
-        return resolveWithInvalidIntentSchema("NotificationsFormIntent");
+        return resolveWithInvalidIntentSchema("FormIntent");
       }
       const specificParameters = specificIntent.form.parameters;
       const withStrippedUiPropertiesParameters = deepCopy(specificParameters);
@@ -631,26 +631,26 @@ export class NotificationsGateway
         resolve(value);
       };
     }
-    else if (isNotificationsUiIntent(intent) === true)
+    else if (isUiIntent(intent) === true)
     {
       intentName = "UI";
-      const specificIntent: NotificationsUiIntent = intent;
+      const specificIntent: UiIntent = intent;
       if (await checkSchema(z.object({
         id: z.string(),
         integration: z.union([
           z.object({
-            anchor: z.string(NotificationsUiAnchor.Sidebar),
+            anchor: z.string(IntentUiAnchor.Sidebar),
             isExternal: z.boolean()
           }),
-          z.object({ anchor: z.string(NotificationsUiAnchor.Window) }),
-          z.object({ anchor: z.string(NotificationsUiAnchor.Modal) })
+          z.object({ anchor: z.string(IntentUiAnchor.Window) }),
+          z.object({ anchor: z.string(IntentUiAnchor.Modal) })
         ]),
         frameContent: zodFrameContent,
         dialogContent: zodDialogIconContent.optional()
 
       }), specificIntent.ui) === false)
       {
-        return resolveWithInvalidIntentSchema("NotificationsUiIntent");
+        return resolveWithInvalidIntentSchema("UiIntent");
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {
@@ -658,12 +658,12 @@ export class NotificationsGateway
         resolve(value);
       };
     }
-    else if (isNotificationsDialogIntent(intent) === true)
+    else if (isDialogIntent(intent) === true)
     {
       intentName = "dialog";
-      const specificIntent: NotificationsDialogIntent = intent;
+      const specificIntent: DialogIntent = intent;
       if (await checkSchema(zodDialogIconSizeContent.extend({
-        type: z.enum(NotificationsDialogType),
+        type: z.enum(IntentDialogType),
         frame: z.object({
           content: zodFrameContent,
           height: z.int32().min(0).max(100)
@@ -674,7 +674,7 @@ export class NotificationsGateway
         })
       }), specificIntent.dialog) === false)
       {
-        return resolveWithInvalidIntentSchema("NotificationsDialogIntent");
+        return resolveWithInvalidIntentSchema("DialogIntent");
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {
@@ -682,10 +682,10 @@ export class NotificationsGateway
         resolve(value);
       };
     }
-    else if (isNotificationsImagesIntent(intent) === true)
+    else if (isImagesIntent(intent) === true)
     {
       intentName = "images";
-      const specificIntent: NotificationsImagesIntent = intent;
+      const specificIntent: ImagesIntent = intent;
       if (await checkSchema(z.object({
         images: z.array(z.object({
           imageId: z.string(),
@@ -694,7 +694,7 @@ export class NotificationsGateway
         dialogContent: zodDialogIconContent.optional()
       }), specificIntent.images) === false)
       {
-        return resolveWithInvalidIntentSchema("NotificationsImagesIntent");
+        return resolveWithInvalidIntentSchema("ImagesIntent");
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {
@@ -702,16 +702,16 @@ export class NotificationsGateway
         resolve(value);
       };
     }
-    else if (isNotificationsShowIntent(intent) === true)
+    else if (isShowIntent(intent) === true)
     {
       intentName = "show";
-      const specificIntent: NotificationsShowIntent = intent;
+      const specificIntent: ShowIntent = intent;
       if (await checkSchema(z.object({
-        type: z.enum(NotificationsShowType),
+        type: z.enum(IntentShowType),
         id: z.string()
       }), specificIntent.show) === false)
       {
-        return resolveWithInvalidIntentSchema("NotificationsShowIntent");
+        return resolveWithInvalidIntentSchema("ShowIntent");
       }
       onAcknowledged = (value: NotificationsReturnedValue) =>
       {
@@ -719,16 +719,16 @@ export class NotificationsGateway
         resolve(value);
       };
     }
-    else if (isNotificationsServeBundleIntent(intent) === true)
+    else if (isBundleIntent(intent) === true)
     {
       intentName = "serveBundle";
-      const specificIntent: NotificationsServeBundleIntent = intent;
+      const specificIntent: BundleIntent = intent;
       if (await checkSchema(z.object({
         content: z.instanceof(Buffer),
         settings: z.object().optional()
       }), specificIntent.serveBundle) === false)
       {
-        return resolveWithInvalidIntentSchema("NotificationsServeBundleIntent");
+        return resolveWithInvalidIntentSchema("BundleIntent");
       }
       onAcknowledged = null;
       const extensionApiKey = AuthenticationGuard.registerExtensionsApiKey(extensionId);

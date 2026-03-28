@@ -11,11 +11,11 @@ import {
   ImageFeatureType,
   ImageFormat,
   ImageResizeRender,
+  IntentDialogType,
+  IntentImage,
   NotificationEvent,
   NotificationReturnedError,
   NotificationReturnedErrorCause,
-  NotificationsDialogType,
-  NotificationsImage,
   NotificationValue,
   PicteusExtension
 } from "@picteus/extension-sdk";
@@ -56,7 +56,7 @@ class ImageCommonsExtension extends PicteusExtension
 
   private async convertImages(communicator: Communicator, imageIds: string[], parameters: Record<string, any>): Promise<void>
   {
-    const newImages: NotificationsImage[] = [];
+    const newImages: IntentImage[] = [];
     for (const imageId of imageIds)
     {
       const image = await this.getImageApi().imageGet({ id: imageId });
@@ -71,7 +71,7 @@ class ImageCommonsExtension extends PicteusExtension
         await communicator.launchIntent<boolean>({
           dialog:
             {
-              type: NotificationsDialogType.Error,
+              type: IntentDialogType.Error,
               title: "Image Conversion",
               description: "When a dimension is specified, the metadata must be stripped.",
               buttons: { yes: "OK" }
@@ -216,7 +216,7 @@ class ImageCommonsExtension extends PicteusExtension
     await communicator.launchIntent({
       dialog:
         {
-          type: NotificationsDialogType.Info,
+          type: IntentDialogType.Info,
           size: "xl",
           title: "Tag",
           description: "Please, tag the images",
@@ -428,7 +428,7 @@ class ImageCommonsExtension extends PicteusExtension
 
     await communicator.launchIntent({
       dialog: {
-        type: NotificationsDialogType.Info,
+        type: IntentDialogType.Info,
         title: "Analytics",
         description: "Breakdown of provided tags within the collection over time.",
         details: html,

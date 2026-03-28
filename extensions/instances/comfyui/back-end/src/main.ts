@@ -9,9 +9,9 @@ import {
   ImageFeatureFormat,
   ImageFeatureType,
   ImageMetadata,
+  IntentDialogType,
+  IntentShowType,
   NotificationEvent,
-  NotificationsDialogType,
-  NotificationsShowType,
   NotificationValue,
   PicteusExtension,
   PromptKind,
@@ -119,7 +119,7 @@ class ComfyUiExtension extends PicteusExtension
         fs.symlinkSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), comfyUiExtensionDirectoryName), customNodesDirectoryPath, "dir");
         await communicator.launchIntent<boolean>({
           dialog: {
-            type: NotificationsDialogType.Info,
+            type: IntentDialogType.Info,
             title: "ComfyUI extension Installed",
             description: "The extension is installed, you should now restart ComfyUi, so that it is taken into account.",
             buttons: { yes: "OK" }
@@ -228,7 +228,7 @@ class ComfyUiExtension extends PicteusExtension
       });
       await communicator.launchIntent<void>({
         dialog: {
-          type: NotificationsDialogType.Info,
+          type: IntentDialogType.Info,
           title: "ComfyUI Analysis",
           description: `After having inspected the image metadata, here is the output of the analysis regarding the images that were detected as input images.`,
           details: `${value}.`,
@@ -273,7 +273,7 @@ class ComfyUiExtension extends PicteusExtension
       communicator.sendLog(`Failed to send the prompt to the extension web service at '${extensionWebServiceUrl}'. Reason: '${error.message}'`, "error");
       return;
     }
-    await communicator.launchIntent({ show: { type: NotificationsShowType.Sidebar, id: `${this.extensionId}-main` } });
+    await communicator.launchIntent({ show: { type: IntentShowType.Sidebar, id: `${this.extensionId}-main` } });
   }
 
   private computePromptAndWorkflow(metadata: ImageMetadata): ComfyUiPromptAndWorkflow | undefined

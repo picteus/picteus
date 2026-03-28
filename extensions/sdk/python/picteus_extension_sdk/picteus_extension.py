@@ -20,7 +20,7 @@ from socketio import SimpleClient
 
 import picteus_ws_client
 from picteus_extension_sdk import get_version
-from picteus_extension_sdk.intents import NotificationsIntent
+from picteus_extension_sdk.intents import Intent
 from picteus_ws_client import Manifest
 
 basicConfig(
@@ -119,9 +119,10 @@ class _MessageSender:
     async def send_notification(self, value: Dict[str, Any]) -> None:
         await self.send_message(notificationsChannel, {"notification": value})
 
-    async def launch_intent(self, intent: NotificationsIntent, future: asyncio.Future) -> None:
+    async def launch_intent(self, intent: Intent, future: asyncio.Future) -> None:
         def callback(the_value: [Dict[str, Any]]) -> T:
-            self.logger.debug(f"Received a result related to the intent '{_scrub_bytes(intent)}' for {self.to_string()}")
+            self.logger.debug(
+                f"Received a result related to the intent '{_scrub_bytes(intent)}' for {self.to_string()}")
             if "cancel" in the_value:
                 # noinspection PyUnresolvedReferences
                 future.set_exception(
@@ -194,7 +195,7 @@ class Communicator:
     def send_acknowledgment(self, success: bool) -> None:
         self._queue.put_nowait({"sender": self._sender, "type": "acknowledgment", "acknowledgment": success})
 
-    async def launch_intent(self, intent: NotificationsIntent) -> T:
+    async def launch_intent(self, intent: Intent) -> T:
         loop = asyncio.get_event_loop()
         future: asyncio.Future = loop.create_future()
         await self._queue.put({"sender": self._sender, "type": "intent", "intent": intent, "future": future})
