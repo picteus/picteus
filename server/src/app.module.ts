@@ -356,75 +356,80 @@ class MigrationModule implements OnModuleInit, OnModuleDestroy
 
 }
 
-// The orders in which the providers matter, because we want their "onModuleInit()" method invoked in the following order: "AdministrationService" => "RepositoryService"
-const providers = [unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, throttlerGuardProvider, VectorDatabaseAccessor, HostService, NotifierService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService];
-
-@Module({
-  imports:
-    [
-      EventEmitterModule.forRoot({ wildcard: true, delimiter: NotifierService.delimiter }),
-      ThrottlerModule.forRoot({
-        throttlers:
-          [
-            {
-              ttl: 1_000,
-              limit: 100
-            }
-          ]
-      }),
-      PrerequisitesModule,
-      MigrationModule
-    ],
-  controllers,
-  providers
-})
-export class MainModule implements OnModuleInit, OnApplicationBootstrap, OnModuleDestroy, OnApplicationShutdown, NestModule
+export function fineTuneApplication(application: NestExpressApplication): void
 {
+  // We do not use the "setGlobalPrefix()" function on purpose, by prefixing every controller, instead
+  // application.setGlobalPrefix("prefix");
+  // We want to compress the network output
+  application.use(compression());
+  // 64 MB. of body payload should be enough
+  const limit = "64mb";
+  application.useBodyParser("urlencoded", { limit, extended: true });
+  application.useBodyParser("json", { limit });
+  application.useBodyParser("text", { limit });
+  application.useBodyParser("raw", { limit, type: "*/*" });
+}
 
-  static fineTuneApplication(application: NestExpressApplication): void
+export function computeMainModule(withThrotlling: boolean): Type<NestModule>
+{
+  // The orders in which the providers matter, because we want their "onModuleInit()" method invoked in the following order: "AdministrationService" => "RepositoryService"
+  const providers = [unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, ...(withThrotlling === false ? [] : [throttlerGuardProvider]), VectorDatabaseAccessor, HostService, NotifierService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService];
+
+  @Module({
+    imports:
+      [
+        EventEmitterModule.forRoot({ wildcard: true, delimiter: NotifierService.delimiter }),
+        ...(withThrotlling === false ? [] : [ThrottlerModule.forRoot({
+          throttlers:
+            [
+              {
+                ttl: 1_000,
+                limit: 100
+              }
+            ]
+        })]),
+        PrerequisitesModule,
+        MigrationModule
+      ],
+    controllers,
+    providers
+  })
+  class MainModule implements OnModuleInit, OnApplicationBootstrap, OnModuleDestroy, OnApplicationShutdown, NestModule
   {
-    // We do not use the "setGlobalPrefix()" function on purpose, by prefixing every controller, instead
-    // application.setGlobalPrefix("prefix");
-    // We want to compress the network output
-    application.use(compression());
-    // 64 MB. of body payload should be enough
-    const limit = "64mb";
-    application.useBodyParser("urlencoded", { limit, extended: true });
-    application.useBodyParser("json", { limit });
-    application.useBodyParser("text", { limit });
-    application.useBodyParser("raw", { limit, type: "*/*" });
+
+    constructor()
+    {
+      logger.debug("Instantiating a MainModule");
+    }
+
+    async onModuleInit(): Promise<void>
+    {
+      logger.info("The initializing of the AppModule is over");
+    }
+
+    onApplicationBootstrap(): any
+    {
+      logger.info("The AppModule is now initialized");
+    }
+
+    async onModuleDestroy(): Promise<void>
+    {
+      logger.info("Destroying the AppModule");
+      logger.info("Destroyed the AppModule");
+    }
+
+    onApplicationShutdown(signal?: string): any
+    {
+      logger.info(`The AppModule is now shutting down${signal === undefined ? "" : ` with '${signal}' signal`}`);
+    }
+
+    configure(consumer: MiddlewareConsumer): void
+    {
+      consumer.apply(ImageResizerMiddleware).forRoutes(Resizer.webServerBasePath);
+      consumer.apply(ExtensionsUserInterfaceMiddleware).forRoutes(ExtensionsUiServer.webServerBasePath);
+    }
+
   }
 
-  constructor()
-  {
-    logger.debug("Instantiating a MainModule");
-  }
-
-  async onModuleInit(): Promise<void>
-  {
-    logger.info("The initializing of the AppModule is over");
-  }
-
-  onApplicationBootstrap(): any
-  {
-    logger.info("The AppModule is now initialized");
-  }
-
-  async onModuleDestroy(): Promise<void>
-  {
-    logger.info("Destroying the AppModule");
-    logger.info("Destroyed the AppModule");
-  }
-
-  onApplicationShutdown(signal?: string): any
-  {
-    logger.info(`The AppModule is now shutting down${signal === undefined ? "" : ` with '${signal}' signal`}`);
-  }
-
-  configure(consumer: MiddlewareConsumer): void
-  {
-    consumer.apply(ImageResizerMiddleware).forRoutes(Resizer.webServerBasePath);
-    consumer.apply(ExtensionsUserInterfaceMiddleware).forRoutes(ExtensionsUiServer.webServerBasePath);
-  }
-
+  return MainModule;
 }

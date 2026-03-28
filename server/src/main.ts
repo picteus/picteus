@@ -34,7 +34,7 @@ import { environmentVariableChecker, StringLengths, StringNature } from "./servi
 import { ConstantsRegistry, ManifestRuntimeEnvironment } from "./dtos/app.dtos";
 import { deepCopy, stringify } from "./utils";
 import { apiKeyHeaderName, AuthenticationGuard } from "./app.guards";
-import { MainModule } from "./app.module";
+import { computeMainModule, fineTuneApplication } from "./app.module";
 import { HostService } from "./services/hostService";
 import { getTemporaryDirectoryPath } from "./services/utils/downloader";
 import { ExtensionGenerator } from "./services/extensionGenerator";
@@ -68,15 +68,15 @@ class InternalServer
     fs.writeFileSync(filePath, stringify(application.functions));
   }
 
-  async start(portNumber: number, secretsDirectoryPath: string | undefined, enableSwaggerUi: boolean): Promise<void>
+  async start(portNumber: number, useThrottling: boolean, secretsDirectoryPath: string | undefined, enableSwaggerUi: boolean): Promise<void>
   {
     const baseUrl = paths.webServicesBaseUrl;
     const swaggerUiPrefix = "swaggerui";
-    logger.info(`Starting the HTTP server ${secretsDirectoryPath !== undefined ? "with SSL " : ""}available at '${baseUrl}'${enableSwaggerUi === false ? "" : ` and Swagger UI available at '${baseUrl}/${swaggerUiPrefix}'`}`);
+    logger.info(`Starting the HTTP server${secretsDirectoryPath !== undefined ? " with SSL " : ""}${useThrottling === true ? " with throttling" : ""} available at '${baseUrl}'${enableSwaggerUi === false ? "" : ` and Swagger UI available at '${baseUrl}/${swaggerUiPrefix}'`}`);
     this.checkEnvironmentVariables();
-    const application = await this.createApplication(secretsDirectoryPath, portNumber);
+    const application = await this.createApplication(secretsDirectoryPath, useThrottling, portNumber);
 
-    MainModule.fineTuneApplication(application);
+    fineTuneApplication(application);
     {
       const httpAdapter: ExpressAdapter = application.getHttpAdapter() as ExpressAdapter;
       const instance: Express = httpAdapter.getInstance();
@@ -130,7 +130,7 @@ class InternalServer
     return this._application;
   }
 
-  private async createApplication(secretsDirectoryPath: string | undefined, portNumber?: number): Promise<NestExpressApplication>
+  private async createApplication(secretsDirectoryPath: string | undefined, useThrottling?: boolean, portNumber?: number): Promise<NestExpressApplication>
   {
     let httpsOptions: HttpsOptions | undefined;
     if (secretsDirectoryPath !== undefined)
@@ -213,7 +213,7 @@ class InternalServer
     }
 
     const httpAdapter = portNumber === undefined ? new ExpressAdapter() : new CustomExpressAdapter();
-    this._application = await NestFactory.create<NestExpressApplication>(MainModule, httpAdapter, options);
+    this._application = await NestFactory.create<NestExpressApplication>(computeMainModule(useThrottling === true), httpAdapter, options);
     // We do not invoke the "this.application.enableShutdownHooks()" statement to prevent from receiving the "OnApplicationShutdown" event, because this causes duplicated "onModuleDestroy()" invocations. The https://github.com/hienngm/nestjs-graceful-shutdown is also supposed to help
     if (httpAdapter instanceof CustomExpressAdapter)
     {
@@ -476,7 +476,7 @@ async function run(): Promise<void>
       const server = new InternalServer();
       try
       {
-        await server.start(paths.webServicesPortNumber, paths.isSecure === true ? secretsDirectoryPath : undefined, true);
+        await server.start(paths.webServicesPortNumber, cliOptions.useThrottling, paths.isSecure === true ? secretsDirectoryPath : undefined, true);
         logger.info("The server is started");
       }
       catch (error)

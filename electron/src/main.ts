@@ -104,11 +104,11 @@ class HttpServer
   {
   }
 
-  async start(serverDirectoryPath: string, emptyDatabaseFilePath: string, portNumber: number, useSsl: boolean | undefined, requiresApiKeys: boolean | undefined, unpackedExtensionsDirectoryPath: string | undefined, coordinator: HttpServerApplicationCoordinator): Promise<string>
+  async start(serverDirectoryPath: string, emptyDatabaseFilePath: string, portNumber: number, useSsl: boolean | undefined, useThrottling: boolean | undefined, requiresApiKeys: boolean | undefined, unpackedExtensionsDirectoryPath: string | undefined, coordinator: HttpServerApplicationCoordinator, execArgv: string[] | undefined): Promise<string>
   {
     const serverSourceDirectoryPath = path.join(serverDirectoryPath, "src");
     const filePath = path.join(serverSourceDirectoryPath, "main.js");
-    logger.info(`Starting the process server from the main file '${filePath}'`);
+    logger.info(`Starting the process server from the main file '${filePath}'${execArgv === undefined ? "" : (` with the --execArgv parameter set to '${execArgv}'`)}`);
 
     this._swaggerUiUrl = LocalhostComputer.instance.computeUrl(portNumber, useSsl === undefined ? false : useSsl, "swaggerui");
     const environmentVariables: Record<string, string> =
@@ -134,6 +134,10 @@ class HttpServer
     {
       forkArguments.push("--useSsl", useSsl.toString());
     }
+    if (useThrottling !== undefined)
+    {
+      forkArguments.push("--useThrottling", useThrottling.toString());
+    }
     if (requiresApiKeys !== undefined)
     {
       forkArguments.push("--requiresApiKeys", requiresApiKeys.toString());
@@ -143,8 +147,7 @@ class HttpServer
       forkArguments.push("--unpackedExtensionsDirectoryPath", unpackedExtensionsDirectoryPath);
     }
     const serverProcess = fork(filePath, [...forkArguments], {
-      // TODO: add a CLI option to enable remote debugging of the server
-      // execArgv: ["--inspect-brk=5858", "--trace-warnings"],
+      execArgv,
       env: { ...process.env, ...environmentVariables }
     });
     this.serverProcess = serverProcess;
@@ -398,7 +401,7 @@ export class ApplicationWrapper
   {
   }
 
-  start(useSsl: boolean = defaultCliOptions.useSsl, apiServerPortNumber: number = defaultCliOptions.apiServerPortNumber, webServerPortNumber: number = defaultCliOptions.webServerPortNumber, requiresApiKeys: boolean | undefined = defaultCliOptions.requiresApiKeys, unpackedExtensionsDirectoryPath: string | undefined = defaultCliOptions.unpackedExtensionsDirectoryPath, logBrowser: boolean = false): void
+  start(useSsl: boolean = defaultCliOptions.useSsl, useThrottling: boolean = defaultCliOptions.useThrottling, apiServerPortNumber: number = defaultCliOptions.apiServerPortNumber, webServerPortNumber: number = defaultCliOptions.webServerPortNumber, requiresApiKeys: boolean | undefined = defaultCliOptions.requiresApiKeys, unpackedExtensionsDirectoryPath: string | undefined = defaultCliOptions.unpackedExtensionsDirectoryPath, logBrowser: boolean = false, execArg: string[] | undefined): void
   {
     const gotTheLock = app.requestSingleInstanceLock({});
     if (gotTheLock === false)
@@ -466,19 +469,23 @@ export class ApplicationWrapper
           await this.loadUrl(this.mainWindow, new URL(`${fileWithProtocol}${path.join(electronDirectoryPath, "assets", "index.html")}`));
         }
 
-        const apiKey = await this.startProcessServer(apiServerPortNumber, useSsl, requiresApiKeys, unpackedExtensionsDirectoryPath, serverDirectoryPath, {
-          isApplicationQuitting: () =>
-          {
-            return this.isApplicationQuitting;
-          },
-          onError: (exitCode: number | null) =>
-          {
-            dialog.showErrorBox(applicationQuitting, `The process server stopped unexpectedly${exitCode === null ? "" : ` with code ${exitCode}`}`);
-            app.exit(1);
-          }
-        });
+        {
+          const coordinator =
+            {
+              isApplicationQuitting: () =>
+              {
+                return this.isApplicationQuitting;
+              },
+              onError: (exitCode: number | null) =>
+              {
+                dialog.showErrorBox(applicationQuitting, `The process server stopped unexpectedly${exitCode === null ? "" : ` with code ${exitCode}`}`);
+                app.exit(1);
+              }
+            };
+          const apiKey = await HttpServer.instance.start(serverDirectoryPath, path.join(serverDirectoryPath, "database.db"), apiServerPortNumber, useSsl, useThrottling, requiresApiKeys, unpackedExtensionsDirectoryPath, coordinator, execArg);
 
-        await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, apiKey);
+          await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, apiKey);
+        }
 
         // We restore the windows previous states
         this.persistentWindowManager.initialize();
@@ -874,11 +881,6 @@ export class ApplicationWrapper
     return await CommandsManager.instance.start(portNumber, useSsl, webDirectoryPath, path.join(serverDirectoryPath, "secrets"));
   }
 
-  private async startProcessServer(portNumber: number, useSsl: boolean | undefined, requiresApiKeys: boolean | undefined, unpackedExtensionsDirectoryPath: string | undefined, serverDirectoryPath: string, coordinator: HttpServerApplicationCoordinator): Promise<string>
-  {
-    return await HttpServer.instance.start(serverDirectoryPath, path.join(serverDirectoryPath, "database.db"), portNumber, useSsl, requiresApiKeys, unpackedExtensionsDirectoryPath, coordinator);
-  }
-
   private async onVersion(version: string): Promise<void>
   {
     const versionFilePath = path.join(applicationDirectoryPath, "version.txt");
@@ -954,6 +956,7 @@ async function main(): Promise<void>
   }
   const parseCommandLineAndRun = await computeParseCommandLineAndRun();
   const logBrowserOption = "logBrowser";
+  const execArgvOption = "execArgv";
   await parseCommandLineAndRun(logger, cliArguments, app.getName(), app.getVersion(), environment === "production", async (program: Program): Promise<void> =>
   {
     const commands = await program.getAllCommands();
@@ -965,12 +968,17 @@ async function main(): Promise<void>
           validator: CaporalValidator.BOOLEAN,
           default: "false"
         });
+        command.option(`--${execArgvOption} <string>`, "The additional arguments to pass to the process server, for debugging purposes, see https://nodejs.org/api/child_process.html#child-processforkmodulepath-args-options", {
+          validator: CaporalValidator.STRING,
+          default: undefined
+        });
       }
     }
   }, async (actionParameters: ActionParameters, cliOptions: CliOptions): Promise<void> =>
   {
     const logBrowser = actionParameters.options[logBrowserOption] as boolean;
-    applicationWrapper.start(cliOptions.useSsl, cliOptions.apiServerPortNumber, cliOptions.webServerPortNumber, cliOptions.requiresApiKeys, cliOptions.unpackedExtensionsDirectoryPath, logBrowser);
+    const execArgv = actionParameters.options[execArgvOption] as string;
+    applicationWrapper.start(cliOptions.useSsl, cliOptions.useThrottling, cliOptions.apiServerPortNumber, cliOptions.webServerPortNumber, cliOptions.requiresApiKeys, cliOptions.unpackedExtensionsDirectoryPath, logBrowser, execArgv === undefined ? undefined : execArgv.replace(/^[“”"]+|[“”"]+$/g, "").split(" "));
   }, (code: number): void =>
   {
     app.exit(code);

@@ -31,7 +31,7 @@ import {
   SearchService,
   VectorDatabaseAccessor
 } from "../src/services/app.service";
-import { MainModule } from "../src/app.module";
+import { computeMainModule, fineTuneApplication } from "../src/app.module";
 import {
   Extension,
   fileWithProtocol,
@@ -535,7 +535,7 @@ export class Base extends Core
     logger.debug("Creating the Nest application");
     this.moduleRef = await this.createTestingModule();
     this.application = this.moduleRef.createNestApplication<NestExpressApplication>();
-    MainModule.fineTuneApplication(this.application);
+    fineTuneApplication(this.application);
     const portNumber = await pickPort({ type: "tcp", minPort: 7000, maxPort: 8000 });
     paths.setSecureAndPortNumber(undefined, portNumber);
     logger.debug(`The Nest application is listening incoming requests on port ${portNumber}`);
@@ -566,7 +566,7 @@ export class Base extends Core
 
   private async createTestingModule(): Promise<TestingModule>
   {
-    return await Test.createTestingModule({ imports: [MainModule] }).compile();
+    return await Test.createTestingModule({ imports: [computeMainModule(false)] }).compile();
   }
 
   setSdkDirectoryPath(): void

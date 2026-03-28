@@ -4,6 +4,7 @@ import { Logger } from "winston";
 export interface CliOptions
 {
   readonly useSsl: boolean;
+  readonly useThrottling: boolean;
   readonly apiServerPortNumber: number;
   readonly webServerPortNumber: number;
   readonly vectorDatabasePortNumber: number;
@@ -14,6 +15,7 @@ export interface CliOptions
 export const defaultCliOptions: CliOptions =
   {
     useSsl: false,
+    useThrottling: false,
     apiServerPortNumber: 3001,
     webServerPortNumber: 2999,
     vectorDatabasePortNumber: 3002,
@@ -54,9 +56,13 @@ export async function computeParseCommandLineAndRun(): Promise<parseCommandLineA
     theProgram.name(name).version(version).strict(isStrict);
     theProgram.command(defaultCommand, "Starts the application")
       .default()
-      .option("--useSsl <enabled>", "Whether SSL should be enabled", {
+      .option("--useSsl <enabled>", "Whether SSL is enabled", {
         validator: CaporalValidator.BOOLEAN,
         default: defaultCliOptions.useSsl
+      })
+      .option("--useThrottling <enabled>", "Whether requests throttling is enabled", {
+        validator: CaporalValidator.BOOLEAN,
+        default: defaultCliOptions.useThrottling
       })
       .option("--apiServerPort <portNumber>", "Indicates the internal API server port number", {
         validator: CaporalValidator.NUMBER,
@@ -82,6 +88,7 @@ export async function computeParseCommandLineAndRun(): Promise<parseCommandLineA
       {
         exit = false;
         const useSsl: boolean = actionParameters.options["useSsl"] as boolean;
+        const useThrottling: boolean = actionParameters.options["useThrottling"] as boolean;
         const apiServerPort: number = actionParameters.options["apiServerPort"] as number;
         const webServerPort: number = actionParameters.options["webServerPort"] as number;
         const vectorDatabasePort: number = actionParameters.options["vectorDatabasePortNumber"] as number;
@@ -95,6 +102,7 @@ export async function computeParseCommandLineAndRun(): Promise<parseCommandLineA
 
         return starter(actionParameters, {
           useSsl,
+          useThrottling,
           apiServerPortNumber: apiServerPort,
           webServerPortNumber: webServerPort,
           vectorDatabasePortNumber: vectorDatabasePort,
