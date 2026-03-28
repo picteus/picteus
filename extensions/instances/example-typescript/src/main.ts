@@ -49,7 +49,7 @@ class TypeScriptExtension extends PicteusExtension
 
   protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
   {
-    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageDeleted || event === NotificationEvent.ImageComputeTags || event === NotificationEvent.ImageComputeFeatures)
+    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageTagsUpdated || event === NotificationEvent.ImageFeaturesUpdated || event === NotificationEvent.ImageDeleted || event === NotificationEvent.ImageComputeTags || event === NotificationEvent.ImageComputeFeatures)
     {
       await this.handleImageEvent(communicator, event, value);
     }
@@ -95,6 +95,10 @@ class TypeScriptExtension extends PicteusExtension
     if (isCreatedOrUpdated === true || event === NotificationEvent.ImageDeleted)
     {
       communicator.sendLog(`The image with id '${imageId}' was touched`, "info");
+    }
+    if (event === NotificationEvent.ImageTagsUpdated || event === NotificationEvent.ImageFeaturesUpdated)
+    {
+      communicator.sendLog(`The tags or features of the image with id '${imageId}' were updated`, "info");
     }
     if (isCreatedOrUpdated === true || event === NotificationEvent.ImageComputeTags)
     {

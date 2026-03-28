@@ -38,7 +38,7 @@ class PythonExtension(PicteusExtension):
             f"The extension with id '{self.extension_id}' was notified that the settings have been set", "debug")
 
     async def on_event(self, communicator: Communicator, event: str, value: Dict[str, Any]) -> Any | None:
-        if event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED or event == NotificationEvent.IMAGE_DELETED or event == NotificationEvent.IMAGE_COMPUTE_TAGS or event == NotificationEvent.IMAGE_COMPUTE_FEATURES:
+        if event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED or event == NotificationEvent.IMAGE_TAGS_UPDATED or event == NotificationEvent.IMAGE_FEATURES_UPDATED or event == NotificationEvent.IMAGE_DELETED or event == NotificationEvent.IMAGE_COMPUTE_TAGS or event == NotificationEvent.IMAGE_COMPUTE_FEATURES:
             await self._handle_image_event(communicator, event, value)
         elif event == NotificationEvent.PROCESS_RUN_COMMAND:
             command_id: str = value["commandId"]
@@ -64,19 +64,21 @@ class PythonExtension(PicteusExtension):
         return None
 
     async def _handle_image_event(self, communicator: Communicator, event: Literal[
-        NotificationEvent.IMAGE_CREATED, NotificationEvent.IMAGE_UPDATED, NotificationEvent.IMAGE_DELETED, NotificationEvent.IMAGE_COMPUTE_TAGS, NotificationEvent.IMAGE_COMPUTE_FEATURES],
+        NotificationEvent.IMAGE_CREATED, NotificationEvent.IMAGE_UPDATED, NotificationEvent.IMAGE_TAGS_UPDATED, NotificationEvent.IMAGE_FEATURES_UPDATED, NotificationEvent.IMAGE_DELETED, NotificationEvent.IMAGE_COMPUTE_TAGS, NotificationEvent.IMAGE_COMPUTE_FEATURES],
                                   value: dict[str, Any]) -> None:
         image_id: str = value["id"]
         is_created_or_updated: bool = event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED
         if is_created_or_updated or event == NotificationEvent.IMAGE_DELETED:
             communicator.send_log(f"The image with id '{image_id}' was touched", "info")
+        if event == NotificationEvent.IMAGE_TAGS_UPDATED or event == NotificationEvent.IMAGE_FEATURES_UPDATED:
+            communicator.send_log(f"The tags or features of the image with id '{image_id}' were updated", "info")
         if is_created_or_updated or event == NotificationEvent.IMAGE_COMPUTE_TAGS:
             communicator.send_log(f"Setting the tags for the image with id '{image_id}'", "debug")
-        self.get_image_api().image_set_tags(id=image_id, extension_id=self.extension_id,
+            self.get_image_api().image_set_tags(id=image_id, extension_id=self.extension_id,
                                             request_body=[self.extension_id])
         if is_created_or_updated or event == NotificationEvent.IMAGE_COMPUTE_FEATURES:
             communicator.send_log(f"Setting the features for the image with id '{image_id}'", "debug")
-        self.get_image_api().image_set_features(id=image_id, extension_id=self.extension_id,
+            self.get_image_api().image_set_features(id=image_id, extension_id=self.extension_id,
                                                 image_feature=[ImageFeature(type=ImageFeatureType.OTHER,
                                                                             format=ImageFeatureFormat.STRING,
                                                                             name="example",

@@ -34,8 +34,6 @@ export default function Notification({
 
   async function handleOnClick() {
     if (notification.type === "image") {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
       const image = await ImageService.get({ id: event.rawData.value.id });
       setImageVisualizer({ imageSummary: image });
     }

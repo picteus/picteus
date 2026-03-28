@@ -21,6 +21,8 @@
         "process.runCommand",
         "image.created",
         "image.updated",
+        "image.tags.updated",
+        "image.features.updated",
         "image.deleted",
         "image.computeTags",
         "image.computeFeatures",
@@ -31,6 +33,8 @@
           "events": [
             "image.created",
             "image.updated",
+            "image.tags.updated",
+            "image.features.updated",
             "image.deleted",
             "image.computeTags",
             "image.computeFeatures"

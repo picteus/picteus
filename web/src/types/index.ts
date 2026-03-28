@@ -18,7 +18,7 @@ export type SocketResponseType =
       channel: string;
       contextId: string;
       milliseconds: number;
-      value: object;
+      value: Record<string, any>;
     }
   | undefined;
 
@@ -187,6 +187,8 @@ export enum ChannelEnum {
   IMAGE_PREFIX = "image",
   IMAGE_CREATED = "image.created",
   IMAGE_UPDATED = "image.updated",
+  IMAGE_TAGS_UPDATED = "image.tags.updated",
+  IMAGE_FEATURES_UPDATED = "image.features.updated",
   IMAGE_DELETED = "image.deleted",
 }
 

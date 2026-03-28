@@ -60,8 +60,8 @@ export enum ImageEventAction
 {
   Created = "created",
   Updated = "updated",
-  TagsUpdated = "tagsUpdated",
-  FeaturesUpdated = "featuresUpdated",
+  TagsUpdated = "tags.updated",
+  FeaturesUpdated = "features.updated",
   Deleted = "deleted",
   Renamed = "renamed",
   ComputeFeatures = "computeFeatures",

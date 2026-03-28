@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconX } from "@tabler/icons-react";
+import { Accordion, ActionIcon, Button, Divider, Flex, Menu, Overlay, Table, Text } from "@mantine/core";
 import {
   ExtensionImageFeature,
   ExtensionImageTag,
@@ -10,11 +11,12 @@ import {
   ImageSummary,
   Repository
 } from "@picteus/ws-client";
-import { Accordion, ActionIcon, Button, Divider, Flex, Menu, Overlay, Table, Text } from "@mantine/core";
+import style from "./ImageVisualizer.module.scss";
 import { ImageService, RepositoriesService, StorageService } from "app/services";
+import { useEventSocket } from "app/context";
+import { ChannelEnum, EventInformationType } from "types";
 import { CodeViewer, CopyText, ExternalLink, Markdown } from "app/components";
 import { capitalizeText, formatDate, formatSize } from "utils";
-import style from "./ImageVisualizer.module.scss";
 import { TableComponent } from "./components";
 import { ImageItemMenu } from "../ImageMasonry/components/ImageItem/components";
 
@@ -37,6 +39,7 @@ export default function ImageVisualizer({
   const [imageData, setImageData] = useState<Image>();
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>();
   const [imageFeatures, setImageFeatures] = useState<ExtensionImageFeature[]>();
+  const event: EventInformationType = useEventSocket();
   const imageRef = useRef();
   const [imageZoom, setImageZoom] = useState<number>(1);
   const [t] = useTranslation();
@@ -58,6 +61,18 @@ export default function ImageVisualizer({
     setImageFeatures(imageData.features);
     setImageData(imageData);
   }
+
+  useEffect(() => {
+    if (event !== undefined) {
+      const channel = event.rawData.channel;
+      if (channel === ChannelEnum.IMAGE_UPDATED || channel === ChannelEnum.IMAGE_TAGS_UPDATED || channel === ChannelEnum.IMAGE_FEATURES_UPDATED)
+      {
+        if (imageData !== undefined && event.rawData.value?.id === imageData.id) {
+          void loadImageData();
+        }
+      }
+    }
+  }, [event]);
 
   useEffect(() => {
     void loadImageData();

@@ -250,6 +250,12 @@ export default {
     image: {
       created: "The image '{{id}}' has been created.",
       updated: "The image '{{id}}' has been updated.",
+      tags: {
+        updated: "The image '{{id}}' tags have been updated."
+      },
+      features: {
+        updated: "The image '{{id}}' features have been updated."
+      },
       deleted: "The image '{{id}}' has been deleted."
     }
   },

@@ -104,8 +104,6 @@ async function getEventText(channel, value): Promise<getEventTextReturnType> {
 async function generateImageCreatedOrUpdatedNotification(
   rawData: SocketResponseType,
 ): Promise<EventNotificationType> {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
   const imageId = rawData?.value?.id;
   const image = await ImageService.get({ id: imageId });
   const intlPrefix =

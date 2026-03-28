@@ -43,6 +43,8 @@ export enum ManifestEvent
   ExtensionSettings = "extension.settings",
   ImageCreated = "image.created",
   ImageUpdated = "image.updated",
+  ImageTagsUpdated = "image.tags.updated",
+  ImageFeaturesUpdated = "image.features.updated",
   ImageDeleted = "image.deleted",
   ImageComputeFeatures = "image.computeFeatures",
   ImageComputeEmbeddings = "image.computeEmbeddings",

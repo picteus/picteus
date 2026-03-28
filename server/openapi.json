@@ -4143,6 +4143,8 @@
           "extension.settings",
           "image.created",
           "image.updated",
+          "image.tags.updated",
+          "image.features.updated",
           "image.deleted",
           "image.computeFeatures",
           "image.computeEmbeddings",
