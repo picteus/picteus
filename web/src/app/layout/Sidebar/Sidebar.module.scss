@@ -14,6 +14,7 @@
   align-items: center;
   justify-content: center;
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
+  position: relative;
 
   &:hover {
     background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
@@ -31,4 +32,11 @@
 .icon {
   max-width: 24px;
   max-height: 24px;
+}
+
+.externalLinkIcon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  color: var(--mantine-color-blue-filled);
 }

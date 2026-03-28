@@ -35,6 +35,7 @@ export interface CommandParameters {
 export interface CommandContextType {
   sendCommand: (command: string, parameters: CommandParameters) => Promise<any>;
   isAvailable: () => boolean;
+  sendCommandOnConnected: (command: string, parameters: CommandParameters) => Promise<any>;
 }
 
 export type EventNotificationType = {

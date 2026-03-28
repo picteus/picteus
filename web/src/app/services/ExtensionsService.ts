@@ -146,7 +146,7 @@ async function synchronize(
   return extensionApi.extensionSynchronize(requestParameters);
 }
 
-function getAdditionalUi(
+function getAdditionalUis(
 ): AdditionalUi[] {
   return list().flatMap(
     (extension) =>
@@ -190,7 +190,7 @@ export default {
   setSettings,
   getExtensionsWithCapability,
   getConfiguration,
-  getAdditionalUi,
+  getAdditionalUis,
   getExtensionsCommands,
   runImageCommand,
   runProcessCommand,

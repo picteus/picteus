@@ -2,7 +2,14 @@ import { useTranslation } from "react-i18next";
 import React, { ReactNode, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Stack, Tooltip, UnstyledButton } from "@mantine/core";
-import { IconActivity, IconAdjustmentsHorizontal, IconBox, IconFolderOpen, IconPhotoMinus } from "@tabler/icons-react";
+import {
+  IconActivity,
+  IconAdjustmentsHorizontal,
+  IconBox,
+  IconExternalLink,
+  IconFolderOpen,
+  IconPhotoMinus
+} from "@tabler/icons-react";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
@@ -16,12 +23,13 @@ import { ChannelEnum, computeResourceTypeUrl } from "types";
 
 interface NavbarLinkProps {
   icon: ReactNode;
+  externalLink?: boolean;
   label: string;
   route: string;
   onClick?(): void;
 }
 
-function NavbarLink({ icon, label, route, onClick }: NavbarLinkProps) {
+function NavbarLink({ icon, externalLink, label, route, onClick }: NavbarLinkProps) {
   const { pathname } = useLocation();
   return (
     <Tooltip label={label} position="right" transitionProps={{ duration: 0 }}>
@@ -31,6 +39,11 @@ function NavbarLink({ icon, label, route, onClick }: NavbarLinkProps) {
         data-active={pathname === route || undefined}
       >
         {icon}
+        {externalLink === true && <IconExternalLink
+          className={style.externalLinkIcon}
+          stroke={1.5}
+          size={14}
+        />}
       </UnstyledButton>
     </Tooltip>
   );
@@ -60,6 +73,7 @@ export default function Sidebar() {
         <NavbarLink
           key={"navbarLink-" + element.title}
           icon={<img className={style.icon} src={computeResourceTypeUrl(element.icon)} alt="Extension anchor" />}
+          externalLink={element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === true}
           label={element.title}
           route={routePathFragment}
           onClick={() => {
