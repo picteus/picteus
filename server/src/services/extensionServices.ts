@@ -100,11 +100,11 @@ export class ExtensionsUiServer
 
   static readonly webServerBasePath = "ui";
 
-  private static readonly textPlain = types.txt;
-
-  private static readonly extensionPathFragment = "extension";
+  static readonly extensionPathFragment = "extension";
 
   private static readonly bundlePathFragment = "bundle";
+
+  private static readonly textPlain = types.txt;
 
   private readonly defaultIconFilePath: string;
 
@@ -130,18 +130,25 @@ export class ExtensionsUiServer
     }
     const fragment = pathTokens[1];
     let pathIndex = 2;
+    let extensionId: string;
     let uiPath: string;
     let filePath: string;
     let logFragment: string;
     if (fragment === ExtensionsUiServer.extensionPathFragment)
     {
-      if (pathTokens.length < 4)
+      if (pathTokens.length < 3)
       {
         this.sendInvalidPathResponse(response);
         return;
       }
-      const extensionId = pathTokens[pathIndex++];
-      uiPath = pathTokens.slice(pathIndex).join(pathSeparator);
+      extensionId = pathTokens[pathIndex++];
+      uiPath = pathTokens.length < 4 ? "" : pathTokens.slice(pathIndex).join(pathSeparator);
+      // We handle the parameters case
+      if (uiPath === "")
+      {
+        this.sendExtensionParameters(request, response, extensionId);
+        return;
+      }
 
       const manifest: ExtendedManifest | undefined = this.extensionsRegistry.get(extensionId);
       if (manifest === undefined)
@@ -180,7 +187,7 @@ export class ExtensionsUiServer
         this.sendInvalidPathResponse(response);
         return;
       }
-      const extensionId = extensionBundleServe.extensionApiKey.id;
+      extensionId = extensionBundleServe.extensionApiKey.id;
       if (this.checkExtensionState(response, extensionId) === false)
       {
         return;
@@ -212,6 +219,15 @@ export class ExtensionsUiServer
     {
       response.status(HttpStatus.NOT_FOUND).type(ExtensionsUiServer.textPlain).send(`Non-existent file '${uiPath}' related to ${logFragment}`);
       return;
+    }
+    else
+    {
+      if (fs.lstatSync(filePath).isFile() === false && fragment == ExtensionsUiServer.extensionPathFragment)
+      {
+        // This enables to access to the extension parameters from any directory-linked path
+        this.sendExtensionParameters(request, response, extensionId);
+        return;
+      }
     }
     const rawExtension = path.extname(filePath);
     const extension = rawExtension.startsWith(".") ? rawExtension.substring(1) : "";
@@ -260,6 +276,23 @@ export class ExtensionsUiServer
   private sendInvalidPathResponse(response: Response): void
   {
     response.status(HttpStatus.NOT_FOUND).type(ExtensionsUiServer.textPlain).send("Invalid path");
+  }
+
+  private sendExtensionParameters(request: Request, response: Response, extensionId: string): void
+  {
+    const refererExtensionId = AuthenticationGuard.extractExtensionIdFromRefererHeader(request);
+    if (extensionId !== refererExtensionId)
+    {
+      response.status(HttpStatus.UNAUTHORIZED).type(ExtensionsUiServer.textPlain).send(refererExtensionId === undefined ? "Invalid 'Referer' HTTP header" : "Mismatching extension identifier");
+    }
+    response.status(HttpStatus.OK).type(types.json).send({
+      parameters:
+        {
+          extensionId,
+          webServicesBaseUrl: paths.webServicesBaseUrl,
+          apiKey: AuthenticationGuard.registerExtensionApiKey(extensionId).key
+        }
+    });
   }
 
 }
@@ -562,7 +595,7 @@ export class ExtensionService
       // In case the extension is unpacked, we unregister it
       await this.unregisterUnpackedExtension(id);
     }
-    AuthenticationGuard.unregisterExtensionsApiKey(id);
+    AuthenticationGuard.unregisterExtensionApiKeys(id);
     // We delete all the features computed by the extension
     await this.entitiesProvider.imageFeature.deleteMany({ where: { extensionId: id } });
     // We delete all the embeddings computed by the extension
@@ -602,11 +635,11 @@ export class ExtensionService
     if (isPause === true)
     {
       await this.extensionsManager.stopProcesses([id]);
-      AuthenticationGuard.unregisterExtensionsApiKey(id);
+      AuthenticationGuard.unregisterExtensionApiKeys(id);
     }
     else
     {
-      await this.extensionsManager.startProcesses([AuthenticationGuard.registerExtensionsApiKey(id)]);
+      await this.extensionsManager.startProcesses([AuthenticationGuard.registerExtensionApiKey(id)]);
       // We synchronize the images via this extension, once it is resumed
       await this.synchronize(id);
     }
@@ -1204,7 +1237,7 @@ export class ExtensionService
       {
         await this.extensionsManager.stopProcesses([manifest.id]);
       }
-      AuthenticationGuard.unregisterExtensionsApiKey(manifest.id);
+      AuthenticationGuard.unregisterExtensionApiKeys(manifest.id);
     }
     if (useReader === true && (idWhenUpdating === undefined || this.perUnpackedExtensionIdDirectoryPaths.has(manifest.id) === true))
     {
@@ -1300,7 +1333,7 @@ export class ExtensionService
     // We do not start the extension if it was initially paused
     if (shouldHandleProcesses === true && this.extensionsRegistry.isPaused(manifest.id) === false)
     {
-      await this.extensionsManager.startProcesses([AuthenticationGuard.registerExtensionsApiKey(manifest.id)]);
+      await this.extensionsManager.startProcesses([AuthenticationGuard.registerExtensionApiKey(manifest.id)]);
       if (idWhenUpdating === undefined)
       {
         // We automatically synchronize the images via this extension, once it is installed

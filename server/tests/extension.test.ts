@@ -809,13 +809,18 @@ describe("Extensions", () =>
     }
     await testApiInstall(builder, manifest, zip.toBuffer(), async () =>
     {
+      const urlPrefix = `${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${manifest.id}`;
       for (const aCase of cases)
       {
-        const url = `${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${manifest.id}/${elementBasePath + aCase.path}`;
+        const url = `${urlPrefix}/${elementBasePath + aCase.path}`;
         const response = await fetch(url);
         expect(response.ok).toBeTruthy();
         expect(await response.text()).toEqual(aCase.content);
         expect(response.headers.get(headers.request.CONTENT_TYPE)).toEqual(`${aCase.mimeType}; charset=utf-8`);
+      }
+      {
+        const response = await fetch(urlPrefix);
+        console.dir(response);
       }
     });
   });

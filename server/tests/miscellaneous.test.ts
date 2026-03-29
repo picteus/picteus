@@ -1177,10 +1177,10 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
     }
   });
 
-  test("Notifier", async () =>
+  test("NotifierService", async () =>
   {
     const entityName = EventEntity.Image;
-    const action = ImageEventAction.Created;
+    const action = ImageEventAction.TagsUpdated;
     {
       const event = NotifierService.parseEvent(NotifierService.buildEvent(entityName, action));
       expect(event.eventEntity).toBe(entityName);

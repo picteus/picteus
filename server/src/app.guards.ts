@@ -19,6 +19,7 @@ import { logger } from "./logger";
 import { paths } from "./paths";
 import { apiScopesSeparator } from "./dtos/app.dtos";
 import { EntitiesProvider } from "./services/databaseProviders";
+import { ExtensionsUiServer } from "./services/extensionServices";
 
 
 export const apiKeyHeaderName = "X-API-KEY";
@@ -140,6 +141,9 @@ export class AuthenticationGuard implements CanActivate
   // This acts as a cache of API secret values
   private static readonly perSecretValueSecretsMap: Map<string, ApiSecret> = new Map<string, ApiSecret>();
 
+  // Whether we want to API to support authorizations based on the HTTP "Referer" header value
+  private static readonly acceptRefererHeader = Math.random() > 1;
+
   static generateApiKey(): string
   {
     return new Chance().string({ casing: "lower", alpha: true, length: 36 });
@@ -169,12 +173,12 @@ export class AuthenticationGuard implements CanActivate
   {
     for (const extensionId of extensionIds)
     {
-      AuthenticationGuard.registerExtensionsApiKey(extensionId);
+      AuthenticationGuard.registerExtensionApiKey(extensionId);
     }
     return AuthenticationGuard.extensionsApiPermissions;
   }
 
-  static registerExtensionsApiKey(extensionId: string): ExtensionApiKey
+  static registerExtensionApiKey(extensionId: string): ExtensionApiKey
   {
     logger.debug(`Registering an API key for the extension '${extensionId}'`);
     const apiKey = AuthenticationGuard.generateApiKey();
@@ -183,7 +187,7 @@ export class AuthenticationGuard implements CanActivate
     return extensionsApiKey;
   }
 
-  static unregisterExtensionsApiKey(extensionId: string): void
+  static unregisterExtensionApiKeys(extensionId: string): void
   {
     let index = 0;
     for (const extensionApiKey of AuthenticationGuard.extensionsApiPermissions)
@@ -201,6 +205,31 @@ export class AuthenticationGuard implements CanActivate
   static resetExtensionsApiKeys(): void
   {
     AuthenticationGuard.extensionsApiPermissions.length = 0;
+  }
+
+  static extractExtensionIdFromRefererHeader(request: IncomingMessage): string | undefined
+  {
+    const headers: Request.IncomingHttpHeaders = request.headers;
+    const values = headers["referer"];
+    if (values === undefined)
+    {
+      return undefined;
+    }
+    const value = values === undefined ? undefined : (Array.isArray(values) === true ? values[0] : values);
+    if (value === undefined)
+    {
+      return undefined;
+    }
+    if (value === undefined)
+    {
+      return undefined;
+    }
+    const urlPrefix = `${paths.webServicesBaseUrl}/${ExtensionsUiServer.webServerBasePath}/${ExtensionsUiServer.extensionPathFragment}/`;
+    if (value.startsWith(urlPrefix) === false)
+    {
+      return undefined;
+    }
+    return value.substring(urlPrefix.length).split("/")[0];
   }
 
   private static getExtensionsApiKey(apiKey: string, extensionId?: string): ExtensionApiKey | undefined
@@ -221,10 +250,20 @@ export class AuthenticationGuard implements CanActivate
       return true;
     }
     const httpArgumentsHost = context.switchToHttp();
-    const request: IncomingMessage = httpArgumentsHost.getRequest<IncomingMessage>();
-    const apiKey = this.extractApiKeyFromHeader(request);
+    const httpRequest = httpArgumentsHost.getRequest();
+    if (AuthenticationGuard.acceptRefererHeader === true)
+    {
+      const extensionId = AuthenticationGuard.extractExtensionIdFromRefererHeader(httpRequest);
+      if (extensionId !== undefined)
+      {
+        // The request is coming from an extension UI
+        httpRequest[AuthenticationGuard.policyContextAttributeName] = this.computeExtensionPolicyContext(extensionId);
+        return true;
+      }
+    }
+    const apiKey = this.extractApiKeyFromHeader(httpRequest);
     const policyContext = await this.checkMasterAndExtensionApiKey(apiKey);
-    httpArgumentsHost.getRequest()[AuthenticationGuard.policyContextAttributeName] = policyContext;
+    httpRequest[AuthenticationGuard.policyContextAttributeName] = policyContext;
     if (policyContext.scopes.indexOf(ApiScope.All) !== -1)
     {
       // As soon as we have the 'all' scope, we allow everything
@@ -235,13 +274,6 @@ export class AuthenticationGuard implements CanActivate
     return policyHandlers.every((handler) =>
       this.executePolicyHandler(handler, policyContext)
     );
-  }
-
-  private extractApiKeyFromHeader(request: IncomingMessage): string | undefined
-  {
-    const headers: Request.IncomingHttpHeaders = request.headers;
-    const values = headers[apiKeyHeaderName.toLowerCase()];
-    return values === undefined ? undefined : (Array.isArray(values) === true ? values[0] : values);
   }
 
   private async checkMasterAndExtensionApiKey(apiKey: string | undefined): Promise<PolicyContext>
@@ -262,10 +294,7 @@ export class AuthenticationGuard implements CanActivate
     const extensionsApiKey = AuthenticationGuard.getExtensionsApiKey(apiKey);
     if (extensionsApiKey !== undefined)
     {
-      return {
-        extensionId: extensionsApiKey.id,
-        scopes: [ApiScope.ExtensionChromeExtensionInstall, ApiScope.ExtensionRun, ApiScope.ExtensionSettingsRead, ApiScope.ExtensionSettingsWrite, ApiScope.ImageAttachmentWrite, ApiScope.ImageEmbeddingsWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageRead, ApiScope.ImageTagWrite, ApiScope.RepositoryEnsure, ApiScope.RepositoryRead, ApiScope.RepositoryStoreImage]
-      };
+      return this.computeExtensionPolicyContext(extensionsApiKey.id);
     }
     // The provided string is not the master API key, nor an extension API key: we check against the registered API secrets
     const scopes = await this.checkApiSecret(apiKey);
@@ -275,6 +304,21 @@ export class AuthenticationGuard implements CanActivate
       throw new UnauthorizedException("Invalid API key");
     }
     return { scopes };
+  }
+
+  private extractApiKeyFromHeader(request: IncomingMessage): string | undefined
+  {
+    const headers: Request.IncomingHttpHeaders = request.headers;
+    const values = headers[apiKeyHeaderName.toLowerCase()];
+    return values === undefined ? undefined : (Array.isArray(values) === true ? values[0] : values);
+  }
+
+  private computeExtensionPolicyContext(extensionId: string): PolicyContext
+  {
+    return {
+      extensionId,
+      scopes: [ApiScope.ExtensionChromeExtensionInstall, ApiScope.ExtensionRun, ApiScope.ExtensionSettingsRead, ApiScope.ExtensionSettingsWrite, ApiScope.ImageAttachmentWrite, ApiScope.ImageEmbeddingsWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageRead, ApiScope.ImageTagWrite, ApiScope.RepositoryEnsure, ApiScope.RepositoryRead, ApiScope.RepositoryStoreImage]
+    };
   }
 
   private async checkApiSecret(apiKey: string): Promise<ApiScope[] | undefined>

@@ -731,7 +731,7 @@ export class NotificationsGateway
         return resolveWithInvalidIntentSchema("BundleIntent");
       }
       onAcknowledged = null;
-      const extensionApiKey = AuthenticationGuard.registerExtensionsApiKey(extensionId);
+      const extensionApiKey = AuthenticationGuard.registerExtensionApiKey(extensionId);
       try
       {
         const value = await this.uiServer.serveBundle(extensionApiKey, specificIntent.serveBundle.settings, specificIntent.serveBundle.content);

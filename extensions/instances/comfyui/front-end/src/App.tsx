@@ -6,16 +6,40 @@ import { Configuration, ExtensionApi } from "@picteus/extension-sdk/dist/picteus
 
 export default () =>
 {
+  const [parameters, setParameters] = useState<Record<string, any> | null>();
   const [url, setUrl] = useState<string>();
-  const [message, setMessage] = useState<string | undefined>("Loading…");
+  const loadingMessage = "Loading…";
+  const [message, setMessage] = useState<string | undefined>(loadingMessage);
   const [retry, setRetry] = useState<boolean>(false);
+
+  useEffect(() =>
+  {
+    async function run()
+    {
+      const data = await (await fetch(`${window.location.origin}${window.location.pathname.split("/").slice(0, -1).join("/")}`)).json();
+      setParameters(data !== undefined ? data.parameters : null);
+    }
+
+    void run();
+  }, []);
+
   const connect = useCallback(async () =>
   {
-    // TODO: find a save way to access to the extension parameters
+    setMessage(loadingMessage);
     setRetry(false);
-    const parameters = await (await fetch("../../parameters.json")).json();
+    if (parameters === undefined)
+    {
+      return;
+    }
+    if (parameters === null)
+    {
+      setMessage("Could not access to the parameters");
+      setRetry(true);
+      return;
+    }
+    const extensionId = parameters.extensionId;
     const configuration = new Configuration({ basePath: parameters.webServicesBaseUrl, apiKey: parameters.apiKey });
-    const settings = await new ExtensionApi(configuration).extensionGetSettings({ id: parameters.extensionId });
+    const settings = await new ExtensionApi(configuration).extensionGetSettings({ id: extensionId });
     const theUrl = (settings.value as Record<string, any>)["url"] as string;
     if (theUrl !== undefined)
     {
@@ -36,11 +60,12 @@ export default () =>
       setMessage("The settings of the extension are not defined");
       setRetry(true);
     }
-  }, []);
+  }, [parameters]);
+
   useEffect(() =>
   {
     void connect();
-  }, []);
+  }, [parameters]);
 
   return (
     <>

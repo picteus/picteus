@@ -25,7 +25,11 @@ export default () => {
 
   useEffect(() => {
     const run = async () => {
-      const data = await (await fetch(window.location.href.split("?")[0].replace(/index\.html$/, ""))).json();
+      const data = await (await fetch(`${window.location.origin}${window.location.pathname.split("/").slice(0, -1).join("/")}`)).json();
+      if (data === undefined) {
+        setError("Could not access to the parameters");
+        return;
+      }
       const parameters: Record<string, any> = data.parameters;
       setExtensionId(parameters.extensionId);
       setConfiguration(new Configuration({ basePath: parameters.webServicesBaseUrl, apiKey: parameters.apiKey }));

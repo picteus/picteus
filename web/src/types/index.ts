@@ -187,8 +187,8 @@ export enum ChannelEnum {
   IMAGE_PREFIX = "image",
   IMAGE_CREATED = "image.created",
   IMAGE_UPDATED = "image.updated",
-  IMAGE_TAGS_UPDATED = "image.tags.updated",
-  IMAGE_FEATURES_UPDATED = "image.features.updated",
+  IMAGE_TAGS_UPDATED = "image.tagsUpdated",
+  IMAGE_FEATURES_UPDATED = "image.featuresUpdated",
   IMAGE_DELETED = "image.deleted",
 }
 
