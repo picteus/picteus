@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { Group, Layout, Panel, Separator } from "react-resizable-panels";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconX } from "@tabler/icons-react";
 import { Accordion, ActionIcon, Button, Divider, Flex, Menu, Overlay, Table, Text } from "@mantine/core";
 import {
@@ -207,7 +207,8 @@ export default function ImageVisualizer({
     });
   }, [imageData]);
 
-  function handleOnPanelSizeChange(size: number[]) {
+  function onLayoutChanged(layout: Layout) {
+    const size = Object.values(layout);
     StorageService.setVisualizerPanelSizes(size);
     setPanelSizes(size);
   }
@@ -220,8 +221,8 @@ export default function ImageVisualizer({
       backgroundOpacity={0.95}
     >
       <div className={style.container}>
-        <PanelGroup direction="horizontal" onLayout={handleOnPanelSizeChange}>
-          <Panel defaultSize={panelSizes[0]} minSize={40}>
+        <Group orientation="horizontal" onLayoutChanged={onLayoutChanged}>
+          <Panel id="left" defaultSize={`${panelSizes[0]}%`} minSize="40%">
             <div data-close="close" className={style.imageContainer}>
               <ActionIcon
                 size={"xl"}
@@ -253,10 +254,10 @@ export default function ImageVisualizer({
               </ActionIcon>
             </div>
           </Panel>
-          <PanelResizeHandle className={style.paneSeparator}>
+          <Separator className={style.paneSeparator}>
             <div className={style.paneSeparatorHandle} />
-          </PanelResizeHandle>
-          <Panel defaultSize={panelSizes[1]} minSize={20}>
+          </Separator>
+          <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%">
             <div className={style.informationContainer}>
               <div className={style.header}>
                 <div className={style.titleContainer}>
@@ -406,7 +407,7 @@ export default function ImageVisualizer({
               </Accordion>
             </div>
           </Panel>
-        </PanelGroup>
+        </Group>
       </div>
     </Overlay>
   );
