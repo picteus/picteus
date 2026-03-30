@@ -17,12 +17,8 @@ export function isObjectEmpty(object: object) {
   return Object.keys(object).length === 0 && object.constructor === Object;
 }
 
-export function timeAgoFromMilliseconds(dateMilliseconds: number) {
-  const date = new Date(dateMilliseconds);
-  const now = new Date();
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  const diffInMs = now - date;
+export function timeAgoFromMilliseconds(dateInMilliseconds: number, nowInMilliseconds: number = Date.now()) {
+  const diffInMs = nowInMilliseconds - dateInMilliseconds;
   const diffInSeconds = Math.floor(diffInMs / 1000);
   const diffInMinutes = Math.floor(diffInSeconds / 60);
   const diffInHours = Math.floor(diffInMinutes / 60);
@@ -34,7 +30,7 @@ export function timeAgoFromMilliseconds(dateMilliseconds: number) {
   } else if (diffInHours < 12) {
     return i18n.t("utils.timeAgo.hour", { count: diffInHours });
   } else {
-    return i18n.t("utils.timeAgo.fullDate", { date: date.toLocaleString() });
+    return i18n.t("utils.timeAgo.fullDate", { date: new Date(dateInMilliseconds).toLocaleString() });
   }
 }
 

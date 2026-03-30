@@ -67,6 +67,7 @@ export function fromExtensionEventActionToManifestEvent(action: ExtensionEventAc
     case ExtensionEventAction.Log:
     case ExtensionEventAction.Notification:
     case ExtensionEventAction.Intent:
+    case ExtensionEventAction.Acknowledgment:
       return null;
   }
 }

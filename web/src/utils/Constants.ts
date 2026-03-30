@@ -5,12 +5,10 @@ export const API_KEY = urlSearchParams.get("apiKey") || "";
 
 export const ROUTES = {
   home: "/",
-  bootstrap: "/bootstrap",
   repositories: "/repositories",
   extensions: "/extensions",
   activity: "/activity",
   settings: "/settings",
-  explore: "/explore",
 };
 
 export function computeExtensionSidebarUuid(extensionId: string, id: string): string {

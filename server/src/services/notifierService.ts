@@ -17,11 +17,6 @@ export enum EventEntity
   Text = "text"
 }
 
-export enum ActivityAction
-{
-  Acknowledgment = "acknowledgment"
-}
-
 export enum ProcessEventAction
 {
   RunCommand = "runCommand"
@@ -45,7 +40,8 @@ export enum ExtensionEventAction
   Error = "error",
   Log = "log",
   Notification = "notification",
-  Intent = "intent"
+  Intent = "intent",
+  Acknowledgment = "acknowledgment"
 }
 
 export enum RepositoryEventAction
@@ -78,7 +74,6 @@ export enum TextEventAction
 export type EventStateDoubleWildcardType = "**";
 
 export type EventAction =
-  ActivityAction
   | ProcessEventAction
   | ExtensionEventAction
   | RepositoryEventAction

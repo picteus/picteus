@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react";
-import {
-  createTheme,
-  localStorageColorSchemeManager,
-  MantineProvider,
-} from "@mantine/core";
+import { createTheme, localStorageColorSchemeManager, MantineProvider } from "@mantine/core";
 import { Configuration, DefaultConfig } from "@picteus/ws-client";
 import "@mantine/core/styles.css";
 import "react-toastify/dist/ReactToastify.css";
 
-import { API_KEY, BASE_PATH, ROUTES } from "utils";
+import { API_KEY, BASE_PATH } from "utils";
 import { BootstrapScreen } from "app/screens";
 import Initializer from "./Initializer.tsx";
 import "i18n/i18n.ts";
@@ -32,7 +28,7 @@ function App() {
   useEffect(() => {
     (async () => {
       const boostrapInterval = setInterval(() => {
-        fetch(BASE_PATH + ROUTES.bootstrap)
+        fetch(BASE_PATH + "/bootstrap")
           .then(async (response) => {
             if (!response.ok) {
               // The server indicates that it is now ready

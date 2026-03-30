@@ -12,7 +12,7 @@ export function useEventSocket() {
 }
 
 export function EventSocketProvider({ children }) {
-  const [data, setData] = useState<EventInformationType>(undefined);
+  const [event, setEvent] = useState<EventInformationType>(undefined);
 
   useEffect(() => {
     const options = {
@@ -27,7 +27,7 @@ export function EventSocketProvider({ children }) {
         onResult: (result: any) => void,
       ) => {
         const rawData = { channel, contextId, milliseconds, value };
-        const eventData: EventInformationType = {
+        const event: EventInformationType = {
           id: generateRandomId(),
           channel,
           date: formatDate(milliseconds),
@@ -36,10 +36,10 @@ export function EventSocketProvider({ children }) {
           onResult,
           ...(await EventService.getEventText(channel, value)),
         };
-        void EventService.pushEventIntoIndexedDB(eventData);
-        setData(eventData);
+        void EventService.pushEventIntoIndexedDB(event);
+        setEvent(event);
         console.debug(
-          `Received a notification on channel '${channel}' emitted at ${milliseconds} ms with value ${JSON.stringify(value, undefined, 2)}`,
+          `Received a notification on channel '${channel}' with context id '${contextId}' emitted at ${milliseconds} ms with value ${JSON.stringify(value, undefined, 2)}`,
         );
       },
     );
@@ -52,7 +52,7 @@ export function EventSocketProvider({ children }) {
   }, []);
 
   return (
-    <EventSocketContext.Provider value={data}>
+    <EventSocketContext.Provider value={event}>
       {children}
     </EventSocketContext.Provider>
   );

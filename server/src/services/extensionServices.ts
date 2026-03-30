@@ -284,6 +284,7 @@ export class ExtensionsUiServer
     if (extensionId !== refererExtensionId)
     {
       response.status(HttpStatus.UNAUTHORIZED).type(ExtensionsUiServer.textPlain).send(refererExtensionId === undefined ? "Invalid 'Referer' HTTP header" : "Mismatching extension identifier");
+      return;
     }
     response.status(HttpStatus.OK).type(types.json).send({
       parameters:

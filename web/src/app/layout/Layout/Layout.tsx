@@ -25,9 +25,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <Sidebar />
         <div id="content-wrapper" className={style.contentWrapper}>
           <div className={style.mainContent}>{children}</div>
-          <div className={style.bottomBar}>
-            <EventInformation />
-          </div>
+          <div className={style.bottomBar}><EventInformation /></div>
         </div>
         <div className={style.rightSidebar}>
           <Flex gap={12} direction="column">

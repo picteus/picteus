@@ -34,7 +34,7 @@ export default function IntentCenter() {
   const [, addTab] = useGalleryTabsContext();
 
   const confirmAction = useConfirmAction();
-  const eventData = useEventSocket();
+  const event = useEventSocket();
   const [t] = useTranslation();
   const [imageVisualizerContext, setImageVisualizerContext] =
     useImageVisualizerContext();
@@ -51,15 +51,15 @@ export default function IntentCenter() {
   }
 
   function respondWithValue(value: any= {}): void {
-    eventData.onResult({ value });
+    event.onResult({ value });
   }
 
   function respondWithCancel(): void {
-    eventData.onResult({ cancel: "Cancelled" });
+    event.onResult({ cancel: "Cancelled" });
   }
 
   function respondWithError(message: string): void {
-    eventData.onResult({ error: message });
+    event.onResult({ error: message });
   }
 
   function handleOnSend(parameters: any, modalId: string): void {
@@ -136,8 +136,8 @@ export default function IntentCenter() {
   }
 
   useEffect(() => {
-    if (eventData?.rawData?.channel === ChannelEnum.EXTENSION_INTENT) {
-      const value = eventData.rawData.value as ExtensionIntent;
+    if (event?.rawData?.channel === ChannelEnum.EXTENSION_INTENT) {
+      const value = event.rawData.value as ExtensionIntent;
       const intent = value.intent;
       const extensionId = value.id;
       const extensionName = ExtensionsService.list().find(
@@ -275,7 +275,7 @@ export default function IntentCenter() {
         respondWithError(`Cannot handel the unexpected intent '${JSON.stringify(intent)}'`);
       }
     }
-  }, [eventData]);
+  }, [event]);
 
   useEffect(() => {
     if (imageVisualizerContext?.imageSummary) {

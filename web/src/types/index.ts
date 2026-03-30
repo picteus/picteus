@@ -175,6 +175,7 @@ export enum ChannelEnum {
   EXTENSION_INTENT = "extension.intent",
   EXTENSION_ERROR = "extension.error",
   EXTENSION_LOG = "extension.log",
+  EXTENSION_ACKNOWLEDGMENT = "extension.acknowledgment",
 
   REPOSITORY_PREFIX = "repository",
   REPOSITORY_CREATED = "repository.created",

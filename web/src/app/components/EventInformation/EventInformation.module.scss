@@ -1,5 +1,22 @@
 .container {
   display: flex;
   align-items: center;
-  gap : 10px
+  justify-content: space-between;
+  gap : 10px;
+  overflow: auto;
+  flex-grow: 1;
+  max-height : $bottombar-width;
+}
+
+.event {
+  display: flex;
+  align-items: center;
+  gap : 3px;
+}
+
+.activities {
+  display: flex;
+  align-items: center;
+  gap : 3px;
+  max-width: 30%;
 }

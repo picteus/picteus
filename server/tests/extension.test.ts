@@ -812,15 +812,26 @@ describe("Extensions", () =>
       const urlPrefix = `${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${manifest.id}`;
       for (const aCase of cases)
       {
-        const url = `${urlPrefix}/${elementBasePath + aCase.path}`;
+        const url = `${urlPrefix}/${elementBasePath}${aCase.path}`;
         const response = await fetch(url);
         expect(response.ok).toBeTruthy();
         expect(await response.text()).toEqual(aCase.content);
         expect(response.headers.get(headers.request.CONTENT_TYPE)).toEqual(`${aCase.mimeType}; charset=utf-8`);
       }
       {
-        const response = await fetch(urlPrefix);
-        console.dir(response);
+        {
+          const response = await fetch(urlPrefix);
+          expect(response.status).toEqual(401);
+          expect(await response.text()).toEqual("Invalid 'Referer' HTTP header");
+        }
+        {
+          const response = await fetch(urlPrefix, { headers: { [headers.request.REFERER]: urlPrefix } });
+          expect(response.ok).toBeTruthy();
+          const { parameters } = await response.json();
+          expect(parameters["extensionId"]).toEqual(manifest.id);
+          expect(parameters["webServicesBaseUrl"]).toEqual(paths.webServicesBaseUrl);
+          expect(parameters["apiKey"]).toBeDefined();
+        }
       }
     });
   });

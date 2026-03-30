@@ -29,7 +29,6 @@ import {
 } from "../bos";
 import { deepCopy, stringify } from "../utils";
 import {
-  ActivityAction,
   EventAction,
   EventEntity,
   ExtensionEventAction,
@@ -135,7 +134,7 @@ export class NotificationsGateway
 
   private readonly perExtensionsSocketSupportedEvents: Map<string, string []> = new Map();
 
-  private readonly perEventContextId: Map<string, string> = new Map();
+  private readonly contextIds: Set<string> = new Set();
 
   constructor(private readonly notifierService: NotifierService, private readonly extensionTaskExecutor: ExtensionTaskExecutor, private readonly uiServer: ExtensionsUiServer, private readonly moduleRef: ModuleRef)
   {
@@ -195,7 +194,7 @@ export class NotificationsGateway
     this.io = undefined;
     this.activeSocketIds.clear();
     this.perExtensionsSocketSupportedEvents.clear();
-    this.perEventContextId.clear();
+    this.contextIds.clear();
     logger.debug("Destroyed a NotificationsGateway");
   }
 
@@ -220,7 +219,7 @@ export class NotificationsGateway
             const contextId = randomUUID();
             if (event === NotifierService.buildEvent(EventEntity.Process, ProcessEventAction.RunCommand) || event === NotifierService.buildEvent(EventEntity.Image, ImageEventAction.RunCommand))
             {
-              this.perEventContextId.set(event, contextId);
+              this.contextIds.add(contextId);
             }
             await this.extensionTaskExecutor.run(extensionId, event, async () =>
             {
@@ -336,10 +335,10 @@ export class NotificationsGateway
       const theContextId = contextId!;
       const success = notificationValue.acknowledgment.success;
       logger.debug(`Received a ${success === true ? "successful" : "failure"} acknowledgment regarding a previously sent event to the extension with id '${extensionId}' related to the context with id '${theContextId}'`);
-      if (this.perEventContextId.delete(theContextId) === true && masterSocket !== undefined)
+      if (this.contextIds.delete(theContextId) === true && masterSocket !== undefined)
       {
         // We notify the master socket of the command achievement
-        this.emitEventToSocket(masterSocket, NotifierService.buildEvent(EventEntity.Extension, ActivityAction.Acknowledgment), theContextId, Date.now(), {
+        this.emitEventToSocket(masterSocket, NotifierService.buildEvent(EventEntity.Extension, ExtensionEventAction.Acknowledgment), theContextId, Date.now(), {
           id: extensionId,
           contextId: theContextId,
           success
