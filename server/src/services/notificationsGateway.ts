@@ -60,14 +60,16 @@ import {
   UiIntent
 } from "./intents";
 
-
-type SocketMessageValue = { apiKey?: string, extensionId?: string, contextId?: string }
+const contextIdPropertyName = "contextId";
+type WithContextId = { [contextIdPropertyName]: string; };
+type SocketAdditionalMessage = WithContextId & { isActivity?: boolean };
+type SocketMessageValue = { apiKey?: string, extensionId?: string, [contextIdPropertyName]?: string }
 type ConnectionValue = SocketMessageValue & {
   isOpen?: boolean,
   sdkVersion?: string,
   environment?: ManifestRuntimeEnvironment
 };
-type NotificationsAcknowledgment = { contextId: string, success: boolean }
+type NotificationsAcknowledgment = WithContextId & { success: boolean }
 type NotificationsLog = { log: string, level: string }
 type NotificationsNotification = Record<string, any>
 
@@ -134,7 +136,7 @@ export class NotificationsGateway
 
   private readonly perExtensionsSocketSupportedEvents: Map<string, string []> = new Map();
 
-  private readonly contextIds: Set<string> = new Set();
+  private readonly activitiesContextIds: Set<string> = new Set();
 
   constructor(private readonly notifierService: NotifierService, private readonly extensionTaskExecutor: ExtensionTaskExecutor, private readonly uiServer: ExtensionsUiServer, private readonly moduleRef: ModuleRef)
   {
@@ -194,7 +196,7 @@ export class NotificationsGateway
     this.io = undefined;
     this.activeSocketIds.clear();
     this.perExtensionsSocketSupportedEvents.clear();
-    this.contextIds.clear();
+    this.activitiesContextIds.clear();
     logger.debug("Destroyed a NotificationsGateway");
   }
 
@@ -219,7 +221,7 @@ export class NotificationsGateway
             const contextId = randomUUID();
             if (event === NotifierService.buildEvent(EventEntity.Process, ProcessEventAction.RunCommand) || event === NotifierService.buildEvent(EventEntity.Image, ImageEventAction.RunCommand))
             {
-              this.contextIds.add(contextId);
+              this.activitiesContextIds.add(contextId);
             }
             await this.extensionTaskExecutor.run(extensionId, event, async () =>
             {
@@ -228,13 +230,13 @@ export class NotificationsGateway
               const waitForAcknowledgment = extensionId === undefined && onResult === undefined;
               if (waitForAcknowledgment === true)
               {
-                this.emitEventToSocket(socket, event, contextId, milliseconds, value, logSuffix, undefined);
+                this.emitEventToSocket(socket, event, { contextId }, milliseconds, value, logSuffix, undefined);
               }
               else
               {
                 await new Promise<void>((resolve, reject) =>
                 {
-                  this.emitEventToSocket(socket, event, contextId, milliseconds, value, logSuffix, (result) =>
+                  this.emitEventToSocket(socket, event, { contextId }, milliseconds, value, logSuffix, (result) =>
                   {
                     try
                     {
@@ -335,10 +337,13 @@ export class NotificationsGateway
       const theContextId = contextId!;
       const success = notificationValue.acknowledgment.success;
       logger.debug(`Received a ${success === true ? "successful" : "failure"} acknowledgment regarding a previously sent event to the extension with id '${extensionId}' related to the context with id '${theContextId}'`);
-      if (this.contextIds.delete(theContextId) === true && masterSocket !== undefined)
+      if (this.activitiesContextIds.delete(theContextId) === true && masterSocket !== undefined)
       {
         // We notify the master socket of the command achievement
-        this.emitEventToSocket(masterSocket, NotifierService.buildEvent(EventEntity.Extension, ExtensionEventAction.Acknowledgment), theContextId, Date.now(), {
+        this.emitEventToSocket(masterSocket, NotifierService.buildEvent(EventEntity.Extension, ExtensionEventAction.Acknowledgment), {
+          contextId: theContextId,
+          isActivity: true
+        }, Date.now(), {
           id: extensionId,
           contextId: theContextId,
           success
@@ -548,7 +553,10 @@ export class NotificationsGateway
       {
         return;
       }
-      this.emitEventToSocket(masterSocket, NotifierService.buildEvent(EventEntity.Extension, action), contextId ?? randomUUID(), Date.now(), value, undefined, onAcknowledged);
+      this.emitEventToSocket(masterSocket, NotifierService.buildEvent(EventEntity.Extension, action), {
+        contextId: contextId ?? randomUUID(),
+        isActivity: contextId !== undefined && this.activitiesContextIds.has(contextId) === true
+      }, Date.now(), value, undefined, onAcknowledged);
       if (onAcknowledged === undefined)
       {
         resolve(undefined);
@@ -748,9 +756,9 @@ export class NotificationsGateway
     return { intentName, onAcknowledged };
   }
 
-  private emitEventToSocket(socket: Socket, event: string, contextId: string, milliseconds: number, value: object, logSuffix?: string, onAcknowledged?: (result: any) => void): void
+  private emitEventToSocket(socket: Socket, event: string, additionalMessage: SocketAdditionalMessage, milliseconds: number, value: object, logSuffix?: string, onAcknowledged?: (result: any) => void): void
   {
-    const message = { channel: event, contextId, milliseconds, value };
+    const message = { ...additionalMessage, channel: event, milliseconds, value };
     logger.debug(`Sending at ${format(new Date(milliseconds), "HH:mm:ss.SSS")} the '${event}' event to the socket with id '${socket.id}'${logSuffix === undefined ? "" : logSuffix}, with ${onAcknowledged === undefined ? "no" : "an"} acknowledgement callback, attached to the context with id '${message.contextId}'`);
     // We need to split the 2 use cases, because invoking the 'emit' method with an "undefined" value for the callback parameter causes a runtime error with the Python socket.io client
     if (onAcknowledged === undefined)

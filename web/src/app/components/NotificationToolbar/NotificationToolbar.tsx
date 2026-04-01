@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { ActionIcon, Flex, Menu, Text } from "@mantine/core";
 import { IconBell, IconBellZ } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +12,8 @@ import style from "./NotificationToolbar.module.scss";
 
 export default function NotificationToolbar() {
   const [t] = useTranslation();
-  const lastEvent = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [opened, setOpened] = useState(false);
   const [events, setEvents] = useState<EventInformationType[]>([]);
   const [seed, setSeed] = useState(generateRandomId);
@@ -28,7 +29,7 @@ export default function NotificationToolbar() {
 
   useEffect(() => {
     void load();
-  }, [lastEvent, seed]);
+  }, [event, seed]);
 
   return (
     <Menu

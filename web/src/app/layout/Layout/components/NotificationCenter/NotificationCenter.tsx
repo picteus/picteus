@@ -1,11 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useSyncExternalStore } from "react";
 import { useEventSocket } from "app/context";
-import { EventInformationType } from "types";
 import { notifyEvent } from "utils";
 import { Notification } from "app/components";
 
 export default function NotificationCenter() {
-  const event: EventInformationType = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
 
   useEffect(() => {
     if (event?.notification) {

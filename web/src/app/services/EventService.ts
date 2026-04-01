@@ -1,4 +1,4 @@
-import { ChannelEnum, EventInformationType, EventNotificationType, SocketResponseType } from "types";
+import { ChannelEnum, EventInformationType, EventNotificationType, SocketEventType } from "types";
 import i18n from "i18n/i18n.ts";
 import { ImageService, RepositoriesService } from "app/services";
 
@@ -102,7 +102,7 @@ async function getEventText(channel, value): Promise<getEventTextReturnType> {
 }
 
 async function generateImageCreatedOrUpdatedNotification(
-  rawData: SocketResponseType,
+  rawData: SocketEventType,
 ): Promise<EventNotificationType> {
   const imageId = rawData?.value?.id;
   const image = await ImageService.get({ id: imageId });
@@ -149,7 +149,7 @@ async function generateImageCreatedOrUpdatedNotification(
 }*/
 
 async function generateNotification(
-  rawData: SocketResponseType,
+  rawData: SocketEventType,
 ): Promise<EventNotificationType> {
   const channel = rawData.channel;
   if (

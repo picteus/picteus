@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { randomId } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
@@ -34,7 +34,8 @@ export default function IntentCenter() {
   const [, addTab] = useGalleryTabsContext();
 
   const confirmAction = useConfirmAction();
-  const event = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [t] = useTranslation();
   const [imageVisualizerContext, setImageVisualizerContext] =
     useImageVisualizerContext();
@@ -92,6 +93,7 @@ export default function IntentCenter() {
       const action = async () => {
         const image = await ImageService.get({ id: show.id });
         setImageVisualizerContext({ imageSummary: image });
+        respondWithValue();
       };
       if (shouldConfirm) {
         return confirmAction(action, {
@@ -220,7 +222,7 @@ export default function IntentCenter() {
             component: <FullscreenURLModal content={frameContent} />,
             icon: ui.dialogContent?.icon,
             title: ui.dialogContent?.title,
-            onBeforeClose: respondWithCancel
+            onBeforeClose: respondWithValue
           });
           respondWithValue();
         }
@@ -242,7 +244,9 @@ export default function IntentCenter() {
           ),
           title: dialog.title,
           size: dialog.size,
-          onBeforeClose: respondWithCancel
+          onBeforeClose: () => {
+            handleOnSend({}, modalId);
+          }
         });
       };
 

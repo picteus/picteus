@@ -13,16 +13,14 @@ import {
   SearchSortingProperty
 } from "@picteus/ws-client";
 
-export type SocketResponseType =
-  | {
-      channel: string;
-      contextId: string;
-      milliseconds: number;
-      value: Record<string, any>;
-    }
-  | undefined;
+type SocketEventAdditionalMessage = { contextId: string; isActivity?: boolean };
+export type SocketEventType = SocketEventAdditionalMessage & {
+  channel: string;
+  milliseconds: number;
+  value: Record<string, any>;
+};
 
-export interface CommandSocketResponseType {
+export interface CommandSocketEventType {
   id: string;
   error?: string;
   value?: any;
@@ -50,7 +48,7 @@ export type EventNotificationType = {
 export type EventInformationType = {
   id: string;
   channel: string;
-  rawData: SocketResponseType;
+  rawData: SocketEventType;
   statusText: string;
   logLevel: string;
   date: string;
@@ -178,6 +176,7 @@ export enum ChannelEnum {
   EXTENSION_ACKNOWLEDGMENT = "extension.acknowledgment",
 
   REPOSITORY_PREFIX = "repository",
+  REPOSITORY_SYNCHRONIZE_PREFIX = "repository.synchronize",
   REPOSITORY_CREATED = "repository.created",
   REPOSITORY_SYNCHRONIZE_STARTED = "repository.synchronize.started",
   REPOSITORY_SYNCHRONIZE_STOPPED = "repository.synchronize.stopped",

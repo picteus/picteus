@@ -31,7 +31,7 @@ function GalleryTab({ tab, onRemove }) {
 
   return (
     <Tabs.Tab
-      key={"tab-" + tab.id}
+      key={`tab-${tab.id}`}
       styles={tabStyle}
       className={style.tabItem}
       value={tab.id}
@@ -94,6 +94,7 @@ export default function GalleryScreen() {
           {tabs?.map((tab, index) => {
             return (
               <GalleryTab
+                key={`gallery-${tab.id}`}
                 tab={tab}
                 onRemove={() =>
                   handleOnRemoveTab(tab.id, computeNextTabValue(index))
@@ -108,7 +109,7 @@ export default function GalleryScreen() {
         </Tabs.Panel>
 
         {tabs?.map((tab) => (
-          <Tabs.Panel key={tab.id} value={tab.id}>
+          <Tabs.Panel key={`panel-${tab.id}`} value={tab.id}>
             {tab.type === "Masonry" ? (
               <Container>
                 <MasonryVisualizer

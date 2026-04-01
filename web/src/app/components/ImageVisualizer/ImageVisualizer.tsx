@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Group, Layout, Panel, Separator } from "react-resizable-panels";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconX } from "@tabler/icons-react";
@@ -14,7 +14,7 @@ import {
 import style from "./ImageVisualizer.module.scss";
 import { ImageService, RepositoriesService, StorageService } from "app/services";
 import { useEventSocket } from "app/context";
-import { ChannelEnum, EventInformationType } from "types";
+import { ChannelEnum } from "types";
 import { CodeViewer, CopyText, ExternalLink, Markdown } from "app/components";
 import { capitalizeText, formatDate, formatSize } from "utils";
 import { TableComponent } from "./components";
@@ -39,7 +39,8 @@ export default function ImageVisualizer({
   const [imageData, setImageData] = useState<Image>();
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>();
   const [imageFeatures, setImageFeatures] = useState<ExtensionImageFeature[]>();
-  const event: EventInformationType = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const imageRef = useRef();
   const [imageZoom, setImageZoom] = useState<number>(1);
   const [t] = useTranslation();

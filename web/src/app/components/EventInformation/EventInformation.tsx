@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Accordion, ActionIcon, Badge, Box, Flex, Loader, Popover, Text } from "@mantine/core";
 import { IconArrowBigUpLines } from "@tabler/icons-react";
@@ -115,7 +115,8 @@ const map = new Map();
 
 export default function EventInformation() {
   const [t] = useTranslation();
-  const event = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [theLastEvent, setTheLastEvent] = useState<EventInformationType>();
   const [contextsMap, setContextsMap] = useState<Map<string, Context>>(map);
   const [contextsList, setContextsList] = useState<Context[]>([...map.values()]);
@@ -124,7 +125,7 @@ export default function EventInformation() {
     if (event === undefined) {
       return;
     }
-    if (event.channel === ChannelEnum.EXTENSION_INTENT || event.channel === ChannelEnum.EXTENSION_ERROR || event.channel === ChannelEnum.EXTENSION_LOG || ChannelEnum.EXTENSION_ACKNOWLEDGMENT) {
+    if (event.rawData.isActivity === true) {
       const contextId = event.rawData.contextId;
       let context = contextsMap.get(contextId);
       if (context === undefined) {
@@ -163,7 +164,7 @@ export default function EventInformation() {
         </>}
         {theLastEvent === undefined && <Text size={size}>{t("eventInformation.idle")}</Text>}
       </Box>
-      {Math.random() > 1 && <Activities contexts={contextsList} size={size} />}
+      {(Math.random() > 1) && <Activities contexts={contextsList} size={size} />}
     </div>
   );
 }

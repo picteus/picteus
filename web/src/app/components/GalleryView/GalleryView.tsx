@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
 import { SearchRange } from "@picteus/ws-client";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Flex } from "@mantine/core";
 import { IconPhotoSearch, IconPin } from "@tabler/icons-react";
 
-import { ChannelEnum, EventInformationType, FilterOrCollectionId, ImageMasonryDataType } from "types";
+import { ChannelEnum, FilterOrCollectionId, ImageMasonryDataType } from "types";
 import { EmptyResults, ImageMasonry, RefreshButton, TopBar } from "app/components";
 import { ImageService, RepositoriesService } from "app/services";
 import { useContainerDimensions } from "app/hooks";
@@ -35,7 +35,8 @@ export default function GalleryView({ initialFilterOrCollectionId }: GalleryView
 
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const lastEvent: EventInformationType = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [data, setData] = useState<ImageMasonryDataType>({
     currentPage: initialPagination.currentPage,
     total: 0,
@@ -79,12 +80,12 @@ export default function GalleryView({ initialFilterOrCollectionId }: GalleryView
 
   useEffect(() => {
     if (
-      lastEvent?.rawData?.channel === ChannelEnum.IMAGE_CREATED ||
-      lastEvent?.rawData?.channel === ChannelEnum.IMAGE_DELETED
+      event?.rawData?.channel === ChannelEnum.IMAGE_CREATED ||
+      event?.rawData?.channel === ChannelEnum.IMAGE_DELETED
     ) {
       setShowAlertNewImages(true);
     }
-  }, [lastEvent]);
+  }, [event]);
 
   async function load() {
     if (!filterOrCollectionId) {

@@ -365,7 +365,7 @@ export class ExtensionService
 
   private readonly perExtensionIdChromeExtensionNames: Map<string, string[]> = new Map<string, string[]>();
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionsRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifier: NotifierService)
+  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionsRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifierService: NotifierService)
   {
     logger.debug("Instantiating an ExtensionService");
   }
@@ -380,7 +380,7 @@ export class ExtensionService
     ensureDirectory(modelsCacheDirectoryPath);
 
     // We listen to all the image events and propagate them to the extensions
-    this.notifier.onAll(async (event: string, value: object) =>
+    this.notifierService.onAll(async (event: string, value: object) =>
     {
       const parsedEvent = NotifierService.parseEvent(event);
       const action: ImageEventAction = parsedEvent.action as ImageEventAction;
@@ -424,13 +424,13 @@ export class ExtensionService
         {
           await this.notifyTaskExecutor(manifest, hasExtensionStarted);
         }
-        this.notifier.emit(EventEntity.Extension, ExtensionEventAction.Process, hasExtensionStarted === true ? ExtensionEventProcess.Started : ExtensionEventProcess.Stopped, {
+        this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Process, hasExtensionStarted === true ? ExtensionEventProcess.Started : ExtensionEventProcess.Stopped, {
           id: extensionId
         });
       }
       else if (message.type === "error" || message.type === "fatal")
       {
-        this.notifier.emit(EventEntity.Extension, ExtensionEventAction.Error, undefined, {
+        this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Error, undefined, {
           id: extensionId,
           message: message.value
         });
@@ -618,7 +618,7 @@ export class ExtensionService
     this.perExtensionIdConnections.delete(id);
     this.perExtensionIdRunnables.delete(id);
     this.errorExtensionIds.delete(id);
-    this.notifier.emit(EventEntity.Extension, ExtensionEventAction.Uninstalled, undefined, { id });
+    this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Uninstalled, undefined, { id });
   }
 
   async pauseOrResume(id: string, isPause: boolean): Promise<void>
@@ -644,7 +644,7 @@ export class ExtensionService
       // We synchronize the images via this extension, once it is resumed
       await this.synchronize(id);
     }
-    this.notifier.emit(EventEntity.Extension, isPause === true ? ExtensionEventAction.Paused : ExtensionEventAction.Resumed, undefined, { id });
+    this.notifierService.emit(EventEntity.Extension, isPause === true ? ExtensionEventAction.Paused : ExtensionEventAction.Resumed, undefined, { id });
   }
 
   async registerUnpackedExtension(directoryPath: string, shouldHandleProcesses: boolean): Promise<void>
@@ -734,7 +734,7 @@ export class ExtensionService
       update: objectValue
     });
     // We indicate to the extension that its settings have changed so that it can take action
-    this.notifier.emit(EventEntity.Extension, ExtensionEventAction.Settings, undefined, { id, value }, id);
+    this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Settings, undefined, { id, value }, id);
   }
 
   async synchronize(id: string): Promise<void>
@@ -831,7 +831,7 @@ export class ExtensionService
     }
     return await new Promise<CapabilityResult<T>>((resolve) =>
     {
-      this.notifier.emit<T>(eventEntity, action, state, value, extensionId, (value: T) =>
+      this.notifierService.emit<T>(eventEntity, action, state, value, extensionId, (value: T) =>
       {
         resolve({ extensionId, value });
       });
@@ -933,7 +933,7 @@ export class ExtensionService
         eventAction = ImageEventAction.RunCommand;
         break;
     }
-    this.notifier.emit(eventEntity, eventAction, undefined, {
+    this.notifierService.emit(eventEntity, eventAction, undefined, {
       commandId,
       parameters,
       imageIds
@@ -1328,7 +1328,7 @@ export class ExtensionService
       // We ensure that the collection of embeddings for this extension exists
       await this.vectorDatabaseAccessor.ensureCollection(manifest.id);
     }
-    this.notifier.emit(EventEntity.Extension, idWhenUpdating !== undefined ? ExtensionEventAction.Updated : ExtensionEventAction.Installed, undefined, {
+    this.notifierService.emit(EventEntity.Extension, idWhenUpdating !== undefined ? ExtensionEventAction.Updated : ExtensionEventAction.Installed, undefined, {
       id: manifest.id
     });
     // We do not start the extension if it was initially paused
@@ -1710,13 +1710,13 @@ export class ExtensionService
     {
       if (wait === false)
       {
-        this.notifier.emit(EventEntity.Image, action, undefined, { id: imageId }, id);
+        this.notifierService.emit(EventEntity.Image, action, undefined, { id: imageId }, id);
       }
       else
       {
         return new Promise<void>(resolve =>
         {
-          this.notifier.emit(EventEntity.Image, action, undefined, { id: imageId }, id, () =>
+          this.notifierService.emit(EventEntity.Image, action, undefined, { id: imageId }, id, () =>
           {
             resolve();
           });

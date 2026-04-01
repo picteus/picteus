@@ -10,28 +10,18 @@ import {
   Table,
   Text,
   Title,
-  Tooltip,
+  Tooltip
 } from "@mantine/core";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { Repository, RepositoryStatus } from "@picteus/ws-client";
-import {
-  IconFolderSearch,
-  IconPlus,
-  IconReload,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
 
+import { ChannelEnum } from "types";
 import { formatDate, notifyError, notifySuccess } from "utils";
 import { RepositoriesService } from "app/services";
 import { AddRepositoryModal } from "./components";
-import {
-  Container,
-  EmptyResults,
-  ExternalLink,
-  Loader,
-  RefreshButton,
-} from "app/components";
+import { Container, EmptyResults, ExternalLink, Loader, RefreshButton } from "app/components";
 import { useConfirmAction, useEventSocket } from "app/context";
 
 export default function RepositoriesScreen() {
@@ -39,7 +29,8 @@ export default function RepositoriesScreen() {
     RepositoriesService.list(),
   );
   const [loading, setLoading] = useState<boolean>(false);
-  const socketNotification = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const confirmAction = useConfirmAction();
 
   const [t] = useTranslation();
@@ -67,12 +58,10 @@ export default function RepositoriesScreen() {
   }
 
   useEffect(() => {
-    if (
-      socketNotification?.rawData.channel.startsWith("repository.synchronize")
-    ) {
+    if (event?.rawData.channel.startsWith(ChannelEnum.REPOSITORY_SYNCHRONIZE_PREFIX)) {
       void fetchAllRepositories();
     }
-  }, [socketNotification]);
+  }, [event]);
 
   async function handleOnSynchronizeRepository(id: string) {
     await RepositoriesService.synchronize({ id });

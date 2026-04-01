@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import { CommandContextType, CommandParameters, CommandSocketResponseType } from "types";
+import { CommandContextType, CommandParameters, CommandSocketEventType } from "types";
 
 const CommandSocketContext = createContext(undefined);
 
@@ -36,7 +36,7 @@ export function CommandSocketProvider({ children }: { children: ReactNode }) {
       setConnected(false);
     });
     ioClient.emit("initialize", { secret: commandsSocketSecret });
-    ioClient.on("result", (response: CommandSocketResponseType) => {
+    ioClient.on("result", (response: CommandSocketEventType) => {
       const { id, error, value } = response;
       if (callbacks.current[id]) {
         if (error) {

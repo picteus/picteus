@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import React, { ReactNode, useEffect, useMemo } from "react";
+import React, { ReactNode, useEffect, useMemo, useSyncExternalStore } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Stack, Tooltip, UnstyledButton } from "@mantine/core";
 import {
@@ -52,17 +52,21 @@ function NavbarLink({ icon, externalLink, label, route, onClick }: NavbarLinkPro
 export default function Sidebar() {
   const navigate = useNavigate();
   const [additionalUiContextValue, refreshAdditionalUi] = useAdditionalUiContext();
-  const eventSocket = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const openWindow = useOpenWindow();
   const [t] = useTranslation();
 
   useEffect(() => {
-    if (eventSocket?.channel === ChannelEnum.EXTENSION_UPDATED || eventSocket?.channel === ChannelEnum.EXTENSION_INSTALLED || eventSocket?.channel === ChannelEnum.EXTENSION_UNINSTALLED || eventSocket?.channel === ChannelEnum.EXTENSION_PAUSED || eventSocket?.channel === ChannelEnum.EXTENSION_RESUMED) {
+    if (event === undefined) {
+      return;
+    }
+    if (event.channel === ChannelEnum.EXTENSION_UPDATED || event.channel === ChannelEnum.EXTENSION_INSTALLED || event.channel === ChannelEnum.EXTENSION_UNINSTALLED || event.channel === ChannelEnum.EXTENSION_PAUSED || event.channel === ChannelEnum.EXTENSION_RESUMED) {
       void ExtensionsService.fetchAll().then(() => {
         refreshAdditionalUi();
       });
     }
-  }, [eventSocket]);
+  }, [event]);
   const { sendCommand, isAvailable } = useCommandSocket();
 
   const additionalElements = useMemo(() => {

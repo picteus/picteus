@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Kbd, Menu, Text } from "@mantine/core";
 import { CommandEntity, ManifestCapabilityId } from "@picteus/ws-client";
@@ -13,7 +13,8 @@ import { TextToImagesModal } from "app/components/ActionModal";
 export default function GeneralCommands() {
   const callCommand = useExtensionCommand();
   const [, addModal] = useActionModalContext();
-  const eventSocket = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
 
   const [t] = useTranslation();
 
@@ -31,7 +32,7 @@ export default function GeneralCommands() {
   );
 
   useEffect(() => {
-    if (eventSocket?.channel === ChannelEnum.EXTENSION_UPDATED || eventSocket?.channel === ChannelEnum.EXTENSION_INSTALLED || eventSocket?.channel === ChannelEnum.EXTENSION_UNINSTALLED || eventSocket?.channel === ChannelEnum.EXTENSION_PAUSED || eventSocket?.channel === ChannelEnum.EXTENSION_RESUMED) {
+    if (event?.channel === ChannelEnum.EXTENSION_UPDATED || event?.channel === ChannelEnum.EXTENSION_INSTALLED || event?.channel === ChannelEnum.EXTENSION_UNINSTALLED || event?.channel === ChannelEnum.EXTENSION_PAUSED || event?.channel === ChannelEnum.EXTENSION_RESUMED) {
       void ExtensionsService.fetchAll().then(() => {
         setExtensionsProcessCommands(
           ExtensionsService.getExtensionsCommands([CommandEntity.Process]),
@@ -43,7 +44,7 @@ export default function GeneralCommands() {
         );
       });
     }
-  }, [eventSocket]);
+  }, [event]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {

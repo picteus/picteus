@@ -42,7 +42,7 @@ export class RepositoryWatcher
     return RepositoryWatcher.instances[repositoryId];
   }
 
-  static async start(repository: Repository, persistenceProvider: PersistenceProvider, vectorDatabaseAccessor: VectorDatabaseAccessor, notifier: NotifierService, collectionService: CollectionService): Promise<void>
+  static async start(repository: Repository, persistenceProvider: PersistenceProvider, vectorDatabaseAccessor: VectorDatabaseAccessor, notifierService: NotifierService, collectionService: CollectionService): Promise<void>
   {
     const id = repository.id;
     if (RepositoryWatcher.get(id) !== undefined)
@@ -53,8 +53,8 @@ export class RepositoryWatcher
     const watcher = new RepositoryWatcher(id, repository.getLocation().toFilePath(), ImageFormats, vectorDatabaseAccessor, collectionService);
     RepositoryWatcher.instances[id] = watcher;
     RepositoryWatcher.startedRepositories.push(repository);
-    await watcher.start(persistenceProvider, notifier);
-    notifier.emit(EventEntity.Repository, RepositoryEventAction.Watch, ExtensionEventProcess.Started, { id });
+    await watcher.start(persistenceProvider, notifierService);
+    notifierService.emit(EventEntity.Repository, RepositoryEventAction.Watch, ExtensionEventProcess.Started, { id });
   }
 
   static async stop(repository: Repository, notifierService: NotifierService): Promise<void>

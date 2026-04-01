@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Autocomplete,
@@ -15,7 +15,7 @@ import {
   Stack,
   Table,
   Text,
-  Title,
+  Title
 } from "@mantine/core";
 import { IconActivity } from "@tabler/icons-react";
 
@@ -41,7 +41,8 @@ type EventsTableDisplayType = {
 const BATCH_SIZE = 20;
 export default function ActivityScreen() {
   const [t] = useTranslation();
-  const lastEvent = useEventSocket();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [events, setEvents] = useState<EventsTableDisplayType[]>([]);
   const [searchValue, setSearchValue] = useState<string>("");
 
@@ -132,7 +133,7 @@ export default function ActivityScreen() {
   useEffect(() => {
     StorageService.setActivityFilters(activeFilters);
     void load();
-  }, [lastEvent, activeFilters]);
+  }, [event, activeFilters]);
 
   function handleOnAddFilter() {
     if (searchValue) {

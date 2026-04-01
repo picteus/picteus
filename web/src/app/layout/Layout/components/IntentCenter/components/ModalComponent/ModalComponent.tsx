@@ -64,7 +64,7 @@ export default function ModalComponent({
           ? { content: style.fullScreenContent, body: style.fullScreenBody }
           : {}
       }
-      closeOnEscape={false}
+      closeOnEscape={true}
       withinPortal={false}
       onClose={handleOnCloseActionModal}
       opened={actionModalOpened}
