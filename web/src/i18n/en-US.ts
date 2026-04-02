@@ -232,7 +232,7 @@ export default {
       info: "The extension '{{id}}' triggered an informational event.",
       fatal: "The extension '{{id}}' has been stopped due too many process stops.",
       notification: "The extension '{{id}}' has send a notification.",
-      intent: "The extension '{{id}}' triggered an intent.",
+      intent: "The extension '{{id}}' triggered {{type}} intent.",
       acknowledgment: "The extension '{{id}}' has acknowledged a processing."
     },
     repository: {

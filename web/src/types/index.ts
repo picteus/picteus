@@ -137,6 +137,11 @@ export type UiExtensionCommandType = {
   command: UiCommandType;
 };
 
+export type ExtensionIntentType = {
+  id: string;
+  intent: UiCommandType;
+};
+
 type BaseTab = {
   id?: string;
   label: string;

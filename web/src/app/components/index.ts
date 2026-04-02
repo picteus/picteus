@@ -23,4 +23,6 @@ export { default as GeneralCommands } from "./GeneralCommands/GeneralCommands.ts
 export { default as NotificationToolbar } from "./NotificationToolbar/NotificationToolbar.tsx";
 export { default as CopyText } from "./CopyText/CopyText.tsx";
 export { default as Markdown } from "./Markdown/Markdown.tsx";
+export { default as ExtensionIcon } from "./ExtensionIcon/ExtensionIcon.tsx";
+export { default as ImageThumbnail } from "./ImageThumbnail/ImageThumbnail.tsx";
 export { CaptionDistance } from "./ImageMasonry/components";

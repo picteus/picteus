@@ -11,12 +11,22 @@
 .event {
   display: flex;
   align-items: center;
-  gap : 3px;
+  gap : 5px;
 }
 
 .activities {
   display: flex;
   align-items: center;
-  gap : 3px;
-  max-width: 30%;
+  gap : 5px;
+  max-width: 40%;
+}
+
+.logLevelBadge {
+  flex-shrink: 0;
+  white-space: nowrap
+}
+
+.logDate {
+  flex-shrink: 0;
+  white-space: nowrap
 }

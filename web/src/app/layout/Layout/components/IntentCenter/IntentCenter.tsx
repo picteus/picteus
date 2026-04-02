@@ -9,7 +9,7 @@ import { ExtensionsService, ImageService, StorageService } from "app/services";
 import { useOpenWindow } from "app/hooks";
 import { CommandForm, DialogForm } from "app/components";
 import { FullscreenURLModal } from "app/components/ActionModal";
-import { ActionModalValue, ChannelEnum, ResourceType, ShowType, UiCommandType } from "types";
+import { ActionModalValue, ChannelEnum, ExtensionIntentType, ResourceType, ShowType } from "types";
 import {
   useActionModalContext,
   useAdditionalUiContext,
@@ -22,10 +22,6 @@ import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyError,
 
 import { ImageVisualizerWrapper, ModalComponent } from "./components";
 
-type ExtensionIntent = {
-  id: string;
-  intent: UiCommandType;
-};
 
 export default function IntentCenter() {
   const [modalStack, addModal, removeModal] = useActionModalContext();
@@ -139,7 +135,7 @@ export default function IntentCenter() {
 
   useEffect(() => {
     if (event?.rawData?.channel === ChannelEnum.EXTENSION_INTENT) {
-      const value = event.rawData.value as ExtensionIntent;
+      const value = event.rawData.value as ExtensionIntentType;
       const intent = value.intent;
       const extensionId = value.id;
       const extensionName = ExtensionsService.list().find(

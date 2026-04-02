@@ -9,7 +9,7 @@ import { ImageApiImageClosestImagesRequest } from "@picteus/ws-client/src/apis/I
 import { notifyError, Validators } from "utils";
 import { ImageWithCaption } from "types";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmptyResults, ImageMasonry } from "app/components";
+import { CaptionDistance, EmptyResults, ImageMasonry, ImageThumbnail } from "app/components";
 import { useContainerDimensions } from "app/hooks";
 import { useImageVisualizerContext } from "app/context";
 import style from "./ClosestEmbeddingsImagesModal.module.scss";
@@ -118,30 +118,15 @@ export default function ClosestEmbeddingsImagesModal({
                     align="center"
                     gap={10}
                   >
-                    <img
-                      alt="Thumbnail"
-                      src={ImageService.getImageSrc(
-                        sourceImage?.url,
-                        undefined,
-                        34,
-                      )}
-                    />
+                    <ImageThumbnail summary={sourceImage} height={34} />
                     <Text className={style.sourceName} size="sm">
                       {sourceImage?.name}
                     </Text>
                   </Flex>
                 </HoverCard.Target>
                 <HoverCard.Dropdown>
-                  <div className={style.sourceImage}>
-                    <img
-                      onClick={handleOnClickSourceImage}
-                      alt="Thumbnail"
-                      src={ImageService.getImageSrc(
-                        sourceImage?.url,
-                        undefined,
-                        250,
-                      )}
-                    />
+                  <div onClick={handleOnClickSourceImage} className={style.sourceImage}>
+                    <ImageThumbnail summary={sourceImage} height={250} />
                   </div>
                 </HoverCard.Dropdown>
               </HoverCard>

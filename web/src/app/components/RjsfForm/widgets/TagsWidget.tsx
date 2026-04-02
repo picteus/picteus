@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Group, Image, MultiSelect, MultiSelectProps, Stack, Text } from "@mantine/core";
+import { Group, MultiSelect, MultiSelectProps, Stack, Text } from "@mantine/core";
 import { WidgetProps } from "@rjsf/utils";
 import { useTranslation } from "react-i18next";
 
 import { Extension, ExtensionImageTag } from "@picteus/ws-client";
 
-import { ExtensionsService, RepositoriesService } from "../../../services";
+import { ExtensionsService, RepositoriesService } from "app/services";
+import { ExtensionIcon } from "app/components";
 
 
 export default function TagsWidget(props: WidgetProps) {
@@ -46,10 +47,9 @@ export default function TagsWidget(props: WidgetProps) {
             if (count > 1) {
                 const extension = extensions.find(e => e.manifest.id === tag.id);
                 if (extension) {
-                    const iconUrl = ExtensionsService.getSidebarAnchorIconURL(extension.manifest.id);
                     return (
                         <Group gap="sm">
-                            <Image src={iconUrl} width={16} height={16} radius="sm" />
+                            <ExtensionIcon id={extension.manifest.id} size="sm"/>
                             <Stack gap={2}>
                                 <Text size="sm">{tag.value}</Text>
                                 <Text size="xs" opacity={0.65}>

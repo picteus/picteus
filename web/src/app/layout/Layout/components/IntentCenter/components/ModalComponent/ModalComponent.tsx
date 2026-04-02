@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDisclosure } from "@mantine/hooks";
-import { ActionIcon, Divider, Flex, Modal, Title } from "@mantine/core";
+import { ActionIcon, Divider, Flex, Image, Modal, Title } from "@mantine/core";
 import { IconChevronLeft } from "@tabler/icons-react";
 
 import { ActionModalValue, computeResourceTypeUrl } from "types";
@@ -34,7 +34,7 @@ export default function ModalComponent({
 
   function computeTitle() {
     const title = <Title className={style.title} order={3}>{modal.icon &&
-      <img className={style.icon} src={computeResourceTypeUrl(modal.icon)} alt="icon" />}{modal.title}</Title>;
+      <Image src={computeResourceTypeUrl(modal.icon)} h={24} w={24} />}{modal.title}</Title>;
     if (modal.fullScreen) {
       return (
         <Flex align="center" gap="md">

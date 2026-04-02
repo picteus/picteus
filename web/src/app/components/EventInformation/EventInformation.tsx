@@ -1,14 +1,18 @@
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Accordion, ActionIcon, Badge, Box, Flex, Loader, Popover, Text } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { IconArrowBigUpLines } from "@tabler/icons-react";
 
 import { ChannelEnum, EventInformationType } from "types";
 import { useEventSocket } from "app/context";
 import { EventService } from "app/services";
+import { ExtensionIcon } from "app/components";
 import { timeAgoFromMilliseconds } from "utils";
 import style from "./EventInformation.module.scss";
-import { useDisclosure } from "@mantine/hooks";
+
+
+const size = "xs";
 
 interface Context {
   id: string;
@@ -17,7 +21,11 @@ interface Context {
   events: EventInformationType[];
 }
 
-function LogDate({ timestampInMilliseconds, size }: { timestampInMilliseconds: number, size: string }) {
+function EventText({ text, maxLines, isBold = false }: { text: string, maxLines: number, isBold?: boolean }) {
+  return (<Text lineClamp={maxLines} fw={isBold === true ? "bold" : "normal"} truncate="end" size={size}>{text}</Text>);
+}
+
+function EventDate({ timestampInMilliseconds }: { timestampInMilliseconds: number}) {
 
   const [date, setDate] = useState<string>(timeAgoFromMilliseconds(timestampInMilliseconds));
   useEffect(() => {
@@ -29,34 +37,59 @@ function LogDate({ timestampInMilliseconds, size }: { timestampInMilliseconds: n
     return () => clearInterval(interval);
   }, [timestampInMilliseconds]);
 
-  return (<Text size={size} c="dimmed" lineClamp={1}>
+  return (<Text className={style.logDate} size={size} c="dimmed" lineClamp={1}>
     {date}
   </Text>);
 }
 
-function LogLevelBadge({ event, size, isShort }: { event: EventInformationType, size: string, isShort: boolean }) {
+function EventLevelBadge({ event, isShort }: { event: EventInformationType, isShort: boolean }) {
   return (<Badge
     size={size}
     color={EventService.computeLogLevelColor(event.logLevel)}
+    className={style.logLevelBadge}
   >
     {isShort === true ? event.logLevel.charAt(0) : event.logLevel}
   </Badge>);
 }
 
-function Activities({ contexts, size }: { contexts: Context[], size: string }) {
+function Activity({ context }: { context: Context }) {
+  const firstEvent = context.events.slice(-1)[0];
+
+  return (<Accordion.Item key={context.id} value={context.id}>
+    <Accordion.Control>
+      <Flex direction="row" gap={size} align="center">
+        <Loader size={size} />
+        <ExtensionIcon id={context.extensionId} size="sm"/>
+        <EventLevelBadge event={firstEvent} isShort={false} />
+        <EventDate timestampInMilliseconds={context.timestamp} />
+        <EventText text={firstEvent.statusText} maxLines={1} isBold={true} />
+      </Flex>
+    </Accordion.Control>
+    <Accordion.Panel>
+      <Flex direction="column" gap={size} wrap="nowrap">
+        {context.events.map(event => (
+          <Flex key={event.id} direction="row" gap={size} align="center" wrap="nowrap">
+            <EventLevelBadge event={event} isShort={true} />
+            <EventText text={event.statusText} maxLines={1} />
+          </Flex>))}
+      </Flex>
+    </Accordion.Panel>
+  </Accordion.Item>);
+}
+
+function Activities({ contexts }: { contexts: Context[] }) {
   const [opened, { close, open }] = useDisclosure(false);
 
   return (<Box className={style.activities}>
     {contexts.length > 0 && <>
-      <Badge
-        size={size}
-        color="grape"
-      >
+      <Text lineClamp={1} truncate="end" size={size}>{contexts.slice(-1)[0].events.slice(-1)[0].statusText}</Text>
+      <Loader size={size} />
+      <Badge size={size} color="grape" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
         {contexts.length}
       </Badge>
       <Popover
         width="40%"
-        position="top-start"
+        position="top-end"
         offset={20}
         withArrow
         trapFocus={true}
@@ -71,55 +104,21 @@ function Activities({ contexts, size }: { contexts: Context[], size: string }) {
         </Popover.Target>
         <Popover.Dropdown>
           <Accordion variant="separated" defaultValue="Apples">
-            {contexts.map(context => {
-              const firstEvent = context.events.slice(-1)[0];
-              return (<Accordion.Item key={context.id} value={context.id}>
-                <Accordion.Control>
-                  <Flex direction="row" gap="xs" align="center">
-                    <Loader size="xs" />
-                    <LogLevelBadge event={firstEvent} size={size} isShort={false} />
-                    <LogDate size={size} timestampInMilliseconds={context.timestamp} />
-                    <Text size={size} fw={500} truncate="end">{firstEvent.statusText}</Text>
-                  </Flex>
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <Flex direction="column" gap="xs" wrap="nowrap">
-                    {context.events.map(event => (
-                      <Flex key={event.id} direction="row" gap="xs" align="center" wrap="nowrap">
-                        <LogLevelBadge event={event} size={size} isShort={true} />
-                        <Text size={size} truncate="end">{event.statusText}</Text>
-                      </Flex>))}
-                  </Flex>
-                </Accordion.Panel>
-              </Accordion.Item>);
-            })}
+            {contexts.map(context => <Activity context={context} />)}
           </Accordion>
         </Popover.Dropdown>
       </Popover>
-      <Text lineClamp={1} truncate="end" size={size}>{contexts.slice(-1)[0].events.slice(-1)[0].statusText}</Text>
-      <Loader size="xs" />
     </>}
   </Box>);
 }
-
-const map = new Map();
-// map.set("id", {id: "id", timestamp: Date.now(), events:[{
-//     contextId: "id",
-//     id: "id",
-//     channel: "string",
-//     rawData: {  milliseconds:Date.now()},
-//     statusText: "A first very long message A first very long message A first very long message",
-//     logLevel: "info",
-//     date: "maintenant"
-//   }]});
 
 export default function EventInformation() {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [theLastEvent, setTheLastEvent] = useState<EventInformationType>();
-  const [contextsMap, setContextsMap] = useState<Map<string, Context>>(map);
-  const [contextsList, setContextsList] = useState<Context[]>([...map.values()]);
+  const [contextsMap, setContextsMap] = useState<Map<string, Context>>(new Map());
+  const [contextsList, setContextsList] = useState<Context[]>([...contextsMap.values()]);
 
   useEffect(() => {
     if (event === undefined) {
@@ -138,7 +137,7 @@ export default function EventInformation() {
         contextsMap.set(contextId, context);
       }
       if (event.channel === ChannelEnum.EXTENSION_ACKNOWLEDGMENT) {
-        contextsMap.delete(contextId);
+        // contextsMap.delete(contextId);
       }
       else {
         context.events.push(event);
@@ -153,18 +152,17 @@ export default function EventInformation() {
     setTheLastEvent(event);
   }, [event]);
 
-  const size = "xs";
   return (
     <div className={style.container}>
       <Box className={style.event}>
         {theLastEvent && <>
-          <LogLevelBadge event={theLastEvent} size={size} isShort={false} />
-          <Text lineClamp={2} size={size}>{theLastEvent.statusText}</Text>
-          <LogDate size={size} timestampInMilliseconds={theLastEvent.rawData.milliseconds} />
+          <EventLevelBadge event={theLastEvent} isShort={false} />
+          <EventText text={theLastEvent.statusText} maxLines={2}/>
+          <EventDate timestampInMilliseconds={theLastEvent.rawData.milliseconds} />
         </>}
         {theLastEvent === undefined && <Text size={size}>{t("eventInformation.idle")}</Text>}
       </Box>
-      {(Math.random() > 1) && <Activities contexts={contextsList} size={size} />}
+      <Activities contexts={contextsList} />
     </div>
   );
 }

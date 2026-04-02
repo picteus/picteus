@@ -1,5 +1,5 @@
 import React from "react";
-import { Divider, Notification as MantineNotification, Text } from "@mantine/core";
+import { Divider, Image, Notification as MantineNotification, Text } from "@mantine/core";
 import { IconFolderOpen, IconInfoCircle } from "@tabler/icons-react";
 
 import { timeAgoFromMilliseconds } from "utils";
@@ -46,13 +46,9 @@ export default function Notification({
     if (notification.iconUrl === "repository") {
       return <IconFolderOpen stroke={1.2} />;
     }
-    return (
-      <img
-        onClick={handleOnClick}
-        className={style.icon}
-        alt="Thumbnail"
-        src={notification.iconUrl}
-      />
+    return (<div onClick={handleOnClick}>
+        <Image src={notification.iconUrl} w={32} fit="contain" alt="Thumbnail" />
+      </div>
     );
   }
 

@@ -1,4 +1,4 @@
-import { ChannelEnum, EventInformationType, EventNotificationType, SocketEventType } from "types";
+import { ChannelEnum, EventInformationType, EventNotificationType, ExtensionIntentType, SocketEventType } from "types";
 import i18n from "i18n/i18n.ts";
 import { ImageService, RepositoriesService } from "app/services";
 
@@ -69,12 +69,9 @@ function computeLogLevelColor(logLevel: string) {
   }
 }
 
-async function getEventText(channel, value): Promise<getEventTextReturnType> {
-  let statusText;
-
+async function getEventText(channel: string, value: Record<string, any>): Promise<getEventTextReturnType> {
   if (channel === ChannelEnum.EXTENSION_LOG) {
-    statusText = `Extension "${value.id}" : ${value.message.message}`;
-    return { statusText, logLevel: value.message.level };
+    return { statusText: `Extension "${value.id}" : ${value.message.message}`, logLevel: value.message.level };
   }
 
   async function computeId() {
@@ -97,8 +94,32 @@ async function getEventText(channel, value): Promise<getEventTextReturnType> {
       return value["id"];
     }
   }
-  statusText = i18n.t(`eventInformation.${channel}`, { id: await computeId() });
-  return { statusText, logLevel: "info" };
+  const i18nMnemonic = `eventInformation.${channel}`;
+  const id = await computeId();
+  const logLevel = "info";
+
+  if (channel === ChannelEnum.EXTENSION_INTENT) {
+    const intent = (value as ExtensionIntentType).intent;
+    let type: string;
+    if (intent.form) {
+      type = "a form";
+    } else if (intent.ui) {
+      type = "a ui";
+    } else if (intent.dialog) {
+      type = "a dialog";
+    } else if (intent.show) {
+      type = "a show";
+    } else if (intent.images) {
+      type = "an images";
+    }
+    else {
+      type = "an unknown";
+    }
+    return { statusText: i18n.t(i18nMnemonic, { id, type}), logLevel };
+  }
+
+  const statusText = i18n.t(i18nMnemonic, { id });
+  return { statusText, logLevel };
 }
 
 async function generateImageCreatedOrUpdatedNotification(

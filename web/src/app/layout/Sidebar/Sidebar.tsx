@@ -18,6 +18,7 @@ import style from "./Sidebar.module.scss";
 
 import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
+import { ExtensionIcon } from "app/components";
 import { useOpenWindow } from "app/hooks";
 import { ChannelEnum, computeResourceTypeUrl } from "types";
 
@@ -76,7 +77,7 @@ export default function Sidebar() {
         // TODO: handle the case of the closeable items
         <NavbarLink
           key={"navbarLink-" + element.title}
-          icon={<img className={style.icon} src={computeResourceTypeUrl(element.icon)} alt="Extension anchor" />}
+          icon={<ExtensionIcon id={element.extensionId} url={computeResourceTypeUrl(element.icon)} size="md" />}
           externalLink={element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === true}
           label={element.title}
           route={routePathFragment}
