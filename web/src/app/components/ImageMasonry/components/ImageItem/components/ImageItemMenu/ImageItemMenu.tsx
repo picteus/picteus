@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Menu, Text } from "@mantine/core";
-import { IconBolt, IconRefresh, IconTopologyRing3 } from "@tabler/icons-react";
+import { IconRefresh, IconTopologyRing3 } from "@tabler/icons-react";
 import { CommandEntity, ExtensionImageTag, Image, ImageSummary, ManifestCapabilityId } from "@picteus/ws-client";
 
+import { Common, ExtensionIcon } from "app/components";
 import { ClosestEmbeddingsImagesModal } from "app/components/ActionModal";
 import { ExtensionsService, ImageService } from "app/services";
 import { useExtensionCommand } from "app/hooks";
@@ -63,17 +64,12 @@ export default function ImageItemMenu({ image }: ImageItemMenu) {
           {extensionsWithImageEmbeddingsCapability?.map((extension, index) => {
             return (
               <Menu.Item
-                key={
-                  "embeddingCapabilityItem-" +
-                  extension.manifest.id +
-                  "-" +
-                  index
-                }
+                key={`embeddingCapability-${extension.manifest.id}-${index}`}
                 onClick={() =>
                   handleOnClickClosestImages(extension.manifest.id)
                 }
                 leftSection={
-                  <IconTopologyRing3 style={{ width: 14, height: 14 }} />
+                  <IconTopologyRing3 style={{ width: "sm", height: Common.IconSmallSize }} />
                 }
               >
                 <Text size="sm"> {t("commands.closestImages")}</Text>
@@ -89,7 +85,7 @@ export default function ImageItemMenu({ image }: ImageItemMenu) {
               handleOnClickSynchronize()
             }
             leftSection={
-              <IconRefresh style={{ width: 14, height: 14 }} />
+              <IconRefresh style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />
             }
           >
             <Text size="sm"> {t("commands.synchronize")}</Text>
@@ -114,22 +110,18 @@ export default function ImageItemMenu({ image }: ImageItemMenu) {
               return true;
             })
             .map((extensionCommand, index) => {
+              const manifest = extensionCommand.extension.manifest;
               return (
                 <Menu.Item
-                  key={
-                    "extensionImageCommands-" +
-                    extensionCommand.extension.manifest.id +
-                    "-" +
-                    index
-                  }
+                  key={`command-${extensionCommand.extension.manifest.id}-${index}`}
                   onClick={() =>
                     callCommand(
-                      extensionCommand.extension.manifest.id,
+                      manifest.id,
                       extensionCommand.command,
                       [image.id],
                     )
                   }
-                  leftSection={<IconBolt style={{ width: 14, height: 14 }} />}
+                  leftSection={<ExtensionIcon id={extensionCommand.extension.manifest.id} size="sm" />}
                 >
                   <Text size="sm"> {extensionCommand.command.label}</Text>
                   <Text size="xs" c="dimmed">

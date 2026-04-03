@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Kbd, Menu, Text } from "@mantine/core";
+import { IconBox } from "@tabler/icons-react";
+
 import { CommandEntity, ManifestCapabilityId } from "@picteus/ws-client";
-import { IconBolt, IconBox, IconSearch } from "@tabler/icons-react";
 
 import { ChannelEnum, UiCommandType } from "types";
 import { ExtensionsService } from "app/services";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useExtensionCommand } from "app/hooks";
+import { ExtensionIcon } from "app/components";
 import { TextToImagesModal } from "app/components/ActionModal";
 
 export default function GeneralCommands() {
@@ -94,7 +96,7 @@ export default function GeneralCommands() {
                 index
               }
               onClick={() => handleOnClickTextToImage(extension.manifest.id)}
-              leftSection={<IconSearch style={{ width: 14, height: 14 }} />}
+              leftSection={<ExtensionIcon id={extension.manifest.id} size="sm" />}
               rightSection={
                 index === 0 && (
                   <>
@@ -112,25 +114,21 @@ export default function GeneralCommands() {
         })}
         <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
         {extensionsProcessCommands?.map((extensionCommand, index) => {
+          const manifest = extensionCommand.extension.manifest;
           return (
             <Menu.Item
-              key={
-                "extensionsProcessCommands-" +
-                extensionCommand.extension.manifest.id +
-                "-" +
-                index
-              }
+              key={`command-${manifest.id}-${index}`              }
               onClick={() =>
                 handleOnClickExtensionCommand(
-                  extensionCommand.extension.manifest.id,
+                  manifest.id,
                   extensionCommand.command,
                 )
               }
-              leftSection={<IconBolt style={{ width: 14, height: 14 }} />}
+              leftSection={<ExtensionIcon id={manifest.id} size="sm" />}
             >
               <Text size="sm"> {extensionCommand.command.label}</Text>
               <Text size="xs" c="dimmed">
-                {extensionCommand.extension.manifest.name}
+                {manifest.name}
               </Text>
             </Menu.Item>
           );

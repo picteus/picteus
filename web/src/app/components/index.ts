@@ -1,3 +1,4 @@
+export { default as Common } from "./Common/Common.ts";
 export { default as ImageVisualizer } from "./ImageVisualizer/ImageVisualizer.tsx";
 export { default as Container } from "./Container/Container.tsx";
 export { default as Loader } from "./Loader/Loader.tsx";
