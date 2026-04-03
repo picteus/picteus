@@ -45,13 +45,18 @@ export type EventNotificationType = {
   seen: boolean;
 };
 
+export type EventLogType = {
+  text: string;
+  level: string;
+  date: string;
+  extensionId?: string;
+};
+
 export type EventInformationType = {
   id: string;
   channel: string;
   rawData: SocketEventType;
-  statusText: string;
-  logLevel: string;
-  date: string;
+  log: EventLogType;
   notification?: EventNotificationType;
   onResult?: (result: any) => void;
 };

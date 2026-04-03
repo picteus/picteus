@@ -207,54 +207,54 @@ export default {
     title: "Extensions",
     successUninstall: "The extension has been successfully uninstalled",
     errorUninstall:
-      "An error occured while uninstalling the extension : {{error}}",
+      "An error occurred while uninstalling the extension : {{error}}",
     confirmDeleteTitle: "Uninstall extension",
     confirmDeleteMessage:
       "Are you sure you want to uninstall the extension '{{name}}' ?",
     errorToggleStatus:
-      "An error occured while trying to toggle the extension status.",
+      "An error occurred while trying to toggle the extension status.",
     successSynchronize: "The extension '{{name}}' is now synchronizing."
   },
   eventInformation: {
-    idle: "Listening for events...",
+    idle: "Listening for events…",
     unknownEvent: "Unknown event",
     extension: {
-      installed: "The extension '{{id}}' has been installed.",
-      updated: "The extension '{{id}}' has been updated.",
-      uninstalled: "The extension '{{id}}' has been uninstalled.",
-      paused: "The extension '{{id}}' has been paused.",
-      resumed: "The extension '{{id}}' has been resumed.",
+      installed: "The extension '{{id}}' has been installed",
+      updated: "The extension '{{id}}' has been updated",
+      uninstalled: "The extension '{{id}}' has been uninstalled",
+      paused: "The extension '{{id}}' has been paused",
+      resumed: "The extension '{{id}}' has been resumed",
       process: {
-        started: "The process of the extension '{{id}}' has started.",
-        stopped: "The process of the extension '{{id}}' has stopped."
+        started: "The process of the extension '{{id}}' has started",
+        stopped: "The process of the extension '{{id}}' has stopped"
       },
-      error: "An error occurred in the extension '{{id}}'.",
-      info: "The extension '{{id}}' triggered an informational event.",
-      fatal: "The extension '{{id}}' has been stopped due too many process stops.",
-      notification: "The extension '{{id}}' has send a notification.",
-      intent: "The extension '{{id}}' triggered {{type}} intent.",
-      acknowledgment: "The extension '{{id}}' has acknowledged a processing."
+      error: "An error occurred in the extension",
+      info: "The extension sent an informational message",
+      fatal: "The extension has been stopped due too many process stops",
+      notification: "The extension has send a notification",
+      intent: "The extension triggered {{type}} intent",
+      acknowledgment: "The extension has acknowledged a processing.",
     },
     repository: {
-      created: "Repository '{{id}}' has been created.",
+      created: "The repository '{{id}}' has been created",
       synchronize: {
         started:
-          "Synchronization for the repository with ID '{{id}}' has been initiated.",
+          "The synchronization for the repository with ID '{{id}}' has been initiated",
         stopped:
-          "Synchronization for the repository with ID '{{id}}' has been completed."
+          "The synchronization for the repository with ID '{{id}}' has been completed"
       },
       watch: {
-        started: "Watch on the repository '{{id}}' has been started.",
-        stopped: "Watch on the repository '{{id}}' has been stopped."
+        started: "Watch on the repository '{{id}}' has been started",
+        stopped: "Watch on the repository '{{id}}' has been stopped"
       },
       deleted: "Repository '{{id}}' has been deleted."
     },
     image: {
-      created: "The image '{{id}}' has been created.",
-      updated: "The image '{{id}}' has been updated.",
-      tagsUpdated: "The image '{{id}}' tags have been updated.",
-      featuresUpdated: "The image '{{id}}' features have been updated.",
-      deleted: "The image '{{id}}' has been deleted."
+      created: "The image '{{id}}' has been created",
+      updated: "The image '{{id}}' has been updated",
+      tagsUpdated: "The image '{{id}}' tags have been updated",
+      featuresUpdated: "The image '{{id}}' features have been updated",
+      deleted: "The image '{{id}}' has been deleted"
     }
   },
   notifications: {

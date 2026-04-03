@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
-import { API_KEY, BASE_PATH, formatDate, generateRandomId } from "utils";
+import { API_KEY, BASE_PATH, generateRandomId } from "utils";
 import { EventInformationType, SocketEventType } from "types";
 import { EventService } from "app/services";
 
@@ -42,15 +42,15 @@ export class SocketClient {
         { channel, contextId, isActivity, milliseconds, value }: SocketEventType,
         onResult: (result: any) => void,
       ) => {
-        const rawData = { channel, contextId, isActivity, milliseconds, value };
+        const rawData: SocketEventType = { channel, contextId, isActivity, milliseconds, value };
+        const log = await EventService.computeEventLog(rawData);
         const event: EventInformationType = {
           id: generateRandomId(),
           channel,
-          date: formatDate(milliseconds),
           rawData,
+          log: log,
           notification: await EventService.generateNotification(rawData),
           onResult,
-          ...(await EventService.getEventText(channel, value)),
         };
         void EventService.pushEventIntoIndexedDB(event);
         console.debug(

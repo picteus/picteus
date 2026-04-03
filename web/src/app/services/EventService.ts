@@ -1,6 +1,14 @@
-import { ChannelEnum, EventInformationType, EventNotificationType, ExtensionIntentType, SocketEventType } from "types";
+import {
+  ChannelEnum,
+  EventInformationType,
+  EventLogType,
+  EventNotificationType,
+  ExtensionIntentType,
+  SocketEventType
+} from "types";
 import i18n from "i18n/i18n.ts";
 import { ImageService, RepositoriesService } from "app/services";
+import { formatDate } from "utils";
 
 const INDEXED_DB_NAME = "PicteusDatabase";
 const INDEXED_DB_STORE = "ActivityStore";
@@ -52,11 +60,6 @@ async function getEventsFromIndexedDB() {
   });
 }
 
-type getEventTextReturnType = {
-  statusText: string;
-  logLevel: string;
-};
-
 function computeLogLevelColor(logLevel: string) {
   if (logLevel === "info") {
     return "blue";
@@ -69,21 +72,25 @@ function computeLogLevelColor(logLevel: string) {
   }
 }
 
-async function getEventText(channel: string, value: Record<string, any>): Promise<getEventTextReturnType> {
+async function computeEventLog(event: SocketEventType): Promise<EventLogType> {
+  const date = formatDate(event.milliseconds);
+  const { channel, value } = event;
   if (channel === ChannelEnum.EXTENSION_LOG) {
-    return { statusText: `Extension "${value.id}" : ${value.message.message}`, logLevel: value.message.level };
+    const extensionId = value["id"];
+    return { text: value.message.message, level: value.message.level, date, extensionId };
   }
 
-  async function computeId() {
+  async function computeI18nId(): Promise<string> {
+    const valueId = value["id"];
     if (channel.startsWith(ChannelEnum.REPOSITORY_PREFIX)) {
       const repository = RepositoriesService.getRepositoryInformation(
-        value["id"],
+        valueId,
       );
       return repository.name;
     }
     else if (channel.startsWith(ChannelEnum.IMAGE_PREFIX)) {
       try {
-        const image = await ImageService.get({ id: value["id"] });
+        const image = await ImageService.get({ id: valueId });
         return image.name;
       } catch (error) {
         console.warn("Can't fetch the image, probably deleted", error);
@@ -91,12 +98,12 @@ async function getEventText(channel: string, value: Record<string, any>): Promis
       }
     }
     else if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
-      return value["id"];
+      return valueId;
     }
   }
   const i18nMnemonic = `eventInformation.${channel}`;
-  const id = await computeId();
-  const logLevel = "info";
+  const id = await computeI18nId();
+  const level = "info";
 
   if (channel === ChannelEnum.EXTENSION_INTENT) {
     const intent = (value as ExtensionIntentType).intent;
@@ -115,11 +122,15 @@ async function getEventText(channel: string, value: Record<string, any>): Promis
     else {
       type = "an unknown";
     }
-    return { statusText: i18n.t(i18nMnemonic, { id, type}), logLevel };
+    return { text: i18n.t(i18nMnemonic, { id, type}), level, date, extensionId: id };
   }
 
-  const statusText = i18n.t(i18nMnemonic, { id });
-  return { statusText, logLevel };
+  const result:EventLogType = { text: i18n.t(i18nMnemonic, { id }), level, date };
+  if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
+    result.extensionId = id;
+  }
+
+  return result;
 }
 
 async function generateImageCreatedOrUpdatedNotification(
@@ -252,6 +263,6 @@ export default {
   markAllNotificationsAsSeen,
   computeLogLevelColor,
   getEventsFromIndexedDB,
-  getEventText,
+  computeEventLog,
   generateNotification,
 };

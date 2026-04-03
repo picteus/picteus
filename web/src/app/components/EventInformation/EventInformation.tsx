@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { Accordion, ActionIcon, Badge, Box, Flex, Loader, Popover, Text } from "@mantine/core";
+import { Accordion, ActionIcon, Badge, Flex, Grid, Loader, Popover, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconArrowBigUpLines } from "@tabler/icons-react";
 
@@ -21,8 +21,8 @@ interface Context {
   events: EventInformationType[];
 }
 
-function EventText({ text, maxLines, isBold = false }: { text: string, maxLines: number, isBold?: boolean }) {
-  return (<Text lineClamp={maxLines} fw={isBold === true ? "bold" : "normal"} truncate="end" size={size}>{text}</Text>);
+function EventText({ event, maxLines, isBold = false }: { event: EventInformationType, maxLines: number, isBold?: boolean }) {
+  return (<Text lineClamp={maxLines} fw={isBold === true ? "bold" : "normal"} truncate="end" size={size}>{event.log.text}</Text>);
 }
 
 function EventDate({ timestampInMilliseconds }: { timestampInMilliseconds: number}) {
@@ -45,14 +45,14 @@ function EventDate({ timestampInMilliseconds }: { timestampInMilliseconds: numbe
 function EventLevelBadge({ event, isShort }: { event: EventInformationType, isShort: boolean }) {
   return (<Badge
     size={size}
-    color={EventService.computeLogLevelColor(event.logLevel)}
+    color={EventService.computeLogLevelColor(event.log.level)}
     className={style.logLevelBadge}
   >
-    {isShort === true ? event.logLevel.charAt(0) : event.logLevel}
+    {isShort === true ? event.log.level.charAt(0) : event.log.level}
   </Badge>);
 }
 
-function Activity({ context }: { context: Context }) {
+function PopActivity({ context }: { context: Context }) {
   const firstEvent = context.events.slice(-1)[0];
 
   return (<Accordion.Item key={context.id} value={context.id}>
@@ -62,7 +62,7 @@ function Activity({ context }: { context: Context }) {
         <ExtensionIcon id={context.extensionId} size="sm"/>
         <EventLevelBadge event={firstEvent} isShort={false} />
         <EventDate timestampInMilliseconds={context.timestamp} />
-        <EventText text={firstEvent.statusText} maxLines={1} isBold={true} />
+        <EventText event={firstEvent} maxLines={1} isBold={true} />
       </Flex>
     </Accordion.Control>
     <Accordion.Panel>
@@ -70,19 +70,26 @@ function Activity({ context }: { context: Context }) {
         {context.events.map(event => (
           <Flex key={event.id} direction="row" gap={size} align="center" wrap="nowrap">
             <EventLevelBadge event={event} isShort={true} />
-            <EventText text={event.statusText} maxLines={1} />
+            <EventText event={firstEvent} maxLines={1} />
           </Flex>))}
       </Flex>
     </Accordion.Panel>
   </Accordion.Item>);
 }
 
+function PopActivities({ contexts }: { contexts: Context[] })
+{
+  return (<Accordion multiple variant="separated" radius="md">
+    {contexts.map(context => <PopActivity context={context} />)}
+  </Accordion>);
+}
+
 function Activities({ contexts }: { contexts: Context[] }) {
   const [opened, { close, open }] = useDisclosure(false);
 
-  return (<Box className={style.activities}>
+  return (<Flex align="center" justify="flex-end" gap={size}>
     {contexts.length > 0 && <>
-      <Text lineClamp={1} truncate="end" size={size}>{contexts.slice(-1)[0].events.slice(-1)[0].statusText}</Text>
+      <Text lineClamp={1} truncate="end" size={size}>{contexts.slice(-1)[0].events.slice(-1)[0].log.text}</Text>
       <Loader size={size} />
       <Badge size={size} color="grape" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
         {contexts.length}
@@ -103,17 +110,28 @@ function Activities({ contexts }: { contexts: Context[] }) {
           </ActionIcon>
         </Popover.Target>
         <Popover.Dropdown>
-          <Accordion variant="separated" defaultValue="Apples">
-            {contexts.map(context => <Activity context={context} />)}
-          </Accordion>
+          <PopActivities contexts={contexts} />
         </Popover.Dropdown>
       </Popover>
     </>}
-  </Box>);
+  </Flex>);
+}
+
+function Status({ event }: { event: EventInformationType }) {
+  const [t] = useTranslation();
+
+  return (<Flex align="center" gap={size}>
+    {event && <>
+      {event.log.extensionId && <ExtensionIcon id={event.log.extensionId} size="sm" />}
+      <EventLevelBadge event={event} isShort={false} />
+      <EventText event={event} maxLines={2} />
+      <EventDate timestampInMilliseconds={event.rawData.milliseconds} />
+    </>}
+    {event === undefined && <Text size={size}>{t("eventInformation.idle")}</Text>}
+  </Flex>);
 }
 
 export default function EventInformation() {
-  const [t] = useTranslation();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [theLastEvent, setTheLastEvent] = useState<EventInformationType>();
@@ -131,13 +149,13 @@ export default function EventInformation() {
         context = {
           id: contextId,
           timestamp: event.rawData.milliseconds,
-          extensionId: event.rawData.value["id"],
+          extensionId: event.log.extensionId,
           events: []
         };
         contextsMap.set(contextId, context);
       }
       if (event.channel === ChannelEnum.EXTENSION_ACKNOWLEDGMENT) {
-        // contextsMap.delete(contextId);
+        contextsMap.delete(contextId);
       }
       else {
         context.events.push(event);
@@ -153,16 +171,13 @@ export default function EventInformation() {
   }, [event]);
 
   return (
-    <div className={style.container}>
-      <Box className={style.event}>
-        {theLastEvent && <>
-          <EventLevelBadge event={theLastEvent} isShort={false} />
-          <EventText text={theLastEvent.statusText} maxLines={2}/>
-          <EventDate timestampInMilliseconds={theLastEvent.rawData.milliseconds} />
-        </>}
-        {theLastEvent === undefined && <Text size={size}>{t("eventInformation.idle")}</Text>}
-      </Box>
-      <Activities contexts={contextsList} />
-    </div>
+    <Grid className={style.container} columns={10} gutter="sm" justify="center" align="center" overflow="hidden">
+      <Grid.Col span={7} >
+        <Status event={theLastEvent} />
+      </Grid.Col>
+      <Grid.Col span={3}>
+        <Activities contexts={contextsList} />
+      </Grid.Col>
+    </Grid>
   );
 }

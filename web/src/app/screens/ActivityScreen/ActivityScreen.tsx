@@ -104,10 +104,10 @@ export default function ActivityScreen() {
   ): EventsTableDisplayType[] {
     return events.map((event) => {
       return {
-        date: event.date,
+        date: event.log.date,
         channel: event.rawData.channel,
-        logLevel: event.logLevel,
-        description: event.statusText,
+        logLevel: event.log.level,
+        description: event.log.text,
         payload: event.rawData.value,
       };
     });

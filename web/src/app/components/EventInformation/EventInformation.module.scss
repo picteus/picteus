@@ -1,24 +1,6 @@
 .container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap : 10px;
-  overflow: auto;
   flex-grow: 1;
   max-height : $bottombar-width;
-}
-
-.event {
-  display: flex;
-  align-items: center;
-  gap : 5px;
-}
-
-.activities {
-  display: flex;
-  align-items: center;
-  gap : 5px;
-  max-width: 40%;
 }
 
 .logLevelBadge {
