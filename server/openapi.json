@@ -5808,7 +5808,14 @@
               }
             ]
           },
-
+          "features": {
+            "description": "A filter which limits the result entities with the provided features specifications",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatures"
+              }
+            ]
+          },
           "properties": {
             "description": "A filter which limits the result entities with the provided technical properties",
             "allOf": [
