@@ -79,7 +79,7 @@ export default function FiltersBar({
         CollectionService.get(filterOrCollectionId.collectionId).then(collection => {
           setSelectedCollection(collection);
           setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
-        }).catch((_error) => {
+        }).catch(() => {
           // In case the collection does not exist anymore, we do nothing
         });
       }
@@ -279,7 +279,7 @@ export default function FiltersBar({
     return `${t("sort.sortedBy")} "${sortBy.label}" - ${sortOrder.label}`;
   }
 
-  function handleOnChangeFilter(filterKey: string, value?: any) {
+  function handleOnChangeFilter(filterKey: string, value?: string | string [] | FeaturesNamesOption[]) {
     const updatedFilter = { ...localFilters, [filterKey]: value };
     if (filterKey === "searchIn" && value === undefined) {
       delete updatedFilter.keyword;

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 import { API_KEY, BASE_PATH, generateRandomId } from "utils";
-import { EventInformationType, SocketEventType } from "types";
+import { EventInformationType, EventOnResultType, SocketEventType } from "types";
 import { EventService } from "app/services";
 
 
@@ -40,7 +40,7 @@ export class SocketClient {
       "events",
       async (
         { channel, contextId, isActivity, milliseconds, value }: SocketEventType,
-        onResult: (result: any) => void,
+        onResult: EventOnResultType,
       ) => {
         const rawData: SocketEventType = { channel, contextId, isActivity, milliseconds, value };
         const log = await EventService.computeEventLog(rawData);

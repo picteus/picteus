@@ -39,6 +39,7 @@ async function pushEventIntoIndexedDB(event: EventInformationType) {
   const db = await initializeIndexedDB();
   const transaction = db.transaction(INDEXED_DB_STORE, "readwrite");
   const store = transaction.objectStore(INDEXED_DB_STORE);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { onResult, ...toStore } = event;
   store.add(toStore);
 }

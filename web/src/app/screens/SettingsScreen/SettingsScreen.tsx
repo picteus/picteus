@@ -1,23 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {
-  Checkbox,
-  Flex,
-  Stack,
-  Switch,
-  Tabs,
-  Text,
-  Title,
-  useMantineColorScheme,
-} from "@mantine/core";
+import { Checkbox, Flex, Stack, Switch, Tabs, Text, Title, useMantineColorScheme } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { Container } from "app/components";
-import {
-  IconActivity,
-  IconDeviceLaptop,
-  IconMoonStars,
-  IconSun,
-} from "@tabler/icons-react";
+import { IconActivity, IconDeviceLaptop, IconMoonStars, IconSun } from "@tabler/icons-react";
 import { StorageService } from "app/services";
 
 export default function SettingsScreen() {
@@ -29,7 +15,7 @@ export default function SettingsScreen() {
     keepTransitions: true,
   });
 
-  function handleOnChangeColorScheme({ target: { checked: value } }: any) {
+  function handleOnChangeColorScheme({ target: { checked: value } }: { target: { checked: boolean } }) {
     setColorScheme(value ? "dark" : "light");
   }
 

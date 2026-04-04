@@ -11,6 +11,7 @@ import "@mantine/dropzone/styles.css";
 import RepositoryWidget from "./widgets/RepositoryWidget";
 import CollectionWidget from "./widgets/CollectionWidget";
 import TagsWidget from "./widgets/TagsWidget";
+import { JsonType } from "../../../types";
 
 
 type RsfjFormType = {
@@ -20,16 +21,16 @@ type RsfjFormType = {
   onChange: (formData: object) => void;
 };
 
-type UIProperty = { property: string, ui: Record<string, any> };
+type UIProperty = { property: string, ui: JsonType };
 const uiPropertyName = "ui";
 
-function stripAndExtractParametersUiProperties(parameters: Record<string, any>): UIProperty[] {
+function stripAndExtractParametersUiProperties(parameters: JsonType): UIProperty[] {
   const uis: UIProperty[] = [];
   const properties = parameters.properties;
   if (properties !== undefined) {
     for (const property in properties) {
       const childProperty = properties[property];
-      const ui: Record<string, any> = childProperty[uiPropertyName];
+      const ui: JsonType = childProperty[uiPropertyName];
       delete childProperty[uiPropertyName];
       if (ui !== undefined) {
         uis.push({ property, ui });
@@ -91,7 +92,7 @@ export default function RjsfForm({
   function ensureSchemaDefaultValues(schema: RJSFSchema): RJSFSchema {
     if (schema.type === "object" && schema.properties) {
       for (const key in schema.properties) {
-        const property: any = schema.properties[key];
+        const property: JsonType = schema.properties[key] as JsonType;
         if (property.type === "boolean" && property.default === undefined) {
           property.default = false;
         }

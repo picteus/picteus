@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import { CommandContextType, CommandParameters, CommandSocketEventType } from "types";
+import { CommandContextType, CommandParameters, CommandSocketEventType, JsonType } from "types";
 
 const CommandSocketContext = createContext(undefined);
 
@@ -11,13 +11,13 @@ export function useCommandSocket(): CommandContextType {
 interface SendAndResolve<T> {
   command: string;
   parameters: CommandParameters;
-  resolve: (t: T) => void;
+  resolve: (value: T) => void;
 }
 
 export function CommandSocketProvider({ children }: { children: ReactNode }) {
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
-  const onConnectedSendAndResolves = useRef<SendAndResolve<any>[]>([]);
+  const onConnectedSendAndResolves = useRef<SendAndResolve<JsonType>[]>([]);
   const callbacks = useRef({});
 
   useEffect(() => {
@@ -89,12 +89,12 @@ export function CommandSocketProvider({ children }: { children: ReactNode }) {
   );
 
   const sendCommandOnConnected = useCallback(
-    (command: string, parameters: CommandParameters): Promise<any> => {
+    (command: string, parameters: CommandParameters): Promise<JsonType> => {
       if (connected === true) {
         return sendCommand(command, parameters);
       }
       else {
-        return new Promise<any>(resolve => {
+        return new Promise<JsonType>(resolve => {
           onConnectedSendAndResolves.current = onConnectedSendAndResolves.current.concat({ command, parameters, resolve });
         });
       }

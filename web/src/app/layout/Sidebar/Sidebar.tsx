@@ -68,7 +68,7 @@ export default function Sidebar() {
       });
     }
   }, [event]);
-  const { sendCommand, isAvailable } = useCommandSocket();
+  const { isAvailable } = useCommandSocket();
 
   const additionalElements = useMemo(() => {
     return additionalUiContextValue.sidebar.map((element) => {
@@ -116,7 +116,7 @@ export default function Sidebar() {
         />
       );
     });
-  }, [additionalUiContextValue, sendCommand, isAvailable]);
+  }, [additionalUiContextValue, isAvailable]);
 
   const commonIconStyle = useMemo(
     () => ({

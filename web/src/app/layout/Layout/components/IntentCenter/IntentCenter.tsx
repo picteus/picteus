@@ -9,7 +9,15 @@ import { ExtensionsService, ImageService, StorageService } from "app/services";
 import { useOpenWindow } from "app/hooks";
 import { CommandForm, DialogForm } from "app/components";
 import { FullscreenURLModal } from "app/components/ActionModal";
-import { ActionModalValue, ChannelEnum, ExtensionIntentType, ResourceType, ShowType } from "types";
+import { ImageVisualizerWrapper, ModalComponent } from "./components";
+import {
+  ActionModalValue,
+  ChannelEnum,
+  EventOnResultValueType,
+  ExtensionIntentType,
+  ResourceType,
+  ShowType
+} from "types";
 import {
   useActionModalContext,
   useAdditionalUiContext,
@@ -19,8 +27,6 @@ import {
   useImageVisualizerContext
 } from "app/context";
 import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyError, ROUTES } from "utils";
-
-import { ImageVisualizerWrapper, ModalComponent } from "./components";
 
 
 export default function IntentCenter() {
@@ -47,7 +53,7 @@ export default function IntentCenter() {
     removeModal(modalId);
   }
 
-  function respondWithValue(value: any= {}): void {
+  function respondWithValue(value: EventOnResultValueType = {}): void {
     event.onResult({ value });
   }
 
@@ -59,9 +65,9 @@ export default function IntentCenter() {
     event.onResult({ error: message });
   }
 
-  function handleOnSend(parameters: any, modalId: string): void {
+  function handleOnSend(value: EventOnResultValueType, modalId: string): void {
     try {
-      respondWithValue(parameters);
+      respondWithValue(value);
       onCloseActionModal(modalId);
     } catch (error) {
       console.error(error);

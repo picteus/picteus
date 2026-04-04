@@ -194,7 +194,7 @@ export default function ImageVisualizer({
     }
     const metadata: ImageMetadata = imageData.metadata;
     // We exclude the empty metadata entities
-    return Object.entries(metadata).filter(([_key, value]) => value !== undefined && value !== "{}").map(([key, value]) => {
+    return Object.entries(metadata).filter(([, value]) => value !== undefined && value !== "{}").map(([key, value]) => {
       try {
         JSON.parse(value);
         value = <CodeViewer code={value} />;

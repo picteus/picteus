@@ -22,7 +22,7 @@ import { IconActivity } from "@tabler/icons-react";
 import { Container, EmptyResults } from "app/components";
 import { EventService, StorageService } from "app/services";
 import { useEventSocket } from "app/context";
-import { ChannelEnum, EventInformationType } from "types";
+import { ChannelEnum, EventInformationType, JsonType } from "types";
 import { recursivelyIncludes } from "utils";
 import style from "./ActivityScreen.module.scss";
 
@@ -36,7 +36,7 @@ type EventsTableDisplayType = {
   channel: string;
   logLevel: string;
   description: string;
-  payload: any;
+  payload: JsonType;
 };
 const BATCH_SIZE = 20;
 export default function ActivityScreen() {
@@ -170,7 +170,7 @@ export default function ActivityScreen() {
     return <>{events?.length ? renderContent() : renderEmpty()}</>;
   }
 
-  function handleOnPaginationChange(newPage) {
+  function handleOnPaginationChange(newPage: number) {
     setPagination({
       ...pagination,
       currentPage: newPage,
