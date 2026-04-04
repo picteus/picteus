@@ -39,7 +39,7 @@ function App() {
             const res = await response.json();
             setBootstrapLogs(res.logs);
           })
-          .catch((_error) => {
+          .catch(() => {
             // This happens as long as the server is not reachable
           });
       }, 250);

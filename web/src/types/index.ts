@@ -13,27 +13,29 @@ import {
   SearchSortingProperty
 } from "@picteus/ws-client";
 
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type JsonType = Record<string, any>;
+
 type SocketEventAdditionalMessage = { contextId: string; isActivity?: boolean };
 export type SocketEventType = SocketEventAdditionalMessage & {
   channel: string;
   milliseconds: number;
-  value: Record<string, any>;
+  value: JsonType;
 };
 
 export interface CommandSocketEventType {
   id: string;
   error?: string;
-  value?: any;
+  value?: JsonType;
 }
 
-export interface CommandParameters {
-  [key: string]: any;
-}
+export type CommandParameters = JsonType;
 
 export interface CommandContextType {
-  sendCommand: (command: string, parameters: CommandParameters) => Promise<any>;
+  sendCommand: (command: string, parameters: CommandParameters) => Promise<string>;
   isAvailable: () => boolean;
-  sendCommandOnConnected: (command: string, parameters: CommandParameters) => Promise<any>;
+  sendCommandOnConnected: (command: string, parameters: CommandParameters) => Promise<string>;
 }
 
 export type EventNotificationType = {
@@ -52,13 +54,18 @@ export type EventLogType = {
   extensionId?: string;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EventOnResultValueType = any;
+
+export type EventOnResultType = (result: EventOnResultValueType) => void;
+
 export type EventInformationType = {
   id: string;
   channel: string;
   rawData: SocketEventType;
   log: EventLogType;
   notification?: EventNotificationType;
-  onResult?: (result: any) => void;
+  onResult?: EventOnResultType;
 };
 
 export type ImageWithCaption = (Image | ImageSummary) & {

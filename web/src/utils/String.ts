@@ -54,7 +54,7 @@ export function detectPlatformFromPath(filePath: string): "windows" | "unix" {
   return "unix";
 }
 
-export function recursivelyIncludes(value: any, search: string): boolean {
+export function recursivelyIncludes(value: unknown, search: string): boolean {
   if (value === null || value === undefined) {
     return false;
   }
