@@ -1,7 +1,20 @@
 import * as React from "react";
-import { KeyboardEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Configuration, ImageApi, RepositoryApi, SearchParameters } from "@picteus/ws-client";
+import {
+  AspectRatio,
+  Badge,
+  Button,
+  Card,
+  Container,
+  Group,
+  Image,
+  Notification,
+  SimpleGrid,
+  Skeleton,
+  TagsInput
+} from "@mantine/core";
 
 import "./App.css";
 
@@ -15,8 +28,6 @@ export default () => {
 
   // The global list of tags applied to all selected images
   const [commonTags, setCommonTags] = useState<string[]>([]);
-  // Local input state for the global tags field
-  const [newTagInput, setNewTagInput] = useState<string>("");
 
   // Individual tags for displaying the current state per image
   const [imageTagsMap, setImageTagsMap] = useState<Record<string, string[]>>({});
@@ -135,90 +146,63 @@ export default () => {
     }
   };
 
-  const handleGlobalInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      const tagValue = newTagInput.trim();
-      if (tagValue) {
-        if (!commonTags.includes(tagValue)) {
-          setCommonTags(prev => [...prev, tagValue]);
-          if (!knownTags.includes(tagValue)) {
-            setKnownTags(prev => [...prev, tagValue]);
-          }
-        }
-        setNewTagInput("");
-      }
-    }
-  };
-
-  const handleGlobalRemoveTag = (tagToRemove: string) => {
-    setCommonTags(prev => prev.filter(t => t !== tagToRemove));
-  };
+  // No longer need manual enter or remove handlers, handled by TagsInput / MultiSelect
 
   return (
-    <div className="app-container">
+    <Container size="xl" py="xl">
       {error && (
-        <div className="error-message">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} title="Dismiss">×</button>
-        </div>
+        <Notification color="red" title="Error" onClose={() => setError(null)} mb="xl">
+          {error}
+        </Notification>
       )}
 
-      <datalist id="known-tags">
-        {knownTags.map(tag => (
-          <option key={tag} value={tag} />
-        ))}
-      </datalist>
+      <Card withBorder radius="md" p="md" mb="xl">
+        <Group mb="md" align="flex-end">
+          <TagsInput
+            placeholder="Type or select tags..."
+            data={knownTags}
+            value={commonTags}
+            onChange={(val) => {
+              setCommonTags(val);
+              const newTags = val.filter(v => !knownTags.includes(v));
+              if (newTags.length > 0) {
+                setKnownTags([...knownTags, ...newTags]);
+              }
+            }}
+            style={{ flex: 1 }}
+          />
+          <Button onClick={handleApplyTagsToAllImages}>Apply</Button>
+        </Group>
+      </Card>
 
-      <div className="global-controls">
-        <div className="global-top-row">
-          <div className="tag-input-container">
-            <input
-              type="text"
-              placeholder="Type a tag and press Enter..."
-              list="known-tags"
-              value={newTagInput}
-              onChange={(e) => setNewTagInput(e.target.value)}
-              onKeyDown={handleGlobalInputKeyDown}
-            />
-          </div>
-          <button className="apply-btn" onClick={handleApplyTagsToAllImages}>
-            Apply
-          </button>
-        </div>
-
-        <div className="global-tags-container">
-          {commonTags.length === 0 && <span className="tag-chip">No tags to apply</span>}
-          {commonTags.map(tag => (
-            <span key={tag} className="tag-chip">
-              {tag}
-              <button className="tag-remove-btn" onClick={() => handleGlobalRemoveTag(tag)} title="Remove tag">×</button>
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="images-grid">
+      <SimpleGrid cols={{ base: 3 }} spacing="md">
         {imageIds && imageIds.map(imageId => (
-          <div key={imageId} className="image-card">
-            <div className="thumbnail-container">
-              {imageUrls[imageId] ? <img src={imageUrls[imageId]} alt="Thumbnail" /> : <div className="loading-placeholder" />}
-            </div>
+          <Card key={imageId} withBorder radius="md" p={0}>
+            <Card.Section>
+              <AspectRatio ratio={16 / 9} bg="dark.4">
+                {imageUrls[imageId] ? (
+                  <Image src={imageUrls[imageId]} fit="cover" />
+                ) : (
+                  <Skeleton height="100%" radius={0} />
+                )}
+              </AspectRatio>
+            </Card.Section>
 
-            <div className="tags-container">
+            <Group gap="xs" p="md">
               {imageTagsMap[imageId]?.map(tag => (
-                <span key={tag} className="tag-chip">
+                <Badge key={tag} variant="light">
                   {tag}
-                </span>
+                </Badge>
               ))}
               {(!imageTagsMap[imageId] || imageTagsMap[imageId].length === 0) && (
-                <span className="tag-chip" style={{ background: "transparent", border: "1px dashed var(--border-color)", padding: "2px 6px" }}>
+                <Badge variant="outline" color="gray" style={{ borderStyle: "dashed" }}>
                   No tags
-                </span>
+                </Badge>
               )}
-            </div>
-          </div>
+            </Group>
+          </Card>
         ))}
-      </div>
-    </div>
+      </SimpleGrid>
+    </Container>
   );
 };

@@ -36,8 +36,8 @@
   "devDependencies": {
     "typescript": "5.9.2",
     "@types/node": "22.17.1",
-    "@types/react": "18.3.12",
-    "@types/react-dom": "18.3.1",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
     "vite": "6.4.1",
     "vite-tsconfig-paths": "6.1.1",
     "zip-a-folder": "6.1.0"
@@ -45,6 +45,7 @@
   "dependencies": {
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "@picteus/ws-client": "0.14.0"
+    "@mantine/core": "8.3.18",
+    "@picteus/ws-client": "0.14.1"
   }
 }

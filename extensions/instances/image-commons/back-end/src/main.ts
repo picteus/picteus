@@ -217,7 +217,7 @@ class ImageCommonsExtension extends PicteusExtension
       dialog:
         {
           type: IntentDialogType.Info,
-          size: "xl",
+          size: "m",
           title: "Tag",
           description: "Please, tag the images",
           frame: { content: { url: result + "/index.html" }, height: 50 },
