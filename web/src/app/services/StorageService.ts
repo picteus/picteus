@@ -1,7 +1,9 @@
 import { FilterOrCollectionId, FolderTypes, TabsType } from "types";
 import { VISUALIZER_DEFAULT_PANEL_SIZES } from "utils";
 
+
 const prefix = "picteus_";
+const VERSION_KEY = prefix + "version";
 const TABS_KEY = prefix + "tabs";
 const SEARCH_FILTERS_KEY: string = prefix + "searchFilters";
 const ACTIVITY_FILTERS_KEY: string = prefix + "activityFilters";
@@ -11,12 +13,23 @@ const CLOSEST_IMAGES_RESULTS_COUNT: string =
 const TEXT_TO_IMAGES_RESULTS_COUNT: string =
   prefix + "textToImagesResultsCount";
 const FOLDER_PICKER_LAST_LOCATION = prefix + "extensionPickerLastLocation";
-export const COLOR_SCHEME = prefix + "colorScheme";
 
 export const EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION =
   prefix + "extensionIntentShowShouldConfirmRedirection";
 
+function getWithNullValue(key: string): string {
+  const value = localStorage.getItem(key);
+  return value == null ? "null" : value;
+}
+
 export default {
+  COLOR_SCHEME: prefix + "colorScheme",
+  getVersion: (): string | undefined => {
+    return getWithNullValue(VERSION_KEY);
+  },
+  setVersion: (value: string): void => {
+    localStorage.setItem(VERSION_KEY, value);
+  },
   setActivityFilters: (
     filters: Array<{
       field: string;
@@ -26,7 +39,7 @@ export default {
   getActivityFilters: (): Array<{
     field: string;
     value: string;
-  }> => JSON.parse(localStorage.getItem(ACTIVITY_FILTERS_KEY) || "null"),
+  }> => JSON.parse(getWithNullValue(ACTIVITY_FILTERS_KEY)),
   setSearchFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId | undefined) => {
     if (filterOrCollectionId === undefined) {
       localStorage.removeItem(SEARCH_FILTERS_KEY);
@@ -36,13 +49,11 @@ export default {
     }
   },
   getSearchFilterOrCollectionId: (): FilterOrCollectionId | null => {
-    return JSON.parse(
-      localStorage.getItem(SEARCH_FILTERS_KEY) || "null",
-    );
+    return JSON.parse(getWithNullValue(SEARCH_FILTERS_KEY));
   },
 
   getVisualizerPanelSizes: (): number[] =>
-    JSON.parse(localStorage.getItem(VISUALIZER_PANEL_SIZES_KEY) || "null") ||
+    JSON.parse(getWithNullValue(VISUALIZER_PANEL_SIZES_KEY)) ||
     VISUALIZER_DEFAULT_PANEL_SIZES,
   setVisualizerPanelSizes: (sizes: number[]) => {
     localStorage.setItem(VISUALIZER_PANEL_SIZES_KEY, JSON.stringify(sizes));

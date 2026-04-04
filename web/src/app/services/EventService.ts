@@ -15,6 +15,12 @@ const INDEXED_DB_STORE = "ActivityStore";
 
 let indexedDbInstance: IDBDatabase | null = null;
 
+const upgrade = (previousVersion: string, currentVersion: string)=>{
+  if (currentVersion === "0.4.0") {
+    indexedDB.deleteDatabase(INDEXED_DB_NAME);
+  }
+}
+
 const initializeIndexedDB = (): Promise<IDBDatabase> => {
   if (indexedDbInstance) {
     return Promise.resolve(indexedDbInstance);
@@ -259,6 +265,7 @@ async function markAllNotificationsAsSeen() {
   });
 }
 export default {
+  upgrade,
   pushEventIntoIndexedDB,
   clearNotification,
   markAllNotificationsAsSeen,

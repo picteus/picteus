@@ -10,7 +10,7 @@ import Initializer from "./Initializer.tsx";
 import "i18n/i18n.ts";
 import "assets/style/style.scss";
 import "assets/style/override.scss";
-import { COLOR_SCHEME } from "./app/services/StorageService.ts";
+import { EventService, StorageService } from "./app/services";
 
 const theme = createTheme({
   fontFamily: "Roboto, sans-serif",
@@ -25,12 +25,26 @@ function App() {
   const [bootstrapping, setBootstrapping] = useState<boolean>(true);
   const [bootstrapLogs, setBootstrapLogs] = useState<string[]>([]);
 
+  async function upgrade(previousVersion: string, currentVersion: string): Promise<void> {
+    EventService.upgrade(previousVersion, currentVersion);
+  }
+
   useEffect(() => {
-    (async () => {
-      const boostrapInterval = setInterval(() => {
+    const run = async () =>
+    {
+      const currentVersion = import.meta.env.PACKAGE_VERSION;
+      const previousVersion = StorageService.getVersion();
+      if (previousVersion !== currentVersion) {
+        await upgrade(previousVersion ?? currentVersion, currentVersion);
+        StorageService.setVersion(currentVersion);
+      }
+      const boostrapInterval = setInterval(() =>
+      {
         fetch(BASE_PATH + "/bootstrap")
-          .then(async (response) => {
-            if (!response.ok) {
+          .then(async (response) =>
+          {
+            if (!response.ok)
+            {
               // The server indicates that it is now ready
               setBootstrapping(false);
               clearInterval(boostrapInterval);
@@ -39,15 +53,17 @@ function App() {
             const res = await response.json();
             setBootstrapLogs(res.logs);
           })
-          .catch(() => {
+          .catch(() =>
+          {
             // This happens as long as the server is not reachable
           });
       }, 250);
-    })();
+    };
+    void run();
   }, []);
 
   const colorSchemeManager = localStorageColorSchemeManager({
-    key: COLOR_SCHEME,
+    key: StorageService.COLOR_SCHEME,
   });
 
   return (
