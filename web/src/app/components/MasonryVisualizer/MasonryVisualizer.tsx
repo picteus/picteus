@@ -15,7 +15,7 @@ export default function MasonryVisualizer({
   imageIds,
 }: MasonryVisualizerType) {
   const containerRef = useRef();
-  const containerWidth = useContainerDimensions(containerRef);
+  const { width } = useContainerDimensions(containerRef);
   const [images, setImages] = useState<Image[]>([]);
 
   async function load() {
@@ -40,7 +40,7 @@ export default function MasonryVisualizer({
           <Text>{description}</Text>
           <ImageMasonry
             keyPrefix="masonryVisualizerImages"
-            containerWidth={containerWidth}
+            containerWidth={width}
             data={{
               images,
               currentPage: 1,

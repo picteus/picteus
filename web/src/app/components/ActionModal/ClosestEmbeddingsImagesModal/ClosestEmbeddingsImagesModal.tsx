@@ -34,7 +34,7 @@ export default function ClosestEmbeddingsImagesModal({
   const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const containerWidth = useContainerDimensions(containerRef);
+  const { width } = useContainerDimensions(containerRef);
   const [, setImageVisualizerContext] = useImageVisualizerContext();
 
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
@@ -164,7 +164,7 @@ export default function ClosestEmbeddingsImagesModal({
       return (
         <ImageMasonry
           keyPrefix="closestEmbeddingsImages"
-          containerWidth={containerWidth}
+          containerWidth={width}
           data={{
             images: imageSummaries,
             currentPage: 1,

@@ -32,7 +32,7 @@ export default function TextToImagesModal({
   >([]);
   const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const containerWidth = useContainerDimensions(containerRef);
+  const { width } = useContainerDimensions(containerRef);
   const focusTrapRef = useFocusTrap();
 
   const initialResultsCount = StorageService.getTextToImagesResultsCount();
@@ -145,7 +145,7 @@ export default function TextToImagesModal({
       return (
         <ImageMasonry
           keyPrefix="textToImagesImages"
-          containerWidth={containerWidth}
+          containerWidth={width}
           data={{
             images: imageSummaries,
             currentPage: 1,

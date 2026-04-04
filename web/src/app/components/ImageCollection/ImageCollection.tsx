@@ -14,7 +14,7 @@ type ImageCollectionType = { imageIds: string[] };
 export default function ImageCollection({imageIds}: ImageCollectionType) {
   const [images, setImages] = useState<ImageSummary[]>();
   const containerRef = useRef<HTMLDivElement>(null);
-  const containerWidth = useContainerDimensions(containerRef);
+  const { width } = useContainerDimensions(containerRef);
 
   useEffect(() => {
     async function load() {
@@ -29,7 +29,7 @@ export default function ImageCollection({imageIds}: ImageCollectionType) {
   return (
     <div ref={containerRef}>
       {containerRef?.current && images && <ImageMasonry
-        containerWidth={containerWidth}
+        containerWidth={width}
         imageSize={100}
         imageItemMode={ImageItemMode.PASSIVE}
         loadMore={() => {

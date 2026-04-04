@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { Accordion, ActionIcon, Badge, Flex, Grid, Loader, Popover, Text } from "@mantine/core";
+import { Accordion, ActionIcon, Badge, Flex, Grid, Loader, Popover, ScrollArea, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconArrowBigUpLines } from "@tabler/icons-react";
 
@@ -67,24 +67,30 @@ function PopActivity({ context }: { context: Context }) {
     </Accordion.Control>
     <Accordion.Panel>
       <Flex direction="column" gap={size} wrap="nowrap">
-        {context.events.map(event => (
+        {context.events.slice(0, context.events.length - 1).map(event => (
           <Flex key={event.id} direction="row" gap={size} align="center" wrap="nowrap">
             <EventLevelBadge event={event} isShort={true} />
-            <EventText event={firstEvent} maxLines={1} />
+            <EventText event={event} maxLines={1} />
           </Flex>))}
       </Flex>
     </Accordion.Panel>
   </Accordion.Item>);
 }
 
-function PopActivities({ contexts }: { contexts: Context[] })
+function PopActivities({ contexts, containerHeight }: { contexts: Context[], containerHeight: number })
 {
-  return (<Accordion multiple variant="separated" radius="md">
-    {contexts.map(context => <PopActivity context={context} />)}
-  </Accordion>);
+  const maxHeight = containerHeight * .80;
+  return (<ScrollArea.Autosize mah={maxHeight} mx="auto" >
+      <Flex align="flex-end">
+        <Accordion multiple variant="separated" radius="md">
+          {contexts.map(context => <PopActivity context={context} />)}
+        </Accordion>
+      </Flex>
+    </ScrollArea.Autosize>
+  );
 }
 
-function Activities({ contexts }: { contexts: Context[] }) {
+function Activities({ contexts, containerHeight }: { contexts: Context[], containerHeight: number }) {
   const [opened, { close, open }] = useDisclosure(false);
 
   return (<Flex align="center" justify="flex-end" gap={size}>
@@ -110,7 +116,7 @@ function Activities({ contexts }: { contexts: Context[] }) {
           </ActionIcon>
         </Popover.Target>
         <Popover.Dropdown>
-          <PopActivities contexts={contexts} />
+          <PopActivities contexts={contexts} containerHeight={containerHeight}/>
         </Popover.Dropdown>
       </Popover>
     </>}
@@ -131,7 +137,7 @@ function Status({ event }: { event: EventInformationType }) {
   </Flex>);
 }
 
-export default function EventInformation() {
+export default function EventInformation({containerHeight}: { containerHeight: number }) {
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [theLastEvent, setTheLastEvent] = useState<EventInformationType>();
@@ -176,7 +182,7 @@ export default function EventInformation() {
         <Status event={theLastEvent} />
       </Grid.Col>
       <Grid.Col span={3}>
-        <Activities contexts={contextsList} />
+        <Activities contexts={contextsList} containerHeight={containerHeight}/>
       </Grid.Col>
     </Grid>
   );

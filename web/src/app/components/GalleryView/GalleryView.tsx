@@ -43,7 +43,7 @@ export default function GalleryView({ initialFilterOrCollectionId }: GalleryView
     images: [],
   });
   const containerRef = useRef<HTMLDivElement>(null);
-  const containerWidth = useContainerDimensions(containerRef);
+  const { width } = useContainerDimensions(containerRef);
   const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(initialFilterOrCollectionId);
   const [showAlertNewImages, setShowAlertNewImages] = useState<boolean>(false);
 
@@ -182,7 +182,7 @@ export default function GalleryView({ initialFilterOrCollectionId }: GalleryView
     if (containerRef?.current) {
       return (
         <ImageMasonry
-          containerWidth={containerWidth}
+          containerWidth={width}
           data={data}
           loadMore={handleOnInfiniteScroll}
         />

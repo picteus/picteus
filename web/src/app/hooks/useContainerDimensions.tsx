@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-export default function useContainerDimensions(containerRef) {
-  const [containerWidth, setContainerWidth] = useState<number>();
+export default function useContainerDimensions(containerRef): { width: number, height: number } {
+  const [dimensions, setDimensions] = useState<{ width: number, height: number }>({ width: 0, height: 0 });
 
   const debounce = (func, delay) => {
     let timer;
@@ -14,15 +14,19 @@ export default function useContainerDimensions(containerRef) {
   useEffect(() => {
     if (containerRef.current) {
       const handleResize = debounce(() => {
-        setContainerWidth(containerRef?.current?.clientWidth);
-      }, 500);
+        if (containerRef?.current) {
+          setDimensions({ width: containerRef.current.clientWidth, height: containerRef.current.clientHeight });
+        }
+      }, (100 / 60) * 5);
       window.addEventListener("resize", handleResize);
-      setContainerWidth(containerRef?.current?.clientWidth);
+      if (containerRef?.current) {
+        setDimensions({ width: containerRef.current.clientWidth, height: containerRef.current.clientHeight });
+      }
       return () => {
         window.removeEventListener("resize", handleResize);
       };
     }
   }, [containerRef?.current]);
 
-  return containerWidth;
+  return { width: dimensions.width, height: dimensions.height };
 }
