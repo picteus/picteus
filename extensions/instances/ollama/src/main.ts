@@ -158,7 +158,7 @@ class OllamaExtension extends PicteusExtension
       try
       {
         const version = await this.ollama.version();
-        communicator.sendLog(`Ollama server v${version} is running`, "info");
+        communicator.sendLog(`Ollama server v${version.version} is running`, "info");
       }
       catch (error)
       {
