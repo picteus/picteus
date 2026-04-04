@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import React, { ReactNode, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Group, Layout, Panel, Separator } from "react-resizable-panels";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconX } from "@tabler/icons-react";
@@ -364,13 +364,42 @@ export default function ImageVisualizer({
                     <Accordion.Panel>
                       <Table width={"100%"} layout="fixed">
                         <Table.Tbody>
-                          {imageFeatures?.map((imageFeature, index) =>
-                          {
+                          {imageFeatures?.map((imageFeature, index) => {
                             const value = imageFeature.value;
-                            const tableValue = imageFeature.format === "json" ?
-                              <CodeViewer code={imageFeature.value} /> : (imageFeature.format === "markdown" ?
+                            let tableValue: string | ReactNode;
+                            switch (imageFeature.format) {
+                              default:
+                                tableValue = "Unexpected";
+                                break;
+                              case "json":
+                                tableValue = <CodeViewer code={imageFeature.value} />;
+                                break;
+                              case "markdown":
                                 // We need to handle the specific case the linebreak "<br>", because the library does not handle it properly by default
-                                <Markdown content={value as string}/> : (typeof value === "string" ? capitalizeText(value) : (typeof value === "number" ? value.toString() : (typeof value === "boolean" ? value.toString() : value))));
+                                tableValue = <Markdown content={value as string}/>;
+                                break;
+                              case "xml":
+                                tableValue = value as string;
+                                break;
+                              case "html":
+                                tableValue = value as string;
+                                break;
+                              case "binary":
+                                tableValue = "";
+                                break;
+                              case "string":
+                                tableValue = capitalizeText(value as string);
+                                break;
+                              case "integer":
+                                tableValue = value.toString();
+                                break;
+                              case "float":
+                                tableValue = value.toString();
+                                break;
+                              case "boolean":
+                                tableValue = value.toString();
+                                break;
+                            }
                             return (
                               <TableComponent
                                 key={`feature-${index}`}
