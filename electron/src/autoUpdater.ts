@@ -73,21 +73,20 @@ async function showInstallQuestion(window: BrowserWindow, releaseName: string, r
     type: "question",
     title: app.getName(),
     message: `A new version '${releaseName}' of the application has been downloaded: do you want to relaunch the application and install it now (patience, it will take about 30 seconds to restart)? Or do you prefer that it gets installed at next launch?`,
-    detail: (releaseNotes !== undefined && releaseNotes.trim().length > 0) ? ("Here are the release notes of this version:" + "\n\n" + releaseNotes) : undefined,
+    detail: releaseNotes !== undefined ? ("Here are the release notes of this version:" + "\n\n" + releaseNotes) : undefined,
     buttons: ["Later", "Relaunch"]
   });
   return returnValue.response === 1;
 }
 
-function installAndQuitApplication(window: BrowserWindow, run: () => void): void
+function installAndQuitApplication(onQuit: () => void, run: () => void): void
 {
   logger.info("Quitting and installing the new version of the application");
-  // We make the main window closable, otherwise, the "autoUpdater.quitAndInstall()" does not work, as stated on https://github.com/electron-userland/electron-builder/issues/3402
-  window.closable = true;
+  onQuit();
   run();
 }
 
-async function autoUpdateApplicationViaAutoUpdater(window: BrowserWindow, updateFeedUrl: string): Promise<void>
+async function autoUpdateApplicationViaAutoUpdater(window: BrowserWindow, updateFeedUrl: string, onQuit: () => void): Promise<void>
 {
   logger.info(`Running the auto-update process against the application feed at URL '${updateFeedUrl}'`);
   return new Promise<void>(async (resolve, reject) =>
@@ -105,11 +104,11 @@ async function autoUpdateApplicationViaAutoUpdater(window: BrowserWindow, update
       logger.warn("No update is available");
       resolve();
     });
-    autoUpdater.on("update-downloaded", async (_event: Event, releaseNotes: string, releaseName: string, _releaseDate: Date, _updateURL: string): Promise<void> =>
+    autoUpdater.on("update-downloaded", async (_event: Event, releaseNotes: string | undefined, releaseName: string, _releaseDate: Date, _updateURL: string): Promise<void> =>
     {
-      if ((await showInstallQuestion(window, releaseName, releaseNotes)) === true)
+      if ((await showInstallQuestion(window, releaseName, releaseNotes === "" ? undefined : releaseNotes)) === true)
       {
-        installAndQuitApplication(window, () =>
+        installAndQuitApplication(onQuit, () =>
         {
           autoUpdater.quitAndInstall();
         });
@@ -200,7 +199,7 @@ class CustomProvider extends Provider<UpdateInfo>
 
 }
 
-async function autoUpdateApplicationViaElectronUpdater(window: BrowserWindow, updateFeedUrl: string): Promise<void>
+async function autoUpdateApplicationViaElectronUpdater(window: BrowserWindow, updateFeedUrl: string, onQuit: () => void): Promise<void>
 {
   // Enables the next line, when you need to test the auto-update process in development mode
   // electronUpdaterAutoUpdater.forceDevUpdateConfig = true;
@@ -228,11 +227,11 @@ async function autoUpdateApplicationViaElectronUpdater(window: BrowserWindow, up
   {
     const releaseName = event.releaseName!;
     const eventReleaseNotes = event.releaseNotes;
-    const releaseNotes = (eventReleaseNotes === undefined || eventReleaseNotes === null) ? undefined : (typeof eventReleaseNotes === "string" ? eventReleaseNotes as string : (eventReleaseNotes.length === 0 ? undefined : eventReleaseNotes![0].note ?? undefined));
+    const releaseNotes = (eventReleaseNotes === undefined || eventReleaseNotes === null) ? undefined : (typeof eventReleaseNotes === "string" ? (eventReleaseNotes as string ?? undefined) : (eventReleaseNotes.length === 0 ? undefined : eventReleaseNotes![0].note ?? undefined));
 
     if ((await showInstallQuestion(window, releaseName, releaseNotes)) === true)
     {
-      installAndQuitApplication(window, () =>
+      installAndQuitApplication(onQuit, () =>
       {
         electronUpdaterAutoUpdater.quitAndInstall(true, true);
       });

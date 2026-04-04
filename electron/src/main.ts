@@ -386,6 +386,8 @@ export class ApplicationWrapper
 
   private isApplicationQuitting = false;
 
+  private isApplicationUpgrading = false;
+
   private readonly chromeExtensionManager: ChromeExtensionManager = new ChromeExtensionManager();
 
   private readonly persistentWindowManager: PersistentWindowManager = new PersistentWindowManager(path.join(applicationDirectoryPath, "window-states.json"), this.computeWindowOptions());
@@ -501,7 +503,7 @@ export class ApplicationWrapper
     app.on("window-all-closed", () =>
     {
       logger.debug("All windows are now closed");
-      if (process.platform !== "darwin")
+      if (this.isApplicationUpgrading === false && process.platform !== "darwin")
       {
         app.quit();
       }
@@ -520,9 +522,13 @@ export class ApplicationWrapper
         this.persistentWindowManager.quit();
         if (this.mainWindow !== undefined)
         {
-          // This is the way to make the window closable
-          logger.debug("Marking the window as closable");
-          this.mainWindow.closable = true;
+          // It may happen that the "mainWindow" is already destroyed during an application upgrade
+          if (this.mainWindow.isDestroyed() === false)
+          {
+            // This is the way to make the window closable
+            logger.debug("Marking the window as closable");
+            this.mainWindow.closable = true;
+          }
         }
         logger.debug("The application is now quitting");
         app.quit();
@@ -711,15 +717,19 @@ export class ApplicationWrapper
   private async handleAutoUpdate(window: Electron.CrossProcessExports.BrowserWindow): Promise<void>
   {
     const checkForUpdate = environment === "production" && (process.platform === "win32" || process.platform === "darwin");
-    // TODO: we disable the auto-update temporarily
-    if (Math.random() > 1 && checkForUpdate === true)
+    if (checkForUpdate === true)
     {
       // We check whether there is a newer version of the application
       try
       {
         const updateBaseUrl = "https://storage.googleapis.com/understitiel/picteus";
         const updateFeedUrl = `${updateBaseUrl}/feed-${process.platform}.json`;
-        await autoUpdateApplication(window, updateFeedUrl);
+        await autoUpdateApplication(window, updateFeedUrl, () =>
+        {
+          // We make the main window closable, otherwise, the "autoUpdater.quitAndInstall()" does not work, as stated on https://github.com/electron-userland/electron-builder/issues/3402
+          window.closable = true;
+          this.isApplicationUpgrading = true;
+        });
       }
       catch (error)
       {
