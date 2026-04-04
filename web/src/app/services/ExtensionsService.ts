@@ -164,15 +164,18 @@ function getAdditionalUis(
             (element.integration.anchor === UserInterfaceAnchor.Sidebar || element.integration.anchor === UserInterfaceAnchor.Window) &&
             extension.status === ExtensionStatus.Enabled,
         )
-        .map((element) => ({
-          uuid: computeExtensionSidebarUuid(extension.manifest.id, element.id),
-          integration: element.integration,
-          content: { url: element.integration.anchor === UserInterfaceAnchor.Window ? element.url : buildSidebarAnchorURL(extension.manifest.id, element.url) },
-          icon: { url: getSidebarAnchorIconURL(extension.manifest.id) },
-          title: extension.manifest.name,
-          extensionId: extension.manifest.id,
-          automaticallyReopen: true,
-        })) || [],
+        .map((element) => {
+          const integration = element.integration;
+          return {
+            uuid: computeExtensionSidebarUuid(extension.manifest.id, element.id),
+            integration,
+            content: { url: (integration.anchor === UserInterfaceAnchor.Window || (integration.anchor === UserInterfaceAnchor.Sidebar && integration.isExternal === true)) ? element.url : buildSidebarAnchorURL(extension.manifest.id, element.url) },
+            icon: { url: getSidebarAnchorIconURL(extension.manifest.id) },
+            title: extension.manifest.name,
+            extensionId: extension.manifest.id,
+            automaticallyReopen: true
+          };
+        }) || [],
   );
 }
 
