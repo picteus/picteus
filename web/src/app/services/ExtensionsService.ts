@@ -20,13 +20,21 @@ import {
   UserInterfaceAnchor
 } from "@picteus/ws-client";
 
-import { AdditionalUi, UiExtensionCommandType } from "types";
+import { AdditionalUi, ChannelEnum, EventInformationType, UiExtensionCommandType } from "types";
 import { BASE_PATH, computeExtensionSidebarUuid } from "utils";
 
 const extensionApi = new ExtensionApi();
 
 let extensions: Extension[] = [];
 let extensionsConfiguration: ExtensionsConfiguration;
+
+function requiresCommandReload(event?: EventInformationType): boolean {
+  if (event === undefined) {
+    return false;
+  }
+  const channel = event?.channel;
+  return channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_PAUSED || channel === ChannelEnum.EXTENSION_RESUMED;
+}
 
 async function fetchAll(): Promise<{
   extensions: Extension[];
@@ -177,6 +185,7 @@ function getSidebarAnchorIconURL(extensionId: string) {
 }
 
 export default {
+  requiresCommandReload,
   fetchAll,
   list,
   isPaused,

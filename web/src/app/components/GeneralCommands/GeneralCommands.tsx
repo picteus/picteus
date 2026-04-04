@@ -5,7 +5,7 @@ import { IconBox } from "@tabler/icons-react";
 
 import { CommandEntity, ManifestCapabilityId } from "@picteus/ws-client";
 
-import { ChannelEnum, UiCommandType } from "types";
+import { UiCommandType } from "types";
 import { ExtensionsService } from "app/services";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useExtensionCommand } from "app/hooks";
@@ -34,7 +34,7 @@ export default function GeneralCommands() {
   );
 
   useEffect(() => {
-    if (event?.channel === ChannelEnum.EXTENSION_UPDATED || event?.channel === ChannelEnum.EXTENSION_INSTALLED || event?.channel === ChannelEnum.EXTENSION_UNINSTALLED || event?.channel === ChannelEnum.EXTENSION_PAUSED || event?.channel === ChannelEnum.EXTENSION_RESUMED) {
+    if (ExtensionsService.requiresCommandReload(event) === true) {
       void ExtensionsService.fetchAll().then(() => {
         setExtensionsProcessCommands(
           ExtensionsService.getExtensionsCommands([CommandEntity.Process]),

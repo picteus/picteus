@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useLocation } from "react-router-dom";
 import { IconPhoto } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -18,8 +18,8 @@ import {
 import { CommandEntity } from "@picteus/ws-client";
 
 import { ExtensionIcon, ImageMasonry } from "app/components";
-import { ImageItemMode } from "types";
-import { useImagesSelectedContext } from "app/context";
+import { ImageItemMode, UiExtensionCommandType } from "types";
+import { useEventSocket, useImagesSelectedContext } from "app/context";
 import { ROUTES } from "utils";
 import { ExtensionsService } from "app/services";
 import { useExtensionCommand } from "app/hooks";
@@ -32,18 +32,25 @@ const commandSeparator = "$$";
 export default function SelectedImagesAffix() {
   const location = useLocation();
   const [selectedImages, setSelectedImages] = useImagesSelectedContext();
+  const [extensionsImageCommands, setExtensionsImageCommands] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands([CommandEntity.Images]));
   const callCommand = useExtensionCommand();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [selectedAction, setSelectedAction] = useState<string>();
   const [t] = useTranslation();
 
   function shouldAffixBeVisible() {
     return location.pathname === ROUTES.home && selectedImages?.length >= 1;
   }
-  const extensionsImageCommands = useMemo(() => {
-    return ExtensionsService.getExtensionsCommands([
-      CommandEntity.Images,
-    ]);
-  }, []);
+
+  useEffect(() => {
+    if (ExtensionsService.requiresCommandReload(event) === true) {
+      void ExtensionsService.fetchAll().then(() => {
+        setExtensionsImageCommands(ExtensionsService.getExtensionsCommands([CommandEntity.Images]));
+      })
+    }
+  }, [event]);
+
   function computeBulkActionsOptions() {
     return extensionsImageCommands?.map((extensionCommand) => {
       return {

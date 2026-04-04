@@ -1,23 +1,41 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Menu, Text } from "@mantine/core";
 import { IconRefresh, IconTopologyRing3 } from "@tabler/icons-react";
-import { CommandEntity, ExtensionImageTag, Image, ImageSummary, ManifestCapabilityId } from "@picteus/ws-client";
+import {
+  CommandEntity,
+  Extension,
+  ExtensionImageTag,
+  Image,
+  ImageSummary,
+  ManifestCapabilityId
+} from "@picteus/ws-client";
 
+import { UiExtensionCommandType } from "types";
 import { Common, ExtensionIcon } from "app/components";
 import { ClosestEmbeddingsImagesModal } from "app/components/ActionModal";
 import { ExtensionsService, ImageService } from "app/services";
 import { useExtensionCommand } from "app/hooks";
-import { useActionModalContext } from "app/context";
+import { useActionModalContext, useEventSocket } from "app/context";
 
 type ImageItemMenu = {
   image: ImageSummary;
 };
 
+const commandEntities = [
+  CommandEntity.Images,
+  CommandEntity.Image,
+];
+
 export default function ImageItemMenu({ image }: ImageItemMenu) {
   const [, addModal] = useActionModalContext();
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>([]);
+  const [extensionsImageCommands, setExtensionsImageCommands] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands(commandEntities));
+  const [extensionsWithImageEmbeddingsCapability, setExtensionsWithImageEmbeddingsCapability] = useState<Extension[]>(ExtensionsService.getExtensionsWithCapability(
+    ManifestCapabilityId.ImageEmbeddings));
   const callCommand = useExtensionCommand();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [t] = useTranslation();
 
   async function load() {
@@ -28,6 +46,16 @@ export default function ImageItemMenu({ image }: ImageItemMenu) {
   useEffect(() => {
     void load();
   }, []);
+
+  useEffect(() => {
+    if (ExtensionsService.requiresCommandReload(event) === true) {
+      void ExtensionsService.fetchAll().then(() => {
+        setExtensionsImageCommands(ExtensionsService.getExtensionsCommands(commandEntities));
+        setExtensionsWithImageEmbeddingsCapability(ExtensionsService.getExtensionsWithCapability(
+          ManifestCapabilityId.ImageEmbeddings));
+      })
+    }
+  }, [event]);
 
   function handleOnClickClosestImages(extensionId: string) {
     addModal({
@@ -47,16 +75,6 @@ export default function ImageItemMenu({ image }: ImageItemMenu) {
   }
 
   const menu = useMemo(() => {
-    const extensionsWithImageEmbeddingsCapability =
-      ExtensionsService.getExtensionsWithCapability(
-        ManifestCapabilityId.ImageEmbeddings,
-      );
-
-    const extensionsImageCommands = ExtensionsService.getExtensionsCommands([
-      CommandEntity.Images,
-      CommandEntity.Image,
-    ]);
-
     function renderCoreFeatures() {
       return (
         <>
@@ -140,7 +158,7 @@ export default function ImageItemMenu({ image }: ImageItemMenu) {
         {extensionsImageCommands && renderExtensionsCommands()}
       </>
     );
-  }, [image, imageTags]);
+  }, [image, imageTags, extensionsImageCommands, extensionsWithImageEmbeddingsCapability]);
 
   return (
     <>
