@@ -662,10 +662,10 @@ export class ImageFeature
   @ApiProperty(
     {
       description: "The image feature value",
-      oneOf:
+      anyOf:
         [
           { type: "string", minLength: 1, maxLength: FieldLengths.value },
-          { type: "number", format: "int64" },
+          { type: "integer", format: "int64" },
           { type: "number", format: "double" },
           { type: "boolean" }
         ],
@@ -1286,7 +1286,7 @@ export class SearchRange
   @ApiProperty(
     {
       description: "The number of items to return",
-      type: Number,
+      type: "integer",
       format: "int64",
       minimum: 1,
       maximum: 1_000,
@@ -1306,7 +1306,7 @@ export class SearchRange
   @ApiProperty(
     {
       description: "The number of items to skip",
-      type: Number,
+      type: "integer",
       format: "int64",
       minimum: 0,
       required: false,

@@ -52,7 +52,7 @@
     "package": "npm run build && npm pack"
   },
   "dependencies": {
-    "@picteus/ws-client": "0.14.0"
+    "@picteus/ws-client": "0.14.1"
   },
   "devDependencies": {
     "cross-var": "1.1.0",

@@ -207,7 +207,7 @@ export class SearchFeatureCondition
   @ApiProperty(
     {
       description: "The image feature value",
-      oneOf:
+      anyOf:
         [
           { type: "string", maxLength: FieldLengths.value },
           { type: "number", format: "int64" },

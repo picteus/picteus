@@ -3700,7 +3700,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.14.0",
+    "version": "0.14.1",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",
@@ -5171,14 +5171,14 @@
           },
           "value": {
             "description": "The image feature value",
-            "oneOf": [
+            "anyOf": [
               {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 524288
               },
               {
-                "type": "number",
+                "type": "integer",
                 "format": "int64"
               },
               {
@@ -5227,14 +5227,14 @@
           },
           "value": {
             "description": "The image feature value",
-            "oneOf": [
+            "anyOf": [
               {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 524288
               },
               {
-                "type": "number",
+                "type": "integer",
                 "format": "int64"
               },
               {
@@ -5644,7 +5644,7 @@
           },
           "value": {
             "description": "The image feature value",
-            "oneOf": [
+            "anyOf": [
               {
                 "type": "string",
                 "maxLength": 524288
@@ -5964,7 +5964,7 @@
         "type": "object",
         "properties": {
           "take": {
-            "type": "number",
+            "type": "integer",
             "description": "The number of items to return",
             "format": "int64",
             "minimum": 1,
@@ -5973,7 +5973,7 @@
             "example": 20
           },
           "skip": {
-            "type": "number",
+            "type": "integer",
             "description": "The number of items to skip",
             "format": "int64",
             "minimum": 0,
