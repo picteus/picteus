@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { CommandEntity } from "@picteus/ws-client";
-import { IconBolt, IconPhoto } from "@tabler/icons-react";
+import { IconPhoto } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-
 import {
   Affix,
   Button,
@@ -16,7 +14,10 @@ import {
   Text,
   Transition
 } from "@mantine/core";
-import { ImageMasonry } from "app/components";
+
+import { CommandEntity } from "@picteus/ws-client";
+
+import { ExtensionIcon, ImageMasonry } from "app/components";
 import { ImageItemMode } from "types";
 import { useImagesSelectedContext } from "app/context";
 import { ROUTES } from "utils";
@@ -24,6 +25,9 @@ import { ExtensionsService } from "app/services";
 import { useExtensionCommand } from "app/hooks";
 
 import style from "./SelectedImagesAffix.module.scss";
+
+
+const commandSeparator = "$$";
 
 export default function SelectedImagesAffix() {
   const location = useLocation();
@@ -43,11 +47,9 @@ export default function SelectedImagesAffix() {
   function computeBulkActionsOptions() {
     return extensionsImageCommands?.map((extensionCommand) => {
       return {
-        value:
-          extensionCommand.command.id +
-          "$$" +
-          extensionCommand.extension.manifest.id,
+        value: `${extensionCommand.command.id}${commandSeparator}${extensionCommand.extension.manifest.id}`,
         label: extensionCommand.command.label,
+        extensionId: extensionCommand.extension.manifest.id,
         extensionName: extensionCommand.extension.manifest.name,
       };
     });
@@ -55,12 +57,12 @@ export default function SelectedImagesAffix() {
 
   function renderSelectOption(
     item: ComboboxLikeRenderOptionInput<
-      ComboboxItem & { extensionName: string }
+      ComboboxItem & { extensionId: string, extensionName: string }
     >,
   ) {
     return (
-      <Flex align="center" gap={5}>
-        <IconBolt style={{ width: 14, height: 14 }} />
+      <Flex align="center" gap={10}>
+        <ExtensionIcon id={item.option.extensionId} size="sm" />
         <Flex direction="column">
           <Text size="sm"> {item.option.label}</Text>
           <Text size="xs" c="dimmed">
@@ -72,7 +74,7 @@ export default function SelectedImagesAffix() {
   }
 
   function handleOnApplyAction() {
-    const [action, extensionId] = selectedAction?.split("$$") || [];
+    const [action, extensionId] = selectedAction?.split(commandSeparator) || [];
 
     const command = extensionsImageCommands.find(
       (imageCommand) => imageCommand.command.id === action,
