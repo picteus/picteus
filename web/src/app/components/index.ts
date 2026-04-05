@@ -14,6 +14,7 @@ export { default as GalleryView } from "./GalleryView/GalleryView.tsx";
 export { default as MasonryVisualizer } from "./MasonryVisualizer/MasonryVisualizer.tsx";
 export { default as CommandForm } from "./CommandForm/CommandForm.tsx";
 export { default as ImageMasonry } from "./ImageMasonry/ImageMasonry.tsx";
+export { default as ImageGallery } from "./ImageGallery/ImageGallery.tsx";
 export { default as ImageCollection } from "./ImageCollection/ImageCollection.tsx";
 export { default as EventInformation } from "./EventInformation/EventInformation.tsx";
 export { default as FilterSelect } from "./FilterSelect/FilterSelect.tsx";

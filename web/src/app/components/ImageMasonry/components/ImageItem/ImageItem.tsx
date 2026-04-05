@@ -1,9 +1,8 @@
 import React, { ReactNode, useMemo, useState } from "react";
-import { Image, ImageSummary } from "@picteus/ws-client";
 import { IconDots } from "@tabler/icons-react";
 import { ActionIcon, Checkbox, Flex, Menu } from "@mantine/core";
 
-import { ImageItemMode } from "types";
+import { ImageItemMode, ImageOrSummary } from "types";
 import { useImagesSelectedContext } from "app/context";
 import { ImageService } from "app/services";
 
@@ -12,14 +11,16 @@ import style from "./ImageItem.module.scss";
 
 type ImageItemType = {
   width: number;
-  image: Image | ImageSummary;
+  height?: number;
+  image: ImageOrSummary;
   mode?: ImageItemMode;
-  onClick: (data: Image | ImageSummary) => void;
+  onClick: (data: ImageOrSummary) => void;
   caption?: ReactNode;
 };
 
 export default function ImageItem({
   width,
+  height,
   image,
   onClick,
   mode = ImageItemMode.VIEW,
@@ -66,11 +67,8 @@ export default function ImageItem({
       className={`${style.imageWrapper} ${isSelected ? style.hover : ""}`}
       onClick={handleOnClick}
       style={{
-        width: width + "px",
-        height:
-          (width * image.dimensions.height) /
-            image.dimensions.width +
-          "px",
+        width: `${width}px`,
+        height: height === undefined ? undefined : `${height}px`,
       }}
     >
       {caption && <div className={style.captionContainer}>{caption}</div>}
@@ -116,7 +114,7 @@ export default function ImageItem({
         }}
         loading="lazy"
         className={`${style.image} ${hidePlaceholder ? style.loaded : ""}`}
-        src={ImageService.getImageSrc(image.uri, width)}
+        src={ImageService.getImageSrc(image.uri, width, height)}
         alt={image.name}
       />
       {!hidePlaceholder && <div className={style.placeholder}></div>}

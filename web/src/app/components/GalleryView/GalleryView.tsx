@@ -6,8 +6,8 @@ import { IconLayoutDashboard, IconListDetails, IconPhoto, IconPhotoSearch, IconP
 
 import { SearchRange } from "@picteus/ws-client";
 
-import { ChannelEnum, FilterOrCollectionId, ImageMasonryDataType } from "types";
-import { Container, EmptyResults, ImageMasonry, RefreshButton, TopBar } from "app/components";
+import { ChannelEnum, FilterOrCollectionId, ImageExplorerDataType } from "types";
+import { Container, EmptyResults, ImageGallery, ImageMasonry, RefreshButton, TopBar } from "app/components";
 import { FiltersBar } from "./components";
 import { ImageService, RepositoriesService } from "app/services";
 import { useEventSocket, useGalleryTabsContext } from "app/context";
@@ -71,7 +71,7 @@ function GalleryTopBar({
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t("galleryScreen.galleryView")}>
-              <ActionIcon disabled={true} size="lg" variant={viewMode === "gallery" ? "filled" : "default"} onClick={() => setViewMode("gallery")}>
+              <ActionIcon size="lg" variant={viewMode === "gallery" ? "filled" : "default"} onClick={() => setViewMode("gallery")}>
                 <IconPhoto stroke={1.2} />
               </ActionIcon>
             </Tooltip>
@@ -98,7 +98,7 @@ function GalleryTopBar({
 
 type GalleryContentProps = {
   loading: boolean;
-  data: ImageMasonryDataType;
+  data: ImageExplorerDataType;
   width: number;
   filterOrCollectionId?: FilterOrCollectionId;
   refreshTrigger: number;
@@ -164,7 +164,7 @@ function GalleryContent({
   }
 
   if (viewMode === "gallery") {
-    return <div>Gallery view not implemented yet</div>;
+    return <ImageGallery containerWidth={width} data={data} loadMore={handleOnInfiniteScroll} />;
   }
 
   if (viewMode === "detail") {
@@ -181,7 +181,7 @@ type GalleryViewProps = {
 
 export default function GalleryView({ initialFilterOrCollectionId, containerWidth }: GalleryViewProps) {
   const { addTab } = useGalleryTabsContext();
-  const [data, setData] = useState<ImageMasonryDataType>({ currentPage: 1, total: 0, images: [] });
+  const [data, setData] = useState<ImageExplorerDataType>({ currentPage: 1, total: 0, images: [] });
   const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(initialFilterOrCollectionId);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
