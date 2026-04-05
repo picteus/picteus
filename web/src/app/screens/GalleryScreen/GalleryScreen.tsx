@@ -3,23 +3,24 @@ import { Input, ScrollArea, Tabs } from "@mantine/core";
 import { IconPhoto, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Container, GalleryView, MasonryVisualizer } from "app/components";
+import { TabsType } from "types";
+import { Container, ExtensionIcon, GalleryView, MasonryVisualizer } from "app/components";
 import { useGalleryTabsContext } from "app/context";
 import { useContainerDimensions } from "app/hooks";
 import style from "./GalleryScreen.module.scss";
 
 
-function GalleryTab({ tab, onRemove }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [tabLabel, setTabLabel] = useState(tab.label);
-  const [, , , { renameTab }] = useGalleryTabsContext();
-  const tabStyle = {
-    tab: {
-      padding: "10px 6px 10px 10px",
-    },
-  };
+type GalleryTabType = {
+  tab: TabsType;
+  onRemove: () => void;
+};
 
-  function handleOnDoubleclickTabLabel() {
+function GalleryTab({ tab, onRemove }: GalleryTabType) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tabLabel, setTabLabel] = useState(tab.content.title);
+  const { state } = useGalleryTabsContext();
+
+  function handleOnDoubleClickTabLabel() {
     setIsEditing(true);
   }
 
@@ -28,15 +29,15 @@ function GalleryTab({ tab, onRemove }) {
   }
 
   function onFinishEditing() {
-    renameTab(tab.id, tabLabel);
+    state.renameTab(tab.id, tabLabel);
     setIsEditing(false);
   }
 
   return (
     <Tabs.Tab
-      styles={tabStyle}
-      className={style.tabItem}
       value={tab.id}
+      leftSection={tab.extensionId !== undefined ? <ExtensionIcon id={tab.extensionId} size="sm" /> :
+        <IconPhoto size={13} />}
       rightSection={
         <IconX
           size={14}
@@ -59,7 +60,7 @@ function GalleryTab({ tab, onRemove }) {
           value={tabLabel}
         />
       ) : (
-        <div onDoubleClick={handleOnDoubleclickTabLabel}>{tabLabel}</div>
+        <div onDoubleClick={handleOnDoubleClickTabLabel}>{tabLabel}</div>
       )}
     </Tabs.Tab>
   );
@@ -69,16 +70,16 @@ export default function GalleryScreen() {
   const [t] = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const { width, height } = useContainerDimensions(containerRef);
-  const [tabs, , removeFromStack, { activeTab, setActiveTab }, galleryTabValue] = useGalleryTabsContext();
+  const {tabs, removeTab, state, galleryTabValue} = useGalleryTabsContext();
 
   function handleOnRemoveTab(tabId: string, nextTabValue: string) {
-    removeFromStack(tabId);
-    if (tabId === activeTab) {
-      setActiveTab(nextTabValue);
+    removeTab(tabId);
+    if (tabId === state.activeTab) {
+      state.setActiveTab(nextTabValue);
     }
   }
 
-  function computeNextTabValue(index) {
+  function computeNextTabValue(index: number) {
     if (index + 1 < tabs.length) {
       return tabs[index + 1].id;
     }
@@ -91,7 +92,7 @@ export default function GalleryScreen() {
   return (
     <div ref={containerRef} className={style.mainContainer}>
       {containerRef.current && <ScrollArea h={height}>
-        <Tabs value={activeTab} onChange={setActiveTab}>
+        <Tabs value={state.activeTab} onChange={state.setActiveTab}>
           <Tabs.List>
             <Tabs.Tab value={galleryTabValue} leftSection={<IconPhoto size={13} />}>
               {t("galleryScreen.explore")}
@@ -117,7 +118,7 @@ export default function GalleryScreen() {
                 <Container>
                   <MasonryVisualizer
                     id={tab.id}
-                    description={tab.description}
+                    content={tab.content}
                     imageIds={tab.data.imageIds}
                     containerWidth={width}
                   />

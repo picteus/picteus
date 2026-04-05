@@ -156,8 +156,8 @@ export type ExtensionIntentType = {
 
 type BaseTab = {
   id?: string;
-  label: string;
-  description?: string;
+  extensionId?: string;
+  content: DialogContent;
 };
 
 export type FilterOrCollectionId = { filter?: SearchFilter, collectionId?: number };

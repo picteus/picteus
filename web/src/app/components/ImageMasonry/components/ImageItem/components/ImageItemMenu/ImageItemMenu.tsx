@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import React, { ReactElement, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Menu, Text } from "@mantine/core";
-import { IconRefresh, IconTopologyRing3 } from "@tabler/icons-react";
+import { IconRefresh, IconTopologyRing3, IconTrash } from "@tabler/icons-react";
+
 import {
   CommandEntity,
   Extension,
@@ -12,23 +13,46 @@ import {
 } from "@picteus/ws-client";
 
 import { UiExtensionCommandType } from "types";
+import { notifyApiCallError } from "utils";
 import { Common, ExtensionIcon } from "app/components";
 import { ClosestEmbeddingsImagesModal } from "app/components/ActionModal";
 import { ExtensionsService, ImageService } from "app/services";
 import { useExtensionCommand } from "app/hooks";
-import { useActionModalContext, useEventSocket } from "app/context";
+import { useActionModalContext, useConfirmAction, useEventSocket } from "app/context";
 
-type ImageItemMenu = {
+
+const commandEntities = [CommandEntity.Images, CommandEntity.Image];
+
+
+type ImageItemMenuEntryType = {
+  key: string;
+  extensionId?: string;
+  icon?: ReactElement;
+  label: string;
+  subLabel: string;
+  onClick: () => void;
+};
+
+function ImageItemMenuEntry({key, extensionId, icon, label, subLabel, onClick} : ImageItemMenuEntryType)  {
+  return (
+    <Menu.Item
+      key={key}
+      onClick={onClick}
+      leftSection={icon ?? <ExtensionIcon id={extensionId} size="sm" />}
+    >
+      <Text size="sm">{label}</Text>
+      <Text size="xs" c="dimmed">{subLabel}</Text>
+    </Menu.Item>
+  );
+}
+
+type ImageItemMenuType = {
   image: ImageSummary;
 };
 
-const commandEntities = [
-  CommandEntity.Images,
-  CommandEntity.Image,
-];
-
-export default function ImageItemMenu({ image }: ImageItemMenu) {
+export default function ImageItemMenu({ image }: ImageItemMenuType) {
   const [, addModal] = useActionModalContext();
+  const confirmAction = useConfirmAction();
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>([]);
   const [extensionsImageCommands, setExtensionsImageCommands] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands(commandEntities));
   const [extensionsWithImageEmbeddingsCapability, setExtensionsWithImageEmbeddingsCapability] = useState<Extension[]>(ExtensionsService.getExtensionsWithCapability(
@@ -70,8 +94,16 @@ export default function ImageItemMenu({ image }: ImageItemMenu) {
     });
   }
 
-  async function handleOnClickSynchronize() {
-    await ImageService.synchronize(image.id)
+  function handleOnClickSynchronize() {
+    ImageService.synchronize(image.id).catch(notifyApiCallError)
+  }
+
+  function handleOnClickDelete() {
+    confirmAction(() => ImageService.destroy(image.id).catch(notifyApiCallError), {
+      title: t("commands.confirmDeleteTitle"),
+      message: t("commands.confirmDeleteMessage")
+    });
+
   }
 
   const menu = useMemo(() => {
@@ -79,36 +111,30 @@ export default function ImageItemMenu({ image }: ImageItemMenu) {
       return (
         <>
           <Menu.Label>{t("commands.coreFeatures")}</Menu.Label>
-          {extensionsWithImageEmbeddingsCapability?.map((extension, index) => {
-            return (
-              <Menu.Item
-                key={`embeddingCapability-${extension.manifest.id}-${index}`}
-                onClick={() =>
-                  handleOnClickClosestImages(extension.manifest.id)
-                }
-                leftSection={
-                  <IconTopologyRing3 style={{ width: "sm", height: Common.IconSmallSize }} />
-                }
-              >
-                <Text size="sm"> {t("commands.closestImages")}</Text>
-                <Text size="xs" c="dimmed">
-                  {extension.manifest.name}
-                </Text>
-              </Menu.Item>
-            );
-          })}
-          <Menu.Item
-            key={"synchronize"}
+          {extensionsWithImageEmbeddingsCapability?.map((extension, index) => (<ImageItemMenuEntry
+            key={`embeddingCapability-${extension.manifest.id}-${index}`}
             onClick={() =>
-              handleOnClickSynchronize()
+              handleOnClickClosestImages(extension.manifest.id)
             }
-            leftSection={
-              <IconRefresh style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />
-            }
-          >
-            <Text size="sm"> {t("commands.synchronize")}</Text>
-            <Text size="xs" c="dimmed">{t("commands.synchronizeDetails")}</Text>
-          </Menu.Item>
+            extensionId={extension.manifest.id}
+            icon={<IconTopologyRing3 style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />}
+            label={t("commands.closestImages")}
+            subLabel={extension.manifest.name}
+          />))}
+          <ImageItemMenuEntry
+            key={"synchronize"}
+            onClick={handleOnClickSynchronize}
+            icon={<IconRefresh style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />}
+            label={t("commands.synchronize")}
+            subLabel={t("commands.allExtensionsDetails")}
+          />
+          <ImageItemMenuEntry
+            key={"delete"}
+            onClick={handleOnClickDelete}
+            icon={<IconTrash style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />}
+            label={t("commands.delete")}
+            subLabel={t("commands.allExtensionsDetails")}
+          />
         </>
       );
     }
@@ -129,24 +155,13 @@ export default function ImageItemMenu({ image }: ImageItemMenu) {
             })
             .map((extensionCommand, index) => {
               const manifest = extensionCommand.extension.manifest;
-              return (
-                <Menu.Item
-                  key={`command-${extensionCommand.extension.manifest.id}-${index}`}
-                  onClick={() =>
-                    callCommand(
-                      manifest.id,
-                      extensionCommand.command,
-                      [image.id],
-                    )
-                  }
-                  leftSection={<ExtensionIcon id={extensionCommand.extension.manifest.id} size="sm" />}
-                >
-                  <Text size="sm"> {extensionCommand.command.label}</Text>
-                  <Text size="xs" c="dimmed">
-                    {extensionCommand.extension.manifest.name}
-                  </Text>
-                </Menu.Item>
-              );
+              return (<ImageItemMenuEntry
+                key={`command-${extensionCommand.extension.manifest.id}-${index}`}
+                onClick={() => callCommand(manifest.id, extensionCommand.command, [image.id])}
+                extensionId={manifest.id}
+                label={extensionCommand.command.label}
+                subLabel={extensionCommand.extension.manifest.name}
+              />);
             })}
         </>
       );

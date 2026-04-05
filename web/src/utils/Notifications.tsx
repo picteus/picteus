@@ -16,8 +16,8 @@ export function notifySuccess(description: string) {
   );
 }
 
-export function notifyApiCallError(error: { response: Response }, message: string): void {
-  error.response.json().then((jsonError) => notifyError(`${message}. Reason: '${jsonError.message}'`));
+export function notifyApiCallError(error: { response: Response }, message?: string): void {
+  error.response.json().then((jsonError) => notifyError(message !== undefined ? `${message}. Reason: '${jsonError.message}'`: jsonError.message));
 }
 
 export function notifyApiCallI18nError(error: { response: Response }, mnemonic: string): void {

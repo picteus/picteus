@@ -1,22 +1,24 @@
 import { useEffect, useState } from "react";
-import { Stack, Text } from "@mantine/core";
+import { IconInfoCircle } from "@tabler/icons-react";
+import { Alert, Stack, Text } from "@mantine/core";
 
 import { Image } from "@picteus/ws-client";
 
+import { DialogContent } from "types";
 import { ImageMasonry } from "app/components";
 import { ImageService } from "app/services";
 
 
 type MasonryVisualizerType = {
   id: string;
-  description: string;
+  content: DialogContent;
   imageIds: Array<{ imageId: string }>;
   containerWidth: number;
 };
 
 export default function MasonryVisualizer({
   id,
-  description,
+  content,
   imageIds,
   containerWidth,
 }: MasonryVisualizerType) {
@@ -38,7 +40,8 @@ export default function MasonryVisualizer({
   }, []);
 
   return (images.length > 0 && <Stack>
-      <Text>{description}</Text>
+      <Text>{content.description}</Text>
+      {content.details && <Alert color="blue" icon={<IconInfoCircle />}>{content.details}</Alert>}
       <ImageMasonry
         keyPrefix={id}
         containerWidth={containerWidth}

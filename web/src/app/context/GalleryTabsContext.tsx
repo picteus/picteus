@@ -5,17 +5,17 @@ import { TabsType } from "types";
 import { StorageService } from "app/services";
 
 
-type GalleryTabsContextType = [
-  stack: TabsType[],
-  addToStack: (tab: TabsType) => void,
-  removeFromStack: (id: string) => void,
-  activeTabState: {
+type GalleryTabsContextType = {
+  tabs: TabsType[],
+  addTab: (tab: TabsType) => void,
+  removeTab: (id: string) => void,
+  state: {
     activeTab: string;
     setActiveTab: (id: string) => void;
     renameTab: (tabId: string, newName: string) => void;
   },
   galleryTabValue: string,
-];
+};
 
 const GalleryTabsContext = createContext<GalleryTabsContextType | undefined>(
   undefined,
@@ -66,13 +66,13 @@ export function GalleryTabsProvider({ children }) {
 
   return (
     <GalleryTabsContext.Provider
-      value={[
-        stack,
-        addToStack,
-        removeFromStack,
-        { activeTab, setActiveTab, renameTab },
-        galleryTabValue,
-      ]}
+      value={{
+        tabs: stack,
+        addTab: addToStack,
+        removeTab: removeFromStack,
+        state: { activeTab, setActiveTab, renameTab },
+        galleryTabValue
+      }}
     >
       {children}
     </GalleryTabsContext.Provider>

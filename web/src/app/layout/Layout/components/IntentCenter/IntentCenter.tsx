@@ -33,7 +33,7 @@ export default function IntentCenter() {
   const [modalStack, addModal, removeModal] = useActionModalContext();
   const [additionalUiContextValue, , addTransient] = useAdditionalUiContext();
   const openWindow = useOpenWindow();
-  const [, addTab] = useGalleryTabsContext();
+  const { addTab } = useGalleryTabsContext();
 
   const confirmAction = useConfirmAction();
   const { eventStore } = useEventSocket();
@@ -254,8 +254,8 @@ export default function IntentCenter() {
       const handleImages = () => {
         const images = intent.images;
         addTab({
-          label: images.dialogContent.title,
-          description: images.dialogContent.description,
+          extensionId,
+          content: images.dialogContent,
           type: "Masonry",
           data: {
             imageIds: images.images,

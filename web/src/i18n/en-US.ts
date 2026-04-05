@@ -317,10 +317,13 @@ export default {
     extensionsCommands: "Extensions commands",
     closestImages: "Closest images",
     synchronize: "Synchronize",
-    synchronizeDetails: "All Extensions",
+    allExtensionsDetails: "All Extensions",
+    delete: "Delete",
     textToImages: "Text to images",
     extensionCommandFailed:
-      "The command '{{command}}' of extension '{{extension}}' failed to trigger"
+      "The command '{{command}}' of extension '{{extension}}' failed to trigger",
+    confirmDeleteTitle: "Image deletion",
+    confirmDeleteMessage: "Are you sure you want to delete this image?",
   },
   selectedImagesAffix: {
     selectLabel: "Select bulk action for images",

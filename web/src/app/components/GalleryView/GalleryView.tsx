@@ -180,7 +180,7 @@ type GalleryViewProps = {
 };
 
 export default function GalleryView({ initialFilterOrCollectionId, containerWidth }: GalleryViewProps) {
-  const [, addTab] = useGalleryTabsContext();
+  const { addTab } = useGalleryTabsContext();
   const [data, setData] = useState<ImageMasonryDataType>({ currentPage: 1, total: 0, images: [] });
   const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(initialFilterOrCollectionId);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -221,7 +221,7 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
   function handleOnPin() {
     addTab({
       type: "View",
-      label: "New tab",
+      content: { title: "New tab", description: "" },
       data: { filterOrCollectionId: filterOrCollectionId },
     });
   }

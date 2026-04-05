@@ -78,6 +78,10 @@ async function synchronize(id: string): Promise<void> {
    await imageApi.imageSynchronize({id});
 }
 
+async function destroy(id: string): Promise<void> {
+   await imageApi.imageDelete({id});
+}
+
 function getFittedDimensionsToScreen(
   imageDimensions: ImageDimensions,
   panelSizes: number[],
@@ -122,6 +126,7 @@ export default {
   getFittedDimensionsToScreen,
   getClosestImages,
   synchronize,
+  destroy,
   getAllTags,
   textToImages,
 };
