@@ -114,7 +114,8 @@ export default {
     resume: "Resume",
     settings: "Settings",
     cancel: "Cancel",
-    refresh: "Refresh"
+    refresh: "Refresh",
+    pin: "Pin"
   },
   widgets:
     {
