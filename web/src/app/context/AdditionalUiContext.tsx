@@ -4,7 +4,8 @@ import { UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { AdditionalUi } from "types";
 import { ExtensionsService } from "app/services";
-import { useOpenWindow } from "../hooks";
+import { useOpenWindow } from "app/hooks";
+import { notifyErrorWithError } from "utils";
 
 type AdditionalUiContextValue = {
   sidebar: AdditionalUi[];
@@ -36,7 +37,7 @@ export function AdditionalUiProvider({ children }) {
     // We open the extensions UI fragments with a "window" integration
     for (const additionalUi of additionalUis) {
       if (additionalUi.integration.anchor === UserInterfaceAnchor.Window) {
-        openWindow(additionalUi.uuid, additionalUi.content, true).catch(error => console.error("Could not open the window with uuid '" + additionalUi.uuid + "'. Reason: '" + error.message + "'"));
+        openWindow(additionalUi.uuid, additionalUi.content, true).catch(error => notifyErrorWithError(error, `Could not open the window with uuid '${additionalUi.uuid}'`));
       }
     }
     windowsOpened.current = true;

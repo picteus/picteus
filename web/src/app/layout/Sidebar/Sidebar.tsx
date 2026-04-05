@@ -13,7 +13,7 @@ import {
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
-import { computeExtensionSidebarRoute, ROUTES } from "utils";
+import { computeExtensionSidebarRoute, notifyError, notifyErrorWithError, ROUTES } from "utils";
 import style from "./Sidebar.module.scss";
 
 import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
@@ -93,7 +93,7 @@ export default function Sidebar() {
                   window.open(url, "_blank");
                 }
                 else {
-                  console.error("Cannot handle a content with no 'url' property when no host is available");
+                  notifyError("Cannot handle a content with no 'url' property when no host is available");
                 }
               }
               else {
@@ -105,10 +105,9 @@ export default function Sidebar() {
                   parameters = { html: content.html };
                 }
                 else {
-                  console.error("Cannot handle a content with no 'frameContent.url' nor 'frameContent.html' property");
-                  return;
+                  return notifyError("Cannot handle a content with no 'frameContent.url' nor 'frameContent.html' property");
                 }
-                openWindow(element.uuid, parameters, false).catch(error => console.error(`Cannot open the window. Reason: '${error.message}'`));
+                openWindow(element.uuid, parameters, false).catch(error => notifyErrorWithError(error, "Cannot open the window"));
                 }
               }
           }

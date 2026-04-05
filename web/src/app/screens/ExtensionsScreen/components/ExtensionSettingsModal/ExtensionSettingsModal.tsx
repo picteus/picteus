@@ -5,7 +5,7 @@ import { IconCircleX, IconInfoCircle } from "@tabler/icons-react";
 import { ExtensionSettings } from "@picteus/ws-client/src/models/ExtensionSettings.ts";
 import { Alert, Button, Flex, Modal, Title } from "@mantine/core";
 
-import { notifyError, notifySuccess } from "utils";
+import { notifyApiCallError, notifySuccess } from "utils";
 import { ExtensionsService } from "app/services";
 import { extractSchemaAndUiSchema, RjsfForm } from "app/components";
 
@@ -41,11 +41,7 @@ export default function ExtensionSettingsModal({
 
       setExtensionSettings(settings);
     } catch (error) {
-      notifyError(t("extensionSettingsModal.errorLoading"));
-      console.error(
-        "An error occurred while loading the extension settings",
-        error,
-      );
+      notifyApiCallError(error, t("extensionSettingsModal.errorLoading"));
     } finally {
       setLoading(false);
     }
@@ -59,11 +55,7 @@ export default function ExtensionSettingsModal({
       });
       notifySuccess(t("extensionSettingsModal.successSaving"));
     } catch (error) {
-      notifyError(t("extensionSettingsModal.errorSaving"));
-      console.error(
-        "An error occurred while saving the extension settings",
-        error,
-      );
+      notifyApiCallError(error, t("extensionSettingsModal.errorSaving"));
     } finally {
       onSuccess();
       setLoading(false);

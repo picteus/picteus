@@ -36,7 +36,7 @@ import {
 import { FilterSelect } from "app/components";
 import CollectionsBar from "../CollectionsBar/CollectionsBar.tsx";
 import { FilterOrCollectionId, LocalFiltersType, LocalFiltersTypeFeature } from "types";
-import { capitalizeText } from "utils";
+import { capitalizeText, notifyErrorWithError } from "utils";
 
 const {
   defaultFilter,
@@ -127,7 +127,7 @@ export default function FiltersBar({
       setTagsOptions(await computeTagsOptions());
     }
 
-    load().catch(console.error);
+    load().catch(notifyErrorWithError);
   }, []);
 
   useEffect(() => {

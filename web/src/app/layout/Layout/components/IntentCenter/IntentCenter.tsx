@@ -26,7 +26,7 @@ import {
   useGalleryTabsContext,
   useImageVisualizerContext
 } from "app/context";
-import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyError, ROUTES } from "utils";
+import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyErrorWithError, ROUTES } from "utils";
 
 
 export default function IntentCenter() {
@@ -70,8 +70,7 @@ export default function IntentCenter() {
       respondWithValue(value);
       onCloseActionModal(modalId);
     } catch (error) {
-      console.error(error);
-      notifyError(t("extensionIntent.onResultError"));
+      notifyErrorWithError(error, t("extensionIntent.onResultError"));
     }
   }
 

@@ -100,7 +100,7 @@ async function computeEventLog(event: SocketEventType): Promise<EventLogType> {
         const image = await ImageService.get({ id: valueId });
         return image.name;
       } catch (error) {
-        console.warn("Can't fetch the image, probably deleted", error);
+        // This may happen if the image has been deleted in the meantime
         return "Image";
       }
     }

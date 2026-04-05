@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef } from "react"; // Import the default Highlight.js style
+import { useEffect, useMemo, useRef } from "react";
+// Import the default Highlight.js style
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
 import beautify from "js-beautify";
 import { useMantineColorScheme } from "@mantine/core";
+
+import { notifyErrorWithError } from "utils";
 
 hljs.registerLanguage("json", json);
 
@@ -33,13 +36,9 @@ export default function CodeViewer({ code }) {
         };
       return beautify.js(code, options);
     } catch (error) {
-      console.error(
-        "An error occurred while trying to beautify the code : ",
-        code,
-        error,
-      );
+      notifyErrorWithError(error, "An error occurred while trying to beautify the code");
+      return "Source code is broken";
     }
-    return "Source code is broken";
   }, [code]);
 
   return (

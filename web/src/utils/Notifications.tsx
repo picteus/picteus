@@ -16,8 +16,20 @@ export function notifySuccess(description: string) {
   );
 }
 
-export function notifyError(description: string) {
-  return toast(
+export function notifyApiCallError(error: { response: Response }, message: string): void {
+  error.response.json().then((jsonError) => notifyError(`${message}. Reason: '${jsonError.message}'`));
+}
+
+export function notifyApiCallI18nError(error: { response: Response }, mnemonic: string): void {
+  error.response.json().then((jsonError) => notifyError(i18n.t(mnemonic, { error: jsonError.message })));
+}
+
+export function notifyErrorWithError(error: Error, message?: string): void {
+  notifyError(message !== undefined ? `${message}. Reason: '${error.message}'` : error.message);
+}
+
+export function notifyError(description: string): void {
+  toast(
     <Notification
       icon={<IconX />}
       color="red"

@@ -1,30 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
+
 import { useForm } from "@mantine/form";
-
+import { ActionIcon, Alert, Button, Flex, Modal, Text, Title } from "@mantine/core";
+import { Dropzone } from "@mantine/dropzone";
 import "@mantine/dropzone/styles.css";
+import { IconAlertTriangle, IconFileZip, IconTrash, IconUpload, IconX } from "@tabler/icons-react";
 
-import {
-  ActionIcon,
-  Alert,
-  Button,
-  Flex,
-  Modal,
-  Text,
-  Title,
-} from "@mantine/core";
-import {
-  IconAlertTriangle,
-  IconFileZip,
-  IconTrash,
-  IconUpload,
-  IconX,
-} from "@tabler/icons-react";
 import { Extension } from "@picteus/ws-client";
 
 import { ExtensionsService } from "app/services";
-import { fileToBlob, mimeTypes, notifyError, Validators } from "utils";
-import { Dropzone } from "@mantine/dropzone";
+import { fileToBlob, mimeTypes, notifyApiCallI18nError, Validators } from "utils";
 
 type FormValueType = {
   file: File | undefined;
@@ -96,14 +82,7 @@ export default function AddOrUpdateExtensionModal({
 
       onSuccess(_extension);
     } catch (error) {
-      const errorJson = await error.response.json();
-      notifyError(
-        t(messagePrefix + ".errorAdd", { error: errorJson?.message }),
-      );
-      console.error(
-        "An error occurred while trying to add or update an extension",
-        error,
-      );
+      notifyApiCallI18nError(error, `${messagePrefix}.errorAdd`);
     } finally {
       setLoading(false);
     }

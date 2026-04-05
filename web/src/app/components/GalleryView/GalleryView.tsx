@@ -12,7 +12,7 @@ import { FiltersBar } from "./components";
 import { ImageService, RepositoriesService } from "app/services";
 import { useContainerDimensions } from "app/hooks";
 import { useEventSocket, useGalleryTabsContext } from "app/context";
-import { notifyError, ROUTES } from "utils";
+import { notifyApiCallError, ROUTES } from "utils";
 import style from "./GalleryView.module.scss";
 
 
@@ -176,9 +176,7 @@ export default function GalleryView({ initialFilterOrCollectionId }: GalleryView
         images: apiResponse.items,
       });
     } catch (error) {
-      console.warn("Can't fetch images", error);
-      const errorJson = await error.response.json();
-      notifyError(errorJson.message);
+      notifyApiCallError(error, "Can't fetch images");
     } finally {
       setLoading(false);
     }

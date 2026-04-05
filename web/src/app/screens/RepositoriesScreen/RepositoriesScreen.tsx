@@ -18,7 +18,7 @@ import { Repository, RepositoryStatus } from "@picteus/ws-client";
 import { IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
 
 import { ChannelEnum } from "types";
-import { formatDate, notifyError, notifySuccess } from "utils";
+import { formatDate, notifyApiCallI18nError, notifySuccess } from "utils";
 import { RepositoriesService } from "app/services";
 import { AddRepositoryModal } from "./components";
 import { Container, EmptyResults, ExternalLink, Loader, RefreshButton } from "app/components";
@@ -73,14 +73,7 @@ export default function RepositoriesScreen() {
       notifySuccess(t("repositoryScreen.successRemove"));
       void fetchAllRepositories();
     } catch (error) {
-      const errorJson = await error.response.json();
-      notifyError(
-        t("repositoryScreen.errorRemove", { error: errorJson?.message }),
-      );
-      console.error(
-        "An error occured while trying to remove a repository",
-        error,
-      );
+      notifyApiCallI18nError(error, "repositoryScreen.errorRemove");
     }
   }
 

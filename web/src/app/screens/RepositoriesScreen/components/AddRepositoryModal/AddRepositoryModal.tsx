@@ -3,18 +3,10 @@ import { IconFolderSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Form, useForm } from "@mantine/form";
 import { RepositoryApiRepositoryCreateRequest } from "@picteus/ws-client";
-import {
-  ActionIcon,
-  Button,
-  Flex,
-  Modal,
-  Textarea,
-  TextInput,
-  Title,
-} from "@mantine/core";
+import { ActionIcon, Button, Flex, Modal, Textarea, TextInput, Title } from "@mantine/core";
 
 import { FolderTypes } from "types";
-import { detectPlatformFromPath, notifyError, Validators } from "utils";
+import { detectPlatformFromPath, notifyApiCallI18nError, Validators } from "utils";
 import { RepositoriesService, StorageService } from "app/services";
 import { useFolderPicker } from "app/hooks";
 
@@ -55,11 +47,7 @@ export default function AddRepositoryModal({
       await RepositoriesService.add(values);
       onSuccess();
     } catch (error) {
-      const errorJson = await error.response.json();
-      notifyError(
-        t("addRepositoryModal.errorAdd", { error: errorJson?.message }),
-      );
-      console.error("An error occured while trying to create a repo", error);
+      notifyApiCallI18nError(error, "addRepositoryModal.errorAdd");
     } finally {
       setLoading(false);
     }

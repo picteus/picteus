@@ -26,7 +26,7 @@ import {
 import { Extension, ExtensionStatus } from "@picteus/ws-client";
 import { useDisclosure } from "@mantine/hooks";
 
-import { notifyError, notifySuccess } from "utils";
+import { notifyApiCallI18nError, notifySuccess } from "utils";
 import { Container, EmptyResults, RefreshButton } from "app/components";
 import { ExtensionsService } from "app/services";
 import { AddOrUpdateExtensionModal, ExtensionSettingsModal } from "./components";
@@ -71,14 +71,7 @@ export default function ExtensionsScreen() {
       notifySuccess(t("extensionsScreen.successUninstall"));
       void fetchAllExtensions();
     } catch (error) {
-      const errorJson = await error.response.json();
-      notifyError(
-        t("extensionsScreen.errorUninstall", { error: errorJson?.message }),
-      );
-      console.error(
-        "An error occured while trying to uninstall an extension",
-        error,
-      );
+      notifyApiCallI18nError(error, "extensionsScreen.errorUninstall");
     }
   }
 
@@ -111,14 +104,7 @@ export default function ExtensionsScreen() {
       });
       void fetchAllExtensions();
     } catch (error) {
-      const errorJson = await error.response.json();
-      notifyError(
-        t("extensionsScreen.errorToggleStatus", { error: errorJson?.message }),
-      );
-      console.error(
-        "An error occured while trying to toggle extension status",
-        error,
-      );
+      notifyApiCallI18nError(error, "extensionsScreen.errorToggleStatus");
     }
   }
   async function handleOnSynchronize(extension: Extension) {
@@ -132,14 +118,7 @@ export default function ExtensionsScreen() {
         }),
       );
     } catch (error) {
-      const errorJson = await error.response.json();
-      notifyError(
-        t("extensionsScreen.errorToggleStatus", { error: errorJson?.message }),
-      );
-      console.error(
-        "An error occured while trying to synchronize an extension",
-        error,
-      );
+      notifyApiCallI18nError(error, "extensionsScreen.errorToggleStatus");
     }
   }
 

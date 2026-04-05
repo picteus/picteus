@@ -6,7 +6,7 @@ import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 import { Form, useForm } from "@mantine/form";
 import { ImageApiImageClosestImagesRequest } from "@picteus/ws-client/src/apis/ImageApi.ts";
 
-import { notifyError, Validators } from "utils";
+import { notifyApiCallError, Validators } from "utils";
 import { ImageWithCaption } from "types";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImageMasonry, ImageThumbnail } from "app/components";
@@ -79,12 +79,7 @@ export default function ClosestEmbeddingsImagesModal({
           })),
       );
     } catch (error) {
-      const errorJson = await error.response.json();
-      notifyError(errorJson?.message);
-      console.error(
-        "An error occurred while trying to find closes images",
-        error,
-      );
+      notifyApiCallError(error, "An error occurred while trying to find closes images");
     } finally {
       setLoading(false);
     }
