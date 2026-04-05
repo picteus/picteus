@@ -150,83 +150,67 @@ export default function ExtensionsScreen() {
     };
     return (
       <Flex gap={10} justify="flex-end">
-        <ActionIcon
-          size="md"
-          variant="default"
-          onClick={() => setExtensionToUpdate(extension)}
-        >
-          <Tooltip label={t("button.update")} position="top-end" offset={10}>
-            <IconUpload {...iconSizeAndStroke} />
-          </Tooltip>
-        </ActionIcon>
-
-        <ActionIcon
-          size="md"
-          variant="default"
-          onClick={() => handleOnSynchronize(extension)}
-          disabled={extension.status === ExtensionStatus.Paused}
-        >
-          <Tooltip
-            label={t("button.synchronize")}
-            position="top-end"
-            offset={10}
+        <Tooltip label={t("button.update")}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            onClick={() => setExtensionToUpdate(extension)}
           >
-            <IconReload {...iconSizeAndStroke} />
-          </Tooltip>
-        </ActionIcon>
-
-        <ActionIcon
-          size="md"
-          variant="default"
-          onClick={() => setExtensionToSetSettings(extension)}
-          disabled={extension.status === ExtensionStatus.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
-        >
-          <Tooltip label={t("button.settings")} position="top-end" offset={10}>
-            <IconAdjustmentsHorizontal {...iconSizeAndStroke} />
-          </Tooltip>
-        </ActionIcon>
-
-        <ActionIcon
-          size="md"
-          variant="default"
-          onClick={() => handleOnToggleExtensionStatus(extension)}
-        >
-          <Tooltip
-            label={t(
-              extension.status === ExtensionStatus.Paused
-                ? "button.resume"
-                : "button.pause",
-            )}
-            position="top-end"
-            offset={10}
+              <IconUpload {...iconSizeAndStroke} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t("button.synchronize")}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            onClick={() => handleOnSynchronize(extension)}
+            disabled={extension.status === ExtensionStatus.Paused}
           >
-            {extension.status === ExtensionStatus.Paused ? (
-              <IconPlayerPlay {...iconSizeAndStroke} />
-            ) : (
-              <IconPlayerPause {...iconSizeAndStroke} />
-            )}
-          </Tooltip>
-        </ActionIcon>
-
-        <ActionIcon
-          size="md"
-          variant="default"
-          onClick={() =>
-            confirmAction(
-              () => handleOnUninstallExtension(extension.manifest.id),
-              {
-                title: t("extensionsScreen.confirmDeleteTitle"),
-                message: t("extensionsScreen.confirmDeleteMessage", {
-                  name: extension.manifest.name,
-                }),
-              },
-            )
-          }
-        >
-          <Tooltip label={t("button.uninstall")} position="top-end" offset={10}>
-            <IconTrash color="red" {...iconSizeAndStroke} />
-          </Tooltip>
-        </ActionIcon>
+              <IconReload {...iconSizeAndStroke} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t("button.settings")}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            onClick={() => setExtensionToSetSettings(extension)}
+            disabled={extension.status === ExtensionStatus.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
+          >
+              <IconAdjustmentsHorizontal {...iconSizeAndStroke} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t(extension.status === ExtensionStatus.Paused ? "button.resume" : "button.pause")}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            onClick={() => handleOnToggleExtensionStatus(extension)}
+          >
+              {extension.status === ExtensionStatus.Paused ? (
+                <IconPlayerPlay {...iconSizeAndStroke} />
+              ) : (
+                <IconPlayerPause {...iconSizeAndStroke} />
+              )}
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t("button.uninstall")}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            onClick={() =>
+              confirmAction(
+                () => handleOnUninstallExtension(extension.manifest.id),
+                {
+                  title: t("extensionsScreen.confirmDeleteTitle"),
+                  message: t("extensionsScreen.confirmDeleteMessage", {
+                    name: extension.manifest.name,
+                  }),
+                },
+              )
+            }
+          >
+              <IconTrash color="red" {...iconSizeAndStroke} />
+          </ActionIcon>
+        </Tooltip>
       </Flex>
     );
   }

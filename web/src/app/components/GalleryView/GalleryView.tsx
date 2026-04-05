@@ -63,7 +63,7 @@ function GalleryTopBar({
             alert={showAlertNewImages}
             onRefresh={onInternalRefresh}
           />
-          <Tooltip position="bottom-end" offset={10} label={t("button.pin")}>
+          <Tooltip label={t("button.pin")}>
             <ActionIcon size="lg" variant={"default"} onClick={handleOnPin}>
               <IconPin stroke={1.2} />
             </ActionIcon>

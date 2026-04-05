@@ -87,35 +87,31 @@ export default function RepositoriesScreen() {
   function renderMenu(repository: Repository) {
     return (
       <Flex gap={10}>
-        <ActionIcon
-          size="md"
-          variant="default"
-          onClick={() => handleOnSynchronizeRepository(repository.id)}
-        >
-          <Tooltip
-            label={t("button.synchronize")}
-            position="top-end"
-            offset={10}
+        <Tooltip label={t("button.synchronize")}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            onClick={() => handleOnSynchronizeRepository(repository.id)}
           >
-            <IconReload size={20} stroke={1} />
-          </Tooltip>
-        </ActionIcon>
-        <ActionIcon
-          size="md"
-          variant="default"
-          onClick={() =>
-            confirmAction(() => handleOnDeleteRepository(repository.id), {
-              title: t("repositoryScreen.confirmDeleteTitle"),
-              message: t("repositoryScreen.confirmDeleteMessage", {
-                name: repository.name,
-              }),
-            })
-          }
-        >
-          <Tooltip label={t("button.delete")} position="top-end" offset={10}>
-            <IconTrash color="red" size={20} stroke={1} />
-          </Tooltip>
-        </ActionIcon>
+              <IconReload size={20} stroke={1} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t("button.delete")}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            onClick={() =>
+              confirmAction(() => handleOnDeleteRepository(repository.id), {
+                title: t("repositoryScreen.confirmDeleteTitle"),
+                message: t("repositoryScreen.confirmDeleteMessage", {
+                  name: repository.name,
+                }),
+              })
+            }
+          >
+              <IconTrash color="red" size={20} stroke={1} />
+          </ActionIcon>
+        </Tooltip>
       </Flex>
     );
   }

@@ -12,7 +12,8 @@ import {
   Space,
   Stack,
   Text,
-  TextInput
+  TextInput,
+  Tooltip
 } from "@mantine/core";
 import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
 import {
@@ -332,16 +333,18 @@ export default function FiltersBar({
           onChange={setPopoverOpened}
         >
           <Popover.Target>
-            <ActionIcon
-              onClick={() =>
-                popoverOpened ? setPopoverOpened(false) : setPopoverOpened(true)
-              }
-              size="lg"
-              variant="default"
-              title={t("filters.title")}
-            >
-              <IconFilter stroke={1.3} />
-            </ActionIcon>
+            <Tooltip label={t("filters.title")}>
+              <ActionIcon
+                onClick={() =>
+                  popoverOpened ? setPopoverOpened(false) : setPopoverOpened(true)
+                }
+                size="lg"
+                variant="default"
+                title={t("filters.title")}
+              >
+                <IconFilter stroke={1.3} />
+              </ActionIcon>
+            </Tooltip>
           </Popover.Target>
           <Popover.Dropdown>{localFilters !== undefined && renderFiltersDropdown()}</Popover.Dropdown>
         </Popover>

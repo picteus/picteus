@@ -37,19 +37,19 @@ export default function RefreshButton({ alert, onRefresh }: RefreshButtonType) {
       </Button>
     </Indicator>
   ) : (
-    <ActionIcon
-      size="lg"
-      disabled={isFeedback}
-      variant={"default"}
-      onClick={handleClick}
-    >
-      <Tooltip position="bottom-end" offset={10} label={t("button.refresh")}>
-        {isFeedback ? (
-          <IconCheck color={"green"} {...commonIconProps} />
-        ) : (
-          <IconRefresh {...commonIconProps} />
-        )}
-      </Tooltip>
-    </ActionIcon>
+    <Tooltip label={t("button.refresh")}>
+      <ActionIcon
+        size="lg"
+        disabled={isFeedback}
+        variant={"default"}
+        onClick={handleClick}
+      >
+          {isFeedback ? (
+            <IconCheck color={"green"} {...commonIconProps} />
+          ) : (
+            <IconRefresh {...commonIconProps} />
+          )}
+      </ActionIcon>
+    </Tooltip>
   );
 }

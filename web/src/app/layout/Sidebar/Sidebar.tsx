@@ -33,7 +33,7 @@ interface NavbarLinkProps {
 function NavbarLink({ icon, externalLink, label, route, onClick }: NavbarLinkProps) {
   const { pathname } = useLocation();
   return (
-    <Tooltip label={label} position="right" transitionProps={{ duration: 0 }}>
+    <Tooltip label={label} position="right">
       <UnstyledButton
         onClick={onClick}
         className={style.iconLink}
