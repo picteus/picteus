@@ -4,7 +4,6 @@ import {
   Autocomplete,
   Badge,
   Button,
-  Card,
   Divider,
   Flex,
   Grid,
@@ -179,7 +178,7 @@ export default function ActivityScreen() {
 
   function renderContent() {
     return (
-      <Card>
+      <>
         <ScrollArea>
           <Table striped highlightOnHover withColumnBorders>
             <Table.Thead>
@@ -242,7 +241,7 @@ export default function ActivityScreen() {
             total={Math.ceil(events.length / pagination.take)}
           />
         </div>
-      </Card>
+      </>
     );
   }
 

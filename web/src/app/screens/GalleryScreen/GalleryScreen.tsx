@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { Input, Tabs } from "@mantine/core";
+import React, { useRef, useState } from "react";
+import { Input, ScrollArea, Tabs } from "@mantine/core";
 import { IconPhoto, IconX } from "@tabler/icons-react";
 
 import { Container, GalleryView, MasonryVisualizer } from "app/components";
 import { useGalleryTabsContext } from "app/context";
 import style from "./GalleryScreen.module.scss";
+import { useContainerDimensions } from "../../hooks";
 
 function GalleryTab({ tab, onRemove }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -64,8 +65,9 @@ function GalleryTab({ tab, onRemove }) {
 }
 
 export default function GalleryScreen() {
-  const [tabs, , removeFromStack, { activeTab, setActiveTab }] =
-    useGalleryTabsContext();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { height } = useContainerDimensions(containerRef);
+  const [tabs, , removeFromStack, { activeTab, setActiveTab }] = useGalleryTabsContext();
 
   function handleOnRemoveTab(tabId, nextTabValue) {
     removeFromStack(tabId);
@@ -85,46 +87,48 @@ export default function GalleryScreen() {
   }
 
   return (
-    <div>
-      <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
-          <Tabs.Tab value="gallery" leftSection={<IconPhoto size={13} />}>
-            Explore
-          </Tabs.Tab>
-          {tabs?.map((tab, index) => {
-            return (
-              <GalleryTab
-                key={`gallery-${tab.id}`}
-                tab={tab}
-                onRemove={() =>
-                  handleOnRemoveTab(tab.id, computeNextTabValue(index))
-                }
-              />
-            );
-          })}
-        </Tabs.List>
-
-        <Tabs.Panel value="gallery">
-          <GalleryView />
-        </Tabs.Panel>
-
-        {tabs?.map((tab) => (
-          <Tabs.Panel key={`panel-${tab.id}`} value={tab.id}>
-            {tab.type === "Masonry" ? (
-              <Container>
-                <MasonryVisualizer
-                  description={tab.description}
-                  imageIds={tab.data.imageIds}
+    <div ref={containerRef} className={style.mainContainer}>
+      {containerRef.current && <ScrollArea h={height}>
+        <Tabs value={activeTab} onChange={setActiveTab}>
+          <Tabs.List>
+            <Tabs.Tab value="gallery" leftSection={<IconPhoto size={13} />}>
+              Explore
+            </Tabs.Tab>
+            {tabs?.map((tab, index) => {
+              return (
+                <GalleryTab
+                  key={`gallery-${tab.id}`}
+                  tab={tab}
+                  onRemove={() =>
+                    handleOnRemoveTab(tab.id, computeNextTabValue(index))
+                  }
                 />
-              </Container>
-            ) : (
-              <GalleryView
-                initialFilterOrCollectionId={tab.data.filterOrCollectionId}
-              />
-            )}
+              );
+            })}
+          </Tabs.List>
+
+          <Tabs.Panel value="gallery">
+            <GalleryView />
           </Tabs.Panel>
-        ))}
-      </Tabs>
+
+          {tabs?.map((tab) => (
+            <Tabs.Panel key={`panel-${tab.id}`} value={tab.id}>
+              {tab.type === "Masonry" ? (
+                <Container>
+                  <MasonryVisualizer
+                    description={tab.description}
+                    imageIds={tab.data.imageIds}
+                  />
+                </Container>
+              ) : (
+                <GalleryView
+                  initialFilterOrCollectionId={tab.data.filterOrCollectionId}
+                />
+              )}
+            </Tabs.Panel>
+          ))}
+        </Tabs>
+      </ScrollArea>}
     </div>
   );
 }

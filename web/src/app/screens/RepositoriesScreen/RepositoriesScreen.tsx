@@ -1,17 +1,5 @@
 import { useTranslation } from "react-i18next";
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Card,
-  Flex,
-  LoadingOverlay,
-  Stack,
-  Table,
-  Text,
-  Title,
-  Tooltip
-} from "@mantine/core";
+import { ActionIcon, Badge, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { Repository, RepositoryStatus } from "@picteus/ws-client";
@@ -151,27 +139,25 @@ export default function RepositoriesScreen() {
 
   function renderContent() {
     return (
-      <Card>
-        <Table.ScrollContainer minWidth={500}>
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t("field.name")}</Table.Th>
-                <Table.Th>{t("field.status")}</Table.Th>
-                <Table.Th>{t("field.url")}</Table.Th>
-                <Table.Th style={{ minWidth: "110px" }}>
-                  {t("field.createdOn")}
-                </Table.Th>
-                <Table.Th style={{ minWidth: "110px" }}>
-                  {t("field.modifiedOn")}
-                </Table.Th>
-                <Table.Th></Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>{rows}</Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
-      </Card>
+      <Table.ScrollContainer minWidth={500}>
+        <Table stickyHeader>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>{t("field.name")}</Table.Th>
+              <Table.Th>{t("field.status")}</Table.Th>
+              <Table.Th>{t("field.url")}</Table.Th>
+              <Table.Th style={{ minWidth: "110px" }}>
+                {t("field.createdOn")}
+              </Table.Th>
+              <Table.Th style={{ minWidth: "110px" }}>
+                {t("field.modifiedOn")}
+              </Table.Th>
+              <Table.Th></Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
     );
   }
 
@@ -194,7 +180,7 @@ export default function RepositoriesScreen() {
         onClose={closeAddRepositoryModal}
         onSuccess={handleOnSuccessRepositoryAdded}
       />
-      <Stack gap="lg">
+      <Stack gap="lg" h="100%">
         <Flex justify="space-between" align="center">
           <Title>{t("repositoryScreen.title")}</Title>
           <Flex gap="sm" align="center">

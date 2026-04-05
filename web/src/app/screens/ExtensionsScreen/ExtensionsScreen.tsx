@@ -1,18 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Card,
-  Flex,
-  LoadingOverlay,
-  Stack,
-  Table,
-  Text,
-  Title,
-  Tooltip
-} from "@mantine/core";
+import { ActionIcon, Badge, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import {
   IconAdjustmentsHorizontal,
   IconPlayerPause,
@@ -268,23 +256,21 @@ export default function ExtensionsScreen() {
 
   function renderContent() {
     return (
-      <Card>
-        <Table.ScrollContainer minWidth={500}>
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t("field.id")}</Table.Th>
-                <Table.Th>{t("field.version")}</Table.Th>
-                <Table.Th>{t("field.name")}</Table.Th>
-                <Table.Th>{t("field.description")}</Table.Th>
-                <Table.Th>{t("field.status")}</Table.Th>
-                <Table.Th></Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>{rows}</Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
-      </Card>
+      <Table.ScrollContainer minWidth={500}>
+        <Table stickyHeader>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>{t("field.id")}</Table.Th>
+              <Table.Th>{t("field.version")}</Table.Th>
+              <Table.Th>{t("field.name")}</Table.Th>
+              <Table.Th>{t("field.description")}</Table.Th>
+              <Table.Th>{t("field.status")}</Table.Th>
+              <Table.Th></Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
     );
   }
 
@@ -302,7 +288,7 @@ export default function ExtensionsScreen() {
         onClose={handleOnCloseExtensionSettingsModal}
         onSuccess={handleOnSuccessExtensionSettingsModal}
       />
-      <Stack gap="lg">
+      <Stack gap="lg" h="100%">
         <Flex justify="space-between" align="center">
           <Title>{t("extensionsScreen.title")}</Title>
           <Flex gap="sm" align="center">
