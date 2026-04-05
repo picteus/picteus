@@ -1,22 +1,23 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Flex, Tooltip } from "@mantine/core";
-import { IconPhotoSearch, IconPin } from "@tabler/icons-react";
+import { IconLayoutDashboard, IconListDetails, IconPhoto, IconPhotoSearch, IconPin } from "@tabler/icons-react";
 
 import { SearchRange } from "@picteus/ws-client";
 
 import { ChannelEnum, FilterOrCollectionId, ImageMasonryDataType } from "types";
-import { EmptyResults, ImageMasonry, RefreshButton, TopBar } from "app/components";
+import { Container, EmptyResults, ImageMasonry, RefreshButton, TopBar } from "app/components";
 import { FiltersBar } from "./components";
 import { ImageService, RepositoriesService } from "app/services";
-import { useContainerDimensions } from "app/hooks";
 import { useEventSocket, useGalleryTabsContext } from "app/context";
 import { notifyApiCallError, ROUTES } from "utils";
 import style from "./GalleryView.module.scss";
 
 
 const BATCH_SIZE = 40;
+
+export type ViewMode = "masonry" | "gallery" | "detail";
 
 type PaginationType = SearchRange & {
   currentPage: number;
@@ -27,6 +28,8 @@ type GalleryTopBarProps = {
   setFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId) => void;
   handleOnRefresh: () => void;
   handleOnPin: () => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
 };
 
 function GalleryTopBar({
@@ -34,6 +37,8 @@ function GalleryTopBar({
   setFilterOrCollectionId,
   handleOnRefresh,
   handleOnPin,
+  viewMode,
+  setViewMode,
 }: GalleryTopBarProps) {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
@@ -59,6 +64,23 @@ function GalleryTopBar({
       <Flex align="start" justify="space-between">
         <FiltersBar initialFilterOrCollectionId={initialFilterOrCollectionId} onChange={setFilterOrCollectionId} />
         <Flex gap="xs">
+          <ActionIcon.Group>
+            <Tooltip label={t("galleryScreen.masonryView")}>
+              <ActionIcon size="lg" variant={viewMode === "masonry" ? "filled" : "default"} onClick={() => setViewMode("masonry")}>
+                <IconLayoutDashboard stroke={1.2} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t("galleryScreen.galleryView")}>
+              <ActionIcon disabled={true} size="lg" variant={viewMode === "gallery" ? "filled" : "default"} onClick={() => setViewMode("gallery")}>
+                <IconPhoto stroke={1.2} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t("galleryScreen.detailView")}>
+              <ActionIcon disabled={true} size="lg" variant={viewMode === "detail" ? "filled" : "default"} onClick={() => setViewMode("detail")}>
+                <IconListDetails stroke={1.2} />
+              </ActionIcon>
+            </Tooltip>
+          </ActionIcon.Group>
           <RefreshButton
             alert={showAlertNewImages}
             onRefresh={onInternalRefresh}
@@ -81,6 +103,7 @@ type GalleryContentProps = {
   filterOrCollectionId?: FilterOrCollectionId;
   refreshTrigger: number;
   onFetchData: (pagination: PaginationType) => void;
+  viewMode: ViewMode;
 };
 
 function GalleryContent({
@@ -90,6 +113,7 @@ function GalleryContent({
   filterOrCollectionId,
   refreshTrigger,
   onFetchData,
+  viewMode,
 }: GalleryContentProps) {
   const [t] = useTranslation();
   const navigate = useNavigate();
@@ -139,21 +163,29 @@ function GalleryContent({
     );
   }
 
+  if (viewMode === "gallery") {
+    return <div>Gallery view not implemented yet</div>;
+  }
+
+  if (viewMode === "detail") {
+    return <div>Detail view not implemented yet</div>;
+  }
+
   return <ImageMasonry containerWidth={width} data={data} loadMore={handleOnInfiniteScroll} />;
 }
 
 type GalleryViewProps = {
   initialFilterOrCollectionId?: FilterOrCollectionId;
+  containerWidth: number;
 };
 
-export default function GalleryView({ initialFilterOrCollectionId }: GalleryViewProps) {
+export default function GalleryView({ initialFilterOrCollectionId, containerWidth }: GalleryViewProps) {
   const [, addTab] = useGalleryTabsContext();
   const [data, setData] = useState<ImageMasonryDataType>({ currentPage: 1, total: 0, images: [] });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { width } = useContainerDimensions(containerRef);
   const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(initialFilterOrCollectionId);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
+  const [viewMode, setViewMode] = useState<ViewMode>("masonry");
 
   async function load(currentPagination: PaginationType) {
     if (!filterOrCollectionId) {
@@ -196,24 +228,27 @@ export default function GalleryView({ initialFilterOrCollectionId }: GalleryView
 
   return (
     <>
-      <div ref={containerRef} className={style.container}>
+      <div className={style.container}>
         <GalleryTopBar
           initialFilterOrCollectionId={initialFilterOrCollectionId}
           setFilterOrCollectionId={setFilterOrCollectionId}
           handleOnRefresh={handleOnRefresh}
           handleOnPin={handleOnPin}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
         />
         <div className={style.contentContainer}>
-          <div className={style.galleryContainer}>
-            {containerRef?.current && <GalleryContent
+          <Container>
+            <GalleryContent
               loading={loading}
               data={data}
-              width={width}
+              width={containerWidth}
               filterOrCollectionId={filterOrCollectionId}
               refreshTrigger={refreshTrigger}
               onFetchData={load}
-            />}
-          </div>
+              viewMode={viewMode}
+            />
+          </Container>
         </div>
       </div>
     </>

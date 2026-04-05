@@ -269,6 +269,10 @@ export default {
     imageDeletedDescription: "The image '{{imageName}}' has been deleted."
   },
   galleryScreen: {
+    masonryView: "Masonry",
+    galleryView: "Gallery",
+    detailView: "Detail",
+    explore: "Explore",
     alertGalleryChanged: "Changes detected in the gallery. Reload to update."
   },
   activityScreen: {

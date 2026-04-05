@@ -10,12 +10,6 @@
     z-index: 2;
     cursor : pointer;
   }
-  .galleryContainer{
-    padding-top: $content-padding-vertical;
-    padding-left: $content-padding-horizontal;
-    padding-right: $content-padding-horizontal;
-    padding-bottom:$bottombar-width + 10px;
-  }
 }
 .topBar {
   display: flex;

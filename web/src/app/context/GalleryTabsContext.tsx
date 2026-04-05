@@ -4,6 +4,7 @@ import { randomId } from "@mantine/hooks";
 import { TabsType } from "types";
 import { StorageService } from "app/services";
 
+
 type GalleryTabsContextType = [
   stack: TabsType[],
   addToStack: (tab: TabsType) => void,
@@ -13,6 +14,7 @@ type GalleryTabsContextType = [
     setActiveTab: (id: string) => void;
     renameTab: (tabId: string, newName: string) => void;
   },
+  galleryTabValue: string,
 ];
 
 const GalleryTabsContext = createContext<GalleryTabsContextType | undefined>(
@@ -29,11 +31,11 @@ export function useGalleryTabsContext() {
   return context;
 }
 
+const galleryTabValue = "gallery";
+
 export function GalleryTabsProvider({ children }) {
-  const [stack, setStack] = useState<TabsType[]>(
-    StorageService.getGalleryTabs(),
-  );
-  const [activeTab, setActiveTab] = useState<string>("gallery");
+  const [stack, setStack] = useState<TabsType[]>(StorageService.getGalleryTabs());
+  const [activeTab, setActiveTab] = useState<string>(galleryTabValue);
 
   useEffect(() => {
     StorageService.setGalleryTabs(stack);
@@ -69,6 +71,7 @@ export function GalleryTabsProvider({ children }) {
         addToStack,
         removeFromStack,
         { activeTab, setActiveTab, renameTab },
+        galleryTabValue,
       ]}
     >
       {children}

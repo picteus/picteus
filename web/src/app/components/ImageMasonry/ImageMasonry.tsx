@@ -24,9 +24,7 @@ export default function ImageMasonry({
   loadMore,
   containerWidth,
 }: ImageMasonryType) {
-  const [localData, setLocalData] = useState<
-    ImageSummary[] | ImageWithCaption[]
-  >([]);
+  const [localData, setLocalData] = useState<ImageSummary[] | ImageWithCaption[]>([]);
   const queueRef = useRef<ImageSummary[][]>([]); // Queue for holding image summaries
   const [isProcessing, setIsProcessing] = useState(false); // To track if an update is being processed
 
@@ -65,9 +63,6 @@ export default function ImageMasonry({
   }, [data]);
 
   const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo(() => {
-    if (containerWidth === 0) {
-      containerWidth = window.innerWidth;
-    }
     const gutter = 10;
     const approximateWidth = imageSize;
     const columns = Math.floor(containerWidth / approximateWidth);
@@ -78,7 +73,7 @@ export default function ImageMasonry({
   }, [containerWidth]);
 
   return (
-    localData?.length !== 0 && (
+    localData.length !== 0 && containerWidth > 0 && (
       <MasonryLayout
         sizes={sizes}
         items={localData}
