@@ -12,7 +12,6 @@ from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, I
     InstructionsPrompt, PromptKind, GenerationRecipePrompt, ImageFeatureValue
 
 os.environ["HF_HOME"] = PicteusExtension.get_cache_directory_path()
-from transformers import pipeline, Pipeline
 
 
 class BriaExtension(PicteusExtension):
@@ -20,7 +19,7 @@ class BriaExtension(PicteusExtension):
     def __init__(self) -> None:
         super().__init__()
         self._model: str = "briaai/RMBG-1.4"
-        self._pipe: Optional[Pipeline] = None
+        self._pipe: Optional[Any] = None
 
     async def on_ready(self, communicator: Optional[Communicator]) -> None:
         await super().on_ready(communicator)
@@ -39,10 +38,10 @@ class BriaExtension(PicteusExtension):
                     new_images.append(IntentImage(new_image.id))
             if len(new_images) > 0:
                 await communicator.launch_intent(ImagesIntent(images=
-                                                                           IntentImages(images=new_images,
-                                                                                               dialogContent=IntentDialogIconContent(
-                                                                                                   title="Background-less images",
-                                                                                                   description="These are the images without background"))))
+                                                              IntentImages(images=new_images,
+                                                                           dialogContent=IntentDialogIconContent(
+                                                                               title="Background-less images",
+                                                                               description="These are the images without background"))))
 
         return None
 
@@ -89,6 +88,7 @@ class BriaExtension(PicteusExtension):
         return pillow_image
 
     def _ensure_pipeline(self) -> None:
+        from transformers import pipeline
         if self._pipe is None:
             self._pipe = pipeline("image-segmentation", model=self._model, trust_remote_code=True,
                                   cache_dir=PicteusExtension.get_cache_directory_path())
