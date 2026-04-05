@@ -139,7 +139,6 @@ export default function TextToImagesModal({
     if (containerRef?.current) {
       return (
         <ImageMasonry
-          keyPrefix="textToImagesImages"
           containerWidth={width}
           data={{
             images: imageSummaries,

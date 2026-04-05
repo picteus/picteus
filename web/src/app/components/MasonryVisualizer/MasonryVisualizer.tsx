@@ -10,14 +10,12 @@ import { ImageService } from "app/services";
 
 
 type MasonryVisualizerType = {
-  id: string;
   content: DialogContent;
   imageIds: Array<{ imageId: string }>;
   containerWidth: number;
 };
 
 export default function MasonryVisualizer({
-  id,
   content,
   imageIds,
   containerWidth,
@@ -43,7 +41,6 @@ export default function MasonryVisualizer({
       <Text>{content.description}</Text>
       {content.details && <Alert color="blue" icon={<IconInfoCircle />}>{content.details}</Alert>}
       <ImageMasonry
-        keyPrefix={id}
         containerWidth={containerWidth}
         data={{
           images,

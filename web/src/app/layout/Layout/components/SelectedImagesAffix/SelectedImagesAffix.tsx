@@ -150,7 +150,6 @@ export default function SelectedImagesAffix() {
                     imageSize={133}
                     imageItemMode={ImageItemMode.SELECT}
                     loadMore={() => {}}
-                    keyPrefix="selectedImages"
                     data={{
                       images: selectedImages.map((imageSummary) => ({
                         ...imageSummary,

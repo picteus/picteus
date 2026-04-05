@@ -158,7 +158,6 @@ export default function ClosestEmbeddingsImagesModal({
     if (containerRef?.current) {
       return (
         <ImageMasonry
-          keyPrefix="closestEmbeddingsImages"
           containerWidth={width}
           data={{
             images: imageSummaries,
