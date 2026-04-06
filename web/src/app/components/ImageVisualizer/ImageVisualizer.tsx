@@ -13,7 +13,7 @@ import {
   Repository
 } from "@picteus/ws-client";
 
-import { capitalizeText, formatDate, formatSize } from "utils";
+import { capitalizeText, formatDate, formatDimensions, formatSize } from "utils";
 import { ImageService, RepositoriesService, StorageService } from "app/services";
 import { useEventSocket } from "app/context";
 import { ChannelEnum } from "types";
@@ -167,7 +167,7 @@ export default function ImageVisualizer({
       },
       {
         label: t("field.dimensions"),
-        value: `${image.dimensions.width}x${image.dimensions.height}`,
+        value: formatDimensions(image.dimensions),
       },
       ...(image.sourceUrl
         ? [

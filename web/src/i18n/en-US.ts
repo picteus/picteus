@@ -41,6 +41,7 @@ export default {
     repositories: "Repositories",
     repositoryId: "Repository ID",
     size: "Size",
+    format: "Format",
     formats: "Formats",
     features: "Features",
     tags: "Tags",

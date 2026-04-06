@@ -10,7 +10,7 @@ import { ChannelEnum, FilterOrCollectionId, ImageExplorerDataType, ImageOrSummar
 import { notifyApiCallError, ROUTES } from "utils";
 import { ImageService, RepositoriesService } from "app/services";
 import { useEventSocket, useGalleryTabsContext } from "app/context";
-import { Container, EmptyResults, ImageGallery, ImageMasonry, RefreshButton, TopBar } from "app/components";
+import { Container, EmptyResults, ImageGallery, ImageMasonry, ImageTable, RefreshButton, TopBar } from "app/components";
 import { FiltersBar } from "./components";
 
 import style from "./GalleryView.module.scss";
@@ -18,7 +18,7 @@ import style from "./GalleryView.module.scss";
 
 const BATCH_SIZE = 60;
 
-export type ViewMode = "masonry" | "gallery" | "detail";
+export type ViewMode = "masonry" | "gallery" | "table";
 
 type GalleryTopBarProps = {
   initialFilterOrCollectionId?: FilterOrCollectionId;
@@ -73,7 +73,7 @@ function GalleryTopBar({
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t("galleryScreen.detailView")}>
-              <ActionIcon disabled={true} size="lg" variant={viewMode === "detail" ? "filled" : "default"} onClick={() => setViewMode("detail")}>
+              <ActionIcon size="lg" variant={viewMode === "table" ? "filled" : "default"} onClick={() => setViewMode("table")}>
                 <IconListDetails stroke={1.2} />
               </ActionIcon>
             </Tooltip>
@@ -126,6 +126,7 @@ function GalleryContent({
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    setAccumulatedData([]);
     setPagination({ currentPage: 1, take: BATCH_SIZE, skip: 0 });
   }, [filterOrCollectionId, refreshTrigger]);
 
@@ -176,8 +177,8 @@ function GalleryContent({
     return <ImageGallery containerWidth={width} data={accumulatedData} loadMore={handleOnInfiniteScroll} />;
   }
 
-  if (viewMode === "detail") {
-    return <div>Detail view not implemented yet</div>;
+  if (viewMode === "table") {
+    return <ImageTable containerWidth={width} data={accumulatedData} loadMore={handleOnInfiniteScroll} />;
   }
 
   return <ImageMasonry containerWidth={width} data={accumulatedData} loadMore={handleOnInfiniteScroll} />;

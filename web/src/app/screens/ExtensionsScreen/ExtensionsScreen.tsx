@@ -257,7 +257,7 @@ export default function ExtensionsScreen() {
   function renderContent() {
     return (
       <Table.ScrollContainer minWidth={500}>
-        <Table stickyHeader>
+        <Table stickyHeader highlightOnHover striped>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>{t("field.id")}</Table.Th>
