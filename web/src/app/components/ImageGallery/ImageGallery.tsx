@@ -4,7 +4,7 @@ import { useIntersection } from "@mantine/hooks";
 
 import { ImageExplorerDataType, ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
 import { useImageVisualizerContext } from "app/context";
-import { ImageItem } from "app/components/ImageMasonry/components";
+import { ImageItem } from "app/components";
 
 
 type ImageGalleryType = {

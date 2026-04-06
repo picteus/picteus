@@ -5,9 +5,9 @@ import { ActionIcon, Checkbox, Flex, Menu } from "@mantine/core";
 import { ImageItemMode, ImageOrSummary } from "types";
 import { useImagesSelectedContext } from "app/context";
 import { ImageService } from "app/services";
-
-import { ImageItemMenu } from "./components";
+import { ImageItemMenu } from "app/components";
 import style from "./ImageItem.module.scss";
+
 
 type ImageItemType = {
   width: number;

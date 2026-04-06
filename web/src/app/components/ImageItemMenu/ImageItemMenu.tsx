@@ -14,11 +14,11 @@ import {
 
 import { UiExtensionCommandType } from "types";
 import { notifyApiCallError } from "utils";
-import { Common, ExtensionIcon } from "app/components";
-import { ClosestEmbeddingsImagesModal } from "app/components/ActionModal";
 import { ExtensionsService, ImageService } from "app/services";
 import { useExtensionCommand } from "app/hooks";
 import { useActionModalContext, useConfirmAction, useEventSocket } from "app/context";
+import { Common, ExtensionIcon } from "app/components";
+import { ClosestEmbeddingsImagesModal } from "./components";
 
 
 const commandEntities = [CommandEntity.Images, CommandEntity.Image];

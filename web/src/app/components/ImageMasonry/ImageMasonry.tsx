@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MasonryLayout, { MasonrySizing } from "react-fast-masonry";
 
 import { ImageExplorerDataType, ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
-import { useImageVisualizerContext } from "app/context"; // Import context
-import { ImageItem } from "./components";
+import { useImageVisualizerContext } from "app/context";
+import { ImageItem } from "app/components";
 import style from "./ImageMasonry.module.scss";
+
 
 type ImageMasonryType = {
   imageSize?: number;

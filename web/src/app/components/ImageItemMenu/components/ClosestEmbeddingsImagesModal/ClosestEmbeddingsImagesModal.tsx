@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Divider, Flex, Group, HoverCard, Input, NumberInput, Text } from "@mantine/core";
-import { ImageSummary } from "@picteus/ws-client";
-import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 import { Form, useForm } from "@mantine/form";
-import { ImageApiImageClosestImagesRequest } from "@picteus/ws-client/src/apis/ImageApi.ts";
+import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
+
+import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-client";
 
 import { notifyApiCallError, Validators } from "utils";
 import { ImageWithCaption } from "types";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmptyResults, ImageMasonry, ImageThumbnail } from "app/components";
 import { useContainerDimensions } from "app/hooks";
 import { useImageVisualizerContext } from "app/context";
+import { CaptionDistance, EmptyResults, ImageMasonry, ImageThumbnail } from "app/components";
 import style from "./ClosestEmbeddingsImagesModal.module.scss";
 
 type ClosestEmbeddingsImagesModalFormPayload = {

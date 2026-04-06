@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Group, Layout, Panel, Separator } from "react-resizable-panels";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconX } from "@tabler/icons-react";
 import { Accordion, ActionIcon, Button, Divider, Flex, Menu, Overlay, Table, Text } from "@mantine/core";
+
 import {
   ExtensionImageFeature,
   ExtensionImageTag,
@@ -11,14 +12,14 @@ import {
   ImageSummary,
   Repository
 } from "@picteus/ws-client";
-import style from "./ImageVisualizer.module.scss";
+
+import { capitalizeText, formatDate, formatSize } from "utils";
 import { ImageService, RepositoriesService, StorageService } from "app/services";
 import { useEventSocket } from "app/context";
 import { ChannelEnum } from "types";
-import { CodeViewer, CopyText, ExternalLink, Markdown } from "app/components";
-import { capitalizeText, formatDate, formatSize } from "utils";
+import { CodeViewer, CopyText, ExternalLink, ImageItemMenu, Markdown } from "app/components";
 import { TableComponent } from "./components";
-import { ImageItemMenu } from "../ImageMasonry/components/ImageItem/components";
+import style from "./ImageVisualizer.module.scss";
 
 
 export default function ImageVisualizer({
