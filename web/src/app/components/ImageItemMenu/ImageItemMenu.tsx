@@ -25,7 +25,6 @@ const commandEntities = [CommandEntity.Images, CommandEntity.Image];
 
 
 type ImageItemMenuEntryType = {
-  key: string;
   extensionId?: string;
   icon?: ReactElement;
   label: string;
@@ -33,10 +32,9 @@ type ImageItemMenuEntryType = {
   onClick: () => void;
 };
 
-function ImageItemMenuEntry({key, extensionId, icon, label, subLabel, onClick} : ImageItemMenuEntryType)  {
+function ImageItemMenuEntry({extensionId, icon, label, subLabel, onClick} : ImageItemMenuEntryType)  {
   return (
     <Menu.Item
-      key={key}
       onClick={onClick}
       leftSection={icon ?? <ExtensionIcon id={extensionId} size="sm" />}
     >

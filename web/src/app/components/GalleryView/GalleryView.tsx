@@ -16,13 +16,9 @@ import { FiltersBar } from "./components";
 import style from "./GalleryView.module.scss";
 
 
-const BATCH_SIZE = 40;
+const BATCH_SIZE = 60;
 
 export type ViewMode = "masonry" | "gallery" | "detail";
-
-type PaginationType = SearchRange & {
-  currentPage: number;
-};
 
 type GalleryTopBarProps = {
   initialFilterOrCollectionId?: FilterOrCollectionId;
@@ -97,6 +93,10 @@ function GalleryTopBar({
   );
 }
 
+type PaginationType = SearchRange & {
+  currentPage: number;
+};
+
 type GalleryContentProps = {
   loading: boolean;
   data: ImageExplorerDataType;
@@ -106,6 +106,7 @@ type GalleryContentProps = {
   onFetchData: (pagination: PaginationType) => void;
   viewMode: ViewMode;
 };
+
 
 function GalleryContent({
   loading,
@@ -118,18 +119,14 @@ function GalleryContent({
 }: GalleryContentProps) {
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const [pagination, setPagination] = useState<PaginationType>({ currentPage: 1, take: BATCH_SIZE, skip: 0 });
-  const [localData, setLocalData] = useState<ImageOrSummary[]>([]);
+  const defaultPagination: PaginationType = { currentPage: 1, take: BATCH_SIZE, skip: 0 };
+  const [pagination, setPagination] = useState<PaginationType>(defaultPagination);
+  const [accumulatedData, setAccumulatedData] = useState<ImageOrSummary[]>([]);
   const isFetchingRef = useRef<boolean>(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    setPagination({
-      ...pagination,
-      currentPage: 1,
-      take: BATCH_SIZE,
-      skip: 0,
-    });
+    setPagination({ currentPage: 1, take: BATCH_SIZE, skip: 0 });
   }, [filterOrCollectionId, refreshTrigger]);
 
   useEffect(() => {
@@ -138,7 +135,7 @@ function GalleryContent({
 
   useEffect(() => {
     isFetchingRef.current = false;
-    setLocalData((prevData) => {
+    setAccumulatedData((prevData) => {
       if (data.currentPage === 1) {
         return data.images;
       }
@@ -151,17 +148,14 @@ function GalleryContent({
       isFetchingRef.current = true;
       const maxPage = Math.ceil(data.total / pagination.take);
       if (pagination.currentPage === maxPage) {
+        isFetchingRef.current = false;
         return;
       }
-      const handleOnPaginationChange = (pageNumber: number) => {
-        setPagination({
-          ...pagination,
-          currentPage: pageNumber,
-          take: BATCH_SIZE,
-          skip: (pageNumber - 1) * BATCH_SIZE
-        });
-      };
-      handleOnPaginationChange(pagination.currentPage + 1);
+      setPagination({
+        currentPage: pagination.currentPage + 1,
+        take: BATCH_SIZE,
+        skip: pagination.currentPage * BATCH_SIZE
+      });
     }
   }, [pagination]);
 
@@ -179,14 +173,14 @@ function GalleryContent({
   }
 
   if (viewMode === "gallery") {
-    return <ImageGallery containerWidth={width} data={localData} loadMore={handleOnInfiniteScroll} />;
+    return <ImageGallery containerWidth={width} data={accumulatedData} loadMore={handleOnInfiniteScroll} />;
   }
 
   if (viewMode === "detail") {
     return <div>Detail view not implemented yet</div>;
   }
 
-  return <ImageMasonry containerWidth={width} data={localData} loadMore={handleOnInfiniteScroll} />;
+  return <ImageMasonry containerWidth={width} data={accumulatedData} loadMore={handleOnInfiniteScroll} />;
 }
 
 type GalleryViewProps = {

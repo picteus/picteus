@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo, useState } from "react";
+import React, { ReactNode, useCallback, useMemo, useState } from "react";
 import { IconDots } from "@tabler/icons-react";
 import { ActionIcon, Checkbox, Flex, Menu } from "@mantine/core";
 
@@ -30,30 +30,29 @@ export default function ImageItem({
   const [menuOpened, setMenuOpened] = useState(false);
   const [selectedImages, setSelectedImages] = useImagesSelectedContext();
 
-  function handleOnClick(event: React.MouseEvent<HTMLElement>) {
+  const handleOnSelectImage = useCallback(()=> {
+    if (selectedImages.find((i) => i.id === image.id)) {
+      setSelectedImages(selectedImages.filter((i) => i.id !== image.id));
+    }
+    else {
+      setSelectedImages([...selectedImages, image]);
+    }
+  }, [selectedImages]);
+
+  const handleOnClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     const target = event.target as HTMLElement;
-
     if (mode === ImageItemMode.SELECT) {
       return handleOnSelectImage();
     }
-
     if (target.getAttribute("data-action")) {
       onClick(image);
     }
-  }
+  }, [handleOnSelectImage]);
 
-  function handleOnChangeMenuOpened(e) {
-    setMenuOpened(e);
-  }
-
-  function handleOnSelectImage() {
-    if (selectedImages.find((i) => i.id === image.id)) {
-      setSelectedImages(selectedImages.filter((i) => i.id !== image.id));
-    } else {
-      setSelectedImages([...selectedImages, image]);
-    }
-  }
+  const handleOnChangeMenuOpened = useCallback((opened: boolean) => {
+    setMenuOpened(opened);
+  }, []);
 
   const isSelected = useMemo(
     () =>
@@ -62,7 +61,7 @@ export default function ImageItem({
     [selectedImages, image],
   );
 
-  return image ? (
+  return (
     <div
       className={`${style.imageWrapper} ${isSelected ? style.hover : ""}`}
       onClick={handleOnClick}
@@ -82,8 +81,7 @@ export default function ImageItem({
             checked={isSelected}
             size={width < 200 ? "sm" : "md"}
             onChange={handleOnSelectImage}
-          />
-          }
+          />}
           {mode === ImageItemMode.VIEW && (
             <Menu
               withinPortal={false}
@@ -101,7 +99,6 @@ export default function ImageItem({
                   <IconDots />
                 </ActionIcon>
               </Menu.Target>
-
               <ImageItemMenu image={image} />
             </Menu>
           )}
@@ -109,7 +106,6 @@ export default function ImageItem({
       </div>
       <img
         onLoad={async () => {
-          await new Promise((r) => setTimeout(r, 50));
           setHidePlaceholder(true);
         }}
         loading="lazy"
@@ -119,7 +115,5 @@ export default function ImageItem({
       />
       {!hidePlaceholder && <div className={style.placeholder}></div>}
     </div>
-  ) : (
-    <></>
   );
 }

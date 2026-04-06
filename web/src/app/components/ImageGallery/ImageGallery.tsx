@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { Grid } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
 
-import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
+import { ImageItemMode, ImageOrSummary } from "types";
 import { useImageVisualizerContext } from "app/context";
 import { ImageItem } from "app/components";
 
@@ -56,7 +56,6 @@ export default function ImageGallery({
                 })
               }
               image={item}
-              caption={(item as ImageWithCaption).caption}
             />
           </Grid.Col>
         ))}
