@@ -117,7 +117,6 @@ export default function GalleryScreen() {
               {tab.type === "Masonry" ? (
                 <Container>
                   <MasonryVisualizer
-                    id={tab.id}
                     content={tab.content}
                     imageIds={tab.data.imageIds}
                     containerWidth={width}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Flex, Tooltip } from "@mantine/core";
@@ -133,14 +133,14 @@ function GalleryContent({
     onFetchData(pagination);
   }, [pagination]);
 
-  function handleOnPaginationChange(pageNumber: number) {
+  const handleOnPaginationChange = useCallback((pageNumber: number) => {
     setPagination({
       ...pagination,
       currentPage: pageNumber,
       take: BATCH_SIZE,
-      skip: (pageNumber - 1) * BATCH_SIZE,
+      skip: (pageNumber - 1) * BATCH_SIZE
     });
-  }
+  }, [pagination]);
 
   function handleOnInfiniteScroll() {
     const maxPage = Math.ceil(data.total / pagination.take);

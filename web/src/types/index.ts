@@ -68,16 +68,18 @@ export type EventInformationType = {
   onResult?: EventOnResultType;
 };
 
-export type ImageOrSummary = (Image | ImageSummary);
+export type ImageOrSummary = Image | ImageSummary;
 
 export type ImageWithCaption = ImageOrSummary & {
   caption?: ReactNode;
 };
 
+export type ImageOrSummaryOrCaption = ImageOrSummary | ImageWithCaption;
+
 export type ImageExplorerDataType = {
   currentPage: number;
   total: number;
-  images: (ImageOrSummary | ImageWithCaption)[];
+  images: ImageOrSummaryOrCaption[];
 };
 
 export enum FolderTypes {

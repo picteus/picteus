@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ImageSummary } from "@picteus/ws-client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MasonryLayout, { MasonrySizing } from "react-fast-masonry";
 
 import { ImageExplorerDataType, ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
@@ -23,41 +22,24 @@ export default function ImageMasonry({
   containerWidth,
 }: ImageMasonryType) {
   const [localData, setLocalData] = useState<ImageOrSummary[]>([]);
-  const queueRef = useRef<ImageSummary[][]>([]); // Queue for holding image summaries
-  const [isProcessing, setIsProcessing] = useState(false); // To track if an update is being processed
-
+  const isFetchingRef = useRef<boolean>(false);
   const [, setImageVisualizerContext] = useImageVisualizerContext();
 
-  function processQueue() {
-    if (queueRef.current.length === 0) {
-      setIsProcessing(false);
-      return;
+  const loadMoreThrottled = useCallback(()=>{
+    if (isFetchingRef.current === false) {
+      isFetchingRef.current = true;
+      loadMore();
     }
-    setIsProcessing(true);
-    const nextBatch = queueRef.current.shift();
-
-    if (nextBatch) {
-      setLocalData((prevData) => {
-        if (data.currentPage === 1) {
-          // Reset the data if it's the first page
-          return nextBatch;
-        }
-        // Otherwise, append the new images
-        return [...prevData, ...nextBatch];
-      });
-
-      setTimeout(() => processQueue(), 0);
-    }
-  }
+  }, [loadMore]);
 
   useEffect(() => {
-    if (data.images?.length) {
-      queueRef.current.push(data.images);
-
-      if (!isProcessing) {
-        processQueue();
+    isFetchingRef.current = false;
+    setLocalData((prevData) => {
+      if (data.currentPage === 1) {
+        return data.images;
       }
-    }
+      return [...prevData, ...data.images];
+    });
   }, [data]);
 
   const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo(() => {
@@ -92,7 +74,7 @@ export default function ImageMasonry({
             />
           );
         }}
-        loadMore={loadMore}
+        loadMore={loadMoreThrottled}
         pack={true}
         awaitMore={true}
         pageSize={20}

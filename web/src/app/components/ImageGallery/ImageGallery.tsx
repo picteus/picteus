@@ -2,11 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
 
-import { ImageSummary } from "@picteus/ws-client";
-
 import { ImageExplorerDataType, ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
 import { useImageVisualizerContext } from "app/context";
 import { ImageItem } from "app/components/ImageMasonry/components";
+
 
 type ImageGalleryType = {
   imageSize?: number;
@@ -24,50 +23,30 @@ export default function ImageGallery({
   containerWidth,
 }: ImageGalleryType) {
   const [localData, setLocalData] = useState<ImageOrSummary[]>([]);
-  const queueRef = useRef<ImageSummary[][]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-
+  const isFetchingRef = useRef<boolean>(false);
   const [, setImageVisualizerContext] = useImageVisualizerContext();
   const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });
 
-  function processQueue() {
-    if (queueRef.current.length === 0) {
-      setIsProcessing(false);
-      return;
-    }
-    setIsProcessing(true);
-    const nextBatch = queueRef.current.shift();
-
-    if (nextBatch) {
-      setLocalData((prevData) => {
-        if (data.currentPage === 1) {
-          return nextBatch;
-        }
-        return [...prevData, ...nextBatch];
-      });
-
-      setTimeout(() => processQueue(), 0);
-    }
-  }
-
   useEffect(() => {
-    if (data.images.length) {
-      queueRef.current.push(data.images);
-
-      if (!isProcessing) {
-        processQueue();
+    if (entry?.isIntersecting === true) {
+      if (isFetchingRef.current === false) {
+        isFetchingRef.current = true;
+        loadMore();
       }
-    }
-  }, [data]);
-
-  useEffect(() => {
-    if (entry?.isIntersecting) {
-      loadMore();
     }
   }, [entry?.isIntersecting, loadMore]);
 
-  const gutter = 10;
+  useEffect(() => {
+    isFetchingRef.current = false;
+    setLocalData((prevData) => {
+      if (data.currentPage === 1) {
+        return data.images;
+      }
+      return [...prevData, ...data.images];
+    });
+  }, [data]);
 
+  const gutter = 10;
   const columnWidth = useMemo(() => {
     const approximateWidth = imageSize;
     const columns = Math.max(1, Math.floor(containerWidth / approximateWidth));
