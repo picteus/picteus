@@ -12,7 +12,9 @@ import { ImageService, StorageService } from "app/services";
 import { useContainerDimensions } from "app/hooks";
 import { useImageVisualizerContext } from "app/context";
 import { CaptionDistance, EmptyResults, ImageMasonry, ImageThumbnail } from "app/components";
+
 import style from "./ClosestEmbeddingsImagesModal.module.scss";
+
 
 type ClosestEmbeddingsImagesModalFormPayload = {
   count: number;
@@ -159,11 +161,7 @@ export default function ClosestEmbeddingsImagesModal({
       return (
         <ImageMasonry
           containerWidth={width}
-          data={{
-            images: imageSummaries,
-            currentPage: 1,
-            total: imageSummaries.length,
-          }}
+          data={imageSummaries}
           loadMore={() => {}}
         />
       );

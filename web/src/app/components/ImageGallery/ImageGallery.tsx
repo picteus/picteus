@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Grid } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
 
-import { ImageExplorerDataType, ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
+import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
 import { useImageVisualizerContext } from "app/context";
 import { ImageItem } from "app/components";
 
 
 type ImageGalleryType = {
   imageSize?: number;
-  data: ImageExplorerDataType;
+  data: ImageOrSummary [];
   loadMore: () => void;
   containerWidth: number;
   imageItemMode?: ImageItemMode;
@@ -22,29 +22,15 @@ export default function ImageGallery({
   loadMore,
   containerWidth,
 }: ImageGalleryType) {
-  const [localData, setLocalData] = useState<ImageOrSummary[]>([]);
-  const isFetchingRef = useRef<boolean>(false);
   const [, setImageVisualizerContext] = useImageVisualizerContext();
   const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });
 
   useEffect(() => {
-    if (entry?.isIntersecting === true) {
-      if (isFetchingRef.current === false) {
-        isFetchingRef.current = true;
-        loadMore();
-      }
+    if (entry?.isIntersecting === true)
+    {
+      loadMore();
     }
   }, [entry?.isIntersecting, loadMore]);
-
-  useEffect(() => {
-    isFetchingRef.current = false;
-    setLocalData((prevData) => {
-      if (data.currentPage === 1) {
-        return data.images;
-      }
-      return [...prevData, ...data.images];
-    });
-  }, [data]);
 
   const gutter = 10;
   const columnWidth = useMemo(() => {
@@ -55,9 +41,9 @@ export default function ImageGallery({
   }, [containerWidth, imageSize]);
 
   return (
-    localData?.length !== 0 && containerWidth > 0 && (
+    data.length !== 0 && containerWidth > 0 && (
       <Grid gutter={gutter}>
-        {localData.map((item) => (
+        {data.map((item) => (
           <Grid.Col span="content" key={item.id}>
             <ImageItem
               width={columnWidth}
@@ -65,7 +51,7 @@ export default function ImageGallery({
               mode={imageItemMode}
               onClick={() =>
                 setImageVisualizerContext({
-                  prevAndNextIds: localData.map((image) => image.id),
+                  prevAndNextIds: data.map((image) => image.id),
                   imageSummary: item,
                 })
               }

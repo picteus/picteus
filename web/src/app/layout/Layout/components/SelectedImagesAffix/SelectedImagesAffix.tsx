@@ -17,12 +17,12 @@ import {
 
 import { CommandEntity } from "@picteus/ws-client";
 
-import { ExtensionIcon, ImageMasonry } from "app/components";
 import { ImageItemMode, UiExtensionCommandType } from "types";
-import { useEventSocket, useImagesSelectedContext } from "app/context";
 import { ROUTES } from "utils";
+import { useEventSocket, useImagesSelectedContext } from "app/context";
 import { ExtensionsService } from "app/services";
 import { useExtensionCommand } from "app/hooks";
+import { ExtensionIcon, ImageMasonry } from "app/components";
 
 import style from "./SelectedImagesAffix.module.scss";
 
@@ -150,14 +150,7 @@ export default function SelectedImagesAffix() {
                     imageSize={133}
                     imageItemMode={ImageItemMode.SELECT}
                     loadMore={() => {}}
-                    data={{
-                      images: selectedImages.map((imageSummary) => ({
-                        ...imageSummary,
-                        caption: undefined,
-                      })),
-                      currentPage: 1,
-                      total: selectedImages.length,
-                    }}
+                    data={selectedImages}
                   />
                 </div>
               </div>

@@ -42,11 +42,7 @@ export default function MasonryVisualizer({
       {content.details && <Alert color="blue" icon={<IconInfoCircle />}>{content.details}</Alert>}
       <ImageMasonry
         containerWidth={containerWidth}
-        data={{
-          images,
-          currentPage: 1,
-          total: images.length,
-        }}
+        data={images}
         loadMore={() => {}}
       />
     </Stack>

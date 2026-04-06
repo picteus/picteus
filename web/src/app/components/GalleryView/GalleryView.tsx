@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Flex, Tooltip } from "@mantine/core";
@@ -6,12 +6,13 @@ import { IconLayoutDashboard, IconListDetails, IconPhoto, IconPhotoSearch, IconP
 
 import { SearchRange } from "@picteus/ws-client";
 
-import { ChannelEnum, FilterOrCollectionId, ImageExplorerDataType } from "types";
-import { Container, EmptyResults, ImageGallery, ImageMasonry, RefreshButton, TopBar } from "app/components";
-import { FiltersBar } from "./components";
+import { ChannelEnum, FilterOrCollectionId, ImageExplorerDataType, ImageOrSummary } from "types";
+import { notifyApiCallError, ROUTES } from "utils";
 import { ImageService, RepositoriesService } from "app/services";
 import { useEventSocket, useGalleryTabsContext } from "app/context";
-import { notifyApiCallError, ROUTES } from "utils";
+import { Container, EmptyResults, ImageGallery, ImageMasonry, RefreshButton, TopBar } from "app/components";
+import { FiltersBar } from "./components";
+
 import style from "./GalleryView.module.scss";
 
 
@@ -118,6 +119,8 @@ function GalleryContent({
   const [t] = useTranslation();
   const navigate = useNavigate();
   const [pagination, setPagination] = useState<PaginationType>({ currentPage: 1, take: BATCH_SIZE, skip: 0 });
+  const [localData, setLocalData] = useState<ImageOrSummary[]>([]);
+  const isFetchingRef = useRef<boolean>(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -133,22 +136,34 @@ function GalleryContent({
     onFetchData(pagination);
   }, [pagination]);
 
-  const handleOnPaginationChange = useCallback((pageNumber: number) => {
-    setPagination({
-      ...pagination,
-      currentPage: pageNumber,
-      take: BATCH_SIZE,
-      skip: (pageNumber - 1) * BATCH_SIZE
+  useEffect(() => {
+    isFetchingRef.current = false;
+    setLocalData((prevData) => {
+      if (data.currentPage === 1) {
+        return data.images;
+      }
+      return [...prevData, ...data.images];
     });
-  }, [pagination]);
+  }, [data]);
 
-  function handleOnInfiniteScroll() {
-    const maxPage = Math.ceil(data.total / pagination.take);
-    if (pagination.currentPage === maxPage) {
-      return;
+  const handleOnInfiniteScroll = useCallback(() => {
+    if (isFetchingRef.current === false) {
+      isFetchingRef.current = true;
+      const maxPage = Math.ceil(data.total / pagination.take);
+      if (pagination.currentPage === maxPage) {
+        return;
+      }
+      const handleOnPaginationChange = (pageNumber: number) => {
+        setPagination({
+          ...pagination,
+          currentPage: pageNumber,
+          take: BATCH_SIZE,
+          skip: (pageNumber - 1) * BATCH_SIZE
+        });
+      };
+      handleOnPaginationChange(pagination.currentPage + 1);
     }
-    handleOnPaginationChange(pagination.currentPage + 1);
-  }
+  }, [pagination]);
 
   if (loading === false && data.total === 0) {
     const repositoriesExists = RepositoriesService.list().length > 0;
@@ -164,14 +179,14 @@ function GalleryContent({
   }
 
   if (viewMode === "gallery") {
-    return <ImageGallery containerWidth={width} data={data} loadMore={handleOnInfiniteScroll} />;
+    return <ImageGallery containerWidth={width} data={localData} loadMore={handleOnInfiniteScroll} />;
   }
 
   if (viewMode === "detail") {
     return <div>Detail view not implemented yet</div>;
   }
 
-  return <ImageMasonry containerWidth={width} data={data} loadMore={handleOnInfiniteScroll} />;
+  return <ImageMasonry containerWidth={width} data={localData} loadMore={handleOnInfiniteScroll} />;
 }
 
 type GalleryViewProps = {

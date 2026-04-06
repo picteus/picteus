@@ -3,10 +3,10 @@ import React, { useEffect, useRef, useState } from "react";
 
 import { ImageSummary } from "@picteus/ws-client";
 
-import { ImageItemMode } from "../../../types";
-import { useContainerDimensions } from "../../hooks";
-import { ImageMasonry } from "../index.ts";
-import { ImageService } from "../../services";
+import { ImageItemMode } from "types";
+import { useContainerDimensions } from "app/hooks";
+import { ImageService } from "app/services";
+import { ImageMasonry } from "app/components";
 
 
 type ImageCollectionType = { imageIds: string[] };
@@ -34,11 +34,7 @@ export default function ImageCollection({imageIds}: ImageCollectionType) {
         imageItemMode={ImageItemMode.PASSIVE}
         loadMore={() => {
         }}
-        data={{
-          images,
-          currentPage: 1,
-          total: images.length
-        }}
+        data={images}
       />
       }
     </div>);

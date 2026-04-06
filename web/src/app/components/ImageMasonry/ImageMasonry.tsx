@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import MasonryLayout, { MasonrySizing } from "react-fast-masonry";
 
-import { ImageExplorerDataType, ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
+import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
 import { useImageVisualizerContext } from "app/context";
 import { ImageItem } from "app/components";
+
 import style from "./ImageMasonry.module.scss";
 
 
 type ImageMasonryType = {
   imageSize?: number;
-  data: ImageExplorerDataType;
+  data: ImageOrSummary [];
   loadMore: () => void;
   containerWidth: number;
   imageItemMode?: ImageItemMode;
@@ -22,26 +23,7 @@ export default function ImageMasonry({
   loadMore,
   containerWidth,
 }: ImageMasonryType) {
-  const [localData, setLocalData] = useState<ImageOrSummary[]>([]);
-  const isFetchingRef = useRef<boolean>(false);
   const [, setImageVisualizerContext] = useImageVisualizerContext();
-
-  const loadMoreThrottled = useCallback(()=>{
-    if (isFetchingRef.current === false) {
-      isFetchingRef.current = true;
-      loadMore();
-    }
-  }, [loadMore]);
-
-  useEffect(() => {
-    isFetchingRef.current = false;
-    setLocalData((prevData) => {
-      if (data.currentPage === 1) {
-        return data.images;
-      }
-      return [...prevData, ...data.images];
-    });
-  }, [data]);
 
   const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo(() => {
     const gutter = 10;
@@ -54,28 +36,28 @@ export default function ImageMasonry({
   }, [containerWidth]);
 
   return (
-    localData.length !== 0 && containerWidth > 0 && (
+    data.length !== 0 && containerWidth > 0 && (
       <MasonryLayout
         sizes={sizes}
-        items={localData}
+        items={data}
         renderItem={({ columnWidth }, index: number) => {
           return (
             <ImageItem
-              key={localData[index].id}
+              key={data[index].id}
               width={columnWidth as number}
               mode={imageItemMode}
               onClick={() =>
                 setImageVisualizerContext({
-                  prevAndNextIds: localData.map((image) => image.id),
-                  imageSummary: localData[index],
+                  prevAndNextIds: data.map((image) => image.id),
+                  imageSummary: data[index],
                 })
               }
-              image={localData[index]}
-              caption={(localData[index] as ImageWithCaption).caption}
+              image={data[index]}
+              caption={(data[index] as ImageWithCaption).caption}
             />
           );
         }}
-        loadMore={loadMoreThrottled}
+        loadMore={loadMore}
         pack={true}
         awaitMore={true}
         pageSize={20}

@@ -1,16 +1,17 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Divider, Flex, Group, Loader, NumberInput, TextInput } from "@mantine/core";
-import { ImageApiImageTextToImagesRequest } from "@picteus/ws-client";
-import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 import { Form, useForm } from "@mantine/form";
 import { useFocusTrap } from "@mantine/hooks";
+import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
+
+import { ImageApiImageTextToImagesRequest } from "@picteus/ws-client";
 
 import { notifyApiCallError, Validators } from "utils";
 import { ImageWithCaption } from "types";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmptyResults, ImageMasonry } from "app/components";
 import { useContainerDimensions } from "app/hooks";
+import { CaptionDistance, EmptyResults, ImageMasonry } from "app/components";
 
 import style from "./TextToImagesModal.module.scss";
 
@@ -140,11 +141,7 @@ export default function TextToImagesModal({
       return (
         <ImageMasonry
           containerWidth={width}
-          data={{
-            images: imageSummaries,
-            currentPage: 1,
-            total: imageSummaries.length,
-          }}
+          data={imageSummaries}
           loadMore={() => {}}
         />
       );
