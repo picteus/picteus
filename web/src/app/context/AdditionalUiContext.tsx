@@ -4,7 +4,7 @@ import { UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { AdditionalUi } from "types";
 import { ExtensionsService } from "app/services";
-import { useOpenWindow } from "app/hooks";
+import useOpenWindow from "../hooks/useOpenWindow.tsx";
 import { notifyErrorWithError } from "utils";
 
 type AdditionalUiContextValue = {
@@ -56,7 +56,7 @@ export function AdditionalUiProvider({ children }) {
     const newAdditionalUis = transientUis.filter(transientUi => ExtensionsService.isPaused(transientUi.extensionId) === false);
     setTransientUis(newAdditionalUis);
     const additionalUis = [...computeAdditionalUi().sidebar, ...newAdditionalUis];
-    setAdditionalContextValue({ sidebar:[...additionalUis] });
+    setAdditionalContextValue({ sidebar: [...additionalUis] });
   }, [transientUis]);
 
   const addTransient = useCallback((additionalUi: AdditionalUi) => {

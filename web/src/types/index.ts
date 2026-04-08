@@ -32,10 +32,12 @@ export interface CommandSocketEventType {
 
 export type CommandParameters = JsonType;
 
+export type SendCommandType = (command: string, parameters: CommandParameters) => Promise<string>;
+
 export interface CommandContextType {
-  sendCommand: (command: string, parameters: CommandParameters) => Promise<string>;
+  sendCommand: SendCommandType;
   isAvailable: () => boolean;
-  sendCommandOnConnected: (command: string, parameters: CommandParameters) => Promise<string>;
+  sendCommandOnConnected: SendCommandType;
 }
 
 export type EventNotificationType = {

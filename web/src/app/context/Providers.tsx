@@ -10,19 +10,19 @@ import { GalleryTabsProvider } from "./GalleryTabsContext.tsx";
 export default function Providers({ children }) {
   return (
     <CommandSocketProvider>
-      <ImageVisualizerProvider>
-        <ActionModalProvider>
-          <ConfirmActionProvider>
-            <EventSocketProvider>
+      <EventSocketProvider>
+        <ConfirmActionProvider>
+          <ImageVisualizerProvider>
+            <ActionModalProvider>
               <AdditionalUiProvider>
                 <GalleryTabsProvider>
                   <ImagesSelectedProvider>{children}</ImagesSelectedProvider>
                 </GalleryTabsProvider>
               </AdditionalUiProvider>
-            </EventSocketProvider>
-          </ConfirmActionProvider>
-        </ActionModalProvider>
-      </ImageVisualizerProvider>
+            </ActionModalProvider>
+          </ImageVisualizerProvider>
+        </ConfirmActionProvider>
+      </EventSocketProvider>
     </CommandSocketProvider>
   );
 }
