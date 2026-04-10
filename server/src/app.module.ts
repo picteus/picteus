@@ -226,57 +226,6 @@ const throttlerGuardProvider: ClassProvider<ThrottlerGuard> =
 const validationPipeProvider: FactoryProvider = { provide: APP_PIPE, useFactory: validationPipeFactory };
 
 @Injectable()
-class ImageResizerMiddleware implements NestMiddleware, OnModuleInit, OnModuleDestroy
-{
-
-  private readonly resizer: Resizer = new Resizer();
-
-  private readonly limiter: RateLimiterMemory = new RateLimiterMemory({ duration: 1, points: 200 });
-
-  constructor(private readonly repositoryService: RepositoryService)
-  {
-    logger.debug("Instantiating an ImageResizerMiddleware");
-  }
-
-  async onModuleInit(): Promise<void>
-  {
-    logger.info("The initializing of the ImageResizerMiddleware is over");
-  }
-
-  async onModuleDestroy(): Promise<void>
-  {
-    logger.info("Destroying the ImageResizerMiddleware");
-    logger.info("Destroyed the ImageResizerMiddleware");
-  }
-
-  async use(request: ExpressRequest, response: ExpressResponse): Promise<void>
-  {
-    try
-    {
-      await this.limiter.consume("", 1);
-      await this.resizer.handle(request, response, (nodePath: string) =>
-      {
-        const status: RepositoryStatus | undefined = this.repositoryService.getImageRepositoryStatus(nodePath);
-        return status === undefined ? "it does not belong to any repository" : ((status === RepositoryStatus.READY || status === RepositoryStatus.INDEXING) ? undefined : "it belongs to a not-available repository");
-      });
-    }
-    catch (error)
-    {
-      if (error instanceof RateLimiterRes)
-      {
-        this.resizer.sendTooManyRequestsError(response);
-      }
-      else
-      {
-        // This should never happen
-        throw error;
-      }
-    }
-  }
-
-}
-
-@Injectable()
 class ExtensionsUserInterfaceMiddleware implements NestMiddleware, OnModuleInit, OnModuleDestroy
 {
 
@@ -372,6 +321,61 @@ export function fineTuneApplication(application: NestExpressApplication): void
 
 export function computeMainModule(withThrotlling: boolean): Type<NestModule>
 {
+
+  @Injectable()
+  class ImageResizerMiddleware implements NestMiddleware, OnModuleInit, OnModuleDestroy
+  {
+
+    private readonly resizer: Resizer = new Resizer();
+
+    private readonly limiter?: RateLimiterMemory = withThrotlling === false ? undefined : new RateLimiterMemory({
+      duration: 1,
+      points: 200
+    });
+
+    constructor(private readonly repositoryService: RepositoryService)
+    {
+      logger.debug("Instantiating an ImageResizerMiddleware");
+    }
+
+    async onModuleInit(): Promise<void>
+    {
+      logger.info("The initializing of the ImageResizerMiddleware is over");
+    }
+
+    async onModuleDestroy(): Promise<void>
+    {
+      logger.info("Destroying the ImageResizerMiddleware");
+      logger.info("Destroyed the ImageResizerMiddleware");
+    }
+
+    async use(request: ExpressRequest, response: ExpressResponse): Promise<void>
+    {
+      try
+      {
+        await this.limiter?.consume("", 1);
+        await this.resizer.handle(request, response, (nodePath: string) =>
+        {
+          const status: RepositoryStatus | undefined = this.repositoryService.getImageRepositoryStatus(nodePath);
+          return status === undefined ? "it does not belong to any repository" : ((status === RepositoryStatus.READY || status === RepositoryStatus.INDEXING) ? undefined : "it belongs to a not-available repository");
+        });
+      }
+      catch (error)
+      {
+        if (error instanceof RateLimiterRes)
+        {
+          this.resizer.sendTooManyRequestsError(response);
+        }
+        else
+        {
+          // This should never happen
+          throw error;
+        }
+      }
+    }
+
+  }
+
   // The orders in which the providers matter, because we want their "onModuleInit()" method invoked in the following order: "AdministrationService" => "RepositoryService"
   const providers = [unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, ...(withThrotlling === false ? [] : [throttlerGuardProvider]), VectorDatabaseAccessor, HostService, NotifierService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService];
 
