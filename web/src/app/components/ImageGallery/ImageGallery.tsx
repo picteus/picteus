@@ -12,6 +12,7 @@ import style from "./ImageGallery.module.scss";
 type ImageGalleryType = {
   imageSize?: number;
   data: ImageOrSummary [];
+  onSelectedImage: (image: ImageOrSummary) => void;
   loadMore: () => void;
   containerWidth: number;
   containerHeight: number;
@@ -23,6 +24,7 @@ type ImageGalleryType = {
 export default function ImageGallery({
   imageSize = 250,
   data,
+  onSelectedImage,
   loadMore,
   containerWidth,
   containerHeight,
@@ -34,11 +36,15 @@ export default function ImageGallery({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
   const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
-  const navigation = useImageNavigation(selectedImage, setSelectedImage);
-  useKey("Escape", () => setSelectedImage(undefined));
+  const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
+    setSelectedImage(image);
+    onSelectedImage(image);
+  }, [setSelectedImage]);
+  const navigation = useImageNavigation(selectedImage, setSelectedImageWrapper);
+  useKey("Escape", () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
-    navigation.setImageIds(data.map(image => image.id));
+    navigation.setImageIds(data.map(image => image.id), selectedImage);
   }, [data]);
 
   useEffect(() => {
@@ -102,7 +108,7 @@ export default function ImageGallery({
                 width={columnWidth}
                 height={columnWidth}
                 mode={imageItemMode}
-                onClick={() => setSelectedImage(item)}
+                onClick={() => setSelectedImageWrapper(item)}
                 image={item}
               />
             </Grid.Col>
@@ -116,10 +122,11 @@ export default function ImageGallery({
             <Overlay
               color="#000"
               backgroundOpacity={1}
+              zIndex={0}
             >
               <ImageDetail
                 image={selectedImage}
-                onClose={() => setSelectedImage((undefined))}
+                onClose={() => setSelectedImageWrapper((undefined))}
                 hasPrev={navigation.hasPrev}
                 hasNext={navigation.hasNext}
                 onPrev={navigation.onPrev}

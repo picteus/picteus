@@ -28,13 +28,14 @@ export default function ImageCollection({imageIds}: ImageCollectionType) {
   // TODO: find a way to limit the number of images displayed
   return (
     <div ref={containerRef}>
-      {containerRef?.current && images && <ImageMasonry
-        containerWidth={width}
+      {containerRef.current && images && <ImageMasonry
         imageSize={100}
-        imageItemMode={ImageItemMode.PASSIVE}
+        data={images}
         loadMore={() => {
         }}
-        data={images}
+        containerWidth={width}
+        containerRef={containerRef}
+        imageItemMode={ImageItemMode.PASSIVE}
       />
       }
     </div>);

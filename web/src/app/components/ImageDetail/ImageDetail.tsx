@@ -203,7 +203,7 @@ export default function ImageDetail({
 
   return (
     <Group orientation="horizontal" onLayoutChanged={onLayoutChanged}>
-      <Panel id="left" defaultSize={`${panelSizes[0]}%`} minSize="40%">
+      <Panel id="left" defaultSize={`${panelSizes[0]}%`} minSize="40%" className={style.left}>
         <div data-close="close" className={style.imageContainer}>
           <ActionIcon
             size={"xl"}
@@ -234,11 +234,11 @@ export default function ImageDetail({
             <IconArrowRight />
           </ActionIcon>
         </div>
-      </Panel>
+      </Panel >
       <Separator className={style.paneSeparator}>
         <div className={style.paneSeparatorHandle} />
       </Separator>
-      <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%" style={{width: "200px"}}>
+      <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%" className={style.right}>
         <div className={style.informationContainer}>
           <div className={style.header}>
             <div className={style.titleContainer}>

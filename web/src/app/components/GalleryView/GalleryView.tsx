@@ -26,6 +26,7 @@ type GalleryTopBarProps = {
   handleOnRefresh: () => void;
   handleOnPin: () => void;
   viewMode: ViewMode;
+  setZIndex: boolean;
   setViewMode: (mode: ViewMode) => void;
 };
 
@@ -35,6 +36,7 @@ function GalleryTopBar({
   handleOnRefresh,
   handleOnPin,
   viewMode,
+  setZIndex,
   setViewMode,
 }: GalleryTopBarProps) {
   const [t] = useTranslation();
@@ -57,7 +59,7 @@ function GalleryTopBar({
   }
 
   return (
-    <TopBar>
+    <TopBar setZIndex={setZIndex}>
       <Flex align="start" justify="space-between">
         <FiltersBar initialFilterOrCollectionId={initialFilterOrCollectionId} onChange={setFilterOrCollectionId} />
         <Flex gap="xs">
@@ -100,6 +102,7 @@ type PaginationType = SearchRange & {
 type GalleryContentProps = {
   loading: boolean;
   data: ImageExplorerDataType;
+  onSelectedImage: (image: ImageOrSummary) => void;
   containerWidth: number;
   containerHeight: number;
   containerRef: RefObject<HTMLDivElement>;
@@ -114,6 +117,7 @@ type GalleryContentProps = {
 function GalleryContent({
   loading,
   data,
+  onSelectedImage,
   containerWidth,
   containerHeight,
   containerRef,
@@ -180,16 +184,18 @@ function GalleryContent({
   }
 
   if (viewMode === "gallery") {
-    return <ImageGallery containerWidth={containerWidth} containerHeight={containerHeight} containerRef={containerRef}
-                         scrollRootRef={scrollRootRef} data={accumulatedData}
-                         loadMore={loadMore} />;
+    return <ImageGallery data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
+                         containerWidth={containerWidth} containerHeight={containerHeight} containerRef={containerRef}
+                         scrollRootRef={scrollRootRef}
+    />;
   }
 
   if (viewMode === "table") {
     return <ImageTable containerWidth={containerWidth} data={accumulatedData} loadMore={loadMore} />;
   }
 
-  return <ImageMasonry containerWidth={containerWidth} data={accumulatedData} loadMore={loadMore} />;
+  return <ImageMasonry data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
+                       containerWidth={containerWidth} containerRef={containerRef} />;
 }
 
 type GalleryViewProps = {
@@ -207,6 +213,7 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<ViewMode>("masonry");
+  const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
 
   async function loadData(pagination: PaginationType) {
     if (filterOrCollectionId === undefined) {
@@ -248,6 +255,10 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
     });
   }
 
+  function handleOnSelectedImage(image: ImageOrSummary) {
+    setSelectedImage(image);
+  }
+
   return (
     <>
       <div className={style.container}>
@@ -258,12 +269,14 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
           handleOnPin={handleOnPin}
           viewMode={viewMode}
           setViewMode={setViewMode}
+          setZIndex={selectedImage === undefined}
         />
         <div className={style.contentContainer}>
           <Container>
             <GalleryContent
               loading={loading}
               data={data}
+              onSelectedImage={handleOnSelectedImage}
               containerWidth={containerWidth}
               containerHeight={containerHeight}
               containerRef={containerRef}

@@ -5,8 +5,8 @@
   position: relative;
   .alertContainer {
     position: fixed;
-    left : $sidebar-width;
-    width: calc(100% - $sidebar-width - $rightSidebar-width);
+    left : $left-sidebar-width;
+    width: 100%;
     z-index: 2;
     cursor : pointer;
   }

@@ -14,7 +14,7 @@ export default function ImageVisualizerWrapper({
   const [selectedImage, setSelectedImage] = useState<ImageOrSummary>(state.imageSummary);
   const navigation = useImageNavigation(selectedImage, setSelectedImage);
   useEffect(() => {
-    navigation.setImageIds(state.prevAndNextIds);
+    navigation.setImageIds(state.prevAndNextIds, selectedImage);
   }, [state]);
 
   return (

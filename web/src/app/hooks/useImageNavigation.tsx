@@ -55,8 +55,8 @@ export default function useImageNavigation(selectedImage: ImageOrSummary, setSel
   }
 
   return {
-    setImageIds:(imageIds: string[]) => {
-      setState((previousValue) => ({ ...previousValue, prevAndNextIds: imageIds }));
+    setImageIds:(imageIds: string[], selectedImage: ImageOrSummary) => {
+      setState({ imageSummary: selectedImage, prevAndNextIds: imageIds });
     },
     hasPrev: computeHas("prev"),
     hasNext: computeHas("next"),
