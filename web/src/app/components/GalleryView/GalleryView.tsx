@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { RefObject, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Flex, Tooltip } from "@mantine/core";
@@ -16,7 +16,7 @@ import { FiltersBar } from "./components";
 import style from "./GalleryView.module.scss";
 
 
-const BATCH_SIZE = 60;
+const BATCH_SIZE = 100;
 
 export type ViewMode = "masonry" | "gallery" | "table";
 
@@ -100,32 +100,36 @@ type PaginationType = SearchRange & {
 type GalleryContentProps = {
   loading: boolean;
   data: ImageExplorerDataType;
-  width: number;
+  containerWidth: number;
+  containerHeight: number;
   filterOrCollectionId?: FilterOrCollectionId;
   refreshTrigger: number;
   onFetchData: (pagination: PaginationType) => void;
   viewMode: ViewMode;
+  scrollRootRef: RefObject<HTMLDivElement>;
 };
 
 
 function GalleryContent({
   loading,
   data,
-  width,
+  containerWidth,
+  containerHeight,
   filterOrCollectionId,
   refreshTrigger,
   onFetchData,
   viewMode,
+  scrollRootRef,
 }: GalleryContentProps) {
   const [t] = useTranslation();
   const navigate = useNavigate();
   const defaultPagination: PaginationType = { currentPage: 1, take: BATCH_SIZE, skip: 0 };
   const [pagination, setPagination] = useState<PaginationType>(defaultPagination);
   const [accumulatedData, setAccumulatedData] = useState<ImageOrSummary[]>([]);
-  const isFetchingRef = useRef<boolean>(false);
+  const isLoadingMoreRef = useRef<boolean>(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    scrollRootRef.current.scrollTo(0, 0);
     setAccumulatedData([]);
     setPagination({ currentPage: 1, take: BATCH_SIZE, skip: 0 });
   }, [filterOrCollectionId, refreshTrigger]);
@@ -135,7 +139,7 @@ function GalleryContent({
   }, [pagination]);
 
   useEffect(() => {
-    isFetchingRef.current = false;
+    isLoadingMoreRef.current = false;
     setAccumulatedData((prevData) => {
       if (data.currentPage === 1) {
         return data.images;
@@ -144,12 +148,12 @@ function GalleryContent({
     });
   }, [data]);
 
-  const handleOnInfiniteScroll = useCallback(() => {
-    if (isFetchingRef.current === false) {
-      isFetchingRef.current = true;
+  const loadMore = useCallback(() => {
+    if (isLoadingMoreRef.current === false) {
+      isLoadingMoreRef.current = true;
       const maxPage = Math.ceil(data.total / pagination.take);
       if (pagination.currentPage === maxPage) {
-        isFetchingRef.current = false;
+        isLoadingMoreRef.current = false;
         return;
       }
       setPagination({
@@ -174,22 +178,25 @@ function GalleryContent({
   }
 
   if (viewMode === "gallery") {
-    return <ImageGallery containerWidth={width} data={accumulatedData} loadMore={handleOnInfiniteScroll} />;
+    return <ImageGallery containerWidth={containerWidth} containerHeight={containerHeight} data={accumulatedData}
+                         loadMore={loadMore} scrollRootRef={scrollRootRef} />;
   }
 
   if (viewMode === "table") {
-    return <ImageTable containerWidth={width} data={accumulatedData} loadMore={handleOnInfiniteScroll} />;
+    return <ImageTable containerWidth={containerWidth} data={accumulatedData} loadMore={loadMore} />;
   }
 
-  return <ImageMasonry containerWidth={width} data={accumulatedData} loadMore={handleOnInfiniteScroll} />;
+  return <ImageMasonry containerWidth={containerWidth} data={accumulatedData} loadMore={loadMore} />;
 }
 
 type GalleryViewProps = {
   initialFilterOrCollectionId?: FilterOrCollectionId;
   containerWidth: number;
+  containerHeight: number;
+  scrollRootRef: RefObject<HTMLDivElement>;
 };
 
-export default function GalleryView({ initialFilterOrCollectionId, containerWidth }: GalleryViewProps) {
+export default function GalleryView({ initialFilterOrCollectionId, containerWidth, containerHeight, scrollRootRef }: GalleryViewProps) {
   const { addTab } = useGalleryTabsContext();
   const [data, setData] = useState<ImageExplorerDataType>({ currentPage: 1, total: 0, images: [] });
   const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(initialFilterOrCollectionId);
@@ -197,8 +204,8 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
   const [loading, setLoading] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<ViewMode>("masonry");
 
-  async function load(currentPagination: PaginationType) {
-    if (!filterOrCollectionId) {
+  async function loadData(pagination: PaginationType) {
+    if (filterOrCollectionId === undefined) {
       return;
     }
     setLoading(true);
@@ -207,19 +214,20 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
         filter: filterOrCollectionId.filter,
         collectionId: filterOrCollectionId.filter !== undefined ? undefined : filterOrCollectionId.collectionId,
         range: {
-          take: currentPagination.take,
-          skip: currentPagination.skip,
+          take: pagination.take,
+          skip: pagination.skip,
         },
       });
-
       setData({
         total: apiResponse.totalCount,
-        currentPage: currentPagination.currentPage,
+        currentPage: pagination.currentPage,
         images: apiResponse.items,
       });
-    } catch (error) {
+    }
+    catch (error) {
       notifyApiCallError(error, "Can't fetch images");
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   }
@@ -232,7 +240,7 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
     addTab({
       type: "View",
       content: { title: "New tab", description: "" },
-      data: { filterOrCollectionId: filterOrCollectionId },
+      data: { filterOrCollectionId },
     });
   }
 
@@ -252,11 +260,13 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
             <GalleryContent
               loading={loading}
               data={data}
-              width={containerWidth}
+              containerWidth={containerWidth}
+              containerHeight={containerHeight}
               filterOrCollectionId={filterOrCollectionId}
               refreshTrigger={refreshTrigger}
-              onFetchData={load}
+              onFetchData={loadData}
               viewMode={viewMode}
+              scrollRootRef={scrollRootRef}
             />
           </Container>
         </div>

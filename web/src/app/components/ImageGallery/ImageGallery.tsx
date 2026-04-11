@@ -1,6 +1,5 @@
-import { useEffect, useMemo } from "react";
+import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@mantine/core";
-import { useIntersection } from "@mantine/hooks";
 
 import { ImageItemMode, ImageOrSummary } from "types";
 import { useImageVisualizerContext } from "app/context";
@@ -12,7 +11,9 @@ type ImageGalleryType = {
   data: ImageOrSummary [];
   loadMore: () => void;
   containerWidth: number;
+  containerHeight: number;
   imageItemMode?: ImageItemMode;
+  scrollRootRef: RefObject<HTMLDivElement>;
 };
 
 export default function ImageGallery({
@@ -21,16 +22,56 @@ export default function ImageGallery({
   data,
   loadMore,
   containerWidth,
+  containerHeight,
+  scrollRootRef,
 }: ImageGalleryType) {
   const [, setImageVisualizerContext] = useImageVisualizerContext();
-  const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });
+  const [sentinel, setSentinel] = useState<HTMLHeadingElement | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<() => void>(loadMore);
 
   useEffect(() => {
-    if (entry?.isIntersecting === true)
-    {
-      loadMore();
+    loadMoreRef.current = loadMore;
+  }, [loadMore]);
+
+  const sentinelRef = useCallback((node: HTMLHeadingElement | null) => {
+    if (node !== null) {
+      setSentinel(node);
     }
-  }, [entry?.isIntersecting, loadMore]);
+  }, []);
+
+  useEffect(() => {
+    const root = scrollRootRef.current;
+    if (sentinel === null || root === null) {
+      return;
+    }
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting === true) {
+          loadMoreRef.current();
+        }
+      },
+      {
+        root,
+        threshold: 0,
+        rootMargin: `0px 0px ${containerHeight * 5}px 0px`,
+      }
+    );
+    observerRef.current.observe(sentinel);
+    return () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+    };
+  }, [containerHeight, scrollRootRef, sentinel]);
+
+  useEffect(() => {
+    const observer = observerRef.current;
+    if (sentinel === null || observer === null) {
+      return;
+    }
+    observer.unobserve(sentinel);
+    observer.observe(sentinel);
+  }, [data]);
 
   const gutter = 10;
   const columnWidth = useMemo(() => {
@@ -60,7 +101,7 @@ export default function ImageGallery({
           </Grid.Col>
         ))}
         <Grid.Col span={12}>
-          <div ref={ref} style={{ width: "100%", height: 20 }} />
+          <div ref={sentinelRef} style={{ width: "100%", height: 1 }} />
         </Grid.Col>
       </Grid>
     )

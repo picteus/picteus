@@ -71,39 +71,40 @@ export default function ImageItem({
       }}
     >
       {caption && <div className={style.captionContainer}>{caption}</div>}
-      <div
+      <Flex
+        data-action={true}
+        p="sm"
+        align="start"
+        justify="space-between"
         style={menuOpened ? { opacity: 1 } : {}}
         className={style.overlay}
-        data-action={true}
       >
-        <Flex data-action={true} p="sm" align="center" justify="space-between">
-          {mode !== ImageItemMode.PASSIVE && <Checkbox
-            checked={isSelected}
-            size={width < 200 ? "sm" : "md"}
-            onChange={handleOnSelectImage}
-          />}
-          {mode === ImageItemMode.VIEW && (
-            <Menu
-              withinPortal={false}
-              position="bottom-end"
-              trigger="hover"
-              openDelay={50}
-              closeDelay={600}
-              opened={menuOpened}
-              onChange={handleOnChangeMenuOpened}
-              shadow="md"
-              width={260}
-            >
-              <Menu.Target>
-                <ActionIcon variant="default">
-                  <IconDots />
-                </ActionIcon>
-              </Menu.Target>
-              <ImageItemMenu image={image} />
-            </Menu>
-          )}
-        </Flex>
-      </div>
+        {mode !== ImageItemMode.PASSIVE && <Checkbox
+          checked={isSelected}
+          size={width < 200 ? "sm" : "md"}
+          onChange={handleOnSelectImage}
+        />}
+        {mode === ImageItemMode.VIEW && (
+          <Menu
+            withinPortal={false}
+            position="bottom-end"
+            trigger="hover"
+            openDelay={50}
+            closeDelay={600}
+            opened={menuOpened}
+            onChange={handleOnChangeMenuOpened}
+            shadow="md"
+            width={260}
+          >
+            <Menu.Target>
+              <ActionIcon variant="default">
+                <IconDots />
+              </ActionIcon>
+            </Menu.Target>
+            <ImageItemMenu image={image} />
+          </Menu>
+        )}
+      </Flex>
       <img
         onLoad={async () => {
           setHidePlaceholder(true);
@@ -112,6 +113,8 @@ export default function ImageItem({
         className={`${style.image} ${hidePlaceholder ? style.loaded : ""}`}
         src={ImageService.getImageSrc(image.uri, width, height)}
         alt={image.name}
+        width={width}
+        height={height ?? (width * image.dimensions.height / image.dimensions.width)}
       />
       {!hidePlaceholder && <div className={style.placeholder}></div>}
     </div>

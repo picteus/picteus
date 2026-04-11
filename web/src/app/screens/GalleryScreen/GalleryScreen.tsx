@@ -69,6 +69,7 @@ function GalleryTab({ tab, onRemove }: GalleryTabType) {
 export default function GalleryScreen() {
   const [t] = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const { width, height } = useContainerDimensions(containerRef);
   const {tabs, removeTab, state, galleryTabValue} = useGalleryTabsContext();
 
@@ -91,7 +92,7 @@ export default function GalleryScreen() {
 
   return (
     <div ref={containerRef} className={style.mainContainer}>
-      {containerRef.current && <ScrollArea h={height}>
+      {containerRef.current && <ScrollArea h={height} viewportRef={viewportRef}>
         <Tabs value={state.activeTab} onChange={state.setActiveTab}>
           <Tabs.List>
             <Tabs.Tab value={galleryTabValue} leftSection={<IconPhoto size={13} />}>
@@ -110,7 +111,8 @@ export default function GalleryScreen() {
             })}
           </Tabs.List>
           <Tabs.Panel value={galleryTabValue}>
-            <GalleryView containerWidth={width}/>
+            {viewportRef.current &&
+              <GalleryView containerWidth={width} containerHeight={height} scrollRootRef={viewportRef} />}
           </Tabs.Panel>
           {tabs.map((tab) => (
             <Tabs.Panel key={`panel-${tab.id}`} value={tab.id}>
@@ -123,9 +125,11 @@ export default function GalleryScreen() {
                   />
                 </Container>
               ) : (
-                <GalleryView
+                viewportRef.current && <GalleryView
                   initialFilterOrCollectionId={tab.data.filterOrCollectionId}
                   containerWidth={width}
+                  containerHeight={height}
+                  scrollRootRef={viewportRef}
                 />
               )}
             </Tabs.Panel>
