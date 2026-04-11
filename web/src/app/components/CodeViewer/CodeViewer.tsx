@@ -10,7 +10,7 @@ import { notifyErrorWithError } from "utils";
 hljs.registerLanguage("json", json);
 
 export default function CodeViewer({ code }) {
-  const codeRef = useRef();
+  const codeRef = useRef<HTMLElement>(null);
 
   const { colorScheme } = useMantineColorScheme();
   import((`highlight.js/styles/${colorScheme === "dark" ? "dark.min.css" : "lightfair.min.css"}`));
@@ -19,7 +19,7 @@ export default function CodeViewer({ code }) {
     if (codeRef.current) {
       hljs.highlightElement(codeRef.current);
     }
-  }, [codeRef, code]);
+  }, [codeRef]);
 
   const formattedCode = useMemo(() => {
     try {

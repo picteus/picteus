@@ -297,7 +297,7 @@ export default function ImageDetail({
                 </Text>
               </Accordion.Control>
               <Accordion.Panel>
-                <Table>
+                <Table layout="fixed" >
                   <Table.Tbody>
                     {informationData.map((information, index) => (
                       <TableComponent
@@ -317,7 +317,7 @@ export default function ImageDetail({
                   </Text>
                 </Accordion.Control>
                 <Accordion.Panel>
-                  <Table width={"100%"} layout="fixed">
+                  <Table layout="fixed">
                     <Table.Tbody>
                       {imageTags?.map((imageTag, index) => (
                         <TableComponent
@@ -341,7 +341,7 @@ export default function ImageDetail({
                   </Text>
                 </Accordion.Control>
                 <Accordion.Panel>
-                  <Table width={"100%"} layout="fixed">
+                  <Table layout="fixed">
                     <Table.Tbody>
                       {imageFeatures?.map((imageFeature, index) =>
                       {
@@ -403,7 +403,7 @@ export default function ImageDetail({
                 </Text>
               </Accordion.Control>
               <Accordion.Panel>
-                <Table width={"100%"} layout="fixed">
+                <Table layout="fixed">
                   <Table.Tbody>
                     {imageMetadata?.map((metadata, index) => (
                       <TableComponent

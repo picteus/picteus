@@ -28,8 +28,8 @@
     background: var(--mantine-color-body);
     position: fixed;
     bottom: 0;
-    left: 0;
-    right: 0;
+    left: $left-sidebar-width;
+    right: $right-sidebar-width;
     flex-grow: 1;
   }
 }
