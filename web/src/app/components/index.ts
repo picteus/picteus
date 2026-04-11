@@ -13,6 +13,7 @@ export { default as BottomBar } from "./BottomBar/BottomBar.tsx";
 export { default as GalleryView } from "./GalleryView/GalleryView.tsx";
 export { default as MasonryVisualizer } from "./MasonryVisualizer/MasonryVisualizer.tsx";
 export { default as CommandForm } from "./CommandForm/CommandForm.tsx";
+export { default as ImageDetail } from "./ImageDetail/ImageDetail.tsx";
 export { default as ImageItem } from "./ImageItem/ImageItem.tsx";
 export { default as ImageItemMenu } from "./ImageItemMenu/ImageItemMenu.tsx";
 export { default as ImageMasonry } from "./ImageMasonry/ImageMasonry.tsx";

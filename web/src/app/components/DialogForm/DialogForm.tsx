@@ -1,7 +1,7 @@
 import { DialogType } from "types";
 import { Alert, Button, Flex } from "@mantine/core";
 import { IconCircleX, IconInfoCircle, IconQuestionMark } from "@tabler/icons-react";
-import { useEnterKey } from "app/hooks";
+import { useKey } from "app/hooks";
 import { CopyText, ImageCollection } from "app/components";
 
 import style from "./DialogForm.module.scss";
@@ -10,7 +10,7 @@ type DialogFormType = { dialog: DialogType; imageIds?: string[]; onSend(isYes: b
 
 export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
 {
-  useEnterKey(() => onSend(true));
+  useKey("Enter", () => onSend(true));
 
   const Buttons = () =>
   {

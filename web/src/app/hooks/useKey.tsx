@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 
-export default function useEnterKey(callback: () => void) {
+
+export default function useKey(key: "Enter" | "Escape", callback: () => void) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Enter") {
+      if (event.key === key) {
         event.preventDefault();
         callback();
       }

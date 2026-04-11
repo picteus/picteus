@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState } from "react";
-import { Image, ImageSummary } from "@picteus/ws-client";
+
+import { ImageOrSummary } from "types";
+
 
 export type ImageVisualizerContextValue = {
-  imageSummary: ImageSummary | Image | undefined;
+  imageSummary: ImageOrSummary | undefined;
   prevAndNextIds?: string[];
 };
 

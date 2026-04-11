@@ -5,7 +5,7 @@ import { IconInfoCircle } from "@tabler/icons-react";
 
 import { UiCommandType } from "types";
 import { ImageCollection, Markdown, RjsfForm } from "app/components";
-import { useEnterKey } from "app/hooks";
+import { useKey } from "app/hooks";
 
 import style from "./CommandForm.module.scss";
 import { extractSchemaAndUiSchema } from "../RjsfForm/RjsfForm.tsx";
@@ -28,7 +28,7 @@ export default function CommandForm({
   const [commandParameters, setCommandParameters] = useState<object>();
   const [t] = useTranslation();
 
-  useEnterKey(() => onSend(extensionId, command.id, commandParameters));
+  useKey("Enter", () => onSend(extensionId, command.id, commandParameters));
 
   const form = command.form;
   const { schema, uiSchema } = extractSchemaAndUiSchema(form.parameters);

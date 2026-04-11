@@ -47,9 +47,16 @@ export const ConfirmActionProvider = ({
         <Alert icon={<IconAlertTriangle />} color="orange">
           {modalOptions.message}
         </Alert>
-        <Flex justify="flex-end">
+        <Flex justify="flex-end" gap="md" mt="md">
           <Button
-            mt="lg"
+            variant="default"
+            onClick={() => {
+              setConfirmModalOpen(false);
+            }}
+          >
+            {i18n.t("button.cancel")}
+          </Button>
+          <Button
             color="red"
             onClick={() => {
               onConfirmCallback();

@@ -112,7 +112,7 @@ export default function GalleryScreen() {
           </Tabs.List>
           <Tabs.Panel value={galleryTabValue}>
             {viewportRef.current &&
-              <GalleryView containerWidth={width} containerHeight={height} scrollRootRef={viewportRef} />}
+              <GalleryView containerWidth={width} containerHeight={height} containerRef={containerRef} scrollRootRef={viewportRef} />}
           </Tabs.Panel>
           {tabs.map((tab) => (
             <Tabs.Panel key={`panel-${tab.id}`} value={tab.id}>
@@ -129,6 +129,7 @@ export default function GalleryScreen() {
                   initialFilterOrCollectionId={tab.data.filterOrCollectionId}
                   containerWidth={width}
                   containerHeight={height}
+                  containerRef={containerRef}
                   scrollRootRef={viewportRef}
                 />
               )}

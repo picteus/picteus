@@ -1,10 +1,13 @@
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Grid } from "@mantine/core";
+import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
+import { Grid, Overlay } from "@mantine/core";
 
 import { ImageItemMode, ImageOrSummary } from "types";
-import { useImageVisualizerContext } from "app/context";
-import { ImageItem } from "app/components";
+import { useImageNavigation, useKey } from "app/hooks";
+import { ImageDetail, ImageItem } from "app/components";
 
+import style from "./ImageGallery.module.scss";
 
 type ImageGalleryType = {
   imageSize?: number;
@@ -12,23 +15,31 @@ type ImageGalleryType = {
   loadMore: () => void;
   containerWidth: number;
   containerHeight: number;
-  imageItemMode?: ImageItemMode;
+  containerRef: RefObject<HTMLDivElement>;
   scrollRootRef: RefObject<HTMLDivElement>;
+  imageItemMode?: ImageItemMode;
 };
 
 export default function ImageGallery({
   imageSize = 250,
-  imageItemMode,
   data,
   loadMore,
   containerWidth,
   containerHeight,
+  containerRef,
   scrollRootRef,
+  imageItemMode,
 }: ImageGalleryType) {
-  const [, setImageVisualizerContext] = useImageVisualizerContext();
   const [sentinel, setSentinel] = useState<HTMLHeadingElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
+  const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
+  const navigation = useImageNavigation(selectedImage, setSelectedImage);
+  useKey("Escape", () => setSelectedImage(undefined));
+
+  useEffect(() => {
+    navigation.setImageIds(data.map(image => image.id));
+  }, [data]);
 
   useEffect(() => {
     loadMoreRef.current = loadMore;
@@ -83,27 +94,41 @@ export default function ImageGallery({
 
   return (
     data.length !== 0 && containerWidth > 0 && (
-      <Grid gutter={gutter}>
-        {data.map((item) => (
-          <Grid.Col span="content" key={item.id}>
-            <ImageItem
-              width={columnWidth}
-              height={columnWidth}
-              mode={imageItemMode}
-              onClick={() =>
-                setImageVisualizerContext({
-                  prevAndNextIds: data.map((image) => image.id),
-                  imageSummary: item,
-                })
-              }
-              image={item}
-            />
+      <>
+        <Grid gutter={gutter}>
+          {data.map((item) => (
+            <Grid.Col span="content" key={item.id}>
+              <ImageItem
+                width={columnWidth}
+                height={columnWidth}
+                mode={imageItemMode}
+                onClick={() => setSelectedImage(item)}
+                image={item}
+              />
+            </Grid.Col>
+          ))}
+          <Grid.Col span={12}>
+            <div ref={sentinelRef} className={style.sentinel} />
           </Grid.Col>
-        ))}
-        <Grid.Col span={12}>
-          <div ref={sentinelRef} style={{ width: "100%", height: 1 }} />
-        </Grid.Col>
-      </Grid>
+        </Grid>
+        {createPortal(
+          selectedImage && <div className={style.visualizedImage}>
+            <Overlay
+              color="#000"
+              backgroundOpacity={1}
+            >
+              <ImageDetail
+                image={selectedImage}
+                onClose={() => setSelectedImage((undefined))}
+                hasPrev={navigation.hasPrev}
+                hasNext={navigation.hasNext}
+                onPrev={navigation.onPrev}
+                onNext={navigation.onNext}
+              />
+            </Overlay>
+          </div>,
+          containerRef.current
+        )}</>
     )
   );
 }

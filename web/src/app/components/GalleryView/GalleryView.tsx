@@ -102,11 +102,12 @@ type GalleryContentProps = {
   data: ImageExplorerDataType;
   containerWidth: number;
   containerHeight: number;
+  containerRef: RefObject<HTMLDivElement>;
+  scrollRootRef: RefObject<HTMLDivElement>;
   filterOrCollectionId?: FilterOrCollectionId;
   refreshTrigger: number;
   onFetchData: (pagination: PaginationType) => void;
   viewMode: ViewMode;
-  scrollRootRef: RefObject<HTMLDivElement>;
 };
 
 
@@ -115,11 +116,12 @@ function GalleryContent({
   data,
   containerWidth,
   containerHeight,
+  containerRef,
+  scrollRootRef,
   filterOrCollectionId,
   refreshTrigger,
   onFetchData,
   viewMode,
-  scrollRootRef,
 }: GalleryContentProps) {
   const [t] = useTranslation();
   const navigate = useNavigate();
@@ -178,8 +180,9 @@ function GalleryContent({
   }
 
   if (viewMode === "gallery") {
-    return <ImageGallery containerWidth={containerWidth} containerHeight={containerHeight} data={accumulatedData}
-                         loadMore={loadMore} scrollRootRef={scrollRootRef} />;
+    return <ImageGallery containerWidth={containerWidth} containerHeight={containerHeight} containerRef={containerRef}
+                         scrollRootRef={scrollRootRef} data={accumulatedData}
+                         loadMore={loadMore} />;
   }
 
   if (viewMode === "table") {
@@ -193,10 +196,11 @@ type GalleryViewProps = {
   initialFilterOrCollectionId?: FilterOrCollectionId;
   containerWidth: number;
   containerHeight: number;
+  containerRef: RefObject<HTMLDivElement>;
   scrollRootRef: RefObject<HTMLDivElement>;
 };
 
-export default function GalleryView({ initialFilterOrCollectionId, containerWidth, containerHeight, scrollRootRef }: GalleryViewProps) {
+export default function GalleryView({ initialFilterOrCollectionId, containerWidth, containerHeight, containerRef, scrollRootRef }: GalleryViewProps) {
   const { addTab } = useGalleryTabsContext();
   const [data, setData] = useState<ImageExplorerDataType>({ currentPage: 1, total: 0, images: [] });
   const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(initialFilterOrCollectionId);
@@ -262,11 +266,12 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
               data={data}
               containerWidth={containerWidth}
               containerHeight={containerHeight}
+              containerRef={containerRef}
+              scrollRootRef={scrollRootRef}
               filterOrCollectionId={filterOrCollectionId}
               refreshTrigger={refreshTrigger}
               onFetchData={loadData}
               viewMode={viewMode}
-              scrollRootRef={scrollRootRef}
             />
           </Container>
         </div>
