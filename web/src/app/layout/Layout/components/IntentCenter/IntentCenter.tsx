@@ -39,14 +39,11 @@ export default function IntentCenter() {
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [t] = useTranslation();
-  const [imageVisualizerContext, setImageVisualizerContext] =
-    useImageVisualizerContext();
+  const [imageVisualizer, setImageVisualizer] = useImageVisualizerContext();
   const navigate = useNavigate();
 
   function handleOnCloseVisualizer() {
-    setImageVisualizerContext({
-      imageSummary: undefined,
-    });
+    setImageVisualizer({ selectedImage: undefined, images: [] });
   }
 
   function onCloseActionModal(modalId: string): void {
@@ -93,7 +90,7 @@ export default function IntentCenter() {
     else if (show.type === "image") {
       const action = async () => {
         const image = await ImageService.get({ id: show.id });
-        setImageVisualizerContext({ imageSummary: image });
+        setImageVisualizer({ selectedImage: image, images: [image] });
         respondWithValue();
       };
       if (shouldConfirm) {
@@ -283,11 +280,11 @@ export default function IntentCenter() {
   }, [event]);
 
   useEffect(() => {
-    if (imageVisualizerContext?.imageSummary) {
+    if (imageVisualizer?.selectedImage) {
       addModal({
         component: (
           <ImageVisualizerWrapper
-            imageVisualizerContext={imageVisualizerContext}
+            imageVisualizerContext={imageVisualizer}
             onClose={handleOnCloseVisualizer}
           />
         ),
@@ -296,7 +293,7 @@ export default function IntentCenter() {
         fullScreen: true,
       });
     }
-  }, [imageVisualizerContext?.imageSummary]);
+  }, [imageVisualizer?.selectedImage]);
 
   return (
     <>

@@ -13,7 +13,13 @@ export default function CodeViewer({ code }) {
   const codeRef = useRef<HTMLElement>(null);
 
   const { colorScheme } = useMantineColorScheme();
-  import((`highlight.js/styles/${colorScheme === "dark" ? "dark.min.css" : "lightfair.min.css"}`));
+  useEffect(() => {
+    if (colorScheme === "dark") {
+      import("highlight.js/styles/dark.min.css");
+    } else {
+      import("highlight.js/styles/lightfair.min.css");
+    }
+  }, [colorScheme]);
 
   useEffect(() => {
     if (codeRef.current) {

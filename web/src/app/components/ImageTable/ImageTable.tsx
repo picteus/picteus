@@ -45,8 +45,8 @@ export default function ImageTable({
           mode={imageItemMode}
           onClick={() =>
             setImageVisualizerContext({
-              prevAndNextIds: data.map((image) => image.id),
-              imageSummary: image,
+              selectedImage: image,
+              images: data
             })
           }
           image={image}

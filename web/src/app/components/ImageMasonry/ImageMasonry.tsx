@@ -30,7 +30,7 @@ export default function ImageMasonry({
   containerRef,
   imageItemMode,
 }: ImageMasonryType) {
-  const [, setImageVisualizerContext] = useImageVisualizerContext();
+  const [, setImageVisualizer] = useImageVisualizerContext();
   const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
     setSelectedImage(image);
@@ -43,7 +43,7 @@ export default function ImageMasonry({
 
   useEffect(() => {
     if (containerRef !== undefined) {
-      navigation.setImageIds(data.map(image => image.id), selectedImage);
+      navigation.setImages(data, selectedImage);
     }
   }, [data]);
 
@@ -71,9 +71,9 @@ export default function ImageMasonry({
               mode={imageItemMode}
               onClick={() => {
                 if (containerRef === undefined) {
-                  setImageVisualizerContext({
-                    prevAndNextIds: data.map((image) => image.id),
-                    imageSummary: data[index]
+                  setImageVisualizer({
+                    selectedImage: data[index],
+                    images: data
                   });
                 }
                 else {
@@ -102,9 +102,9 @@ export default function ImageMasonry({
               <ImageDetail
                 image={selectedImage}
                 onClose={() => setSelectedImageWrapper((undefined))}
-                hasPrev={navigation.hasPrev}
+                hasPrevious={navigation.hasPrev}
                 hasNext={navigation.hasNext}
-                onPrev={navigation.onPrev}
+                onPrevious={navigation.onPrevious}
                 onNext={navigation.onNext}
               />
             </Overlay>

@@ -2,36 +2,34 @@ import { useEffect, useState } from "react";
 
 import { ImageOrSummary } from "types";
 import { ImageVisualizerContextValue } from "app/context";
-import { ImageService } from "app/services";
 
 
 export default function useImageNavigation(selectedImage: ImageOrSummary, setSelected: (image: ImageOrSummary) => void) {
-  const [state, setState] = useState<ImageVisualizerContextValue>({ imageSummary: undefined, prevAndNextIds: undefined });
+  const [state, setState] = useState<ImageVisualizerContextValue>({ selectedImage: undefined, images: undefined });
 
   useEffect(() => {
-    if (selectedImage !== state.imageSummary && state.imageSummary !== undefined) {
-      setSelected(state.imageSummary);
+    if (selectedImage !== state.selectedImage && state.selectedImage !== undefined) {
+      setSelected(state.selectedImage);
     }
   }, [state]);
 
   async function handleOnNavigate(direction: number): Promise<void> {
-    const prevAndNextIds = state.prevAndNextIds;
+    const prevAndNextIds = state.images;
     if (prevAndNextIds) {
       const index = prevAndNextIds.findIndex(
-        (id) => id === state.imageSummary?.id,
+        (image) => image.id === state.selectedImage?.id,
       );
       const newIndex = index + direction;
       if (newIndex >= 0 && newIndex < prevAndNextIds.length) {
-        const imageSummary = await ImageService.get({ id: prevAndNextIds[newIndex] });
         setState((previousValue) => ({
           ...previousValue,
-          imageSummary,
+          selectedImage: prevAndNextIds[newIndex],
         }));
       }
     }
   }
 
-  function handlePrev(): void {
+  function handlePrevious(): void {
     void handleOnNavigate(-1);
   }
 
@@ -40,10 +38,10 @@ export default function useImageNavigation(selectedImage: ImageOrSummary, setSel
   }
 
   function computeHas(direction: string) {
-    const prevAndNextIds = state.prevAndNextIds;
+    const prevAndNextIds = state.images;
     if (prevAndNextIds) {
       const index = prevAndNextIds.findIndex(
-        (id) => id === state.imageSummary?.id,
+        (image) => image.id === state.selectedImage?.id,
       );
       if (direction === "prev") {
         return index > 0;
@@ -55,12 +53,12 @@ export default function useImageNavigation(selectedImage: ImageOrSummary, setSel
   }
 
   return {
-    setImageIds:(imageIds: string[], selectedImage: ImageOrSummary) => {
-      setState({ imageSummary: selectedImage, prevAndNextIds: imageIds });
+    setImages:(images: ImageOrSummary[], selectedImage: ImageOrSummary) => {
+      setState({ selectedImage: selectedImage, images: images });
     },
     hasPrev: computeHas("prev"),
     hasNext: computeHas("next"),
-    onPrev: handlePrev,
+    onPrevious: handlePrevious,
     onNext: handleNext
   };
 }

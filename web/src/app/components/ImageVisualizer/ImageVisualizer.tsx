@@ -41,7 +41,7 @@ export default function ImageVisualizer({
       backgroundOpacity={0.95}
     >
       <div className={style.container}>
-        <ImageDetail image={image} onClose={onClose} hasNext={hasNext} hasPrev={hasPrev} onNext={onNext} onPrev={onPrev} />
+        <ImageDetail image={image} onClose={onClose} hasNext={hasNext} hasPrevious={hasPrev} onNext={onNext} onPrevious={onPrev} />
       </div>
     </Overlay>
   );

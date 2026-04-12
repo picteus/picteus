@@ -11,10 +11,10 @@ export default function ImageVisualizerWrapper({
   onClose,
 }) {
   const [state] = useState<ImageVisualizerContextValue>(imageVisualizerContext);
-  const [selectedImage, setSelectedImage] = useState<ImageOrSummary>(state.imageSummary);
+  const [selectedImage, setSelectedImage] = useState<ImageOrSummary>(state.selectedImage);
   const navigation = useImageNavigation(selectedImage, setSelectedImage);
   useEffect(() => {
-    navigation.setImageIds(state.prevAndNextIds, selectedImage);
+    navigation.setImages(state.images, selectedImage);
   }, [state]);
 
   return (
@@ -22,7 +22,7 @@ export default function ImageVisualizerWrapper({
       image={selectedImage}
       hasPrev={navigation.hasPrev}
       hasNext={navigation.hasNext}
-      onPrev={navigation.onPrev}
+      onPrev={navigation.onPrevious}
       onNext={navigation.onNext}
       onClose={onClose}
     />

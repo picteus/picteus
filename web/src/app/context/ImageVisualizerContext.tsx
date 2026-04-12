@@ -4,8 +4,8 @@ import { ImageOrSummary } from "types";
 
 
 export type ImageVisualizerContextValue = {
-  imageSummary: ImageOrSummary | undefined;
-  prevAndNextIds?: string[];
+  selectedImage: ImageOrSummary | undefined;
+  images: ImageOrSummary[];
 };
 
 export type ImageVisualizerContextDispatcher = React.Dispatch<
@@ -22,8 +22,8 @@ export function useImageVisualizerContext() {
 
 export function ImageVisualizerProvider({ children }) {
   const [value, setValue] = useState<ImageVisualizerContextValue>({
-    imageSummary: undefined,
-    prevAndNextIds: undefined,
+    selectedImage: undefined,
+    images: [],
   });
 
   return (

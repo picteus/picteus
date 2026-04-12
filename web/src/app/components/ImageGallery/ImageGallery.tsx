@@ -44,7 +44,7 @@ export default function ImageGallery({
   useKey("Escape", () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
-    navigation.setImageIds(data.map(image => image.id), selectedImage);
+    navigation.setImages(data, selectedImage);
   }, [data]);
 
   useEffect(() => {
@@ -127,9 +127,9 @@ export default function ImageGallery({
               <ImageDetail
                 image={selectedImage}
                 onClose={() => setSelectedImageWrapper((undefined))}
-                hasPrev={navigation.hasPrev}
+                hasPrevious={navigation.hasPrev}
                 hasNext={navigation.hasNext}
-                onPrev={navigation.onPrev}
+                onPrevious={navigation.onPrevious}
                 onNext={navigation.onNext}
               />
             </Overlay>

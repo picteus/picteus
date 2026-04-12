@@ -96,9 +96,9 @@ export default function ClosestEmbeddingsImagesModal({
   }, []);
 
   function handleOnClickSourceImage() {
-    setImageVisualizerContext((prev) => ({
-      ...prev,
-      imageSummary: sourceImage,
+    setImageVisualizerContext((previousValue) => ({
+      ...previousValue,
+      selectedImage: sourceImage,
     }));
   }
 
