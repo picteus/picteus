@@ -58,7 +58,7 @@ export default function ImageMasonry({
   }, [containerWidth]);
 
   return (
-    data.length !== 0 && containerWidth > 0 && (
+    data.length > 0 && containerWidth > 0 && (
       <>
         <MasonryLayout
         sizes={sizes}

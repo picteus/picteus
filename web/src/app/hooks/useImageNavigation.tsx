@@ -8,7 +8,7 @@ export default function useImageNavigation(selectedImage: ImageOrSummary, setSel
   const [state, setState] = useState<ImageVisualizerContextValue>({ selectedImage: undefined, images: [] });
 
   useEffect(() => {
-    if (selectedImage !== state.selectedImage) {
+    if (selectedImage !== state.selectedImage && state.selectedImage !== undefined) {
       setSelected(state.selectedImage);
     }
   }, [state]);
@@ -47,6 +47,9 @@ export default function useImageNavigation(selectedImage: ImageOrSummary, setSel
   function computeHas(direction: string) {
     const prevAndNextIds = state.images;
     if (prevAndNextIds) {
+      if (prevAndNextIds.length <= 1) {
+        return false;
+      }
       const index = prevAndNextIds.findIndex(
         (image) => image.id === state.selectedImage?.id,
       );

@@ -10,18 +10,18 @@ import style from "./ImageVisualizer.module.scss";
 type ImageVisualizerType = {
   image: ImageOrSummary;
   onClose: () => void;
-  hasPrev: boolean;
+  hasPrevious: boolean;
   hasNext: boolean;
-  onPrev: () => void;
+  onPrevious: () => void;
   onNext: () => void;
 };
 
 export default function ImageVisualizer({
   image,
   onClose,
-  hasPrev,
+  hasPrevious,
   hasNext,
-  onPrev,
+  onPrevious,
   onNext
 }: ImageVisualizerType) {
 
@@ -41,7 +41,7 @@ export default function ImageVisualizer({
       backgroundOpacity={0.95}
     >
       <div className={style.container}>
-        <ImageDetail image={image} onClose={onClose} hasNext={hasNext} hasPrevious={hasPrev} onNext={onNext} onPrevious={onPrev} />
+        <ImageDetail image={image} onClose={onClose} hasNext={hasNext} hasPrevious={hasPrevious} onNext={onNext} onPrevious={onPrevious} />
       </div>
     </Overlay>
   );

@@ -194,7 +194,7 @@ function GalleryContent({
     return <ImageTable containerWidth={containerWidth} data={accumulatedData} loadMore={loadMore} />;
   }
 
-  return <ImageMasonry data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
+  return containerRef && <ImageMasonry data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
                        containerWidth={containerWidth} containerRef={containerRef} />;
 }
 

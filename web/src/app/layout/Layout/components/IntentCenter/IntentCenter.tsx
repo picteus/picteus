@@ -274,7 +274,7 @@ export default function IntentCenter() {
         handleImages();
       }
       else {
-        respondWithError(`Cannot handel the unexpected intent '${JSON.stringify(intent)}'`);
+        respondWithError(`Cannot handle the unexpected intent '${JSON.stringify(intent)}'`);
       }
     }
   }, [event]);

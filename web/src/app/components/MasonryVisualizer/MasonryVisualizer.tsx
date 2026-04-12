@@ -35,7 +35,7 @@ export default function MasonryVisualizer({
     }
 
     void load();
-  }, []);
+  }, [imageIds]);
 
   return (images.length > 0 && <Stack>
       <Text>{content.description}</Text>
