@@ -19,18 +19,18 @@ import style from "./ImageDetail.module.scss";
 type ImageDetailType = {
   image: ImageOrSummary;
   onClose: () => void;
-  hasPrev: boolean;
+  hasPrevious: boolean;
   hasNext: boolean;
-  onPrev: () => void;
+  onPrevious: () => void;
   onNext: () => void;
 };
 
 export default function ImageDetail({
    image,
    onClose,
-   hasPrev,
+   hasPrevious,
    hasNext,
-   onPrev,
+   onPrevious,
    onNext,
  }: ImageDetailType) {
   const [imageData, setImageData] = useState<Image>();
@@ -87,8 +87,8 @@ export default function ImageDetail({
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft" && hasPrev) {
-        onPrev();
+      if (event.key === "ArrowLeft" && hasPrevious) {
+        onPrevious();
       } else if (event.key === "ArrowRight" && hasNext) {
         onNext();
       }
@@ -99,7 +99,7 @@ export default function ImageDetail({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [hasPrev, hasNext, onPrev, onNext]);
+  }, [hasPrevious, hasNext, onPrevious, onNext]);
 
   useEffect(() => {
     let zoom = 1;
@@ -208,9 +208,9 @@ export default function ImageDetail({
           <ActionIcon
             size={"xl"}
             ml={"xl"}
-            style={hasPrev ? {} : { visibility: "hidden" }}
+            style={hasPrevious ? {} : { visibility: "hidden" }}
             variant="default"
-            onClick={onPrev}
+            onClick={onPrevious}
           >
             <IconArrowLeft />
           </ActionIcon>
