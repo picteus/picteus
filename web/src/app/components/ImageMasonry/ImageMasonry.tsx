@@ -37,7 +37,7 @@ export default function ImageMasonry({
     if (onSelectedImage !== undefined) {
       onSelectedImage(image);
     }
-  }, [setSelectedImage]);
+  }, [setSelectedImage, onSelectedImage]);
   const navigation = useImageNavigation(selectedImage, setSelectedImageWrapper);
   useKey("Escape", () => setSelectedImageWrapper(undefined));
 
@@ -102,7 +102,7 @@ export default function ImageMasonry({
               <ImageDetail
                 image={selectedImage}
                 onClose={() => setSelectedImageWrapper((undefined))}
-                hasPrevious={navigation.hasPrev}
+                hasPrevious={navigation.hasPrevious}
                 hasNext={navigation.hasNext}
                 onPrevious={navigation.onPrevious}
                 onNext={navigation.onNext}

@@ -39,7 +39,7 @@ export default function ImageGallery({
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
     setSelectedImage(image);
     onSelectedImage(image);
-  }, [setSelectedImage]);
+  }, [setSelectedImage, onSelectedImage]);
   const navigation = useImageNavigation(selectedImage, setSelectedImageWrapper);
   useKey("Escape", () => setSelectedImageWrapper(undefined));
 
@@ -127,7 +127,7 @@ export default function ImageGallery({
               <ImageDetail
                 image={selectedImage}
                 onClose={() => setSelectedImageWrapper((undefined))}
-                hasPrevious={navigation.hasPrev}
+                hasPrevious={navigation.hasPrevious}
                 hasNext={navigation.hasNext}
                 onPrevious={navigation.onPrevious}
                 onNext={navigation.onNext}

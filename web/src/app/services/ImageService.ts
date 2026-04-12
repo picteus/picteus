@@ -6,7 +6,6 @@ import {
   ImageApiImageGetAllFeaturesRequest,
   ImageApiImageGetRequest,
   ImageApiImageTextToImagesRequest,
-  ImageDimensions,
   ImageDistance,
   ImageFormat,
   SearchImageResult,
@@ -50,11 +49,12 @@ async function get(parameters: ImageApiImageGetRequest) {
   return imageApi.imageGet(parameters);
 }
 
-function getImageSrc(url: string, width?: number, height?: number)
+function getImageSrc(url: string, width?: number, height?: number, render? : "inbox" | "outbox")
 {
-  const widthParam = width ? `&w=${width}` : "";
-  const heightParam = height ? `&h=${height}` : "";
-  return `${BASE_PATH}/resize/?u=${encodeURIComponent(url)}${widthParam}${heightParam}`;
+  const widthParameter = width ? `&w=${width}` : "";
+  const heightParameter = height ? `&h=${height}` : "";
+  const renderParameter = render ? `&r=${render}` : "";
+  return `${BASE_PATH}/resize/?u=${encodeURIComponent(url)}${widthParameter}${heightParameter}${renderParameter}`;
 }
 
 async function getAllFeatures(
@@ -82,37 +82,6 @@ async function destroy(id: string): Promise<void> {
    await imageApi.imageDelete({id});
 }
 
-function getFittedDimensionsToScreen(
-  imageDimensions: ImageDimensions,
-  panelSizes: number[],
-): ImageDimensions {
-  const WIDTH_OFFSET = 190;
-  const HEIGHT_OFFSET = 200;
-
-  const screenDimensions: ImageDimensions = {
-    width: (panelSizes[0] / 100) * window.innerWidth - WIDTH_OFFSET,
-    height: window.innerHeight - HEIGHT_OFFSET,
-  };
-
-  const imageAspectRatio: number =
-    imageDimensions.width / imageDimensions.height;
-  const screenAspectRatio: number =
-    screenDimensions.width / screenDimensions.height;
-
-  let fittedHeight: number;
-  let fittedWidth: number;
-
-  if (imageAspectRatio > screenAspectRatio) {
-    fittedWidth = screenDimensions.width;
-    fittedHeight = screenDimensions.width / imageAspectRatio;
-  } else {
-    fittedHeight = screenDimensions.height;
-    fittedWidth = screenDimensions.height * imageAspectRatio;
-  }
-
-  return { width: Math.round(fittedWidth), height: Math.round(fittedHeight) };
-}
-
 async function getAllTags(imageId: string): Promise<ExtensionImageTag[]> {
   return imageApi.imageGetAllTags({ id: imageId });
 }
@@ -123,7 +92,6 @@ export default {
   get,
   getImageSrc,
   getAllFeatures,
-  getFittedDimensionsToScreen,
   getClosestImages,
   synchronize,
   destroy,

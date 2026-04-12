@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Group, Layout, Panel, Separator } from "react-resizable-panels";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconX } from "@tabler/icons-react";
 import { Accordion, ActionIcon, Button, Divider, Flex, Menu, Table, Text } from "@mantine/core";
+import { useResizeObserver } from "@mantine/hooks";
 
 import { ExtensionImageFeature, ExtensionImageTag, Image, ImageMetadata, Repository } from "@picteus/ws-client";
 
@@ -39,15 +40,14 @@ export default function ImageDetail({
   const [repository, setRepository] = useState<Repository>();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
-  const imageRef = useRef();
+  const [imageWrapperRef, imageWrapperRectangle] = useResizeObserver();
+  const imageRef = useRef<HTMLImageElement>();
   const [imageZoom, setImageZoom] = useState<number>(1);
   const [t] = useTranslation();
-  const [panelSizes, setPanelSizes] = useState<number[]>(
-    StorageService.getVisualizerPanelSizes(),
-  );
+  const [panelSizes, setPanelSizes] = useState<number[]>(StorageService.getVisualizerPanelSizes());
 
   async function loadImageData() {
-    const imageData: Image = await ImageService.get({ id: image.id });
+    const imageData: Image = "metadata" in image ? image as Image : await ImageService.get({ id: image.id });
     setImageTags(imageData.tags);
     setImageFeatures(imageData.features);
     setImageData(imageData);
@@ -70,17 +70,9 @@ export default function ImageDetail({
     void loadImageData();
   }, [image]);
 
-  const dimensions = useMemo(() => {
-    return ImageService.getFittedDimensionsToScreen(
-      image.dimensions,
-      panelSizes,
-    );
-  }, [image, panelSizes]);
-
   useEffect(() => {
     if (imageRef?.current) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
       imageRef.current.style.transform = "scale(" + imageZoom + ")";
     }
   }, [imageZoom, imageRef]);
@@ -89,7 +81,8 @@ export default function ImageDetail({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "ArrowLeft" && hasPrevious) {
         onPrevious();
-      } else if (event.key === "ArrowRight" && hasNext) {
+      }
+      else if (event.key === "ArrowRight" && hasNext) {
         onNext();
       }
     }
@@ -116,7 +109,6 @@ export default function ImageDetail({
     }
     if (imageRef?.current) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
       imageRef.current.addEventListener("mousewheel", adjustZoomLevel);
     }
   }, [imageRef]);
@@ -204,36 +196,35 @@ export default function ImageDetail({
   return (
     <Group orientation="horizontal" onLayoutChanged={onLayoutChanged}>
       <Panel id="left" defaultSize={`${panelSizes[0]}%`} minSize="40%" className={style.left}>
-        <div data-close="close" className={style.imageContainer}>
+        <Flex data-close="close" align="center" justify="space-between" gap="sm" className={style.imageContainer}>
           <ActionIcon
             size={"xl"}
-            ml={"xl"}
+            ml={"sm"}
             style={hasPrevious ? {} : { visibility: "hidden" }}
             variant="default"
             onClick={onPrevious}
           >
             <IconArrowLeft />
           </ActionIcon>
-
-          <img
-            ref={imageRef}
-            src={ImageService.getImageSrc(
-              image.uri,
-              dimensions.width,
-              dimensions.height
-            )}
-            alt="Local picture"
-          />
+          <div ref={imageWrapperRef} className={style.imageWrapper}>
+            {imageWrapperRectangle.width > 0 && <img
+              ref={imageRef}
+              src={ImageService.getImageSrc(image.uri, Math.ceil(imageWrapperRectangle.width), Math.ceil(imageWrapperRectangle.height), "inbox")}
+              alt="Image"
+              className={style.image}
+              style={{maxWidth: imageWrapperRectangle.width}}
+            />}
+          </div>
           <ActionIcon
             style={hasNext ? {} : { visibility: "hidden" }}
             size={"xl"}
-            mr={"xl"}
+            mr={"sm"}
             variant="default"
             onClick={onNext}
           >
             <IconArrowRight />
           </ActionIcon>
-        </div>
+        </Flex>
       </Panel >
       <Separator className={style.paneSeparator}>
         <div className={style.paneSeparatorHandle} />

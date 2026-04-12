@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { RefObject, useEffect, useState } from "react";
 
-export default function useContainerDimensions(containerRef): { width: number, height: number } {
-  const [dimensions, setDimensions] = useState<{ width: number, height: number }>({ width: 0, height: 0 });
+
+export default function useContainerDimensions(containerRef: RefObject<HTMLDivElement>): { width?: number, height?: number } {
+  const [dimensions, setDimensions] = useState<{ width?: number, height?: number }>({ width: containerRef.current?.clientWidth, height: containerRef.current?.clientHeight });
 
   const debounce = (func, delay) => {
     let timer;
@@ -12,15 +13,16 @@ export default function useContainerDimensions(containerRef): { width: number, h
   };
 
   useEffect(() => {
-    if (containerRef.current) {
+    const container = containerRef.current;
+    if (container) {
       const handleResize = debounce(() => {
         if (containerRef?.current) {
-          setDimensions({ width: containerRef.current.clientWidth, height: containerRef.current.clientHeight });
+          setDimensions({ width: container.clientWidth, height: container.clientHeight });
         }
-      }, (100 / 60) * 5);
+      }, (100 / 60));
       window.addEventListener("resize", handleResize);
       if (containerRef?.current) {
-        setDimensions({ width: containerRef.current.clientWidth, height: containerRef.current.clientHeight });
+        setDimensions({ width: container.clientWidth, height: container.clientHeight });
       }
       return () => {
         window.removeEventListener("resize", handleResize);
@@ -28,5 +30,5 @@ export default function useContainerDimensions(containerRef): { width: number, h
     }
   }, [containerRef?.current]);
 
-  return { width: dimensions.width, height: dimensions.height };
+  return dimensions;
 }

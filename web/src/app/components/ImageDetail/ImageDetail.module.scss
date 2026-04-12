@@ -6,15 +6,36 @@
 }
 
 .imageContainer,
+.imageWrapper,
 .informationContainer {
   height: 100%;
 }
+
 .imageContainer {
-  flex : 1;
-  display : flex;
-  align-items: center;
-  justify-content: space-between;
+  padding-top: 15px;
+  padding-bottom: 15px;
 }
+
+.imageWrapper,
+.image {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+.imageWrapper {
+  flex: 1;
+  align-content: center;
+  position: relative;
+}
+
+.image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .informationContainer {
   overflow-x: hidden;
   overflow-y: auto;

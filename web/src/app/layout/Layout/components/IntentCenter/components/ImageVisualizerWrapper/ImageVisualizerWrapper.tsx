@@ -20,7 +20,7 @@ export default function ImageVisualizerWrapper({
   return (
     <ImageVisualizer
       image={selectedImage}
-      hasPrev={navigation.hasPrev}
+      hasPrev={navigation.hasPrevious}
       hasNext={navigation.hasNext}
       onPrev={navigation.onPrevious}
       onNext={navigation.onNext}

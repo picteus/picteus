@@ -5,13 +5,20 @@ import { ImageVisualizerContextValue } from "app/context";
 
 
 export default function useImageNavigation(selectedImage: ImageOrSummary, setSelected: (image: ImageOrSummary) => void) {
-  const [state, setState] = useState<ImageVisualizerContextValue>({ selectedImage: undefined, images: undefined });
+  const [state, setState] = useState<ImageVisualizerContextValue>({ selectedImage: undefined, images: [] });
 
   useEffect(() => {
-    if (selectedImage !== state.selectedImage && state.selectedImage !== undefined) {
+    if (selectedImage !== state.selectedImage) {
       setSelected(state.selectedImage);
     }
   }, [state]);
+
+  useEffect(() => {
+    setState((previousValue) => ({
+      ...previousValue,
+      selectedImage
+    }));
+  }, [selectedImage]);
 
   async function handleOnNavigate(direction: number): Promise<void> {
     const prevAndNextIds = state.images;
@@ -56,7 +63,7 @@ export default function useImageNavigation(selectedImage: ImageOrSummary, setSel
     setImages:(images: ImageOrSummary[], selectedImage: ImageOrSummary) => {
       setState({ selectedImage: selectedImage, images: images });
     },
-    hasPrev: computeHas("prev"),
+    hasPrevious: computeHas("prev"),
     hasNext: computeHas("next"),
     onPrevious: handlePrevious,
     onNext: handleNext
