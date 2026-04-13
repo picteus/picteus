@@ -10,21 +10,21 @@ import style from "./ImageItem.module.scss";
 
 
 type ImageItemType = {
+  image: ImageOrSummary;
+  caption?: ReactNode;
   width: number;
   height?: number;
-  image: ImageOrSummary;
   mode?: ImageItemMode;
   onClick: (data: ImageOrSummary) => void;
-  caption?: ReactNode;
 };
 
 export default function ImageItem({
+  image,
+  caption,
   width,
   height,
-  image,
   onClick,
   mode = ImageItemMode.VIEW,
-  caption,
 }: ImageItemType) {
   const [hidePlaceholder, setHidePlaceholder] = useState<boolean>(false);
   const [menuOpened, setMenuOpened] = useState(false);

@@ -157,15 +157,12 @@ export default function ClosestEmbeddingsImagesModal({
         />
       );
     }
-    if (containerRef?.current) {
-      return (
-        <ImageMasonry
-          containerWidth={width}
-          data={imageSummaries}
-          loadMore={() => {}}
-        />
-      );
-    }
+    return (containerRef.current && <ImageMasonry
+        containerWidth={width}
+        data={imageSummaries}
+        loadMore={() => {
+        }}
+      />);
   }
 
   return (

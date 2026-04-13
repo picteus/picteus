@@ -1,7 +1,7 @@
 import { RefObject, useEffect, useState } from "react";
 
 
-export default function useContainerDimensions(containerRef: RefObject<HTMLDivElement>): { width?: number, height?: number } {
+export default function useContainerDimensions(containerRef: RefObject<HTMLElement>): { width?: number, height?: number } {
   const [dimensions, setDimensions] = useState<{ width?: number, height?: number }>({ width: containerRef.current?.clientWidth, height: containerRef.current?.clientHeight });
 
   const debounce = (func, delay) => {

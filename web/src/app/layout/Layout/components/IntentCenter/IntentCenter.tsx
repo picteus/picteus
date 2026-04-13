@@ -298,15 +298,11 @@ export default function IntentCenter() {
   return (
     <>
       {modalStack.map((modal: ActionModalValue) =>
-        modal.component ? (
           <ModalComponent
-            key={"modal-" + modal.id}
+            key={`modal-${modal.id}`}
             modal={modal}
             onCloseActionModal={onCloseActionModal}
-          />
-        ) : (
-          <></>
-        ),
+          />,
       )}
     </>
   );

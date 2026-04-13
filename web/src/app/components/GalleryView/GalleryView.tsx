@@ -105,8 +105,8 @@ type GalleryContentProps = {
   onSelectedImage: (image: ImageOrSummary) => void;
   containerWidth: number;
   containerHeight: number;
-  containerRef: RefObject<HTMLDivElement>;
-  scrollRootRef: RefObject<HTMLDivElement>;
+  containerRef: RefObject<HTMLElement>;
+  scrollRootRef: RefObject<HTMLElement>;
   filterOrCollectionId?: FilterOrCollectionId;
   refreshTrigger: number;
   onFetchData: (pagination: PaginationType) => void;
@@ -191,7 +191,7 @@ function GalleryContent({
   }
 
   if (viewMode === "table") {
-    return <ImageTable containerWidth={containerWidth} data={accumulatedData} loadMore={loadMore} />;
+    return <ImageTable data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore} containerWidth={containerWidth} containerRef={containerRef}/>;
   }
 
   return containerRef && <ImageMasonry data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
@@ -202,8 +202,8 @@ type GalleryViewProps = {
   initialFilterOrCollectionId?: FilterOrCollectionId;
   containerWidth: number;
   containerHeight: number;
-  containerRef: RefObject<HTMLDivElement>;
-  scrollRootRef: RefObject<HTMLDivElement>;
+  containerRef: RefObject<HTMLElement>;
+  scrollRootRef: RefObject<HTMLElement>;
 };
 
 export default function GalleryView({ initialFilterOrCollectionId, containerWidth, containerHeight, containerRef, scrollRootRef }: GalleryViewProps) {

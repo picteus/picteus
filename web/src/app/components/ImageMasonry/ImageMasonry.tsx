@@ -1,11 +1,11 @@
-import React, { RefObject, useCallback, useEffect, useMemo, useState } from "react";
+import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Overlay } from "@mantine/core";
 import MasonryLayout, { MasonrySizing } from "react-fast-masonry";
 
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
 import { useImageVisualizerContext } from "app/context";
-import { useImageNavigation, useKey } from "app/hooks";
+import { useEscapeKey, useImageNavigation } from "app/hooks";
 import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageMasonry.module.scss";
@@ -17,7 +17,7 @@ type ImageMasonryType = {
   onSelectedImage?: (image: ImageOrSummary) => void;
   loadMore: () => void;
   containerWidth: number;
-  containerRef?: RefObject<HTMLDivElement>;
+  containerRef?: RefObject<HTMLElement>;
   imageItemMode?: ImageItemMode;
 };
 
@@ -39,7 +39,8 @@ export default function ImageMasonry({
     }
   }, [setSelectedImage, onSelectedImage]);
   const navigation = useImageNavigation(selectedImage, setSelectedImageWrapper);
-  useKey("Escape", () => setSelectedImageWrapper(undefined));
+  const portalRef = useRef<HTMLDivElement>(null);
+  useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
     if (containerRef !== undefined) {
@@ -61,39 +62,38 @@ export default function ImageMasonry({
     data.length > 0 && containerWidth > 0 && (
       <>
         <MasonryLayout
-        sizes={sizes}
-        items={data}
-        renderItem={({ columnWidth }, index: number) => {
-          return (
-            <ImageItem
-              key={data[index].id}
-              width={columnWidth as number}
-              mode={imageItemMode}
-              onClick={() => {
-                if (containerRef === undefined) {
-                  setImageVisualizer({
-                    selectedImage: data[index],
-                    images: data
-                  });
-                }
-                else {
-                  setSelectedImageWrapper(data[index]);
-                }
-              }
-              }
-              image={data[index]}
-              caption={(data[index] as ImageWithCaption).caption}
-            />
-          );
-        }}
-        loadMore={loadMore}
-        pack={true}
-        awaitMore={true}
-        pageSize={20}
-        className={style.masonry}
-      />
+          sizes={sizes}
+          items={data}
+          renderItem={({ columnWidth }, index: number) => {
+            return (
+              <ImageItem
+                key={data[index].id}
+                image={data[index]}
+                caption={(data[index] as ImageWithCaption).caption}
+                width={columnWidth as number}
+                mode={imageItemMode}
+                onClick={() => {
+                  if (containerRef === undefined) {
+                    setImageVisualizer({
+                      selectedImage: data[index],
+                      images: data
+                    });
+                  }
+                  else {
+                    setSelectedImageWrapper(data[index]);
+                  }
+                }}
+              />
+            );
+          }}
+          loadMore={loadMore}
+          pack={true}
+          awaitMore={true}
+          pageSize={20}
+          className={style.masonry}
+        />
         {containerRef !== undefined && createPortal(
-          selectedImage && <div className={style.visualizedImage}>
+          selectedImage && <div ref={portalRef} className={style.visualizedImage}>
             <Overlay
               color="#000"
               backgroundOpacity={1}
@@ -111,7 +111,7 @@ export default function ImageMasonry({
           </div>,
           containerRef.current
         )}
-        </>
+      </>
     )
   );
 }

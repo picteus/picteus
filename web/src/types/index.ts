@@ -249,9 +249,10 @@ export type ActionModalValue = {
   id?: string;
   title?: string;
   withCloseButton?: boolean;
+  closeOnEscape?: boolean;
   icon?: ResourceType;
   fullScreen?: boolean;
   size?: SizeType;
-  component: ReactElement | undefined;
+  component: ReactElement;
   onBeforeClose?: () => void;
 };

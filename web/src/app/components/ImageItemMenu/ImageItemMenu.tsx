@@ -14,9 +14,9 @@ import {
 
 import { UiExtensionCommandType } from "types";
 import { notifyApiCallError } from "utils";
-import { ExtensionsService, ImageService } from "app/services";
-import { useExtensionCommand } from "app/hooks";
 import { useActionModalContext, useConfirmAction, useEventSocket } from "app/context";
+import { useExtensionCommand } from "app/hooks";
+import { ExtensionsService, ImageService } from "app/services";
 import { Common, ExtensionIcon } from "app/components";
 import { ClosestEmbeddingsImagesModal } from "./components";
 
@@ -83,7 +83,6 @@ export default function ImageItemMenu({ image }: ImageItemMenuType) {
     addModal({
       component: (
         <ClosestEmbeddingsImagesModal
-          key={"ClosestEmbeddingsImagesModal" + image.id}
           imageId={image.id}
           extensionId={extensionId}
         />

@@ -307,7 +307,7 @@ export default {
     searchPlaceholder: "Search text"
   },
   closestEmbeddingsImagesModal: {
-    title: "Find closest image matches",
+    title: "Closest images",
     errorFind: "Error",
     description:
       "Define the number of similar images to retrieve. The system will execute a nearest neighbor search against image embeddings in the library to identify the most relevant matches.",

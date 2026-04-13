@@ -24,24 +24,15 @@ export default function ImageVisualizer({
   onPrevious,
   onNext
 }: ImageVisualizerType) {
-
-  function handleOnCloseFromOverlay(event: React.MouseEvent<HTMLElement>) {
-    const target = event.target as HTMLElement;
-    const allowClose = !!target.getAttribute("data-close");
-    if (allowClose) {
-      onClose();
-    }
-  }
-
   return (
     <Overlay
       className={style.overlay}
-      onClick={handleOnCloseFromOverlay}
       color="#000"
-      backgroundOpacity={0.95}
+      backgroundOpacity={1}
     >
       <div className={style.container}>
-        <ImageDetail image={image} onClose={onClose} hasNext={hasNext} hasPrevious={hasPrevious} onNext={onNext} onPrevious={onPrevious} />
+        <ImageDetail image={image} onClose={onClose} hasNext={hasNext} hasPrevious={hasPrevious}
+                     onNext={onNext} onPrevious={onPrevious} />
       </div>
     </Overlay>
   );

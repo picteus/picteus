@@ -1,31 +1,37 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { ActionIcon, Divider, Flex, Image, Modal, Title } from "@mantine/core";
 import { IconChevronLeft } from "@tabler/icons-react";
 
 import { ActionModalValue, computeResourceTypeUrl } from "types";
+import { useEscapeKey } from "app/hooks";
+
 import style from "./ModalComponent.module.scss";
+
+
+type ModalComponentType = {
+  modal: ActionModalValue;
+  onCloseActionModal: (modalId: string) => void;
+};
 
 export default function ModalComponent({
   modal,
   onCloseActionModal,
-}: {
-  modal: ActionModalValue;
-  onCloseActionModal: (modalId: string) => void;
-}) {
-  const [
-    actionModalOpened,
-    { open: openActionModal, close: closeActionModal },
-  ] = useDisclosure(false);
+}: ModalComponentType) {
+  const [actionModalOpened, { open: openActionModal, close: closeActionModal }] = useDisclosure(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEscapeKey(ref, () => {
+    if (modal.closeOnEscape !== false) {
+      handleOnCloseActionModal();
+    }
+  });
 
   useEffect(() => {
-    if (modal?.component) {
-      openActionModal();
-    }
+    openActionModal();
   }, [modal]);
 
   function handleOnCloseActionModal() {
-    if (modal?.onBeforeClose) {
+    if (modal.onBeforeClose !== undefined) {
       modal.onBeforeClose();
     }
     closeActionModal();
@@ -59,13 +65,14 @@ export default function ModalComponent({
 
   return (
     <Modal
+      ref={ref}
       classNames={
         modal.fullScreen
           ? { content: style.fullScreenContent, body: style.fullScreenBody }
           : {}
       }
-      closeOnEscape={true}
       withinPortal={false}
+      closeOnEscape={false}
       onClose={handleOnCloseActionModal}
       opened={actionModalOpened}
       fullScreen={modal.fullScreen}

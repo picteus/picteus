@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { randomId } from "@mantine/hooks";
 
 import { ActionModalValue } from "types";
@@ -29,28 +29,8 @@ export function ActionModalProvider({ children }) {
   }
 
   function removeFromStack(id: string) {
-    setStack((prev) => prev.filter((item) => item.id !== id));
+    setStack((previousValue) => previousValue.filter((item) => item.id !== id));
   }
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        if (stack.length > 0) {
-          const topModal = stack[stack.length - 1];
-          if (topModal?.component?.props?.onClose) {
-            topModal?.component?.props?.onClose();
-          }
-          removeFromStack(topModal.id);
-        }
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [stack]);
 
   return (
     <ActionModalContext.Provider value={[stack, addToStack, removeFromStack]}>

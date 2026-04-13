@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { Grid, Overlay } from "@mantine/core";
 
 import { ImageItemMode, ImageOrSummary } from "types";
-import { useImageNavigation, useKey } from "app/hooks";
+import { useEscapeKey, useImageNavigation } from "app/hooks";
 import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageGallery.module.scss";
@@ -16,8 +16,8 @@ type ImageGalleryType = {
   loadMore: () => void;
   containerWidth: number;
   containerHeight: number;
-  containerRef: RefObject<HTMLDivElement>;
-  scrollRootRef: RefObject<HTMLDivElement>;
+  containerRef: RefObject<HTMLElement>;
+  scrollRootRef: RefObject<HTMLElement>;
   imageItemMode?: ImageItemMode;
 };
 
@@ -41,7 +41,8 @@ export default function ImageGallery({
     onSelectedImage(image);
   }, [setSelectedImage, onSelectedImage]);
   const navigation = useImageNavigation(selectedImage, setSelectedImageWrapper);
-  useKey("Escape", () => setSelectedImageWrapper(undefined));
+  const portalRef = useRef<HTMLDivElement>(null);
+  useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
     navigation.setImages(data, selectedImage);
@@ -105,11 +106,11 @@ export default function ImageGallery({
           {data.map((item) => (
             <Grid.Col span="content" key={item.id}>
               <ImageItem
+                image={item}
                 width={columnWidth}
                 height={columnWidth}
                 mode={imageItemMode}
                 onClick={() => setSelectedImageWrapper(item)}
-                image={item}
               />
             </Grid.Col>
           ))}
@@ -118,7 +119,7 @@ export default function ImageGallery({
           </Grid.Col>
         </Grid>
         {createPortal(
-          selectedImage && <div className={style.visualizedImage}>
+          selectedImage && <div ref={portalRef} className={style.visualizedImage}>
             <Overlay
               color="#000"
               backgroundOpacity={1}
