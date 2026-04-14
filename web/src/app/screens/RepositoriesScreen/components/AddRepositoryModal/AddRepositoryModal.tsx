@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { IconFolderSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { Form, useForm } from "@mantine/form";
-import { RepositoryApiRepositoryCreateRequest } from "@picteus/ws-client";
 import { ActionIcon, Button, Flex, Modal, Textarea, TextInput, Title } from "@mantine/core";
+import { useForm } from "@mantine/form";
+
+import { RepositoryApiRepositoryCreateRequest } from "@picteus/ws-client";
 
 import { FolderTypes } from "types";
 import { detectPlatformFromPath, notifyApiCallI18nError, Validators } from "utils";
-import { RepositoriesService, StorageService } from "app/services";
 import { useFolderPicker } from "app/hooks";
+import { RepositoriesService, StorageService } from "app/services";
+
 
 const initialValues: RepositoryApiRepositoryCreateRequest = {
   type: "file",
@@ -84,7 +86,7 @@ export default function AddRepositoryModal({
         title={<Title order={3}>{t("addRepositoryModal.title")}</Title>}
         padding="lg"
       >
-        <Form form={form} onSubmit={handleSubmit}>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
           <TextInput
             mb="lg"
             withAsterisk
@@ -123,7 +125,7 @@ export default function AddRepositoryModal({
               {t("button.add")}
             </Button>
           </Flex>
-        </Form>
+        </form>
       </Modal>
     </>
   );

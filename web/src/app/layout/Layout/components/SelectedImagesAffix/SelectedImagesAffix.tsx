@@ -159,7 +159,7 @@ export default function SelectedImagesAffix() {
                 <Select
                   allowDeselect={false}
                   style={{ flex: 1 }}
-                  onChange={setSelectedAction}
+                  onChange={(value) => setSelectedAction(value)}
                   value={selectedAction}
                   placeholder={t("selectedImagesAffix.selectPlaceholder")}
                   label={t("selectedImagesAffix.selectLabel")}

@@ -5,10 +5,11 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconArrowBigUpLines } from "@tabler/icons-react";
 
 import { ChannelEnum, EventInformationType } from "types";
+import { timeAgoFromMilliseconds } from "utils";
 import { useEventSocket } from "app/context";
 import { EventService } from "app/services";
 import { ExtensionIcon } from "app/components";
-import { timeAgoFromMilliseconds } from "utils";
+
 import style from "./EventInformation.module.scss";
 
 
@@ -177,7 +178,7 @@ export default function EventInformation({containerHeight}: { containerHeight: n
   }, [event]);
 
   return (
-    <Grid className={style.container} columns={10} gutter="sm" justify="center" align="center" overflow="hidden">
+    <Grid className={style.container} columns={10} gap="sm" justify="center" align="center" overflow="hidden">
       <Grid.Col span={7} >
         <Status event={theLastEvent} />
       </Grid.Col>

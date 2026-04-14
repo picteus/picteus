@@ -9,6 +9,7 @@ import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageGallery.module.scss";
 
+
 type ImageGalleryType = {
   imageSize?: number;
   data: ImageOrSummary [];
@@ -102,7 +103,7 @@ export default function ImageGallery({
   return (
     data.length !== 0 && containerWidth > 0 && (
       <>
-        <Grid gutter={gutter}>
+        <Grid gap={gutter}>
           {data.map((item) => (
             <Grid.Col span="content" key={item.id}>
               <ImageItem

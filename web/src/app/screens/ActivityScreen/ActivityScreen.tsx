@@ -18,12 +18,14 @@ import {
 } from "@mantine/core";
 import { IconActivity } from "@tabler/icons-react";
 
-import { Container, EmptyResults } from "app/components";
-import { EventService, StorageService } from "app/services";
-import { useEventSocket } from "app/context";
 import { ChannelEnum, EventInformationType, JsonType } from "types";
 import { recursivelyIncludes } from "utils";
+import { useEventSocket } from "app/context";
+import { EventService, StorageService } from "app/services";
+import { Container, EmptyResults } from "app/components";
+
 import style from "./ActivityScreen.module.scss";
+
 
 const channelEnum = Object.values(ChannelEnum).map((channel) => ({
   value: channel,
@@ -280,7 +282,7 @@ export default function ActivityScreen() {
               defaultValue={"channel"}
               allowDeselect={false}
               value={searchField}
-              onChange={setSearchField}
+              onChange={(value) => setSearchField(value)}
               label={t("activityScreen.search")}
               data={searchFieldData}
             />

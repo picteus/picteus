@@ -4,8 +4,10 @@ import { Box, Button, Group, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 
 import { Collection, SearchFilter } from "@picteus/ws-client";
-import { CollectionService } from "app/services";
+
 import { notifyError, notifySuccess } from "utils";
+import { CollectionService } from "app/services";
+
 
 type CollectionModalProps = {
     collection?: Collection; // If provided, we are editing.
@@ -81,7 +83,7 @@ export default function CollectionModal({
                     mb="sm"
                 />
                 <Group justify="flex-end" mt="md">
-                    <Button variant="default" onClick={onClose} disabled={loading}>
+                    <Button variant="subtle" onClick={onClose} disabled={loading}>
                         {t("button.cancel")}
                     </Button>
                     <Button type="submit" loading={loading}>

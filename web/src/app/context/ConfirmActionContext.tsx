@@ -49,7 +49,7 @@ export const ConfirmActionProvider = ({
         </Alert>
         <Flex justify="flex-end" gap="md" mt="md">
           <Button
-            variant="default"
+            variant="subtle"
             onClick={() => {
               setConfirmModalOpen(false);
             }}

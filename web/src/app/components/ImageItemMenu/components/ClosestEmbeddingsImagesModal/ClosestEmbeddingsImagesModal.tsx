@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Divider, Flex, Group, HoverCard, Input, NumberInput, Text } from "@mantine/core";
-import { Form, useForm } from "@mantine/form";
+import { useForm } from "@mantine/form";
 import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 
 import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-client";
 
-import { notifyApiCallError, Validators } from "utils";
 import { ImageWithCaption } from "types";
-import { ImageService, StorageService } from "app/services";
+import { notifyApiCallError, Validators } from "utils";
 import { useContainerDimensions } from "app/hooks";
 import { useImageVisualizerContext } from "app/context";
+import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImageMasonry, ImageThumbnail } from "app/components";
 
 import style from "./ClosestEmbeddingsImagesModal.module.scss";
@@ -105,7 +105,7 @@ export default function ClosestEmbeddingsImagesModal({
   function renderForm() {
     return (
       <Group mt="sm">
-        <Form style={{ width: 900 }} form={form} onSubmit={handleSubmit}>
+        <form style={{ width: 900 }} onSubmit={form.onSubmit(handleSubmit)}>
           <Flex align="end" gap={20}>
             <Input.Wrapper label={t("field.source")}>
               <HoverCard shadow="lg">
@@ -140,7 +140,7 @@ export default function ClosestEmbeddingsImagesModal({
               {t("button.find")}
             </Button>
           </Flex>
-        </Form>
+        </form>
       </Group>
     );
   }

@@ -1,13 +1,16 @@
 import React, { useRef, useState } from "react";
-import { Input, ScrollArea, Tabs } from "@mantine/core";
+import { Input, ScrollArea, Scroller, Tabs } from "@mantine/core";
 import { IconPhoto, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { TabsType } from "types";
-import { Container, ExtensionIcon, GalleryView, MasonryVisualizer } from "app/components";
 import { useGalleryTabsContext } from "app/context";
 import { useContainerDimensions } from "app/hooks";
+import { Container, ExtensionIcon, GalleryView, MasonryVisualizer } from "app/components";
+
 import style from "./GalleryScreen.module.scss";
+
+``
 
 
 type GalleryTabType = {
@@ -95,20 +98,22 @@ export default function GalleryScreen() {
       {containerRef.current && <ScrollArea h={height} viewportRef={viewportRef}>
         <Tabs value={state.activeTab} onChange={state.setActiveTab}>
           <Tabs.List>
-            <Tabs.Tab value={galleryTabValue} leftSection={<IconPhoto size={13} />}>
-              {t("galleryScreen.explore")}
-            </Tabs.Tab>
-            {tabs.map((tab, index) => {
-              return (
-                <GalleryTab
-                  key={`gallery-${tab.id}`}
-                  tab={tab}
-                  onRemove={() =>
-                    handleOnRemoveTab(tab.id, computeNextTabValue(index))
-                  }
-                />
-              );
-            })}
+            <Scroller>
+              <Tabs.Tab value={galleryTabValue} leftSection={<IconPhoto size={13} />}>
+                {t("galleryScreen.explore")}
+              </Tabs.Tab>
+              {tabs.map((tab, index) => {
+                return (
+                  <GalleryTab
+                    key={`gallery-${tab.id}`}
+                    tab={tab}
+                    onRemove={() =>
+                      handleOnRemoveTab(tab.id, computeNextTabValue(index))
+                    }
+                  />
+                );
+              })}
+            </Scroller>
           </Tabs.List>
           <Tabs.Panel value={galleryTabValue}>
             {viewportRef.current &&

@@ -1,16 +1,16 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Divider, Flex, Group, Loader, NumberInput, TextInput } from "@mantine/core";
-import { Form, useForm } from "@mantine/form";
+import { useForm } from "@mantine/form";
 import { useFocusTrap } from "@mantine/hooks";
 import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 
 import { ImageApiImageTextToImagesRequest } from "@picteus/ws-client";
 
-import { notifyApiCallError, Validators } from "utils";
 import { ImageWithCaption } from "types";
-import { ImageService, StorageService } from "app/services";
+import { notifyApiCallError, Validators } from "utils";
 import { useContainerDimensions } from "app/hooks";
+import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImageMasonry } from "app/components";
 
 import style from "./TextToImagesModal.module.scss";
@@ -89,7 +89,7 @@ export default function TextToImagesModal({
   function renderForm() {
     return (
       <Group mt="sm">
-        <Form style={{ width: "90%" }} form={form} onSubmit={handleSubmit}>
+        <form style={{ width: "90%" }} onSubmit={form.onSubmit(handleSubmit)}>
           <Flex ref={focusTrapRef} align="end" gap={10}>
             <TextInput
               data-autofocus
@@ -112,7 +112,7 @@ export default function TextToImagesModal({
               {t("button.find")}
             </Button>
           </Flex>
-        </Form>
+        </form>
       </Group>
     );
   }
