@@ -31,16 +31,9 @@ function sentinelObserverNullGuardPlugin(): Plugin {
 
 export default defineConfig(({ mode }) => {
   const isProfiling = mode === "profiling";
-  const resolve = isProfiling === true ? {
-    alias: [
-      { find: "react-dom/client", replacement: "react-dom/profiling" },
-      { find: "react-dom", replacement: "react-dom/profiling" },
-      { find: "scheduler/tracing", replacement: "scheduler/tracing-profiling" }
-    ]
-  } : undefined;
   return {
     plugins: [sentinelObserverNullGuardPlugin(), react(), tsconfigPaths(), eslintPlugin()],
-    resolve,
+    resolve: isProfiling === true ? { alias: [{ find: "react-dom/client", replacement: "react-dom/profiling" }] } : undefined,
     base: "",
     define: {
       "import.meta.env.PACKAGE_VERSION": JSON.stringify(version)
