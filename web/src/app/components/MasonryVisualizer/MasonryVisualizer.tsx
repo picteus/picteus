@@ -12,13 +12,11 @@ import { ImageService } from "app/services";
 type MasonryVisualizerType = {
   content: DialogContent;
   imageIds: Array<{ imageId: string }>;
-  containerWidth: number;
 };
 
 export default function MasonryVisualizer({
   content,
   imageIds,
-  containerWidth,
 }: MasonryVisualizerType) {
   const [images, setImages] = useState<Image[]>([]);
 
@@ -41,7 +39,6 @@ export default function MasonryVisualizer({
       <Text>{content.description}</Text>
       {content.details && <Alert color="blue" icon={<IconInfoCircle />}>{content.details}</Alert>}
       <ImageMasonry
-        containerWidth={containerWidth}
         data={images}
         loadMore={() => {}}
       />

@@ -8,7 +8,6 @@ import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-cli
 
 import { ImageWithCaption } from "types";
 import { notifyApiCallError, Validators } from "utils";
-import { useContainerDimensions } from "app/hooks";
 import { useImageVisualizerContext } from "app/context";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImageMasonry, ImageThumbnail } from "app/components";
@@ -36,7 +35,6 @@ export default function ClosestEmbeddingsImagesModal({
   const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { width } = useContainerDimensions(containerRef);
   const [, setImageVisualizerContext] = useImageVisualizerContext();
 
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
@@ -158,7 +156,6 @@ export default function ClosestEmbeddingsImagesModal({
       );
     }
     return (containerRef.current && <ImageMasonry
-        containerWidth={width}
         data={imageSummaries}
         loadMore={() => {
         }}
@@ -172,7 +169,7 @@ export default function ClosestEmbeddingsImagesModal({
       </Alert>
       {renderForm()}
       <Divider mt="lg" mb="xl" />
-      <div ref={containerRef}>{renderContent()}</div>
+      <Flex ref={containerRef} align="center" justify="center">{renderContent()}</Flex>
     </>
   );
 }

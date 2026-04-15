@@ -1,6 +1,7 @@
 import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Overlay } from "@mantine/core";
+import { useResizeObserver } from "@mantine/hooks";
 import MasonryLayout, { MasonrySizing } from "react-fast-masonry";
 
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
@@ -16,7 +17,6 @@ type ImageMasonryType = {
   data: ImageOrSummary [];
   onSelectedImage?: (image: ImageOrSummary) => void;
   loadMore: () => void;
-  containerWidth: number;
   containerRef?: RefObject<HTMLElement>;
   imageItemMode?: ImageItemMode;
 };
@@ -26,10 +26,10 @@ export default function ImageMasonry({
   data,
   onSelectedImage,
   loadMore,
-  containerWidth,
   containerRef,
   imageItemMode,
 }: ImageMasonryType) {
+  const [hostRef, hostRefRectangle] = useResizeObserver();
   const [, setImageVisualizer] = useImageVisualizerContext();
   const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
@@ -48,50 +48,48 @@ export default function ImageMasonry({
     }
   }, [data]);
 
-  const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo(() => {
+  const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo<[MasonrySizing, ...MasonrySizing[]]>(() => {
     const gutter = 10;
     const approximateWidth = imageSize;
+    const containerWidth = Math.round(hostRefRectangle.width);
     const columns = Math.floor(containerWidth / approximateWidth);
-    const remainingSpace =
-      containerWidth - columns * approximateWidth - gutter * (columns - 1) - 60;
+    const remainingSpace = containerWidth - (columns * approximateWidth) - ((columns - 1) * gutter);
     const columnWidth = approximateWidth + Math.floor(remainingSpace / columns);
-    return [{ columns, gutter, columnWidth: columnWidth }];
-  }, [containerWidth]);
+    return [{ columns, gutter, columnWidth }];
+  }, [hostRefRectangle, imageSize]);
 
   return (
-    data.length > 0 && containerWidth > 0 && (
-      <>
-        <MasonryLayout
+    data.length > 0 && (
+      <div ref={hostRef} className={style.host}>
+        {hostRef && hostRefRectangle.width > 0 && <MasonryLayout
           sizes={sizes}
           items={data}
-          renderItem={({ columnWidth }, index: number) => {
-            return (
-              <ImageItem
-                key={data[index].id}
-                image={data[index]}
-                caption={(data[index] as ImageWithCaption).caption}
-                width={columnWidth as number}
-                mode={imageItemMode}
-                onClick={() => {
-                  if (containerRef === undefined) {
-                    setImageVisualizer({
-                      selectedImage: data[index],
-                      images: data
-                    });
-                  }
-                  else {
-                    setSelectedImageWrapper(data[index]);
-                  }
-                }}
-              />
-            );
-          }}
+          renderItem={({ columnWidth }, index: number) =>
+            (<ImageItem
+              key={data[index].id}
+              image={data[index]}
+              caption={(data[index] as ImageWithCaption).caption}
+              width={columnWidth as number}
+              mode={imageItemMode}
+              onClick={() => {
+                if (containerRef === undefined) {
+                  setImageVisualizer({
+                    selectedImage: data[index],
+                    images: data
+                  });
+                }
+                else {
+                  setSelectedImageWrapper(data[index]);
+                }
+              }}
+            />)}
           loadMore={loadMore}
           pack={true}
           awaitMore={true}
           pageSize={20}
           className={style.masonry}
         />
+        }
         {containerRef !== undefined && createPortal(
           selectedImage && <div ref={portalRef} className={style.visualizedImage}>
             <Overlay
@@ -111,7 +109,7 @@ export default function ImageMasonry({
           </div>,
           containerRef.current
         )}
-      </>
+      </div>
     )
   );
 }

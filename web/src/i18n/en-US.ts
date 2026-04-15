@@ -349,6 +349,11 @@ export default {
     showSidebarDescription:
       "Picteus wants to display an sidebar. Do you want to proceed?"
   },
+  errors: {
+    imageTitle: "Loading error",
+    imageDetail: "An error occurred: could not load the image visual.",
+    imageCondensed: "Could not load the visual",
+  },
   utils: {
     timeAgo: {
       second: "{{count}} second ago",

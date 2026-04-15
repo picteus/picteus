@@ -146,11 +146,10 @@ export default function SelectedImagesAffix() {
                 <Divider mb="sm" />
                 <div className={style.affixThumbnailGrid}>
                   <ImageMasonry
-                    containerWidth={400}
                     imageSize={133}
-                    imageItemMode={ImageItemMode.SELECT}
-                    loadMore={() => {}}
                     data={selectedImages}
+                    loadMore={() => {}}
+                    imageItemMode={ImageItemMode.SELECT}
                   />
                 </div>
               </div>

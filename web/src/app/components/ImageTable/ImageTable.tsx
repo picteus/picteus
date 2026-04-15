@@ -54,14 +54,16 @@ export default function ImageTable({
     return null;
   }
 
+  const edge = 160;
+
   const rows = data.map((image) => (
     <Table.Tr key={image.id}>
-      <Table.Td style={{ width: 160 }}>
+      <Table.Td style={{ width: edge }}>
         <ImageItem
           image={image}
           caption={(image as ImageWithCaption).caption}
-          width={160}
-          height={160}
+          width={edge}
+          height={edge}
           mode={imageItemMode}
           onClick={() =>
             setSelectedImageWrapper(image)

@@ -9,7 +9,6 @@ import { ImageApiImageTextToImagesRequest } from "@picteus/ws-client";
 
 import { ImageWithCaption } from "types";
 import { notifyApiCallError, Validators } from "utils";
-import { useContainerDimensions } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImageMasonry } from "app/components";
 
@@ -33,7 +32,6 @@ export default function TextToImagesModal({
   >([]);
   const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { width } = useContainerDimensions(containerRef);
   const focusTrapRef = useFocusTrap();
 
   const initialResultsCount = StorageService.getTextToImagesResultsCount();
@@ -140,7 +138,6 @@ export default function TextToImagesModal({
     if (containerRef?.current) {
       return (
         <ImageMasonry
-          containerWidth={width}
           data={imageSummaries}
           loadMore={() => {}}
         />

@@ -6,8 +6,10 @@ import {
   ImageApiImageGetAllFeaturesRequest,
   ImageApiImageGetRequest,
   ImageApiImageTextToImagesRequest,
+  ImageDimensions,
   ImageDistance,
   ImageFormat,
+  ImageResizeRender,
   SearchImageResult,
   SearchImageSummaryResult,
   SearchParameters
@@ -49,7 +51,7 @@ async function get(parameters: ImageApiImageGetRequest) {
   return imageApi.imageGet(parameters);
 }
 
-function getImageSrc(url: string, width?: number, height?: number, render? : "inbox" | "outbox")
+function getImageSrc(url: string, width?: number, height?: number, render? : ImageResizeRender)
 {
   const widthParameter = width ? `&w=${width}` : "";
   const heightParameter = height ? `&h=${height}` : "";
@@ -86,6 +88,29 @@ async function getAllTags(imageId: string): Promise<ExtensionImageTag[]> {
   return imageApi.imageGetAllTags({ id: imageId });
 }
 
+function computeImageDimensions(imageDimensions: ImageDimensions, areaDimensions: ImageDimensions, resizeRender: ImageResizeRender): ImageDimensions {
+  const imageRatio = imageDimensions.width / imageDimensions.height;
+  const areaRatio = areaDimensions.width / areaDimensions.height;
+  const scaleRatio = Math.min(1, Math.min(imageDimensions.width / areaDimensions.width, imageDimensions.height / areaDimensions.height));
+  const areaWidth = areaDimensions.width * scaleRatio;
+  const areaHeight = areaDimensions.height * scaleRatio;
+  if (resizeRender === "inbox") {
+    if (imageRatio >= areaRatio) {
+      return { width: Math.round(areaWidth), height: Math.round(areaWidth / imageRatio) };
+    }
+    else {
+      return { width: Math.round(areaHeight * imageRatio), height: Math.round(areaHeight) };
+    }
+  }
+  else if (resizeRender === "outbox") {
+    return { width: Math.round(areaWidth), height: Math.round(areaHeight) };
+  }
+  else
+  {
+    throw new Error(`Unsupported resize render '${resizeRender}'`);
+  }
+}
+
 export default {
   searchImages,
   searchSummaries,
@@ -97,4 +122,5 @@ export default {
   destroy,
   getAllTags,
   textToImages,
+  computeImageDimensions,
 };

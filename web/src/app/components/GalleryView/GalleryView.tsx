@@ -195,7 +195,7 @@ function GalleryContent({
   }
 
   return containerRef && <ImageMasonry data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
-                       containerWidth={containerWidth} containerRef={containerRef} />;
+                                       containerRef={containerRef} />;
 }
 
 type GalleryViewProps = {

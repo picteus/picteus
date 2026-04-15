@@ -126,7 +126,6 @@ export default function GalleryScreen() {
                   <MasonryVisualizer
                     content={tab.content}
                     imageIds={tab.data.imageIds}
-                    containerWidth={width}
                   />
                 </Container>
               ) : (

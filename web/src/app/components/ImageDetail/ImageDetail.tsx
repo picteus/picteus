@@ -1,11 +1,19 @@
 import React, { ReactNode, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Group, Layout, Panel, Separator } from "react-resizable-panels";
-import { IconArrowLeft, IconArrowRight, IconChevronDown, IconX } from "@tabler/icons-react";
-import { Accordion, ActionIcon, Button, Divider, Flex, Menu, Table, Text } from "@mantine/core";
+import { IconArrowLeft, IconArrowRight, IconChevronDown, IconCircleX, IconX } from "@tabler/icons-react";
+import { Accordion, ActionIcon, Alert, Button, Divider, Flex, Menu, Table, Text } from "@mantine/core";
 import { useResizeObserver } from "@mantine/hooks";
 
-import { ExtensionImageFeature, ExtensionImageTag, Image, ImageMetadata, Repository } from "@picteus/ws-client";
+import {
+  ExtensionImageFeature,
+  ExtensionImageTag,
+  Image,
+  ImageDimensions,
+  ImageMetadata,
+  ImageResizeRender,
+  Repository
+} from "@picteus/ws-client";
 
 import { capitalizeText, formatDate, formatDimensions, formatSize } from "utils";
 import { ChannelEnum, ImageOrSummary } from "types";
@@ -34,6 +42,7 @@ export default function ImageDetail({
    onPrevious,
    onNext,
  }: ImageDetailType) {
+  const [t] = useTranslation();
   const [imageData, setImageData] = useState<Image>();
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>();
   const [imageFeatures, setImageFeatures] = useState<ExtensionImageFeature[]>();
@@ -41,10 +50,29 @@ export default function ImageDetail({
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [imageWrapperRef, imageWrapperRectangle] = useResizeObserver();
+  const [imageWrapperDimensions, setImageWrapperDimensions] = useState<ImageDimensions | undefined>();
+  const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions | undefined>();
+  const [imageSrc, setImageSrc] = useState<string | undefined>();
   const imageRef = useRef<HTMLImageElement>();
+  const [placeholder, setPlaceholder] = useState<boolean>(true);
+  const [error, setError] = useState<string | undefined>();
   const [imageZoom, setImageZoom] = useState<number>(1);
-  const [t] = useTranslation();
   const [panelSizes, setPanelSizes] = useState<number[]>(StorageService.getVisualizerPanelSizes());
+  const resizeRender: ImageResizeRender = "inbox";
+  useEffect(() => {
+    setImageWrapperDimensions({width: Math.round(imageWrapperRectangle.width), height: Math.round(imageWrapperRectangle.height)});
+    if (imageWrapperRectangle.width> 0 || imageWrapperRectangle.height > 0) {
+      setImageExpectedDimensions(ImageService.computeImageDimensions(image.dimensions, {
+        width: imageWrapperRectangle.width,
+        height: imageWrapperRectangle.height
+      }, resizeRender));
+      setImageSrc(ImageService.getImageSrc(image.uri, imageWrapperDimensions.width, imageWrapperDimensions.height, resizeRender));
+    }
+  }, [imageWrapperRectangle, image]);
+  useEffect(() => {
+    setPlaceholder(true);
+    setError(undefined);
+  }, [image]);
 
   async function loadImageData() {
     const imageData: Image = "metadata" in image ? image as Image : await ImageService.get({ id: image.id });
@@ -207,13 +235,23 @@ export default function ImageDetail({
             <IconArrowLeft />
           </ActionIcon>
           <div ref={imageWrapperRef} className={style.imageWrapper}>
-            {imageWrapperRectangle.width > 0 && <img
+            {imageWrapperDimensions && imageWrapperDimensions.width > 0 && imageWrapperDimensions.height > 0 && <img
               ref={imageRef}
-              src={ImageService.getImageSrc(image.uri, Math.ceil(imageWrapperRectangle.width), Math.ceil(imageWrapperRectangle.height), "inbox")}
-              alt="Image"
-              className={style.image}
-              style={{maxWidth: imageWrapperRectangle.width}}
+              className={`${style.image} ${placeholder === false ? style.loaded : style.unLoaded}`}
+              onLoad={() => {
+                setPlaceholder(false);
+                setError(undefined);
+              }}
+              onError={() => setError(t("errors.imageDetail"))}
+              src={imageSrc}
+              alt={image.name}
+              width={imageExpectedDimensions.width}
+              height={imageExpectedDimensions.height}
+              style={{width: imageExpectedDimensions.width, height: imageExpectedDimensions.height}}
             />}
+            {placeholder && <Flex className={style.placeholder} align="center" justify="center">{error && (
+              <Alert variant="light" color="red" title={t("errors.imageTitle")}
+                     icon={<IconCircleX />}>{error}</Alert>)}</Flex>}
           </div>
           <ActionIcon
             style={hasNext ? {} : { visibility: "hidden" }}

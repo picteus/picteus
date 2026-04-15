@@ -88,6 +88,7 @@ export default function ImageItemMenu({ image }: ImageItemMenuType) {
         />
       ),
       title: t("closestEmbeddingsImagesModal.title"),
+      size: "l",
     });
   }
 

@@ -1,11 +1,15 @@
-import React, { ReactNode, useCallback, useMemo, useState } from "react";
+import React, { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { IconDots } from "@tabler/icons-react";
-import { ActionIcon, Checkbox, Flex, Menu } from "@mantine/core";
+import { ActionIcon, Checkbox, Flex, Menu, Text } from "@mantine/core";
+import { useTranslation } from "react-i18next";
+
+import { ImageDimensions } from "@picteus/ws-client";
 
 import { ImageItemMode, ImageOrSummary } from "types";
 import { useImagesSelectedContext } from "app/context";
 import { ImageService } from "app/services";
 import { ImageItemMenu } from "app/components";
+
 import style from "./ImageItem.module.scss";
 
 
@@ -26,13 +30,39 @@ export default function ImageItem({
   onClick,
   mode = ImageItemMode.VIEW,
 }: ImageItemType) {
-  const [hidePlaceholder, setHidePlaceholder] = useState<boolean>(false);
+  const [t] = useTranslation();
+  const [placeholder, setPlaceholder] = useState<boolean>(true);
+  const [error, setError] = useState<string | undefined>();
   const [menuOpened, setMenuOpened] = useState(false);
   const [selectedImages, setSelectedImages] = useImagesSelectedContext();
+  const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions | undefined>();
+  const [imageSrc, setImageSrc] = useState<string | undefined>();
+  useEffect(() => {
+    const resizeRender = width === undefined || height === undefined ? "inbox" : "outbox";
+    let newImageExpectedDimensions: ImageDimensions;
+    if (resizeRender === "inbox") {
+      const scalingRatio = Math.min(1, width !== undefined ? (image.dimensions.width / width) : (image.dimensions.height / height));
+      const imageRatio = image.dimensions.width / image.dimensions.height;
+      newImageExpectedDimensions = {
+        width: Math.round(scalingRatio * (width !== undefined ? width : (height * imageRatio))),
+        height: Math.round(scalingRatio * (height !== undefined ? height : (width / imageRatio)))
+      };
+    }
+    else {
+      newImageExpectedDimensions = ImageService.computeImageDimensions(image.dimensions, {
+        width,
+        height
+      }, resizeRender);
+    }
+    setImageExpectedDimensions(newImageExpectedDimensions);
+    setImageSrc(ImageService.getImageSrc(image.uri, width, height, resizeRender));
+    setPlaceholder(true);
+    setError(undefined);
+  }, [image, width, height]);
 
   const handleOnSelectImage = useCallback(()=> {
-    if (selectedImages.find((i) => i.id === image.id)) {
-      setSelectedImages(selectedImages.filter((i) => i.id !== image.id));
+    if (selectedImages.find((anImage) => anImage.id === image.id)) {
+      setSelectedImages(selectedImages.filter((anImage) => anImage.id !== image.id));
     }
     else {
       setSelectedImages([...selectedImages, image]);
@@ -61,13 +91,15 @@ export default function ImageItem({
     [selectedImages, image],
   );
 
-  return (
-    <div
+  return (imageExpectedDimensions !== undefined && imageExpectedDimensions.width > 0 && imageExpectedDimensions.height > 0) && (
+    <Flex
+      align="center"
+      justify="center"
       className={`${style.imageWrapper} ${isSelected ? style.hover : ""}`}
       onClick={handleOnClick}
       style={{
         width: `${width}px`,
-        height: height === undefined ? undefined : `${height}px`,
+        height: `${height !== undefined ? height : Math.round(width * (imageExpectedDimensions.height / imageExpectedDimensions.width))}px`
       }}
     >
       {caption && <div className={style.captionContainer}>{caption}</div>}
@@ -106,17 +138,20 @@ export default function ImageItem({
         )}
       </Flex>
       <img
-        onLoad={async () => {
-          setHidePlaceholder(true);
+        className={`${style.image} ${placeholder === false ? style.loaded : style.unLoaded}`}
+        onLoad={() => {
+          setPlaceholder(false);
+          setError(undefined);
         }}
+        onError={() => setError(t("errors.imageCondensed"))}
         loading="lazy"
-        className={`${style.image} ${hidePlaceholder ? style.loaded : ""}`}
-        src={ImageService.getImageSrc(image.uri, width, height)}
+        src={imageSrc}
         alt={image.name}
-        width={width}
-        height={height ?? (width * image.dimensions.height / image.dimensions.width)}
+        width={imageExpectedDimensions.width}
+        height={imageExpectedDimensions.height}
+        style={{width: imageExpectedDimensions.width, height: imageExpectedDimensions.height}}
       />
-      {!hidePlaceholder && <div className={style.placeholder}></div>}
-    </div>
+      {placeholder === true && <Flex className={style.placeholder} align="center" justify="center">{error && (<Text c="red">{error}</Text>)}</Flex>}
+    </Flex>
   );
 }
