@@ -39,7 +39,7 @@ export default function MasonryVisualizer({
       <Text>{content.description}</Text>
       {content.details && <Alert color="blue" icon={<IconInfoCircle />}>{content.details}</Alert>}
       <ImageMasonry
-        data={images}
+        images={images}
         loadMore={() => {}}
       />
     </Stack>

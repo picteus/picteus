@@ -13,7 +13,7 @@ import style from "./ImageTable.module.scss";
 
 
 type ImageTableType = {
-  data: ImageOrSummary[];
+  images: ImageOrSummary[];
   onSelectedImage: (image: ImageOrSummary) => void;
   loadMore: () => void;
   containerWidth: number;
@@ -22,7 +22,7 @@ type ImageTableType = {
 };
 
 export default function ImageTable({
-  data,
+  images,
   onSelectedImage,
   loadMore,
   containerWidth,
@@ -41,8 +41,8 @@ export default function ImageTable({
   const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });
 
   useEffect(() => {
-    navigation.setImages(data, selectedImage);
-  }, [data]);
+    navigation.setImages(images, selectedImage);
+  }, [images]);
 
   useEffect(() => {
     if (entry?.isIntersecting === true) {
@@ -50,13 +50,13 @@ export default function ImageTable({
     }
   }, [entry?.isIntersecting, loadMore]);
 
-  if (!data || data.length === 0 || containerWidth <= 0) {
+  if (!images || images.length === 0 || containerWidth <= 0) {
     return null;
   }
 
   const edge = 160;
 
-  const rows = data.map((image) => (
+  const rows = images.map((image) => (
     <Table.Tr key={image.id}>
       <Table.Td style={{ width: edge }}>
         <ImageItem

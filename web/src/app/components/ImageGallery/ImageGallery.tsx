@@ -12,7 +12,7 @@ import style from "./ImageGallery.module.scss";
 
 type ImageGalleryType = {
   imageSize?: number;
-  data: ImageOrSummary [];
+  images: ImageOrSummary [];
   onSelectedImage: (image: ImageOrSummary) => void;
   loadMore: () => void;
   containerWidth: number;
@@ -24,7 +24,7 @@ type ImageGalleryType = {
 
 export default function ImageGallery({
   imageSize = 250,
-  data,
+  images,
   onSelectedImage,
   loadMore,
   containerWidth,
@@ -46,8 +46,8 @@ export default function ImageGallery({
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
-    navigation.setImages(data, selectedImage);
-  }, [data]);
+    navigation.setImages(images, selectedImage);
+  }, [images]);
 
   useEffect(() => {
     loadMoreRef.current = loadMore;
@@ -90,7 +90,7 @@ export default function ImageGallery({
     }
     observer.unobserve(sentinel);
     observer.observe(sentinel);
-  }, [data]);
+  }, [images]);
 
   const gutter = 10;
   const columnWidth = useMemo(() => {
@@ -101,10 +101,10 @@ export default function ImageGallery({
   }, [containerWidth, imageSize]);
 
   return (
-    data.length !== 0 && containerWidth > 0 && (
+    images.length !== 0 && containerWidth > 0 && (
       <>
         <Grid gap={gutter}>
-          {data.map((item) => (
+          {images.map((item) => (
             <Grid.Col span="content" key={item.id}>
               <ImageItem
                 image={item}

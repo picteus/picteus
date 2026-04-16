@@ -32,7 +32,7 @@ export default function ImageCollection({imageIds}: ImageCollectionType) {
   return (
     images && <ImageMasonry
       imageSize={100}
-      data={images}
+      images={images}
       loadMore={() => {
       }}
       imageItemMode={ImageItemMode.PASSIVE}

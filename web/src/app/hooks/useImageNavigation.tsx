@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { ImageOrSummary } from "types";
 import { ImageVisualizerContextValue } from "app/context";
+import { ImageService } from "app/services";
 
 
 export default function useImageNavigation(selectedImage: ImageOrSummary, setSelected: (image: ImageOrSummary) => void) {
@@ -21,16 +22,18 @@ export default function useImageNavigation(selectedImage: ImageOrSummary, setSel
   }, [selectedImage]);
 
   async function handleOnNavigate(direction: number): Promise<void> {
-    const prevAndNextIds = state.images;
-    if (prevAndNextIds) {
-      const index = prevAndNextIds.findIndex(
-        (image) => image.id === state.selectedImage?.id,
+    if (state.selectedImage !== undefined) {
+      const previousAndNextImages = state.images;
+      const index = previousAndNextImages.findIndex(
+        (image) => image.id === state.selectedImage?.id
       );
       const newIndex = index + direction;
-      if (newIndex >= 0 && newIndex < prevAndNextIds.length) {
+      if (newIndex >= 0 && newIndex < previousAndNextImages.length) {
+        // We make a call to make sure that the data is up to date
+        const image = await ImageService.get( {id: previousAndNextImages[newIndex].id} );
         setState((previousValue) => ({
           ...previousValue,
-          selectedImage: prevAndNextIds[newIndex],
+          selectedImage: image
         }));
       }
     }
@@ -64,7 +67,7 @@ export default function useImageNavigation(selectedImage: ImageOrSummary, setSel
 
   return {
     setImages:(images: ImageOrSummary[], selectedImage: ImageOrSummary) => {
-      setState({ selectedImage: selectedImage, images: images });
+      setState({ selectedImage, images });
     },
     hasPrevious: computeHas("prev"),
     hasNext: computeHas("next"),

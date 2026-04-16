@@ -156,7 +156,7 @@ export default function ClosestEmbeddingsImagesModal({
       );
     }
     return (containerRef.current && <ImageMasonry
-        data={imageSummaries}
+        images={imageSummaries}
         loadMore={() => {
         }}
       />);

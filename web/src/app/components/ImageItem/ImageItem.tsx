@@ -37,6 +37,7 @@ export default function ImageItem({
   const [selectedImages, setSelectedImages] = useImagesSelectedContext();
   const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions | undefined>();
   const [imageSrc, setImageSrc] = useState<string | undefined>();
+
   useEffect(() => {
     const resizeRender = width === undefined || height === undefined ? "inbox" : "outbox";
     let newImageExpectedDimensions: ImageDimensions;
@@ -56,9 +57,13 @@ export default function ImageItem({
     }
     setImageExpectedDimensions(newImageExpectedDimensions);
     setImageSrc(ImageService.getImageSrc(image.uri, width, height, resizeRender));
+  }, [image, width, height]);
+
+  useEffect(() =>
+  {
     setPlaceholder(true);
     setError(undefined);
-  }, [image, width, height]);
+  }, [imageSrc]);
 
   const handleOnSelectImage = useCallback(()=> {
     if (selectedImages.find((anImage) => anImage.id === image.id)) {

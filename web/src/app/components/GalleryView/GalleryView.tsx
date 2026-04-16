@@ -184,17 +184,17 @@ function GalleryContent({
   }
 
   if (viewMode === "gallery") {
-    return <ImageGallery data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
+    return <ImageGallery images={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
                          containerWidth={containerWidth} containerHeight={containerHeight} containerRef={containerRef}
                          scrollRootRef={scrollRootRef}
     />;
   }
 
   if (viewMode === "table") {
-    return <ImageTable data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore} containerWidth={containerWidth} containerRef={containerRef}/>;
+    return <ImageTable images={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore} containerWidth={containerWidth} containerRef={containerRef}/>;
   }
 
-  return containerRef && <ImageMasonry data={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
+  return containerRef && <ImageMasonry images={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
                                        containerRef={containerRef} />;
 }
 

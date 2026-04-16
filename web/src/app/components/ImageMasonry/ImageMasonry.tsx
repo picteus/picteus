@@ -14,7 +14,7 @@ import style from "./ImageMasonry.module.scss";
 
 type ImageMasonryType = {
   imageSize?: number;
-  data: ImageOrSummary [];
+  images: ImageOrSummary [];
   onSelectedImage?: (image: ImageOrSummary) => void;
   loadMore: () => void;
   containerRef?: RefObject<HTMLElement>;
@@ -23,7 +23,7 @@ type ImageMasonryType = {
 
 export default function ImageMasonry({
   imageSize = 300,
-  data,
+  images,
   onSelectedImage,
   loadMore,
   containerRef,
@@ -37,16 +37,16 @@ export default function ImageMasonry({
     if (onSelectedImage !== undefined) {
       onSelectedImage(image);
     }
-  }, [setSelectedImage, onSelectedImage]);
+  }, [images, onSelectedImage]);
   const navigation = useImageNavigation(selectedImage, setSelectedImageWrapper);
   const portalRef = useRef<HTMLDivElement>(null);
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
     if (containerRef !== undefined) {
-      navigation.setImages(data, selectedImage);
+      navigation.setImages(images, selectedImage);
     }
-  }, [data]);
+  }, [images, selectedImage]);
 
   const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo<[MasonrySizing, ...MasonrySizing[]]>(() => {
     const gutter = 10;
@@ -59,27 +59,27 @@ export default function ImageMasonry({
   }, [hostRefRectangle, imageSize]);
 
   return (
-    data.length > 0 && (
+    images.length > 0 && (
       <div ref={hostRef} className={style.host}>
         {hostRef && hostRefRectangle.width > 0 && <MasonryLayout
           sizes={sizes}
-          items={data}
+          items={images}
           renderItem={({ columnWidth }, index: number) =>
             (<ImageItem
-              key={data[index].id}
-              image={data[index]}
-              caption={(data[index] as ImageWithCaption).caption}
+              key={images[index].id}
+              image={images[index]}
+              caption={(images[index] as ImageWithCaption).caption}
               width={columnWidth as number}
               mode={imageItemMode}
               onClick={() => {
                 if (containerRef === undefined) {
                   setImageVisualizer({
-                    selectedImage: data[index],
-                    images: data
+                    selectedImage: images[index],
+                    images: images
                   });
                 }
                 else {
-                  setSelectedImageWrapper(data[index]);
+                  setSelectedImageWrapper(images[index]);
                 }
               }}
             />)}

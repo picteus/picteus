@@ -138,7 +138,7 @@ export default function TextToImagesModal({
     if (containerRef?.current) {
       return (
         <ImageMasonry
-          data={imageSummaries}
+          images={imageSummaries}
           loadMore={() => {}}
         />
       );

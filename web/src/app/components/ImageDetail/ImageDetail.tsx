@@ -43,7 +43,7 @@ export default function ImageDetail({
    onNext,
  }: ImageDetailType) {
   const [t] = useTranslation();
-  const [imageData, setImageData] = useState<Image>();
+  const [imageData, setImageData] = useState<Image>("metadata" in image ? image as Image : undefined);
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>();
   const [imageFeatures, setImageFeatures] = useState<ExtensionImageFeature[]>();
   const [repository, setRepository] = useState<Repository>();
@@ -74,28 +74,27 @@ export default function ImageDetail({
     setError(undefined);
   }, [image]);
 
-  async function loadImageData() {
-    const imageData: Image = "metadata" in image ? image as Image : await ImageService.get({ id: image.id });
+  async function loadImageData(force: boolean) {
+    const imageData: Image = (force === false && "metadata" in image) ? image as Image : await ImageService.get({ id: image.id });
+    setImageData(imageData);
     setImageTags(imageData.tags);
     setImageFeatures(imageData.features);
-    setImageData(imageData);
     setRepository(RepositoriesService.getRepositoryInformation(imageData.repositoryId));
   }
 
   useEffect(() => {
     if (event !== undefined) {
       const channel = event.rawData.channel;
-      if (channel === ChannelEnum.IMAGE_UPDATED || channel === ChannelEnum.IMAGE_TAGS_UPDATED || channel === ChannelEnum.IMAGE_FEATURES_UPDATED)
-      {
-        if (imageData !== undefined && event.rawData.value?.id === imageData.id) {
-          void loadImageData();
+      if (channel === ChannelEnum.IMAGE_UPDATED || channel === ChannelEnum.IMAGE_TAGS_UPDATED || channel === ChannelEnum.IMAGE_FEATURES_UPDATED) {
+        if (imageData !== undefined && event.rawData.value.id === imageData.id) {
+          void loadImageData(true);
         }
       }
     }
   }, [event]);
 
   useEffect(() => {
-    void loadImageData();
+    void loadImageData(false);
   }, [image]);
 
   useEffect(() => {
@@ -142,16 +141,19 @@ export default function ImageDetail({
   }, [imageRef]);
 
   const informationData = useMemo(() => {
+    if (imageData === undefined) {
+      return [];
+    }
     return [
       {
         label: t("field.id"),
-        value: <CopyText text={image.id} />,
+        value: <CopyText text={imageData.id} />,
       },
-      ...(image.parentId
+      ...(imageData.parentId
         ? [
           {
             label: t("field.parentId"),
-            value: <CopyText text={image.parentId} />,
+            value: <CopyText text={imageData.parentId} />,
           },
         ]
         : []),
@@ -161,19 +163,19 @@ export default function ImageDetail({
       },
       {
         label: t("field.repositoryId"),
-        value: <CopyText text={image.repositoryId} />,
+        value: <CopyText text={imageData.repositoryId} />,
       },
       {
         label: t("field.createdOn"),
-        value: formatDate(image.fileDates.creationDate),
+        value: formatDate(imageData.fileDates.creationDate),
       },
       {
         label: t("field.modifiedOn"),
-        value: formatDate(image.fileDates.modificationDate),
+        value: formatDate(imageData.fileDates.modificationDate),
       },
       {
         label: t("field.dimensions"),
-        value: formatDimensions(image.dimensions),
+        value: formatDimensions(imageData.dimensions),
       },
       ...(image.sourceUrl
         ? [
@@ -181,8 +183,8 @@ export default function ImageDetail({
             label: t("field.sourceUrl"),
             value: (
               <ExternalLink
-                label={image.sourceUrl}
-                url={image.sourceUrl}
+                label={imageData.sourceUrl}
+                url={imageData.sourceUrl}
               />
             ),
           },
@@ -190,10 +192,10 @@ export default function ImageDetail({
         : []),
       {
         label: t("field.location"),
-        value: <ExternalLink label={image.url} url={image.url} />,
+        value: <ExternalLink label={imageData.url} url={imageData.url} />,
       },
     ];
-  }, [image, repository]);
+  }, [imageData, repository]);
 
   const imageMetadata = useMemo(() => {
     if (!imageData) {
