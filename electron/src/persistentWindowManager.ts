@@ -3,6 +3,7 @@ import * as fs from "fs";
 import { BrowserWindow } from "electron";
 
 import { logger } from "./logger";
+import { WindowTuner } from "./main";
 
 
 interface IdUrl
@@ -39,7 +40,7 @@ export class PersistentWindowManager
 
   private shouldListenToCloseEvents: boolean = true;
 
-  constructor(private readonly stateFilePath: string, private readonly options: Electron.BrowserWindowConstructorOptions)
+  constructor(private readonly stateFilePath: string, private readonly windowTuner: WindowTuner, private readonly options: Electron.BrowserWindowConstructorOptions)
   {
   }
 
@@ -74,6 +75,7 @@ export class PersistentWindowManager
     }
 
     const window = new BrowserWindow(options);
+    this.windowTuner(window);
     window.setMenu(null);
     window.setMenuBarVisibility(false);
     this.perIdWindowWithUrls.set(idUrl.id, { window, url: idUrl.url, automaticallyReopen });

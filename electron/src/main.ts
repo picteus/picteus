@@ -379,6 +379,8 @@ class ChromeExtensionManager
 
 }
 
+export type WindowTuner = (window: BrowserWindow) => void;
+
 export class ApplicationWrapper
 {
 
@@ -390,7 +392,25 @@ export class ApplicationWrapper
 
   private readonly chromeExtensionManager: ChromeExtensionManager = new ChromeExtensionManager();
 
-  private readonly persistentWindowManager: PersistentWindowManager = new PersistentWindowManager(path.join(applicationDirectoryPath, "window-states.json"), this.computeWindowOptions());
+  private readonly windowTuner: WindowTuner = (window: BrowserWindow): void =>
+  {
+    // We register a "CommandOrControl+W" key shortcut to close any window through this shortcut, except non-closeable ones: this is required because when removing the default menu on a window also removes its default key shortcut mechanism
+    window.webContents.on("before-input-event", (event, input) =>
+    {
+      if (input.key === "w" && ((os.platform() === "darwin" && input.meta === true) || (os.platform() === "win32" && input.control === true)))
+      {
+        event.preventDefault();
+        if (window.isClosable() === true)
+        {
+          window.close();
+        }
+      }
+    });
+  };
+
+  private readonly persistentWindowManager: PersistentWindowManager = new PersistentWindowManager(path.join(applicationDirectoryPath, "window-states.json"), this.windowTuner, this.computeWindowOptions());
+
+  private readonly shouldRegisterShortcut: boolean = false;
 
   private mainWindow?: BrowserWindow;
 
@@ -418,7 +438,10 @@ export class ApplicationWrapper
     {
       logger.debug("The application is ready");
 
-      this.registerShortcut();
+      if (this.shouldRegisterShortcut === true)
+      {
+        this.registerShortcut();
+      }
       this.setMenu();
       await this.onVersion(app.getVersion());
 
@@ -537,7 +560,10 @@ export class ApplicationWrapper
 
     app.on("will-quit", () =>
     {
-      this.unregisterShortcut();
+      if (this.shouldRegisterShortcut === true)
+      {
+        this.unregisterShortcut();
+      }
     });
   }
 
@@ -911,7 +937,7 @@ export class ApplicationWrapper
 
   private registerShortcut(): void
   {
-    // We register a global "CommandOrControl+W" key shortcut, in order to close any window through this shortcut, except non-closeable ones: this is required, because when removing the default menu on a window also removes its default key shortcut mechanism
+    // This is a placeholder for registering a dedicated key shortcut working on all windows
     const success = globalShortcut.register("CommandOrControl+W", () =>
     {
       const focusedWindow = BrowserWindow.getFocusedWindow();
