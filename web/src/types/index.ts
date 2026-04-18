@@ -95,6 +95,13 @@ export enum ImageItemMode {
   VIEW = "VIEW",
 }
 
+export interface WithNavigationType {
+  hasPrevious: boolean;
+  hasNext: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+}
+
 export type DialogContent = {
   title: string;
   description: string;

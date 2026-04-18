@@ -103,8 +103,6 @@ export default function ImageGallery({
     return { columns, columnWidth: approximateWidth + Math.floor(remainingSpace / columns)};
   }, [imageSize, hostRefRectangle]);
 
-  console.debug("ImageGallery");
-
   const renderedImages = useMemo(()=> images.map((item) => (
     <Grid.Col span={1} key={item.id}>
       <ImageItem
@@ -140,10 +138,7 @@ export default function ImageGallery({
               <ImageDetail
                 image={navigation.selectedImage}
                 onClose={() => setSelectedImageWrapper((undefined))}
-                hasPrevious={navigation.hasPrevious}
-                hasNext={navigation.hasNext}
-                onPrevious={navigation.onPrevious}
-                onNext={navigation.onNext}
+                withNavigation={navigation}
               />
             </Overlay>
           </div>,

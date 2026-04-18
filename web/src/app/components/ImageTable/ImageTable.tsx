@@ -114,10 +114,7 @@ export default function ImageTable({
             <ImageDetail
               image={navigation.selectedImage}
               onClose={() => setSelectedImageWrapper((undefined))}
-              hasPrevious={navigation.hasPrevious}
-              hasNext={navigation.hasNext}
-              onPrevious={navigation.onPrevious}
-              onNext={navigation.onNext}
+              withNavigation={navigation}
             />
           </Overlay>
         </div>,

@@ -1,21 +1,25 @@
 import { useCallback, useMemo, useState } from "react";
 
-import { ImageOrSummary } from "types";
+import { ImageOrSummary, WithNavigationType } from "types";
 import { ImageVisualizerContextValue } from "app/context";
 import { ImageService } from "app/services";
 
 
-export default function useImageNavigation(initialValue?: ImageVisualizerContextValue) {
+export default function useImageNavigation(initialValue?: ImageVisualizerContextValue): WithNavigationType & {
+  setImages: (images: ImageOrSummary[]) => void,
+  setSelectedImage: (selectedImage: ImageOrSummary) => void,
+  selectedImage: ImageOrSummary | undefined
+} {
   const [state, setState] = useState<ImageVisualizerContextValue>(initialValue ?? { selectedImage: undefined, images: [] });
 
-  const setImages = useCallback((images: ImageOrSummary[]) => {
+  const setImages = useCallback((images: ImageOrSummary[]): void => {
     setState((previousValue) => {
       previousValue.images = images;
       return { ...previousValue };
     });
   }, []);
 
-  const setSelectedImage = useCallback((selectedImage: ImageOrSummary) => {
+  const setSelectedImage = useCallback((selectedImage: ImageOrSummary): void => {
     setState((previousValue) => {
       previousValue.selectedImage = selectedImage;
       return { ...previousValue };

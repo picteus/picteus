@@ -16,7 +16,7 @@ import {
 } from "@picteus/ws-client";
 
 import { capitalizeText, formatDate, formatDimensions, formatSize } from "utils";
-import { ChannelEnum, ImageOrSummary } from "types";
+import { ChannelEnum, ImageOrSummary, WithNavigationType } from "types";
 import { useEventSocket } from "app/context";
 import { ImageService, RepositoriesService, StorageService } from "app/services";
 import { CodeViewer, CopyText, ExternalLink, ImageItemMenu, Markdown } from "app/components";
@@ -28,19 +28,13 @@ import style from "./ImageDetail.module.scss";
 type ImageDetailType = {
   image: ImageOrSummary;
   onClose: () => void;
-  hasPrevious: boolean;
-  hasNext: boolean;
-  onPrevious: () => void;
-  onNext: () => void;
+  withNavigation: WithNavigationType;
 };
 
 export default function ImageDetail({
    image,
    onClose,
-   hasPrevious,
-   hasNext,
-   onPrevious,
-   onNext,
+   withNavigation,
  }: ImageDetailType) {
   const [t] = useTranslation();
   const [imageData, setImageData] = useState<Image>("metadata" in image ? image as Image : undefined);
@@ -103,23 +97,6 @@ export default function ImageDetail({
       imageRef.current.style.transform = "scale(" + imageZoom + ")";
     }
   }, [imageZoom, imageRef]);
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft" && hasPrevious) {
-        onPrevious();
-      }
-      else if (event.key === "ArrowRight" && hasNext) {
-        onNext();
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [hasPrevious, hasNext, onPrevious, onNext]);
 
   useEffect(() => {
     let zoom = 1;
@@ -230,9 +207,9 @@ export default function ImageDetail({
           <ActionIcon
             size={"xl"}
             ml={"sm"}
-            style={hasPrevious ? {} : { visibility: "hidden" }}
+            style={withNavigation.hasPrevious ? {} : { visibility: "hidden" }}
             variant="default"
-            onClick={onPrevious}
+            onClick={withNavigation.onPrevious}
           >
             <IconArrowLeft />
           </ActionIcon>
@@ -256,11 +233,11 @@ export default function ImageDetail({
                      icon={<IconCircleX />}>{error}</Alert>)}</Flex>}
           </div>
           <ActionIcon
-            style={hasNext ? {} : { visibility: "hidden" }}
+            style={withNavigation.hasNext ? {} : { visibility: "hidden" }}
             size={"xl"}
             mr={"sm"}
             variant="default"
-            onClick={onNext}
+            onClick={withNavigation.onNext}
           >
             <IconArrowRight />
           </ActionIcon>

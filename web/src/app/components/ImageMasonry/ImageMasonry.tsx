@@ -102,10 +102,7 @@ export default function ImageMasonry({
               <ImageDetail
                 image={navigation.selectedImage}
                 onClose={handleOnClose}
-                hasPrevious={navigation.hasPrevious}
-                hasNext={navigation.hasNext}
-                onPrevious={navigation.onPrevious}
-                onNext={navigation.onNext}
+                withNavigation={navigation}
               />
             </Overlay>
           </div>,

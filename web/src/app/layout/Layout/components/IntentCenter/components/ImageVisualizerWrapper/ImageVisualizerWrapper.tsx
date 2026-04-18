@@ -17,13 +17,7 @@ export default function ImageVisualizerWrapper({
   const navigation = useImageNavigation(imageVisualizerContext);
 
   return (
-    navigation.selectedImage !== undefined && <ImageVisualizer
-      image={navigation.selectedImage}
-      hasPrevious={navigation.hasPrevious}
-      hasNext={navigation.hasNext}
-      onPrevious={navigation.onPrevious}
-      onNext={navigation.onNext}
-      onClose={onClose}
-    />
+    navigation.selectedImage !== undefined &&
+    <ImageVisualizer image={navigation.selectedImage} onClose={onClose} withNavigation={navigation} />
   );
 }
