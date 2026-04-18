@@ -1,7 +1,7 @@
 import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-
 import { Grid, Overlay } from "@mantine/core";
+import { useResizeObserver } from "@mantine/hooks";
 
 import { ImageItemMode, ImageOrSummary } from "types";
 import { useEscapeKey, useImageNavigation } from "app/hooks";
@@ -15,7 +15,6 @@ type ImageGalleryType = {
   images: ImageOrSummary [];
   onSelectedImage: (image: ImageOrSummary) => void;
   loadMore: () => void;
-  containerWidth: number;
   containerHeight: number;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
@@ -27,26 +26,26 @@ export default function ImageGallery({
   images,
   onSelectedImage,
   loadMore,
-  containerWidth,
   containerHeight,
   containerRef,
   scrollRootRef,
   imageItemMode,
 }: ImageGalleryType) {
+  const gutter = 10;
+  const [hostRef, hostRefRectangle] = useResizeObserver();
   const [sentinel, setSentinel] = useState<HTMLHeadingElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
-  const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
+  const navigation = useImageNavigation();
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
-    setSelectedImage(image);
+    navigation.setSelectedImage(image);
     onSelectedImage(image);
-  }, [setSelectedImage, onSelectedImage]);
-  const navigation = useImageNavigation(selectedImage, setSelectedImageWrapper);
+  }, [onSelectedImage, navigation]);
   const portalRef = useRef<HTMLDivElement>(null);
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
-    navigation.setImages(images, selectedImage);
+    navigation.setImages(images);
   }, [images]);
 
   useEffect(() => {
@@ -92,42 +91,54 @@ export default function ImageGallery({
     observer.observe(sentinel);
   }, [images]);
 
-  const gutter = 10;
-  const columnWidth = useMemo(() => {
+  const handleOnClick = useCallback((image: ImageOrSummary): void => {
+    setSelectedImageWrapper(image);
+  }, []);
+
+  const { columns, columnWidth } = useMemo(() => {
     const approximateWidth = imageSize;
+    const containerWidth = Math.round(hostRefRectangle.width);
     const columns = Math.max(1, Math.floor(containerWidth / approximateWidth));
-    const remainingSpace = containerWidth - columns * approximateWidth - gutter * (columns - 1) - 60;
-    return approximateWidth + Math.floor(remainingSpace / columns);
-  }, [containerWidth, imageSize]);
+    const remainingSpace = containerWidth - columns * approximateWidth - gutter * (columns - 1);
+    return { columns, columnWidth: approximateWidth + Math.floor(remainingSpace / columns)};
+  }, [imageSize, hostRefRectangle]);
+
+  console.debug("ImageGallery");
+
+  const renderedImages = useMemo(()=> images.map((item) => (
+    <Grid.Col span={1} key={item.id}>
+      <ImageItem
+        image={item}
+        width={columnWidth}
+        height={columnWidth}
+        mode={imageItemMode}
+        onClick={handleOnClick}
+      />
+    </Grid.Col>
+  )), [images, columnWidth]);
+
+  const renderedGrid = useMemo(() => (
+    <Grid columns={columns} gap={gutter}>
+      {renderedImages}
+      <Grid.Col span={columns}>
+        <div ref={sentinelRef} className={style.sentinel} />
+      </Grid.Col>
+    </Grid>
+  ), [renderedImages, columns]);
 
   return (
-    images.length !== 0 && containerWidth > 0 && (
-      <>
-        <Grid gap={gutter}>
-          {images.map((item) => (
-            <Grid.Col span="content" key={item.id}>
-              <ImageItem
-                image={item}
-                width={columnWidth}
-                height={columnWidth}
-                mode={imageItemMode}
-                onClick={() => setSelectedImageWrapper(item)}
-              />
-            </Grid.Col>
-          ))}
-          <Grid.Col span={12}>
-            <div ref={sentinelRef} className={style.sentinel} />
-          </Grid.Col>
-        </Grid>
+    images.length !== 0 && columns > 0 && (
+      <div ref={hostRef} className={style.host}>
+        {renderedGrid}
         {createPortal(
-          selectedImage && <div ref={portalRef} className={style.visualizedImage}>
+          navigation.selectedImage && <div ref={portalRef} className={style.visualizedImage}>
             <Overlay
               color="#000"
               backgroundOpacity={1}
               zIndex={0}
             >
               <ImageDetail
-                image={selectedImage}
+                image={navigation.selectedImage}
                 onClose={() => setSelectedImageWrapper((undefined))}
                 hasPrevious={navigation.hasPrevious}
                 hasNext={navigation.hasNext}
@@ -137,7 +148,7 @@ export default function ImageGallery({
             </Overlay>
           </div>,
           containerRef.current
-        )}</>
+        )}</div>
     )
   );
 }

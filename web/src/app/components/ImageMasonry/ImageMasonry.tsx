@@ -1,4 +1,4 @@
-import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { RefObject, useCallback, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Overlay } from "@mantine/core";
 import { useResizeObserver } from "@mantine/hooks";
@@ -31,22 +31,34 @@ export default function ImageMasonry({
 }: ImageMasonryType) {
   const [hostRef, hostRefRectangle] = useResizeObserver();
   const [, setImageVisualizer] = useImageVisualizerContext();
-  const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
+  const navigation = useImageNavigation();
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
-    setSelectedImage(image);
+    navigation.setSelectedImage(image);
     if (onSelectedImage !== undefined) {
       onSelectedImage(image);
     }
-  }, [images, onSelectedImage]);
-  const navigation = useImageNavigation(selectedImage, setSelectedImageWrapper);
+  }, [images, onSelectedImage, navigation]);
   const portalRef = useRef<HTMLDivElement>(null);
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
     if (containerRef !== undefined) {
-      navigation.setImages(images, selectedImage);
+      navigation.setImages(images);
     }
-  }, [images, selectedImage]);
+  }, [images]);
+
+  const handleOnClick = useCallback((image: ImageOrSummary) => {
+    if (containerRef === undefined) {
+      setImageVisualizer({ selectedImage: image, images });
+    }
+    else {
+      setSelectedImageWrapper(image);
+    }
+  }, [images]);
+
+  const handleOnClose = useCallback(() => {
+    setSelectedImageWrapper((undefined));
+  }, []);
 
   const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo<[MasonrySizing, ...MasonrySizing[]]>(() => {
     const gutter = 10;
@@ -71,17 +83,7 @@ export default function ImageMasonry({
               caption={(images[index] as ImageWithCaption).caption}
               width={columnWidth as number}
               mode={imageItemMode}
-              onClick={() => {
-                if (containerRef === undefined) {
-                  setImageVisualizer({
-                    selectedImage: images[index],
-                    images: images
-                  });
-                }
-                else {
-                  setSelectedImageWrapper(images[index]);
-                }
-              }}
+              onClick={handleOnClick}
             />)}
           loadMore={loadMore}
           pack={true}
@@ -91,15 +93,15 @@ export default function ImageMasonry({
         />
         }
         {containerRef !== undefined && createPortal(
-          selectedImage && <div ref={portalRef} className={style.visualizedImage}>
+          navigation.selectedImage && <div ref={portalRef} className={style.visualizedImage}>
             <Overlay
               color="#000"
               backgroundOpacity={1}
               zIndex={0}
             >
               <ImageDetail
-                image={selectedImage}
-                onClose={() => setSelectedImageWrapper((undefined))}
+                image={navigation.selectedImage}
+                onClose={handleOnClose}
                 hasPrevious={navigation.hasPrevious}
                 hasNext={navigation.hasNext}
                 onPrevious={navigation.onPrevious}

@@ -138,7 +138,7 @@ function GalleryContent({
     scrollRootRef.current.scrollTo(0, 0);
     setAccumulatedData([]);
     setPagination({ currentPage: 1, take: BATCH_SIZE, skip: 0 });
-  }, [filterOrCollectionId, refreshTrigger]);
+  }, [filterOrCollectionId, refreshTrigger, viewMode]);
 
   useEffect(() => {
     onFetchData(pagination);
@@ -185,8 +185,7 @@ function GalleryContent({
 
   if (viewMode === "gallery") {
     return <ImageGallery images={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
-                         containerWidth={containerWidth} containerHeight={containerHeight} containerRef={containerRef}
-                         scrollRootRef={scrollRootRef}
+                         containerHeight={containerHeight} containerRef={containerRef} scrollRootRef={scrollRootRef}
     />;
   }
 
@@ -255,9 +254,9 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
     });
   }
 
-  function handleOnSelectedImage(image: ImageOrSummary) {
+  const handleOnSelectedImage = useCallback((image: ImageOrSummary) => {
     setSelectedImage(image);
-  }
+  }, []);
 
   return (
     <>

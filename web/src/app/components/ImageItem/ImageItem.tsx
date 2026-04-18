@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IconDots } from "@tabler/icons-react";
 import { ActionIcon, Checkbox, Flex, Menu, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
@@ -13,13 +13,41 @@ import { ImageItemMenu } from "app/components";
 import style from "./ImageItem.module.scss";
 
 
+function useImageRefStatus(src: string): { imgRef: RefObject<HTMLImageElement>, isLoaded: boolean, isError: boolean } {
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img === null || src === undefined) {
+      return;
+    }
+    setIsLoaded(false);
+    setIsError(false);
+    if (img.complete === true && img.naturalWidth !== 0) {
+      setIsLoaded(true);
+      return;
+    }
+    const handleLoad = () => setIsLoaded(true);
+    img.addEventListener("load", handleLoad);
+    const handleError = () => setIsError(true);
+    img.addEventListener("error", handleError);
+    return () => {
+      img.removeEventListener("load", handleLoad);
+      img.removeEventListener("error", handleError);
+    };
+  }, [src]);
+  return { imgRef, isLoaded, isError };
+}
+
 type ImageItemType = {
   image: ImageOrSummary;
   caption?: ReactNode;
   width: number;
   height?: number;
   mode?: ImageItemMode;
-  onClick: (data: ImageOrSummary) => void;
+  onClick: (image: ImageOrSummary) => void;
 };
 
 export default function ImageItem({
@@ -31,12 +59,11 @@ export default function ImageItem({
   mode = ImageItemMode.VIEW,
 }: ImageItemType) {
   const [t] = useTranslation();
-  const [placeholder, setPlaceholder] = useState<boolean>(true);
-  const [error, setError] = useState<string | undefined>();
   const [menuOpened, setMenuOpened] = useState(false);
   const [selectedImages, setSelectedImages] = useImagesSelectedContext();
   const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions | undefined>();
   const [imageSrc, setImageSrc] = useState<string | undefined>();
+  const { imgRef, isLoaded, isError } = useImageRefStatus(imageSrc);
 
   useEffect(() => {
     const resizeRender = width === undefined || height === undefined ? "inbox" : "outbox";
@@ -58,12 +85,6 @@ export default function ImageItem({
     setImageExpectedDimensions(newImageExpectedDimensions);
     setImageSrc(ImageService.getImageSrc(image.uri, width, height, resizeRender));
   }, [image, width, height]);
-
-  useEffect(() =>
-  {
-    setPlaceholder(true);
-    setError(undefined);
-  }, [imageSrc]);
 
   const handleOnSelectImage = useCallback(()=> {
     if (selectedImages.find((anImage) => anImage.id === image.id)) {
@@ -143,12 +164,8 @@ export default function ImageItem({
         )}
       </Flex>
       <img
-        className={`${style.image} ${placeholder === false ? style.loaded : style.unLoaded}`}
-        onLoad={() => {
-          setPlaceholder(false);
-          setError(undefined);
-        }}
-        onError={() => setError(t("errors.imageCondensed"))}
+        ref={imgRef}
+        className={`${style.image} ${isLoaded === true ? style.loaded : style.unLoaded}`}
         loading="lazy"
         src={imageSrc}
         alt={image.name}
@@ -156,7 +173,8 @@ export default function ImageItem({
         height={imageExpectedDimensions.height}
         style={{width: imageExpectedDimensions.width, height: imageExpectedDimensions.height}}
       />
-      {placeholder === true && <Flex className={style.placeholder} align="center" justify="center">{error && (<Text c="red">{error}</Text>)}</Flex>}
+      {isLoaded === false && <Flex className={style.placeholder} align="center" justify="center">{isError === true && (
+        <Text c="red">{t("errors.imageCondensed")}</Text>)}</Flex>}
     </Flex>
   );
 }

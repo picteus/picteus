@@ -29,9 +29,7 @@ export default function ClosestEmbeddingsImagesModal({
   imageId,
 }: ClosestEmbeddingsImagesModalType) {
   const [t] = useTranslation();
-  const [imageSummaries, setImageSummaries] = useState<
-    ImageWithCaption[]
-  >([]);
+  const [images, setImages] = useState<ImageWithCaption[]>([]);
   const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,7 +68,7 @@ export default function ClosestEmbeddingsImagesModal({
     }
     try {
       const imageDistances = await ImageService.getClosestImages(parameters);
-      setImageSummaries(
+      setImages(
         imageDistances
           .sort((a, b) => a.distance - b.distance)
           .map((imageDistance) => ({
@@ -142,8 +140,9 @@ export default function ClosestEmbeddingsImagesModal({
       </Group>
     );
   }
+
   function renderContent() {
-    if (!loading && !imageSummaries.length) {
+    if (!loading && !images.length) {
       return (
         <EmptyResults
           icon={
@@ -156,7 +155,7 @@ export default function ClosestEmbeddingsImagesModal({
       );
     }
     return (containerRef.current && <ImageMasonry
-        images={imageSummaries}
+        images={images}
         loadMore={() => {
         }}
       />);

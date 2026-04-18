@@ -1,4 +1,4 @@
-import React, { RefObject, useCallback, useEffect, useRef, useState } from "react";
+import React, { RefObject, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Overlay, Table, Text } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
@@ -29,19 +29,19 @@ export default function ImageTable({
   containerRef,
   imageItemMode,
 }: ImageTableType) {
-  const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
+  const edge = 160;
+  const navigation = useImageNavigation();
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
-    setSelectedImage(image);
+    navigation.setSelectedImage(image);
     onSelectedImage(image);
-  }, [setSelectedImage, onSelectedImage]);
-  const navigation = useImageNavigation(selectedImage, setSelectedImageWrapper);
+  }, [onSelectedImage, navigation]);
   const portalRef = useRef<HTMLDivElement>(null);
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
   const [t] = useTranslation();
   const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });
 
   useEffect(() => {
-    navigation.setImages(images, selectedImage);
+    navigation.setImages(images);
   }, [images]);
 
   useEffect(() => {
@@ -53,8 +53,6 @@ export default function ImageTable({
   if (!images || images.length === 0 || containerWidth <= 0) {
     return null;
   }
-
-  const edge = 160;
 
   const rows = images.map((image) => (
     <Table.Tr key={image.id}>
@@ -107,14 +105,14 @@ export default function ImageTable({
       </Table>
       <div ref={ref} style={{ width: "100%", height: 20 }} />
       {createPortal(
-        selectedImage && <div ref={portalRef} className={style.visualizedImage}>
+        navigation.selectedImage && <div ref={portalRef} className={style.visualizedImage}>
           <Overlay
             color="#000"
             backgroundOpacity={1}
             zIndex={0}
           >
             <ImageDetail
-              image={selectedImage}
+              image={navigation.selectedImage}
               onClose={() => setSelectedImageWrapper((undefined))}
               hasPrevious={navigation.hasPrevious}
               hasNext={navigation.hasNext}

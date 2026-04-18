@@ -1,27 +1,45 @@
-import { useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { ImageOrSummary } from "types";
 import { ImageVisualizerContextValue } from "app/context";
 import { ImageService } from "app/services";
 
 
-export default function useImageNavigation(selectedImage: ImageOrSummary, setSelected: (image: ImageOrSummary) => void) {
-  const [state, setState] = useState<ImageVisualizerContextValue>({ selectedImage: undefined, images: [] });
+export default function useImageNavigation(initialValue?: ImageVisualizerContextValue) {
+  const [state, setState] = useState<ImageVisualizerContextValue>(initialValue ?? { selectedImage: undefined, images: [] });
 
-  useEffect(() => {
-    if (selectedImage !== state.selectedImage && state.selectedImage !== undefined) {
-      setSelected(state.selectedImage);
+  const setImages = useCallback((images: ImageOrSummary[]) => {
+    setState((previousValue) => {
+      previousValue.images = images;
+      return { ...previousValue };
+    });
+  }, []);
+
+  const setSelectedImage = useCallback((selectedImage: ImageOrSummary) => {
+    setState((previousValue) => {
+      previousValue.selectedImage = selectedImage;
+      return { ...previousValue };
+    });
+  }, []);
+
+  const computeHas = useCallback((direction: string) => {
+    const previousAndNextImages = state.images;
+    if (previousAndNextImages.length <= 1) {
+      return false;
+    }
+    const index = previousAndNextImages.findIndex((image) => image.id === state.selectedImage?.id);
+    if (direction === "previous") {
+      return index > 0;
+    }
+    else if (direction === "next") {
+      return index < previousAndNextImages.length - 1;
     }
   }, [state]);
 
-  useEffect(() => {
-    setState((previousValue) => ({
-      ...previousValue,
-      selectedImage
-    }));
-  }, [selectedImage]);
+  const hasPrevious = useMemo<boolean>(() => computeHas("previous"), [computeHas]);
+  const hasNext = useMemo<boolean>(() => computeHas("next"), [computeHas]);
 
-  async function handleOnNavigate(direction: number): Promise<void> {
+  const handleOnNavigate = useCallback((direction: number): void => {
     if (state.selectedImage !== undefined) {
       const previousAndNextImages = state.images;
       const index = previousAndNextImages.findIndex(
@@ -30,48 +48,29 @@ export default function useImageNavigation(selectedImage: ImageOrSummary, setSel
       const newIndex = index + direction;
       if (newIndex >= 0 && newIndex < previousAndNextImages.length) {
         // We make a call to make sure that the data is up to date
-        const image = await ImageService.get( {id: previousAndNextImages[newIndex].id} );
-        setState((previousValue) => ({
-          ...previousValue,
-          selectedImage: image
+        ImageService.get({ id: previousAndNextImages[newIndex].id }).then(image => setState((previousValue) => {
+          previousValue.selectedImage = image;
+          return { ...previousValue };
         }));
       }
     }
-  }
+  }, [state]);
 
-  function handlePrevious(): void {
+  const onPrevious = useCallback(() => {
     void handleOnNavigate(-1);
-  }
+  }, [handleOnNavigate]);
 
-  function handleNext(): void {
+  const onNext = useCallback(() => {
     void handleOnNavigate(1);
-  }
-
-  function computeHas(direction: string) {
-    const prevAndNextIds = state.images;
-    if (prevAndNextIds) {
-      if (prevAndNextIds.length <= 1) {
-        return false;
-      }
-      const index = prevAndNextIds.findIndex(
-        (image) => image.id === state.selectedImage?.id,
-      );
-      if (direction === "prev") {
-        return index > 0;
-      } else if (direction === "next") {
-        return index < prevAndNextIds.length - 1;
-      }
-    }
-    return false;
-  }
+  }, [handleOnNavigate]);
 
   return {
-    setImages:(images: ImageOrSummary[], selectedImage: ImageOrSummary) => {
-      setState({ selectedImage, images });
-    },
-    hasPrevious: computeHas("prev"),
-    hasNext: computeHas("next"),
-    onPrevious: handlePrevious,
-    onNext: handleNext
+    setImages,
+    setSelectedImage,
+    selectedImage: state.selectedImage,
+    hasPrevious,
+    hasNext,
+    onPrevious,
+    onNext
   };
 }

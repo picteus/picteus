@@ -1,23 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 
-import { ImageOrSummary } from "types";
+import { ImageVisualizerContextValue } from "app/context";
 import { useImageNavigation } from "app/hooks";
 import { ImageVisualizer } from "app/components";
 
 
+type ImageVisualizerWrapperType = {
+  imageVisualizerContext: ImageVisualizerContextValue;
+  onClose: () => void
+};
+
 export default function ImageVisualizerWrapper({
   imageVisualizerContext,
   onClose,
-}) {
-  const [selectedImage, setSelectedImage] = useState<ImageOrSummary>(imageVisualizerContext.selectedImage);
-  const navigation = useImageNavigation(selectedImage, setSelectedImage);
-  useEffect(() => {
-    navigation.setImages(imageVisualizerContext.images, selectedImage);
-  }, [imageVisualizerContext]);
+}: ImageVisualizerWrapperType) {
+  const navigation = useImageNavigation(imageVisualizerContext);
 
   return (
-    <ImageVisualizer
-      image={selectedImage}
+    navigation.selectedImage !== undefined && <ImageVisualizer
+      image={navigation.selectedImage}
       hasPrevious={navigation.hasPrevious}
       hasNext={navigation.hasNext}
       onPrevious={navigation.onPrevious}

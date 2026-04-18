@@ -21,10 +21,7 @@ export function useImageVisualizerContext() {
 }
 
 export function ImageVisualizerProvider({ children }) {
-  const [value, setValue] = useState<ImageVisualizerContextValue>({
-    selectedImage: undefined,
-    images: [],
-  });
+  const [value, setValue] = useState<ImageVisualizerContextValue>({ selectedImage: undefined, images: [] });
 
   return (
     <ImageVisualizerContext.Provider value={[value, setValue]}>
