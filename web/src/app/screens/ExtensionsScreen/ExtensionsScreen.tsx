@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Badge, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import {
@@ -11,40 +11,52 @@ import {
   IconTrash,
   IconUpload
 } from "@tabler/icons-react";
+
 import { Extension, ExtensionStatus } from "@picteus/ws-client";
-import { useDisclosure } from "@mantine/hooks";
 
 import { notifyApiCallI18nError, notifySuccess } from "utils";
-import { Container, EmptyResults, RefreshButton } from "app/components";
+import { useActionModalContext, useConfirmAction } from "app/context";
 import { ExtensionsService } from "app/services";
+import { Container, EmptyResults, RefreshButton } from "app/components";
 import { AddOrUpdateExtensionModal, ExtensionSettingsModal } from "./components";
-import { useConfirmAction } from "app/context";
-import { useSearchParams } from "react-router-dom";
+
 
 export default function ExtensionsScreen() {
+  const extensionSettingsModalId = "extension-settings-modal";
   const [t] = useTranslation();
-  const [searchParams] = useSearchParams();
-  const showSettingsExtensionId = searchParams.get("settings");
-  const [extensions, setExtensions] = useState<Extension[]>(
-    ExtensionsService.list(),
-  );
-
+  const [extensions, setExtensions] = useState<Extension[]>(ExtensionsService.list());
   const confirmAction = useConfirmAction();
-  const [extensionToUpdate, setExtensionToUpdate] = useState<Extension>();
-  const [extensionToSetSettings, setExtensionToSetSettings] =
-    useState<Extension>();
+  const [, addModal, removeModal] = useActionModalContext();
+  const addOrUpdateExtensionModalId = "add-or-update-extension-modal";
   const [loading, setLoading] = useState<boolean>(false);
-  const [
-    isAddOrUpdateExtensionModalOpen,
-    {
-      open: openAddOrUpdateExtensionModal,
-      close: closeAddOrUpdateExtensionModal,
-    },
-  ] = useDisclosure(false);
-  const [
-    isExtensionSettingsModalOpen,
-    { open: openExtensionSettingsModal, close: closeExtensionSettingsModal },
-  ] = useDisclosure(false);
+
+  function openExtensionSettingsModal(extension: Extension) {
+    addModal({
+      id: extensionSettingsModalId,
+      component: (
+        <ExtensionSettingsModal
+          extension={extension}
+          onSuccess={handleOnSuccessExtensionSettingsModal}
+        />
+      ),
+      title: t("extensionSettingsModal.title"),
+      size: "l",
+    });
+  }
+
+  function openAddOrUpdateExtensionModal(extension?: Extension) {
+    addModal({
+      id: addOrUpdateExtensionModalId,
+      component: (
+        <AddOrUpdateExtensionModal
+          extension={extension}
+          onSuccess={handleOnSuccessExtensionAddedOrUpdated}
+        />
+      ),
+      title: t(extension ? "updateExtensionModal.title" : "addExtensionModal.title"),
+      size: "l",
+    });
+  }
 
   async function fetchAllExtensions() {
     setLoading(true);
@@ -63,27 +75,6 @@ export default function ExtensionsScreen() {
     }
   }
 
-  useEffect(() => {
-    if (extensions?.length && showSettingsExtensionId) {
-      const extensionToSettings = extensions.find(
-        (extension) => extension.manifest.id === showSettingsExtensionId,
-      );
-      setExtensionToSetSettings(extensionToSettings);
-    }
-  }, [extensions, showSettingsExtensionId]);
-
-  useEffect(() => {
-    if (extensionToUpdate) {
-      openAddOrUpdateExtensionModal();
-    }
-  }, [extensionToUpdate]);
-
-  useEffect(() => {
-    if (extensionToSetSettings) {
-      openExtensionSettingsModal();
-    }
-  }, [extensionToSetSettings]);
-
   async function handleOnToggleExtensionStatus(extension: Extension) {
     try {
       await ExtensionsService.startOrStop({
@@ -95,6 +86,7 @@ export default function ExtensionsScreen() {
       notifyApiCallI18nError(error, "extensionsScreen.errorToggleStatus");
     }
   }
+
   async function handleOnSynchronize(extension: Extension) {
     try {
       await ExtensionsService.synchronize({
@@ -121,7 +113,7 @@ export default function ExtensionsScreen() {
           <ActionIcon
             size="md"
             variant="default"
-            onClick={() => setExtensionToUpdate(extension)}
+            onClick={() => openAddOrUpdateExtensionModal(extension)}
           >
               <IconUpload {...iconSizeAndStroke} />
           </ActionIcon>
@@ -140,7 +132,7 @@ export default function ExtensionsScreen() {
           <ActionIcon
             size="md"
             variant="default"
-            onClick={() => setExtensionToSetSettings(extension)}
+            onClick={() => openExtensionSettingsModal(extension)}
             disabled={extension.status === ExtensionStatus.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
           >
               <IconAdjustmentsHorizontal {...iconSizeAndStroke} />
@@ -210,24 +202,14 @@ export default function ExtensionsScreen() {
     </Table.Tr>
   ));
 
-  function handleOnCloseAddOrUpdateExtensionModal() {
-    closeAddOrUpdateExtensionModal();
-    setExtensionToUpdate(undefined);
-  }
-
   async function handleOnSuccessExtensionAddedOrUpdated(extension: Extension) {
-    handleOnCloseAddOrUpdateExtensionModal();
-    setExtensionToSetSettings(extension);
+    removeModal(addOrUpdateExtensionModalId);
+    openExtensionSettingsModal(extension);
     void fetchAllExtensions();
   }
 
-  function handleOnCloseExtensionSettingsModal() {
-    closeExtensionSettingsModal();
-    setExtensionToSetSettings(undefined);
-  }
-
   function handleOnSuccessExtensionSettingsModal() {
-    handleOnCloseExtensionSettingsModal();
+    removeModal(extensionSettingsModalId);
     void fetchAllExtensions();
   }
 
@@ -242,6 +224,7 @@ export default function ExtensionsScreen() {
       />
     );
   }
+
   function render() {
     if (loading) {
       return (
@@ -276,25 +259,13 @@ export default function ExtensionsScreen() {
 
   return (
     <Container>
-      <AddOrUpdateExtensionModal
-        extension={extensionToUpdate}
-        opened={isAddOrUpdateExtensionModalOpen}
-        onClose={handleOnCloseAddOrUpdateExtensionModal}
-        onSuccess={handleOnSuccessExtensionAddedOrUpdated}
-      />
-      <ExtensionSettingsModal
-        extension={extensionToSetSettings}
-        opened={isExtensionSettingsModalOpen}
-        onClose={handleOnCloseExtensionSettingsModal}
-        onSuccess={handleOnSuccessExtensionSettingsModal}
-      />
       <Stack gap="lg" h="100%">
         <Flex justify="space-between" align="center">
           <Title>{t("extensionsScreen.title")}</Title>
           <Flex gap="sm" align="center">
             <Button
               leftSection={<IconPlus size={20} />}
-              onClick={openAddOrUpdateExtensionModal}
+              onClick={() => openAddOrUpdateExtensionModal()}
             >
               {t("button.add")}
             </Button>

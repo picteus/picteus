@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-
+import { ActionIcon, Alert, Button, Flex, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { ActionIcon, Alert, Button, Flex, Modal, Text, Title } from "@mantine/core";
 import { Dropzone } from "@mantine/dropzone";
 import "@mantine/dropzone/styles.css";
 import { IconAlertTriangle, IconFileZip, IconTrash, IconUpload, IconX } from "@tabler/icons-react";
@@ -12,25 +11,22 @@ import { Extension } from "@picteus/ws-client";
 import { ExtensionsService } from "app/services";
 import { fileToBlob, mimeTypes, notifyApiCallI18nError, Validators } from "utils";
 
+
 type FormValueType = {
   file: File | undefined;
-};
-
-type AddOrUpdateExtensionModalType = {
-  opened: boolean;
-  extension?: Extension;
-  onClose: () => void;
-  onSuccess: (extension: Extension) => void;
 };
 
 const initialValues: FormValueType = {
   file: undefined,
 };
 
+type AddOrUpdateExtensionModalType = {
+  extension?: Extension;
+  onSuccess: (extension: Extension) => void;
+};
+
 export default function AddOrUpdateExtensionModal({
-  opened,
   extension,
-  onClose,
   onSuccess,
 }: AddOrUpdateExtensionModalType) {
   const [t] = useTranslation();
@@ -88,12 +84,7 @@ export default function AddOrUpdateExtensionModal({
     }
   }
 
-  useEffect(() => {
-    if (!opened) {
-      form.reset();
-      setFileIsValid(false);
-    }
-  }, [opened]);
+
 
   function renderDropzone() {
     const getIconStyle = (color) => {
@@ -169,46 +160,35 @@ export default function AddOrUpdateExtensionModal({
   }
   return (
     <>
-      <Modal
-        size="lg"
-        opened={opened}
-        closeButtonProps={{ disabled: loading }}
-        onClose={loading ? () => {} : onClose}
-        title={<Title order={3}>{t(messagePrefix + ".title")}</Title>}
-        padding="lg"
-      >
-        {extension && (
-          <>
-            <Alert mb="sm" color="orange" icon={<IconAlertTriangle />}>
-              <Trans
-                i18nKey="updateExtensionModal.warning"
-                components={{ strong: <b /> }}
-                values={{ name: extension.manifest.id }}
-              />
-            </Alert>
-          </>
-        )}
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          {renderDropzone()}
+      {extension && (
+        <Alert mb="sm" color="orange" icon={<IconAlertTriangle />}>
+          <Trans
+            i18nKey="updateExtensionModal.warning"
+            components={{ strong: <b /> }}
+            values={{ name: extension.manifest.id }}
+          />
+        </Alert>
+      )}
+      <form onSubmit={form.onSubmit(handleSubmit)}>
+        {renderDropzone()}
 
+        <Flex justify="flex-end">
+          <Button
+            loading={loading}
+            disabled={loading || !fileIsValid}
+            type="submit"
+          >
+            {t(extension ? "button.update" : "button.add")}
+          </Button>
+        </Flex>
+        {loading && (
           <Flex justify="flex-end">
-            <Button
-              loading={loading}
-              disabled={loading || !fileIsValid}
-              type="submit"
-            >
-              {t(extension ? "button.update" : "button.add")}
-            </Button>
+            <Text mt="xs" size="xs">
+              {t("message.fileProcessing")}
+            </Text>
           </Flex>
-          {loading && (
-            <Flex justify="flex-end">
-              <Text mt="xs" size="xs">
-                {t("message.fileProcessing")}
-              </Text>
-            </Flex>
-          )}
-        </form>
-      </Modal>
+        )}
+      </form>
     </>
   );
 }

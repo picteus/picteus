@@ -1,16 +1,17 @@
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Badge, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import React, { useEffect, useState, useSyncExternalStore } from "react";
-import { useDisclosure } from "@mantine/hooks";
+
 import { Repository, RepositoryStatus } from "@picteus/ws-client";
 import { IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
 
 import { ChannelEnum } from "types";
 import { notifyApiCallI18nError, notifySuccess } from "utils";
+import { useActionModalContext, useConfirmAction, useEventSocket } from "app/context";
 import { RepositoriesService } from "app/services";
-import { AddRepositoryModal } from "./components";
 import { Container, EmptyResults, ExternalLink, FormatedDate, Loader, RefreshButton } from "app/components";
-import { useConfirmAction, useEventSocket } from "app/context";
+import { AddRepositoryModal } from "./components";
+
 
 export default function RepositoriesScreen() {
   const [repositories, setRepositories] = useState<Repository[]>(
@@ -23,10 +24,17 @@ export default function RepositoriesScreen() {
 
   const [t] = useTranslation();
 
-  const [
-    isAddRepositoryModalOpen,
-    { open: openAddRepositoryModal, close: closeAddRepositoryModal },
-  ] = useDisclosure(false);
+  const [, addModal, removeModal] = useActionModalContext();
+  const addRepositoryModalId = "add-repository-modal";
+
+  function openAddRepositoryModal() {
+    addModal({
+      id: addRepositoryModalId,
+      component: <AddRepositoryModal onSuccess={handleOnSuccessRepositoryAdded} />,
+      title: t("addRepositoryModal.title"),
+      size: "l",
+    });
+  }
 
   async function fetchAllRepositories() {
     setLoading(true);
@@ -121,7 +129,7 @@ export default function RepositoriesScreen() {
   ));
 
   function handleOnSuccessRepositoryAdded() {
-    closeAddRepositoryModal();
+    removeModal(addRepositoryModalId);
     void fetchAllRepositories();
   }
 
@@ -175,11 +183,6 @@ export default function RepositoriesScreen() {
 
   return (
     <Container>
-      <AddRepositoryModal
-        opened={isAddRepositoryModalOpen}
-        onClose={closeAddRepositoryModal}
-        onSuccess={handleOnSuccessRepositoryAdded}
-      />
       <Stack gap="lg" h="100%">
         <Flex justify="space-between" align="center">
           <Title>{t("repositoryScreen.title")}</Title>

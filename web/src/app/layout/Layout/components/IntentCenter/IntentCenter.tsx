@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { randomId } from "@mantine/hooks";
 
-import { UserInterfaceAnchor } from "@picteus/ws-client";
+import { ExtensionSettings, UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { ChannelEnum, EventOnResultValueType, ExtensionIntentType, ResourceType, ShowType } from "types";
-import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyErrorWithError, ROUTES } from "utils";
+import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyErrorWithError } from "utils";
 import {
   useActionModalContext,
   useAdditionalUiContext,
@@ -18,6 +18,7 @@ import {
 import { ExtensionsService, ImageService, StorageService } from "app/services";
 import { useOpenWindow } from "app/hooks";
 import { CommandForm, DialogForm, Iframe } from "app/components";
+import { ExtensionSettingsModal } from "../../../../screens/ExtensionsScreen/components";
 
 
 export default function IntentCenter() {
@@ -59,8 +60,28 @@ export default function IntentCenter() {
 
     if (show.type === "extensionSettings") {
       const action = () => {
-        navigate(`${ROUTES.extensions}?settings=${show.id}`);
-        respondWithValue();
+        const extension = ExtensionsService.list().find(extension => extension.manifest.id === show.id);
+        if (extension === undefined) {
+          return respondWithError(`The extension with id '${show.id}' is not installed`);
+        }
+
+        const modalId = `extension-settings-${extension.manifest.id}`;
+
+        function handleOnSuccess(settings: ExtensionSettings) {
+          removeModal(modalId);
+          respondWithValue(settings);
+        }
+        addModal({
+          id: modalId,
+          component: (
+            <ExtensionSettingsModal
+              extension={extension}
+              onSuccess={handleOnSuccess}
+            />
+          ),
+          title: t("extensionSettingsModal.title"),
+          size: "l",
+        })
       };
       if (shouldConfirm) {
         return confirmAction(action, {

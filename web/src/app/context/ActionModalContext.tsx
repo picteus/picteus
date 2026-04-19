@@ -3,10 +3,8 @@ import { randomId } from "@mantine/hooks";
 
 import { ActionModalValue } from "types";
 
-const ActionModalContext = createContext<
-  | [ActionModalValue[], (val: ActionModalValue) => void, (id: string) => void]
-  | undefined
->(undefined);
+
+const ActionModalContext = createContext<[ActionModalValue[], (value: ActionModalValue) => string, (id: string) => void]>(undefined);
 
 export function useActionModalContext() {
   const context = useContext(ActionModalContext);
@@ -21,11 +19,12 @@ export function useActionModalContext() {
 export function ActionModalProvider({ children }) {
   const [modals, setModals] = useState<ActionModalValue[]>([]);
 
-  function add(modal: ActionModalValue) {
+  function add(modal: ActionModalValue): string {
     if (!modal.id) {
       modal.id = randomId();
     }
     setModals((previousValue) => [...previousValue, modal]);
+    return modal.id;
   }
 
   function remove(id: string) {

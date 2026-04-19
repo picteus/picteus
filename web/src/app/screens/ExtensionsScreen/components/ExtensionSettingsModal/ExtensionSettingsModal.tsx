@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Extension } from "@picteus/ws-client";
+import { Alert, Button, Flex } from "@mantine/core";
 import { IconCircleX, IconInfoCircle } from "@tabler/icons-react";
-import { ExtensionSettings } from "@picteus/ws-client/src/models/ExtensionSettings.ts";
-import { Alert, Button, Flex, Modal, Title } from "@mantine/core";
+
+import { Extension, ExtensionSettings } from "@picteus/ws-client";
+
 
 import { notifyApiCallError, notifySuccess } from "utils";
 import { ExtensionsService } from "app/services";
 import { extractSchemaAndUiSchema, RjsfForm } from "app/components";
 
-type ExtensionSettingsModalType = {
-  opened: boolean;
-  extension: Extension;
-  onClose: () => void;
-  onSuccess: () => void;
-};
 
 const propertiesName = "properties";
 
@@ -22,10 +17,13 @@ function hasSettings(extension: Extension, extensionSettings: ExtensionSettings)
   return extension?.manifest.settings?.[propertiesName] !== undefined && Object.keys(extension?.manifest.settings?.[propertiesName]).length > 0 && extensionSettings !== undefined;
 }
 
+type ExtensionSettingsModalType = {
+  extension: Extension;
+  onSuccess: (settings: ExtensionSettings) => void;
+};
+
 export default function ExtensionSettingsModal({
-  opened,
   extension,
-  onClose,
   onSuccess,
 }: ExtensionSettingsModalType) {
   const [t] = useTranslation();
@@ -57,16 +55,14 @@ export default function ExtensionSettingsModal({
     } catch (error) {
       notifyApiCallError(error, t("extensionSettingsModal.errorSaving"));
     } finally {
-      onSuccess();
+      onSuccess(extensionSettings);
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (opened) {
-      void load();
-    }
-  }, [opened]);
+    void load();
+  }, []);
 
   function renderForm() {
     if (hasSettings(extension, extensionSettings) === false) {
@@ -116,15 +112,9 @@ export default function ExtensionSettingsModal({
   }
 
   return (
-    <Modal
-      size="lg"
-      opened={opened}
-      onClose={loading ? () => {} : onClose}
-      title={<Title order={3}>{t("extensionSettingsModal.title")}</Title>}
-      padding="lg"
-    >
+    <>
       {renderForm()}
       {renderError()}
-    </Modal>
+    </>
   );
 }

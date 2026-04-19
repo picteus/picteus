@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { IconFolderSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { ActionIcon, Button, Flex, Modal, Textarea, TextInput, Title } from "@mantine/core";
+import { ActionIcon, Button, Flex, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 
 import { RepositoryApiRepositoryCreateRequest } from "@picteus/ws-client";
@@ -20,15 +20,11 @@ const initialValues: RepositoryApiRepositoryCreateRequest = {
   watch: undefined,
 };
 
-export default function AddRepositoryModal({
-  opened,
-  onClose,
-  onSuccess,
-}: {
-  opened: boolean;
-  onClose: () => void;
+type AddRepositoryModalType = {
   onSuccess: () => void;
-}) {
+};
+
+export default function AddRepositoryModal({ onSuccess }: AddRepositoryModalType) {
   const [t] = useTranslation();
   const openFolderPicker = useFolderPicker();
 
@@ -59,8 +55,8 @@ export default function AddRepositoryModal({
     const folderUrl = await openFolderPicker();
     if (folderUrl) {
       StorageService.setLastFolderLocation(FolderTypes.REPOSITORY, folderUrl);
-      const currentRepositoryname = form.getValues().name;
-      if (!currentRepositoryname || currentRepositoryname?.trim() === "") {
+      const currentRepositoryName = form.getValues().name;
+      if (!currentRepositoryName || currentRepositoryName?.trim() === "") {
         const lastUrlSegment = folderUrl
           .split(detectPlatformFromPath(folderUrl) === "windows" ? "\\" : "/")
           .filter((segment) => segment !== "")
@@ -71,62 +67,46 @@ export default function AddRepositoryModal({
     }
   }
 
-  useEffect(() => {
-    if (!opened) {
-      form.reset();
-    }
-  }, [opened]);
-
   return (
-    <>
-      <Modal
-        size="lg"
-        opened={opened}
-        onClose={onClose}
-        title={<Title order={3}>{t("addRepositoryModal.title")}</Title>}
-        padding="lg"
-      >
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <TextInput
-            mb="lg"
-            withAsterisk
-            label={t("field.name")}
-            placeholder={t("addRepositoryModal.namePlaceholder")}
-            {...form.getInputProps("name")}
-          />
-          <TextInput
-            rightSection={
-              <ActionIcon
-                onClick={handleOnClickBrowseFolder}
-                variant="default"
-                size="lg"
-              >
-                <IconFolderSearch stroke={1.5} />
-              </ActionIcon>
-            }
-            mb="lg"
-            withAsterisk
-            label={t("field.url")}
-            placeholder={t("addRepositoryModal.urlPlaceholder")}
-            {...form.getInputProps("url")}
-          />
+    <form onSubmit={form.onSubmit(handleSubmit)}>
+      <TextInput
+        mb="lg"
+        withAsterisk
+        label={t("field.name")}
+        placeholder={t("addRepositoryModal.namePlaceholder")}
+        {...form.getInputProps("name")}
+      />
+      <TextInput
+        rightSection={
+          <ActionIcon
+            onClick={handleOnClickBrowseFolder}
+            variant="default"
+            size="lg"
+          >
+            <IconFolderSearch stroke={1.5} />
+          </ActionIcon>
+        }
+        mb="lg"
+        withAsterisk
+        label={t("field.url")}
+        placeholder={t("addRepositoryModal.urlPlaceholder")}
+        {...form.getInputProps("url")}
+      />
 
-          <Textarea
-            mb="lg"
-            label={t("field.comment")}
-            autosize
-            minRows={3}
-            maxRows={6}
-            placeholder={t("addRepositoryModal.commentPlaceholder")}
-            {...form.getInputProps("comment")}
-          />
-          <Flex justify="flex-end">
-            <Button loading={loading} disabled={loading} type="submit">
-              {t("button.add")}
-            </Button>
-          </Flex>
-        </form>
-      </Modal>
-    </>
+      <Textarea
+        mb="lg"
+        label={t("field.comment")}
+        autosize
+        minRows={3}
+        maxRows={6}
+        placeholder={t("addRepositoryModal.commentPlaceholder")}
+        {...form.getInputProps("comment")}
+      />
+      <Flex justify="flex-end">
+        <Button loading={loading} disabled={loading} type="submit">
+          {t("button.add")}
+        </Button>
+      </Flex>
+    </form>
   );
 }
