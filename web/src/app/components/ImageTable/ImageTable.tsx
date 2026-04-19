@@ -3,13 +3,12 @@ import { createPortal } from "react-dom";
 import { Overlay, Table, Text } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
-
-import { formatDate, formatDimensions, formatSize } from "utils";
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
 import { useEscapeKey, useImageNavigation } from "app/hooks";
-import { ImageDetail, ImageItem } from "app/components";
+import { FormatedDate, ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageTable.module.scss";
+import { ImageDimensions, ImageWeight } from "../ImageDetail/components";
 
 
 type ImageTableType = {
@@ -77,13 +76,13 @@ export default function ImageTable({
         <Text size="sm">{image.format}</Text>
       </Table.Td>
       <Table.Td>
-        <Text size="sm">{formatDimensions(image.dimensions)}</Text>
+        <Text size="sm"><ImageDimensions dimensions={image.dimensions} /></Text>
       </Table.Td>
       <Table.Td>
-        <Text size="sm">{formatSize(image.sizeInBytes)}</Text>
+        <Text size="sm"><ImageWeight image={image} /></Text>
       </Table.Td>
       <Table.Td>
-        <Text size="sm">{formatDate(image.modificationDate)}</Text>
+        <Text size="sm"><FormatedDate timestamp={image.fileDates.modificationDate}/></Text>
       </Table.Td>
     </Table.Tr>
   ));

@@ -6,10 +6,10 @@ import { Repository, RepositoryStatus } from "@picteus/ws-client";
 import { IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
 
 import { ChannelEnum } from "types";
-import { formatDate, notifyApiCallI18nError, notifySuccess } from "utils";
+import { notifyApiCallI18nError, notifySuccess } from "utils";
 import { RepositoriesService } from "app/services";
 import { AddRepositoryModal } from "./components";
-import { Container, EmptyResults, ExternalLink, Loader, RefreshButton } from "app/components";
+import { Container, EmptyResults, ExternalLink, FormatedDate, Loader, RefreshButton } from "app/components";
 import { useConfirmAction, useEventSocket } from "app/context";
 
 export default function RepositoriesScreen() {
@@ -111,10 +111,10 @@ export default function RepositoriesScreen() {
         </Text>
       </Table.Td>
       <Table.Td>
-        <Text size="md">{formatDate(repository.creationDate)}</Text>
+        <Text size="md"><FormatedDate timestamp={repository.creationDate}/></Text>
       </Table.Td>
       <Table.Td>
-        <Text size="md">{formatDate(repository.modificationDate)}</Text>
+        <Text size="md"><FormatedDate timestamp={repository.modificationDate}/></Text>
       </Table.Td>
       <Table.Td>{renderMenu(repository)}</Table.Td>
     </Table.Tr>

@@ -1,15 +1,3 @@
-import { ImageDimensions } from "@picteus/ws-client";
-
-
-export function formatSize(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  } else if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(2)} kB`;
-  } else {
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  }
-}
 export function formatDate(timestamp: number): string {
   const date = new Date(timestamp); // Convert from seconds to milliseconds if needed
   const day = String(date.getDate()).padStart(2, "0");
@@ -18,10 +6,5 @@ export function formatDate(timestamp: number): string {
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
   const seconds = String(date.getSeconds()).padStart(2, "0");
-
   return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
-}
-
-export function formatDimensions(dimensions: ImageDimensions): string {
-  return `${dimensions.width}x${dimensions.height}`;
 }

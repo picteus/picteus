@@ -1,26 +1,37 @@
-import React, { ReactNode, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import React, { ReactNode, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Group, Layout, Panel, Separator } from "react-resizable-panels";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconCircleX, IconX } from "@tabler/icons-react";
-import { Accordion, ActionIcon, Alert, Button, Divider, Flex, Menu, Table, Text } from "@mantine/core";
+import {
+  Accordion,
+  ActionIcon,
+  Alert,
+  Button,
+  Divider,
+  Flex,
+  Group as MantineGroup,
+  Menu,
+  Table,
+  Text
+} from "@mantine/core";
 import { getHotkeyHandler, useFocusTrap, useResizeObserver } from "@mantine/hooks";
 
 import {
   ExtensionImageFeature,
   ExtensionImageTag,
   Image,
-  ImageDimensions,
+  ImageDimensions as PicteusImageDimensions,
   ImageMetadata,
   ImageResizeRender,
   Repository
 } from "@picteus/ws-client";
 
-import { capitalizeText, formatDate, formatDimensions, formatSize } from "utils";
+import { capitalizeText } from "utils";
 import { ChannelEnum, ImageOrSummary, WithNavigationType } from "types";
 import { useEventSocket } from "app/context";
 import { ImageService, RepositoriesService, StorageService } from "app/services";
-import { CodeViewer, CopyText, ExternalLink, ImageItemMenu, Markdown } from "app/components";
-import { TableComponent } from "./components/index.ts";
+import { CodeViewer, CopyText, ExternalLink, FormatedDate, ImageItemMenu, ImageTag, Markdown } from "app/components";
+import { ImageDimensions, ImageWeight, TableComponent } from "./components";
 
 import style from "./ImageDetail.module.scss";
 
@@ -47,8 +58,8 @@ export default function ImageDetail({
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [imageWrapperRef, imageWrapperRectangle] = useResizeObserver();
-  const [imageWrapperDimensions, setImageWrapperDimensions] = useState<ImageDimensions | undefined>();
-  const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions | undefined>();
+  const [imageWrapperDimensions, setImageWrapperDimensions] = useState<PicteusImageDimensions | undefined>();
+  const [imageExpectedDimensions, setImageExpectedDimensions] = useState<PicteusImageDimensions | undefined>();
   const [imageSrc, setImageSrc] = useState<string | undefined>();
   const imageRef = useRef<HTMLImageElement>();
   const [placeholder, setPlaceholder] = useState<boolean>(true);
@@ -60,13 +71,13 @@ export default function ImageDetail({
   useEffect(() => {
     setImageWrapperDimensions({width: Math.round(imageWrapperRectangle.width), height: Math.round(imageWrapperRectangle.height)});
     if (imageWrapperRectangle.width> 0 || imageWrapperRectangle.height > 0) {
-      setImageExpectedDimensions(ImageService.computeImageDimensions(image.dimensions, {
+      setImageExpectedDimensions(ImageService.computeImageDimensions(imageData.dimensions, {
         width: imageWrapperRectangle.width,
         height: imageWrapperRectangle.height
       }, resizeRender));
       setImageSrc(ImageService.getImageSrc(image.uri, imageWrapperDimensions.width, imageWrapperDimensions.height, resizeRender));
     }
-  }, [imageWrapperRectangle, image]);
+  }, [imageWrapperRectangle, imageData]);
 
   useEffect(() => {
     setPlaceholder(true);
@@ -86,13 +97,17 @@ export default function ImageDetail({
     }
   }, [withNavigation]);
 
-  async function loadImageData(force: boolean) {
-    const imageData: Image = (force === false && "metadata" in image) ? image as Image : await ImageService.get({ id: image.id });
-    setImageData(imageData);
-    setImageTags(imageData.tags);
-    setImageFeatures(imageData.features);
-    setRepository(RepositoriesService.getRepositoryInformation(imageData.repositoryId));
-  }
+  const loadImageData = useCallback((force: boolean): void => {
+    async function load() {
+      const imageData: Image = (force === false && "metadata" in image) ? image as Image : await ImageService.get({ id: image.id });
+      setImageData(imageData);
+      setImageTags(imageData.tags);
+      setImageFeatures(imageData.features);
+      setRepository(RepositoriesService.getRepositoryInformation(imageData.repositoryId));
+    }
+
+    void load();
+  }, [image]);
 
   useEffect(() => {
     if (event !== undefined) {
@@ -162,17 +177,13 @@ export default function ImageDetail({
       },
       {
         label: t("field.createdOn"),
-        value: formatDate(imageData.fileDates.creationDate),
+        value: <FormatedDate timestamp={imageData.fileDates.creationDate}/>,
       },
       {
         label: t("field.modifiedOn"),
-        value: formatDate(imageData.fileDates.modificationDate),
+        value: <FormatedDate timestamp={imageData.fileDates.modificationDate}/>,
       },
-      {
-        label: t("field.dimensions"),
-        value: formatDimensions(imageData.dimensions),
-      },
-      ...(image.sourceUrl
+      ...(imageData.sourceUrl
         ? [
           {
             label: t("field.sourceUrl"),
@@ -223,234 +234,244 @@ export default function ImageDetail({
     ["ArrowRight", withNavigation.onNext],
   ]);
 
-  return (
-    <Group elementRef={ref} orientation="horizontal" onLayoutChanged={handleOnLayoutChanged} onKeyDown={handleOnKeyDown}>
-      <Panel id="left" defaultSize={`${panelSizes[0]}%`} minSize="40%" className={style.left}>
-        <Flex data-close="close" align="center" justify="space-between" gap="sm" className={style.imageContainer}>
-          <ActionIcon
-            ref={leftArrowRef}
-            size={"xl"}
-            ml={"sm"}
-            style={withNavigation.hasPrevious ? {} : { visibility: "hidden" }}
-            variant="default"
-            onClick={withNavigation.onPrevious}
-          >
-            <IconArrowLeft />
-          </ActionIcon>
-          <div ref={imageWrapperRef} className={style.imageWrapper}>
-            {imageWrapperDimensions && imageWrapperDimensions.width > 0 && imageWrapperDimensions.height > 0 && <img
-              ref={imageRef}
-              className={`${style.image} ${placeholder === false ? style.loaded : style.unLoaded}`}
-              onLoad={() => {
-                setPlaceholder(false);
-                setError(undefined);
-              }}
-              onError={() => setError(t("errors.imageDetail"))}
-              src={imageSrc}
-              alt={image.name}
-              width={imageExpectedDimensions.width}
-              height={imageExpectedDimensions.height}
-              style={{width: imageExpectedDimensions.width, height: imageExpectedDimensions.height}}
-            />}
-            {placeholder && <Flex className={style.placeholder} align="center" justify="center">{error && (
-              <Alert variant="light" color="red" title={t("errors.imageTitle")}
-                     icon={<IconCircleX />}>{error}</Alert>)}</Flex>}
+  function renderLeftPanel() {
+    return <Flex data-close="close" align="center" justify="space-between" gap="sm" className={style.imageContainer}>
+      <ActionIcon
+        ref={leftArrowRef}
+        size={"xl"}
+        ml={"sm"}
+        style={withNavigation.hasPrevious ? {} : { visibility: "hidden" }}
+        variant="default"
+        onClick={withNavigation.onPrevious}
+      >
+        <IconArrowLeft />
+      </ActionIcon>
+      <div ref={imageWrapperRef} className={style.imageWrapper}>
+        {imageWrapperDimensions && imageWrapperDimensions.width > 0 && imageWrapperDimensions.height > 0 && <img
+          ref={imageRef}
+          className={`${style.image} ${placeholder === false ? style.loaded : style.unLoaded}`}
+          onLoad={() =>
+          {
+            setPlaceholder(false);
+            setError(undefined);
+          }}
+          onError={() => setError(t("errors.imageDetail"))}
+          src={imageSrc}
+          alt={imageData.name}
+          width={imageExpectedDimensions.width}
+          height={imageExpectedDimensions.height}
+          style={{ width: imageExpectedDimensions.width, height: imageExpectedDimensions.height }}
+        />}
+        {placeholder && <Flex className={style.placeholder} align="center" justify="center">{error && (
+          <Alert variant="light" color="red" title={t("errors.imageTitle")}
+                 icon={<IconCircleX />}>{error}</Alert>)}</Flex>}
+      </div>
+      <ActionIcon
+        ref={rightArrowRef}
+        style={withNavigation.hasNext ? {} : { visibility: "hidden" }}
+        size={"xl"}
+        mr={"sm"}
+        variant="default"
+        onClick={withNavigation.onNext}
+      >
+        <IconArrowRight />
+      </ActionIcon>
+    </Flex>;
+  }
+
+  function renderTags(imageTags: ExtensionImageTag[]) {
+    return <Table layout="fixed">
+      <Table.Tbody>
+        <MantineGroup gap="xs">
+          {imageTags.map((imageTag, index) => (
+            <ImageTag key={`tag-${index}`} imageTag={imageTag} />
+          ))}
+        </MantineGroup>
+      </Table.Tbody>
+    </Table>;
+  }
+
+  function renderRightPanel() {
+    return <div className={style.informationContainer}>
+      <div className={style.header}>
+        <div className={style.titleContainer}>
+          <div className={style.titleBox}>
+            <div className={style.title}>
+              <CopyText size="md" text={imageData.name} />
+              <Text c="dimmed" size="sm">
+                {imageData.format} — {<ImageWeight image={imageData} />} — {<ImageDimensions
+                dimensions={imageData.dimensions} />}
+              </Text>
+            </div>
           </div>
-          <ActionIcon
-            ref={rightArrowRef}
-            style={withNavigation.hasNext ? {} : { visibility: "hidden" }}
-            size={"xl"}
-            mr={"sm"}
-            variant="default"
-            onClick={withNavigation.onNext}
-          >
-            <IconArrowRight />
+          <ActionIcon variant="default" onClick={onClose}>
+            <IconX stroke={1.2} size={50} />
           </ActionIcon>
+        </div>
+        <Flex px="md">
+          <Menu
+            withinPortal={false}
+            position="bottom-end"
+            trigger="hover"
+            trapFocus={false}
+            openDelay={80}
+            closeDelay={400}
+            shadow="md"
+            width={200}
+          >
+            <Menu.Target>
+              <Button
+                variant="default"
+                rightSection={
+                  <IconChevronDown stroke={1.2} size={16} />
+                }
+              >
+                {t("menu.imageCommands")}
+              </Button>
+            </Menu.Target>
+            <ImageItemMenu image={image} />
+          </Menu>
         </Flex>
-      </Panel >
+        <Divider my="md" />
+      </div>
+      <Accordion
+        multiple
+        defaultValue={[
+          "information",
+          "tags",
+          "features",
+          "metadata",
+          "generator"
+        ]}
+      >
+        <Accordion.Item value="information">
+          <Accordion.Control>
+            <Text size="sm" fw={500}>
+              {t("menu.information")}
+            </Text>
+          </Accordion.Control>
+          <Accordion.Panel>
+            <Table layout="fixed">
+              <Table.Tbody>
+                {informationData.map((information, index) => (
+                  <TableComponent
+                    key={`information-${index}`}
+                    data={information}
+                  />
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Accordion.Panel>
+        </Accordion.Item>
+        {imageTags && (
+          <Accordion.Item value="tags">
+            <Accordion.Control>
+              <Text size="sm" fw={500}>
+                {t("menu.tags")}
+              </Text>
+            </Accordion.Control>
+            <Accordion.Panel>
+              {renderTags(imageTags)}
+            </Accordion.Panel>
+          </Accordion.Item>
+        )}
+        {imageFeatures && (
+          <Accordion.Item value="features">
+            <Accordion.Control>
+              <Text size="sm" fw={500}>
+                {t("menu.features")}
+              </Text>
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Table layout="fixed">
+                <Table.Tbody>
+                  {imageFeatures?.map((imageFeature, index) =>
+                  {
+                    const value = imageFeature.value;
+                    let tableValue: string | ReactNode;
+                    switch (imageFeature.format)
+                    {
+                      default:
+                        tableValue = "Unexpected";
+                        break;
+                      case "json":
+                        tableValue = <CodeViewer code={imageFeature.value} />;
+                        break;
+                      case "markdown":
+                        // We need to handle the specific case the linebreak "<br>", because the library does not handle it properly by default
+                        tableValue = <Markdown content={value as string} />;
+                        break;
+                      case "xml":
+                        tableValue = value as string;
+                        break;
+                      case "html":
+                        tableValue = value as string;
+                        break;
+                      case "binary":
+                        tableValue = "";
+                        break;
+                      case "string":
+                        tableValue = capitalizeText(value as string);
+                        break;
+                      case "integer":
+                        tableValue = value.toString();
+                        break;
+                      case "float":
+                        tableValue = value.toString();
+                        break;
+                      case "boolean":
+                        tableValue = value.toString();
+                        break;
+                    }
+                    return (
+                      <TableComponent
+                        key={`feature-${index}`}
+                        data={{
+                          label: `${capitalizeText(imageFeature.type)} (${imageFeature.id}${imageFeature.name === undefined ? "" : (`:${imageFeature.name}`)})`,
+                          value: tableValue
+                        }}
+                      />
+                    );
+                  })}
+                </Table.Tbody>
+              </Table>
+            </Accordion.Panel>
+          </Accordion.Item>
+        )}
+        <Accordion.Item value="metadata">
+          <Accordion.Control>
+            <Text size="sm" fw={500}>
+              {t("menu.metadata")}
+            </Text>
+          </Accordion.Control>
+          <Accordion.Panel>
+            <Table layout="fixed">
+              <Table.Tbody>
+                {imageMetadata?.map((metadata, index) => (
+                  <TableComponent
+                    key={`metadata-${index}`}
+                    data={metadata}
+                  />
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Accordion.Panel>
+        </Accordion.Item>
+      </Accordion>
+    </div>;
+  }
+
+  return (
+    <Group elementRef={ref} orientation="horizontal" onLayoutChanged={handleOnLayoutChanged}
+           onKeyDown={handleOnKeyDown}>
+      <Panel id="left" defaultSize={`${panelSizes[0]}%`} minSize="40%" className={style.left}>
+        {renderLeftPanel()}
+      </Panel>
       <Separator className={style.paneSeparator}>
         <div className={style.paneSeparatorHandle} />
       </Separator>
       <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%" className={style.right}>
-        <div className={style.informationContainer}>
-          <div className={style.header}>
-            <div className={style.titleContainer}>
-              <div className={style.titleBox}>
-                <div className={style.title}>
-                  <CopyText size="md" text={image.name} />
-                  <Text c="dimmed" size="sm">
-                    {image.format} —{" "}
-                    {formatSize(image.sizeInBytes)}
-                  </Text>
-                </div>
-              </div>
-              <ActionIcon variant="default" onClick={onClose}>
-                <IconX stroke={1.2} size={50} />
-              </ActionIcon>
-            </div>
-            <Flex px="md">
-              <Menu
-                withinPortal={false}
-                position="bottom-end"
-                trigger="hover"
-                trapFocus={false}
-                openDelay={80}
-                closeDelay={400}
-                shadow="md"
-                width={200}
-              >
-                <Menu.Target>
-                  <Button
-                    variant="default"
-                    rightSection={
-                      <IconChevronDown stroke={1.2} size={16} />
-                    }
-                  >
-                    {t("menu.imageCommands")}
-                  </Button>
-                </Menu.Target>
-                <ImageItemMenu image={image} />
-              </Menu>
-            </Flex>
-            <Divider my="md" />
-          </div>
-          <Accordion
-            multiple
-            defaultValue={[
-              "information",
-              "tags",
-              "features",
-              "metadata",
-              "generator"
-            ]}
-          >
-            <Accordion.Item value="information">
-              <Accordion.Control>
-                <Text size="sm" fw={500}>
-                  {t("menu.information")}
-                </Text>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Table layout="fixed" >
-                  <Table.Tbody>
-                    {informationData.map((information, index) => (
-                      <TableComponent
-                        key={`information-${index}`}
-                        data={information}
-                      />
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Accordion.Panel>
-            </Accordion.Item>
-            {imageTags && (
-              <Accordion.Item value="tags">
-                <Accordion.Control>
-                  <Text size="sm" fw={500}>
-                    {t("menu.tags")}
-                  </Text>
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <Table layout="fixed">
-                    <Table.Tbody>
-                      {imageTags?.map((imageTag, index) => (
-                        <TableComponent
-                          key={`tag-${index}`}
-                          data={{
-                            label: capitalizeText(imageTag.id),
-                            value: imageTag.value
-                          }}
-                        />
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </Accordion.Panel>
-              </Accordion.Item>
-            )}
-            {imageFeatures && (
-              <Accordion.Item value="features">
-                <Accordion.Control>
-                  <Text size="sm" fw={500}>
-                    {t("menu.features")}
-                  </Text>
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <Table layout="fixed">
-                    <Table.Tbody>
-                      {imageFeatures?.map((imageFeature, index) =>
-                      {
-                        const value = imageFeature.value;
-                        let tableValue: string | ReactNode;
-                        switch (imageFeature.format)
-                        {
-                          default:
-                            tableValue = "Unexpected";
-                            break;
-                          case "json":
-                            tableValue = <CodeViewer code={imageFeature.value} />;
-                            break;
-                          case "markdown":
-                            // We need to handle the specific case the linebreak "<br>", because the library does not handle it properly by default
-                            tableValue = <Markdown content={value as string} />;
-                            break;
-                          case "xml":
-                            tableValue = value as string;
-                            break;
-                          case "html":
-                            tableValue = value as string;
-                            break;
-                          case "binary":
-                            tableValue = "";
-                            break;
-                          case "string":
-                            tableValue = capitalizeText(value as string);
-                            break;
-                          case "integer":
-                            tableValue = value.toString();
-                            break;
-                          case "float":
-                            tableValue = value.toString();
-                            break;
-                          case "boolean":
-                            tableValue = value.toString();
-                            break;
-                        }
-                        return (
-                          <TableComponent
-                            key={`feature-${index}`}
-                            data={{
-                              label: `${capitalizeText(imageFeature.type)} (${imageFeature.id}${imageFeature.name === undefined ? "" : (`:${imageFeature.name}`)})`,
-                              value: tableValue
-                            }}
-                          />
-                        );
-                      })}
-                    </Table.Tbody>
-                  </Table>
-                </Accordion.Panel>
-              </Accordion.Item>
-            )}
-            <Accordion.Item value="metadata">
-              <Accordion.Control>
-                <Text size="sm" fw={500}>
-                  {t("menu.metadata")}
-                </Text>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Table layout="fixed">
-                  <Table.Tbody>
-                    {imageMetadata?.map((metadata, index) => (
-                      <TableComponent
-                        key={`metadata-${index}`}
-                        data={metadata}
-                      />
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
-        </div>
+        {renderRightPanel()}
       </Panel>
     </Group>
   );
