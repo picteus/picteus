@@ -23,7 +23,7 @@ export default function Notification({
   withTime = false,
 }: NotificationType) {
   const notification: EventNotificationType = event.notification;
-  const [, setImageVisualizer] = useImageVisualizerContext();
+  const showImageVisualizer = useImageVisualizerContext();
 
   function handleOnClose() {
     if (!toast) {
@@ -35,7 +35,7 @@ export default function Notification({
   async function handleOnClick() {
     if (notification.type === "image") {
       const image = await ImageService.get({ id: event.rawData.value.id });
-      setImageVisualizer({ selectedImage: image , images: [image]});
+      showImageVisualizer({ selectedImage: image , images: [image]});
     }
   }
 

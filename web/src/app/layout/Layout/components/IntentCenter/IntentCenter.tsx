@@ -1,23 +1,12 @@
 import React, { useEffect, useSyncExternalStore } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { randomId } from "@mantine/hooks";
-import { useNavigate } from "react-router-dom";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
-import { ExtensionsService, ImageService, StorageService } from "app/services";
-import { useOpenWindow } from "app/hooks";
-import { CommandForm, DialogForm } from "app/components";
-import { FullscreenURLModal } from "app/components/ActionModal";
-import { ImageVisualizerWrapper, ModalComponent } from "./components";
-import {
-  ActionModalValue,
-  ChannelEnum,
-  EventOnResultValueType,
-  ExtensionIntentType,
-  ResourceType,
-  ShowType
-} from "types";
+import { ChannelEnum, EventOnResultValueType, ExtensionIntentType, ResourceType, ShowType } from "types";
+import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyErrorWithError, ROUTES } from "utils";
 import {
   useActionModalContext,
   useAdditionalUiContext,
@@ -26,11 +15,13 @@ import {
   useGalleryTabsContext,
   useImageVisualizerContext
 } from "app/context";
-import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyErrorWithError, ROUTES } from "utils";
+import { ExtensionsService, ImageService, StorageService } from "app/services";
+import { useOpenWindow } from "app/hooks";
+import { CommandForm, DialogForm, Iframe } from "app/components";
 
 
 export default function IntentCenter() {
-  const [modalStack, addModal, removeModal] = useActionModalContext();
+  const [, addModal, removeModal] = useActionModalContext();
   const [additionalUiContextValue, , addTransient] = useAdditionalUiContext();
   const openWindow = useOpenWindow();
   const { addTab } = useGalleryTabsContext();
@@ -39,16 +30,8 @@ export default function IntentCenter() {
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [t] = useTranslation();
-  const [imageVisualizer, setImageVisualizer] = useImageVisualizerContext();
+  const showImageVisualizer = useImageVisualizerContext();
   const navigate = useNavigate();
-
-  function handleOnCloseVisualizer() {
-    setImageVisualizer({ selectedImage: undefined, images: [] });
-  }
-
-  function onCloseActionModal(modalId: string): void {
-    removeModal(modalId);
-  }
 
   function respondWithValue(value: EventOnResultValueType = {}): void {
     event.onResult({ value });
@@ -65,7 +48,7 @@ export default function IntentCenter() {
   function handleOnSend(value: EventOnResultValueType, modalId: string): void {
     try {
       respondWithValue(value);
-      onCloseActionModal(modalId);
+      removeModal(modalId);
     } catch (error) {
       notifyErrorWithError(error, t("extensionIntent.onResultError"));
     }
@@ -90,7 +73,7 @@ export default function IntentCenter() {
     else if (show.type === "image") {
       const action = async () => {
         const image = await ImageService.get({ id: show.id });
-        setImageVisualizer({ selectedImage: image, images: [image] });
+        showImageVisualizer({ selectedImage: image, images: [image] });
         respondWithValue();
       };
       if (shouldConfirm) {
@@ -217,7 +200,7 @@ export default function IntentCenter() {
         else {
           addModal({
             fullScreen: true,
-            component: <FullscreenURLModal content={frameContent} />,
+            component: <Iframe content={frameContent} />,
             icon: ui.dialogContent?.icon,
             title: ui.dialogContent?.title,
             onBeforeClose: respondWithValue
@@ -279,31 +262,5 @@ export default function IntentCenter() {
     }
   }, [event]);
 
-  useEffect(() => {
-    if (imageVisualizer?.selectedImage) {
-      addModal({
-        component: (
-          <ImageVisualizerWrapper
-            imageVisualizerContext={imageVisualizer}
-            onClose={handleOnCloseVisualizer}
-          />
-        ),
-        withCloseButton: false,
-        onBeforeClose: handleOnCloseVisualizer,
-        fullScreen: true,
-      });
-    }
-  }, [imageVisualizer?.selectedImage]);
-
-  return (
-    <>
-      {modalStack.map((modal: ActionModalValue) =>
-          <ModalComponent
-            key={`modal-${modal.id}`}
-            modal={modal}
-            onCloseActionModal={onCloseActionModal}
-          />,
-      )}
-    </>
-  );
+  return <></>;
 }

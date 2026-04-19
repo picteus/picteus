@@ -1,6 +1,9 @@
-import style from "./FullscreenURLModal.module.scss";
+import style from "./Iframe.module.scss";
 
-export default function FullscreenURLModal({ content }: { content: { url: string } | { html: string }}) {
+
+type IframeType = { content: { url: string } | { html: string } };
+
+export default function Iframe({ content }: IframeType) {
   return <iframe className={style.iframe} {...{
     src: "url" in content ? content.url : undefined,
     srcDoc: "html" in content ? content.html : undefined

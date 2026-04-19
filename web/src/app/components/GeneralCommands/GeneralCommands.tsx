@@ -6,11 +6,11 @@ import { IconBox } from "@tabler/icons-react";
 import { CommandEntity, ManifestCapabilityId } from "@picteus/ws-client";
 
 import { UiCommandType } from "types";
-import { ExtensionsService } from "app/services";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useExtensionCommand } from "app/hooks";
-import { ExtensionIcon } from "app/components";
-import { TextToImagesModal } from "app/components/ActionModal";
+import { ExtensionsService } from "app/services";
+import { ExtensionIcon, TextToImages } from "app/components";
+
 
 export default function GeneralCommands() {
   const callCommand = useExtensionCommand();
@@ -76,7 +76,7 @@ export default function GeneralCommands() {
 
   async function handleOnClickTextToImage(extensionId: string) {
     addModal({
-      component: <TextToImagesModal extensionId={extensionId} />,
+      component: <TextToImages extensionId={extensionId} />,
       title: t("textToImagesModal.title"),
     });
   }

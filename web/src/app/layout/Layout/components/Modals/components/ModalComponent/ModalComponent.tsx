@@ -11,14 +11,14 @@ import style from "./ModalComponent.module.scss";
 
 type ModalComponentType = {
   modal: ActionModalValue;
-  onCloseActionModal: (modalId: string) => void;
+  onClose: (modalId: string) => void;
 };
 
 export default function ModalComponent({
   modal,
-  onCloseActionModal,
+  onClose,
 }: ModalComponentType) {
-  const [actionModalOpened, { open: openActionModal, close: closeActionModal }] = useDisclosure(false);
+  const [opened, { open, close }] = useDisclosure(false);
   const ref = useRef<HTMLDivElement>(null);
   useEscapeKey(ref, () => {
     if (modal.closeOnEscape !== false) {
@@ -27,15 +27,15 @@ export default function ModalComponent({
   });
 
   useEffect(() => {
-    openActionModal();
+    open();
   }, [modal]);
 
   function handleOnCloseActionModal() {
     if (modal.onBeforeClose !== undefined) {
       modal.onBeforeClose();
     }
-    closeActionModal();
-    onCloseActionModal(modal.id);
+    close();
+    onClose(modal.id)
   }
 
   function computeTitle() {
@@ -56,15 +56,6 @@ export default function ModalComponent({
     return title;
   }
 
-  const WrappedComponent = React.cloneElement(modal.component, {
-    onClose: () => {
-      if (modal.component.props.onClose) {
-        modal.component.props.onClose();
-      }
-      handleOnCloseActionModal();
-    },
-  });
-
   return (
     <Modal
       ref={ref}
@@ -73,18 +64,22 @@ export default function ModalComponent({
           ? { content: style.fullScreenContent, body: style.fullScreenBody }
           : {}
       }
-      withinPortal={false}
+      stackId={modal.id}
+      withinPortal={true}
       closeOnEscape={false}
+      withOverlay={true}
       onClose={handleOnCloseActionModal}
-      opened={actionModalOpened}
+      trapFocus={true}
+      returnFocus={true}
+      opened={opened}
       fullScreen={modal.fullScreen}
+      withCloseButton={modal.withCloseButton === undefined ? true : modal.withCloseButton}
       size={modal.fullScreen === true ? undefined : ((modal.size === undefined || modal.size === "auto") ? "auto" : ((modal.size === "xs" ? 30 : (modal.size === "s" ? 40 : (modal.size === "m" ? 50 : (modal.size === "l" ? 80 : 100)))) + "%"))}
       title={modal.title === undefined ? undefined : computeTitle() }
-      withCloseButton={modal.withCloseButton === undefined ? true : modal.withCloseButton}
       padding="lg"
     >
       {modal.fullScreen && <Divider mb="md" />}
-      {WrappedComponent}
+      {modal.component}
     </Modal>
   );
 }

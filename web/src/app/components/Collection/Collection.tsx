@@ -3,25 +3,25 @@ import { useTranslation } from "react-i18next";
 import { Box, Button, Group, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 
-import { Collection, SearchFilter } from "@picteus/ws-client";
+import { Collection as PicteusCollection, SearchFilter } from "@picteus/ws-client";
 
 import { notifyError, notifySuccess } from "utils";
 import { CollectionService } from "app/services";
 
 
-type CollectionModalProps = {
-    collection?: Collection; // If provided, we are editing.
+type CollectionType = {
+    collection?: PicteusCollection; // If provided, we are editing.
     searchFilter?: SearchFilter; // If not provided but we are editing, we can get it from the collection API
-    onSuccess: (collection: Collection) => void;
+    onSuccess: (collection: PicteusCollection) => void;
     onClose?: () => void;
 };
 
-export default function CollectionModal({
+export default function Collection({
     collection,
     searchFilter,
     onSuccess,
     onClose,
-}: CollectionModalProps) {
+}: CollectionType) {
     const [t] = useTranslation();
     const [loading, setLoading] = useState<boolean>(false);
 
@@ -38,7 +38,7 @@ export default function CollectionModal({
     async function handleOnSubmit(values: typeof form.values) {
         setLoading(true);
         try {
-            let newCollection: Collection;
+            let newCollection: PicteusCollection;
             if (collection) {
                 // Update existing collection
                 newCollection = await CollectionService.update(

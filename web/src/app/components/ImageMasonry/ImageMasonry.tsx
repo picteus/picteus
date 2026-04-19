@@ -30,7 +30,7 @@ export default function ImageMasonry({
   imageItemMode,
 }: ImageMasonryType) {
   const [hostRef, hostRefRectangle] = useResizeObserver();
-  const [, setImageVisualizer] = useImageVisualizerContext();
+  const showImageVisualizer = useImageVisualizerContext();
   const navigation = useImageNavigation();
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
     navigation.setSelectedImage(image);
@@ -49,7 +49,7 @@ export default function ImageMasonry({
 
   const handleOnClick = useCallback((image: ImageOrSummary) => {
     if (containerRef === undefined) {
-      setImageVisualizer({ selectedImage: image, images });
+      showImageVisualizer({ selectedImage: image, images });
     }
     else {
       setSelectedImageWrapper(image);

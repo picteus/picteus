@@ -12,20 +12,21 @@ import { notifyApiCallError, Validators } from "utils";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImageMasonry } from "app/components";
 
-import style from "./TextToImagesModal.module.scss";
+import style from "./TextToImages.module.scss";
 
-type TextToImageModalFormPayload = {
+
+type TextToImagesFormPayload = {
   count: number;
   text: string;
 };
 
-type TextToImageModalType = {
+type TextToImageType = {
   extensionId: string;
 };
 
-export default function TextToImagesModal({
+export default function TextToImages({
   extensionId,
-}: TextToImageModalType) {
+}: TextToImageType) {
   const [t] = useTranslation();
   const [imageSummaries, setImageSummaries] = useState<
     ImageWithCaption[]
@@ -36,7 +37,7 @@ export default function TextToImagesModal({
 
   const initialResultsCount = StorageService.getTextToImagesResultsCount();
 
-  const initialValues: TextToImageModalFormPayload = {
+  const initialValues: TextToImagesFormPayload = {
     count: initialResultsCount,
     text: undefined,
   };
@@ -50,7 +51,7 @@ export default function TextToImagesModal({
     },
   });
 
-  async function handleSubmit(values: TextToImageModalFormPayload) {
+  async function handleSubmit(values: TextToImagesFormPayload) {
     StorageService.setTextToImagesResultsCount(values.count);
     const parameters: ImageApiImageTextToImagesRequest = {
       ...values,

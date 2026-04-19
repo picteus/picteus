@@ -11,17 +11,17 @@ export default function Providers({ children }) {
   return (
     <CommandSocketProvider>
       <EventSocketProvider>
-        <ConfirmActionProvider>
-          <ImageVisualizerProvider>
-            <ActionModalProvider>
+        <ActionModalProvider>
+          <ConfirmActionProvider>
+            <ImageVisualizerProvider>
               <AdditionalUiProvider>
                 <GalleryTabsProvider>
                   <ImagesSelectedProvider>{children}</ImagesSelectedProvider>
                 </GalleryTabsProvider>
               </AdditionalUiProvider>
-            </ActionModalProvider>
-          </ImageVisualizerProvider>
-        </ConfirmActionProvider>
+            </ImageVisualizerProvider>
+          </ConfirmActionProvider>
+        </ActionModalProvider>
       </EventSocketProvider>
     </CommandSocketProvider>
   );

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Group, Layout, Panel, Separator } from "react-resizable-panels";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconCircleX, IconX } from "@tabler/icons-react";
 import { Accordion, ActionIcon, Alert, Button, Divider, Flex, Menu, Table, Text } from "@mantine/core";
-import { useResizeObserver } from "@mantine/hooks";
+import { getHotkeyHandler, useFocusTrap, useResizeObserver } from "@mantine/hooks";
 
 import {
   ExtensionImageFeature,
@@ -37,6 +37,7 @@ export default function ImageDetail({
    withNavigation,
  }: ImageDetailType) {
   const [t] = useTranslation();
+  const ref = useFocusTrap(true);
   const [imageData, setImageData] = useState<Image>("metadata" in image ? image as Image : undefined);
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>();
   const [imageFeatures, setImageFeatures] = useState<ExtensionImageFeature[]>();
@@ -194,14 +195,19 @@ export default function ImageDetail({
     });
   }, [imageData]);
 
-  function onLayoutChanged(layout: Layout) {
+  function handleOnLayoutChanged(layout: Layout) {
     const size = Object.values(layout);
     StorageService.setVisualizerPanelSizes(size);
     setPanelSizes(size);
   }
 
+  const handleOnKeyDown = getHotkeyHandler([
+    ["ArrowLeft", withNavigation.onPrevious],
+    ["ArrowRight", withNavigation.onNext],
+  ]);
+
   return (
-    <Group orientation="horizontal" onLayoutChanged={onLayoutChanged}>
+    <Group elementRef={ref} orientation="horizontal" onLayoutChanged={handleOnLayoutChanged} onKeyDown={handleOnKeyDown}>
       <Panel id="left" defaultSize={`${panelSizes[0]}%`} minSize="40%" className={style.left}>
         <Flex data-close="close" align="center" justify="space-between" gap="sm" className={style.imageContainer}>
           <ActionIcon

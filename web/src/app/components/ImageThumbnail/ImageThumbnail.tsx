@@ -1,18 +1,20 @@
 import React from "react";
 import { Image } from "@mantine/core";
 
-import { ImageService } from "app/services";
 import { ImageSummary } from "@picteus/ws-client";
 
+import { ImageService } from "app/services";
+
+
 type ImageThumbnailType = {
-  summary?: ImageSummary;
+  summary: ImageSummary;
   height: number;
 };
 
 export default function ImageThumbnail({ summary, height }: ImageThumbnailType) {
   return (<Image
-    alt="Image thumbnail"
+    alt={summary.name}
     h={height}
     fit="contain"
-    src={summary === undefined ? "" : ImageService.getImageSrc(summary.url, undefined, height)}></Image>);
+    src={ImageService.getImageSrc(summary.url, undefined, height)} />);
 }

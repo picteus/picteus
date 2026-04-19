@@ -19,21 +19,21 @@ export function useActionModalContext() {
 }
 
 export function ActionModalProvider({ children }) {
-  const [stack, setStack] = useState<ActionModalValue[]>([]);
+  const [modals, setModals] = useState<ActionModalValue[]>([]);
 
-  function addToStack(modal: ActionModalValue) {
+  function add(modal: ActionModalValue) {
     if (!modal.id) {
       modal.id = randomId();
     }
-    setStack((prev) => [...prev, modal]);
+    setModals((previousValue) => [...previousValue, modal]);
   }
 
-  function removeFromStack(id: string) {
-    setStack((previousValue) => previousValue.filter((item) => item.id !== id));
+  function remove(id: string) {
+    setModals((previousValue) => previousValue.filter((item) => item.id !== id));
   }
 
   return (
-    <ActionModalContext.Provider value={[stack, addToStack, removeFromStack]}>
+    <ActionModalContext.Provider value={[modals, add, remove]}>
       {children}
     </ActionModalContext.Provider>
   );

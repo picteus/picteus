@@ -2,29 +2,31 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Box, Button, Center, Flex, Loader, Menu, Text, Tooltip } from "@mantine/core";
 import { IconBookmark, IconChevronDown, IconDeviceFloppy, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
-import { Collection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
 
-import { CollectionService } from "app/services";
-import { useActionModalContext, useConfirmAction } from "app/context";
-import { CollectionModal } from "app/components/ActionModal";
+import { Collection as PicteusCollection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
+
 import { notifyError, notifySuccess } from "utils";
+import { useActionModalContext, useConfirmAction } from "app/context";
+import { CollectionService } from "app/services";
+import { Collection } from "app/components";
 
-type CollectionsBarProps = {
+
+type CollectionsBarType = {
     currentFilter: SearchFilter;
-    selectedCollection?: Collection;
-    onApplyCollection: (collection: Collection | undefined) => void;
+    selectedCollection?: PicteusCollection;
+    onApplyCollection: (collection: PicteusCollection | undefined) => void;
 };
 
 export default function CollectionsBar({
     currentFilter,
     selectedCollection,
     onApplyCollection,
-}: CollectionsBarProps) {
+}: CollectionsBarType) {
     const [t] = useTranslation();
     const [, addModal] = useActionModalContext();
     const confirmAction = useConfirmAction();
     const [loading, setLoading] = useState(false);
-    const [collections, setCollections] = useState<Collection[]>([]);
+    const [collections, setCollections] = useState<PicteusCollection[]>([]);
     const [menuOpened, setMenuOpened] = useState(false);
 
     useEffect(() => {
@@ -47,7 +49,7 @@ export default function CollectionsBar({
         addModal({
             title: t("collections.create"),
             component: (
-                <CollectionModal
+                <Collection
                     searchFilter={currentFilter}
                     onSuccess={(collection) => {
                         void loadCollections();
@@ -69,12 +71,12 @@ export default function CollectionsBar({
         }
     }
 
-    function handleOnEdit(collection: Collection) {
+    function handleOnEdit(collection: PicteusCollection) {
         setMenuOpened(false);
         addModal({
             title: t("collections.edit"),
             component: (
-                <CollectionModal
+                <Collection
                     collection={collection}
                     searchFilter={collection.filter}
                     onSuccess={(updatedCollection) => {
@@ -86,7 +88,7 @@ export default function CollectionsBar({
         });
     }
 
-    function handleOnDelete(collection: Collection) {
+    function handleOnDelete(collection: PicteusCollection) {
         setMenuOpened(false);
         confirmAction(
             async () => {

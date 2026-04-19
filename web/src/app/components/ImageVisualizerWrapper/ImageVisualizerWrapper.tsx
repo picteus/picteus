@@ -2,7 +2,7 @@ import React from "react";
 
 import { ImageVisualizerContextValue } from "app/context";
 import { useImageNavigation } from "app/hooks";
-import { ImageVisualizer } from "app/components";
+import { ImageVisualizer } from "./components";
 
 
 type ImageVisualizerWrapperType = {

@@ -1,10 +1,13 @@
 .bottomBar {
+  height : $bottom-bar-width;
+  display: flex;
+  align-items: center;
+  padding : 0 10px;
+  border-top: solid 1px var(--override-divider-color);
+  background: var(--mantine-color-body);
   position: fixed;
   bottom: 0;
-  border-top: 1px solid var(--override-divider-color);
-  background-color: var(--mantine-color-body);
-  width: 100%;
-}
-.eventInformation {
-  padding: 10px 30px;
+  left: $left-sidebar-width;
+  right: $right-sidebar-width;
+  flex-grow: 1;
 }

@@ -2,19 +2,18 @@ import React, { ReactNode, useCallback, useRef } from "react";
 import { Flex } from "@mantine/core";
 
 import { Sidebar } from "app/layout";
-import { EventInformation, GeneralCommands, NotificationToolbar } from "app/components";
-import { IntentCenter, NotificationCenter, SelectedImagesAffix } from "./components";
-import { useContainerDimensions } from "app/hooks";
+import { BottomBar, GeneralCommands, NotificationToolbar } from "app/components";
+import { IntentCenter, Modals, NotificationCenter, SelectedImagesAffix } from "./components";
 
 import style from "./Layout.module.scss";
 
 
 export default function Layout({ children }: { children: ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { height } = useContainerDimensions(containerRef);
   const contextualComponents = useCallback(() => {
     return (
       <>
+        <Modals/>
         <IntentCenter />
         <SelectedImagesAffix />
         <NotificationCenter />
@@ -29,9 +28,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <Sidebar />
         <div id="content-wrapper" className={style.contentWrapper}>
           <div className={style.mainContent}>{children}</div>
-          <div className={style.bottomBar}>
-            <EventInformation containerHeight={height} />
-          </div>
+          <BottomBar containerRef={containerRef} />
         </div>
         <div className={style.rightSidebar}>
           <Flex gap={12} direction="column">

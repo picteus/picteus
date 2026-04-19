@@ -33,7 +33,7 @@ export default function ClosestEmbeddingsImagesModal({
   const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [, setImageVisualizerContext] = useImageVisualizerContext();
+  const showImageVisualizer = useImageVisualizerContext();
 
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
 
@@ -92,15 +92,12 @@ export default function ClosestEmbeddingsImagesModal({
   }, []);
 
   function handleOnClickSourceImage() {
-    setImageVisualizerContext((previousValue) => ({
-      ...previousValue,
-      selectedImage: sourceImage,
-    }));
+    showImageVisualizer({ images, selectedImage: sourceImage });
   }
 
   function renderForm() {
     return (
-      <Group mt="sm">
+      sourceImage && <Group mt="sm">
         <form style={{ width: 900 }} onSubmit={form.onSubmit(handleSubmit)}>
           <Flex align="end" gap={20}>
             <Input.Wrapper label={t("field.source")}>
