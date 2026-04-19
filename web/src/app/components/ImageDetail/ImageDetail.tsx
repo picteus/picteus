@@ -70,12 +70,12 @@ export default function ImageDetail({
 
   useEffect(() => {
     setImageWrapperDimensions({width: Math.round(imageWrapperRectangle.width), height: Math.round(imageWrapperRectangle.height)});
-    if (imageWrapperRectangle.width> 0 || imageWrapperRectangle.height > 0) {
+    if (imageData !== undefined && (imageWrapperRectangle.width > 0 || imageWrapperRectangle.height > 0)) {
       setImageExpectedDimensions(ImageService.computeImageDimensions(imageData.dimensions, {
         width: imageWrapperRectangle.width,
         height: imageWrapperRectangle.height
       }, resizeRender));
-      setImageSrc(ImageService.getImageSrc(image.uri, imageWrapperDimensions.width, imageWrapperDimensions.height, resizeRender));
+      setImageSrc(ImageService.getImageSrc(imageData.uri, imageWrapperDimensions.width, imageWrapperDimensions.height, resizeRender));
     }
   }, [imageWrapperRectangle, imageData]);
 
@@ -247,7 +247,7 @@ export default function ImageDetail({
         <IconArrowLeft />
       </ActionIcon>
       <div ref={imageWrapperRef} className={style.imageWrapper}>
-        {imageWrapperDimensions && imageWrapperDimensions.width > 0 && imageWrapperDimensions.height > 0 && <img
+        {imageExpectedDimensions && imageWrapperDimensions && imageWrapperDimensions.width > 0 && imageWrapperDimensions.height > 0 && <img
           ref={imageRef}
           className={`${style.image} ${placeholder === false ? style.loaded : style.unLoaded}`}
           onLoad={() =>
@@ -296,13 +296,13 @@ export default function ImageDetail({
       <div className={style.header}>
         <div className={style.titleContainer}>
           <div className={style.titleBox}>
-            <div className={style.title}>
+            {imageData && <div className={style.title}>
               <CopyText size="md" text={imageData.name} />
               <Text c="dimmed" size="sm">
                 {imageData.format} — {<ImageWeight image={imageData} />} — {<ImageDimensions
                 dimensions={imageData.dimensions} />}
               </Text>
-            </div>
+            </div>}
           </div>
           <ActionIcon variant="default" onClick={onClose}>
             <IconX stroke={1.2} size={50} />
@@ -329,7 +329,7 @@ export default function ImageDetail({
                 {t("menu.imageCommands")}
               </Button>
             </Menu.Target>
-            <ImageItemMenu image={image} />
+            {imageData && <ImageItemMenu image={imageData} />}
           </Menu>
         </Flex>
         <Divider my="md" />

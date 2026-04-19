@@ -22,35 +22,34 @@ import { AddOrUpdateExtensionModal, ExtensionSettingsModal } from "./components"
 
 
 export default function ExtensionsScreen() {
-  const extensionSettingsModalId = "extension-settings-modal";
   const [t] = useTranslation();
   const [extensions, setExtensions] = useState<Extension[]>(ExtensionsService.list());
   const confirmAction = useConfirmAction();
-  const [, addModal, removeModal] = useActionModalContext();
-  const addOrUpdateExtensionModalId = "add-or-update-extension-modal";
+  const [, addModal] = useActionModalContext();
   const [loading, setLoading] = useState<boolean>(false);
 
   function openExtensionSettingsModal(extension: Extension) {
     addModal({
-      id: extensionSettingsModalId,
+      title: t("extensionSettingsModal.title"),
+      size: "l",
       component: (
         <ExtensionSettingsModal
           extension={extension}
-          onSuccess={handleOnSuccessExtensionSettingsModal}
+          onSuccess={fetchAllExtensions}
         />
       ),
-      title: t("extensionSettingsModal.title"),
-      size: "l",
     });
   }
 
   function openAddOrUpdateExtensionModal(extension?: Extension) {
     addModal({
-      id: addOrUpdateExtensionModalId,
       component: (
         <AddOrUpdateExtensionModal
           extension={extension}
-          onSuccess={handleOnSuccessExtensionAddedOrUpdated}
+          onSuccess={(extension: Extension) => {
+            openExtensionSettingsModal(extension);
+            void fetchAllExtensions();
+          }}
         />
       ),
       title: t(extension ? "updateExtensionModal.title" : "addExtensionModal.title"),
@@ -201,17 +200,6 @@ export default function ExtensionsScreen() {
       <Table.Td>{renderMenu(extension)}</Table.Td>
     </Table.Tr>
   ));
-
-  async function handleOnSuccessExtensionAddedOrUpdated(extension: Extension) {
-    removeModal(addOrUpdateExtensionModalId);
-    openExtensionSettingsModal(extension);
-    void fetchAllExtensions();
-  }
-
-  function handleOnSuccessExtensionSettingsModal() {
-    removeModal(extensionSettingsModalId);
-    void fetchAllExtensions();
-  }
 
   function renderEmpty() {
     return (

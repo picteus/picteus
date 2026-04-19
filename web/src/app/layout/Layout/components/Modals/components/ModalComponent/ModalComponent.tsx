@@ -5,7 +5,7 @@ import { IconChevronLeft } from "@tabler/icons-react";
 
 import { ActionModalValue, computeResourceTypeUrl } from "types";
 import { useEscapeKey } from "app/hooks";
-// A copy-and-paste from Mantine, in order to fix a bug with the focus
+// A copy-and-paste from Mantine in order to fix a bug with the focus
 import { FOCUS_SELECTOR, focusable, tabbable } from "./tabbable.ts";
 
 import style from "./ModalComponent.module.scss";
@@ -90,18 +90,22 @@ export default function ModalComponent({
 
   const restoreFocus = useRememberActiveElement(opened);
 
-  const handleOnClose = useCallback(() => {
+  const handleOnClose = useCallback((viaOnSuccess: boolean): void => {
     if (modal.onBeforeClose !== undefined) {
-      modal.onBeforeClose();
+      modal.onBeforeClose(viaOnSuccess);
     }
     restoreFocus();
     disclosureHandlers.close();
     onClose(modal.id)
   }, [modal, restoreFocus]);
 
+  const handleOnCloseCancel = useCallback((): void => {
+    handleOnClose(false);
+    }, [handleOnClose]);
+
   useEscapeKey(ref, () => {
     if (modal.closeOnEscape !== false) {
-      handleOnClose();
+      handleOnClose(false);
     }
   });
 
@@ -113,7 +117,7 @@ export default function ModalComponent({
     if (modal.fullScreen) {
       return (
         <Flex align="center" gap="md">
-          <ActionIcon onClick={handleOnClose} variant="default">
+          <ActionIcon onClick={handleOnCloseCancel} variant="default">
             <IconChevronLeft />
           </ActionIcon>
           {title}
@@ -122,6 +126,15 @@ export default function ModalComponent({
     }
     return title;
   }
+
+  const withOnSuccessWrappedComponent = React.cloneElement(modal.component, {
+    onSuccess: (args) => {
+      if (modal.component.props.onSuccess !== undefined && typeof modal.component.props.onSuccess === "function") {
+        modal.component.props.onSuccess(args);
+      }
+      handleOnClose(true);
+    },
+  });
 
   const classNames = modal.fullScreen
     ? { content: style.fullScreenContent, body: style.fullScreenBody }
@@ -135,7 +148,7 @@ export default function ModalComponent({
       withinPortal={true}
       closeOnEscape={false}
       withOverlay={true}
-      onClose={handleOnClose}
+      onClose={handleOnCloseCancel}
       trapFocus={true}
       returnFocus={false}
       opened={opened}
@@ -145,7 +158,7 @@ export default function ModalComponent({
       title={modal.title === undefined ? undefined : computeTitle() }
       padding="lg"
     >
-      <ModalContent component={modal.component} fullScreen={modal.fullScreen} />
+      <ModalContent component={withOnSuccessWrappedComponent} fullScreen={modal.fullScreen} />
     </Modal>
   );
 }

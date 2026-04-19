@@ -1,5 +1,4 @@
 import React, { createContext, useCallback, useContext } from "react";
-import { randomId } from "@mantine/hooks";
 
 import { ImageOrSummary } from "types";
 import { ImageVisualizerWrapper } from "app/components";
@@ -18,25 +17,18 @@ export function useImageVisualizerContext() {
 }
 
 export function ImageVisualizerProvider({ children }) {
-  const [, addModal, removeModal] = useActionModalContext();
+  const [, addModal] = useActionModalContext();
 
   const show = useCallback((imageVisualizer: ImageVisualizerContextValue): void => {
-    const modalId = randomId();
-
-    function handleOnCloseVisualizer() {
-      removeModal(modalId);
-    }
-
     addModal({
-      id: modalId,
       component: (
         <ImageVisualizerWrapper
           imageVisualizerContext={imageVisualizer}
-          onClose={handleOnCloseVisualizer}
+          onSuccess={() => {
+          }}
         />
       ),
       withCloseButton: false,
-      onBeforeClose: handleOnCloseVisualizer,
       fullScreen: true
     });
   }, []);

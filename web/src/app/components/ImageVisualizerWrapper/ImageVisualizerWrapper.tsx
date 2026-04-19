@@ -7,17 +7,17 @@ import { ImageVisualizer } from "./components";
 
 type ImageVisualizerWrapperType = {
   imageVisualizerContext: ImageVisualizerContextValue;
-  onClose: () => void
+  onSuccess: () => void
 };
 
 export default function ImageVisualizerWrapper({
   imageVisualizerContext,
-  onClose,
+  onSuccess,
 }: ImageVisualizerWrapperType) {
   const navigation = useImageNavigation(imageVisualizerContext);
 
   return (
     navigation.selectedImage !== undefined &&
-    <ImageVisualizer image={navigation.selectedImage} onClose={onClose} withNavigation={navigation} />
+    <ImageVisualizer image={navigation.selectedImage} onClose={onSuccess} withNavigation={navigation} />
   );
 }

@@ -14,9 +14,7 @@ import { AddRepositoryModal } from "./components";
 
 
 export default function RepositoriesScreen() {
-  const [repositories, setRepositories] = useState<Repository[]>(
-    RepositoriesService.list(),
-  );
+  const [repositories, setRepositories] = useState<Repository[]>(RepositoriesService.list());
   const [loading, setLoading] = useState<boolean>(false);
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
@@ -24,13 +22,11 @@ export default function RepositoriesScreen() {
 
   const [t] = useTranslation();
 
-  const [, addModal, removeModal] = useActionModalContext();
-  const addRepositoryModalId = "add-repository-modal";
+  const [, addModal] = useActionModalContext();
 
   function openAddRepositoryModal() {
     addModal({
-      id: addRepositoryModalId,
-      component: <AddRepositoryModal onSuccess={handleOnSuccessRepositoryAdded} />,
+      component: <AddRepositoryModal onSuccess={fetchAllRepositories} />,
       title: t("addRepositoryModal.title"),
       size: "l",
     });
@@ -127,11 +123,6 @@ export default function RepositoriesScreen() {
       <Table.Td>{renderMenu(repository)}</Table.Td>
     </Table.Tr>
   ));
-
-  function handleOnSuccessRepositoryAdded() {
-    removeModal(addRepositoryModalId);
-    void fetchAllRepositories();
-  }
 
   function renderEmpty() {
     return (

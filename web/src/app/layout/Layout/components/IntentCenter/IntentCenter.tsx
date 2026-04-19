@@ -65,22 +65,22 @@ export default function IntentCenter() {
           return respondWithError(`The extension with id '${show.id}' is not installed`);
         }
 
-        const modalId = `extension-settings-${extension.manifest.id}`;
-
-        function handleOnSuccess(settings: ExtensionSettings) {
-          removeModal(modalId);
-          respondWithValue(settings);
-        }
         addModal({
-          id: modalId,
           component: (
             <ExtensionSettingsModal
               extension={extension}
-              onSuccess={handleOnSuccess}
+              onSuccess={(settings: ExtensionSettings) => {
+                respondWithValue(settings);
+              }}
             />
           ),
           title: t("extensionSettingsModal.title"),
           size: "l",
+          onBeforeClose: (viaOnSuccess: boolean) => {
+            if (viaOnSuccess === false) {
+              respondWithCancel();
+            }
+          }
         })
       };
       if (shouldConfirm) {
@@ -173,7 +173,11 @@ export default function IntentCenter() {
           ),
           title: form.dialogContent?.title || t("extensionIntent.modalTitle", { extension: extensionName }),
           size: form.dialogContent?.size,
-          onBeforeClose: respondWithCancel
+          onBeforeClose: (viaOnSuccess: boolean) => {
+            if (viaOnSuccess === false) {
+              respondWithCancel();
+            }
+          }
         });
       };
 
@@ -224,7 +228,6 @@ export default function IntentCenter() {
             component: <Iframe content={frameContent} />,
             icon: ui.dialogContent?.icon,
             title: ui.dialogContent?.title,
-            onBeforeClose: respondWithValue
           });
           respondWithValue();
         }
@@ -246,8 +249,10 @@ export default function IntentCenter() {
           ),
           title: dialog.title,
           size: dialog.size,
-          onBeforeClose: () => {
-            handleOnSend({}, modalId);
+          onBeforeClose: (viaOnSuccess: boolean) => {
+            if (viaOnSuccess === false) {
+              handleOnSend({}, modalId);
+            }
           }
         });
       };

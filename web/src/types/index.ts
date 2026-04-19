@@ -261,5 +261,5 @@ export type ActionModalValue = {
   fullScreen?: boolean;
   size?: SizeType;
   component: ReactElement;
-  onBeforeClose?: () => void;
+  onBeforeClose?: (viaOnSuccess: boolean) => void;
 };
