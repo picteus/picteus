@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Divider, Flex, Group, HoverCard, Input, NumberInput, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { useFocusTrap } from "@mantine/hooks";
 import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 
 import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-client";
@@ -34,6 +35,7 @@ export default function ClosestEmbeddingsImagesModal({
   const [loading, setLoading] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const showImageVisualizer = useImageVisualizerContext();
+  const focusTrapRef = useFocusTrap();
 
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
 
@@ -122,6 +124,7 @@ export default function ClosestEmbeddingsImagesModal({
               </HoverCard>
             </Input.Wrapper>
             <NumberInput
+              ref={focusTrapRef}
               min={1}
               withAsterisk
               label={t("field.imageCount")}

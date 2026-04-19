@@ -37,7 +37,9 @@ export default function ImageDetail({
    withNavigation,
  }: ImageDetailType) {
   const [t] = useTranslation();
-  const ref = useFocusTrap(true);
+  const ref = useFocusTrap();
+  const leftArrowRef = useRef<HTMLButtonElement>(null);
+  const rightArrowRef = useRef<HTMLButtonElement>(null);
   const [imageData, setImageData] = useState<Image>("metadata" in image ? image as Image : undefined);
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>();
   const [imageFeatures, setImageFeatures] = useState<ExtensionImageFeature[]>();
@@ -54,6 +56,7 @@ export default function ImageDetail({
   const [imageZoom, setImageZoom] = useState<number>(1);
   const [panelSizes, setPanelSizes] = useState<number[]>(StorageService.getVisualizerPanelSizes());
   const resizeRender: ImageResizeRender = "inbox";
+
   useEffect(() => {
     setImageWrapperDimensions({width: Math.round(imageWrapperRectangle.width), height: Math.round(imageWrapperRectangle.height)});
     if (imageWrapperRectangle.width> 0 || imageWrapperRectangle.height > 0) {
@@ -64,10 +67,24 @@ export default function ImageDetail({
       setImageSrc(ImageService.getImageSrc(image.uri, imageWrapperDimensions.width, imageWrapperDimensions.height, resizeRender));
     }
   }, [imageWrapperRectangle, image]);
+
   useEffect(() => {
     setPlaceholder(true);
     setError(undefined);
   }, [image]);
+
+  useEffect(() => {
+    if (withNavigation.hasPrevious === false) {
+      if (withNavigation.hasNext === true && rightArrowRef.current !== null) {
+        rightArrowRef.current.focus();
+      }
+    }
+    else if (withNavigation.hasNext === false) {
+      if (withNavigation.hasPrevious === true && leftArrowRef.current !== null) {
+        leftArrowRef.current.focus();
+      }
+    }
+  }, [withNavigation]);
 
   async function loadImageData(force: boolean) {
     const imageData: Image = (force === false && "metadata" in image) ? image as Image : await ImageService.get({ id: image.id });
@@ -211,6 +228,7 @@ export default function ImageDetail({
       <Panel id="left" defaultSize={`${panelSizes[0]}%`} minSize="40%" className={style.left}>
         <Flex data-close="close" align="center" justify="space-between" gap="sm" className={style.imageContainer}>
           <ActionIcon
+            ref={leftArrowRef}
             size={"xl"}
             ml={"sm"}
             style={withNavigation.hasPrevious ? {} : { visibility: "hidden" }}
@@ -239,6 +257,7 @@ export default function ImageDetail({
                      icon={<IconCircleX />}>{error}</Alert>)}</Flex>}
           </div>
           <ActionIcon
+            ref={rightArrowRef}
             style={withNavigation.hasNext ? {} : { visibility: "hidden" }}
             size={"xl"}
             mr={"sm"}
@@ -274,6 +293,7 @@ export default function ImageDetail({
                 withinPortal={false}
                 position="bottom-end"
                 trigger="hover"
+                trapFocus={false}
                 openDelay={80}
                 closeDelay={400}
                 shadow="md"

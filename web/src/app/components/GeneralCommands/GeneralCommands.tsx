@@ -144,6 +144,7 @@ export default function GeneralCommands() {
       offset={12}
       withArrow
       trigger="hover"
+      trapFocus={false}
       openDelay={80}
       closeDelay={200}
       shadow="md"
