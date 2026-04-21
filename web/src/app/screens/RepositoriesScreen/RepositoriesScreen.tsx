@@ -21,6 +21,8 @@ import {
 } from "app/components";
 import { AddOrUpdateRepositoryModal, RepositoryDetail } from "./components";
 
+import variables from "assets/style/variablesExport.module.scss";
+
 
 export default function RepositoriesScreen() {
   const [repositories, setRepositories] = useState<Repository[]>(RepositoriesService.list());
@@ -164,7 +166,8 @@ export default function RepositoriesScreen() {
 
   function renderContent() {
     return (
-      <Table.ScrollContainer minWidth={500}>
+      <Table.ScrollContainer minWidth={variables.tableMinimalWidth} pr={variables.contentPaddingHorizontal}
+                             mr={`-${variables.contentPaddingHorizontal}`}>
         <Table stickyHeader highlightOnHover striped>
           <Table.Thead>
             <Table.Tr>

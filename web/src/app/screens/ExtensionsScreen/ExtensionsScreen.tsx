@@ -20,6 +20,8 @@ import { ExtensionsService } from "app/services";
 import { Container, EmptyResults, EntityStatus, RefreshButton } from "app/components";
 import { AddOrUpdateExtensionModal, ExtensionSettingsModal } from "./components";
 
+import variables from "assets/style/variablesExport.module.scss";
+
 
 export default function ExtensionsScreen() {
   const [t] = useTranslation();
@@ -114,7 +116,7 @@ export default function ExtensionsScreen() {
             variant="default"
             onClick={() => openAddOrUpdateExtensionModal(extension)}
           >
-              <IconUpload {...iconSizeAndStroke} />
+            <IconUpload {...iconSizeAndStroke} />
           </ActionIcon>
         </Tooltip>
         <Tooltip label={t("button.synchronize")}>
@@ -124,7 +126,7 @@ export default function ExtensionsScreen() {
             onClick={() => handleOnSynchronize(extension)}
             disabled={extension.status === ExtensionStatus.Paused}
           >
-              <IconReload {...iconSizeAndStroke} />
+            <IconReload {...iconSizeAndStroke} />
           </ActionIcon>
         </Tooltip>
         <Tooltip label={t("button.settings")}>
@@ -134,7 +136,7 @@ export default function ExtensionsScreen() {
             onClick={() => openExtensionSettingsModal(extension)}
             disabled={extension.status === ExtensionStatus.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
           >
-              <IconAdjustmentsHorizontal {...iconSizeAndStroke} />
+            <IconAdjustmentsHorizontal {...iconSizeAndStroke} />
           </ActionIcon>
         </Tooltip>
         <Tooltip label={t(extension.status === ExtensionStatus.Paused ? "button.resume" : "button.pause")}>
@@ -143,11 +145,11 @@ export default function ExtensionsScreen() {
             variant="default"
             onClick={() => handleOnToggleExtensionStatus(extension)}
           >
-              {extension.status === ExtensionStatus.Paused ? (
-                <IconPlayerPlay {...iconSizeAndStroke} />
-              ) : (
-                <IconPlayerPause {...iconSizeAndStroke} />
-              )}
+            {extension.status === ExtensionStatus.Paused ? (
+              <IconPlayerPlay {...iconSizeAndStroke} />
+            ) : (
+              <IconPlayerPause {...iconSizeAndStroke} />
+            )}
           </ActionIcon>
         </Tooltip>
         <Tooltip label={t("button.uninstall")}>
@@ -166,7 +168,7 @@ export default function ExtensionsScreen() {
               )
             }
           >
-              <IconTrash color="red" {...iconSizeAndStroke} />
+            <IconTrash color="red" {...iconSizeAndStroke} />
           </ActionIcon>
         </Tooltip>
       </Flex>
@@ -220,7 +222,9 @@ export default function ExtensionsScreen() {
 
   function renderContent() {
     return (
-      <Table.ScrollContainer minWidth={500}>
+      <Table.ScrollContainer minWidth={variables.tableMinimalWidth} pr={variables.contentPaddingHorizontal}
+                             mr={`-${variables.contentPaddingHorizontal}`}
+      >
         <Table stickyHeader highlightOnHover striped>
           <Table.Thead>
             <Table.Tr>
