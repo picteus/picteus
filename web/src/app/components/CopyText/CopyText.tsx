@@ -1,20 +1,23 @@
 import React from "react";
-import { ActionIcon, CopyButton, Flex, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, CopyButton, Flex, MantineSize, Text, Tooltip } from "@mantine/core";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
 
 import style from "./CopyText.module.scss";
 
+
 type CopyTextType = {
   text: string;
-  size?: "sm" | "md" | "lg";
+  size?: MantineSize;
+  c?: string;
   value?: string;
   style?: string;
 };
 
-export default function CopyText({ text, size = "sm", value, style: textStyle = style.ellipsis }: CopyTextType) {
+export default function CopyText({ text, size = "sm", value, c, style: textStyle = style.ellipsis }: CopyTextType) {
+  const width = 14;
   return (
     <Flex align={"center"}>
-      <Text className={textStyle} size={size} dangerouslySetInnerHTML={{ __html: text }}/>
+      <Text className={textStyle} size={size} c={c} dangerouslySetInnerHTML={{ __html: text }}/>
       <CopyButton value={value || text} timeout={1200}>
         {({ copied, copy }) => (
           <Tooltip
@@ -23,14 +26,14 @@ export default function CopyText({ text, size = "sm", value, style: textStyle = 
             position="right"
           >
             <ActionIcon
-              color={copied ? "teal" : "gray"}
+              color={copied ? "teal" : (c ?? "gray")}
               variant="subtle"
               onClick={copy}
             >
               {copied ? (
-                <IconCheck style={{ width: 14 }} />
+                <IconCheck style={{ width }} />
               ) : (
-                <IconCopy style={{ width: 14 }} />
+                <IconCopy style={{ width }} />
               )}
             </ActionIcon>
           </Tooltip>

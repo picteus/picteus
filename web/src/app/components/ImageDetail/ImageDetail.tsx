@@ -169,7 +169,7 @@ export default function ImageDetail({
         : []),
       {
         label: t("field.repository"),
-        value: repository && <ExternalLink label={repository.url} url={repository.url} />,
+        value: repository && <ExternalLink url={repository.url} type="link" />,
       },
       {
         label: t("field.repositoryId"),
@@ -188,17 +188,14 @@ export default function ImageDetail({
           {
             label: t("field.sourceUrl"),
             value: (
-              <ExternalLink
-                label={imageData.sourceUrl}
-                url={imageData.sourceUrl}
-              />
+              <ExternalLink url={imageData.sourceUrl} type="link" />
             ),
           },
         ]
         : []),
       {
         label: t("field.location"),
-        value: <ExternalLink label={imageData.url} url={imageData.url} />,
+        value: <ExternalLink url={imageData.url} type="link" />,
       },
     ];
   }, [imageData, repository]);

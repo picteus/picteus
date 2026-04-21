@@ -23,6 +23,7 @@ export default {
     toastSuccessTitle: "Operation successful"
   },
   field: {
+    noValue: "—",
     id: "ID",
     parentId: "Parent ID",
     url: "URL",
@@ -100,7 +101,9 @@ export default {
   },
   button: {
     add: "Add",
+    edit: "Edit",
     find: "Find",
+    externalLinkOpen: "Open",
     clearAll: "Clear all",
     synchronize: "Synchronize",
     delete: "Delete",
@@ -165,7 +168,8 @@ export default {
     successUpdate: "The repository has been successfully updated",
     errorAdd: "An error occurred while adding the repository : {{error}}",
     errorUpdate: "An error occurred while updating the repository : {{error}}",
-    title: "Add repository",
+    addTitle: "Add repository",
+    updateTitle: "Edit repository",
     namePlaceholder: "AI generated pictures",
     urlPlaceholder: "file:///Users/john/ai-pictures/",
     commentPlaceholder: "Contains every AI generated pictures"
@@ -206,6 +210,11 @@ export default {
     confirmDeleteTitle: "Delete repository",
     confirmDeleteMessage:
       "Are you sure you want to delete the repository '{{name}}' ?"
+  },
+  repositoryDetail: {
+    title: "Repository",
+    latestImages: "Latest images",
+    imageCount: "Image count"
   },
   extensionsScreen: {
     title: "Extensions",

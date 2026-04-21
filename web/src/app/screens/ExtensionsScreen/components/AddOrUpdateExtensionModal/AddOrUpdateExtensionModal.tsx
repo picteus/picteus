@@ -178,7 +178,7 @@ export default function AddOrUpdateExtensionModal({
             disabled={loading || !fileIsValid}
             type="submit"
           >
-            {t(extension ? "button.update" : "button.add")}
+            {t(extension ? "button.save" : "button.add")}
           </Button>
         </Flex>
         {loading && (

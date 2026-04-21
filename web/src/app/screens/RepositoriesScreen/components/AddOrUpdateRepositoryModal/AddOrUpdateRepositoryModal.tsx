@@ -123,7 +123,7 @@ export default function AddOrUpdateRepositoryModal({ repository, onSuccess }: Ad
       />
       <Flex justify="flex-end">
         <Button loading={loading} disabled={loading} type="submit">
-          {t(repository ? "button.update" : "button.add")}
+          {t(repository ? "button.save" : "button.add")}
         </Button>
       </Flex>
     </form>

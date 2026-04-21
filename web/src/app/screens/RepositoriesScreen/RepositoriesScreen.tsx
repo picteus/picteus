@@ -1,5 +1,17 @@
 import { useTranslation } from "react-i18next";
-import { ActionIcon, Badge, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
+import {
+  ActionIcon,
+  Badge,
+  Button,
+  Drawer,
+  Flex,
+  LoadingOverlay,
+  Stack,
+  Table,
+  Text,
+  Title,
+  Tooltip
+} from "@mantine/core";
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 
 import { Repository, RepositoryStatus } from "@picteus/ws-client";
@@ -9,8 +21,8 @@ import { ChannelEnum } from "types";
 import { notifyApiCallI18nError, notifySuccess } from "utils";
 import { useActionModalContext, useConfirmAction, useEventSocket } from "app/context";
 import { RepositoriesService } from "app/services";
-import { Container, EmptyResults, ExternalLink, FormatedDate, Loader, RefreshButton } from "app/components";
-import { AddOrUpdateRepositoryModal } from "./components";
+import { Container, EmptyResults, ExternalLink, FormatedDate, Loader, NoValue, RefreshButton } from "app/components";
+import { AddOrUpdateRepositoryModal, RepositoryDetail } from "./components";
 
 
 export default function RepositoriesScreen() {
@@ -19,6 +31,7 @@ export default function RepositoriesScreen() {
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const confirmAction = useConfirmAction();
+  const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null);
 
   const [t] = useTranslation();
 
@@ -27,7 +40,7 @@ export default function RepositoriesScreen() {
   function openAddOrUpdateRepositoryModal(repository?: Repository) {
     addModal({
       component: <AddOrUpdateRepositoryModal repository={repository} onSuccess={fetchAllRepositories} />,
-      title: t(repository ? "updateRepositoryModal.title" : "addRepositoryModal.title"),
+      title: t(`addOrUpdateRepositoryModal.${repository ? "updateTitle" : "addTitle"}`),
       size: "l",
     });
   }
@@ -37,6 +50,17 @@ export default function RepositoriesScreen() {
     setRepositories(await RepositoriesService.fetchAll());
     setLoading(false);
   }
+
+  useEffect(() => {
+    if (selectedRepository) {
+      const updated = repositories.find((r) => r.id === selectedRepository.id);
+      if (updated && updated !== selectedRepository) {
+        setSelectedRepository(updated);
+      } else if (!updated) {
+        setSelectedRepository(null);
+      }
+    }
+  }, [repositories, selectedRepository]);
 
   function renderStatus(status: RepositoryStatus) {
     if (status === RepositoryStatus.Indexing) {
@@ -71,7 +95,8 @@ export default function RepositoriesScreen() {
 
   function renderMenu(repository: Repository) {
     return (
-      <Flex gap={10}>
+      <Flex gap={10} onClick={(e) => e.stopPropagation()}>
+        <ExternalLink url={repository.url} type="action" />
         <Tooltip label={t("button.edit")}>
           <ActionIcon
             size="md"
@@ -111,23 +136,29 @@ export default function RepositoriesScreen() {
   }
 
   const rows = repositories.map((repository: Repository) => (
-    <Table.Tr key={repository.name}>
+    <Table.Tr
+      key={repository.name}
+      onClick={() => setSelectedRepository(repository)}
+      style={{ cursor: "pointer" }}
+    >
       <Table.Td>
         <Text size="md">{repository.name}</Text>
       </Table.Td>
       <Table.Td>
-        <Text size="md">{renderStatus(repository.status)}</Text>
-      </Table.Td>
-      <Table.Td>
-        <Text size="md">
-          <ExternalLink label={repository.url} url={repository.url} />
-        </Text>
+        {repository.comment ? (
+           <Text size="md">{repository.comment}</Text>
+        ) : (
+          <NoValue />
+        )}
       </Table.Td>
       <Table.Td>
         <Text size="md"><FormatedDate timestamp={repository.creationDate}/></Text>
       </Table.Td>
       <Table.Td>
         <Text size="md"><FormatedDate timestamp={repository.modificationDate}/></Text>
+      </Table.Td>
+      <Table.Td>
+        <Text size="md">{renderStatus(repository.status)}</Text>
       </Table.Td>
       <Table.Td>{renderMenu(repository)}</Table.Td>
     </Table.Tr>
@@ -152,14 +183,14 @@ export default function RepositoriesScreen() {
           <Table.Thead>
             <Table.Tr>
               <Table.Th>{t("field.name")}</Table.Th>
-              <Table.Th>{t("field.status")}</Table.Th>
-              <Table.Th>{t("field.url")}</Table.Th>
+              <Table.Th>{t("field.comment")}</Table.Th>
               <Table.Th style={{ minWidth: "110px" }}>
                 {t("field.createdOn")}
               </Table.Th>
               <Table.Th style={{ minWidth: "110px" }}>
                 {t("field.modifiedOn")}
               </Table.Th>
+              <Table.Th>{t("field.status")}</Table.Th>
               <Table.Th></Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -198,6 +229,21 @@ export default function RepositoriesScreen() {
         </Flex>
         {render()}
       </Stack>
+      <Drawer
+        opened={!!selectedRepository}
+        onClose={() => setSelectedRepository(null)}
+        title={<Title order={3}>{t("repositoryDetail.title")}</Title>}
+        position="right"
+        size="md"
+        overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}
+      >
+        {selectedRepository && (
+          <RepositoryDetail
+            repository={selectedRepository}
+            openAddOrUpdateRepositoryModal={openAddOrUpdateRepositoryModal}
+          />
+        )}
+      </Drawer>
     </Container>
   );
 }
