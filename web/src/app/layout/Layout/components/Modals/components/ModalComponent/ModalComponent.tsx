@@ -53,7 +53,7 @@ function ModalContent({ component, fullScreen }: ModalContentType) {
   }, [focusRef]);
 
   return (
-    <div ref={focusRef}>
+    <div ref={focusRef} className={fullScreen === true ? style.contentFullScreen : style.content}>
       {fullScreen && <Divider mb="md" />}
       {component}
     </div>
@@ -127,17 +127,15 @@ export default function ModalComponent({
     return title;
   }
 
-  const withOnSuccessWrappedComponent = React.cloneElement(modal.component, {
+  const wrappedComponent = !(modal.component.props.onSuccess !== undefined && typeof modal.component.props.onSuccess === "function") ? modal.component :React.cloneElement(modal.component, {
     onSuccess: (args) => {
-      if (modal.component.props.onSuccess !== undefined && typeof modal.component.props.onSuccess === "function") {
-        modal.component.props.onSuccess(args);
-      }
+      modal.component.props.onSuccess(args);
       handleOnClose(true);
     },
   });
 
   const classNames = modal.fullScreen
-    ? { content: style.fullScreenContent, body: style.fullScreenBody }
+    ? { content: style.modalFullScreenContent, body: style.modalFullScreenBody }
     : {};
 
   return (
@@ -158,7 +156,7 @@ export default function ModalComponent({
       title={modal.title === undefined ? undefined : computeTitle() }
       padding="lg"
     >
-      <ModalContent component={withOnSuccessWrappedComponent} fullScreen={modal.fullScreen} />
+      <ModalContent component={wrappedComponent} fullScreen={modal.fullScreen} />
     </Modal>
   );
 }

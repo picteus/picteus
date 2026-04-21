@@ -1,8 +1,9 @@
-.fullScreenContent {
+.modalFullScreenContent {
   display: flex ;
   flex-direction: column;
 }
-.fullScreenBody {
+
+.modalFullScreenBody {
   flex: 1;
 }
 
@@ -13,3 +14,9 @@
   gap: 10px;
 }
 
+.contentFullScreen {
+  height: 100%;
+}
+
+.content {
+}
