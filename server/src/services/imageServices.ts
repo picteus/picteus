@@ -66,6 +66,7 @@ import {
   SearchFeatures,
   SearchFeaturesResult,
   SearchFilter,
+  SearchImageIdResult,
   SearchImageResult,
   SearchImageSummaryResult,
   SearchMediaUrlResult,
@@ -156,6 +157,20 @@ export class ImageService
     logger.debug("Instantiating an ImageService");
   }
 
+  async searchForImageIds(parameters: SearchParameters): Promise<SearchImageIdResult>
+  {
+    const {
+      where,
+      orderBy,
+      take,
+      skip
+    } = await this.computeRequestParameters("Retrieving the image ids", parameters);
+    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+      this.entitiesProvider.images.findMany({ select: { id:true },orderBy, where, take, skip }),
+      this.entitiesProvider.images.count({ where })
+    ]);
+    return new SearchImageIdResult(entities.map(entity => entity.id), totalCount);
+  }
   async searchForImageSummaries(parameters: SearchParameters): Promise<SearchImageSummaryResult>
   {
     const {

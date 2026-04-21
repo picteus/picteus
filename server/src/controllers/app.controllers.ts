@@ -96,6 +96,7 @@ import {
   RepositoryLocationType,
   SearchFeaturesResult,
   SearchFilter,
+  SearchImageIdResult,
   SearchImageResult,
   SearchImageSummaryResult,
   SearchMediaUrlResult,
@@ -977,6 +978,29 @@ export class RepositoryController
     return await this.repositoryService.create(type, url, technicalId, name, comment, watch);
   }
 
+  @Put(":id/update")
+  @ApiOperation(
+    {
+      summary: "Updates a repository",
+      description: "Updates the name and comment of a repository."
+    }
+  )
+  @ApiParam({ name: "id", description: "The repository identifier", schema: repositoryIdSchema, required: true })
+  @ApiQuery({ name: "name", description: "The repository name", type: String, required: false })
+  @ApiQuery({ name: "comment", description: "The repository comment", type: String, required: false })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The updated repository",
+      type: Repository
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryManage]))
+  async update(@Param("id") id: string, @Query("name") name?: string, @Query("comment") comment?: string): Promise<Repository>
+  {
+    return await this.repositoryService.update(id, name, comment);
+  }
+
   @Put("ensure")
   @ApiOperation(
     {
@@ -1559,6 +1583,27 @@ export class ImageController
   constructor(private readonly imageService: ImageService)
   {
     logger.debug("Instantiating an ImageController");
+  }
+
+  @Post("search/ids")
+  @ApiOperation(
+    {
+      summary: "Retrieves image ids",
+      description: "Retrieves image ids following search parameters."
+    }
+  )
+  @HttpCode(OK)
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The image ids matching the parameters and the extension identifiers",
+      type: SearchImageIdResult
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  async searchIds(@Body() parameters: SearchParameters): Promise<SearchImageIdResult>
+  {
+    return await this.imageService.searchForImageIds(parameters);
   }
 
   @Post("search/summaries")

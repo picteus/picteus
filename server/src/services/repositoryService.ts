@@ -189,6 +189,27 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     return repository;
   }
 
+  async update(id: string, name: string | undefined, comment: string | undefined): Promise<Repository>
+  {
+    logger.info(`Updating that the repository with id '${id}''${name === undefined ? "" : `, with name '${name}'`}'${comment === undefined ? "" : `, with comment '${comment}'`}`);
+    const repository = await this.getRepository(id);
+    parametersChecker.checkString("name", name, StringLengths.Length64, StringNature.Free, true);
+    parametersChecker.checkString("comment", comment, StringLengths.Length256, StringNature.Free, true);
+    if (name !== undefined)
+    {
+      const withSameNameEntity = await this.entitiesProvider.repositories.findUnique({ where: { name } });
+      if (withSameNameEntity !== null && withSameNameEntity.id !== repository.id)
+      {
+        parametersChecker.throwBadParameter("name", name, "a repository with the same name already exists");
+      }
+    }
+    const updatedRepository = await this.entitiesProvider.repositories.update({
+      where: { id },
+      data: { name, comment }
+    });
+    return plainToInstanceViaJSON(Repository, updatedRepository);
+  }
+
   async ensure(technicalId: string, name: string, comment: string | undefined, watch: boolean = true): Promise<Repository>
   {
     logger.info(`Ensuring that the repository with technical identifier '${technicalId}' exists, with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}`);
@@ -427,8 +448,8 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     parametersChecker.checkString("nameWithoutExtension", nameWithoutExtension, StringLengths.Length256, StringNature.FileSystemFileName);
     parametersChecker.checkString("relativeDirectoryPath", relativeDirectoryPath, StringLengths.Length256, StringNature.FileSystemRelativeDirectoryPath, true, true);
 
-    const entity = await this.getRepository(id);
-    if (entity.status === RepositoryStatus.UNAVAILABLE || entity.status === RepositoryStatus.UNAVAILABLE_INDEXING)
+    const repository = await this.getRepository(id);
+    if (repository.status === RepositoryStatus.UNAVAILABLE || repository.status === RepositoryStatus.UNAVAILABLE_INDEXING)
     {
       parametersChecker.throwBadParameterError(`The repository with id '${id}' is not available`);
     }
@@ -440,7 +461,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
 
     const currentFilePath = imageEntity.url.substring(fileWithProtocol.length);
     const currentExtension = path.extname(currentFilePath);
-    const repositoryDirectoryPath = entity.url.substring(fileWithProtocol.length);
+    const repositoryDirectoryPath = repository.url.substring(fileWithProtocol.length);
     const futureDirectoryPath = relativeDirectoryPath === undefined ? repositoryDirectoryPath : path.join(repositoryDirectoryPath, relativeDirectoryPath);
     const futureFilePath = path.join(futureDirectoryPath, `${nameWithoutExtension}${currentExtension}`);
     if (futureFilePath === currentFilePath)

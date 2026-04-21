@@ -456,9 +456,10 @@ describe("Image with module", () =>
     const inFeatures = { inName: false, inMetadata: false, inFeatures: true };
     const inAll = { inName: true, inMetadata: true, inFeatures: true };
     const inNone = { inName: false, inMetadata: false, inFeatures: false };
+    const searchIds = base.getImageController().searchIds;
     const searchFeatures = base.getImageController().searchFeatures;
     const searchTags = base.getImageController().searchTags;
-    const webServices = [base.getImageController().searchSummaries, base.getImageController().searchImages, searchFeatures, searchTags];
+    const webServices = [base.getImageController().searchSummaries, base.getImageController().searchImages, searchIds, searchFeatures, searchTags];
     for (const unboundWebService of webServices)
     {
       const webService = unboundWebService.bind(base.getImageController());
@@ -728,8 +729,12 @@ describe("Image with module", () =>
         // We assess via a collection
         expect((await webService(new SearchParameters(undefined, collection.id))).items.length).toBe(imagesCount);
       }
-      if (unboundWebService === searchFeatures || unboundWebService === searchTags)
+      if (unboundWebService === searchIds || unboundWebService === searchFeatures || unboundWebService === searchTags)
       {
+        const extractId = (object: any): string | undefined =>
+        {
+          return typeof object === "string" ? object : ("id" in object ? object.id as string : undefined);
+        };
         const extensionIdsArray = [[extension.manifest.id], [], undefined];
         for (const extensionIds of extensionIdsArray)
         {
@@ -740,38 +745,42 @@ describe("Image with module", () =>
               }
           }, extensionIds);
           expect(rawResult.totalCount).toEqual(imagesCount);
-          expect(rawResult.items.length).toEqual(imagesCount);
-          const result: SearchFeaturesResult | SearchTagsResult = rawResult as SearchFeaturesResult | SearchTagsResult;
-          expect(rawResult.items[0].id).toEqual(image.id);
-          expect(rawResult.items[1].id).toEqual(withFeaturesAndTagsImage.id);
-          expect(rawResult.items[2].id).toEqual(otherImage.id);
-          if (unboundWebService === searchFeatures)
+          const items = rawResult.items;
+          expect(items.length).toEqual(imagesCount);
+          expect(extractId(items[0])).toEqual(image.id);
+          expect(extractId(items[1])).toEqual(withFeaturesAndTagsImage.id);
+          expect(extractId(items[2])).toEqual(otherImage.id);
+          if (unboundWebService !== searchIds)
           {
-            const extensionFeatures = features.map(attribute =>
+            const result: SearchFeaturesResult | SearchTagsResult = rawResult as SearchFeaturesResult | SearchTagsResult;
+            if (unboundWebService === searchFeatures)
             {
-              return { ...attribute, id: extension.manifest.id };
-            });
-            const otherExtensionFeatures = features.map(attribute =>
+              const extensionFeatures = features.map(attribute =>
+              {
+                return { ...attribute, id: extension.manifest.id };
+              });
+              const otherExtensionFeatures = features.map(attribute =>
+              {
+                return { ...attribute, id: otherExtension.manifest.id };
+              });
+              expect(result.items[0].attribute).toEqual((extensionIds === undefined || extensionIds.length === 0) ? extensionFeatures.concat(otherExtensionFeatures) : extensionFeatures);
+              expect(result.items[1].attribute).toEqual(extensionFeatures);
+            }
+            if (unboundWebService === searchTags)
             {
-              return { ...attribute, id: otherExtension.manifest.id };
-            });
-            expect(result.items[0].attribute).toEqual((extensionIds === undefined || extensionIds.length === 0) ? extensionFeatures.concat(otherExtensionFeatures) : extensionFeatures);
-            expect(result.items[1].attribute).toEqual(extensionFeatures);
+              const extensionTags = tags.map(attribute =>
+              {
+                return { value: attribute, id: extension.manifest.id };
+              });
+              const otherExtensionTags = tags.map(attribute =>
+              {
+                return { value: attribute, id: otherExtension.manifest.id };
+              });
+              expect(result.items[0].attribute).toEqual((extensionIds === undefined || extensionIds.length === 0) ? extensionTags.concat(otherExtensionTags) : extensionTags);
+              expect(result.items[1].attribute).toEqual(extensionTags);
+            }
+            expect(result.items[2].attribute).toEqual([]);
           }
-          if (unboundWebService === searchTags)
-          {
-            const extensionTags = tags.map(attribute =>
-            {
-              return { value: attribute, id: extension.manifest.id };
-            });
-            const otherExtensionTags = tags.map(attribute =>
-            {
-              return { value: attribute, id: otherExtension.manifest.id };
-            });
-            expect(result.items[0].attribute).toEqual((extensionIds === undefined || extensionIds.length === 0) ? extensionTags.concat(otherExtensionTags) : extensionTags);
-            expect(result.items[1].attribute).toEqual(extensionTags);
-          }
-          expect(result.items[2].attribute).toEqual([]);
         }
       }
     }

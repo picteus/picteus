@@ -1127,6 +1127,62 @@
         ]
       }
     },
+    "/repository/{id}/update": {
+      "put": {
+        "description": "Updates the name and comment of a repository.",
+        "operationId": "repository_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The repository identifier",
+            "schema": {
+              "description": "A repository identifier",
+              "type": "string",
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+              "minLength": 36,
+              "maxLength": 36,
+              "example": "9aa0820f-6405-4b54-a01a-a6b56489a77f"
+            }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "The repository name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "comment",
+            "required": false,
+            "in": "query",
+            "description": "The repository comment",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The updated repository",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repository"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Updates a repository",
+        "tags": [
+          "repository"
+        ]
+      }
+    },
     "/repository/ensure": {
       "put": {
         "description": "Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it.",
@@ -1871,6 +1927,39 @@
         "summary": "Deletes collection",
         "tags": [
           "collection"
+        ]
+      }
+    },
+    "/image/search/ids": {
+      "post": {
+        "description": "Retrieves image ids following search parameters.",
+        "operationId": "image_searchIds",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchParameters"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The image ids matching the parameters and the extension identifiers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchImageIdResult"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Retrieves image ids",
+        "tags": [
+          "image"
         ]
       }
     },
@@ -3700,7 +3789,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.14.1",
+    "version": "0.15.0",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",
@@ -6011,6 +6100,29 @@
           }
         },
         "description": "Filtering and range parameters when searching for images"
+      },
+      "SearchImageIdResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "The items corresponding to the search filter and to the range",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "The total number of items",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "description": "The result of an image ids search",
+        "required": [
+          "items",
+          "totalCount"
+        ]
       },
       "ImageSummary": {
         "type": "object",

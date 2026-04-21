@@ -1097,6 +1097,17 @@ export class ImageSummary extends Dates
 
 }
 
+@ApiSchema({ description: "The result of an image ids search" })
+export class SearchImageIdResult extends generateItemsResultClass(String)
+{
+
+  constructor(items: string[], totalCount: number)
+  {
+    super(items, totalCount);
+  }
+
+}
+
 @ApiSchema({ description: "The result of an image summaries search" })
 export class SearchImageSummaryResult extends generateItemsResultClass(ImageSummary)
 {
