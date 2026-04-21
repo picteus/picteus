@@ -160,9 +160,11 @@ export default {
     badFileUrl: "The file URL must start with : 'file://' ",
     empty: "This field can not be empty"
   },
-  addRepositoryModal: {
+  addOrUpdateRepositoryModal: {
     successAdd: "The repository has been successfully added",
+    successUpdate: "The repository has been successfully updated",
     errorAdd: "An error occurred while adding the repository : {{error}}",
+    errorUpdate: "An error occurred while updating the repository : {{error}}",
     title: "Add repository",
     namePlaceholder: "AI generated pictures",
     urlPlaceholder: "file:///Users/john/ai-pictures/",

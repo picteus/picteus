@@ -3,14 +3,14 @@ import { ActionIcon, Badge, Button, Flex, LoadingOverlay, Stack, Table, Text, Ti
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 
 import { Repository, RepositoryStatus } from "@picteus/ws-client";
-import { IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
+import { IconEdit, IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
 
 import { ChannelEnum } from "types";
 import { notifyApiCallI18nError, notifySuccess } from "utils";
 import { useActionModalContext, useConfirmAction, useEventSocket } from "app/context";
 import { RepositoriesService } from "app/services";
 import { Container, EmptyResults, ExternalLink, FormatedDate, Loader, RefreshButton } from "app/components";
-import { AddRepositoryModal } from "./components";
+import { AddOrUpdateRepositoryModal } from "./components";
 
 
 export default function RepositoriesScreen() {
@@ -24,10 +24,10 @@ export default function RepositoriesScreen() {
 
   const [, addModal] = useActionModalContext();
 
-  function openAddRepositoryModal() {
+  function openAddOrUpdateRepositoryModal(repository?: Repository) {
     addModal({
-      component: <AddRepositoryModal onSuccess={fetchAllRepositories} />,
-      title: t("addRepositoryModal.title"),
+      component: <AddOrUpdateRepositoryModal repository={repository} onSuccess={fetchAllRepositories} />,
+      title: t(repository ? "updateRepositoryModal.title" : "addRepositoryModal.title"),
       size: "l",
     });
   }
@@ -72,6 +72,15 @@ export default function RepositoriesScreen() {
   function renderMenu(repository: Repository) {
     return (
       <Flex gap={10}>
+        <Tooltip label={t("button.edit")}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            onClick={() => openAddOrUpdateRepositoryModal(repository)}
+          >
+              <IconEdit size={20} stroke={1} />
+          </ActionIcon>
+        </Tooltip>
         <Tooltip label={t("button.synchronize")}>
           <ActionIcon
             size="md"
@@ -131,7 +140,7 @@ export default function RepositoriesScreen() {
         description={t("emptyRepositories.description")}
         title={t("emptyRepositories.title")}
         buttonText={t("emptyRepositories.buttonText")}
-        buttonAction={openAddRepositoryModal}
+        buttonAction={() => openAddOrUpdateRepositoryModal()}
       />
     );
   }
@@ -180,7 +189,7 @@ export default function RepositoriesScreen() {
           <Flex gap="sm" align="center">
             <Button
               leftSection={<IconPlus size={20} />}
-              onClick={openAddRepositoryModal}
+              onClick={() => openAddOrUpdateRepositoryModal()}
             >
               {t("button.add")}
             </Button>

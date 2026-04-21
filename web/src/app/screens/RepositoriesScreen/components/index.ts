@@ -1,1 +1,1 @@
-export { default as AddRepositoryModal } from "./AddRepositoryModal/AddRepositoryModal.tsx";
+export { default as AddOrUpdateRepositoryModal } from "./AddOrUpdateRepositoryModal/AddOrUpdateRepositoryModal.tsx";

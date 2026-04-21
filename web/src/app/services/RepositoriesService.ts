@@ -5,7 +5,8 @@ import {
   RepositoryApi,
   RepositoryApiRepositoryCreateRequest,
   RepositoryApiRepositoryDeleteRequest,
-  RepositoryApiRepositorySynchronizeRequest
+  RepositoryApiRepositorySynchronizeRequest,
+  RepositoryApiRepositoryUpdateRequest
 } from "@picteus/ws-client";
 
 const repositoryApi = new RepositoryApi();
@@ -25,6 +26,12 @@ async function add(
   parameters: RepositoryApiRepositoryCreateRequest,
 ): Promise<Repository> {
   return repositoryApi.repositoryCreate({ ...parameters, watch: true });
+}
+
+async function update(
+  parameters: RepositoryApiRepositoryUpdateRequest,
+): Promise<Repository> {
+  return repositoryApi.repositoryUpdate({ ...parameters });
 }
 
 async function remove(
@@ -59,6 +66,7 @@ export default {
   fetchAll,
   list,
   add,
+  update,
   getRepositoryInformation,
   synchronize,
   getFeatureNames,

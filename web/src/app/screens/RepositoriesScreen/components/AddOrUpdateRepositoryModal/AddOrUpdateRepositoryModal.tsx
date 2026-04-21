@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import { ActionIcon, Button, Flex, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 
-import { RepositoryApiRepositoryCreateRequest } from "@picteus/ws-client";
+import { Repository, RepositoryApiRepositoryCreateRequest } from "@picteus/ws-client";
 
 import { FolderTypes } from "types";
-import { detectPlatformFromPath, notifyApiCallI18nError, Validators } from "utils";
+import { detectPlatformFromPath, notifyApiCallI18nError, notifySuccess, Validators } from "utils";
 import { useFolderPicker } from "app/hooks";
 import { RepositoriesService, StorageService } from "app/services";
 
@@ -20,17 +20,24 @@ const initialValues: RepositoryApiRepositoryCreateRequest = {
   watch: undefined,
 };
 
-type AddRepositoryModalType = {
+type AddOrUpdateRepositoryModalType = {
+  repository?: Repository;
   onSuccess: () => void;
 };
 
-export default function AddRepositoryModal({ onSuccess }: AddRepositoryModalType) {
+export default function AddOrUpdateRepositoryModal({ repository, onSuccess }: AddOrUpdateRepositoryModalType) {
   const [t] = useTranslation();
   const openFolderPicker = useFolderPicker();
 
   const form = useForm({
     mode: "uncontrolled",
-    initialValues,
+    initialValues: repository ? {
+      type: "file" as const,
+      url: repository.url,
+      name: repository.name,
+      comment: repository.comment ?? undefined,
+      watch: undefined,
+    } : initialValues,
     validate: {
       name: Validators.isNotEmpty,
       url: (value) =>
@@ -42,10 +49,19 @@ export default function AddRepositoryModal({ onSuccess }: AddRepositoryModalType
   async function handleSubmit(values: RepositoryApiRepositoryCreateRequest) {
     setLoading(true);
     try {
-      await RepositoriesService.add(values);
+      if (repository) {
+        await RepositoriesService.update({
+          id: repository.id,
+          name: values.name,
+          comment: values.comment,
+        });
+      } else {
+        await RepositoriesService.add(values);
+      }
+      notifySuccess(t(`addOrUpdateRepositoryModal.${repository ? "successUpdate" : "successAdd"}`))
       onSuccess();
     } catch (error) {
-      notifyApiCallI18nError(error, "addRepositoryModal.errorAdd");
+      notifyApiCallI18nError(error, `addOrUpdateRepositoryModal.${repository ? 'errorUpdate' : 'errorAdd'}`);
     } finally {
       setLoading(false);
     }
@@ -73,23 +89,26 @@ export default function AddRepositoryModal({ onSuccess }: AddRepositoryModalType
         mb="lg"
         withAsterisk
         label={t("field.name")}
-        placeholder={t("addRepositoryModal.namePlaceholder")}
+        placeholder={t("addOrUpdateRepositoryModal.namePlaceholder")}
         {...form.getInputProps("name")}
       />
       <TextInput
+        disabled={!!repository}
         rightSection={
-          <ActionIcon
-            onClick={handleOnClickBrowseFolder}
-            variant="default"
-            size="lg"
-          >
-            <IconFolderSearch stroke={1.5} />
-          </ActionIcon>
+          !repository ? (
+            <ActionIcon
+              onClick={handleOnClickBrowseFolder}
+              variant="default"
+              size="lg"
+            >
+              <IconFolderSearch stroke={1.5} />
+            </ActionIcon>
+          ) : undefined
         }
         mb="lg"
         withAsterisk
         label={t("field.url")}
-        placeholder={t("addRepositoryModal.urlPlaceholder")}
+        placeholder={t("addOrUpdateRepositoryModal.urlPlaceholder")}
         {...form.getInputProps("url")}
       />
 
@@ -99,12 +118,12 @@ export default function AddRepositoryModal({ onSuccess }: AddRepositoryModalType
         autosize
         minRows={3}
         maxRows={6}
-        placeholder={t("addRepositoryModal.commentPlaceholder")}
+        placeholder={t("addOrUpdateRepositoryModal.commentPlaceholder")}
         {...form.getInputProps("comment")}
       />
       <Flex justify="flex-end">
         <Button loading={loading} disabled={loading} type="submit">
-          {t("button.add")}
+          {t(repository ? "button.update" : "button.add")}
         </Button>
       </Flex>
     </form>
