@@ -7,7 +7,7 @@ import { ImageSummary, Repository, SearchOriginNature, SearchSortingProperty } f
 
 import { notifyErrorWithError, removeFilePrefixFromUrl } from "utils";
 import { ImageService } from "app/services";
-import { CopyText, ExternalLink, FormatedDate, NoValue } from "app/components";
+import { CopyText, EntityStatus, ExternalLink, FormatedDate, NoValue } from "app/components";
 
 
 type RepositoryDetailProps = {
@@ -109,9 +109,7 @@ export default function RepositoryDetail({ repository, openAddOrUpdateRepository
 
       <Box>
          <Text size="sm" fw={600} c="dimmed">{t("field.status")}</Text>
-         <Badge mt={4} color={repository.status === "READY" ? "green" : repository.status === "INDEXING" ? "yellow" : "gray"}>
-            {repository.status}
-         </Badge>
+         <Text size="sm"><EntityStatus type="repository" status={repository.status} /></Text>
       </Box>
 
       <Flex gap="md">

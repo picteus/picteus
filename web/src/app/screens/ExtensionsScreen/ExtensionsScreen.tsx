@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActionIcon, Badge, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import {
   IconAdjustmentsHorizontal,
   IconPlayerPause,
@@ -17,7 +17,7 @@ import { Extension, ExtensionStatus } from "@picteus/ws-client";
 import { notifyApiCallI18nError, notifySuccess } from "utils";
 import { useActionModalContext, useConfirmAction } from "app/context";
 import { ExtensionsService } from "app/services";
-import { Container, EmptyResults, RefreshButton } from "app/components";
+import { Container, EmptyResults, EntityStatus, RefreshButton } from "app/components";
 import { AddOrUpdateExtensionModal, ExtensionSettingsModal } from "./components";
 
 
@@ -173,13 +173,6 @@ export default function ExtensionsScreen() {
     );
   }
 
-  function renderStatus(status: ExtensionStatus) {
-    if (status === ExtensionStatus.Paused) {
-      return <Badge color="yellow">{status}</Badge>;
-    }
-    return <Badge color="green">{status}</Badge>;
-  }
-
   const rows = extensions.map((extension: Extension) => (
     <Table.Tr key={"extensionTr-" + extension.manifest.id}>
       <Table.Td>
@@ -195,7 +188,7 @@ export default function ExtensionsScreen() {
         <Text size="md">{extension.manifest.description}</Text>
       </Table.Td>
       <Table.Td>
-        <Text size="md">{renderStatus(extension.status)}</Text>
+        <EntityStatus type="extension" status={extension.status} size="md" />
       </Table.Td>
       <Table.Td>{renderMenu(extension)}</Table.Td>
     </Table.Tr>

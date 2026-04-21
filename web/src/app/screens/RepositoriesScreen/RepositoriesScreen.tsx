@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { ActionIcon, Badge, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 
-import { Repository, RepositoryStatus } from "@picteus/ws-client";
+import { Repository } from "@picteus/ws-client";
 import { IconEdit, IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
 
 import { ChannelEnum } from "types";
@@ -13,9 +13,9 @@ import {
   Container,
   Drawer,
   EmptyResults,
+  EntityStatus,
   ExternalLink,
   FormatedDate,
-  Loader,
   NoValue,
   RefreshButton
 } from "app/components";
@@ -58,17 +58,6 @@ export default function RepositoriesScreen() {
       }
     }
   }, [repositories, selectedRepository]);
-
-  function renderStatus(status: RepositoryStatus) {
-    if (status === RepositoryStatus.Indexing) {
-      return (
-        <Badge color="yellow" leftSection={<Loader />}>
-          {status}
-        </Badge>
-      );
-    }
-    return <Badge color="green">{status}</Badge>;
-  }
 
   useEffect(() => {
     if (event?.rawData.channel.startsWith(ChannelEnum.REPOSITORY_SYNCHRONIZE_PREFIX)) {
@@ -155,7 +144,7 @@ export default function RepositoriesScreen() {
         <Text size="md"><FormatedDate timestamp={repository.modificationDate}/></Text>
       </Table.Td>
       <Table.Td>
-        <Text size="md">{renderStatus(repository.status)}</Text>
+        <EntityStatus type="repository" status={repository.status} size="md" />
       </Table.Td>
       <Table.Td>{renderMenu(repository)}</Table.Td>
     </Table.Tr>
