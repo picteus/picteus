@@ -129,7 +129,7 @@ export default function ImageItemMenu({ image }: ImageItemMenuType) {
           <ImageItemMenuEntry
             key={"delete"}
             onClick={handleOnClickDelete}
-            icon={<IconTrash style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />}
+            icon={<IconTrash color="red"  style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />}
             label={t("commands.delete")}
             subLabel={t("commands.allExtensionsDetails")}
           />

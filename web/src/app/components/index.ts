@@ -35,4 +35,5 @@ export { default as TextToImages } from "./TextToImages/TextToImages.tsx";
 export { default as Collection } from "./Collection/Collection.tsx";
 export { default as FormatedDate } from "./FormatedDate/FormatedDate.tsx";
 export { default as NoValue } from "./NoValue/NoValue.tsx";
+export { default as Drawer } from "./Drawer/Drawer.tsx";
 export { CaptionDistance } from "./ImageMasonry/components";

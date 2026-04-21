@@ -1,20 +1,9 @@
 import React, { ReactNode, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { useTranslation } from "react-i18next";
-import { Group, Layout, Panel, Separator } from "react-resizable-panels";
-import { IconArrowLeft, IconArrowRight, IconChevronDown, IconCircleX, IconX } from "@tabler/icons-react";
-import {
-  Accordion,
-  ActionIcon,
-  Alert,
-  Button,
-  Divider,
-  Flex,
-  Group as MantineGroup,
-  Menu,
-  Table,
-  Text
-} from "@mantine/core";
+import { Accordion, ActionIcon, Alert, Button, Divider, Flex, Group, Menu, Table, Text } from "@mantine/core";
 import { getHotkeyHandler, useFocusTrap, useResizeObserver } from "@mantine/hooks";
+import { Group as ResizableGroup, Layout, Panel, Separator } from "react-resizable-panels";
+import { IconArrowLeft, IconArrowRight, IconChevronDown, IconCircleX, IconX } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import {
   ExtensionImageFeature,
@@ -279,11 +268,11 @@ export default function ImageDetail({
   function renderTags(imageTags: ExtensionImageTag[]) {
     return <Table layout="fixed">
       <Table.Tbody>
-        <MantineGroup gap="xs">
+        <Group gap="xs">
           {imageTags.map((imageTag, index) => (
             <ImageTag key={`tag-${index}`} imageTag={imageTag} />
           ))}
-        </MantineGroup>
+        </Group>
       </Table.Tbody>
     </Table>;
   }
@@ -459,7 +448,7 @@ export default function ImageDetail({
   }
 
   return (
-    <Group elementRef={ref} orientation="horizontal" onLayoutChanged={handleOnLayoutChanged}
+    <ResizableGroup elementRef={ref} orientation="horizontal" onLayoutChanged={handleOnLayoutChanged}
            onKeyDown={handleOnKeyDown}>
       <Panel id="left" defaultSize={`${panelSizes[0]}%`} minSize="40%" className={style.left}>
         {renderLeftPanel()}
@@ -470,6 +459,6 @@ export default function ImageDetail({
       <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%" className={style.right}>
         {renderRightPanel()}
       </Panel>
-    </Group>
+    </ResizableGroup>
   );
 }

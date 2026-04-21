@@ -1,17 +1,5 @@
 import { useTranslation } from "react-i18next";
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Drawer,
-  Flex,
-  LoadingOverlay,
-  Stack,
-  Table,
-  Text,
-  Title,
-  Tooltip
-} from "@mantine/core";
+import { ActionIcon, Badge, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 
 import { Repository, RepositoryStatus } from "@picteus/ws-client";
@@ -21,7 +9,16 @@ import { ChannelEnum } from "types";
 import { notifyApiCallI18nError, notifySuccess } from "utils";
 import { useActionModalContext, useConfirmAction, useEventSocket } from "app/context";
 import { RepositoriesService } from "app/services";
-import { Container, EmptyResults, ExternalLink, FormatedDate, Loader, NoValue, RefreshButton } from "app/components";
+import {
+  Container,
+  Drawer,
+  EmptyResults,
+  ExternalLink,
+  FormatedDate,
+  Loader,
+  NoValue,
+  RefreshButton
+} from "app/components";
 import { AddOrUpdateRepositoryModal, RepositoryDetail } from "./components";
 
 
@@ -95,7 +92,7 @@ export default function RepositoriesScreen() {
 
   function renderMenu(repository: Repository) {
     return (
-      <Flex gap={10} onClick={(e) => e.stopPropagation()}>
+      <Flex gap={10} onClick={(event) => event.stopPropagation()}>
         <ExternalLink url={repository.url} type="action" />
         <Tooltip label={t("button.edit")}>
           <ActionIcon
@@ -232,10 +229,7 @@ export default function RepositoriesScreen() {
       <Drawer
         opened={!!selectedRepository}
         onClose={() => setSelectedRepository(null)}
-        title={<Title order={3}>{t("repositoryDetail.title")}</Title>}
-        position="right"
-        size="md"
-        overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}
+        title={t("repositoryDetail.title")}
       >
         {selectedRepository && (
           <RepositoryDetail
