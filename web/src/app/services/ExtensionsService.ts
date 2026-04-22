@@ -23,6 +23,7 @@ import {
 import { AdditionalUi, ChannelEnum, EventInformationType, UiExtensionCommandType } from "types";
 import { BASE_PATH, computeExtensionSidebarUuid } from "utils";
 
+
 const extensionApi = new ExtensionApi();
 
 let extensions: Extension[] = [];
@@ -169,8 +170,8 @@ function getAdditionalUis(
           return {
             uuid: computeExtensionSidebarUuid(extension.manifest.id, element.id),
             integration,
-            content: { url: (integration.anchor === UserInterfaceAnchor.Window || (integration.anchor === UserInterfaceAnchor.Sidebar && integration.isExternal === true)) ? element.url : buildSidebarAnchorURL(extension.manifest.id, element.url) },
-            icon: { url: getSidebarAnchorIconURL(extension.manifest.id) },
+            content: { url: (integration.anchor === UserInterfaceAnchor.Window || (integration.anchor === UserInterfaceAnchor.Sidebar && integration.isExternal === true)) ? element.url : buildUiURL(extension.manifest.id, element.url) },
+            icon: { url: getIconURL(extension) },
             title: extension.manifest.name,
             extensionId: extension.manifest.id,
             automaticallyReopen: true
@@ -179,12 +180,12 @@ function getAdditionalUis(
   );
 }
 
-function buildSidebarAnchorURL(extensionId: string, url: string) {
+function buildUiURL(extensionId: string, url: string) {
   return `${BASE_PATH}/ui/extension/${extensionId}${url}`;
 }
 
-function getSidebarAnchorIconURL(extensionId: string) {
-  return buildSidebarAnchorURL(extensionId, "/icon.png");
+function getIconURL(extensionIdOrExtension: string | Extension) {
+  return buildUiURL(typeof extensionIdOrExtension === "string" ? extensionIdOrExtension : (extensionIdOrExtension as Extension).manifest.id, "/icon.png");
 }
 
 export default {
@@ -193,7 +194,7 @@ export default {
   list,
   isPaused,
   add,
-  getSidebarAnchorIconURL,
+  getIconURL,
   update,
   uninstall,
   synchronize,

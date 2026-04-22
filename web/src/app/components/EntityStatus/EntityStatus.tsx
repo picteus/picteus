@@ -24,6 +24,6 @@ export default function EntityStatus({ type, status, size }: EntityStatusType)
     return <Badge color={status === RepositoryStatus.Ready ? "green" : "gray"} size={size}>{status}</Badge>;
   }
   else {
-    return <Badge color={status === ExtensionStatus.Paused ? "yellow" : "green"} size={size}>{status}</Badge>;
+    return <Badge color={status === ExtensionStatus.Paused ? "gray" : "green"} size={size}>{status}</Badge>;
   }
 }

@@ -45,11 +45,11 @@ export default function TagsWidget(props: WidgetProps) {
             const count = tagCounts[tag.value] || 0;
 
             if (count > 1) {
-                const extension = extensions.find(e => e.manifest.id === tag.id);
+                const extension = extensions.find(anExtension => anExtension.manifest.id === tag.id);
                 if (extension) {
                     return (
                         <Group gap="sm">
-                            <ExtensionIcon id={extension.manifest.id} size="sm"/>
+                            <ExtensionIcon idOrExtension={extension} size="sm"/>
                             <Stack gap={2}>
                                 <Text size="sm">{tag.value}</Text>
                                 <Text size="xs" opacity={0.65}>

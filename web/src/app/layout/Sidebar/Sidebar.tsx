@@ -76,8 +76,8 @@ export default function Sidebar() {
       return (
         // TODO: handle the case of the closeable items
         <NavbarLink
-          key={"navbarLink-" + element.title}
-          icon={<ExtensionIcon id={element.extensionId} url={computeResourceTypeUrl(element.icon)} size="md" />}
+          key={`navbarLink-${element.uuid}`}
+          icon={<ExtensionIcon idOrExtension={element.extensionId} url={computeResourceTypeUrl(element.icon)} size="md" />}
           externalLink={element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === true}
           label={element.title}
           route={routePathFragment}

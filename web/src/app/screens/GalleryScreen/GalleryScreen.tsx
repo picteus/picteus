@@ -39,7 +39,7 @@ function GalleryTab({ tab, onRemove }: GalleryTabType) {
   return (
     <Tabs.Tab
       value={tab.id}
-      leftSection={tab.extensionId !== undefined ? <ExtensionIcon id={tab.extensionId} size="sm" /> :
+      leftSection={tab.extensionId !== undefined ? <ExtensionIcon idOrExtension={tab.extensionId} size="sm" /> :
         <IconPhoto size={13} />}
       rightSection={
         <IconX

@@ -36,7 +36,7 @@ function ImageItemMenuEntry({extensionId, icon, label, subLabel, onClick} : Imag
   return (
     <Menu.Item
       onClick={onClick}
-      leftSection={icon ?? <ExtensionIcon id={extensionId} size="sm" />}
+      leftSection={icon ?? <ExtensionIcon idOrExtension={extensionId} size="sm" />}
     >
       <Text size="sm">{label}</Text>
       <Text size="xs" c="dimmed">{subLabel}</Text>

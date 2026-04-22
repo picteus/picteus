@@ -1,12 +1,13 @@
 import React, { ReactElement, useCallback, useEffect, useRef } from "react";
 import { useDisclosure } from "@mantine/hooks";
-import { ActionIcon, Divider, Flex, Image, Modal, Text } from "@mantine/core";
+import { ActionIcon, Divider, Flex, Modal } from "@mantine/core";
 import { IconChevronLeft } from "@tabler/icons-react";
 
-import { ActionModalValue, computeResourceTypeUrl } from "types";
+import { ActionModalValue } from "types";
 import { useEscapeKey } from "app/hooks";
 // A copy-and-paste from Mantine in order to fix a bug with the focus
 import { FOCUS_SELECTOR, focusable, tabbable } from "./tabbable.ts";
+import { ContentTitle } from "app/components";
 
 import style from "./ModalComponent.module.scss";
 
@@ -110,10 +111,7 @@ export default function ModalComponent({
   });
 
   function computeTitle() {
-    const title = <Flex className={style.title}>
-      {modal.icon && <Image src={computeResourceTypeUrl(modal.icon)} h={24} w={24} />}
-      <Text size="xl" fw={700}>{modal.title}</Text>
-    </Flex>;
+    const title = <ContentTitle text={modal.title} icon={modal.icon} />;
     if (modal.fullScreen) {
       return (
         <Flex align="center" gap="md">

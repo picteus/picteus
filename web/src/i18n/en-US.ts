@@ -216,6 +216,9 @@ export default {
     latestImages: "Latest images",
     imageCount: "Image count"
   },
+  extensionDetail: {
+    title: "Extension"
+  },
   extensionsScreen: {
     title: "Extensions",
     successUninstall: "The extension has been successfully uninstalled",

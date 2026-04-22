@@ -96,7 +96,7 @@ export default function GeneralCommands() {
                 index
               }
               onClick={() => handleOnClickTextToImage(extension.manifest.id)}
-              leftSection={<ExtensionIcon id={extension.manifest.id} size="sm" />}
+              leftSection={<ExtensionIcon idOrExtension={extension} size="sm" />}
               rightSection={
                 index === 0 && (
                   <>
@@ -114,17 +114,16 @@ export default function GeneralCommands() {
         })}
         <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
         {extensionsProcessCommands?.map((extensionCommand, index) => {
-          const manifest = extensionCommand.extension.manifest;
+          const extension = extensionCommand.extension;
+          const command = extensionCommand.command;
+          const manifest = extension.manifest;
           return (
             <Menu.Item
-              key={`command-${manifest.id}-${index}`              }
+              key={`command-${manifest.id}-${index}`}
               onClick={() =>
-                handleOnClickExtensionCommand(
-                  manifest.id,
-                  extensionCommand.command,
-                )
+                handleOnClickExtensionCommand(manifest.id, command,)
               }
-              leftSection={<ExtensionIcon id={manifest.id} size="sm" />}
+              leftSection={<ExtensionIcon idOrExtension={extension} size="sm" />}
             >
               <Text size="sm"> {extensionCommand.command.label}</Text>
               <Text size="xs" c="dimmed">

@@ -7,7 +7,7 @@ import { ImageSummary, Repository, SearchOriginNature, SearchSortingProperty } f
 
 import { notifyErrorWithError, removeFilePrefixFromUrl } from "utils";
 import { ImageService } from "app/services";
-import { CopyText, EntityStatus, ExternalLink, FormatedDate, NoValue } from "app/components";
+import { CopyText, EntityStatus, ExternalLink, FieldValue, FormatedDate, NoValue } from "app/components";
 
 
 type RepositoryDetailProps = {
@@ -34,8 +34,8 @@ export default function RepositoryDetail({ repository, openAddOrUpdateRepository
         filter: { origin: { kind: SearchOriginNature.Repositories, ids: [repository!.id] }, sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false } },
         range: { take: 10 },
       });
-      setImages(result.items || []);
-      setTotalCount(result.totalCount || 0);
+      setImages(result.items);
+      setTotalCount(result.totalCount);
     } catch (error) {
       notifyErrorWithError(error);
     } finally {
@@ -47,7 +47,7 @@ export default function RepositoryDetail({ repository, openAddOrUpdateRepository
     if (images.length === 0) return <Text c="dimmed">{t("emptyImages.title")}</Text>;
 
     return (
-      <Flex style={{ padding: "10px 0", minHeight: 100 }}>
+      <Flex mt="xs" style={{ padding: "10px 0", minHeight: 100 }}>
         {images.map((img, i) => (
           <Box
             key={img.id}
@@ -83,55 +83,24 @@ export default function RepositoryDetail({ repository, openAddOrUpdateRepository
     <Stack gap="md" pos="relative">
       <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
 
-      <Box>
-        <Text size="sm" fw={600} c="dimmed">{t("field.id")}</Text>
-        <CopyText size="xs" c="dimmed" text={repository.id} />
-      </Box>
-
-      <Box>
-        <Text size="sm" fw={600} c="dimmed">{t("field.url")}</Text>
-        <CopyText size="xs" c="dimmed" text={removeFilePrefixFromUrl(repository.url)} />
-      </Box>
-
-      <Box>
-        <Text size="sm" fw={600} c="dimmed">{t("field.name")}</Text>
-        <Text size="lg" fw={500}>{repository.name}</Text>
-      </Box>
-
-      <Box>
-         <Text size="sm" fw={600} c="dimmed">{t("field.comment")}</Text>
-         {repository.comment ? (
-           <Text>{repository.comment}</Text>
-         ) : (
-           <NoValue />
-         )}
-      </Box>
-
-      <Box>
-         <Text size="sm" fw={600} c="dimmed">{t("field.status")}</Text>
-         <Text size="sm"><EntityStatus type="repository" status={repository.status} /></Text>
-      </Box>
-
+      <FieldValue name={t("field.id")} value={<CopyText size="xs" c="dimmed" text={repository.id} />} />
+      <FieldValue name={t("field.url")}
+                  value={<CopyText size="xs" c="dimmed" text={removeFilePrefixFromUrl(repository.url)} />} />
+      <FieldValue name={t("field.name")} value={<Text size="lg" fw={500}>{repository.name}</Text>} />
+      <FieldValue name={t("field.comment")}
+                  value={repository.comment ? <Text>{repository.comment}</Text> : <NoValue />} />
+      <FieldValue name={t("field.status")}
+                  value={<EntityStatus type="repository" status={repository.status} size="sm" />} />
       <Flex gap="md">
-        <Box>
-          <Text size="sm" fw={600} c="dimmed">{t("field.createdOn")}</Text>
-          <Text size="sm"><FormatedDate timestamp={repository.creationDate}/></Text>
-        </Box>
-        <Box>
-          <Text size="sm" fw={600} c="dimmed">{t("field.modifiedOn")}</Text>
-          <Text size="sm"><FormatedDate timestamp={repository.modificationDate}/></Text>
-        </Box>
+        <FieldValue name={t("field.createdOn")}
+                    value={<Text size="sm"><FormatedDate timestamp={repository.creationDate} /></Text>} />
+        <FieldValue name={t("field.modifiedOn")}
+                    value={<Text size="sm"><FormatedDate timestamp={repository.modificationDate} /></Text>} />
       </Flex>
-
-      <Box>
-         <Text size="sm" fw={600} c="dimmed">{t("repositoryDetail.imageCount")}</Text>
-         <Badge size="lg" variant="light" mt={4}><NumberFormatter value={totalCount} thousandSeparator /></Badge>
-      </Box>
-
-      <Box>
-        <Text size="sm" fw={600} c="dimmed" mb="xs">{t("repositoryDetail.latestImages")}</Text>
-        {renderImageStack()}
-      </Box>
+      <FieldValue name={t("repositoryDetail.imageCount")}
+                  value={<Badge size="lg" variant="light" mt={4}><NumberFormatter value={totalCount}
+                                                                                  thousandSeparator /></Badge>} />
+      <FieldValue name={t("repositoryDetail.latestImages")} value={renderImageStack()} />
 
       <Flex gap="sm" mt="lg">
         <Button

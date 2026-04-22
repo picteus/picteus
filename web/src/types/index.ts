@@ -252,12 +252,14 @@ export type LocalFiltersType = {
   sortOrder?: string;
 };
 
+export type ContentIconType = ResourceType | { icon: ReactNode };
+
 export type ActionModalValue = {
   id?: string;
   title?: string;
   withCloseButton?: boolean;
   closeOnEscape?: boolean;
-  icon?: ResourceType;
+  icon?: ContentIconType;
   fullScreen?: boolean;
   size?: SizeType;
   component: ReactElement;

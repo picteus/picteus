@@ -69,7 +69,7 @@ export default function SelectedImagesAffix() {
   ) {
     return (
       <Flex align="center" gap={10}>
-        <ExtensionIcon id={item.option.extensionId} size="sm" />
+        <ExtensionIcon idOrExtension={item.option.extensionId} size="sm" />
         <Flex direction="column">
           <Text size="sm"> {item.option.label}</Text>
           <Text size="xs" c="dimmed">

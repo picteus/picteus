@@ -70,7 +70,7 @@ export default function useExtensionCommand() {
 
     addModal({
       id: modalId,
-      icon: form?.dialogContent?.icon ?? { url: ExtensionsService.getSidebarAnchorIconURL(extensionId) },
+      icon: form?.dialogContent?.icon ?? { url: ExtensionsService.getIconURL(extensionId) },
       component: (
         <CommandForm
           extensionId={extensionId}

@@ -66,6 +66,8 @@ export default function IntentCenter() {
         }
 
         addModal({
+          title: t("extensionSettingsModal.title"),
+          size: "m",
           component: (
             <ExtensionSettingsModal
               extension={extension}
@@ -74,8 +76,6 @@ export default function IntentCenter() {
               }}
             />
           ),
-          title: t("extensionSettingsModal.title"),
-          size: "l",
           onBeforeClose: (viaOnSuccess: boolean) => {
             if (viaOnSuccess === false) {
               respondWithCancel();
@@ -148,7 +148,7 @@ export default function IntentCenter() {
         (extension) => extension.manifest.id === extensionId,
       )?.manifest.name;
       const computeIcon = (resourceType: ResourceType) => {
-        return resourceType ?? { url: ExtensionsService.getSidebarAnchorIconURL(extensionId) };
+        return resourceType ?? { url: ExtensionsService.getIconURL(extensionId) };
       }
       const modalId = randomId();
 

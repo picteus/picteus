@@ -3,7 +3,7 @@ import { ActionIcon, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, To
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 
 import { Repository } from "@picteus/ws-client";
-import { IconEdit, IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
+import { IconEdit, IconFolderOpen, IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
 
 import { ChannelEnum } from "types";
 import { notifyApiCallI18nError, notifySuccess } from "utils";
@@ -38,9 +38,10 @@ export default function RepositoriesScreen() {
 
   function openAddOrUpdateRepositoryModal(repository?: Repository) {
     addModal({
-      component: <AddOrUpdateRepositoryModal repository={repository} onSuccess={fetchAllRepositories} />,
       title: t(`addOrUpdateRepositoryModal.${repository ? "updateTitle" : "addTitle"}`),
+      icon: { icon: <IconFolderOpen /> },
       size: "l",
+      component: <AddOrUpdateRepositoryModal repository={repository} onSuccess={fetchAllRepositories} />,
     });
   }
 
@@ -222,6 +223,7 @@ export default function RepositoriesScreen() {
         opened={!!selectedRepository}
         onClose={() => setSelectedRepository(null)}
         title={t("repositoryDetail.title")}
+        icon={{ icon: <IconFolderOpen /> }}
       >
         {selectedRepository && (
           <RepositoryDetail
