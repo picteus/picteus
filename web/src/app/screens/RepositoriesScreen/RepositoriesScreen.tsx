@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ActionIcon, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Flex, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 
 import { Repository } from "@picteus/ws-client";
@@ -17,11 +17,10 @@ import {
   ExternalLink,
   FormatedDate,
   NoValue,
-  RefreshButton
+  RefreshButton,
+  StandardTable
 } from "app/components";
 import { AddOrUpdateRepositoryModal, RepositoryDetail } from "./components";
-
-import variables from "assets/style/variablesExport.module.scss";
 
 
 export default function RepositoriesScreen() {
@@ -153,53 +152,18 @@ export default function RepositoriesScreen() {
     </Table.Tr>
   ));
 
-  function renderEmpty() {
-    return (
-      <EmptyResults
-        icon={<IconFolderSearch size={140} stroke={1} />}
-        description={t("emptyRepositories.description")}
-        title={t("emptyRepositories.title")}
-        buttonText={t("emptyRepositories.buttonText")}
-        buttonAction={() => openAddOrUpdateRepositoryModal()}
-      />
-    );
-  }
-
-  function renderContent() {
-    return (
-      <Table.ScrollContainer minWidth={variables.tableMinimalWidth} pr={variables.contentPaddingHorizontal}
-                             mr={`-${variables.contentPaddingHorizontal}`}>
-        <Table stickyHeader highlightOnHover striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>{t("field.name")}</Table.Th>
-              <Table.Th>{t("field.comment")}</Table.Th>
-              <Table.Th style={{ minWidth: "110px" }}>
-                {t("field.createdOn")}
-              </Table.Th>
-              <Table.Th style={{ minWidth: "110px" }}>
-                {t("field.modifiedOn")}
-              </Table.Th>
-              <Table.Th>{t("field.status")}</Table.Th>
-              <Table.Th></Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
-    );
-  }
-
-  function render() {
-    if (loading) {
-      return (
-        <LoadingOverlay visible zIndex={1000} overlayProps={{ blur: 3 }} />
-      );
-    }
-    if (repositories.length) {
-      return renderContent();
-    }
-    return renderEmpty();
+  function renderTable() {
+    return <StandardTable head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", "field.status", ""]}
+                          loading={loading}
+                          emptyResults={<EmptyResults
+                            icon={<IconFolderSearch size={140} stroke={1} />}
+                            description={t("emptyRepositories.description")}
+                            title={t("emptyRepositories.title")}
+                            buttonText={t("emptyRepositories.buttonText")}
+                            buttonAction={() => openAddOrUpdateRepositoryModal()}
+                          />}>
+      {rows}
+    </StandardTable>;
   }
 
   return (
@@ -217,7 +181,7 @@ export default function RepositoriesScreen() {
             <RefreshButton onRefresh={() => fetchAllRepositories()} />
           </Flex>
         </Flex>
-        {render()}
+        {renderTable()}
       </Stack>
       <Drawer
         opened={!!selectedRepository}

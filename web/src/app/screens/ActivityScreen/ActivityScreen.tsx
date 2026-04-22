@@ -1,30 +1,13 @@
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Autocomplete,
-  Badge,
-  Button,
-  Divider,
-  Flex,
-  Grid,
-  Pagination,
-  Pill,
-  ScrollArea,
-  Select,
-  Stack,
-  Table,
-  Text,
-  Title
-} from "@mantine/core";
+import { Autocomplete, Badge, Button, Flex, Grid, Pill, Select, Stack, Table, Text, Title } from "@mantine/core";
 import { IconActivity } from "@tabler/icons-react";
 
 import { ChannelEnum, EventInformationType, JsonType } from "types";
 import { recursivelyIncludes } from "utils";
 import { useEventSocket } from "app/context";
 import { EventService, StorageService } from "app/services";
-import { Container, EmptyResults } from "app/components";
-
-import style from "./ActivityScreen.module.scss";
+import { Container, EmptyResults, StandardTable } from "app/components";
 
 
 const channelEnum = Object.values(ChannelEnum).map((channel) => ({
@@ -70,8 +53,8 @@ export default function ActivityScreen() {
   const endIndex = startIndex + pagination.take;
   const paginatedEvents = events?.slice(startIndex, endIndex);
   const rows = paginatedEvents?.map((event, index) => (
-    <Table.Tr key={"notification-tr-" + index + "-" + event.date}>
-      <Table.Td>
+    <Table.Tr key={`notification-${index}-${event.date}`}>
+      <Table.Td w={160}>
         <Text size="sm">{event.date}</Text>
       </Table.Td>
       <Table.Td>
@@ -82,7 +65,7 @@ export default function ActivityScreen() {
           {event.channel.startsWith("extension") ? event.payload?.id : "-"}
         </Text>
       </Table.Td>
-      <Table.Td>
+      <Table.Td w={80}>
         <Badge
           style={{ flexShrink: 0 }}
           size="sm"
@@ -167,10 +150,6 @@ export default function ActivityScreen() {
     setActiveFilters(activeFilters.filter((filter) => filter.field !== field));
   }
 
-  function render() {
-    return <>{events?.length ? renderContent() : renderEmpty()}</>;
-  }
-
   function handleOnPaginationChange(newPage: number) {
     setPagination({
       ...pagination,
@@ -178,73 +157,22 @@ export default function ActivityScreen() {
     });
   }
 
-  function renderContent() {
-    return (
-      <>
-        <ScrollArea>
-          <Table striped highlightOnHover withColumnBorders>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th style={{ minWidth: "70px" }}>
-                  {t("field.createdOn")}
-                </Table.Th>
-                <Table.Th>{t("field.channel")}</Table.Th>
-                <Table.Th>{t("field.extension")} ID</Table.Th>
-                <Table.Th style={{ minWidth: "80px" }}>
-                  {t("field.logLevel")}
-                </Table.Th>
-                <Table.Th>{t("field.description")}</Table.Th>
-                <Table.Th>{t("field.payload")}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-
-            <Table.Tbody>{rows}</Table.Tbody>
-          </Table>
-        </ScrollArea>
-        <Divider mb={"md"} />
-        <div className={style.paginationContainer}>
-          <Select
-            value={pagination.take.toString()}
-            data={[
-              {
-                value: "10",
-                label: t("pagination.resultsPerPage", { count: 10 }),
-              },
-              {
-                value: "20",
-                label: t("pagination.resultsPerPage", { count: 20 }),
-              },
-              {
-                value: "50",
-                label: t("pagination.resultsPerPage", { count: 50 }),
-              },
-              {
-                value: "100",
-                label: t("pagination.resultsPerPage", { count: 100 }),
-              },
-            ]}
-            onChange={(value) => {
-              setPagination({
-                ...pagination,
-                take: parseInt(value),
-                currentPage: 1,
-              });
-            }}
-          />
-          <Text size="sm">
-            {`${(pagination.currentPage - 1) * pagination.take + 1} - ${Math.min(
-              pagination.currentPage * pagination.take,
-              events.length,
-            )} ${t("pagination.of")} ${events.length} ${t("pagination.results")}`}
-          </Text>
-          <Pagination
-            value={pagination.currentPage}
-            onChange={handleOnPaginationChange}
-            total={Math.ceil(events.length / pagination.take)}
-          />
-        </div>
-      </>
-    );
+  function renderTable() {
+    return <StandardTable
+      head={["field.createdOn", "field.channel", "field.extension", "field.logLevel", "field.description", "field.payload"]}
+      withPagination={{
+        value: pagination,
+        setValue: setPagination,
+        totalCount: events.length,
+        onPaginationChange: handleOnPaginationChange
+      }}
+      emptyResults={<EmptyResults
+        icon={<IconActivity size={140} stroke={1} />}
+        description={t("activityScreen.emptyActivity.description")}
+        title={t("activityScreen.emptyActivity.title")}
+      />}>
+      {rows}
+    </StandardTable>;
   }
 
   function computeAutoCompleteData() {
@@ -259,15 +187,6 @@ export default function ActivityScreen() {
       ];
     }
     return [];
-  }
-  function renderEmpty() {
-    return (
-      <EmptyResults
-        icon={<IconActivity size={140} stroke={1} />}
-        description={t("activityScreen.emptyActivity.description")}
-        title={t("activityScreen.emptyActivity.title")}
-      />
-    );
   }
 
   return (
@@ -317,7 +236,7 @@ export default function ActivityScreen() {
             );
           })}
         </div>
-        {render()}
+        {renderTable()}
       </Stack>
     </Container>
   );

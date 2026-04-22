@@ -38,5 +38,6 @@ export { default as FormatedDate } from "./FormatedDate/FormatedDate.tsx";
 export { default as NoValue } from "./NoValue/NoValue.tsx";
 export { default as FieldValue } from "./FieldValue/FieldValue.tsx";
 export { default as ContentTitle } from "./ContentTitle/ContentTitle.tsx";
+export { default as StandardTable } from "./StandardTable/StandardTable.tsx";
 export { default as Drawer } from "./Drawer/Drawer.tsx";
 export { CaptionDistance } from "./ImageMasonry/components";

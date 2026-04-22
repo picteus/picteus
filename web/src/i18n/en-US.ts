@@ -141,9 +141,9 @@ export default {
     buttonTextNoRepository: "Manage repositories"
   },
   emptyRepositories: {
-    title: "No repository added",
+    title: "No repository",
     description:
-      "It seems there are no repositories configured at the moment. Please add a repository to start managing your pictures.",
+      "It seems there are no repositories configured at the moment. Please add a repository to start managing your images.",
     buttonText: "Add repository"
   },
   emptyExtensions: {
@@ -170,9 +170,9 @@ export default {
     errorUpdate: "An error occurred while updating the repository : {{error}}",
     addTitle: "Add repository",
     updateTitle: "Edit repository",
-    namePlaceholder: "AI generated pictures",
-    urlPlaceholder: "file:///Users/john/ai-pictures/",
-    commentPlaceholder: "Contains every AI generated pictures"
+    namePlaceholder: "AI generated images",
+    urlPlaceholder: "file:///Users/john/ai-images/",
+    commentPlaceholder: "Contains every AI generated images"
   },
   addExtensionModal: {
     successAdd: "The extension has been successfully added",

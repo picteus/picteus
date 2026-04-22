@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActionIcon, Button, Flex, LoadingOverlay, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Flex, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import {
   IconAdjustmentsHorizontal,
   IconBox,
@@ -18,10 +18,16 @@ import { Extension, ExtensionStatus } from "@picteus/ws-client";
 import { notifyApiCallI18nError, notifySuccess } from "utils";
 import { useActionModalContext, useConfirmAction } from "app/context";
 import { ExtensionsService } from "app/services";
-import { Container, Drawer, EmptyResults, EntityStatus, ExtensionIcon, RefreshButton } from "app/components";
+import {
+  Container,
+  Drawer,
+  EmptyResults,
+  EntityStatus,
+  ExtensionIcon,
+  RefreshButton,
+  StandardTable
+} from "app/components";
 import { AddOrUpdateExtensionModal, ExtensionDetail, ExtensionSettingsModal } from "./components";
-
-import variables from "assets/style/variablesExport.module.scss";
 
 
 export default function ExtensionsScreen() {
@@ -209,51 +215,18 @@ export default function ExtensionsScreen() {
     </Table.Tr>
   ));
 
-  function renderEmpty() {
-    return (
-      <EmptyResults
-        icon={<IconPuzzle size={140} stroke={1} />}
-        description={t("emptyExtensions.description")}
-        title={t("emptyExtensions.title")}
-        buttonText={t("emptyExtensions.buttonText")}
-        buttonAction={openAddOrUpdateExtensionModal}
-      />
-    );
-  }
-
-  function render() {
-    if (loading) {
-      return (
-        <LoadingOverlay visible zIndex={1000} overlayProps={{ blur: 3 }} />
-      );
-    }
-    if (extensions.length) {
-      return renderContent();
-    }
-    return renderEmpty();
-  }
-
-  function renderContent() {
-    return (
-      <Table.ScrollContainer minWidth={variables.tableMinimalWidth} pr={variables.contentPaddingHorizontal}
-        mr={`-${variables.contentPaddingHorizontal}`}
-      >
-        <Table stickyHeader highlightOnHover striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th w={40}></Table.Th>
-              <Table.Th>{t("field.id")}</Table.Th>
-              <Table.Th>{t("field.version")}</Table.Th>
-              <Table.Th>{t("field.name")}</Table.Th>
-              <Table.Th>{t("field.description")}</Table.Th>
-              <Table.Th>{t("field.status")}</Table.Th>
-              <Table.Th></Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
-    );
+  function renderTable() {
+    return <StandardTable head={["", "field.id", "field.version", "field.name", "field.description", "field.status"]}
+                          loading={loading}
+                          emptyResults={<EmptyResults
+                            icon={<IconPuzzle size={140} stroke={1} />}
+                            description={t("emptyExtensions.description")}
+                            title={t("emptyExtensions.title")}
+                            buttonText={t("emptyExtensions.buttonText")}
+                            buttonAction={() => openAddOrUpdateExtensionModal()}
+                          />}>
+      {rows}
+    </StandardTable>;
   }
 
   return (
@@ -271,7 +244,7 @@ export default function ExtensionsScreen() {
             <RefreshButton onRefresh={() => fetchAllExtensions()} />
           </Flex>
         </Flex>
-        {render()}
+        {renderTable()}
       </Stack>
       <Drawer
         opened={!!selectedExtension}
