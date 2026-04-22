@@ -529,7 +529,7 @@ export class BasisSearchOrigin
 
   @ApiProperty(
     {
-      description: "Indicates how the search result entities should be sorted",
+      description: "Indicates how the search result entities should be filtered",
       enum: SearchOriginKind,
       enumName: "SearchOriginNature",
       required: true,

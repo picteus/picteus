@@ -5561,13 +5561,13 @@
           "repositories",
           "images"
         ],
-        "description": "Indicates how the search result entities should be sorted"
+        "description": "Indicates how the search result entities should be filtered"
       },
       "SearchRepositoriesOrigin": {
         "type": "object",
         "properties": {
           "kind": {
-            "description": "Indicates how the search result entities should be sorted",
+            "description": "Indicates how the search result entities should be filtered",
             "example": "repositories",
             "allOf": [
               {
@@ -5597,7 +5597,7 @@
         "type": "object",
         "properties": {
           "kind": {
-            "description": "Indicates how the search result entities should be sorted",
+            "description": "Indicates how the search result entities should be filtered",
             "example": "repositories",
             "allOf": [
               {
