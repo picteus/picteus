@@ -168,7 +168,7 @@ class PythonExtension(PicteusExtension):
             icon_content: bytes = file.read()
         frame_content = IntentFrameUrlContent(
             url=self.web_services_base_url + "/swaggerui") if is_url == True else IntentFrameHtmlContent(
-            html=f"""<html lang="en"><head><title>${title}</title></head><body style="border: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "{anchor}" UI element.</div></body></html>""")
+            html=f"""<html lang="en"><head><title>${title}</title></head><body style="border: 0; margin: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "{anchor}" UI element.</div></body></html>""")
         await communicator.launch_intent(
             UiIntent(ui=IntentUi(id=f"ui-{anchor}-{nature}",
                                  integration=IntentUIModalIntegration() if (

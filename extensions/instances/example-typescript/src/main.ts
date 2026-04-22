@@ -227,7 +227,7 @@ class TypeScriptExtension extends PicteusExtension
     const nature: string = parameters["nature"];
     const isUrl = nature === "URL";
     const title = `${anchor} UI`;
-    const frameContent = isUrl === true ? { url: `${this.webServicesBaseUrl}/swaggerui` } : { html: `<html lang="en"><head><title>${title}</title></head><body style="border: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "${anchor}" UI element.</div></body></html>` };
+    const frameContent = isUrl === true ? { url: `${this.webServicesBaseUrl}/swaggerui` } : { html: `<html lang="en"><head><title>${title}</title></head><body style="border: 0; margin: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "${anchor}" UI element.</div></body></html>` };
     await communicator.launchIntent<boolean>({
       ui:
         {
