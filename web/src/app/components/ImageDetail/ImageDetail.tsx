@@ -1,5 +1,5 @@
 import React, { ReactNode, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Accordion, ActionIcon, Alert, Button, Divider, Flex, Group, Menu, Table, Text } from "@mantine/core";
+import { Accordion, ActionIcon, Alert, Button, Flex, Group, Menu, Table, Text } from "@mantine/core";
 import { getHotkeyHandler, useFocusTrap, useResizeObserver } from "@mantine/hooks";
 import { Group as ResizableGroup, Layout, Panel, Separator } from "react-resizable-panels";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconCircleX, IconX } from "@tabler/icons-react";
@@ -19,7 +19,16 @@ import { capitalizeText } from "utils";
 import { ChannelEnum, ImageOrSummary, WithNavigationType } from "types";
 import { useEventSocket } from "app/context";
 import { ImageService, RepositoriesService, StorageService } from "app/services";
-import { CodeViewer, CopyText, ExternalLink, FormatedDate, ImageItemMenu, ImageTag, Markdown } from "app/components";
+import {
+  CodeViewer,
+  CopyText,
+  ExternalLink,
+  FormatedDate,
+  ImageItemMenu,
+  ImageTag,
+  Markdown,
+  TopPanel
+} from "app/components";
 import { ImageDimensions, ImageWeight, TableComponent } from "./components";
 
 import style from "./ImageDetail.module.scss";
@@ -279,8 +288,8 @@ export default function ImageDetail({
 
   function renderRightPanel() {
     return <div className={style.informationContainer}>
-      <div className={style.header}>
-        <div className={style.titleContainer}>
+      <TopPanel
+        info={<>
           <div className={style.titleBox}>
             {imageData && <div className={style.title}>
               <CopyText size="md" text={imageData.name} />
@@ -293,33 +302,30 @@ export default function ImageDetail({
           <ActionIcon variant="default" onClick={onClose}>
             <IconX stroke={1.2} size={50} />
           </ActionIcon>
-        </div>
-        <Flex px="md">
-          <Menu
-            withinPortal={false}
-            position="bottom-end"
-            trigger="hover"
-            trapFocus={false}
-            openDelay={80}
-            closeDelay={400}
-            shadow="md"
-            width={200}
-          >
-            <Menu.Target>
-              <Button
-                variant="default"
-                rightSection={
-                  <IconChevronDown stroke={1.2} size={16} />
-                }
-              >
-                {t("menu.imageCommands")}
-              </Button>
-            </Menu.Target>
-            {imageData && <ImageItemMenu image={imageData} />}
-          </Menu>
-        </Flex>
-        <Divider my="md" />
-      </div>
+        </>}
+        actions={<Menu
+          withinPortal={false}
+          position="bottom-end"
+          trigger="hover"
+          trapFocus={false}
+          openDelay={80}
+          closeDelay={400}
+          shadow="md"
+          width={200}
+        >
+          <Menu.Target>
+            <Button
+              variant="default"
+              rightSection={
+                <IconChevronDown stroke={1.2} size={16} />
+              }
+            >
+              {t("menu.imageCommands")}
+            </Button>
+          </Menu.Target>
+          {imageData && <ImageItemMenu image={imageData} />}
+        </Menu>
+        }/>
       <Accordion
         multiple
         defaultValue={[

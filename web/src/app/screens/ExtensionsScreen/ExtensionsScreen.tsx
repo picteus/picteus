@@ -27,7 +27,7 @@ import {
   RefreshButton,
   StandardTable
 } from "app/components";
-import { AddOrUpdateExtensionModal, ExtensionDetail, ExtensionSettingsModal } from "./components";
+import { AddOrUpdateExtensionModal, ExtensionDetail, ExtensionSettingsModal, ExtensionTop } from "./components";
 
 
 export default function ExtensionsScreen() {
@@ -36,7 +36,7 @@ export default function ExtensionsScreen() {
   const confirmAction = useConfirmAction();
   const [, addModal] = useActionModalContext();
   const [loading, setLoading] = useState<boolean>(false);
-  const [selectedExtension, setSelectedExtension] = useState<Extension | null>(null);
+  const [selectedExtension, setSelectedExtension] = useState<Extension>();
 
   function openExtensionSettingsModal(extension: Extension) {
     addModal({
@@ -247,17 +247,12 @@ export default function ExtensionsScreen() {
         {renderTable()}
       </Stack>
       <Drawer
-        opened={!!selectedExtension}
-        onClose={() => setSelectedExtension(null)}
-        title={t("extensionDetail.title")}
-        icon={selectedExtension ? { url: ExtensionsService.getIconURL(selectedExtension) } : undefined}
+        opened={selectedExtension !== undefined}
+        onClose={() => setSelectedExtension(undefined)}
+        title={selectedExtension &&
+          <ExtensionTop extension={selectedExtension} openAddOrUpdateExtensionModal={openAddOrUpdateExtensionModal} openExtensionSettingsModal={openExtensionSettingsModal} />}
       >
-        {selectedExtension && (
-          <ExtensionDetail
-            extension={selectedExtension}
-            openAddOrUpdateExtensionModal={openAddOrUpdateExtensionModal}
-          />
-        )}
+        {selectedExtension && <ExtensionDetail extension={selectedExtension} />}
       </Drawer>
     </Container>
   );

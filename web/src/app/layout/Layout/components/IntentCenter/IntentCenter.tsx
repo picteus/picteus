@@ -15,10 +15,11 @@ import {
   useGalleryTabsContext,
   useImageVisualizerContext
 } from "app/context";
-import { ExtensionsService, ImageService, StorageService } from "app/services";
+import { ExtensionsService, ImageService, RepositoriesService, StorageService } from "app/services";
 import { useOpenWindow } from "app/hooks";
 import { CommandForm, DialogForm, Iframe } from "app/components";
-import { ExtensionSettingsModal } from "../../../../screens/ExtensionsScreen/components";
+import { ExtensionSettingsModal } from "app/screens/ExtensionsScreen/components";
+import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
 
 
 export default function IntentCenter() {
@@ -91,6 +92,37 @@ export default function IntentCenter() {
       }
       return action();
     }
+    else if (show.type === "repository") {
+      const action = () => {
+        const repository = RepositoriesService.list().find(aRepository => aRepository.id === show.id);
+        if (repository === undefined) {
+          return respondWithError(`The repository with id '${show.id}' does not exist`);
+        }
+
+        addModal({
+          title: <RepositoryTop repository={repository} />,
+          size: "m",
+          component: (
+            <RepositoryDetail
+              repository={repository}
+              openAddOrUpdateRepositoryModal={()=>{}}
+            />
+          ),
+          onBeforeClose: (viaOnSuccess: boolean) => {
+            if (viaOnSuccess === false) {
+              respondWithCancel();
+            }
+          }
+        })
+      };
+      if (shouldConfirm) {
+        return confirmAction(action, {
+          title: t("extensionIntent.settingsRedirectTitle"),
+          message: t("extensionIntent.settingsRedirectDescription"),
+        });
+      }
+      return action();
+    }
     else if (show.type === "image") {
       const action = async () => {
         const image = await ImageService.get({ id: show.id });
@@ -135,7 +167,7 @@ export default function IntentCenter() {
       return action();
     }
     else {
-      respondWithError(`Unhandled '${show}' show intent`);
+      respondWithError(`Unhandled '${JSON.stringify(show)}' show intent`);
     }
   }
 

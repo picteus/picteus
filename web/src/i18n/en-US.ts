@@ -62,7 +62,11 @@ export default {
     width: "Width",
     height: "Height",
     generatorPlaceholder: "Choose a generator",
-    distance: "Distance"
+    distance: "Distance",
+    runtimes: "Runtimes",
+    events: "Events",
+    capabilities: "Capabilities",
+    commands: "Commands"
   },
   filters: {
     title: "Filters",

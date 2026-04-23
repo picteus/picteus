@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 
 import { ImageSummary, Repository, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
 
-import { notifyErrorWithError, removeFilePrefixFromUrl } from "utils";
+import { notifyErrorWithError } from "utils";
 import { ImageService } from "app/services";
-import { CopyText, EntityStatus, ExternalLink, FieldValue, FormatedDate, NoValue } from "app/components";
+import { ExternalLink, FieldValue, FormatedDate } from "app/components";
 
 
 type RepositoryDetailProps = {
@@ -82,15 +82,6 @@ export default function RepositoryDetail({ repository, openAddOrUpdateRepository
   return (
     <Stack gap="md" pos="relative">
       <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
-
-      <FieldValue name={t("field.id")} value={<CopyText size="xs" c="dimmed" text={repository.id} />} />
-      <FieldValue name={t("field.url")}
-                  value={<CopyText size="xs" c="dimmed" text={removeFilePrefixFromUrl(repository.url)} />} />
-      <FieldValue name={t("field.name")} value={<Text size="lg" fw={500}>{repository.name}</Text>} />
-      <FieldValue name={t("field.comment")}
-                  value={repository.comment ? <Text>{repository.comment}</Text> : <NoValue />} />
-      <FieldValue name={t("field.status")}
-                  value={<EntityStatus type="repository" status={repository.status} size="sm" />} />
       <Flex gap="md">
         <FieldValue name={t("field.createdOn")}
                     value={<Text size="sm"><FormatedDate timestamp={repository.creationDate} /></Text>} />

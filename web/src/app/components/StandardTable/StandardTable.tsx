@@ -27,7 +27,7 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
   const [t] = useTranslation();
 
   function renderHeaders() {
-    return head.map(string => <Table.Th>{string.length === 0 ? "" : t(string)}</Table.Th>);
+    return head.map((string, index) => <Table.Th key={index}>{string.length === 0 ? "" : t(string)}</Table.Th>);
   }
 
   function renderPagination() {
@@ -99,7 +99,7 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
 
   return (<>
     {renderTable()}
-    { withPagination && (<><Divider mb={"md"} /> {renderPagination()}  </>)}
+    {withPagination && (<><Divider mb={"md"} /> {renderPagination()}  </>)}
   </>);
 
 }

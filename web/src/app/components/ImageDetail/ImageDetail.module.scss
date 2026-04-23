@@ -69,27 +69,21 @@
   width: 100%;
   @extend .scrollbar-custom;
   background: var(--mantine-color-body);
+
   .header {
     position: sticky;
     top : 0;
     z-index: 1;
     background: var(--mantine-color-body);
   }
-  .titleContainer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap : 10px;
-    padding: 20px;
 
-    .titleBox {
-      width: 85%;
-    }
+  .titleBox {
+    width: 85%;
+  }
 
-    .title {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+  .title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

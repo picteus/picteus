@@ -256,7 +256,7 @@ export type ContentIconType = ResourceType | { icon: ReactNode };
 
 export type ActionModalValue = {
   id?: string;
-  title?: string;
+  title?: ReactNode;
   withCloseButton?: boolean;
   closeOnEscape?: boolean;
   icon?: ContentIconType;

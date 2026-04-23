@@ -111,7 +111,7 @@ export default function ModalComponent({
   });
 
   function computeTitle() {
-    const title = <ContentTitle text={modal.title} icon={modal.icon} />;
+    const title = typeof modal.title === "string" ? <ContentTitle text={modal.title} icon={modal.icon} /> : modal.title;
     if (modal.fullScreen) {
       return (
         <Flex align="center" gap="md">
@@ -132,9 +132,11 @@ export default function ModalComponent({
     },
   });
 
-  const classNames = modal.fullScreen
-    ? { content: style.modalFullScreenContent, body: style.modalFullScreenBody }
-    : {};
+  const classNames = ({
+    ...(modal.fullScreen
+      ? { content: style.modalFullScreenContent, body: style.modalFullScreenBody }
+      : {}), header: style.header
+  });
 
   return (
     <Modal

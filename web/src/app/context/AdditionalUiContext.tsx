@@ -3,9 +3,10 @@ import React, { createContext, useCallback, useContext, useRef, useState } from 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { AdditionalUi } from "types";
+import { notifyErrorWithError } from "utils";
 import { ExtensionsService } from "app/services";
 import useOpenWindow from "../hooks/useOpenWindow.tsx";
-import { notifyErrorWithError } from "utils";
+
 
 type AdditionalUiContextValue = {
   sidebar: AdditionalUi[];

@@ -20,7 +20,7 @@ import {
   RefreshButton,
   StandardTable
 } from "app/components";
-import { AddOrUpdateRepositoryModal, RepositoryDetail } from "./components";
+import { AddOrUpdateRepositoryModal, RepositoryDetail, RepositoryTop } from "./components";
 
 
 export default function RepositoriesScreen() {
@@ -29,7 +29,7 @@ export default function RepositoriesScreen() {
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const confirmAction = useConfirmAction();
-  const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null);
+  const [selectedRepository, setSelectedRepository] = useState<Repository>();
 
   const [t] = useTranslation();
 
@@ -56,7 +56,7 @@ export default function RepositoriesScreen() {
       if (updated && updated !== selectedRepository) {
         setSelectedRepository(updated);
       } else if (!updated) {
-        setSelectedRepository(null);
+        setSelectedRepository(undefined);
       }
     }
   }, [repositories, selectedRepository]);
@@ -184,10 +184,9 @@ export default function RepositoriesScreen() {
         {renderTable()}
       </Stack>
       <Drawer
-        opened={!!selectedRepository}
-        onClose={() => setSelectedRepository(null)}
-        title={t("repositoryDetail.title")}
-        icon={{ icon: <IconFolderOpen /> }}
+        opened={selectedRepository !== undefined}
+        onClose={() => setSelectedRepository(undefined)}
+        title={selectedRepository && <RepositoryTop repository={selectedRepository} />}
       >
         {selectedRepository && (
           <RepositoryDetail
