@@ -3,7 +3,7 @@ import { IconDots } from "@tabler/icons-react";
 import { ActionIcon, Checkbox, Flex, Menu, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
-import { ImageDimensions } from "@picteus/ws-client";
+import { ImageDimensions, ImageResizeRender } from "@picteus/ws-client";
 
 import { ImageItemMode, ImageOrSummary } from "types";
 import { useImagesSelectedContext } from "app/context";
@@ -41,6 +41,34 @@ function useImageRefStatus(src: string): { imgRef: RefObject<HTMLImageElement>, 
   return { imgRef, isLoaded, isError };
 }
 
+function computeResizeRender(width: number, height: number): ImageResizeRender {
+  return width === undefined || height === undefined ? "inbox" : "outbox";
+}
+
+function computeImageSrc(image: ImageOrSummary, width: number, height: number, resizeRender: ImageResizeRender): string {
+  return ImageService.getImageSrc(image.uri, width, height, resizeRender);
+}
+
+function computeExpectedDimensions(width: number, height: number, image: ImageOrSummary): {
+  resizeRender: ImageResizeRender,
+  expectedDimensions: ImageDimensions
+} {
+  const resizeRender = computeResizeRender(width, height);
+  let expectedDimensions: ImageDimensions;
+  if (resizeRender === "inbox") {
+    const scalingRatio = Math.min(1, width !== undefined ? (image.dimensions.width / width) : (image.dimensions.height / height));
+    const imageRatio = image.dimensions.width / image.dimensions.height;
+    expectedDimensions = {
+      width: Math.round(scalingRatio * (width !== undefined ? width : (height * imageRatio))),
+      height: Math.round(scalingRatio * (height !== undefined ? height : (width / imageRatio)))
+    };
+  }
+  else {
+    expectedDimensions = ImageService.computeImageDimensions(image.dimensions, { width, height }, resizeRender);
+  }
+  return { resizeRender, expectedDimensions };
+}
+
 type ImageItemType = {
   image: ImageOrSummary;
   caption?: ReactNode;
@@ -59,31 +87,19 @@ export default function ImageItem({
   mode = ImageItemMode.VIEW,
 }: ImageItemType) {
   const [t] = useTranslation();
-  const [menuOpened, setMenuOpened] = useState(false);
+  const [menuOpened, setMenuOpened] = useState<boolean>(false);
   const [selectedImages, setSelectedImages] = useImagesSelectedContext();
-  const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions | undefined>();
-  const [imageSrc, setImageSrc] = useState<string | undefined>();
+  const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions>(computeExpectedDimensions(width, height, image).expectedDimensions);
+  const [imageSrc, setImageSrc] = useState<string>(computeImageSrc(image, width, height, computeResizeRender(width, height)));
   const { imgRef, isLoaded, isError } = useImageRefStatus(imageSrc);
 
   useEffect(() => {
-    const resizeRender = width === undefined || height === undefined ? "inbox" : "outbox";
-    let newImageExpectedDimensions: ImageDimensions;
-    if (resizeRender === "inbox") {
-      const scalingRatio = Math.min(1, width !== undefined ? (image.dimensions.width / width) : (image.dimensions.height / height));
-      const imageRatio = image.dimensions.width / image.dimensions.height;
-      newImageExpectedDimensions = {
-        width: Math.round(scalingRatio * (width !== undefined ? width : (height * imageRatio))),
-        height: Math.round(scalingRatio * (height !== undefined ? height : (width / imageRatio)))
-      };
-    }
-    else {
-      newImageExpectedDimensions = ImageService.computeImageDimensions(image.dimensions, {
-        width,
-        height
-      }, resizeRender);
-    }
+    const {
+      resizeRender,
+      expectedDimensions: newImageExpectedDimensions
+    } = computeExpectedDimensions(width, height, image);
     setImageExpectedDimensions(newImageExpectedDimensions);
-    setImageSrc(ImageService.getImageSrc(image.uri, width, height, resizeRender));
+    setImageSrc(computeImageSrc(image, width, height, resizeRender));
   }, [image, width, height]);
 
   const handleOnSelectImage = useCallback(()=> {
@@ -117,16 +133,18 @@ export default function ImageItem({
     [selectedImages, image],
   );
 
+  const containerStyle = useMemo(() => ({
+    width: `${width}px`,
+    height: `${height !== undefined ? height : Math.round(width * (imageExpectedDimensions.height / imageExpectedDimensions.width))}px`
+  }), [width, height, imageExpectedDimensions]);
+
   return (imageExpectedDimensions !== undefined && imageExpectedDimensions.width > 0 && imageExpectedDimensions.height > 0) && (
     <Flex
       align="center"
       justify="center"
       className={`${style.imageWrapper} ${isSelected ? style.hover : ""}`}
       onClick={handleOnClick}
-      style={{
-        width: `${width}px`,
-        height: `${height !== undefined ? height : Math.round(width * (imageExpectedDimensions.height / imageExpectedDimensions.width))}px`
-      }}
+      style={containerStyle}
     >
       {caption && <div className={style.captionContainer}>{caption}</div>}
       <Flex
