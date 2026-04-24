@@ -3,6 +3,8 @@
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "skipLibCheck": true,
+    "target": "ES2022",
+    "lib": ["ES2023"],
     "module": "ESNext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
