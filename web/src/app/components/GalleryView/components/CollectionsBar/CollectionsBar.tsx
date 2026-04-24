@@ -6,7 +6,8 @@ import { IconBookmark, IconChevronDown, IconDeviceFloppy, IconEdit, IconPlus, Ic
 import { Collection as PicteusCollection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
 
 import { notifyError, notifySuccess } from "utils";
-import { useActionModalContext, useConfirmAction } from "app/context";
+import { useActionModalContext } from "app/context";
+import { useConfirmAction } from "app/hooks";
 import { CollectionService } from "app/services";
 import { Collection } from "app/components";
 

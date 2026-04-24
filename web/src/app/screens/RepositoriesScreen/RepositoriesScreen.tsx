@@ -1,34 +1,30 @@
 import { useTranslation } from "react-i18next";
-import { ActionIcon, Button, Flex, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
+import { Button, Flex, Stack, Table, Text, Title } from "@mantine/core";
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 
 import { Repository } from "@picteus/ws-client";
-import { IconEdit, IconFolderOpen, IconFolderSearch, IconPlus, IconReload, IconTrash } from "@tabler/icons-react";
+import { IconFolderOpen, IconFolderSearch, IconPlus } from "@tabler/icons-react";
 
 import { ChannelEnum } from "types";
-import { notifyApiCallI18nError, notifySuccess } from "utils";
-import { useActionModalContext, useConfirmAction, useEventSocket } from "app/context";
+import { useActionModalContext, useEventSocket } from "app/context";
 import { RepositoriesService } from "app/services";
 import {
   Container,
   Drawer,
   EmptyResults,
   EntityStatus,
-  ExternalLink,
   FormatedDate,
   NoValue,
   RefreshButton,
   StandardTable
 } from "app/components";
-import { AddOrUpdateRepositoryModal, RepositoryDetail, RepositoryTop } from "./components";
-
+import { AddOrUpdateRepositoryModal, RepositoryActions, RepositoryDetail, RepositoryTop } from "./components";
 
 export default function RepositoriesScreen() {
   const [repositories, setRepositories] = useState<Repository[]>(RepositoriesService.list());
   const [loading, setLoading] = useState<boolean>(false);
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
-  const confirmAction = useConfirmAction();
   const [selectedRepository, setSelectedRepository] = useState<Repository>();
 
   const [t] = useTranslation();
@@ -67,61 +63,6 @@ export default function RepositoriesScreen() {
     }
   }, [event]);
 
-  async function handleOnSynchronizeRepository(id: string) {
-    await RepositoriesService.synchronize({ id });
-  }
-
-  async function handleOnDeleteRepository(id: string) {
-    try {
-      await RepositoriesService.remove({ id });
-      notifySuccess(t("repositoryScreen.successRemove"));
-      void fetchAllRepositories();
-    } catch (error) {
-      notifyApiCallI18nError(error, "repositoryScreen.errorRemove");
-    }
-  }
-
-  function renderMenu(repository: Repository) {
-    return (
-      <Flex gap={10} onClick={(event) => event.stopPropagation()}>
-        <ExternalLink url={repository.url} type="action" />
-        <Tooltip label={t("button.edit")}>
-          <ActionIcon
-            size="md"
-            variant="default"
-            onClick={() => openAddOrUpdateRepositoryModal(repository)}
-          >
-              <IconEdit size={20} stroke={1} />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label={t("button.synchronize")}>
-          <ActionIcon
-            size="md"
-            variant="default"
-            onClick={() => handleOnSynchronizeRepository(repository.id)}
-          >
-              <IconReload size={20} stroke={1} />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label={t("button.delete")}>
-          <ActionIcon
-            size="md"
-            variant="default"
-            onClick={() =>
-              confirmAction(() => handleOnDeleteRepository(repository.id), {
-                title: t("repositoryScreen.confirmDeleteTitle"),
-                message: t("repositoryScreen.confirmDeleteMessage", {
-                  name: repository.name,
-                }),
-              })
-            }
-          >
-              <IconTrash color="red" size={20} stroke={1} />
-          </ActionIcon>
-        </Tooltip>
-      </Flex>
-    );
-  }
 
   const rows = repositories.map((repository: Repository) => (
     <Table.Tr
@@ -148,7 +89,13 @@ export default function RepositoriesScreen() {
       <Table.Td>
         <EntityStatus type="repository" status={repository.status} size="md" />
       </Table.Td>
-      <Table.Td>{renderMenu(repository)}</Table.Td>
+      <Table.Td>
+        <RepositoryActions
+          repository={repository}
+          onEdit={openAddOrUpdateRepositoryModal}
+          onDeleted={fetchAllRepositories}
+        />
+      </Table.Td>
     </Table.Tr>
   ));
 
@@ -186,13 +133,12 @@ export default function RepositoriesScreen() {
       <Drawer
         opened={selectedRepository !== undefined}
         onClose={() => setSelectedRepository(undefined)}
-        title={selectedRepository && <RepositoryTop repository={selectedRepository} />}
+        title={selectedRepository && <RepositoryTop repository={selectedRepository}
+                                                    onEdit={openAddOrUpdateRepositoryModal}
+                                                    onDeleted={fetchAllRepositories} />}
       >
         {selectedRepository && (
-          <RepositoryDetail
-            repository={selectedRepository}
-            openAddOrUpdateRepositoryModal={openAddOrUpdateRepositoryModal}
-          />
+          <RepositoryDetail repository={selectedRepository} />
         )}
       </Drawer>
     </Container>

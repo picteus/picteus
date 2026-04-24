@@ -10,13 +10,12 @@ import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyErrorW
 import {
   useActionModalContext,
   useAdditionalUiContext,
-  useConfirmAction,
   useEventSocket,
   useGalleryTabsContext,
   useImageVisualizerContext
 } from "app/context";
 import { ExtensionsService, ImageService, RepositoriesService, StorageService } from "app/services";
-import { useOpenWindow } from "app/hooks";
+import { useConfirmAction, useOpenWindow } from "app/hooks";
 import { CommandForm, DialogForm, Iframe } from "app/components";
 import { ExtensionSettingsModal } from "app/screens/ExtensionsScreen/components";
 import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
@@ -100,20 +99,16 @@ export default function IntentCenter() {
         }
 
         addModal({
-          title: <RepositoryTop repository={repository} />,
+          title: <RepositoryTop repository={repository} onDeleted={() => {
+          }} />,
           size: "m",
-          component: (
-            <RepositoryDetail
-              repository={repository}
-              openAddOrUpdateRepositoryModal={()=>{}}
-            />
-          ),
+          component: <RepositoryDetail repository={repository} />,
           onBeforeClose: (viaOnSuccess: boolean) => {
             if (viaOnSuccess === false) {
               respondWithCancel();
             }
           }
-        })
+        });
       };
       if (shouldConfirm) {
         return confirmAction(action, {

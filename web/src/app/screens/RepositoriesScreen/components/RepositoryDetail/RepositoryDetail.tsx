@@ -1,21 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { Badge, Box, Button, Flex, LoadingOverlay, NumberFormatter, Stack, Text } from "@mantine/core";
-import { IconEdit } from "@tabler/icons-react";
+import { Badge, Box, Flex, LoadingOverlay, NumberFormatter, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { ImageSummary, Repository, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
 
 import { notifyErrorWithError } from "utils";
 import { ImageService } from "app/services";
-import { ExternalLink, FieldValue, FormatedDate } from "app/components";
+import { FieldValue, FormatedDate } from "app/components";
 
 
-type RepositoryDetailProps = {
+type RepositoryDetailType = {
   repository: Repository;
-  openAddOrUpdateRepositoryModal: (repository: Repository) => void;
 };
 
-export default function RepositoryDetail({ repository, openAddOrUpdateRepositoryModal }: RepositoryDetailProps) {
+export default function RepositoryDetail({ repository }: RepositoryDetailType) {
   const [t] = useTranslation();
   const [images, setImages] = useState<ImageSummary[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -92,20 +90,6 @@ export default function RepositoryDetail({ repository, openAddOrUpdateRepository
                   value={<Badge size="lg" variant="light" mt={4}><NumberFormatter value={totalCount}
                                                                                   thousandSeparator /></Badge>} />
       <FieldValue name={t("repositoryDetail.latestImages")} value={renderImageStack()} />
-
-      <Flex gap="sm" mt="lg">
-        <Button
-          leftSection={<IconEdit size={16} />}
-          onClick={() => {
-             openAddOrUpdateRepositoryModal(repository);
-          }}
-          variant="default"
-        >
-          {t("button.edit")}
-        </Button>
-        <ExternalLink url={repository.url} type="button" />
-      </Flex>
-
     </Stack>
   );
 }

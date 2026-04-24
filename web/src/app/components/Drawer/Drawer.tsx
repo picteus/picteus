@@ -31,8 +31,8 @@ export default function Drawer({
     size="lg"
     radius="lg"
     offset={8}
-    overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}
     classNames={{ header: style.header }}
+    zIndex={9}
   >
     {opened && <div ref={childrenRef} className={style.children} style={{ width: "100%" }}>{children}</div>}
   </MantineDrawer>

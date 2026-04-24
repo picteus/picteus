@@ -1,21 +1,22 @@
 import React from "react";
-import { Button, Flex, Stack, Text } from "@mantine/core";
-import { IconAdjustmentsHorizontal, IconUpload } from "@tabler/icons-react";
+import { Flex, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
-import { Extension, ExtensionStatus } from "@picteus/ws-client";
+import { Extension } from "@picteus/ws-client";
 
 import { ExtensionsService } from "app/services";
 import { ContentTitle, CopyText, EntityStatus, FieldValue, NoValue } from "app/components";
+import { ExtensionActions } from "../index.ts";
 
 
 type ExtensionTopType = {
   extension: Extension;
   openAddOrUpdateExtensionModal: (extension: Extension) => void;
   openExtensionSettingsModal: (extension: Extension) => void;
+  onUninstalled: () => void;
 };
 
-export default function ExtensionTop({ extension, openAddOrUpdateExtensionModal, openExtensionSettingsModal }: ExtensionTopType) {
+export default function ExtensionTop({ extension, openAddOrUpdateExtensionModal, openExtensionSettingsModal, onUninstalled }: ExtensionTopType) {
   const { t } = useTranslation();
 
   return (<>
@@ -31,25 +32,12 @@ export default function ExtensionTop({ extension, openAddOrUpdateExtensionModal,
         <FieldValue name={t("field.status")}
                     value={<EntityStatus type="extension" status={extension.status} size="sm" />} />
         <Flex gap="sm" mt="lg">
-          <Button
-            leftSection={<IconUpload size={16} />}
-            onClick={() => {
-              openAddOrUpdateExtensionModal(extension);
-            }}
-            variant="default"
-          >
-            {t("button.update")}
-          </Button>
-          <Button
-            leftSection={<IconAdjustmentsHorizontal size={16} />}
-            onClick={() => {
-              openExtensionSettingsModal(extension);
-            }}
-            variant="default"
-            disabled={extension.status === ExtensionStatus.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
-          >
-            {t("button.settings")}
-          </Button>
+          <ExtensionActions
+            extension={extension}
+            onUpdate={openAddOrUpdateExtensionModal}
+            onSettings={openExtensionSettingsModal}
+            onUninstalled={onUninstalled}
+          />
         </Flex>
       </Stack>
     </>

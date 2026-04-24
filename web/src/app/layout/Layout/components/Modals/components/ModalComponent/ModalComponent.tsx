@@ -155,6 +155,7 @@ export default function ModalComponent({
       size={modal.fullScreen === true ? undefined : ((modal.size === undefined || modal.size === "auto") ? "auto" : ((modal.size === "xs" ? 30 : (modal.size === "s" ? 40 : (modal.size === "m" ? 50 : (modal.size === "l" ? 80 : 100)))) + "%"))}
       title={modal.title === undefined ? undefined : computeTitle() }
       padding="lg"
+      zIndex={10}
     >
       <ModalContent component={wrappedComponent} fullScreen={modal.fullScreen} />
     </Modal>

@@ -75,7 +75,7 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
   }
 
   if (loading === true) {
-    return <LoadingOverlay visible zIndex={1000} overlayProps={{ blur: 3 }} />;
+    return <LoadingOverlay visible zIndex={2} overlayProps={{ blur: 3 }} />;
   }
   if (children.length === 0 && emptyResults !== undefined) {
     return emptyResults;
@@ -85,7 +85,7 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
     return (<Table.ScrollContainer minWidth={variables.tableMinimalWidth} pr={variables.contentPaddingHorizontal}
                                    mr={`-${variables.contentPaddingHorizontal}`}
       >
-        <Table stickyHeader highlightOnHover striped>
+        <Table stickyHeader highlightOnHover striped  classNames={{ thead: style.thead }}>
           <Table.Thead>
             <Table.Tr>
               {renderHeaders()}

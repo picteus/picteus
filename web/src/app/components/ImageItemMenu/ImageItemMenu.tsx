@@ -14,8 +14,8 @@ import {
 
 import { UiExtensionCommandType } from "types";
 import { notifyApiCallError } from "utils";
-import { useActionModalContext, useConfirmAction, useEventSocket } from "app/context";
-import { useExtensionCommand } from "app/hooks";
+import { useActionModalContext, useEventSocket } from "app/context";
+import { useConfirmAction, useExtensionCommand } from "app/hooks";
 import { ExtensionsService, ImageService } from "app/services";
 import { Common, ExtensionIcon } from "app/components";
 import { ClosestEmbeddingsImagesModal } from "./components";
