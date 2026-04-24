@@ -17,7 +17,9 @@ type ImageMasonryType = {
   images: ImageOrSummary [];
   onSelectedImage?: (image: ImageOrSummary) => void;
   loadMore: () => void;
+  containerHeight?: number;
   containerRef?: RefObject<HTMLElement>;
+  scrollRootRef?: RefObject<HTMLElement>;
   imageItemMode?: ImageItemMode;
 };
 
@@ -26,7 +28,9 @@ export default function ImageMasonry({
   images,
   onSelectedImage,
   loadMore,
+  containerHeight,
   containerRef,
+  scrollRootRef,
   imageItemMode,
 }: ImageMasonryType) {
   const [hostRef, hostRefRectangle] = useResizeObserver();
@@ -39,7 +43,34 @@ export default function ImageMasonry({
     }
   }, [images, onSelectedImage, navigation]);
   const portalRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
+
+  useEffect(() => {
+    const root = scrollRootRef.current;
+    if (sentinelRef.current === null || root === null) {
+      return;
+    }
+    const factor = 5;
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      {
+        root,
+        threshold: 0,
+        rootMargin: `0px 0px ${containerHeight * factor}px 0px`
+      });
+    observerRef.current.observe(sentinelRef.current);
+    return () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+    };
+  }, [scrollRootRef, loadMore, images.length]);
 
   useEffect(() => {
     if (containerRef !== undefined) {
@@ -87,11 +118,11 @@ export default function ImageMasonry({
             />)}
           loadMore={loadMore}
           pack={true}
-          awaitMore={true}
-          pageSize={20}
+          pageSize={images.length}
           className={style.masonry}
         />
         }
+        <div ref={sentinelRef} className={style.sentinel} />
         {containerRef !== undefined && createPortal(
           navigation.selectedImage && <div ref={portalRef} className={style.visualizedImage}>
             <Overlay

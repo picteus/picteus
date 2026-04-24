@@ -63,6 +63,7 @@ export default function ImageGallery({
     if (sentinel === null || root === null) {
       return;
     }
+    const factor = 5;
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting === true) {
@@ -72,7 +73,7 @@ export default function ImageGallery({
       {
         root,
         threshold: 0,
-        rootMargin: `0px 0px ${containerHeight * 5}px 0px`,
+        rootMargin: `0px 0px ${containerHeight * factor}px 0px`,
       }
     );
     observerRef.current.observe(sentinel);
