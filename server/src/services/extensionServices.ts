@@ -156,11 +156,8 @@ export class ExtensionsUiServer
         response.status(HttpStatus.NOT_FOUND).type(ExtensionsUiServer.textPlain).send(`Non-existent extension with id '${extensionId}'`);
         return;
       }
-      else if (this.checkExtensionState(response, extensionId) === false)
-      {
-        return;
-      }
 
+      // Even if the extension is paused, we want to serve its icon
       filePath = path.join(manifest.directoryPath, uiPath);
       logFragment = `the extension with id '${extensionId}'`;
       // We handle the special elements
@@ -170,6 +167,10 @@ export class ExtensionsUiServer
         const edgeInPixels = 24;
         const formatAndBuffer = await resize("extension icon", actualFilePath, "PNG", edgeInPixels, edgeInPixels, "inbox", undefined, undefined, true, false);
         response.status(HttpStatus.OK).type(types.png).send(formatAndBuffer.buffer);
+        return;
+      }
+      if (this.checkExtensionState(response, extensionId) === false)
+      {
         return;
       }
     }
