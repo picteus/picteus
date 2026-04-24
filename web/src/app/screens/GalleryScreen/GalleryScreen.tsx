@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { TabsType } from "types";
 import { useGalleryTabsContext } from "app/context";
 import { useContainerDimensions } from "app/hooks";
+import { FiltersService, StorageService } from "app/services";
 import { Container, ExtensionIcon, GalleryView, MasonryVisualizer } from "app/components";
 
 import style from "./GalleryScreen.module.scss";
@@ -117,7 +118,9 @@ export default function GalleryScreen() {
           </Tabs.List>
           <Tabs.Panel value={galleryTabValue}>
             {viewportRef.current &&
-              <GalleryView containerWidth={width} containerHeight={height} containerRef={containerRef} scrollRootRef={viewportRef} />}
+              <GalleryView viewData={StorageService.getMainViewTabData(FiltersService.defaultFilter)} isDefault={true}
+                           containerWidth={width} containerHeight={height} containerRef={containerRef}
+                           scrollRootRef={viewportRef} />}
           </Tabs.Panel>
           {tabs.map((tab) => (
             <Tabs.Panel key={`panel-${tab.id}`} value={tab.id}>
@@ -125,12 +128,13 @@ export default function GalleryScreen() {
                 <Container>
                   <MasonryVisualizer
                     content={tab.content}
-                    imageIds={tab.data.imageIds}
+                    filterOrCollectionId={tab.data.filterOrCollectionId}
                   />
                 </Container>
               ) : (
                 viewportRef.current && <GalleryView
-                  initialFilterOrCollectionId={tab.data.filterOrCollectionId}
+                  viewData={{ mode: "masonry", filterOrCollectionId: tab.data.filterOrCollectionId }}
+                  isDefault={false}
                   containerWidth={width}
                   containerHeight={height}
                   containerRef={containerRef}

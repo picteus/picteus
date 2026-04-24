@@ -1,39 +1,30 @@
 import { useEffect, useState } from "react";
-import { IconInfoCircle } from "@tabler/icons-react";
 import { Alert, Stack, Text } from "@mantine/core";
+import { IconInfoCircle } from "@tabler/icons-react";
 
-import { Image } from "@picteus/ws-client";
+import { Image, SearchImageResult } from "@picteus/ws-client";
 
-import { DialogContent } from "types";
+import { DialogContent, FilterOrCollectionId } from "types";
 import { ImageMasonry } from "app/components";
 import { ImageService } from "app/services";
 
 
 type MasonryVisualizerType = {
   content: DialogContent;
-  imageIds: Array<{ imageId: string }>;
+  filterOrCollectionId: FilterOrCollectionId;
 };
 
-export default function MasonryVisualizer({
-  content,
-  imageIds,
-}: MasonryVisualizerType) {
+export default function MasonryVisualizer({ content, filterOrCollectionId }: MasonryVisualizerType) {
   const [images, setImages] = useState<Image[]>([]);
 
   useEffect(() => {
     async function load() {
-      const _images: Image[] = [];
-      for (const image of imageIds) {
-        const _image = await ImageService.get({ id: image.imageId });
-        if (_image) {
-          _images.push(_image);
-        }
-      }
-      setImages(_images);
+      const result: SearchImageResult = await ImageService.searchImages(filterOrCollectionId);
+      setImages(result.items);
     }
 
     void load();
-  }, [imageIds]);
+  }, [filterOrCollectionId]);
 
   return (images.length > 0 && <Stack>
       <Text>{content.description}</Text>

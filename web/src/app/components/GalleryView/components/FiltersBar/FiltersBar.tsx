@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   ActionIcon,
   Button,
@@ -16,6 +15,8 @@ import {
   Tooltip
 } from "@mantine/core";
 import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
+
 import {
   Collection,
   ImageFeatureFormat,
@@ -25,18 +26,13 @@ import {
   SearchFilterFromJSON
 } from "@picteus/ws-client";
 
-import { useDebouncedCallback } from "app/hooks";
-import {
-  CollectionService,
-  FeaturesNamesOption,
-  FiltersService,
-  RepositoriesService,
-  StorageService
-} from "app/services";
-import { FilterSelect } from "app/components";
-import CollectionsBar from "../CollectionsBar/CollectionsBar.tsx";
 import { FilterOrCollectionId, LocalFiltersType, LocalFiltersTypeFeature } from "types";
 import { capitalizeText, notifyErrorWithError } from "utils";
+import { useDebouncedCallback } from "app/hooks";
+import { CollectionService, FeaturesNamesOption, FiltersService, RepositoriesService } from "app/services";
+import { FilterSelect } from "app/components";
+import { CollectionsBar } from "../index.ts";
+
 
 const {
   defaultFilter,
@@ -49,14 +45,12 @@ const {
 } = FiltersService;
 
 
-export default function FiltersBar({
-  initialFilterOrCollectionId,
-  onChange
-}: {
+type FiltersBarType = {
   initialFilterOrCollectionId: FilterOrCollectionId;
   onChange: (filterOrCollectionId: FilterOrCollectionId) => void;
-})
-{
+};
+
+export default function FiltersBar({ initialFilterOrCollectionId, onChange }: FiltersBarType) {
   const [t] = useTranslation();
   const [searchText, setSearchText] = useState<string>();
   const [featuresOptions, setFeaturesOptions] = useState<FeaturesNamesOption[]>([]);
@@ -67,30 +61,23 @@ export default function FiltersBar({
   const [searchFilter, setSearchFilter] = useState<SearchFilter>();
   const [selectedCollection, setSelectedCollection] = useState<Collection>();
 
-  const debouncedSearchCallback = useDebouncedCallback(async () =>
-  {
+  const debouncedSearchCallback = useDebouncedCallback(async () => {
     setLocalFilters({...localFilters, keyword: searchText, searchIn: localFilters.searchIn ?? ((searchText === undefined || searchText === "") ? undefined : ["inName"])});
   }, 400);
 
-  useEffect(() =>
-  {
-    const filterOrCollectionId = initialFilterOrCollectionId !== undefined ? initialFilterOrCollectionId : StorageService.getSearchFilterOrCollectionId();
-    if (filterOrCollectionId !== null) {
-      if (filterOrCollectionId.collectionId !== undefined) {
-        CollectionService.get(filterOrCollectionId.collectionId).then(collection => {
-          setSelectedCollection(collection);
-          setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
-        }).catch(() => {
-          // In case the collection does not exist anymore, we do nothing
-        });
-      }
-      else {
-        setSelectedCollection(undefined);
-        setLocalFilters(FiltersService.searchFilterToLocalFilters(filterOrCollectionId.filter));
-      }
+  useEffect(() => {
+    const filterOrCollectionId = initialFilterOrCollectionId;
+    if (filterOrCollectionId.collectionId !== undefined) {
+      CollectionService.get(filterOrCollectionId.collectionId).then(collection => {
+        setSelectedCollection(collection);
+        setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
+      }).catch(() => {
+        // In case the collection does not exist anymore, we do nothing
+      });
     }
     else {
-      setLocalFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
+      setSelectedCollection(undefined);
+      setLocalFilters(FiltersService.searchFilterToLocalFilters(filterOrCollectionId.filter));
     }
   }, [initialFilterOrCollectionId]);
 
@@ -150,7 +137,6 @@ export default function FiltersBar({
       if (selectedCollection === undefined || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) !== JSON.stringify(SearchFilterFromJSON(updatedSearchFilter))) {
         chooseCollection = false;
         const filterOrCollectionId = { filter: updatedSearchFilter };
-        StorageService.setSearchFilterOrCollectionId(filterOrCollectionId);
         onChange(filterOrCollectionId);
       }
       else if (selectedCollection !== undefined) {
@@ -158,8 +144,6 @@ export default function FiltersBar({
       }
     }
     if (chooseCollection === true || (chooseCollection !== false && selectedCollection !== undefined)) {
-      const updatedFilterOrCollectionId = { collectionId: selectedCollection.id };
-      StorageService.setSearchFilterOrCollectionId(updatedFilterOrCollectionId);
       onChange({ collectionId: selectedCollection.id });
     }
   }, [selectedCollection, localFilters]);

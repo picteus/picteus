@@ -6,10 +6,17 @@ import { IconLayoutDashboard, IconListDetails, IconPhoto, IconPhotoSearch, IconP
 
 import { SearchRange } from "@picteus/ws-client";
 
-import { ChannelEnum, FilterOrCollectionId, ImageExplorerDataType, ImageOrSummary } from "types";
+import {
+  ChannelEnum,
+  FilterOrCollectionId,
+  ImageExplorerDataType,
+  ImageOrSummary,
+  ViewMode,
+  ViewTabDataType
+} from "types";
 import { notifyApiCallError, ROUTES } from "utils";
-import { ImageService, RepositoriesService } from "app/services";
 import { useEventSocket, useGalleryTabsContext } from "app/context";
+import { ImageService, RepositoriesService, StorageService } from "app/services";
 import { Container, EmptyResults, ImageGallery, ImageMasonry, ImageTable, RefreshButton, TopBar } from "app/components";
 import { FiltersBar } from "./components";
 
@@ -18,10 +25,8 @@ import style from "./GalleryView.module.scss";
 
 const BATCH_SIZE = 100;
 
-export type ViewMode = "masonry" | "gallery" | "table";
-
 type GalleryTopBarProps = {
-  initialFilterOrCollectionId?: FilterOrCollectionId;
+  filterOrCollectionId: FilterOrCollectionId;
   setFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId) => void;
   handleOnRefresh: () => void;
   handleOnPin: () => void;
@@ -31,7 +36,7 @@ type GalleryTopBarProps = {
 };
 
 function GalleryTopBar({
-  initialFilterOrCollectionId,
+  filterOrCollectionId,
   setFilterOrCollectionId,
   handleOnRefresh,
   handleOnPin,
@@ -61,7 +66,7 @@ function GalleryTopBar({
   return (
     <TopBar setZIndex={setZIndex}>
       <Flex align="start" justify="space-between">
-        <FiltersBar initialFilterOrCollectionId={initialFilterOrCollectionId} onChange={setFilterOrCollectionId} />
+        <FiltersBar initialFilterOrCollectionId={filterOrCollectionId} onChange={setFilterOrCollectionId} />
         <Flex gap="xs">
           <ActionIcon.Group>
             <Tooltip label={t("galleryScreen.masonryView")}>
@@ -198,21 +203,34 @@ function GalleryContent({
 }
 
 type GalleryViewProps = {
-  initialFilterOrCollectionId?: FilterOrCollectionId;
+  viewData: ViewTabDataType;
+  isDefault: boolean;
   containerWidth: number;
   containerHeight: number;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
 };
 
-export default function GalleryView({ initialFilterOrCollectionId, containerWidth, containerHeight, containerRef, scrollRootRef }: GalleryViewProps) {
+export default function GalleryView({ viewData, isDefault, containerWidth, containerHeight, containerRef, scrollRootRef }: GalleryViewProps) {
   const { addTab } = useGalleryTabsContext();
   const [data, setData] = useState<ImageExplorerDataType>({ currentPage: 1, total: 0, images: [] });
-  const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(initialFilterOrCollectionId);
+  const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(viewData.filterOrCollectionId);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("masonry");
+  const [viewMode, setViewMode] = useState<ViewMode>(viewData.mode);
   const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
+  const setFilterOrCollectionIdWrapper = useCallback((filterOrCollectionId: FilterOrCollectionId) => {
+    if (isDefault === true) {
+      StorageService.setMainViewTabData({ mode: viewData.mode, filterOrCollectionId });
+    }
+    setFilterOrCollectionId(filterOrCollectionId);
+  }, [viewData]);
+  const setViewModeWrapper = useCallback((viewMode: ViewMode) => {
+    if (isDefault === true) {
+      StorageService.setMainViewTabData({ mode: viewMode, filterOrCollectionId: viewData.filterOrCollectionId });
+    }
+    setViewMode(viewMode);
+  }, [viewData]);
 
   async function loadData(pagination: PaginationType) {
     if (filterOrCollectionId === undefined) {
@@ -250,7 +268,7 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
     addTab({
       type: "View",
       content: { title: "New tab", description: "" },
-      data: { filterOrCollectionId },
+      data: { mode: "masonry", filterOrCollectionId },
     });
   }
 
@@ -262,12 +280,12 @@ export default function GalleryView({ initialFilterOrCollectionId, containerWidt
     <>
       <div className={style.container}>
         <GalleryTopBar
-          initialFilterOrCollectionId={initialFilterOrCollectionId}
-          setFilterOrCollectionId={setFilterOrCollectionId}
+          filterOrCollectionId={viewData.filterOrCollectionId}
+          setFilterOrCollectionId={setFilterOrCollectionIdWrapper}
           handleOnRefresh={handleOnRefresh}
           handleOnPin={handleOnPin}
           viewMode={viewMode}
-          setViewMode={setViewMode}
+          setViewMode={setViewModeWrapper}
           setZIndex={selectedImage === undefined}
         />
         <div className={style.contentContainer}>

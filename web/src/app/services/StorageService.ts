@@ -1,11 +1,12 @@
-import { FilterOrCollectionId, FolderTypes, TabsType } from "types";
+import { FolderTypes, TabsType, ViewTabDataType } from "types";
 import { VISUALIZER_DEFAULT_PANEL_SIZES } from "utils";
+import { SearchFilter } from "@picteus/ws-client";
 
 
 const prefix = "picteus_";
 const VERSION_KEY = prefix + "version";
+const MAIN_TAB_KEY = prefix + "mainTab";
 const TABS_KEY = prefix + "tabs";
-const SEARCH_FILTERS_KEY: string = prefix + "searchFilters";
 const ACTIVITY_FILTERS_KEY: string = prefix + "activityFilters";
 const VISUALIZER_PANEL_SIZES_KEY: string = prefix + "visualizerPanelSizes";
 const CLOSEST_IMAGES_RESULTS_COUNT: string =
@@ -22,6 +23,15 @@ function getWithNullValue(key: string): string {
   return value == null ? "null" : value;
 }
 
+function getJsonNullValue<T>(key: string, defaultValue: T = null): T {
+  return JSON.parse(getWithNullValue(key)) || defaultValue;
+}
+
+function storeJson<T>(key:string, value: T) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+
 export default {
   COLOR_SCHEME: prefix + "colorScheme",
   getVersion: (): string | undefined => {
@@ -34,34 +44,22 @@ export default {
     filters: Array<{
       field: string;
       value: string;
-    }>,
-  ) => localStorage.setItem(ACTIVITY_FILTERS_KEY, JSON.stringify(filters)),
+    }>
+  ): void => storeJson(ACTIVITY_FILTERS_KEY, filters),
   getActivityFilters: (): Array<{
     field: string;
     value: string;
-  }> => JSON.parse(getWithNullValue(ACTIVITY_FILTERS_KEY)),
-  setSearchFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId | undefined) => {
-    if (filterOrCollectionId === undefined) {
-      localStorage.removeItem(SEARCH_FILTERS_KEY);
-    }
-    else {
-      localStorage.setItem(SEARCH_FILTERS_KEY, JSON.stringify(filterOrCollectionId));
-    }
-  },
-  getSearchFilterOrCollectionId: (): FilterOrCollectionId | null => {
-    return JSON.parse(getWithNullValue(SEARCH_FILTERS_KEY));
-  },
-
+  }> => getJsonNullValue(getWithNullValue(ACTIVITY_FILTERS_KEY)),
   getVisualizerPanelSizes: (): number[] =>
-    JSON.parse(getWithNullValue(VISUALIZER_PANEL_SIZES_KEY)) ||
+    getJsonNullValue<number[]>(VISUALIZER_PANEL_SIZES_KEY) ||
     VISUALIZER_DEFAULT_PANEL_SIZES,
-  setVisualizerPanelSizes: (sizes: number[]) => {
+  setVisualizerPanelSizes: (sizes: number[]): void => {
     localStorage.setItem(VISUALIZER_PANEL_SIZES_KEY, JSON.stringify(sizes));
   },
   getClosestImagesResultsCount: (): number => {
     return parseInt(localStorage.getItem(CLOSEST_IMAGES_RESULTS_COUNT) || "4");
   },
-  setClosestImagesResultsCount: (value: number) => {
+  setClosestImagesResultsCount: (value: number): void => {
     localStorage.setItem(CLOSEST_IMAGES_RESULTS_COUNT, value.toString());
   },
   getTextToImagesResultsCount: (): number => {
@@ -102,14 +100,19 @@ export default {
       "true"
     );
   },
-  setGalleryTabs(tabs: TabsType[]) {
-    localStorage.setItem(TABS_KEY, JSON.stringify(tabs));
+  getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType {
+    return getJsonNullValue<ViewTabDataType>(MAIN_TAB_KEY, {
+      mode: "masonry",
+      filterOrCollectionId: { filter: defaultFilter }
+    });
+  },
+  setMainViewTabData(data: ViewTabDataType): void {
+    storeJson(MAIN_TAB_KEY, data);
   },
   getGalleryTabs(): TabsType[] {
-    const tabs = localStorage.getItem(TABS_KEY);
-    if (tabs) {
-      return JSON.parse(tabs);
-    }
-    return [];
+    return getJsonNullValue<TabsType[]>(TABS_KEY, []);
+  },
+  setGalleryTabs(tabs: TabsType[]): void {
+    storeJson(TABS_KEY, tabs);
   },
 };

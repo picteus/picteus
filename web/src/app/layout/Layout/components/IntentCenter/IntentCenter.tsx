@@ -291,7 +291,15 @@ export default function IntentCenter() {
           content: images.dialogContent,
           type: "Masonry",
           data: {
-            imageIds: images.images,
+            mode: "masonry",
+            filterOrCollectionId: {
+              filter: {
+                origin: {
+                  kind: "images",
+                  ids: images.images.map(image => image.imageId)
+                }
+              }
+            }
           },
         });
         respondWithValue();

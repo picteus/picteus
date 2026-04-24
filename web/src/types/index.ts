@@ -167,31 +167,32 @@ export type ExtensionIntentType = {
   intent: UiCommandType;
 };
 
+export type FilterOrCollectionId = { filter?: SearchFilter, collectionId?: number };
+
+export type ViewMode = "masonry" | "gallery" | "table";
+
+export type ViewTabDataType = {
+  mode: ViewMode;
+  filterOrCollectionId: FilterOrCollectionId;
+}
+
 type BaseTab = {
   id?: string;
   extensionId?: string;
   content: DialogContent;
+  data: ViewTabDataType;
 };
 
-export type FilterOrCollectionId = { filter?: SearchFilter, collectionId?: number };
-
-type ViewTab = BaseTab & {
+export type ViewTab = BaseTab & {
   type: "View";
-  data: {
-    images?: never;
-    filterOrCollectionId: FilterOrCollectionId;
-  };
 };
 
 type MasonryTab = BaseTab & {
   type: "Masonry";
-  data: {
-    imageIds: Array<{ imageId: string }>;
-    filterOrCollectionId?: never;
-  };
 };
 
 export type TabsType = ViewTab | MasonryTab;
+
 export enum ChannelEnum {
   EXTENSION_PREFIX = "extension",
   EXTENSION_PROCESS_PREFIX = "extension.process",
