@@ -10,7 +10,6 @@ type EntityStatusType = {
   imageTag: ExtensionImageTag;
 };
 
-export default function EntityStatus({ imageTag }: EntityStatusType)
-{
+export default function EntityStatus({ imageTag }: EntityStatusType) {
   return <Badge tt="none" variant="outline" leftSection={<ExtensionIcon idOrExtension={imageTag.id} size="sm" />}>{imageTag.value}</Badge>;
 }

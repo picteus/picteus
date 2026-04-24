@@ -49,11 +49,11 @@ export default function ImageMasonry({
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
-    const root = scrollRootRef.current;
-    if (sentinelRef.current === null || root === null) {
+    const root = scrollRootRef?.current;
+    if (sentinelRef.current === null || root === undefined) {
       return;
     }
-    const factor = 5;
+    const factor = 3;
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {

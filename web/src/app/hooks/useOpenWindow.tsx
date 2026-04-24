@@ -1,4 +1,4 @@
-import { useCommandSocket } from "app/context";
+import { useCommandSocket } from "app/context/CommandSocketContext";
 
 
 type OpenWindowType = (id: string, content: ({ url: string } | { html: string }),

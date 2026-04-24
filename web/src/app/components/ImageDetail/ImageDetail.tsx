@@ -277,11 +277,15 @@ export default function ImageDetail({
   function renderTags(imageTags: ExtensionImageTag[]) {
     return <Table layout="fixed">
       <Table.Tbody>
-        <Group gap="xs">
-          {imageTags.map((imageTag, index) => (
-            <ImageTag key={`tag-${index}`} imageTag={imageTag} />
-          ))}
-        </Group>
+        <Table.Tr>
+          <Table.Td>
+            <Group gap="xs">
+              {imageTags.map((imageTag, index) => (
+                <ImageTag key={`tag-${index}`} imageTag={imageTag} />
+              ))}
+            </Group>
+          </Table.Td>
+        </Table.Tr>
       </Table.Tbody>
     </Table>;
   }

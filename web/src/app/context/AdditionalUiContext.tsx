@@ -23,7 +23,13 @@ const AdditionalUiContext = createContext<AdditionalUiContextType | undefined>(
 );
 
 export function useAdditionalUiContext() {
-  return useContext(AdditionalUiContext);
+  const context = useContext(AdditionalUiContext);
+  if (!context) {
+    throw new Error(
+      "useAdditionalUiContext must be used within an AdditionalUiProvider"
+    );
+  }
+  return context;
 }
 
 export function AdditionalUiProvider({ children }) {
