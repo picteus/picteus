@@ -7,7 +7,6 @@ export { default as RjsfForm, extractSchemaAndUiSchema } from "./RjsfForm/RjsfFo
 export { default as CodeViewer } from "./CodeViewer/CodeViewer.tsx";
 export { default as ExternalLink } from "./ExternalLink/ExternalLink.tsx";
 export { default as EmptyResults } from "./EmptyResults/EmptyResults.tsx";
-export { default as TopBar } from "./TopBar/TopBar.tsx";
 export { default as BottomBar } from "./BottomBar/BottomBar.tsx";
 export { default as GalleryView } from "./GalleryView/GalleryView.tsx";
 export { default as MasonryVisualizer } from "./MasonryVisualizer/MasonryVisualizer.tsx";
