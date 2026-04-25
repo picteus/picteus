@@ -111,7 +111,7 @@ export default function ImageMasonry({
             (<ImageItem
               key={images[index].id}
               image={images[index]}
-              caption={(images[index] as ImageWithCaption).caption}
+              overlay={(images[index] as ImageWithCaption).caption}
               width={columnWidth as number}
               mode={imageItemMode}
               onClick={handleOnClick}

@@ -66,7 +66,7 @@ function GalleryTopBar({
   return (
     <TopBar setZIndex={setZIndex}>
       <Flex align="start" justify="space-between">
-        <FiltersBar initialFilterOrCollectionId={filterOrCollectionId} onChange={setFilterOrCollectionId} />
+        <FiltersBar filterOrCollectionId={filterOrCollectionId} onChange={setFilterOrCollectionId} />
         <Flex gap="xs">
           <ActionIcon.Group>
             <Tooltip label={t("galleryScreen.masonryView")}>

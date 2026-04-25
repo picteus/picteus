@@ -46,11 +46,11 @@ const {
 
 
 type FiltersBarType = {
-  initialFilterOrCollectionId: FilterOrCollectionId;
+  filterOrCollectionId: FilterOrCollectionId;
   onChange: (filterOrCollectionId: FilterOrCollectionId) => void;
 };
 
-export default function FiltersBar({ initialFilterOrCollectionId, onChange }: FiltersBarType) {
+export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBarType) {
   const [t] = useTranslation();
   const [searchText, setSearchText] = useState<string>();
   const [featuresOptions, setFeaturesOptions] = useState<FeaturesNamesOption[]>([]);
@@ -66,9 +66,9 @@ export default function FiltersBar({ initialFilterOrCollectionId, onChange }: Fi
   }, 400);
 
   useEffect(() => {
-    const filterOrCollectionId = initialFilterOrCollectionId;
-    if (filterOrCollectionId.collectionId !== undefined) {
-      CollectionService.get(filterOrCollectionId.collectionId).then(collection => {
+    const updatedFilterOrCollectionId = filterOrCollectionId;
+    if (updatedFilterOrCollectionId.collectionId !== undefined) {
+      CollectionService.get(updatedFilterOrCollectionId.collectionId).then(collection => {
         setSelectedCollection(collection);
         setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
       }).catch(() => {
@@ -77,9 +77,9 @@ export default function FiltersBar({ initialFilterOrCollectionId, onChange }: Fi
     }
     else {
       setSelectedCollection(undefined);
-      setLocalFilters(FiltersService.searchFilterToLocalFilters(filterOrCollectionId.filter));
+      setLocalFilters(FiltersService.searchFilterToLocalFilters(updatedFilterOrCollectionId.filter));
     }
-  }, [initialFilterOrCollectionId]);
+  }, [filterOrCollectionId]);
 
   useEffect(() =>
   {
@@ -343,13 +343,11 @@ export default function FiltersBar({ initialFilterOrCollectionId, onChange }: Fi
           }}
         />
       </Flex>
-
       <Space h="sm" />
       {localFilters !== undefined && <Group>
         <Pill {...commonPillProps} withRemoveButton={false}>
           {computeSortingLabelDisplay()}
         </Pill>
-
         {localFilters.searchIn?.length > 0 && (
           <Pill
             size="md"
@@ -359,7 +357,6 @@ export default function FiltersBar({ initialFilterOrCollectionId, onChange }: Fi
             {`${t("filters.searchTextIn")} : ${computeSearchInLabelDisplay()}`}
           </Pill>
         )}
-
         {localFilters.repositories?.length > 0 && (
           <Pill
             {...commonPillProps}

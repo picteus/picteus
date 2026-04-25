@@ -58,7 +58,7 @@ export default function ImageTable({
       <Table.Td style={{ width: edge }}>
         <ImageItem
           image={image}
-          caption={(image as ImageWithCaption).caption}
+          overlay={(image as ImageWithCaption).caption}
           width={edge}
           height={edge}
           mode={imageItemMode}

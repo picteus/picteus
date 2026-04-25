@@ -71,19 +71,19 @@ function computeExpectedDimensions(width: number, height: number, image: ImageOr
 
 type ImageItemType = {
   image: ImageOrSummary;
-  caption?: ReactNode;
   width: number;
   height?: number;
   mode?: ImageItemMode;
+  overlay?: ReactNode;
   onClick: (image: ImageOrSummary) => void;
 };
 
 export default function ImageItem({
   image,
-  caption,
   width,
   height,
   onClick,
+  overlay,
   mode = ImageItemMode.VIEW,
 }: ImageItemType) {
   const [t] = useTranslation();
@@ -138,61 +138,72 @@ export default function ImageItem({
     height: `${height !== undefined ? height : Math.round(width * (imageExpectedDimensions.height / imageExpectedDimensions.width))}px`
   }), [width, height, imageExpectedDimensions]);
 
-  return (imageExpectedDimensions !== undefined && imageExpectedDimensions.width > 0 && imageExpectedDimensions.height > 0) && (
-    <Flex
-      align="center"
-      justify="center"
-      className={`${style.imageWrapper} ${isSelected ? style.hover : ""}`}
-      onClick={handleOnClick}
-      style={containerStyle}
+  const menu = useMemo(() => (mode === ImageItemMode.VIEW && (
+    <Menu
+      withinPortal={false}
+      position="bottom-end"
+      trigger="hover"
+      openDelay={50}
+      closeDelay={600}
+      opened={menuOpened}
+      onChange={handleOnChangeMenuOpened}
+      shadow="md"
+      width={260}
     >
-      {caption && <div className={style.captionContainer}>{caption}</div>}
-      <Flex
-        data-action={true}
-        p="sm"
-        align="start"
-        justify="space-between"
-        style={menuOpened ? { opacity: 1 } : {}}
-        className={style.overlay}
-      >
-        {mode !== ImageItemMode.PASSIVE && <Checkbox
-          checked={isSelected}
-          size={width < 200 ? "sm" : "md"}
-          onChange={handleOnSelectImage}
-        />}
-        {mode === ImageItemMode.VIEW && (
-          <Menu
-            withinPortal={false}
-            position="bottom-end"
-            trigger="hover"
-            openDelay={50}
-            closeDelay={600}
-            opened={menuOpened}
-            onChange={handleOnChangeMenuOpened}
-            shadow="md"
-            width={260}
-          >
-            <Menu.Target>
-              <ActionIcon variant="default">
-                <IconDots />
-              </ActionIcon>
-            </Menu.Target>
-            <ImageItemMenu image={image} />
-          </Menu>
-        )}
-      </Flex>
-      <img
-        ref={imgRef}
-        className={`${style.image} ${isLoaded === true ? style.loaded : style.unLoaded}`}
-        loading="lazy"
-        src={imageSrc}
-        alt={image.name}
-        width={imageExpectedDimensions.width}
-        height={imageExpectedDimensions.height}
-        style={{width: imageExpectedDimensions.width, height: imageExpectedDimensions.height}}
-      />
-      {isLoaded === false && <Flex className={style.placeholder} align="center" justify="center">{isError === true && (
-        <Text c="red">{t("errors.imageCondensed")}</Text>)}</Flex>}
-    </Flex>
-  );
+      <Menu.Target>
+        <ActionIcon variant="default">
+          <IconDots />
+        </ActionIcon>
+      </Menu.Target>
+      {menuOpened && <ImageItemMenu image={image} />}
+    </Menu>
+  )), [image, menuOpened, handleOnChangeMenuOpened]);
+
+  const actions = useMemo(() => (<Flex
+    data-action={true}
+    p="sm"
+    align="start"
+    justify="space-between"
+    style={menuOpened ? { opacity: 1 } : {}}
+    className={style.overlay}
+  >
+    {mode !== ImageItemMode.PASSIVE && <Checkbox
+      checked={isSelected}
+      size={width < 200 ? "sm" : "md"}
+      onChange={handleOnSelectImage}
+    />}
+    {menu}
+  </Flex>), [menuOpened, menu, isSelected, handleOnChangeMenuOpened]);
+
+  const img = useMemo(() => (<img
+    ref={imgRef}
+    className={`${style.image} ${isLoaded === true ? style.loaded : style.unLoaded}`}
+    loading="lazy"
+    src={imageSrc}
+    alt={image.name}
+    width={imageExpectedDimensions.width}
+    height={imageExpectedDimensions.height}
+    style={imageExpectedDimensions}
+  />), [imgRef, isLoaded, imageSrc, imageExpectedDimensions]);
+
+  const overlayElement = useMemo(() => (overlay && <div className={style.captionContainer}>{overlay}</div>), [overlay]);
+
+  const placeholder = useMemo(() => (isLoaded === false &&
+    <Flex className={style.placeholder} align="center" justify="center">{isError === true && (
+      <Text c="red">{t("errors.imageCondensed")}</Text>)}</Flex>), [isLoaded, isError]);
+
+  const className = useMemo(() => `${style.imageWrapper} ${isSelected ? style.hover : ""}`, [isSelected]);
+
+  return (<Flex
+    align="center"
+    justify="center"
+    className={className}
+    onClick={handleOnClick}
+    style={containerStyle}
+  >
+    {actions}
+    {img}
+    {overlayElement}
+    {placeholder}
+  </Flex>);
 }
