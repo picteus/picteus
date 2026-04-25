@@ -1,72 +1,18 @@
-.left {
+.paneSeparator {
+}
 
+.paneSeparatorHandle {
+}
+
+.left {
+  height: 100%;
 }
 
 .right {
-}
-
-.imageContainer,
-.imageWrapper,
-.informationContainer {
-  height: 100%;
-}
-
-.imageContainer {
-  padding-top: 15px;
-  padding-bottom: 15px;
-}
-
-.imageWrapper,
-.image {
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-}
-
-.imageWrapper {
-  flex: 1;
-  align-content: center;
-  position: relative;
-}
-
-.image {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-.image.notLoaded {
-  opacity: 0;
-}
-.image.loaded {
-  opacity: 1;
-}
-
-.placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: $image-item-radius;
-  background-color: #f0f0f0;
-  background-image: linear-gradient(to right, #f0f0f0 0%, #e0e0e0 20%, #f0f0f0 40%, #f0f0f0 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.informationContainer {
   overflow-x: hidden;
   overflow-y: auto;
   width: 100%;
+  height: 100%;
   @extend .scrollbar-custom;
   background: var(--mantine-color-body);
 
@@ -75,15 +21,5 @@
     top : 0;
     z-index: 1;
     background: var(--mantine-color-body);
-  }
-
-  .titleBox {
-    width: 85%;
-  }
-
-  .title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 }

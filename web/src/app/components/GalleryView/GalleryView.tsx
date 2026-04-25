@@ -21,7 +21,7 @@ type GalleryViewProps = {
 
 export default function GalleryView({ viewData, isDefault, containerWidth, containerHeight, containerRef, scrollRootRef }: GalleryViewProps) {
   const { addTab } = useGalleryTabsContext();
-  const [data, setData] = useState<ImageExplorerDataType>({ currentPage: 1, total: 0, images: [] });
+  const [data, setData] = useState<ImageExplorerDataType>({ currentPage: 1, imagesPerPage: 100, total: 0, images: [] });
   const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(viewData.filterOrCollectionId);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
@@ -41,9 +41,6 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
   }, [viewData]);
 
   async function loadData(pagination: PaginationType) {
-    if (filterOrCollectionId === undefined) {
-      return;
-    }
     setLoading(true);
     try {
       const apiResponse = await ImageService.searchImages({
@@ -56,6 +53,7 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
       });
       setData({
         total: apiResponse.totalCount,
+        imagesPerPage: pagination.take,
         currentPage: pagination.currentPage,
         images: apiResponse.items,
       });

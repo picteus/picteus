@@ -4,7 +4,7 @@ import { Table, Text } from "@mantine/core";
 type TableComponentType = {
   data: {
     label: string;
-    value: string | ReactNode;
+    value: ReactNode;
   };
 };
 

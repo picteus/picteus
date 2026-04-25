@@ -11,8 +11,6 @@ import { RepositoriesService } from "app/services";
 import { EmptyResults, ImageGallery, ImageMasonry, ImageTable } from "app/components";
 
 
-const BATCH_SIZE = 100;
-
 export type PaginationType = SearchRange & {
   currentPage: number;
 };
@@ -46,7 +44,7 @@ export default function ImagesContent({
                        }: ImagesContentType) {
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const defaultPagination: PaginationType = { currentPage: 1, take: BATCH_SIZE, skip: 0 };
+  const defaultPagination: PaginationType = { currentPage: 1, take: data.imagesPerPage, skip: 0 };
   const [pagination, setPagination] = useState<PaginationType>(defaultPagination);
   const [accumulatedData, setAccumulatedData] = useState<ImageOrSummary[]>([]);
   const isLoadingMoreRef = useRef<boolean>(false);
@@ -54,7 +52,7 @@ export default function ImagesContent({
   useEffect(() => {
     scrollRootRef.current.scrollTo(0, 0);
     setAccumulatedData([]);
-    setPagination({ currentPage: 1, take: BATCH_SIZE, skip: 0 });
+    setPagination({ currentPage: 1, take: data.imagesPerPage, skip: 0 });
   }, [filterOrCollectionId, refreshTrigger, viewMode]);
 
   useEffect(() => {
@@ -63,26 +61,26 @@ export default function ImagesContent({
 
   useEffect(() => {
     isLoadingMoreRef.current = false;
-    setAccumulatedData((prevData) => {
+    setAccumulatedData((previousData) => {
       if (data.currentPage === 1) {
         return data.images;
       }
-      return [...prevData, ...data.images];
+      return [...previousData, ...data.images];
     });
   }, [data]);
 
   const loadMore = useCallback(() => {
     if (isLoadingMoreRef.current === false) {
       isLoadingMoreRef.current = true;
-      const maxPage = Math.ceil(data.total / pagination.take);
-      if (pagination.currentPage === maxPage) {
+      const maximumPage = Math.ceil(data.total / pagination.take);
+      if (pagination.currentPage >= maximumPage) {
         isLoadingMoreRef.current = false;
         return;
       }
       setPagination({
         currentPage: pagination.currentPage + 1,
-        take: BATCH_SIZE,
-        skip: pagination.currentPage * BATCH_SIZE
+        take: data.imagesPerPage,
+        skip: pagination.currentPage * data.imagesPerPage
       });
     }
   }, [pagination]);

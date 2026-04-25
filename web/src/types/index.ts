@@ -80,6 +80,7 @@ export type ImageOrSummaryOrCaption = ImageOrSummary | ImageWithCaption;
 
 export type ImageExplorerDataType = {
   currentPage: number;
+  imagesPerPage: number;
   total: number;
   images: ImageOrSummaryOrCaption[];
 };

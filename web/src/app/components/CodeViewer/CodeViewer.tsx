@@ -22,9 +22,10 @@ export default function CodeViewer({ code }) {
   }, [colorScheme]);
 
   useEffect(() => {
-    if (codeRef.current) {
-      hljs.highlightElement(codeRef.current);
-    }
+    //TODO: reactivate this once the performance issue is solved
+    // if (codeRef.current) {
+    //   hljs.highlightElement(codeRef.current);
+    // }
   }, [codeRef]);
 
   const formattedCode = useMemo(() => {
