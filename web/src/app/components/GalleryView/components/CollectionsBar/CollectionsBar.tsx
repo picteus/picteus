@@ -125,13 +125,13 @@ export default function CollectionsBar({
                         <Flex justify="space-between" align="center">
                             <Text size="sm">{truncateName(collection.name)}</Text>
                             <Flex gap="xs">
-                                <ActionIcon variant="subtle" size="xs" onClick={(event) => {
+                                <ActionIcon component="div" variant="subtle" size="xs" onClick={(event) => {
                                     event.stopPropagation();
                                     handleOnEdit(collection);
                                 }}>
                                     <IconEdit size={12} />
                                 </ActionIcon>
-                                <ActionIcon variant="subtle" size="xs" color="red" onClick={(event) => {
+                                <ActionIcon component="div" variant="subtle" size="xs" color="red" onClick={(event) => {
                                     event.stopPropagation();
                                     handleOnDelete(collection);
                                 }}>

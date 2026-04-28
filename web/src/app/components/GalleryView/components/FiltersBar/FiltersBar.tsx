@@ -179,7 +179,6 @@ export default function FiltersBar({ filterOrCollectionId, setFilterOrCollection
                 }
                 size="lg"
                 variant="default"
-                title={t("filters.title")}
               >
                 <IconFilter stroke={1.3} />
               </ActionIcon>

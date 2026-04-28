@@ -81,7 +81,7 @@ export default function ImagesContent({
         skip: previousValue.currentPage * imagesPerPage
       }));
     }
-  }, [pagination]);
+  }, [pagination, data.total]);
 
   if (loading === false && data.total === 0) {
     const repositoriesExists = RepositoriesService.list().length > 0;

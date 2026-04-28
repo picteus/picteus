@@ -53,14 +53,7 @@ export default function useExtensionCommand() {
     command: UiCommandType,
     imageIds?: string[],
   ) {
-    console.debug(
-      "Triggering command '" +
-        command.id +
-        "' of extension '" +
-        extensionId +
-        "' with imageIds : " +
-        imageIds?.join(", "),
-    );
+    console.debug(`Triggering command '${command.id}' of extension '${extensionId}' with imageIds : ${imageIds?.join(", ")}`);
     const form = command.form;
     if (!form.parameters) {
       return handleOnSendCommand(extensionId, command.id, undefined, imageIds);
