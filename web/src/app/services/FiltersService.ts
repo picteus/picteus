@@ -79,24 +79,22 @@ const defaultFilter: SearchFilter = {
   sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false }
 };
 
-function localFiltersToSearchFilter(
-  filters: LocalFiltersType,
-): SearchFilter {
+function localFiltersToSearchFilter(localFilters: LocalFiltersType): SearchFilter {
   function computeSearchKeyword() : { keyword: SearchKeyword } | object {
-    const inName = filters.searchIn?.includes("inName") || false;
-    const inMetadata = filters.searchIn?.includes("inMetadata") || false;
-    const inFeatures = filters.searchIn?.includes("inFeatures") || false;
+    const inName = localFilters.searchIn?.includes("inName") || false;
+    const inMetadata = localFilters.searchIn?.includes("inMetadata") || false;
+    const inFeatures = localFilters.searchIn?.includes("inFeatures") || false;
 
-    if ((filters.keyword === undefined || filters.keyword === "") || (!inName && !inMetadata && !inFeatures)) {
+    if ((localFilters.keyword === undefined || localFilters.keyword === "") || (!inName && !inMetadata && !inFeatures)) {
       return {};
     }
-    return { keyword : { text: filters.keyword || "", inName, inMetadata, inFeatures } };
+    return { keyword : { text: localFilters.keyword || "", inName, inMetadata, inFeatures } };
   }
 
   function computeFeatures(): { features: SearchFeatures } | object {
-    if (filters.features?.length) {
+    if (localFilters.features?.length) {
       return { features: {
-          operator: SearchFeatureLogicalOperator.Or, conditions: filters.features.map(feature => {
+          operator: SearchFeatureLogicalOperator.Or, conditions: localFilters.features.map(feature => {
             return {
               format: feature.format,
               type: feature.type,
@@ -111,20 +109,20 @@ function localFiltersToSearchFilter(
   }
 
   function computeSearchTags(): { tags: SearchTags } | object {
-    return filters.tags?.length ? { tags: { values: filters.tags } } : {};
+    return localFilters.tags?.length ? { tags: { values: localFilters.tags } } : {};
   }
 
   return SearchFilterFromJSON({
     criteria: {
       ...computeSearchKeyword(),
-      formats: filters.formats?.length > 0 ? filters.formats : undefined,
+      formats: localFilters.formats?.length > 0 ? localFilters.formats : undefined,
       ...computeFeatures(),
       ...computeSearchTags()
     },
-    ...(filters.repositories?.length ? { origin: { kind: SearchOriginNature.Repositories, ids: filters.repositories } } : {}),
+    ...(localFilters.repositories?.length ? { origin: { kind: SearchOriginNature.Repositories, ids: localFilters.repositories } } : {}),
     sorting: {
-      property: filters.sortBy,
-      isAscending: filters.sortOrder === "1"
+      property: localFilters.sortBy,
+      isAscending: localFilters.sortOrder === "1"
     }
   });
 }

@@ -13,12 +13,12 @@ import style from "./TopBar.module.scss";
 
 type TopBarType = {
   filterOrCollectionId: FilterOrCollectionId;
-  setFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId) => void;
+  setFilterOrCollectionId: React.Dispatch<React.SetStateAction<FilterOrCollectionId>>;
   handleOnRefresh: () => void;
   handleOnPin: () => void;
   viewMode: ViewMode;
-  setZIndex: boolean;
   setViewMode: (mode: ViewMode) => void;
+  setZIndex: boolean;
 };
 
 export default function GalleryTopBar({
@@ -27,8 +27,8 @@ export default function GalleryTopBar({
                                         handleOnRefresh,
                                         handleOnPin,
                                         viewMode,
-                                        setZIndex,
                                         setViewMode,
+                                        setZIndex,
                                       }: TopBarType) {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
@@ -52,7 +52,7 @@ export default function GalleryTopBar({
   return (
     <Flex align="start" justify="space-between" className={style.topBar}
           style={{ zIndex: setZIndex === true ? 1 : undefined }}>
-      <FiltersBar filterOrCollectionId={filterOrCollectionId} onChange={setFilterOrCollectionId} />
+      <FiltersBar filterOrCollectionId={filterOrCollectionId} setFilterOrCollectionId={setFilterOrCollectionId} />
       <Flex gap="xs">
         <ActionIcon.Group>
           <Tooltip label={t("galleryScreen.masonryView")}>

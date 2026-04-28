@@ -104,10 +104,10 @@ export default function ImageGallery({
     return { columns, columnWidth: approximateWidth + Math.floor(remainingSpace / columns)};
   }, [imageSize, hostRefRectangle]);
 
-  const renderedImages = useMemo(()=> images.map((item) => (
-    <Grid.Col span={1} key={item.id}>
+  const renderedImages = useMemo(()=> images.map((image) => (
+    <Grid.Col span={1} key={image.id}>
       <ImageItem
-        image={item}
+        image={image}
         width={columnWidth}
         height={columnWidth}
         mode={imageItemMode}

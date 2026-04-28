@@ -79,8 +79,6 @@ export type ImageWithCaption = ImageOrSummary & {
 export type ImageOrSummaryOrCaption = ImageOrSummary | ImageWithCaption;
 
 export type ImageExplorerDataType = {
-  currentPage: number;
-  imagesPerPage: number;
   total: number;
   images: ImageOrSummaryOrCaption[];
 };
@@ -168,7 +166,7 @@ export type ExtensionIntentType = {
   intent: UiCommandType;
 };
 
-export type FilterOrCollectionId = { filter?: SearchFilter, collectionId?: number };
+export type FilterOrCollectionId = { filter: SearchFilter } | { collectionId: number };
 
 export type ViewMode = "masonry" | "gallery" | "table";
 

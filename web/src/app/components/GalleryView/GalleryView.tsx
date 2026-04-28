@@ -1,11 +1,14 @@
 import React, { RefObject, useCallback, useState } from "react";
 
+import { SearchRange } from "@picteus/ws-client";
+
 import { FilterOrCollectionId, ImageExplorerDataType, ImageOrSummary, ViewMode, ViewTabDataType } from "types";
 import { notifyApiCallError } from "utils";
 import { useGalleryTabsContext } from "app/context";
+import { useInterceptedState } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
 import { Container } from "app/components";
-import { ImagesContent, PaginationType, TopBar } from "./components";
+import { ImagesContent, TopBar } from "./components";
 
 import style from "./GalleryView.module.scss";
 
@@ -19,52 +22,58 @@ type GalleryViewProps = {
   scrollRootRef: RefObject<HTMLElement>;
 };
 
-export default function GalleryView({ viewData, isDefault, containerWidth, containerHeight, containerRef, scrollRootRef }: GalleryViewProps) {
+export default function GalleryView({ viewData, isDefault, containerWidth, containerHeight, containerRef, scrollRootRef }: GalleryViewProps){
   const { addTab } = useGalleryTabsContext();
-  const [data, setData] = useState<ImageExplorerDataType>({ currentPage: 1, imagesPerPage: 100, total: 0, images: [] });
-  const [filterOrCollectionId, setFilterOrCollectionId] = useState<FilterOrCollectionId>(viewData.filterOrCollectionId);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [data, setData] = useState<ImageExplorerDataType>({ total: -1, images: [] });
+  const [filterOrCollectionId, setFilterOrCollectionId] = useInterceptedState<FilterOrCollectionId>(viewData.filterOrCollectionId, (previousFilterOrCollectionId: FilterOrCollectionId, updatedFilterOrCollectionId: FilterOrCollectionId)=> {
+    if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(previousFilterOrCollectionId)) {
+      if (isDefault === true) {
+        StorageService.setMainViewTabData({ mode: viewData.mode, filterOrCollectionId: updatedFilterOrCollectionId });
+      }
+      // There should be now issue with the "handleOnRefresh()" call, because it only performs a state update through an updater callbacck
+      handleOnRefresh();
+      return updatedFilterOrCollectionId;
+    }
+    else {
+      return previousFilterOrCollectionId;
+    }
+  });
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
-  const [viewMode, setViewMode] = useState<ViewMode>(viewData.mode);
+  const [viewMode, setViewMode] = useInterceptedState<ViewMode>(viewData.mode, (previousViewMode: ViewMode, updatedViewMode: ViewMode) => {
+    if (updatedViewMode !== previousViewMode) {
+      if (isDefault === true) {
+        StorageService.setMainViewTabData({ mode: updatedViewMode, filterOrCollectionId: viewData.filterOrCollectionId });
+      }
+      setViewMode(updatedViewMode);
+      return updatedViewMode;
+    }
+    else {
+      return previousViewMode;
+    }
+  });
   const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
-  const setFilterOrCollectionIdWrapper = useCallback((filterOrCollectionId: FilterOrCollectionId) => {
-    if (isDefault === true) {
-      StorageService.setMainViewTabData({ mode: viewData.mode, filterOrCollectionId });
-    }
-    setFilterOrCollectionId(filterOrCollectionId);
-  }, [viewData]);
-  const setViewModeWrapper = useCallback((viewMode: ViewMode) => {
-    if (isDefault === true) {
-      StorageService.setMainViewTabData({ mode: viewMode, filterOrCollectionId: viewData.filterOrCollectionId });
-    }
-    setViewMode(viewMode);
-  }, [viewData]);
 
-  async function loadData(pagination: PaginationType) {
+  const onFetchData = useCallback((searchRange: SearchRange) => {
     setLoading(true);
-    try {
-      const apiResponse = await ImageService.searchImages({
-        filter: filterOrCollectionId.filter,
-        collectionId: filterOrCollectionId.filter !== undefined ? undefined : filterOrCollectionId.collectionId,
-        range: {
-          take: pagination.take,
-          skip: pagination.skip,
-        },
-      });
+    ImageService.searchImages({
+      filter: "filter" in filterOrCollectionId ? filterOrCollectionId.filter : undefined,
+      collectionId: "collectionId" in filterOrCollectionId ? filterOrCollectionId.collectionId : undefined,
+      range: {
+        take: searchRange.take,
+        skip: searchRange.skip
+      }
+    }).then((result) => {
       setData({
-        total: apiResponse.totalCount,
-        imagesPerPage: pagination.take,
-        currentPage: pagination.currentPage,
-        images: apiResponse.items,
+        total: result.totalCount,
+        images: result.items
       });
-    }
-    catch (error) {
+    }).catch((error) => {
       notifyApiCallError(error, "Can't fetch images");
-    }
-    finally {
+    }).finally(() => {
       setLoading(false);
-    }
-  }
+    });
+  }, [filterOrCollectionId]);
 
   function handleOnRefresh() {
     setRefreshTrigger(value => value + 1);
@@ -86,12 +95,12 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
     <>
       <div className={style.container}>
         <TopBar
-          filterOrCollectionId={viewData.filterOrCollectionId}
-          setFilterOrCollectionId={setFilterOrCollectionIdWrapper}
+          filterOrCollectionId={filterOrCollectionId}
+          setFilterOrCollectionId={setFilterOrCollectionId}
           handleOnRefresh={handleOnRefresh}
           handleOnPin={handleOnPin}
           viewMode={viewMode}
-          setViewMode={setViewModeWrapper}
+          setViewMode={setViewMode}
           setZIndex={selectedImage === undefined}
         />
         <div className={style.contentContainer}>
@@ -104,9 +113,8 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
               containerHeight={containerHeight}
               containerRef={containerRef}
               scrollRootRef={scrollRootRef}
-              filterOrCollectionId={filterOrCollectionId}
               refreshTrigger={refreshTrigger}
-              onFetchData={loadData}
+              onFetchData={onFetchData}
               viewMode={viewMode}
             />
           </Container>

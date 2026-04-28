@@ -1,152 +1,120 @@
-import React, { useEffect, useState } from "react";
-import {
-  ActionIcon,
-  Button,
-  Flex,
-  Group,
-  MantineSize,
-  Pill,
-  Popover,
-  Select,
-  Space,
-  Stack,
-  Text,
-  TextInput,
-  Tooltip
-} from "@mantine/core";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ActionIcon, Flex, Group, MantineSize, Pill, Popover, Stack, TextInput, Tooltip } from "@mantine/core";
 import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import {
-  Collection,
-  ImageFeatureFormat,
-  ImageFeatureType,
-  Repository,
-  SearchFilter,
-  SearchFilterFromJSON
-} from "@picteus/ws-client";
+import { Collection, Repository, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
 
-import { FilterOrCollectionId, LocalFiltersType, LocalFiltersTypeFeature } from "types";
-import { capitalizeText, notifyErrorWithError } from "utils";
-import { useDebouncedCallback } from "app/hooks";
+import { FilterOrCollectionId, LocalFiltersType } from "types";
+import { useDebouncedCallback, useInterceptedState } from "app/hooks";
 import { CollectionService, FeaturesNamesOption, FiltersService, RepositoriesService } from "app/services";
-import { FilterSelect } from "app/components";
-import { CollectionsBar } from "../index.ts";
+import { CollectionsBar, Filters } from "../index.ts";
 
 
-const {
-  defaultFilter,
-  sortByOptions,
-  sortOrderOptions,
-  searchInOptions,
-  formatsOptions,
-  computeFeaturesNamesOptions,
-  computeTagsOptions
-} = FiltersService;
+const { defaultFilter, sortByOptions, sortOrderOptions, searchInOptions } = FiltersService;
 
 
 type FiltersBarType = {
   filterOrCollectionId: FilterOrCollectionId;
-  onChange: (filterOrCollectionId: FilterOrCollectionId) => void;
+  setFilterOrCollectionId: React.Dispatch<React.SetStateAction<FilterOrCollectionId>>;
 };
 
-export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBarType) {
+export default function FiltersBar({ filterOrCollectionId, setFilterOrCollectionId }: FiltersBarType) {
   const [t] = useTranslation();
   const [searchText, setSearchText] = useState<string>();
-  const [featuresOptions, setFeaturesOptions] = useState<FeaturesNamesOption[]>([]);
-  const [tagsOptions, setTagsOptions] = useState<{ value: string, label: string }[]>([]);
-  const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [popoverOpened, setPopoverOpened] = useState(false);
-  const [localFilters, setLocalFilters] = useState<LocalFiltersType>();
-  const [searchFilter, setSearchFilter] = useState<SearchFilter>();
-  const [selectedCollection, setSelectedCollection] = useState<Collection>();
+  const repositories = useMemo<Repository []>(() => (RepositoriesService.list()), []);
+  const [popoverOpened, setPopoverOpened] = useState<boolean>(false);
+  const [localFilters, setLocalFilters] = useInterceptedState<LocalFiltersType>(undefined);
+  const [searchFilter, setSearchFilter] = useInterceptedState<SearchFilter>(undefined);
+  const [selectedCollection, setSelectedCollection] = useState<Collection | undefined>();
 
-  const debouncedSearchCallback = useDebouncedCallback(async () => {
-    setLocalFilters({...localFilters, keyword: searchText, searchIn: localFilters.searchIn ?? ((searchText === undefined || searchText === "") ? undefined : ["inName"])});
+  const setFilterOrCollectionIdWrapper = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId) => {
+    setFilterOrCollectionId((previousFilterOrCollectionId: FilterOrCollectionId) => {
+      if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(previousFilterOrCollectionId)) {
+        return updatedFilterOrCollectionId;
+      }
+      else {
+        return previousFilterOrCollectionId;
+      }
+    })
+  }, [setFilterOrCollectionId]);
+
+  useEffect(() => {
+    if ("collectionId" in filterOrCollectionId) {
+      CollectionService.get(filterOrCollectionId.collectionId).then(collection => {
+        setSelectedCollection((previousCollection: Collection) => {
+          if (JSON.stringify(previousCollection) !== JSON.stringify(collection)) {
+            return collection;
+          }
+          else {
+            return previousCollection;
+          }
+        });
+        setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
+      });
+    }
+    else if ("filter" in filterOrCollectionId) {
+      setLocalFilters(FiltersService.searchFilterToLocalFilters(filterOrCollectionId.filter));
+    }
+  }, [filterOrCollectionId, setLocalFilters]);
+
+  useEffect(() => {
+    setSearchFilter(localFilters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(localFilters));
+  }, [localFilters, setSearchFilter]);
+
+  useEffect(() => {
+    const updatedSearchFilter = localFilters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(localFilters);
+    if (selectedCollection !== undefined) {
+      if (JSON.stringify(SearchFilterFromJSON(updatedSearchFilter)) === JSON.stringify(SearchFilterFromJSON(selectedCollection.filter))) {
+        setFilterOrCollectionIdWrapper({collectionId: selectedCollection.id});
+        return;
+      }
+    }
+    if (updatedSearchFilter !== undefined) {
+      setFilterOrCollectionIdWrapper({filter: updatedSearchFilter});
+    }
+  }, [selectedCollection, localFilters, setFilterOrCollectionIdWrapper]);
+
+  const onChangeFilterWrapper = useCallback((key: string, value?: string | string [] | FeaturesNamesOption[]) => {
+    setLocalFilters((previousLocalFilters: LocalFiltersType) => {
+      const updatedLocalFilters = { ...previousLocalFilters, [key]: value };
+      if (key === "searchIn" && value === undefined) {
+        delete updatedLocalFilters.keyword;
+      }
+      else if (Array.isArray(value) === true && value.length === 0) {
+        delete updatedLocalFilters[key];
+      }
+      return updatedLocalFilters;
+    });
+  }, [setLocalFilters]);
+
+  const debouncedSearchCallback = useDebouncedCallback(async (searchText: string) => {
+    setLocalFilters(previousValue => ({
+      ...previousValue,
+      keyword: searchText,
+      searchIn: previousValue.searchIn ?? ((searchText === undefined || searchText === "") ? undefined : ["inName"])
+    }));
   }, 400);
 
   useEffect(() => {
-    const updatedFilterOrCollectionId = filterOrCollectionId;
-    if (updatedFilterOrCollectionId.collectionId !== undefined) {
-      CollectionService.get(updatedFilterOrCollectionId.collectionId).then(collection => {
-        setSelectedCollection(collection);
-        setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
-      }).catch(() => {
-        // In case the collection does not exist anymore, we do nothing
-      });
-    }
-    else {
-      setSelectedCollection(undefined);
-      setLocalFilters(FiltersService.searchFilterToLocalFilters(updatedFilterOrCollectionId.filter));
-    }
-  }, [filterOrCollectionId]);
-
-  useEffect(() =>
-  {
     if (searchText !== undefined) {
       debouncedSearchCallback(searchText);
     }
   }, [searchText]);
 
-  useEffect(() => {
-    async function load() {
-      setRepositories(RepositoriesService.list());
-      {
-        const options = await computeFeaturesNamesOptions();
-        const builtInOptions: FeaturesNamesOption[] = [];
-        const types: ImageFeatureType[] = [ImageFeatureType.Recipe, ImageFeatureType.Annotation, ImageFeatureType.Comment, ImageFeatureType.Description, ImageFeatureType.Caption];
-        const formats: ImageFeatureFormat[] = [ImageFeatureFormat.Json, ImageFeatureFormat.Markdown, ImageFeatureFormat.Html, ImageFeatureFormat.Xml, ImageFeatureFormat.String];
-        for (const type of types)
-        {
-          for (const format of formats)
-          {
-            builtInOptions.push({
-              value: type,
-              category: capitalizeText(type),
-              format: format,
-              type: type
-            });
-          }
-        }
-        const allOptions = builtInOptions.concat(...options);
-        setFeaturesOptions(allOptions);
-      }
-      setTagsOptions(await computeTagsOptions());
+  const setSelectedCollectionWrapper = useCallback((updatedCollection: Collection | undefined) => {
+    if (updatedCollection !== undefined) {
+      setLocalFilters(FiltersService.searchFilterToLocalFilters(updatedCollection.filter));
     }
-
-    load().catch(notifyErrorWithError);
-  }, []);
-
-  useEffect(() => {
-    if (localFilters !== undefined && localFilters.repositories !== undefined) {
-      // We remove the repositories that no longer exist
-      const existingRepositories = localFilters.repositories.filter(repositoryId =>
-        repositories.find((repository) => repository.id === repositoryId)
-      );
-      if (existingRepositories.length !== localFilters.repositories.length) {
-        setLocalFilters({ ...localFilters, repositories: existingRepositories });
+    setSelectedCollection((previousCollection: Collection) => {
+      if (JSON.stringify(previousCollection) !== JSON.stringify(updatedCollection)) {
+        return updatedCollection;
       }
-    }
-  }, [repositories, localFilters]);
-
-  useEffect(() => {
-    const updatedSearchFilter = localFilters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(localFilters);
-    setSearchFilter(updatedSearchFilter);
-    let chooseCollection: boolean;
-    if (localFilters !== undefined) {
-      if (selectedCollection === undefined || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) !== JSON.stringify(SearchFilterFromJSON(updatedSearchFilter))) {
-        chooseCollection = false;
-        const filterOrCollectionId = { filter: updatedSearchFilter };
-        onChange(filterOrCollectionId);
+      else {
+        return previousCollection;
       }
-      else if (selectedCollection !== undefined) {
-        chooseCollection = true;
-      }
-    }
-    if (chooseCollection === true || (chooseCollection !== false && selectedCollection !== undefined)) {
-      onChange({ collectionId: selectedCollection.id });
-    }
-  }, [selectedCollection, localFilters]);
+    });
+  }, [setLocalFilters]);
 
   function handleOnClearAll() {
     setLocalFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
@@ -154,107 +122,7 @@ export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBa
     setSelectedCollection(undefined);
   }
 
-  function computeFeatureOptionValue(feature: LocalFiltersTypeFeature): string {
-    return feature.category;
-  }
-
-  function renderFiltersDropdown() {
-    return (
-      <Stack>
-        <Group>
-          <Stack gap={5}>
-            <Text size="sm">{t("sort.sortBy")}</Text>
-            <Select
-              onChange={(value) => handleOnChangeFilter("sortBy", value)}
-              value={localFilters.sortBy}
-              placeholder={t("sort.sortByPlaceholder")}
-              comboboxProps={{ withinPortal: false }}
-              width={200}
-              data={sortByOptions}
-              allowDeselect={false}
-            />
-          </Stack>
-          <Stack gap={5}>
-            <Text size="sm">{t("sort.sortOrder")}</Text>
-            <Select
-              onChange={(value) => handleOnChangeFilter("sortOrder", value)}
-              value={localFilters.sortOrder}
-              placeholder={t("sort.sortOrderPlaceholder")}
-              data={sortOrderOptions}
-              comboboxProps={{ withinPortal: false }}
-              allowDeselect={false}
-            />
-          </Stack>
-        </Group>
-        <Stack mt="xs">
-          <FilterSelect
-            label={t("filters.searchTextIn")}
-            selectedValues={localFilters.searchIn}
-            options={searchInOptions}
-            onChange={(values: string[]) =>
-              handleOnChangeFilter("searchIn", values)
-            }
-          />
-        </Stack>
-        <Stack mt="xs">
-          <FilterSelect
-            label={t("field.repositories")}
-            selectedValues={localFilters.repositories}
-            options={repositories.map((repository) => ({
-              value: repository.id,
-              label: repository.name
-            }))}
-            onChange={(values: string[]) =>
-              handleOnChangeFilter("repositories", values)
-            }
-          />
-        </Stack>
-        <Stack mt="xs">
-          <FilterSelect
-            label={t("field.formats")}
-            selectedValues={localFilters.formats}
-            options={formatsOptions}
-            onChange={(values: string[]) =>
-              handleOnChangeFilter("formats", values)
-            }
-          />
-        </Stack>
-        <Stack mt="xs">
-          <FilterSelect
-            label={t("field.features")}
-            selectedValues={localFilters.features?.map(feature => computeFeatureOptionValue(feature)).filter((feature, index, array) => array.indexOf(feature) == index) || []}
-            options={featuresOptions.filter((option, index, array) => array.map(item => item.category).indexOf(option.category) == index).map(option => {
-              return { value: computeFeatureOptionValue(option), label: option.category };
-            })}
-            onChange={(values: string[]) =>
-            {
-              const matchingOptions = featuresOptions.filter(option => values.indexOf(option.category) !== -1);
-              handleOnChangeFilter("features", matchingOptions);
-            }
-            }
-          />
-        </Stack>
-        <Stack mt="xs">
-          <FilterSelect
-            label={t("field.tags")}
-            selectedValues={localFilters.tags}
-            options={tagsOptions}
-            onChange={(values: string[]) =>
-              handleOnChangeFilter("tags", values)
-            }
-          />
-        </Stack>
-        <Flex justify="flex-end">
-          <Button onClick={handleOnClearAll} variant="default" size={"xs"}>
-            {t("button.clearAll")}
-          </Button>
-        </Flex>
-      </Stack>
-    );
-  }
-
-  function computeSortingLabelDisplay()
-  {
+  function computeSortingLabelDisplay() {
     const sortBy = sortByOptions.find(
       (option) => option.value === localFilters.sortBy
     );
@@ -264,15 +132,6 @@ export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBa
     return `${t("sort.sortedBy")} "${sortBy.label}" - ${sortOrder.label}`;
   }
 
-  function handleOnChangeFilter(filterKey: string, value?: string | string [] | FeaturesNamesOption[]) {
-    const updatedFilter = { ...localFilters, [filterKey]: value };
-    if (filterKey === "searchIn" && value === undefined) {
-      delete updatedFilter.keyword;
-      setSearchText("");
-    }
-    setLocalFilters(updatedFilter);
-  }
-
   function computeSearchInLabelDisplay() {
     return searchInOptions
       .filter((option) => localFilters.searchIn?.includes(option.value)) // Only selected
@@ -280,14 +139,10 @@ export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBa
       .join(", ");
   }
 
-  const commonPillProps = {
-    size: "md" as MantineSize,
-    onClick: () => setPopoverOpened(true),
-    withRemoveButton: true
-  };
+  const commonPillProps = { size: "md" as MantineSize, withRemoveButton: true };
 
   return (
-    <div>
+    <Stack>
       <Flex gap={10} align="center">
         <TextInput
           defaultValue={localFilters?.keyword}
@@ -330,21 +185,20 @@ export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBa
               </ActionIcon>
             </Tooltip>
           </Popover.Target>
-          <Popover.Dropdown>{localFilters !== undefined && renderFiltersDropdown()}</Popover.Dropdown>
+          <Popover.Dropdown>
+            {localFilters &&
+              <Filters repositories={repositories} localFilters={localFilters} onChangeFilter={onChangeFilterWrapper}
+                       handleOnClearAll={handleOnClearAll} />}
+          </Popover.Dropdown>
         </Popover>
-        <CollectionsBar
-          currentFilter={searchFilter}
+        {searchFilter && <CollectionsBar
+          searchFilter={searchFilter}
           selectedCollection={selectedCollection}
-          onApplyCollection={(collection) => {
-            const updatedLocalFilters = FiltersService.searchFilterToLocalFilters(collection === undefined ? defaultFilter : collection.filter);
-            setLocalFilters(updatedLocalFilters);
-            setSearchText(updatedLocalFilters.keyword ?? "");
-            setSelectedCollection(collection);
-          }}
+          setSelectedCollection={setSelectedCollectionWrapper}
         />
+        }
       </Flex>
-      <Space h="sm" />
-      {localFilters !== undefined && <Group>
+      {localFilters && <Group>
         <Pill {...commonPillProps} withRemoveButton={false}>
           {computeSortingLabelDisplay()}
         </Pill>
@@ -352,7 +206,7 @@ export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBa
           <Pill
             size="md"
             withRemoveButton
-            onRemove={() => handleOnChangeFilter("searchIn")}
+            onRemove={() => onChangeFilterWrapper("searchIn")}
           >
             {`${t("filters.searchTextIn")} : ${computeSearchInLabelDisplay()}`}
           </Pill>
@@ -360,7 +214,7 @@ export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBa
         {localFilters.repositories?.length > 0 && (
           <Pill
             {...commonPillProps}
-            onRemove={() => handleOnChangeFilter("repositories")}
+            onRemove={() => onChangeFilterWrapper("repositories")}
           >
             {`${t("field.repositories")} : ${repositories
               .filter((r) => localFilters.repositories?.includes(r.id))
@@ -371,7 +225,7 @@ export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBa
         {localFilters.formats?.length > 0 && (
           <Pill
             {...commonPillProps}
-            onRemove={() => handleOnChangeFilter("formats")}
+            onRemove={() => onChangeFilterWrapper("formats")}
           >
             {`${t("field.formats")} : ${[...localFilters.formats]?.join(", ")}`}
           </Pill>
@@ -379,7 +233,7 @@ export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBa
         {localFilters.features?.length > 0 && (
           <Pill
             {...commonPillProps}
-            onRemove={() => handleOnChangeFilter("features")}
+            onRemove={() => onChangeFilterWrapper("features")}
           >
             {`${t("field.features")} : ${[...localFilters.features]?.map(feature => feature.category).filter((feature, index, array) => array.indexOf(feature) == index).join(", ")}`}
           </Pill>
@@ -387,13 +241,14 @@ export default function FiltersBar({ filterOrCollectionId, onChange }: FiltersBa
         {localFilters.tags?.length > 0 && (
           <Pill
             {...commonPillProps}
-            onRemove={() => handleOnChangeFilter("tags")}
+            onRemove={() => onChangeFilterWrapper("tags")}
           >
             {`${t("field.tags")} : ${[...localFilters.tags]?.join(", ")}`}
           </Pill>
         )}
       </Group>
       }
-    </div>
+    </Stack>
   );
+
 }

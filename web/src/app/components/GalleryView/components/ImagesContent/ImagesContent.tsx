@@ -5,13 +5,13 @@ import { useTranslation } from "react-i18next";
 
 import { SearchRange } from "@picteus/ws-client";
 
-import { FilterOrCollectionId, ImageExplorerDataType, ImageOrSummary, ViewMode } from "types";
+import { ImageExplorerDataType, ImageOrSummary, ViewMode } from "types";
 import { ROUTES } from "utils";
 import { RepositoriesService } from "app/services";
 import { EmptyResults, ImageGallery, ImageMasonry, ImageTable } from "app/components";
 
 
-export type PaginationType = SearchRange & {
+type PaginationType = SearchRange & {
   currentPage: number;
 };
 
@@ -23,9 +23,8 @@ type ImagesContentType = {
   containerHeight: number;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
-  filterOrCollectionId?: FilterOrCollectionId;
   refreshTrigger: number;
-  onFetchData: (pagination: PaginationType) => void;
+  onFetchData: (searchRange: SearchRange) => void;
   viewMode: ViewMode;
 };
 
@@ -37,14 +36,14 @@ export default function ImagesContent({
                          containerHeight,
                          containerRef,
                          scrollRootRef,
-                         filterOrCollectionId,
                          refreshTrigger,
                          onFetchData,
                          viewMode,
                        }: ImagesContentType) {
+  const imagesPerPage = 100;
+  const defaultPagination = { currentPage: 1, take: imagesPerPage, skip: 0 };
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const defaultPagination: PaginationType = { currentPage: 1, take: data.imagesPerPage, skip: 0 };
   const [pagination, setPagination] = useState<PaginationType>(defaultPagination);
   const [accumulatedData, setAccumulatedData] = useState<ImageOrSummary[]>([]);
   const isLoadingMoreRef = useRef<boolean>(false);
@@ -52,8 +51,8 @@ export default function ImagesContent({
   useEffect(() => {
     scrollRootRef.current.scrollTo(0, 0);
     setAccumulatedData([]);
-    setPagination({ currentPage: 1, take: data.imagesPerPage, skip: 0 });
-  }, [filterOrCollectionId, refreshTrigger, viewMode]);
+    setPagination(defaultPagination);
+  }, [refreshTrigger, viewMode]);
 
   useEffect(() => {
     onFetchData(pagination);
@@ -62,9 +61,6 @@ export default function ImagesContent({
   useEffect(() => {
     isLoadingMoreRef.current = false;
     setAccumulatedData((previousData) => {
-      if (data.currentPage === 1) {
-        return data.images;
-      }
       return [...previousData, ...data.images];
     });
   }, [data]);
@@ -72,16 +68,18 @@ export default function ImagesContent({
   const loadMore = useCallback(() => {
     if (isLoadingMoreRef.current === false) {
       isLoadingMoreRef.current = true;
-      const maximumPage = Math.ceil(data.total / pagination.take);
-      if (pagination.currentPage >= maximumPage) {
-        isLoadingMoreRef.current = false;
-        return;
+      if (data.total !== -1) {
+        const maximumPage = Math.ceil(data.total / pagination.take);
+        if (pagination.currentPage >= maximumPage) {
+          isLoadingMoreRef.current = false;
+          return;
+        }
       }
-      setPagination({
-        currentPage: pagination.currentPage + 1,
-        take: data.imagesPerPage,
-        skip: pagination.currentPage * data.imagesPerPage
-      });
+      setPagination(previousValue => ({
+        currentPage: previousValue.currentPage + 1,
+        take: imagesPerPage,
+        skip: previousValue.currentPage * imagesPerPage
+      }));
     }
   }, [pagination]);
 

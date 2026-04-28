@@ -1,37 +1,32 @@
 import { Flex, MultiSelect, Stack, Text } from "@mantine/core";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 
-export default function FilterSelect({
-  label,
-  options = [],
-  selectedValues = [],
-  onChange,
-}) {
-  const [selected, setSelected] = useState<string[]>(selectedValues);
+import { WithValueAndLabel } from "app/services/FiltersService.ts";
 
-  const data = useMemo(() => {
+
+type FilterSelectType = {
+  label: string;
+  options: WithValueAndLabel[];
+  selectedValues: string[];
+  onChange: (values: string[]) => void;
+};
+
+export default function FilterSelect({ label, options = [], selectedValues = [], onChange }: FilterSelectType) {
+
+  const data = useMemo<WithValueAndLabel[]>(() => {
     return [...options];
   }, [options]);
 
-  useEffect(() => {
-    setSelected(selectedValues);
-  }, [selectedValues]);
-
-  function handleOnChange(value: string[]) {
-    setSelected(value);
-    if (value !== selectedValues) {
-      /*   if (value.length === 0) {
-        onChange(options.map((option) => option.value));
-      } else {*/
-      onChange(value);
-      /*   }*/
+  function handleOnChange(values: string[]) {
+    if (values !== selectedValues) {
+      onChange(values);
     }
   }
 
   function computePlaceholder() {
-    if (selected.length === 0) {
+    if (selectedValues.length === 0) {
       return "All values";
-    } else if (selected.length === options.length) {
+    } else if (selectedValues.length === options.length) {
       return "";
     }
     return "Pick an option";
@@ -44,7 +39,7 @@ export default function FilterSelect({
       </Flex>
       <MultiSelect
         data={data}
-        value={selected}
+        value={selectedValues}
         clearable
         comboboxProps={{ withinPortal: false }}
         placeholder={computePlaceholder()}
