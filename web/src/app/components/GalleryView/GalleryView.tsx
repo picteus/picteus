@@ -24,7 +24,6 @@ type GalleryViewProps = {
 
 export default function GalleryView({ viewData, isDefault, containerWidth, containerHeight, containerRef, scrollRootRef }: GalleryViewProps){
   const { addTab } = useGalleryTabsContext();
-  const [data, setData] = useState<ImageExplorerDataType>({ total: -1, images: [] });
   const [filterOrCollectionId, setFilterOrCollectionId] = useInterceptedState<FilterOrCollectionId>(viewData.filterOrCollectionId, (previousFilterOrCollectionId: FilterOrCollectionId, updatedFilterOrCollectionId: FilterOrCollectionId)=> {
     if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(previousFilterOrCollectionId)) {
       if (isDefault === true) {
@@ -45,7 +44,7 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
       if (isDefault === true) {
         StorageService.setMainViewTabData({ mode: updatedViewMode, filterOrCollectionId: viewData.filterOrCollectionId });
       }
-      setViewMode(updatedViewMode);
+      handleOnRefresh();
       return updatedViewMode;
     }
     else {
@@ -54,9 +53,9 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
   });
   const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
 
-  const onFetchData = useCallback((searchRange: SearchRange) => {
+  const onFetchData = useCallback((searchRange: SearchRange): Promise<ImageExplorerDataType> => {
     setLoading(true);
-    ImageService.searchImages({
+    return ImageService.searchImages({
       filter: "filter" in filterOrCollectionId ? filterOrCollectionId.filter : undefined,
       collectionId: "collectionId" in filterOrCollectionId ? filterOrCollectionId.collectionId : undefined,
       range: {
@@ -64,12 +63,16 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
         skip: searchRange.skip
       }
     }).then((result) => {
-      setData({
+      return Promise.resolve<ImageExplorerDataType>({
         total: result.totalCount,
         images: result.items
       });
     }).catch((error) => {
       notifyApiCallError(error, "Can't fetch images");
+      return Promise.resolve<ImageExplorerDataType>({
+        total: 0,
+        images: []
+      });
     }).finally(() => {
       setLoading(false);
     });
@@ -97,7 +100,7 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
         <TopBar
           filterOrCollectionId={filterOrCollectionId}
           setFilterOrCollectionId={setFilterOrCollectionId}
-          handleOnRefresh={handleOnRefresh}
+          onRefresh={handleOnRefresh}
           handleOnPin={handleOnPin}
           viewMode={viewMode}
           setViewMode={setViewMode}
@@ -107,15 +110,14 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
           <Container>
             <ImagesContent
               loading={loading}
-              data={data}
-              onSelectedImage={handleOnSelectedImage}
+              viewMode={viewMode}
               containerWidth={containerWidth}
               containerHeight={containerHeight}
               containerRef={containerRef}
               scrollRootRef={scrollRootRef}
-              refreshTrigger={refreshTrigger}
               onFetchData={onFetchData}
-              viewMode={viewMode}
+              onSelectedImage={handleOnSelectedImage}
+              refreshTrigger={refreshTrigger}
             />
           </Container>
         </div>

@@ -14,7 +14,7 @@ import style from "./TopBar.module.scss";
 type TopBarType = {
   filterOrCollectionId: FilterOrCollectionId;
   setFilterOrCollectionId: React.Dispatch<React.SetStateAction<FilterOrCollectionId>>;
-  handleOnRefresh: () => void;
+  onRefresh: () => void;
   handleOnPin: () => void;
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
@@ -24,7 +24,7 @@ type TopBarType = {
 export default function GalleryTopBar({
                                         filterOrCollectionId,
                                         setFilterOrCollectionId,
-                                        handleOnRefresh,
+                                        onRefresh,
                                         handleOnPin,
                                         viewMode,
                                         setViewMode,
@@ -46,7 +46,7 @@ export default function GalleryTopBar({
 
   function onInternalRefresh() {
     setShowAlertNewImages(false);
-    handleOnRefresh();
+    onRefresh();
   }
 
   return (

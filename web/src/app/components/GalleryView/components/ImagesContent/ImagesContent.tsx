@@ -1,4 +1,4 @@
-import React, { RefObject, useCallback, useEffect, useRef, useState } from "react";
+import React, { RefObject, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -17,73 +17,89 @@ type PaginationType = SearchRange & {
 
 type ImagesContentType = {
   loading: boolean;
-  data: ImageExplorerDataType;
-  onSelectedImage: (image: ImageOrSummary) => void;
+  viewMode: ViewMode;
   containerWidth: number;
   containerHeight: number;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
+  onFetchData: (searchRange: SearchRange) => Promise<ImageExplorerDataType>;
+  onSelectedImage: (image: ImageOrSummary) => void;
   refreshTrigger: number;
-  onFetchData: (searchRange: SearchRange) => void;
-  viewMode: ViewMode;
 };
 
 export default function ImagesContent({
                          loading,
-                         data,
-                         onSelectedImage,
+                         viewMode,
                          containerWidth,
                          containerHeight,
                          containerRef,
                          scrollRootRef,
-                         refreshTrigger,
                          onFetchData,
-                         viewMode,
+                         onSelectedImage,
+                         refreshTrigger,
                        }: ImagesContentType) {
   const imagesPerPage = 100;
   const defaultPagination = { currentPage: 1, take: imagesPerPage, skip: 0 };
   const [t] = useTranslation();
   const navigate = useNavigate();
   const [pagination, setPagination] = useState<PaginationType>(defaultPagination);
-  const [accumulatedData, setAccumulatedData] = useState<ImageOrSummary[]>([]);
-  const isLoadingMoreRef = useRef<boolean>(false);
+  const [totalImagesCount, setTotalImagesCount] = useState<number>(-1);
+  const [accumulatedImages, setAccumulatedImages] = useState<ImageOrSummary[]>([]);
+  const isFetchingDataRef = useRef<boolean>(false);
+  const fetchSessionIdRef = useRef<number>(0);
+  const onFetchDataRef = useRef<(searchRange: SearchRange) => Promise<ImageExplorerDataType>>(onFetchData);
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
+    fetchSessionIdRef.current += 1;
+    isFetchingDataRef.current = false;
     scrollRootRef.current.scrollTo(0, 0);
-    setAccumulatedData([]);
-    setPagination(defaultPagination);
-  }, [refreshTrigger, viewMode]);
-
-  useEffect(() => {
-    onFetchData(pagination);
-  }, [pagination]);
-
-  useEffect(() => {
-    isLoadingMoreRef.current = false;
-    setAccumulatedData((previousData) => {
-      return [...previousData, ...data.images];
+    startTransition(() => {
+      setTotalImagesCount(-1);
+      setAccumulatedImages([]);
+      setPagination({ currentPage: 1, take: imagesPerPage, skip: 0 });
     });
-  }, [data]);
+  }, [refreshTrigger, setPagination]);
 
-  const loadMore = useCallback(() => {
-    if (isLoadingMoreRef.current === false) {
-      isLoadingMoreRef.current = true;
-      if (data.total !== -1) {
-        const maximumPage = Math.ceil(data.total / pagination.take);
-        if (pagination.currentPage >= maximumPage) {
-          isLoadingMoreRef.current = false;
+  useEffect(() => {
+    onFetchDataRef.current = onFetchData;
+  }, [onFetchData]);
+
+  useEffect(() => {
+    if (isFetchingDataRef.current === false) {
+      const currentSessionId = fetchSessionIdRef.current;
+      isFetchingDataRef.current = true;
+      onFetchDataRef.current(pagination).then((data: ImageExplorerDataType)=> {
+        if (currentSessionId !== fetchSessionIdRef.current) {
           return;
         }
-      }
-      setPagination(previousValue => ({
-        currentPage: previousValue.currentPage + 1,
-        take: imagesPerPage,
-        skip: previousValue.currentPage * imagesPerPage
-      }));
+        isFetchingDataRef.current = false;
+        setTotalImagesCount(data.total);
+        if (data.images.length > 0) {
+          setAccumulatedImages((previousData) => ([...previousData, ...data.images]));
+        }
+      });
     }
-  }, [pagination, data.total]);
+  }, [pagination]);
 
-  if (loading === false && data.total === 0) {
+  const loadMore = useCallback(() => {
+    if (isFetchingDataRef.current) {
+      return;
+    }
+    if (totalImagesCount !== -1) {
+      const maximumPage = Math.ceil(totalImagesCount / pagination.take);
+      if (pagination.currentPage >= maximumPage) {
+        return;
+      }
+    }
+    setPagination(previousPagination => ({
+      currentPage: previousPagination.currentPage + 1,
+      take: imagesPerPage,
+      skip: previousPagination.currentPage * imagesPerPage
+    }));
+  }, [pagination, setPagination, totalImagesCount]);
+
+  if (loading === false && totalImagesCount === 0) {
     const repositoriesExists = RepositoriesService.list().length > 0;
     return (
       <EmptyResults
@@ -97,16 +113,16 @@ export default function ImagesContent({
   }
 
   if (viewMode === "gallery") {
-    return <ImageGallery images={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
+    return <ImageGallery images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore}
                          containerHeight={containerHeight} containerRef={containerRef} scrollRootRef={scrollRootRef}
     />;
   }
 
   if (viewMode === "table") {
-    return <ImageTable images={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore} containerWidth={containerWidth} containerRef={containerRef}/>;
+    return <ImageTable images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore} containerWidth={containerWidth} containerRef={containerRef}/>;
   }
 
-  return containerRef && <ImageMasonry images={accumulatedData} onSelectedImage={onSelectedImage} loadMore={loadMore}
+  return containerRef && <ImageMasonry images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore}
                                        containerHeight={containerHeight} containerRef={containerRef}
                                        scrollRootRef={scrollRootRef} />;
 }
