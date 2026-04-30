@@ -12,7 +12,6 @@ import { EmptyResults, ImageGallery, ImageMasonry, ImageTable } from "app/compon
 
 
 const imagesPerPage = 100;
-const defaultPagination = { currentPage: 1, take: imagesPerPage, skip: 0 };
 
 type PaginationType = SearchRange & {
   currentPage: number;
@@ -41,7 +40,7 @@ export default function ImagesContent({
                        }: ImagesContentType) {
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const [pagination, setPagination] = useState<PaginationType>(defaultPagination);
+  const [pagination, setPagination] = useState<PaginationType>({ currentPage: 1, take: imagesPerPage, skip: 0 });
   const [totalImagesCount, setTotalImagesCount] = useState<number>(-1);
   const [accumulatedImages, setAccumulatedImages] = useState<ImageOrSummary[]>([]);
   const isFetchingDataRef = useRef<boolean>(false);
@@ -54,7 +53,7 @@ export default function ImagesContent({
     scrollRootRef.current.scrollTo(0, 0);
     setTotalImagesCount(-1);
     setAccumulatedImages([]);
-    setPagination(defaultPagination);
+    setPagination({ currentPage: 1, take: imagesPerPage, skip: 0 });
   }, [refreshTrigger]);
 
   useEffect(() => {

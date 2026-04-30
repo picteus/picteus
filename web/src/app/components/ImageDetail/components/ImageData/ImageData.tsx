@@ -124,7 +124,7 @@ export default function ImageData({ image }: ImageDataType) {
       multiple
       defaultValue={sections.map(section => section.id)}
     >
-      {sections.map((section) => (<Accordion.Item value={section.id}>
+      {sections.map((section) => (<Accordion.Item key={section.id} value={section.id}>
           <Accordion.Control key={section.id}>
             <Text size="sm" fw={500}>
               {t(section.mnemonic)}
