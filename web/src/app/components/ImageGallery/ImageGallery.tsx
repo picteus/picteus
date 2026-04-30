@@ -37,10 +37,11 @@ export default function ImageGallery({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
   const navigation = useImageNavigation();
+  const setSelectedImage = navigation.setSelectedImage;
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
-    navigation.setSelectedImage(image);
+    setSelectedImage(image);
     onSelectedImage(image);
-  }, [onSelectedImage, navigation]);
+  }, [onSelectedImage, setSelectedImage]);
   const portalRef = useRef<HTMLDivElement>(null);
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
@@ -94,7 +95,7 @@ export default function ImageGallery({
 
   const handleOnClick = useCallback((image: ImageOrSummary): void => {
     setSelectedImageWrapper(image);
-  }, []);
+  }, [setSelectedImageWrapper]);
 
   const { columns, columnWidth } = useMemo(() => {
     const approximateWidth = imageSize;

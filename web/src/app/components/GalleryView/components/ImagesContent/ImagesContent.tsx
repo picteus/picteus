@@ -1,4 +1,4 @@
-import React, { RefObject, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import React, { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -11,12 +11,14 @@ import { RepositoriesService } from "app/services";
 import { EmptyResults, ImageGallery, ImageMasonry, ImageTable } from "app/components";
 
 
+const imagesPerPage = 100;
+const defaultPagination = { currentPage: 1, take: imagesPerPage, skip: 0 };
+
 type PaginationType = SearchRange & {
   currentPage: number;
 };
 
 type ImagesContentType = {
-  loading: boolean;
   viewMode: ViewMode;
   containerWidth: number;
   containerHeight: number;
@@ -28,7 +30,6 @@ type ImagesContentType = {
 };
 
 export default function ImagesContent({
-                         loading,
                          viewMode,
                          containerWidth,
                          containerHeight,
@@ -38,8 +39,6 @@ export default function ImagesContent({
                          onSelectedImage,
                          refreshTrigger,
                        }: ImagesContentType) {
-  const imagesPerPage = 100;
-  const defaultPagination = { currentPage: 1, take: imagesPerPage, skip: 0 };
   const [t] = useTranslation();
   const navigate = useNavigate();
   const [pagination, setPagination] = useState<PaginationType>(defaultPagination);
@@ -48,18 +47,15 @@ export default function ImagesContent({
   const isFetchingDataRef = useRef<boolean>(false);
   const fetchSessionIdRef = useRef<number>(0);
   const onFetchDataRef = useRef<(searchRange: SearchRange) => Promise<ImageExplorerDataType>>(onFetchData);
-  const [, startTransition] = useTransition();
 
   useEffect(() => {
     fetchSessionIdRef.current += 1;
     isFetchingDataRef.current = false;
     scrollRootRef.current.scrollTo(0, 0);
-    startTransition(() => {
-      setTotalImagesCount(-1);
-      setAccumulatedImages([]);
-      setPagination({ currentPage: 1, take: imagesPerPage, skip: 0 });
-    });
-  }, [refreshTrigger, setPagination]);
+    setTotalImagesCount(-1);
+    setAccumulatedImages([]);
+    setPagination(defaultPagination);
+  }, [refreshTrigger]);
 
   useEffect(() => {
     onFetchDataRef.current = onFetchData;
@@ -97,9 +93,9 @@ export default function ImagesContent({
       take: imagesPerPage,
       skip: previousPagination.currentPage * imagesPerPage
     }));
-  }, [pagination, setPagination, totalImagesCount]);
+  }, [pagination, totalImagesCount]);
 
-  if (loading === false && totalImagesCount === 0) {
+  if (totalImagesCount === 0) {
     const repositoriesExists = RepositoriesService.list().length > 0;
     return (
       <EmptyResults

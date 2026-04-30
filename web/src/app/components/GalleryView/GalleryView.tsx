@@ -38,7 +38,6 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
     }
   });
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
   const [viewMode, setViewMode] = useInterceptedState<ViewMode>(viewData.mode, (previousViewMode: ViewMode, updatedViewMode: ViewMode) => {
     if (updatedViewMode !== previousViewMode) {
       if (isDefault === true) {
@@ -54,7 +53,6 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
   const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
 
   const onFetchData = useCallback((searchRange: SearchRange): Promise<ImageExplorerDataType> => {
-    setLoading(true);
     return ImageService.searchImages({
       filter: "filter" in filterOrCollectionId ? filterOrCollectionId.filter : undefined,
       collectionId: "collectionId" in filterOrCollectionId ? filterOrCollectionId.collectionId : undefined,
@@ -73,8 +71,6 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
         total: 0,
         images: []
       });
-    }).finally(() => {
-      setLoading(false);
     });
   }, [filterOrCollectionId]);
 
@@ -109,7 +105,6 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
         <div className={style.contentContainer}>
           <Container>
             <ImagesContent
-              loading={loading}
               viewMode={viewMode}
               containerWidth={containerWidth}
               containerHeight={containerHeight}
