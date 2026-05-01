@@ -1,7 +1,7 @@
 import React from "react";
 import { Overlay } from "@mantine/core";
 
-import { ImageOrSummary, WithNavigationType } from "types";
+import { ImageOrSummary, ViewMode, WithNavigationType } from "types";
 import { ImageDetail } from "app/components";
 
 import style from "./ImageVisualizer.module.scss";
@@ -9,15 +9,12 @@ import style from "./ImageVisualizer.module.scss";
 
 type ImageVisualizerType = {
   image: ImageOrSummary;
-  onClose: () => void;
   withNavigation: WithNavigationType;
+  viewMode: ViewMode;
+  onClose: () => void;
 };
 
-export default function ImageVisualizer({
-  image,
-  onClose,
-  withNavigation,
-}: ImageVisualizerType) {
+export default function ImageVisualizer({ image, viewMode, withNavigation, onClose }: ImageVisualizerType) {
   return (
     <Overlay
       className={style.overlay}
@@ -25,7 +22,7 @@ export default function ImageVisualizer({
       backgroundOpacity={1}
     >
       <div className={style.container}>
-        <ImageDetail image={image} onClose={onClose} withNavigation={withNavigation} />
+        <ImageDetail image={image} withNavigation={withNavigation} viewMode={viewMode} onClose={onClose} />
       </div>
     </Overlay>
   );

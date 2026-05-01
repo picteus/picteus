@@ -100,7 +100,7 @@ export default function ImageGallery({
 
   const handleOnClick = useCallback((image: ImageOrSummary): void => {
     if (displayDetailInContainer === false) {
-      showImageVisualizer({ selectedImage: image, images });
+      showImageVisualizer({ selectedImage: image, images, viewMode: "gallery" });
     }
     else {
       setSelectedImageWrapper(image);
@@ -123,6 +123,7 @@ export default function ImageGallery({
         height={columnWidth}
         mode={imageItemMode}
         overlay={"caption" in image ? (image as ImageWithCaption).caption : undefined}
+        viewMode="gallery"
         onClick={handleOnClick}
       />
     </Grid.Col>
@@ -150,8 +151,9 @@ export default function ImageGallery({
             >
               <ImageDetail
                 image={navigation.selectedImage}
-                onClose={() => setSelectedImageWrapper((undefined))}
                 withNavigation={navigation}
+                viewMode="gallery"
+                onClose={() => setSelectedImageWrapper((undefined))}
               />
             </Overlay>
           </div>,

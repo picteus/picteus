@@ -61,6 +61,7 @@ export default function ImageTable({
           width={edge}
           height={edge}
           mode={imageItemMode}
+          viewMode="table"
           onClick={() =>
             setSelectedImageWrapper(image)
           }
@@ -111,8 +112,9 @@ export default function ImageTable({
           >
             <ImageDetail
               image={navigation.selectedImage}
-              onClose={() => setSelectedImageWrapper((undefined))}
               withNavigation={navigation}
+              viewMode="table"
+              onClose={() => setSelectedImageWrapper((undefined))}
             />
           </Overlay>
         </div>,

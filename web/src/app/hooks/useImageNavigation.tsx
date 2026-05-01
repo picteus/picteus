@@ -10,7 +10,7 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
   setSelectedImage: (selectedImage: ImageOrSummary) => void,
   selectedImage: ImageOrSummary | undefined
 } {
-  const [state, setState] = useState<ImageVisualizerContextValue>(initialValue ?? { selectedImage: undefined, images: [] });
+  const [state, setState] = useState<ImageVisualizerContextValue>(initialValue ?? { selectedImage: undefined, images: [], viewMode: "masonry" });
 
   const setImages = useCallback((images: ImageOrSummary[]): void => {
     setState((previousValue) => {

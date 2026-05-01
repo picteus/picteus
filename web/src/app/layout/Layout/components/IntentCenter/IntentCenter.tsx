@@ -121,7 +121,7 @@ export default function IntentCenter() {
     else if (show.type === "image") {
       const action = async () => {
         const image = await ImageService.get({ id: show.id });
-        showImageVisualizer({ selectedImage: image, images: [image] });
+        showImageVisualizer({ selectedImage: image, images: [image], viewMode: "masonry" });
         respondWithValue();
       };
       if (shouldConfirm) {

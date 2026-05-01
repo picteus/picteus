@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-client";
 
-import { ImageWithCaption } from "types";
+import { ImageWithCaption, ViewMode } from "types";
 import { notifyApiCallError, Validators } from "utils";
 import { useImageVisualizerContext } from "app/context";
 import { useReadyRef } from "app/hooks";
@@ -24,12 +24,10 @@ type ClosestEmbeddingsImagesModalFormPayload = {
 type ClosestEmbeddingsImagesModalType = {
   extensionId: string;
   imageId: string;
+  viewMode: ViewMode;
 };
 
-export default function ClosestEmbeddingsImagesModal({
-  extensionId,
-  imageId,
-}: ClosestEmbeddingsImagesModalType) {
+export default function ClosestEmbeddingsImagesModal({  extensionId, imageId, viewMode}: ClosestEmbeddingsImagesModalType) {
   const [t] = useTranslation();
   const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
@@ -95,7 +93,7 @@ export default function ClosestEmbeddingsImagesModal({
   }, []);
 
   function handleOnClickSourceImage() {
-    showImageVisualizer({ images, selectedImage: sourceImage });
+    showImageVisualizer({ images, selectedImage: sourceImage, viewMode });
   }
 
   function renderForm() {
@@ -144,7 +142,7 @@ export default function ClosestEmbeddingsImagesModal({
 
   function renderContent() {
     return (isReady && <ImagesView
-      viewData={{ viewMode: "masonry", images }}
+      viewData={{ viewMode, images }}
       isDefault={false}
       containerRef={readyRef}
       onEmptyResults={() => (<EmptyResults

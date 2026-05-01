@@ -138,10 +138,12 @@ export default {
   },
   emptyImages: {
     title: "No Images available",
-    descriptionNoRepository:
-      "There are currently no images stored in your repositories. Please upload or add images to your repositories to see them listed here.",
     description:
       "There are currently no images corresponding to your search criteria. Please try again with different criteria.",
+    descriptionNoRepository:
+      "There are currently no images stored in your repositories. Please upload or add images to your repositories to see them listed here.",
+    descriptionNoData:
+      "There is no more image in the collection or in the initial set.",
     buttonTextNoRepository: "Manage repositories"
   },
   emptyRepositories: {

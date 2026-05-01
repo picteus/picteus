@@ -18,6 +18,6 @@ export default function ImageVisualizerWrapper({
 
   return (
     navigation.selectedImage !== undefined &&
-    <ImageVisualizer image={navigation.selectedImage} onClose={onSuccess} withNavigation={navigation} />
+    <ImageVisualizer image={navigation.selectedImage} withNavigation={navigation} viewMode={imageVisualizerContext.viewMode} onClose={onSuccess} />
   );
 }

@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext } from "react";
 
-import { ImageOrSummary } from "types";
+import { ImageOrSummary, ViewMode } from "types";
 import { ImageVisualizerWrapper } from "app/components";
 import { useActionModalContext } from "./ActionModalContext.tsx";
 
@@ -8,6 +8,7 @@ import { useActionModalContext } from "./ActionModalContext.tsx";
 export type ImageVisualizerContextValue = {
   selectedImage: ImageOrSummary | undefined;
   images: ImageOrSummary[];
+  viewMode: ViewMode;
 };
 
 const ImageVisualizerContext = createContext<((value: ImageVisualizerContextValue) => void) | undefined>(undefined);

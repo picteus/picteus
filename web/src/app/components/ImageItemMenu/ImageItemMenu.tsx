@@ -12,7 +12,7 @@ import {
   ManifestCapabilityId
 } from "@picteus/ws-client";
 
-import { UiExtensionCommandType } from "types";
+import { UiExtensionCommandType, ViewMode } from "types";
 import { notifyApiCallError } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useConfirmAction, useExtensionCommand } from "app/hooks";
@@ -46,9 +46,10 @@ function ImageItemMenuEntry({extensionId, icon, label, subLabel, onClick} : Imag
 
 type ImageItemMenuType = {
   image: ImageSummary;
+  viewMode: ViewMode;
 };
 
-export default function ImageItemMenu({ image }: ImageItemMenuType) {
+export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
   const [, addModal] = useActionModalContext();
   const confirmAction = useConfirmAction();
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>([]);
@@ -85,6 +86,7 @@ export default function ImageItemMenu({ image }: ImageItemMenuType) {
         <ClosestEmbeddingsImagesModal
           imageId={image.id}
           extensionId={extensionId}
+          viewMode={viewMode}
         />
       ),
       title: t("closestEmbeddingsImagesModal.title"),

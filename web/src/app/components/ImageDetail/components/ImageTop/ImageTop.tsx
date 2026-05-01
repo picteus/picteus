@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Image } from "@picteus/ws-client";
 
+import { ViewMode } from "types";
 import { CopyText, ImageItemMenu, TopPanel } from "app/components";
 import { ImageDimensions, ImageWeight } from "../index.ts";
 
@@ -13,10 +14,11 @@ import style from "./ImageTop.module.scss";
 
 type ImageTopType = {
   image: Image;
+  viewMode: ViewMode;
   onClose: () => void;
 };
 
-export default function ImageTop({ image, onClose }: ImageTopType) {
+export default function ImageTop({ image, viewMode, onClose }: ImageTopType) {
   const [t] = useTranslation();
 
   return (<TopPanel
@@ -52,7 +54,7 @@ export default function ImageTop({ image, onClose }: ImageTopType) {
             {t("menu.imageCommands")}
           </Button>
         </Menu.Target>
-        <ImageItemMenu image={image} />
+        <ImageItemMenu image={image} viewMode={viewMode}/>
       </Menu>
       } />
   );

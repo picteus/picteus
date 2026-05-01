@@ -145,7 +145,7 @@ export default function GalleryScreen() {
                 containerRef={containerRef}
                 onEmptyResults={() => (<EmptyResults
                   icon={<IconPhotoSearch size={140} stroke={1} />}
-                  description={t("emptyImages.description")}
+                  description={t(`emptyImages.${("filter" in tab.data.filterOrCollectionId && tab.data.filterOrCollectionId.filter.origin) ? "descriptionNoData" : "description"}`)}
                   title={t("emptyImages.title")}
                 />)}
                 stickyControlBar={true}

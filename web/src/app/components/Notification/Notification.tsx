@@ -35,7 +35,7 @@ export default function Notification({
   async function handleOnClick() {
     if (notification.type === "image") {
       const image = await ImageService.get({ id: event.rawData.value.id });
-      showImageVisualizer({ selectedImage: image , images: [image]});
+      showImageVisualizer({ selectedImage: image , images: [image], viewMode: "masonry"});
     }
   }
 

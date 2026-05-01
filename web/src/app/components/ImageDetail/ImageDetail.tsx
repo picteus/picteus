@@ -4,7 +4,7 @@ import { Group as ResizableGroup, Layout, Panel, Separator } from "react-resizab
 
 import { Image } from "@picteus/ws-client";
 
-import { ChannelEnum, ImageOrSummary, WithNavigationType } from "types";
+import { ChannelEnum, ImageOrSummary, ViewMode, WithNavigationType } from "types";
 import { useEventSocket } from "app/context";
 import { ImageService, StorageService } from "app/services";
 import { ImageData, ImageTop, ImageVisual } from "./components";
@@ -14,11 +14,12 @@ import style from "./ImageDetail.module.scss";
 
 type ImageDetailType = {
   image: ImageOrSummary;
-  onClose: () => void;
   withNavigation: WithNavigationType;
+  viewMode: ViewMode;
+  onClose: () => void;
 };
 
-export default function ImageDetail({ image, onClose, withNavigation }: ImageDetailType) {
+export default function ImageDetail({ image, withNavigation, viewMode, onClose }: ImageDetailType) {
   const ref = useFocusTrap();
   const [imageData, setImageData] = useState<Image>("metadata" in image ? image as Image : undefined);
   const [panelSizes, setPanelSizes] = useState<number[]>(StorageService.getVisualizerPanelSizes());
@@ -70,7 +71,7 @@ export default function ImageDetail({ image, onClose, withNavigation }: ImageDet
       </Separator>
       <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%" className={style.right}>
         {imageData && <>
-          <ImageTop image={imageData} onClose={onClose} />
+          <ImageTop image={imageData} viewMode={viewMode} onClose={onClose} />
           <ImageData image={imageData} />
         </>}
       </Panel>

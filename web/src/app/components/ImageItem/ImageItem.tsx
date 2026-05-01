@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { ImageDimensions, ImageResizeRender } from "@picteus/ws-client";
 
-import { ImageItemMode, ImageOrSummary } from "types";
+import { ImageItemMode, ImageOrSummary, ViewMode } from "types";
 import { useImagesSelectedContext } from "app/context";
 import { ImageService } from "app/services";
 import { ImageItemMenu } from "app/components";
@@ -75,6 +75,7 @@ type ImageItemType = {
   height?: number;
   mode?: ImageItemMode;
   overlay?: ReactNode;
+  viewMode: ViewMode;
   onClick: (image: ImageOrSummary) => void;
 };
 
@@ -82,9 +83,10 @@ export default function ImageItem({
   image,
   width,
   height,
-  onClick,
   overlay,
+  viewMode,
   mode = ImageItemMode.VIEW,
+ onClick,
 }: ImageItemType) {
   const [t] = useTranslation();
   const [menuOpened, setMenuOpened] = useState<boolean>(false);
@@ -155,7 +157,7 @@ export default function ImageItem({
           <IconDots />
         </ActionIcon>
       </Menu.Target>
-      {menuOpened && <ImageItemMenu image={image} />}
+      {menuOpened && <ImageItemMenu image={image} viewMode={viewMode} />}
     </Menu>
   )), [image, menuOpened, handleOnChangeMenuOpened]);
 

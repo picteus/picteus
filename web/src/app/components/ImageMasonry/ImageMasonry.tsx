@@ -81,7 +81,7 @@ export default function ImageMasonry({
 
   const handleOnClick = useCallback((image: ImageOrSummary) => {
     if (displayDetailInContainer === false) {
-      showImageVisualizer({ selectedImage: image, images });
+      showImageVisualizer({ selectedImage: image, images, viewMode: "masonry" });
     }
     else {
       setSelectedImageWrapper(image);
@@ -115,6 +115,7 @@ export default function ImageMasonry({
               width={columnWidth as number}
               mode={imageItemMode}
               overlay={"caption" in images[index] ? (images[index] as ImageWithCaption).caption : undefined}
+              viewMode="masonry"
               onClick={handleOnClick}
             />)}
           loadMore={loadMore}
@@ -133,8 +134,9 @@ export default function ImageMasonry({
             >
               <ImageDetail
                 image={navigation.selectedImage}
-                onClose={handleOnClose}
                 withNavigation={navigation}
+                viewMode="masonry"
+                onClose={handleOnClose}
               />
             </Overlay>
           </div>,
