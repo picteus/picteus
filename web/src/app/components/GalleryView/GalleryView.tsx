@@ -24,32 +24,9 @@ type GalleryViewProps = {
 
 export default function GalleryView({ viewData, isDefault, containerWidth, containerHeight, containerRef, scrollRootRef }: GalleryViewProps){
   const { addTab } = useGalleryTabsContext();
-  const [filterOrCollectionId, setFilterOrCollectionId] = useInterceptedState<FilterOrCollectionId>(viewData.filterOrCollectionId, (previousFilterOrCollectionId: FilterOrCollectionId, updatedFilterOrCollectionId: FilterOrCollectionId)=> {
-    if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(previousFilterOrCollectionId)) {
-      if (isDefault === true) {
-        StorageService.setMainViewTabData({ mode: viewData.mode, filterOrCollectionId: updatedFilterOrCollectionId });
-      }
-      // There should be now issue with the "handleOnRefresh()" call, because it only performs a state update through an updater callbacck
-      handleOnRefresh();
-      return updatedFilterOrCollectionId;
-    }
-    else {
-      return previousFilterOrCollectionId;
-    }
-  });
+  const [filterOrCollectionId, setFilterOrCollectionId] = useInterceptedState<FilterOrCollectionId>(viewData.filterOrCollectionId);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  const [viewMode, setViewMode] = useInterceptedState<ViewMode>(viewData.mode, (previousViewMode: ViewMode, updatedViewMode: ViewMode) => {
-    if (updatedViewMode !== previousViewMode) {
-      if (isDefault === true) {
-        StorageService.setMainViewTabData({ mode: updatedViewMode, filterOrCollectionId: viewData.filterOrCollectionId });
-      }
-      handleOnRefresh();
-      return updatedViewMode;
-    }
-    else {
-      return previousViewMode;
-    }
-  });
+  const [viewMode, setViewMode] = useInterceptedState<ViewMode>(viewData.mode);
   const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
 
   const onFetchData = useCallback((searchRange: SearchRange): Promise<ImageExplorerDataType> => {
@@ -74,6 +51,23 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
     });
   }, [filterOrCollectionId]);
 
+  function handleOnFilterOrCollectionId(updatedFilterOrCollectionId: FilterOrCollectionId) {
+    setFilterOrCollectionId(updatedFilterOrCollectionId);
+    if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(filterOrCollectionId)) {
+      if (isDefault === true) {
+        StorageService.setMainViewTabData({ mode: viewData.mode, filterOrCollectionId: updatedFilterOrCollectionId });
+      }
+      handleOnRefresh();
+    }
+  }
+  function handleOnViewMode(updatedViewMode: ViewMode) {
+    setViewMode(updatedViewMode);
+    if (isDefault === true) {
+      StorageService.setMainViewTabData({ mode: updatedViewMode, filterOrCollectionId });
+    }
+    handleOnRefresh();
+  }
+
   function handleOnRefresh() {
     setRefreshTrigger(value => value + 1);
   }
@@ -94,12 +88,12 @@ export default function GalleryView({ viewData, isDefault, containerWidth, conta
     <>
       <div className={style.container}>
         <TopBar
-          filterOrCollectionId={filterOrCollectionId}
-          setFilterOrCollectionId={setFilterOrCollectionId}
+          initialFilterOrCollectionId={filterOrCollectionId}
+          onFilterOrCollectionId={handleOnFilterOrCollectionId}
           onRefresh={handleOnRefresh}
-          handleOnPin={handleOnPin}
           viewMode={viewMode}
-          setViewMode={setViewMode}
+          onViewMode={handleOnViewMode}
+          handleOnPin={handleOnPin}
           setZIndex={selectedImage === undefined}
         />
         <div className={style.contentContainer}>

@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActionIcon, Box, Button, Center, Flex, Loader, Menu, Text, Tooltip } from "@mantine/core";
 import { IconBookmark, IconChevronDown, IconDeviceFloppy, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -7,21 +7,23 @@ import { Collection as PicteusCollection, SearchFilter, SearchFilterFromJSON } f
 
 import { notifyError, notifySuccess } from "utils";
 import { useActionModalContext } from "app/context";
-import { useConfirmAction } from "app/hooks";
+import { useAsyncInitialize, useConfirmAction } from "app/hooks";
 import { CollectionService } from "app/services";
 import { Collection } from "app/components";
 
 
 type CollectionsBarType = {
-    searchFilter: SearchFilter;
-    selectedCollection?: PicteusCollection;
-    setSelectedCollection: (collection: PicteusCollection | undefined) => void;
+    searchFilter?: SearchFilter;
+    initialCollectionId?: number;
+    onCollection: (collection: PicteusCollection) => void;
+    clearCollectionTrigger: number;
 };
 
 export default function CollectionsBar({
     searchFilter,
-    selectedCollection,
-    setSelectedCollection,
+    initialCollectionId,
+    onCollection,
+    clearCollectionTrigger,
 }: CollectionsBarType) {
     const [t] = useTranslation();
     const [, addModal] = useActionModalContext();
@@ -29,6 +31,35 @@ export default function CollectionsBar({
     const [loading, setLoading] = useState<boolean>(false);
     const [collections, setCollections] = useState<PicteusCollection[]>([]);
     const [menuOpened, setMenuOpened] = useState<boolean>(false);
+    const [selectedCollection, setSelectedCollection] = useState<PicteusCollection | undefined>();
+    const [saveDisabled, setSaveDisabled] = useState<boolean>(true);
+    const onCollectionRef = useRef<(collection: PicteusCollection) => void>(onCollection);
+
+    useEffect(() => {
+        onCollectionRef.current = onCollection;
+    }, [onCollection]);
+
+    useAsyncInitialize<number | undefined>(initialCollectionId, async (value: number)=> {
+        if (value !== undefined) {
+            const collection = await CollectionService.get(value);
+            setSelectedCollection(collection);
+            onCollectionRef.current(collection);
+        }
+    });
+
+    useEffect(() => {
+        setSaveDisabled(selectedCollection === undefined || searchFilter === undefined || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter)))
+    }, [searchFilter, selectedCollection]);
+
+    useEffect(() => {
+        if (clearCollectionTrigger > 0) {
+            setSelectedCollection(undefined);
+        }
+    }, [clearCollectionTrigger]);
+
+    useEffect(() => {
+        loadCollections();
+    }, []);
 
     function loadCollections() {
         setLoading(true);
@@ -39,34 +70,35 @@ export default function CollectionsBar({
         });
     }
 
-    useEffect(() => {
-        loadCollections();
-    }, []);
+    function handleOnSelectedCollection(collection: PicteusCollection) {
+        setSelectedCollection(collection);
+        setSaveDisabled(true);
+        onCollection(collection);
+    }
 
     function handleOnSaveCurrent() {
         addModal({
             title: t("collections.create"),
             component: (
                 <Collection
-                    searchFilter={searchFilter}
+                    searchFilter={searchFilter!}
                     onSuccess={(collection) => {
                         loadCollections();
-                        setSelectedCollection(collection);
+                        onCollection(collection);
                     }}
                 />
             ),
         });
     }
 
-    async function handleOnUpdateCurrent() {
-        try {
-            const collection = await CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment);
+    function handleOnUpdateCurrent() {
+        CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment).then((collection: PicteusCollection) => {
             notifySuccess(t("collections.updateSuccess"));
             loadCollections();
             setSelectedCollection(collection);
-        } catch (error) {
-            notifyError((error as Error).message);
-        }
+            setSaveDisabled(true);
+            onCollection(collection);
+        }).catch(error => notifyError((error as Error).message));
     }
 
     function handleOnEdit(collection: PicteusCollection) {
@@ -79,7 +111,7 @@ export default function CollectionsBar({
                     searchFilter={collection.filter}
                     onSuccess={(updatedCollection) => {
                         loadCollections();
-                        setSelectedCollection(updatedCollection);
+                        onCollection(updatedCollection);
                     }}
                 />
             ),
@@ -93,7 +125,7 @@ export default function CollectionsBar({
                 try {
                     await CollectionService.delete(collection.id);
                     loadCollections();
-                    setSelectedCollection(undefined);
+                    onCollection(undefined);
                 } catch (error) {
                     notifyError((error as Error).message);
                 }
@@ -109,7 +141,7 @@ export default function CollectionsBar({
         return name.length > 32 ? name.substring(0, 32) + "..." : name;
     }
 
-    return useMemo<ReactElement>(() => (<Button.Group>
+    return (<Button.Group>
           <Menu shadow="md" width={340} position="bottom-end" opened={menuOpened} onChange={setMenuOpened}>
               <Menu.Target>
                   <Button variant="default" leftSection={<IconBookmark size={14} />}
@@ -121,7 +153,7 @@ export default function CollectionsBar({
                   <Menu.Label>{t("collections.savedCollections")}</Menu.Label>
                   {loading && <Box p="sm"><Center><Loader size="sm" /></Center></Box>}
                   {!loading && collections.map((collection) => (
-                    <Menu.Item key={collection.id} onClick={() => setSelectedCollection(collection)}>
+                    <Menu.Item key={collection.id} onClick={() => handleOnSelectedCollection(collection)}>
                         <Flex justify="space-between" align="center">
                             <Text size="sm">{truncateName(collection.name)}</Text>
                             <Flex gap="xs">
@@ -145,18 +177,16 @@ export default function CollectionsBar({
           </Menu>
           {selectedCollection && (
             <Tooltip label={t("collections.updateCurrent", { name: selectedCollection.name })}>
-                <Button variant="default"
-                        disabled={searchFilter && JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter))}
-                        onClick={() => void handleOnUpdateCurrent()} px="xs">
+                <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
                     <IconDeviceFloppy size={16} />
                 </Button>
             </Tooltip>
           )}
           <Tooltip label={t("collections.saveCurrent")}>
-              <Button variant="default" onClick={handleOnSaveCurrent} px="xs">
+              <Button variant="default" px="xs" disabled={!searchFilter}  onClick={handleOnSaveCurrent}>
                   <IconPlus size={16} />
               </Button>
           </Tooltip>
       </Button.Group>
-    ), [loading, menuOpened, collections, selectedCollection, searchFilter]);
+    );
 }

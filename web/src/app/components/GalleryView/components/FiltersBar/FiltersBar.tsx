@@ -7,7 +7,7 @@ import { Collection, Repository, SearchFilter, SearchFilterFromJSON } from "@pic
 
 import { FilterOrCollectionId, LocalFiltersType } from "types";
 import { useDebouncedCallback, useInterceptedState } from "app/hooks";
-import { CollectionService, FeaturesNamesOption, FiltersService, RepositoriesService } from "app/services";
+import { FeaturesNamesOption, FiltersService, RepositoriesService } from "app/services";
 import { CollectionsBar, Filters } from "../index.ts";
 
 
@@ -15,65 +15,33 @@ const { defaultFilter, sortByOptions, sortOrderOptions, searchInOptions } = Filt
 
 
 type FiltersBarType = {
-  filterOrCollectionId: FilterOrCollectionId;
-  setFilterOrCollectionId: React.Dispatch<React.SetStateAction<FilterOrCollectionId>>;
+  initialFilterOrCollectionId: FilterOrCollectionId;
+  onFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId) => void;
 };
 
-export default function FiltersBar({ filterOrCollectionId, setFilterOrCollectionId }: FiltersBarType) {
+export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrCollectionId }: FiltersBarType) {
   const [t] = useTranslation();
   const [searchText, setSearchText] = useState<string>();
   const repositories = useMemo<Repository []>(() => (RepositoriesService.list()), []);
   const [popoverOpened, setPopoverOpened] = useState<boolean>(false);
-  const [localFilters, setLocalFilters] = useInterceptedState<LocalFiltersType>(undefined);
+  const [localFilters, setLocalFilters] = useInterceptedState<LocalFiltersType>("filter" in initialFilterOrCollectionId ? FiltersService.searchFilterToLocalFilters(initialFilterOrCollectionId.filter) : undefined );
   const [searchFilter, setSearchFilter] = useInterceptedState<SearchFilter>(undefined);
-  const [selectedCollection, setSelectedCollection] = useState<Collection | undefined>();
-
-  const setFilterOrCollectionIdWrapper = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId) => {
-    setFilterOrCollectionId((previousFilterOrCollectionId: FilterOrCollectionId) => {
-      if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(previousFilterOrCollectionId)) {
-        return updatedFilterOrCollectionId;
-      }
-      else {
-        return previousFilterOrCollectionId;
-      }
-    })
-  }, [setFilterOrCollectionId]);
-
-  useEffect(() => {
-    if ("collectionId" in filterOrCollectionId) {
-      CollectionService.get(filterOrCollectionId.collectionId).then(collection => {
-        setSelectedCollection((previousCollection: Collection) => {
-          if (JSON.stringify(previousCollection) !== JSON.stringify(collection)) {
-            return collection;
-          }
-          else {
-            return previousCollection;
-          }
-        });
-        setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
-      });
-    }
-    else if ("filter" in filterOrCollectionId) {
-      setLocalFilters(FiltersService.searchFilterToLocalFilters(filterOrCollectionId.filter));
-    }
-  }, [filterOrCollectionId, setLocalFilters]);
-
-  useEffect(() => {
-    setSearchFilter(localFilters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(localFilters));
-  }, [localFilters, setSearchFilter]);
+  const [currentCollection, setCurrentCollection] = useState<Collection | undefined>();
+  const [initialCollectionId] = useState<number | undefined>("collectionId" in initialFilterOrCollectionId ? initialFilterOrCollectionId.collectionId : undefined);
+  const [clearCollectionTrigger, setClearCollectionTrigger] = useState<number>(0);
 
   useEffect(() => {
     const updatedSearchFilter = localFilters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(localFilters);
-    if (selectedCollection !== undefined) {
-      if (JSON.stringify(SearchFilterFromJSON(updatedSearchFilter)) === JSON.stringify(SearchFilterFromJSON(selectedCollection.filter))) {
-        setFilterOrCollectionIdWrapper({collectionId: selectedCollection.id});
-        return;
+    if (updatedSearchFilter !== undefined) {
+      if (currentCollection !== undefined && JSON.stringify(SearchFilterFromJSON(updatedSearchFilter)) === JSON.stringify(SearchFilterFromJSON(currentCollection.filter))) {
+        onFilterOrCollectionId({ collectionId: currentCollection.id });
+      }
+      else {
+        onFilterOrCollectionId({ filter: updatedSearchFilter });
       }
     }
-    if (updatedSearchFilter !== undefined) {
-      setFilterOrCollectionIdWrapper({filter: updatedSearchFilter});
-    }
-  }, [selectedCollection, localFilters, setFilterOrCollectionIdWrapper]);
+    setSearchFilter(updatedSearchFilter);
+  }, [localFilters, setSearchFilter, currentCollection]);
 
   const onChangeFilterWrapper = useCallback((key: string, value?: string | string [] | FeaturesNamesOption[]) => {
     setLocalFilters((previousLocalFilters: LocalFiltersType) => {
@@ -102,24 +70,18 @@ export default function FiltersBar({ filterOrCollectionId, setFilterOrCollection
     }
   }, [searchText]);
 
-  const setSelectedCollectionWrapper = useCallback((updatedCollection: Collection | undefined) => {
-    if (updatedCollection !== undefined) {
-      setLocalFilters(FiltersService.searchFilterToLocalFilters(updatedCollection.filter));
-    }
-    setSelectedCollection((previousCollection: Collection) => {
-      if (JSON.stringify(previousCollection) !== JSON.stringify(updatedCollection)) {
-        return updatedCollection;
-      }
-      else {
-        return previousCollection;
-      }
-    });
-  }, [setLocalFilters]);
+  function handleOnCollection(collection: Collection) {
+    console.log("handleOnCollection");
+    setCurrentCollection(collection);
+    setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
+    setSearchFilter(collection.filter)
+    onFilterOrCollectionId({ collectionId: collection.id });
+  }
 
   function handleOnClearAll() {
     setLocalFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
     setSearchText("");
-    setSelectedCollection(undefined);
+    setClearCollectionTrigger(prev => prev + 1);
   }
 
   function computeSortingLabelDisplay() {
@@ -190,12 +152,12 @@ export default function FiltersBar({ filterOrCollectionId, setFilterOrCollection
                        handleOnClearAll={handleOnClearAll} />}
           </Popover.Dropdown>
         </Popover>
-        {searchFilter && <CollectionsBar
+        <CollectionsBar
           searchFilter={searchFilter}
-          selectedCollection={selectedCollection}
-          setSelectedCollection={setSelectedCollectionWrapper}
+          initialCollectionId={initialCollectionId}
+          onCollection={handleOnCollection}
+          clearCollectionTrigger={clearCollectionTrigger}
         />
-        }
       </Flex>
       {localFilters && <Group>
         <Pill {...commonPillProps} withRemoveButton={false}>
