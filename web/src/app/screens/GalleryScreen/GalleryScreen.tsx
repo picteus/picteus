@@ -1,17 +1,17 @@
 import React, { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Input, ScrollArea, Scroller, Tabs } from "@mantine/core";
-import { IconPhoto, IconX } from "@tabler/icons-react";
+import { IconPhoto, IconPhotoSearch, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { TabsType } from "types";
+import { ROUTES } from "utils";
 import { useGalleryTabsContext } from "app/context";
 import { useContainerDimensions } from "app/hooks";
-import { FiltersService, StorageService } from "app/services";
-import { Container, ExtensionIcon, GalleryView, MasonryVisualizer } from "app/components";
+import { FiltersService, RepositoriesService, StorageService } from "app/services";
+import { EmptyResults, ExtensionIcon, ImagesView } from "app/components";
 
 import style from "./GalleryScreen.module.scss";
-
-``
 
 
 type GalleryTabType = {
@@ -72,9 +72,10 @@ function GalleryTab({ tab, onRemove }: GalleryTabType) {
 
 export default function GalleryScreen() {
   const [t] = useTranslation();
+  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
-  const { width, height } = useContainerDimensions(containerRef);
+  const { height } = useContainerDimensions(containerRef);
   const {tabs, removeTab, state, galleryTabValue} = useGalleryTabsContext();
 
   function handleOnRemoveTab(tabId: string, nextTabValue: string) {
@@ -118,29 +119,40 @@ export default function GalleryScreen() {
           </Tabs.List>
           <Tabs.Panel value={galleryTabValue}>
             {viewportRef.current &&
-              <GalleryView viewData={StorageService.getMainViewTabData(FiltersService.defaultFilter)} isDefault={true}
-                           containerWidth={width} containerHeight={height} containerRef={containerRef}
-                           scrollRootRef={viewportRef} />}
+              <ImagesView viewData={StorageService.getMainViewTabData(FiltersService.defaultFilter)} isDefault={true}
+                          containerRef={containerRef} stickyControlBar={true} onEmptyResults={() => {
+                const repositoriesExists = RepositoriesService.list().length > 0;
+                return (
+                  <EmptyResults
+                    icon={<IconPhotoSearch size={140} stroke={1} />}
+                    description={t(repositoriesExists ? "emptyImages.description" : "emptyImages.descriptionNoRepository")}
+                    title={t("emptyImages.title")}
+                    buttonText={t("emptyImages.buttonTextNoRepository")}
+                    buttonAction={repositoriesExists ? undefined : () => navigate(ROUTES.repositories)}
+                  />
+                );
+              }} scrollRootRef={viewportRef} displayDetailInContainer={true} />}
           </Tabs.Panel>
           {tabs.map((tab) => (
             <Tabs.Panel key={`panel-${tab.id}`} value={tab.id}>
-              {tab.type === "Masonry" ? (
-                <Container>
-                  <MasonryVisualizer
-                    content={tab.content}
-                    filterOrCollectionId={tab.data.filterOrCollectionId}
-                  />
-                </Container>
-              ) : (
-                viewportRef.current && <GalleryView
-                  viewData={{ mode: "masonry", filterOrCollectionId: tab.data.filterOrCollectionId }}
-                  isDefault={false}
-                  containerWidth={width}
-                  containerHeight={height}
-                  containerRef={containerRef}
-                  scrollRootRef={viewportRef}
-                />
-              )}
+              {viewportRef.current && <ImagesView
+                viewData={{
+                  mode: tab.data.mode,
+                  pinnable: tab.data.pinnable,
+                  filterOrCollectionId: tab.data.filterOrCollectionId
+                }}
+                isDefault={false}
+                containerRef={containerRef}
+                onEmptyResults={() => (<EmptyResults
+                  icon={<IconPhotoSearch size={140} stroke={1} />}
+                  description={t("emptyImages.description")}
+                  title={t("emptyImages.title")}
+                />)}
+                stickyControlBar={true}
+                scrollRootRef={viewportRef}
+                displayDetailInContainer={true}
+              />
+              }
             </Tabs.Panel>
           ))}
         </Tabs>

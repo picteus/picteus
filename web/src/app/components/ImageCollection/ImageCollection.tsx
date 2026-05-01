@@ -1,17 +1,19 @@
-import React, { useEffect, useState } from "react";
-
+import React, { useEffect, useRef, useState } from "react";
 
 import { ImageSummary } from "@picteus/ws-client";
 
 import { ImageItemMode } from "types";
+import { notifyApiCallError } from "utils";
 import { ImageService } from "app/services";
 import { ImageMasonry } from "app/components";
-import { notifyApiCallError } from "../../../utils";
+
+import style from "./ImageCollection.module.scss";
 
 
 type ImageCollectionType = { imageIds: string[] };
 
 export default function ImageCollection({imageIds}: ImageCollectionType) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [images, setImages] = useState<ImageSummary[]>();
 
   useEffect(() => {
@@ -29,13 +31,16 @@ export default function ImageCollection({imageIds}: ImageCollectionType) {
   }, [imageIds]);
 
   // TODO: find a way to limit the number of images displayed
-  return (
-    images && <ImageMasonry
+  return (<div ref={containerRef} className={style.style}>
+    {images && <ImageMasonry
       imageSize={100}
       images={images}
       loadMore={() => {
       }}
+      containerRef={containerRef}
+      displayDetailInContainer={false}
       imageItemMode={ImageItemMode.PASSIVE}
-    />
+    />}
+    </div>
   );
 }

@@ -3,8 +3,9 @@ import { createPortal } from "react-dom";
 import { Grid, Overlay } from "@mantine/core";
 import { useResizeObserver } from "@mantine/hooks";
 
-import { ImageItemMode, ImageOrSummary } from "types";
-import { useEscapeKey, useImageNavigation } from "app/hooks";
+import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
+import { useImageVisualizerContext } from "app/context";
+import { useContainerDimensions, useEscapeKey, useImageNavigation } from "app/hooks";
 import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageGallery.module.scss";
@@ -15,9 +16,9 @@ type ImageGalleryType = {
   images: ImageOrSummary [];
   onSelectedImage: (image: ImageOrSummary) => void;
   loadMore: () => void;
-  containerHeight: number;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
+  displayDetailInContainer: boolean;
   imageItemMode?: ImageItemMode;
 };
 
@@ -26,13 +27,15 @@ export default function ImageGallery({
   images,
   onSelectedImage,
   loadMore,
-  containerHeight,
   containerRef,
   scrollRootRef,
+  displayDetailInContainer,
   imageItemMode,
 }: ImageGalleryType) {
   const gutter = 10;
   const [hostRef, hostRefRectangle] = useResizeObserver();
+  const { height: containerHeight } = useContainerDimensions(containerRef);
+  const showImageVisualizer = useImageVisualizerContext();
   const [sentinel, setSentinel] = useState<HTMLHeadingElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
@@ -46,7 +49,9 @@ export default function ImageGallery({
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
-    navigation.setImages(images);
+    if (displayDetailInContainer === true) {
+      navigation.setImages(images);
+    }
   }, [images]);
 
   useEffect(() => {
@@ -94,7 +99,12 @@ export default function ImageGallery({
   }, [images]);
 
   const handleOnClick = useCallback((image: ImageOrSummary): void => {
-    setSelectedImageWrapper(image);
+    if (displayDetailInContainer === false) {
+      showImageVisualizer({ selectedImage: image, images });
+    }
+    else {
+      setSelectedImageWrapper(image);
+    }
   }, [setSelectedImageWrapper]);
 
   const { columns, columnWidth } = useMemo(() => {
@@ -112,6 +122,7 @@ export default function ImageGallery({
         width={columnWidth}
         height={columnWidth}
         mode={imageItemMode}
+        overlay={"caption" in image ? (image as ImageWithCaption).caption : undefined}
         onClick={handleOnClick}
       />
     </Grid.Col>
@@ -130,7 +141,7 @@ export default function ImageGallery({
     images.length !== 0 && columns > 0 && (
       <div ref={hostRef} className={style.host}>
         {renderedGrid}
-        {createPortal(
+        {displayDetailInContainer === true && createPortal(
           navigation.selectedImage && <div ref={portalRef} className={style.visualizedImage}>
             <Overlay
               color="#000"

@@ -71,7 +71,6 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
   }, [searchText]);
 
   function handleOnCollection(collection: Collection) {
-    console.log("handleOnCollection");
     setCurrentCollection(collection);
     setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
     setSearchFilter(collection.filter)
@@ -160,9 +159,9 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
         />
       </Flex>
       {localFilters && <Group>
-        <Pill {...commonPillProps} withRemoveButton={false}>
+        {localFilters.sortBy && <Pill {...commonPillProps} withRemoveButton={false}>
           {computeSortingLabelDisplay()}
-        </Pill>
+        </Pill>}
         {localFilters.searchIn?.length > 0 && (
           <Pill
             size="md"

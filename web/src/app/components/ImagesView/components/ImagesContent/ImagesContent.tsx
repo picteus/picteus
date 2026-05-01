@@ -1,13 +1,8 @@
-import React, { RefObject, useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { IconPhotoSearch } from "@tabler/icons-react";
-import { useTranslation } from "react-i18next";
+import React, { ReactElement, RefObject, useCallback, useEffect, useRef, useState } from "react";
 
 import { SearchRange } from "@picteus/ws-client";
 
 import { ImageExplorerDataType, ImageOrSummary, ViewMode } from "types";
-import { ROUTES } from "utils";
-import { RepositoriesService } from "app/services";
 import { EmptyResults, ImageGallery, ImageMasonry, ImageTable } from "app/components";
 
 
@@ -19,10 +14,10 @@ type PaginationType = SearchRange & {
 
 type ImagesContentType = {
   viewMode: ViewMode;
-  containerWidth: number;
-  containerHeight: number;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
+  onEmptyResults: () => ReactElement<typeof EmptyResults>;
+  displayDetailInContainer: boolean;
   onFetchData: (searchRange: SearchRange) => Promise<ImageExplorerDataType>;
   onSelectedImage: (image: ImageOrSummary) => void;
   refreshTrigger: number;
@@ -30,16 +25,14 @@ type ImagesContentType = {
 
 export default function ImagesContent({
                          viewMode,
-                         containerWidth,
-                         containerHeight,
                          containerRef,
                          scrollRootRef,
+                         onEmptyResults,
+                         displayDetailInContainer,
                          onFetchData,
                          onSelectedImage,
                          refreshTrigger,
                        }: ImagesContentType) {
-  const [t] = useTranslation();
-  const navigate = useNavigate();
   const [pagination, setPagination] = useState<PaginationType>({ currentPage: 1, take: imagesPerPage, skip: 0 });
   const [totalImagesCount, setTotalImagesCount] = useState<number>(-1);
   const [accumulatedImages, setAccumulatedImages] = useState<ImageOrSummary[]>([]);
@@ -95,29 +88,24 @@ export default function ImagesContent({
   }, [pagination, totalImagesCount]);
 
   if (totalImagesCount === 0) {
-    const repositoriesExists = RepositoriesService.list().length > 0;
-    return (
-      <EmptyResults
-        icon={<IconPhotoSearch size={140} stroke={1} />}
-        description={t(repositoriesExists ? "emptyImages.description" : "emptyImages.descriptionNoRepository")}
-        title={t("emptyImages.title")}
-        buttonText={t("emptyImages.buttonTextNoRepository")}
-        buttonAction={repositoriesExists ? undefined : () => navigate(ROUTES.repositories)}
-      />
-    );
+    return onEmptyResults();
+  }
+
+  if (viewMode === "masonry") {
+    return <ImageMasonry images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore}
+                         containerRef={containerRef}
+                         scrollRootRef={scrollRootRef} displayDetailInContainer={displayDetailInContainer} />;
   }
 
   if (viewMode === "gallery") {
     return <ImageGallery images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore}
-                         containerHeight={containerHeight} containerRef={containerRef} scrollRootRef={scrollRootRef}
-    />;
+                         containerRef={containerRef} scrollRootRef={scrollRootRef}
+                         displayDetailInContainer={displayDetailInContainer} />;
   }
 
   if (viewMode === "table") {
-    return <ImageTable images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore} containerWidth={containerWidth} containerRef={containerRef}/>;
+    return <ImageTable images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore} containerRef={containerRef}/>;
   }
 
-  return containerRef && <ImageMasonry images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore}
-                                       containerHeight={containerHeight} containerRef={containerRef}
-                                       scrollRootRef={scrollRootRef} />;
+  return <></>
 }

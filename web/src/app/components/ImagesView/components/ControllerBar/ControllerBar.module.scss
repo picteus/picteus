@@ -1,8 +1,14 @@
-.topBar {
-  position: sticky;
-  top: 0;
+.content {
+  width: 100%;
   padding: $content-padding;
   border-bottom: 1px solid var(--override-divider-color);
   background-color: var(--mantine-color-body);
-  width: 100%;
+}
+
+.notSticky {
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
 }

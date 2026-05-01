@@ -289,9 +289,9 @@ export default function IntentCenter() {
         addTab({
           extensionId,
           content: images.dialogContent,
-          type: "Masonry",
           data: {
             mode: "masonry",
+            pinnable: false,
             filterOrCollectionId: {
               filter: {
                 origin: {

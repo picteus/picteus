@@ -78,6 +78,7 @@ export default function GeneralCommands() {
     addModal({
       component: <TextToImages extensionId={extensionId} />,
       title: t("textToImagesModal.title"),
+      size: "l"
     });
   }
 

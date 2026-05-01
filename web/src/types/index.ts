@@ -172,25 +172,16 @@ export type ViewMode = "masonry" | "gallery" | "table";
 
 export type ViewTabDataType = {
   mode: ViewMode;
+  pinnable: boolean;
   filterOrCollectionId: FilterOrCollectionId;
 }
 
-type BaseTab = {
+export type TabsType = {
   id?: string;
   extensionId?: string;
   content: DialogContent;
   data: ViewTabDataType;
 };
-
-export type ViewTab = BaseTab & {
-  type: "View";
-};
-
-type MasonryTab = BaseTab & {
-  type: "Masonry";
-};
-
-export type TabsType = ViewTab | MasonryTab;
 
 export enum ChannelEnum {
   EXTENSION_PREFIX = "extension",

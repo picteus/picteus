@@ -103,6 +103,7 @@ export default {
   getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType {
     return getJsonNullValue<ViewTabDataType>(MAIN_TAB_KEY, {
       mode: "masonry",
+      pinnable: true,
       filterOrCollectionId: { filter: defaultFilter }
     });
   },

@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Divider, Flex, Group, Loader, NumberInput, TextInput } from "@mantine/core";
+import { Alert, Button, Flex, Group, NumberInput, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useFocusTrap } from "@mantine/hooks";
 import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
@@ -9,10 +9,9 @@ import { ImageApiImageTextToImagesRequest } from "@picteus/ws-client";
 
 import { ImageWithCaption } from "types";
 import { notifyApiCallError, Validators } from "utils";
+import { useReadyRef } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmptyResults, ImageMasonry } from "app/components";
-
-import style from "./TextToImages.module.scss";
+import { CaptionDistance, EmptyResults, ImagesView } from "app/components";
 
 
 type TextToImagesFormPayload = {
@@ -24,15 +23,12 @@ type TextToImageType = {
   extensionId: string;
 };
 
-export default function TextToImages({
-  extensionId,
-}: TextToImageType) {
+export default function TextToImages({ extensionId }: TextToImageType) {
   const [t] = useTranslation();
-  const [imageSummaries, setImageSummaries] = useState<
-    ImageWithCaption[]
-  >([]);
+  const [images, setImages] = useState<ImageWithCaption[]>([]);
+  const [emptyResult, setEmptyResult] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerRef, readyRef, isReady] = useReadyRef<HTMLElement>();
   const focusTrapRef = useFocusTrap();
 
   const initialResultsCount = StorageService.getTextToImagesResultsCount();
@@ -65,19 +61,20 @@ export default function TextToImages({
       return;
     }
     setLoading(true);
+    setEmptyResult(false);
 
     try {
       const imageDistances = await ImageService.textToImages(parameters);
-      setImageSummaries(
-        imageDistances
-          .sort((a, b) => a.distance - b.distance)
-          .map((imageDistance) => {
-            return {
-              ...imageDistance.image,
-              caption: <CaptionDistance distance={imageDistance.distance} />,
-            };
-          }),
-      );
+      const computedImages = imageDistances
+        .sort((a, b) => a.distance - b.distance)
+        .map((imageDistance) => {
+          return {
+            ...imageDistance.image,
+            caption: <CaptionDistance distance={imageDistance.distance} />,
+          };
+        });
+      setEmptyResult(computedImages.length === 0);
+      setImages(computedImages);
     } catch (error) {
       notifyApiCallError(error, "An error occurred while trying to search images from text");
     } finally {
@@ -88,7 +85,7 @@ export default function TextToImages({
   function renderForm() {
     return (
       <Group mt="sm">
-        <form style={{ width: "90%" }} onSubmit={form.onSubmit(handleSubmit)}>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
           <Flex ref={focusTrapRef} align="end" gap={10}>
             <TextInput
               data-autofocus
@@ -98,7 +95,6 @@ export default function TextToImages({
               placeholder={t("textToImagesModal.searchPlaceholder")}
               {...form.getInputProps("text")}
             />
-
             <NumberInput
               min={1}
               withAsterisk
@@ -117,33 +113,24 @@ export default function TextToImages({
   }
 
   function renderContent() {
-    if (loading) {
-      return (
-        <Flex p="xl" justify="center">
-          <Loader />
-        </Flex>
-      );
-    }
-    if (!loading && !imageSummaries.length) {
-      return (
-        <EmptyResults
-          icon={
-            <IconPhotoSearch size={140} stroke={1} className={style.icon} />
-          }
-          description={t("emptyImages.description")}
-          title={t("emptyImages.title")}
-          buttonText={t("emptyImages.buttonText")}
-        />
-      );
-    }
-    if (containerRef?.current) {
-      return (
-        <ImageMasonry
-          images={imageSummaries}
-          loadMore={() => {}}
-        />
-      );
-    }
+    return (isReady && <ImagesView
+      viewData={{ viewMode: "masonry", images: images }}
+      isDefault={false}
+      containerRef={readyRef}
+      onEmptyResults={() => {
+        if (loading === false && emptyResult === true) {
+          return (<EmptyResults
+            icon={<IconPhotoSearch size={140} stroke={1} />}
+            description={t("emptyImages.description")}
+            title={t("emptyImages.title")}
+          />);
+        }
+      }}
+      controlBarChildren={renderForm()}
+      stickyControlBar={false}
+      displayDetailInContainer={false}
+      scrollRootRef={readyRef}
+    />);
   }
 
   return (
@@ -151,10 +138,7 @@ export default function TextToImages({
       <Alert icon={<IconInfoCircle />}>
         {t("textToImagesModal.description")}
       </Alert>
-      {renderForm()}
-      <Divider mt="lg" mb="xl" />
-
-      <div ref={containerRef}>{renderContent()}</div>
+      <Flex ref={containerRef} align="center" justify="center">{renderContent()}</Flex>
     </>
   );
 }

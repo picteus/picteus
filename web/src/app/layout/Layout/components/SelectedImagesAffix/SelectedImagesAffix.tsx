@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useLocation } from "react-router-dom";
 import { IconPhoto } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -30,14 +30,15 @@ import style from "./SelectedImagesAffix.module.scss";
 const commandSeparator = "$$";
 
 export default function SelectedImagesAffix() {
+  const [t] = useTranslation();
   const location = useLocation();
+  const imagesContainerRef = useRef<HTMLDivElement>(null);
   const [selectedImages, setSelectedImages] = useImagesSelectedContext();
   const [extensionsImageCommands, setExtensionsImageCommands] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands([CommandEntity.Images]));
   const callCommand = useExtensionCommand();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [selectedAction, setSelectedAction] = useState<string>();
-  const [t] = useTranslation();
 
   function shouldAffixBeVisible() {
     return location.pathname === ROUTES.home && selectedImages?.length >= 1;
@@ -144,11 +145,13 @@ export default function SelectedImagesAffix() {
                 </Flex>
 
                 <Divider mb="sm" />
-                <div className={style.affixThumbnailGrid}>
+                <div ref={imagesContainerRef} className={style.affixThumbnailGrid}>
                   <ImageMasonry
                     imageSize={133}
                     images={selectedImages}
                     loadMore={() => {}}
+                    containerRef={imagesContainerRef}
+                    displayDetailInContainer={false}
                     imageItemMode={ImageItemMode.SELECT}
                   />
                 </div>

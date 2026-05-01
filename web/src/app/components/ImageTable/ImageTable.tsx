@@ -4,7 +4,7 @@ import { Overlay, Table, Text } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
-import { useEscapeKey, useImageNavigation } from "app/hooks";
+import { useContainerDimensions, useEscapeKey, useImageNavigation } from "app/hooks";
 import { FormatedDate, ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageTable.module.scss";
@@ -15,7 +15,6 @@ type ImageTableType = {
   images: ImageOrSummary[];
   onSelectedImage: (image: ImageOrSummary) => void;
   loadMore: () => void;
-  containerWidth: number;
   containerRef: RefObject<HTMLElement>;
   imageItemMode?: ImageItemMode;
 };
@@ -24,12 +23,12 @@ export default function ImageTable({
   images,
   onSelectedImage,
   loadMore,
-  containerWidth,
   containerRef,
   imageItemMode,
 }: ImageTableType) {
   const edge = 160;
   const navigation = useImageNavigation();
+  const { width: containerWidth } = useContainerDimensions(containerRef);
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
     navigation.setSelectedImage(image);
     onSelectedImage(image);

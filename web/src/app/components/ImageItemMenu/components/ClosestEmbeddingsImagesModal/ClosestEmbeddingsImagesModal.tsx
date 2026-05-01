@@ -1,17 +1,18 @@
-import { useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Alert, Button, Divider, Flex, Group, HoverCard, Input, NumberInput, Text } from "@mantine/core";
+import React, { useEffect, useState } from "react";
+import { Alert, Button, Flex, Group, HoverCard, Input, NumberInput, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useFocusTrap } from "@mantine/hooks";
 import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-client";
 
 import { ImageWithCaption } from "types";
 import { notifyApiCallError, Validators } from "utils";
 import { useImageVisualizerContext } from "app/context";
+import { useReadyRef } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmptyResults, ImageMasonry, ImageThumbnail } from "app/components";
+import { CaptionDistance, EmptyResults, ImagesView, ImageThumbnail } from "app/components";
 
 import style from "./ClosestEmbeddingsImagesModal.module.scss";
 
@@ -30,10 +31,10 @@ export default function ClosestEmbeddingsImagesModal({
   imageId,
 }: ClosestEmbeddingsImagesModalType) {
   const [t] = useTranslation();
-  const [images, setImages] = useState<ImageWithCaption[]>([]);
   const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [images, setImages] = useState<ImageWithCaption[]>([]);
+  const [containerRef, readyRef, isReady] = useReadyRef<HTMLElement>();
   const showImageVisualizer = useImageVisualizerContext();
   const focusTrapRef = useFocusTrap();
 
@@ -100,7 +101,7 @@ export default function ClosestEmbeddingsImagesModal({
   function renderForm() {
     return (
       sourceImage && <Group mt="sm">
-        <form style={{ width: 900 }} onSubmit={form.onSubmit(handleSubmit)}>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
           <Flex align="end" gap={20}>
             <Input.Wrapper label={t("field.source")}>
               <HoverCard shadow="lg">
@@ -142,23 +143,20 @@ export default function ClosestEmbeddingsImagesModal({
   }
 
   function renderContent() {
-    if (!loading && !images.length) {
-      return (
-        <EmptyResults
-          icon={
-            <IconPhotoSearch size={140} stroke={1} className={style.icon} />
-          }
-          description={t("emptyImages.description")}
-          title={t("emptyImages.title")}
-          buttonText={t("emptyImages.buttonText")}
-        />
-      );
-    }
-    return (containerRef.current && <ImageMasonry
-        images={images}
-        loadMore={() => {
-        }}
-      />);
+    return (isReady && <ImagesView
+      viewData={{ viewMode: "masonry", images }}
+      isDefault={false}
+      containerRef={readyRef}
+      onEmptyResults={() => (<EmptyResults
+        icon={<IconPhotoSearch size={140} stroke={1} />}
+        description={t("emptyImages.description")}
+        title={t("emptyImages.title")}
+      />)}
+      controlBarChildren={renderForm()}
+      stickyControlBar={false}
+      displayDetailInContainer={false}
+      scrollRootRef={readyRef}
+    />);
   }
 
   return (
@@ -166,8 +164,6 @@ export default function ClosestEmbeddingsImagesModal({
       <Alert icon={<IconInfoCircle />}>
         {t("closestEmbeddingsImagesModal.description")}
       </Alert>
-      {renderForm()}
-      <Divider mt="lg" mb="xl" />
       <Flex ref={containerRef} align="center" justify="center">{renderContent()}</Flex>
     </>
   );

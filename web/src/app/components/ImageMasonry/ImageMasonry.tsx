@@ -6,7 +6,7 @@ import MasonryLayout, { MasonrySizing } from "react-fast-masonry";
 
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
 import { useImageVisualizerContext } from "app/context";
-import { useEscapeKey, useImageNavigation } from "app/hooks";
+import { useContainerDimensions, useEscapeKey, useImageNavigation } from "app/hooks";
 import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageMasonry.module.scss";
@@ -17,9 +17,9 @@ type ImageMasonryType = {
   images: ImageOrSummary [];
   onSelectedImage?: (image: ImageOrSummary) => void;
   loadMore: () => void;
-  containerHeight?: number;
-  containerRef?: RefObject<HTMLElement>;
+  containerRef: RefObject<HTMLElement>;
   scrollRootRef?: RefObject<HTMLElement>;
+  displayDetailInContainer: boolean;
   imageItemMode?: ImageItemMode;
 };
 
@@ -28,12 +28,13 @@ export default function ImageMasonry({
   images,
   onSelectedImage,
   loadMore,
-  containerHeight,
   containerRef,
   scrollRootRef,
+  displayDetailInContainer,
   imageItemMode,
 }: ImageMasonryType) {
   const [hostRef, hostRefRectangle] = useResizeObserver();
+  const { height: containerHeight } = useContainerDimensions(containerRef);
   const showImageVisualizer = useImageVisualizerContext();
   const navigation = useImageNavigation();
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
@@ -73,13 +74,13 @@ export default function ImageMasonry({
   }, [scrollRootRef, loadMore, images.length]);
 
   useEffect(() => {
-    if (containerRef !== undefined) {
+    if (displayDetailInContainer === true) {
       navigation.setImages(images);
     }
   }, [images]);
 
   const handleOnClick = useCallback((image: ImageOrSummary) => {
-    if (containerRef === undefined) {
+    if (displayDetailInContainer === false) {
       showImageVisualizer({ selectedImage: image, images });
     }
     else {
@@ -111,9 +112,9 @@ export default function ImageMasonry({
             (<ImageItem
               key={images[index].id}
               image={images[index]}
-              overlay={(images[index] as ImageWithCaption).caption}
               width={columnWidth as number}
               mode={imageItemMode}
+              overlay={"caption" in images[index] ? (images[index] as ImageWithCaption).caption : undefined}
               onClick={handleOnClick}
             />)}
           loadMore={loadMore}
@@ -123,7 +124,7 @@ export default function ImageMasonry({
         />
         }
         <div ref={sentinelRef} className={style.sentinel} />
-        {containerRef !== undefined && createPortal(
+        {displayDetailInContainer === true && createPortal(
           navigation.selectedImage && <div ref={portalRef} className={style.visualizedImage}>
             <Overlay
               color="#000"
