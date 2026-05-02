@@ -90,7 +90,7 @@ export default function ImageItem({
 }: ImageItemType) {
   const [t] = useTranslation();
   const [menuOpened, setMenuOpened] = useState<boolean>(false);
-  const [selectedImages, setSelectedImages] = useImagesSelectedContext();
+  const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
   const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions>(computeExpectedDimensions(width, height, image).expectedDimensions);
   const [imageSrc, setImageSrc] = useState<string>(computeImageSrc(image, width, height, computeResizeRender(width, height)));
   const { imgRef, isLoaded, isError } = useImageRefStatus(imageSrc);
@@ -104,14 +104,7 @@ export default function ImageItem({
     setImageSrc(computeImageSrc(image, width, height, resizeRender));
   }, [image, width, height]);
 
-  const handleOnSelectImage = useCallback(()=> {
-    if (selectedImages.find((anImage) => anImage.id === image.id)) {
-      setSelectedImages(selectedImages.filter((anImage) => anImage.id !== image.id));
-    }
-    else {
-      setSelectedImages([...selectedImages, image]);
-    }
-  }, [selectedImages]);
+  const handleOnSelectImage = useCallback(() => toggleSelectedImage(image), [image, toggleSelectedImage]);
 
   const handleOnClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -128,12 +121,7 @@ export default function ImageItem({
     setMenuOpened(opened);
   }, []);
 
-  const isSelected = useMemo(
-    () =>
-      selectedImages.find((value) => value.id === image.id) !==
-      undefined,
-    [selectedImages, image],
-  );
+  const isSelected = useMemo(() => isSelectedImage(image), [image, isSelectedImage]);
 
   const containerStyle = useMemo(() => ({
     width: `${width}px`,
@@ -175,7 +163,7 @@ export default function ImageItem({
       onChange={handleOnSelectImage}
     />}
     {menu}
-  </Flex>), [menuOpened, menu, isSelected, handleOnChangeMenuOpened]);
+  </Flex>), [menuOpened, menu, isSelected, handleOnChangeMenuOpened, handleOnSelectImage]);
 
   const img = useMemo(() => (<img
     ref={imgRef}

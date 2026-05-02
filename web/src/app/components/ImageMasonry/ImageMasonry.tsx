@@ -42,7 +42,7 @@ export default function ImageMasonry({
     if (onSelectedImage !== undefined) {
       onSelectedImage(image);
     }
-  }, [images, onSelectedImage, navigation]);
+  }, [onSelectedImage, navigation]);
   const portalRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -86,11 +86,11 @@ export default function ImageMasonry({
     else {
       setSelectedImageWrapper(image);
     }
-  }, [images]);
+  }, [images, setSelectedImageWrapper]);
 
   const handleOnClose = useCallback(() => {
     setSelectedImageWrapper((undefined));
-  }, []);
+  }, [setSelectedImageWrapper]);
 
   const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo<[MasonrySizing, ...MasonrySizing[]]>(() => {
     const gutter = 10;

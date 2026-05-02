@@ -14,7 +14,7 @@ import style from "./ImageGallery.module.scss";
 type ImageGalleryType = {
   imageSize?: number;
   images: ImageOrSummary [];
-  onSelectedImage: (image: ImageOrSummary) => void;
+  onSelectedImage?: (image: ImageOrSummary) => void;
   loadMore: () => void;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
@@ -40,11 +40,12 @@ export default function ImageGallery({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
   const navigation = useImageNavigation();
-  const setSelectedImage = navigation.setSelectedImage;
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
-    setSelectedImage(image);
-    onSelectedImage(image);
-  }, [onSelectedImage, setSelectedImage]);
+    navigation.setSelectedImage(image);
+    if (onSelectedImage !== undefined) {
+      onSelectedImage(image);
+    }
+  }, [onSelectedImage, navigation]);
   const portalRef = useRef<HTMLDivElement>(null);
   useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
@@ -138,6 +139,10 @@ export default function ImageGallery({
     </Grid>
   ), [renderedImages, columns]);
 
+  const handleOnClose = useCallback(() => {
+    setSelectedImageWrapper((undefined));
+  }, [setSelectedImageWrapper]);
+
   return (
     images.length !== 0 && columns > 0 && (
       <div ref={hostRef} className={style.host}>
@@ -153,7 +158,7 @@ export default function ImageGallery({
                 image={navigation.selectedImage}
                 withNavigation={navigation}
                 viewMode="gallery"
-                onClose={() => setSelectedImageWrapper((undefined))}
+                onClose={handleOnClose}
               />
             </Overlay>
           </div>,

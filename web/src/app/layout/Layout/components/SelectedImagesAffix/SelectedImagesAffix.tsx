@@ -33,7 +33,7 @@ export default function SelectedImagesAffix() {
   const [t] = useTranslation();
   const location = useLocation();
   const imagesContainerRef = useRef<HTMLDivElement>(null);
-  const [selectedImages, setSelectedImages] = useImagesSelectedContext();
+  const { selectedImages, clearSelectedImages} = useImagesSelectedContext();
   const [extensionsImageCommands, setExtensionsImageCommands] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands([CommandEntity.Images]));
   const callCommand = useExtensionCommand();
   const { eventStore } = useEventSocket();
@@ -94,10 +94,6 @@ export default function SelectedImagesAffix() {
     );
   }
 
-  function handleOnClickUnselectAllImages() {
-    setSelectedImages([]);
-  }
-
   return (
     <Affix style={{ zIndex: 200 }} position={{ bottom: 50, right: 50 }}>
       <Transition transition="slide-up" mounted={shouldAffixBeVisible()}>
@@ -134,7 +130,7 @@ export default function SelectedImagesAffix() {
                     })}
                   </Text>
                   <Text
-                    onClick={handleOnClickUnselectAllImages}
+                    onClick={clearSelectedImages}
                     style={{ cursor: "pointer" }}
                     size="xs"
                     c="dimmed"

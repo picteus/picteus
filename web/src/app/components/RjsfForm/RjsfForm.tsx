@@ -103,6 +103,7 @@ export default function RjsfForm({
     }
     return schema;
   }
+
   const widgets: RegistryWidgetsType = {
     repository: RepositoryWidget,
     collection: CollectionWidget,
@@ -120,7 +121,6 @@ export default function RjsfForm({
         onChange={(event) => setFormData(event.formData)}
         widgets={widgets}
       >
-        <div></div>
       </Form>
     </ErrorBoundary>
   );

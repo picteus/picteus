@@ -1,10 +1,12 @@
-import { DialogType } from "types";
 import { Alert, Button, Flex } from "@mantine/core";
 import { IconCircleX, IconInfoCircle, IconQuestionMark } from "@tabler/icons-react";
+
+import { DialogType } from "types";
 import { useKey } from "app/hooks";
-import { CopyText, ImageCollection } from "app/components";
+import { CopyText, ImagesCollection } from "app/components";
 
 import style from "./DialogForm.module.scss";
+
 
 type DialogFormType = { dialog: DialogType; imageIds?: string[]; onSend(isYes: boolean): void };
 
@@ -47,7 +49,7 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
     <Flex direction="column" gap="xs">
       <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }} /></Alert>
       {dialog.details && <CopyText size="md" style={style.text} text={dialog.details} />}
-      {imageIds && <ImageCollection imageIds={imageIds} />}
+      {imageIds && <ImagesCollection imageIds={imageIds} />}
       {dialog.frame && <iframe className={style.iframe} style={{ height: `${dialog.frame.height}vh` }} {...{
         src: "url" in content ? content.url : undefined,
         srcDoc: "html" in content ? content.html : undefined

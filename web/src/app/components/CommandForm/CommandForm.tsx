@@ -4,11 +4,12 @@ import { Alert, Button, Flex } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 
 import { UiCommandType } from "types";
-import { ImageCollection, Markdown, RjsfForm } from "app/components";
 import { useKey } from "app/hooks";
+import { ImagesCollection, Markdown, RjsfForm } from "app/components";
+import { extractSchemaAndUiSchema } from "../RjsfForm/RjsfForm.tsx";
 
 import style from "./CommandForm.module.scss";
-import { extractSchemaAndUiSchema } from "../RjsfForm/RjsfForm.tsx";
+
 
 type CommandFormType = {
   command: UiCommandType;
@@ -41,7 +42,7 @@ export default function CommandForm({
         {form.dialogContent.details && (
           <div className={style.details}><Markdown content={form.dialogContent.details} /></div>)}
       </Flex>)}
-      {imageIds && <ImageCollection imageIds={imageIds} />}
+      {imageIds && <ImagesCollection imageIds={imageIds} />}
       <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setCommandParameters} />
       <Flex mt={"md"} align="flex-end" justify="flex-end" gap={5}>
         {<Button variant="subtle" onClick={onCancel}>
