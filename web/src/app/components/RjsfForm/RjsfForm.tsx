@@ -121,6 +121,8 @@ export default function RjsfForm({
         onChange={(event) => setFormData(event.formData)}
         widgets={widgets}
       >
+        {/* This prevents the default "Submit" button from being displayed */}
+        <div></div>
       </Form>
     </ErrorBoundary>
   );

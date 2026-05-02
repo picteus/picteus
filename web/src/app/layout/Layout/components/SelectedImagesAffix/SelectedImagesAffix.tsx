@@ -33,15 +33,16 @@ export default function SelectedImagesAffix() {
   const [t] = useTranslation();
   const location = useLocation();
   const imagesContainerRef = useRef<HTMLDivElement>(null);
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const { selectedImages, clearSelectedImages} = useImagesSelectedContext();
   const [extensionsImageCommands, setExtensionsImageCommands] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands([CommandEntity.Images]));
   const callCommand = useExtensionCommand();
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>();
 
   function shouldAffixBeVisible() {
-    return location.pathname === ROUTES.home && selectedImages?.length >= 1;
+    return location.pathname === ROUTES.home && selectedImages?.length >= 1 && isProcessing === false;
   }
 
   useEffect(() => {
@@ -85,13 +86,16 @@ export default function SelectedImagesAffix() {
     const [action, extensionId] = selectedAction?.split(commandSeparator) || [];
 
     const command = extensionsImageCommands.find(
-      (imageCommand) => imageCommand.command.id === action,
+      (imageCommand) => imageCommand.command.id === action && imageCommand.extension.manifest.id === extensionId
     );
-    void callCommand(
-      extensionId,
-      command.command,
-      selectedImages.map((image) => image.id),
-    );
+    setIsProcessing(true);
+    void callCommand(extensionId, command.command, selectedImages.map((image) => image.id), () => {
+      setIsProcessing(false);
+    }, (wasAborted: boolean) => {
+      if (wasAborted === true) {
+        setIsProcessing(false);
+      }
+    });
   }
 
   return (
