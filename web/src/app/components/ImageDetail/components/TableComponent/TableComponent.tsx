@@ -1,22 +1,21 @@
 import React, { ReactNode } from "react";
 import { Table, Text } from "@mantine/core";
 
+
 type TableComponentType = {
-  data: {
-    label: string;
-    value: ReactNode;
-  };
+  label: ReactNode;
+  value: ReactNode;
 };
 
-export default function TableComponent({ data }: TableComponentType) {
+export default function TableComponent({ label, value }: TableComponentType) {
   return (
     <Table.Tr>
       <Table.Td style={{ width: "110px" }}>
         <Text c="dimmed" size="sm">
-          {data.label}
+          {label}
         </Text>
       </Table.Td>
-      <Table.Td>{data.value}</Table.Td>
+      <Table.Td>{value}</Table.Td>
     </Table.Tr>
   );
 }

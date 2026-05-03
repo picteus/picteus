@@ -25,13 +25,13 @@ export default {
   field: {
     noValue: "—",
     id: "ID",
-    parentId: "Parent ID",
+    parent: "Parent",
     url: "URL",
     search: "Search",
     file: "File",
     comment: "Comment",
     name: "Name",
-    sourceUrl: "Source URL",
+    sourceUrl: "Source",
     status: "Status",
     createdOn: "Created on",
     modifiedOn: "Modified on",
@@ -40,7 +40,6 @@ export default {
     dimensions: "Dimensions",
     repository: "Repository",
     repositories: "Repositories",
-    repositoryId: "Repository ID",
     size: "Size",
     format: "Format",
     formats: "Formats",
@@ -66,7 +65,14 @@ export default {
     runtimes: "Runtimes",
     events: "Events",
     capabilities: "Capabilities",
-    commands: "Commands"
+    commands: "Commands",
+    schemaVersion: "Schema",
+    software: "Software",
+    aspectRatio: "Aspect ratio",
+    modelTags: "Models",
+    assetIds: "Assets",
+    prompt: "Prompt",
+    instructions: "Instructions"
   },
   filters: {
     title: "Filters",
@@ -107,6 +113,9 @@ export default {
     add: "Add",
     edit: "Edit",
     find: "Find",
+    open: "Open",
+    copy: "Copy",
+    copied: "Copied",
     externalLinkOpen: "Open",
     clearAll: "Clear all",
     synchronize: "Synchronize",
@@ -373,6 +382,7 @@ export default {
     imageTitle: "Loading error",
     imageDetail: "An error occurred: could not load the image visual.",
     imageCondensed: "Could not load the visual",
+    imageNotAvailable: "Image not available anymore.",
   },
   utils: {
     timeAgo: {

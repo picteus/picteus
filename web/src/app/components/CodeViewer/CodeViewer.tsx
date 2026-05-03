@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useRef } from "react";
+import { useMantineColorScheme } from "@mantine/core";
 // Import the default Highlight.js style
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
 import beautify from "js-beautify";
-import { useMantineColorScheme } from "@mantine/core";
 
 import { notifyErrorWithError } from "utils";
 
+
 hljs.registerLanguage("json", json);
 
-export default function CodeViewer({ code }) {
+type CodeViewerType = {
+  code: string;
+};
+
+export default function CodeViewer({ code }: CodeViewerType) {
   const codeRef = useRef<HTMLElement>(null);
 
   const { colorScheme } = useMantineColorScheme();

@@ -1,22 +1,20 @@
+import { SearchFilter } from "@picteus/ws-client";
+
 import { FolderTypes, TabsType, ViewTabDataType } from "types";
 import { VISUALIZER_DEFAULT_PANEL_SIZES } from "utils";
-import { SearchFilter } from "@picteus/ws-client";
 
 
 const prefix = "picteus_";
-const VERSION_KEY = prefix + "version";
-const MAIN_TAB_KEY = prefix + "mainTab";
-const TABS_KEY = prefix + "tabs";
-const ACTIVITY_FILTERS_KEY: string = prefix + "activityFilters";
-const VISUALIZER_PANEL_SIZES_KEY: string = prefix + "visualizerPanelSizes";
-const CLOSEST_IMAGES_RESULTS_COUNT: string =
-  prefix + "closestImagesResultsCount";
-const TEXT_TO_IMAGES_RESULTS_COUNT: string =
-  prefix + "textToImagesResultsCount";
-const FOLDER_PICKER_LAST_LOCATION = prefix + "extensionPickerLastLocation";
-
-export const EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION =
-  prefix + "extensionIntentShowShouldConfirmRedirection";
+const VERSION_KEY = `${prefix}version`;
+const MAIN_TAB_KEY = `${prefix}mainTab`;
+const TABS_KEY = `${prefix}tabs`;
+const ACTIVITY_FILTERS_KEY = `${prefix}activityFilters`;
+const VISUALIZER_PANEL_SIZES_KEY = `${prefix}visualizerPanelSizes`;
+const CLOSEST_IMAGES_RESULTS_COUNT = `${prefix}closestImagesResultsCount`;
+const TEXT_TO_IMAGES_RESULTS_COUNT = `${prefix}textToImagesResultsCount`;
+const FOLDER_PICKER_LAST_LOCATION = `${prefix}extensionPickerLastLocation`;
+const EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION = `${prefix}extensionIntentShowShouldConfirmRedirection`;
+const IMAGE_DETAIL_TRAITS = `${prefix}imageDetailTraits`;
 
 function getWithNullValue(key: string): string {
   const value = localStorage.getItem(key);
@@ -33,7 +31,7 @@ function storeJson<T>(key:string, value: T) {
 
 
 export default {
-  COLOR_SCHEME: prefix + "colorScheme",
+  COLOR_SCHEME: `${prefix}colorScheme`,
   getVersion: (): string | undefined => {
     return getWithNullValue(VERSION_KEY);
   },
@@ -88,11 +86,8 @@ export default {
       JSON.stringify(updatedLocation),
     );
   },
-  setExtensionIntentShowShouldConfirm: (shouldConfirm: boolean) => {
-    localStorage.setItem(
-      EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION,
-      shouldConfirm.toString(),
-    );
+  setExtensionIntentShowShouldConfirm: (value: boolean) => {
+    localStorage.setItem(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION, value.toString());
   },
   getExtensionIntentShowShouldConfirm: () => {
     return (
@@ -107,13 +102,19 @@ export default {
       filterOrCollectionId: { filter: defaultFilter }
     });
   },
-  setMainViewTabData(data: ViewTabDataType): void {
-    storeJson(MAIN_TAB_KEY, data);
+  setMainViewTabData(value: ViewTabDataType): void {
+    storeJson(MAIN_TAB_KEY, value);
   },
   getGalleryTabs(): TabsType[] {
     return getJsonNullValue<TabsType[]>(TABS_KEY, []);
   },
-  setGalleryTabs(tabs: TabsType[]): void {
-    storeJson(TABS_KEY, tabs);
+  setGalleryTabs(value: TabsType[]): void {
+    storeJson(TABS_KEY, value);
   },
+  getImageDetailTraits(defaultValue: string []): string[] {
+    return getJsonNullValue<string[]>(IMAGE_DETAIL_TRAITS, defaultValue);
+  },
+  setImageDetailTraits(value: string[]): void {
+    storeJson(IMAGE_DETAIL_TRAITS, value);
+  }
 };

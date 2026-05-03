@@ -1,5 +1,6 @@
 import i18n from "../i18n/i18n.ts";
 
+
 export function removeFilePrefixFromUrl(url: string) {
   if (url) {
     return url.replace(/^file:\/\//, "");
@@ -11,10 +12,6 @@ export function capitalizeText(text: string) {
     return "";
   }
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-}
-
-export function isObjectEmpty(object: object) {
-  return Object.keys(object).length === 0 && object.constructor === Object;
 }
 
 export function timeAgoFromMilliseconds(dateInMilliseconds: number, nowInMilliseconds: number = Date.now()) {
@@ -37,6 +34,7 @@ export function timeAgoFromMilliseconds(dateInMilliseconds: number, nowInMillise
 export function generateRandomId() {
   return Math.random().toString(36).substring(2);
 }
+
 export function hexToRgb(hex) {
   const bigint = parseInt(hex.replace("#", ""), 16);
   const r = (bigint >> 16) & 255;

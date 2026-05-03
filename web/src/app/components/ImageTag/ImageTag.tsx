@@ -6,10 +6,10 @@ import { ExtensionImageTag } from "@picteus/ws-client";
 import { ExtensionIcon } from "../index.ts";
 
 
-type EntityStatusType = {
+type ImageTagType = {
   imageTag: ExtensionImageTag;
 };
 
-export default function EntityStatus({ imageTag }: EntityStatusType) {
+export default function ImageTag({ imageTag }: ImageTagType) {
   return <Badge tt="none" variant="outline" leftSection={<ExtensionIcon idOrExtension={imageTag.id} size="sm" />}>{imageTag.value}</Badge>;
 }

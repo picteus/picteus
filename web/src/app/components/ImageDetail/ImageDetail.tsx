@@ -72,7 +72,7 @@ export default function ImageDetail({ image, withNavigation, viewMode, onClose }
       <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%" className={style.right}>
         {imageData && <>
           <ImageTop image={imageData} viewMode={viewMode} onClose={onClose} />
-          <ImageData image={imageData} />
+          <ImageData image={imageData} viewMode={viewMode}/>
         </>}
       </Panel>
     </ResizableGroup>

@@ -6,3 +6,7 @@ export { default as ImageTop } from "./ImageTop/ImageTop.tsx";
 export { default as ImageData } from "./ImageData/ImageData.tsx";
 export { default as ImageMetadata } from "./ImageMetadata/ImageMetadata.tsx";
 export { default as ImageFeature } from "./ImageFeature/ImageFeature.tsx";
+export { default as ImageRecipe } from "./ImageRecipe/ImageRecipe.tsx";
+export { default as AiModelTag } from "./AiModelTag/AiModelTag.tsx";
+export { default as ImageRatio } from "./ImageRatio/ImageRatio.tsx";
+export { default as ImageItemWrapper } from "./ImageItemWrapper/ImageItemWrapper.tsx";

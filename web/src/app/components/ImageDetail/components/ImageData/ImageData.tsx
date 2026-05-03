@@ -1,51 +1,79 @@
 import React, { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
-import { Accordion, Group, Table, Text } from "@mantine/core";
+import { Accordion, ActionIcon, Flex, Group, Table, Text, Tooltip } from "@mantine/core";
+import { IconEye } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Image, ImageMetadata as PicteusImageMetadata, Repository } from "@picteus/ws-client";
+import {
+  ExtensionImageFeature,
+  Image,
+  ImageFeatureType,
+  ImageMetadata as PicteusImageMetadata,
+  Repository
+} from "@picteus/ws-client";
 
 
+import { ViewMode } from "types";
 import { capitalizeText } from "utils";
-import { RepositoriesService } from "app/services";
-import { CopyText, ExternalLink, FormatedDate, ImageTag } from "app/components";
+import { useActionModalContext } from "app/context";
+import { RepositoriesService, StorageService } from "app/services";
+import { ExtensionIcon, ExternalLink, FormatedDate, ImageTag } from "app/components";
 import { ImageFeature, ImageMetadata, TableComponent } from "../index.ts";
+import { RepositoryDetail, RepositoryTop } from "../../../../screens/RepositoriesScreen/components";
+import ImageItemWrapper from "../ImageItemWrapper/ImageItemWrapper.tsx";
 
 
 type ImageDataType = {
   image: Image;
+  viewMode: ViewMode;
 };
 
-export default function ImageData({ image }: ImageDataType) {
+export default function ImageData({ image, viewMode }: ImageDataType) {
   const [t] = useTranslation();
   const [repository, setRepository] = useState<Repository>(RepositoriesService.getRepositoryInformation(image.repositoryId));
+  const [, addModal] = useActionModalContext();
+  const sectionIds = { information: "information", tags: "tags", features: "features", metadata: "metadata" };
+  const [accordionValue, setAccordionValue] = useState<string[]>(StorageService.getImageDetailTraits([sectionIds.information, sectionIds.tags, sectionIds.features]));
 
   useEffect(() => {
     setRepository(RepositoriesService.getRepositoryInformation(image.repositoryId));
   }, [image]);
 
-  type LabelAndValue = { label: string, value: ReactNode };
+  useEffect(() => {
+    StorageService.setImageDetailTraits(accordionValue);
+  }, [accordionValue]);
+
+  type LabelAndValue = { label: ReactNode, value: ReactNode };
 
   const information = useMemo<ReactElement []>(() => {
     const labelAndValues: LabelAndValue [] = [
-      {
-        label: t("field.id"),
-        value: <CopyText text={image.id} />,
-      },
       ...(image.parentId
         ? [
           {
-            label: t("field.parentId"),
-            value: <CopyText text={image.parentId} />,
+            label: t("field.parent"),
+            value: <ImageItemWrapper imageId={image.parentId} edge={100} viewMode={viewMode} /> ,
           },
         ]
         : []),
       {
         label: t("field.repository"),
-        value: repository && <ExternalLink url={repository.url} type="link" />,
-      },
-      {
-        label: t("field.repositoryId"),
-        value: <CopyText text={image.repositoryId} />,
+        value: <Flex align="center" gap={10}>
+          <Text size="sm">{repository.name}</Text>
+          <Tooltip
+            label={t("button.open")}
+            position="right"
+          >
+            <ActionIcon variant="default" onClick={() => {
+              addModal({
+                title: <RepositoryTop repository={repository} onDeleted={() => {
+                }} />,
+                size: "m",
+                component: <RepositoryDetail repository={repository} />,
+              })
+            }}>
+              <IconEye />
+            </ActionIcon>
+          </Tooltip>
+        </Flex>
       },
       {
         label: t("field.createdOn"),
@@ -59,40 +87,43 @@ export default function ImageData({ image }: ImageDataType) {
         ? [
           {
             label: t("field.sourceUrl"),
-            value: (
-              <ExternalLink url={image.sourceUrl} type="link" />
-            ),
+            value: <ExternalLink url={image.sourceUrl} type="link" />
           },
         ]
         : []),
-      {
-        label: t("field.location"),
-        value: <ExternalLink url={image.url} type="link" />,
-      },
     ];
     return labelAndValues.map((information, index) => (
       <TableComponent
         key={`information-${index}`}
-        data={information}
+        label={information.label}
+        value={information.value}
       />
     ));
   }, [image, repository]);
 
-  const tags = useMemo<ReactElement>(()=> (<TableComponent data={{
-      label: "", value: <Group gap="xs">
-        {image.tags.map((imageTag, index) => (
-          <ImageTag key={`tag-${index}`} imageTag={imageTag} />
-        ))}
-      </Group>
-    }} />
+  const tags = useMemo<ReactElement>(()=> (<TableComponent label="" value={<Group gap="xs">
+      {image.tags.map((imageTag, index) => (
+        <ImageTag key={`tag-${index}`} imageTag={imageTag} />
+      ))}
+    </Group>} />
   ), [image]);
 
-  const features = useMemo(() =>(image.features.map((imageFeature, index) => (<TableComponent
+  const sortedFeatureTypes:ImageFeatureType[] = [ImageFeatureType.Recipe, ImageFeatureType.Annotation, ImageFeatureType.Description, ImageFeatureType.Caption, ImageFeatureType.Comment, ImageFeatureType.Metadata, ImageFeatureType.Identity, ImageFeatureType.Other];
+
+  const features = useMemo(() =>(image.features.sort((feature1: ExtensionImageFeature, feature2: ExtensionImageFeature)=> {
+    const index1 = sortedFeatureTypes.indexOf(feature1.type);
+    const index2 = sortedFeatureTypes.indexOf(feature2.type);
+    if (index1 !== index2) {
+      return index1 - index2;
+    }
+    return 0;
+  }).map((imageFeature, index) => (<TableComponent
       key={`feature-${index}`}
-      data={{
-        label: `${capitalizeText(imageFeature.type)} (${imageFeature.id}${imageFeature.name === undefined ? "" : (`:${imageFeature.name}`)})`,
-        value: <ImageFeature feature={imageFeature} />
-      }}
+      label={<Flex gap={10}>
+        <ExtensionIcon idOrExtension={imageFeature.id} size="sm"/>
+        {`${capitalizeText(imageFeature.type)} ${imageFeature.name === undefined ? "" : `(${imageFeature.name})`}`}
+      </Flex>}
+      value={<ImageFeature feature={imageFeature} viewMode={viewMode}/>}
     />
   ))), [image]);
 
@@ -108,21 +139,23 @@ export default function ImageData({ image }: ImageDataType) {
     return labelAndValues.map((labelAndValue, index) => (
       <TableComponent
         key={`metadata-${index}`}
-        data={labelAndValue}
+        label={labelAndValue.label}
+        value={labelAndValue.value}
       />
     ));
   }, [image]);
 
   const sections = useMemo(() => ([
-    { id: "information", mnemonic: "menu.information", element: information },
-    { id: "tags", mnemonic: "menu.tags", element: tags },
-    { id: "features", mnemonic: "menu.features", element: features },
-    { id: "metadata", mnemonic: "menu.metadata", element: metadata }
+    { id: sectionIds.information, mnemonic: "menu.information", node: information },
+    { id: sectionIds.tags, mnemonic: "menu.tags", node: tags },
+    { id: sectionIds.features, mnemonic: "menu.features", node: features },
+    { id: sectionIds.metadata, mnemonic: "menu.metadata", node: metadata }
   ]), [information, tags, features, metadata]);
 
   return useMemo<ReactElement>(() => (<Accordion
       multiple
-      defaultValue={sections.map(section => section.id)}
+      value={accordionValue}
+      onChange={setAccordionValue}
     >
       {sections.map((section) => (<Accordion.Item key={section.id} value={section.id}>
           <Accordion.Control key={section.id}>
@@ -133,12 +166,12 @@ export default function ImageData({ image }: ImageDataType) {
           <Accordion.Panel>
             <Table layout="fixed">
               <Table.Tbody>
-                {section.element}
+                {section.node}
               </Table.Tbody>
             </Table>
           </Accordion.Panel>
         </Accordion.Item>
       ))}
     </Accordion>)
-  , [sections]);
+  , [sections, accordionValue]);
 }

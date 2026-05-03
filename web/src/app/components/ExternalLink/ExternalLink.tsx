@@ -1,5 +1,5 @@
 import React from "react";
-import { ActionIcon, Button, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Group, Text, Tooltip } from "@mantine/core";
 import { IconExternalLink } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -22,8 +22,13 @@ export default function ExternalLink({
   const cleanUrl = removeFilePrefixFromUrl(url);
   const openExplorer = useOpenExplorer(cleanUrl);
 
-  async function handleOnClick() {
-    await openExplorer();
+  function handleOnClick() {
+    if (url.startsWith("file://") === true) {
+      void openExplorer();
+    }
+    else {
+      window.open(url, "_blank");
+    }
   }
 
   if (type === "action") {
@@ -47,8 +52,8 @@ export default function ExternalLink({
   }
   else {
     return (
-      <div className={style.container} onClick={handleOnClick}>
-        <Text size={"sm"} td="underline" c={"blue"}>
+      <Group className={style.container} gap={10} wrap="nowrap" preventGrowOverflow={false} onClick={handleOnClick}>
+        <Text size={"sm"} td="underline" c={"blue"} truncate="start">
           {cleanUrl}
         </Text>
         <IconExternalLink
@@ -56,7 +61,7 @@ export default function ExternalLink({
           size={18}
           color="var(--mantine-color-blue-filled)"
         />
-      </div>
+      </Group>
     );
   }
 }
