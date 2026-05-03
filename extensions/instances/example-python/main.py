@@ -256,8 +256,7 @@ class PythonExtension(PicteusExtension):
                         type=IntentDialogType.ERROR,
                         title="Image Conversion",
                         description="When a dimension is specified, the metadata must be stripped.",
-                        buttons=IntentDialogButtons(
-                            yes="OK"))))
+                        buttons=IntentDialogButtons(yes="OK"))))
                     return None
 
                 communicator.send_log(f"Converting the image with id '{image.id}' and URL '{image.url}'", "debug")
