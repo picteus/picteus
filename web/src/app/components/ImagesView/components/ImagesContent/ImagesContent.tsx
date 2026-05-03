@@ -70,7 +70,7 @@ export default function ImagesContent({
         if (data.images.length > 0) {
           setAccumulatedImages((previousAccumulatedImages) => {
             const newAccumulatedData = [...previousAccumulatedImages, ...data.images];
-            if (newAccumulatedData.length >= Math.ceil(totalImagesCount / pagination.take)) {
+            if (newAccumulatedData.length >= data.total) {
               allImagesLoadedRef.current = true;
             }
             return newAccumulatedData;
