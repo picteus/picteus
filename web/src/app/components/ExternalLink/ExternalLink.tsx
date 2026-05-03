@@ -52,11 +52,12 @@ export default function ExternalLink({
   }
   else {
     return (
-      <Group className={style.container} gap={10} wrap="nowrap" preventGrowOverflow={false} onClick={handleOnClick}>
-        <Text size={"sm"} td="underline" c={"blue"} truncate="start">
+      <Group className={style.container} gap={10} wrap="nowrap" maw="100%" onClick={handleOnClick}>
+        <Text size={"sm"} td="underline" c={"blue"} truncate="start" style={{ flex: 1, minWidth: 0 }}>
           {cleanUrl}
         </Text>
         <IconExternalLink
+          style={{ flexShrink: 0 }}
           stroke={1.5}
           size={18}
           color="var(--mantine-color-blue-filled)"

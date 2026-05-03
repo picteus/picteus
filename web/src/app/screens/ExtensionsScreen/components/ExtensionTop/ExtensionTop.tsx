@@ -23,7 +23,9 @@ export default function ExtensionTop({ extension, openAddOrUpdateExtensionModal,
       <ContentTitle text={t("extensionDetail.title")}
                     icon={{ url: ExtensionsService.getIconURL(extension) }} />
       <Stack gap="md" pos="relative">
-        <FieldValue name={t("field.id")} value={<CopyText size="xs" c="dimmed" text={extension.manifest.id} />} />
+        <FieldValue name={t("field.id")} value={<CopyText value={extension.manifest.id}>
+          <Text size="xs" c="dimmed">{extension.manifest.id}</Text>
+        </CopyText>} />
         <FieldValue name={t("field.name")} value={<Text size="lg" fw={500}>{extension.manifest.name}</Text>} />
         <FieldValue name={t("field.version")} value={<Text size="md">{extension.manifest.version}</Text>} />
         <FieldValue name={t("field.description")}

@@ -1,5 +1,5 @@
 import React from "react";
-import { ActionIcon, Button, Group, Menu, Text } from "@mantine/core";
+import { ActionIcon, Button, Group, Menu, Stack, Text } from "@mantine/core";
 import { IconChevronDown, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -24,15 +24,19 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType) {
   return (<TopPanel
       info={<>
         <div className={style.titleBox}>
-          <div className={style.title}>
-            <CopyText size="md" text={image.name} />
+          <Stack className={style.title}>
+            <CopyText value={image.name} inline={true} >
+              <Text size="md" truncate="end">{image.name}</Text>
+            </CopyText>
             <Text c="dimmed" size="sm">
               {image.format} — {<ImageWeight image={image} />} — {<ImageDimensions
               dimensions={image.dimensions} />} ({<ImageRatio
               dimensions={image.dimensions} />})
             </Text>
-            <CopyText text={image.id} c="dimmed" size="sm"/>
-          </div>
+            <CopyText value={image.id} inline={true}>
+              <Text c="dimmed" size="sm">{image.id}</Text>
+            </CopyText>
+          </Stack>
         </div>
         <ActionIcon variant="default" onClick={onClose}>
           <IconX stroke={1.2} size={50} />

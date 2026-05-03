@@ -22,9 +22,13 @@ export default function RepositoryTop({ repository, onEdit, onDeleted }: Reposit
   return (<>
       <ContentTitle text={t("repositoryDetail.title")} icon={{ icon: <IconFolderOpen /> }} />
       <Stack gap="md" pos="relative">
-        <FieldValue name={t("field.id")} value={<CopyText size="xs" c="dimmed" text={repository.id} />} />
+        <FieldValue name={t("field.id")} value={<CopyText value={repository.id}>
+          <Text size="xs" c="dimmed">{repository.id}</Text>
+        </CopyText>} />
         <FieldValue name={t("field.url")}
-                    value={<CopyText size="xs" c="dimmed" text={removeFilePrefixFromUrl(repository.url)} />} />
+                    value={<CopyText value={removeFilePrefixFromUrl(repository.url)}>
+                      <Text size="xs" c="dimmed">{removeFilePrefixFromUrl(repository.url)}</Text>
+                    </CopyText>} />
         <FieldValue name={t("field.name")} value={<Text size="lg" fw={500}>{repository.name}</Text>} />
         <FieldValue name={t("field.comment")}
                     value={repository.comment ? <Text>{repository.comment}</Text> : <NoValue />} />

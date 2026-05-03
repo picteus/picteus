@@ -8,7 +8,7 @@ import {
 
 import { ViewMode } from "types";
 import { capitalizeText } from "utils";
-import { CodeViewer, Markdown } from "app/components";
+import { CodeViewer, CopyText, Markdown } from "app/components";
 import { ImageRecipe } from "../index";
 
 
@@ -30,8 +30,7 @@ export default function ImageFeature({ feature, viewMode }: ImageFeatureType) {
         }
         return  <CodeViewer code={feature.value as string} />;
       case "markdown":
-        // We need to handle the specific case the linebreak "<br>", because the library does not handle it properly by default
-        return <Markdown content={value as string} />;
+        return <CopyText value={value as string}><Markdown content={value as string} /></CopyText>;
       case "xml":
         return value as string;
       case "html":
@@ -39,7 +38,7 @@ export default function ImageFeature({ feature, viewMode }: ImageFeatureType) {
       case "binary":
         return "";
       case "string":
-        return capitalizeText(value as string);
+        return <CopyText value={capitalizeText(value as string)}>{capitalizeText(value as string)}</CopyText>;
       case "integer":
       case "float":
       case "boolean":

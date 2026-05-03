@@ -1,4 +1,4 @@
-import { Alert, Button, Flex } from "@mantine/core";
+import { Alert, Button, Flex, Text } from "@mantine/core";
 import { IconCircleX, IconInfoCircle, IconQuestionMark } from "@tabler/icons-react";
 
 import { DialogType } from "types";
@@ -48,7 +48,10 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
   return (
     <Flex direction="column" gap="xs">
       <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }} /></Alert>
-      {dialog.details && <CopyText size="md" style={style.text} text={dialog.details} />}
+      {dialog.details &&
+        <CopyText value={dialog.details}>
+          <Text size="md" mt={10} dangerouslySetInnerHTML={{ __html: dialog.details }}/>
+        </CopyText>}
       {imageIds && <ImagesCollection imageIds={imageIds} />}
       {dialog.frame && <iframe className={style.iframe} style={{ height: `${dialog.frame.height}vh` }} {...{
         src: "url" in content ? content.url : undefined,
