@@ -35,7 +35,7 @@
     "icon.png"
   ],
   "scripts": {
-    "prepare": "npm --prefix front-end install",
+    "prepare": "cd front-end && npm --no-save install",
     "back-end:build": "tsc --project back-end/tsconfig.json",
     "front-end:build": "npm --prefix front-end run build",
     "build": "npm run back-end:build && npm run front-end:build"
