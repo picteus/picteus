@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { ChangeEvent, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input, ScrollArea, Scroller, Tabs } from "@mantine/core";
 import { IconPhoto, IconPhotoSearch, IconX } from "@tabler/icons-react";
@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { TabsType } from "types";
 import { ROUTES } from "utils";
 import { useGalleryTabsContext } from "app/context";
-import { useContainerDimensions } from "app/hooks";
+import { useContainerDimensions, useReadyRef } from "app/hooks";
 import { FiltersService, RepositoriesService, StorageService } from "app/services";
 import { EmptyResults, ExtensionIcon, ImagesView } from "app/components";
 
@@ -28,7 +28,7 @@ function GalleryTab({ tab, onRemove }: GalleryTabType) {
     setIsEditing(true);
   }
 
-  function handleOnChangeTabLabel(event) {
+  function handleOnChangeTabLabel(event: ChangeEvent<HTMLInputElement>) {
     setTabLabel(event.target.value);
   }
 
@@ -73,88 +73,91 @@ function GalleryTab({ tab, onRemove }: GalleryTabType) {
 export default function GalleryScreen() {
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const { height } = useContainerDimensions(containerRef);
+  const [containerRef,  containerReadyRef, containerIsReady ] = useReadyRef<HTMLDivElement>();
+  const [viewportRef,  viewportReadyRef, viewportIsReady ] = useReadyRef<HTMLDivElement>();
+  const { height } = useContainerDimensions(containerReadyRef);
   const {tabs, removeTab, state, galleryTabValue} = useGalleryTabsContext();
 
-  function handleOnRemoveTab(tabId: string, nextTabValue: string) {
+  const otherTabs = useMemo(() => (tabs.map((tab, index) => (<GalleryTab
+      key={`gallery-${tab.id}`}
+      tab={tab}
+      onRemove={() => handleOnRemoveTab(tab.id, index)}
+    />)
+  )), [tabs]);
+
+  const otherTabPanels = useMemo(() => (tabs.map((tab) => (
+      <Tabs.Panel key={`panel-${tab.id}`} value={tab.id}>
+        {viewportReadyRef && <ImagesView
+          viewData={{
+            mode: tab.data.mode,
+            pinnable: tab.data.pinnable,
+            filterOrCollectionId: tab.data.filterOrCollectionId
+          }}
+          isDefault={false}
+          containerRef={containerReadyRef}
+          onEmptyResults={() => (<EmptyResults
+            icon={<IconPhotoSearch size={140} stroke={1} />}
+            description={t(`emptyImages.${("filter" in tab.data.filterOrCollectionId && tab.data.filterOrCollectionId.filter.origin) ? "descriptionNoData" : "description"}`)}
+            title={t("emptyImages.title")}
+          />)}
+          stickyControlBar={true}
+          scrollRootRef={viewportReadyRef}
+          displayDetailInContainer={true}
+        />
+        }
+      </Tabs.Panel>
+    ))
+  ), [tabs]);
+
+  const computeEmptyResults = useCallback(() => {
+    const repositoriesExists = RepositoriesService.list().length > 0;
+    return (
+      <EmptyResults
+        icon={<IconPhotoSearch size={140} stroke={1} />}
+        description={t(repositoriesExists ? "emptyImages.description" : "emptyImages.descriptionNoRepository")}
+        title={t("emptyImages.title")}
+        buttonText={t("emptyImages.buttonTextNoRepository")}
+        buttonAction={repositoriesExists ? undefined : () => navigate(ROUTES.repositories)}
+      />
+    );
+  }, []);
+
+  function handleOnRemoveTab(tabId: string, index: number) {
+    let nextTabId: string;
+    if (index + 1 < tabs.length) {
+      nextTabId = tabs[index + 1].id;
+    }
+    else if (index - 1 >= 0) {
+      nextTabId = tabs[index - 1].id;
+    }
+    else {
+      nextTabId = galleryTabValue;
+    }
+
     removeTab(tabId);
     if (tabId === state.activeTab) {
-      state.setActiveTab(nextTabValue);
+      state.setActiveTab(nextTabId);
     }
-  }
-
-  function computeNextTabValue(index: number) {
-    if (index + 1 < tabs.length) {
-      return tabs[index + 1].id;
-    }
-    if (index - 1 >= 0) {
-      return tabs[index - 1].id;
-    }
-    return galleryTabValue;
   }
 
   return (
     <div ref={containerRef} className={style.mainContainer}>
-      {containerRef.current && <ScrollArea h={height} viewportRef={viewportRef}>
-        <Tabs value={state.activeTab} onChange={state.setActiveTab}>
+      {containerIsReady && <ScrollArea h={height} viewportRef={viewportRef}>
+        <Tabs value={state.activeTab} onChange={state.setActiveTab} keepMounted={true}>
           <Tabs.List>
             <Scroller>
               <Tabs.Tab value={galleryTabValue} leftSection={<IconPhoto size={13} />}>
                 {t("galleryScreen.explore")}
               </Tabs.Tab>
-              {tabs.map((tab, index) => {
-                return (
-                  <GalleryTab
-                    key={`gallery-${tab.id}`}
-                    tab={tab}
-                    onRemove={() =>
-                      handleOnRemoveTab(tab.id, computeNextTabValue(index))
-                    }
-                  />
-                );
-              })}
+              {otherTabs}
             </Scroller>
           </Tabs.List>
           <Tabs.Panel value={galleryTabValue}>
-            {viewportRef.current &&
+            {viewportIsReady &&
               <ImagesView viewData={StorageService.getMainViewTabData(FiltersService.defaultFilter)} isDefault={true}
-                          containerRef={containerRef} stickyControlBar={true} onEmptyResults={() => {
-                const repositoriesExists = RepositoriesService.list().length > 0;
-                return (
-                  <EmptyResults
-                    icon={<IconPhotoSearch size={140} stroke={1} />}
-                    description={t(repositoriesExists ? "emptyImages.description" : "emptyImages.descriptionNoRepository")}
-                    title={t("emptyImages.title")}
-                    buttonText={t("emptyImages.buttonTextNoRepository")}
-                    buttonAction={repositoriesExists ? undefined : () => navigate(ROUTES.repositories)}
-                  />
-                );
-              }} scrollRootRef={viewportRef} displayDetailInContainer={true} />}
+                          containerRef={containerReadyRef} stickyControlBar={true} onEmptyResults={computeEmptyResults} scrollRootRef={viewportReadyRef} displayDetailInContainer={true} />}
           </Tabs.Panel>
-          {tabs.map((tab) => (
-            <Tabs.Panel key={`panel-${tab.id}`} value={tab.id}>
-              {viewportRef.current && <ImagesView
-                viewData={{
-                  mode: tab.data.mode,
-                  pinnable: tab.data.pinnable,
-                  filterOrCollectionId: tab.data.filterOrCollectionId
-                }}
-                isDefault={false}
-                containerRef={containerRef}
-                onEmptyResults={() => (<EmptyResults
-                  icon={<IconPhotoSearch size={140} stroke={1} />}
-                  description={t(`emptyImages.${("filter" in tab.data.filterOrCollectionId && tab.data.filterOrCollectionId.filter.origin) ? "descriptionNoData" : "description"}`)}
-                  title={t("emptyImages.title")}
-                />)}
-                stickyControlBar={true}
-                scrollRootRef={viewportRef}
-                displayDetailInContainer={true}
-              />
-              }
-            </Tabs.Panel>
-          ))}
+          {otherTabPanels}
         </Tabs>
       </ScrollArea>}
     </div>

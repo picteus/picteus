@@ -24,7 +24,7 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType) {
   return (<TopPanel
       info={<>
         <div className={style.titleBox}>
-          <Stack className={style.title}>
+          <Stack className={style.title} gap={3}>
             <CopyText value={image.name} inline={true} >
               <Text size="md" truncate="end">{image.name}</Text>
             </CopyText>

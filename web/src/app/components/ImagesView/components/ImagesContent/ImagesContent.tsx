@@ -36,17 +36,21 @@ export default function ImagesContent({
   const [pagination, setPagination] = useState<PaginationType>({ currentPage: 1, take: imagesPerPage, skip: 0 });
   const [totalImagesCount, setTotalImagesCount] = useState<number>(-1);
   const [accumulatedImages, setAccumulatedImages] = useState<ImageOrSummary[]>([]);
+  const allImagesLoadedRef = useRef<boolean>(false);
   const isFetchingDataRef = useRef<boolean>(false);
   const fetchSessionIdRef = useRef<number>(0);
   const onFetchDataRef = useRef<(searchRange: SearchRange) => Promise<ImageExplorerDataType>>(onFetchData);
 
   useEffect(() => {
-    fetchSessionIdRef.current += 1;
-    isFetchingDataRef.current = false;
-    scrollRootRef.current.scrollTo(0, 0);
-    setTotalImagesCount(-1);
-    setAccumulatedImages([]);
-    setPagination({ currentPage: 1, take: imagesPerPage, skip: 0 });
+    if (refreshTrigger >= 1) {
+      allImagesLoadedRef.current = false;
+      fetchSessionIdRef.current += 1;
+      isFetchingDataRef.current = false;
+      scrollRootRef.current.scrollTo(0, 0);
+      setTotalImagesCount(-1);
+      setAccumulatedImages([]);
+      setPagination({ currentPage: 1, take: imagesPerPage, skip: 0 });
+    }
   }, [refreshTrigger]);
 
   useEffect(() => {
@@ -54,7 +58,7 @@ export default function ImagesContent({
   }, [onFetchData]);
 
   useEffect(() => {
-    if (isFetchingDataRef.current === false) {
+    if (isFetchingDataRef.current === false && allImagesLoadedRef.current === false) {
       const currentSessionId = fetchSessionIdRef.current;
       isFetchingDataRef.current = true;
       onFetchDataRef.current(pagination).then((data: ImageExplorerDataType)=> {
@@ -64,28 +68,37 @@ export default function ImagesContent({
         isFetchingDataRef.current = false;
         setTotalImagesCount(data.total);
         if (data.images.length > 0) {
-          setAccumulatedImages((previousData) => ([...previousData, ...data.images]));
+          setAccumulatedImages((previousAccumulatedImages) => {
+            const newAccumulatedData = [...previousAccumulatedImages, ...data.images];
+            if (newAccumulatedData.length >= Math.ceil(totalImagesCount / pagination.take)) {
+              allImagesLoadedRef.current = true;
+            }
+            return newAccumulatedData;
+          });
         }
       });
     }
   }, [pagination]);
 
   const loadMore = useCallback(() => {
-    if (isFetchingDataRef.current) {
+    if (isFetchingDataRef.current || allImagesLoadedRef.current === true) {
       return;
     }
-    if (totalImagesCount !== -1) {
-      const maximumPage = Math.ceil(totalImagesCount / pagination.take);
-      if (pagination.currentPage >= maximumPage) {
-        return;
+    setPagination(previousPagination => {
+      if (totalImagesCount !== -1) {
+        const maximumPage = Math.ceil(totalImagesCount / previousPagination.take);
+        if (previousPagination.currentPage >= maximumPage) {
+          allImagesLoadedRef.current = true;
+          return previousPagination;
+        }
       }
-    }
-    setPagination(previousPagination => ({
-      currentPage: previousPagination.currentPage + 1,
-      take: imagesPerPage,
-      skip: previousPagination.currentPage * imagesPerPage
-    }));
-  }, [pagination, totalImagesCount]);
+      return {
+        currentPage: previousPagination.currentPage + 1,
+        take: imagesPerPage,
+        skip: previousPagination.currentPage * imagesPerPage
+      };
+    });
+  }, [totalImagesCount]);
 
   if (totalImagesCount === 0) {
     return onEmptyResults();
@@ -107,5 +120,5 @@ export default function ImagesContent({
     return <ImageTable images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore} containerRef={containerRef}/>;
   }
 
-  return <></>
+  return <></>;
 }
