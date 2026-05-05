@@ -90,9 +90,7 @@ async function computeEventLog(event: SocketEventType): Promise<EventLogType> {
   async function computeI18nId(): Promise<string> {
     const valueId = value["id"];
     if (channel.startsWith(ChannelEnum.REPOSITORY_PREFIX)) {
-      const repository = RepositoriesService.getRepositoryInformation(
-        valueId,
-      );
+      const repository = channel === ChannelEnum.REPOSITORY_CREATED ? (await RepositoriesService.get({ id: valueId })) : RepositoriesService.getRepositoryInformation(valueId);
       return repository.name;
     }
     else if (channel.startsWith(ChannelEnum.IMAGE_PREFIX)) {
@@ -108,6 +106,7 @@ async function computeEventLog(event: SocketEventType): Promise<EventLogType> {
       return valueId;
     }
   }
+
   const i18nMnemonic = `eventInformation.${channel}`;
   const id = await computeI18nId();
   const level = "info";

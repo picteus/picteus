@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Box, Button, Center, Flex, Loader, Menu, Text, Tooltip } from "@mantine/core";
 import { IconChevronDown, IconDeviceFloppy, IconLibraryPhoto, IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -6,11 +6,12 @@ import { useTranslation } from "react-i18next";
 import { Collection as PicteusCollection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
 
 import { notifyError, notifySuccess } from "utils";
-import { useActionModalContext } from "app/context";
+import { useActionModalContext, useEventSocket } from "app/context";
 import { useAsyncInitialize } from "app/hooks";
 import { CollectionService } from "app/services";
 import AddOrUpdateCollection
     from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
+import { ChannelEnum } from "../../../../../types";
 
 
 type CollectionsBarType = {
@@ -29,6 +30,8 @@ export default function CollectionsBar({
     const [t] = useTranslation();
     const [, addModal] = useActionModalContext();
     const [loading, setLoading] = useState<boolean>(false);
+    const { eventStore } = useEventSocket();
+    const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
     const [collections, setCollections] = useState<PicteusCollection[]>([]);
     const [menuOpened, setMenuOpened] = useState<boolean>(false);
     const [selectedCollection, setSelectedCollection] = useState<PicteusCollection | undefined>();
@@ -38,6 +41,15 @@ export default function CollectionsBar({
     useEffect(() => {
         onCollectionRef.current = onCollection;
     }, [onCollection]);
+
+    useEffect(() => {
+        if (event?.channel === ChannelEnum.COLLECTION_DELETED) {
+            void loadCollections(true);
+            if (event.rawData.value["id"] === selectedCollection?.id) {
+                setSelectedCollection(undefined);
+            }
+        }
+    }, [event]);
 
     useAsyncInitialize<number | undefined>(initialCollectionId, async (value: number)=> {
         if (value !== undefined) {
@@ -61,9 +73,9 @@ export default function CollectionsBar({
         loadCollections();
     }, []);
 
-    function loadCollections() {
+    function loadCollections(force = false) {
         setLoading(true);
-        CollectionService.listAll().then(updatedCollections => setCollections(updatedCollections)).catch(error => {
+        (force === false ? CollectionService.list() : CollectionService.fetchAll()).then(updatedCollections => setCollections(updatedCollections)).catch(error => {
             notifyError((error as Error).message);
         }).finally(() => {
             setLoading(false);

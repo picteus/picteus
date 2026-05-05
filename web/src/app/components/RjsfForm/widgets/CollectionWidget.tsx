@@ -14,7 +14,7 @@ export default function CollectionWidget(props: WidgetProps) {
     const [t] = useTranslation();
 
     useEffect(() => {
-        CollectionService.listAll().then((colls) => {
+        CollectionService.fetchAll().then((colls) => {
             setCollections(colls);
         });
     }, []);

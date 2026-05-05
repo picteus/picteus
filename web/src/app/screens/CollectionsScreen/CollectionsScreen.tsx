@@ -1,18 +1,22 @@
-import React, { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { Button, Flex, Stack, Table, Text, Title } from "@mantine/core";
 import { IconLibrary, IconListSearch, IconPlus } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import { Collection } from "@picteus/ws-client";
 
-import { useActionModalContext } from "app/context";
+import { ChannelEnum } from "types";
+import { useActionModalContext, useEventSocket } from "app/context";
 import { CollectionService } from "app/services";
 import { Container, Drawer, EmptyResults, FormatedDate, NoValue, RefreshButton, StandardTable } from "app/components";
 import { AddOrUpdateCollection, CollectionActions, CollectionDetail, CollectionTop } from "./components";
 
+
 export default function CollectionsScreen() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [selectedCollection, setSelectedCollection] = useState<Collection>();
   const [t] = useTranslation();
   const [, addModal] = useActionModalContext();
@@ -23,32 +27,40 @@ export default function CollectionsScreen() {
 
   useEffect(() => {
     if (selectedCollection) {
-      const updated = collections.find((c) => c.id === selectedCollection.id);
-      if (updated && updated !== selectedCollection) {
-        setSelectedCollection(updated);
-      } else if (!updated) {
+      const updatedCollection = collections.find((collection) => collection.id === selectedCollection.id);
+      if (updatedCollection && updatedCollection !== selectedCollection) {
+        setSelectedCollection(updatedCollection);
+      } else if (!updatedCollection) {
         setSelectedCollection(undefined);
       }
     }
   }, [collections, selectedCollection]);
+
+  useEffect(() => {
+    if (event?.channel.startsWith(ChannelEnum.COLLECTION_PREFIX)) {
+      void fetchAllCollections();
+    }
+  }, [event]);
 
   const showAddButton = false;
 
   async function fetchAllCollections() {
     setLoading(true);
     try {
-      setCollections(await CollectionService.listAll());
+      setCollections(await CollectionService.fetchAll());
     } finally {
       setLoading(false);
     }
   }
+
+  function nothing(){}
 
   function openAddOrUpdateCollectionModal(collection?: Collection) {
     addModal({
       title: t(`addOrUpdateCollectionModal.${collection ? "updateTitle" : "addTitle"}`),
       icon: { icon: <IconLibrary /> },
       size: "s",
-      component: <AddOrUpdateCollection collection={collection} onSuccess={fetchAllCollections} />,
+      component: <AddOrUpdateCollection collection={collection} onSuccess={nothing} />,
     });
   }
 
@@ -78,7 +90,7 @@ export default function CollectionsScreen() {
         <CollectionActions
           collection={collection}
           onEdit={openAddOrUpdateCollectionModal}
-          onDeleted={fetchAllCollections}
+          onDeleted={nothing}
         />
       </Table.Td>
     </Table.Tr>
@@ -121,11 +133,9 @@ export default function CollectionsScreen() {
         onClose={() => setSelectedCollection(undefined)}
         title={selectedCollection && <CollectionTop collection={selectedCollection}
                                                     onEdit={openAddOrUpdateCollectionModal}
-                                                    onDeleted={fetchAllCollections} />}
+                                                    onDeleted={nothing} />}
       >
-        {selectedCollection && (
-          <CollectionDetail collection={selectedCollection} />
-        )}
+        {selectedCollection && <CollectionDetail collection={selectedCollection} />}
       </Drawer>
     </Container>
   );

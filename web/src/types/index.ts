@@ -205,6 +205,11 @@ export enum ChannelEnum {
   REPOSITORY_WATCH_STOPPED = "repository.watch.stopped",
   REPOSITORY_DELETED = "repository.deleted",
 
+  COLLECTION_PREFIX = "collection",
+  COLLECTION_CREATED = "collection.created",
+  COLLECTION_UPDATED = "collection.updated",
+  COLLECTION_DELETED = "collection.deleted",
+
   IMAGE_PREFIX = "image",
   IMAGE_CREATED = "image.created",
   IMAGE_UPDATED = "image.updated",

@@ -7,7 +7,12 @@ class CollectionService {
 
     private collections?: Collection[];
 
-    async listAll(): Promise<Collection[]> {
+    async fetchAll(): Promise<Collection[]> {
+        await this.refresh();
+        return this.collections;
+    }
+
+    async list(): Promise<Collection[]> {
         if (this.collections === undefined) {
             await this.refresh();
         }

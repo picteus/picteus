@@ -21,29 +21,33 @@ import {
 import { AddOrUpdateRepository, RepositoryActions, RepositoryDetail, RepositoryTop } from "./components";
 
 export default function RepositoriesScreen() {
+  const [t] = useTranslation();
   const [repositories, setRepositories] = useState<Repository[]>(RepositoriesService.list());
   const [loading, setLoading] = useState<boolean>(false);
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [selectedRepository, setSelectedRepository] = useState<Repository>();
-
-  const [t] = useTranslation();
-
   const [, addModal] = useActionModalContext();
+
+  async function fetchAllRepositories() {
+    setLoading(true);
+    try {
+      setRepositories(await RepositoriesService.fetchAll());
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+
+  function nothing(){}
 
   function openAddOrUpdateRepositoryModal(repository?: Repository) {
     addModal({
       title: t(`addOrUpdateRepositoryModal.${repository ? "updateTitle" : "addTitle"}`),
       icon: { icon: <IconFolderOpen /> },
       size: "s",
-      component: <AddOrUpdateRepository repository={repository} onSuccess={fetchAllRepositories} />,
+      component: <AddOrUpdateRepository repository={repository} onSuccess={nothing} />,
     });
-  }
-
-  async function fetchAllRepositories() {
-    setLoading(true);
-    setRepositories(await RepositoriesService.fetchAll());
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -58,11 +62,10 @@ export default function RepositoriesScreen() {
   }, [repositories, selectedRepository]);
 
   useEffect(() => {
-    if (event?.rawData.channel.startsWith(ChannelEnum.REPOSITORY_SYNCHRONIZE_PREFIX)) {
+    if (event?.channel.startsWith(ChannelEnum.REPOSITORY_PREFIX)) {
       void fetchAllRepositories();
     }
   }, [event]);
-
 
   const rows = repositories.map((repository: Repository) => (
     <Table.Tr
@@ -93,7 +96,7 @@ export default function RepositoriesScreen() {
         <RepositoryActions
           repository={repository}
           onEdit={openAddOrUpdateRepositoryModal}
-          onDeleted={fetchAllRepositories}
+          onDeleted={nothing}
         />
       </Table.Td>
     </Table.Tr>
@@ -135,7 +138,7 @@ export default function RepositoriesScreen() {
         onClose={() => setSelectedRepository(undefined)}
         title={selectedRepository && <RepositoryTop repository={selectedRepository}
                                                     onEdit={openAddOrUpdateRepositoryModal}
-                                                    onDeleted={fetchAllRepositories} />}
+                                                    onDeleted={nothing} />}
       >
         {selectedRepository && (
           <RepositoryDetail repository={selectedRepository} />
