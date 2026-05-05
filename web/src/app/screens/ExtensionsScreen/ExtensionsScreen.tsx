@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Flex, Stack, Table, Text, Title } from "@mantine/core";
-import { IconBox, IconPlus, IconPuzzle } from "@tabler/icons-react";
+import { ActionIcon, Button, Card, Flex, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
+import { IconBox, IconLayoutGrid, IconList, IconPlus, IconPuzzle } from "@tabler/icons-react";
 
 import { Extension } from "@picteus/ws-client";
 
@@ -17,7 +17,7 @@ import {
   StandardTable
 } from "app/components";
 import {
-  AddOrUpdateExtensionModal,
+  AddOrUpdateExtension,
   ExtensionActions,
   ExtensionDetail,
   ExtensionSettingsModal,
@@ -31,6 +31,7 @@ export default function ExtensionsScreen() {
   const [, addModal] = useActionModalContext();
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedExtension, setSelectedExtension] = useState<Extension>();
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
   useEffect(() => {
     if (selectedExtension) {
@@ -42,7 +43,7 @@ export default function ExtensionsScreen() {
     addModal({
       title: t("extensionSettingsModal.title"),
       icon: { url: ExtensionsService.getIconURL(extension.manifest.id) },
-      size: "m",
+      size: "s",
       component: (
         <ExtensionSettingsModal
           extension={extension}
@@ -60,7 +61,7 @@ export default function ExtensionsScreen() {
       },
       size: "m",
       component: (
-        <AddOrUpdateExtensionModal
+        <AddOrUpdateExtension
           extension={extension}
           onSuccess={(extension: Extension) => {
             openExtensionSettingsModal(extension);
@@ -127,13 +128,58 @@ export default function ExtensionsScreen() {
     </StandardTable>;
   }
 
+  function renderCard() {
+    if (!loading && extensions.length === 0) {
+      return <EmptyResults
+        icon={<IconPuzzle size={140} stroke={1} />}
+        description={t("emptyExtensions.description")}
+        title={t("emptyExtensions.title")}
+        buttonText={t("emptyExtensions.buttonText")}
+        buttonAction={() => openAddOrUpdateExtensionModal()}
+      />;
+    }
+
+    return (
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3, xl: 4 }} spacing="md">
+        {extensions.map((extension) => (
+          <Card key={extension.manifest.id} shadow="sm" padding="lg" radius="md" withBorder>
+            <ExtensionTop
+              extension={extension}
+              openAddOrUpdateExtensionModal={openAddOrUpdateExtensionModal}
+              openExtensionSettingsModal={openExtensionSettingsModal}
+              onUninstalled={fetchAllExtensions}
+            />
+          </Card>
+        ))}
+      </SimpleGrid>
+    );
+  }
+
+  const showModes = false;
+
   return (
     <Container>
       <Stack gap="lg" h="100%">
         <Flex justify="space-between" align="center">
           <Title>{t("extensionsScreen.title")}</Title>
           <Flex gap="sm" align="center">
-            <Button
+            {showModes && <ActionIcon.Group>
+              <ActionIcon
+                variant={viewMode === "table" ? "filled" : "default"}
+                size="lg"
+                onClick={() => setViewMode("table")}
+              >
+                <IconList size={20} />
+              </ActionIcon>
+              <ActionIcon
+                variant={viewMode === "card" ? "filled" : "default"}
+                size="lg"
+                onClick={() => setViewMode("card")}
+              >
+                <IconLayoutGrid size={20} />
+              </ActionIcon>
+            </ActionIcon.Group>
+            }            <Button
               leftSection={<IconPlus size={20} />}
               onClick={() => openAddOrUpdateExtensionModal()}
             >
@@ -142,7 +188,7 @@ export default function ExtensionsScreen() {
             <RefreshButton onRefresh={() => fetchAllExtensions()} />
           </Flex>
         </Flex>
-        {renderTable()}
+        {viewMode === "table" ? renderTable() : renderCard()}
       </Stack>
       <Drawer
         opened={selectedExtension !== undefined}

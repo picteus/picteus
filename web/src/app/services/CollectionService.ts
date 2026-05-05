@@ -1,11 +1,17 @@
 import { Collection, CollectionApi, SearchFilter } from "@picteus/ws-client";
 
+
 const collectionApi = new CollectionApi();
 
 class CollectionService {
 
+    private collections?: Collection[];
+
     async listAll(): Promise<Collection[]> {
-        return collectionApi.collectionList();
+        if (this.collections === undefined) {
+            await this.refresh();
+        }
+        return this.collections;
     }
 
     async create(
@@ -13,11 +19,13 @@ class CollectionService {
         searchFilter: SearchFilter,
         comment?: string,
     ): Promise<Collection> {
-        return collectionApi.collectionCreate({
+        const result = await collectionApi.collectionCreate({
             name,
             searchFilter,
             comment: comment === "" ? undefined : comment
         });
+        await this.refresh();
+        return result;
     }
 
     async update(
@@ -26,25 +34,31 @@ class CollectionService {
         searchFilter?: SearchFilter,
         comment?: string,
     ): Promise<Collection> {
-        return collectionApi.collectionUpdate({
+        const result = await collectionApi.collectionUpdate({
             id,
             name,
             searchFilter,
             comment: comment === "" ? undefined : comment
         });
+        await this.refresh();
+        return result;
     }
 
     async delete(id: number): Promise<void> {
-        return collectionApi.collectionDelete({
-            id,
-        });
+        const result =  await collectionApi.collectionDelete({ id });
+        await this.refresh();
+        return result;
     }
 
     async get(id: number): Promise<Collection> {
-        return collectionApi.collectionGet({
-            id,
-        });
+        return collectionApi.collectionGet({ id });
     }
+
+    private async refresh()
+    {
+        this.collections = await collectionApi.collectionList();
+    }
+
 }
 
 export default new CollectionService();

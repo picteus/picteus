@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActionIcon, Box, Button, Center, Flex, Loader, Menu, Text, Tooltip } from "@mantine/core";
-import { IconBookmark, IconChevronDown, IconDeviceFloppy, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
+import { Box, Button, Center, Flex, Loader, Menu, Text, Tooltip } from "@mantine/core";
+import { IconChevronDown, IconDeviceFloppy, IconLibraryPhoto, IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Collection as PicteusCollection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
 
 import { notifyError, notifySuccess } from "utils";
 import { useActionModalContext } from "app/context";
-import { useAsyncInitialize, useConfirmAction } from "app/hooks";
+import { useAsyncInitialize } from "app/hooks";
 import { CollectionService } from "app/services";
-import { Collection } from "app/components";
+import AddOrUpdateCollection
+    from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
 
 type CollectionsBarType = {
@@ -27,7 +28,6 @@ export default function CollectionsBar({
 }: CollectionsBarType) {
     const [t] = useTranslation();
     const [, addModal] = useActionModalContext();
-    const confirmAction = useConfirmAction();
     const [loading, setLoading] = useState<boolean>(false);
     const [collections, setCollections] = useState<PicteusCollection[]>([]);
     const [menuOpened, setMenuOpened] = useState<boolean>(false);
@@ -78,12 +78,14 @@ export default function CollectionsBar({
 
     function handleOnSaveCurrent() {
         addModal({
-            title: t("collections.create"),
+            title: t("addOrUpdateCollectionModal.addTitle"),
+            size: "s",
             component: (
-                <Collection
+                <AddOrUpdateCollection
                     searchFilter={searchFilter!}
                     onSuccess={(collection) => {
                         loadCollections();
+                        setSelectedCollection(collection);
                         onCollection(collection);
                     }}
                 />
@@ -93,7 +95,7 @@ export default function CollectionsBar({
 
     function handleOnUpdateCurrent() {
         CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment).then((collection: PicteusCollection) => {
-            notifySuccess(t("collections.updateSuccess"));
+            notifySuccess(t("addOrUpdateCollectionModal.successUpdate"));
             loadCollections();
             setSelectedCollection(collection);
             setSaveDisabled(true);
@@ -101,88 +103,37 @@ export default function CollectionsBar({
         }).catch(error => notifyError((error as Error).message));
     }
 
-    function handleOnEdit(collection: PicteusCollection) {
-        setMenuOpened(false);
-        addModal({
-            title: t("collections.edit"),
-            component: (
-                <Collection
-                    collection={collection}
-                    searchFilter={collection.filter}
-                    onSuccess={(updatedCollection) => {
-                        loadCollections();
-                        onCollection(updatedCollection);
-                    }}
-                />
-            ),
-        });
-    }
-
-    function handleOnDelete(collection: PicteusCollection) {
-        setMenuOpened(false);
-        confirmAction(
-            async () => {
-                try {
-                    await CollectionService.delete(collection.id);
-                    loadCollections();
-                    onCollection(undefined);
-                } catch (error) {
-                    notifyError((error as Error).message);
-                }
-            },
-            {
-                title: t("collections.confirmDeleteTitle", { defaultValue: "Delete Collection" }),
-                message: t("collections.deleteConfirmation", { defaultValue: "Are you sure you want to delete this collection?" })
-            }
-        );
-    }
-
     function truncateName(name: string) {
         return name.length > 32 ? name.substring(0, 32) + "..." : name;
     }
 
     return (<Button.Group>
-          <Menu shadow="md" width={340} position="bottom-end" opened={menuOpened} onChange={setMenuOpened}>
+          <Menu shadow="md" width={340} position="bottom" withArrow trigger="click-hover" opened={menuOpened} onChange={setMenuOpened}>
               <Menu.Target>
-                  <Button variant="default" leftSection={<IconBookmark size={14} />}
+                  <Button variant="default" leftSection={<IconLibraryPhoto size={14} />}
                           rightSection={<IconChevronDown size={14} />}>
-                      {selectedCollection ? truncateName(selectedCollection.name) : t("collections.title")}
+                      {selectedCollection ? truncateName(selectedCollection.name) : t("field.collections")}
                   </Button>
               </Menu.Target>
-              <Menu.Dropdown>
-                  <Menu.Label>{t("collections.savedCollections")}</Menu.Label>
+              <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
                   {loading && <Box p="sm"><Center><Loader size="sm" /></Center></Box>}
                   {!loading && collections.map((collection) => (
                     <Menu.Item key={collection.id} onClick={() => handleOnSelectedCollection(collection)}>
+                        <Text size="sm">{truncateName(collection.name)}</Text>
                         <Flex justify="space-between" align="center">
-                            <Text size="sm">{truncateName(collection.name)}</Text>
-                            <Flex gap="xs">
-                                <ActionIcon component="div" variant="subtle" size="xs" onClick={(event) => {
-                                    event.stopPropagation();
-                                    handleOnEdit(collection);
-                                }}>
-                                    <IconEdit size={12} />
-                                </ActionIcon>
-                                <ActionIcon component="div" variant="subtle" size="xs" color="red" onClick={(event) => {
-                                    event.stopPropagation();
-                                    handleOnDelete(collection);
-                                }}>
-                                    <IconTrash size={12} />
-                                </ActionIcon>
-                            </Flex>
                         </Flex>
                     </Menu.Item>
                   ))}
               </Menu.Dropdown>
           </Menu>
           {selectedCollection && (
-            <Tooltip label={t("collections.updateCurrent", { name: selectedCollection.name })}>
+            <Tooltip label={t("button.save", { name: selectedCollection.name })}>
                 <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
                     <IconDeviceFloppy size={16} />
                 </Button>
             </Tooltip>
           )}
-          <Tooltip label={t("collections.saveCurrent")}>
+          <Tooltip label={t("button.add")}>
               <Button variant="default" px="xs" disabled={!searchFilter}  onClick={handleOnSaveCurrent}>
                   <IconPlus size={16} />
               </Button>

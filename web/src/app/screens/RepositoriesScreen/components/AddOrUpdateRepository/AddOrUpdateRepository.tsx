@@ -20,12 +20,12 @@ const initialValues: RepositoryApiRepositoryCreateRequest = {
   watch: undefined,
 };
 
-type AddOrUpdateRepositoryModalType = {
+type AddOrUpdateRepositoryType = {
   repository?: Repository;
   onSuccess: () => void;
 };
 
-export default function AddOrUpdateRepositoryModal({ repository, onSuccess }: AddOrUpdateRepositoryModalType) {
+export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUpdateRepositoryType) {
   const [t] = useTranslation();
   const openFolderPicker = useFolderPicker();
 

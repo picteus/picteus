@@ -6,6 +6,7 @@ import { UserInterfaceAnchor } from "@picteus/ws-client";
 import { computeExtensionSidebarRoute, ROUTES } from "utils";
 import {
   ActivityScreen,
+  CollectionsScreen,
   ExtensionsScreen,
   GalleryScreen,
   RepositoriesScreen,
@@ -70,6 +71,7 @@ function RouterContent() {
     return Object.entries(ROUTES).map(([key, path]) => {
       const ComponentMap: Record<string, FunctionComponent> = {
         home: GalleryScreen,
+        collections: CollectionsScreen,
         repositories: RepositoriesScreen,
         extensions: ExtensionsScreen,
         activity: ActivityScreen,

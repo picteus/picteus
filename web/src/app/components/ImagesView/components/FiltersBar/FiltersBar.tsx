@@ -95,8 +95,8 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
 
   function computeSearchInLabelDisplay() {
     return searchInOptions
-      .filter((option) => localFilters.searchIn?.includes(option.value)) // Only selected
-      .map((option) => option.label) // Map to label
+      .filter((option) => localFilters.searchIn?.includes(option.value))
+      .map((option) => option.label)
       .join(", ");
   }
 

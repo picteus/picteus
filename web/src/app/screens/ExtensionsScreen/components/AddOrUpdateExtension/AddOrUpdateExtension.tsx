@@ -8,8 +8,8 @@ import { IconAlertTriangle, IconFileZip, IconTrash, IconUpload, IconX } from "@t
 
 import { Extension } from "@picteus/ws-client";
 
-import { ExtensionsService } from "app/services";
 import { fileToBlob, mimeTypes, notifyApiCallI18nError, Validators } from "utils";
+import { ExtensionsService } from "app/services";
 
 
 type FormValueType = {
@@ -20,15 +20,15 @@ const initialValues: FormValueType = {
   file: undefined,
 };
 
-type AddOrUpdateExtensionModalType = {
+type AddOrUpdateExtensionType = {
   extension?: Extension;
   onSuccess: (extension: Extension) => void;
 };
 
-export default function AddOrUpdateExtensionModal({
+export default function AddOrUpdateExtension({
   extension,
   onSuccess,
-}: AddOrUpdateExtensionModalType) {
+}: AddOrUpdateExtensionType) {
   const [t] = useTranslation();
   const [fileIsValid, setFileIsValid] = useState(false);
   const dropzoneRef = useRef<() => void>(null);
@@ -83,8 +83,6 @@ export default function AddOrUpdateExtensionModal({
       setLoading(false);
     }
   }
-
-
 
   function renderDropzone() {
     const getIconStyle = (color) => {
@@ -158,6 +156,7 @@ export default function AddOrUpdateExtensionModal({
       </Dropzone>
     );
   }
+
   return (
     <>
       {extension && (

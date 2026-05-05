@@ -8,6 +8,7 @@ import {
   IconBox,
   IconExternalLink,
   IconFolderOpen,
+  IconLibraryPhoto,
   IconPhotoMinus
 } from "@tabler/icons-react";
 
@@ -70,6 +71,33 @@ export default function Sidebar() {
   }, [event]);
   const { isAvailable } = useCommandSocket();
 
+  const commonIconStyle = useMemo(
+    () => ({
+      width: 20,
+      height: 20,
+      stroke: 1.5,
+    }),
+    [],
+  );
+
+  const mainElementData = [
+    { route: ROUTES.home, label: "gallery", icon: <IconPhotoMinus {...commonIconStyle} /> },
+    { route: ROUTES.repositories, label: "repositories", icon: <IconFolderOpen {...commonIconStyle} /> },
+    { route: ROUTES.collections, label: "collections", icon: <IconLibraryPhoto {...commonIconStyle} /> },
+    { route: ROUTES.extensions, label: "extensions", icon: <IconBox {...commonIconStyle} /> },
+    { route: ROUTES.activity, label: "activity", icon: <IconActivity {...commonIconStyle} /> }
+  ];
+
+  const mainElements = useMemo(() => (mainElementData.map(element => (
+    <NavbarLink
+      key={element.route}
+      icon={element.icon}
+      label={t("menu." + element.label)}
+      route={element.route}
+      onClick={() => navigate(element.route)}
+    />
+  ))), []);
+
   const additionalElements = useMemo(() => {
     return additionalUiContextValue.sidebar.map((element) => {
       const routePathFragment = computeExtensionSidebarRoute(element.uuid);
@@ -117,42 +145,10 @@ export default function Sidebar() {
     });
   }, [additionalUiContextValue, isAvailable]);
 
-  const commonIconStyle = useMemo(
-    () => ({
-      width: 20,
-      height: 20,
-      stroke: 1.5,
-    }),
-    [],
-  );
-
   return (
     <nav className={style.container}>
       <Stack justify="center" gap={15}>
-        <NavbarLink
-          icon={<IconPhotoMinus {...commonIconStyle} />}
-          label={t("menu.gallery")}
-          route={ROUTES.home}
-          onClick={() => navigate(ROUTES.home)}
-        />
-        <NavbarLink
-          icon={<IconFolderOpen {...commonIconStyle} />}
-          label={t("menu.repositories")}
-          route={ROUTES.repositories}
-          onClick={() => navigate(ROUTES.repositories)}
-        />
-        <NavbarLink
-          icon={<IconBox {...commonIconStyle} />}
-          label={t("menu.extensions")}
-          route={ROUTES.extensions}
-          onClick={() => navigate(ROUTES.extensions)}
-        />
-        <NavbarLink
-          icon={<IconActivity {...commonIconStyle} />}
-          label={t("menu.activity")}
-          route={ROUTES.activity}
-          onClick={() => navigate(ROUTES.activity)}
-        />
+        {mainElements}
         {additionalElements}
         <NavbarLink
           icon={<IconAdjustmentsHorizontal {...commonIconStyle} />}

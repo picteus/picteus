@@ -18,7 +18,7 @@ import {
   RefreshButton,
   StandardTable
 } from "app/components";
-import { AddOrUpdateRepositoryModal, RepositoryActions, RepositoryDetail, RepositoryTop } from "./components";
+import { AddOrUpdateRepository, RepositoryActions, RepositoryDetail, RepositoryTop } from "./components";
 
 export default function RepositoriesScreen() {
   const [repositories, setRepositories] = useState<Repository[]>(RepositoriesService.list());
@@ -35,8 +35,8 @@ export default function RepositoriesScreen() {
     addModal({
       title: t(`addOrUpdateRepositoryModal.${repository ? "updateTitle" : "addTitle"}`),
       icon: { icon: <IconFolderOpen /> },
-      size: "l",
-      component: <AddOrUpdateRepositoryModal repository={repository} onSuccess={fetchAllRepositories} />,
+      size: "s",
+      component: <AddOrUpdateRepository repository={repository} onSuccess={fetchAllRepositories} />,
     });
   }
 
