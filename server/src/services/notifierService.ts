@@ -13,6 +13,7 @@ export enum EventEntity
   Process = "process",
   Extension = "extension",
   Repository = "repository",
+  Collection = "collection",
   Image = "image",
   Text = "text"
 }
@@ -52,6 +53,13 @@ export enum RepositoryEventAction
   Deleted = "deleted"
 }
 
+export enum CollectionEventAction
+{
+  Created = "created",
+  Updated = "updated",
+  Deleted = "deleted"
+}
+
 export enum ImageEventAction
 {
   Created = "created",
@@ -77,6 +85,7 @@ export type EventAction =
   | ProcessEventAction
   | ExtensionEventAction
   | RepositoryEventAction
+  | CollectionEventAction
   | ImageEventAction
   | TextEventAction
   | EventStateDoubleWildcardType;

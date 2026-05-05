@@ -20,6 +20,7 @@ import {
   SearchPropertyRange,
   SearchTags
 } from "../src/dtos/app.dtos";
+import { CollectionEventAction, EventEntity, NotifierService } from "../src/services/notifierService";
 
 
 const { BAD_REQUEST } = HttpCodes;
@@ -102,6 +103,8 @@ describe("Collections", () =>
 
     {
       // We assess with valid parameters
+      const listener = base.computeEventListener();
+      base.getNotifierService().once(EventEntity.Collection, CollectionEventAction.Created, undefined, listener);
       const collection = await base.getCollectionController().create(name, comment, filter);
       expect(collection.name).toEqual(name);
       expect(collection.comment).toEqual(comment);
@@ -110,6 +113,7 @@ describe("Collections", () =>
       const maximumDeltaMilliseconds = 1_000;
       expect(nowInMilliseconds - collection.creationDate).toBeLessThanOrEqual(maximumDeltaMilliseconds);
       expect(nowInMilliseconds - collection.modificationDate).toBeLessThanOrEqual(maximumDeltaMilliseconds);
+      expect(listener).toHaveBeenCalledWith(EventEntity.Collection + NotifierService.delimiter + CollectionEventAction.Created, { id: collection.id });
     }
   });
 
@@ -165,6 +169,8 @@ describe("Collections", () =>
 
     {
       // We assess with valid parameters
+      const listener = base.computeEventListener();
+      base.getNotifierService().once(EventEntity.Collection, CollectionEventAction.Updated, undefined, listener);
       const newName = name + "bis";
       const newComment = comment + "bis";
       const newFilter = new SearchFilter(new SearchCriteria());
@@ -175,6 +181,7 @@ describe("Collections", () =>
       expect(updatedCollection.creationDate).toEqual(collection.creationDate);
       expect(updatedCollection.modificationDate).not.toEqual(collection.modificationDate);
       expect(Date.now() - collection.modificationDate).toBeLessThanOrEqual(1_000);
+      expect(listener).toHaveBeenCalledWith(EventEntity.Collection + NotifierService.delimiter + CollectionEventAction.Updated, { id: collection.id });
     }
   });
 
@@ -195,8 +202,11 @@ describe("Collections", () =>
 
     {
       // We assess with valid parameters
+      const listener = base.computeEventListener();
+      base.getNotifierService().once(EventEntity.Collection, CollectionEventAction.Deleted, undefined, listener);
       await base.getCollectionController().delete(collection.id);
       expect((await base.getCollectionController().list()).length).toEqual(0);
+      expect(listener).toHaveBeenCalledWith(EventEntity.Collection + NotifierService.delimiter + CollectionEventAction.Deleted, { id: collection.id });
     }
   });
 

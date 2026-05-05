@@ -8,6 +8,7 @@ import { Collection, FieldLengths, SearchFilter, SearchOriginKind } from "../dto
 import { EntitiesProvider } from "./databaseProviders";
 import { parametersChecker } from "./utils/parametersChecker";
 import { plainToInstanceViaJSON } from "../utils";
+import { CollectionEventAction, EventEntity, NotifierService } from "./notifierService";
 
 
 @Injectable()
@@ -15,7 +16,7 @@ export class CollectionService
   implements OnModuleInit, OnModuleDestroy
 {
 
-  constructor(private readonly entitiesProvider: EntitiesProvider)
+  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly notifierService: NotifierService)
   {
     logger.debug("Instantiating a CollectionService");
   }
@@ -55,6 +56,7 @@ export class CollectionService
     const entity = await this.entitiesProvider.collections.create({
       data: { name, comment, filter: instanceToPlain(filter) }
     });
+    this.notifierService.emit(EventEntity.Collection, CollectionEventAction.Created, undefined, { id: entity.id });
     return this.toDto(entity);
   }
 
@@ -88,6 +90,7 @@ export class CollectionService
         filter: filter === undefined ? undefined : instanceToPlain(filter)
       }
     });
+    this.notifierService.emit(EventEntity.Collection, CollectionEventAction.Updated, undefined, { id });
     return this.toDto(updatedEntity);
   }
 
@@ -96,6 +99,7 @@ export class CollectionService
     logger.debug(`Deleting the collection with id '${id}'`);
     const entity = await this.getPersistedCollection(id);
     await this.entitiesProvider.collections.delete({ where: { id: entity.id } });
+    this.notifierService.emit(EventEntity.Collection, CollectionEventAction.Deleted, undefined, { id });
   }
 
   async clearFromOrigin(type: SearchOriginKind, id: string): Promise<void>
