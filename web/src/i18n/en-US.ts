@@ -3,11 +3,11 @@ export default {
     loading: "Loading application..."
   },
   menu: {
-    gallery: "Gallery",
-    activity: "Activity",
+    images: "Images",
     repositories: "Repositories",
     collections: "Collections",
     extensions: "Extensions",
+    activity: "Activity",
     settings: "Settings",
     information: "Information",
     imageCommands: "Image commands",
@@ -306,12 +306,11 @@ export default {
     imageUpdatedDescription: "The image '{{imageName}}' has been updated.",
     imageDeletedDescription: "The image '{{imageName}}' has been deleted."
   },
-  galleryScreen: {
+  imagesScreen: {
     masonryView: "Masonry",
     galleryView: "Gallery",
     detailView: "Detail",
-    explore: "Explore",
-    alertGalleryChanged: "Changes detected in the gallery. Reload to update."
+    explore: "Explore"
   },
   activityScreen: {
     title: "Activity",

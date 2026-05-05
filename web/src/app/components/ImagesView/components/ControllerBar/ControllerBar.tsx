@@ -60,19 +60,19 @@ export default function ControllerBar({
                    onFilterOrCollectionId={onFilterOrCollectionId} /> : <div/>}
       <Flex gap="xs">
         <ActionIcon.Group>
-          <Tooltip label={t("galleryScreen.masonryView")}>
+          <Tooltip label={t("imagesScreen.masonryView")}>
             <ActionIcon size="lg" variant={viewMode === "masonry" ? "filled" : "default"}
                         onClick={() => onViewMode("masonry")}>
               <IconLayoutDashboard stroke={1.2} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label={t("galleryScreen.galleryView")}>
+          <Tooltip label={t("imagesScreen.galleryView")}>
             <ActionIcon size="lg" variant={viewMode === "gallery" ? "filled" : "default"}
                         onClick={() => onViewMode("gallery")}>
               <IconPhoto stroke={1.2} />
             </ActionIcon>
           </Tooltip>
-          {withTable && <Tooltip label={t("galleryScreen.detailView")}>
+          {withTable && <Tooltip label={t("imagesScreen.detailView")}>
             <ActionIcon size="lg" variant={viewMode === "table" ? "filled" : "default"}
                         onClick={() => onViewMode("table")}>
               <IconListDetails stroke={1.2} />

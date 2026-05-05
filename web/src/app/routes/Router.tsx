@@ -8,7 +8,7 @@ import {
   ActivityScreen,
   CollectionsScreen,
   ExtensionsScreen,
-  GalleryScreen,
+  ImagesScreen,
   RepositoriesScreen,
   SettingsScreen,
   SidebarAnchorScreen
@@ -70,7 +70,7 @@ function RouterContent() {
   const mainRoutes = useMemo<Route []>(()=> {
     return Object.entries(ROUTES).map(([key, path]) => {
       const ComponentMap: Record<string, FunctionComponent> = {
-        home: GalleryScreen,
+        home: ImagesScreen,
         collections: CollectionsScreen,
         repositories: RepositoriesScreen,
         extensions: ExtensionsScreen,

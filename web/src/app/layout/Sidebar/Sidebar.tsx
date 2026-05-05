@@ -81,7 +81,7 @@ export default function Sidebar() {
   );
 
   const mainElementData = [
-    { route: ROUTES.home, label: "gallery", icon: <IconPhotoMinus {...commonIconStyle} /> },
+    { route: ROUTES.home, label: "images", icon: <IconPhotoMinus {...commonIconStyle} /> },
     { route: ROUTES.repositories, label: "repositories", icon: <IconFolderOpen {...commonIconStyle} /> },
     { route: ROUTES.collections, label: "collections", icon: <IconLibraryPhoto {...commonIconStyle} /> },
     { route: ROUTES.extensions, label: "extensions", icon: <IconBox {...commonIconStyle} /> },

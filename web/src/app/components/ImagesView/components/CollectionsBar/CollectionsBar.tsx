@@ -5,13 +5,13 @@ import { useTranslation } from "react-i18next";
 
 import { Collection as PicteusCollection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
 
+import { ChannelEnum } from "types";
 import { notifyError, notifySuccess } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useAsyncInitialize } from "app/hooks";
 import { CollectionService } from "app/services";
 import AddOrUpdateCollection
     from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
-import { ChannelEnum } from "../../../../../types";
 
 
 type CollectionsBarType = {

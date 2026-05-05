@@ -11,15 +11,15 @@ import { useContainerDimensions, useReadyRef } from "app/hooks";
 import { FiltersService, RepositoriesService, StorageService } from "app/services";
 import { EmptyResults, ExtensionIcon, ImagesView } from "app/components";
 
-import style from "./GalleryScreen.module.scss";
+import style from "./ImagesScreen.module.scss";
 
 
-type GalleryTabType = {
+type ImageTabType = {
   tab: TabsType;
   onRemove: () => void;
 };
 
-function GalleryTab({ tab, onRemove }: GalleryTabType) {
+function ImageTab({ tab, onRemove }: ImageTabType) {
   const [isEditing, setIsEditing] = useState(false);
   const [tabLabel, setTabLabel] = useState(tab.content.title);
   const { state } = useGalleryTabsContext();
@@ -70,7 +70,7 @@ function GalleryTab({ tab, onRemove }: GalleryTabType) {
   );
 }
 
-export default function GalleryScreen() {
+export default function ImagesScreen() {
   const [t] = useTranslation();
   const navigate = useNavigate();
   const [containerRef,  containerReadyRef, containerIsReady ] = useReadyRef<HTMLDivElement>();
@@ -78,7 +78,7 @@ export default function GalleryScreen() {
   const { height } = useContainerDimensions(containerReadyRef);
   const {tabs, removeTab, state, galleryTabValue} = useGalleryTabsContext();
 
-  const otherTabs = useMemo(() => (tabs.map((tab, index) => (<GalleryTab
+  const otherTabs = useMemo(() => (tabs.map((tab, index) => (<ImageTab
       key={`gallery-${tab.id}`}
       tab={tab}
       onRemove={() => handleOnRemoveTab(tab.id, index)}
@@ -147,7 +147,7 @@ export default function GalleryScreen() {
           <Tabs.List>
             <Scroller>
               <Tabs.Tab value={galleryTabValue} leftSection={<IconPhoto size={13} />}>
-                {t("galleryScreen.explore")}
+                {t("imagesScreen.explore")}
               </Tabs.Tab>
               {otherTabs}
             </Scroller>
