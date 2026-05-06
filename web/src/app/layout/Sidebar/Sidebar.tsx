@@ -1,12 +1,11 @@
 import { useTranslation } from "react-i18next";
-import React, { ReactNode, useEffect, useMemo, useSyncExternalStore } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Stack, Tooltip, UnstyledButton } from "@mantine/core";
+import React, { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useNavigate } from "react-router-dom";
+import { Stack } from "@mantine/core";
 import {
   IconActivity,
   IconAdjustmentsHorizontal,
   IconBox,
-  IconExternalLink,
   IconFolderOpen,
   IconLibraryPhoto,
   IconPhotoMinus
@@ -15,41 +14,15 @@ import {
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { computeExtensionSidebarRoute, notifyError, notifyErrorWithError, ROUTES } from "utils";
-import style from "./Sidebar.module.scss";
-
 import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
 import { ExtensionIcon } from "app/components";
 import { useOpenWindow } from "app/hooks";
 import { ChannelEnum, computeResourceTypeUrl } from "types";
+import { ImagesNavbarLink, NavbarLink } from "./components";
 
-interface NavbarLinkProps {
-  icon: ReactNode;
-  externalLink?: boolean;
-  label: string;
-  route: string;
-  onClick?(): void;
-}
+import style from "./Sidebar.module.scss";
 
-function NavbarLink({ icon, externalLink, label, route, onClick }: NavbarLinkProps) {
-  const { pathname } = useLocation();
-  return (
-    <Tooltip label={label} position="right">
-      <UnstyledButton
-        onClick={onClick}
-        className={style.iconLink}
-        data-active={pathname === route || undefined}
-      >
-        {icon}
-        {externalLink === true && <IconExternalLink
-          className={style.externalLinkIcon}
-          stroke={1.5}
-          size={14}
-        />}
-      </UnstyledButton>
-    </Tooltip>
-  );
-}
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -88,15 +61,27 @@ export default function Sidebar() {
     { route: ROUTES.activity, label: "activity", icon: <IconActivity {...commonIconStyle} /> }
   ];
 
-  const mainElements = useMemo(() => (mainElementData.map(element => (
-    <NavbarLink
-      key={element.route}
-      icon={element.icon}
-      label={t("menu." + element.label)}
-      route={element.route}
-      onClick={() => navigate(element.route)}
-    />
-  ))), []);
+  const mainElements = useMemo(() => (mainElementData.map(element => {
+    if (element.route === ROUTES.home) {
+      return (
+        <ImagesNavbarLink
+          key={element.route}
+          icon={element.icon}
+          label={t("menu." + element.label)}
+          route={element.route}
+        />
+      );
+    }
+    return (
+      <NavbarLink
+        key={element.route}
+        icon={element.icon}
+        label={t("menu." + element.label)}
+        route={element.route}
+        onClick={() => navigate(element.route)}
+      />
+    );
+  })), [mainElementData]);
 
   const additionalElements = useMemo(() => {
     return additionalUiContextValue.sidebar.map((element) => {
@@ -143,7 +128,7 @@ export default function Sidebar() {
         />
       );
     });
-  }, [additionalUiContextValue, isAvailable]);
+  }, [additionalUiContextValue, isAvailable, navigate, openWindow]);
 
   return (
     <nav className={style.container}>

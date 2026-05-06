@@ -5,33 +5,3 @@
   height : 100%;
   position: fixed;
 }
-
-.iconLink {
-  width: 37px;
-  height: 37px;
-  border-radius: var(--mantine-radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
-  position: relative;
-
-  &:hover {
-    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
-  }
-
-  &[data-active] {
-    &,
-    &:hover {
-      background-color: var(--mantine-color-blue-light);
-      color: var(--mantine-color-blue-light-color);
-    }
-  }
-}
-
-.externalLinkIcon {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  color: var(--mantine-color-blue-filled);
-}

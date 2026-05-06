@@ -4,7 +4,7 @@ import { ImageVisualizerProvider } from "./ImageVisualizerContext.tsx";
 import { ActionModalProvider } from "./ActionModalContext.tsx";
 import { ImagesSelectedProvider } from "./ImagesSelectedContext.tsx";
 import { AdditionalUiProvider } from "./AdditionalUiContext.tsx";
-import { GalleryTabsProvider } from "./GalleryTabsContext.tsx";
+import { ImagesTabsProvider } from "./ImagesTabsContext.tsx";
 
 export default function Providers({ children }) {
   return (
@@ -13,9 +13,9 @@ export default function Providers({ children }) {
         <ActionModalProvider>
             <ImageVisualizerProvider>
               <AdditionalUiProvider>
-                <GalleryTabsProvider>
+                <ImagesTabsProvider>
                   <ImagesSelectedProvider>{children}</ImagesSelectedProvider>
-                </GalleryTabsProvider>
+                </ImagesTabsProvider>
               </AdditionalUiProvider>
             </ImageVisualizerProvider>
         </ActionModalProvider>

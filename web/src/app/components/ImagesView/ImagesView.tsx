@@ -11,7 +11,7 @@ import {
   ViewTabDataType
 } from "types";
 import { notifyApiCallError } from "utils";
-import { useGalleryTabsContext } from "app/context";
+import { useImagesTabsContext } from "app/context";
 import { useInterceptedState } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
 import { Container, EmptyResults } from "app/components";
@@ -32,7 +32,7 @@ type ImagesViewType = {
 };
 
 export default function ImagesView({ viewData, isDefault, containerRef, controlBarChildren, stickyControlBar, onEmptyResults, displayDetailInContainer, scrollRootRef }: ImagesViewType){
-  const { addTab } = useGalleryTabsContext();
+  const { addTab } = useImagesTabsContext();
   const hasFilterOrCollectionId = "filterOrCollectionId" in viewData;
   const pinnable = "pinnable" in viewData ? viewData.pinnable : false;
   const [filterOrCollectionId, setFilterOrCollectionId] = useInterceptedState<FilterOrCollectionId>(hasFilterOrCollectionId === true ? viewData.filterOrCollectionId : {

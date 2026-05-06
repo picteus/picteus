@@ -5,7 +5,7 @@ import { TabsType } from "types";
 import { StorageService } from "app/services";
 
 
-type GalleryTabsContextType = {
+type ImagesTabsContextType = {
   tabs: TabsType[],
   addTab: (tab: TabsType) => void,
   removeTab: (id: string) => void,
@@ -14,28 +14,28 @@ type GalleryTabsContextType = {
     setActiveTab: (id: string) => void;
     renameTab: (tabId: string, newName: string) => void;
   },
-  galleryTabValue: string,
+  mainTabValue: string,
 };
 
-const GalleryTabsContext = createContext<GalleryTabsContextType | undefined>(
+const ImagesTabsContext = createContext<ImagesTabsContextType | undefined>(
   undefined,
 );
 
-export function useGalleryTabsContext() {
-  const context = useContext(GalleryTabsContext);
+export function useImagesTabsContext() {
+  const context = useContext(ImagesTabsContext);
   if (!context) {
     throw new Error(
-      "useGalleryTabsContext must be used within GalleryTabsProvider",
+      "useImagesTabsContext must be used within ImagesTabsProvider",
     );
   }
   return context;
 }
 
-const galleryTabValue = "gallery";
+const mainTabValue = "explorer";
 
-export function GalleryTabsProvider({ children }) {
+export function ImagesTabsProvider({ children }) {
   const [stack, setStack] = useState<TabsType[]>(StorageService.getGalleryTabs());
-  const [activeTab, setActiveTab] = useState<string>(galleryTabValue);
+  const [activeTab, setActiveTab] = useState<string>(mainTabValue);
 
   useEffect(() => {
     StorageService.setGalleryTabs(stack);
@@ -65,16 +65,16 @@ export function GalleryTabsProvider({ children }) {
   }
 
   return (
-    <GalleryTabsContext.Provider
+    <ImagesTabsContext.Provider
       value={{
         tabs: stack,
         addTab: addToStack,
         removeTab: removeFromStack,
         state: { activeTab, setActiveTab, renameTab },
-        galleryTabValue
+        mainTabValue
       }}
     >
       {children}
-    </GalleryTabsContext.Provider>
+    </ImagesTabsContext.Provider>
   );
 }

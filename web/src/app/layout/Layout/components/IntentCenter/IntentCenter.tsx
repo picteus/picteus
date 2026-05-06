@@ -11,7 +11,7 @@ import {
   useActionModalContext,
   useAdditionalUiContext,
   useEventSocket,
-  useGalleryTabsContext,
+  useImagesTabsContext,
   useImageVisualizerContext
 } from "app/context";
 import { ExtensionsService, ImageService, RepositoriesService, StorageService } from "app/services";
@@ -25,7 +25,7 @@ export default function IntentCenter() {
   const [, addModal, removeModal] = useActionModalContext();
   const [additionalUiContextValue, , addTransient] = useAdditionalUiContext();
   const openWindow = useOpenWindow();
-  const { addTab } = useGalleryTabsContext();
+  const { addTab } = useImagesTabsContext();
 
   const confirmAction = useConfirmAction();
   const { eventStore } = useEventSocket();
