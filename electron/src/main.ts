@@ -423,7 +423,7 @@ export class ApplicationWrapper
   {
   }
 
-  start(useSsl: boolean = defaultCliOptions.useSsl, useThrottling: boolean = defaultCliOptions.useThrottling, apiServerPortNumber: number = defaultCliOptions.apiServerPortNumber, webServerPortNumber: number = defaultCliOptions.webServerPortNumber, requiresApiKeys: boolean | undefined = defaultCliOptions.requiresApiKeys, unpackedExtensionsDirectoryPath: string | undefined = defaultCliOptions.unpackedExtensionsDirectoryPath, logBrowser: boolean = false, execArg: string[] | undefined): void
+  start(useSsl: boolean = defaultCliOptions.useSsl, useThrottling: boolean = defaultCliOptions.useThrottling, apiServerPortNumber: number = defaultCliOptions.apiServerPortNumber, webServerPortNumber: number = defaultCliOptions.webServerPortNumber, requiresApiKeys: boolean | undefined = defaultCliOptions.requiresApiKeys, unpackedExtensionsDirectoryPath: string | undefined = defaultCliOptions.unpackedExtensionsDirectoryPath, webApplicationUrl: string | undefined, logBrowser: boolean = false, execArg: string[] | undefined): void
   {
     const gotTheLock = app.requestSingleInstanceLock({});
     if (gotTheLock === false)
@@ -486,7 +486,7 @@ export class ApplicationWrapper
         if (useBootstrap === true)
         {
           // We load the web application in bootstrap mode
-          await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates);
+          await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, webApplicationUrl);
         }
         else
         {
@@ -509,7 +509,7 @@ export class ApplicationWrapper
             };
           const apiKey = await HttpServer.instance.start(serverDirectoryPath, path.join(serverDirectoryPath, "database.db"), apiServerPortNumber, useSsl, useThrottling, requiresApiKeys, unpackedExtensionsDirectoryPath, coordinator, execArg);
 
-          await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, apiKey);
+          await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, webApplicationUrl, apiKey);
         }
 
         // We restore the windows previous states
@@ -894,12 +894,12 @@ export class ApplicationWrapper
     Menu.setApplicationMenu(menu);
   }
 
-  private async loadWebApplication(window: BrowserWindow, useSsl: boolean, processServerPortNumber: number, socketCoordinates: SocketCoordinates, apiKey?: string): Promise<URL>
+  private async loadWebApplication(window: BrowserWindow, useSsl: boolean, processServerPortNumber: number, socketCoordinates: SocketCoordinates, webApplicationUrl?: string, apiKey?: string): Promise<URL>
   {
     // We load the web application
     const webServicesBaseUrl = LocalhostComputer.instance.computeUrl(processServerPortNumber, useSsl);
-    // const url = new URL(`${fileWithProtocol}${path.join(applicationRootDirectoryPath, "web", "index.html")}`);
-    const url = new URL(`${socketCoordinates.webCoordinates.baseUrl}/index.html`);
+    const rawUrl = webApplicationUrl ?? `${socketCoordinates.webCoordinates.baseUrl}/index.html`;
+    const url = new URL(rawUrl);
     url.searchParams.set("webServicesBaseUrl", webServicesBaseUrl);
     if (apiKey !== undefined)
     {
@@ -991,6 +991,7 @@ async function main(): Promise<void>
     cliArguments.push(defaultCommand);
   }
   const parseCommandLineAndRun = await computeParseCommandLineAndRun();
+  const webApplicationUrlOption = "webApplicationUrl";
   const logBrowserOption = "logBrowser";
   const execArgvOption = "execArgv";
   await parseCommandLineAndRun(logger, cliArguments, app.getName(), app.getVersion(), environment === "production", async (program: Program): Promise<void> =>
@@ -1000,6 +1001,10 @@ async function main(): Promise<void>
     {
       if (command.name === defaultCommand)
       {
+        command.option(`--${webApplicationUrlOption} <url>`, "Indicates URL of the web application that should be open in the internal browser", {
+          validator: CaporalValidator.STRING,
+          default: undefined
+        });
         command.option(`--${logBrowserOption} <enabled>`, "Indicates whether the internal browser logs should be output", {
           validator: CaporalValidator.BOOLEAN,
           default: "false"
@@ -1012,9 +1017,11 @@ async function main(): Promise<void>
     }
   }, async (actionParameters: ActionParameters, cliOptions: CliOptions): Promise<void> =>
   {
+    const webApplicationUrl = actionParameters.options[webApplicationUrlOption] as string;
     const logBrowser = actionParameters.options[logBrowserOption] as boolean;
     const execArgv = actionParameters.options[execArgvOption] as string;
-    applicationWrapper.start(cliOptions.useSsl, cliOptions.useThrottling, cliOptions.apiServerPortNumber, cliOptions.webServerPortNumber, cliOptions.requiresApiKeys, cliOptions.unpackedExtensionsDirectoryPath, logBrowser, execArgv === undefined ? undefined : execArgv.replace(/^[“”"]+|[“”"]+$/g, "").split(" "));
+    const execArg = execArgv === undefined ? undefined : execArgv.replace(/^[“”"]+|[“”"]+$/g, "").split(" ");
+    applicationWrapper.start(cliOptions.useSsl, cliOptions.useThrottling, cliOptions.apiServerPortNumber, cliOptions.webServerPortNumber, cliOptions.requiresApiKeys, cliOptions.unpackedExtensionsDirectoryPath, webApplicationUrl, logBrowser, execArg);
   }, (code: number): void =>
   {
     app.exit(code);
