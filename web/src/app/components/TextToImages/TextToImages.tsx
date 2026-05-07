@@ -114,7 +114,7 @@ export default function TextToImages({ extensionId }: TextToImageType) {
 
   function renderContent() {
     return (isReady && <ImagesView
-      viewData={{ viewMode: "masonry", images: images }}
+      viewData={{ viewMode: "masonry", images }}
       isDefault={false}
       containerRef={readyRef}
       onEmptyResults={() => {

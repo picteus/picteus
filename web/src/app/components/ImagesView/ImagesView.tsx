@@ -51,9 +51,30 @@ export default function ImagesView({ viewData, isDefault, containerRef, controlB
   useEffect(() => {
     if ("images" in viewData) {
       setImages(viewData.images);
-      handleOnRefresh();
+      setFilterOrCollectionId({
+        filter: {
+          origin: {
+            kind: "images",
+            ids: viewData.images.map(image => image.id)
+          }
+        }
+      });
+    } else {
+      setImages(undefined);
     }
-  }, [viewData]);
+
+    if ("filterOrCollectionId" in viewData) {
+      setFilterOrCollectionId(viewData.filterOrCollectionId);
+    }
+
+    if ("mode" in viewData) {
+      setViewMode(viewData.mode);
+    } else if ("viewMode" in viewData) {
+      setViewMode(viewData.viewMode);
+    }
+
+    handleOnRefresh();
+  }, [viewData, setFilterOrCollectionId, setViewMode]);
 
   const onFetchData = useCallback((searchRange: SearchRange): Promise<ImageExplorerDataType> => {
     if (images !== undefined) {

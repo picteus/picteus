@@ -81,6 +81,7 @@ function ImagesNavbarMenuItem({ tab, onRemove, isActive, onClick }: { tab: TabsT
           <div onDoubleClick={handleOnDoubleClickTabLabel} style={{ flexGrow: 1, minWidth: '100px' }}>{tabLabel}</div>
         )}
         <ActionIcon
+          component="div"
           size="xs"
           variant="subtle"
           color={isActive ? "blue" : "gray"}
