@@ -19,7 +19,7 @@ type ImagesContentType = {
   onEmptyResults: () => ReactElement<typeof EmptyResults>;
   displayDetailInContainer: boolean;
   onFetchData: (searchRange: SearchRange) => Promise<ImageExplorerDataType>;
-  onSelectedImage: (image: ImageOrSummary) => void;
+  onSelectedImage?: (image: ImageOrSummary) => void;
   refreshTrigger: number;
 };
 

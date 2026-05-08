@@ -10,7 +10,6 @@ import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-cli
 import { ImageWithCaption, ViewMode } from "types";
 import { notifyApiCallError, Validators } from "utils";
 import { useImageVisualizerContext } from "app/context";
-import { useReadyRef } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImagesView, ImageThumbnail } from "app/components";
 
@@ -32,7 +31,6 @@ export default function ClosestEmbeddingsImagesModal({  extensionId, imageId, vi
   const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
   const [images, setImages] = useState<ImageWithCaption[]>([]);
-  const [containerRef, readyRef, isReady] = useReadyRef<HTMLElement>();
   const showImageVisualizer = useImageVisualizerContext();
   const focusTrapRef = useFocusTrap();
 
@@ -141,19 +139,16 @@ export default function ClosestEmbeddingsImagesModal({  extensionId, imageId, vi
   }
 
   function renderContent() {
-    return (isReady && <ImagesView
+    return (<ImagesView
       viewData={{ viewMode, images }}
       isDefault={false}
-      containerRef={readyRef}
       onEmptyResults={() => (<EmptyResults
         icon={<IconPhotoSearch size={140} stroke={1} />}
         description={t("emptyImages.description")}
         title={t("emptyImages.title")}
       />)}
       controlBarChildren={renderForm()}
-      stickyControlBar={false}
       displayDetailInContainer={false}
-      scrollRootRef={readyRef}
     />);
   }
 
@@ -162,7 +157,7 @@ export default function ClosestEmbeddingsImagesModal({  extensionId, imageId, vi
       <Alert icon={<IconInfoCircle />}>
         {t("closestEmbeddingsImagesModal.description")}
       </Alert>
-      <Flex ref={containerRef} align="center" justify="center">{renderContent()}</Flex>
+      <Flex align="center" justify="center">{renderContent()}</Flex>
     </>
   );
 }

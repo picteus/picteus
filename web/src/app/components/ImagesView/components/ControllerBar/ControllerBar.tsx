@@ -19,7 +19,6 @@ type ControllerBarType = {
   viewMode: ViewMode;
   onViewMode: (mode: ViewMode) => void;
   handleOnPin?: () => void;
-  setZIndex?: boolean;
 };
 
 export default function ControllerBar({
@@ -30,7 +29,6 @@ export default function ControllerBar({
                                         viewMode,
                                         onViewMode,
                                         handleOnPin,
-                                        setZIndex,
                                       }: ControllerBarType) {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
@@ -53,8 +51,7 @@ export default function ControllerBar({
   }
 
   return (
-    <Flex align="end" justify="space-between" className={`${style.content} ${setZIndex === undefined ? style.notSticky : style.sticky}`}
-          style={{ zIndex: setZIndex === true ? 1 : undefined }}>
+    <Flex align="end" justify="space-between" className={style.content}>
       {children}
       {("collectionId" in initialFilterOrCollectionId || initialFilterOrCollectionId.filter.origin === undefined) ? <FiltersBar initialFilterOrCollectionId={initialFilterOrCollectionId}
                    onFilterOrCollectionId={onFilterOrCollectionId} /> : <div/>}

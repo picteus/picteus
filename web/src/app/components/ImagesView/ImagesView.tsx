@@ -1,15 +1,9 @@
-import React, { ReactElement, ReactNode, RefObject, useCallback, useEffect, useState } from "react";
+import React, { ReactElement, ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { Flex } from "@mantine/core";
 
 import { SearchRange } from "@picteus/ws-client";
 
-import {
-  FilterOrCollectionId,
-  ImageExplorerDataType,
-  ImageOrSummary,
-  ImageWithCaption,
-  ViewMode,
-  ViewTabDataType
-} from "types";
+import { FilterOrCollectionId, ImageExplorerDataType, ImageWithCaption, ViewMode, ViewTabDataType } from "types";
 import { notifyApiCallError } from "utils";
 import { useImagesTabsContext } from "app/context";
 import { useInterceptedState } from "app/hooks";
@@ -23,15 +17,14 @@ import style from "./ImagesView.module.scss";
 type ImagesViewType = {
   viewData: ViewTabDataType | {viewMode: ViewMode, images: ImageWithCaption[]};
   isDefault: boolean;
-  containerRef: RefObject<HTMLElement>;
   controlBarChildren?: ReactNode;
-  stickyControlBar: boolean;
   onEmptyResults: () => ReactElement<typeof EmptyResults>;
   displayDetailInContainer: boolean;
-  scrollRootRef: RefObject<HTMLElement>;
 };
 
-export default function ImagesView({ viewData, isDefault, containerRef, controlBarChildren, stickyControlBar, onEmptyResults, displayDetailInContainer, scrollRootRef }: ImagesViewType){
+export default function ImagesView({ viewData, isDefault, controlBarChildren, onEmptyResults, displayDetailInContainer }: ImagesViewType){
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRootRef = useRef<HTMLDivElement>(null);
   const { addTab } = useImagesTabsContext();
   const hasFilterOrCollectionId = "filterOrCollectionId" in viewData;
   const pinnable = "pinnable" in viewData ? viewData.pinnable : false;
@@ -46,7 +39,6 @@ export default function ImagesView({ viewData, isDefault, containerRef, controlB
   const [images, setImages] = useState<ImageWithCaption[] | undefined>("images" in viewData ? viewData.images : undefined);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [viewMode, setViewMode] = useInterceptedState<ViewMode>("mode" in viewData ? viewData.mode : viewData.viewMode);
-  const [selectedImage, setSelectedImage] = useState<ImageOrSummary>();
 
   useEffect(() => {
     if ("images" in viewData) {
@@ -101,10 +93,6 @@ export default function ImagesView({ viewData, isDefault, containerRef, controlB
     });
   }, [filterOrCollectionId, images]);
 
-  const handleOnSelectedImage = useCallback((image: ImageOrSummary) => {
-    setSelectedImage(image);
-  }, []);
-
   function handleOnFilterOrCollectionId(updatedFilterOrCollectionId: FilterOrCollectionId) {
     setFilterOrCollectionId(updatedFilterOrCollectionId);
     if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(filterOrCollectionId)) {
@@ -134,7 +122,7 @@ export default function ImagesView({ viewData, isDefault, containerRef, controlB
     });
   }
 
-  return (<div className={style.container}>
+  return (<Flex ref={containerRef} direction="column" className={style.container}>
     <ControllerBar
       children={controlBarChildren}
       initialFilterOrCollectionId={filterOrCollectionId}
@@ -143,9 +131,8 @@ export default function ImagesView({ viewData, isDefault, containerRef, controlB
       viewMode={viewMode}
       onViewMode={handleOnViewMode}
       handleOnPin={pinnable === true ? handleOnPin : undefined}
-      setZIndex={stickyControlBar === false ? undefined : (selectedImage === undefined)}
     />
-    <div className={style.contentContainer}>
+    <div ref={scrollRootRef} className={style.contentContainer}>
       <Container>
         <ImagesContent
           viewMode={viewMode}
@@ -154,10 +141,9 @@ export default function ImagesView({ viewData, isDefault, containerRef, controlB
           onEmptyResults={onEmptyResults}
           displayDetailInContainer={displayDetailInContainer}
           onFetchData={onFetchData}
-          onSelectedImage={handleOnSelectedImage}
           refreshTrigger={refreshTrigger}
         />
       </Container>
     </div>
-  </div>);
+  </Flex>);
 }

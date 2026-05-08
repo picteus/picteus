@@ -9,7 +9,6 @@ import { ImageApiImageTextToImagesRequest } from "@picteus/ws-client";
 
 import { ImageWithCaption } from "types";
 import { notifyApiCallError, Validators } from "utils";
-import { useReadyRef } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImagesView } from "app/components";
 
@@ -28,7 +27,6 @@ export default function TextToImages({ extensionId }: TextToImageType) {
   const [images, setImages] = useState<ImageWithCaption[]>([]);
   const [emptyResult, setEmptyResult] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const [containerRef, readyRef, isReady] = useReadyRef<HTMLElement>();
   const focusTrapRef = useFocusTrap();
 
   const initialResultsCount = StorageService.getTextToImagesResultsCount();
@@ -113,10 +111,9 @@ export default function TextToImages({ extensionId }: TextToImageType) {
   }
 
   function renderContent() {
-    return (isReady && <ImagesView
+    return (<ImagesView
       viewData={{ viewMode: "masonry", images }}
       isDefault={false}
-      containerRef={readyRef}
       onEmptyResults={() => {
         if (loading === false && emptyResult === true) {
           return (<EmptyResults
@@ -127,9 +124,7 @@ export default function TextToImages({ extensionId }: TextToImageType) {
         }
       }}
       controlBarChildren={renderForm()}
-      stickyControlBar={false}
       displayDetailInContainer={false}
-      scrollRootRef={readyRef}
     />);
   }
 
@@ -138,7 +133,7 @@ export default function TextToImages({ extensionId }: TextToImageType) {
       <Alert icon={<IconInfoCircle />}>
         {t("textToImagesModal.description")}
       </Alert>
-      <Flex ref={containerRef} align="center" justify="center">{renderContent()}</Flex>
+      <Flex align="center" justify="center">{renderContent()}</Flex>
     </>
   );
 }
