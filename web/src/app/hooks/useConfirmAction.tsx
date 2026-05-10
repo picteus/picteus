@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { Alert, Button, Flex } from "@mantine/core";
-import { randomId } from "@mantine/hooks";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import i18n from "i18next";
 
@@ -14,10 +13,9 @@ interface ConfirmOptions {
 
 export default function useConfirmAction() {
   const [, addModal, removeModal] = useActionModalContext();
-  function confirmAction(onConfirm: () => void, options: ConfirmOptions) {
-    const modalId = randomId();
-    addModal({
-      id:modalId,
+
+  return useCallback((onConfirm: () => void, options: ConfirmOptions) => {
+    const modalId = addModal({
       title: options.title,
       size: "s",
       component: <>
@@ -45,7 +43,5 @@ export default function useConfirmAction() {
         </Flex>
       </>
     });
-  }
-
-  return confirmAction;
+  }, [addModal, removeModal]);
 }

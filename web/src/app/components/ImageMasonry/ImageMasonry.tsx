@@ -1,12 +1,10 @@
 import React, { RefObject, useCallback, useEffect, useMemo, useRef } from "react";
-import { createPortal } from "react-dom";
-import { Overlay } from "@mantine/core";
 import { useResizeObserver } from "@mantine/hooks";
 import MasonryLayout, { MasonrySizing } from "react-fast-masonry";
 
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
-import { useImageVisualizerContext } from "app/context";
-import { useContainerDimensions, useEscapeKey, useImageNavigation } from "app/hooks";
+import { useActionModalContext } from "app/context";
+import { useContainerDimensions } from "app/hooks";
 import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageMasonry.module.scss";
@@ -15,39 +13,45 @@ import style from "./ImageMasonry.module.scss";
 type ImageMasonryType = {
   imageSize?: number;
   images: ImageOrSummary [];
-  onSelectedImage?: (image: ImageOrSummary) => void;
   loadMore: () => void;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef?: RefObject<HTMLElement>;
-  displayDetailInContainer: boolean;
   imageItemMode?: ImageItemMode;
 };
 
 export default function ImageMasonry({
   imageSize = 300,
   images,
-  onSelectedImage,
   loadMore,
   containerRef,
   scrollRootRef,
-  displayDetailInContainer,
   imageItemMode,
 }: ImageMasonryType) {
   const [hostRef, hostRefRectangle] = useResizeObserver();
   const { height: containerHeight } = useContainerDimensions(containerRef);
-  const showImageVisualizer = useImageVisualizerContext();
-  const navigation = useImageNavigation();
-  const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
-    navigation.setSelectedImage(image);
-    if (onSelectedImage !== undefined) {
-      onSelectedImage(image);
+  const [, addModal, removeModal] = useActionModalContext();
+
+  const handleOnClick = useCallback((image: ImageOrSummary) => {
+    if (image !== undefined) {
+      const id = addModal({
+        component: (
+          <ImageDetail
+            image={image}
+            images={images}
+            viewMode="masonry"
+            onClose={() => {
+              removeModal(id);
+            }}
+          />),
+        isStackable: true,
+        withCloseButton: false,
+        fullScreen: true
+      });
     }
-  }, [onSelectedImage, navigation]);
-  const portalRef = useRef<HTMLDivElement>(null);
+  }, [images]);
+
   const sentinelRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
-
-  useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
 
   useEffect(() => {
     const root = scrollRootRef?.current;
@@ -72,25 +76,6 @@ export default function ImageMasonry({
       observerRef.current = null;
     };
   }, [scrollRootRef, loadMore, images.length]);
-
-  useEffect(() => {
-    if (displayDetailInContainer === true) {
-      navigation.setImages(images);
-    }
-  }, [images]);
-
-  const handleOnClick = useCallback((image: ImageOrSummary) => {
-    if (displayDetailInContainer === false) {
-      showImageVisualizer({ selectedImage: image, images, viewMode: "masonry" });
-    }
-    else {
-      setSelectedImageWrapper(image);
-    }
-  }, [images, setSelectedImageWrapper]);
-
-  const handleOnClose = useCallback(() => {
-    setSelectedImageWrapper((undefined));
-  }, [setSelectedImageWrapper]);
 
   const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo<[MasonrySizing, ...MasonrySizing[]]>(() => {
     const gutter = 10;
@@ -125,23 +110,6 @@ export default function ImageMasonry({
         />
         }
         <div ref={sentinelRef} className={style.sentinel} />
-        {displayDetailInContainer === true && createPortal(
-          navigation.selectedImage && <div ref={portalRef} className={style.visualizedImage}>
-            <Overlay
-              color="#000"
-              backgroundOpacity={1}
-              zIndex={0}
-            >
-              <ImageDetail
-                image={navigation.selectedImage}
-                withNavigation={navigation}
-                viewMode="masonry"
-                onClose={handleOnClose}
-              />
-            </Overlay>
-          </div>,
-          containerRef.current
-        )}
       </div>
     )
   );

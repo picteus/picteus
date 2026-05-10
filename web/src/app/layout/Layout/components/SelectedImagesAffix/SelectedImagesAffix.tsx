@@ -151,7 +151,6 @@ export default function SelectedImagesAffix() {
                     images={selectedImages}
                     loadMore={() => {}}
                     containerRef={imagesContainerRef}
-                    displayDetailInContainer={false}
                     imageItemMode={ImageItemMode.SELECT}
                   />
                 </div>

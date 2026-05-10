@@ -1,9 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 
-import { ImageOrSummary, WithNavigationType } from "types";
-import { ImageVisualizerContextValue } from "app/context";
+import { ImageOrSummary, ViewMode, WithNavigationType } from "types";
 import { ImageService } from "app/services";
 
+
+type ImageVisualizerContextValue = {
+  selectedImage: ImageOrSummary | undefined;
+  images: ImageOrSummary[];
+  viewMode: ViewMode;
+};
 
 export default function useImageNavigation(initialValue?: ImageVisualizerContextValue): WithNavigationType & {
   setImages: (images: ImageOrSummary[]) => void,
@@ -13,17 +18,11 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
   const [state, setState] = useState<ImageVisualizerContextValue>(initialValue ?? { selectedImage: undefined, images: [], viewMode: "masonry" });
 
   const setImages = useCallback((images: ImageOrSummary[]): void => {
-    setState((previousValue) => {
-      previousValue.images = images;
-      return { ...previousValue };
-    });
+    setState((previousValue) => ({ ...previousValue, images }));
   }, []);
 
   const setSelectedImage = useCallback((selectedImage: ImageOrSummary): void => {
-    setState((previousValue) => {
-      previousValue.selectedImage = selectedImage;
-      return { ...previousValue };
-    });
+    setState((previousValue) => ({ ...previousValue, selectedImage }));
   }, []);
 
   const computeHas = useCallback((direction: string) => {

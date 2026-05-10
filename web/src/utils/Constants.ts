@@ -10,6 +10,7 @@ export const ROUTES = {
   extensions: "/extensions",
   activity: "/activity",
   settings: "/settings",
+  test: "/test"
 };
 
 export function computeExtensionSidebarUuid(extensionId: string, id: string): string {

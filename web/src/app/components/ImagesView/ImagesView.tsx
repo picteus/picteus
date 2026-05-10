@@ -19,10 +19,9 @@ type ImagesViewType = {
   isDefault: boolean;
   controlBarChildren?: ReactNode;
   onEmptyResults: () => ReactElement<typeof EmptyResults>;
-  displayDetailInContainer: boolean;
 };
 
-export default function ImagesView({ viewData, isDefault, controlBarChildren, onEmptyResults, displayDetailInContainer }: ImagesViewType){
+export default function ImagesView({ viewData, isDefault, controlBarChildren, onEmptyResults }: ImagesViewType){
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRootRef = useRef<HTMLDivElement>(null);
   const { addTab } = useImagesTabsContext();
@@ -139,7 +138,6 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
           containerRef={containerRef}
           scrollRootRef={scrollRootRef}
           onEmptyResults={onEmptyResults}
-          displayDetailInContainer={displayDetailInContainer}
           onFetchData={onFetchData}
           refreshTrigger={refreshTrigger}
         />

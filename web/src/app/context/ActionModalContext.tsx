@@ -1,10 +1,18 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useRef, useState } from "react";
 import { randomId } from "@mantine/hooks";
 
 import { ActionModalValue } from "types";
 
 
-const ActionModalContext = createContext<[ActionModalValue[], (value: ActionModalValue) => string, (id: string) => void]>(undefined);
+type ListenerType = (value: ActionModalValue, isAdded: boolean) => void;
+
+type ActionModalContextType = [
+  ActionModalValue[],
+  (value: ActionModalValue) => string,
+  (id: string) => void,
+  subscribe: (listener: ListenerType) => (() => void)
+];
+const ActionModalContext = createContext<ActionModalContextType>(undefined);
 
 export function useActionModalContext() {
   const context = useContext(ActionModalContext);
@@ -18,21 +26,44 @@ export function useActionModalContext() {
 
 export function ActionModalProvider({ children }) {
   const [modals, setModals] = useState<ActionModalValue[]>([]);
+  const listenersRef = useRef<ListenerType[]>([]);
 
-  function add(modal: ActionModalValue): string {
+  const add = useCallback((modal: ActionModalValue): string => {
     if (!modal.id) {
       modal.id = randomId();
     }
-    setModals((previousValue) => [...previousValue, modal]);
+    setModals((previousModals) => [...previousModals, modal]);
+    for (const listener of listenersRef.current) {
+      listener(modal, true);
+    }
     return modal.id;
-  }
+  }, []);
 
-  function remove(id: string) {
-    setModals((previousValue) => previousValue.filter((item) => item.id !== id));
-  }
+
+  const remove = useCallback((id: string): void => {
+    setModals((previousModals) => {
+      const index = previousModals.findIndex((modal) => modal.id === id);
+      if (index !== -1) {
+        const modal = previousModals[index];
+        for (const listener of listenersRef.current) {
+          listener(modal, false);
+        }
+        previousModals.splice(index, 1);
+        return [...previousModals];
+      }
+      return previousModals;
+    });
+  }, []);
+
+  const subscribe = useCallback((listener: ListenerType): (() => void) => {
+    listenersRef.current = [...listenersRef.current, listener];
+    return () => {
+      listenersRef.current.splice(listenersRef.current.indexOf(listener), 1);
+    };
+  }, []);
 
   return (
-    <ActionModalContext.Provider value={[modals, add, remove]}>
+    <ActionModalContext.Provider value={[modals, add, remove, subscribe]}>
       {children}
     </ActionModalContext.Provider>
   );

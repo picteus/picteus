@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useRef } from "react";
 import { useDisclosure } from "@mantine/hooks";
-import { ActionIcon, Divider, Flex, Modal } from "@mantine/core";
+import { ActionIcon, Flex, Modal } from "@mantine/core";
 import { IconChevronLeft } from "@tabler/icons-react";
 
 import { ActionModalValue } from "types";
@@ -12,12 +12,12 @@ import { ContentTitle } from "app/components";
 import style from "./ModalComponent.module.scss";
 
 
-type ModalContentType = {
+type ModalChildType = {
   component: ReactElement;
   fullScreen: boolean;
 }
 
-function ModalContent({ component, fullScreen }: ModalContentType) {
+function ModalChild({ component, fullScreen }: ModalChildType) {
   const focusRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,8 +54,7 @@ function ModalContent({ component, fullScreen }: ModalContentType) {
   }, [focusRef]);
 
   return (
-    <div ref={focusRef} className={fullScreen === true ? style.contentFullScreen : style.content}>
-      {fullScreen && <Divider mb="md" />}
+    <div ref={focusRef} className={`${style.child}${fullScreen ? ` ${style.childFullScreen}` : ""}`}>
       {component}
     </div>
   );
@@ -110,9 +109,11 @@ export default function ModalComponent({
     }
   });
 
+  const fullScreen = modal.fullScreen;
+
   function computeTitle() {
     const title = typeof modal.title === "string" ? <ContentTitle text={modal.title} icon={modal.icon} /> : modal.title;
-    if (modal.fullScreen) {
+    if (fullScreen) {
       return (
         <Flex align="center" gap="md">
           <ActionIcon onClick={handleOnCloseCancel} variant="default">
@@ -132,11 +133,12 @@ export default function ModalComponent({
     },
   });
 
-  const classNames = ({
-    ...(modal.fullScreen
-      ? { content: style.modalFullScreenContent, body: style.modalFullScreenBody }
-      : {}), header: style.header
-  });
+  const classNames = {
+    content: `${style.content}${fullScreen ? ` ${style.contentFullScreen}` : ""}`,
+    body: `${style.body}${fullScreen ? ` ${style.bodyFullScreen}` : ""}`,
+    header: style.header
+  };
+  const size = fullScreen === true ? undefined : ((modal.size === undefined || modal.size === "auto") ? "auto" : ((modal.size === "xs" ? 30 : (modal.size === "s" ? 40 : (modal.size === "m" ? 50 : (modal.size === "l" ? 80 : 100)))) + "%"));
 
   return (
     <Modal
@@ -150,14 +152,13 @@ export default function ModalComponent({
       trapFocus={true}
       returnFocus={false}
       opened={opened}
-      fullScreen={modal.fullScreen}
-      withCloseButton={modal.withCloseButton === undefined ? true : modal.withCloseButton}
-      size={modal.fullScreen === true ? undefined : ((modal.size === undefined || modal.size === "auto") ? "auto" : ((modal.size === "xs" ? 30 : (modal.size === "s" ? 40 : (modal.size === "m" ? 50 : (modal.size === "l" ? 80 : 100)))) + "%"))}
+      fullScreen={fullScreen}
+      withCloseButton={modal.withCloseButton ?? true}
+      size={size}
       title={modal.title === undefined ? undefined : computeTitle() }
-      padding="lg"
       zIndex={10}
     >
-      <ModalContent component={wrappedComponent} fullScreen={modal.fullScreen} />
+      <ModalChild component={wrappedComponent} fullScreen={fullScreen} />
     </Modal>
   );
 }

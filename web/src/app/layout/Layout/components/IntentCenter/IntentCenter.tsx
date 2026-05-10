@@ -7,16 +7,10 @@ import { ExtensionSettings, UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { ChannelEnum, EventOnResultValueType, ExtensionIntentType, ResourceType, ShowType } from "types";
 import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyErrorWithError } from "utils";
-import {
-  useActionModalContext,
-  useAdditionalUiContext,
-  useEventSocket,
-  useImagesTabsContext,
-  useImageVisualizerContext
-} from "app/context";
+import { useActionModalContext, useAdditionalUiContext, useEventSocket, useImagesTabsContext } from "app/context";
 import { ExtensionsService, ImageService, RepositoriesService, StorageService } from "app/services";
 import { useConfirmAction, useOpenWindow } from "app/hooks";
-import { CommandForm, DialogForm, Iframe } from "app/components";
+import { CommandForm, DialogForm, Iframe, ImageDetail } from "app/components";
 import { ExtensionSettingsModal } from "app/screens/ExtensionsScreen/components";
 import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
 
@@ -31,7 +25,6 @@ export default function IntentCenter() {
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [t] = useTranslation();
-  const showImageVisualizer = useImageVisualizerContext();
   const navigate = useNavigate();
 
   function respondWithValue(value: EventOnResultValueType = {}): void {
@@ -121,7 +114,19 @@ export default function IntentCenter() {
     else if (show.type === "image") {
       const action = async () => {
         const image = await ImageService.get({ id: show.id });
-        showImageVisualizer({ selectedImage: image, images: [image], viewMode: "masonry" });
+        const id = addModal({
+          component: (
+            <ImageDetail
+              image={image}
+              images={[image]}
+              viewMode="masonry"
+              onClose={() => {
+                removeModal(id);
+              }}
+            />),
+          withCloseButton: false,
+          fullScreen: true
+        });
         respondWithValue();
       };
       if (shouldConfirm) {

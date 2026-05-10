@@ -5,20 +5,22 @@ import { ImageSummary } from "@picteus/ws-client";
 
 import { ImageItemMode, ImageOrSummary } from "types";
 import { notifyApiCallError } from "utils";
-import { useImageVisualizerContext } from "app/context";
+import { useActionModalContext } from "app/context";
 import { ImageService } from "app/services";
-import { ImageItem } from "app/components";
+import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImagesCollection.module.scss";
 
 
-type ImageCollectionType = { imageIds: string[] };
+type ImageCollectionType = {
+  imageIds: string[]
+};
 
 export default function ImagesCollection({imageIds}: ImageCollectionType) {
   const edge = 100;
   const containerRef = useRef<HTMLDivElement>(null);
   const [images, setImages] = useState<ImageSummary[]>([]);
-  const showImageVisualizer = useImageVisualizerContext();
+  const [, addModal, removeModal] = useActionModalContext();
 
   useEffect(() => {
     async function load() {
@@ -34,8 +36,21 @@ export default function ImagesCollection({imageIds}: ImageCollectionType) {
   }, [imageIds]);
 
   const handleOnClick = useCallback((image: ImageOrSummary): void => {
-    showImageVisualizer({ selectedImage: image, images, viewMode: "gallery" });
-  }, []);
+    const id = addModal({
+      component: (
+        <ImageDetail
+          image={image}
+          images={images}
+          viewMode="gallery"
+          onClose={() => {
+            removeModal(id);
+          }}
+        />),
+      isStackable: true,
+      withCloseButton: false,
+      fullScreen: true
+    });
+  }, [images]);
 
   return (<div ref={containerRef} className={style.container}>
       <Flex className={style.content} align="center" gap={10}>

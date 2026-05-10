@@ -10,6 +10,8 @@ import { useDebouncedCallback, useInterceptedState } from "app/hooks";
 import { FeaturesNamesOption, FiltersService, RepositoriesService } from "app/services";
 import { CollectionsBar, Filters } from "../index.ts";
 
+import style from "./FiltersBar.module.scss";
+
 
 const { defaultFilter, sortByOptions, sortOrderOptions, searchInOptions } = FiltersService;
 
@@ -120,7 +122,7 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
             </ActionIcon>
           }
           placeholder={t("field.search")}
-          style={{ width: 400 }}
+          className={style.textSearch}
           onChange={(event) => setSearchText(event.target.value)}
           value={searchText}
         />

@@ -4,6 +4,8 @@ import { HashRouter, useLocation, useNavigate } from "react-router-dom";
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { computeExtensionSidebarRoute, ROUTES } from "utils";
+import { AdditionalUi } from "types";
+import { useAdditionalUiContext } from "app/context";
 import {
   ActivityScreen,
   CollectionsScreen,
@@ -11,11 +13,11 @@ import {
   ImagesScreen,
   RepositoriesScreen,
   SettingsScreen,
-  SidebarAnchorScreen
+  SidebarAnchorScreen,
+  TestsScreen
 } from "app/screens";
 import { Layout } from "app/layout";
-import { AdditionalUi } from "types";
-import { useAdditionalUiContext } from "app/context";
+
 
 export default function AppRouter() {
   return (
@@ -76,6 +78,7 @@ function RouterContent() {
         extensions: ExtensionsScreen,
         activity: ActivityScreen,
         settings: SettingsScreen,
+        test: TestsScreen,
       };
       return {key, path, layout: renderLayout(ComponentMap[key]), alwaysRender: false};
     })

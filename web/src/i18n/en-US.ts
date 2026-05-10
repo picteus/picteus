@@ -8,6 +8,7 @@ export default {
     collections: "Collections",
     extensions: "Extensions",
     activity: "Activity",
+    test: "Test",
     settings: "Settings",
     information: "Information",
     imageCommands: "Image commands",

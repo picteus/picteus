@@ -18,7 +18,7 @@ import { useActionModalContext, useEventSocket } from "app/context";
 import { useConfirmAction, useExtensionCommand } from "app/hooks";
 import { ExtensionsService, ImageService } from "app/services";
 import { Common, ExtensionIcon } from "app/components";
-import { ClosestEmbeddingsImagesModal } from "./components";
+import { ClosestEmbeddingsImages } from "./components";
 
 
 const commandEntities = [CommandEntity.Images, CommandEntity.Image];
@@ -83,12 +83,13 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
   function handleOnClickClosestImages(extensionId: string) {
     addModal({
       component: (
-        <ClosestEmbeddingsImagesModal
+        <ClosestEmbeddingsImages
           imageId={image.id}
           extensionId={extensionId}
           viewMode={viewMode}
         />
       ),
+      isStackable: true,
       title: t("closestEmbeddingsImagesModal.title"),
       size: "l",
     });

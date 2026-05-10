@@ -16,7 +16,7 @@ type ImageRecipeType = {
 
 export default function ImageRecipe({ recipe, viewMode }: ImageRecipeType) {
   const [t] = useTranslation();
-  const prompt: GenerationRecipePrompt = recipe.prompt ;
+  const prompt: GenerationRecipePrompt = recipe.prompt;
 
   return (
     <Stack gap="xs" mt="sm">
@@ -62,14 +62,15 @@ export default function ImageRecipe({ recipe, viewMode }: ImageRecipeType) {
         <Group gap={4}>
           <Text fw={700} size="sm">{t("field.assetIds")}:</Text>
           {recipe.inputAssets.map((asset) => (
-            <ImageItemWrapper key={asset} imageId={asset} edge={75} viewMode={viewMode} />
+            <ImageItemWrapper key={asset} imageId={asset} edge={75} viewMode={viewMode}/>
           ))}
         </Group>
       )}
-      <Stack gap={4}>
+      {prompt && typeof prompt === "object" && <Stack gap={4}>
         <Text fw={700} size="sm">{t(`field.${"text" in prompt ? "prompt" : "instructions"}`)}:</Text>
-        {"text" in prompt ? <Text size="sm">{prompt.text}</Text> : <CodeViewer code={JSON.stringify(prompt.value, undefined, 2)} />}
-      </Stack>
+        {"text" in prompt ? (<Text size="sm">{prompt.text}</Text>) : ("value" in prompt ?
+          <CodeViewer code={JSON.stringify(prompt.value, undefined, 2)} /> : <></>)}
+      </Stack>}
     </Stack>
   );
 }

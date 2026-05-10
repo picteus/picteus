@@ -1,11 +1,10 @@
 import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { Grid, Overlay } from "@mantine/core";
+import { Grid } from "@mantine/core";
 import { useResizeObserver } from "@mantine/hooks";
 
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
-import { useImageVisualizerContext } from "app/context";
-import { useContainerDimensions, useEscapeKey, useImageNavigation } from "app/hooks";
+import { useActionModalContext } from "app/context";
+import { useContainerDimensions } from "app/hooks";
 import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageGallery.module.scss";
@@ -14,44 +13,43 @@ import style from "./ImageGallery.module.scss";
 type ImageGalleryType = {
   imageSize?: number;
   images: ImageOrSummary [];
-  onSelectedImage?: (image: ImageOrSummary) => void;
   loadMore: () => void;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
-  displayDetailInContainer: boolean;
   imageItemMode?: ImageItemMode;
 };
 
 export default function ImageGallery({
   imageSize = 250,
   images,
-  onSelectedImage,
   loadMore,
   containerRef,
   scrollRootRef,
-  displayDetailInContainer,
   imageItemMode,
 }: ImageGalleryType) {
   const gutter = 10;
   const [hostRef, hostRefRectangle] = useResizeObserver();
   const { height: containerHeight } = useContainerDimensions(containerRef);
-  const showImageVisualizer = useImageVisualizerContext();
   const [sentinel, setSentinel] = useState<HTMLHeadingElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
-  const navigation = useImageNavigation();
+  const [, addModal, removeModal] = useActionModalContext();
   const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
-    navigation.setSelectedImage(image);
-    if (onSelectedImage !== undefined) {
-      onSelectedImage(image);
-    }
-  }, [onSelectedImage, navigation]);
-  const portalRef = useRef<HTMLDivElement>(null);
-  useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
-
-  useEffect(() => {
-    if (displayDetailInContainer === true) {
-      navigation.setImages(images);
+    if (image !== undefined) {
+      const id = addModal({
+        component: (
+          <ImageDetail
+            image={image}
+            images={images}
+            viewMode="gallery"
+            onClose={() => {
+              removeModal(id);
+            }}
+          />),
+        isStackable: true,
+        withCloseButton: false,
+        fullScreen: true
+      });
     }
   }, [images]);
 
@@ -99,15 +97,6 @@ export default function ImageGallery({
     observer.observe(sentinel);
   }, [images]);
 
-  const handleOnClick = useCallback((image: ImageOrSummary): void => {
-    if (displayDetailInContainer === false) {
-      showImageVisualizer({ selectedImage: image, images, viewMode: "gallery" });
-    }
-    else {
-      setSelectedImageWrapper(image);
-    }
-  }, [setSelectedImageWrapper]);
-
   const { columns, columnWidth } = useMemo(() => {
     const approximateWidth = imageSize;
     const containerWidth = Math.round(hostRefRectangle.width);
@@ -125,7 +114,7 @@ export default function ImageGallery({
         mode={imageItemMode}
         overlay={"caption" in image ? (image as ImageWithCaption).caption : undefined}
         viewMode="gallery"
-        onClick={handleOnClick}
+        onClick={setSelectedImageWrapper}
       />
     </Grid.Col>
   )), [images, columnWidth]);
@@ -139,31 +128,11 @@ export default function ImageGallery({
     </Grid>
   ), [renderedImages, columns]);
 
-  const handleOnClose = useCallback(() => {
-    setSelectedImageWrapper((undefined));
-  }, [setSelectedImageWrapper]);
-
   return (
     images.length !== 0 && columns > 0 && (
       <div ref={hostRef} className={style.host}>
         {renderedGrid}
-        {displayDetailInContainer === true && createPortal(
-          navigation.selectedImage && <div ref={portalRef} className={style.visualizedImage}>
-            <Overlay
-              color="#000"
-              backgroundOpacity={1}
-              zIndex={0}
-            >
-              <ImageDetail
-                image={navigation.selectedImage}
-                withNavigation={navigation}
-                viewMode="gallery"
-                onClose={handleOnClose}
-              />
-            </Overlay>
-          </div>,
-          containerRef.current
-        )}</div>
+      </div>
     )
   );
 }

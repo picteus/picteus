@@ -17,9 +17,7 @@ type ImagesContentType = {
   containerRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
   onEmptyResults: () => ReactElement<typeof EmptyResults>;
-  displayDetailInContainer: boolean;
   onFetchData: (searchRange: SearchRange) => Promise<ImageExplorerDataType>;
-  onSelectedImage?: (image: ImageOrSummary) => void;
   refreshTrigger: number;
 };
 
@@ -28,9 +26,7 @@ export default function ImagesContent({
                          containerRef,
                          scrollRootRef,
                          onEmptyResults,
-                         displayDetailInContainer,
                          onFetchData,
-                         onSelectedImage,
                          refreshTrigger,
                        }: ImagesContentType) {
   const [pagination, setPagination] = useState<PaginationType>({ currentPage: 1, take: imagesPerPage, skip: 0 });
@@ -105,19 +101,17 @@ export default function ImagesContent({
   }
 
   if (viewMode === "masonry") {
-    return <ImageMasonry images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore}
-                         containerRef={containerRef}
-                         scrollRootRef={scrollRootRef} displayDetailInContainer={displayDetailInContainer} />;
+    return <ImageMasonry images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
+                         scrollRootRef={scrollRootRef} />;
   }
 
   if (viewMode === "gallery") {
-    return <ImageGallery images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore}
-                         containerRef={containerRef} scrollRootRef={scrollRootRef}
-                         displayDetailInContainer={displayDetailInContainer} />;
+    return <ImageGallery images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
+                         scrollRootRef={scrollRootRef} />;
   }
 
   if (viewMode === "table") {
-    return <ImageTable images={accumulatedImages} onSelectedImage={onSelectedImage} loadMore={loadMore} containerRef={containerRef}/>;
+    return <ImageTable images={accumulatedImages} loadMore={loadMore} containerRef={containerRef} />;
   }
 
   return <></>;

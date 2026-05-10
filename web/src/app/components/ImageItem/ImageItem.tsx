@@ -83,10 +83,10 @@ export default function ImageItem({
   image,
   width,
   height,
+  mode = ImageItemMode.VIEW,
   overlay,
   viewMode,
-  mode = ImageItemMode.VIEW,
- onClick,
+  onClick,
 }: ImageItemType) {
   const [t] = useTranslation();
   const [menuOpened, setMenuOpened] = useState<boolean>(false);

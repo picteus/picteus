@@ -58,7 +58,8 @@ export default function Sidebar() {
     { route: ROUTES.repositories, label: "repositories", icon: <IconFolderOpen {...commonIconStyle} /> },
     { route: ROUTES.collections, label: "collections", icon: <IconLibraryPhoto {...commonIconStyle} /> },
     { route: ROUTES.extensions, label: "extensions", icon: <IconBox {...commonIconStyle} /> },
-    { route: ROUTES.activity, label: "activity", icon: <IconActivity {...commonIconStyle} /> }
+    { route: ROUTES.activity, label: "activity", icon: <IconActivity {...commonIconStyle} /> },
+    // { route: ROUTES.test, label: "test", icon: <IconFlask2 {...commonIconStyle} /> }
   ];
 
   const mainElements = useMemo(() => (mainElementData.map(element => {

@@ -5,4 +5,5 @@ export { default as CollectionsScreen } from "./CollectionsScreen/CollectionsScr
 export { default as ExtensionsScreen } from "./ExtensionsScreen/ExtensionsScreen.tsx";
 export { default as ActivityScreen } from "./ActivityScreen/ActivityScreen.tsx";
 export { default as SettingsScreen } from "./SettingsScreen/SettingsScreen.tsx";
+export { default as TestsScreen } from "./TestsScreen/TestsScreen.tsx";
 export * from "./Anchors";

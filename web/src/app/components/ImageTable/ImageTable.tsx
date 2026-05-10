@@ -1,19 +1,17 @@
-import React, { RefObject, useCallback, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { Overlay, Table, Text } from "@mantine/core";
+import React, { RefObject, useCallback, useEffect } from "react";
+import { Table, Text } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
-import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
-import { useContainerDimensions, useEscapeKey, useImageNavigation } from "app/hooks";
-import { FormatedDate, ImageDetail, ImageItem } from "app/components";
 
-import style from "./ImageTable.module.scss";
+import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
+import { useActionModalContext } from "app/context";
+import { useContainerDimensions } from "app/hooks";
+import { FormatedDate, ImageDetail, ImageItem } from "app/components";
 import { ImageDimensions, ImageWeight } from "../ImageDetail/components";
 
 
 type ImageTableType = {
   images: ImageOrSummary[];
-  onSelectedImage: (image: ImageOrSummary) => void;
   loadMore: () => void;
   containerRef: RefObject<HTMLElement>;
   imageItemMode?: ImageItemMode;
@@ -21,26 +19,33 @@ type ImageTableType = {
 
 export default function ImageTable({
   images,
-  onSelectedImage,
   loadMore,
   containerRef,
   imageItemMode,
 }: ImageTableType) {
   const edge = 160;
-  const navigation = useImageNavigation();
   const { width: containerWidth } = useContainerDimensions(containerRef);
-  const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
-    navigation.setSelectedImage(image);
-    onSelectedImage(image);
-  }, [onSelectedImage, navigation]);
-  const portalRef = useRef<HTMLDivElement>(null);
-  useEscapeKey(portalRef, () => setSelectedImageWrapper(undefined));
+  const [, addModal, removeModal] = useActionModalContext();
+  const handleOnClick = useCallback((image: ImageOrSummary) => {
+    if (image !== undefined) {
+      const id = addModal({
+        component: (
+          <ImageDetail
+            image={image}
+            images={images}
+            viewMode="table"
+            onClose={() => {
+              removeModal(id);
+            }}
+          />),
+        isStackable: true,
+        withCloseButton: false,
+        fullScreen: true
+      });
+    }
+  }, [images]);
   const [t] = useTranslation();
   const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });
-
-  useEffect(() => {
-    navigation.setImages(images);
-  }, [images]);
 
   useEffect(() => {
     if (entry?.isIntersecting === true) {
@@ -62,9 +67,7 @@ export default function ImageTable({
           height={edge}
           mode={imageItemMode}
           viewMode="table"
-          onClick={() =>
-            setSelectedImageWrapper(image)
-          }
+          onClick={handleOnClick}
         />
       </Table.Td>
       <Table.Td>
@@ -103,23 +106,6 @@ export default function ImageTable({
         <Table.Tbody>{rows}</Table.Tbody>
       </Table>
       <div ref={ref} style={{ width: "100%", height: 20 }} />
-      {createPortal(
-        navigation.selectedImage && <div ref={portalRef} className={style.visualizedImage}>
-          <Overlay
-            color="#000"
-            backgroundOpacity={1}
-            zIndex={0}
-          >
-            <ImageDetail
-              image={navigation.selectedImage}
-              withNavigation={navigation}
-              viewMode="table"
-              onClose={() => setSelectedImageWrapper((undefined))}
-            />
-          </Overlay>
-        </div>,
-        containerRef.current
-      )}
     </>
   );
 }

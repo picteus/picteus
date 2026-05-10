@@ -9,34 +9,34 @@ import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-cli
 
 import { ImageWithCaption, ViewMode } from "types";
 import { notifyApiCallError, Validators } from "utils";
-import { useImageVisualizerContext } from "app/context";
+import { useActionModalContext } from "app/context";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmptyResults, ImagesView, ImageThumbnail } from "app/components";
+import { CaptionDistance, EmptyResults, ImageDetail, ImagesView, ImageThumbnail } from "app/components";
 
-import style from "./ClosestEmbeddingsImagesModal.module.scss";
+import style from "./ClosestEmbeddingsImages.module.scss";
 
 
-type ClosestEmbeddingsImagesModalFormPayload = {
+type ClosestEmbeddingsImagesFormPayload = {
   count: number;
 };
 
-type ClosestEmbeddingsImagesModalType = {
+type ClosestEmbeddingsImagesType = {
   extensionId: string;
   imageId: string;
   viewMode: ViewMode;
 };
 
-export default function ClosestEmbeddingsImagesModal({  extensionId, imageId, viewMode}: ClosestEmbeddingsImagesModalType) {
+export default function ClosestEmbeddingsImages({  extensionId, imageId, viewMode}: ClosestEmbeddingsImagesType) {
   const [t] = useTranslation();
   const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
   const [images, setImages] = useState<ImageWithCaption[]>([]);
-  const showImageVisualizer = useImageVisualizerContext();
   const focusTrapRef = useFocusTrap();
+  const [, addModal, removeModal] = useActionModalContext();
 
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
 
-  const initialValues: ClosestEmbeddingsImagesModalFormPayload = {
+  const initialValues: ClosestEmbeddingsImagesFormPayload = {
     count: initialResultsCount,
   };
 
@@ -48,7 +48,7 @@ export default function ClosestEmbeddingsImagesModal({  extensionId, imageId, vi
     },
   });
 
-  async function handleSubmit(values: ClosestEmbeddingsImagesModalFormPayload) {
+  async function handleSubmit(values: ClosestEmbeddingsImagesFormPayload) {
     StorageService.setClosestImagesResultsCount(values.count);
     const parameters: ImageApiImageClosestImagesRequest = {
       count: values.count,
@@ -91,7 +91,20 @@ export default function ClosestEmbeddingsImagesModal({  extensionId, imageId, vi
   }, []);
 
   function handleOnClickSourceImage() {
-    showImageVisualizer({ images, selectedImage: sourceImage, viewMode });
+    const id = addModal({
+      component: (
+        <ImageDetail
+          image={sourceImage}
+          images={images}
+          viewMode={viewMode}
+          onClose={() => {
+            removeModal(id);
+          }}
+        />),
+      isStackable: true,
+      withCloseButton: false,
+      fullScreen: true
+    });
   }
 
   function renderForm() {
@@ -148,16 +161,15 @@ export default function ClosestEmbeddingsImagesModal({  extensionId, imageId, vi
         title={t("emptyImages.title")}
       />)}
       controlBarChildren={renderForm()}
-      displayDetailInContainer={false}
     />);
   }
 
   return (
     <>
-      <Alert icon={<IconInfoCircle />}>
+      <Alert icon={<IconInfoCircle />} m={10}>
         {t("closestEmbeddingsImagesModal.description")}
       </Alert>
-      <Flex align="center" justify="center">{renderContent()}</Flex>
+        <Flex align="center" justify="center">{renderContent()}</Flex>
     </>
   );
 }

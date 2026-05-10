@@ -123,7 +123,7 @@ export default function ImageData({ image, viewMode }: ImageDataType) {
         <ExtensionIcon idOrExtension={imageFeature.id} size="sm"/>
         {`${capitalizeText(imageFeature.type)} ${imageFeature.name === undefined ? "" : `(${imageFeature.name})`}`}
       </Flex>}
-      value={<ImageFeature feature={imageFeature} viewMode={viewMode}/>}
+      value={<ImageFeature feature={imageFeature} viewMode={viewMode} />}
     />
   ))), [image]);
 

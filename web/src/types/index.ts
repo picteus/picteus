@@ -252,6 +252,7 @@ export type ContentIconType = ResourceType | { icon: ReactNode };
 
 export type ActionModalValue = {
   id?: string;
+  isStackable?: boolean;
   title?: ReactNode;
   withCloseButton?: boolean;
   closeOnEscape?: boolean;

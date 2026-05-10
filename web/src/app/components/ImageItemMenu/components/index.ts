@@ -1,1 +1,1 @@
-export { default as ClosestEmbeddingsImagesModal } from "./ClosestEmbeddingsImagesModal/ClosestEmbeddingsImagesModal.tsx";
+export { default as ClosestEmbeddingsImages } from "./ClosestEmbeddingsImages/ClosestEmbeddingsImages.tsx";

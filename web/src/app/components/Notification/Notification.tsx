@@ -5,7 +5,8 @@ import { IconFolderOpen, IconInfoCircle } from "@tabler/icons-react";
 import { timeAgoFromMilliseconds } from "utils";
 import { EventInformationType, EventNotificationType } from "types";
 import { EventService, ImageService } from "app/services";
-import { useImageVisualizerContext } from "app/context";
+import { useActionModalContext } from "app/context";
+import { ImageDetail } from "app/components";
 
 import style from "./Notification.module.scss";
 
@@ -23,7 +24,7 @@ export default function Notification({
   withTime = false,
 }: NotificationType) {
   const notification: EventNotificationType = event.notification;
-  const showImageVisualizer = useImageVisualizerContext();
+  const [, addModal, removeModal] = useActionModalContext();
 
   function handleOnClose() {
     if (!toast) {
@@ -35,7 +36,19 @@ export default function Notification({
   async function handleOnClick() {
     if (notification.type === "image") {
       const image = await ImageService.get({ id: event.rawData.value.id });
-      showImageVisualizer({ selectedImage: image , images: [image], viewMode: "masonry"});
+      const id = addModal({
+        component: (
+          <ImageDetail
+            image={image}
+            images={[image]}
+            viewMode="masonry"
+            onClose={() => {
+              removeModal(id);
+            }}
+          />),
+        withCloseButton: false,
+        fullScreen: true
+      });
     }
   }
 

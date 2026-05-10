@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 import { Image } from "@picteus/ws-client";
 
 import { ImageItemMode, ImageOrSummary, ViewMode } from "types";
-import { useImageVisualizerContext } from "app/context";
+import { useActionModalContext } from "app/context";
 import { ImageService } from "app/services";
-import { ImageItem } from "app/components";
+import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageItemWrapper.module.scss";
 
@@ -23,15 +23,28 @@ export default function ImageItemWrapper({ imageId, edge, viewMode }: ImageItemW
   const [t] = useTranslation();
   const [image, setImage] = useState<Image>(undefined);
   const [error, setError] = useState<boolean>(false);
-  const showImageVisualizer = useImageVisualizerContext();
+  const [, addModal, removeModal] = useActionModalContext();
 
   useEffect(() => {
       ImageService.get({ id: imageId }).then((parentImage: Image) => setImage(parentImage)).catch(() => setError(true));
   }, [imageId]);
 
   const handleOnClick = useCallback((image: ImageOrSummary): void => {
-    showImageVisualizer({ selectedImage: image, images: [image], viewMode});
-  }, [showImageVisualizer]);
+    const id = addModal({
+      component: (
+        <ImageDetail
+          image={image}
+          images={[image]}
+          viewMode={viewMode}
+          onClose={() => {
+            removeModal(id);
+          }}
+        />),
+      isStackable: true,
+      withCloseButton: false,
+      fullScreen: true
+    });
+  }, [viewMode]);
 
   if (error) {
     return <Box w={edge} h={edge}>
@@ -43,5 +56,5 @@ export default function ImageItemWrapper({ imageId, edge, viewMode }: ImageItemW
 
   return image === undefined ? <Loader size={edge} /> :
     <ImageItem image={image} width={edge} height={edge} mode={ImageItemMode.PASSIVE} viewMode={viewMode}
-               onClick={handleOnClick} />;
+               onClick={handleOnClick}/>;
 }

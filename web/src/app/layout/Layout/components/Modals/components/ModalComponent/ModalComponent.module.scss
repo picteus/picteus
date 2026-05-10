@@ -1,19 +1,28 @@
-.modalFullScreenContent {
+.content {
+}
+.contentFullScreen {
+  background: transparent;
   display: flex ;
   flex-direction: column;
 }
 
-.modalFullScreenBody {
+.body {
+}
+.bodyFullScreen {
+  padding-top: 0;
+  padding-left: $left-sidebar-width;
+  padding-right: $right-sidebar-width;
+  padding-bottom: $bottom-bar-width;
+  height: 100%;
   flex: 1;
 }
 
-.contentFullScreen {
+.child {
+}
+.childFullScreen {
   height: 100%;
 }
 
 .header {
   align-items: flex-start;
-}
-
-.content {
 }

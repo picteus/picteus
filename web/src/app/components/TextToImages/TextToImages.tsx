@@ -124,7 +124,6 @@ export default function TextToImages({ extensionId }: TextToImageType) {
         }
       }}
       controlBarChildren={renderForm()}
-      displayDetailInContainer={false}
     />);
   }
 

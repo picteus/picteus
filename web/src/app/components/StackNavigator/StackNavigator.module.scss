@@ -1,0 +1,39 @@
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.content {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.contentEmpty {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.stack {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.stackHidden {
+  display: none;
+  pointer-events: none;
+}
+
+.topBar {
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.componentWrapper {
+  overflow-y: auto;
+}
