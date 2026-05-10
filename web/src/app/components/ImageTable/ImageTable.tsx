@@ -27,22 +27,20 @@ export default function ImageTable({
   const { width: containerWidth } = useContainerDimensions(containerRef);
   const [, addModal, removeModal] = useActionModalContext();
   const handleOnClick = useCallback((image: ImageOrSummary) => {
-    if (image !== undefined) {
-      const id = addModal({
-        component: (
-          <ImageDetail
-            image={image}
-            images={images}
-            viewMode="table"
-            onClose={() => {
-              removeModal(id);
-            }}
-          />),
-        isStackable: true,
-        withCloseButton: false,
-        fullScreen: true
-      });
-    }
+    const id = addModal({
+      component: (
+        <ImageDetail
+          image={image}
+          images={images}
+          viewMode="table"
+          onClose={() => {
+            removeModal(id);
+          }}
+        />),
+      isStackable: true,
+      withCloseButton: false,
+      fullScreen: true
+    });
   }, [images]);
   const [t] = useTranslation();
   const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });

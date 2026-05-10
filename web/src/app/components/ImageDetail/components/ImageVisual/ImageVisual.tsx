@@ -30,17 +30,17 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
   const [imageWrapperDimensions, setImageWrapperDimensions] = useState<PicteusImageDimensions | undefined>();
   const [imageExpectedDimensions, setImageExpectedDimensions] = useState<PicteusImageDimensions | undefined>();
   const [imageSrc, setImageSrc] = useState<string | undefined>();
-  const [error, setError] = useState<string | undefined>();
-  const [imageZoom, setImageZoom] = useState<number>(1);
+  const [error, setError] = useState<string | undefined>( );
 
   useEffect(() => {
-    setImageWrapperDimensions({width: Math.round(imageWrapperRectangle.width), height: Math.round(imageWrapperRectangle.height)});
+    const newImageWrapperDimensions = {width: Math.round(imageWrapperRectangle.width), height: Math.round(imageWrapperRectangle.height)};
+    setImageWrapperDimensions(newImageWrapperDimensions);
     if (image !== undefined && (imageWrapperRectangle.width > 0 || imageWrapperRectangle.height > 0)) {
       setImageExpectedDimensions(ImageService.computeImageDimensions(image.dimensions, {
         width: imageWrapperRectangle.width,
         height: imageWrapperRectangle.height
       }, resizeRender));
-      setImageSrc(ImageService.getImageSrc(image.uri, imageWrapperDimensions.width, imageWrapperDimensions.height, resizeRender));
+      setImageSrc(ImageService.getImageSrc(image.uri, newImageWrapperDimensions.width, newImageWrapperDimensions.height, resizeRender));
     }
   }, [imageWrapperRectangle, image]);
 
@@ -57,32 +57,6 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
     }
   }, [withNavigation]);
 
-  useEffect(() => {
-    if (imageRef?.current) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      imageRef.current.style.transform = "scale(" + imageZoom + ")";
-    }
-  }, [imageZoom, imageRef]);
-
-  useEffect(() => {
-    let zoom = 1;
-    function adjustZoomLevel(event) {
-      const direction = event.deltaY > 0 ? -1 : 1;
-
-      const newZoom = zoom + direction * 0.08;
-
-      if (newZoom < 1) {
-        return;
-      }
-      zoom = newZoom;
-      setImageZoom(newZoom);
-    }
-    if (imageRef?.current) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      imageRef.current.addEventListener("mousewheel", adjustZoomLevel);
-    }
-  }, [imageRef]);
-
   return (<Flex data-close="close" align="center" justify="space-between" gap="sm" className={style.imageContainer}>
     <ActionIcon
       ref={leftArrowRef}
@@ -98,8 +72,7 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
       {imageExpectedDimensions && imageWrapperDimensions && imageWrapperDimensions.width > 0 && imageWrapperDimensions.height > 0 && <img
         ref={imageRef}
         className={`${style.image} ${placeholder === false ? style.loaded : style.unLoaded}`}
-        onLoad={() =>
-        {
+        onLoad={() => {
           setPlaceholder(false);
           setError(undefined);
         }}

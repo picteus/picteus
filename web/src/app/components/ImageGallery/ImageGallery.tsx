@@ -34,23 +34,21 @@ export default function ImageGallery({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
   const [, addModal, removeModal] = useActionModalContext();
-  const setSelectedImageWrapper = useCallback((image: ImageOrSummary) => {
-    if (image !== undefined) {
-      const id = addModal({
-        component: (
-          <ImageDetail
-            image={image}
-            images={images}
-            viewMode="gallery"
-            onClose={() => {
-              removeModal(id);
-            }}
-          />),
-        isStackable: true,
-        withCloseButton: false,
-        fullScreen: true
-      });
-    }
+  const handleOnClick = useCallback((image: ImageOrSummary) => {
+    const id = addModal({
+      component: (
+        <ImageDetail
+          image={image}
+          images={images}
+          viewMode="gallery"
+          onClose={() => {
+            removeModal(id);
+          }}
+        />),
+      isStackable: true,
+      withCloseButton: false,
+      fullScreen: true
+    });
   }, [images]);
 
   useEffect(() => {
@@ -114,10 +112,10 @@ export default function ImageGallery({
         mode={imageItemMode}
         overlay={"caption" in image ? (image as ImageWithCaption).caption : undefined}
         viewMode="gallery"
-        onClick={setSelectedImageWrapper}
+        onClick={handleOnClick}
       />
     </Grid.Col>
-  )), [images, columnWidth]);
+  )), [images, columnWidth, imageItemMode, handleOnClick]);
 
   const renderedGrid = useMemo(() => (
     <Grid columns={columns} gap={gutter}>

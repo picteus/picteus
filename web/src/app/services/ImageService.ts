@@ -91,7 +91,7 @@ async function getAllTags(imageId: string): Promise<ExtensionImageTag[]> {
 function computeImageDimensions(imageDimensions: ImageDimensions, areaDimensions: ImageDimensions, resizeRender: ImageResizeRender): ImageDimensions {
   const imageRatio = imageDimensions.width / imageDimensions.height;
   const areaRatio = areaDimensions.width / areaDimensions.height;
-  const scaleRatio = Math.min(1, Math.min(imageDimensions.width / areaDimensions.width, imageDimensions.height / areaDimensions.height));
+  const scaleRatio = Math.min(1, imageRatio >= areaRatio ? (imageDimensions.width / areaDimensions.width): (imageDimensions.height / areaDimensions.height));
   const areaWidth = areaDimensions.width * scaleRatio;
   const areaHeight = areaDimensions.height * scaleRatio;
   if (resizeRender === "inbox") {
@@ -105,8 +105,7 @@ function computeImageDimensions(imageDimensions: ImageDimensions, areaDimensions
   else if (resizeRender === "outbox") {
     return { width: Math.round(areaWidth), height: Math.round(areaHeight) };
   }
-  else
-  {
+  else {
     throw new Error(`Unsupported resize render '${resizeRender}'`);
   }
 }

@@ -32,22 +32,20 @@ export default function ImageMasonry({
   const [, addModal, removeModal] = useActionModalContext();
 
   const handleOnClick = useCallback((image: ImageOrSummary) => {
-    if (image !== undefined) {
-      const id = addModal({
-        component: (
-          <ImageDetail
-            image={image}
-            images={images}
-            viewMode="masonry"
-            onClose={() => {
-              removeModal(id);
-            }}
-          />),
-        isStackable: true,
-        withCloseButton: false,
-        fullScreen: true
-      });
-    }
+    const id = addModal({
+      component: (
+        <ImageDetail
+          image={image}
+          images={images}
+          viewMode="masonry"
+          onClose={() => {
+            removeModal(id);
+          }}
+        />),
+      isStackable: true,
+      withCloseButton: false,
+      fullScreen: true
+    });
   }, [images]);
 
   const sentinelRef = useRef<HTMLDivElement>(null);

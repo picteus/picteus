@@ -115,7 +115,7 @@ export default function ImageItem({
     if (target.getAttribute("data-action")) {
       onClick(image);
     }
-  }, [handleOnSelectImage]);
+  }, [mode, handleOnSelectImage, onClick]);
 
   const handleOnChangeMenuOpened = useCallback((opened: boolean) => {
     setMenuOpened(opened);
