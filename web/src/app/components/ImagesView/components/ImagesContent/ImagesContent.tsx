@@ -1,9 +1,12 @@
 import React, { ReactElement, RefObject, useCallback, useEffect, useRef, useState } from "react";
+import { Box, Portal } from "@mantine/core";
 
 import { SearchRange } from "@picteus/ws-client";
 
 import { ImageExplorerDataType, ImageOrSummary, ViewMode } from "types";
-import { EmptyResults, ImageGallery, ImageMasonry, ImageTable } from "app/components";
+import { EmptyResults, ImageGallery, ImageMasonry, ImageTable, OverlayIndicator } from "app/components";
+
+import style from "./ImagesContent.module.scss";
 
 
 const imagesPerPage = 100;
@@ -15,6 +18,7 @@ type PaginationType = SearchRange & {
 type ImagesContentType = {
   viewMode: ViewMode;
   containerRef: RefObject<HTMLElement>;
+  contentRef: RefObject<HTMLElement>;
   scrollRootRef: RefObject<HTMLElement>;
   onEmptyResults: () => ReactElement<typeof EmptyResults>;
   onFetchData: (searchRange: SearchRange) => Promise<ImageExplorerDataType>;
@@ -24,6 +28,7 @@ type ImagesContentType = {
 export default function ImagesContent({
                          viewMode,
                          containerRef,
+                         contentRef,
                          scrollRootRef,
                          onEmptyResults,
                          onFetchData,
@@ -100,18 +105,41 @@ export default function ImagesContent({
     return onEmptyResults();
   }
 
+  const imagesCountIndicator = totalImagesCount > 0 ? (
+    <Portal target={contentRef.current}>
+      <Box className={style.imagesCountIndicator}>
+        <OverlayIndicator text={`${accumulatedImages.length} / ${totalImagesCount}`} />
+      </Box>
+    </Portal>
+  ) : null;
+
   if (viewMode === "masonry") {
-    return <ImageMasonry images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
-                         scrollRootRef={scrollRootRef} />;
+    return (
+      <>
+        <ImageMasonry images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
+                             scrollRootRef={scrollRootRef} />
+        {imagesCountIndicator}
+      </>
+    );
   }
 
   if (viewMode === "gallery") {
-    return <ImageGallery images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
-                         scrollRootRef={scrollRootRef} />;
+    return (
+      <>
+        <ImageGallery images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
+                             scrollRootRef={scrollRootRef} />
+        {imagesCountIndicator}
+      </>
+    );
   }
 
   if (viewMode === "table") {
-    return <ImageTable images={accumulatedImages} loadMore={loadMore} containerRef={containerRef} />;
+    return (
+      <>
+        <ImageTable images={accumulatedImages} loadMore={loadMore} containerRef={containerRef} />
+        {imagesCountIndicator}
+      </>
+    );
   }
 
   return <></>;

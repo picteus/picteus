@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActionIcon, Alert, Flex } from "@mantine/core";
+import { ActionIcon, Alert, Box, Flex } from "@mantine/core";
 import { useResizeObserver } from "@mantine/hooks";
 import { IconArrowLeft, IconArrowRight, IconCircleX } from "@tabler/icons-react";
 
@@ -10,6 +10,7 @@ import { Image, ImageDimensions as PicteusImageDimensions, ImageResizeRender } f
 
 import { WithNavigationType } from "types";
 import { ImageService } from "app/services";
+import { OverlayIndicator } from "app/components";
 
 import style from "./ImageVisual.module.scss";
 
@@ -30,16 +31,19 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
   const [imageWrapperDimensions, setImageWrapperDimensions] = useState<PicteusImageDimensions | undefined>();
   const [imageExpectedDimensions, setImageExpectedDimensions] = useState<PicteusImageDimensions | undefined>();
   const [imageSrc, setImageSrc] = useState<string | undefined>();
+  const [scalingRatio, setScalingRatio] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>( );
 
   useEffect(() => {
     const newImageWrapperDimensions = {width: Math.round(imageWrapperRectangle.width), height: Math.round(imageWrapperRectangle.height)};
     setImageWrapperDimensions(newImageWrapperDimensions);
     if (image !== undefined && (imageWrapperRectangle.width > 0 || imageWrapperRectangle.height > 0)) {
-      setImageExpectedDimensions(ImageService.computeImageDimensions(image.dimensions, {
+      const newImageExpectedDimensions = ImageService.computeImageDimensions(image.dimensions, {
         width: imageWrapperRectangle.width,
         height: imageWrapperRectangle.height
-      }, resizeRender));
+      }, resizeRender);
+      setImageExpectedDimensions(newImageExpectedDimensions);
+      setScalingRatio(Math.round((newImageExpectedDimensions.width / image.dimensions.width) * 100).toString());
       setImageSrc(ImageService.getImageSrc(image.uri, newImageWrapperDimensions.width, newImageWrapperDimensions.height, resizeRender));
     }
   }, [imageWrapperRectangle, image]);
@@ -86,6 +90,7 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
       {placeholder && <Flex className={style.placeholder} align="center" justify="center">{error && (
         <Alert variant="light" color="red" title={t("errors.imageTitle")}
                icon={<IconCircleX />}>{error}</Alert>)}</Flex>}
+      {scalingRatio && <Box className={style.scalingRatio}><OverlayIndicator text={`${scalingRatio}%`} /></Box>}
     </div>
     <ActionIcon
       ref={rightArrowRef}

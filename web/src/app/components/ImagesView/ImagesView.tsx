@@ -23,6 +23,7 @@ type ImagesViewType = {
 
 export default function ImagesView({ viewData, isDefault, controlBarChildren, onEmptyResults }: ImagesViewType){
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const scrollRootRef = useRef<HTMLDivElement>(null);
   const { addTab } = useImagesTabsContext();
   const hasFilterOrCollectionId = "filterOrCollectionId" in viewData;
@@ -131,17 +132,20 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       onViewMode={handleOnViewMode}
       handleOnPin={pinnable === true ? handleOnPin : undefined}
     />
-    <div ref={scrollRootRef} className={style.contentContainer}>
-      <Container>
-        <ImagesContent
-          viewMode={viewMode}
-          containerRef={containerRef}
-          scrollRootRef={scrollRootRef}
-          onEmptyResults={onEmptyResults}
-          onFetchData={onFetchData}
-          refreshTrigger={refreshTrigger}
-        />
-      </Container>
+    <div ref={contentRef} className={style.content}>
+      <div ref={scrollRootRef} className={style.scrolling}>
+        <Container>
+          <ImagesContent
+            viewMode={viewMode}
+            containerRef={containerRef}
+            contentRef={contentRef}
+            scrollRootRef={scrollRootRef}
+            onEmptyResults={onEmptyResults}
+            onFetchData={onFetchData}
+            refreshTrigger={refreshTrigger}
+          />
+        </Container>
+      </div>
     </div>
   </Flex>);
 }
