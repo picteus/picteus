@@ -8,6 +8,7 @@ import { Extension } from "@picteus/ws-client";
 import { useActionModalContext } from "app/context";
 import { ExtensionsService } from "app/services";
 import {
+  Common,
   Container,
   Drawer,
   EmptyResults,
@@ -57,7 +58,7 @@ export default function ExtensionsScreen() {
     addModal({
       title: t(`${extension ? "updateExtensionModal" : "addExtensionModal"}.title`),
       icon: extension ? { url: ExtensionsService.getIconURL(extension) } : {
-        icon: <IconBox />
+        icon: <IconBox stroke={Common.IconStrokeSize}/>
       },
       size: "m",
       component: (

@@ -6,9 +6,10 @@ import { timeAgoFromMilliseconds } from "utils";
 import { EventInformationType, EventNotificationType } from "types";
 import { EventService, ImageService } from "app/services";
 import { useActionModalContext } from "app/context";
-import { ImageDetail } from "app/components";
+import { Common, ImageDetail } from "app/components";
 
 import style from "./Notification.module.scss";
+
 
 type NotificationType = {
   event: EventInformationType;
@@ -54,10 +55,10 @@ export default function Notification({
 
   function computeIcon() {
     if (!notification.iconUrl) {
-      return <IconInfoCircle stroke={1.2} />;
+      return <IconInfoCircle stroke={Common.IconStrokeSize} />;
     }
     if (notification.iconUrl === "repository") {
-      return <IconFolderOpen stroke={1.2} />;
+      return <IconFolderOpen stroke={Common.IconStrokeSize} />;
     }
     return (<div onClick={handleOnClick}>
         <Image src={notification.iconUrl} w={32} fit="contain" alt="Thumbnail" />

@@ -42,6 +42,7 @@ export default {
     dimensions: "Dimensions",
     repository: "Repository",
     repositories: "Repositories",
+    icon: "Icon",
     size: "Size",
     format: "Format",
     formats: "Formats",
@@ -231,7 +232,6 @@ export default {
       "Are you sure you want to delete the repository '{{name}}' ?"
   },
   repositoryDetail: {
-    title: "Repository",
     latestImages: "Latest images",
     imageCount: "Image count"
   },
@@ -243,7 +243,6 @@ export default {
     confirmDeleteMessage: "Are you sure you want to delete the collection '{{name}}'?"
   },
   collectionDetail: {
-    title: "Collection",
     latestImages: "Latest images"
   },
   extensionsScreen: {
@@ -256,7 +255,7 @@ export default {
     successSynchronize: "The extension '{{name}}' is now synchronizing."
   },
   eventInformation: {
-    idle: "Listening for events…",
+    idle: "Listening to events…",
     unknownEvent: "Unknown event",
     extension: {
       installed: "The extension '{{id}}' has been installed",

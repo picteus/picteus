@@ -1,14 +1,15 @@
-import { useTranslation } from "react-i18next";
-import { Button, Flex, Stack, Table, Text, Title } from "@mantine/core";
 import React, { useEffect, useState, useSyncExternalStore } from "react";
+import { Button, Flex, Stack, Table, Text, Title } from "@mantine/core";
+import { IconFolderOpen, IconFolderSearch, IconPlus } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import { Repository } from "@picteus/ws-client";
-import { IconFolderOpen, IconFolderSearch, IconPlus } from "@tabler/icons-react";
 
 import { ChannelEnum } from "types";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { RepositoriesService } from "app/services";
 import {
+  Common,
   Container,
   Drawer,
   EmptyResults,
@@ -19,6 +20,7 @@ import {
   StandardTable
 } from "app/components";
 import { AddOrUpdateRepository, RepositoryActions, RepositoryDetail, RepositoryTop } from "./components";
+
 
 export default function RepositoriesScreen() {
   const [t] = useTranslation();
@@ -44,7 +46,7 @@ export default function RepositoriesScreen() {
   function openAddOrUpdateRepositoryModal(repository?: Repository) {
     addModal({
       title: t(`addOrUpdateRepositoryModal.${repository ? "updateTitle" : "addTitle"}`),
-      icon: { icon: <IconFolderOpen /> },
+      icon: { icon: <IconFolderOpen stroke={Common.IconStrokeSize} /> },
       size: "s",
       component: <AddOrUpdateRepository repository={repository} onSuccess={nothing} />,
     });

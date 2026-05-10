@@ -1,11 +1,12 @@
 import React from "react";
-import { Flex, Stack, Text } from "@mantine/core";
+import { Flex, Image, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
+import { IconBox } from "@tabler/icons-react";
 
 import { Extension } from "@picteus/ws-client";
 
 import { ExtensionsService } from "app/services";
-import { ContentTitle, CopyText, EntityStatus, FieldValue, NoValue } from "app/components";
+import { Common, ContentTitle, CopyText, EntityStatus, FieldValue, NoValue } from "app/components";
 import { ExtensionActions } from "../index.ts";
 
 
@@ -18,15 +19,15 @@ type ExtensionTopType = {
 
 export default function ExtensionTop({ extension, openAddOrUpdateExtensionModal, openExtensionSettingsModal, onUninstalled }: ExtensionTopType) {
   const { t } = useTranslation();
+  const iconEdge = 32;
 
   return (<>
-      <ContentTitle text={t("extensionDetail.title")}
-                    icon={{ url: ExtensionsService.getIconURL(extension) }} />
+      <ContentTitle text={extension.manifest.name} icon={{ icon: <IconBox stroke={Common.IconStrokeSize} /> }} />
       <Stack gap="md" pos="relative">
-        <FieldValue name={t("field.id")} value={<CopyText value={extension.manifest.id}>
+        <FieldValue name={t("field.id")} value={<CopyText value={extension.manifest.id} inline={true}>
           <Text size="xs" c="dimmed">{extension.manifest.id}</Text>
         </CopyText>} />
-        <FieldValue name={t("field.name")} value={<Text size="lg" fw={500}>{extension.manifest.name}</Text>} />
+        <FieldValue name={t("field.icon")} value={<Image src={ExtensionsService.getIconURL(extension)} h={iconEdge} w={iconEdge} />} />
         <FieldValue name={t("field.version")} value={<Text size="md">{extension.manifest.version}</Text>} />
         <FieldValue name={t("field.description")}
                     value={extension.manifest.description ? <Text>{extension.manifest.description}</Text> :

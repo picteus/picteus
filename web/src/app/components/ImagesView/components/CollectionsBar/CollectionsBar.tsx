@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Box, Button, Center, Flex, Loader, Menu, Text, Tooltip } from "@mantine/core";
-import { IconChevronDown, IconDeviceFloppy, IconLibraryPhoto, IconPlus } from "@tabler/icons-react";
+import { IconChevronDown, IconDeviceFloppy, IconLibrary, IconLibraryPhoto, IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Collection as PicteusCollection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
@@ -10,6 +10,7 @@ import { notifyError, notifySuccess } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useAsyncInitialize } from "app/hooks";
 import { CollectionService } from "app/services";
+import { Common } from "app/components";
 import AddOrUpdateCollection
     from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
@@ -91,6 +92,7 @@ export default function CollectionsBar({
     function handleOnSaveCurrent() {
         addModal({
             title: t("addOrUpdateCollectionModal.addTitle"),
+            icon: { icon: <IconLibrary stroke={Common.IconStrokeSize} /> },
             size: "s",
             component: (
                 <AddOrUpdateCollection

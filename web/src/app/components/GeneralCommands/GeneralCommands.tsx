@@ -9,7 +9,7 @@ import { UiCommandType } from "types";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useExtensionCommand } from "app/hooks";
 import { ExtensionsService } from "app/services";
-import { ExtensionIcon, TextToImages } from "app/components";
+import { Common, ExtensionIcon, TextToImages } from "app/components";
 
 
 export default function GeneralCommands() {
@@ -152,7 +152,7 @@ export default function GeneralCommands() {
     >
       <Menu.Target>
         <ActionIcon size="md">
-          <IconBox stroke={1.2} />
+          <IconBox stroke={Common.IconStrokeSize} />
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown>{menu}</Menu.Dropdown>

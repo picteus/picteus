@@ -16,7 +16,7 @@ import { UserInterfaceAnchor } from "@picteus/ws-client";
 import { computeExtensionSidebarRoute, notifyError, notifyErrorWithError, ROUTES } from "utils";
 import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
-import { ExtensionIcon } from "app/components";
+import { Common, ExtensionIcon } from "app/components";
 import { useOpenWindow } from "app/hooks";
 import { ChannelEnum, computeResourceTypeUrl } from "types";
 import { ImagesNavbarLink, NavbarLink } from "./components";
@@ -44,13 +44,13 @@ export default function Sidebar() {
   }, [event]);
   const { isAvailable } = useCommandSocket();
 
+  const iconEdge = 20;
   const commonIconStyle = useMemo(
     () => ({
-      width: 20,
-      height: 20,
-      stroke: 1.5,
-    }),
-    [],
+      width: iconEdge,
+      height: iconEdge,
+      stroke: Common.IconStrokeSize
+    }), []
   );
 
   const mainElementData = [

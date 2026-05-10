@@ -8,7 +8,16 @@ import { Collection } from "@picteus/ws-client";
 import { ChannelEnum } from "types";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { CollectionService } from "app/services";
-import { Container, Drawer, EmptyResults, FormatedDate, NoValue, RefreshButton, StandardTable } from "app/components";
+import {
+  Common,
+  Container,
+  Drawer,
+  EmptyResults,
+  FormatedDate,
+  NoValue,
+  RefreshButton,
+  StandardTable
+} from "app/components";
 import { AddOrUpdateCollection, CollectionActions, CollectionDetail, CollectionTop } from "./components";
 
 
@@ -58,7 +67,7 @@ export default function CollectionsScreen() {
   function openAddOrUpdateCollectionModal(collection?: Collection) {
     addModal({
       title: t(`addOrUpdateCollectionModal.${collection ? "updateTitle" : "addTitle"}`),
-      icon: { icon: <IconLibrary /> },
+      icon: { icon: <IconLibrary stroke={Common.IconStrokeSize} /> },
       size: "s",
       component: <AddOrUpdateCollection collection={collection} onSuccess={nothing} />,
     });
