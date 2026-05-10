@@ -7,14 +7,16 @@ import { ImageService } from "app/services";
 
 
 type ImageThumbnailType = {
-  summary: ImageSummary;
-  height: number;
+  image: ImageSummary;
+  width?: number;
+  height?: number;
 };
 
-export default function ImageThumbnail({ summary, height }: ImageThumbnailType) {
+export default function ImageThumbnail({ image, width, height }: ImageThumbnailType) {
   return (<Image
-    alt={summary.name}
+    alt={image.name}
+    w={width}
     h={height}
     fit="contain"
-    src={ImageService.getImageSrc(summary.url, undefined, height)} />);
+    src={ImageService.getImageSrc(image.url, width, height)} />);
 }

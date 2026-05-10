@@ -40,11 +40,11 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
       const channel = event.rawData.channel;
       if (channel === ChannelEnum.IMAGE_UPDATED || channel === ChannelEnum.IMAGE_TAGS_UPDATED || channel === ChannelEnum.IMAGE_FEATURES_UPDATED) {
         if (imageData !== undefined && event.rawData.value.id === imageData.id) {
-          void loadImageData(image,true);
+          void loadImageData(navigation.selectedImage,true);
         }
       }
     }
-  }, [event, image]);
+  }, [event, navigation.selectedImage]);
 
   useEffect(() => {
     if (image) {
@@ -76,7 +76,9 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
       </Separator>
       <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%" className={style.right}>
         {imageData && <>
-          <ImageTop image={imageData} viewMode={viewMode} onClose={onClose}/>
+          <div className={style.rightTop}>
+            <ImageTop image={imageData} viewMode={viewMode} onClose={onClose}/>
+          </div>
           <div className={style.rightBottom}>
             <ImageData image={imageData} viewMode={viewMode} />
           </div>

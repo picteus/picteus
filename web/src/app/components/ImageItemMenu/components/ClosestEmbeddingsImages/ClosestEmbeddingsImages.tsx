@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Button, Flex, Group, HoverCard, Input, NumberInput, Text } from "@mantine/core";
+import { Alert, Button, Flex, Group, Input, NumberInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useFocusTrap } from "@mantine/hooks";
 import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
@@ -9,11 +9,8 @@ import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-cli
 
 import { ImageWithCaption, ViewMode } from "types";
 import { notifyApiCallError, Validators } from "utils";
-import { useActionModalContext } from "app/context";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmptyResults, ImageDetail, ImagesView, ImageThumbnail } from "app/components";
-
-import style from "./ClosestEmbeddingsImages.module.scss";
+import { CaptionDistance, EmptyResults, ImagesView, ImageThumbnail } from "app/components";
 
 
 type ClosestEmbeddingsImagesFormPayload = {
@@ -22,17 +19,15 @@ type ClosestEmbeddingsImagesFormPayload = {
 
 type ClosestEmbeddingsImagesType = {
   extensionId: string;
-  imageId: string;
+  image: ImageSummary;
   viewMode: ViewMode;
 };
 
-export default function ClosestEmbeddingsImages({  extensionId, imageId, viewMode}: ClosestEmbeddingsImagesType) {
+export default function ClosestEmbeddingsImages({  extensionId, image, viewMode}: ClosestEmbeddingsImagesType) {
   const [t] = useTranslation();
-  const [sourceImage, setSourceImage] = useState<ImageSummary>();
   const [loading, setLoading] = useState<boolean>(false);
   const [images, setImages] = useState<ImageWithCaption[]>([]);
   const focusTrapRef = useFocusTrap();
-  const [, addModal, removeModal] = useActionModalContext();
 
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
 
@@ -53,7 +48,7 @@ export default function ClosestEmbeddingsImages({  extensionId, imageId, viewMod
     const parameters: ImageApiImageClosestImagesRequest = {
       count: values.count,
       extensionId,
-      id: imageId,
+      id: image.id,
     };
     void load(parameters);
   }
@@ -61,10 +56,6 @@ export default function ClosestEmbeddingsImages({  extensionId, imageId, viewMod
   async function load(parameters: ImageApiImageClosestImagesRequest) {
     setLoading(true);
 
-    if (!sourceImage) {
-      const sourceImage = await ImageService.get({ id: imageId });
-      setSourceImage(sourceImage);
-    }
     try {
       const imageDistances = await ImageService.getClosestImages(parameters);
       setImages(
@@ -86,69 +77,33 @@ export default function ClosestEmbeddingsImages({  extensionId, imageId, viewMod
     void load({
       count: initialResultsCount,
       extensionId,
-      id: imageId,
+      id: image.id,
     });
   }, []);
 
-  function handleOnClickSourceImage() {
-    const id = addModal({
-      component: (
-        <ImageDetail
-          image={sourceImage}
-          images={images}
-          viewMode={viewMode}
-          onClose={() => {
-            removeModal(id);
-          }}
-        />),
-      isStackable: true,
-      withCloseButton: false,
-      fullScreen: true
-    });
-  }
-
   function renderForm() {
-    return (
-      sourceImage && <Group mt="sm">
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Flex align="end" gap={20}>
-            <Input.Wrapper label={t("field.source")}>
-              <HoverCard shadow="lg">
-                <HoverCard.Target>
-                  <Flex
-                    className={style.sourceNameContainer}
-                    align="center"
-                    gap={10}
-                  >
-                    <ImageThumbnail summary={sourceImage} height={34} />
-                    <Text className={style.sourceName} size="sm">
-                      {sourceImage?.name}
-                    </Text>
-                  </Flex>
-                </HoverCard.Target>
-                <HoverCard.Dropdown>
-                  <div onClick={handleOnClickSourceImage} className={style.sourceImage}>
-                    <ImageThumbnail summary={sourceImage} height={250} />
-                  </div>
-                </HoverCard.Dropdown>
-              </HoverCard>
-            </Input.Wrapper>
-            <NumberInput
-              ref={focusTrapRef}
-              min={1}
-              withAsterisk
-              label={t("field.imageCount")}
-              placeholder={t("closestEmbeddingsImagesModal.countPlaceholder")}
-              {...form.getInputProps("count")}
-            />
+    const edge = 100;
+    return (<Group>
+      <form onSubmit={form.onSubmit(handleSubmit)}>
+        <Flex align="end" gap={20}>
+          <Input.Wrapper label={t("field.source")}>
+            <ImageThumbnail image={image} width={edge} height={edge} />
+          </Input.Wrapper>
+          <NumberInput
+            ref={focusTrapRef}
+            min={1}
+            withAsterisk
+            label={t("field.imageCount")}
+            placeholder={t("closestEmbeddingsImagesModal.countPlaceholder")}
+            {...form.getInputProps("count")}
+          />
 
-            <Button loading={loading} disabled={loading} type="submit">
-              {t("button.find")}
-            </Button>
-          </Flex>
-        </form>
-      </Group>
-    );
+          <Button loading={loading} disabled={loading} type="submit">
+            {t("button.find")}
+          </Button>
+        </Flex>
+      </form>
+    </Group>);
   }
 
   function renderContent() {

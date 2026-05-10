@@ -84,7 +84,7 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
     addModal({
       component: (
         <ClosestEmbeddingsImages
-          imageId={image.id}
+          image={image}
           extensionId={extensionId}
           viewMode={viewMode}
         />
