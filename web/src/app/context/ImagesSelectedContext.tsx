@@ -1,12 +1,14 @@
-import React, { createContext, useCallback, useContext, useState } from "react";
-
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 import { ImageSummary } from "@picteus/ws-client";
 
-type ImagesSelectedContextValueType = ImageSummary[];
+import { ImageOrSummary } from "types";
+import { notifyApiCallError } from "utils";
+import { ImageService, StorageService } from "app/services";
+
 
 const ImagesSelectedContext = createContext<{
-  selectedImages: ImagesSelectedContextValueType,
+  selectedImages: ImageOrSummary[],
   toggleSelectedImage: (image: ImageSummary) => void,
   isSelectedImage: (image: ImageSummary) => boolean,
   clearSelectedImages: () => void
@@ -17,7 +19,25 @@ export function useImagesSelectedContext() {
 }
 
 export function ImagesSelectedProvider({ children }) {
-  const [selectedImages, setSelectedImages] = useState<ImagesSelectedContextValueType>([]);
+  const [selectedImages, setSelectedImages] = useState<ImageOrSummary[]>([]);
+
+  useEffect(() => {
+    const imagesIds = StorageService.getSelectedImagesIds();
+    if (imagesIds.length > 0) {
+      ImageService.searchImages({
+        filter: {
+          origin: {
+            kind: "images",
+            ids: imagesIds
+          }
+        }
+      }).then(images => setSelectedImages(images.items)).catch(notifyApiCallError);
+    }
+  }, []);
+
+  useEffect(() => {
+    StorageService.setSelectedImageIds(selectedImages.map(image => image.id));
+  }, [selectedImages]);
 
   const toggleSelectedImage = useCallback((image: ImageSummary)=> {
     if (selectedImages.find((anImage) => anImage.id === image.id)) {

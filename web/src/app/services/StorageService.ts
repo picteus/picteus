@@ -15,7 +15,8 @@ const TEXT_TO_IMAGES_RESULTS_COUNT = `${prefix}textToImagesResultsCount`;
 const FOLDER_PICKER_LAST_LOCATION = `${prefix}extensionPickerLastLocation`;
 const EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION = `${prefix}extensionIntentShowShouldConfirmRedirection`;
 const IMAGE_DETAIL_TRAITS = `${prefix}imageDetailTraits`;
-const SELECTED_IMAGES_AFFIX_ACTION = `${prefix}selectedImagesAffixAction`;
+const SELECTED_IMAGE_IDS = `${prefix}selectedImagesIds`;
+const SELECTED_IMAGES_ACTION = `${prefix}selectedImagesAction`;
 
 function get(key: string, defaultValue: string = undefined): string {
   const value = localStorage.getItem(key);
@@ -118,10 +119,16 @@ export default {
   setImageDetailTraits(value: string[]): void {
     storeJson(IMAGE_DETAIL_TRAITS, value);
   },
-  getSelectedImagesAffixAction(): string | undefined {
-    return get(SELECTED_IMAGES_AFFIX_ACTION);
+  getSelectedImagesIds(): string[] {
+    return getJsonNullValue(SELECTED_IMAGE_IDS, []);
   },
-  setSelectedImagesAffixAction(action: string): void {
-    set(SELECTED_IMAGES_AFFIX_ACTION, action);
+  setSelectedImageIds(ids: string[]): void {
+    storeJson(SELECTED_IMAGE_IDS, ids);
+  },
+  getSelectedImagesAction(): string | undefined {
+    return get(SELECTED_IMAGES_ACTION);
+  },
+  setSelectedImagesAction(action: string): void {
+    set(SELECTED_IMAGES_ACTION, action);
   }
 };

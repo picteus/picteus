@@ -1,0 +1,9 @@
+.container {
+  width : 25vw;
+  height: 50vh;
+}
+
+.images {
+  overflow-y: auto;
+  @extend .scrollbar-custom;
+}

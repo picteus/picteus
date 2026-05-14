@@ -1,9 +1,10 @@
 import React, { ReactNode, useCallback, useRef } from "react";
-import { Flex } from "@mantine/core";
+import { ActionIcon, Flex, HoverCard } from "@mantine/core";
+import { IconPhoto } from "@tabler/icons-react";
 
 import { Sidebar } from "app/layout";
-import { BottomBar, GeneralCommands, NotificationToolbar } from "app/components";
-import { IntentCenter, Modals, NotificationCenter, SelectedImagesAffix } from "./components";
+import { BottomBar, Common, GeneralCommands, NotificationToolbar } from "app/components";
+import { IntentCenter, Modals, NotificationCenter, SelectedImages } from "./components";
 
 import style from "./Layout.module.scss";
 
@@ -15,7 +16,6 @@ export default function Layout({ children }: { children: ReactNode }) {
       <>
         <Modals/>
         <IntentCenter />
-        <SelectedImagesAffix />
         <NotificationCenter />
       </>
     );
@@ -34,6 +34,24 @@ export default function Layout({ children }: { children: ReactNode }) {
           <Flex gap={12} direction="column">
             <NotificationToolbar />
             <GeneralCommands />
+            <HoverCard
+              withinPortal={false}
+              position="left"
+              shadow="lg"
+              withArrow
+              arrowSize={15}
+              offset={15}
+              closeDelay={300}
+            >
+              <HoverCard.Target>
+                <ActionIcon size="md">
+                  <IconPhoto stroke={Common.IconStrokeSize} />
+                </ActionIcon>
+              </HoverCard.Target>
+              <HoverCard.Dropdown>
+                <SelectedImages onProcessing={()=>{}}/>
+              </HoverCard.Dropdown>
+            </HoverCard>
           </Flex>
         </div>
       </div>
