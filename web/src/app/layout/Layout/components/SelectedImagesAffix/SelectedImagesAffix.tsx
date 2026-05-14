@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { ReactElement, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useLocation } from "react-router-dom";
-import { IconPhoto } from "@tabler/icons-react";
+import { IconPhoto, IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import {
   Affix,
@@ -15,14 +15,14 @@ import {
   Transition
 } from "@mantine/core";
 
-import { CommandEntity } from "@picteus/ws-client";
+import { CommandEntity, Manifest } from "@picteus/ws-client";
 
-import { ImageItemMode, UiExtensionCommandType } from "types";
-import { ROUTES } from "utils";
+import { ImageItemMode, UiCommandType, UiExtensionCommandType } from "types";
+import { notifyApiCallError, ROUTES } from "utils";
 import { useEventSocket, useImagesSelectedContext } from "app/context";
-import { ExtensionsService } from "app/services";
-import { useExtensionCommand } from "app/hooks";
-import { ExtensionIcon, ImageMasonry } from "app/components";
+import { useConfirmAction, useExtensionCommand } from "app/hooks";
+import { ExtensionsService, ImageService } from "app/services";
+import { Common, ImageMasonry, ImageMenuSelectCommandEntry, ImageMenuSelectEntry } from "app/components";
 
 import style from "./SelectedImagesAffix.module.scss";
 
@@ -32,6 +32,7 @@ const commandSeparator = "$$";
 export default function SelectedImagesAffix() {
   const [t] = useTranslation();
   const location = useLocation();
+  const confirmAction = useConfirmAction();
   const imagesContainerRef = useRef<HTMLDivElement>(null);
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
@@ -53,43 +54,70 @@ export default function SelectedImagesAffix() {
     }
   }, [event]);
 
-  function computeBulkActionsOptions() {
-    return extensionsImageCommands?.map((extensionCommand) => {
-      return {
-        value: `${extensionCommand.command.id}${commandSeparator}${extensionCommand.extension.manifest.id}`,
-        label: extensionCommand.command.label,
-        extensionId: extensionCommand.extension.manifest.id,
-        extensionName: extensionCommand.extension.manifest.name,
-      };
-    });
+  const synchronizeAction = "synchronize";
+  const deleteAction = "delete";
+
+  function computeSelectData() {
+    return [
+      {
+        group: t("commands.coreFeatures"),
+        items: [
+          {
+            value: synchronizeAction,
+            label: t("commands.synchronize"),
+            subLabel: t("commands.allExtensionsDetails"),
+            icon: <IconRefresh style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />
+          },
+          {
+            value: deleteAction,
+            label: t("commands.delete"),
+            subLabel: t("commands.noExtensionDetails"),
+            icon: <IconTrash color="red" style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />
+          }
+        ]
+      },
+      {
+        group: t("commands.extensionsCommands"),
+        items: extensionsImageCommands?.map((extensionCommand) => ({
+          value: `${extensionCommand.command.id}${commandSeparator}${extensionCommand.extension.manifest.id}`,
+          label: extensionCommand.command.label,
+          command: extensionCommand.command,
+          manifest: extensionCommand.extension.manifest
+        }))
+      }
+    ];
   }
 
-  function renderSelectOption(
-    item: ComboboxLikeRenderOptionInput<
-      ComboboxItem & { extensionId: string, extensionName: string }
-    >,
-  ) {
-    return (
-      <Flex align="center" gap={10}>
-        <ExtensionIcon idOrExtension={item.option.extensionId} size="sm" />
-        <Flex direction="column">
-          <Text size="sm"> {item.option.label}</Text>
-          <Text size="xs" c="dimmed">
-            {item.option.extensionName}
-          </Text>
-        </Flex>
-      </Flex>
-    );
+  function computeSelectRenderOption(item: ComboboxLikeRenderOptionInput<ComboboxItem & (
+    { manifest: Manifest, command: UiCommandType } | { subLabel: string, icon: ReactElement })>) {
+    return "manifest" in item.option ?  (<ImageMenuSelectCommandEntry manifest={item.option.manifest} command={item.option.command} />): (<ImageMenuSelectEntry icon={item.option.icon} label={item.option.label} subLabel={item.option.subLabel}/>);
   }
 
   function handleOnApplyAction() {
-    const [action, extensionId] = selectedAction?.split(commandSeparator) || [];
+    const imageIds = selectedImages.map((image) => image.id);
+
+    if (selectedAction === synchronizeAction) {
+      imageIds.forEach(imageId => ImageService.synchronize(imageId).catch(notifyApiCallError));
+      return;
+    }
+    else if (selectedAction === deleteAction) {
+      confirmAction(() => {
+        imageIds.forEach(imageId => ImageService.destroy(imageId).catch(notifyApiCallError));
+        clearSelectedImages();
+      }, {
+        title: t(`commands.confirmImage${imageIds.length > 1 ? "s" : ""}DeleteTitle`),
+        message: t(`commands.confirmImage${imageIds.length > 1 ? "s" : ""}DeleteMessage`)
+      });
+      return;
+    }
+
+    const [commandId, extensionId] = selectedAction.split(commandSeparator);
 
     const command = extensionsImageCommands.find(
-      (imageCommand) => imageCommand.command.id === action && imageCommand.extension.manifest.id === extensionId
+      (imageCommand) => imageCommand.command.id === commandId && imageCommand.extension.manifest.id === extensionId
     );
     setIsProcessing(true);
-    void callCommand(extensionId, command.command, selectedImages.map((image) => image.id), () => {
+    void callCommand(extensionId, command.command, imageIds, () => {
       setIsProcessing(false);
     }, (wasAborted: boolean) => {
       if (wasAborted === true) {
@@ -99,7 +127,7 @@ export default function SelectedImagesAffix() {
   }
 
   return (
-    <Affix style={{ zIndex: 200 }} position={{ bottom: 50, right: 50 }}>
+    <Affix className={style.container} classNames={{ root: style.root }}>
       <Transition transition="slide-up" mounted={shouldAffixBeVisible()}>
         {(transitionStyles) => (
           <HoverCard
@@ -164,8 +192,9 @@ export default function SelectedImagesAffix() {
                   value={selectedAction}
                   placeholder={t("selectedImagesAffix.selectPlaceholder")}
                   label={t("selectedImagesAffix.selectLabel")}
-                  data={computeBulkActionsOptions()}
-                  renderOption={renderSelectOption}
+                  data={computeSelectData()}
+                  renderOption={computeSelectRenderOption}
+                  maxDropdownHeight={350}
                 />
                 <Button
                   disabled={!selectedAction}

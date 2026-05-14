@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { ActionIcon, Kbd, Menu, Text } from "@mantine/core";
+import { ActionIcon, Kbd, Menu } from "@mantine/core";
 import { IconBox } from "@tabler/icons-react";
 
 import { CommandEntity, ManifestCapabilityId } from "@picteus/ws-client";
@@ -9,7 +9,7 @@ import { UiCommandType } from "types";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useExtensionCommand } from "app/hooks";
 import { ExtensionsService } from "app/services";
-import { Common, ExtensionIcon, TextToImages } from "app/components";
+import { Common, MenuItemEntry, TextToImages } from "app/components";
 
 
 export default function GeneralCommands() {
@@ -88,50 +88,21 @@ export default function GeneralCommands() {
         <Menu.Label>{t("commands.coreFeatures")}</Menu.Label>
 
         {extensionsWithTextEmbeddingsCapability?.map((extension, index) => {
-          return (
-            <Menu.Item
-              key={
-                "textEmbeddingCapabilityItem-" +
-                extension.manifest.id +
-                "-" +
-                index
-              }
-              onClick={() => handleOnClickTextToImage(extension.manifest.id)}
-              leftSection={<ExtensionIcon idOrExtension={extension} size="sm" />}
-              rightSection={
-                index === 0 && (
-                  <>
-                    <Kbd>⌘</Kbd> + <Kbd>Shift</Kbd> + <Kbd>F</Kbd>
-                  </>
-                )
-              }
-            >
-              <Text size="sm"> {t("commands.textToImages")}</Text>
-              <Text size="xs" c="dimmed">
-                {extension.manifest.name}
-              </Text>
-            </Menu.Item>
-          );
+          return (<MenuItemEntry key={`${extension.manifest.id}-${index}`} extensionId={extension.manifest.id}
+                                 label={t("commands.textToImages")}
+                                 subLabel={extension.manifest.name}
+                                 keyShortcut={<><Kbd>⌘</Kbd> + <Kbd>Shift</Kbd> + <Kbd>F</Kbd></>}
+                                 onClick={() => handleOnClickTextToImage(extension.manifest.id)} />);
         })}
         <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
-        {extensionsProcessCommands?.map((extensionCommand, index) => {
+        {extensionsProcessCommands?.map((extensionCommand) => {
           const extension = extensionCommand.extension;
           const command = extensionCommand.command;
           const manifest = extension.manifest;
           return (
-            <Menu.Item
-              key={`command-${manifest.id}-${index}`}
-              onClick={() =>
-                handleOnClickExtensionCommand(manifest.id, command,)
-              }
-              leftSection={<ExtensionIcon idOrExtension={extension} size="sm" />}
-            >
-              <Text size="sm"> {extensionCommand.command.label}</Text>
-              <Text size="xs" c="dimmed">
-                {manifest.name}
-              </Text>
-            </Menu.Item>
-          );
+            <MenuItemEntry key={`${manifest.id}-${command.id}`} extensionId={manifest.id} label={command.label}
+                           subLabel={manifest.name}
+                           onClick={() => handleOnClickExtensionCommand(manifest.id, command)} />);
         })}
       </>
     );

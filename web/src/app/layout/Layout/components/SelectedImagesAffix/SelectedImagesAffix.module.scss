@@ -1,3 +1,11 @@
+.root {
+  bottom: $bottom-bar-width + 10;
+  right: $right-sidebar-width + 10;
+}
+
+.container {
+  z-index: 1;
+}
 
 .affixThumbnailGrid {
   width : 370px;
@@ -5,4 +13,3 @@
   overflow-y: scroll;
   @extend .scrollbar-custom;
 }
-
