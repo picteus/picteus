@@ -15,10 +15,19 @@ const TEXT_TO_IMAGES_RESULTS_COUNT = `${prefix}textToImagesResultsCount`;
 const FOLDER_PICKER_LAST_LOCATION = `${prefix}extensionPickerLastLocation`;
 const EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION = `${prefix}extensionIntentShowShouldConfirmRedirection`;
 const IMAGE_DETAIL_TRAITS = `${prefix}imageDetailTraits`;
+const SELECTED_IMAGES_AFFIX_ACTION = `${prefix}selectedImagesAffixAction`;
+
+function get(key: string, defaultValue: string = undefined): string {
+  const value = localStorage.getItem(key);
+  return value === null ? defaultValue : value;
+}
+
+function set(key: string, value: string): void {
+  localStorage.setItem(key, value);
+}
 
 function getWithNullValue(key: string): string {
-  const value = localStorage.getItem(key);
-  return value == null ? "null" : value;
+  return get(key, "null");
 }
 
 function getJsonNullValue<T>(key: string, defaultValue: T = null): T {
@@ -26,7 +35,7 @@ function getJsonNullValue<T>(key: string, defaultValue: T = null): T {
 }
 
 function storeJson<T>(key:string, value: T) {
-  localStorage.setItem(key, JSON.stringify(value));
+  set(key, JSON.stringify(value));
 }
 
 
@@ -36,7 +45,7 @@ export default {
     return getWithNullValue(VERSION_KEY);
   },
   setVersion: (value: string): void => {
-    localStorage.setItem(VERSION_KEY, value);
+    set(VERSION_KEY, value);
   },
   setActivityFilters: (
     filters: Array<{
@@ -52,48 +61,40 @@ export default {
     getJsonNullValue<number[]>(VISUALIZER_PANEL_SIZES_KEY) ||
     VISUALIZER_DEFAULT_PANEL_SIZES,
   setVisualizerPanelSizes: (sizes: number[]): void => {
-    localStorage.setItem(VISUALIZER_PANEL_SIZES_KEY, JSON.stringify(sizes));
+    storeJson(VISUALIZER_PANEL_SIZES_KEY, sizes)
   },
   getClosestImagesResultsCount: (): number => {
-    return parseInt(localStorage.getItem(CLOSEST_IMAGES_RESULTS_COUNT) || "4");
+    return parseInt(get(CLOSEST_IMAGES_RESULTS_COUNT, "4"));
   },
   setClosestImagesResultsCount: (value: number): void => {
-    localStorage.setItem(CLOSEST_IMAGES_RESULTS_COUNT, value.toString());
+    set(CLOSEST_IMAGES_RESULTS_COUNT, value.toString())
   },
   getTextToImagesResultsCount: (): number => {
-    return parseInt(localStorage.getItem(TEXT_TO_IMAGES_RESULTS_COUNT) || "4");
+    return parseInt(get(TEXT_TO_IMAGES_RESULTS_COUNT, "4"));
   },
   setTextToImagesResultsCount: (value: number) => {
-    localStorage.setItem(TEXT_TO_IMAGES_RESULTS_COUNT, value.toString());
+    set(TEXT_TO_IMAGES_RESULTS_COUNT, value.toString())
   },
   getLastFolderLocation: (folderType: FolderTypes) => {
-    const location = localStorage.getItem(FOLDER_PICKER_LAST_LOCATION);
+    const location = getJsonNullValue<object>(FOLDER_PICKER_LAST_LOCATION)
     if (location) {
-      const jsonLocation = JSON.parse(location);
-      return jsonLocation[folderType];
+      return location[folderType];
     }
     return "/Users";
   },
   setLastFolderLocation: (folderType: FolderTypes, lastLocation: string) => {
-    const location = localStorage.getItem(FOLDER_PICKER_LAST_LOCATION) || "{}";
-    const jsonLocation = JSON.parse(location);
+    const jsonLocation = JSON.parse(get(FOLDER_PICKER_LAST_LOCATION, "{}"));
     const updatedLocation = {
       ...jsonLocation,
       [folderType]: lastLocation,
     };
-    localStorage.setItem(
-      FOLDER_PICKER_LAST_LOCATION,
-      JSON.stringify(updatedLocation),
-    );
+    storeJson(FOLDER_PICKER_LAST_LOCATION, updatedLocation);
   },
   setExtensionIntentShowShouldConfirm: (value: boolean) => {
-    localStorage.setItem(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION, value.toString());
+    set(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION, value.toString());
   },
   getExtensionIntentShowShouldConfirm: () => {
-    return (
-      localStorage.getItem(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION) ===
-      "true"
-    );
+    return get(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION) === "true";
   },
   getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType {
     return getJsonNullValue<ViewTabDataType>(MAIN_TAB_KEY, {
@@ -116,5 +117,11 @@ export default {
   },
   setImageDetailTraits(value: string[]): void {
     storeJson(IMAGE_DETAIL_TRAITS, value);
+  },
+  getSelectedImagesAffixAction(): string | undefined {
+    return get(SELECTED_IMAGES_AFFIX_ACTION);
+  },
+  setSelectedImagesAffixAction(action: string): void {
+    set(SELECTED_IMAGES_AFFIX_ACTION, action);
   }
 };

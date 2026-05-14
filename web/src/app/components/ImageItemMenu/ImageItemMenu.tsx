@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Menu } from "@mantine/core";
-import { IconRefresh, IconTopologyRing3, IconTrash } from "@tabler/icons-react";
+import { IconTopologyRing3 } from "@tabler/icons-react";
 
 import {
   CommandEntity,
@@ -17,7 +17,7 @@ import { notifyApiCallError } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useConfirmAction, useExtensionCommand } from "app/hooks";
 import { ExtensionsService, ImageService } from "app/services";
-import { Common, MenuItemEntry } from "app/components";
+import { Common, computeIcon, MenuItemEntry } from "app/components";
 import { ClosestEmbeddingsImages } from "./components";
 
 
@@ -105,14 +105,14 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
           <MenuItemEntry
             key={"synchronize"}
             onClick={handleOnClickSynchronize}
-            icon={<IconRefresh style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />}
+            icon={computeIcon("synchronize")}
             label={t("commands.synchronize")}
             subLabel={t("commands.allExtensionsDetails")}
           />
           <MenuItemEntry
             key={"delete"}
             onClick={handleOnClickDelete}
-            icon={<IconTrash color="red"  style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />}
+            icon={computeIcon("delete")}
             label={t("commands.delete")}
             subLabel={t("commands.noExtensionDetails")}
           />

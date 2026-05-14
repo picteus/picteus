@@ -1,11 +1,21 @@
 import React, { ReactElement, ReactNode } from "react";
 import { Flex, Menu, Text } from "@mantine/core";
+import { IconRefresh, IconTrash } from "@tabler/icons-react";
 
 import { Manifest } from "@picteus/ws-client";
 
 import { UiCommandType } from "types";
-import { ExtensionIcon } from "app/components";
+import { Common, ExtensionIcon } from "app/components";
 
+
+export function computeIcon(action: "synchronize" | "delete"): ReactElement {
+  switch (action) {
+    case "synchronize":
+      return <IconRefresh style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />;
+    case "delete":
+      return <IconTrash color="red" style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />;
+  }
+}
 
 type MenuItemEntryType = {
   extensionId?: string;

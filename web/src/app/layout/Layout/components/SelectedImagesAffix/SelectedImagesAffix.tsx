@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useLocation } from "react-router-dom";
-import { IconPhoto, IconRefresh, IconTrash } from "@tabler/icons-react";
+import { IconPhoto } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import {
   Affix,
@@ -21,8 +21,14 @@ import { ImageItemMode, UiCommandType, UiExtensionCommandType } from "types";
 import { notifyApiCallError, ROUTES } from "utils";
 import { useEventSocket, useImagesSelectedContext } from "app/context";
 import { useConfirmAction, useExtensionCommand } from "app/hooks";
-import { ExtensionsService, ImageService } from "app/services";
-import { Common, ImageMasonry, ImageMenuSelectCommandEntry, ImageMenuSelectEntry } from "app/components";
+import { ExtensionsService, ImageService, StorageService } from "app/services";
+import {
+  computeIcon,
+  ExtensionIcon,
+  ImageMasonry,
+  ImageMenuSelectCommandEntry,
+  ImageMenuSelectEntry
+} from "app/components";
 
 import style from "./SelectedImagesAffix.module.scss";
 
@@ -42,10 +48,6 @@ export default function SelectedImagesAffix() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>();
 
-  function shouldAffixBeVisible() {
-    return location.pathname === ROUTES.home && selectedImages?.length >= 1 && isProcessing === false;
-  }
-
   useEffect(() => {
     if (ExtensionsService.requiresCommandReload(event) === true) {
       void ExtensionsService.fetchAll().then(() => {
@@ -53,6 +55,13 @@ export default function SelectedImagesAffix() {
       })
     }
   }, [event]);
+
+  useEffect(() => {
+    const latestAction = StorageService.getSelectedImagesAffixAction();
+    if (latestAction) {
+      setSelectedAction(latestAction);
+    }
+  }, []);
 
   const synchronizeAction = "synchronize";
   const deleteAction = "delete";
@@ -66,13 +75,13 @@ export default function SelectedImagesAffix() {
             value: synchronizeAction,
             label: t("commands.synchronize"),
             subLabel: t("commands.allExtensionsDetails"),
-            icon: <IconRefresh style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />
+            icon: computeIcon("synchronize")
           },
           {
             value: deleteAction,
             label: t("commands.delete"),
             subLabel: t("commands.noExtensionDetails"),
-            icon: <IconTrash color="red" style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />
+            icon: computeIcon("delete")
           }
         ]
       },
@@ -88,12 +97,32 @@ export default function SelectedImagesAffix() {
     ];
   }
 
-  function computeSelectRenderOption(item: ComboboxLikeRenderOptionInput<ComboboxItem & (
-    { manifest: Manifest, command: UiCommandType } | { subLabel: string, icon: ReactElement })>) {
+  type SelectRenderOptionType = ComboboxLikeRenderOptionInput<ComboboxItem & ({ manifest: Manifest, command: UiCommandType } | {
+    subLabel: string,
+    icon: ReactElement
+  })>;
+
+  function computeSelectRenderOption(item: SelectRenderOptionType) {
     return "manifest" in item.option ?  (<ImageMenuSelectCommandEntry manifest={item.option.manifest} command={item.option.command} />): (<ImageMenuSelectEntry icon={item.option.icon} label={item.option.label} subLabel={item.option.subLabel}/>);
   }
 
+  function computeLeftSection() {
+    if (selectedAction === undefined) {
+      return undefined;
+    }
+    if (selectedAction === synchronizeAction) {
+      return computeIcon("synchronize");
+    }
+    else if (selectedAction === deleteAction) {
+      return computeIcon("delete");
+    }
+    const [, extensionId] = selectedAction.split(commandSeparator);
+    return <ExtensionIcon idOrExtension={extensionId} size="sm" />
+  }
+
   function handleOnApplyAction() {
+    StorageService.setSelectedImagesAffixAction(selectedAction);
+
     const imageIds = selectedImages.map((image) => image.id);
 
     if (selectedAction === synchronizeAction) {
@@ -125,6 +154,11 @@ export default function SelectedImagesAffix() {
       }
     });
   }
+
+  function shouldAffixBeVisible() {
+    return location.pathname === ROUTES.home && selectedImages?.length >= 1 && isProcessing === false;
+  }
+
 
   return (
     <Affix className={style.container} classNames={{ root: style.root }}>
@@ -171,7 +205,6 @@ export default function SelectedImagesAffix() {
                     {t("selectedImagesAffix.buttonUnselectAll")}
                   </Text>
                 </Flex>
-
                 <Divider mb="sm" />
                 <div ref={imagesContainerRef} className={style.affixThumbnailGrid}>
                   <ImageMasonry
@@ -190,6 +223,7 @@ export default function SelectedImagesAffix() {
                   style={{ flex: 1 }}
                   onChange={(value) => setSelectedAction(value)}
                   value={selectedAction}
+                  leftSection={computeLeftSection()}
                   placeholder={t("selectedImagesAffix.selectPlaceholder")}
                   label={t("selectedImagesAffix.selectLabel")}
                   data={computeSelectData()}
