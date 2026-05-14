@@ -131,17 +131,15 @@ export function ImagesNavbarLink({ icon, label, route }: NavbarLinkType) {
   return (
     <Menu trigger="hover" position="right-start" withArrow opened={opened} onChange={setOpened} offset={12} closeDelay={400}>
       <Menu.Target>
-        <div style={{ display: 'flex' }}>
-          <Tooltip label={label} position="right" disabled={opened}>
-            <UnstyledButton
-              onClick={navigateAndSetExplore}
-              className={style.iconLink}
-              data-active={pathname === route || undefined}
-            >
-              {icon}
-            </UnstyledButton>
-          </Tooltip>
-        </div>
+        <Tooltip label={label} position="right" disabled={opened}>
+          <UnstyledButton
+            onClick={navigateAndSetExplore}
+            className={style.iconLink}
+            data-active={pathname === route || undefined}
+          >
+            {icon}
+          </UnstyledButton>
+        </Tooltip>
       </Menu.Target>
 
       <Menu.Dropdown onMouseEnter={() => setOpened(true)} onMouseLeave={() => setOpened(false)}>

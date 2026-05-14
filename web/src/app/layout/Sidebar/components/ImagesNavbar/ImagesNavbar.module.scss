@@ -1,6 +1,6 @@
 .iconLink {
-  width: 37px;
-  height: 37px;
+  width: $left-sidebar-width - 35px;
+  height: $left-sidebar-width - 35px;
   border-radius: var(--mantine-radius-md);
   display: flex;
   align-items: center;

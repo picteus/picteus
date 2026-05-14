@@ -1,5 +1,5 @@
 import React, { ReactNode, useCallback, useRef } from "react";
-import { ActionIcon, Flex, HoverCard } from "@mantine/core";
+import { ActionIcon, Flex, HoverCard, Indicator } from "@mantine/core";
 import { IconPhoto } from "@tabler/icons-react";
 
 import { Sidebar } from "app/layout";
@@ -7,10 +7,12 @@ import { BottomBar, Common, GeneralCommands, NotificationToolbar } from "app/com
 import { IntentCenter, Modals, NotificationCenter, SelectedImages } from "./components";
 
 import style from "./Layout.module.scss";
+import { useImagesSelectedContext } from "../../context";
 
 
 export default function Layout({ children }: { children: ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { selectedImages} = useImagesSelectedContext();
   const contextualComponents = useCallback(() => {
     return (
       <>
@@ -33,7 +35,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className={style.rightSidebar}>
           <Flex gap={12} direction="column">
             <NotificationToolbar />
-            <GeneralCommands />
             <HoverCard
               withinPortal={false}
               position="left"
@@ -44,14 +45,17 @@ export default function Layout({ children }: { children: ReactNode }) {
               closeDelay={300}
             >
               <HoverCard.Target>
-                <ActionIcon size="md">
-                  <IconPhoto stroke={Common.IconStrokeSize} />
-                </ActionIcon>
+                <Indicator inline color="orange" label={selectedImages.length} size={16}>
+                  <ActionIcon variant="outline" size="md">
+                    <IconPhoto stroke={Common.IconStrokeSize} />
+                  </ActionIcon>
+                </Indicator>
               </HoverCard.Target>
               <HoverCard.Dropdown>
                 <SelectedImages onProcessing={()=>{}}/>
               </HoverCard.Dropdown>
             </HoverCard>
+            <GeneralCommands />
           </Flex>
         </div>
       </div>

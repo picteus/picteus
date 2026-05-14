@@ -5,3 +5,12 @@
   height : 100%;
   position: fixed;
 }
+
+.wrapper {
+  height: 100%;
+}
+
+.additional {
+  overflow-y: auto;
+  width: $left-sidebar-width - 30px;
+}

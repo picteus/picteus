@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import React, { useEffect, useMemo, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
-import { Stack } from "@mantine/core";
+import { Divider, ScrollArea, Stack } from "@mantine/core";
 import {
   IconActivity,
   IconAdjustmentsHorizontal,
@@ -133,9 +133,16 @@ export default function Sidebar() {
 
   return (
     <nav className={style.container}>
-      <Stack justify="center" gap={15}>
-        {mainElements}
-        {additionalElements}
+      <Stack gap={15} align="stretch" className={style.wrapper}>
+        <Stack gap={15}>
+          {mainElements}
+        </Stack>
+        <Divider />
+        <ScrollArea flex={1} scrollbarSize={5} scrollbars="y" className={style.additional}>
+          <Stack gap={15} justify="start">
+            {additionalElements}
+          </Stack>
+        </ScrollArea>
         <NavbarLink
           icon={<IconAdjustmentsHorizontal {...commonIconStyle} />}
           label={t("menu.settings")}

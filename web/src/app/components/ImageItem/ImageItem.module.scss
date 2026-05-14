@@ -12,7 +12,7 @@
     width: 100%;
     height: 100%;
     background : rgba(0, 0, 0, 0.2);
-    border-radius: $image-item-radius;
+    border-radius: $image-radius;
     opacity: 0;
     transition: opacity 200ms;
   }
@@ -29,7 +29,7 @@
   width: 100%;
   object-fit: cover;
   object-position: center;
-  border-radius: $image-item-radius ;
+  border-radius: $image-radius ;
   transition: opacity 0.2s ease-out, transform 0.2s ease-out,transform 0.3s, box-shadow 0.3s;
 }
 .image.notLoaded {
@@ -45,7 +45,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: $image-item-radius;
+  border-radius: $image-radius;
   background-color: #f0f0f0;
   background-image: linear-gradient(to right, #f0f0f0 0%, #e0e0e0 20%, #f0f0f0 40%, #f0f0f0 100%);
   background-size: 200% 100%;

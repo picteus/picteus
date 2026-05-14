@@ -1,5 +1,4 @@
 import React, { ReactElement, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Box,
   Button,
@@ -11,6 +10,8 @@ import {
   Stack,
   Text
 } from "@mantine/core";
+import { useElementSize } from "@mantine/hooks";
+import { useTranslation } from "react-i18next";
 
 import { CommandEntity, Manifest } from "@picteus/ws-client";
 
@@ -40,6 +41,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
   const [t] = useTranslation();
   const confirmAction = useConfirmAction();
   const imagesContainerRef = useRef<HTMLDivElement>(null);
+  const { ref: containerRef, height: containerHeight } = useElementSize();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const { selectedImages, clearSelectedImages} = useImagesSelectedContext();
@@ -152,7 +154,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
     });
   }
 
-  return (<Stack align="stretch" justify="space-between" gap={10} className={style.container}>
+  return (<Stack ref={containerRef} align="stretch" justify="space-between" gap={10} className={style.container}>
       <Box ref={imagesContainerRef} flex={1} className={style.images}>
         <ImageMasonry
           imageSize={100}
@@ -194,7 +196,8 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
             label={t("selectedImagesAffix.selectLabel")}
             data={computeSelectData()}
             renderOption={computeSelectRenderOption}
-            maxDropdownHeight={350}
+            maxDropdownHeight={containerHeight - 50}
+            comboboxProps={{ withinPortal: false, position: "top" }}
           />
           <Button
             disabled={!selectedAction || selectedImages.length === 0}
