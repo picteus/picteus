@@ -1,11 +1,12 @@
 import React from "react";
-import { ActionIcon, Button, Group, Menu, Stack, Text } from "@mantine/core";
-import { IconChevronDown, IconX } from "@tabler/icons-react";
+import { ActionIcon, Button, Group, Menu, Stack, Text, Tooltip } from "@mantine/core";
+import { IconChevronDown, IconSquare, IconSquareCheck, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Image } from "@picteus/ws-client";
 
 import { ViewMode } from "types";
+import { useImagesSelectedContext } from "app/context";
 import { CopyText, ExternalLink, ImageItemMenu, TopPanel } from "app/components";
 import { ImageDimensions, ImageRatio, ImageWeight } from "../index.ts";
 
@@ -20,12 +21,14 @@ type ImageTopType = {
 
 export default function ImageTop({ image, viewMode, onClose }: ImageTopType) {
   const [t] = useTranslation();
+  const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
+  const isSelected = isSelectedImage(image);
 
   return (<TopPanel
       info={<>
         <div className={style.titleBox}>
           <Stack className={style.title} gap={3}>
-            <CopyText value={image.name} inline={true} >
+            <CopyText value={image.name} inline={true}>
               <Text size="md" truncate="end">{image.name}</Text>
             </CopyText>
             <Text c="dimmed" size="sm">
@@ -61,9 +64,21 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType) {
               {t("menu.imageCommands")}
             </Button>
           </Menu.Target>
-          <ImageItemMenu image={image} viewMode={viewMode}/>
+          <ImageItemMenu image={image} viewMode={viewMode} />
         </Menu>
         <ExternalLink url={image.url} type="button" />
+        <Tooltip
+          label={t(`button.${isSelected ? "removeFromSelection" : "addToSelection"}`)}
+          position="bottom"
+        >
+          <Button
+            variant="default"
+            leftSection={isSelected ? <IconSquareCheck size={16} /> : <IconSquare size={16} />}
+            onClick={() => toggleSelectedImage(image)}
+          >
+            {t(`button.${isSelected ? "remove" : "add"}`)}
+          </Button>
+        </Tooltip>
       </Group>}
     />
   );

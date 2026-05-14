@@ -32,7 +32,7 @@ export default function ExternalLink({
   }
 
   if (type === "action") {
-    return (<Tooltip label={t("button.externalLinkOpen")}>
+    return (<Tooltip label={t("button.externalLinkOpen")} position="bottom">
       <ActionIcon
         variant="default"
         onClick={handleOnClick}
@@ -42,12 +42,14 @@ export default function ExternalLink({
     </Tooltip>);
   }
   else if (type === "button") {
-    return (<Button
-        leftSection={<IconExternalLink size={16} />}
-        onClick={handleOnClick}
-      >
-        {t("button.externalLinkOpen")}
-      </Button>
+    return (<Tooltip label={t("button.externalLinkOpen")} position="bottom">
+        <Button
+          leftSection={<IconExternalLink size={16} />}
+          onClick={handleOnClick}
+        >
+          {t("button.open")}
+        </Button>
+      </Tooltip>
     );
   }
   else {

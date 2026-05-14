@@ -100,12 +100,13 @@ export default {
   },
   button: {
     add: "Add",
+    remove: "Remove",
     edit: "Edit",
     find: "Find",
     open: "Open",
     copy: "Copy",
     copied: "Copied",
-    externalLinkOpen: "Open",
+    externalLinkOpen: "Show on filesystem",
     clearAll: "Clear all",
     synchronize: "Synchronize",
     delete: "Delete",
@@ -121,7 +122,9 @@ export default {
     settings: "Settings",
     cancel: "Cancel",
     refresh: "Refresh",
-    pin: "Pin"
+    pin: "Pin",
+    addToSelection: "Add to selection",
+    removeFromSelection: "Remove from selection",
   },
   widgets:
     {
