@@ -1,0 +1,89 @@
+import React, { useEffect, useState, useSyncExternalStore } from "react";
+import { ActionIcon, Flex, HoverCard, Text } from "@mantine/core";
+import { IconBell, IconBellZ } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
+
+import { EventInformationType } from "types";
+import { generateRandomId } from "utils";
+import { useEventSocket } from "app/context";
+import { EventService } from "app/services";
+import { Common, Notification } from "app/components";
+
+
+export default function NotificationToolbar() {
+  const [t] = useTranslation();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const [events, setEvents] = useState<EventInformationType[]>([]);
+  const [seed, setSeed] = useState(generateRandomId);
+
+  async function handleOnClearAll() {
+    await EventService.markAllNotificationsAsSeen();
+    setSeed(generateRandomId);
+  }
+  async function load() {
+    const _events = await EventService.getEventsFromIndexedDB();
+    setEvents(_events.filter((event) => event.notification?.seen === false));
+  }
+
+  useEffect(() => {
+    void load();
+  }, [event, seed]);
+
+  return (<HoverCard
+    withinPortal={true}
+    position="left"
+    shadow="lg"
+    withArrow
+    arrowSize={Common.ArrowSize}
+    offset={Common.RightSideBarOffset}
+    closeDelay={Common.HoverCloseDelayInMilliseconds}
+    width={350}
+  >
+    <HoverCard.Target>
+      <ActionIcon variant="outline" size="md">
+        <IconBell stroke={Common.IconStrokeSize} />
+      </ActionIcon>
+    </HoverCard.Target>
+    <HoverCard.Dropdown>
+      {events?.length === 0 ? (
+        <Flex align="center" justify="center" direction="column" p="md">
+          <IconBellZ stroke={1} color="grey" size={38} />
+          <Text c="dimmed" size={"sm"} mt="sm">
+            {t("notifications.noNotifications")}
+          </Text>
+        </Flex>
+      ) : (
+        <>
+          <Flex mr="sm" align="flex-end" justify="flex-end">
+            <Text
+              style={{ cursor: "pointer" }}
+              c="dimmed"
+              td={"underline"}
+              size={"sm"}
+              onClick={handleOnClearAll}
+            >
+              {t("button.clearAll")}
+            </Text>
+          </Flex>
+          {events.map((event, index) => (
+            <div
+              key={
+                "inline-notification-" +
+                index +
+                "-" +
+                event.rawData.milliseconds
+              }
+            >
+              <Notification
+                onClose={() => setSeed(generateRandomId)}
+                event={event}
+                withTime={true}
+              />
+            </div>
+          ))}
+        </>
+      )}
+    </HoverCard.Dropdown>
+  </HoverCard>);
+}

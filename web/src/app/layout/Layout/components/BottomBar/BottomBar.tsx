@@ -7,7 +7,7 @@ import { ROUTES } from "utils";
 import { useContainerDimensions } from "app/hooks";
 import { Common } from "app/components";
 import { EventInformation } from "./components";
-import { NavbarLink } from "../../layout/Sidebar/components";
+import { NavbarLink } from "../../../Sidebar/components";
 
 import style from "./BottomBar.module.scss";
 

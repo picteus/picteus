@@ -7,7 +7,6 @@ export { default as RjsfForm, extractSchemaAndUiSchema } from "./RjsfForm/RjsfFo
 export { default as CodeViewer } from "./CodeViewer/CodeViewer.tsx";
 export { default as ExternalLink } from "./ExternalLink/ExternalLink.tsx";
 export { default as EmptyResults } from "./EmptyResults/EmptyResults.tsx";
-export { default as BottomBar } from "./BottomBar/BottomBar.tsx";
 export { default as ImagesView } from "./ImagesView/ImagesView.tsx";
 export { default as CommandForm } from "./CommandForm/CommandForm.tsx";
 export { computeIcon, MenuItemEntry, ImageMenuSelectEntry, ImageMenuSelectCommandEntry } from "./ActionEntry/ActionEntry.tsx";
@@ -23,8 +22,6 @@ export { default as FilterSelect } from "./FilterSelect/FilterSelect.tsx";
 export { default as Notification } from "./Notification/Notification.tsx";
 export { default as RefreshButton } from "./RefreshButton/RefreshButton.tsx";
 export { default as DialogForm } from "./DialogForm/DialogForm.tsx";
-export { default as GeneralCommands } from "./GeneralCommands/GeneralCommands.tsx";
-export { default as NotificationToolbar } from "./NotificationToolbar/NotificationToolbar.tsx";
 export { default as CopyText } from "./CopyText/CopyText.tsx";
 export { default as Markdown } from "./Markdown/Markdown.tsx";
 export { default as ExtensionIcon } from "./ExtensionIcon/ExtensionIcon.tsx";

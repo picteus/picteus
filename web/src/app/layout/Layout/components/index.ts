@@ -1,5 +1,9 @@
 export { default as SelectedImagesAffix } from "./SelectedImagesAffix/SelectedImagesAffix.tsx";
 export { default as SelectedImages } from "./SelectedImages/SelectedImages.tsx";
+export { default as SelectedImagesHover } from "./SelectedImagesHover/SelectedImagesHover.tsx";
+export { default as BottomBar } from "./BottomBar/BottomBar.tsx";
 export { default as NotificationCenter } from "./NotificationCenter/NotificationCenter.tsx";
+export { default as NotificationToolbar } from "./NotificationToolbar/NotificationToolbar.tsx";
 export { default as IntentCenter } from "./IntentCenter/IntentCenter.tsx";
+export { default as GeneralCommands } from "./GeneralCommands/GeneralCommands.tsx";
 export { default as Modals } from "./Modals/Modals.tsx";

@@ -1,18 +1,22 @@
 import React, { ReactNode, useCallback, useRef } from "react";
-import { ActionIcon, Flex, HoverCard, Indicator } from "@mantine/core";
-import { IconPhoto } from "@tabler/icons-react";
+import { Flex } from "@mantine/core";
 
 import { Sidebar } from "app/layout";
-import { BottomBar, Common, GeneralCommands, NotificationToolbar } from "app/components";
-import { IntentCenter, Modals, NotificationCenter, SelectedImages } from "./components";
+import {
+  BottomBar,
+  GeneralCommands,
+  IntentCenter,
+  Modals,
+  NotificationCenter,
+  NotificationToolbar
+} from "./components";
+import { SelectedImagesHover } from "./components/index.ts";
 
 import style from "./Layout.module.scss";
-import { useImagesSelectedContext } from "../../context";
 
 
 export default function Layout({ children }: { children: ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { selectedImages} = useImagesSelectedContext();
   const contextualComponents = useCallback(() => {
     return (
       <>
@@ -33,28 +37,9 @@ export default function Layout({ children }: { children: ReactNode }) {
           <BottomBar containerRef={containerRef} />
         </div>
         <div className={style.rightSidebar}>
-          <Flex gap={12} direction="column">
+          <Flex gap={20} direction="column">
             <NotificationToolbar />
-            <HoverCard
-              withinPortal={false}
-              position="left"
-              shadow="lg"
-              withArrow
-              arrowSize={15}
-              offset={15}
-              closeDelay={300}
-            >
-              <HoverCard.Target>
-                <Indicator inline color="orange" label={selectedImages.length} size={16}>
-                  <ActionIcon variant="outline" size="md">
-                    <IconPhoto stroke={Common.IconStrokeSize} />
-                  </ActionIcon>
-                </Indicator>
-              </HoverCard.Target>
-              <HoverCard.Dropdown>
-                <SelectedImages onProcessing={()=>{}}/>
-              </HoverCard.Dropdown>
-            </HoverCard>
+            <SelectedImagesHover/>
             <GeneralCommands />
           </Flex>
         </div>

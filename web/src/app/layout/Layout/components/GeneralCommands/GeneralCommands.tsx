@@ -110,14 +110,15 @@ export default function GeneralCommands() {
 
   return (
     <Menu
-      withinPortal={false}
-      position="left-start"
-      offset={12}
+      withinPortal={true}
+      position="left"
       withArrow
+      arrowSize={Common.ArrowSize}
+      offset={Common.RightSideBarOffset}
       trigger="hover"
       trapFocus={false}
       openDelay={80}
-      closeDelay={200}
+      closeDelay={Common.HoverCloseDelayInMilliseconds}
       shadow="md"
       width={350}
     >
