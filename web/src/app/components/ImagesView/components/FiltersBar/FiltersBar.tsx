@@ -1,6 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ActionIcon, Flex, Group, MantineSize, Pill, Popover, Stack, TextInput, Tooltip } from "@mantine/core";
-import { IconFilter, IconSearch, IconX } from "@tabler/icons-react";
+import {
+  ActionIcon,
+  CloseButton,
+  Flex,
+  Group,
+  MantineSize,
+  Pill,
+  Popover,
+  Stack,
+  TextInput,
+  Tooltip
+} from "@mantine/core";
+import { IconFilter, IconSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Collection, Repository, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
@@ -109,22 +120,14 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
       <Flex gap={10} align="center">
         <TextInput
           defaultValue={localFilters?.keyword}
+          value={searchText}
           leftSectionPointerEvents="none"
           leftSection={<IconSearch stroke={1.5} />}
-          rightSection={
-            <ActionIcon
-              onClick={() => setSearchText("")}
-              size="xs"
-              variant="transparent"
-              c="dimmed"
-            >
-              <IconX stroke={1.5} />
-            </ActionIcon>
-          }
+          rightSection={<CloseButton size="xs" variant="transparent" c="dimmed" onClick={() => setSearchText("")} />}
           placeholder={t("field.search")}
           className={style.textSearch}
+          classNames={{ section: style.section }}
           onChange={(event) => setSearchText(event.target.value)}
-          value={searchText}
         />
         <Popover
           width={500}
@@ -137,11 +140,9 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
           <Popover.Target>
             <Tooltip label={t("filters.title")}>
               <ActionIcon
-                onClick={() =>
-                  popoverOpened ? setPopoverOpened(false) : setPopoverOpened(true)
-                }
                 size="lg"
                 variant="default"
+                onClick={() => popoverOpened ? setPopoverOpened(false) : setPopoverOpened(true)}
               >
                 <IconFilter stroke={1.3} />
               </ActionIcon>

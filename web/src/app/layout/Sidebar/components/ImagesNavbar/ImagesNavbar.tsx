@@ -1,4 +1,4 @@
-import React, { ChangeEvent, ReactNode, useState } from "react";
+import React, { ChangeEvent, ReactNode, useCallback, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ActionIcon, Input, Menu, Tooltip, UnstyledButton } from "@mantine/core";
 import { IconExternalLink, IconPhoto, IconX } from "@tabler/icons-react";
@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { TabsType } from "types";
 import { useImagesTabsContext } from "app/context";
-import { ExtensionIcon } from "app/components";
+import { Common, ExtensionIcon } from "app/components";
 
 import style from "./ImagesNavbar.module.scss";
 
@@ -21,25 +21,34 @@ interface NavbarLinkType {
 
 export function NavbarLink({ icon, externalLink, label, route, onClick }: NavbarLinkType) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const handleOnClick = useCallback(() => {
+    if (onClick) {
+      onClick();
+    }
+    else {
+      navigate(route);
+    }
+  }, [onClick]);
+
   return (
     <Tooltip label={label} position="right">
       <UnstyledButton
-        onClick={onClick}
+        onClick={handleOnClick}
         className={style.iconLink}
+        size="md"
         data-active={pathname === route || undefined}
       >
         {icon}
-        {externalLink === true && <IconExternalLink
-          className={style.externalLinkIcon}
-          stroke={1.5}
-          size={14}
-        />}
+        {externalLink === true && <IconExternalLink className={style.externalLinkIcon} stroke={Common.IconStrokeSize} size={14} />}
       </UnstyledButton>
     </Tooltip>
   );
 }
 
-function ImagesNavbarMenuItem({ tab, onRemove, isActive, onClick }: { tab: TabsType, onRemove: () => void, isActive: boolean, onClick: () => void }) {
+type ImagesNavbarMenuItemType = { tab: TabsType, onRemove: () => void, isActive: boolean, onClick: () => void };
+
+function ImagesNavbarMenuItem({ tab, onRemove, isActive, onClick }: ImagesNavbarMenuItemType) {
   const [isEditing, setIsEditing] = useState(false);
   const [tabLabel, setTabLabel] = useState(tab.content.title);
   const { state } = useImagesTabsContext();
@@ -97,7 +106,13 @@ function ImagesNavbarMenuItem({ tab, onRemove, isActive, onClick }: { tab: TabsT
   );
 }
 
-export function ImagesNavbarLink({ icon, label, route }: NavbarLinkType) {
+interface ImagesNavbarLinkType {
+  icon: ReactNode;
+  label: string;
+  route: string;
+}
+
+export function ImagesNavbarLink({ icon, label, route }: ImagesNavbarLinkType) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { tabs, removeTab, state, mainTabValue } = useImagesTabsContext();

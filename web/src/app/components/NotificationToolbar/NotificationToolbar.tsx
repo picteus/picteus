@@ -4,11 +4,13 @@ import { IconBell, IconBellZ } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { EventInformationType } from "types";
+import { generateRandomId } from "utils";
 import { useEventSocket } from "app/context";
 import { EventService } from "app/services";
-import { Notification } from "app/components";
-import { generateRandomId } from "utils";
+import { Common, Notification } from "app/components";
+
 import style from "./NotificationToolbar.module.scss";
+
 
 export default function NotificationToolbar() {
   const [t] = useTranslation();
@@ -47,7 +49,7 @@ export default function NotificationToolbar() {
     >
       <Menu.Target>
         <ActionIcon variant="default" size="md">
-          <IconBell stroke={1.2} />
+          <IconBell stroke={Common.IconStrokeSize} />
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown className={style.dropdownContainer}>

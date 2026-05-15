@@ -1,9 +1,10 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ActionIcon, Box, Flex, Title } from "@mantine/core";
+import { ActionIcon, Box, CloseButton, Flex, Title } from "@mantine/core";
 import { useFocusTrap } from "@mantine/hooks";
-import { IconArrowLeft, IconX } from "@tabler/icons-react";
+import { IconArrowLeft } from "@tabler/icons-react";
 
 import { ActionModalValue } from "types";
+import { useKey } from "app/hooks";
 
 import style from "./StackNavigator.module.scss";
 
@@ -65,9 +66,7 @@ function StackedElement({ stackedComponent, visible, pop }: StackedElementType) 
             {stackedComponent.title}
           </Title>
         )}
-        <ActionIcon variant="default" onClick={pop}>
-          <IconX stroke={1.2} size={50} />
-        </ActionIcon>
+        <CloseButton size="lg" variant="subtle" onClick={pop} />
       </Flex>}
       <Box flex={1} className={style.componentWrapper}>
         {stackedComponent.component}
@@ -104,17 +103,11 @@ export default function StackNavigator ({ children }: StackNavigatorType) {
     });
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && stack.length > 0 && stack[stack.length - 1].closeOnEscape !== false) {
-        pop();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [pop, stack]);
+  useKey("Escape", () => {
+    if (stack.length > 0 && stack[stack.length - 1].closeOnEscape !== false) {
+      pop();
+    }
+  });
 
   const popToRoot = useCallback(() => {
     setStack([]);

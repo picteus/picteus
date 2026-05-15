@@ -1,6 +1,6 @@
 import React from "react";
-import { ActionIcon, Button, Group, Menu, Stack, Text, Tooltip } from "@mantine/core";
-import { IconChevronDown, IconSquare, IconSquareCheck, IconX } from "@tabler/icons-react";
+import { Button, CloseButton, Group, Menu, Stack, Text, Tooltip } from "@mantine/core";
+import { IconChevronDown, IconSquare, IconSquareCheck } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Image } from "@picteus/ws-client";
@@ -41,9 +41,7 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType) {
             </CopyText>
           </Stack>
         </div>
-        <ActionIcon variant="default" onClick={onClose}>
-          <IconX stroke={1.2} size={50} />
-        </ActionIcon>
+        <CloseButton size="lg" variant="subtle" onClick={onClose} />
       </>}
       actions={<Group>
         <Menu

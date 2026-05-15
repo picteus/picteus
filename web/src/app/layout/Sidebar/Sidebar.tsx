@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
 import { Divider, ScrollArea, Stack } from "@mantine/core";
 import {
-  IconActivity,
   IconAdjustmentsHorizontal,
   IconBox,
   IconFolderOpen,
@@ -44,21 +43,13 @@ export default function Sidebar() {
   }, [event]);
   const { isAvailable } = useCommandSocket();
 
-  const iconEdge = 20;
-  const commonIconStyle = useMemo(
-    () => ({
-      width: iconEdge,
-      height: iconEdge,
-      stroke: Common.IconStrokeSize
-    }), []
-  );
+  const commonIconStyle = useMemo(() => ({ stroke: Common.IconStrokeSize }), []);
 
   const mainElementData = [
     { route: ROUTES.home, label: "images", icon: <IconPhotoMinus {...commonIconStyle} /> },
     { route: ROUTES.repositories, label: "repositories", icon: <IconFolderOpen {...commonIconStyle} /> },
     { route: ROUTES.collections, label: "collections", icon: <IconLibraryPhoto {...commonIconStyle} /> },
     { route: ROUTES.extensions, label: "extensions", icon: <IconBox {...commonIconStyle} /> },
-    { route: ROUTES.activity, label: "activity", icon: <IconActivity {...commonIconStyle} /> },
     // { route: ROUTES.test, label: "test", icon: <IconFlask2 {...commonIconStyle} /> }
   ];
 
@@ -77,9 +68,8 @@ export default function Sidebar() {
       <NavbarLink
         key={element.route}
         icon={element.icon}
-        label={t("menu." + element.label)}
+        label={t(`menu.${element.label}`)}
         route={element.route}
-        onClick={() => navigate(element.route)}
       />
     );
   })), [mainElementData]);
@@ -90,7 +80,7 @@ export default function Sidebar() {
       return (
         // TODO: handle the case of the closeable items
         <NavbarLink
-          key={`navbarLink-${element.uuid}`}
+          key={element.uuid}
           icon={<ExtensionIcon idOrExtension={element.extensionId} url={computeResourceTypeUrl(element.icon)} size="md" />}
           externalLink={element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === true}
           label={element.title}
@@ -147,7 +137,6 @@ export default function Sidebar() {
           icon={<IconAdjustmentsHorizontal {...commonIconStyle} />}
           label={t("menu.settings")}
           route={ROUTES.settings}
-          onClick={() => navigate(ROUTES.settings)}
         />
       </Stack>
     </nav>
