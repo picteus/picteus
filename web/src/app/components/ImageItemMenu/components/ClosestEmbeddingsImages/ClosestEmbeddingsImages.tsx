@@ -111,7 +111,7 @@ export default function ClosestEmbeddingsImages({  extensionId, image, viewMode}
       viewData={{ viewMode, images }}
       isDefault={false}
       onEmptyResults={() => (<EmptyResults
-        icon={<IconPhotoSearch size={140} stroke={1} />}
+        icon={IconPhotoSearch}
         description={t("emptyImages.description")}
         title={t("emptyImages.title")}
       />)}

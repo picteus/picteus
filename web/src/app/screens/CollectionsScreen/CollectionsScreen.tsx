@@ -109,7 +109,7 @@ export default function CollectionsScreen() {
     return <StandardTable head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", ""]}
                           loading={loading}
                           emptyResults={<EmptyResults
-                            icon={<IconListSearch size={140} stroke={1} />}
+                            icon={IconListSearch}
                             description={t("emptyCollections.description")}
                             title={t("emptyCollections.title")}
                             buttonText={t("emptyCollections.buttonText")}

@@ -11,6 +11,7 @@ import {
   Text
 } from "@mantine/core";
 import { useElementSize } from "@mantine/hooks";
+import { IconPhotoOff } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { CommandEntity, Manifest } from "@picteus/ws-client";
@@ -22,6 +23,7 @@ import { useConfirmAction, useExtensionCommand } from "app/hooks";
 import { ExtensionsService, ImageService, StorageService } from "app/services";
 import {
   computeIcon,
+  EmptyResults,
   ExtensionIcon,
   ImageMasonry,
   ImageMenuSelectCommandEntry,
@@ -156,14 +158,22 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
 
   return (<Stack ref={containerRef} align="stretch" justify="space-between" gap={10} className={style.container}>
       <Box ref={imagesContainerRef} flex={1} className={style.images}>
-        <ImageMasonry
-          imageSize={100}
-          images={selectedImages}
-          loadMore={() => {
-          }}
-          containerRef={imagesContainerRef}
-          imageItemMode={ImageItemMode.SELECT}
-        />
+        {selectedImages.length === 0 ? (
+          <EmptyResults
+            icon={IconPhotoOff}
+            title={t("emptySelectedImages.title")}
+            description={t("emptySelectedImages.description")}
+          />
+        ) : (
+          <ImageMasonry
+            imageSize={100}
+            images={selectedImages}
+            loadMore={() => {
+            }}
+            containerRef={imagesContainerRef}
+            imageItemMode={ImageItemMode.SELECT}
+          />
+        )}
       </Box>
       <Stack gap={5} >
         <Divider />

@@ -1,12 +1,12 @@
-import React, { ReactElement } from "react";
+import React from "react";
 import { Button, Center, Group, Stack, Text, Title } from "@mantine/core";
-import { IconZoomQuestion } from "@tabler/icons-react";
-import i18n from "i18next";
+import { IconProps } from "@tabler/icons-react";
 
 import style from "./EmptyResults.module.scss";
 
+
 type EmptyResultsType = {
-  icon: ReactElement;
+  icon: React.ForwardRefExoticComponent<IconProps & React.RefAttributes<SVGSVGElement>>;
   title: string;
   description: string;
   buttonText?: string;
@@ -14,16 +14,18 @@ type EmptyResultsType = {
 };
 
 export default function EmptyResults({
-  icon = <IconZoomQuestion size={140} stroke={1} />,
-  title = i18n.t("emptyResults.title"),
-  description = i18n.t("emptyResults.description"),
-  buttonText = i18n.t("emptyResults.buttonText"),
+  icon,
+  title,
+  description,
+  buttonText,
   buttonAction,
 }: EmptyResultsType) {
   return (
     <Center className={style.container}>
       <Stack gap="xl">
-        <Center> {React.cloneElement(icon, { className: style.icon })}</Center>
+        <Center>
+          {React.createElement(icon, { size: 140, stroke: 1, className: style.icon })}
+        </Center>
         <Title>{title}</Title>
         <Text c="dimmed" size="lg" ta="center">
           {description}

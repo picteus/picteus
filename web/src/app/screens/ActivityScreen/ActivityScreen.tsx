@@ -10,6 +10,8 @@ import { EventService, StorageService } from "app/services";
 import { Container, EmptyResults, StandardTable } from "app/components";
 
 
+const BATCH_SIZE = 20;
+
 const channelEnum = Object.values(ChannelEnum).map((channel) => ({
   value: channel,
   label: channel,
@@ -22,27 +24,16 @@ type EventsTableDisplayType = {
   description: string;
   payload: JsonType;
 };
-const BATCH_SIZE = 20;
+
 export default function ActivityScreen() {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
   const [events, setEvents] = useState<EventsTableDisplayType[]>([]);
   const [searchValue, setSearchValue] = useState<string>("");
-
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    take: BATCH_SIZE,
-  });
-
+  const [pagination, setPagination] = useState({ currentPage: 1, take: BATCH_SIZE });
   const [searchField, setSearchField] = useState<string>("channel");
-  const [activeFilters, setActiveFilters] = useState<
-    Array<{
-      field: string;
-      value: string;
-    }>
-  >(StorageService.getActivityFilters() || []);
-
+  const [activeFilters, setActiveFilters] = useState<Array<{ field: string; value: string; }>>(StorageService.getActivityFilters() || []);
   const searchFieldData = [
     { value: "channel", label: t("field.channel") },
     { value: "logLevel", label: t("field.logLevel") },
@@ -83,9 +74,7 @@ export default function ActivityScreen() {
     </Table.Tr>
   ));
 
-  function transformEventsForTable(
-    events: EventInformationType[],
-  ): EventsTableDisplayType[] {
+  function transformEventsForTable(events: EventInformationType[]): EventsTableDisplayType[] {
     return events.map((event) => {
       return {
         date: event.log.date,
@@ -98,11 +87,8 @@ export default function ActivityScreen() {
   }
 
   async function load() {
-    const events: EventInformationType[] =
-      await EventService.getEventsFromIndexedDB();
-
+    const events: EventInformationType[] = await EventService.getEventsFromIndexedDB();
     let eventsTable: EventsTableDisplayType[] = transformEventsForTable(events);
-
     if (activeFilters?.length) {
       eventsTable = eventsTable.filter((event) => {
         return activeFilters.every((filter) => {
@@ -167,7 +153,7 @@ export default function ActivityScreen() {
         onPaginationChange: handleOnPaginationChange
       }}
       emptyResults={<EmptyResults
-        icon={<IconActivity size={140} stroke={1} />}
+        icon={IconActivity}
         description={t("activityScreen.emptyActivity.description")}
         title={t("activityScreen.emptyActivity.title")}
       />}>

@@ -124,18 +124,12 @@ export default {
     refresh: "Refresh",
     pin: "Pin",
     addToSelection: "Add to selection",
-    removeFromSelection: "Remove from selection",
+    removeFromSelection: "Remove from selection"
   },
-  widgets:
-    {
-      collectionPlaceHolder: "Select a collection",
-      repositoryPlaceHolder: "Select a repository",
-      tagsPlaceHolder: "Select tags"
-    },
-  emptyResults: {
-    title: "No Results Available",
-    description: "There are currently no results",
-    buttonText: "Reload"
+  widgets: {
+    collectionPlaceHolder: "Select a collection",
+    repositoryPlaceHolder: "Select a repository",
+    tagsPlaceHolder: "Select tags"
   },
   emptyImages: {
     title: "No Images available",
@@ -146,6 +140,10 @@ export default {
     descriptionNoData:
       "There is no more image in the collection or in the initial set.",
     buttonTextNoRepository: "Manage repositories"
+  },
+  emptySelectedImages: {
+    title: "No images selected",
+    description: "There are currently no images selected."
   },
   emptyRepositories: {
     title: "No repository",

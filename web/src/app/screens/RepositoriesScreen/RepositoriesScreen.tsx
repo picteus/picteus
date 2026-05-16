@@ -108,7 +108,7 @@ export default function RepositoriesScreen() {
     return <StandardTable head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", "field.status", ""]}
                           loading={loading}
                           emptyResults={<EmptyResults
-                            icon={<IconFolderSearch size={140} stroke={1} />}
+                            icon={IconFolderSearch}
                             description={t("emptyRepositories.description")}
                             title={t("emptyRepositories.title")}
                             buttonText={t("emptyRepositories.buttonText")}

@@ -60,7 +60,7 @@ function ImagesScreenWrapped({ parentAddModal, parentRemoveModal }: ImagesScreen
     const repositoriesExists = RepositoriesService.list().length > 0;
     return (
       <EmptyResults
-        icon={<IconPhotoSearch size={140} stroke={1} />}
+        icon={IconPhotoSearch}
         description={t(repositoriesExists ? "emptyImages.description" : "emptyImages.descriptionNoRepository")}
         title={t("emptyImages.title")}
         buttonText={t("emptyImages.buttonTextNoRepository")}
@@ -85,7 +85,7 @@ function ImagesScreenWrapped({ parentAddModal, parentRemoveModal }: ImagesScreen
     }}
     isDefault={false}
     onEmptyResults={() => (<EmptyResults
-      icon={<IconPhotoSearch size={140} stroke={1} />}
+      icon={IconPhotoSearch}
       description={t(`emptyImages.${("filter" in activeTab.data.filterOrCollectionId && activeTab.data.filterOrCollectionId.filter.origin) ? "descriptionNoData" : "description"}`)}
       title={t("emptyImages.title")}
     />)}

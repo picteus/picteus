@@ -119,7 +119,7 @@ export default function ExtensionsScreen() {
     return <StandardTable head={["", "field.id", "field.version", "field.name", "field.description", "field.status", ""]}
                           loading={loading}
                           emptyResults={<EmptyResults
-                            icon={<IconPuzzle size={140} stroke={1} />}
+                            icon={IconPuzzle}
                             description={t("emptyExtensions.description")}
                             title={t("emptyExtensions.title")}
                             buttonText={t("emptyExtensions.buttonText")}
@@ -132,7 +132,7 @@ export default function ExtensionsScreen() {
   function renderCard() {
     if (!loading && extensions.length === 0) {
       return <EmptyResults
-        icon={<IconPuzzle size={140} stroke={1} />}
+        icon={IconPuzzle}
         description={t("emptyExtensions.description")}
         title={t("emptyExtensions.title")}
         buttonText={t("emptyExtensions.buttonText")}

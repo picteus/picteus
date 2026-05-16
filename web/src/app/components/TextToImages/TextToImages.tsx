@@ -117,7 +117,7 @@ export default function TextToImages({ extensionId }: TextToImageType) {
       onEmptyResults={() => {
         if (loading === false && emptyResult === true) {
           return (<EmptyResults
-            icon={<IconPhotoSearch size={140} stroke={1} />}
+            icon={IconPhotoSearch}
             description={t("emptyImages.description")}
             title={t("emptyImages.title")}
           />);
