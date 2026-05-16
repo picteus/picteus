@@ -1,19 +1,19 @@
 import React, { useEffect, useSyncExternalStore } from "react";
-import { useEventSocket } from "app/context";
+
 import { notifyEvent } from "utils";
+import { useEventSocket } from "app/context";
 import { Notification } from "app/components";
+
 
 export default function NotificationCenter() {
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const notification = useSyncExternalStore(eventStore.subscribeToNotifications, eventStore.getNotification);
 
   useEffect(() => {
-    if (event?.notification) {
-      (async () => {
-        notifyEvent(<Notification event={event} toast={true} />);
-      })();
+    if (notification) {
+      notifyEvent(<Notification notification={notification} toast={true} />);
     }
-  }, [event]);
+  }, [notification]);
 
   return <></>;
 }

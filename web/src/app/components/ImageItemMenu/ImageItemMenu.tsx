@@ -37,7 +37,7 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
     ManifestCapabilityId.ImageEmbeddings));
   const callCommand = useExtensionCommand();
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const [t] = useTranslation();
 
   async function load() {

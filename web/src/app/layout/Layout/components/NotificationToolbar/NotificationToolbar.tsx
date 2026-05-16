@@ -3,7 +3,7 @@ import { ActionIcon, Flex, HoverCard, Text } from "@mantine/core";
 import { IconBell, IconBellZ } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { EventInformationType } from "types";
+import { EventNotificationType } from "types";
 import { generateRandomId } from "utils";
 import { useEventSocket } from "app/context";
 import { EventService } from "app/services";
@@ -13,22 +13,18 @@ import { Common, Notification } from "app/components";
 export default function NotificationToolbar() {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
-  const [events, setEvents] = useState<EventInformationType[]>([]);
-  const [seed, setSeed] = useState(generateRandomId);
-
-  async function handleOnClearAll() {
-    await EventService.markAllNotificationsAsSeen();
-    setSeed(generateRandomId);
-  }
-  async function load() {
-    const _events = await EventService.getEventsFromIndexedDB();
-    setEvents(_events.filter((event) => event.notification?.seen === false));
-  }
+  const notification = useSyncExternalStore(eventStore.subscribeToNotifications, eventStore.getNotification);
+  const [notifications, setNotifications] = useState<EventNotificationType[]>([]);
+  const [seed, setSeed] = useState<string>(generateRandomId());
 
   useEffect(() => {
-    void load();
-  }, [event, seed]);
+    EventService.getNotifications().then(setNotifications);
+  }, [notification, seed]);
+
+  async function handleOnClearAll() {
+    await EventService.deleteAllNotifications();
+    setSeed(generateRandomId());
+  }
 
   return (<HoverCard
     withinPortal={true}
@@ -46,7 +42,7 @@ export default function NotificationToolbar() {
       </ActionIcon>
     </HoverCard.Target>
     <HoverCard.Dropdown>
-      {events?.length === 0 ? (
+      {notifications?.length === 0 ? (
         <Flex align="center" justify="center" direction="column" p="md">
           <IconBellZ stroke={1} color="grey" size={38} />
           <Text c="dimmed" size={"sm"} mt="sm">
@@ -66,19 +62,12 @@ export default function NotificationToolbar() {
               {t("button.clearAll")}
             </Text>
           </Flex>
-          {events.map((event, index) => (
-            <div
-              key={
-                "inline-notification-" +
-                index +
-                "-" +
-                event.rawData.milliseconds
-              }
-            >
+          {notifications.map((notification) => (
+            <div key={notification.id}>
               <Notification
-                onClose={() => setSeed(generateRandomId)}
-                event={event}
+                notification={notification}
                 withTime={true}
+                onClose={() => setSeed(generateRandomId())}
               />
             </div>
           ))}

@@ -23,7 +23,7 @@ export default function IntentCenter() {
 
   const confirmAction = useConfirmAction();
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const [t] = useTranslation();
   const navigate = useNavigate();
 
@@ -172,8 +172,8 @@ export default function IntentCenter() {
   }
 
   useEffect(() => {
-    if (event?.rawData?.channel === ChannelEnum.EXTENSION_INTENT) {
-      const value = event.rawData.value as ExtensionIntentType;
+    if (event?.channel === ChannelEnum.EXTENSION_INTENT) {
+      const value = event.value as ExtensionIntentType;
       const intent = value.intent;
       const extensionId = value.id;
       const extensionName = ExtensionsService.list().find(

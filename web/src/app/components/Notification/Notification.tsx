@@ -2,41 +2,40 @@ import React from "react";
 import { Divider, Image, Notification as MantineNotification, Text } from "@mantine/core";
 import { IconFolderOpen, IconInfoCircle } from "@tabler/icons-react";
 
+import { EventNotificationType } from "types";
 import { timeAgoFromMilliseconds } from "utils";
-import { EventInformationType, EventNotificationType } from "types";
-import { EventService, ImageService } from "app/services";
 import { useActionModalContext } from "app/context";
+import { EventService, ImageService } from "app/services";
 import { Common, ImageDetail } from "app/components";
 
 import style from "./Notification.module.scss";
 
 
 type NotificationType = {
-  event: EventInformationType;
-  onClose?: () => void;
+  notification: EventNotificationType;
   toast?: boolean;
   withTime?: boolean;
+  onClose?: () => void;
 };
 
 export default function Notification({
-  event,
-  onClose = () => {},
+  notification,
   toast = false,
   withTime = false,
+  onClose = () => {}
 }: NotificationType) {
-  const notification: EventNotificationType = event.notification;
   const [, addModal, removeModal] = useActionModalContext();
 
   function handleOnClose() {
     if (!toast) {
-      EventService.clearNotification(event.id);
+      EventService.deleteNotification(notification.id);
       onClose();
     }
   }
 
   async function handleOnClick() {
     if (notification.type === "image") {
-      const image = await ImageService.get({ id: event.rawData.value.id });
+      const image = await ImageService.get({ id: notification.entityId });
       const id = addModal({
         component: (
           <ImageDetail
@@ -90,7 +89,7 @@ export default function Notification({
       {withTime && (
         <>
           <Text c="dimmed" size="xs" pl="xs" pb="xs">
-            {timeAgoFromMilliseconds(notification.timeInMilliseconds)}
+            {timeAgoFromMilliseconds(notification.milliseconds)}
           </Text>
           <Divider />
         </>

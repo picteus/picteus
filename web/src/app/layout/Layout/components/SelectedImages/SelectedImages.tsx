@@ -45,7 +45,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
   const imagesContainerRef = useRef<HTMLDivElement>(null);
   const { ref: containerRef, height: containerHeight } = useElementSize();
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const { selectedImages, clearSelectedImages} = useImagesSelectedContext();
   const [extensionsImageCommands, setExtensionsImageCommands] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands([CommandEntity.Images]));
   const callCommand = useExtensionCommand();

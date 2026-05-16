@@ -27,7 +27,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [additionalUiContextValue, refreshAdditionalUi] = useAdditionalUiContext();
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const openWindow = useOpenWindow();
   const [t] = useTranslation();
 

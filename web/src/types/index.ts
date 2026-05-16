@@ -17,10 +17,14 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type JsonType = Record<string, any>;
 
-type SocketEventAdditionalMessage = { contextId: string; isActivity?: boolean };
-export type SocketEventType = SocketEventAdditionalMessage & {
-  channel: string;
+type WithIdAndMilliseconds = {
+  id: string;
   milliseconds: number;
+};
+
+type SocketEventAdditionalMessage = { contextId: string; isActivity?: boolean };
+export type SocketEventType = WithIdAndMilliseconds & SocketEventAdditionalMessage & {
+  channel: string;
   value: JsonType;
 };
 
@@ -40,16 +44,15 @@ export interface CommandContextType {
   sendCommandOnConnected: SendCommandType;
 }
 
-export type EventNotificationType = {
+export type EventNotificationType = WithIdAndMilliseconds & {
   title: string;
   type: "image" | "repository";
-  timeInMilliseconds: number;
   description: string;
   iconUrl: string;
-  seen: boolean;
+  entityId?: string;
 };
 
-export type EventLogType = {
+export type EventLogType = WithIdAndMilliseconds & {
   text: string;
   level: string;
   date: string;
@@ -61,12 +64,7 @@ export type EventOnResultValueType = any;
 
 export type EventOnResultType = (result: EventOnResultValueType) => void;
 
-export type EventInformationType = {
-  id: string;
-  channel: string;
-  rawData: SocketEventType;
-  log: EventLogType;
-  notification?: EventNotificationType;
+export type EventInformationType = SocketEventType & {
   onResult?: EventOnResultType;
 };
 

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Autocomplete, Badge, Button, Flex, Grid, Pill, Select, Stack, Table, Text, Title } from "@mantine/core";
 import { IconActivity } from "@tabler/icons-react";
 
-import { ChannelEnum, EventInformationType, JsonType } from "types";
+import { ChannelEnum, JsonType, SocketEventType } from "types";
 import { recursivelyIncludes } from "utils";
 import { useEventSocket } from "app/context";
 import { EventService, StorageService } from "app/services";
@@ -28,7 +28,7 @@ type EventsTableDisplayType = {
 export default function ActivityScreen() {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const [events, setEvents] = useState<EventsTableDisplayType[]>([]);
   const [searchValue, setSearchValue] = useState<string>("");
   const [pagination, setPagination] = useState({ currentPage: 1, take: BATCH_SIZE });
@@ -74,20 +74,21 @@ export default function ActivityScreen() {
     </Table.Tr>
   ));
 
-  function transformEventsForTable(events: EventInformationType[]): EventsTableDisplayType[] {
+  function transformEventsForTable(events: SocketEventType[]): EventsTableDisplayType[] {
     return events.map((event) => {
+      const logEvent = EventService.computeEventLog(event);
       return {
-        date: event.log.date,
-        channel: event.rawData.channel,
-        logLevel: event.log.level,
-        description: event.log.text,
-        payload: event.rawData.value,
+        date: logEvent.date,
+        channel: event.channel,
+        logLevel: logEvent.level,
+        description: logEvent.text,
+        payload: event.value,
       };
     });
   }
 
   async function load() {
-    const events: EventInformationType[] = await EventService.getEventsFromIndexedDB();
+    const events: SocketEventType[] = await EventService.getSocketEvents();
     let eventsTable: EventsTableDisplayType[] = transformEventsForTable(events);
     if (activeFilters?.length) {
       eventsTable = eventsTable.filter((event) => {

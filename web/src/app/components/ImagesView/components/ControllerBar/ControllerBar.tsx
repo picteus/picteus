@@ -32,7 +32,7 @@ export default function ControllerBar({
                                       }: ControllerBarType) {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const [showAlertNewImages, setShowAlertNewImages] = useState<boolean>(false);
   const withTable = useMemo<boolean>(() => Math.random() > 1, []);
 
@@ -40,7 +40,7 @@ export default function ControllerBar({
     if (event === undefined) {
       return;
     }
-    if (event.rawData.channel === ChannelEnum.IMAGE_CREATED || event.rawData.channel === ChannelEnum.IMAGE_DELETED) {
+    if (event.channel === ChannelEnum.IMAGE_CREATED || event.channel === ChannelEnum.IMAGE_DELETED) {
       setShowAlertNewImages(true);
     }
   }, [event]);

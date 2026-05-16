@@ -25,7 +25,7 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
   const navigation = useImageNavigation({ selectedImage: "metadata" in image ? image as Image : undefined, images, viewMode });
   const [panelSizes, setPanelSizes] = useState<number[]>(StorageService.getVisualizerPanelSizes());
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
 
   const loadImageData = useCallback((image: ImageOrSummary, force: boolean): void => {
     async function load() {
@@ -37,9 +37,9 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
 
   useEffect(() => {
     if (event !== undefined) {
-      const channel = event.rawData.channel;
+      const channel = event.channel;
       if (channel === ChannelEnum.IMAGE_UPDATED || channel === ChannelEnum.IMAGE_TAGS_UPDATED || channel === ChannelEnum.IMAGE_FEATURES_UPDATED) {
-        if (imageData !== undefined && event.rawData.value.id === imageData.id) {
+        if (imageData !== undefined && event.value.id === imageData.id) {
           void loadImageData(navigation.selectedImage,true);
         }
       }

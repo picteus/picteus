@@ -27,7 +27,7 @@ export default function RepositoriesScreen() {
   const [repositories, setRepositories] = useState<Repository[]>(RepositoriesService.list());
   const [loading, setLoading] = useState<boolean>(false);
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const [selectedRepository, setSelectedRepository] = useState<Repository>();
   const [, addModal] = useActionModalContext();
 

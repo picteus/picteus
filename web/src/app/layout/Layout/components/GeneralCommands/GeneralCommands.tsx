@@ -16,7 +16,7 @@ export default function GeneralCommands() {
   const callCommand = useExtensionCommand();
   const [, addModal] = useActionModalContext();
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
 
   const [t] = useTranslation();
 

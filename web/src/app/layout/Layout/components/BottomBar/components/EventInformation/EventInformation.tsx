@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useSyncExternalStore } from "react";
-import { useTranslation } from "react-i18next";
 import { Accordion, ActionIcon, Badge, Flex, Grid, Loader, Popover, ScrollArea, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconArrowBigUpLines } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
-import { ChannelEnum, EventInformationType } from "types";
+import { ChannelEnum, EventLogType } from "types";
 import { timeAgoFromMilliseconds } from "utils";
 import { useEventSocket } from "app/context";
 import { EventService } from "app/services";
@@ -19,15 +19,24 @@ interface Context {
   id: string;
   timestamp: number;
   extensionId: string;
-  events: EventInformationType[];
+  logs: EventLogType[];
 }
 
-function EventText({ event, maxLines, isBold = false }: { event: EventInformationType, maxLines: number, isBold?: boolean }) {
-  return (<Text lineClamp={maxLines} fw={isBold === true ? "bold" : "normal"} truncate="end" size={size}>{event.log.text}</Text>);
+type LogTextType = {
+  log: EventLogType,
+  maxLines: number,
+  isBold?: boolean
+};
+
+function LogText({ log, maxLines, isBold = false }: LogTextType) {
+  return (<Text lineClamp={maxLines} fw={isBold === true ? "bold" : "normal"} truncate="end" size={size}>{log.text}</Text>);
 }
 
-function EventDate({ timestampInMilliseconds }: { timestampInMilliseconds: number}) {
+type LogDateType = {
+  timestampInMilliseconds: number
+};
 
+function LogDate({ timestampInMilliseconds }: LogDateType) {
   const [date, setDate] = useState<string>(timeAgoFromMilliseconds(timestampInMilliseconds));
   useEffect(() => {
     const run = () => {
@@ -43,35 +52,40 @@ function EventDate({ timestampInMilliseconds }: { timestampInMilliseconds: numbe
   </Text>);
 }
 
-function EventLevelBadge({ event, isShort }: { event: EventInformationType, isShort: boolean }) {
+type LogEventType = {
+  log: EventLogType,
+  isShort: boolean
+};
+
+function LogLevelBadge({ log, isShort }: LogEventType) {
   return (<Badge
     size={size}
-    color={EventService.computeLogLevelColor(event.log.level)}
+    color={EventService.computeLogLevelColor(log.level)}
     className={style.logLevelBadge}
   >
-    {isShort === true ? event.log.level.charAt(0) : event.log.level}
+    {isShort === true ? log.level.charAt(0) : log.level}
   </Badge>);
 }
 
 function PopActivity({ context }: { context: Context }) {
-  const firstEvent = context.events.slice(-1)[0];
+  const firstLog = context.logs.slice(-1)[0];
 
   return (<Accordion.Item key={context.id} value={context.id}>
     <Accordion.Control>
       <Flex direction="row" gap={size} align="center">
         <Loader size={size} />
         <ExtensionIcon idOrExtension={context.extensionId} size="sm"/>
-        <EventLevelBadge event={firstEvent} isShort={false} />
-        <EventDate timestampInMilliseconds={context.timestamp} />
-        <EventText event={firstEvent} maxLines={1} isBold={true} />
+        <LogLevelBadge log={firstLog} isShort={false} />
+        <LogDate timestampInMilliseconds={context.timestamp} />
+        <LogText log={firstLog} maxLines={1} isBold={true} />
       </Flex>
     </Accordion.Control>
     <Accordion.Panel>
       <Flex direction="column" gap={size} wrap="nowrap">
-        {context.events.slice(0, context.events.length - 1).map(event => (
-          <Flex key={event.id} direction="row" gap={size} align="center" wrap="nowrap">
-            <EventLevelBadge event={event} isShort={true} />
-            <EventText event={event} maxLines={1} />
+        {context.logs.slice(0, context.logs.length - 1).map(log => (
+          <Flex key={log.id} direction="row" gap={size} align="center" wrap="nowrap">
+            <LogLevelBadge log={log} isShort={true} />
+            <LogText log={log} maxLines={1} />
           </Flex>))}
       </Flex>
     </Accordion.Panel>
@@ -96,7 +110,7 @@ function Activities({ contexts, containerHeight }: { contexts: Context[], contai
 
   return (<Flex align="center" justify="flex-end" gap={size}>
     {contexts.length > 0 && <>
-      <Text lineClamp={1} truncate="end" size={size}>{contexts.slice(-1)[0].events.slice(-1)[0].log.text}</Text>
+      <Text lineClamp={1} truncate="end" size={size}>{contexts.slice(-1)[0].logs.slice(-1)[0].text}</Text>
       <Loader size={size} />
       <Badge size={size} color="grape" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
         {contexts.length}
@@ -124,24 +138,28 @@ function Activities({ contexts, containerHeight }: { contexts: Context[], contai
   </Flex>);
 }
 
-function Status({ event }: { event: EventInformationType }) {
+type StatusType = {
+  log: EventLogType;
+};
+
+function Status({ log }: StatusType) {
   const [t] = useTranslation();
 
   return (<Flex align="center" gap={size}>
-    {event && <>
-      {event.log.extensionId && <ExtensionIcon idOrExtension={event.log.extensionId} size="sm" />}
-      <EventLevelBadge event={event} isShort={false} />
-      <EventText event={event} maxLines={2} />
-      <EventDate timestampInMilliseconds={event.rawData.milliseconds} />
+    {log && <>
+      {log.extensionId && <ExtensionIcon idOrExtension={log.extensionId} size="sm" />}
+      <LogLevelBadge log={log} isShort={false} />
+      <LogText log={log} maxLines={2} />
+      <LogDate timestampInMilliseconds={log.milliseconds} />
     </>}
-    {event === undefined && <Text size={size}>{t("eventInformation.idle")}</Text>}
+    {log === undefined && <Text size={size}>{t("eventInformation.idle")}</Text>}
   </Flex>);
 }
 
 export default function EventInformation({containerHeight}: { containerHeight: number }) {
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
-  const [theLastEvent, setTheLastEvent] = useState<EventInformationType>();
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
+  const [theLastLog, setTheLastLog] = useState<EventLogType>();
   const [contextsMap, setContextsMap] = useState<Map<string, Context>>(new Map());
   const [contextsList, setContextsList] = useState<Context[]>([...contextsMap.values()]);
 
@@ -149,15 +167,16 @@ export default function EventInformation({containerHeight}: { containerHeight: n
     if (event === undefined) {
       return;
     }
-    if (event.rawData.isActivity === true) {
-      const contextId = event.rawData.contextId;
+    const log = EventService.computeEventLog(event);
+    if (event.isActivity === true) {
+      const contextId = event.contextId;
       let context = contextsMap.get(contextId);
       if (context === undefined) {
         context = {
           id: contextId,
-          timestamp: event.rawData.milliseconds,
-          extensionId: event.log.extensionId,
-          events: []
+          timestamp: event.milliseconds,
+          extensionId: EventService.computeEventExtensionId(event),
+          logs: []
         };
         contextsMap.set(contextId, context);
       }
@@ -165,7 +184,7 @@ export default function EventInformation({containerHeight}: { containerHeight: n
         contextsMap.delete(contextId);
       }
       else {
-        context.events.push(event);
+        context.logs.push(log);
       }
       setContextsMap(contextsMap);
       setContextsList([...contextsMap.values()]);
@@ -174,13 +193,13 @@ export default function EventInformation({containerHeight}: { containerHeight: n
     if (event.channel === ChannelEnum.EXTENSION_ACKNOWLEDGMENT) {
       return;
     }
-    setTheLastEvent(event);
+    setTheLastLog(log);
   }, [event]);
 
   return (
     <Grid className={style.container} columns={10} gap="sm" justify="center" align="center" overflow="hidden">
       <Grid.Col span={7} >
-        <Status event={theLastEvent} />
+        <Status log={theLastLog}/>
       </Grid.Col>
       <Grid.Col span={3}>
         <Activities contexts={contextsList} containerHeight={containerHeight}/>

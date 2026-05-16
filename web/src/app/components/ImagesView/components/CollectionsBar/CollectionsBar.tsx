@@ -32,7 +32,7 @@ export default function CollectionsBar({
     const [, addModal] = useActionModalContext();
     const [loading, setLoading] = useState<boolean>(false);
     const { eventStore } = useEventSocket();
-    const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+    const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
     const [collections, setCollections] = useState<PicteusCollection[]>([]);
     const [menuOpened, setMenuOpened] = useState<boolean>(false);
     const [selectedCollection, setSelectedCollection] = useState<PicteusCollection | undefined>();
@@ -46,7 +46,7 @@ export default function CollectionsBar({
     useEffect(() => {
         if (event?.channel === ChannelEnum.COLLECTION_DELETED) {
             void loadCollections(true);
-            if (event.rawData.value["id"] === selectedCollection?.id) {
+            if (event.value["id"] === selectedCollection?.id) {
                 setSelectedCollection(undefined);
             }
         }

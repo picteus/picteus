@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 import { API_KEY, BASE_PATH, generateRandomId } from "utils";
-import { EventInformationType, EventOnResultType, SocketEventType } from "types";
+import { EventInformationType, EventNotificationType, EventOnResultType, SocketEventType } from "types";
 import { EventService } from "app/services";
 
 
@@ -16,13 +16,17 @@ export function useEventSocket() {
   return useContext(EventSocketContext);
 }
 
-export class SocketClient {
+class SocketClient {
 
   private readonly socket: Socket;
 
-  private readonly listeners: Set<(event: EventInformationType) => void> = new Set();
+  private socketEvent?: EventInformationType = undefined;
 
-  private event: EventInformationType = undefined;
+  private readonly socketEventListeners: Set<(event: EventInformationType) => void> = new Set();
+
+  private notification?: EventNotificationType = undefined;
+
+  private readonly notificationListeners: Set<(event: EventNotificationType) => void> = new Set();
 
   constructor(url: string, apiKey: string) {
     const options = {
@@ -36,28 +40,27 @@ export class SocketClient {
     this.socket.on("connect_error", (): void => {
       console.debug("The socket connection is erroneous");
     });
-    this.socket.on(
-      "events",
-      async (
+    this.socket.on("events", async (
         { channel, contextId, isActivity, milliseconds, value }: SocketEventType,
-        onResult: EventOnResultType,
+        onResult: EventOnResultType
       ) => {
-        const rawData: SocketEventType = { channel, contextId, isActivity, milliseconds, value };
-        const log = await EventService.computeEventLog(rawData);
-        const event: EventInformationType = {
-          id: generateRandomId(),
-          channel,
-          rawData,
-          log: log,
-          notification: await EventService.generateNotification(rawData),
-          onResult,
-        };
-        void EventService.pushEventIntoIndexedDB(event);
-        console.debug(
-          `Received an ${isActivity === true ? "activity" : ""} event on channel '${channel}' with context id '${contextId}' emitted at ${milliseconds} ms with value ${JSON.stringify(value, undefined, 2)}`
-        );
-        this.event = event;
-        this.emitChange();
+        const socketEvent: SocketEventType = { id: generateRandomId(), channel, contextId, isActivity, milliseconds, value };
+        console.debug(`Received an ${isActivity === true ? "activity" : ""} event on channel '${channel}' with context id '${contextId}' emitted at ${milliseconds} ms with value ${JSON.stringify(value, undefined, 2)}`);
+        const event: EventInformationType = { ...socketEvent, onResult };
+        void EventService.storeSocketEvent(socketEvent);
+        this.socketEvent = event;
+        for (const listener of this.socketEventListeners) {
+          listener(this.socketEvent);
+        }
+
+        const notification = await EventService.generateNotification(socketEvent);
+        if (notification) {
+          void EventService.storeNotification(notification);
+          this.notification = notification;
+          for (const listener of this.notificationListeners) {
+            listener(this.notification);
+          }
+        }
       },
     );
     this.socket.emit("connection", { apiKey, isOpen: true });
@@ -68,20 +71,23 @@ export class SocketClient {
     console.debug("The socket has been disconnected");
   }
 
-  subscribe = (callback: (event: EventInformationType) => void): () => boolean => {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+  subscribeToSocketEvents = (callback: (event: EventInformationType) => void): () => boolean => {
+    this.socketEventListeners.add(callback);
+    return () => this.socketEventListeners.delete(callback);
   };
 
-  getEvent = (): EventInformationType => {
-    return this.event;
+  getSocketEvent = (): EventInformationType => {
+    return this.socketEvent;
   };
 
-  private emitChange(): void {
-    for (const listener of this.listeners) {
-      listener(this.event);
-    }
-  }
+  subscribeToNotifications = (callback: (event: EventNotificationType) => void): () => boolean => {
+    this.notificationListeners.add(callback);
+    return () => this.notificationListeners.delete(callback);
+  };
+
+  getNotification = (): EventNotificationType => {
+    return this.notification;
+  };
 
 }
 
@@ -90,7 +96,7 @@ export function EventSocketProvider({ children }) {
   const [event, setEvent] = useState<EventInformationType>(undefined);
 
   useEffect(() => {
-    const unsubscribe = socketClient.subscribe((theEvent: EventInformationType) => {
+    const unsubscribe = socketClient.subscribeToSocketEvents((theEvent: EventInformationType) => {
       setEvent(theEvent);
     });
     return () => {

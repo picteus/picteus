@@ -25,7 +25,7 @@ export default function CollectionsScreen() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribe, eventStore.getEvent);
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const [selectedCollection, setSelectedCollection] = useState<Collection>();
   const [t] = useTranslation();
   const [, addModal] = useActionModalContext();
