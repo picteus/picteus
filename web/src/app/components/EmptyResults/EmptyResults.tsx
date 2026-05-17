@@ -7,6 +7,7 @@ import style from "./EmptyResults.module.scss";
 
 type EmptyResultsType = {
   icon: React.ForwardRefExoticComponent<IconProps & React.RefAttributes<SVGSVGElement>>;
+  isSmall?: boolean;
   title: string;
   description: string;
   buttonText?: string;
@@ -15,6 +16,7 @@ type EmptyResultsType = {
 
 export default function EmptyResults({
   icon,
+  isSmall,
   title,
   description,
   buttonText,
@@ -22,12 +24,12 @@ export default function EmptyResults({
 }: EmptyResultsType) {
   return (
     <Center className={style.container}>
-      <Stack gap="xl">
+      <Stack gap={isSmall ? "md" : "lg"} align="center">
         <Center>
-          {React.createElement(icon, { size: 140, stroke: 1, className: style.icon })}
+          {React.createElement(icon, { size: isSmall ? 100 : 140, stroke: 1, className: style.icon })}
         </Center>
-        <Title>{title}</Title>
-        <Text c="dimmed" size="lg" ta="center">
+        <Title size={isSmall ? "lg" : undefined}>{title}</Title>
+        <Text c="dimmed" size={isSmall ? "md" : "lg"} ta="center">
           {description}
         </Text>
         {buttonAction && (

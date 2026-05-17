@@ -9,17 +9,17 @@ import variables from "assets/style/variablesExport.module.scss";
 
 
 type ImageThumbnailType = {
-  image: ImageSummary;
+  imageOrUrl: ImageSummary | string;
   width?: number;
   height?: number;
 };
 
-export default function ImageThumbnail({ image, width, height }: ImageThumbnailType) {
+export default function ImageThumbnail({ imageOrUrl, width, height }: ImageThumbnailType) {
   return (<Image
-    alt={image.name}
+    alt={typeof imageOrUrl === "string" ? "Thumbnail" : imageOrUrl.name}
     w={width}
     h={height}
     fit="contain"
     radius={variables.imageRadius}
-    src={ImageService.getImageSrc(image.url, width, height)} />);
+    src={ImageService.getImageSrc(typeof imageOrUrl === "string" ? imageOrUrl : imageOrUrl.url, width, height)} />);
 }

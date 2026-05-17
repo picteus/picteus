@@ -48,8 +48,8 @@ export type EventNotificationType = WithIdAndMilliseconds & {
   title: string;
   type: "image" | "repository";
   description: string;
-  iconUrl: string;
   entityId?: string;
+  entityUrl?: string;
 };
 
 export type EventLogType = WithIdAndMilliseconds & {

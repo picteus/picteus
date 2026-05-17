@@ -165,9 +165,8 @@ async function generateImageCreatedOrUpdatedNotification(event: SocketEventType)
   const image = await ImageService.get({ id: imageId });
   const suffix = event.channel === ChannelEnum.IMAGE_CREATED ? "imageCreated" : "imageUpdated";
   const title = i18n.t(`notifications.${suffix}`);
-  const iconUrl = ImageService.getImageSrc(image.uri, undefined, 32);
   const description = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
-  return { id: event.id, title, type: "image", iconUrl, description, milliseconds: event.milliseconds, entityId: imageId };
+  return { id: event.id, title, type: "image", description, milliseconds: event.milliseconds, entityId: imageId, entityUrl: image.url };
 }
 
 /*async function generateRepositoryNotification(

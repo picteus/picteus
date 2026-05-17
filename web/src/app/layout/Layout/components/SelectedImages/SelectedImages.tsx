@@ -161,6 +161,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
         {selectedImages.length === 0 ? (
           <EmptyResults
             icon={IconPhotoOff}
+            isSmall={true}
             title={t("emptySelectedImages.title")}
             description={t("emptySelectedImages.description")}
           />
@@ -179,10 +180,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
         <Divider />
         <Flex align="center" justify="space-between">
           <Text size="sm" fw={700}>
-            {selectedImages?.length}{" "}
-            {t("selectedImagesAffix.buttonLabelWithCount", {
-              count: selectedImages?.length,
-            })}
+            {selectedImages?.length > 0 ? t("selectedImages.buttonLabelWithCount", { count: selectedImages?.length }) : " "}
           </Text>
           {selectedImages.length > 0 &&
             <Text
@@ -192,7 +190,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
               c="dimmed"
               td="underline"
             >
-              {t("selectedImagesAffix.buttonUnselectAll")}
+              {t("selectedImages.buttonUnselectAll")}
             </Text>}
         </Flex>
         <Flex align="flex-end" gap={5}>
@@ -202,8 +200,8 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
             onChange={(value) => setSelectedAction(value)}
             value={selectedAction}
             leftSection={computeLeftSection()}
-            placeholder={t("selectedImagesAffix.selectPlaceholder")}
-            label={t("selectedImagesAffix.selectLabel")}
+            placeholder={t("selectedImages.selectPlaceholder")}
+            label={t("selectedImages.selectLabel")}
             data={computeSelectData()}
             renderOption={computeSelectRenderOption}
             maxDropdownHeight={containerHeight - 50}

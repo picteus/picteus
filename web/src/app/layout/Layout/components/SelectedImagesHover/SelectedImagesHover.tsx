@@ -27,8 +27,7 @@ export default function SelectedImagesHover() {
       </Indicator>
     </HoverCard.Target>
     <HoverCard.Dropdown>
-      <SelectedImages onProcessing={() =>
-      {
+      <SelectedImages onProcessing={() => {
       }} />
     </HoverCard.Dropdown>
   </HoverCard>);

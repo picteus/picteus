@@ -41,7 +41,7 @@ export default function SelectedImagesAffix() {
                 rightSection={<IconPhoto size={23} />}
               >
                 {selectedImages?.length}{" "}
-                {t("selectedImagesAffix.buttonLabelWithCount", {
+                {t("selectedImages.buttonLabelWithCount", {
                   count: selectedImages?.length,
                 })}
               </Button>

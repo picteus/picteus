@@ -1,12 +1,12 @@
 import React from "react";
-import { Divider, Image, Notification as MantineNotification, Text } from "@mantine/core";
-import { IconFolderOpen, IconInfoCircle } from "@tabler/icons-react";
+import { Notification as MantineNotification, Text } from "@mantine/core";
+import { IconInfoCircle } from "@tabler/icons-react";
 
 import { EventNotificationType } from "types";
 import { timeAgoFromMilliseconds } from "utils";
 import { useActionModalContext } from "app/context";
 import { EventService, ImageService } from "app/services";
-import { Common, ImageDetail } from "app/components";
+import { Common, ImageDetail, ImageThumbnail } from "app/components";
 
 import style from "./Notification.module.scss";
 
@@ -28,7 +28,7 @@ export default function Notification({
 
   function handleOnClose() {
     if (!toast) {
-      EventService.deleteNotification(notification.id);
+      void EventService.deleteNotification(notification.id);
       onClose();
     }
   }
@@ -53,47 +53,40 @@ export default function Notification({
   }
 
   function computeIcon() {
-    if (!notification.iconUrl) {
+    if (!notification.entityUrl) {
       return <IconInfoCircle stroke={Common.IconStrokeSize} />;
     }
-    if (notification.iconUrl === "repository") {
-      return <IconFolderOpen stroke={Common.IconStrokeSize} />;
-    }
+    const edge = 32;
     return (<div onClick={handleOnClick}>
-        <Image src={notification.iconUrl} w={32} fit="contain" alt="Thumbnail" />
+        <ImageThumbnail imageOrUrl={notification.entityUrl} width={edge} height={edge} />
       </div>
     );
   }
 
-  return (
-    <>
-      <MantineNotification
-        onClose={handleOnClose}
-        styles={{
-          icon: {
-            backgroundColor: "transparent",
-          },
-          ...(!toast
-            ? {
-                root: { border: "none", boxShadow: "none" },
-              }
-            : {}),
-        }}
-        icon={computeIcon()}
-        title={notification.title}
-      >
-        <div className={style.description} onClick={handleOnClick}>
-          {notification.description}
-        </div>
-      </MantineNotification>
-      {withTime && (
-        <>
-          <Text c="dimmed" size="xs" pl="xs" pb="xs">
-            {timeAgoFromMilliseconds(notification.milliseconds)}
-          </Text>
-          <Divider />
-        </>
-      )}
-    </>
-  );
+  return (<>
+    <MantineNotification
+      onClose={handleOnClose}
+      styles={{
+        icon: { backgroundColor: "transparent" }, ...(!toast ? {
+          root: {
+            border: "none",
+            boxShadow: "none"
+          }
+        } : {})
+      }}
+      icon={computeIcon()}
+      title={notification.title}
+    >
+      <div className={style.description} onClick={handleOnClick}>
+        {notification.description}
+      </div>
+    </MantineNotification>
+    {withTime && (
+      <>
+        <Text c="dimmed" size="xs" pl="xs" pb="xs">
+          {timeAgoFromMilliseconds(notification.milliseconds)}
+        </Text>
+      </>
+    )}
+  </>);
 }

@@ -87,7 +87,7 @@ export default function ClosestEmbeddingsImages({  extensionId, image, viewMode}
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Flex align="end" gap={20}>
           <Input.Wrapper label={t("field.source")}>
-            <ImageThumbnail image={image} width={edge} height={edge} />
+            <ImageThumbnail imageOrUrl={image} width={edge} height={edge} />
           </Input.Wrapper>
           <NumberInput
             ref={focusTrapRef}

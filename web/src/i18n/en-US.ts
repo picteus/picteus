@@ -132,7 +132,7 @@ export default {
     tagsPlaceHolder: "Select tags"
   },
   emptyImages: {
-    title: "No Images available",
+    title: "No available image",
     description:
       "There are currently no images corresponding to your search criteria. Please try again with different criteria.",
     descriptionNoRepository:
@@ -142,7 +142,7 @@ export default {
     buttonTextNoRepository: "Manage repositories"
   },
   emptySelectedImages: {
-    title: "No images selected",
+    title: "No selected image",
     description: "There are currently no images selected."
   },
   emptyRepositories: {
@@ -158,7 +158,7 @@ export default {
     buttonText: "Add collection"
   },
   emptyExtensions: {
-    title: "No extension installed",
+    title: "No installed extension",
     description:
       "It seems there are no extensions configured at the moment. Please add an extension to start enhancing the app's features.",
     buttonText: "Add extension"
@@ -298,7 +298,10 @@ export default {
     }
   },
   notifications: {
-    noNotifications: "No notifications",
+    empty: {
+      title: "No notification",
+      description: "Notification will pop when new images will be indexed or images updated."
+    },
     repositoryEvent: "Repository event",
     imageCreated: "Image created",
     imageUpdated: "Image updated",
@@ -366,7 +369,7 @@ export default {
     confirmImagesDeleteTitle: "Images deletion",
     confirmImagesDeleteMessage: "Are you sure you want to delete those image?"
   },
-  selectedImagesAffix: {
+  selectedImages: {
     selectLabel: "Select bulk action for images",
     selectPlaceholder: "Choose an action",
     buttonLabelWithCount_one: "image selected",
