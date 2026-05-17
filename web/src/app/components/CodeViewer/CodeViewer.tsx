@@ -5,7 +5,7 @@ import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
 import beautify from "js-beautify";
 
-import { notifyErrorWithError } from "utils";
+import { NotificationsService } from "utils";
 
 
 hljs.registerLanguage("json", json);
@@ -48,7 +48,7 @@ export default function CodeViewer({ code }: CodeViewerType) {
         };
       return beautify.js(code, options);
     } catch (error) {
-      notifyErrorWithError(error, "An error occurred while trying to beautify the code");
+      NotificationsService.errorWithMessage(error, "An error occurred while trying to beautify the code");
       return "Source code is broken";
     }
   }, [code]);

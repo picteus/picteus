@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { ImageSummary, Repository, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
 
-import { notifyErrorWithError } from "utils";
+import { NotificationsService } from "utils";
 import { ImageService } from "app/services";
 import { FieldValue, FormatedDate, ImagesStack } from "app/components";
 
@@ -35,7 +35,7 @@ export default function RepositoryDetail({ repository }: RepositoryDetailType) {
       setImages(result.items);
       setTotalCount(result.totalCount);
     } catch (error) {
-      notifyErrorWithError(error);
+      NotificationsService.errorWithMessage(error);
     } finally {
       setLoading(false);
     }

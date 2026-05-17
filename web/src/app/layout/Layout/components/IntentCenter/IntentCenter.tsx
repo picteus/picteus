@@ -6,7 +6,7 @@ import { randomId } from "@mantine/hooks";
 import { ExtensionSettings, UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { ChannelEnum, EventOnResultValueType, ExtensionIntentType, ResourceType, ShowType } from "types";
-import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, notifyErrorWithError } from "utils";
+import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, NotificationsService } from "utils";
 import { useActionModalContext, useAdditionalUiContext, useEventSocket, useImagesTabsContext } from "app/context";
 import { ExtensionsService, ImageService, RepositoriesService, StorageService } from "app/services";
 import { useConfirmAction, useOpenWindow } from "app/hooks";
@@ -44,7 +44,7 @@ export default function IntentCenter() {
       respondWithValue(value);
       removeModal(modalId);
     } catch (error) {
-      notifyErrorWithError(error, t("extensionIntent.onResultError"));
+      NotificationsService.errorWithMessage(error, t("extensionIntent.onResultError"));
     }
   }
 

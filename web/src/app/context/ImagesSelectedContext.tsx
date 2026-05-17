@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { ImageSummary } from "@picteus/ws-client";
 
 import { ImageOrSummary } from "types";
-import { notifyApiCallError } from "utils";
+import { NotificationsService } from "utils";
 import { ImageService, StorageService } from "app/services";
 
 
@@ -31,7 +31,7 @@ export function ImagesSelectedProvider({ children }) {
             ids: imagesIds
           }
         }
-      }).then(images => setSelectedImages(images.items)).catch(notifyApiCallError);
+      }).then(images => setSelectedImages(images.items)).catch(NotificationsService.apiCallError);
     }
   }, []);
 

@@ -13,7 +13,7 @@ import {
 } from "@picteus/ws-client";
 
 import { UiExtensionCommandType, ViewMode } from "types";
-import { notifyApiCallError } from "utils";
+import { NotificationsService } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useConfirmAction, useExtensionCommand } from "app/hooks";
 import { ExtensionsService, ImageService } from "app/services";
@@ -75,11 +75,11 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
   }
 
   function handleOnClickSynchronize() {
-    ImageService.synchronize(image.id).catch(notifyApiCallError)
+    ImageService.synchronize(image.id).catch(NotificationsService.apiCallError)
   }
 
   function handleOnClickDelete() {
-    confirmAction(() => ImageService.destroy(image.id).catch(notifyApiCallError), {
+    confirmAction(() => ImageService.destroy(image.id).catch(NotificationsService.apiCallError), {
       title: t("commands.confirmImageDeleteTitle"),
       message: t("commands.confirmImageDeleteMessage")
     });

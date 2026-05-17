@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 
 import { Extension, ExtensionStatus } from "@picteus/ws-client";
 
-import { notifyApiCallI18nError, notifySuccess } from "utils";
+import { NotificationsService } from "utils";
 import { useConfirmAction } from "app/hooks";
 import { ExtensionsService } from "app/services";
 
@@ -41,10 +41,10 @@ export default function ExtensionActions({
   async function handleOnUninstallExtension(extensionId: string) {
     try {
       await ExtensionsService.uninstall({ id: extensionId });
-      notifySuccess(t("extensionsScreen.successUninstall"));
+      NotificationsService.success(t("extensionsScreen.successUninstall"));
       onUninstalled();
     } catch (error) {
-      notifyApiCallI18nError(error, "extensionsScreen.errorUninstall");
+      NotificationsService.apiCallI18nError(error, "extensionsScreen.errorUninstall");
     }
   }
 
@@ -56,20 +56,20 @@ export default function ExtensionActions({
       });
       onUninstalled();
     } catch (error) {
-      notifyApiCallI18nError(error, "extensionsScreen.errorToggleStatus");
+      NotificationsService.apiCallI18nError(error, "extensionsScreen.errorToggleStatus");
     }
   }
 
   async function handleOnSynchronize(extension: Extension) {
     try {
       await ExtensionsService.synchronize({ id: extension.manifest.id });
-      notifySuccess(
+      NotificationsService.success(
         t("extensionsScreen.successSynchronize", {
           name: extension.manifest.name,
         }),
       );
     } catch (error) {
-      notifyApiCallI18nError(error, "extensionsScreen.errorToggleStatus");
+      NotificationsService.apiCallI18nError(error, "extensionsScreen.errorToggleStatus");
     }
   }
 

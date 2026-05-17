@@ -1,5 +1,5 @@
-import React from "react";
-import { Notification as MantineNotification, Text } from "@mantine/core";
+import React, { ReactNode } from "react";
+import { CloseButton, Flex, Notification as MantineNotification, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 
 import { EventNotificationType } from "types";
@@ -11,25 +11,66 @@ import { Common, ImageDetail, ImageThumbnail } from "app/components";
 import style from "./Notification.module.scss";
 
 
-type NotificationType = {
+type NotificationWrapperType = {
   notification: EventNotificationType;
-  toast?: boolean;
-  withTime?: boolean;
-  onClose?: () => void;
+  icon: ReactNode;
+  onClose: () => void;
+  onClick: () => void;
 };
 
-export default function Notification({
-  notification,
-  toast = false,
-  withTime = false,
-  onClose = () => {}
-}: NotificationType) {
+function MantineNotificationWrapper({ notification, icon, onClose, onClick }: NotificationWrapperType) {
+  return (<MantineNotification
+      onClose={onClose}
+      styles={{ icon: { backgroundColor: "transparent" } }}
+      icon={icon}
+      title={notification.title}
+    >
+      <div className={style.description} onClick={onClick}>
+        {notification.description}
+      </div>
+    </MantineNotification>
+  );
+}
+
+function EnhancedNotificationWrapper({ notification, icon, onClose, onClick }: NotificationWrapperType) {
+  return (
+    <Flex align="flex-start" gap={8} onClick={onClick} className={style.description}>
+      {icon}
+      <Flex direction="column" gap={4} flex={1}>
+        <Flex justify="space-between" align="center">
+          <Text fw={500} size="sm">{notification.title}</Text>
+          <CloseButton onClick={(event) => {
+            event.stopPropagation();
+            onClose();
+          }} />
+        </Flex>
+        <Text c="gray" size="sm">
+          {notification.description}
+        </Text>
+        <Text c="dimmed" size="xs">
+          {timeAgoFromMilliseconds(notification.milliseconds)}
+        </Text>
+      </Flex>
+    </Flex>
+  );
+}
+
+type NotificationType = {
+  notification: EventNotificationType;
+  isToast?: boolean;
+  onClose?: () => void;
+  onOpen?: () => void;
+};
+
+export default function Notification({ notification, isToast = false, onClose, onOpen }: NotificationType) {
   const [, addModal, removeModal] = useActionModalContext();
 
   function handleOnClose() {
-    if (!toast) {
+    if (!isToast) {
       void EventService.deleteNotification(notification.id);
-      onClose();
+      if (onClose) {
+        onClose();
+      }
     }
   }
 
@@ -50,43 +91,27 @@ export default function Notification({
         fullScreen: true
       });
     }
+    if (onOpen) {
+      onOpen();
+    }
   }
 
-  function computeIcon() {
+  function computeIcon(size: number) {
     if (!notification.entityUrl) {
-      return <IconInfoCircle stroke={Common.IconStrokeSize} />;
+      return <IconInfoCircle stroke={Common.IconStrokeSize} size={size}/>;
     }
-    const edge = 32;
     return (<div onClick={handleOnClick}>
-        <ImageThumbnail imageOrUrl={notification.entityUrl} width={edge} height={edge} />
+        <ImageThumbnail imageOrUrl={notification.entityUrl} width={size} height={size} />
       </div>
     );
   }
 
-  return (<>
-    <MantineNotification
-      onClose={handleOnClose}
-      styles={{
-        icon: { backgroundColor: "transparent" }, ...(!toast ? {
-          root: {
-            border: "none",
-            boxShadow: "none"
-          }
-        } : {})
-      }}
-      icon={computeIcon()}
-      title={notification.title}
-    >
-      <div className={style.description} onClick={handleOnClick}>
-        {notification.description}
-      </div>
-    </MantineNotification>
-    {withTime && (
-      <>
-        <Text c="dimmed" size="xs" pl="xs" pb="xs">
-          {timeAgoFromMilliseconds(notification.milliseconds)}
-        </Text>
-      </>
-    )}
-  </>);
+  if (isToast) {
+    return <MantineNotificationWrapper notification={notification} icon={computeIcon(32)} onClose={handleOnClose}
+                                       onClick={handleOnClick} />;
+  }
+  else {
+    return <EnhancedNotificationWrapper notification={notification} icon={computeIcon(64)} onClose={handleOnClose}
+                                       onClick={handleOnClick} />;
+  }
 }

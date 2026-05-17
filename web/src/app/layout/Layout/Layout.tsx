@@ -2,14 +2,7 @@ import React, { ReactNode, useCallback, useRef } from "react";
 import { Flex } from "@mantine/core";
 
 import { Sidebar } from "app/layout";
-import {
-  BottomBar,
-  GeneralCommands,
-  IntentCenter,
-  Modals,
-  NotificationCenter,
-  NotificationToolbar
-} from "./components";
+import { BottomBar, GeneralCommands, IntentCenter, Modals, NotificationCenter, Notifications } from "./components";
 import { SelectedImagesHover } from "./components/index.ts";
 
 import style from "./Layout.module.scss";
@@ -38,7 +31,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
         <div className={style.rightSidebar}>
           <Flex gap={20} direction="column">
-            <NotificationToolbar />
+            <Notifications />
             <SelectedImagesHover/>
             <GeneralCommands />
           </Flex>

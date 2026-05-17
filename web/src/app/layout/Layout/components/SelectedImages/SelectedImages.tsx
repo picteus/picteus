@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import { CommandEntity, Manifest } from "@picteus/ws-client";
 
 import { ImageItemMode, UiCommandType, UiExtensionCommandType } from "types";
-import { notifyApiCallError } from "utils";
+import { NotificationsService } from "utils";
 import { useEventSocket, useImagesSelectedContext } from "app/context";
 import { useConfirmAction, useExtensionCommand } from "app/hooks";
 import { ExtensionsService, ImageService, StorageService } from "app/services";
@@ -127,12 +127,12 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType) {
     const imageIds = selectedImages.map((image) => image.id);
 
     if (selectedAction === synchronizeAction) {
-      imageIds.forEach(imageId => ImageService.synchronize(imageId).catch(notifyApiCallError));
+      imageIds.forEach(imageId => ImageService.synchronize(imageId).catch(NotificationsService.apiCallError));
       return;
     }
     else if (selectedAction === deleteAction) {
       confirmAction(() => {
-        imageIds.forEach(imageId => ImageService.destroy(imageId).catch(notifyApiCallError));
+        imageIds.forEach(imageId => ImageService.destroy(imageId).catch(NotificationsService.apiCallError));
         clearSelectedImages();
       }, {
         title: t(`commands.confirmImage${imageIds.length > 1 ? "s" : ""}DeleteTitle`),

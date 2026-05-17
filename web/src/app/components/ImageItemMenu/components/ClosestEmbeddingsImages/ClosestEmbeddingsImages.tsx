@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-client";
 
 import { ImageWithCaption, ViewMode } from "types";
-import { notifyApiCallError, Validators } from "utils";
+import { NotificationsService, Validators } from "utils";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmptyResults, ImagesView, ImageThumbnail } from "app/components";
 
@@ -67,7 +67,7 @@ export default function ClosestEmbeddingsImages({  extensionId, image, viewMode}
           })),
       );
     } catch (error) {
-      notifyApiCallError(error, "An error occurred while trying to find closes images");
+      NotificationsService.apiCallError(error, "An error occurred while trying to find closes images");
     } finally {
       setLoading(false);
     }

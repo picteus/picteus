@@ -8,7 +8,7 @@ import { IconAlertTriangle, IconFileZip, IconTrash, IconUpload, IconX } from "@t
 
 import { Extension } from "@picteus/ws-client";
 
-import { fileToBlob, mimeTypes, notifyApiCallI18nError, Validators } from "utils";
+import { fileToBlob, mimeTypes, NotificationsService, Validators } from "utils";
 import { ExtensionsService } from "app/services";
 
 
@@ -78,7 +78,7 @@ export default function AddOrUpdateExtension({
 
       onSuccess(_extension);
     } catch (error) {
-      notifyApiCallI18nError(error, `${messagePrefix}.errorAdd`);
+      NotificationsService.apiCallI18nError(error, `${messagePrefix}.errorAdd`);
     } finally {
       setLoading(false);
     }

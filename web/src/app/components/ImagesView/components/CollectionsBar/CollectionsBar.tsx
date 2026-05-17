@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Collection as PicteusCollection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
 
 import { ChannelEnum } from "types";
-import { notifyError, notifySuccess } from "utils";
+import { NotificationsService } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useAsyncInitialize } from "app/hooks";
 import { CollectionService } from "app/services";
@@ -77,7 +77,7 @@ export default function CollectionsBar({
     function loadCollections(force = false) {
         setLoading(true);
         (force === false ? CollectionService.list() : CollectionService.fetchAll()).then(updatedCollections => setCollections(updatedCollections)).catch(error => {
-            notifyError((error as Error).message);
+            NotificationsService.withMessage((error as Error).message);
         }).finally(() => {
             setLoading(false);
         });
@@ -109,12 +109,12 @@ export default function CollectionsBar({
 
     function handleOnUpdateCurrent() {
         CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment).then((collection: PicteusCollection) => {
-            notifySuccess(t("addOrUpdateCollectionModal.successUpdate"));
+            NotificationsService.success(t("addOrUpdateCollectionModal.successUpdate"));
             loadCollections();
             setSelectedCollection(collection);
             setSaveDisabled(true);
             onCollection(collection);
-        }).catch(error => notifyError((error as Error).message));
+        }).catch(error => NotificationsService.withMessage((error as Error).message));
     }
 
     function truncateName(name: string) {

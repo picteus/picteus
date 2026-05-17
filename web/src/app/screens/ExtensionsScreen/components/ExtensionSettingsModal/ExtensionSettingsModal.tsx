@@ -6,7 +6,7 @@ import { IconCircleX, IconInfoCircle } from "@tabler/icons-react";
 import { Extension, ExtensionSettings } from "@picteus/ws-client";
 
 
-import { notifyApiCallError, notifySuccess } from "utils";
+import { NotificationsService } from "utils";
 import { ExtensionsService } from "app/services";
 import { extractSchemaAndUiSchema, RjsfForm } from "app/components";
 
@@ -39,7 +39,7 @@ export default function ExtensionSettingsModal({
 
       setExtensionSettings(settings);
     } catch (error) {
-      notifyApiCallError(error, t("extensionSettingsModal.errorLoading"));
+      NotificationsService.apiCallError(error, t("extensionSettingsModal.errorLoading"));
     } finally {
       setLoading(false);
     }
@@ -51,9 +51,9 @@ export default function ExtensionSettingsModal({
         id: extension.manifest.id,
         extensionSettings,
       });
-      notifySuccess(t("extensionSettingsModal.successSaving"));
+      NotificationsService.success(t("extensionSettingsModal.successSaving"));
     } catch (error) {
-      notifyApiCallError(error, t("extensionSettingsModal.errorSaving"));
+      NotificationsService.apiCallError(error, t("extensionSettingsModal.errorSaving"));
     } finally {
       onSuccess(extensionSettings);
       setLoading(false);

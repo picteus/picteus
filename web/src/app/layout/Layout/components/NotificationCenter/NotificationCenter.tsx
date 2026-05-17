@@ -1,6 +1,6 @@
 import React, { useEffect, useSyncExternalStore } from "react";
 
-import { notifyEvent } from "utils";
+import { NotificationsService } from "utils";
 import { useEventSocket } from "app/context";
 import { Notification } from "app/components";
 
@@ -11,7 +11,7 @@ export default function NotificationCenter() {
 
   useEffect(() => {
     if (notification) {
-      notifyEvent(<Notification notification={notification} toast={true} />);
+      NotificationsService.toast(<Notification notification={notification} isToast={true} />);
     }
   }, [notification]);
 

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Repository } from "@picteus/ws-client";
 
-import { notifyApiCallI18nError, notifySuccess } from "utils";
+import { NotificationsService } from "utils";
 import { useConfirmAction } from "app/hooks";
 import { RepositoriesService } from "app/services";
 import { ExternalLink } from "app/components";
@@ -32,10 +32,10 @@ export default function RepositoryActions({
   async function handleOnDeleteRepository(id: string) {
     try {
       await RepositoriesService.remove({ id });
-      notifySuccess(t("repositoryScreen.successRemove"));
+      NotificationsService.success(t("repositoryScreen.successRemove"));
       onDeleted();
     } catch (error) {
-      notifyApiCallI18nError(error, "repositoryScreen.errorRemove");
+      NotificationsService.apiCallI18nError(error, "repositoryScreen.errorRemove");
     }
   }
 

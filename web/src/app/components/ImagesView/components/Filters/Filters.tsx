@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ImageFeatureFormat, ImageFeatureType, Repository } from "@picteus/ws-client";
 
 import { LocalFiltersType } from "types";
-import { capitalizeText, notifyErrorWithError } from "utils";
+import { capitalizeText, NotificationsService } from "utils";
 import { FeaturesNamesOption, FiltersService } from "app/services";
 import { FilterSelect } from "app/components";
 
@@ -54,7 +54,7 @@ export default function Filters({ repositories, localFilters, onChangeFilter, ha
       setTagsOptions(await computeTagsOptions());
     }
 
-    load().catch(notifyErrorWithError);
+    load().catch(NotificationsService.errorWithMessage);
   }, []);
 
   return (<Stack>

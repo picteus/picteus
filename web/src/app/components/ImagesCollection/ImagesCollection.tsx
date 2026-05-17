@@ -4,7 +4,7 @@ import { Flex } from "@mantine/core";
 import { ImageSummary } from "@picteus/ws-client";
 
 import { ImageItemMode, ImageOrSummary } from "types";
-import { notifyApiCallError } from "utils";
+import { NotificationsService } from "utils";
 import { useActionModalContext } from "app/context";
 import { ImageService } from "app/services";
 import { ImageDetail, ImageItem } from "app/components";
@@ -29,7 +29,7 @@ export default function ImagesCollection({imageIds}: ImageCollectionType) {
         setImages(result.items);
       }
       catch (error) {
-        notifyApiCallError(error, "An error occurred while retrieving the images");
+        NotificationsService.apiCallError(error, "An error occurred while retrieving the images");
       }
     }
     void load();

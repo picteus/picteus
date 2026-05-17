@@ -1,22 +1,24 @@
 import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ActionIcon, Divider, Flex, HoverCard, Indicator, Stack, Text } from "@mantine/core";
+import { randomId } from "@mantine/hooks";
 import { IconBell, IconBellZ } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { EventNotificationType } from "types";
-import { generateRandomId } from "utils";
 import { useEventSocket } from "app/context";
 import { EventService } from "app/services";
 import { Common, EmptyResults, Notification } from "app/components";
 
-import style from "./NotificationToolbar.module.scss";
+import style from "./Notifications.module.scss";
 
-export default function NotificationToolbar() {
+
+export default function Notifications() {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
   const notification = useSyncExternalStore(eventStore.subscribeToNotifications, eventStore.getNotification);
   const [notifications, setNotifications] = useState<EventNotificationType[]>([]);
-  const [seed, setSeed] = useState<string>(generateRandomId());
+  const [seed, setSeed] = useState<string>(randomId());
+  const [hoverCardKey, setHoverCardKey] = useState<string>(randomId());
 
   useEffect(() => {
     EventService.getNotifications().then(setNotifications);
@@ -26,19 +28,20 @@ export default function NotificationToolbar() {
     <div key={notification.id}>
       <Notification
         notification={notification}
-        withTime={true}
-        onClose={() => setSeed(generateRandomId())}
+        onClose={() => setSeed(randomId())}
+        onOpen={() => setHoverCardKey(randomId())}
       />
-      {index < (notifications.length - 1) && (<Divider />)}
+      {index < (notifications.length - 1) && (<Divider mt={8} mb={8}/>)}
     </div>
   )), [notifications]);
 
   async function handleOnClearAll() {
     await EventService.deleteAllNotifications();
-    setSeed(generateRandomId());
+    setSeed(randomId());
   }
 
   return (<HoverCard
+    key={hoverCardKey}
     withinPortal={true}
     position="left"
     shadow="lg"

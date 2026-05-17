@@ -3,7 +3,7 @@ import { randomId } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 
 import { UiCommandType } from "types";
-import { notifyError } from "utils";
+import { NotificationsService } from "utils";
 import { useActionModalContext } from "app/context";
 import { ExtensionsService } from "app/services";
 import { CommandForm } from "app/components";
@@ -31,7 +31,7 @@ export default function useExtensionCommand(): CallCommandType {
       }
     }
     catch (error) {
-      notifyError(t("commands.extensionCommandFailed", { command: commandId, extension: extensionId }));
+      NotificationsService.withMessage(t("commands.extensionCommandFailed", { command: commandId, extension: extensionId }));
     }
   }
 

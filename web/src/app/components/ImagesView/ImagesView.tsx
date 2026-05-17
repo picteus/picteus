@@ -4,7 +4,7 @@ import { Flex } from "@mantine/core";
 import { SearchRange } from "@picteus/ws-client";
 
 import { FilterOrCollectionId, ImageExplorerDataType, ImageWithCaption, ViewMode, ViewTabDataType } from "types";
-import { notifyApiCallError } from "utils";
+import { NotificationsService } from "utils";
 import { useImagesTabsContext } from "app/context";
 import { useInterceptedState } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
@@ -85,7 +85,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
         images: result.items
       });
     }).catch((error) => {
-      notifyApiCallError(error, "Can't fetch images");
+      NotificationsService.apiCallError(error, "Can't fetch images");
       return Promise.resolve<ImageExplorerDataType>({
         total: 0,
         images: []

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Collection as PicteusCollection, SearchFilter } from "@picteus/ws-client";
 
-import { notifyError, notifySuccess } from "utils";
+import { NotificationsService } from "utils";
 import { CollectionService, FiltersService } from "app/services";
 
 
@@ -46,19 +46,19 @@ export default function AddOrUpdateCollection({
                   searchFilter,
                   values.comment
                 );
-                notifySuccess(t("addOrUpdateCollectionModal.successUpdate"));
+                NotificationsService.success(t("addOrUpdateCollectionModal.successUpdate"));
             } else {
                 newCollection = await CollectionService.create(
                   values.name,
                   searchFilter,
                   values.comment
                 );
-                notifySuccess(t("addOrUpdateCollectionModal.successAdd"));
+                NotificationsService.success(t("addOrUpdateCollectionModal.successAdd"));
             }
             onSuccess(newCollection);
             onClose?.();
         } catch (error) {
-            notifyError((error as Error).message);
+            NotificationsService.withMessage((error as Error).message);
         } finally {
             setLoading(false);
         }
