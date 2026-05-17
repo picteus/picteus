@@ -45,17 +45,18 @@ export interface CommandContextType {
 }
 
 export type EventNotificationType = WithIdAndMilliseconds & {
-  title: string;
   type: "image" | "repository";
+  title: string;
   description: string;
   entityId?: string;
   entityUrl?: string;
 };
 
-export type EventLogType = WithIdAndMilliseconds & {
+export type LogType = WithIdAndMilliseconds & {
+  type: "image" | "repository" | "collection" | "extension" | "unknown";
   text: string;
   level: string;
-  date: string;
+  entityId?: string;
   extensionId?: string;
 };
 

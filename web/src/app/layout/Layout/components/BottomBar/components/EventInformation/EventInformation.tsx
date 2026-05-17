@@ -4,7 +4,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconArrowBigUpLines } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { ChannelEnum, EventLogType } from "types";
+import { ChannelEnum, LogType } from "types";
 import { timeAgoFromMilliseconds } from "utils";
 import { useEventSocket } from "app/context";
 import { EventService } from "app/services";
@@ -19,11 +19,11 @@ interface Context {
   id: string;
   timestamp: number;
   extensionId: string;
-  logs: EventLogType[];
+  logs: LogType[];
 }
 
 type LogTextType = {
-  log: EventLogType,
+  log: LogType,
   maxLines: number,
   isBold?: boolean
 };
@@ -53,7 +53,7 @@ function LogDate({ timestampInMilliseconds }: LogDateType) {
 }
 
 type LogEventType = {
-  log: EventLogType,
+  log: LogType,
   isShort: boolean
 };
 
@@ -139,7 +139,7 @@ function Activities({ contexts, containerHeight }: { contexts: Context[], contai
 }
 
 type StatusType = {
-  log: EventLogType;
+  log: LogType;
 };
 
 function Status({ log }: StatusType) {
@@ -159,7 +159,7 @@ function Status({ log }: StatusType) {
 export default function EventInformation({containerHeight}: { containerHeight: number }) {
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [theLastLog, setTheLastLog] = useState<EventLogType>();
+  const [theLastLog, setTheLastLog] = useState<LogType>();
   const [contextsMap, setContextsMap] = useState<Map<string, Context>>(new Map());
   const [contextsList, setContextsList] = useState<Context[]>([...contextsMap.values()]);
 
@@ -167,7 +167,7 @@ export default function EventInformation({containerHeight}: { containerHeight: n
     if (event === undefined) {
       return;
     }
-    const log = EventService.computeEventLog(event);
+    const log = EventService.computeLog(event);
     if (event.isActivity === true) {
       const contextId = event.contextId;
       let context = contextsMap.get(contextId);

@@ -17,7 +17,7 @@ type StandardTableType = {
   head: string[];
   loading?: boolean;
   withPagination?: { value: Pagination, setValue: React.Dispatch<React.SetStateAction<Pagination>>, totalCount: number,
-    onPaginationChange: (page: number) => void };
+    onPaginationChange: (page: number) => void, onTake?: (page: number) => void };
   emptyResults?: ReactElement<typeof EmptyResults>;
   children: ReactElement<typeof Table.Tr>[];
 };
@@ -55,9 +55,12 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
             label: t(resultsPerPageMnemonic, { count: 100 })
           }
         ]}
-        onChange={(value) =>
-        {
-          withPagination.setValue({ ...pagination, take: parseInt(value), currentPage: 1 });
+        onChange={(value) => {
+          const take = parseInt(value);
+          withPagination.setValue({ ...pagination, take, currentPage: 1 });
+          if (withPagination.onTake) {
+            withPagination.onTake(take);
+          }
         }}
       />
       <Text size="sm">

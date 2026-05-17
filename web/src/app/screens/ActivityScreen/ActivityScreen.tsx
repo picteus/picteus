@@ -1,179 +1,97 @@
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { Autocomplete, Badge, Button, Flex, Grid, Pill, Select, Stack, Table, Text, Title } from "@mantine/core";
+import { Badge, Flex, Stack, Table, Text, Title } from "@mantine/core";
 import { IconActivity } from "@tabler/icons-react";
 
-import { ChannelEnum, JsonType, SocketEventType } from "types";
-import { recursivelyIncludes } from "utils";
+import { LogType, SocketEventType } from "types";
 import { useEventSocket } from "app/context";
 import { EventService, StorageService } from "app/services";
-import { Container, EmptyResults, StandardTable } from "app/components";
+import { Container, EmptyResults, ExtensionIcon, FormatedDate, StandardTable } from "app/components";
 
-
-const BATCH_SIZE = 20;
-
-const channelEnum = Object.values(ChannelEnum).map((channel) => ({
-  value: channel,
-  label: channel,
-}));
-
-type EventsTableDisplayType = {
-  date: string;
-  channel: string;
-  logLevel: string;
-  description: string;
-  payload: JsonType;
-};
 
 export default function ActivityScreen() {
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [events, setEvents] = useState<EventsTableDisplayType[]>([]);
-  const [searchValue, setSearchValue] = useState<string>("");
-  const [pagination, setPagination] = useState({ currentPage: 1, take: BATCH_SIZE });
-  const [searchField, setSearchField] = useState<string>("channel");
-  const [activeFilters, setActiveFilters] = useState<Array<{ field: string; value: string; }>>(StorageService.getActivityFilters() || []);
-  const searchFieldData = [
-    { value: "channel", label: t("field.channel") },
-    { value: "logLevel", label: t("field.logLevel") },
-    { value: "description", label: t("field.description") },
-    { value: "payload", label: t("field.payload") },
-  ];
+  type TableRowDisplayType = {
+    log: LogType;
+  };
+  const [rows, setRows] = useState<TableRowDisplayType[]>([]);
+  const [pagination, setPagination] = useState({ currentPage: 1, take: StorageService.getActivityLogsBatchSize() });
   const startIndex = (pagination.currentPage - 1) * pagination.take;
   const endIndex = startIndex + pagination.take;
-  const paginatedEvents = events?.slice(startIndex, endIndex);
-  const rows = paginatedEvents?.map((event, index) => (
-    <Table.Tr key={`notification-${index}-${event.date}`}>
+  const paginatedRows = rows?.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    async function load() {
+      const events: SocketEventType[] = await EventService.getSocketEvents();
+      setRows(events.map((event) => ({log: EventService.computeLog(event)})));
+    }
+    void load();
+  }, [event]);
+
+  useEffect(() =>
+  {
+
+  }, [pagination]);
+
+  function handleOnPaginationChange(newPage: number) {
+    setPagination((previousPagination) => ({ ...previousPagination, currentPage: newPage }));
+  }
+
+  function handleOnTakeChange(newTake: number) {
+    StorageService.setActivityLogsBatchSize(newTake);
+  }
+
+  const renderedRows = paginatedRows?.map((row) => (
+    <Table.Tr key={row.log.id}>
       <Table.Td w={160}>
-        <Text size="sm">{event.date}</Text>
+        <Text size="sm"><FormatedDate timestamp={row.log.milliseconds} /></Text>
       </Table.Td>
-      <Table.Td>
-        <Text size="md">{event.channel}</Text>
-      </Table.Td>
-      <Table.Td>
-        <Text size="md">
-          {event.channel.startsWith("extension") ? event.payload?.id : "-"}
-        </Text>
+      <Table.Td w={60}>
+        {row.log.extensionId ?
+          <ExtensionIcon idOrExtension={row.log.extensionId} size="sm" />
+          :
+          (<Text size="md">
+            {row.log.extensionId ?? t("field.noValue")}
+          </Text>)}
       </Table.Td>
       <Table.Td w={80}>
         <Badge
           style={{ flexShrink: 0 }}
           size="sm"
-          color={EventService.computeLogLevelColor(event.logLevel)}
+          color={EventService.computeLogLevelColor(row.log.level)}
         >
-          {event.logLevel}
+          {row.log.level}
         </Badge>
       </Table.Td>
+      {/*<Table.Td>*/}
+      {/*  <Text size="md">{row.log.type === "image" ? row.log.entityId: ""}</Text>*/}
+      {/*</Table.Td>*/}
       <Table.Td>
-        <Text size="md">{event.description}</Text>
-      </Table.Td>
-      <Table.Td>
-        <Text size="md">{JSON.stringify(event.payload)}</Text>
+        <Text size="md">{row.log.text}</Text>
       </Table.Td>
     </Table.Tr>
   ));
 
-  function transformEventsForTable(events: SocketEventType[]): EventsTableDisplayType[] {
-    return events.map((event) => {
-      const logEvent = EventService.computeEventLog(event);
-      return {
-        date: logEvent.date,
-        channel: event.channel,
-        logLevel: logEvent.level,
-        description: logEvent.text,
-        payload: event.value,
-      };
-    });
-  }
-
-  async function load() {
-    const events: SocketEventType[] = await EventService.getSocketEvents();
-    let eventsTable: EventsTableDisplayType[] = transformEventsForTable(events);
-    if (activeFilters?.length) {
-      eventsTable = eventsTable.filter((event) => {
-        return activeFilters.every((filter) => {
-          const searchValue = filter.value?.trim().toLowerCase();
-          return recursivelyIncludes(event?.[filter.field], searchValue);
-        });
-      });
-    }
-    setEvents(eventsTable);
-  }
-
-  useEffect(() => {
-    StorageService.setActivityFilters(activeFilters);
-    void load();
-  }, [event, activeFilters]);
-
-  function handleOnAddFilter() {
-    if (searchValue) {
-      setActiveFilters((prevFilters) => {
-        const existingFilterIndex = prevFilters.findIndex(
-          (filter) => filter.field === searchField,
-        );
-
-        if (existingFilterIndex !== -1) {
-          const updatedFilters = [...prevFilters];
-          updatedFilters[existingFilterIndex] = {
-            field: searchField,
-            value: searchValue,
-          };
-          return updatedFilters;
-        }
-        return [
-          ...prevFilters,
-          {
-            field: searchField,
-            value: searchValue,
-          },
-        ];
-      });
-      setSearchValue("");
-    }
-  }
-
-  function handleOnRemoveFilter(field: string) {
-    setActiveFilters(activeFilters.filter((filter) => filter.field !== field));
-  }
-
-  function handleOnPaginationChange(newPage: number) {
-    setPagination({
-      ...pagination,
-      currentPage: newPage,
-    });
-  }
-
   function renderTable() {
     return <StandardTable
-      head={["field.createdOn", "field.channel", "field.extension", "field.logLevel", "field.description", "field.payload"]}
+      // head={["field.date", "field.extension", "field.logLevel", "field.entity", "field.message"]}
+      head={["field.date", "field.extension", "field.logLevel", "field.message"]}
       withPagination={{
         value: pagination,
         setValue: setPagination,
-        totalCount: events.length,
-        onPaginationChange: handleOnPaginationChange
+        totalCount: rows.length,
+        onPaginationChange: handleOnPaginationChange,
+        onTake: handleOnTakeChange
       }}
       emptyResults={<EmptyResults
         icon={IconActivity}
         description={t("activityScreen.emptyActivity.description")}
         title={t("activityScreen.emptyActivity.title")}
       />}>
-      {rows}
+      {renderedRows}
     </StandardTable>;
-  }
-
-  function computeAutoCompleteData() {
-    if (searchField === "channel") {
-      return channelEnum;
-    }
-    if (searchField === "logLevel") {
-      return [
-        { value: "info", label: "Info" },
-        { value: "debug", label: "Debug" },
-        { value: "error", label: "Error" },
-      ];
-    }
-    return [];
   }
 
   return (
@@ -182,47 +100,6 @@ export default function ActivityScreen() {
         <Flex justify="space-between" align="center">
           <Title>{t("activityScreen.title")}</Title>
         </Flex>
-        <Grid align="flex-end">
-          <Grid.Col span={2}>
-            <Select
-              defaultValue={"channel"}
-              allowDeselect={false}
-              value={searchField}
-              onChange={(value) => setSearchField(value)}
-              label={t("activityScreen.search")}
-              data={searchFieldData}
-            />
-          </Grid.Col>
-          <Grid.Col span={3}>
-            <Autocomplete
-              value={searchValue}
-              onChange={setSearchValue}
-              placeholder={t("activityScreen.searchValuePlaceholder")}
-              data={computeAutoCompleteData()}
-            />
-          </Grid.Col>
-          <Grid.Col span={1}>
-            <Button
-              disabled={searchValue?.trim() === ""}
-              onClick={handleOnAddFilter}
-            >
-              {t("button.add")}
-            </Button>
-          </Grid.Col>
-        </Grid>
-
-        <div>
-          {activeFilters.map((filter) => {
-            return (
-              <Pill
-                size="md"
-                withRemoveButton
-                onRemove={() => handleOnRemoveFilter(filter.field)}
-                key={filter.field}
-              >{`${searchFieldData.find((field) => field.value === filter.field).label}: ${filter.value}`}</Pill>
-            );
-          })}
-        </div>
         {renderTable()}
       </Stack>
     </Container>

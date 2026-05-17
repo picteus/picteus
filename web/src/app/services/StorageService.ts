@@ -8,7 +8,7 @@ const prefix = "picteus_";
 const VERSION_KEY = `${prefix}version`;
 const MAIN_TAB_KEY = `${prefix}mainTab`;
 const TABS_KEY = `${prefix}tabs`;
-const ACTIVITY_FILTERS_KEY = `${prefix}activityFilters`;
+const ACTIVITY_LOGS_BATCH_SIZE = `${prefix}activityLogsBatchSize`;
 const VISUALIZER_PANEL_SIZES_KEY = `${prefix}visualizerPanelSizes`;
 const CLOSEST_IMAGES_RESULTS_COUNT = `${prefix}closestImagesResultsCount`;
 const TEXT_TO_IMAGES_RESULTS_COUNT = `${prefix}textToImagesResultsCount`;
@@ -48,16 +48,12 @@ export default {
   setVersion: (value: string): void => {
     set(VERSION_KEY, value);
   },
-  setActivityFilters: (
-    filters: Array<{
-      field: string;
-      value: string;
-    }>
-  ): void => storeJson(ACTIVITY_FILTERS_KEY, filters),
-  getActivityFilters: (): Array<{
-    field: string;
-    value: string;
-  }> => getJsonNullValue(getWithNullValue(ACTIVITY_FILTERS_KEY)),
+  getActivityLogsBatchSize(): number {
+    return parseInt(get(ACTIVITY_LOGS_BATCH_SIZE, "20"));
+  },
+  setActivityLogsBatchSize(value: number): void {
+    set(ACTIVITY_LOGS_BATCH_SIZE, value.toString());
+  },
   getVisualizerPanelSizes: (): number[] =>
     getJsonNullValue<number[]>(VISUALIZER_PANEL_SIZES_KEY) ||
     VISUALIZER_DEFAULT_PANEL_SIZES,

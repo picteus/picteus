@@ -1,7 +1,6 @@
 import i18n from "i18n/i18n.ts";
 
-import { ChannelEnum, EventLogType, EventNotificationType, ExtensionIntentType, SocketEventType } from "types";
-import { formatDate } from "utils";
+import { ChannelEnum, EventNotificationType, ExtensionIntentType, LogType, SocketEventType } from "types";
 import { ImageService } from "app/services";
 
 
@@ -111,53 +110,60 @@ function computeEventExtensionId(event: SocketEventType): string | undefined {
   return undefined;
 }
 
-function computeEventLog(event: SocketEventType): EventLogType {
-  const date = formatDate(event.milliseconds);
-  const { channel, value } = event;
-  if (channel === ChannelEnum.EXTENSION_LOG) {
-    const extensionId = value["id"];
-    const message = value.message;
-    return { id: event.id, milliseconds: event.milliseconds, text: message.message, level: message.level, date, extensionId };
+function computeLog(event: SocketEventType): LogType {
+  const { id, milliseconds, channel, value } = event;
+  const entityId = event.value["id"];
+  let type: "image" | "repository" | "collection" | "extension" | "unknown";
+  if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
+    type = "extension";
+  }
+  else if (channel.startsWith(ChannelEnum.IMAGE_PREFIX)) {
+    type = "image";
+  }
+  else if (channel.startsWith(ChannelEnum.REPOSITORY_PREFIX)) {
+    type = "repository";
+  }
+  else if (channel.startsWith(ChannelEnum.COLLECTION_PREFIX)) {
+    type = "collection";
+  }
+  else {
+    type = "unknown";
   }
 
-  function computeI18nId(): string {
-    const valueId = value["id"];
-    if (channel.startsWith(ChannelEnum.REPOSITORY_PREFIX) || channel.startsWith(ChannelEnum.IMAGE_PREFIX)) {
-      return valueId;
-    }
-    return computeEventExtensionId(event);
+  let extensionId: string;
+  if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
+    extensionId = entityId;
+  }
+
+  if (channel === ChannelEnum.EXTENSION_LOG) {
+    const message = value.message;
+    return { type, id, milliseconds, text: message.message, level: message.level, entityId, extensionId };
   }
 
   const i18nMnemonic = `eventInformation.${channel}`;
-  const id = computeI18nId();
   const level = "info";
 
   if (channel === ChannelEnum.EXTENSION_INTENT) {
     const intent = (value as ExtensionIntentType).intent;
-    let type: string;
+    let intentType: string;
     if (intent.form) {
-      type = "a form";
+      intentType = "a form";
     } else if (intent.ui) {
-      type = "a ui";
+      intentType = "a ui";
     } else if (intent.dialog) {
-      type = "a dialog";
+      intentType = "a dialog";
     } else if (intent.show) {
-      type = "a show";
+      intentType = "a show";
     } else if (intent.images) {
-      type = "some images";
+      intentType = "some images";
     }
     else {
-      type = "an unknown";
+      intentType = "an unknown";
     }
-    return { id: event.id, milliseconds: event.milliseconds, text: i18n.t(i18nMnemonic, { id, type}), level, date, extensionId: id };
+    return { type, id, milliseconds, text: i18n.t(i18nMnemonic, { id: entityId, type: intentType}), level, entityId, extensionId };
   }
 
-  const result: EventLogType = { id: event.id, milliseconds: event.milliseconds, text: i18n.t(i18nMnemonic, { id }), level, date };
-  if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
-    result.extensionId = id;
-  }
-
-  return result;
+  return { type, id, milliseconds, text: i18n.t(i18nMnemonic, { id: entityId }), level, entityId, extensionId };
 }
 
 async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<EventNotificationType> {
@@ -234,6 +240,6 @@ export default {
   getNotifications,
   storeNotification,
   computeEventExtensionId,
-  computeEventLog,
+  computeLog,
   computeLogLevelColor
 };
