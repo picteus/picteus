@@ -1,6 +1,6 @@
 {
   "id": "ollama",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "name": "Ollama",
   "description": "Computes the caption features of an image through Vision Languages (VL) through Ollama.",
   "runtimes": [
@@ -111,18 +111,20 @@
           "description": "A Vision Language model.",
           "enum": [
             "llava",
+            "llava-llama3",
+            "llava-phi3",
+            "bakllava",
+            "qwen3-vl",
             "qwen2.5vl",
+            "llama3.2-vision",
             "minicpm-v",
             "granite3.2-vision",
             "gemma3",
             "mistral-small3.2",
             "moondream",
-            "bakllava",
-            "llava-phi3"
+            "nemotron3"
           ],
-          "default": [
-            "llava"
-          ]
+          "default": "llava"
         },
         "default": [
           "llava"

@@ -103,6 +103,7 @@ class OllamaExtension extends PicteusExtension
         title: `Response from the '${model}' model`,
         description: `After having analyzed the image, here is the answer to your question <b>"${question}"</b>.`,
         details: `${answer}`,
+        size: "m",
         buttons: { yes: "OK" }
       }
     });
@@ -141,7 +142,7 @@ class OllamaExtension extends PicteusExtension
   private async setup(communicator: Communicator, value: SettingsValue): Promise<void>
   {
     this.ollamaUrl = value["ollamaUrl"];
-    this.models = value["models"];
+    this.models = value["models"] || [];
     this.questions = value["questions"];
     await this.ensureOllamaServer(communicator, true);
     await this.ensureOllamaModels(communicator, this.models, true);
