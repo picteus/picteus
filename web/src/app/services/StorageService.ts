@@ -13,6 +13,7 @@ const VISUALIZER_PANEL_SIZES_KEY = `${prefix}visualizerPanelSizes`;
 const CLOSEST_IMAGES_RESULTS_COUNT = `${prefix}closestImagesResultsCount`;
 const TEXT_TO_IMAGES_RESULTS_COUNT = `${prefix}textToImagesResultsCount`;
 const FOLDER_PICKER_LAST_LOCATION = `${prefix}extensionPickerLastLocation`;
+const AUTO_RELOAD_IMAGES_VIEWS = `${prefix}autoReloadImagesViews`;
 const EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION = `${prefix}extensionIntentShowShouldConfirmRedirection`;
 const IMAGE_DETAIL_TRAITS = `${prefix}imageDetailTraits`;
 const SELECTED_IMAGE_IDS = `${prefix}selectedImagesIds`;
@@ -87,11 +88,17 @@ export default {
     };
     storeJson(FOLDER_PICKER_LAST_LOCATION, updatedLocation);
   },
-  setExtensionIntentShowShouldConfirm: (value: boolean) => {
-    set(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION, value.toString());
+  getAutoReloadImagesViews: () => {
+    return get(AUTO_RELOAD_IMAGES_VIEWS) !== "false";
+  },
+  setAutoReloadImagesViews: (value: boolean) => {
+    set(AUTO_RELOAD_IMAGES_VIEWS, value.toString());
   },
   getExtensionIntentShowShouldConfirm: () => {
     return get(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION) === "true";
+  },
+  setExtensionIntentShowShouldConfirm: (value: boolean) => {
+    set(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION, value.toString());
   },
   getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType {
     return getJsonNullValue<ViewTabDataType>(MAIN_TAB_KEY, {

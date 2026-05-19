@@ -103,16 +103,20 @@ function computeLogLevelColor(logLevel: string): string {
   }
 }
 
+function computeEventEntityId<T>(event: SocketEventType): T | undefined {
+  return event.value["id"] as T;
+}
+
 function computeEventExtensionId(event: SocketEventType): string | undefined {
   if (event.channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
-    return event.value["id"];
+    return computeEventEntityId<string>(event);
   }
   return undefined;
 }
 
 function computeLog(event: SocketEventType): LogType {
   const { id, milliseconds, channel, value } = event;
-  const entityId = event.value["id"];
+  const entityId = computeEventEntityId<string | number>(event);
   let type: "image" | "repository" | "collection" | "extension" | "unknown";
   if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
     type = "extension";
@@ -132,7 +136,7 @@ function computeLog(event: SocketEventType): LogType {
 
   let extensionId: string;
   if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
-    extensionId = entityId;
+    extensionId = entityId as string;
   }
 
   if (channel === ChannelEnum.EXTENSION_LOG) {
@@ -239,6 +243,7 @@ export default {
   deleteAllNotifications,
   getNotifications,
   storeNotification,
+  computeEventEntityId,
   computeEventExtensionId,
   computeLog,
   computeLogLevelColor

@@ -337,7 +337,8 @@ export default {
         "Display a confirmation dialog before the extension triggers a redirection"
     },
     darkMode: "Dark color scheme",
-    lightMode: "Light color scheme"
+    lightMode: "Light color scheme",
+    autoReload: "Auto reload on new or updated images"
   },
   textToImagesModal: {
     title: "Text-to-images search",

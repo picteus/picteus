@@ -1,11 +1,27 @@
-import React, { ReactElement, ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  ReactElement,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore
+} from "react";
 import { Flex } from "@mantine/core";
 
 import { SearchRange } from "@picteus/ws-client";
 
-import { FilterOrCollectionId, ImageExplorerDataType, ImageWithCaption, ViewMode, ViewTabDataType } from "types";
+import {
+  ChannelEnum,
+  FilterOrCollectionId,
+  ImageExplorerDataType,
+  ImageWithCaption,
+  ViewMode,
+  ViewTabDataType
+} from "types";
 import { NotificationsService } from "utils";
-import { useImagesTabsContext } from "app/context";
+import { useEventSocket, useImagesTabsContext } from "app/context";
 import { useInterceptedState } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
 import { Container, EmptyResults } from "app/components";
@@ -26,9 +42,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollRootRef = useRef<HTMLDivElement>(null);
   const { addTab } = useImagesTabsContext();
-  const hasFilterOrCollectionId = "filterOrCollectionId" in viewData;
-  const pinnable = "pinnable" in viewData ? viewData.pinnable : false;
-  const [filterOrCollectionId, setFilterOrCollectionId] = useInterceptedState<FilterOrCollectionId>(hasFilterOrCollectionId === true ? viewData.filterOrCollectionId : {
+  const [filterOrCollectionId, setFilterOrCollectionId] = useInterceptedState<FilterOrCollectionId>("filterOrCollectionId" in viewData ? viewData.filterOrCollectionId : {
     filter: {
       origin: {
         kind: "images",
@@ -36,9 +50,15 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       }
     }
   });
+  const hasFilterOrCollectionId = useMemo<boolean>(() => "filterOrCollectionId" in viewData, [viewData]);
+  const pinnable = useMemo<boolean>(() => "pinnable" in viewData ? viewData.pinnable : false, [viewData]);
   const [images, setImages] = useState<ImageWithCaption[] | undefined>("images" in viewData ? viewData.images : undefined);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [viewMode, setViewMode] = useInterceptedState<ViewMode>("mode" in viewData ? viewData.mode : viewData.viewMode);
+  const [displayRefreshAlert, setDisplayRefreshAlert] = useState<boolean>(false);
+  const autoReloadImagesViews = useMemo<boolean>(() => StorageService.getAutoReloadImagesViews(), []);
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
 
   useEffect(() => {
     if ("images" in viewData) {
@@ -68,6 +88,13 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
     handleOnRefresh();
   }, [viewData, setFilterOrCollectionId, setViewMode]);
 
+  const handleOnRefresh = useCallback(() => {
+    if (hasFilterOrCollectionId) {
+      setRefreshTrigger(previousRefreshTrigger => previousRefreshTrigger + 1);
+      setDisplayRefreshAlert(false);
+    }
+  }, [hasFilterOrCollectionId]);
+
   const onFetchData = useCallback((searchRange: SearchRange): Promise<ImageExplorerDataType> => {
     if (images !== undefined) {
       return Promise.resolve({ total: images.length, images });
@@ -93,44 +120,61 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
     });
   }, [filterOrCollectionId, images]);
 
-  function handleOnFilterOrCollectionId(updatedFilterOrCollectionId: FilterOrCollectionId) {
+  useEffect(() => {
+    if (event === undefined) {
+      return;
+    }
+    if (event.channel === ChannelEnum.IMAGE_CREATED || event.channel === ChannelEnum.IMAGE_UPDATED || event.channel === ChannelEnum.IMAGE_DELETED) {
+      if (autoReloadImagesViews) {
+          handleOnRefresh();
+      }
+      else {
+        setDisplayRefreshAlert(true);
+      }
+    }
+  }, [event, autoReloadImagesViews, handleOnRefresh]);
+
+  const handleOnFilterOrCollectionId = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId) => {
     setFilterOrCollectionId(updatedFilterOrCollectionId);
     if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(filterOrCollectionId)) {
       if (isDefault === true) {
-        StorageService.setMainViewTabData({ mode: viewMode, pinnable: pinnable, filterOrCollectionId: updatedFilterOrCollectionId });
+        StorageService.setMainViewTabData({ mode: viewMode, pinnable, filterOrCollectionId: updatedFilterOrCollectionId });
       }
       handleOnRefresh();
     }
-  }
+  }, [filterOrCollectionId, viewMode, pinnable, handleOnRefresh]);
 
-  function handleOnViewMode(updatedViewMode: ViewMode) {
+  const handleOnViewMode = useCallback((updatedViewMode: ViewMode) => {
     setViewMode(updatedViewMode);
     if (isDefault === true) {
-      StorageService.setMainViewTabData({ mode: updatedViewMode, pinnable: pinnable, filterOrCollectionId });
+      StorageService.setMainViewTabData({ mode: updatedViewMode, pinnable, filterOrCollectionId });
     }
     handleOnRefresh();
-  }
+  }, [pinnable, filterOrCollectionId, handleOnRefresh]);
 
-  function handleOnRefresh() {
-    setRefreshTrigger(previousRefreshTrigger => previousRefreshTrigger + 1);
-  }
-
-  function handleOnPin() {
-    addTab({
-      content: { title: "New tab", description: "" },
-      data: { mode: "masonry", pinnable: true, filterOrCollectionId },
-    });
-  }
+  const handleOnPin = useMemo(() => {
+    if (pinnable) {
+      return () => {
+        addTab({
+          content: { title: "New tab", description: "" },
+          data: { mode: "masonry", pinnable: true, filterOrCollectionId },
+        });
+      };
+    }
+    return undefined;
+  }, [pinnable]);
 
   return (<Flex ref={containerRef} direction="column" className={style.container}>
     <ControllerBar
       children={controlBarChildren}
       initialFilterOrCollectionId={filterOrCollectionId}
       onFilterOrCollectionId={handleOnFilterOrCollectionId}
-      onRefresh={hasFilterOrCollectionId === true ? handleOnRefresh : undefined}
+      withRefreshButton={hasFilterOrCollectionId}
+      displayRefreshAlert={displayRefreshAlert}
+      onRefresh={handleOnRefresh}
       viewMode={viewMode}
       onViewMode={handleOnViewMode}
-      handleOnPin={pinnable === true ? handleOnPin : undefined}
+      handleOnPin={handleOnPin}
     />
     <div ref={contentRef} className={style.content}>
       <div ref={scrollRootRef} className={style.scrolling}>

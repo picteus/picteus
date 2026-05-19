@@ -144,7 +144,18 @@ export function ImagesNavbarLink({ icon, label, route }: ImagesNavbarLinkType) {
   };
 
   return (
-    <Menu trigger="hover" position="right-start" withArrow opened={opened} onChange={setOpened} offset={12} closeDelay={400}>
+    <Menu
+      withinPortal={true}
+      position="right"
+      shadow="lg"
+      withArrow
+      arrowSize={Common.ArrowSize}
+      offset={Common.RightSideBarOffset}
+      closeDelay={Common.HoverCloseDelayInMilliseconds}
+      trigger="hover"
+      opened={opened}
+      onChange={setOpened}
+    >
       <Menu.Target>
         <Tooltip label={label} position="right" disabled={opened}>
           <UnstyledButton
@@ -156,7 +167,6 @@ export function ImagesNavbarLink({ icon, label, route }: ImagesNavbarLinkType) {
           </UnstyledButton>
         </Tooltip>
       </Menu.Target>
-
       <Menu.Dropdown onMouseEnter={() => setOpened(true)} onMouseLeave={() => setOpened(false)}>
         <Menu.Item
           leftSection={<IconPhoto size={13} />}

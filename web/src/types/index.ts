@@ -56,7 +56,7 @@ export type LogType = WithIdAndMilliseconds & {
   type: "image" | "repository" | "collection" | "extension" | "unknown";
   text: string;
   level: string;
-  entityId?: string;
+  entityId?: string | number;
   extensionId?: string;
 };
 

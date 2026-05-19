@@ -8,22 +8,25 @@ import { StorageService } from "app/services";
 
 export default function SettingsScreen() {
   const [t] = useTranslation();
-  const [shouldConfirmRedirection, setShouldConfirmRedirection] = useState(
-    StorageService.getExtensionIntentShowShouldConfirm(),
-  );
-  const { colorScheme, setColorScheme } = useMantineColorScheme({
-    keepTransitions: true,
-  });
+  const [shouldConfirmRedirection, setShouldConfirmRedirection] = useState<boolean>(StorageService.getExtensionIntentShowShouldConfirm());
+  const [autoReloadImagesViews, setAutoReloadImagesViews] = useState<boolean>(StorageService.getAutoReloadImagesViews);
+  const { colorScheme, setColorScheme } = useMantineColorScheme({ keepTransitions: true });
+
+  useEffect(() => {
+    StorageService.setExtensionIntentShowShouldConfirm(shouldConfirmRedirection);
+  }, [shouldConfirmRedirection]);
+
+  useEffect(() => {
+    StorageService.setAutoReloadImagesViews(autoReloadImagesViews);
+  }, [autoReloadImagesViews]);
 
   function handleOnChangeColorScheme({ target: { checked: value } }: { target: { checked: boolean } }) {
     setColorScheme(value ? "dark" : "light");
   }
 
-  useEffect(() => {
-    StorageService.setExtensionIntentShowShouldConfirm(
-      shouldConfirmRedirection,
-    );
-  }, [shouldConfirmRedirection]);
+  function handleOnChangeAutoReloadImagesViews({ target: { checked: value } }: { target: { checked: boolean } }) {
+    setAutoReloadImagesViews(value);
+  }
 
   return (
     <Container>
@@ -72,6 +75,16 @@ export default function SettingsScreen() {
                   {colorScheme === "dark"
                     ? t("settingsScreen.darkMode")
                     : t("settingsScreen.lightMode")}
+                </Text>
+              </Flex>
+              <Flex align="center" gap={10}>
+                <Switch
+                  checked={autoReloadImagesViews}
+                  size="md"
+                  onChange={handleOnChangeAutoReloadImagesViews}
+                />
+                <Text size="sm">
+                  {t("settingsScreen.autoReload")}
                 </Text>
               </Flex>
             </Stack>

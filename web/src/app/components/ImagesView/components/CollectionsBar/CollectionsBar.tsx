@@ -9,7 +9,7 @@ import { ChannelEnum } from "types";
 import { NotificationsService } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useAsyncInitialize } from "app/hooks";
-import { CollectionService } from "app/services";
+import { CollectionService, EventService } from "app/services";
 import { Common } from "app/components";
 import AddOrUpdateCollection
     from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
@@ -46,7 +46,7 @@ export default function CollectionsBar({
     useEffect(() => {
         if (event?.channel === ChannelEnum.COLLECTION_DELETED) {
             void loadCollections(true);
-            if (event.value["id"] === selectedCollection?.id) {
+            if (EventService.computeEventEntityId<number>(event) === selectedCollection?.id) {
                 setSelectedCollection(undefined);
             }
         }

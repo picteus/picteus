@@ -1,10 +1,9 @@
-import React, { ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import React, { ReactNode, useMemo } from "react";
 import { ActionIcon, Flex, Tooltip } from "@mantine/core";
 import { IconLayoutDashboard, IconListDetails, IconPhoto, IconPin } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { ChannelEnum, FilterOrCollectionId, ViewMode } from "types";
-import { useEventSocket } from "app/context";
+import { FilterOrCollectionId, ViewMode } from "types";
 import { RefreshButton } from "app/components";
 import { FiltersBar } from "../index.ts";
 
@@ -15,6 +14,8 @@ type ControllerBarType = {
   children?: ReactNode;
   initialFilterOrCollectionId: FilterOrCollectionId;
   onFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId) => void;
+  withRefreshButton: boolean;
+  displayRefreshAlert: boolean;
   onRefresh?: () => void;
   viewMode: ViewMode;
   onViewMode: (mode: ViewMode) => void;
@@ -25,29 +26,20 @@ export default function ControllerBar({
                                         children,
                                         initialFilterOrCollectionId,
                                         onFilterOrCollectionId,
+                                        withRefreshButton,
+                                        displayRefreshAlert,
                                         onRefresh,
                                         viewMode,
                                         onViewMode,
                                         handleOnPin,
                                       }: ControllerBarType) {
   const [t] = useTranslation();
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [showAlertNewImages, setShowAlertNewImages] = useState<boolean>(false);
   const withTable = useMemo<boolean>(() => Math.random() > 1, []);
 
-  useEffect(() => {
-    if (event === undefined) {
-      return;
-    }
-    if (event.channel === ChannelEnum.IMAGE_CREATED || event.channel === ChannelEnum.IMAGE_DELETED) {
-      setShowAlertNewImages(true);
-    }
-  }, [event]);
-
   function handleOnRefresh() {
-    setShowAlertNewImages(false);
-    onRefresh();
+    if (onRefresh) {
+      onRefresh();
+    }
   }
 
   return (
@@ -77,8 +69,8 @@ export default function ControllerBar({
           </Tooltip>
           }
         </ActionIcon.Group>
-        {onRefresh && <RefreshButton
-          alert={showAlertNewImages}
+        {withRefreshButton && <RefreshButton
+          alert={displayRefreshAlert}
           onRefresh={handleOnRefresh}
         />}
         {handleOnPin && <Tooltip label={t("button.pin")}>
