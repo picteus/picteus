@@ -1,13 +1,14 @@
-import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { getHotkeyHandler, useFocusTrap } from "@mantine/hooks";
 import { Group as ResizableGroup, Layout, Panel, Separator } from "react-resizable-panels";
 
 import { Image } from "@picteus/ws-client";
 
 import { ChannelEnum, ImageOrSummary, ViewMode } from "types";
+import { NotificationsService } from "utils";
 import { useEventSocket } from "app/context";
 import { useImageNavigation } from "app/hooks";
-import { ImageService, StorageService } from "app/services";
+import { EventService, ImageService, StorageService } from "app/services";
 import { ImageData, ImageTop, ImageVisual } from "./components";
 
 import style from "./ImageDetail.module.scss";
@@ -27,30 +28,22 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
 
-  const loadImageData = useCallback((image: ImageOrSummary, force: boolean): void => {
-    async function load() {
-      navigation.setSelectedImage((force === false && "metadata" in image) ? image as Image : await ImageService.get({ id: image.id }));
-    }
-
-    void load();
-  }, [navigation.setSelectedImage]);
-
   useEffect(() => {
     if (event !== undefined) {
-      const channel = event.channel;
-      if (channel === ChannelEnum.IMAGE_UPDATED || channel === ChannelEnum.IMAGE_TAGS_UPDATED || channel === ChannelEnum.IMAGE_FEATURES_UPDATED) {
-        if (imageData !== undefined && event.value.id === imageData.id) {
-          void loadImageData(navigation.selectedImage,true);
+      if (event.channel === ChannelEnum.IMAGE_UPDATED || event.channel === ChannelEnum.IMAGE_TAGS_UPDATED || event.channel === ChannelEnum.IMAGE_FEATURES_UPDATED) {
+        const imageId = EventService.computeEventEntityId<string>(event);
+        if (navigation.containsImage(imageId)) {
+          ImageService.get({ id: imageId }).then(image => navigation.updateImage(image)).catch(NotificationsService.apiCallError);
         }
       }
     }
-  }, [event, navigation.selectedImage]);
+  }, [event, navigation.containsImage, navigation.updateImage]);
 
   useEffect(() => {
     if (image) {
-      void loadImageData(image, false);
+      ("metadata" in image ? Promise.resolve(image as Image) : ImageService.get({ id: image.id })).then(navigation.setSelectedImage).catch(NotificationsService.apiCallError);
     }
-  }, [image]);
+  }, [image, navigation.setSelectedImage]);
 
   function handleOnLayoutChanged(layout: Layout) {
     const size = Object.values(layout);

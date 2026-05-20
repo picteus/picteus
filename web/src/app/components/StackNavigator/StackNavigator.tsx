@@ -4,7 +4,7 @@ import { useFocusTrap } from "@mantine/hooks";
 import { IconArrowLeft } from "@tabler/icons-react";
 
 import { ActionModalValue } from "types";
-import { useKey } from "app/hooks";
+import useKey from "app/hooks/useKey.tsx";
 
 import style from "./StackNavigator.module.scss";
 

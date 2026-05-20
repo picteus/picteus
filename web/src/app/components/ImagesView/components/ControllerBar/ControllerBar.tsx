@@ -19,7 +19,7 @@ type ControllerBarType = {
   onRefresh?: () => void;
   viewMode: ViewMode;
   onViewMode: (mode: ViewMode) => void;
-  handleOnPin?: () => void;
+  onPin?: () => void;
 };
 
 export default function ControllerBar({
@@ -31,7 +31,7 @@ export default function ControllerBar({
                                         onRefresh,
                                         viewMode,
                                         onViewMode,
-                                        handleOnPin,
+                                        onPin,
                                       }: ControllerBarType) {
   const [t] = useTranslation();
   const withTable = useMemo<boolean>(() => Math.random() > 1, []);
@@ -73,8 +73,8 @@ export default function ControllerBar({
           alert={displayRefreshAlert}
           onRefresh={handleOnRefresh}
         />}
-        {handleOnPin && <Tooltip label={t("button.pin")}>
-          <ActionIcon size="lg" variant={"default"} onClick={handleOnPin}>
+        {onPin && <Tooltip label={t("button.pin")}>
+          <ActionIcon size="lg" variant={"default"} onClick={onPin}>
             <IconPin stroke={1.2} />
           </ActionIcon>
         </Tooltip>}

@@ -90,11 +90,9 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
   }, [viewData, setFilterOrCollectionId, setViewMode]);
 
   const handleOnRefresh = useCallback(() => {
-    if (hasFilterOrCollectionId) {
-      setRefreshTrigger(previousRefreshTrigger => previousRefreshTrigger + 1);
-      setDisplayRefreshAlert(false);
-    }
-  }, [hasFilterOrCollectionId]);
+    setRefreshTrigger(previousRefreshTrigger => previousRefreshTrigger + 1);
+    setDisplayRefreshAlert(false);
+  }, []);
 
   const onFetchData = useCallback((searchRange: SearchRange): Promise<ImageExplorerDataType> => {
     if (images !== undefined) {
@@ -169,12 +167,12 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       return () => {
         addTab({
           content: { title: "New tab", description: "" },
-          data: { mode: "masonry", pinnable: true, filterOrCollectionId },
+          data: { mode: "masonry", pinnable: true, filterOrCollectionId }
         });
       };
     }
     return undefined;
-  }, [pinnable]);
+  }, [pinnable, filterOrCollectionId]);
 
   return (<Flex ref={containerRef} direction="column" className={style.container}>
     <ControllerBar
@@ -186,7 +184,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       onRefresh={handleOnRefresh}
       viewMode={viewMode}
       onViewMode={handleOnViewMode}
-      handleOnPin={handleOnPin}
+      onPin={handleOnPin}
     />
     <div ref={contentRef} className={style.content}>
       <div ref={scrollRootRef} className={style.scrolling}>
