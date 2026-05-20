@@ -26,13 +26,16 @@ export function useActionModalContext() {
 
 export function ActionModalProvider({ children }) {
   const [modals, setModals] = useState<ActionModalValue[]>([]);
+  const modalsRef = useRef<ActionModalValue[]>(modals);
   const listenersRef = useRef<ListenerType[]>([]);
 
   const add = useCallback((modal: ActionModalValue): string => {
     if (!modal.id) {
       modal.id = randomId();
     }
-    setModals((previousModals) => [...previousModals, modal]);
+    const newModals = [...modalsRef.current, modal];
+    modalsRef.current = newModals;
+    setModals(newModals);
     for (const listener of listenersRef.current) {
       listener(modal, true);
     }
@@ -41,18 +44,18 @@ export function ActionModalProvider({ children }) {
 
 
   const remove = useCallback((id: string): void => {
-    setModals((previousModals) => {
-      const index = previousModals.findIndex((modal) => modal.id === id);
-      if (index !== -1) {
-        const modal = previousModals[index];
-        for (const listener of listenersRef.current) {
-          listener(modal, false);
-        }
-        previousModals.splice(index, 1);
-        return [...previousModals];
+    const currentModals = modalsRef.current;
+    const index = currentModals.findIndex((modal) => modal.id === id);
+    if (index !== -1) {
+      const modal = currentModals[index];
+      const newModals = [...currentModals];
+      newModals.splice(index, 1);
+      modalsRef.current = newModals;
+      setModals(newModals);
+      for (const listener of listenersRef.current) {
+        listener(modal, false);
       }
-      return previousModals;
-    });
+    }
   }, []);
 
   const subscribe = useCallback((listener: ListenerType): (() => void) => {

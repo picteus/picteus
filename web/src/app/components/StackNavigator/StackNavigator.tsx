@@ -81,39 +81,45 @@ interface StackNavigatorType {
 
 export default function StackNavigator ({ children }: StackNavigatorType) {
   const [stack, setStack] = useState<StackedComponentType[]>([]);
+  const stackRef = useRef<StackedComponentType[]>(stack);
   const listenersRef = useRef<ListenerType[]>([]);
 
   const push = useCallback((stackedComponent: StackedComponentType) => {
-    setStack((previousStack) => [...previousStack, stackedComponent]);
+    const newStack = [...stackRef.current, stackedComponent];
+    stackRef.current = newStack;
+    setStack(newStack);
     for (const listener of listenersRef.current) {
       listener(stackedComponent, false);
     }
   }, []);
 
   const pop = useCallback(() => {
-    setStack((previousStack) => {
-      if (previousStack.length === 0) {
-        return previousStack;
-      }
-      const newStack = previousStack.slice(0, -1);
-      for (const listener of listenersRef.current) {
-        listener(previousStack[previousStack.length - 1], true);
-      }
-      return newStack;
-    });
+    const currentStack = stackRef.current;
+    if (currentStack.length === 0) {
+      return;
+    }
+    const component = currentStack[currentStack.length - 1];
+    const newStack = currentStack.slice(0, -1);
+    stackRef.current = newStack;
+    setStack(newStack);
+    for (const listener of listenersRef.current) {
+      listener(component, true);
+    }
   }, []);
 
   useKey("Escape", () => {
-    if (stack.length > 0 && stack[stack.length - 1].closeOnEscape !== false) {
+    if (stackRef.current.length > 0 && stackRef.current[stackRef.current.length - 1].closeOnEscape !== false) {
       pop();
     }
   });
 
   const popToRoot = useCallback(() => {
+    stackRef.current = [];
     setStack([]);
   }, []);
 
   const set = useCallback((stackedComponents: StackedComponentType []) => {
+    stackRef.current = stackedComponents;
     setStack(stackedComponents);
   }, []);
 

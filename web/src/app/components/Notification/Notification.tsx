@@ -3,7 +3,7 @@ import { CloseButton, Flex, Notification as MantineNotification, Text } from "@m
 import { IconInfoCircle } from "@tabler/icons-react";
 
 import { EventNotificationType } from "types";
-import { timeAgoFromMilliseconds } from "utils";
+import { NotificationsService, timeAgoFromMilliseconds } from "utils";
 import { useActionModalContext } from "app/context";
 import { EventService, ImageService } from "app/services";
 import { Common, ImageDetail, ImageThumbnail } from "app/components";
@@ -75,8 +75,15 @@ export default function Notification({ notification, isToast = false, onClose, o
   }
 
   async function handleOnClick() {
+    let image;
     if (notification.type === "image") {
-      const image = await ImageService.get({ id: notification.entityId });
+      try {
+        image = await ImageService.get({ id: notification.entityId });
+      }
+      catch (error) {
+        NotificationsService.apiCallError(error);
+        return;
+      }
       const id = addModal({
         component: (
           <ImageDetail
