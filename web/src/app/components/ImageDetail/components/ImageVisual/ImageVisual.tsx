@@ -13,6 +13,7 @@ import { ImageService } from "app/services";
 import { OverlayIndicator } from "app/components";
 
 import style from "./ImageVisual.module.scss";
+import { useImageDateChanged } from "../../../../hooks";
 
 
 type ImageVisualType = {
@@ -32,7 +33,8 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
   const [imageExpectedDimensions, setImageExpectedDimensions] = useState<PicteusImageDimensions | undefined>();
   const [imageSrc, setImageSrc] = useState<string | undefined>();
   const [scalingRatio, setScalingRatio] = useState<string | undefined>();
-  const [error, setError] = useState<string | undefined>( );
+  const [error, setError] = useState<string | undefined>();
+  const hasImageDateChanged = useImageDateChanged(image);
 
   useEffect(() => {
     const newImageWrapperDimensions = {width: Math.round(imageWrapperRectangle.width), height: Math.round(imageWrapperRectangle.height)};
@@ -44,9 +46,11 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
       }, resizeRender);
       setImageExpectedDimensions(newImageExpectedDimensions);
       setScalingRatio(Math.round((newImageExpectedDimensions.width / image.dimensions.width) * 100).toString());
-      setImageSrc(ImageService.getImageSrc(image.uri, newImageWrapperDimensions.width, newImageWrapperDimensions.height, resizeRender));
+      const url = ImageService.getImageSrc(image.uri, newImageWrapperDimensions.width, newImageWrapperDimensions.height, resizeRender);
+      const imageDate = image.fileDates?.modificationDate ?? image.modificationDate;
+      setImageSrc((imageDate && hasImageDateChanged) ? `${url}&t=${imageDate}` : url);
     }
-  }, [imageWrapperRectangle, image]);
+  }, [imageWrapperRectangle, hasImageDateChanged, image]);
 
   useEffect(() => {
     if (withNavigation.hasPrevious === false) {

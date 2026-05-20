@@ -11,6 +11,7 @@ import { ImageService } from "app/services";
 import { ImageItemMenu } from "app/components";
 
 import style from "./ImageItem.module.scss";
+import { useImageDateChanged } from "../../hooks";
 
 
 function useImageRefStatus(src: string): { imgRef: RefObject<HTMLImageElement>, isLoaded: boolean, isError: boolean } {
@@ -45,8 +46,10 @@ function computeResizeRender(width: number, height: number): ImageResizeRender {
   return width === undefined || height === undefined ? "inbox" : "outbox";
 }
 
-function computeImageSrc(image: ImageOrSummary, width: number, height: number, resizeRender: ImageResizeRender): string {
-  return ImageService.getImageSrc(image.uri, width, height, resizeRender);
+function computeImageSrc(image: ImageOrSummary, width: number, height: number, resizeRender: ImageResizeRender, hasImageDateChanged: boolean): string {
+  const url = ImageService.getImageSrc(image.uri, width, height, resizeRender);
+  const imageDate = image.fileDates?.modificationDate ?? image.modificationDate;
+  return (imageDate && hasImageDateChanged) ? `${url}&t=${imageDate}` : url;
 }
 
 function computeExpectedDimensions(width: number, height: number, image: ImageOrSummary): {
@@ -91,8 +94,9 @@ export default function ImageItem({
   const [t] = useTranslation();
   const [menuOpened, setMenuOpened] = useState<boolean>(false);
   const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
+  const hasImageDateChanged = useImageDateChanged(image);
   const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions>(computeExpectedDimensions(width, height, image).expectedDimensions);
-  const [imageSrc, setImageSrc] = useState<string>(computeImageSrc(image, width, height, computeResizeRender(width, height)));
+  const [imageSrc, setImageSrc] = useState<string>(computeImageSrc(image, width, height, computeResizeRender(width, height), hasImageDateChanged));
   const { imgRef, isLoaded, isError } = useImageRefStatus(imageSrc);
 
   useEffect(() => {
@@ -101,8 +105,8 @@ export default function ImageItem({
       expectedDimensions: newImageExpectedDimensions
     } = computeExpectedDimensions(width, height, image);
     setImageExpectedDimensions(newImageExpectedDimensions);
-    setImageSrc(computeImageSrc(image, width, height, resizeRender));
-  }, [image, width, height]);
+    setImageSrc(computeImageSrc(image, width, height, resizeRender, hasImageDateChanged));
+  }, [image, width, height, hasImageDateChanged]);
 
   const handleOnSelectImage = useCallback(() => toggleSelectedImage(image), [image, toggleSelectedImage]);
 

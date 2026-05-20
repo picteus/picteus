@@ -10,5 +10,6 @@ export { default as useConfirmAction } from "./useConfirmAction.tsx";
 export { default as useImageNavigation } from "./useImageNavigation.tsx";
 export { default as useInterceptedState } from "./useInterceptedState.tsx";
 export { default as useAsyncInitialize } from "./useAsyncInitialize.tsx";
+export { default as useImageDateChanged } from "./useImageDateChanged.tsx";
 export { default as useReadyRef } from "./useReadyRef.tsx";
 export { default as useTraceUpdate } from "./useTraceUpdate.tsx";
