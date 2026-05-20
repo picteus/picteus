@@ -23,9 +23,9 @@ import {
 import { NotificationsService } from "utils";
 import { useEventSocket, useImagesTabsContext } from "app/context";
 import { useInterceptedState } from "app/hooks";
-import { ImageService, StorageService } from "app/services";
+import { EventService, ImageService, StorageService } from "app/services";
 import { Container, EmptyResults } from "app/components";
-import { ControllerBar, ImagesContent } from "./components";
+import { ControllerBar, ImagesContent, ImagesContentRefType } from "./components";
 
 import style from "./ImagesView.module.scss";
 
@@ -38,6 +38,7 @@ type ImagesViewType = {
 };
 
 export default function ImagesView({ viewData, isDefault, controlBarChildren, onEmptyResults }: ImagesViewType){
+  const imagesContentRef = useRef<ImagesContentRefType>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollRootRef = useRef<HTMLDivElement>(null);
@@ -126,7 +127,18 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
     }
     if (event.channel === ChannelEnum.IMAGE_CREATED || event.channel === ChannelEnum.IMAGE_UPDATED || event.channel === ChannelEnum.IMAGE_DELETED) {
       if (autoReloadImagesViews) {
-          handleOnRefresh();
+        if (imagesContentRef.current) {
+          const imageId = EventService.computeEventEntityId<string>(event);
+          if (event.channel === ChannelEnum.IMAGE_DELETED) {
+            imagesContentRef.current.onImageDeleted(imageId);
+          }
+          else if (event.channel === ChannelEnum.IMAGE_UPDATED) {
+            ImageService.get({id: imageId}).then(image=>imagesContentRef.current.onImageUpdated(image)).catch(NotificationsService.apiCallError);
+          }
+          else {
+            handleOnRefresh();
+          }
+        }
       }
       else {
         setDisplayRefreshAlert(true);
@@ -180,6 +192,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       <div ref={scrollRootRef} className={style.scrolling}>
         <Container>
           <ImagesContent
+            ref={imagesContentRef}
             viewMode={viewMode}
             containerRef={containerRef}
             contentRef={contentRef}

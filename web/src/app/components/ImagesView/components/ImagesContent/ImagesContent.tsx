@@ -1,4 +1,14 @@
-import React, { ReactElement, RefObject, useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  ForwardedRef,
+  forwardRef,
+  ReactElement,
+  RefObject,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState
+} from "react";
 import { Box, Portal } from "@mantine/core";
 
 import { SearchRange } from "@picteus/ws-client";
@@ -25,15 +35,20 @@ type ImagesContentType = {
   refreshTrigger: number;
 };
 
-export default function ImagesContent({
-                         viewMode,
-                         containerRef,
-                         contentRef,
-                         scrollRootRef,
-                         onEmptyResults,
-                         onFetchData,
-                         refreshTrigger,
-                       }: ImagesContentType) {
+export type ImagesContentRefType = {
+  onImageDeleted(imageId: string): void;
+  onImageUpdated(image: ImageOrSummary): void;
+}
+
+export const ImagesContent = forwardRef(({
+                                    viewMode,
+                                    containerRef,
+                                    contentRef,
+                                    scrollRootRef,
+                                    onEmptyResults,
+                                    onFetchData,
+                                    refreshTrigger,
+                                  }: ImagesContentType, ref: ForwardedRef<ImagesContentRefType>) => {
   const [pagination, setPagination] = useState<PaginationType>({ currentPage: 1, take: imagesPerPage, skip: 0 });
   const [totalImagesCount, setTotalImagesCount] = useState<number>(-1);
   const [accumulatedImages, setAccumulatedImages] = useState<ImageOrSummary[]>([]);
@@ -41,6 +56,31 @@ export default function ImagesContent({
   const isFetchingDataRef = useRef<boolean>(false);
   const fetchSessionIdRef = useRef<number>(0);
   const onFetchDataRef = useRef<(searchRange: SearchRange) => Promise<ImageExplorerDataType>>(onFetchData);
+
+  useImperativeHandle(ref, () => ({
+    onImageDeleted(imageId: string): void {
+      setAccumulatedImages(previousValue => {
+        const index = previousValue.findIndex(image => image.id === imageId);
+        if (index !== -1) {
+          const updatedAccumulatedImages = [...previousValue];
+          updatedAccumulatedImages.splice(index, 1);
+          return updatedAccumulatedImages;
+        }
+        return previousValue;
+      });
+    },
+    onImageUpdated(image: ImageOrSummary): void {
+      setAccumulatedImages(previousValue => {
+        const index = previousValue.findIndex(anImage => anImage.id === image.id);
+        if (index !== -1) {
+          const updatedAccumulatedImages = [...previousValue];
+          updatedAccumulatedImages.splice(index, 1, image);
+          return updatedAccumulatedImages;
+        }
+        return previousValue;
+      });
+    }
+  }), []);
 
   useEffect(() => {
     if (refreshTrigger >= 1) {
@@ -117,7 +157,7 @@ export default function ImagesContent({
     return (
       <>
         <ImageMasonry images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
-                             scrollRootRef={scrollRootRef} />
+                      scrollRootRef={scrollRootRef} />
         {imagesCountIndicator}
       </>
     );
@@ -127,7 +167,7 @@ export default function ImagesContent({
     return (
       <>
         <ImageGallery images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
-                             scrollRootRef={scrollRootRef} />
+                      scrollRootRef={scrollRootRef} />
         {imagesCountIndicator}
       </>
     );
@@ -143,4 +183,5 @@ export default function ImagesContent({
   }
 
   return <></>;
-}
+});
+ImagesContent.displayName = "ImagesContent";
