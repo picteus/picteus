@@ -34,7 +34,7 @@ function MantineNotificationWrapper({ notification, icon, onClose, onClick }: No
 
 function EnhancedNotificationWrapper({ notification, icon, onClose, onClick }: NotificationWrapperType) {
   return (
-    <Flex align="flex-start" gap={8} onClick={onClick} className={style.description}>
+    <Flex align="flex-start" gap={8} onClick={onClick} className={style.wrapper}>
       {icon}
       <Flex direction="column" gap={4} flex={1}>
         <Flex justify="space-between" align="center">
@@ -44,7 +44,7 @@ function EnhancedNotificationWrapper({ notification, icon, onClose, onClick }: N
             onClose();
           }} />
         </Flex>
-        <Text c="gray" size="sm">
+        <Text c="gray" size="sm" className={style.description}>
           {notification.description}
         </Text>
         <Text c="dimmed" size="xs">

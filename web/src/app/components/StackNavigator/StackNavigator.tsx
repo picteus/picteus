@@ -100,11 +100,11 @@ export default function StackNavigator ({ children }: StackNavigatorType) {
     }
     const component = currentStack[currentStack.length - 1];
     const newStack = currentStack.slice(0, -1);
-    stackRef.current = newStack;
     setStack(newStack);
     for (const listener of listenersRef.current) {
       listener(component, true);
     }
+    stackRef.current = newStack;
   }, []);
 
   useKey("Escape", () => {
@@ -114,13 +114,13 @@ export default function StackNavigator ({ children }: StackNavigatorType) {
   });
 
   const popToRoot = useCallback(() => {
-    stackRef.current = [];
     setStack([]);
+    stackRef.current = [];
   }, []);
 
   const set = useCallback((stackedComponents: StackedComponentType []) => {
-    stackRef.current = stackedComponents;
     setStack(stackedComponents);
+    stackRef.current = stackedComponents;
   }, []);
 
   const subscribe = useCallback((listener: ListenerType): (() => void) => {

@@ -180,7 +180,7 @@ export default function ImageItem({
     style={imageExpectedDimensions}
   />), [imgRef, isLoaded, imageSrc, imageExpectedDimensions]);
 
-  const overlayElement = useMemo(() => (overlay && <div className={style.captionContainer}>{overlay}</div>), [overlay]);
+  const overlayElement = useMemo(() => ((overlay && mode !== ImageItemMode.SELECT) && <div className={style.captionContainer}>{overlay}</div>), [overlay, mode]);
 
   const placeholder = useMemo(() => (isLoaded === false &&
     <Flex className={style.placeholder} align="center" justify="center">{isError === true && (

@@ -11,7 +11,7 @@ export default function TableComponent({ label, value }: TableComponentType) {
   return (
     <Table.Tr>
       <Table.Td style={{ width: "110px" }}>
-        <Text c="dimmed" size="sm">
+        <Text c="dimmed" size="sm" component="span">
           {label}
         </Text>
       </Table.Td>
