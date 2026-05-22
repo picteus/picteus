@@ -25,6 +25,11 @@ type PaginationType = SearchRange & {
   currentPage: number;
 };
 
+export type ImagesContentRef = {
+  onImageDeleted(imageId: string): void;
+  onImageUpdated(image: ImageOrSummary): void;
+}
+
 type ImagesContentType = {
   viewMode: ViewMode;
   containerRef: RefObject<HTMLElement>;
@@ -35,12 +40,7 @@ type ImagesContentType = {
   refreshTrigger: number;
 };
 
-export type ImagesContentRefType = {
-  onImageDeleted(imageId: string): void;
-  onImageUpdated(image: ImageOrSummary): void;
-}
-
-export const ImagesContent = forwardRef(({
+export const ImagesContent = forwardRef<ImagesContentRef, ImagesContentType>(({
                                     viewMode,
                                     containerRef,
                                     contentRef,
@@ -48,7 +48,7 @@ export const ImagesContent = forwardRef(({
                                     onEmptyResults,
                                     onFetchData,
                                     refreshTrigger,
-                                  }: ImagesContentType, ref: ForwardedRef<ImagesContentRefType>) => {
+                                  }: ImagesContentType, ref: ForwardedRef<ImagesContentRef>) => {
   const [pagination, setPagination] = useState<PaginationType>({ currentPage: 1, take: imagesPerPage, skip: 0 });
   const [totalImagesCount, setTotalImagesCount] = useState<number>(-1);
   const [accumulatedImages, setAccumulatedImages] = useState<ImageOrSummary[]>([]);

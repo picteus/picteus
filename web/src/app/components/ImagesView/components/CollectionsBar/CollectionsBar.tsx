@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore } from "react";
 import { Box, Button, Center, Flex, Loader, Menu, Text, Tooltip } from "@mantine/core";
 import { IconChevronDown, IconDeviceFloppy, IconLibrary, IconLibraryPhoto, IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -15,19 +15,21 @@ import AddOrUpdateCollection
     from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
 
+export interface CollectionsBarRef {
+    clearCollection: () => void;
+}
+
 type CollectionsBarType = {
     searchFilter?: SearchFilter;
     initialCollectionId?: number;
     onCollection: (collection: PicteusCollection) => void;
-    clearCollectionTrigger: number;
 };
 
-export default function CollectionsBar({
+export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(({
     searchFilter,
     initialCollectionId,
     onCollection,
-    clearCollectionTrigger,
-}: CollectionsBarType) {
+}, ref) => {
     const [t] = useTranslation();
     const [, addModal] = useActionModalContext();
     const [loading, setLoading] = useState<boolean>(false);
@@ -64,11 +66,11 @@ export default function CollectionsBar({
         setSaveDisabled(selectedCollection === undefined || searchFilter === undefined || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter)))
     }, [searchFilter, selectedCollection]);
 
-    useEffect(() => {
-        if (clearCollectionTrigger > 0) {
+    useImperativeHandle(ref, () => ({
+        clearCollection: () => {
             setSelectedCollection(undefined);
         }
-    }, [clearCollectionTrigger]);
+    }));
 
     useEffect(() => {
         loadCollections();
@@ -154,4 +156,5 @@ export default function CollectionsBar({
           </Tooltip>
       </Button.Group>
     );
-}
+});
+CollectionsBar.displayName = "CollectionsBar";

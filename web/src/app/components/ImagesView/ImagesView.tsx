@@ -25,7 +25,7 @@ import { useEventSocket, useImagesTabsContext } from "app/context";
 import { useInterceptedState } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
 import { Container, EmptyResults } from "app/components";
-import { ControllerBar, ImagesContent, ImagesContentRefType } from "./components";
+import { ControllerBar, ImagesContent, ImagesContentRef } from "./components";
 
 import style from "./ImagesView.module.scss";
 
@@ -38,7 +38,7 @@ type ImagesViewType = {
 };
 
 export default function ImagesView({ viewData, isDefault, controlBarChildren, onEmptyResults }: ImagesViewType){
-  const imagesContentRef = useRef<ImagesContentRefType>(null);
+  const imagesContentRef = useRef<ImagesContentRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollRootRef = useRef<HTMLDivElement>(null);

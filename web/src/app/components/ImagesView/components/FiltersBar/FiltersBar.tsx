@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react";
 import {
   ActionIcon,
   CloseButton,
@@ -14,12 +14,12 @@ import {
 import { IconFilter, IconSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Collection, Repository, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
+import { Repository, SearchFilter } from "@picteus/ws-client";
 
 import { FilterOrCollectionId, LocalFiltersType } from "types";
 import { useDebouncedCallback, useInterceptedState } from "app/hooks";
 import { FeaturesNamesOption, FiltersService, RepositoriesService } from "app/services";
-import { CollectionsBar, Filters } from "../index.ts";
+import { Filters } from "../index.ts";
 
 import style from "./FiltersBar.module.scss";
 
@@ -27,37 +27,39 @@ import style from "./FiltersBar.module.scss";
 const { defaultFilter, sortByOptions, sortOrderOptions, searchInOptions } = FiltersService;
 
 
+export interface FiltersBarRef {
+  setFilter: (filter: SearchFilter) => void;
+}
+
 type FiltersBarType = {
   initialFilterOrCollectionId: FilterOrCollectionId;
   onFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId) => void;
+  onClearAll: () => void;
+  children?: React.ReactNode;
 };
 
-export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrCollectionId }: FiltersBarType) {
+export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({ initialFilterOrCollectionId, onFilterOrCollectionId, onClearAll, children }, ref) => {
   const [t] = useTranslation();
   const [searchText, setSearchText] = useState<string>();
   const repositories = useMemo<Repository []>(() => (RepositoriesService.list()), []);
   const [popoverOpened, setPopoverOpened] = useState<boolean>(false);
-  const [localFilters, setLocalFilters] = useInterceptedState<LocalFiltersType>("filter" in initialFilterOrCollectionId ? FiltersService.searchFilterToLocalFilters(initialFilterOrCollectionId.filter) : undefined );
-  const [searchFilter, setSearchFilter] = useInterceptedState<SearchFilter>(undefined);
-  const [currentCollection, setCurrentCollection] = useState<Collection | undefined>();
-  const [initialCollectionId] = useState<number | undefined>("collectionId" in initialFilterOrCollectionId ? initialFilterOrCollectionId.collectionId : undefined);
-  const [clearCollectionTrigger, setClearCollectionTrigger] = useState<number>(0);
+  const [filters, setFilters] = useInterceptedState<LocalFiltersType>("filter" in initialFilterOrCollectionId ? FiltersService.searchFilterToLocalFilters(initialFilterOrCollectionId.filter) : undefined );
+
+  useImperativeHandle(ref, () => ({
+    setFilter: (filter: SearchFilter) => {
+      setFilters(FiltersService.searchFilterToLocalFilters(filter));
+    }
+  }));
 
   useEffect(() => {
-    const updatedSearchFilter = localFilters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(localFilters);
+    const updatedSearchFilter = filters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(filters);
     if (updatedSearchFilter !== undefined) {
-      if (currentCollection !== undefined && JSON.stringify(SearchFilterFromJSON(updatedSearchFilter)) === JSON.stringify(SearchFilterFromJSON(currentCollection.filter))) {
-        onFilterOrCollectionId({ collectionId: currentCollection.id });
-      }
-      else {
-        onFilterOrCollectionId({ filter: updatedSearchFilter });
-      }
+      onFilterOrCollectionId({ filter: updatedSearchFilter });
     }
-    setSearchFilter(updatedSearchFilter);
-  }, [localFilters, setSearchFilter, currentCollection]);
+  }, [filters, onFilterOrCollectionId]);
 
   const onChangeFilterWrapper = useCallback((key: string, value?: string | string [] | FeaturesNamesOption[]) => {
-    setLocalFilters((previousLocalFilters: LocalFiltersType) => {
+    setFilters((previousLocalFilters: LocalFiltersType) => {
       const updatedLocalFilters = { ...previousLocalFilters, [key]: value };
       if (key === "searchIn" && value === undefined) {
         delete updatedLocalFilters.keyword;
@@ -67,10 +69,10 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
       }
       return updatedLocalFilters;
     });
-  }, [setLocalFilters]);
+  }, [setFilters]);
 
   const debouncedSearchCallback = useDebouncedCallback(async (searchText: string) => {
-    setLocalFilters(previousValue => ({
+    setFilters(previousValue => ({
       ...previousValue,
       keyword: searchText,
       searchIn: previousValue.searchIn ?? ((searchText === undefined || searchText === "") ? undefined : ["inName"])
@@ -83,32 +85,25 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
     }
   }, [searchText]);
 
-  function handleOnCollection(collection: Collection) {
-    setCurrentCollection(collection);
-    setLocalFilters(FiltersService.searchFilterToLocalFilters(collection.filter));
-    setSearchFilter(collection.filter)
-    onFilterOrCollectionId({ collectionId: collection.id });
-  }
-
   function handleOnClearAll() {
-    setLocalFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
+    setFilters(FiltersService.searchFilterToLocalFilters(defaultFilter));
     setSearchText("");
-    setClearCollectionTrigger(prev => prev + 1);
+    onClearAll();
   }
 
   function computeSortingLabelDisplay() {
     const sortBy = sortByOptions.find(
-      (option) => option.value === localFilters.sortBy
+      (option) => option.value === filters.sortBy
     );
     const sortOrder = sortOrderOptions.find(
-      (option) => option.value === localFilters.sortOrder
+      (option) => option.value === filters.sortOrder
     );
     return `${t("sort.sortedBy")} "${sortBy.label}" - ${sortOrder.label}`;
   }
 
   function computeSearchInLabelDisplay() {
     return searchInOptions
-      .filter((option) => localFilters.searchIn?.includes(option.value))
+      .filter((option) => filters.searchIn?.includes(option.value))
       .map((option) => option.label)
       .join(", ");
   }
@@ -119,7 +114,7 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
     <Stack>
       <Flex gap={10} align="center">
         <TextInput
-          defaultValue={localFilters?.keyword}
+          defaultValue={filters?.keyword}
           value={searchText}
           leftSectionPointerEvents="none"
           leftSection={<IconSearch stroke={1.5} />}
@@ -149,23 +144,18 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
             </Tooltip>
           </Popover.Target>
           <Popover.Dropdown>
-            {localFilters &&
-              <Filters repositories={repositories} localFilters={localFilters} onChangeFilter={onChangeFilterWrapper}
+            {filters &&
+              <Filters repositories={repositories} localFilters={filters} onChangeFilter={onChangeFilterWrapper}
                        handleOnClearAll={handleOnClearAll} />}
           </Popover.Dropdown>
         </Popover>
-        <CollectionsBar
-          searchFilter={searchFilter}
-          initialCollectionId={initialCollectionId}
-          onCollection={handleOnCollection}
-          clearCollectionTrigger={clearCollectionTrigger}
-        />
+        {children}
       </Flex>
-      {localFilters && <Group>
-        {localFilters.sortBy && <Pill {...commonPillProps} withRemoveButton={false}>
+      {filters && <Group>
+        {filters.sortBy && <Pill {...commonPillProps} withRemoveButton={false}>
           {computeSortingLabelDisplay()}
         </Pill>}
-        {localFilters.searchIn?.length > 0 && (
+        {filters.searchIn?.length > 0 && (
           <Pill
             size="md"
             withRemoveButton
@@ -174,44 +164,44 @@ export default function FiltersBar({ initialFilterOrCollectionId, onFilterOrColl
             {`${t("filters.searchTextIn")} : ${computeSearchInLabelDisplay()}`}
           </Pill>
         )}
-        {localFilters.repositories?.length > 0 && (
+        {filters.repositories?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => onChangeFilterWrapper("repositories")}
           >
             {`${t("field.repositories")} : ${repositories
-              .filter((r) => localFilters.repositories?.includes(r.id))
+              .filter((r) => filters.repositories?.includes(r.id))
               .map((r) => r.name)
               .join(", ")}`}
           </Pill>
         )}
-        {localFilters.formats?.length > 0 && (
+        {filters.formats?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => onChangeFilterWrapper("formats")}
           >
-            {`${t("field.formats")} : ${[...localFilters.formats]?.join(", ")}`}
+            {`${t("field.formats")} : ${[...filters.formats]?.join(", ")}`}
           </Pill>
         )}
-        {localFilters.features?.length > 0 && (
+        {filters.features?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => onChangeFilterWrapper("features")}
           >
-            {`${t("field.features")} : ${[...localFilters.features]?.map(feature => feature.category).filter((feature, index, array) => array.indexOf(feature) == index).join(", ")}`}
+            {`${t("field.features")} : ${[...filters.features]?.map(feature => feature.category).filter((feature, index, array) => array.indexOf(feature) == index).join(", ")}`}
           </Pill>
         )}
-        {localFilters.tags?.length > 0 && (
+        {filters.tags?.length > 0 && (
           <Pill
             {...commonPillProps}
             onRemove={() => onChangeFilterWrapper("tags")}
           >
-            {`${t("field.tags")} : ${[...localFilters.tags]?.join(", ")}`}
+            {`${t("field.tags")} : ${[...filters.tags]?.join(", ")}`}
           </Pill>
         )}
       </Group>
       }
     </Stack>
   );
-
-}
+});
+FiltersBar.displayName = "FiltersBar";

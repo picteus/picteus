@@ -1,11 +1,12 @@
-import React, { ReactNode, useMemo } from "react";
+import React, { ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { ActionIcon, Flex, Tooltip } from "@mantine/core";
 import { IconLayoutDashboard, IconListDetails, IconPhoto, IconPin } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import { Collection, SearchFilterFromJSON } from "@picteus/ws-client";
 
 import { FilterOrCollectionId, ViewMode } from "types";
 import { RefreshButton } from "app/components";
-import { FiltersBar } from "../index.ts";
+import { CollectionsBar, CollectionsBarRef, FiltersBar, FiltersBarRef } from "../index.ts";
 
 import style from "./ControllerBar.module.scss";
 
@@ -35,6 +36,32 @@ export default function ControllerBar({
                                       }: ControllerBarType) {
   const [t] = useTranslation();
   const withTable = useMemo<boolean>(() => Math.random() > 1, []);
+  const [currentCollection, setCurrentCollection] = useState<Collection | undefined>();
+  const [initialCollectionId] = useState<number | undefined>("collectionId" in initialFilterOrCollectionId ? initialFilterOrCollectionId.collectionId : undefined);
+  const collectionsBarRef = useRef<CollectionsBarRef>(null);
+  const filtersBarRef = useRef<FiltersBarRef>(null);
+
+  const handleOnCollection = useCallback((collection: Collection) => {
+    setCurrentCollection(collection);
+    filtersBarRef.current?.setFilter(collection.filter);
+    onFilterOrCollectionId({ collectionId: collection.id });
+  }, [onFilterOrCollectionId]);
+
+  const handleOnFilterOrCollectionId = useCallback((filterOrCollectionId: FilterOrCollectionId) => {
+    if ("filter" in filterOrCollectionId) {
+      if (currentCollection !== undefined && JSON.stringify(SearchFilterFromJSON(filterOrCollectionId.filter)) === JSON.stringify(SearchFilterFromJSON(currentCollection.filter))) {
+        onFilterOrCollectionId({ collectionId: currentCollection.id });
+      } else {
+        onFilterOrCollectionId(filterOrCollectionId);
+      }
+    } else {
+      onFilterOrCollectionId(filterOrCollectionId);
+    }
+  }, [currentCollection, onFilterOrCollectionId]);
+
+  const handleOnClearAll = useCallback(() => {
+    collectionsBarRef.current?.clearCollection();
+  }, []);
 
   function handleOnRefresh() {
     if (onRefresh) {
@@ -45,8 +72,19 @@ export default function ControllerBar({
   return (
     <Flex align="end" justify="space-between" className={style.content}>
       {children}
-      {("collectionId" in initialFilterOrCollectionId || initialFilterOrCollectionId.filter.origin === undefined) ? <FiltersBar initialFilterOrCollectionId={initialFilterOrCollectionId}
-                   onFilterOrCollectionId={onFilterOrCollectionId} /> : <div/>}
+      <FiltersBar
+        ref={filtersBarRef}
+        initialFilterOrCollectionId={initialFilterOrCollectionId}
+        onFilterOrCollectionId={handleOnFilterOrCollectionId}
+        onClearAll={handleOnClearAll}
+      >
+        <CollectionsBar
+          ref={collectionsBarRef}
+          searchFilter={"filter" in initialFilterOrCollectionId ? initialFilterOrCollectionId.filter : currentCollection?.filter}
+          initialCollectionId={initialCollectionId}
+          onCollection={handleOnCollection}
+        />
+      </FiltersBar>
       <Flex gap="xs">
         <ActionIcon.Group>
           <Tooltip label={t("imagesScreen.masonryView")}>
