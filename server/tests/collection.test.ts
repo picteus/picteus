@@ -51,7 +51,7 @@ describe("Collections", () =>
     await Base.afterAll();
   });
 
-  const filter: SearchFilter = new SearchFilter(new SearchCriteria([ImageFormat.PNG], new SearchKeyword("keyword", true, false, true), new SearchTags(["tag"]), new SearchFeatures(SearchFeatureLogicalOperator.AND, [new SearchFeatureCondition(ImageFeatureType.IDENTITY, ImageFeatureFormat.STRING, "id", SearchFeatureComparisonOperator.EQUALS, "id")], undefined), new SearchProperties(new SearchPropertyRange(100, 200))));
+  const filter: SearchFilter = new SearchFilter(new SearchCriteria([ImageFormat.PNG], new SearchKeyword("keyword", true, false, true), new SearchTags(["tag"]), new SearchFeatures(SearchFeatureLogicalOperator.AND, [new SearchFeatureCondition(undefined, ImageFeatureType.IDENTITY, ImageFeatureFormat.STRING, "id", SearchFeatureComparisonOperator.EQUALS, "id")], undefined), new SearchProperties(new SearchPropertyRange(100, 200))));
 
   const name = "name";
 

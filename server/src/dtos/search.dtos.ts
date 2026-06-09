@@ -7,6 +7,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
   MinLength,
@@ -18,6 +19,9 @@ import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from "@nestjs/s
 import { TypeBasedValidation } from "./validators.dtos";
 import { deepObjectTransform, forceArray, forceBoolean, transformStringifyJson } from "./transformers.dtos";
 import {
+  computeIdPattern,
+  extensionIdSchema,
+  ExtensionIdType,
   FieldLengths,
   ImageFeatureFormat,
   ImageFeatureType,
@@ -136,14 +140,30 @@ export enum SearchFeatureComparisonOperator
 export class SearchFeatureCondition
 {
 
-  constructor(type: ImageFeatureType | undefined, format: ImageFeatureFormat, name: string | undefined, operator: SearchFeatureComparisonOperator, value: ImageFeatureValue)
+  constructor(extensionId: ExtensionIdType | undefined, type: ImageFeatureType | undefined, format: ImageFeatureFormat, name: string | undefined, operator: SearchFeatureComparisonOperator, value: ImageFeatureValue)
   {
+    this.extensionId = extensionId;
     this.type = type;
     this.format = format;
     this.name = name;
     this.operator = operator;
     this.value = value;
   }
+
+  @ApiProperty(
+    {
+      ...extensionIdSchema,
+      description: "The extension identifier",
+      type: String,
+      required: false
+    }
+  )
+  @IsOptional()
+  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @MinLength(1)
+  @MaxLength(FieldLengths.shortTechnical)
+  @Expose()
+  readonly extensionId?: ExtensionIdType;
 
   @ApiProperty(
     {

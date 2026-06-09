@@ -30,6 +30,7 @@ import {
   computeIdPattern,
   Dates,
   extensionIdSchema,
+  ExtensionIdType,
   FieldLengths,
   fileUrlPattern,
   generateItemsResultClass,
@@ -710,7 +711,7 @@ export enum ImageResizeRender
 export class ExtensionImageFeature extends ImageFeature
 {
 
-  constructor(id: string, type: ImageFeatureType, format: ImageFeatureFormat, name: string | undefined, value: ImageFeatureValue)
+  constructor(id: ExtensionIdType, type: ImageFeatureType, format: ImageFeatureFormat, name: string | undefined, value: ImageFeatureValue)
   {
     super(type, format, name, value);
     this.id = id;
@@ -728,7 +729,7 @@ export class ExtensionImageFeature extends ImageFeature
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()
-  readonly id: string;
+  readonly id: ExtensionIdType;
 
 }
 

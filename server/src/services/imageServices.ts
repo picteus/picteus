@@ -166,11 +166,12 @@ export class ImageService
       skip
     } = await this.computeRequestParameters("Retrieving the image ids", parameters);
     const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({ select: { id:true },orderBy, where, take, skip }),
+      this.entitiesProvider.images.findMany({ select: { id: true }, orderBy, where, take, skip }),
       this.entitiesProvider.images.count({ where })
     ]);
     return new SearchImageIdResult(entities.map(entity => entity.id), totalCount);
   }
+
   async searchForImageSummaries(parameters: SearchParameters): Promise<SearchImageSummaryResult>
   {
     const {
@@ -986,6 +987,10 @@ export class ImageService
         const format = condition.format;
         const operator = condition.operator;
         const whereInputs: Prisma.ImageFeatureWhereInput[] = [];
+        if (condition.extensionId !== undefined)
+        {
+          whereInputs.push({ extensionId: { equals: condition.extensionId } });
+        }
         if (condition.type !== undefined)
         {
           whereInputs.push({ type: { equals: condition.type } });

@@ -492,25 +492,43 @@ describe("Image with module", () =>
               {
                 logicalOperator: SearchFeatureLogicalOperator.AND,
                 comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
+                extensionId: undefined,
                 value: ImageFeatureNullValue.Null,
                 count: withFeaturesAndTagsCount
               },
               {
                 logicalOperator: SearchFeatureLogicalOperator.NOT,
                 comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
+                extensionId: undefined,
                 value: ImageFeatureNullValue.Null,
                 count: onlyOne
               },
               {
                 logicalOperator: SearchFeatureLogicalOperator.AND,
                 comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
+                extensionId: undefined,
                 value: feature.value,
                 count: zero
               },
               {
                 logicalOperator: SearchFeatureLogicalOperator.AND,
                 comparisonOperator: SearchFeatureComparisonOperator.EQUALS,
+                extensionId: undefined,
                 value: typeof feature.value === "boolean" ? !feature.value : (typeof feature.value === "number" ? (feature.value + 1) : (`${feature.value}other`)),
+                count: zero
+              },
+              {
+                logicalOperator: SearchFeatureLogicalOperator.AND,
+                comparisonOperator: SearchFeatureComparisonOperator.EQUALS,
+                extensionId: otherExtension.manifest.id,
+                value: feature.value,
+                count: onlyOne
+              },
+              {
+                logicalOperator: SearchFeatureLogicalOperator.AND,
+                comparisonOperator: SearchFeatureComparisonOperator.EQUALS,
+                extensionId: "inexistent",
+                value: feature.value,
                 count: zero
               }
             ];
@@ -527,6 +545,7 @@ describe("Image with module", () =>
                           conditions:
                             [
                               {
+                                extensionId: useCase.extensionId,
                                 format: feature.format,
                                 name: feature.name,
                                 operator: useCase.comparisonOperator,

@@ -455,6 +455,8 @@ export const computeImageFormatsExtensions = (imageFormats: ImageFormat[]): stri
   }).flat(1);
 };
 
+export type ExtensionIdType = string;
+
 export type ImageFeatureValue = string | number | boolean;
 
 export type ImageTag = string;

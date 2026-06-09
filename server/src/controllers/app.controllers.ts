@@ -66,6 +66,7 @@ import {
   ExtensionAndManual,
   ExtensionGenerationOptions,
   extensionIdSchema,
+  ExtensionIdType,
   ExtensionImageEmbeddings,
   ExtensionImageFeature,
   ExtensionImageFeatureName,
@@ -551,7 +552,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
-  async get(@Param("id") id: string): Promise<ExtensionAndManual>
+  async get(@Param("id") id: ExtensionIdType): Promise<ExtensionAndManual>
   {
     return await this.extensionService.get(id);
   }
@@ -604,7 +605,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionWrite]))
-  async update(@Param("id") id: string, @Body() archive: Buffer): Promise<Extension>
+  async update(@Param("id") id: ExtensionIdType, @Body() archive: Buffer): Promise<Extension>
   {
     return await this.extensionService.install(id, archive, true);
   }
@@ -627,7 +628,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionWrite]))
-  async uninstall(@Param("id") id: string): Promise<void>
+  async uninstall(@Param("id") id: ExtensionIdType): Promise<void>
   {
     return await this.extensionService.uninstall(id);
   }
@@ -651,7 +652,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionManage]))
-  async pauseOrResume(@Param("id") id: string, @Query("isPause") isPause: boolean): Promise<void>
+  async pauseOrResume(@Param("id") id: ExtensionIdType, @Query("isPause") isPause: boolean): Promise<void>
   {
     return await this.extensionService.pauseOrResume(id, isPause);
   }
@@ -672,7 +673,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionSettingsRead]))
-  async getSettings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string): Promise<ExtensionSettings>
+  async getSettings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType): Promise<ExtensionSettings>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
     {
@@ -700,7 +701,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionSettingsWrite]))
-  async setSettings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Body() settings: ExtensionSettings): Promise<void>
+  async setSettings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Body() settings: ExtensionSettings): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
     {
@@ -727,7 +728,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionManage]))
-  async synchronize(@Param("id") id: string): Promise<void>
+  async synchronize(@Param("id") id: ExtensionIdType): Promise<void>
   {
     return await this.extensionService.synchronize(id);
   }
@@ -752,7 +753,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRun]))
-  async runProcessCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("commandId") commandId: string, @Body() parameters: Record<string, any> | undefined): Promise<void>
+  async runProcessCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("commandId") commandId: string, @Body() parameters: Record<string, any> | undefined): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
     {
@@ -788,7 +789,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRun]))
-  async runImageCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("commandId") commandId: string, @Body() parameters: Record<string, any> | undefined, @Query("imageIds", new ArrayValidationPipe<String>()) imageIds: string[]): Promise<void>
+  async runImageCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("commandId") commandId: string, @Body() parameters: Record<string, any> | undefined, @Query("imageIds", new ArrayValidationPipe<String>()) imageIds: string[]): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
     {
@@ -826,7 +827,7 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionChromeExtensionInstall]))
-  async installChromeExtension(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("chromeExtensionName") chromeExtensionName: string, @Body() archive: Buffer): Promise<void>
+  async installChromeExtension(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("chromeExtensionName") chromeExtensionName: string, @Body() archive: Buffer): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
     {
@@ -1670,7 +1671,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async searchFeatures(@Body() parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<String>()) extensionIds?: string[]): Promise<SearchFeaturesResult>
+  async searchFeatures(@Body() parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds?: string[]): Promise<SearchFeaturesResult>
   {
     return await this.imageService.searchForImageFeatures(parameters, extensionIds);
   }
@@ -1697,7 +1698,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async searchTags(@Body() parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<String>()) extensionIds?: string[]): Promise<SearchTagsResult>
+  async searchTags(@Body() parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds?: string[]): Promise<SearchTagsResult>
   {
     return await this.imageService.searchForImageTags(parameters, extensionIds);
   }
@@ -1940,7 +1941,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async getFeatures(@Param("id") id: string, @Query("extensionId") extensionId: string): Promise<ImageFeature[]>
+  async getFeatures(@Param("id") id: ExtensionIdType, @Query("extensionId") extensionId: string): Promise<ImageFeature[]>
   {
     return await this.imageService.getFeatures(id, extensionId);
   }
@@ -2001,7 +2002,7 @@ export class ImageController
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageFeatureWrite]))
   // The usage of the "ParseArrayPipe" object is necessary for enabling the validation and discussed at https://stackoverflow.com/a/73468385/808618
-  async setFeatures(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: string, @Body(new ParseArrayPipe({
+  async setFeatures(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body(new ParseArrayPipe({
     items: ImageFeature, exceptionFactory
   })) features: ImageFeature[]): Promise<void>
   {
@@ -2030,7 +2031,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async getTags(@Param("id") id: string, @Query("extensionId") extensionId: string): Promise<ImageTag[]>
+  async getTags(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType): Promise<ImageTag[]>
   {
     return await this.imageService.getTags(id, extensionId);
   }
@@ -2095,7 +2096,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageTagWrite]))
-  async setTags(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: string, @Body() tags: ImageTag[]): Promise<void>
+  async setTags(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() tags: ImageTag[]): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
     {
@@ -2137,7 +2138,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageTagWrite]))
-  async ensureTags(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: string, @Body() tags: ImageTag[]): Promise<void>
+  async ensureTags(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() tags: ImageTag[]): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
     {
@@ -2217,7 +2218,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async getEmbeddings(@Param("id") id: string, @Query("extensionId") extensionId: string): Promise<ImageEmbeddings>
+  async getEmbeddings(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType): Promise<ImageEmbeddings>
   {
     return await this.imageService.getEmbeddings(id, extensionId);
   }
@@ -2251,7 +2252,7 @@ export class ImageController
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageEmbeddingsWrite]))
   @Throttle({ default: { ttl: 1_000, limit: 10 } })
-  async setEmbeddings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: string, @Body() embeddings: ImageEmbeddings): Promise<void>
+  async setEmbeddings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() embeddings: ImageEmbeddings): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
     {
@@ -2291,7 +2292,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async closestImages(@Param("id") id: string, @Query("extensionId") extensionId: string, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
+  async closestImages(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
   {
     return await this.imageService.closestImages(id, extensionId, count);
   }
@@ -2320,7 +2321,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async closestEmbeddingsImages(@Query("extensionId") extensionId: string, @Query("count", ParseIntPipe) count: number, @Body() embeddings: ImageEmbeddings): Promise<ImageDistances>
+  async closestEmbeddingsImages(@Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number, @Body() embeddings: ImageEmbeddings): Promise<ImageDistances>
   {
     return await this.imageService.closestEmbeddingsImages(extensionId, embeddings, count);
   }
@@ -2349,7 +2350,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
-  async textToImages(@Query("text") text: string, @Query("extensionId") extensionId: string, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
+  async textToImages(@Query("text") text: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
   {
     return await this.imageService.textToImages(text, extensionId, count);
   }
@@ -2484,7 +2485,7 @@ export class ImageAttachmentController
     }
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageAttachmentWrite]))
-  async create(@RequestPolicyContext() policyContext: PolicyContext, @Query("imageId") imageId: string, @Query("extensionId") extensionId: string, @Query("mimeType") mimeType: string, @Body() payload: Buffer): Promise<string>
+  async create(@RequestPolicyContext() policyContext: PolicyContext, @Query("imageId") imageId: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("mimeType") mimeType: string, @Body() payload: Buffer): Promise<string>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
     {

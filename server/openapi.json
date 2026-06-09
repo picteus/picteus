@@ -3789,7 +3789,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.15.0",
+    "version": "0.16.0",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",
@@ -5699,6 +5699,14 @@
       "SearchFeatureCondition": {
         "type": "object",
         "properties": {
+          "extensionId": {
+            "type": "string",
+            "description": "The extension identifier",
+            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "extension-id"
+          },
           "type": {
             "description": "The image feature type",
             "example": "nature",
