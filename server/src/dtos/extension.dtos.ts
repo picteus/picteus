@@ -20,7 +20,6 @@ import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from "@nestjs/s
 
 import { jsonTransform } from "./transformers.dtos";
 import {
-  computeIdPattern,
   extensionIdPattern,
   extensionIdSchema,
   FieldLengths,
@@ -28,6 +27,7 @@ import {
   Json,
   namePattern,
   semverPattern,
+  shortTechnicalIdPattern,
   shortTechnicalSchema,
   uriPathPattern
 } from "./common.dtos";
@@ -210,7 +210,7 @@ export class ManifestExtensionCommand
       example: "convert"
     }
   )
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(shortTechnicalIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @IsDefined()
@@ -649,7 +649,7 @@ export class ManifestInterfaceElement
       example: "main"
     }
   )
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(shortTechnicalIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @IsDefined()
@@ -778,7 +778,7 @@ class ExtensionBasis
       required: true
     }
   )
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(extensionIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @IsDefined()
@@ -1238,7 +1238,7 @@ export class ConfigurationExtensionCommand
       required: true
     }
   )
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(extensionIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @IsDefined()

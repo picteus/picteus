@@ -19,7 +19,7 @@ import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from "@nestjs/s
 import { TypeBasedValidation } from "./validators.dtos";
 import { deepObjectTransform, forceArray, forceBoolean, transformStringifyJson } from "./transformers.dtos";
 import {
-  computeIdPattern,
+  extensionIdPattern,
   extensionIdSchema,
   ExtensionIdType,
   FieldLengths,
@@ -159,7 +159,7 @@ export class SearchFeatureCondition
     }
   )
   @IsOptional()
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(extensionIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()

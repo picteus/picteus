@@ -7,7 +7,7 @@ import { SchemaObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.inte
 
 export const alphaNumericPlusPattern = "a-z0-9A-Z-_.";
 
-export const computeIdPattern = (maximumLength: number): string =>
+const computeIdPattern = (maximumLength: number): string =>
 {
   return `^[${alphaNumericPlusPattern}]{1,${maximumLength}}$`;
 };
@@ -55,7 +55,9 @@ export const uniqueIdPattern = `[${alphaNumericPattern}]{8}-[${alphaNumericPatte
 
 export const namePattern = computeNamePattern(FieldLengths.name);
 
-export const extensionIdPattern = computeIdPattern(FieldLengths.shortTechnical);
+export const shortTechnicalIdPattern = computeIdPattern(FieldLengths.shortTechnical);
+
+export const extensionIdPattern = shortTechnicalIdPattern;
 
 const noProtocolUriPathPattern = "[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
@@ -102,7 +104,7 @@ export const extensionIdSchema: SchemaObject =
   {
     description: "An extension identifier",
     type: "string",
-    pattern: computeIdPattern(FieldLengths.shortTechnical),
+    pattern: extensionIdPattern,
     minLength: 1,
     maxLength: FieldLengths.shortTechnical,
     example: "extension-id"
@@ -123,7 +125,7 @@ export const shortTechnicalSchema: SchemaObject =
   {
     description: "A technical identifier",
     type: "string",
-    pattern: computeIdPattern(FieldLengths.shortTechnical),
+    pattern: shortTechnicalIdPattern,
     minLength: 1,
     maxLength: FieldLengths.shortTechnical,
     example: "technical-id"

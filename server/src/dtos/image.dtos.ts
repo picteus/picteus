@@ -27,8 +27,8 @@ import { TypeBasedValidation } from "./validators.dtos";
 import { forceInteger, jsonTransform } from "./transformers.dtos";
 import {
   alphaNumericPlusPattern,
-  computeIdPattern,
   Dates,
+  extensionIdPattern,
   extensionIdSchema,
   ExtensionIdType,
   FieldLengths,
@@ -520,7 +520,7 @@ export class ApplicationMetadataItem
       required: true
     }
   )
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(extensionIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @IsDefined()
@@ -725,7 +725,7 @@ export class ExtensionImageFeature extends ImageFeature
       required: true
     }
   )
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(extensionIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()
@@ -756,7 +756,7 @@ export class ExtensionImageFeatureName
     }
   )
   @IsString()
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(extensionIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()
@@ -831,7 +831,7 @@ export class ExtensionImageTag
     }
   )
   @IsString()
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(extensionIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()
@@ -910,7 +910,7 @@ export class ExtensionImageEmbeddings extends ImageEmbeddings
       required: true
     }
   )
-  @Matches(computeIdPattern(FieldLengths.shortTechnical))
+  @Matches(extensionIdPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()

@@ -3,13 +3,13 @@ import { IsEnum, IsOptional, IsString, Matches, MaxLength, MinLength } from "cla
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 
 import {
-  computeIdPattern,
   Dates,
   FieldLengths,
   fileUrlPattern,
   fileWithProtocol,
   namePattern,
   repositoryIdSchema,
+  shortTechnicalIdPattern,
   uniqueIdPattern
 } from "./common.dtos";
 
@@ -157,7 +157,7 @@ export class Repository extends Dates
     {
       description: "The technical identifier of the repository",
       type: String,
-      pattern: computeIdPattern(FieldLengths.shortTechnical),
+      pattern: shortTechnicalIdPattern,
       minLength: 1,
       maxLength: FieldLengths.shortTechnical,
       required: false,
