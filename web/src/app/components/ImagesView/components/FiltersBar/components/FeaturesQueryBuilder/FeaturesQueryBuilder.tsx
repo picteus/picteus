@@ -13,13 +13,25 @@ import {
   Text,
   TextInput
 } from "@mantine/core";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
+import {
+  IconBraces,
+  IconDatabase,
+  IconDirection,
+  IconDots,
+  IconFileDescription,
+  IconMessage,
+  IconPlus,
+  IconTextCaption,
+  IconTrash,
+  IconUserScan
+} from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import {
   ExtensionImageFeatureName,
   ImageFeatureFormat,
   ImageFeatureNullValue,
+  ImageFeatureType,
   SearchFeatureComparisonOperator,
   SearchFeatureCondition,
   SearchFeatureConditionValue,
@@ -29,12 +41,8 @@ import {
 
 import { NotificationsService } from "utils";
 import { FiltersService } from "app/services";
-import { ExtensionIcon } from "app/components";
+import { Common, ExtensionIcon } from "app/components";
 
-
-function computeExtensionImageFeatureNameValue(featureName: ExtensionImageFeatureName): string {
-  return `${featureName.id}|${featureName.format}|${featureName.type}|${featureName.name}`;
-}
 
 function computeSearchFeatureConditionValue(searchFeatureCondition: SearchFeatureCondition): string {
   return `${searchFeatureCondition.extensionId || ""}|${searchFeatureCondition.format}|${searchFeatureCondition.type || ""}|${searchFeatureCondition.name || ""}`;
@@ -158,11 +166,50 @@ function convertValue(rawValue: string, format: ImageFeatureFormat, operator: Se
   }
 }
 
-function computeFeatureNameLabel(featureName: ExtensionImageFeatureName): string {
-  return `${featureName.type}: ${featureName.name}`;
+function computeFeatureNameValue(featureName: FeatureNameType): string {
+  return `${featureName.id || ""}|${featureName.format}|${featureName.type}|${featureName.name || ""}`;
 }
 
+function computeFeatureNameLabel(featureName: FeatureNameType): string {
+  return `${featureName.type}${featureName.name === undefined ? "" : `: ${featureName.name}`}${featureName.format === undefined ? "" : ` (${featureName.format})`}`;
+}
+
+const allowedFeatureNameFormats: ImageFeatureFormat[] = Object.values(ImageFeatureFormat).filter(type => type !== ImageFeatureFormat.Binary);
+
 const defaultLogicalOperator = SearchFeatureLogicalOperator.Or;
+
+const operatorData = [
+  { value: SearchFeatureLogicalOperator.And, label: "AND" },
+  { value: SearchFeatureLogicalOperator.Or, label: "OR" },
+  { value: SearchFeatureLogicalOperator.Not, label: "NOT" }
+];
+
+const perTypeIconMap = {
+  [ImageFeatureType.Caption]: IconTextCaption,
+  [ImageFeatureType.Description]: IconFileDescription,
+  [ImageFeatureType.Comment]: IconMessage,
+  [ImageFeatureType.Annotation]: IconBraces,
+  [ImageFeatureType.Metadata]: IconDatabase,
+  [ImageFeatureType.Recipe]: IconDirection,
+  [ImageFeatureType.Identity]: IconUserScan,
+  [ImageFeatureType.Other]: IconDots
+};
+
+const iconProperties = { size: Common.IconSmallSize, stroke: 1, radius: "sm" };
+
+type FeatureNameType = {
+  id?: string,
+  type: ImageFeatureType,
+  format: ImageFeatureFormat,
+  name?: string
+};
+
+type FeatureNamesDataType = {
+  value: string,
+  label: string,
+  index: number,
+  reference: FeatureNameType
+};
 
 type FeaturesQueryBuilderType = {
   searchFeatures?: SearchFeatures;
@@ -171,25 +218,65 @@ type FeaturesQueryBuilderType = {
 
 export default function FeaturesQueryBuilder({ searchFeatures, onChange }: FeaturesQueryBuilderType) {
   const [t] = useTranslation();
-  const operatorData = [
-    { value: SearchFeatureLogicalOperator.And, label: "AND" },
-    { value: SearchFeatureLogicalOperator.Or, label: "OR" },
-    { value: SearchFeatureLogicalOperator.Not, label: "NOT" }
-  ];
   const [featureNames, setFeatureNames] = useState<ExtensionImageFeatureName[]>([]);
-  const [perFeatureNamesDataValueFeaturesNamesOptionMap, setPerFeatureNamesDataValueFeaturesNamesOptionMap] = useState<Map<string, ExtensionImageFeatureName>>(new Map());
-  const featureNamesData = useMemo(() => (featureNames.filter(imageFeatureName => imageFeatureName.format !== ImageFeatureFormat.Binary).map((imageFeatureName, index) => ({
-    value: computeExtensionImageFeatureNameValue(imageFeatureName),
-    label: computeFeatureNameLabel(imageFeatureName),
-    index,
-    reference: imageFeatureName
-  }))), [featureNames]);
+  const [perFeatureNamesDataValueFeaturesNamesOptionMap, setPerFeatureNamesDataValueFeaturesNamesOptionMap] = useState<Map<string, FeatureNameType>>(new Map());
+  const featureNamesData = useMemo<FeatureNamesDataType []>(() => {
+    const defaultFeatureNameDatas: FeatureNamesDataType[] = featureNames.filter(imageFeatureName => allowedFeatureNameFormats.indexOf(imageFeatureName.format) !== -1).map((imageFeatureName, index) => ({
+      value: computeFeatureNameValue(imageFeatureName),
+      label: computeFeatureNameLabel(imageFeatureName),
+      index,
+      reference: imageFeatureName
+    }));
+    const featureNameDatas: FeatureNamesDataType [] = defaultFeatureNameDatas;
+    Object.values(ImageFeatureType).forEach((featureType) =>
+    {
+      let formats: ImageFeatureFormat [];
+      switch (featureType)
+      {
+        case ImageFeatureType.Caption:
+          formats = [ImageFeatureFormat.String];
+          break;
+        case ImageFeatureType.Description:
+        case ImageFeatureType.Comment:
+          formats = [ImageFeatureFormat.String, ImageFeatureFormat.Markdown, ImageFeatureFormat.Html];
+          break;
+        case ImageFeatureType.Annotation:
+          formats = allowedFeatureNameFormats;
+          break;
+        case ImageFeatureType.Metadata:
+          formats = [ImageFeatureFormat.Json, ImageFeatureFormat.Xml];
+          break;
+        case ImageFeatureType.Recipe:
+          formats = [ImageFeatureFormat.Json];
+          break;
+        case ImageFeatureType.Identity:
+          formats = allowedFeatureNameFormats;
+          break;
+        case ImageFeatureType.Other:
+          formats = allowedFeatureNameFormats;
+          break;
+        default:
+          formats = [];
+          break;
+      }
+      for (const format of formats) {
+        const featureName: FeatureNameType = { type: featureType, format };
+        featureNameDatas.push({
+          value: computeFeatureNameValue(featureName),
+          label: computeFeatureNameLabel(featureName),
+          index: featureNameDatas.length,
+          reference: featureName
+        });
+      }
+    });
+    return featureNameDatas;
+  }, [featureNames]);
 
   useEffect(() => {
-    setPerFeatureNamesDataValueFeaturesNamesOptionMap(featureNamesData.reduce<Map<string, ExtensionImageFeatureName>>((map, imageFeatureName) => {
+    setPerFeatureNamesDataValueFeaturesNamesOptionMap(featureNamesData.reduce<Map<string, FeatureNameType>>((map, imageFeatureName) => {
       map.set(imageFeatureName.value, imageFeatureName.reference);
       return map;
-    }, new Map<string, ExtensionImageFeatureName>()));
+    }, new Map<string, FeatureNameType>()));
   }, [featureNamesData]);
 
   useEffect(() => {
@@ -259,7 +346,7 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
     return (
       <Group gap={8}>
         {item.checked && <CheckIcon className={Combobox.classes.optionsDropdownCheckIcon}/>}
-        {featureName.id && <ExtensionIcon idOrExtension={featureName.id} size="sm" />}
+        {featureName.id ? <ExtensionIcon idOrExtension={featureName.id} size="sm" />: React.createElement(perTypeIconMap[featureName.type], iconProperties)}
         <Text size="sm">{computeFeatureNameLabel(featureName)}</Text>
       </Group>
     );
@@ -305,9 +392,9 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
                 maxDropdownHeight={300}
                 data={featureNamesData}
                 value={computeSearchFeatureConditionValue(condition)}
-                leftSection={condition.extensionId && <ExtensionIcon idOrExtension={condition.extensionId} size="sm" />}
+                leftSection={condition.extensionId ? <ExtensionIcon idOrExtension={condition.extensionId} size="sm" /> : React.createElement(perTypeIconMap[condition.type], iconProperties)}
                 renderOption={renderFeatureNameSelectOption}
-                comboboxProps={{ width: 220, position: "bottom-start" }}
+                comboboxProps={{ width: 250, position: "bottom-start" }}
                 onChange={handleOnChangeFeatureName}
               />
               <Select
