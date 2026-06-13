@@ -115,10 +115,10 @@ function localFiltersToSearchFilter(localFilters: LocalFiltersType): SearchFilte
       ...computeSearchTags()
     },
     ...(localFilters.repositories?.length ? { origin: { kind: SearchOriginNature.Repositories, ids: localFilters.repositories } } : {}),
-    sorting: {
+    sorting: localFilters.sortBy ? {
       property: localFilters.sortBy,
       isAscending: localFilters.sortOrder === "1"
-    }
+    } : undefined
   };
   return SearchFilterFromJSON(rawSearchFilter);
 }

@@ -16,7 +16,7 @@ import {
 import {
   IconBraces,
   IconDatabase,
-  IconDirection,
+  IconDirections,
   IconDots,
   IconFileDescription,
   IconMessage,
@@ -190,7 +190,7 @@ const perTypeIconMap = {
   [ImageFeatureType.Comment]: IconMessage,
   [ImageFeatureType.Annotation]: IconBraces,
   [ImageFeatureType.Metadata]: IconDatabase,
-  [ImageFeatureType.Recipe]: IconDirection,
+  [ImageFeatureType.Recipe]: IconDirections,
   [ImageFeatureType.Identity]: IconUserScan,
   [ImageFeatureType.Other]: IconDots
 };

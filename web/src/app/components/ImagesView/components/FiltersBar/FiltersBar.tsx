@@ -107,6 +107,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({ initialFi
   }));
 
   useEffect(() => {
+    setSearchText(filters?.keyword ?? "");
     const updatedSearchFilter = filters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(filters);
     if (updatedSearchFilter !== undefined) {
       onFilterOrCollectionId({ filter: updatedSearchFilter });
