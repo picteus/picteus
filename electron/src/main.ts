@@ -237,7 +237,7 @@ class TrayGenerator
     const trayIcon = icon.resize({ width: 16 });
     trayIcon.setTemplateImage(true);
     this.tray = new Tray(trayIcon);
-    this.tray.setToolTip("This enables to interact with the application");
+    this.tray.setToolTip(`${app.getName()} — click to hide or display the application`);
     this.tray.setIgnoreDoubleClickEvents(true);
     this.tray.on("click", this.toggleWindow);
     this.tray.on("right-click", this.rightClickMenu);
