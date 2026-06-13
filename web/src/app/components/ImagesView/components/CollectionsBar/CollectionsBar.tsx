@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore } from "react";
-import { Box, Button, Center, Flex, Loader, Menu, Text, Tooltip } from "@mantine/core";
+import { Box, Button, Center, Loader, Menu, Text, Tooltip } from "@mantine/core";
 import { IconChevronDown, IconDeviceFloppy, IconLibrary, IconLibraryPhoto, IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -124,7 +124,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
     }
 
     return (<Button.Group>
-          <Menu shadow="md" width={340} position="bottom" withArrow trigger="click-hover" opened={menuOpened} onChange={setMenuOpened}>
+          <Menu shadow="md" width={340} position="bottom" trigger="click-hover" opened={menuOpened} onChange={setMenuOpened}>
               <Menu.Target>
                   <Button variant="default" leftSection={<IconLibraryPhoto size={14} />}
                           rightSection={<IconChevronDown size={14} />}>
@@ -136,8 +136,6 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
                   {!loading && collections.map((collection) => (
                     <Menu.Item key={collection.id} onClick={() => handleOnSelectedCollection(collection)}>
                         <Text size="sm">{truncateName(collection.name)}</Text>
-                        <Flex justify="space-between" align="center">
-                        </Flex>
                     </Menu.Item>
                   ))}
               </Menu.Dropdown>

@@ -18,7 +18,6 @@ export { default as ImageGallery } from "./ImageGallery/ImageGallery.tsx";
 export { default as ImageTable } from "./ImageTable/ImageTable.tsx";
 export { default as ImagesCollection } from "./ImagesCollection/ImagesCollection.tsx";
 export { default as ImagesStack } from "./ImagesStack/ImagesStack.tsx";
-export { default as FilterSelect } from "./FilterSelect/FilterSelect.tsx";
 export { default as Notification } from "./Notification/Notification.tsx";
 export { default as RefreshButton } from "./RefreshButton/RefreshButton.tsx";
 export { default as DialogForm } from "./DialogForm/DialogForm.tsx";

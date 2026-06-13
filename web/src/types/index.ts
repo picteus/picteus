@@ -4,12 +4,12 @@ import { RJSFSchema } from "@rjsf/utils";
 import {
   Extension,
   Image,
-  ImageFeatureFormat,
-  ImageFeatureType,
   ImageFormat,
   ImageSummary,
   ManifestInterfaceElementIntegration,
+  SearchFeatures,
   SearchFilter,
+  SearchProperties,
   SearchSortingProperty
 } from "@picteus/ws-client";
 
@@ -234,13 +234,12 @@ export type AdditionalUi = {
   automaticallyReopen: boolean;
 };
 
-export type LocalFiltersTypeFeature = { category: string, format: ImageFeatureFormat, type: ImageFeatureType, name?: string };
-
 export type LocalFiltersType = {
   keyword?: string;
-  searchIn?: string[];
+  searchIn?: ("inName" | "inMetadata" | "inFeatures")[];
   formats?: ImageFormat[];
-  features?: LocalFiltersTypeFeature[];
+  features?: SearchFeatures;
+  properties?: SearchProperties;
   tags?: string[];
   repositories?: string[];
   sortBy?: SearchSortingProperty;

@@ -13,6 +13,7 @@ import style from "./ControllerBar.module.scss";
 
 type ControllerBarType = {
   children?: ReactNode;
+  withFilter: boolean;
   initialFilterOrCollectionId: FilterOrCollectionId;
   onFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId) => void;
   withRefreshButton: boolean;
@@ -25,6 +26,7 @@ type ControllerBarType = {
 
 export default function ControllerBar({
                                         children,
+                                        withFilter,
                                         initialFilterOrCollectionId,
                                         onFilterOrCollectionId,
                                         withRefreshButton,
@@ -72,7 +74,7 @@ export default function ControllerBar({
   return (
     <Flex align="end" justify="space-between" className={style.content}>
       {children}
-      <FiltersBar
+      {withFilter && <FiltersBar
         ref={filtersBarRef}
         initialFilterOrCollectionId={initialFilterOrCollectionId}
         onFilterOrCollectionId={handleOnFilterOrCollectionId}
@@ -84,7 +86,7 @@ export default function ControllerBar({
           initialCollectionId={initialCollectionId}
           onCollection={handleOnCollection}
         />
-      </FiltersBar>
+      </FiltersBar>}
       <Flex gap="xs">
         <ActionIcon.Group>
           <Tooltip label={t("imagesScreen.masonryView")}>

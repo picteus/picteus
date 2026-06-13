@@ -1,6 +1,6 @@
 export default {
   bootstrap: {
-    loading: "Loading application..."
+    loading: "Loading application…"
   },
   menu: {
     images: "Images",
@@ -26,6 +26,7 @@ export default {
   },
   field: {
     noValue: "—",
+    value: "Value",
     id: "ID",
     parent: "Parent",
     url: "URL",
@@ -43,8 +44,15 @@ export default {
     dimensions: "Dimensions",
     repository: "Repository",
     repositories: "Repositories",
+    properties: "Properties",
+    essentials: "Essentials",
     icon: "Icon",
     size: "Size",
+    maximum: "Maximum",
+    minimum: "Minimum",
+    from: "From",
+    to: "To",
+    any: "Any",
     format: "Format",
     formats: "Formats",
     features: "Features",
@@ -86,9 +94,14 @@ export default {
     inName: "Image name",
     inMetadata: "Image metadata",
     inFeatures: "Image features",
+    allValues: "All values",
+    pickAnOption: "Pick an option",
     collection: "Collection",
     selectAll: "Select all",
-    clearAll: "Clear all"
+    clearAll: "Clear all",
+    noMatching: "No matching",
+    noConditions: "No conditions. Click to add.",
+    addCondition: "Add condition"
   },
   sort: {
     asc: "Ascending",
@@ -274,7 +287,7 @@ export default {
       fatal: "The extension has been stopped due too many process stops",
       notification: "The extension has send a notification",
       intent: "The extension triggered {{type}} intent",
-      acknowledgment: "The extension has acknowledged a processing."
+      acknowledgment: "The extension has acknowledged a processing"
     },
     repository: {
       created: "The repository '{{id}}' has been created",
@@ -288,7 +301,12 @@ export default {
         started: "Watch on the repository '{{id}}' has been started",
         stopped: "Watch on the repository '{{id}}' has been stopped"
       },
-      deleted: "Repository '{{id}}' has been deleted."
+      deleted: "Repository '{{id}}' has been deleted"
+    },
+    collection: {
+      created: "The collection '{{id}}' has been created",
+      updated: "The collection '{{id}}' has been updated",
+      deleted: "Collection '{{id}}' has been deleted"
     },
     image: {
       created: "The image '{{id}}' has been created",

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Select, SelectProps, Stack, Text } from "@mantine/core";
+import { ComboboxItem, ComboboxLikeRenderOptionInput, Select, SelectProps, Stack, Text } from "@mantine/core";
 import { WidgetProps } from "@rjsf/utils";
 import { useTranslation } from "react-i18next";
 
 import { Repository } from "@picteus/ws-client";
 
-import { RepositoriesService } from "../../../services";
+import { RepositoriesService } from "app/services";
 
 
 export default function RepositoryWidget(props: WidgetProps) {
@@ -19,25 +19,25 @@ export default function RepositoryWidget(props: WidgetProps) {
         });
     }, []);
 
-    const selectData = repositories.map((repo) => ({
-        value: repo.id,
-        label: repo.name,
+    const selectData = repositories.map((repository) => ({
+        value: repository.id,
+        label: repository.name,
     }));
 
-    const renderSelectOption: SelectProps["renderOption"] = ({ option }) => {
-        const item = repositories.find((r) => r.id === option.value);
-        if (!item) return null;
+    const renderSelectOption: SelectProps["renderOption"] = (item: ComboboxLikeRenderOptionInput<ComboboxItem>) => {
+        const repository = repositories.find((aRepository) => aRepository.id === item.option.value);
+        if (!repository) return null;
         return (
             <Stack gap={2}>
-                <Text size="sm" fw={500}>{item.name}</Text>
-                {item.comment && (
+                <Text size="sm" fw={500}>{repository.name}</Text>
+                {repository.comment && (
                     <Text size="xs" opacity={0.65}>
-                        {item.comment}
+                        {repository.comment}
                     </Text>
                 )}
-                {item.url && (
+                {repository.url && (
                     <Text size="xs" opacity={0.65}>
-                        {item.url}
+                        {repository.url}
                     </Text>
                 )}
             </Stack>

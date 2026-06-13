@@ -103,7 +103,7 @@ export default function ImageData({ image, viewMode }: ImageDataType) {
 
   const tags = useMemo<ReactElement>(()=> (<TableComponent label="" value={<Group gap="xs">
       {image.tags.map((imageTag, index) => (
-        <ImageTag key={`tag-${index}`} imageTag={imageTag} />
+        <ImageTag key={`tag-${index}`} tag={imageTag} kind="badge" />
       ))}
     </Group>} />
   ), [image]);

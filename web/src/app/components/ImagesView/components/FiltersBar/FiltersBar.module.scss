@@ -1,7 +1,22 @@
-.textSearch {
-  width: 250px;
+.container {
+  min-height: 44px;
+  max-height: 120px;
+  overflow-y: auto;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-right: 64px;
 }
 
-.section {
-  z-index: 0;
+.wrapper {
+  width: 100%;
+  height: 50px;
+}
+
+.input {
+  flex: 1;
+  min-width: 100px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
 }

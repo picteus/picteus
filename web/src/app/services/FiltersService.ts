@@ -2,20 +2,21 @@ import i18n from "i18n/i18n.ts";
 
 import { RepositoriesService } from "app/services";
 import {
-  ImageFeatureNullValue,
+  ExtensionImageFeatureName,
+  ExtensionImageTag,
   ImageFormat,
-  SearchFeatureComparisonOperator,
-  SearchFeatureLogicalOperator,
   SearchFeatures,
   SearchFilter,
   SearchFilterFromJSON,
   SearchKeyword,
   SearchOriginNature,
+  SearchProperties,
   SearchSortingProperty,
   SearchTags
 } from "@picteus/ws-client";
-import { LocalFiltersType, LocalFiltersTypeFeature } from "types";
-import { capitalizeText } from "../../utils";
+
+import { LocalFiltersType } from "types";
+
 
 export type WithValue = { value: string };
 
@@ -52,16 +53,12 @@ const formatsOptions: WithValueAndLabel[] = Object.keys(ImageFormat).map((key) =
   label: ImageFormat[key]
 }));
 
-export type FeaturesNamesOption = WithValue & LocalFiltersTypeFeature;
-
-const computeFeaturesNamesOptions: () => Promise<FeaturesNamesOption[]> = async () => {
-  const featureNames = await RepositoriesService.getFeatureNames();
-  return featureNames.map(name => ({ value: name.name, label: name.name, category: name.name, format: name.format, type: name.type, name: name.name }));
+const computeFeaturesNamesOptions: () => Promise<ExtensionImageFeatureName[]> = async () => {
+  return await RepositoriesService.getFeatureNames();
 };
 
-const computeTagsOptions: () => Promise<WithValueAndLabel[]> = async () => {
-  const tags = await RepositoriesService.getTags();
-  return tags.map(tag => ({ value: tag.value, label: tag.value }));
+const computeTagsOptions: () => Promise<ExtensionImageTag[]> = async () => {
+  return await RepositoriesService.getTags();
 };
 
 const sortOrderOptions: WithValueAndLabel[] = [
@@ -92,18 +89,15 @@ function localFiltersToSearchFilter(localFilters: LocalFiltersType): SearchFilte
   }
 
   function computeFeatures(): { features: SearchFeatures } | object {
-    if (localFilters.features?.length) {
-      return { features: {
-          operator: SearchFeatureLogicalOperator.Or, conditions: localFilters.features.map(feature => {
-            return {
-              format: feature.format,
-              type: feature.type,
-              name: feature.name,
-              operator: SearchFeatureComparisonOperator.Different,
-              value: ImageFeatureNullValue.Empty
-            };
-          })
-        } };
+    if (localFilters.features) {
+      return { features: localFilters.features };
+    }
+    return {};
+  }
+
+  function computeProperties(): { properties: SearchProperties } | object {
+    if (localFilters.properties) {
+      return { properties: localFilters.properties };
     }
     return {};
   }
@@ -112,11 +106,12 @@ function localFiltersToSearchFilter(localFilters: LocalFiltersType): SearchFilte
     return localFilters.tags?.length ? { tags: { values: localFilters.tags } } : {};
   }
 
-  return SearchFilterFromJSON({
+  const rawSearchFilter = {
     criteria: {
       ...computeSearchKeyword(),
       formats: localFilters.formats?.length > 0 ? localFilters.formats : undefined,
       ...computeFeatures(),
+      ...computeProperties(),
       ...computeSearchTags()
     },
     ...(localFilters.repositories?.length ? { origin: { kind: SearchOriginNature.Repositories, ids: localFilters.repositories } } : {}),
@@ -124,7 +119,8 @@ function localFiltersToSearchFilter(localFilters: LocalFiltersType): SearchFilte
       property: localFilters.sortBy,
       isAscending: localFilters.sortOrder === "1"
     }
-  });
+  };
+  return SearchFilterFromJSON(rawSearchFilter);
 }
 
 function searchFilterToLocalFilters(searchFilter: SearchFilter): LocalFiltersType {
@@ -137,7 +133,7 @@ function searchFilterToLocalFilters(searchFilter: SearchFilter): LocalFiltersTyp
   if (criteria) {
     if (criteria.keyword) {
       localFilters.keyword = criteria.keyword.text;
-      const searchIn: string[] = [];
+      const searchIn: ("inName" | "inMetadata" | "inFeatures")[] = [];
       if (criteria.keyword.inName) {
         searchIn.push("inName");
       }
@@ -155,15 +151,11 @@ function searchFilterToLocalFilters(searchFilter: SearchFilter): LocalFiltersTyp
     }
 
     if (criteria.features) {
-      const features: SearchFeatures = criteria.features;
-      if (features.conditions) {
-        localFilters.features = features.conditions.map((condition) => ({
-          format: condition.format,
-          category: capitalizeText(condition.type),
-          type: condition.type,
-          name: condition.name
-        }));
-      }
+      localFilters.features = criteria.features;
+    }
+
+    if (criteria.properties) {
+      localFilters.properties = criteria.properties;
     }
 
     if (criteria.tags) {

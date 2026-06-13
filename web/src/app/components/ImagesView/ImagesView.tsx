@@ -177,6 +177,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
   return (<Flex ref={containerRef} direction="column" className={style.container}>
     <ControllerBar
       children={controlBarChildren}
+      withFilter={isDefault}
       initialFilterOrCollectionId={filterOrCollectionId}
       onFilterOrCollectionId={handleOnFilterOrCollectionId}
       withRefreshButton={hasFilterOrCollectionId}
