@@ -1,8 +1,10 @@
-import { defineConfig, type Plugin } from "vite";
+import path from "node:path";
+
+import { defineConfig, type Plugin, TerserOptions } from "vite";
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 import { version } from "./package.json";
+
 
 /**
  * Patches @researchgate/react-intersection-list's Sentinel component.
@@ -10,29 +12,35 @@ import { version } from "./package.json";
  * this.observer can be null when shouldComponentUpdate is called.
  * The original code lacked a null guard, causing a runtime crash.
  */
-function sentinelObserverNullGuardPlugin(): Plugin {
+function sentinelObserverNullGuardPlugin(): Plugin
+{
   return {
     name: "sentinel-observer-null-guard",
     enforce: "pre",
-    transform(code, id) {
-      if (!id.includes("react-intersection-list")) return null;
-      if (!id.includes("Sentinel")) return null;
-      return {
-        code: code.replace(
-          "      this.observer.externalUnobserve();\n      this.observer.observe();",
-          "      if (this.observer) { this.observer.externalUnobserve(); this.observer.observe(); }"
-        ),
-        map: null,
-      };
-    },
+    transform(code, _id)
+    {
+      if (code.includes("this.observer.externalUnobserve()"))
+      {
+        return code.replace(
+          /this\.observer\.externalUnobserve\(\);[\s\S]*?this\.observer\.observe\(\);/g,
+          "if (this.observer) { this.observer.externalUnobserve(); this.observer.observe(); }"
+        );
+      }
+      return null;
+    }
   };
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode }) =>
+{
   const isProfiling = mode === "profiling";
   return {
-    plugins: [sentinelObserverNullGuardPlugin(), react(), tsconfigPaths()],
-    resolve: isProfiling === true ? { alias: [{ find: "react-dom/client", replacement: "react-dom/profiling" }] } : undefined,
+    plugins: [sentinelObserverNullGuardPlugin(), react()],
+    resolve: {
+      dedupe: ["react", "react-dom"],
+      tsconfigPaths: true,
+      alias: isProfiling === true ? [{ find: "react-dom/client", replacement: "react-dom/profiling" }] : undefined
+    },
     base: "",
     define: {
       "import.meta.env.PACKAGE_VERSION": JSON.stringify(version)
@@ -40,13 +48,13 @@ export default defineConfig(({ mode }) => {
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: `@import "./src/assets/style/variables.scss";`
+          additionalData: `@import "${path.resolve(__dirname, "src/assets/style/variables.scss").replace(/\\/g, "/")}";`
         }
       }
     },
     build: {
       outDir: "../build/web",
-      terserOptions: isProfiling === true ? { keep_fnames: true, keep_classnames: true } : undefined,
+      terserOptions: isProfiling === true ? { keep_fnames: true, keep_classnames: true } as TerserOptions : undefined,
       sourcemap: isProfiling === true
     }
   };

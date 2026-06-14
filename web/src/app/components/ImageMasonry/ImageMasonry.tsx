@@ -1,6 +1,6 @@
 import React, { RefObject, useCallback, useEffect, useMemo, useRef } from "react";
 import { useResizeObserver } from "@mantine/hooks";
-import MasonryLayout, { MasonrySizing } from "react-fast-masonry";
+import { FastMasonry as MasonryLayout, MasonrySizing } from "react-fast-masonry";
 
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
 import { useActionModalContext } from "app/context";
