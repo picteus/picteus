@@ -5,6 +5,7 @@ import {
   Configuration,
   GenerationRecipe,
   ImageApi,
+  ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
   PromptKind,
@@ -34,19 +35,24 @@ async function fetchImage(imageUrl: string): Promise<{ buffer: ArrayBuffer, mime
   return { buffer: await blob.arrayBuffer(), mimeType: response.headers.get("content-type") };
 }
 
-async function storeImage(imageUrl: string, imageBufferOrBlob: ArrayBuffer | Blob, mimeType: string, prompt: string): Promise<void>
+async function storeImage(imageUrl: string | undefined, imageBufferOrBlob: ArrayBuffer | Blob, mimeType: string, prompt: string): Promise<void>
 {
   const settings = await getSettings();
   if (settings !== undefined)
   {
     if (settings.webServicesBaseUrl !== undefined)
     {
+      console.log(`Sending to the server at '${settings.webServicesBaseUrl}' the image with prompt '${prompt}'`);
       const blob = imageBufferOrBlob instanceof Blob ? imageBufferOrBlob : new Blob([imageBufferOrBlob], { type: mimeType });
+      const imageBitmap = await createImageBitmap(blob);
+      const aspectRatio = imageBitmap.width / imageBitmap.height;
       const recipe: GenerationRecipe =
         {
           schemaVersion: 1,
           modelTags: ["google/gemini-2.5-flash-image:2.5"],
+          url: imageUrl,
           software: "google/gemini",
+          aspectRatio,
           prompt: { kind: PromptKind.Textual, text: prompt }
         };
       const configuration = new Configuration({
@@ -71,23 +77,31 @@ async function storeImage(imageUrl: string, imageBufferOrBlob: ArrayBuffer | Blo
         extensionId: extensionId,
         requestBody: [extensionId]
       });
+      const features: ImageFeature[] = [
+        {
+          type: ImageFeatureType.Recipe,
+          format: ImageFeatureFormat.Json,
+          value: JSON.stringify(recipe)
+        },
+        {
+          type: ImageFeatureType.Description,
+          format: ImageFeatureFormat.String,
+          name: "prompt",
+          value: prompt
+        }
+      ];
+      if (imageUrl !== undefined)
+      {
+        features.push({
+          type: ImageFeatureType.Identity,
+          format: ImageFeatureFormat.String,
+          value: imageUrl
+        });
+      }
       await imageApi.imageSetFeatures({
         id: image.id,
         extensionId,
-        imageFeature:
-          [
-            {
-              type: ImageFeatureType.Recipe,
-              format: ImageFeatureFormat.Json,
-              value: JSON.stringify(recipe)
-            },
-            {
-              type: ImageFeatureType.Description,
-              format: ImageFeatureFormat.String,
-              name: "prompt",
-              value: prompt
-            }
-          ]
+        imageFeature: features
       });
     }
   }
@@ -193,13 +207,14 @@ class GeminiAppImportButtonAdder
           });
         }
 
-        async run(prompt: string, callback: () => Promise<void>)
+        async run(prompt: string, callback: () => Promise<void>): Promise<Blob>
         {
           return new Promise<Blob | undefined>(async (resolve, reject) =>
           {
-            const currentBlob = await this.getClipboardImage();
+            const previousBlob = await this.getClipboardImage();
             await callback();
             const milliseconds = Date.now();
+            let mightBeIdenticalCount = 0;
             let messageSent = false;
             const interval = setInterval(async () =>
             {
@@ -215,12 +230,23 @@ class GeminiAppImportButtonAdder
               }
               if (blob !== undefined)
               {
-                if (currentBlob === undefined || (currentBlob.size !== blob.size || currentBlob.type !== blob.type))
+                let found: boolean;
+                if (previousBlob === undefined)
+                {
+                  found = true;
+                }
+                else
+                {
+                  const mightBeIdentical = previousBlob.size === blob.size || previousBlob.type === blob.type;
+                  mightBeIdenticalCount += mightBeIdentical === true ? 1 : 0;
+                  found = mightBeIdentical === false || mightBeIdenticalCount >= 50 ;
+                }
+                if (found === true)
                 {
                   if (messageSent !== true)
                   {
-                    console.info(`Found the clipboard image relative to the prompt '${prompt}'`);
                     messageSent = true;
+                    console.info(`Found the clipboard image relative to the prompt '${prompt}'`);
                     clearInterval(interval);
                     resolve(blob);
                   }
@@ -238,6 +264,7 @@ class GeminiAppImportButtonAdder
 
         private async getClipboardImage(): Promise<Blob | undefined>
         {
+          console.debug("Reading the clipboard");
           const clipboardContents = await navigator.clipboard.read();
           for (const item of clipboardContents)
           {
@@ -252,7 +279,9 @@ class GeminiAppImportButtonAdder
             if (validTypes.length > 0)
             {
               const mimeType = validTypes[0];
-              return await item.getType(mimeType);
+              const blob = await item.getType(mimeType);
+              console.debug(`Extracted from the clipboard the image with MIME type '${mimeType}', of ${blob.size} bytes`);
+              return blob;
             }
           }
           return undefined;
@@ -263,13 +292,13 @@ class GeminiAppImportButtonAdder
       // noinspection CssInvalidHtmlTagReference
       const userQueryNodes = document.querySelectorAll("user-query p.query-text-line");
       // noinspection CssInvalidHtmlTagReference
-      const copyButtonNodes = document.querySelectorAll("copy-button > button");
+      const copyButtonNodes = document.querySelectorAll("copy-button > gem-icon-button > button");
       // noinspection CssInvalidHtmlTagReference
       const imageNodes = document.querySelectorAll("single-image img");
 
       if (copyButtonNodes.length !== userQueryNodes.length || imageNodes.length !== userQueryNodes.length)
       {
-        console.warn("Could not find all the corresponding prompt and copy button and images");
+        console.warn(`Could not find all the corresponding prompt and copy button and images: userQueryNodes=${userQueryNodes.length}, copyButtonNodes=${copyButtonNodes.length}, imageNodes=${imageNodes.length}`);
         return undefined;
       }
       // console.debug(`Found ${userQueryNodes.length} node candidate(s)`);
@@ -284,7 +313,7 @@ class GeminiAppImportButtonAdder
         const userQueryNode = userQueryNodes[index] as HTMLElement;
         const copyButtonNode = copyButtonNodes[index] as HTMLButtonElement;
         const imageNode = imageNodes[index] as HTMLImageElement;
-        const parentNode = copyButtonNode.parentNode.parentNode;
+        const parentNode = copyButtonNode.parentNode.parentNode.parentNode;
         if (handledNodes.indexOf(parentNode) !== -1)
         {
           continue;
@@ -356,6 +385,7 @@ class GeminiAppImportButtonAdder
 
   start(): GeminiAppImportButtonAdder
   {
+    console.log("Starting the GeminiAppImportButtonAdder");
     let imageRecorder: ImageRecorder;
     this.listener = async (message: any, _sender: chrome.runtime.MessageSender, _sendResponse: any) =>
     {
@@ -388,10 +418,9 @@ class GeminiAppImportButtonAdder
           const imageUrls = imageRecorder.stop();
           if (imageUrls.length === 0)
           {
-            console.error(`Could not detect the URL of the image associated with the prompt '${prompt}'`);
-            return;
+            console.warn(`Could not detect the URL of the image associated with the prompt '${prompt}'`);
           }
-          imageUrl = imageUrls[imageUrls.length - 1];
+          imageUrl = imageUrls.length === 0 ? undefined : imageUrls[imageUrls.length - 1];
           imageRecorder = undefined;
         }
 
