@@ -2,7 +2,7 @@ export const product =
   {
     name: "Picteus",
     technicalId: "picteus",
-    applicationVersion: "0.8.0",
+    applicationVersion: "0.9.0",
     apiVersion: "0.16.0",
     author:
       {
