@@ -41,8 +41,8 @@
   "devDependencies": {
     "typescript": "5.9.2",
     "@types/node": "22.17.1",
-    "tsc-alias": "1.8.16",
-    "@openapitools/openapi-generator-cli": "2.28.0"
+    "tsc-alias": "1.8.17",
+    "@openapitools/openapi-generator-cli": "2.38.0"
   },
   "dependencies": {
     "@picteus/internal-extension-sdk": "0.12.0"
