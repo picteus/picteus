@@ -1,7 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
-import eslintPlugin from "vite-plugin-eslint";
 
 import { version } from "./package.json";
 
@@ -32,7 +31,7 @@ function sentinelObserverNullGuardPlugin(): Plugin {
 export default defineConfig(({ mode }) => {
   const isProfiling = mode === "profiling";
   return {
-    plugins: [sentinelObserverNullGuardPlugin(), react(), tsconfigPaths(), eslintPlugin()],
+    plugins: [sentinelObserverNullGuardPlugin(), react(), tsconfigPaths()],
     resolve: isProfiling === true ? { alias: [{ find: "react-dom/client", replacement: "react-dom/profiling" }] } : undefined,
     base: "",
     define: {
