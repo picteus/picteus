@@ -46,12 +46,12 @@
     "shx": "0.4.0",
     "cross-var": "1.1.0",
     "typescript": "5.9.2",
-    "tsc-alias": "1.8.16",
+    "tsc-alias": "1.8.17",
     "@types/node": "22.17.1",
-    "tsup": "8.5.0"
+    "tsup": "8.5.1"
   },
   "dependencies": {
-    "winston": "3.15.0",
+    "winston": "3.19.0",
     "@caporal/core": "3.1.5"
   }
 }

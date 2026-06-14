@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import stream, { Duplex } from "node:stream";
 
-import sharp, { FitEnum, Metadata, ResizeOptions } from "sharp";
+import sharp from "sharp";
 import EXIF from "exif-js";
 import exif from "exif-reader";
 import { parse as parseIcc } from "icc";
@@ -25,33 +25,9 @@ const { addMetadata } = AddMetaPng;
 const { encodeChunks, extractChunks, writeMetadata: pngWriteMetadata } = PngMetadata.default;
 
 
-type DefinedBitmapFormat =
-  | "avif"
-  | "dcraw"
-  | "dz"
-  | "exr"
-  | "fits"
-  | "gif"
-  | "heif"
-  | "input"
-  | "jpeg"
-  | "jpg"
-  | "jp2"
-  | "jxl"
-  | "magick"
-  | "openslide"
-  | "pdf"
-  | "png"
-  | "ppm"
-  | "rad"
-  | "raw"
-  | "svg"
-  | "tiff"
-  | "tif"
-  | "v"
-  | "webp";
+type DefinedBitmapFormat = keyof sharp.FormatEnum;
 export type BitmapFormat = undefined | DefinedBitmapFormat;
-type BasisBitmapMetadata = Pick<Metadata, "format" | "compression" | "exif" | "icc" | "iptc" | "xmp" | "width" | "height" | "tifftagPhotoshop">
+type BasisBitmapMetadata = Pick<sharp.Metadata, "format" | "compression" | "exif" | "icc" | "iptc" | "xmp" | "width" | "height" | "tifftagPhotoshop">
 export type BitmapMetadata = BasisBitmapMetadata & {
   format: BitmapFormat
 }
@@ -588,9 +564,7 @@ async function extractBufferFromAvif(buffer: Buffer): Promise<Buffer>
 
 async function extractBufferFromHeif(buffer: Buffer): Promise<{ buffer: Buffer; width: number; height: number }>
 {
-  // @ts-ignore
-  const arrayBufferLike: ArrayBufferLike = buffer;
-  const images = await heicDecode.all({ buffer: arrayBufferLike });
+  const images = await heicDecode.all({ buffer });
   if (images.length !== 1)
   {
     throw new ImageError(`The image contains several frames`, ErrorCause.NotImplemented);
@@ -609,7 +583,7 @@ export type FormatAndBuffer =
 
 export async function guessFormat(entity: string, input: string | Buffer): Promise<DefinedResizeFormat>
 {
-  let metadata: Metadata;
+  let metadata: sharp.Metadata;
   try
   {
     metadata = await sharp(input, computeSharpOptions()).metadata();
@@ -633,13 +607,13 @@ export async function resize(entity: string, input: string | Buffer, format: Res
   // The documentation about "sharp" is available at https://sharp.pixelplumbing.com
   // It is important to set the "failOnError" flag to "false", otherwise a popup dialog box occurs when the image seems to be corrupted (discussion at https://github.com/lovell/sharp/issues/793, documentation at http://sharp.pixelplumbing.com/en/stable/api-constructor/)
   const sharpOptions: sharp.SharpOptions = computeSharpOptions();
-  const options: ResizeOptions =
+  const options: sharp.ResizeOptions =
     {
       withoutEnlargement: enlargeable === false
     };
   if (render !== undefined)
   {
-    let fit: keyof FitEnum;
+    let fit: keyof sharp.FitEnum;
     switch (render)
     {
       case "inbox":

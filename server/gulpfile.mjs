@@ -248,7 +248,7 @@ const installElectron = () =>
 
 // Those are the packages that need to be kept in the server "node_modules" directory, even if they should be present in the Electron "node_modules" directory
 // We also need to keep the "tslib" and "rxjs" modules, for a reason that cannot be explained so far
-const toBeKeptPackages = ["tslib", "rxjs", "@babel", "color", "@xmldom", "base64-js", "mkdirp"];
+const toBeKeptPackages = ["tslib", "rxjs", "@babel", "color", "@xmldom", "base64-js", "mkdirp", "negotiator"];
 const computePruneElectronDuplicates = () =>
 {
   const collect = (directories) =>

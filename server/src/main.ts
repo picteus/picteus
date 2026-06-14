@@ -61,7 +61,7 @@ class InternalServer
     const openApiDocument = await this.createOpenApiDocument();
     const originalOpenApiDocument: SwaggerV2.IDocument | OpenApiV3.IDocument | OpenApiV3_1.IDocument = deepCopy(openApiDocument);
     const document: OpenApi.IDocument = OpenApi.convert(originalOpenApiDocument);
-    const application: IHttpLlmApplication<"3.1"> = HttpLlm.application({ model: "3.1", document });
+    const application: IHttpLlmApplication = HttpLlm.application({ document });
 
     const directoryPath = path.dirname(filePath);
     fs.mkdirSync(directoryPath, { recursive: true });
