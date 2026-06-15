@@ -15,8 +15,8 @@ The application is made of six components:
 2. "server": the Node.js HTTP server back-end application, capable of running extensions ;
 3. "extensions/sdk": the Python and TypeScript SDKs ;
 4. "extensions/instances": the built-in extensions for the server ;
-5. "web": the React.js web front-end application ;
-6. "electron": the wrapping Electron application which embeds the "server" and "web" previous components.
+5. "front-end": the React.js web front-end application ;
+6. "electron": the wrapping Electron application which embeds the "server" and "front-end" previous components.
 
 ## Prerequisites
 
@@ -47,7 +47,7 @@ The following commands enable cleaning up the project. They should be run from t
 The versions of the various components are specified through the root `package.json` file via the `config.applicationVersion`, `config.apiVersion` and `config.sdkVersion` properties:
 - `config.applicationVersion`: the version of the Electron application ;
 - `config.serverVersion`: the version of the server ;
-- `config.webVersion`: the version of the front-end application ;
+- `config.frontEndVersion`: the version of the front-end application ;
 - `config.apiVersion`: the version of the API and its OpenAPI web services contract ;
 - `config.sdkVersion`: the version of the SDK.
 
@@ -110,20 +110,20 @@ To publish a new version of the SDKs, run the `npm run sdk:publish` script, afte
 - for publishing the Node.js SDK package on npm, use the `npm login --scope=@koppasoft` command to log in first ;
 - for publishing the Python SDK package on PyPi, declare an API token at https://pypi.org/manage/account/token/ beforehand.
 
-### Web (front-end)
+### Front-end
 
-Its source-code and scripts are located under the `web` directory.
+Its source-code and scripts are located under the `front-end` directory.
 
-All the commands specified in that section should be run from the `web` subdirectory and all resource locations are expressed from that directory, unless stated otherwise explicitly.
+All the commands specified in that section should be run from the `front-end` subdirectory and all resource locations are expressed from that directory, unless stated otherwise explicitly.
 
 #### Build
 
-- To build the web component from scratch, run the following command from the root folder: `npm run web:prerequisites && npm run web:build`.
+- To build the front-end component from scratch, run the following command from the root folder: `npm run front-end:prerequisites && npm run front-end:build`.
 - To recompile it after having changed its code, run the `npm run build` script.
 
 #### Run
 
-To run the web component, run the `npm run start` script.
+To run the front-end component, run the `npm run start` script.
 
 ### Shared
 
@@ -145,7 +145,7 @@ The container image specifications are classically defined through the `Dockerfi
 
 #### Build
 
-To build the container image of the server application via Docker, which also embeds the web application, run the `npm run docker:build` script from the root directory, which creates an image with the `koppasoft/picteus:latest` tag.
+To build the container image of the server application via Docker, which also embeds the front-end application, run the `npm run docker:build` script from the root directory, which creates an image with the `koppasoft/picteus:latest` tag.
 
 #### Publish
 

@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) =>
       }
     },
     build: {
-      outDir: "../build/web",
+      outDir: "../build/front-end",
       terserOptions: isProfiling === true ? { keep_fnames: true, keep_classnames: true } as TerserOptions : undefined,
       sourcemap: isProfiling === true
     }

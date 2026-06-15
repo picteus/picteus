@@ -12,7 +12,7 @@ import { useAsyncInitialize } from "app/hooks";
 import { CollectionService, EventService } from "app/services";
 import { Common } from "app/components";
 import AddOrUpdateCollection
-    from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
+  from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
 
 export interface CollectionsBarRef {

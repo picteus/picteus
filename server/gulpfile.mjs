@@ -24,7 +24,7 @@ const buildServerDirectoryPath = path.join(buildDirectoryPath, "server");
 const electronDirectoryPath = path.join(rootDirectoryPath, "electron");
 const serverDirectoryPath = path.join(rootDirectoryPath, "server");
 const serverSourceDirectoryPath = path.join(serverDirectoryPath, "src");
-const webDirectoryPath = path.join(rootDirectoryPath, "web");
+const frontEndDirectoryPath = path.join(rootDirectoryPath, "front-end");
 const generatedDirectoryPath = path.join(rootDirectoryPath, "generated");
 const openApiGeneratedDirectoryPath = path.join(generatedDirectoryPath, "openapi");
 const temporaryDirectoryPath = path.join(rootDirectoryPath, "tmp");
@@ -567,7 +567,7 @@ export const installTypeScriptOpenApiClient = () =>
     `${packageId}-${computeOpenApiVersion()}.tgz`
   );
   return runGulpRun(
-    `cd ${webDirectoryPath} && npm install ${packageFilePath} --no-save`,
+    `cd ${frontEndDirectoryPath} && npm install ${packageFilePath} --no-save`,
     {}
   );
 };

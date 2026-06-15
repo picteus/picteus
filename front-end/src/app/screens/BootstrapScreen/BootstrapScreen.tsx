@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ReactTyped } from "react-typed";
-import {
-  Flex,
-  Text,
-  Title,
-  useMantineColorScheme,
-  useMantineTheme,
-} from "@mantine/core";
+import { Flex, Text, Title, useMantineColorScheme, useMantineTheme } from "@mantine/core";
 
 import { Spinner } from "app/components";
 import style from "./BootstrapScreen.module.scss";

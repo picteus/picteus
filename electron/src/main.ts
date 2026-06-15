@@ -468,12 +468,13 @@ export class ApplicationWrapper
         const fileWithProtocol = "file://";
         const applicationRootDirectoryPath = path.join(referenceDirectoryPath, "..", "..");
         const serverDirectoryPath = path.join(applicationRootDirectoryPath, "server");
+        const frontEndDirectoryPath = path.join(applicationRootDirectoryPath, "front-end");
         const electronDirectoryPath = path.resolve(path.join(applicationRootDirectoryPath, "electron"));
 
         let socketCoordinates;
         try
         {
-          socketCoordinates = await this.startHttpProxyServer(webServerPortNumber, useSsl, path.join(applicationRootDirectoryPath, "web"), serverDirectoryPath);
+          socketCoordinates = await this.startHttpProxyServer(webServerPortNumber, useSsl, frontEndDirectoryPath, serverDirectoryPath);
         }
         catch (error)
         {
