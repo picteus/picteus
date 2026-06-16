@@ -11,18 +11,18 @@ If you do not want to build the application, you may install it after having dow
 ## Architecture
 
 The application is made of six components:
-1. "shared": a Node.js module which is injected as a dependency to both the "server" and "electron" components ;
-2. "server": the Node.js HTTP server back-end application, capable of running extensions ;
+1. "shared": a Node.js module which is injected as a dependency to both the "back-end" and "electron" components ;
+2. "back-end": the Node.js HTTP server back-end application, capable of running extensions ;
 3. "extensions/sdk": the Python and TypeScript SDKs ;
-4. "extensions/instances": the built-in extensions for the server ;
+4. "extensions/instances": the built-in extensions for the back-end ;
 5. "front-end": the React.js web front-end application ;
-6. "electron": the wrapping Electron application which embeds the "server" and "front-end" previous components.
+6. "electron": the wrapping Electron application which embeds the "back-end" and "front-end" previous components.
 
 ## Prerequisites
 
 - Node.js v22.7.1+ with npm (tested) or pnpm or yarn for building the application's components and the extensions.
 - Python v3.11+ for building the Python extensions.
-- The server module requires Java v17+, which should be accessible as a first Java runtime through the `PATH`, when generating the OpenAPI client code.
+- The back-end module requires Java v17+, which should be accessible as a first Java runtime through the `PATH`, when generating the OpenAPI client code.
 - When building the container image, a Docker-like application should be up and running.
 
 ## Compiling and building
@@ -30,7 +30,7 @@ The application is made of six components:
 The following commands will install dependencies and build the components. They should be run from the root `package.json` file.
 
 - Run the traditional `npm run install` script for resolving the hereby package dependencies.
-- Run the `npm run prerequisites` script for resolving all submodules' dependencies: do not run individually the `npm install` script on every module, because it will not properly install the "server" and "electron" components since the  `prerequisites` npm script resorts to the `--install-link` option, which installed the "shared/back-end" module dependencies.
+- Run the `npm run prerequisites` script for resolving all submodules' dependencies: do not run individually the `npm install` script on every module, because it will not properly install the "back-end" and "electron" components since the  `prerequisites` npm script resorts to the `--install-link` option, which installed the "shared/back-end" module dependencies.
 - Run the `npm run build` script for building all artifacts.
 
 Most of the artifact files are located under the `build` directory, which is a symbolic link pointing to the `electron/build` directory.
@@ -46,29 +46,29 @@ The following commands enable cleaning up the project. They should be run from t
 
 The versions of the various components are specified through the root `package.json` file via the `config.applicationVersion`, `config.apiVersion` and `config.sdkVersion` properties:
 - `config.applicationVersion`: the version of the Electron application ;
-- `config.serverVersion`: the version of the server ;
+- `config.backEndVersion`: the version of the back-end application ;
 - `config.frontEndVersion`: the version of the front-end application ;
 - `config.apiVersion`: the version of the API and its OpenAPI web services contract ;
 - `config.sdkVersion`: the version of the SDK.
 
 Whenever changing any of those versions, think of running the `npm run updateVersion` script from the root directory to propagate the version changes to the relevant submodules, which updates the `src/constants.ts` file accordingly and the SDK version and the extensions' dependency version accordingly.
 
-### Server (back-end)
+### Back-end (server)
 
-Its source-code and scripts are located under the `server` directory.
+Its source-code and scripts are located under the `back-end` directory.
 
-All the commands specified in that section should be run from the `server` subdirectory and all resource locations are expressed from that directory, unless stated otherwise explicitly.
+All the commands specified in that section should be run from the `back-end` subdirectory and all resource locations are expressed from that directory, unless stated otherwise explicitly.
 
 #### Build
 
-- To build the server from scratch, run the following command from the root folder: `npm run server:prerequisites && npm run server:build`.
+- To build the back-end from scratch, run the following command from the root folder: `npm run back-end:prerequisites && npm run back-end:build`.
 - To recompile it after having changed its code, run the `npm run build` script.
 
 #### Run
 
-To run the server, run the `npm run start` script. The environment variables which have an impact over the execution as well as the commands and parameters are described by running the `npm run start:help` script.
+To run the back-end, run the `npm run start` script. The environment variables which have an impact over the execution as well as the commands and parameters are described by running the `npm run start:help` script.
 
-You may access to the SwaggerUI relative the OpenAPI specifications, captured through the JSON `openapi.json` file, open the browser to the [http://localhost:3001/swaggerui](http://localhost:3001/swaggerui) URL, 3001 being the server default port.
+You may access to the SwaggerUI relative the OpenAPI specifications, captured through the JSON `openapi.json` file, open the browser to the [http://localhost:3001/swaggerui](http://localhost:3001/swaggerui) URL, 3001 being the back-end default port.
 
 #### Development
 
@@ -110,7 +110,7 @@ To publish a new version of the SDKs, run the `npm run sdk:publish` script, afte
 - for publishing the Node.js SDK package on npm, use the `npm login --scope=@koppasoft` command to log in first ;
 - for publishing the Python SDK package on PyPi, declare an API token at https://pypi.org/manage/account/token/ beforehand.
 
-### Front-end
+### Front-end (web)
 
 Its source-code and scripts are located under the `front-end` directory.
 
@@ -127,7 +127,7 @@ To run the front-end component, run the `npm run start` script.
 
 ### Shared
 
-Its source-code and scripts are located under the `shared` directory. It only contains a `back-end` folder, which contains code common between the "server" and "electron" modules.
+Its source-code and scripts are located under the `shared` directory. It only contains a `back-end` folder, which contains code common between the "back-end" and "electron" modules.
 
 - Run the `npm run build` script to build it, which will compile the code.
 
@@ -145,7 +145,7 @@ The container image specifications are classically defined through the `Dockerfi
 
 #### Build
 
-To build the container image of the server application via Docker, which also embeds the front-end application, run the `npm run docker:build` script from the root directory, which creates an image with the `koppasoft/picteus:latest` tag.
+To build the container image of the back-end application via Docker, which also embeds the front-end application, run the `npm run docker:build` script from the root directory, which creates an image with the `koppasoft/picteus:latest` tag.
 
 #### Publish
 
@@ -164,11 +164,11 @@ where:
 - `<externalPath>` is the host path to the directory where you want the application to store database files.
 
 This will build an image and create a container with the name `picteus`, using the previously created `picteus` volume:
-- its API server Swagger UI URL is http://localhost:3001/swaggerui# (adapt the port number according to your configuration, see below);
+- its API back-end Swagger UI URL is http://localhost:3001/swaggerui# (adapt the port number according to your configuration, see below);
 - its front-end application URL is http://localhost:2999/?webServicesBaseUrl=http://localhost:3001#/ (adapt the port numbers according to your configuration, see below) ; notice the `webServicesBaseUrl` URI query parameter, which indicates the URL of the API web services, which is http://localhost:3001.
 
 You may fine-tune the container with the following additional environment variables:
-- `apiServerPort`: the port number of the API server, which defaults to `3001` ; if you change it, think of changing the port mapping accordingly ;
+- `apiServerPort`: the port number of the API back-end, which defaults to `3001` ; if you change it, think of changing the port mapping accordingly ;
 - `webServerPort`: the port number of the web server exposing the UI, which defaults to `2999` ; if you change it, think of changing the port mapping accordingly ;
 - `vectorDatabasePort`: the port number of the vector database server, which defaults to `3002` ; if you change it, think of changing the port mapping accordingly ;
 - `useSsl`: a boolean indicating whether the API server should use SSL / TLS, which defaults to `true` ;

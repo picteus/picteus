@@ -24,7 +24,7 @@
     "noEmitOnError": true,
     "baseUrl": "./",
     "rootDir": ".",
-    "outDir": "../build/server",
+    "outDir": "../build/back-end",
     "typeRoots": ["./node_modules/@types"],
     "paths": {
       ".prisma/*": ["./src/generated/prisma-client/*"]

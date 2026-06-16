@@ -51,7 +51,7 @@ const referenceDirectoryPath = dirname(fileURLToPath(import.meta.url));
 const applicationDirectoryPath = app.getPath("userData");
 
 
-interface HttpServerApplicationCoordinator
+interface BackendServerApplicationCoordinator
 {
 
   isApplicationQuitting: () => boolean;
@@ -86,35 +86,35 @@ class LocalhostComputer
 
 }
 
-class HttpServer
+class BackendServer
 {
 
-  private static _instance: HttpServer = new HttpServer();
+  private static _instance: BackendServer = new BackendServer();
 
-  private serverProcess?: ChildProcess;
+  private backendProcess?: ChildProcess;
 
   private _swaggerUiUrl ?: string;
 
-  static get instance(): HttpServer
+  static get instance(): BackendServer
   {
-    return HttpServer._instance;
+    return BackendServer._instance;
   }
 
   private constructor()
   {
   }
 
-  async start(serverDirectoryPath: string, emptyDatabaseFilePath: string, portNumber: number, useSsl: boolean | undefined, useThrottling: boolean | undefined, requiresApiKeys: boolean | undefined, unpackedExtensionsDirectoryPath: string | undefined, coordinator: HttpServerApplicationCoordinator, execArgv: string[] | undefined): Promise<string>
+  async start(backendDirectoryPath: string, emptyDatabaseFilePath: string, portNumber: number, useSsl: boolean | undefined, useThrottling: boolean | undefined, requiresApiKeys: boolean | undefined, unpackedExtensionsDirectoryPath: string | undefined, coordinator: BackendServerApplicationCoordinator, execArgv: string[] | undefined): Promise<string>
   {
-    const serverSourceDirectoryPath = path.join(serverDirectoryPath, "src");
-    const filePath = path.join(serverSourceDirectoryPath, "main.js");
-    logger.info(`Starting the process server from the main file '${filePath}'${execArgv === undefined ? "" : (` with the --execArgv parameter set to '${execArgv}'`)}`);
+    const backendSourceDirectoryPath = path.join(backendDirectoryPath, "src");
+    const filePath = path.join(backendSourceDirectoryPath, "main.js");
+    logger.info(`Starting the process back-end from the main file '${filePath}'${execArgv === undefined ? "" : (` with the --execArgv parameter set to '${execArgv}'`)}`);
 
     this._swaggerUiUrl = LocalhostComputer.instance.computeUrl(portNumber, useSsl === undefined ? false : useSsl, "swaggerui");
     const environmentVariables: Record<string, string> =
       {
         NODE_ENV: environment,
-        NODE_PATH: path.join(serverSourceDirectoryPath, "node_modules"),
+        NODE_PATH: path.join(backendSourceDirectoryPath, "node_modules"),
         // This prevents from experiencing the "Request Header Fields Too Large" error when the URL is too long, see https://www.electronjs.org/docs/latest/api/environment-variables
         NODE_OPTIONS: `--max-http-header-size=${4_096 * 32}`,
         REFERENCE_DATABASE_FILE_PATH: emptyDatabaseFilePath
@@ -146,15 +146,15 @@ class HttpServer
     {
       forkArguments.push("--unpackedExtensionsDirectoryPath", unpackedExtensionsDirectoryPath);
     }
-    const serverProcess = fork(filePath, [...forkArguments], {
+    const backendProcess = fork(filePath, [...forkArguments], {
       execArgv,
       env: { ...process.env, ...environmentVariables }
     });
-    this.serverProcess = serverProcess;
-    CommandsManager.instance.listenToServerProcess(serverProcess);
-    serverProcess.once("exit", (code: number | null) =>
+    this.backendProcess = backendProcess;
+    CommandsManager.instance.listenToProcess(backendProcess);
+    backendProcess.once("exit", (code: number | null) =>
     {
-      const prefix = "The server process exited";
+      const prefix = "The back-end process exited";
       if (code === null || code === 0)
       {
         logger.info(prefix);
@@ -168,7 +168,7 @@ class HttpServer
         coordinator.onError(code);
       }
     });
-    // We wait for the server to be ready
+    // We wait for the underlying back-end server to be ready
     return new Promise<string>((resolve) =>
     {
       CommandsManager.instance.once(HostCommandType.ApiKey, resolve);
@@ -177,17 +177,17 @@ class HttpServer
 
   async stop(): Promise<void>
   {
-    if (this.serverProcess !== undefined)
+    if (this.backendProcess !== undefined)
     {
-      logger.info("Stopping the process server");
-      const definedProcess = this.serverProcess!;
-      this.serverProcess = undefined;
+      logger.info("Stopping the back-end process");
+      const definedProcess = this.backendProcess!;
+      this.backendProcess = undefined;
       return await new Promise<void>((resolve) =>
       {
         // We wait for the process to be killed
         definedProcess.once("close", (code: number | null, signal: NodeJS.Signals | null) =>
         {
-          logger.info(`The server process is now killed and exited${code === null ? "" : `, with code ${code}`}${signal === null ? "" : `, with signal '${signal}'`}`);
+          logger.info(`The back-end process is now killed and exited${code === null ? "" : `, with code ${code}`}${signal === null ? "" : `, with signal '${signal}'`}`);
           resolve();
         });
         definedProcess.kill("SIGINT");
@@ -467,14 +467,14 @@ export class ApplicationWrapper
 
         const fileWithProtocol = "file://";
         const applicationRootDirectoryPath = path.join(referenceDirectoryPath, "..", "..");
-        const serverDirectoryPath = path.join(applicationRootDirectoryPath, "server");
+        const backendDirectoryPath = path.join(applicationRootDirectoryPath, "back-end");
         const frontEndDirectoryPath = path.join(applicationRootDirectoryPath, "front-end");
         const electronDirectoryPath = path.resolve(path.join(applicationRootDirectoryPath, "electron"));
 
         let socketCoordinates;
         try
         {
-          socketCoordinates = await this.startHttpProxyServer(webServerPortNumber, useSsl, frontEndDirectoryPath, serverDirectoryPath);
+          socketCoordinates = await this.startHttpProxyServer(webServerPortNumber, useSsl, frontEndDirectoryPath, backendDirectoryPath);
         }
         catch (error)
         {
@@ -504,11 +504,11 @@ export class ApplicationWrapper
               },
               onError: (exitCode: number | null) =>
               {
-                dialog.showErrorBox(applicationQuitting, `The process server stopped unexpectedly${exitCode === null ? "" : ` with code ${exitCode}`}`);
+                dialog.showErrorBox(applicationQuitting, `The back-end process stopped unexpectedly${exitCode === null ? "" : ` with code ${exitCode}`}`);
                 app.exit(1);
               }
             };
-          const apiKey = await HttpServer.instance.start(serverDirectoryPath, path.join(serverDirectoryPath, "database.db"), apiServerPortNumber, useSsl, useThrottling, requiresApiKeys, unpackedExtensionsDirectoryPath, coordinator, execArg);
+          const apiKey = await BackendServer.instance.start(backendDirectoryPath, path.join(backendDirectoryPath, "database.db"), apiServerPortNumber, useSsl, useThrottling, requiresApiKeys, unpackedExtensionsDirectoryPath, coordinator, execArg);
 
           await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, webApplicationUrl, apiKey);
         }
@@ -542,7 +542,7 @@ export class ApplicationWrapper
         this.isApplicationQuitting = true;
         event.preventDefault();
         await CommandsManager.instance.stop();
-        await HttpServer.instance.stop();
+        await BackendServer.instance.stop();
         this.persistentWindowManager.quit();
         if (this.mainWindow !== undefined)
         {
@@ -840,7 +840,7 @@ export class ApplicationWrapper
                 label: "Swagger UI",
                 click: async (): Promise<void> =>
                 {
-                  await this.openWindow("picteus-swagger-ui", HttpServer.instance.swaggerUiUrl!, false);
+                  await this.openWindow("picteus-swagger-ui", BackendServer.instance.swaggerUiUrl!, false);
                 }
               }
             ));

@@ -14,14 +14,14 @@
   ],
   "files": [
     "build",
-    "!build/server/node_modules",
+    "!build/back-end/node_modules",
     "${extraElectronFilter}",
     {
-      "from": "build/server/node_modules",
-      "to": "build/server/node_modules",
+      "from": "build/back-end/node_modules",
+      "to": "build/back-end/node_modules",
       "filter": [
         "**/*",
-        "${extraServerFilter}"
+        "${extraBackendFilter}"
       ]
     }
   ],

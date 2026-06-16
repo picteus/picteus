@@ -20,10 +20,10 @@ import micromatch from "micromatch";
 const useGulpForExec = Math.random() > 1;
 const rootDirectoryPath = path.join(import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url)), "..");
 const buildDirectoryPath = path.join(rootDirectoryPath, "build");
-const buildServerDirectoryPath = path.join(buildDirectoryPath, "server");
+const buildBackendDirectoryPath = path.join(buildDirectoryPath, "back-end");
 const electronDirectoryPath = path.join(rootDirectoryPath, "electron");
-const serverDirectoryPath = path.join(rootDirectoryPath, "server");
-const serverSourceDirectoryPath = path.join(serverDirectoryPath, "src");
+const backendDirectoryPath = path.join(rootDirectoryPath, "back-end");
+const backendSourceDirectoryPath = path.join(backendDirectoryPath, "src");
 const frontEndDirectoryPath = path.join(rootDirectoryPath, "front-end");
 const generatedDirectoryPath = path.join(rootDirectoryPath, "generated");
 const openApiGeneratedDirectoryPath = path.join(generatedDirectoryPath, "openapi");
@@ -42,7 +42,7 @@ const cleanDirectory = (directoryPath) =>
 const buildTargetDirectoryPath = path.join(temporaryDirectoryPath, "build");
 const cleanNodeModules = () =>
 {
-  return cleanDirectory(path.join(buildServerDirectoryPath, nodeModulesDirectoryName))();
+  return cleanDirectory(path.join(buildBackendDirectoryPath, nodeModulesDirectoryName))();
 };
 
 const runGulpRun = async (command, execOptions) =>
@@ -100,9 +100,9 @@ const copyPackageJson = (sourceDirectoryPath, targetDirectoryPath) =>
     .pipe(gulp.dest(targetDirectoryPath));
 };
 
-const copyServerPackageJson = () =>
+const copyBackendPackageJson = () =>
 {
-  return copyPackageJson(serverDirectoryPath, buildServerDirectoryPath);
+  return copyPackageJson(backendDirectoryPath, buildBackendDirectoryPath);
 };
 
 const npmInstallOptions = `--include=optional --os=${process.env["OPERATING_SYSTEM"] ?? process.platform} --cpu=${process.env["ARCHICTURE"] ?? process.arch}`;
@@ -118,14 +118,14 @@ const installNpmPackages = (directoryPath) =>
   );
 };
 
-const installServer = () =>
+const installBackend = () =>
 {
-  return installNpmPackages(buildServerDirectoryPath);
+  return installNpmPackages(buildBackendDirectoryPath);
 };
 
 const pruneNodeModulesForProduction = () =>
 {
-  const nodesModuleDirectoryPath = path.join(buildServerDirectoryPath, nodeModulesDirectoryName);
+  const nodesModuleDirectoryPath = path.join(buildBackendDirectoryPath, nodeModulesDirectoryName);
   console.info(`Pruning the '${nodeModulesDirectoryName}' directory from non-production files`);
 
   // We filter out all the files that do not match the patterns above
@@ -226,8 +226,7 @@ const pruneNodeModulesForProduction = () =>
     cleanEmptyFoldersRecursively(directoryPath);
   }
 
-  // const patterns = serverPatterns.concat(electronPatterns);
-  const patterns = JSON.parse(fs.readFileSync(path.join(serverDirectoryPath, "package-pruning.json"), { encoding: "utf8" }));
+  const patterns = JSON.parse(fs.readFileSync(path.join(backendDirectoryPath, "package-pruning.json"), { encoding: "utf8" }));
   const resolvedPatterns = patterns.map((pattern) =>
   {
     return pattern.replace("${platform}", process.platform).replace("${arch}", process.arch);
@@ -246,7 +245,7 @@ const installElectron = () =>
   return installNpmPackages(buildTargetDirectoryPath);
 };
 
-// Those are the packages that need to be kept in the server "node_modules" directory, even if they should be present in the Electron "node_modules" directory
+// Those are the packages that need to be kept in the back-end "node_modules" directory, even if they should be present in the Electron "node_modules" directory
 // We also need to keep the "tslib" and "rxjs" modules, for a reason that cannot be explained so far
 const toBeKeptPackages = ["tslib", "rxjs", "@babel", "color", "@xmldom", "base64-js", "mkdirp", "negotiator"];
 const computePruneElectronDuplicates = () =>
@@ -263,15 +262,15 @@ const computePruneElectronDuplicates = () =>
       false
     );
   };
-  const serverDirectoryNames = [];
+  const backendDirectoryNames = [];
   const electronDirectoryNames = [];
   const pattern = nodeModulesDirectoryName + "/*";
   const areChainsInDebugMode = false;
-  const serverChain = () =>
+  const backendChain = () =>
   {
     return gulp
-      .src(pattern, { cwd: buildServerDirectoryPath, allowEmpty: false, debug: areChainsInDebugMode })
-      .pipe(collect(serverDirectoryNames));
+      .src(pattern, { cwd: buildBackendDirectoryPath, allowEmpty: false, debug: areChainsInDebugMode })
+      .pipe(collect(backendDirectoryNames));
   };
   const electronChain = () =>
   {
@@ -281,9 +280,9 @@ const computePruneElectronDuplicates = () =>
   };
   const removeDuplicates = () =>
   {
-    console.log(`The Node.js modules of the 'server' are [${serverDirectoryNames.join(", ")}]`);
+    console.log(`The Node.js modules of the 'back-end' are [${backendDirectoryNames.join(", ")}]`);
     console.log(`The Node.js modules of the 'electron' are [${electronDirectoryNames.join(", ")}]`);
-    const alreadyAvailableModuleNames = serverDirectoryNames.filter((value) =>
+    const alreadyAvailableModuleNames = backendDirectoryNames.filter((value) =>
     {
       return electronDirectoryNames.includes(value) === true && toBeKeptPackages.indexOf(value) === -1;
     });
@@ -291,16 +290,16 @@ const computePruneElectronDuplicates = () =>
     const alreadyAvailableInElectronDirectoryPaths = alreadyAvailableModuleNames.concat([".bin"])
       .map((value) =>
       {
-        return path.join(buildServerDirectoryPath, nodeModulesDirectoryName, value);
+        return path.join(buildBackendDirectoryPath, nodeModulesDirectoryName, value);
       });
     return gulpDel(alreadyAvailableInElectronDirectoryPaths, { force: true });
   };
-  return [serverChain, electronChain, removeDuplicates];
+  return [backendChain, electronChain, removeDuplicates];
 };
 
 const cleanPackageJson = () =>
 {
-  return gulpDel([path.join(buildServerDirectoryPath, packageJsonFileName)], {
+  return gulpDel([path.join(buildBackendDirectoryPath, packageJsonFileName)], {
     force: true
   });
 };
@@ -309,8 +308,8 @@ const cleanPackageJson = () =>
 export const installNodeModulesForDockerfile = gulp.series(
   cleanDirectory(buildTargetDirectoryPath),
   cleanNodeModules,
-  copyServerPackageJson,
-  installServer,
+  copyBackendPackageJson,
+  installBackend,
   pruneNodeModulesForProduction,
   cleanPackageJson
 );
@@ -321,8 +320,8 @@ const pruneElectronDuplicates = gulp.series(existingChain, newChain, removeDupli
 export const installNodeModulesForElectron = gulp.series(
   cleanDirectory(buildTargetDirectoryPath),
   cleanNodeModules,
-  copyServerPackageJson,
-  installServer,
+  copyBackendPackageJson,
+  installBackend,
   copyElectronPackageJson,
   installElectron,
   pruneElectronDuplicates,
@@ -330,14 +329,14 @@ export const installNodeModulesForElectron = gulp.series(
   cleanPackageJson
 );
 
-const secretsTargetDirectoryPath = path.join(buildServerDirectoryPath, "secrets");
+const secretsTargetDirectoryPath = path.join(buildBackendDirectoryPath, "secrets");
 // noinspection JSUnusedGlobalSymbols
 export const copySecrets = gulp.series(
   cleanDirectory(secretsTargetDirectoryPath),
   () =>
   {
     return gulp
-      .src(["**/*"], { cwd: path.join(serverDirectoryPath, "secrets") })
+      .src(["**/*"], { cwd: path.join(backendDirectoryPath, "secrets") })
       .pipe(gulp.dest(secretsTargetDirectoryPath));
   }
 );
@@ -346,8 +345,8 @@ export const copySecrets = gulp.series(
 export const copyDatabase = gulp.series(() =>
 {
   return gulp
-    .src(["database.db"], { cwd: serverDirectoryPath })
-    .pipe(gulp.dest(buildServerDirectoryPath));
+    .src(["database.db"], { cwd: backendDirectoryPath })
+    .pipe(gulp.dest(buildBackendDirectoryPath));
 });
 
 // noinspection JSUnusedGlobalSymbols
@@ -355,10 +354,10 @@ export const copyAssets = gulp.series(() =>
 {
   return gulp
     .src(["assets/**/*", "!**/node_modules/**/*", "!**/node_modules", "!**/package-lock.json"], {
-      cwd: serverDirectoryPath,
+      cwd: backendDirectoryPath,
       dot: true
     })
-    .pipe(gulp.dest(path.join(buildServerDirectoryPath, "assets")));
+    .pipe(gulp.dest(path.join(buildBackendDirectoryPath, "assets")));
 });
 
 const packageId = "picteus-ws-client";
@@ -369,8 +368,8 @@ const npmRegistry = "https://registry.npmjs.org";
 const gitUrl = "git@github.com:picteus/Picteus.git";
 const dottedPackageName = "com.koppasoft.picteus.client";
 const openApiFileName = "openapi.json";
-const openApiFilePath = path.join(serverDirectoryPath, openApiFileName);
-const openApiToolsFilePath = path.join(serverDirectoryPath, "openapitools.json");
+const openApiFilePath = path.join(backendDirectoryPath, openApiFileName);
+const openApiToolsFilePath = path.join(backendDirectoryPath, "openapitools.json");
 const LanguageAndVariants =
   {
     TypeScript: "typescript-fetch",
@@ -534,13 +533,13 @@ const generateOpenApiClient = (languageAndVariant) =>
     const openApiToolsOptionValue = process.platform === "win32" ? openApiToolsFilePath : `'${openApiToolsFilePath}'`;
     const openApiCommand = `openapi-generator-cli generate --openapitools ${openApiToolsOptionValue} --custom-generator ${generatorName}`;
     // We reduce the verbosity of the "openapi-generator-cli" executable via the Java logging level to "warn", as explained at https://github.com/OpenAPITools/openapi-generator/issues/1992
-    return runGulpRun(openApiCommand, { cwd: serverDirectoryPath, env: { JAVA_OPTS: "-Dlog.level=warn" } });
+    return runGulpRun(openApiCommand, { cwd: backendDirectoryPath, env: { JAVA_OPTS: "-Dlog.level=warn" } });
   }
   else
   {
     fs.rmSync(openApiToolsFilePath);
     const openApiCommand = `openapi-generator-cli generate -g ${languageAndVariant} -i "${actualOpenApiFilePath}" -o "${computeOpenApiTargetDirectoryPath(languageAndVariant)}" --additional-properties=packageName="${actualPackageName}"${packagesFragment},gitRepoId="${gitRepoId}",gitUserId="${gitRepoId}",npmName=${npmPackageId},npmVersion=${packageVersion},npmRepository="${packageUrl}",projectDescription="'${packageDescription}'",moduleName="${npmPackageId}",projectName="${languageAndVariant === LanguageAndVariants.JavaScript || languageAndVariant === LanguageAndVariants.TypeScript ? npmPackageId : packageId}",groupId="${dottedPackageName}",artifactId="${packageId}",artifactVersion="${packageVersion}",withInterfaces=true,paramNaming=camelCase,enumPropertyNaming=PascalCase,prefixParameterInterfaces=true,removeOperationIdPrefix=false,useSingleRequestParameter=true,supportsES6=false,legacyDiscriminatorBehavior=false,importFileExtension=,platform=node,packageVersion="${packageVersion}",packageUrl="${packageUrl}",artifactUrl="${packageUrl}",artifactDescription="'${packageDescription}'",scmConnection="${gitUrl}",scmDeveloperConnection="${gitUrl}",scmUrl="${packageUrl}"` + (info.license === undefined ? "" : `,licenseName="'${licenseName}'",licenseInfo="'${licenseName}'"`) + `,developerEmail="${info.contact.email}",developerName="'${info.contact.name}'"` + (info.license === undefined ? "" : `,developerOrganization="${info.license.name}"`) + (info.license === undefined ? "" : `,developerOrganizationUrl="${info.license.url}"`) + ` --global-property=apiTests=true,modelTests=true,modelDocs=true`;
-    return runGulpRun(openApiCommand, { cwd: serverDirectoryPath });
+    return runGulpRun(openApiCommand, { cwd: backendDirectoryPath });
   }
 };
 
@@ -551,7 +550,7 @@ export const packageTypeScriptOpenApiClient = () =>
     LanguageAndVariants.TypeScript
   );
   return runGulpRun(
-    `cd ${directoryPath} && npm pack --loglevel warn && cd ${serverDirectoryPath}`,
+    `cd ${directoryPath} && npm pack --loglevel warn && cd ${backendDirectoryPath}`,
     {}
   );
 };
@@ -597,15 +596,15 @@ export const packagePythonOpenApiClient = () =>
 export const updateVersion = async () =>
 {
   const rootConfig = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, packageJsonFileName), { encoding: "utf8" }))["config"];
-  const applicationVersion = rootConfig["serverVersion"];
+  const applicationVersion = rootConfig["backendVersion"];
   {
-    const filePath = path.join(serverDirectoryPath, packageJsonFileName);
+    const filePath = path.join(backendDirectoryPath, packageJsonFileName);
     const packageJson = JSON.parse(fs.readFileSync(filePath, { encoding: "utf8" }));
     packageJson.version = applicationVersion;
     fs.writeFileSync(filePath, JSON.stringify(packageJson, undefined, 2) + "\n");
   }
   {
-    const filePath = path.join(serverSourceDirectoryPath, "constants.ts");
+    const filePath = path.join(backendSourceDirectoryPath, "constants.ts");
     const string = fs.readFileSync(filePath, { encoding: "utf8" });
     const apiVersion = rootConfig["apiVersion"];
     const tokens = [{ key: "applicationVersion", value: applicationVersion }, { key: "apiVersion", value: apiVersion }];
@@ -670,7 +669,7 @@ const dotPrisma = ".prisma";
 
 const deletePrismaClient = () =>
 {
-  return gulpDel([path.join(buildServerDirectoryPath, nodeModulesDirectoryName, dotPrisma)], {
+  return gulpDel([path.join(buildBackendDirectoryPath, nodeModulesDirectoryName, dotPrisma)], {
     force: true
   });
 };
@@ -678,14 +677,14 @@ const deletePrismaClient = () =>
 // noinspection JSUnusedGlobalSymbols
 export const copyPrismaClient = gulp.series(deletePrismaClient, () =>
 {
-  const directoryPath = path.join(serverDirectoryPath, nodeModulesDirectoryName);
+  const directoryPath = path.join(backendDirectoryPath, nodeModulesDirectoryName);
   const intermediatePaths = [nodeModulesDirectoryName, dotPrisma, "client"];
-  const otherDirectoryPath = path.join(buildServerDirectoryPath, ...intermediatePaths);
+  const otherDirectoryPath = path.join(buildBackendDirectoryPath, ...intermediatePaths);
   fs.mkdirSync(otherDirectoryPath, { recursive: true });
 
   // We copy the "libquery_engine-*" files manually, because they are binary files that Gulp does not handle properly
   const libQueryEnginePrefix = "libquery_engine-";
-  const prismaClientDirectoryPath = path.join(serverDirectoryPath, ...intermediatePaths);
+  const prismaClientDirectoryPath = path.join(backendDirectoryPath, ...intermediatePaths);
   const libQueryEngineFileNames = fs.readdirSync(prismaClientDirectoryPath).filter((fileName) =>
   {
     return fileName.startsWith(libQueryEnginePrefix);
@@ -707,7 +706,7 @@ export const copyPrismaClient = gulp.series(deletePrismaClient, () =>
       buffer: false
     })
     .pipe(
-      gulp.dest(path.join(buildServerDirectoryPath, nodeModulesDirectoryName), { buffer: false })
+      gulp.dest(path.join(buildBackendDirectoryPath, nodeModulesDirectoryName), { buffer: false })
     );
 });
 
@@ -717,14 +716,14 @@ const prisma = "prisma";
 // noinspection JSUnusedGlobalSymbols
 export const fixPrisma = async () =>
 {
-  const filePath = path.join(serverSourceDirectoryPath, "generated", "prisma-client", "internal", "class.ts");
+  const filePath = path.join(backendSourceDirectoryPath, "generated", "prisma-client", "internal", "class.ts");
   const content = fs.readFileSync(filePath, { encoding: "utf8" });
-  fs.writeFileSync(filePath, content.replaceAll(serverDirectoryPath + path.sep, ""), { encoding: "utf8" });
+  fs.writeFileSync(filePath, content.replaceAll(backendDirectoryPath + path.sep, ""), { encoding: "utf8" });
 };
 
 const deletePrismaMigrations = () =>
 {
-  return gulpDel([path.join(buildServerDirectoryPath, prisma)], { force: true });
+  return gulpDel([path.join(buildBackendDirectoryPath, prisma)], { force: true });
 };
 
 const copyPrismaMigrationsFolder = () =>
@@ -732,12 +731,12 @@ const copyPrismaMigrationsFolder = () =>
   const migrations = "migrations";
   const intermediatePaths = [prisma, migrations];
   const migrationsDirectoryPath = path.join(
-    buildServerDirectoryPath,
+    buildBackendDirectoryPath,
     ...intermediatePaths
   );
   return gulp
     .src([`${prisma}/${migrations}/**/*.sql`], {
-      cwd: serverDirectoryPath,
+      cwd: backendDirectoryPath,
       allowEmpty: true,
       buffer: false
     })
@@ -779,7 +778,7 @@ function downloadAndStoreFile(url, filePath, logFragment)
 
 const pyenvArchiveFileName = "pyenv-posix.tar.gz";
 const pythonRuntimePaths = ["runtimes", "python"];
-const pythonRuntimeDirectoryPath = path.join(serverDirectoryPath, ...pythonRuntimePaths);
+const pythonRuntimeDirectoryPath = path.join(backendDirectoryPath, ...pythonRuntimePaths);
 
 // noinspection JSUnusedGlobalSymbols
 export const buildPyenv = async () =>
@@ -822,5 +821,5 @@ export const copyPyenv = async () =>
 {
   return gulp
     .src([pyenvArchiveFileName], { cwd: pythonRuntimeDirectoryPath })
-    .pipe(gulp.dest(path.join(buildServerDirectoryPath, ...pythonRuntimePaths)));
+    .pipe(gulp.dest(path.join(buildBackendDirectoryPath, ...pythonRuntimePaths)));
 };

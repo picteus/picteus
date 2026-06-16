@@ -66,6 +66,8 @@ import { ApiScope } from "../src/app.guards";
 import { ControllerProxy } from "./controllerProxy";
 
 
+const backendDirectoryName = "back-end";
+
 function computePaths(): { directoryPath: string; rootDirectoryPath: string }
 {
   let directoryPath: string;
@@ -79,22 +81,22 @@ function computePaths(): { directoryPath: string; rootDirectoryPath: string }
     directoryPath = __dirname;
   }
   const rootDirectoryPath = path.resolve(path.join(directoryPath, "..", ".."));
-  const buildServerDirectoryPath = path.join(rootDirectoryPath, "build", "server");
+  const backendDirectoryPath = path.join(rootDirectoryPath, "build", backendDirectoryName);
   const nodePathEnvironmentVariableName = "NODE_PATH";
   const nodePathEnvironmentVariableValue = process.env[nodePathEnvironmentVariableName];
   logger.info(`\n+++++\nRunning the tests with ` + (nodePathEnvironmentVariableValue === undefined ? `no '${nodePathEnvironmentVariableName} environment variable set'` : `the '${nodePathEnvironmentVariableName}' environment variable set to '${nodePathEnvironmentVariableValue}'\n+++++`));
   {
     // We fix an issue with the "NODE_PATH" environment variable which is not taken into account when using the Node.js "--experimental-vm-modules" option
-    const serverBuildNodeModulesDirectoryPath = path.join(buildServerDirectoryPath, "node_modules");
-    if (nodePathEnvironmentVariableValue !== undefined && fs.existsSync(serverBuildNodeModulesDirectoryPath) === false)
+    const backendBuildNodeModulesDirectoryPath = path.join(backendDirectoryPath, "node_modules");
+    if (nodePathEnvironmentVariableValue !== undefined && fs.existsSync(backendBuildNodeModulesDirectoryPath) === false)
     {
       const tokens = nodePathEnvironmentVariableValue.split(path.delimiter);
       const nodePath = path.resolve(tokens[tokens.length - 1]);
-      logger.warn(`Creating a symbolic link to fix the '${nodePathEnvironmentVariableName}' environment variable from '${nodePath}' to '${serverBuildNodeModulesDirectoryPath}'`);
-      fs.symlinkSync(nodePath, serverBuildNodeModulesDirectoryPath, "dir");
+      logger.warn(`Creating a symbolic link to fix the '${nodePathEnvironmentVariableName}' environment variable from '${nodePath}' to '${backendBuildNodeModulesDirectoryPath}'`);
+      fs.symlinkSync(nodePath, backendBuildNodeModulesDirectoryPath, "dir");
     }
   }
-  paths.workersDirectoryPath = path.join(buildServerDirectoryPath, "src", "workers");
+  paths.workersDirectoryPath = path.join(backendDirectoryPath, "src", "workers");
   return { directoryPath, rootDirectoryPath };
 }
 
@@ -110,7 +112,7 @@ export class Defaults
 export class ImageFeeder
 {
 
-  readonly imagesDirectoryPath = path.resolve(path.join(Base.rootDirectoryPath, "server", "tests", "images"));
+  readonly imagesDirectoryPath = path.resolve(path.join(Base.rootDirectoryPath, backendDirectoryName, "tests", "images"));
 
   readonly pngImageFileName = "Dali.png";
 
@@ -374,7 +376,7 @@ export class Base extends Core
 
   private application?: NestExpressApplication;
 
-  public readonly originalDatabaseDirectoryPath = path.resolve(path.join(Base.rootDirectoryPath, "server", "database.db"));
+  public readonly originalDatabaseDirectoryPath = path.resolve(path.join(Base.rootDirectoryPath, backendDirectoryName, "database.db"));
 
   readonly imageFeeder = new ImageFeeder();
 

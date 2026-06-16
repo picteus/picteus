@@ -107,9 +107,9 @@ export class CommandsManager
     }
   }
 
-  listenToServerProcess(serverProcess: ChildProcess): void
+  listenToProcess(backendProcess: ChildProcess): void
   {
-    serverProcess.on("message", async (command: HostCommand) =>
+    backendProcess.on("message", async (command: HostCommand) =>
     {
       const commandType = command.type;
       const callback = this.perEventListenersMap.get(commandType);

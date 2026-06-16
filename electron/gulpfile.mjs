@@ -41,18 +41,18 @@ export const preparePackageBuilder = async () =>
   {
     fs.mkdirSync(outputDirectoryPath, { recursive: true });
   }
-  const electronReplaceValue = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", "server", "package-pruning.json"), { encoding: "utf8" })).map(entry =>
+  const electronReplaceValue = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", "back-end", "package-pruning.json"), { encoding: "utf8" })).map(entry =>
   {
     const isExclude = entry.startsWith("!") === true;
     const prefix = isExclude === true ? "!" : "";
     const newEntry = isExclude === true ? entry.substring(1) : entry;
     return `"${prefix}node_modules/${newEntry}"`;
   }).join(",\n");
-  const serverReplaceValue = "";
+  const backendReplaceValue = "";
   const keysAndValues =
     [
       { key: "extraElectronFilter", value: electronReplaceValue.substring(1, electronReplaceValue.length - 2) },
-      { key: "extraServerFilter", value: serverReplaceValue },
+      { key: "extraBackendFilter", value: backendReplaceValue },
       { key: "entitlementFilePath", value: entitlementFilePath },
       { key: "appleIdentityCompany", value: appleIdentityCompany }
     ];
@@ -61,7 +61,6 @@ export const preparePackageBuilder = async () =>
   {
     replacedString = replacedString.replaceAll(`$\{${keysAndValue.key}}`, keysAndValue.value.replaceAll("\\", "\\\\"));
   }
-  // const replacedString = string.replaceAll("${extraElectronFilter}", electronReplaceValue.substring(1, electronReplaceValue.length - 2)).replaceAll("${extraServerFilter}", serverReplaceValue);
   const filePath = path.join(outputDirectoryPath, packageBuilderFileName);
   console.debug(`Writing the electron-builder overwritten content to the the file '${filePath}'`);
   fs.writeFileSync(filePath, replacedString, { encoding: "utf8" });
