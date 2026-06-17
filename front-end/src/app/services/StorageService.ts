@@ -19,119 +19,150 @@ const IMAGE_DETAIL_TRAITS = `${prefix}imageDetailTraits`;
 const SELECTED_IMAGE_IDS = `${prefix}selectedImagesIds`;
 const SELECTED_IMAGES_ACTION = `${prefix}selectedImagesAction`;
 
-function get(key: string, defaultValue: string = undefined): string {
+function get(key: string, defaultValue: string = undefined): string
+{
   const value = localStorage.getItem(key);
   return value === null ? defaultValue : value;
 }
 
-function set(key: string, value: string): void {
+function set(key: string, value: string): void
+{
   localStorage.setItem(key, value);
 }
 
-function getWithNullValue(key: string): string {
+function getWithNullValue(key: string): string
+{
   return get(key, "null");
 }
 
-function getJsonNullValue<T>(key: string, defaultValue: T = null): T {
+function getJsonNullValue<T>(key: string, defaultValue: T = null): T
+{
   return JSON.parse(getWithNullValue(key)) || defaultValue;
 }
 
-function storeJson<T>(key:string, value: T) {
+function storeJson<T>(key: string, value: T)
+{
   set(key, JSON.stringify(value));
 }
 
 
 export default {
   COLOR_SCHEME: `${prefix}colorScheme`,
-  getVersion: (): string | undefined => {
+  getVersion: (): string | undefined =>
+  {
     return getWithNullValue(VERSION_KEY);
   },
-  setVersion: (value: string): void => {
+  setVersion: (value: string): void =>
+  {
     set(VERSION_KEY, value);
   },
-  getActivityLogsBatchSize(): number {
+  getActivityLogsBatchSize(): number
+  {
     return parseInt(get(ACTIVITY_LOGS_BATCH_SIZE, "20"));
   },
-  setActivityLogsBatchSize(value: number): void {
+  setActivityLogsBatchSize(value: number): void
+  {
     set(ACTIVITY_LOGS_BATCH_SIZE, value.toString());
   },
   getVisualizerPanelSizes: (): number[] =>
     getJsonNullValue<number[]>(VISUALIZER_PANEL_SIZES_KEY) ||
     VISUALIZER_DEFAULT_PANEL_SIZES,
-  setVisualizerPanelSizes: (sizes: number[]): void => {
-    storeJson(VISUALIZER_PANEL_SIZES_KEY, sizes)
+  setVisualizerPanelSizes: (sizes: number[]): void =>
+  {
+    storeJson(VISUALIZER_PANEL_SIZES_KEY, sizes);
   },
-  getClosestImagesResultsCount: (): number => {
+  getClosestImagesResultsCount: (): number =>
+  {
     return parseInt(get(CLOSEST_IMAGES_RESULTS_COUNT, "4"));
   },
-  setClosestImagesResultsCount: (value: number): void => {
-    set(CLOSEST_IMAGES_RESULTS_COUNT, value.toString())
+  setClosestImagesResultsCount: (value: number): void =>
+  {
+    set(CLOSEST_IMAGES_RESULTS_COUNT, value.toString());
   },
-  getTextToImagesResultsCount: (): number => {
+  getTextToImagesResultsCount: (): number =>
+  {
     return parseInt(get(TEXT_TO_IMAGES_RESULTS_COUNT, "4"));
   },
-  setTextToImagesResultsCount: (value: number) => {
-    set(TEXT_TO_IMAGES_RESULTS_COUNT, value.toString())
+  setTextToImagesResultsCount: (value: number) =>
+  {
+    set(TEXT_TO_IMAGES_RESULTS_COUNT, value.toString());
   },
-  getLastFolderLocation: (folderType: FolderTypes) => {
-    const location = getJsonNullValue<object>(FOLDER_PICKER_LAST_LOCATION)
-    if (location) {
+  getLastFolderLocation: (folderType: FolderTypes) =>
+  {
+    const location = getJsonNullValue<object>(FOLDER_PICKER_LAST_LOCATION);
+    if (location)
+    {
       return location[folderType];
     }
     return "/Users";
   },
-  setLastFolderLocation: (folderType: FolderTypes, lastLocation: string) => {
+  setLastFolderLocation: (folderType: FolderTypes, lastLocation: string) =>
+  {
     const jsonLocation = JSON.parse(get(FOLDER_PICKER_LAST_LOCATION, "{}"));
     const updatedLocation = {
       ...jsonLocation,
-      [folderType]: lastLocation,
+      [folderType]: lastLocation
     };
     storeJson(FOLDER_PICKER_LAST_LOCATION, updatedLocation);
   },
-  getAutoReloadImagesViews: () => {
+  getAutoReloadImagesViews: () =>
+  {
     return get(AUTO_RELOAD_IMAGES_VIEWS) !== "false";
   },
-  setAutoReloadImagesViews: (value: boolean) => {
+  setAutoReloadImagesViews: (value: boolean) =>
+  {
     set(AUTO_RELOAD_IMAGES_VIEWS, value.toString());
   },
-  getExtensionIntentShowShouldConfirm: () => {
+  getExtensionIntentShowShouldConfirm: () =>
+  {
     return get(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION) === "true";
   },
-  setExtensionIntentShowShouldConfirm: (value: boolean) => {
+  setExtensionIntentShowShouldConfirm: (value: boolean) =>
+  {
     set(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION, value.toString());
   },
-  getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType {
+  getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType
+  {
     return getJsonNullValue<ViewTabDataType>(MAIN_TAB_KEY, {
       mode: "masonry",
       pinnable: true,
       filterOrCollectionId: { filter: defaultFilter }
     });
   },
-  setMainViewTabData(value: ViewTabDataType): void {
+  setMainViewTabData(value: ViewTabDataType): void
+  {
     storeJson(MAIN_TAB_KEY, value);
   },
-  getGalleryTabs(): TabsType[] {
+  getGalleryTabs(): TabsType[]
+  {
     return getJsonNullValue<TabsType[]>(TABS_KEY, []);
   },
-  setGalleryTabs(value: TabsType[]): void {
+  setGalleryTabs(value: TabsType[]): void
+  {
     storeJson(TABS_KEY, value);
   },
-  getImageDetailTraits(defaultValue: string []): string[] {
+  getImageDetailTraits(defaultValue: string []): string[]
+  {
     return getJsonNullValue<string[]>(IMAGE_DETAIL_TRAITS, defaultValue);
   },
-  setImageDetailTraits(value: string[]): void {
+  setImageDetailTraits(value: string[]): void
+  {
     storeJson(IMAGE_DETAIL_TRAITS, value);
   },
-  getSelectedImagesIds(): string[] {
+  getSelectedImagesIds(): string[]
+  {
     return getJsonNullValue(SELECTED_IMAGE_IDS, []);
   },
-  setSelectedImageIds(ids: string[]): void {
+  setSelectedImageIds(ids: string[]): void
+  {
     storeJson(SELECTED_IMAGE_IDS, ids);
   },
-  getSelectedImagesAction(): string | undefined {
+  getSelectedImagesAction(): string | undefined
+  {
     return get(SELECTED_IMAGES_ACTION);
   },
-  setSelectedImagesAction(action: string): void {
+  setSelectedImagesAction(action: string): void
+  {
     set(SELECTED_IMAGES_ACTION, action);
   }
 };

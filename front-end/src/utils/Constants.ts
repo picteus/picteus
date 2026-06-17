@@ -13,11 +13,13 @@ export const ROUTES = {
   test: "/test"
 };
 
-export function computeExtensionSidebarUuid(extensionId: string, id: string): string {
+export function computeExtensionSidebarUuid(extensionId: string, id: string): string
+{
   return `${extensionId}-${id}`;
 }
 
-export function computeExtensionSidebarRoute(uuid: string) {
+export function computeExtensionSidebarRoute(uuid: string)
+{
   return `/extension/${uuid}`;
 }
 

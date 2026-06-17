@@ -25,8 +25,9 @@ export default function ImageGallery({
   loadMore,
   containerRef,
   scrollRootRef,
-  imageItemMode,
-}: ImageGalleryType) {
+  imageItemMode
+}: ImageGalleryType)
+{
   const gutter = 10;
   const [hostRef, hostRefRectangle] = useResizeObserver();
   const { height: containerHeight } = useContainerDimensions(containerRef);
@@ -34,14 +35,16 @@ export default function ImageGallery({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
   const [, addModal, removeModal] = useActionModalContext();
-  const handleOnClick = useCallback((image: ImageOrSummary) => {
+  const handleOnClick = useCallback((image: ImageOrSummary) =>
+  {
     const id = addModal({
       component: (
         <ImageDetail
           image={image}
           images={images}
           viewMode="gallery"
-          onClose={() => {
+          onClose={() =>
+          {
             removeModal(id);
           }}
         />),
@@ -51,59 +54,70 @@ export default function ImageGallery({
     });
   }, [images]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     loadMoreRef.current = loadMore;
   }, [loadMore]);
 
-  const sentinelRef = useCallback((node: HTMLHeadingElement | null) => {
-    if (node !== null) {
+  const sentinelRef = useCallback((node: HTMLHeadingElement | null) =>
+  {
+    if (node !== null)
+    {
       setSentinel(node);
     }
   }, []);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const root = scrollRootRef.current;
-    if (sentinel === null || root === null) {
+    if (sentinel === null || root === null)
+    {
       return;
     }
     const factor = 5;
     observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting === true) {
+      (entries) =>
+      {
+        if (entries[0].isIntersecting === true)
+        {
           loadMoreRef.current();
         }
       },
       {
         root,
         threshold: 0,
-        rootMargin: `0px 0px ${containerHeight * factor}px 0px`,
+        rootMargin: `0px 0px ${containerHeight * factor}px 0px`
       }
     );
     observerRef.current.observe(sentinel);
-    return () => {
+    return () =>
+    {
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
   }, [containerHeight, scrollRootRef, sentinel]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const observer = observerRef.current;
-    if (sentinel === null || observer === null) {
+    if (sentinel === null || observer === null)
+    {
       return;
     }
     observer.unobserve(sentinel);
     observer.observe(sentinel);
   }, [images]);
 
-  const { columns, columnWidth } = useMemo(() => {
+  const { columns, columnWidth } = useMemo(() =>
+  {
     const approximateWidth = imageSize;
     const containerWidth = Math.round(hostRefRectangle.width);
     const columns = Math.max(1, Math.floor(containerWidth / approximateWidth));
     const remainingSpace = containerWidth - columns * approximateWidth - gutter * (columns - 1);
-    return { columns, columnWidth: approximateWidth + Math.floor(remainingSpace / columns)};
+    return { columns, columnWidth: approximateWidth + Math.floor(remainingSpace / columns) };
   }, [imageSize, hostRefRectangle]);
 
-  const renderedImages = useMemo(()=> images.map((image) => (
+  const renderedImages = useMemo(() => images.map((image) => (
     <Grid.Col span={1} key={image.id}>
       <ImageItem
         image={image}
@@ -121,7 +135,7 @@ export default function ImageGallery({
     <Grid columns={columns} gap={gutter}>
       {renderedImages}
       <Grid.Col span={columns}>
-        <div ref={sentinelRef} className={style.sentinel} />
+        <div ref={sentinelRef} className={style.sentinel}/>
       </Grid.Col>
     </Grid>
   ), [renderedImages, columns]);

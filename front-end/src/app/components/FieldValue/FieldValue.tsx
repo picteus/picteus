@@ -7,7 +7,8 @@ type FieldValueType = {
   value: ReactNode;
 };
 
-export default function FieldValue({ name, value}: FieldValueType) {
+export default function FieldValue({ name, value }: FieldValueType)
+{
   return (<Box>
     <Text size="sm" fw={600} c="dimmed">{name}</Text>
     {value}

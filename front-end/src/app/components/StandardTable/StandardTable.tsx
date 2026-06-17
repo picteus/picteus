@@ -16,21 +16,26 @@ type Pagination = {
 type StandardTableType = {
   head: string[];
   loading?: boolean;
-  withPagination?: { value: Pagination, setValue: React.Dispatch<React.SetStateAction<Pagination>>, totalCount: number,
-    onPaginationChange: (page: number) => void, onTake?: (page: number) => void };
+  withPagination?: {
+    value: Pagination, setValue: React.Dispatch<React.SetStateAction<Pagination>>, totalCount: number,
+    onPaginationChange: (page: number) => void, onTake?: (page: number) => void
+  };
   emptyResults?: ReactElement<typeof EmptyResults>;
   children: ReactElement<typeof Table.Tr>[];
 };
 
 
-export default function StandardTable({ head, loading, withPagination, emptyResults, children }: StandardTableType) {
+export default function StandardTable({ head, loading, withPagination, emptyResults, children }: StandardTableType)
+{
   const [t] = useTranslation();
 
-  function renderHeaders() {
+  function renderHeaders()
+  {
     return head.map((string, index) => <Table.Th key={index}>{string.length === 0 ? "" : t(string)}</Table.Th>);
   }
 
-  function renderPagination() {
+  function renderPagination()
+  {
     const pagination = withPagination.value;
     const totalCount = withPagination.totalCount;
     const resultsPerPageMnemonic = "pagination.resultsPerPage";
@@ -55,10 +60,12 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
             label: t(resultsPerPageMnemonic, { count: 100 })
           }
         ]}
-        onChange={(value) => {
+        onChange={(value) =>
+        {
           const take = parseInt(value);
           withPagination.setValue({ ...pagination, take, currentPage: 1 });
-          if (withPagination.onTake) {
+          if (withPagination.onTake)
+          {
             withPagination.onTake(take);
           }
         }}
@@ -77,18 +84,21 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
     </div>;
   }
 
-  if (loading === true) {
-    return <LoadingOverlay visible zIndex={2} overlayProps={{ blur: 3 }} />;
+  if (loading === true)
+  {
+    return <LoadingOverlay visible zIndex={2} overlayProps={{ blur: 3 }}/>;
   }
-  if (children.length === 0 && emptyResults !== undefined) {
+  if (children.length === 0 && emptyResults !== undefined)
+  {
     return emptyResults;
   }
 
-  function renderTable() {
+  function renderTable()
+  {
     return (<Table.ScrollContainer minWidth={variables.tableMinimalWidth} pr={variables.contentPaddingHorizontal}
                                    mr={`-${variables.contentPaddingHorizontal}`}
       >
-        <Table stickyHeader highlightOnHover striped  classNames={{ thead: style.thead }}>
+        <Table stickyHeader highlightOnHover striped classNames={{ thead: style.thead }}>
           <Table.Thead>
             <Table.Tr>
               {renderHeaders()}
@@ -102,7 +112,7 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
 
   return (<>
     {renderTable()}
-    {withPagination && (<><Divider mb={"md"} /> {renderPagination()}  </>)}
+    {withPagination && (<><Divider mb={"md"}/> {renderPagination()}  </>)}
   </>);
 
 }

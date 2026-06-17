@@ -17,23 +17,30 @@ type ExtensionTopType = {
   onUninstalled: () => void;
 };
 
-export default function ExtensionTop({ extension, openAddOrUpdateExtensionModal, openExtensionSettingsModal, onUninstalled }: ExtensionTopType) {
+export default function ExtensionTop({
+  extension,
+  openAddOrUpdateExtensionModal,
+  openExtensionSettingsModal,
+  onUninstalled
+}: ExtensionTopType)
+{
   const { t } = useTranslation();
   const iconEdge = 32;
 
   return (<>
-      <ContentTitle text={extension.manifest.name} icon={{ icon: <IconBox stroke={Common.IconStrokeSize} /> }} />
+      <ContentTitle text={extension.manifest.name} icon={{ icon: <IconBox stroke={Common.IconStrokeSize}/> }}/>
       <Stack gap="md" pos="relative">
         <FieldValue name={t("field.id")} value={<CopyText value={extension.manifest.id} inline={true}>
           <Text size="xs" c="dimmed">{extension.manifest.id}</Text>
-        </CopyText>} />
-        <FieldValue name={t("field.icon")} value={<Image src={ExtensionsService.getIconURL(extension)} h={iconEdge} w={iconEdge} />} />
-        <FieldValue name={t("field.version")} value={<Text size="md">{extension.manifest.version}</Text>} />
+        </CopyText>}/>
+        <FieldValue name={t("field.icon")}
+                    value={<Image src={ExtensionsService.getIconURL(extension)} h={iconEdge} w={iconEdge}/>}/>
+        <FieldValue name={t("field.version")} value={<Text size="md">{extension.manifest.version}</Text>}/>
         <FieldValue name={t("field.description")}
                     value={extension.manifest.description ? <Text>{extension.manifest.description}</Text> :
-                      <NoValue />} />
+                      <NoValue/>}/>
         <FieldValue name={t("field.status")}
-                    value={<EntityStatus type="extension" status={extension.status} size="sm" />} />
+                    value={<EntityStatus type="extension" status={extension.status} size="sm"/>}/>
         <Flex gap="sm" mt="lg">
           <ExtensionActions
             extension={extension}

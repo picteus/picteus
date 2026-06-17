@@ -16,23 +16,24 @@ type RepositoryTopType = {
   onDeleted: () => void;
 };
 
-export default function RepositoryTop({ repository, onEdit, onDeleted }: RepositoryTopType) {
+export default function RepositoryTop({ repository, onEdit, onDeleted }: RepositoryTopType)
+{
   const { t } = useTranslation();
 
   return (<>
-      <ContentTitle text={repository.name} icon={{ icon: <IconFolderOpen stroke={Common.IconStrokeSize}/> }} />
+      <ContentTitle text={repository.name} icon={{ icon: <IconFolderOpen stroke={Common.IconStrokeSize}/> }}/>
       <Stack gap="md" pos="relative">
         <FieldValue name={t("field.id")} value={<CopyText value={repository.id} inline={true}>
           <Text size="xs" c="dimmed">{repository.id}</Text>
-        </CopyText>} />
+        </CopyText>}/>
         <FieldValue name={t("field.url")}
                     value={<CopyText value={removeFilePrefixFromUrl(repository.url)}>
                       <Text size="xs" c="dimmed">{removeFilePrefixFromUrl(repository.url)}</Text>
-                    </CopyText>} />
+                    </CopyText>}/>
         <FieldValue name={t("field.comment")}
-                    value={repository.comment ? <Text>{repository.comment}</Text> : <NoValue />} />
+                    value={repository.comment ? <Text>{repository.comment}</Text> : <NoValue/>}/>
         <FieldValue name={t("field.status")}
-                    value={<EntityStatus type="repository" status={repository.status} size="sm" />} />
+                    value={<EntityStatus type="repository" status={repository.status} size="sm"/>}/>
         <Flex gap="sm" mt="lg">
           <RepositoryActions
             repository={repository}

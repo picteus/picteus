@@ -3,27 +3,31 @@ import { useTranslation } from "react-i18next";
 import { ActionIcon, Button, Indicator, Text, Tooltip } from "@mantine/core";
 import { IconCheck, IconRefresh } from "@tabler/icons-react";
 
+
 type RefreshButtonType = {
   alert?: boolean;
   onRefresh: () => void;
 };
 
-export default function RefreshButton({ alert, onRefresh }: RefreshButtonType) {
+export default function RefreshButton({ alert, onRefresh }: RefreshButtonType)
+{
   const [t] = useTranslation();
   const [isFeedback, setIsFeedback] = useState(false);
 
-  const handleClick = () => {
+  const handleClick = () =>
+  {
     setIsFeedback(true);
     onRefresh();
 
-    setTimeout(() => {
+    setTimeout(() =>
+    {
       setIsFeedback(false);
     }, 800);
   };
 
   const commonIconProps = {
     stroke: 1.2,
-    size: 20,
+    size: 20
   };
 
   return alert ? (
@@ -44,11 +48,11 @@ export default function RefreshButton({ alert, onRefresh }: RefreshButtonType) {
         variant={"default"}
         onClick={handleClick}
       >
-          {isFeedback ? (
-            <IconCheck color={"green"} {...commonIconProps} />
-          ) : (
-            <IconRefresh {...commonIconProps} />
-          )}
+        {isFeedback ? (
+          <IconCheck color={"green"} {...commonIconProps} />
+        ) : (
+          <IconRefresh {...commonIconProps} />
+        )}
       </ActionIcon>
     </Tooltip>
   );

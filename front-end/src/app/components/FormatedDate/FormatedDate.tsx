@@ -5,6 +5,7 @@ type FormatedDateType = {
   timestamp: number;
 };
 
-export default function FormatedDate({ timestamp }: FormatedDateType) {
+export default function FormatedDate({ timestamp }: FormatedDateType)
+{
   return formatDate(timestamp);
 }

@@ -20,8 +20,9 @@ export default function EmptyResults({
   title,
   description,
   buttonText,
-  buttonAction,
-}: EmptyResultsType) {
+  buttonAction
+}: EmptyResultsType)
+{
   return (
     <Center className={style.container}>
       <Stack gap={isSmall ? "md" : "lg"} align="center">

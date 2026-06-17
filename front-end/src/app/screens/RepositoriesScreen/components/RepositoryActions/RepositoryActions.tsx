@@ -11,44 +11,53 @@ import { RepositoriesService } from "app/services";
 import { ExternalLink } from "app/components";
 
 
-interface RepositoryActionsType {
+interface RepositoryActionsType
+{
   repository: Repository;
+
   onEdit?: (repository: Repository) => void;
+
   onDeleted: () => void;
 }
 
 export default function RepositoryActions({
   repository,
   onEdit,
-  onDeleted,
-}: RepositoryActionsType) {
+  onDeleted
+}: RepositoryActionsType)
+{
   const [t] = useTranslation();
   const confirmAction = useConfirmAction();
 
-  async function handleOnSynchronizeRepository(id: string) {
+  async function handleOnSynchronizeRepository(id: string)
+  {
     await RepositoriesService.synchronize({ id });
   }
 
-  async function handleOnDeleteRepository(id: string) {
-    try {
+  async function handleOnDeleteRepository(id: string)
+  {
+    try
+    {
       await RepositoriesService.remove({ id });
       NotificationsService.success(t("repositoryScreen.successRemove"));
       onDeleted();
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallI18nError(error, "repositoryScreen.errorRemove");
     }
   }
 
   return (
     <Flex gap={10} onClick={(event) => event.stopPropagation()}>
-      <ExternalLink url={repository.url} type="action" />
+      <ExternalLink url={repository.url} type="action"/>
       {onEdit && <Tooltip label={t("button.edit")}>
         <ActionIcon
           size="md"
           variant="default"
           onClick={() => onEdit(repository)}
         >
-          <IconEdit size={20} stroke={1} />
+          <IconEdit size={20} stroke={1}/>
         </ActionIcon>
       </Tooltip>}
       <Tooltip label={t("button.synchronize")}>
@@ -57,7 +66,7 @@ export default function RepositoryActions({
           variant="default"
           onClick={() => handleOnSynchronizeRepository(repository.id)}
         >
-          <IconReload size={20} stroke={1} />
+          <IconReload size={20} stroke={1}/>
         </ActionIcon>
       </Tooltip>
       <Tooltip label={t("button.delete")}>
@@ -68,12 +77,12 @@ export default function RepositoryActions({
             confirmAction(() => handleOnDeleteRepository(repository.id), {
               title: t("repositoryScreen.confirmDeleteTitle"),
               message: t("repositoryScreen.confirmDeleteMessage", {
-                name: repository.name,
-              }),
+                name: repository.name
+              })
             })
           }
         >
-          <IconTrash color="red" size={20} stroke={1} />
+          <IconTrash color="red" size={20} stroke={1}/>
         </ActionIcon>
       </Tooltip>
     </Flex>

@@ -9,7 +9,9 @@ export { default as ExternalLink } from "./ExternalLink/ExternalLink.tsx";
 export { default as EmptyResults } from "./EmptyResults/EmptyResults.tsx";
 export { default as ImagesView } from "./ImagesView/ImagesView.tsx";
 export { default as CommandForm } from "./CommandForm/CommandForm.tsx";
-export { computeIcon, MenuItemEntry, ImageMenuSelectEntry, ImageMenuSelectCommandEntry } from "./ActionEntry/ActionEntry.tsx";
+export {
+  computeIcon, MenuItemEntry, ImageMenuSelectEntry, ImageMenuSelectCommandEntry
+} from "./ActionEntry/ActionEntry.tsx";
 export { default as ImageDetail } from "./ImageDetail/ImageDetail.tsx";
 export { default as ImageItem } from "./ImageItem/ImageItem.tsx";
 export { default as ImageItemMenu } from "./ImageItemMenu/ImageItemMenu.tsx";

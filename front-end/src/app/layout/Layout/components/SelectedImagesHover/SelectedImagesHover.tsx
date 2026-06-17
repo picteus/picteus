@@ -7,8 +7,9 @@ import { Common } from "app/components";
 import { SelectedImages } from "../index.ts";
 
 
-export default function SelectedImagesHover() {
-  const { selectedImages} = useImagesSelectedContext();
+export default function SelectedImagesHover()
+{
+  const { selectedImages } = useImagesSelectedContext();
 
   return (<HoverCard
     withinPortal={true}
@@ -22,13 +23,14 @@ export default function SelectedImagesHover() {
     <HoverCard.Target>
       <Indicator inline color="orange" label={selectedImages.length} size={16}>
         <ActionIcon variant="outline" size="md">
-          <IconPhoto stroke={Common.IconStrokeSize} />
+          <IconPhoto stroke={Common.IconStrokeSize}/>
         </ActionIcon>
       </Indicator>
     </HoverCard.Target>
     <HoverCard.Dropdown>
-      <SelectedImages onProcessing={() => {
-      }} />
+      <SelectedImages onProcessing={() =>
+      {
+      }}/>
     </HoverCard.Dropdown>
   </HoverCard>);
 }

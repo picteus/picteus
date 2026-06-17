@@ -17,10 +17,14 @@ import { useConfirmAction } from "app/hooks";
 import { ExtensionsService } from "app/services";
 
 
-interface ExtensionActionsType {
+interface ExtensionActionsType
+{
   extension: Extension;
+
   onUpdate: (extension: Extension) => void;
+
   onSettings: (extension: Extension) => void;
+
   onUninstalled: () => void;
 }
 
@@ -29,46 +33,59 @@ export default function ExtensionActions({
   onUpdate,
   onSettings,
   onUninstalled
-}: ExtensionActionsType) {
+}: ExtensionActionsType)
+{
   const [t] = useTranslation();
   const confirmAction = useConfirmAction();
 
   const iconSizeAndStroke = {
     size: 20,
-    stroke: 1,
+    stroke: 1
   };
 
-  async function handleOnUninstallExtension(extensionId: string) {
-    try {
+  async function handleOnUninstallExtension(extensionId: string)
+  {
+    try
+    {
       await ExtensionsService.uninstall({ id: extensionId });
       NotificationsService.success(t("extensionsScreen.successUninstall"));
       onUninstalled();
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallI18nError(error, "extensionsScreen.errorUninstall");
     }
   }
 
-  async function handleOnToggleExtensionStatus(extension: Extension) {
-    try {
+  async function handleOnToggleExtensionStatus(extension: Extension)
+  {
+    try
+    {
       await ExtensionsService.startOrStop({
         id: extension.manifest.id,
-        isPause: extension.status === ExtensionStatus.Enabled,
+        isPause: extension.status === ExtensionStatus.Enabled
       });
       onUninstalled();
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallI18nError(error, "extensionsScreen.errorToggleStatus");
     }
   }
 
-  async function handleOnSynchronize(extension: Extension) {
-    try {
+  async function handleOnSynchronize(extension: Extension)
+  {
+    try
+    {
       await ExtensionsService.synchronize({ id: extension.manifest.id });
       NotificationsService.success(
         t("extensionsScreen.successSynchronize", {
-          name: extension.manifest.name,
-        }),
+          name: extension.manifest.name
+        })
       );
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallI18nError(error, "extensionsScreen.errorToggleStatus");
     }
   }
@@ -127,9 +144,9 @@ export default function ExtensionActions({
               {
                 title: t("extensionsScreen.confirmDeleteTitle"),
                 message: t("extensionsScreen.confirmDeleteMessage", {
-                  name: extension.manifest.name,
-                }),
-              },
+                  name: extension.manifest.name
+                })
+              }
             )
           }
         >

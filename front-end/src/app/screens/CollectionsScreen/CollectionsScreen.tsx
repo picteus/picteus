@@ -21,7 +21,8 @@ import {
 import { AddOrUpdateCollection, CollectionActions, CollectionDetail, CollectionTop } from "./components";
 
 
-export default function CollectionsScreen() {
+export default function CollectionsScreen()
+{
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const { eventStore } = useEventSocket();
@@ -30,46 +31,61 @@ export default function CollectionsScreen() {
   const [t] = useTranslation();
   const [, addModal] = useActionModalContext();
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     void fetchAllCollections();
   }, []);
 
-  useEffect(() => {
-    if (selectedCollection) {
+  useEffect(() =>
+  {
+    if (selectedCollection)
+    {
       const updatedCollection = collections.find((collection) => collection.id === selectedCollection.id);
-      if (updatedCollection && updatedCollection !== selectedCollection) {
+      if (updatedCollection && updatedCollection !== selectedCollection)
+      {
         setSelectedCollection(updatedCollection);
-      } else if (!updatedCollection) {
+      }
+      else if (!updatedCollection)
+      {
         setSelectedCollection(undefined);
       }
     }
   }, [collections, selectedCollection]);
 
-  useEffect(() => {
-    if (event?.channel.startsWith(ChannelEnum.COLLECTION_PREFIX)) {
+  useEffect(() =>
+  {
+    if (event?.channel.startsWith(ChannelEnum.COLLECTION_PREFIX))
+    {
       void fetchAllCollections();
     }
   }, [event]);
 
   const showAddButton = false;
 
-  async function fetchAllCollections() {
+  async function fetchAllCollections()
+  {
     setLoading(true);
-    try {
+    try
+    {
       setCollections(await CollectionService.fetchAll());
-    } finally {
+    }
+    finally
+    {
       setLoading(false);
     }
   }
 
-  function nothing(){}
+  function nothing()
+  {
+  }
 
-  function openAddOrUpdateCollectionModal(collection?: Collection) {
+  function openAddOrUpdateCollectionModal(collection?: Collection)
+  {
     addModal({
       title: t(`addOrUpdateCollectionModal.${collection ? "updateTitle" : "addTitle"}`),
-      icon: { icon: <IconLibrary stroke={Common.IconStrokeSize} /> },
+      icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
       size: "s",
-      component: <AddOrUpdateCollection collection={collection} onSuccess={nothing} />,
+      component: <AddOrUpdateCollection collection={collection} onSuccess={nothing}/>
     });
   }
 
@@ -84,9 +100,9 @@ export default function CollectionsScreen() {
       </Table.Td>
       <Table.Td>
         {collection.comment ? (
-           <Text size="md">{collection.comment}</Text>
+          <Text size="md">{collection.comment}</Text>
         ) : (
-          <NoValue />
+          <NoValue/>
         )}
       </Table.Td>
       <Table.Td>
@@ -105,7 +121,8 @@ export default function CollectionsScreen() {
     </Table.Tr>
   ));
 
-  function renderTable() {
+  function renderTable()
+  {
     return <StandardTable head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", ""]}
                           loading={loading}
                           emptyResults={<EmptyResults
@@ -126,13 +143,13 @@ export default function CollectionsScreen() {
           <Title>{t("collectionsScreen.title")}</Title>
           <Flex gap="sm" align="center">
             {showAddButton && <Button
-              leftSection={<IconPlus size={20} />}
+              leftSection={<IconPlus size={20}/>}
               onClick={() => openAddOrUpdateCollectionModal()}
             >
               {t("button.add")}
             </Button>
             }
-            <RefreshButton onRefresh={() => fetchAllCollections()} />
+            <RefreshButton onRefresh={() => fetchAllCollections()}/>
           </Flex>
         </Flex>
         {renderTable()}
@@ -142,9 +159,9 @@ export default function CollectionsScreen() {
         onClose={() => setSelectedCollection(undefined)}
         title={selectedCollection && <CollectionTop collection={selectedCollection}
                                                     onEdit={openAddOrUpdateCollectionModal}
-                                                    onDeleted={nothing} />}
+                                                    onDeleted={nothing}/>}
       >
-        {selectedCollection && <CollectionDetail collection={selectedCollection} />}
+        {selectedCollection && <CollectionDetail collection={selectedCollection}/>}
       </Drawer>
     </Container>
   );

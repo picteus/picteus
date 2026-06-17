@@ -26,7 +26,8 @@ import {
 } from "./components";
 
 
-export default function ExtensionsScreen() {
+export default function ExtensionsScreen()
+{
   const [t] = useTranslation();
   const [extensions, setExtensions] = useState<Extension[]>(ExtensionsService.list());
   const [, addModal] = useActionModalContext();
@@ -34,13 +35,16 @@ export default function ExtensionsScreen() {
   const [selectedExtension, setSelectedExtension] = useState<Extension>();
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
-  useEffect(() => {
-    if (selectedExtension) {
+  useEffect(() =>
+  {
+    if (selectedExtension)
+    {
       setSelectedExtension(extensions.find((extension) => extension.manifest.id === selectedExtension.manifest.id));
     }
   }, [extensions]);
 
-  function openExtensionSettingsModal(extension: Extension) {
+  function openExtensionSettingsModal(extension: Extension)
+  {
     addModal({
       title: t("extensionSettingsModal.title"),
       icon: { url: ExtensionsService.getIconURL(extension.manifest.id) },
@@ -50,11 +54,12 @@ export default function ExtensionsScreen() {
           extension={extension}
           onSuccess={fetchAllExtensions}
         />
-      ),
+      )
     });
   }
 
-  function openAddOrUpdateExtensionModal(extension?: Extension) {
+  function openAddOrUpdateExtensionModal(extension?: Extension)
+  {
     addModal({
       title: t(`${extension ? "updateExtensionModal" : "addExtensionModal"}.title`),
       icon: extension ? { url: ExtensionsService.getIconURL(extension) } : {
@@ -64,22 +69,24 @@ export default function ExtensionsScreen() {
       component: (
         <AddOrUpdateExtension
           extension={extension}
-          onSuccess={(extension: Extension) => {
+          onSuccess={(extension: Extension) =>
+          {
             openExtensionSettingsModal(extension);
             void fetchAllExtensions();
           }}
         />
-      ),
+      )
     });
   }
 
-  async function fetchAllExtensions() {
+  async function fetchAllExtensions()
+  {
     setLoading(true);
     setExtensions((await ExtensionsService.fetchAll()).extensions);
     setLoading(false);
   }
 
-  const rows = useMemo(()=>
+  const rows = useMemo(() =>
     extensions.map((extension: Extension) => (
       <Table.Tr
         key={`extension-${extension.manifest.id}`}
@@ -87,7 +94,7 @@ export default function ExtensionsScreen() {
         style={{ cursor: "pointer" }}
       >
         <Table.Td w={40}>
-          <ExtensionIcon idOrExtension={extension} size="sm" />
+          <ExtensionIcon idOrExtension={extension} size="sm"/>
         </Table.Td>
         <Table.Td>
           <Text size="md">{extension.manifest.id}</Text>
@@ -102,7 +109,7 @@ export default function ExtensionsScreen() {
           <Text size="md">{extension.manifest.description}</Text>
         </Table.Td>
         <Table.Td>
-          <EntityStatus type="extension" status={extension.status} size="md" />
+          <EntityStatus type="extension" status={extension.status} size="md"/>
         </Table.Td>
         <Table.Td>
           <ExtensionActions
@@ -115,22 +122,26 @@ export default function ExtensionsScreen() {
       </Table.Tr>
     )), [extensions]);
 
-  function renderTable() {
-    return <StandardTable head={["", "field.id", "field.version", "field.name", "field.description", "field.status", ""]}
-                          loading={loading}
-                          emptyResults={<EmptyResults
-                            icon={IconPuzzle}
-                            description={t("emptyExtensions.description")}
-                            title={t("emptyExtensions.title")}
-                            buttonText={t("emptyExtensions.buttonText")}
-                            buttonAction={() => openAddOrUpdateExtensionModal()}
-                          />}>
+  function renderTable()
+  {
+    return <StandardTable
+      head={["", "field.id", "field.version", "field.name", "field.description", "field.status", ""]}
+      loading={loading}
+      emptyResults={<EmptyResults
+        icon={IconPuzzle}
+        description={t("emptyExtensions.description")}
+        title={t("emptyExtensions.title")}
+        buttonText={t("emptyExtensions.buttonText")}
+        buttonAction={() => openAddOrUpdateExtensionModal()}
+      />}>
       {rows}
     </StandardTable>;
   }
 
-  function renderCard() {
-    if (!loading && extensions.length === 0) {
+  function renderCard()
+  {
+    if (!loading && extensions.length === 0)
+    {
       return <EmptyResults
         icon={IconPuzzle}
         description={t("emptyExtensions.description")}
@@ -170,23 +181,23 @@ export default function ExtensionsScreen() {
                 size="lg"
                 onClick={() => setViewMode("table")}
               >
-                <IconList size={20} />
+                <IconList size={20}/>
               </ActionIcon>
               <ActionIcon
                 variant={viewMode === "card" ? "filled" : "default"}
                 size="lg"
                 onClick={() => setViewMode("card")}
               >
-                <IconLayoutGrid size={20} />
+                <IconLayoutGrid size={20}/>
               </ActionIcon>
             </ActionIcon.Group>
-            }            <Button
-              leftSection={<IconPlus size={20} />}
-              onClick={() => openAddOrUpdateExtensionModal()}
-            >
-              {t("button.add")}
-            </Button>
-            <RefreshButton onRefresh={() => fetchAllExtensions()} />
+            } <Button
+            leftSection={<IconPlus size={20}/>}
+            onClick={() => openAddOrUpdateExtensionModal()}
+          >
+            {t("button.add")}
+          </Button>
+            <RefreshButton onRefresh={() => fetchAllExtensions()}/>
           </Flex>
         </Flex>
         {viewMode === "table" ? renderTable() : renderCard()}
@@ -195,10 +206,12 @@ export default function ExtensionsScreen() {
         opened={selectedExtension !== undefined}
         onClose={() => setSelectedExtension(undefined)}
         title={selectedExtension &&
-          <ExtensionTop extension={selectedExtension} openAddOrUpdateExtensionModal={openAddOrUpdateExtensionModal}
-                        openExtensionSettingsModal={openExtensionSettingsModal} onUninstalled={fetchAllExtensions} />}
+          <ExtensionTop extension={selectedExtension}
+                        openAddOrUpdateExtensionModal={openAddOrUpdateExtensionModal}
+                        openExtensionSettingsModal={openExtensionSettingsModal}
+                        onUninstalled={fetchAllExtensions}/>}
       >
-        {selectedExtension && <ExtensionDetail extension={selectedExtension} />}
+        {selectedExtension && <ExtensionDetail extension={selectedExtension}/>}
       </Drawer>
     </Container>
   );

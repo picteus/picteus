@@ -15,144 +15,165 @@ import AddOrUpdateCollection
   from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
 
-export interface CollectionsBarRef {
-    clearCollection: () => void;
+export interface CollectionsBarRef
+{
+  clearCollection: () => void;
 }
 
 type CollectionsBarType = {
-    searchFilter?: SearchFilter;
-    initialCollectionId?: number;
-    onCollection: (collection: PicteusCollection) => void;
+  searchFilter?: SearchFilter;
+  initialCollectionId?: number;
+  onCollection: (collection: PicteusCollection) => void;
 };
 
 export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(({
-    searchFilter,
-    initialCollectionId,
-    onCollection,
-}, ref) => {
-    const [t] = useTranslation();
-    const [, addModal] = useActionModalContext();
-    const [loading, setLoading] = useState<boolean>(false);
-    const { eventStore } = useEventSocket();
-    const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-    const [collections, setCollections] = useState<PicteusCollection[]>([]);
-    const [menuOpened, setMenuOpened] = useState<boolean>(false);
-    const [selectedCollection, setSelectedCollection] = useState<PicteusCollection | undefined>();
-    const [saveDisabled, setSaveDisabled] = useState<boolean>(true);
-    const onCollectionRef = useRef<(collection: PicteusCollection) => void>(onCollection);
+  searchFilter,
+  initialCollectionId,
+  onCollection
+}, ref) =>
+{
+  const [t] = useTranslation();
+  const [, addModal] = useActionModalContext();
+  const [loading, setLoading] = useState<boolean>(false);
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
+  const [collections, setCollections] = useState<PicteusCollection[]>([]);
+  const [menuOpened, setMenuOpened] = useState<boolean>(false);
+  const [selectedCollection, setSelectedCollection] = useState<PicteusCollection | undefined>();
+  const [saveDisabled, setSaveDisabled] = useState<boolean>(true);
+  const onCollectionRef = useRef<(collection: PicteusCollection) => void>(onCollection);
 
-    useEffect(() => {
-        onCollectionRef.current = onCollection;
-    }, [onCollection]);
+  useEffect(() =>
+  {
+    onCollectionRef.current = onCollection;
+  }, [onCollection]);
 
-    useEffect(() => {
-        if (event?.channel === ChannelEnum.COLLECTION_DELETED) {
-            void loadCollections(true);
-            if (EventService.computeEventEntityId<number>(event) === selectedCollection?.id) {
-                setSelectedCollection(undefined);
-            }
-        }
-    }, [event]);
+  useEffect(() =>
+  {
+    if (event?.channel === ChannelEnum.COLLECTION_DELETED)
+    {
+      void loadCollections(true);
+      if (EventService.computeEventEntityId<number>(event) === selectedCollection?.id)
+      {
+        setSelectedCollection(undefined);
+      }
+    }
+  }, [event]);
 
-    useAsyncInitialize<number | undefined>(initialCollectionId, async (value: number)=> {
-        if (value !== undefined) {
-            const collection = await CollectionService.get(value);
-            setSelectedCollection(collection);
-            onCollectionRef.current(collection);
-        }
+  useAsyncInitialize<number | undefined>(initialCollectionId, async (value: number) =>
+  {
+    if (value !== undefined)
+    {
+      const collection = await CollectionService.get(value);
+      setSelectedCollection(collection);
+      onCollectionRef.current(collection);
+    }
+  });
+
+  useEffect(() =>
+  {
+    setSaveDisabled(selectedCollection === undefined || searchFilter === undefined || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter)));
+  }, [searchFilter, selectedCollection]);
+
+  useImperativeHandle(ref, () => ({
+    clearCollection: () =>
+    {
+      setSelectedCollection(undefined);
+    }
+  }));
+
+  useEffect(() =>
+  {
+    loadCollections();
+  }, []);
+
+  function loadCollections(force = false)
+  {
+    setLoading(true);
+    (force === false ? CollectionService.list() : CollectionService.fetchAll()).then(updatedCollections => setCollections(updatedCollections)).catch(error =>
+    {
+      NotificationsService.withMessage((error as Error).message);
+    }).finally(() =>
+    {
+      setLoading(false);
     });
+  }
 
-    useEffect(() => {
-        setSaveDisabled(selectedCollection === undefined || searchFilter === undefined || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter)))
-    }, [searchFilter, selectedCollection]);
+  function handleOnSelectedCollection(collection: PicteusCollection)
+  {
+    setSelectedCollection(collection);
+    setSaveDisabled(true);
+    onCollection(collection);
+  }
 
-    useImperativeHandle(ref, () => ({
-        clearCollection: () => {
-            setSelectedCollection(undefined);
-        }
-    }));
-
-    useEffect(() => {
-        loadCollections();
-    }, []);
-
-    function loadCollections(force = false) {
-        setLoading(true);
-        (force === false ? CollectionService.list() : CollectionService.fetchAll()).then(updatedCollections => setCollections(updatedCollections)).catch(error => {
-            NotificationsService.withMessage((error as Error).message);
-        }).finally(() => {
-            setLoading(false);
-        });
-    }
-
-    function handleOnSelectedCollection(collection: PicteusCollection) {
-        setSelectedCollection(collection);
-        setSaveDisabled(true);
-        onCollection(collection);
-    }
-
-    function handleOnSaveCurrent() {
-        addModal({
-            title: t("addOrUpdateCollectionModal.addTitle"),
-            icon: { icon: <IconLibrary stroke={Common.IconStrokeSize} /> },
-            size: "s",
-            component: (
-                <AddOrUpdateCollection
-                    searchFilter={searchFilter!}
-                    onSuccess={(collection) => {
-                        loadCollections();
-                        setSelectedCollection(collection);
-                        onCollection(collection);
-                    }}
-                />
-            ),
-        });
-    }
-
-    function handleOnUpdateCurrent() {
-        CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment).then((collection: PicteusCollection) => {
-            NotificationsService.success(t("addOrUpdateCollectionModal.successUpdate"));
+  function handleOnSaveCurrent()
+  {
+    addModal({
+      title: t("addOrUpdateCollectionModal.addTitle"),
+      icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
+      size: "s",
+      component: (
+        <AddOrUpdateCollection
+          searchFilter={searchFilter!}
+          onSuccess={(collection) =>
+          {
             loadCollections();
             setSelectedCollection(collection);
-            setSaveDisabled(true);
             onCollection(collection);
-        }).catch(error => NotificationsService.withMessage((error as Error).message));
-    }
+          }}
+        />
+      )
+    });
+  }
 
-    function truncateName(name: string) {
-        return name.length > 32 ? name.substring(0, 32) + "..." : name;
-    }
+  function handleOnUpdateCurrent()
+  {
+    CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment).then((collection: PicteusCollection) =>
+    {
+      NotificationsService.success(t("addOrUpdateCollectionModal.successUpdate"));
+      loadCollections();
+      setSelectedCollection(collection);
+      setSaveDisabled(true);
+      onCollection(collection);
+    }).catch(error => NotificationsService.withMessage((error as Error).message));
+  }
 
-    return (<Button.Group>
-          <Menu shadow="md" width={340} position="bottom" trigger="click-hover" opened={menuOpened} onChange={setMenuOpened}>
-              <Menu.Target>
-                  <Button variant="default" leftSection={<IconLibraryPhoto size={14} />}
-                          rightSection={<IconChevronDown size={14} />}>
-                      {selectedCollection ? truncateName(selectedCollection.name) : t("field.collections")}
-                  </Button>
-              </Menu.Target>
-              <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
-                  {loading && <Box p="sm"><Center><Loader size="sm" /></Center></Box>}
-                  {!loading && collections.map((collection) => (
-                    <Menu.Item key={collection.id} onClick={() => handleOnSelectedCollection(collection)}>
-                        <Text size="sm">{truncateName(collection.name)}</Text>
-                    </Menu.Item>
-                  ))}
-              </Menu.Dropdown>
-          </Menu>
-          {selectedCollection && (
-            <Tooltip label={t("button.save", { name: selectedCollection.name })}>
-                <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
-                    <IconDeviceFloppy size={16} />
-                </Button>
-            </Tooltip>
-          )}
-          <Tooltip label={t("button.add")}>
-              <Button variant="default" px="xs" disabled={!searchFilter}  onClick={handleOnSaveCurrent}>
-                  <IconPlus size={16} />
-              </Button>
-          </Tooltip>
-      </Button.Group>
-    );
+  function truncateName(name: string)
+  {
+    return name.length > 32 ? name.substring(0, 32) + "..." : name;
+  }
+
+  return (<Button.Group>
+      <Menu shadow="md" width={340} position="bottom" trigger="click-hover" opened={menuOpened}
+            onChange={setMenuOpened}>
+        <Menu.Target>
+          <Button variant="default" leftSection={<IconLibraryPhoto size={14}/>}
+                  rightSection={<IconChevronDown size={14}/>}>
+            {selectedCollection ? truncateName(selectedCollection.name) : t("field.collections")}
+          </Button>
+        </Menu.Target>
+        <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
+          {loading && <Box p="sm"><Center><Loader size="sm"/></Center></Box>}
+          {!loading && collections.map((collection) => (
+            <Menu.Item key={collection.id} onClick={() => handleOnSelectedCollection(collection)}>
+              <Text size="sm">{truncateName(collection.name)}</Text>
+            </Menu.Item>
+          ))}
+        </Menu.Dropdown>
+      </Menu>
+      {selectedCollection && (
+        <Tooltip label={t("button.save", { name: selectedCollection.name })}>
+          <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
+            <IconDeviceFloppy size={16}/>
+          </Button>
+        </Tooltip>
+      )}
+      <Tooltip label={t("button.add")}>
+        <Button variant="default" px="xs" disabled={!searchFilter} onClick={handleOnSaveCurrent}>
+          <IconPlus size={16}/>
+        </Button>
+      </Tooltip>
+    </Button.Group>
+  );
 });
 CollectionsBar.displayName = "CollectionsBar";

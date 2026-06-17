@@ -13,39 +13,53 @@ type StackedComponentType = ActionModalValue;
 
 type ListenerType = (stackedComponent: StackedComponentType, isPopped: boolean) => void;
 
-interface StackContextType {
+interface StackContextType
+{
   push: (stackedComponent: StackedComponentType) => void;
+
   pop: () => void;
+
   popToRoot: () => void;
+
   set: (stackedComponents: StackedComponentType[]) => void;
+
   subscribe: (listener: ListenerType) => (() => void);
 }
 
 const StackContext = createContext<StackContextType | null>(null);
 
-export const useStackNavigator = () => {
+export const useStackNavigator = () =>
+{
   const context = useContext(StackContext);
-  if (!context) {
+  if (!context)
+  {
     throw new Error("useStackNavigator must be used within a StackNavigator");
   }
   return context;
 };
 
-interface StackedElementType {
+interface StackedElementType
+{
   stackedComponent: StackedComponentType;
+
   visible: boolean;
+
   pop: () => void;
 }
 
-function StackedElement({ stackedComponent, visible, pop }: StackedElementType) {
+function StackedElement({ stackedComponent, visible, pop }: StackedElementType)
+{
   const focusTrapRef = useFocusTrap(visible);
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     returnFocusRef.current = document.activeElement as HTMLElement | null;
-    return () => {
+    return () =>
+    {
       const element = returnFocusRef.current;
-      if (element && typeof element.focus === "function") {
+      if (element && typeof element.focus === "function")
+      {
         setTimeout(() => element.focus({ preventScroll: true }), 10);
       }
     };
@@ -59,14 +73,14 @@ function StackedElement({ stackedComponent, visible, pop }: StackedElementType) 
     >
       {stackedComponent.fullScreen !== true && <Flex align="center" p="md" gap="md" className={style.topBar}>
         <ActionIcon variant="default" onClick={pop}>
-          <IconArrowLeft size={20} />
+          <IconArrowLeft size={20}/>
         </ActionIcon>
         {stackedComponent.title && (
           <Title order={4} style={{ flex: 1 }}>
             {stackedComponent.title}
           </Title>
         )}
-        <CloseButton size="lg" variant="subtle" onClick={pop} />
+        <CloseButton size="lg" variant="subtle" onClick={pop}/>
       </Flex>}
       <Box flex={1} className={style.componentWrapper}>
         {stackedComponent.component}
@@ -75,62 +89,76 @@ function StackedElement({ stackedComponent, visible, pop }: StackedElementType) 
   );
 }
 
-interface StackNavigatorType {
+interface StackNavigatorType
+{
   children: ReactNode;
 }
 
-export default function StackNavigator ({ children }: StackNavigatorType) {
+export default function StackNavigator({ children }: StackNavigatorType)
+{
   const [stack, setStack] = useState<StackedComponentType[]>([]);
   const stackRef = useRef<StackedComponentType[]>(stack);
   const listenersRef = useRef<ListenerType[]>([]);
 
-  const push = useCallback((stackedComponent: StackedComponentType) => {
+  const push = useCallback((stackedComponent: StackedComponentType) =>
+  {
     const newStack = [...stackRef.current, stackedComponent];
     stackRef.current = newStack;
     setStack(newStack);
-    for (const listener of listenersRef.current) {
+    for (const listener of listenersRef.current)
+    {
       listener(stackedComponent, false);
     }
   }, []);
 
-  const pop = useCallback(() => {
+  const pop = useCallback(() =>
+  {
     const currentStack = stackRef.current;
-    if (currentStack.length === 0) {
+    if (currentStack.length === 0)
+    {
       return;
     }
     const component = currentStack[currentStack.length - 1];
     const newStack = currentStack.slice(0, -1);
     setStack(newStack);
-    for (const listener of listenersRef.current) {
+    for (const listener of listenersRef.current)
+    {
       listener(component, true);
     }
     stackRef.current = newStack;
   }, []);
 
-  useKey("Escape", () => {
-    if (stackRef.current.length > 0 && stackRef.current[stackRef.current.length - 1].closeOnEscape !== false) {
+  useKey("Escape", () =>
+  {
+    if (stackRef.current.length > 0 && stackRef.current[stackRef.current.length - 1].closeOnEscape !== false)
+    {
       pop();
     }
   });
 
-  const popToRoot = useCallback(() => {
+  const popToRoot = useCallback(() =>
+  {
     setStack([]);
     stackRef.current = [];
   }, []);
 
-  const set = useCallback((stackedComponents: StackedComponentType []) => {
+  const set = useCallback((stackedComponents: StackedComponentType []) =>
+  {
     setStack(stackedComponents);
     stackRef.current = stackedComponents;
   }, []);
 
-  const subscribe = useCallback((listener: ListenerType): (() => void) => {
+  const subscribe = useCallback((listener: ListenerType): (() => void) =>
+  {
     listenersRef.current = [...listenersRef.current, listener];
-    return () => {
+    return () =>
+    {
       listenersRef.current.splice(listenersRef.current.indexOf(listener), 1);
     };
   }, []);
 
-  const renderedStack = useMemo(() => (stack.map((stackedComponentWithId, index) => {
+  const renderedStack = useMemo(() => (stack.map((stackedComponentWithId, index) =>
+  {
     const isVisibleComponent = index === stack.length - 1;
     return (
       <StackedElement

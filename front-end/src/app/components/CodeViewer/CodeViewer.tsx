@@ -14,27 +14,35 @@ type CodeViewerType = {
   code: string;
 };
 
-export default function CodeViewer({ code }: CodeViewerType) {
+export default function CodeViewer({ code }: CodeViewerType)
+{
   const codeRef = useRef<HTMLElement>(null);
 
   const { colorScheme } = useMantineColorScheme();
-  useEffect(() => {
-    if (colorScheme === "dark") {
+  useEffect(() =>
+  {
+    if (colorScheme === "dark")
+    {
       import("highlight.js/styles/dark.min.css");
-    } else {
+    }
+    else
+    {
       import("highlight.js/styles/lightfair.min.css");
     }
   }, [colorScheme]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     //TODO: reactivate this once the performance issue is solved
     // if (codeRef.current) {
     //   hljs.highlightElement(codeRef.current);
     // }
   }, [codeRef]);
 
-  const formattedCode = useMemo(() => {
-    try {
+  const formattedCode = useMemo(() =>
+  {
+    try
+    {
       const options =
         {
           indent_size: 2,
@@ -47,7 +55,9 @@ export default function CodeViewer({ code }: CodeViewerType) {
           end_with_newline: false
         };
       return beautify.js(code, options);
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.errorWithMessage(error, "An error occurred while trying to beautify the code");
       return "Source code is broken";
     }
@@ -55,7 +65,7 @@ export default function CodeViewer({ code }: CodeViewerType) {
 
   return (
     <pre style={{ maxHeight: 400 }}>
-      <code style={{fontFamily: "var(--mantine-font-family)"}} ref={codeRef}>{formattedCode}</code>
+      <code style={{ fontFamily: "var(--mantine-font-family)" }} ref={codeRef}>{formattedCode}</code>
     </pre>
   );
 }

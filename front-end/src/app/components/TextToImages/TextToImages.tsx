@@ -22,7 +22,8 @@ type TextToImageType = {
   extensionId: string;
 };
 
-export default function TextToImages({ extensionId }: TextToImageType) {
+export default function TextToImages({ extensionId }: TextToImageType)
+{
   const [t] = useTranslation();
   const [images, setImages] = useState<ImageWithCaption[]>([]);
   const [emptyResult, setEmptyResult] = useState<boolean>(false);
@@ -33,7 +34,7 @@ export default function TextToImages({ extensionId }: TextToImageType) {
 
   const initialValues: TextToImagesFormPayload = {
     count: initialResultsCount,
-    text: undefined,
+    text: undefined
   };
 
   const form = useForm({
@@ -41,46 +42,56 @@ export default function TextToImages({ extensionId }: TextToImageType) {
     initialValues,
     validate: {
       text: Validators.isNotEmpty,
-      count: Validators.isNotEmpty,
-    },
+      count: Validators.isNotEmpty
+    }
   });
 
-  async function handleSubmit(values: TextToImagesFormPayload) {
+  async function handleSubmit(values: TextToImagesFormPayload)
+  {
     StorageService.setTextToImagesResultsCount(values.count);
     const parameters: ImageApiImageTextToImagesRequest = {
       ...values,
-      extensionId,
+      extensionId
     };
     void load(parameters);
   }
 
-  async function load(parameters: ImageApiImageTextToImagesRequest) {
-    if (!parameters.text) {
+  async function load(parameters: ImageApiImageTextToImagesRequest)
+  {
+    if (!parameters.text)
+    {
       return;
     }
     setLoading(true);
     setEmptyResult(false);
 
-    try {
+    try
+    {
       const imageDistances = await ImageService.textToImages(parameters);
       const computedImages = imageDistances
         .sort((a, b) => a.distance - b.distance)
-        .map((imageDistance) => {
+        .map((imageDistance) =>
+        {
           return {
             ...imageDistance.image,
-            caption: <CaptionDistance distance={imageDistance.distance} />,
+            caption: <CaptionDistance distance={imageDistance.distance}/>
           };
         });
       setEmptyResult(computedImages.length === 0);
       setImages(computedImages);
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallError(error, "An error occurred while trying to search images from text");
-    } finally {
+    }
+    finally
+    {
       setLoading(false);
     }
   }
 
-  function renderForm() {
+  function renderForm()
+  {
     return (
       <Group mt="sm">
         <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -110,12 +121,15 @@ export default function TextToImages({ extensionId }: TextToImageType) {
     );
   }
 
-  function renderContent() {
+  function renderContent()
+  {
     return (<ImagesView
       viewData={{ viewMode: "masonry", images }}
       isDefault={false}
-      onEmptyResults={() => {
-        if (loading === false && emptyResult === true) {
+      onEmptyResults={() =>
+      {
+        if (loading === false && emptyResult === true)
+        {
           return (<EmptyResults
             icon={IconPhotoSearch}
             description={t("emptyImages.description")}
@@ -129,7 +143,7 @@ export default function TextToImages({ extensionId }: TextToImageType) {
 
   return (
     <>
-      <Alert icon={<IconInfoCircle />}>
+      <Alert icon={<IconInfoCircle/>}>
         {t("textToImagesModal.description")}
       </Alert>
       <Flex align="center" justify="center">{renderContent()}</Flex>

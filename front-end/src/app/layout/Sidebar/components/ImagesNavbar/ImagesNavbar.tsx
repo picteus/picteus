@@ -11,22 +11,31 @@ import { Common, ExtensionIcon } from "app/components";
 import style from "./ImagesNavbar.module.scss";
 
 
-interface NavbarLinkType {
+interface NavbarLinkType
+{
   icon: ReactNode;
+
   externalLink?: boolean;
+
   label: string;
+
   route: string;
+
   onClick?(): void;
 }
 
-export function NavbarLink({ icon, externalLink, label, route, onClick }: NavbarLinkType) {
+export function NavbarLink({ icon, externalLink, label, route, onClick }: NavbarLinkType)
+{
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const handleOnClick = useCallback(() => {
-    if (onClick) {
+  const handleOnClick = useCallback(() =>
+  {
+    if (onClick)
+    {
       onClick();
     }
-    else {
+    else
+    {
       navigate(route);
     }
   }, [onClick]);
@@ -40,7 +49,8 @@ export function NavbarLink({ icon, externalLink, label, route, onClick }: Navbar
         data-active={pathname === route || undefined}
       >
         {icon}
-        {externalLink === true && <IconExternalLink className={style.externalLinkIcon} stroke={Common.IconStrokeSize} size={14} />}
+        {externalLink === true &&
+          <IconExternalLink className={style.externalLinkIcon} stroke={Common.IconStrokeSize} size={14}/>}
       </UnstyledButton>
     </Tooltip>
   );
@@ -48,38 +58,56 @@ export function NavbarLink({ icon, externalLink, label, route, onClick }: Navbar
 
 type ImagesNavbarMenuItemType = { tab: TabsType, onRemove: () => void, isActive: boolean, onClick: () => void };
 
-function ImagesNavbarMenuItem({ tab, onRemove, isActive, onClick }: ImagesNavbarMenuItemType) {
+function ImagesNavbarMenuItem({ tab, onRemove, isActive, onClick }: ImagesNavbarMenuItemType)
+{
   const [isEditing, setIsEditing] = useState(false);
   const [tabLabel, setTabLabel] = useState(tab.content.title);
   const { state } = useImagesTabsContext();
 
-  function handleOnDoubleClickTabLabel(event: React.MouseEvent) {
+  function handleOnDoubleClickTabLabel(event: React.MouseEvent)
+  {
     event.stopPropagation();
     setIsEditing(true);
   }
 
-  function handleOnChangeTabLabel(event: ChangeEvent<HTMLInputElement>) {
+  function handleOnChangeTabLabel(event: ChangeEvent<HTMLInputElement>)
+  {
     setTabLabel(event.target.value);
   }
 
-  function onFinishEditing() {
+  function onFinishEditing()
+  {
     state.renameTab(tab.id, tabLabel);
     setIsEditing(false);
   }
 
   return (
     <Menu.Item
-      leftSection={tab.extensionId !== undefined ? <ExtensionIcon idOrExtension={tab.extensionId} size="sm" /> : <IconPhoto size={13} />}
-      onClick={() => { if (!isEditing) onClick(); }}
-      style={{ backgroundColor: isActive ? 'var(--mantine-color-blue-light)' : undefined, color: isActive ? 'var(--mantine-color-blue-light-color)' : undefined }}
+      leftSection={tab.extensionId !== undefined ? <ExtensionIcon idOrExtension={tab.extensionId} size="sm"/> :
+        <IconPhoto size={13}/>}
+      onClick={() =>
+      {
+        if (!isEditing)
+        {
+          onClick();
+        }
+      }}
+      style={{
+        backgroundColor: isActive ? "var(--mantine-color-blue-light)" : undefined,
+        color: isActive ? "var(--mantine-color-blue-light-color)" : undefined
+      }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
         {isEditing ? (
           <Input
             size="xs"
             onClick={(event: React.MouseEvent) => event.stopPropagation()}
-            onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
-              if (event.key === "Enter") onFinishEditing();
+            onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) =>
+            {
+              if (event.key === "Enter")
+              {
+                onFinishEditing();
+              }
             }}
             onBlur={onFinishEditing}
             onChange={handleOnChangeTabLabel}
@@ -87,57 +115,69 @@ function ImagesNavbarMenuItem({ tab, onRemove, isActive, onClick }: ImagesNavbar
             autoFocus
           />
         ) : (
-          <div onDoubleClick={handleOnDoubleClickTabLabel} style={{ flexGrow: 1, minWidth: '100px' }}>{tabLabel}</div>
+          <div onDoubleClick={handleOnDoubleClickTabLabel}
+               style={{ flexGrow: 1, minWidth: "100px" }}>{tabLabel}</div>
         )}
         <ActionIcon
           component="div"
           size="xs"
           variant="subtle"
           color={isActive ? "blue" : "gray"}
-          onClick={(event) => {
+          onClick={(event) =>
+          {
             event.stopPropagation();
             onRemove();
           }}
         >
-          <IconX size={14} />
+          <IconX size={14}/>
         </ActionIcon>
       </div>
     </Menu.Item>
   );
 }
 
-interface ImagesNavbarLinkType {
+interface ImagesNavbarLinkType
+{
   icon: ReactNode;
+
   label: string;
+
   route: string;
 }
 
-export function ImagesNavbarLink({ icon, label, route }: ImagesNavbarLinkType) {
+export function ImagesNavbarLink({ icon, label, route }: ImagesNavbarLinkType)
+{
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { tabs, removeTab, state, mainTabValue } = useImagesTabsContext();
   const [t] = useTranslation();
   const [opened, setOpened] = useState(false);
 
-  function handleOnRemoveTab(tabId: string, index: number) {
+  function handleOnRemoveTab(tabId: string, index: number)
+  {
     let nextTabId: string;
-    if (index + 1 < tabs.length) {
+    if (index + 1 < tabs.length)
+    {
       nextTabId = tabs[index + 1].id;
     }
-    else if (index - 1 >= 0) {
+    else if (index - 1 >= 0)
+    {
       nextTabId = tabs[index - 1].id;
     }
-    else {
+    else
+    {
       nextTabId = mainTabValue;
     }
 
     removeTab(tabId);
-    if (tabId === state.activeTab) {
+    if (tabId === state.activeTab)
+    {
       state.setActiveTab(nextTabId);
     }
   }
 
-  const navigateAndSetExplore = () => {
+  const navigateAndSetExplore = () =>
+  {
     navigate(route);
     state.setActiveTab(mainTabValue);
     setOpened(false);
@@ -169,19 +209,23 @@ export function ImagesNavbarLink({ icon, label, route }: ImagesNavbarLinkType) {
       </Menu.Target>
       <Menu.Dropdown onMouseEnter={() => setOpened(true)} onMouseLeave={() => setOpened(false)}>
         <Menu.Item
-          leftSection={<IconPhoto size={13} />}
+          leftSection={<IconPhoto size={13}/>}
           onClick={navigateAndSetExplore}
-          style={{ backgroundColor: state.activeTab === mainTabValue ? 'var(--mantine-color-blue-light)' : undefined, color: state.activeTab === mainTabValue ? 'var(--mantine-color-blue-light-color)' : undefined }}
+          style={{
+            backgroundColor: state.activeTab === mainTabValue ? "var(--mantine-color-blue-light)" : undefined,
+            color: state.activeTab === mainTabValue ? "var(--mantine-color-blue-light-color)" : undefined
+          }}
         >
           {t("imagesScreen.explore", "Explore")}
         </Menu.Item>
-        {tabs.length > 0 && <Menu.Divider />}
+        {tabs.length > 0 && <Menu.Divider/>}
         {tabs.map((tab, index) => (
           <ImagesNavbarMenuItem
             key={tab.id}
             tab={tab}
             isActive={state.activeTab === tab.id}
-            onClick={() => {
+            onClick={() =>
+            {
               navigate(route);
               state.setActiveTab(tab.id);
               setOpened(false);

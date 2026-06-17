@@ -13,53 +13,69 @@ type CollectionDetailType = {
   collection: Collection;
 };
 
-export default function CollectionDetail({ collection }: CollectionDetailType) {
+export default function CollectionDetail({ collection }: CollectionDetailType)
+{
   const [t] = useTranslation();
   const [images, setImages] = useState<ImageSummary[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (collection) {
+  useEffect(() =>
+  {
+    if (collection)
+    {
       void fetchCollectionDetails();
     }
   }, [collection]);
 
-  async function fetchCollectionDetails() {
+  async function fetchCollectionDetails()
+  {
     setLoading(true);
-    try {
+    try
+    {
       const result = await ImageService.searchSummaries({
-        filter: { ...collection.filter, sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false } },
-        range: { take: 10 },
+        filter: {
+          ...collection.filter,
+          sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false }
+        },
+        range: { take: 10 }
       });
       setImages(result.items);
       setTotalCount(result.totalCount);
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.errorWithMessage(error);
-    } finally {
+    }
+    finally
+    {
       setLoading(false);
     }
   }
 
-  function renderImageStack() {
-    if (images.length === 0) return <Text c="dimmed">{t("emptyImages.title")}</Text>;
+  function renderImageStack()
+  {
+    if (images.length === 0)
+    {
+      return <Text c="dimmed">{t("emptyImages.title")}</Text>;
+    }
 
     return (<ImagesStack images={images}/>);
   }
 
   return (
     <Stack gap="md" pos="relative">
-      <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+      <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }}/>
       <Flex gap="md">
         <FieldValue name={t("field.createdOn")}
-                    value={<Text size="sm"><FormatedDate timestamp={collection.creationDate} /></Text>} />
+                    value={<Text size="sm"><FormatedDate timestamp={collection.creationDate}/></Text>}/>
         <FieldValue name={t("field.modifiedOn")}
-                    value={<Text size="sm"><FormatedDate timestamp={collection.modificationDate} /></Text>} />
+                    value={<Text size="sm"><FormatedDate timestamp={collection.modificationDate}/></Text>}/>
       </Flex>
       <FieldValue name={t("field.imageCount")}
                   value={<Badge size="lg" variant="light" mt={4}><NumberFormatter value={totalCount}
-                                                                                  thousandSeparator /></Badge>} />
-      <FieldValue name={t("collectionDetail.latestImages")} value={renderImageStack()} />
+                                                                                  thousandSeparator/></Badge>}/>
+      <FieldValue name={t("collectionDetail.latestImages")} value={renderImageStack()}/>
     </Stack>
   );
 }

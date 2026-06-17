@@ -24,15 +24,19 @@ type RsfjFormType = {
 type UIProperty = { property: string, ui: JsonType };
 const uiPropertyName = "ui";
 
-function stripAndExtractParametersUiProperties(parameters: JsonType): UIProperty[] {
+function stripAndExtractParametersUiProperties(parameters: JsonType): UIProperty[]
+{
   const uis: UIProperty[] = [];
   const properties = parameters.properties;
-  if (properties !== undefined) {
-    for (const property in properties) {
+  if (properties !== undefined)
+  {
+    for (const property in properties)
+    {
       const childProperty = properties[property];
       const ui: JsonType = childProperty[uiPropertyName];
       delete childProperty[uiPropertyName];
-      if (ui !== undefined) {
+      if (ui !== undefined)
+      {
         uis.push({ property, ui });
       }
     }
@@ -43,22 +47,25 @@ function stripAndExtractParametersUiProperties(parameters: JsonType): UIProperty
 export function extractSchemaAndUiSchema(parameters: object): {
   schema: RJSFSchema,
   uiSchema: UiSchema
-} {
+}
+{
   const deepCopiedParameters: RJSFSchema = JSON.parse(JSON.stringify(parameters));
   const uiProperties = stripAndExtractParametersUiProperties(deepCopiedParameters);
   const uiSchema: UiSchema = {};
-  uiProperties.forEach((uiProperty: UIProperty) => {
+  uiProperties.forEach((uiProperty: UIProperty) =>
+  {
     uiSchema[uiProperty.property] = { "ui:options": uiProperty.ui };
   });
   return { schema: deepCopiedParameters, uiSchema };
 }
 
-function ErrorFallback({ error }) {
+function ErrorFallback({ error })
+{
   return (
     <div role="alert">
       Internal error: <span style={{ color: "red" }}>{error.message}</span>
     </div>
-  )
+  );
 }
 
 const Form = withTheme(MantineTheme);
@@ -67,36 +74,47 @@ export default function RjsfForm({
   initialFormData,
   schema,
   uiSchema,
-  onChange,
-}: RsfjFormType) {
+  onChange
+}: RsfjFormType)
+{
   const [formData, setFormData] = useState(initialFormData);
   const formRef = useRef(null);
 
-  useEffect(() => {
-    if (formData) {
+  useEffect(() =>
+  {
+    if (formData)
+    {
       onChange(formData);
     }
   }, [formData]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const firstInput = formRef?.current?.formElement?.current?.querySelector(
-      "input.mantine-TextInput-input, textarea",
+      "input.mantine-TextInput-input, textarea"
     ) as HTMLElement | null;
-    if (firstInput) {
-      setTimeout(() => {
+    if (firstInput)
+    {
+      setTimeout(() =>
+      {
         firstInput.focus();
       }, 100);
     }
   }, [formRef]);
 
-  function ensureSchemaDefaultValues(schema: RJSFSchema): RJSFSchema {
-    if (schema.type === "object" && schema.properties) {
-      for (const key in schema.properties) {
+  function ensureSchemaDefaultValues(schema: RJSFSchema): RJSFSchema
+  {
+    if (schema.type === "object" && schema.properties)
+    {
+      for (const key in schema.properties)
+      {
         const property: JsonType = schema.properties[key] as JsonType;
-        if (property.type === "boolean" && property.default === undefined) {
+        if (property.type === "boolean" && property.default === undefined)
+        {
           property.default = false;
         }
-        if (property.type === "object") {
+        if (property.type === "object")
+        {
           ensureSchemaDefaultValues(property);
         }
       }
@@ -107,7 +125,7 @@ export default function RjsfForm({
   const widgets: RegistryWidgetsType = {
     repository: RepositoryWidget,
     collection: CollectionWidget,
-    tags: TagsWidget,
+    tags: TagsWidget
   };
 
   return (

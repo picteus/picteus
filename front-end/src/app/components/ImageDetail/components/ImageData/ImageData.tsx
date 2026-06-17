@@ -27,31 +27,35 @@ type ImageDataType = {
   viewMode: ViewMode;
 };
 
-export default function ImageData({ image, viewMode }: ImageDataType) {
+export default function ImageData({ image, viewMode }: ImageDataType)
+{
   const [t] = useTranslation();
   const [repository, setRepository] = useState<Repository>(RepositoriesService.getRepositoryInformation(image.repositoryId));
   const [, addModal] = useActionModalContext();
   const sectionIds = { information: "information", tags: "tags", features: "features", metadata: "metadata" };
   const [accordionValue, setAccordionValue] = useState<string[]>(StorageService.getImageDetailTraits([sectionIds.information, sectionIds.tags, sectionIds.features]));
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     setRepository(RepositoriesService.getRepositoryInformation(image.repositoryId));
   }, [image]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     StorageService.setImageDetailTraits(accordionValue);
   }, [accordionValue]);
 
   type LabelAndValue = { label: ReactNode, value: ReactNode };
 
-  const information = useMemo<ReactElement []>(() => {
+  const information = useMemo<ReactElement []>(() =>
+  {
     const labelAndValues: LabelAndValue [] = [
       ...(image.parentId
         ? [
           {
             label: t("field.parent"),
-            value: <ImageItemWrapper imageId={image.parentId} edge={100} viewMode={viewMode} /> ,
-          },
+            value: <ImageItemWrapper imageId={image.parentId} edge={100} viewMode={viewMode}/>
+          }
         ]
         : []),
       {
@@ -62,35 +66,37 @@ export default function ImageData({ image, viewMode }: ImageDataType) {
             label={t("button.open")}
             position="right"
           >
-            <ActionIcon variant="default" onClick={() => {
+            <ActionIcon variant="default" onClick={() =>
+            {
               addModal({
-                title: <RepositoryTop repository={repository} onDeleted={() => {
-                }} />,
+                title: <RepositoryTop repository={repository} onDeleted={() =>
+                {
+                }}/>,
                 size: "m",
-                component: <RepositoryDetail repository={repository} />,
-              })
+                component: <RepositoryDetail repository={repository}/>
+              });
             }}>
-              <IconEye />
+              <IconEye/>
             </ActionIcon>
           </Tooltip>
         </Flex>
       },
       {
         label: t("field.createdOn"),
-        value: <FormatedDate timestamp={image.fileDates.creationDate}/>,
+        value: <FormatedDate timestamp={image.fileDates.creationDate}/>
       },
       {
         label: t("field.modifiedOn"),
-        value: <FormatedDate timestamp={image.fileDates.modificationDate}/>,
+        value: <FormatedDate timestamp={image.fileDates.modificationDate}/>
       },
       ...(image.sourceUrl
         ? [
           {
             label: t("field.sourceUrl"),
-            value: <ExternalLink url={image.sourceUrl} type="link" />
-          },
+            value: <ExternalLink url={image.sourceUrl} type="link"/>
+          }
         ]
-        : []),
+        : [])
     ];
     return labelAndValues.map((information, index) => (
       <TableComponent
@@ -101,19 +107,21 @@ export default function ImageData({ image, viewMode }: ImageDataType) {
     ));
   }, [image, repository]);
 
-  const tags = useMemo<ReactElement>(()=> (<TableComponent label="" value={<Group gap="xs">
+  const tags = useMemo<ReactElement>(() => (<TableComponent label="" value={<Group gap="xs">
       {image.tags.map((imageTag, index) => (
-        <ImageTag key={`tag-${index}`} tag={imageTag} kind="badge" />
+        <ImageTag key={`tag-${index}`} tag={imageTag} kind="badge"/>
       ))}
-    </Group>} />
+    </Group>}/>
   ), [image]);
 
-  const sortedFeatureTypes:ImageFeatureType[] = [ImageFeatureType.Recipe, ImageFeatureType.Annotation, ImageFeatureType.Description, ImageFeatureType.Caption, ImageFeatureType.Comment, ImageFeatureType.Metadata, ImageFeatureType.Identity, ImageFeatureType.Other];
+  const sortedFeatureTypes: ImageFeatureType[] = [ImageFeatureType.Recipe, ImageFeatureType.Annotation, ImageFeatureType.Description, ImageFeatureType.Caption, ImageFeatureType.Comment, ImageFeatureType.Metadata, ImageFeatureType.Identity, ImageFeatureType.Other];
 
-  const features = useMemo(() =>(image.features.sort((feature1: ExtensionImageFeature, feature2: ExtensionImageFeature)=> {
+  const features = useMemo(() => (image.features.sort((feature1: ExtensionImageFeature, feature2: ExtensionImageFeature) =>
+  {
     const index1 = sortedFeatureTypes.indexOf(feature1.type);
     const index2 = sortedFeatureTypes.indexOf(feature2.type);
-    if (index1 !== index2) {
+    if (index1 !== index2)
+    {
       return index1 - index2;
     }
     return 0;
@@ -123,18 +131,22 @@ export default function ImageData({ image, viewMode }: ImageDataType) {
         <ExtensionIcon idOrExtension={imageFeature.id} size="sm"/>
         {`${capitalizeText(imageFeature.type)} ${imageFeature.name === undefined ? "" : `(${imageFeature.name})`}`}
       </Flex>}
-      value={<ImageFeature feature={imageFeature} viewMode={viewMode} />}
+      value={<ImageFeature feature={imageFeature} viewMode={viewMode}/>}
     />
   ))), [image]);
 
-  const metadata = useMemo(() => {
+  const metadata = useMemo(() =>
+  {
     const metadata: PicteusImageMetadata = image.metadata;
     type KeyType = "all" | "exif" | "icc" | "iptc" | "xmp" | "tiffTagPhotoshop" | "others";
     const keys: KeyType[] = ["all", "exif", "icc", "iptc", "xmp", "tiffTagPhotoshop", "others"];
     // We exclude the empty metadata entities
-    const labelAndValues: LabelAndValue [] = keys.map(key => ({ key, value: metadata[key] })).filter(entry => entry.value !== undefined && entry.value !== "{}").map(entry => ({
+    const labelAndValues: LabelAndValue [] = keys.map(key => ({
+      key,
+      value: metadata[key]
+    })).filter(entry => entry.value !== undefined && entry.value !== "{}").map(entry => ({
       label: entry.key,
-      value: <ImageMetadata metadata={metadata} entry={entry.key} />
+      value: <ImageMetadata metadata={metadata} entry={entry.key}/>
     }));
     return labelAndValues.map((labelAndValue, index) => (
       <TableComponent
@@ -173,5 +185,5 @@ export default function ImageData({ image, viewMode }: ImageDataType) {
         </Accordion.Item>
       ))}
     </Accordion>)
-  , [sections, accordionValue]);
+    , [sections, accordionValue]);
 }

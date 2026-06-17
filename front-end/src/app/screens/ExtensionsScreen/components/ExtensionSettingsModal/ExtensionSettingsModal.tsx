@@ -13,7 +13,8 @@ import { extractSchemaAndUiSchema, RjsfForm } from "app/components";
 
 const propertiesName = "properties";
 
-function hasSettings(extension: Extension, extensionSettings: ExtensionSettings): boolean  {
+function hasSettings(extension: Extension, extensionSettings: ExtensionSettings): boolean
+{
   return extension?.manifest.settings?.[propertiesName] !== undefined && Object.keys(extension?.manifest.settings?.[propertiesName]).length > 0 && extensionSettings !== undefined;
 }
 
@@ -24,56 +25,73 @@ type ExtensionSettingsModalType = {
 
 export default function ExtensionSettingsModal({
   extension,
-  onSuccess,
-}: ExtensionSettingsModalType) {
+  onSuccess
+}: ExtensionSettingsModalType)
+{
   const [t] = useTranslation();
   const [loading, setLoading] = useState<boolean>(false);
   const [extensionSettings, setExtensionSettings] = useState<ExtensionSettings>();
 
-  async function load() {
+  async function load()
+  {
     setLoading(true);
-    try {
+    try
+    {
       const settings = await ExtensionsService.getSettings({
-        id: extension.manifest.id,
+        id: extension.manifest.id
       });
 
       setExtensionSettings(settings);
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallError(error, t("extensionSettingsModal.errorLoading"));
-    } finally {
+    }
+    finally
+    {
       setLoading(false);
     }
   }
-  async function handleOnSaveSettings() {
+
+  async function handleOnSaveSettings()
+  {
     setLoading(true);
-    try {
+    try
+    {
       await ExtensionsService.setSettings({
         id: extension.manifest.id,
-        extensionSettings,
+        extensionSettings
       });
       NotificationsService.success(t("extensionSettingsModal.successSaving"));
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallError(error, t("extensionSettingsModal.errorSaving"));
-    } finally {
+    }
+    finally
+    {
       onSuccess(extensionSettings);
       setLoading(false);
     }
   }
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     void load();
   }, []);
 
-  function renderForm() {
-    if (hasSettings(extension, extensionSettings) === false) {
+  function renderForm()
+  {
+    if (hasSettings(extension, extensionSettings) === false)
+    {
       return undefined;
     }
     const { schema, uiSchema } = extractSchemaAndUiSchema(extension?.manifest.settings);
     return <>
-      <Alert mb="sm" icon={<IconInfoCircle />}>
+      <Alert mb="sm" icon={<IconInfoCircle/>}>
         <Trans
           i18nKey="extensionSettingsModal.warning"
-          components={{ strong: <b /> }}
+          components={{ strong: <b/> }}
           values={{ name: extension.manifest.id }}
         />
       </Alert>
@@ -95,14 +113,16 @@ export default function ExtensionSettingsModal({
       </Flex>
     </>;
   }
-  function renderError() {
+
+  function renderError()
+  {
     return (
       hasSettings(extension, extensionSettings) === false && (
         <>
-          <Alert color="red" mb="sm" icon={<IconCircleX />}>
+          <Alert color="red" mb="sm" icon={<IconCircleX/>}>
             <Trans
               i18nKey="extensionSettingsModal.error"
-              components={{ strong: <b /> }}
+              components={{ strong: <b/> }}
               values={{ name: extension?.manifest.id }}
             />
           </Alert>

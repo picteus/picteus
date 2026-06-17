@@ -17,7 +17,7 @@ const initialValues: RepositoryApiRepositoryCreateRequest = {
   url: "",
   name: "",
   comment: undefined,
-  watch: undefined,
+  watch: undefined
 };
 
 type AddOrUpdateRepositoryType = {
@@ -25,7 +25,8 @@ type AddOrUpdateRepositoryType = {
   onSuccess: () => void;
 };
 
-export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUpdateRepositoryType) {
+export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUpdateRepositoryType)
+{
   const [t] = useTranslation();
   const openFolderPicker = useFolderPicker();
 
@@ -36,43 +37,55 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
       url: repository.url,
       name: repository.name,
       comment: repository.comment ?? undefined,
-      watch: undefined,
+      watch: undefined
     } : initialValues,
     validate: {
       name: Validators.isNotEmpty,
       url: (value) =>
-        value.startsWith("file://") ? null : t("fieldError.badFileUrl"),
-    },
+        value.startsWith("file://") ? null : t("fieldError.badFileUrl")
+    }
   });
   const [loading, setLoading] = useState<boolean>(false);
 
-  async function handleSubmit(values: RepositoryApiRepositoryCreateRequest) {
+  async function handleSubmit(values: RepositoryApiRepositoryCreateRequest)
+  {
     setLoading(true);
-    try {
-      if (repository) {
+    try
+    {
+      if (repository)
+      {
         await RepositoriesService.update({
           id: repository.id,
           name: values.name,
-          comment: values.comment,
+          comment: values.comment
         });
-      } else {
+      }
+      else
+      {
         await RepositoriesService.add(values);
       }
-      NotificationsService.success(t(`addOrUpdateRepositoryModal.${repository ? "successUpdate" : "successAdd"}`))
+      NotificationsService.success(t(`addOrUpdateRepositoryModal.${repository ? "successUpdate" : "successAdd"}`));
       onSuccess();
-    } catch (error) {
-      NotificationsService.apiCallI18nError(error, `addOrUpdateRepositoryModal.${repository ? 'errorUpdate' : 'errorAdd'}`);
-    } finally {
+    }
+    catch (error)
+    {
+      NotificationsService.apiCallI18nError(error, `addOrUpdateRepositoryModal.${repository ? "errorUpdate" : "errorAdd"}`);
+    }
+    finally
+    {
       setLoading(false);
     }
   }
 
-  async function handleOnClickBrowseFolder() {
+  async function handleOnClickBrowseFolder()
+  {
     const folderUrl = await openFolderPicker();
-    if (folderUrl) {
+    if (folderUrl)
+    {
       StorageService.setLastFolderLocation(FolderTypes.REPOSITORY, folderUrl);
       const currentRepositoryName = form.getValues().name;
-      if (!currentRepositoryName || currentRepositoryName?.trim() === "") {
+      if (!currentRepositoryName || currentRepositoryName?.trim() === "")
+      {
         const lastUrlSegment = folderUrl
           .split(detectPlatformFromPath(folderUrl) === "windows" ? "\\" : "/")
           .filter((segment) => segment !== "")
@@ -101,7 +114,7 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
               variant="default"
               size="lg"
             >
-              <IconFolderSearch stroke={1.5} />
+              <IconFolderSearch stroke={1.5}/>
             </ActionIcon>
           ) : undefined
         }

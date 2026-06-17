@@ -14,16 +14,20 @@ const ImagesSelectedContext = createContext<{
   clearSelectedImages: () => void
 } | undefined>(undefined);
 
-export function useImagesSelectedContext() {
+export function useImagesSelectedContext()
+{
   return useContext(ImagesSelectedContext);
 }
 
-export function ImagesSelectedProvider({ children }) {
+export function ImagesSelectedProvider({ children })
+{
   const [selectedImages, setSelectedImages] = useState<ImageOrSummary[]>([]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const imagesIds = StorageService.getSelectedImagesIds();
-    if (imagesIds.length > 0) {
+    if (imagesIds.length > 0)
+    {
       ImageService.searchImages({
         filter: {
           origin: {
@@ -35,27 +39,33 @@ export function ImagesSelectedProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     StorageService.setSelectedImageIds(selectedImages.map(image => image.id));
   }, [selectedImages]);
 
-  const toggleSelectedImage = useCallback((image: ImageSummary)=> {
-    if (selectedImages.find((anImage) => anImage.id === image.id)) {
+  const toggleSelectedImage = useCallback((image: ImageSummary) =>
+  {
+    if (selectedImages.find((anImage) => anImage.id === image.id))
+    {
       setSelectedImages(selectedImages.filter((anImage) => anImage.id !== image.id));
     }
-    else {
+    else
+    {
       setSelectedImages([...selectedImages, image]);
     }
   }, [selectedImages]);
 
   const isSelectedImage = useCallback((image: ImageSummary) => selectedImages.find((anImage) => anImage.id === image.id) !== undefined, [selectedImages]);
 
-  const clearSelectedImages = useCallback(() => {
+  const clearSelectedImages = useCallback(() =>
+  {
     setSelectedImages([]);
   }, []);
 
   return (
-    <ImagesSelectedContext.Provider value={{ selectedImages, toggleSelectedImage, isSelectedImage, clearSelectedImages }}>
+    <ImagesSelectedContext.Provider
+      value={{ selectedImages, toggleSelectedImage, isSelectedImage, clearSelectedImages }}>
       {children}
     </ImagesSelectedContext.Provider>
   );

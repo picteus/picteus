@@ -31,13 +31,14 @@ import style from "./ImagesView.module.scss";
 
 
 type ImagesViewType = {
-  viewData: ViewTabDataType | {viewMode: ViewMode, images: ImageWithCaption[]};
+  viewData: ViewTabDataType | { viewMode: ViewMode, images: ImageWithCaption[] };
   isDefault: boolean;
   controlBarChildren?: ReactNode;
   onEmptyResults: () => ReactElement<typeof EmptyResults>;
 };
 
-export default function ImagesView({ viewData, isDefault, controlBarChildren, onEmptyResults }: ImagesViewType){
+export default function ImagesView({ viewData, isDefault, controlBarChildren, onEmptyResults }: ImagesViewType)
+{
   const imagesContentRef = useRef<ImagesContentRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -61,8 +62,10 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
 
-  useEffect(() => {
-    if ("images" in viewData) {
+  useEffect(() =>
+  {
+    if ("images" in viewData)
+    {
       setImages(viewData.images);
       setFilterOrCollectionId({
         filter: {
@@ -72,30 +75,39 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
           }
         }
       });
-    } else {
+    }
+    else
+    {
       setImages(undefined);
     }
 
-    if ("filterOrCollectionId" in viewData) {
+    if ("filterOrCollectionId" in viewData)
+    {
       setFilterOrCollectionId(viewData.filterOrCollectionId);
     }
 
-    if ("mode" in viewData) {
+    if ("mode" in viewData)
+    {
       setViewMode(viewData.mode);
-    } else if ("viewMode" in viewData) {
+    }
+    else if ("viewMode" in viewData)
+    {
       setViewMode(viewData.viewMode);
     }
 
     handleOnRefresh();
   }, [viewData, setFilterOrCollectionId, setViewMode]);
 
-  const handleOnRefresh = useCallback(() => {
+  const handleOnRefresh = useCallback(() =>
+  {
     setRefreshTrigger(previousRefreshTrigger => previousRefreshTrigger + 1);
     setDisplayRefreshAlert(false);
   }, []);
 
-  const onFetchData = useCallback((searchRange: SearchRange): Promise<ImageExplorerDataType> => {
-    if (images !== undefined) {
+  const onFetchData = useCallback((searchRange: SearchRange): Promise<ImageExplorerDataType> =>
+  {
+    if (images !== undefined)
+    {
       return Promise.resolve({ total: images.length, images });
     }
     return ImageService.searchImages({
@@ -105,12 +117,14 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
         take: searchRange.take,
         skip: searchRange.skip
       }
-    }).then((result) => {
+    }).then((result) =>
+    {
       return Promise.resolve<ImageExplorerDataType>({
         total: result.totalCount,
         images: result.items
       });
-    }).catch((error) => {
+    }).catch((error) =>
+    {
       NotificationsService.apiCallError(error, "Can't fetch images");
       return Promise.resolve<ImageExplorerDataType>({
         total: 0,
@@ -119,52 +133,73 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
     });
   }, [filterOrCollectionId, images]);
 
-  useEffect(() => {
-    if (event === undefined) {
+  useEffect(() =>
+  {
+    if (event === undefined)
+    {
       return;
     }
-    if (event.channel === ChannelEnum.IMAGE_CREATED || event.channel === ChannelEnum.IMAGE_UPDATED || event.channel === ChannelEnum.IMAGE_DELETED) {
-      if (autoReloadImagesViews) {
-        if (imagesContentRef.current) {
+    if (event.channel === ChannelEnum.IMAGE_CREATED || event.channel === ChannelEnum.IMAGE_UPDATED || event.channel === ChannelEnum.IMAGE_DELETED)
+    {
+      if (autoReloadImagesViews)
+      {
+        if (imagesContentRef.current)
+        {
           const imageId = EventService.computeEventEntityId<string>(event);
-          if (event.channel === ChannelEnum.IMAGE_DELETED) {
+          if (event.channel === ChannelEnum.IMAGE_DELETED)
+          {
             imagesContentRef.current.onImageDeleted(imageId);
           }
-          else if (event.channel === ChannelEnum.IMAGE_UPDATED) {
-            ImageService.get({id: imageId}).then(image=>imagesContentRef.current.onImageUpdated(image)).catch(NotificationsService.apiCallError);
+          else if (event.channel === ChannelEnum.IMAGE_UPDATED)
+          {
+            ImageService.get({ id: imageId }).then(image => imagesContentRef.current.onImageUpdated(image)).catch(NotificationsService.apiCallError);
           }
-          else {
+          else
+          {
             handleOnRefresh();
           }
         }
       }
-      else {
+      else
+      {
         setDisplayRefreshAlert(true);
       }
     }
   }, [event, autoReloadImagesViews, handleOnRefresh]);
 
-  const handleOnFilterOrCollectionId = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId) => {
+  const handleOnFilterOrCollectionId = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId) =>
+  {
     setFilterOrCollectionId(updatedFilterOrCollectionId);
-    if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(filterOrCollectionId)) {
-      if (isDefault === true) {
-        StorageService.setMainViewTabData({ mode: viewMode, pinnable, filterOrCollectionId: updatedFilterOrCollectionId });
+    if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(filterOrCollectionId))
+    {
+      if (isDefault === true)
+      {
+        StorageService.setMainViewTabData({
+          mode: viewMode,
+          pinnable,
+          filterOrCollectionId: updatedFilterOrCollectionId
+        });
       }
       handleOnRefresh();
     }
   }, [filterOrCollectionId, viewMode, pinnable, handleOnRefresh]);
 
-  const handleOnViewMode = useCallback((updatedViewMode: ViewMode) => {
+  const handleOnViewMode = useCallback((updatedViewMode: ViewMode) =>
+  {
     setViewMode(updatedViewMode);
-    if (isDefault === true) {
+    if (isDefault === true)
+    {
       StorageService.setMainViewTabData({ mode: updatedViewMode, pinnable, filterOrCollectionId });
     }
     handleOnRefresh();
   }, [pinnable, filterOrCollectionId, handleOnRefresh]);
 
-  const handleOnPin = useMemo(() => {
-    if (pinnable) {
-      return () => {
+  const handleOnPin = useMemo(() =>
+  {
+    if (pinnable)
+    {
+      return () =>
+      {
         addTab({
           content: { title: "New tab", description: "" },
           data: { mode: "masonry", pinnable: true, filterOrCollectionId }

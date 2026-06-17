@@ -1,3 +1,4 @@
-export default function TestsScreen() {
-  return  (<></>);
+export default function TestsScreen()
+{
+  return (<></>);
 }

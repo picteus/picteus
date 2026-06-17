@@ -25,17 +25,18 @@ type ControllerBarType = {
 };
 
 export default function ControllerBar({
-                                        children,
-                                        withFilter,
-                                        initialFilterOrCollectionId,
-                                        onFilterOrCollectionId,
-                                        withRefreshButton,
-                                        displayRefreshAlert,
-                                        onRefresh,
-                                        viewMode,
-                                        onViewMode,
-                                        onPin,
-                                      }: ControllerBarType) {
+  children,
+  withFilter,
+  initialFilterOrCollectionId,
+  onFilterOrCollectionId,
+  withRefreshButton,
+  displayRefreshAlert,
+  onRefresh,
+  viewMode,
+  onViewMode,
+  onPin
+}: ControllerBarType)
+{
   const [t] = useTranslation();
   const withTable = useMemo<boolean>(() => Math.random() > 1, []);
   const [currentCollection, setCurrentCollection] = useState<Collection | undefined>();
@@ -43,30 +44,41 @@ export default function ControllerBar({
   const collectionsBarRef = useRef<CollectionsBarRef>(null);
   const filtersBarRef = useRef<FiltersBarRef>(null);
 
-  const handleOnCollection = useCallback((collection: Collection) => {
+  const handleOnCollection = useCallback((collection: Collection) =>
+  {
     setCurrentCollection(collection);
     filtersBarRef.current?.setFilter(collection.filter);
     onFilterOrCollectionId({ collectionId: collection.id });
   }, [onFilterOrCollectionId]);
 
-  const handleOnFilterOrCollectionId = useCallback((filterOrCollectionId: FilterOrCollectionId) => {
-    if ("filter" in filterOrCollectionId) {
-      if (currentCollection !== undefined && JSON.stringify(SearchFilterFromJSON(filterOrCollectionId.filter)) === JSON.stringify(SearchFilterFromJSON(currentCollection.filter))) {
+  const handleOnFilterOrCollectionId = useCallback((filterOrCollectionId: FilterOrCollectionId) =>
+  {
+    if ("filter" in filterOrCollectionId)
+    {
+      if (currentCollection !== undefined && JSON.stringify(SearchFilterFromJSON(filterOrCollectionId.filter)) === JSON.stringify(SearchFilterFromJSON(currentCollection.filter)))
+      {
         onFilterOrCollectionId({ collectionId: currentCollection.id });
-      } else {
+      }
+      else
+      {
         onFilterOrCollectionId(filterOrCollectionId);
       }
-    } else {
+    }
+    else
+    {
       onFilterOrCollectionId(filterOrCollectionId);
     }
   }, [currentCollection, onFilterOrCollectionId]);
 
-  const handleOnClearAll = useCallback(() => {
+  const handleOnClearAll = useCallback(() =>
+  {
     collectionsBarRef.current?.clearCollection();
   }, []);
 
-  function handleOnRefresh() {
-    if (onRefresh) {
+  function handleOnRefresh()
+  {
+    if (onRefresh)
+    {
       onRefresh();
     }
   }
@@ -92,19 +104,19 @@ export default function ControllerBar({
           <Tooltip label={t("imagesScreen.masonryView")}>
             <ActionIcon size="lg" variant={viewMode === "masonry" ? "filled" : "default"}
                         onClick={() => onViewMode("masonry")}>
-              <IconLayoutDashboard stroke={1.2} />
+              <IconLayoutDashboard stroke={1.2}/>
             </ActionIcon>
           </Tooltip>
           <Tooltip label={t("imagesScreen.galleryView")}>
             <ActionIcon size="lg" variant={viewMode === "gallery" ? "filled" : "default"}
                         onClick={() => onViewMode("gallery")}>
-              <IconPhoto stroke={1.2} />
+              <IconPhoto stroke={1.2}/>
             </ActionIcon>
           </Tooltip>
           {withTable && <Tooltip label={t("imagesScreen.detailView")}>
             <ActionIcon size="lg" variant={viewMode === "table" ? "filled" : "default"}
                         onClick={() => onViewMode("table")}>
-              <IconListDetails stroke={1.2} />
+              <IconListDetails stroke={1.2}/>
             </ActionIcon>
           </Tooltip>
           }
@@ -115,7 +127,7 @@ export default function ControllerBar({
         />}
         {onPin && <Tooltip label={t("button.pin")}>
           <ActionIcon size="lg" variant={"default"} onClick={onPin}>
-            <IconPin stroke={1.2} />
+            <IconPin stroke={1.2}/>
           </ActionIcon>
         </Tooltip>}
       </Flex>

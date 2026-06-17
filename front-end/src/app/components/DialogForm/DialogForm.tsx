@@ -36,29 +36,29 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
     switch (dialog.type)
     {
       case "error":
-        return { color: "red", icon: <IconCircleX /> };
+        return { color: "red", icon: <IconCircleX/> };
       case "info":
-        return { color: "blue", icon: <IconInfoCircle /> };
+        return { color: "blue", icon: <IconInfoCircle/> };
       case "question":
-        return { color: "teal", icon: <IconQuestionMark /> };
+        return { color: "teal", icon: <IconQuestionMark/> };
     }
   }
 
   const content = dialog.frame?.content;
   return (
     <Flex direction="column" gap="xs">
-      <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }} /></Alert>
+      <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }}/></Alert>
       {dialog.details &&
         <CopyText value={dialog.details}>
           <Text size="md" mt={10} dangerouslySetInnerHTML={{ __html: dialog.details }}/>
         </CopyText>}
-      {imageIds && <ImagesCollection imageIds={imageIds} />}
+      {imageIds && <ImagesCollection imageIds={imageIds}/>}
       {dialog.frame && <iframe className={style.iframe} style={{ height: `${dialog.frame.height}vh` }} {...{
         src: "url" in content ? content.url : undefined,
         srcDoc: "html" in content ? content.html : undefined
       }} />}
       <Flex mt="md" align="center" justify="flex-end" gap={10}>
-        <Buttons />
+        <Buttons/>
       </Flex>
     </Flex>
   );

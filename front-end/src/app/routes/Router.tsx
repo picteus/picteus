@@ -19,22 +19,28 @@ import {
 import { Layout } from "app/layout";
 
 
-export default function AppRouter() {
+export default function AppRouter()
+{
   return (
     <HashRouter>
-      <RouterContent />
+      <RouterContent/>
     </HashRouter>
   );
 }
 
-interface Route {
+interface Route
+{
   key: string;
+
   path: string;
+
   layout: JSX.Element;
+
   alwaysRender: boolean;
 }
 
-function RouterContent() {
+function RouterContent()
+{
   const [additionalUi] = useAdditionalUiContext();
   const location = useLocation();
   const navigate = useNavigate();
@@ -43,15 +49,18 @@ function RouterContent() {
   const hasBeenRendered = useRef<{ [key: string]: boolean }>({});
   const scrollPositions = useRef<{ [key: string]: number }>({});
 
-  useEffect(() => {
-    const handleScroll = () => {
+  useEffect(() =>
+  {
+    const handleScroll = () =>
+    {
       scrollPositions.current[location.pathname] = window.scrollY;
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [location.pathname]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const savedScrollPosition = scrollPositions.current[location.pathname] || 0;
     const rootElement = document.documentElement;
     const originalScrollBehavior = rootElement.style.scrollBehavior;
@@ -60,17 +69,21 @@ function RouterContent() {
     rootElement.style.scrollBehavior = originalScrollBehavior;
   }, [location.pathname]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     hasBeenRendered.current[location.pathname] = true;
   }, [location.pathname]);
 
-  function renderLayout(component: FunctionComponent, props?: object) {
+  function renderLayout(component: FunctionComponent, props?: object)
+  {
     const Component: FunctionComponent = component;
     return <Component {...props} />;
   }
 
-  const mainRoutes = useMemo<Route []>(()=> {
-    return Object.entries(ROUTES).map(([key, path]) => {
+  const mainRoutes = useMemo<Route []>(() =>
+  {
+    return Object.entries(ROUTES).map(([key, path]) =>
+    {
       const ComponentMap: Record<string, FunctionComponent> = {
         home: ImagesScreen,
         collections: CollectionsScreen,
@@ -78,23 +91,27 @@ function RouterContent() {
         extensions: ExtensionsScreen,
         activity: ActivityScreen,
         settings: SettingsScreen,
-        test: TestsScreen,
+        test: TestsScreen
       };
-      return {key, path, layout: renderLayout(ComponentMap[key]), alwaysRender: false};
-    })
-  }, [additionalUi, location.pathname]);
-
-  const additionalRoutes = useMemo<Route []>(() => {
-    return additionalUi.sidebar?.filter(element => element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === false).map((element: AdditionalUi) => {
-      const path = computeExtensionSidebarRoute(element.uuid);
-      return { key: element.uuid, path, layout: renderLayout(SidebarAnchorScreen, { element }), alwaysRender: true};
+      return { key, path, layout: renderLayout(ComponentMap[key]), alwaysRender: false };
     });
   }, [additionalUi, location.pathname]);
 
-  useEffect(() => {
+  const additionalRoutes = useMemo<Route []>(() =>
+  {
+    return additionalUi.sidebar?.filter(element => element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === false).map((element: AdditionalUi) =>
+    {
+      const path = computeExtensionSidebarRoute(element.uuid);
+      return { key: element.uuid, path, layout: renderLayout(SidebarAnchorScreen, { element }), alwaysRender: true };
+    });
+  }, [additionalUi, location.pathname]);
+
+  useEffect(() =>
+  {
     const newRoutes = mainRoutes.concat(additionalRoutes);
     setRoutes(newRoutes);
-    if (newRoutes.find(route => route.path === location.pathname) === undefined) {
+    if (newRoutes.find(route => route.path === location.pathname) === undefined)
+    {
       // In case the current navigation path does not match any route, we fall back to the "home" route
       navigate(ROUTES.home);
     }
@@ -103,7 +120,8 @@ function RouterContent() {
   return (
     <Layout>
       <>
-        {routes.map((route) => {
+        {routes.map((route) =>
+        {
           const isActive = location.pathname === route.path;
           return (<div
             key={route.key}

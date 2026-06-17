@@ -23,7 +23,8 @@ type ClosestEmbeddingsImagesType = {
   viewMode: ViewMode;
 };
 
-export default function ClosestEmbeddingsImages({  extensionId, image, viewMode}: ClosestEmbeddingsImagesType) {
+export default function ClosestEmbeddingsImages({ extensionId, image, viewMode }: ClosestEmbeddingsImagesType)
+{
   const [t] = useTranslation();
   const [loading, setLoading] = useState<boolean>(false);
   const [images, setImages] = useState<ImageWithCaption[]>([]);
@@ -32,62 +33,71 @@ export default function ClosestEmbeddingsImages({  extensionId, image, viewMode}
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
 
   const initialValues: ClosestEmbeddingsImagesFormPayload = {
-    count: initialResultsCount,
+    count: initialResultsCount
   };
 
   const form = useForm({
     mode: "uncontrolled",
     initialValues,
     validate: {
-      count: Validators.isNotEmpty,
-    },
+      count: Validators.isNotEmpty
+    }
   });
 
-  async function handleSubmit(values: ClosestEmbeddingsImagesFormPayload) {
+  async function handleSubmit(values: ClosestEmbeddingsImagesFormPayload)
+  {
     StorageService.setClosestImagesResultsCount(values.count);
     const parameters: ImageApiImageClosestImagesRequest = {
       count: values.count,
       extensionId,
-      id: image.id,
+      id: image.id
     };
     void load(parameters);
   }
 
-  async function load(parameters: ImageApiImageClosestImagesRequest) {
+  async function load(parameters: ImageApiImageClosestImagesRequest)
+  {
     setLoading(true);
 
-    try {
+    try
+    {
       const imageDistances = await ImageService.getClosestImages(parameters);
       setImages(
         imageDistances
           .sort((a, b) => a.distance - b.distance)
           .map((imageDistance) => ({
             ...imageDistance.image,
-            caption: <CaptionDistance distance={imageDistance.distance} />,
-          })),
+            caption: <CaptionDistance distance={imageDistance.distance}/>
+          }))
       );
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallError(error, "An error occurred while trying to find closes images");
-    } finally {
+    }
+    finally
+    {
       setLoading(false);
     }
   }
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     void load({
       count: initialResultsCount,
       extensionId,
-      id: image.id,
+      id: image.id
     });
   }, []);
 
-  function renderForm() {
+  function renderForm()
+  {
     const edge = 100;
     return (<Group>
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Flex align="end" gap={20}>
           <Input.Wrapper label={t("field.source")}>
-            <ImageThumbnail imageOrUrl={image} width={edge} height={edge} />
+            <ImageThumbnail imageOrUrl={image} width={edge} height={edge}/>
           </Input.Wrapper>
           <NumberInput
             ref={focusTrapRef}
@@ -106,7 +116,8 @@ export default function ClosestEmbeddingsImages({  extensionId, image, viewMode}
     </Group>);
   }
 
-  function renderContent() {
+  function renderContent()
+  {
     return (<ImagesView
       viewData={{ viewMode, images }}
       isDefault={false}
@@ -121,10 +132,10 @@ export default function ClosestEmbeddingsImages({  extensionId, image, viewMode}
 
   return (
     <>
-      <Alert icon={<IconInfoCircle />} m={10}>
+      <Alert icon={<IconInfoCircle/>} m={10}>
         {t("closestEmbeddingsImagesModal.description")}
       </Alert>
-        <Flex align="center" justify="center">{renderContent()}</Flex>
+      <Flex align="center" justify="center">{renderContent()}</Flex>
     </>
   );
 }

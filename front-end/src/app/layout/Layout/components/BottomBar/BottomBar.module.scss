@@ -1,9 +1,10 @@
-.bottomBar {
+.bottomBar
+{
   position: fixed;
   bottom: 0;
-  height : $bottom-bar-width;
+  height: $bottom-bar-width;
   left: $left-sidebar-width;
   right: $right-sidebar-width;
-  padding : 0 10px;
+  padding: 0 10px;
   border-top: solid 1px var(--override-divider-color);
 }

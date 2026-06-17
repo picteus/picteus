@@ -5,7 +5,9 @@ import { ImagesSelectedProvider } from "./ImagesSelectedContext.tsx";
 import { AdditionalUiProvider } from "./AdditionalUiContext.tsx";
 import { ImagesTabsProvider } from "./ImagesTabsContext.tsx";
 
-export default function Providers({ children }) {
+
+export default function Providers({ children })
+{
   return (
     <CommandSocketProvider>
       <EventSocketProvider>

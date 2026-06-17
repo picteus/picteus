@@ -8,14 +8,16 @@ import { SelectedImagesHover } from "./components/index.ts";
 import style from "./Layout.module.scss";
 
 
-export default function Layout({ children }: { children: ReactNode }) {
+export default function Layout({ children }: { children: ReactNode })
+{
   const containerRef = useRef<HTMLDivElement>(null);
-  const contextualComponents = useCallback(() => {
+  const contextualComponents = useCallback(() =>
+  {
     return (
       <>
         <Modals/>
-        <IntentCenter />
-        <NotificationCenter />
+        <IntentCenter/>
+        <NotificationCenter/>
       </>
     );
   }, []);
@@ -24,16 +26,16 @@ export default function Layout({ children }: { children: ReactNode }) {
     <>
       {contextualComponents()}
       <div ref={containerRef} className={style.mainContainer}>
-        <Sidebar />
+        <Sidebar/>
         <div id="content-wrapper" className={style.contentWrapper}>
           <div className={style.mainContent}>{children}</div>
-          <BottomBar containerRef={containerRef} />
+          <BottomBar containerRef={containerRef}/>
         </div>
         <div className={style.rightSidebar}>
           <Flex gap={20} direction="column">
-            <Notifications />
+            <Notifications/>
             <SelectedImagesHover/>
-            <GeneralCommands />
+            <GeneralCommands/>
           </Flex>
         </div>
       </div>

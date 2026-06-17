@@ -7,7 +7,8 @@ type TableComponentType = {
   value: ReactNode;
 };
 
-export default function TableComponent({ label, value }: TableComponentType) {
+export default function TableComponent({ label, value }: TableComponentType)
+{
   return (
     <Table.Tr>
       <Table.Td style={{ width: "110px" }}>

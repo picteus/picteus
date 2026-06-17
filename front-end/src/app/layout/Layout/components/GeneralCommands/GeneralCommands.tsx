@@ -12,7 +12,8 @@ import { ExtensionsService } from "app/services";
 import { Common, MenuItemEntry, TextToImages } from "app/components";
 
 
-export default function GeneralCommands() {
+export default function GeneralCommands()
+{
   const callCommand = useExtensionCommand();
   const [, addModal] = useActionModalContext();
   const { eventStore } = useEventSocket();
@@ -21,47 +22,55 @@ export default function GeneralCommands() {
   const [t] = useTranslation();
 
   const [extensionsProcessCommands, setExtensionsProcessCommands] = useState(
-    ExtensionsService.getExtensionsCommands([CommandEntity.Process]),
+    ExtensionsService.getExtensionsCommands([CommandEntity.Process])
   );
 
   const [
     extensionsWithTextEmbeddingsCapability,
-    setExtensionsWithTextEmbeddingsCapability,
+    setExtensionsWithTextEmbeddingsCapability
   ] = useState(
     ExtensionsService.getExtensionsWithCapability(
-      ManifestCapabilityId.TextEmbeddings,
-    ),
+      ManifestCapabilityId.TextEmbeddings
+    )
   );
 
-  useEffect(() => {
-    if (ExtensionsService.requiresCommandReload(event) === true) {
-      void ExtensionsService.fetchAll().then(() => {
+  useEffect(() =>
+  {
+    if (ExtensionsService.requiresCommandReload(event) === true)
+    {
+      void ExtensionsService.fetchAll().then(() =>
+      {
         setExtensionsProcessCommands(
-          ExtensionsService.getExtensionsCommands([CommandEntity.Process]),
+          ExtensionsService.getExtensionsCommands([CommandEntity.Process])
         );
         setExtensionsWithTextEmbeddingsCapability(
           ExtensionsService.getExtensionsWithCapability(
-            ManifestCapabilityId.TextEmbeddings,
-          ),
+            ManifestCapabilityId.TextEmbeddings
+          )
         );
       });
     }
   }, [event]);
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
+  useEffect(() =>
+  {
+    function handleKeyDown(event: KeyboardEvent)
+    {
       if (
         event.shiftKey &&
         event.metaKey &&
         (event.key === "F" || event.key === "f")
-      ) {
+      )
+      {
         void handleOnClickTextToImage(
-          extensionsWithTextEmbeddingsCapability[0].manifest.id,
+          extensionsWithTextEmbeddingsCapability[0].manifest.id
         );
       }
     }
+
     document.addEventListener("keydown", handleKeyDown);
-    return () => {
+    return () =>
+    {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [extensionsWithTextEmbeddingsCapability]);
@@ -69,40 +78,46 @@ export default function GeneralCommands() {
   async function handleOnClickExtensionCommand(
     extensionId: string,
     command: UiCommandType,
-    imageIds?: string[],
-  ) {
+    imageIds?: string[]
+  )
+  {
     void callCommand(extensionId, command, imageIds);
   }
 
-  async function handleOnClickTextToImage(extensionId: string) {
+  async function handleOnClickTextToImage(extensionId: string)
+  {
     addModal({
-      component: <TextToImages extensionId={extensionId} />,
+      component: <TextToImages extensionId={extensionId}/>,
       title: t("textToImagesModal.title"),
       size: "l"
     });
   }
 
-  const menu = useMemo(() => {
+  const menu = useMemo(() =>
+  {
     return (
       <>
         <Menu.Label>{t("commands.coreFeatures")}</Menu.Label>
 
-        {extensionsWithTextEmbeddingsCapability?.map((extension, index) => {
+        {extensionsWithTextEmbeddingsCapability?.map((extension, index) =>
+        {
           return (<MenuItemEntry key={`${extension.manifest.id}-${index}`} extensionId={extension.manifest.id}
                                  label={t("commands.textToImages")}
                                  subLabel={extension.manifest.name}
                                  keyShortcut={<><Kbd>⌘</Kbd> + <Kbd>Shift</Kbd> + <Kbd>F</Kbd></>}
-                                 onClick={() => handleOnClickTextToImage(extension.manifest.id)} />);
+                                 onClick={() => handleOnClickTextToImage(extension.manifest.id)}/>);
         })}
         <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
-        {extensionsProcessCommands?.map((extensionCommand) => {
+        {extensionsProcessCommands?.map((extensionCommand) =>
+        {
           const extension = extensionCommand.extension;
           const command = extensionCommand.command;
           const manifest = extension.manifest;
           return (
-            <MenuItemEntry key={`${manifest.id}-${command.id}`} extensionId={manifest.id} label={command.label}
+            <MenuItemEntry key={`${manifest.id}-${command.id}`} extensionId={manifest.id}
+                           label={command.label}
                            subLabel={manifest.name}
-                           onClick={() => handleOnClickExtensionCommand(manifest.id, command)} />);
+                           onClick={() => handleOnClickExtensionCommand(manifest.id, command)}/>);
         })}
       </>
     );
@@ -124,7 +139,7 @@ export default function GeneralCommands() {
     >
       <Menu.Target>
         <ActionIcon size="md">
-          <IconBox stroke={Common.IconStrokeSize} />
+          <IconBox stroke={Common.IconStrokeSize}/>
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown>{menu}</Menu.Dropdown>

@@ -1,14 +1,20 @@
-.content {
+.content
+{
 }
-.contentFullScreen {
+
+.contentFullScreen
+{
   background: transparent;
-  display: flex ;
+  display: flex;
   flex-direction: column;
 }
 
-.body {
+.body
+{
 }
-.bodyFullScreen {
+
+.bodyFullScreen
+{
   padding-top: 0;
   padding-left: $left-sidebar-width;
   padding-right: $right-sidebar-width;
@@ -17,12 +23,16 @@
   flex: 1;
 }
 
-.child {
+.child
+{
 }
-.childFullScreen {
+
+.childFullScreen
+{
   height: 100%;
 }
 
-.header {
+.header
+{
   align-items: flex-start;
 }

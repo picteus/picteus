@@ -28,9 +28,12 @@ export type SocketEventType = WithIdAndMilliseconds & SocketEventAdditionalMessa
   value: JsonType;
 };
 
-export interface CommandSocketEventType {
+export interface CommandSocketEventType
+{
   id: string;
+
   error?: string;
+
   value?: JsonType;
 }
 
@@ -38,9 +41,12 @@ export type CommandParameters = JsonType;
 
 export type SendCommandType = (command: string, parameters: CommandParameters) => Promise<string>;
 
-export interface CommandContextType {
+export interface CommandContextType
+{
   sendCommand: SendCommandType;
+
   isAvailable: () => boolean;
+
   sendCommandOnConnected: SendCommandType;
 }
 
@@ -82,21 +88,27 @@ export type ImageExplorerDataType = {
   images: ImageOrSummaryOrCaption[];
 };
 
-export enum FolderTypes {
+export enum FolderTypes
+{
   REPOSITORY = "repository",
   EXTENSION = "extension",
 }
 
-export enum ImageItemMode {
+export enum ImageItemMode
+{
   PASSIVE = "PASSIVE",
   SELECT = "SELECT",
   VIEW = "VIEW",
 }
 
-export interface WithNavigationType {
+export interface WithNavigationType
+{
   hasPrevious: boolean;
+
   hasNext: boolean;
+
   onPrevious: () => void;
+
   onNext: () => void;
 }
 
@@ -182,7 +194,8 @@ export type TabsType = {
   data: ViewTabDataType;
 };
 
-export enum ChannelEnum {
+export enum ChannelEnum
+{
   EXTENSION_PREFIX = "extension",
   EXTENSION_PROCESS_PREFIX = "extension.process",
   EXTENSION_INSTALLED = "extension.installed",
@@ -220,7 +233,8 @@ export enum ChannelEnum {
 
 export type ResourceType = ({ url: string }) | ({ content: ArrayBuffer });
 
-export function computeResourceTypeUrl(resourceType: ResourceType) {
+export function computeResourceTypeUrl(resourceType: ResourceType)
+{
   return "url" in resourceType ? resourceType.url : ("data:image/png;base64," + btoa(String.fromCharCode(...new Uint8Array(resourceType.content))));
 }
 

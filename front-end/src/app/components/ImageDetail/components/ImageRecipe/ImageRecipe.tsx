@@ -14,7 +14,8 @@ type ImageRecipeType = {
   viewMode: ViewMode;
 };
 
-export default function ImageRecipe({ recipe, viewMode }: ImageRecipeType) {
+export default function ImageRecipe({ recipe, viewMode }: ImageRecipeType)
+{
   const [t] = useTranslation();
   const prompt: GenerationRecipePrompt = recipe.prompt;
 
@@ -54,7 +55,7 @@ export default function ImageRecipe({ recipe, viewMode }: ImageRecipeType) {
         <Group>
           <Text fw={700} size="sm">{t("field.modelTags")}:</Text>
           <Group gap={4}>
-            {recipe.modelTags.map((tag) => (<AiModelTag key={tag} tag={tag} />))}
+            {recipe.modelTags.map((tag) => (<AiModelTag key={tag} tag={tag}/>))}
           </Group>
         </Group>
       )}
@@ -69,7 +70,7 @@ export default function ImageRecipe({ recipe, viewMode }: ImageRecipeType) {
       {prompt && typeof prompt === "object" && <Stack gap={4}>
         <Text fw={700} size="sm">{t(`field.${"text" in prompt ? "prompt" : "instructions"}`)}:</Text>
         {"text" in prompt ? (<Text size="sm">{prompt.text}</Text>) : ("value" in prompt ?
-          <CodeViewer code={JSON.stringify(prompt.value, undefined, 2)} /> : <></>)}
+          <CodeViewer code={JSON.stringify(prompt.value, undefined, 2)}/> : <></>)}
       </Stack>}
     </Stack>
   );

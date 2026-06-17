@@ -10,60 +10,73 @@ import {
   RepositoryApiRepositoryUpdateRequest
 } from "@picteus/ws-client";
 
+
 const repositoryApi = new RepositoryApi();
 
 let repositories: Repository[] = [];
 
-async function fetchAll(): Promise<Repository[]> {
+async function fetchAll(): Promise<Repository[]>
+{
   repositories = await repositoryApi.repositoryList();
   return repositories;
 }
 
-function list(): Repository[] {
+function list(): Repository[]
+{
   return repositories;
 }
 
 async function get(
-  parameters: RepositoryApiRepositoryGetRequest,
-): Promise<Repository> {
+  parameters: RepositoryApiRepositoryGetRequest
+): Promise<Repository>
+{
   return repositoryApi.repositoryGet(parameters);
 }
 
 async function add(
-  parameters: RepositoryApiRepositoryCreateRequest,
-): Promise<Repository> {
+  parameters: RepositoryApiRepositoryCreateRequest
+): Promise<Repository>
+{
   return repositoryApi.repositoryCreate({ ...parameters, watch: true });
 }
 
 async function update(
-  parameters: RepositoryApiRepositoryUpdateRequest,
-): Promise<Repository> {
+  parameters: RepositoryApiRepositoryUpdateRequest
+): Promise<Repository>
+{
   return repositoryApi.repositoryUpdate(parameters);
 }
 
 async function remove(
-  parameters: RepositoryApiRepositoryDeleteRequest,
-): Promise<void> {
+  parameters: RepositoryApiRepositoryDeleteRequest
+): Promise<void>
+{
   await repositoryApi.repositoryDelete(parameters);
 }
 
 async function synchronize(
-  parameters: RepositoryApiRepositorySynchronizeRequest,
-): Promise<void> {
+  parameters: RepositoryApiRepositorySynchronizeRequest
+): Promise<void>
+{
   return repositoryApi.repositorySynchronize(parameters);
 }
 
-async function getFeatureNames(): Promise<ExtensionImageFeatureName[]> {
+async function getFeatureNames(): Promise<ExtensionImageFeatureName[]>
+{
   return repositoryApi.repositoryGetFeatureNames();
 }
 
-async function getTags(): Promise<ExtensionImageTag[]> {
+async function getTags(): Promise<ExtensionImageTag[]>
+{
   return repositoryApi.repositoryGetTags();
 }
 
-function getRepositoryInformation(repositoryId: string): Repository {
-  return repositories.find((repository) => {
-    if (repository.id === repositoryId) {
+function getRepositoryInformation(repositoryId: string): Repository
+{
+  return repositories.find((repository) =>
+  {
+    if (repository.id === repositoryId)
+    {
       return repository;
     }
   });
@@ -79,5 +92,5 @@ export default {
   synchronize,
   getFeatureNames,
   getTags,
-  remove,
+  remove
 };

@@ -22,25 +22,40 @@ type FilterSelectType = {
   onChange: (values: string[]) => void;
 };
 
-export default function FilterSelect({ label, options, selectedValues, renderOption, renderPill, onChange }: FilterSelectType) {
+export default function FilterSelect({
+  label,
+  options,
+  selectedValues,
+  renderOption,
+  renderPill,
+  onChange
+}: FilterSelectType)
+{
   const [t] = useTranslation();
-  const data = useMemo<WithValueAndLabel[]>(() => {
+  const data = useMemo<WithValueAndLabel[]>(() =>
+  {
     return [...options];
   }, [options]);
-  const placeholder = useMemo(() => {
-    if (selectedValues !== undefined) {
-      if (selectedValues.length === 0) {
+  const placeholder = useMemo(() =>
+  {
+    if (selectedValues !== undefined)
+    {
+      if (selectedValues.length === 0)
+      {
         return t("filters.selectAll");
       }
-      else if (selectedValues.length === options.length) {
+      else if (selectedValues.length === options.length)
+      {
         return "";
       }
     }
     return t("filters.pickAnOption");
   }, [selectedValues]);
 
-  function handleOnChange(values: string[]) {
-    if (values !== selectedValues) {
+  function handleOnChange(values: string[])
+  {
+    if (values !== selectedValues)
+    {
       onChange(values);
     }
   }

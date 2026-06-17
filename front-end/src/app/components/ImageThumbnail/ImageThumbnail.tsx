@@ -14,7 +14,8 @@ type ImageThumbnailType = {
   height?: number;
 };
 
-export default function ImageThumbnail({ imageOrUrl, width, height }: ImageThumbnailType) {
+export default function ImageThumbnail({ imageOrUrl, width, height }: ImageThumbnailType)
+{
   return (<Image
     alt={typeof imageOrUrl === "string" ? "Thumbnail" : imageOrUrl.name}
     w={width}

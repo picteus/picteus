@@ -28,7 +28,8 @@ type ImageItemMenuType = {
   viewMode: ViewMode;
 };
 
-export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
+export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
+{
   const [, addModal] = useActionModalContext();
   const confirmAction = useConfirmAction();
   const [imageTags, setImageTags] = useState<ExtensionImageTag[]>([]);
@@ -40,26 +41,32 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const [t] = useTranslation();
 
-  async function load() {
+  async function load()
+  {
     const tags = "tags" in image ? (image as Image).tags : await ImageService.getAllTags(image.id);
     setImageTags(tags);
   }
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     void load();
   }, []);
 
-  useEffect(() => {
-    if (ExtensionsService.requiresCommandReload(event) === true) {
-      void ExtensionsService.fetchAll().then(() => {
+  useEffect(() =>
+  {
+    if (ExtensionsService.requiresCommandReload(event) === true)
+    {
+      void ExtensionsService.fetchAll().then(() =>
+      {
         setExtensionsImageCommands(ExtensionsService.getExtensionsCommands(commandEntities));
         setExtensionsWithImageEmbeddingsCapability(ExtensionsService.getExtensionsWithCapability(
           ManifestCapabilityId.ImageEmbeddings));
-      })
+      });
     }
   }, [event]);
 
-  function handleOnClickClosestImages(extensionId: string) {
+  function handleOnClickClosestImages(extensionId: string)
+  {
     addModal({
       component: (
         <ClosestEmbeddingsImages
@@ -70,15 +77,17 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
       ),
       isStackable: true,
       title: t("closestEmbeddingsImagesModal.title"),
-      size: "l",
+      size: "l"
     });
   }
 
-  function handleOnClickSynchronize() {
-    ImageService.synchronize(image.id).catch(NotificationsService.apiCallError)
+  function handleOnClickSynchronize()
+  {
+    ImageService.synchronize(image.id).catch(NotificationsService.apiCallError);
   }
 
-  function handleOnClickDelete() {
+  function handleOnClickDelete()
+  {
     confirmAction(() => ImageService.destroy(image.id).catch(NotificationsService.apiCallError), {
       title: t("commands.confirmImageDeleteTitle"),
       message: t("commands.confirmImageDeleteMessage")
@@ -86,9 +95,11 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
 
   }
 
-  const menu = useMemo(() => {
+  const menu = useMemo(() =>
+  {
 
-    function renderCoreFeatures() {
+    function renderCoreFeatures()
+    {
       return (
         <>
           <Menu.Label>{t("commands.coreFeatures")}</Menu.Label>
@@ -98,7 +109,7 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
               handleOnClickClosestImages(extension.manifest.id)
             }
             extensionId={extension.manifest.id}
-            icon={<IconTopologyRing3 style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />}
+            icon={<IconTopologyRing3 style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }}/>}
             label={t("commands.closestImages")}
             subLabel={extension.manifest.name}
           />))}
@@ -120,22 +131,26 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType) {
       );
     }
 
-    function renderExtensionsCommands() {
+    function renderExtensionsCommands()
+    {
       return (
         <>
           <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
           {extensionsImageCommands
-            ?.filter((extensionCommand) => {
+            ?.filter((extensionCommand) =>
+            {
               const { withTags } = extensionCommand.command;
 
-              if (withTags?.length) {
+              if (withTags?.length)
+              {
                 return withTags.some((tag) =>
-                  imageTags.some((imageTag) => imageTag.value === tag),
+                  imageTags.some((imageTag) => imageTag.value === tag)
                 );
               }
               return true;
             })
-            .map((extensionCommand) => {
+            .map((extensionCommand) =>
+            {
               const manifest = extensionCommand.extension.manifest;
               return (<MenuItemEntry
                 key={`${extensionCommand.extension.manifest.id}-${extensionCommand.command.id}`}

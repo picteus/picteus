@@ -19,7 +19,8 @@ type ImageTopType = {
   onClose: () => void;
 };
 
-export default function ImageTop({ image, viewMode, onClose }: ImageTopType) {
+export default function ImageTop({ image, viewMode, onClose }: ImageTopType)
+{
   const [t] = useTranslation();
   const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
   const isSelected = isSelectedImage(image);
@@ -32,16 +33,16 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType) {
               <Text size="md" truncate="end">{image.name}</Text>
             </CopyText>
             <Text c="dimmed" size="sm">
-              {image.format} — {<ImageWeight image={image} />} — {<ImageDimensions
-              dimensions={image.dimensions} />} ({<ImageRatio
-              dimensions={image.dimensions} />})
+              {image.format} — {<ImageWeight image={image}/>} — {<ImageDimensions
+              dimensions={image.dimensions}/>} ({<ImageRatio
+              dimensions={image.dimensions}/>})
             </Text>
             <CopyText value={image.id} inline={true}>
               <Text c="dimmed" size="sm">{image.id}</Text>
             </CopyText>
           </Stack>
         </div>
-        <CloseButton size="lg" variant="subtle" onClick={onClose} />
+        <CloseButton size="lg" variant="subtle" onClick={onClose}/>
       </>}
       actions={<Group>
         <Menu
@@ -57,21 +58,21 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType) {
           <Menu.Target>
             <Button
               variant="default"
-              rightSection={<IconChevronDown stroke={1.2} size={16} />}
+              rightSection={<IconChevronDown stroke={1.2} size={16}/>}
             >
               {t("menu.imageCommands")}
             </Button>
           </Menu.Target>
-          <ImageItemMenu image={image} viewMode={viewMode} />
+          <ImageItemMenu image={image} viewMode={viewMode}/>
         </Menu>
-        <ExternalLink url={image.url} type="button" />
+        <ExternalLink url={image.url} type="button"/>
         <Tooltip
           label={t(`button.${isSelected ? "removeFromSelection" : "addToSelection"}`)}
           position="bottom"
         >
           <Button
             variant="default"
-            leftSection={isSelected ? <IconSquareCheck size={16} /> : <IconSquare size={16} />}
+            leftSection={isSelected ? <IconSquareCheck size={16}/> : <IconSquare size={16}/>}
             onClick={() => toggleSelectedImage(image)}
           >
             {t(`button.${isSelected ? "remove" : "add"}`)}

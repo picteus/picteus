@@ -11,14 +11,17 @@ type ImageTagType = {
   kind: "badge" | "plain"
 };
 
-export default function ImageTag({ tag, kind }: ImageTagType) {
-  if (kind === "badge") {
+export default function ImageTag({ tag, kind }: ImageTagType)
+{
+  if (kind === "badge")
+  {
     return (<Badge tt="none" variant="outline"
-                   leftSection={<ExtensionIcon idOrExtension={tag.id} size="sm" />}>{tag.value}</Badge>);
+                   leftSection={<ExtensionIcon idOrExtension={tag.id} size="sm"/>}>{tag.value}</Badge>);
   }
-  else {
+  else
+  {
     return (<Group gap={4} wrap="nowrap">
-        <ExtensionIcon idOrExtension={tag.id} size="sm" />
+        <ExtensionIcon idOrExtension={tag.id} size="sm"/>
         <span>{tag.value}</span>
       </Group>
     );

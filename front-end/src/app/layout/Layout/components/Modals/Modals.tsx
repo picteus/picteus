@@ -5,10 +5,12 @@ import { useActionModalContext } from "app/context";
 import { ModalComponent } from "./components";
 
 
-export default function Modals() {
+export default function Modals()
+{
   const [modals, , removeModal] = useActionModalContext();
 
-  function onCloseActionModal(modalId: string): void {
+  function onCloseActionModal(modalId: string): void
+  {
     removeModal(modalId);
   }
 
@@ -18,5 +20,5 @@ export default function Modals() {
         modal={modal}
         onClose={onCloseActionModal}
       />)
-    ), [modals])
+    ), [modals]);
 }

@@ -1,16 +1,20 @@
-.paneSeparator {
+.paneSeparator
+{
   width: 1px;
   background: var(--mantine-color-default-border);
 }
 
-.paneSeparatorHandle {
+.paneSeparatorHandle
+{
 }
 
-.left {
+.left
+{
   height: 100%;
 }
 
-.right {
+.right
+{
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -19,11 +23,13 @@
   background: var(--mantine-color-body);
 }
 
-.rightTop {
+.rightTop
+{
   flex-shrink: 0;
 }
 
-.rightBottom {
+.rightBottom
+{
   flex: 1;
   overflow-x: hidden;
   overflow-y: auto;

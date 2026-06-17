@@ -9,7 +9,8 @@ type TopPanelType = {
   actions: ReactNode;
 };
 
-export default function TopPanel({ info, actions }: TopPanelType) {
+export default function TopPanel({ info, actions }: TopPanelType)
+{
   return <div className={style.content}>
     <Flex align="center" justify="space-between" gap={10} p={20}>
       {info}
@@ -17,6 +18,6 @@ export default function TopPanel({ info, actions }: TopPanelType) {
     <Flex px="md">
       {actions}
     </Flex>
-    <Divider my="md" />
+    <Divider my="md"/>
   </div>;
 }

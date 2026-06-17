@@ -21,19 +21,22 @@ export default function ImageTable({
   images,
   loadMore,
   containerRef,
-  imageItemMode,
-}: ImageTableType) {
+  imageItemMode
+}: ImageTableType)
+{
   const edge = 160;
   const { width: containerWidth } = useContainerDimensions(containerRef);
   const [, addModal, removeModal] = useActionModalContext();
-  const handleOnClick = useCallback((image: ImageOrSummary) => {
+  const handleOnClick = useCallback((image: ImageOrSummary) =>
+  {
     const id = addModal({
       component: (
         <ImageDetail
           image={image}
           images={images}
           viewMode="table"
-          onClose={() => {
+          onClose={() =>
+          {
             removeModal(id);
           }}
         />),
@@ -45,13 +48,16 @@ export default function ImageTable({
   const [t] = useTranslation();
   const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });
 
-  useEffect(() => {
-    if (entry?.isIntersecting === true) {
+  useEffect(() =>
+  {
+    if (entry?.isIntersecting === true)
+    {
       loadMore();
     }
   }, [entry?.isIntersecting, loadMore]);
 
-  if (!images || images.length === 0 || containerWidth <= 0) {
+  if (!images || images.length === 0 || containerWidth <= 0)
+  {
     return null;
   }
 
@@ -77,10 +83,10 @@ export default function ImageTable({
         <Text size="sm">{image.format}</Text>
       </Table.Td>
       <Table.Td>
-        <Text size="sm"><ImageDimensions dimensions={image.dimensions} /></Text>
+        <Text size="sm"><ImageDimensions dimensions={image.dimensions}/></Text>
       </Table.Td>
       <Table.Td>
-        <Text size="sm"><ImageWeight image={image} /></Text>
+        <Text size="sm"><ImageWeight image={image}/></Text>
       </Table.Td>
       <Table.Td>
         <Text size="sm"><FormatedDate timestamp={image.fileDates.modificationDate}/></Text>
@@ -103,7 +109,7 @@ export default function ImageTable({
         </Table.Thead>
         <Table.Tbody>{rows}</Table.Tbody>
       </Table>
-      <div ref={ref} style={{ width: "100%", height: 20 }} />
+      <div ref={ref} style={{ width: "100%", height: 20 }}/>
     </>
   );
 }

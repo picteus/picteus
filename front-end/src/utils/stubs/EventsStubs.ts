@@ -7,8 +7,8 @@ export const eventsStubs = [
       channel: "repository.synchronize.stopped",
       milliseconds: 1732625957198,
       value: {
-        id: "8d43aee2-eede-47f1-8aba-0ca254619981",
-      },
+        id: "8d43aee2-eede-47f1-8aba-0ca254619981"
+      }
     },
     notification: {
       title: "Repository event",
@@ -17,11 +17,11 @@ export const eventsStubs = [
       description:
         "Synchronization for the repository with ID 'Civitai' has been completed.",
       timeInMilliseconds: 1732625957198,
-      seen: false,
+      seen: false
     },
     statusText:
       "Synchronization for the repository with ID 'Civitai' has been completed.",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "sntzuexe3hk",
@@ -31,8 +31,8 @@ export const eventsStubs = [
       channel: "repository.watch.started",
       milliseconds: 1732625957198,
       value: {
-        id: "8d43aee2-eede-47f1-8aba-0ca254619981",
-      },
+        id: "8d43aee2-eede-47f1-8aba-0ca254619981"
+      }
     },
     notification: {
       title: "Repository event",
@@ -40,10 +40,10 @@ export const eventsStubs = [
       iconUrl: "repository",
       description: "Watch on the repository 'Civitai' has been started.",
       timeInMilliseconds: 1732625957198,
-      seen: false,
+      seen: false
     },
     statusText: "Watch on the repository 'Civitai' has been started.",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "634xz9onkr",
@@ -53,8 +53,8 @@ export const eventsStubs = [
       channel: "repository.watch.stopped",
       milliseconds: 1732625956449,
       value: {
-        id: "8d43aee2-eede-47f1-8aba-0ca254619981",
-      },
+        id: "8d43aee2-eede-47f1-8aba-0ca254619981"
+      }
     },
     notification: {
       title: "Repository event",
@@ -62,10 +62,10 @@ export const eventsStubs = [
       iconUrl: "repository",
       description: "Watch on the repository 'Civitai' has been stopped.",
       timeInMilliseconds: 1732625956449,
-      seen: false,
+      seen: false
     },
     statusText: "Watch on the repository 'Civitai' has been stopped.",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "hkb736ovnwg",
@@ -75,8 +75,8 @@ export const eventsStubs = [
       channel: "repository.synchronize.started",
       milliseconds: 1732625956447,
       value: {
-        id: "8d43aee2-eede-47f1-8aba-0ca254619981",
-      },
+        id: "8d43aee2-eede-47f1-8aba-0ca254619981"
+      }
     },
     notification: {
       title: "Repository event",
@@ -85,11 +85,11 @@ export const eventsStubs = [
       description:
         "Synchronization for the repository with ID 'Civitai' has been initiated.",
       timeInMilliseconds: 1732625956447,
-      seen: false,
+      seen: false
     },
     statusText:
       "Synchronization for the repository with ID 'Civitai' has been initiated.",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "idmk8sau0gn",
@@ -99,8 +99,8 @@ export const eventsStubs = [
       channel: "repository.watch.started",
       milliseconds: 1732620314353,
       value: {
-        id: "8d43aee2-eede-47f1-8aba-0ca254619981",
-      },
+        id: "8d43aee2-eede-47f1-8aba-0ca254619981"
+      }
     },
     notification: {
       title: "Repository event",
@@ -108,10 +108,10 @@ export const eventsStubs = [
       iconUrl: "repository",
       description: "Watch on the repository 'Civitai' has been started.",
       timeInMilliseconds: 1732620314353,
-      seen: true,
+      seen: true
     },
     statusText: "Watch on the repository 'Civitai' has been started.",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "lul5474w2ls",
@@ -121,8 +121,8 @@ export const eventsStubs = [
       channel: "repository.synchronize.stopped",
       milliseconds: 1732620314353,
       value: {
-        id: "8d43aee2-eede-47f1-8aba-0ca254619981",
-      },
+        id: "8d43aee2-eede-47f1-8aba-0ca254619981"
+      }
     },
     notification: {
       title: "Repository event",
@@ -131,11 +131,11 @@ export const eventsStubs = [
       description:
         "Synchronization for the repository with ID 'Civitai' has been completed.",
       timeInMilliseconds: 1732620314353,
-      seen: true,
+      seen: true
     },
     statusText:
       "Synchronization for the repository with ID 'Civitai' has been completed.",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "l7tm4p7m0js",
@@ -145,8 +145,8 @@ export const eventsStubs = [
       channel: "repository.watch.stopped",
       milliseconds: 1732620313604,
       value: {
-        id: "8d43aee2-eede-47f1-8aba-0ca254619981",
-      },
+        id: "8d43aee2-eede-47f1-8aba-0ca254619981"
+      }
     },
     notification: {
       title: "Repository event",
@@ -154,10 +154,10 @@ export const eventsStubs = [
       iconUrl: "repository",
       description: "Watch on the repository 'Civitai' has been stopped.",
       timeInMilliseconds: 1732620313604,
-      seen: true,
+      seen: true
     },
     statusText: "Watch on the repository 'Civitai' has been stopped.",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "enmy3nl8jd9",
@@ -167,8 +167,8 @@ export const eventsStubs = [
       channel: "repository.synchronize.started",
       milliseconds: 1732620313603,
       value: {
-        id: "8d43aee2-eede-47f1-8aba-0ca254619981",
-      },
+        id: "8d43aee2-eede-47f1-8aba-0ca254619981"
+      }
     },
     notification: {
       title: "Repository event",
@@ -177,11 +177,11 @@ export const eventsStubs = [
       description:
         "Synchronization for the repository with ID 'Civitai' has been initiated.",
       timeInMilliseconds: 1732620313603,
-      seen: true,
+      seen: true
     },
     statusText:
       "Synchronization for the repository with ID 'Civitai' has been initiated.",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "u7pt42xp60g",
@@ -194,13 +194,13 @@ export const eventsStubs = [
         id: "example.typescript",
         message: {
           log: "Received the intent error 'The intent returned value is not compliant with the JSON schema. Reason: 'the entity at 'undefined' should be boolean'' with reason '1'",
-          level: "error",
-        },
-      },
+          level: "error"
+        }
+      }
     },
     statusText:
       "Extension \"example.typescript\" : Received the intent error 'The intent returned value is not compliant with the JSON schema. Reason: 'the entity at 'undefined' should be boolean'' with reason '1'",
-    logLevel: "error",
+    logLevel: "error"
   },
   {
     id: "ebuhp4k6yif",
@@ -213,13 +213,13 @@ export const eventsStubs = [
         id: "example.typescript",
         message: {
           log: "Received a process command with id 'askForSomething' with parameters '{\"age\":35}'",
-          level: "debug",
-        },
-      },
+          level: "debug"
+        }
+      }
     },
     statusText:
       "Extension \"example.typescript\" : Received a process command with id 'askForSomething' with parameters '{\"age\":35}'",
-    logLevel: "debug",
+    logLevel: "debug"
   },
   {
     id: "vjkpumkzigo",
@@ -232,13 +232,13 @@ export const eventsStubs = [
         id: "features-transformers",
         message: {
           log: "The image caption is 'a table topped with a bunch of different colored balls'",
-          level: "debug",
-        },
-      },
+          level: "debug"
+        }
+      }
     },
     statusText:
       "Extension \"features-transformers\" : The image caption is 'a table topped with a bunch of different colored balls'",
-    logLevel: "debug",
+    logLevel: "debug"
   },
   {
     id: "pryvizupqyk",
@@ -251,13 +251,13 @@ export const eventsStubs = [
         id: "features-transformers",
         message: {
           log: "Computing the image caption",
-          level: "info",
-        },
-      },
+          level: "info"
+        }
+      }
     },
     statusText:
-      'Extension "features-transformers" : Computing the image caption',
-    logLevel: "info",
+      "Extension \"features-transformers\" : Computing the image caption",
+    logLevel: "info"
   },
   {
     id: "5vwj6wrr7pw",
@@ -270,13 +270,13 @@ export const eventsStubs = [
         id: "example.python",
         message: {
           log: "The image with id 'f3d02c6e-94d6-4278-8563-cf172d893b13' was touched",
-          level: "info",
-        },
-      },
+          level: "info"
+        }
+      }
     },
     statusText:
       "Extension \"example.python\" : The image with id 'f3d02c6e-94d6-4278-8563-cf172d893b13' was touched",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "am2c9jmnnyt",
@@ -289,13 +289,13 @@ export const eventsStubs = [
         id: "example.typescript",
         message: {
           log: "The image with id 'f3d02c6e-94d6-4278-8563-cf172d893b13' was touched",
-          level: "info",
-        },
-      },
+          level: "info"
+        }
+      }
     },
     statusText:
       "Extension \"example.typescript\" : The image with id 'f3d02c6e-94d6-4278-8563-cf172d893b13' was touched",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "xbl2c5wwbad",
@@ -308,11 +308,11 @@ export const eventsStubs = [
         id: "example.python",
         message: {
           key: "value",
-          imageId: "f3d02c6e-94d6-4278-8563-cf172d893b13",
-        },
-      },
+          imageId: "f3d02c6e-94d6-4278-8563-cf172d893b13"
+        }
+      }
     },
-    statusText: 'Extension "example.python" : undefined',
+    statusText: "Extension \"example.python\" : undefined"
   },
   {
     id: "zrzpslup1t",
@@ -325,13 +325,13 @@ export const eventsStubs = [
         id: "features-transformers",
         message: {
           log: "Downloading the image bitmap",
-          level: "info",
-        },
-      },
+          level: "info"
+        }
+      }
     },
     statusText:
-      'Extension "features-transformers" : Downloading the image bitmap',
-    logLevel: "info",
+      "Extension \"features-transformers\" : Downloading the image bitmap",
+    logLevel: "info"
   },
   {
     id: "g44i3i78fyf",
@@ -344,11 +344,11 @@ export const eventsStubs = [
         id: "example.typescript",
         message: {
           key: "value",
-          imageId: "f3d02c6e-94d6-4278-8563-cf172d893b13",
-        },
-      },
+          imageId: "f3d02c6e-94d6-4278-8563-cf172d893b13"
+        }
+      }
     },
-    statusText: 'Extension "example.typescript" : undefined',
+    statusText: "Extension \"example.typescript\" : undefined"
   },
   {
     id: "sj9td52tqmr",
@@ -361,13 +361,13 @@ export const eventsStubs = [
         id: "civitai",
         message: {
           log: "The image with id 'f3d02c6e-94d6-4278-8563-cf172d893b13' was touched",
-          level: "info",
-        },
-      },
+          level: "info"
+        }
+      }
     },
     statusText:
       "Extension \"civitai\" : The image with id 'f3d02c6e-94d6-4278-8563-cf172d893b13' was touched",
-    logLevel: "info",
+    logLevel: "info"
   },
   {
     id: "dxlv2j4giz",
@@ -377,8 +377,8 @@ export const eventsStubs = [
       channel: "image.created",
       milliseconds: 1732620238736,
       value: {
-        id: "f3d02c6e-94d6-4278-8563-cf172d893b13",
-      },
+        id: "f3d02c6e-94d6-4278-8563-cf172d893b13"
+      }
     },
     notification: {
       title: "Image created",
@@ -388,10 +388,10 @@ export const eventsStubs = [
       description:
         "The image Diversity-is-our-strenght copy 2.jpg has been created.",
       timeInMilliseconds: 1732620238736,
-      seen: true,
+      seen: true
     },
     statusText:
       "The image 'Diversity-is-our-strenght copy 2.jpg' has been created.",
-    logLevel: "info",
-  },
+    logLevel: "info"
+  }
 ];

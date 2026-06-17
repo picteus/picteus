@@ -10,7 +10,8 @@ type CopyTextType = {
   children: ReactNode;
 };
 
-export default function CopyText({ value, inline = false, children }: CopyTextType) {
+export default function CopyText({ value, inline = false, children }: CopyTextType)
+{
   const width = 14;
   const [t] = useTranslation();
 
@@ -26,7 +27,8 @@ export default function CopyText({ value, inline = false, children }: CopyTextTy
             color={copied ? "teal" : "gray"}
             variant="subtle"
             size="sm"
-            onClick={(event) => {
+            onClick={(event) =>
+            {
               event.preventDefault();
               event.stopPropagation();
               copy();
@@ -34,9 +36,9 @@ export default function CopyText({ value, inline = false, children }: CopyTextTy
             style={{ display: "inline-flex", verticalAlign: "middle", marginLeft: 4 }}
           >
             {copied ? (
-              <IconCheck style={{ width }} />
+              <IconCheck style={{ width }}/>
             ) : (
-              <IconCopy style={{ width }} />
+              <IconCopy style={{ width }}/>
             )}
           </ActionIcon>
         </Tooltip>
@@ -45,7 +47,8 @@ export default function CopyText({ value, inline = false, children }: CopyTextTy
   );
 
   return (
-    <Box component="span" style={{ display: inline ? "inline-flex" : "inline", alignItems: inline ? "end" : undefined }}>
+    <Box component="span"
+         style={{ display: inline ? "inline-flex" : "inline", alignItems: inline ? "end" : undefined }}>
       {children}
       {copyButtonNode}
     </Box>

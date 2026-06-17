@@ -25,20 +25,23 @@ export default function ImageMasonry({
   loadMore,
   containerRef,
   scrollRootRef,
-  imageItemMode,
-}: ImageMasonryType) {
+  imageItemMode
+}: ImageMasonryType)
+{
   const [hostRef, hostRefRectangle] = useResizeObserver();
   const { height: containerHeight } = useContainerDimensions(containerRef);
   const [, addModal, removeModal] = useActionModalContext();
 
-  const handleOnClick = useCallback((image: ImageOrSummary) => {
+  const handleOnClick = useCallback((image: ImageOrSummary) =>
+  {
     const id = addModal({
       component: (
         <ImageDetail
           image={image}
           images={images}
           viewMode="masonry"
-          onClose={() => {
+          onClose={() =>
+          {
             removeModal(id);
           }}
         />),
@@ -51,15 +54,19 @@ export default function ImageMasonry({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const root = scrollRootRef?.current;
-    if (sentinelRef.current === null || root === undefined) {
+    if (sentinelRef.current === null || root === undefined)
+    {
       return;
     }
     const factor = 3;
     observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
+      (entries) =>
+      {
+        if (entries[0].isIntersecting)
+        {
           loadMore();
         }
       },
@@ -69,13 +76,15 @@ export default function ImageMasonry({
         rootMargin: `0px 0px ${containerHeight * factor}px 0px`
       });
     observerRef.current.observe(sentinelRef.current);
-    return () => {
+    return () =>
+    {
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
   }, [scrollRootRef, loadMore, images.length]);
 
-  const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo<[MasonrySizing, ...MasonrySizing[]]>(() => {
+  const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo<[MasonrySizing, ...MasonrySizing[]]>(() =>
+  {
     const gutter = 10;
     const approximateWidth = imageSize;
     const containerWidth = Math.round(hostRefRectangle.width);
@@ -107,7 +116,7 @@ export default function ImageMasonry({
           className={style.masonry}
         />
         }
-        <div ref={sentinelRef} className={style.sentinel} />
+        <div ref={sentinelRef} className={style.sentinel}/>
       </div>
     )
   );

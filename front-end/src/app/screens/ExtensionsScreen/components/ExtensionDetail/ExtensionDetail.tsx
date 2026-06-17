@@ -11,7 +11,8 @@ type ExtensionDetailProps = {
   extension: Extension;
 };
 
-export default function ExtensionDetail({ extension }: ExtensionDetailProps) {
+export default function ExtensionDetail({ extension }: ExtensionDetailProps)
+{
   const { t, i18n } = useTranslation();
 
   const manifestInstructionsArray = extension.manifest.instructions;
@@ -20,7 +21,8 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps) {
   const capabilities = Array.from(new Set(manifestInstructionsArray?.flatMap(instructions => instructions.capabilities?.map(capability => capability.id) || []) || []));
   const commands = manifestInstructionsArray?.flatMap(instructions => instructions.commands || []) || [];
 
-  const getCommandSpecification = (command: ManifestExtensionCommand) => {
+  const getCommandSpecification = (command: ManifestExtensionCommand) =>
+  {
     const locale = i18n.language.split("-")[0];
     const specification = command.specifications.find((aSpecification: ManifestExtensionCommandSpecification) => aSpecification.locale == locale) || command.specifications.find((aSpecification: ManifestExtensionCommandSpecification) => aSpecification.locale = "en");
     return specification || { label: command.id, description: "" };
@@ -33,22 +35,23 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps) {
           <Group gap="xs">
             {manifestRuntimes.map(r => <Badge key={r.environment} variant="light">{r.environment}</Badge>)}
           </Group>
-        ) : <NoValue />
-      } />
+        ) : <NoValue/>
+      }/>
       <FieldValue name={t("field.events")} value={
         events.length > 0 ? (
           <Group gap="xs">
             {events.map((event, index) => <Badge key={index} variant="dot" tt="none">{event}</Badge>)}
           </Group>
-        ) : <NoValue />
-      } />
+        ) : <NoValue/>
+      }/>
       <FieldValue name={t("field.capabilities")} value={
         capabilities.length > 0 ? (
           <Group gap="xs">
-            {capabilities.map((capability, index) => <Badge key={index} variant="outline" color="grape">{capability}</Badge>)}
+            {capabilities.map((capability, index) => <Badge key={index} variant="outline"
+                                                            color="grape">{capability}</Badge>)}
           </Group>
-        ) : <NoValue />
-      } />
+        ) : <NoValue/>
+      }/>
       <FieldValue name={t("field.commands")} value={
         commands.length > 0 ? (
           <Table>
@@ -59,13 +62,15 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps) {
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {commands.map((command, index) => {
+              {commands.map((command, index) =>
+              {
                 const commandSpecification = getCommandSpecification(command);
                 return (
                   <Table.Tr key={index}>
                     <Table.Td>
                       <Text size="sm" fw={500}>{command.id}</Text>
-                      {commandSpecification.label !== command.id && <Text size="xs" c="dimmed">{commandSpecification.label}</Text>}
+                      {commandSpecification.label !== command.id &&
+                        <Text size="xs" c="dimmed">{commandSpecification.label}</Text>}
                     </Table.Td>
                     <Table.Td>
                       <Text size="sm">{commandSpecification.description}</Text>
@@ -75,8 +80,8 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps) {
               })}
             </Table.Tbody>
           </Table>
-        ) : <NoValue />
-      } />
+        ) : <NoValue/>
+      }/>
     </Stack>
   );
 }

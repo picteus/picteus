@@ -1,17 +1,21 @@
 import React, { useEffect, useState } from "react";
 import style from "./Spinner.module.scss";
 
-export default function Spinner() {
+
+export default function Spinner()
+{
   const spinnerData = {
     interval: 80,
-    frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
+    frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
   };
   const [currentFrame, setCurrentFrame] = useState(0);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
+  useEffect(() =>
+  {
+    const interval = setInterval(() =>
+    {
       setCurrentFrame((prevFrame) =>
-        prevFrame + 1 >= spinnerData.frames.length ? 0 : prevFrame + 1,
+        prevFrame + 1 >= spinnerData.frames.length ? 0 : prevFrame + 1
       );
     }, spinnerData.interval);
 
@@ -25,7 +29,7 @@ export default function Spinner() {
           <span key={index} className="spinner-frame">
             {frame}
           </span>
-        ) : null,
+        ) : null
       )}
     </div>
   );

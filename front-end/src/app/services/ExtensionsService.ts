@@ -29,8 +29,10 @@ const extensionApi = new ExtensionApi();
 let extensions: Extension[] = [];
 let extensionsConfiguration: ExtensionsConfiguration;
 
-function requiresCommandReload(event?: EventInformationType): boolean {
-  if (event === undefined) {
+function requiresCommandReload(event?: EventInformationType): boolean
+{
+  if (event === undefined)
+  {
     return false;
   }
   const channel = event?.channel;
@@ -40,88 +42,102 @@ function requiresCommandReload(event?: EventInformationType): boolean {
 async function fetchAll(): Promise<{
   extensions: Extension[];
   extensionsConfiguration: ExtensionsConfiguration;
-}> {
+}>
+{
   extensions = await extensionApi.extensionList();
   extensionsConfiguration = await extensionApi.extensionGetConfiguration();
   return { extensions, extensionsConfiguration };
 }
 
-function list(): Extension[] {
+function list(): Extension[]
+{
   return extensions;
 }
 
-function isPaused(extensionId: string): boolean | undefined {
+function isPaused(extensionId: string): boolean | undefined
+{
   const extension = list().find(extension => extension.manifest.id === extensionId);
   return extension === undefined ? undefined : extension.status === ExtensionStatus.Paused;
 }
 
 async function add(
-  parameters: ExtensionApiExtensionInstallRequest,
-): Promise<Extension> {
+  parameters: ExtensionApiExtensionInstallRequest
+): Promise<Extension>
+{
   return extensionApi.extensionInstall(parameters);
 }
 
 async function startOrStop(
-  parameters: ExtensionApiExtensionPauseOrResumeRequest,
-): Promise<void> {
+  parameters: ExtensionApiExtensionPauseOrResumeRequest
+): Promise<void>
+{
   return extensionApi.extensionPauseOrResume(parameters);
 }
 
 async function update(
-  parameters: ExtensionApiExtensionUpdateRequest,
-): Promise<Extension> {
+  parameters: ExtensionApiExtensionUpdateRequest
+): Promise<Extension>
+{
   return extensionApi.extensionUpdate(parameters);
 }
 
 async function uninstall(
-  parameters: ExtensionApiExtensionUninstallRequest,
-): Promise<void> {
+  parameters: ExtensionApiExtensionUninstallRequest
+): Promise<void>
+{
   return extensionApi.extensionUninstall(parameters);
 }
 
 async function getSettings(
-  parameters: ExtensionApiExtensionGetSettingsRequest,
-): Promise<ExtensionSettings> {
+  parameters: ExtensionApiExtensionGetSettingsRequest
+): Promise<ExtensionSettings>
+{
   return extensionApi.extensionGetSettings(parameters);
 }
 
 async function setSettings(
-  parameters: ExtensionApiExtensionSetSettingsRequest,
-) {
+  parameters: ExtensionApiExtensionSetSettingsRequest
+)
+{
   return extensionApi.extensionSetSettings(parameters);
 }
 
-function getConfiguration(): ExtensionsConfiguration {
+function getConfiguration(): ExtensionsConfiguration
+{
   return extensionsConfiguration;
 }
 
 function getExtensionsWithCapability(
-  capability: ManifestCapabilityId,
-): Extension[] {
+  capability: ManifestCapabilityId
+): Extension[]
+{
   const extensionsConfigurations = getConfiguration();
   const extensions = list();
 
   return extensionsConfigurations?.capabilities
     ?.find((entity) => entity.capability.id === capability)
-    ?.extensionIds.map((extensionId) => {
+    ?.extensionIds.map((extensionId) =>
+    {
       return extensions.find(
-        (extension) => extension.manifest.id === extensionId,
+        (extension) => extension.manifest.id === extensionId
       );
     });
 }
 
 function getExtensionsCommands(
-  entityTypes: CommandEntity[],
-): UiExtensionCommandType[] {
+  entityTypes: CommandEntity[]
+): UiExtensionCommandType[]
+{
   //getConfiguration() returns commands only for extensions with status "Enabled"
   const extensionsConfigurations = getConfiguration();
   const extensions = list();
   return extensionsConfigurations?.commands
     ?.filter((entity) => entityTypes.indexOf(entity.command.on?.entity) !== -1)
-    .map((entity) => {
+    .map((entity) =>
+    {
       const language = i18n.language;
       const extension = extensions?.find(
-        (extension) => extension.manifest.id === entity.extensionId,
+        (extension) => extension.manifest.id === entity.extensionId
       );
       return {
         extension,
@@ -129,43 +145,47 @@ function getExtensionsCommands(
           id: entity.command.id,
           withTags: entity.command.on?.withTags,
           label: entity.command.specifications.find(
-            (specification) => specification.locale === language,
+            (specification) => specification.locale === language
           ).label,
           form: { parameters: entity.command.parameters }
-        },
+        }
       };
     });
 }
 
 async function runImageCommand(
-  parameters: ExtensionApiExtensionRunImageCommandRequest,
-): Promise<void> {
+  parameters: ExtensionApiExtensionRunImageCommandRequest
+): Promise<void>
+{
   return extensionApi.extensionRunImageCommand(parameters);
 }
 
 async function runProcessCommand(
-  parameters: ExtensionApiExtensionRunProcessCommandRequest,
-): Promise<void> {
+  parameters: ExtensionApiExtensionRunProcessCommandRequest
+): Promise<void>
+{
   return extensionApi.extensionRunProcessCommand(parameters);
 }
 
 async function synchronize(
-  requestParameters: ExtensionApiExtensionSynchronizeRequest,
-): Promise<void> {
+  requestParameters: ExtensionApiExtensionSynchronizeRequest
+): Promise<void>
+{
   return extensionApi.extensionSynchronize(requestParameters);
 }
 
-function getAdditionalUis(
-): AdditionalUi[] {
+function getAdditionalUis(): AdditionalUi[]
+{
   return list().flatMap(
     (extension) =>
       extension.manifest.ui?.elements
         ?.filter(
           (element) =>
             (element.integration.anchor === UserInterfaceAnchor.Sidebar || element.integration.anchor === UserInterfaceAnchor.Window) &&
-            extension.status === ExtensionStatus.Enabled,
+            extension.status === ExtensionStatus.Enabled
         )
-        .map((element) => {
+        .map((element) =>
+        {
           const integration = element.integration;
           return {
             uuid: computeExtensionSidebarUuid(extension.manifest.id, element.id),
@@ -176,15 +196,17 @@ function getAdditionalUis(
             extensionId: extension.manifest.id,
             automaticallyReopen: true
           };
-        }) || [],
+        }) || []
   );
 }
 
-function buildUiURL(extensionId: string, url: string) {
+function buildUiURL(extensionId: string, url: string)
+{
   return `${BASE_PATH}/ui/extension/${extensionId}${url}`;
 }
 
-function getIconURL(extensionIdOrExtension: string | Extension) {
+function getIconURL(extensionIdOrExtension: string | Extension)
+{
   return buildUiURL(typeof extensionIdOrExtension === "string" ? extensionIdOrExtension : (extensionIdOrExtension as Extension).manifest.id, "/icon.png");
 }
 
@@ -206,5 +228,5 @@ export default {
   getAdditionalUis,
   getExtensionsCommands,
   runImageCommand,
-  runProcessCommand,
+  runProcessCommand
 };

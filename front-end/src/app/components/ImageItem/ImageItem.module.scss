@@ -1,45 +1,59 @@
-.imageWrapper {
+.imageWrapper
+{
   position: relative;
-  .captionContainer {
+
+  .captionContainer
+  {
     position: absolute;
     bottom: 0;
     width: 100%;
   }
-  .overlay {
+
+  .overlay
+  {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background : rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: $image-radius;
     opacity: 0;
     transition: opacity 200ms;
   }
+
   &:hover,
-  &.hover {
-    .overlay {
+  &.hover
+  {
+    .overlay
+    {
       opacity: 1;
       cursor: pointer;
     }
   }
 }
 
-.image {
+.image
+{
   width: 100%;
   object-fit: cover;
   object-position: center;
-  border-radius: $image-radius ;
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out,transform 0.3s, box-shadow 0.3s;
+  border-radius: $image-radius;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out, transform 0.3s, box-shadow 0.3s;
 }
-.image.notLoaded {
+
+.image.notLoaded
+{
   opacity: 0;
 }
-.image.loaded {
+
+.image.loaded
+{
   opacity: 1;
 }
 
-.placeholder {
+.placeholder
+{
   position: absolute;
   top: 0;
   left: 0;

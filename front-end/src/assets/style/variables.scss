@@ -1,24 +1,32 @@
 $left-sidebar-width: 75px;
 $right-sidebar-width: 50px;
 $bottom-bar-width: 40px;
-$content-padding-horizontal : 30px;
-$content-padding-vertical : 20px;
-$content-padding : $content-padding-vertical $content-padding-horizontal;
+$content-padding-horizontal: 30px;
+$content-padding-vertical: 20px;
+$content-padding: $content-padding-vertical $content-padding-horizontal;
 
-$image-radius : 8px;
+$image-radius: 8px;
 
-.scrollbar-custom {
-  &::-webkit-scrollbar {
+.scrollbar-custom
+{
+  &::-webkit-scrollbar
+  {
     width: 6px;
   }
-  &::-webkit-scrollbar-track {
+
+  &::-webkit-scrollbar-track
+  {
     background: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
   }
-  &::-webkit-scrollbar-thumb {
+
+  &::-webkit-scrollbar-thumb
+  {
     background: #b4b4b4;
     border-radius: 3px;
   }
-  &::-webkit-scrollbar-thumb:hover {
+
+  &::-webkit-scrollbar-thumb:hover
+  {
     background: #919191;
   }
 }

@@ -1,4 +1,5 @@
-.container {
+.container
+{
   min-height: 44px;
   max-height: 120px;
   overflow-y: auto;
@@ -7,12 +8,14 @@
   padding-right: 64px;
 }
 
-.wrapper {
+.wrapper
+{
   width: 100%;
   height: 50px;
 }
 
-.input {
+.input
+{
   flex: 1;
   min-width: 100px;
   border: none;

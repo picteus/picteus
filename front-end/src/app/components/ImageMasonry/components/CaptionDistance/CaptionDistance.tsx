@@ -3,7 +3,9 @@ import { Flex, Text, Tooltip } from "@mantine/core";
 
 import style from "./CaptionDistance.module.scss";
 
-export default function CaptionDistance({ distance }: { distance: number }) {
+
+export default function CaptionDistance({ distance }: { distance: number })
+{
   const [t] = useTranslation();
   return (
     <Flex justify="space-between" className={style.container}>

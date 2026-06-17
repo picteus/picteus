@@ -10,13 +10,16 @@ type ImageMetadataType = {
   entry: "all" | "exif" | "icc" | "iptc" | "xmp" | "tiffTagPhotoshop" | "others";
 };
 
-export default function ImageMetadata({ metadata, entry }: ImageMetadataType) {
+export default function ImageMetadata({ metadata, entry }: ImageMetadataType)
+{
   const value = metadata[entry];
-  try {
+  try
+  {
     JSON.parse(value);
-    return <CodeViewer code={value} />;
+    return <CodeViewer code={value}/>;
   }
-  catch (error) {
+  catch (error)
+  {
     // We ignore the error because we just want to display the value if it is not parseable
     return value;
   }

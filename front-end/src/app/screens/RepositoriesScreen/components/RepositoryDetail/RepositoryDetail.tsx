@@ -13,52 +13,69 @@ type RepositoryDetailType = {
   repository: Repository;
 };
 
-export default function RepositoryDetail({ repository }: RepositoryDetailType) {
+export default function RepositoryDetail({ repository }: RepositoryDetailType)
+{
   const [t] = useTranslation();
   const [images, setImages] = useState<ImageSummary[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (repository) {
+  useEffect(() =>
+  {
+    if (repository)
+    {
       void fetchRepositoryDetails();
     }
   }, [repository]);
 
-  async function fetchRepositoryDetails() {
+  async function fetchRepositoryDetails()
+  {
     setLoading(true);
-    try {
+    try
+    {
       const result = await ImageService.searchSummaries({
-        filter: { origin: { kind: SearchOriginNature.Repositories, ids: [repository!.id] }, sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false } },
-        range: { take: 10 },
+        filter: {
+          origin: { kind: SearchOriginNature.Repositories, ids: [repository!.id] },
+          sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false }
+        },
+        range: { take: 10 }
       });
       setImages(result.items);
       setTotalCount(result.totalCount);
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.errorWithMessage(error);
-    } finally {
+    }
+    finally
+    {
       setLoading(false);
     }
   }
 
-  function renderImageStack() {
-    if (images.length === 0) return <Text c="dimmed">{t("emptyImages.title")}</Text>;
+  function renderImageStack()
+  {
+    if (images.length === 0)
+    {
+      return <Text c="dimmed">{t("emptyImages.title")}</Text>;
+    }
 
-    return (<ImagesStack images={images}/>);  }
+    return (<ImagesStack images={images}/>);
+  }
 
   return (
     <Stack gap="md" pos="relative">
-      <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+      <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }}/>
       <Flex gap="md">
         <FieldValue name={t("field.createdOn")}
-                    value={<Text size="sm"><FormatedDate timestamp={repository.creationDate} /></Text>} />
+                    value={<Text size="sm"><FormatedDate timestamp={repository.creationDate}/></Text>}/>
         <FieldValue name={t("field.modifiedOn")}
-                    value={<Text size="sm"><FormatedDate timestamp={repository.modificationDate} /></Text>} />
+                    value={<Text size="sm"><FormatedDate timestamp={repository.modificationDate}/></Text>}/>
       </Flex>
       <FieldValue name={t("repositoryDetail.imageCount")}
                   value={<Badge size="lg" variant="light" mt={4}><NumberFormatter value={totalCount}
-                                                                                  thousandSeparator /></Badge>} />
-      <FieldValue name={t("repositoryDetail.latestImages")} value={renderImageStack()} />
+                                                                                  thousandSeparator/></Badge>}/>
+      <FieldValue name={t("repositoryDetail.latestImages")} value={renderImageStack()}/>
     </Stack>
   );
 }

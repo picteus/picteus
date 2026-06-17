@@ -8,9 +8,11 @@ import { ImageService } from "app/services";
 
 type ImagesStackType = { images: ImageSummary[] };
 
-export default function ImagesStack({images}: ImagesStackType) {
+export default function ImagesStack({ images }: ImagesStackType)
+{
 
-  const renderedImages = useMemo(() => (images.map((img, index) => {
+  const renderedImages = useMemo(() => (images.map((img, index) =>
+  {
     const smallEdge = 80;
     const largeEdge = 160;
     return (

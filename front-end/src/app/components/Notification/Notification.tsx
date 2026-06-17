@@ -18,7 +18,8 @@ type NotificationWrapperType = {
   onClick: () => void;
 };
 
-function MantineNotificationWrapper({ notification, icon, onClose, onClick }: NotificationWrapperType) {
+function MantineNotificationWrapper({ notification, icon, onClose, onClick }: NotificationWrapperType)
+{
   return (<MantineNotification
       onClose={onClose}
       styles={{ icon: { backgroundColor: "transparent" } }}
@@ -32,17 +33,19 @@ function MantineNotificationWrapper({ notification, icon, onClose, onClick }: No
   );
 }
 
-function EnhancedNotificationWrapper({ notification, icon, onClose, onClick }: NotificationWrapperType) {
+function EnhancedNotificationWrapper({ notification, icon, onClose, onClick }: NotificationWrapperType)
+{
   return (
     <Flex align="flex-start" gap={8} onClick={onClick} className={style.wrapper}>
       {icon}
       <Flex direction="column" gap={4} flex={1}>
         <Flex justify="space-between" align="center">
           <Text fw={500} size="sm">{notification.title}</Text>
-          <CloseButton onClick={(event) => {
+          <CloseButton onClick={(event) =>
+          {
             event.stopPropagation();
             onClose();
-          }} />
+          }}/>
         </Flex>
         <Text c="gray" size="sm" className={style.description}>
           {notification.description}
@@ -62,25 +65,33 @@ type NotificationType = {
   onOpen?: () => void;
 };
 
-export default function Notification({ notification, isToast = false, onClose, onOpen }: NotificationType) {
+export default function Notification({ notification, isToast = false, onClose, onOpen }: NotificationType)
+{
   const [, addModal, removeModal] = useActionModalContext();
 
-  function handleOnClose() {
-    if (!isToast) {
+  function handleOnClose()
+  {
+    if (!isToast)
+    {
       void EventService.deleteNotification(notification.id);
-      if (onClose) {
+      if (onClose)
+      {
         onClose();
       }
     }
   }
 
-  async function handleOnClick() {
+  async function handleOnClick()
+  {
     let image;
-    if (notification.type === "image") {
-      try {
+    if (notification.type === "image")
+    {
+      try
+      {
         image = await ImageService.get({ id: notification.entityId });
       }
-      catch (error) {
+      catch (error)
+      {
         NotificationsService.apiCallError(error);
         return;
       }
@@ -90,7 +101,8 @@ export default function Notification({ notification, isToast = false, onClose, o
             image={image}
             images={[image]}
             viewMode="masonry"
-            onClose={() => {
+            onClose={() =>
+            {
               removeModal(id);
             }}
           />),
@@ -98,27 +110,32 @@ export default function Notification({ notification, isToast = false, onClose, o
         fullScreen: true
       });
     }
-    if (onOpen) {
+    if (onOpen)
+    {
       onOpen();
     }
   }
 
-  function computeIcon(size: number) {
-    if (!notification.entityUrl) {
+  function computeIcon(size: number)
+  {
+    if (!notification.entityUrl)
+    {
       return <IconInfoCircle stroke={Common.IconStrokeSize} size={size}/>;
     }
     return (<div onClick={handleOnClick}>
-        <ImageThumbnail imageOrUrl={notification.entityUrl} width={size} height={size} />
+        <ImageThumbnail imageOrUrl={notification.entityUrl} width={size} height={size}/>
       </div>
     );
   }
 
-  if (isToast) {
+  if (isToast)
+  {
     return <MantineNotificationWrapper notification={notification} icon={computeIcon(32)} onClose={handleOnClose}
-                                       onClick={handleOnClick} />;
+                                       onClick={handleOnClick}/>;
   }
-  else {
+  else
+  {
     return <EnhancedNotificationWrapper notification={notification} icon={computeIcon(64)} onClose={handleOnClose}
-                                       onClick={handleOnClick} />;
+                                        onClick={handleOnClick}/>;
   }
 }

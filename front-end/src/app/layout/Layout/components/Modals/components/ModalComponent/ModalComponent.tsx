@@ -17,36 +17,47 @@ type ModalChildType = {
   fullScreen: boolean;
 }
 
-function ModalChild({ component, fullScreen }: ModalChildType) {
+function ModalChild({ component, fullScreen }: ModalChildType)
+{
   const focusRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (focusRef.current !== null) {
+  useEffect(() =>
+  {
+    if (focusRef.current !== null)
+    {
       let cleared = false;
       const node = focusRef.current;
       let focusElement: HTMLElement | null = node.querySelector("[data-autofocus]");
 
-      if (!focusElement) {
+      if (!focusElement)
+      {
         const children = Array.from<HTMLElement>(node.querySelectorAll(FOCUS_SELECTOR));
         focusElement = children.find(tabbable) || children.find(focusable) || null;
-        if (!focusElement && focusable(node)) {
+        if (!focusElement && focusable(node))
+        {
           focusElement = node;
         }
       }
-      if (!focusElement) {
+      if (!focusElement)
+      {
         return;
       }
-      const interval = setInterval(() => {
-        if (document.activeElement !== focusElement) {
+      const interval = setInterval(() =>
+      {
+        if (document.activeElement !== focusElement)
+        {
           focusElement.focus({ preventScroll: true });
         }
-        else {
+        else
+        {
           cleared = true;
           clearInterval(interval);
         }
       }, 1_000 / 60);
-      return () => {
-        if (cleared === false) {
+      return () =>
+      {
+        if (cleared === false)
+        {
           clearInterval(interval);
         }
       };
@@ -60,17 +71,22 @@ function ModalChild({ component, fullScreen }: ModalChildType) {
   );
 }
 
-function useRememberActiveElement(shouldRemember: boolean): () => void {
+function useRememberActiveElement(shouldRemember: boolean): () => void
+{
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (shouldRemember) {
+  useEffect(() =>
+  {
+    if (shouldRemember)
+    {
       previousActiveElementRef.current = document.activeElement as HTMLElement | null;
     }
   }, [shouldRemember]);
 
-  return useCallback(() => {
-    if (previousActiveElementRef.current && typeof previousActiveElementRef.current.focus === "function") {
+  return useCallback(() =>
+  {
+    if (previousActiveElementRef.current && typeof previousActiveElementRef.current.focus === "function")
+    {
       previousActiveElementRef.current.focus();
     }
   }, []);
@@ -83,41 +99,50 @@ type ModalComponentType = {
 
 export default function ModalComponent({
   modal,
-  onClose,
-}: ModalComponentType) {
+  onClose
+}: ModalComponentType)
+{
   const [opened, disclosureHandlers] = useDisclosure(true);
   const ref = useRef<HTMLDivElement>(null);
 
   const restoreFocus = useRememberActiveElement(opened);
 
-  const handleOnClose = useCallback((viaOnSuccess: boolean): void => {
-    if (modal.onBeforeClose !== undefined) {
+  const handleOnClose = useCallback((viaOnSuccess: boolean): void =>
+  {
+    if (modal.onBeforeClose !== undefined)
+    {
       modal.onBeforeClose(viaOnSuccess);
     }
     restoreFocus();
     disclosureHandlers.close();
-    onClose(modal.id)
+    onClose(modal.id);
   }, [modal, restoreFocus]);
 
-  const handleOnCloseCancel = useCallback((): void => {
+  const handleOnCloseCancel = useCallback((): void =>
+  {
     handleOnClose(false);
-    }, [handleOnClose]);
+  }, [handleOnClose]);
 
-  useEscapeKey(ref, () => {
-    if (modal.closeOnEscape !== false) {
+  useEscapeKey(ref, () =>
+  {
+    if (modal.closeOnEscape !== false)
+    {
       handleOnClose(false);
     }
   });
 
   const fullScreen = modal.fullScreen;
 
-  function computeTitle() {
-    const title = typeof modal.title === "string" ? <ContentTitle text={modal.title} icon={modal.icon} /> : modal.title;
-    if (fullScreen) {
+  function computeTitle()
+  {
+    const title = typeof modal.title === "string" ?
+      <ContentTitle text={modal.title} icon={modal.icon}/> : modal.title;
+    if (fullScreen)
+    {
       return (
         <Flex align="center" gap="md">
           <ActionIcon onClick={handleOnCloseCancel} variant="default">
-            <IconChevronLeft />
+            <IconChevronLeft/>
           </ActionIcon>
           {title}
         </Flex>
@@ -126,11 +151,12 @@ export default function ModalComponent({
     return title;
   }
 
-  const wrappedComponent = !(modal.component.props.onSuccess !== undefined && typeof modal.component.props.onSuccess === "function") ? modal.component :React.cloneElement(modal.component, {
-    onSuccess: (args) => {
+  const wrappedComponent = !(modal.component.props.onSuccess !== undefined && typeof modal.component.props.onSuccess === "function") ? modal.component : React.cloneElement(modal.component, {
+    onSuccess: (args) =>
+    {
       modal.component.props.onSuccess(args);
       handleOnClose(true);
-    },
+    }
   });
 
   const classNames = {
@@ -155,10 +181,10 @@ export default function ModalComponent({
       fullScreen={fullScreen}
       withCloseButton={modal.withCloseButton ?? true}
       size={size}
-      title={modal.title === undefined ? undefined : computeTitle() }
+      title={modal.title === undefined ? undefined : computeTitle()}
       zIndex={10}
     >
-      <ModalChild component={wrappedComponent} fullScreen={fullScreen} />
+      <ModalChild component={wrappedComponent} fullScreen={fullScreen}/>
     </Modal>
   );
 }

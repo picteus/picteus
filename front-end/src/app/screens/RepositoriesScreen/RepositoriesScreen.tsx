@@ -22,7 +22,8 @@ import {
 import { AddOrUpdateRepository, RepositoryActions, RepositoryDetail, RepositoryTop } from "./components";
 
 
-export default function RepositoriesScreen() {
+export default function RepositoriesScreen()
+{
   const [t] = useTranslation();
   const [repositories, setRepositories] = useState<Repository[]>(RepositoriesService.list());
   const [loading, setLoading] = useState<boolean>(false);
@@ -31,40 +32,53 @@ export default function RepositoriesScreen() {
   const [selectedRepository, setSelectedRepository] = useState<Repository>();
   const [, addModal] = useActionModalContext();
 
-  async function fetchAllRepositories() {
+  async function fetchAllRepositories()
+  {
     setLoading(true);
-    try {
+    try
+    {
       setRepositories(await RepositoriesService.fetchAll());
     }
-    finally {
+    finally
+    {
       setLoading(false);
     }
   }
 
-  function nothing(){}
+  function nothing()
+  {
+  }
 
-  function openAddOrUpdateRepositoryModal(repository?: Repository) {
+  function openAddOrUpdateRepositoryModal(repository?: Repository)
+  {
     addModal({
       title: t(`addOrUpdateRepositoryModal.${repository ? "updateTitle" : "addTitle"}`),
-      icon: { icon: <IconFolderOpen stroke={Common.IconStrokeSize} /> },
+      icon: { icon: <IconFolderOpen stroke={Common.IconStrokeSize}/> },
       size: "s",
-      component: <AddOrUpdateRepository repository={repository} onSuccess={nothing} />,
+      component: <AddOrUpdateRepository repository={repository} onSuccess={nothing}/>
     });
   }
 
-  useEffect(() => {
-    if (selectedRepository) {
+  useEffect(() =>
+  {
+    if (selectedRepository)
+    {
       const updated = repositories.find((r) => r.id === selectedRepository.id);
-      if (updated && updated !== selectedRepository) {
+      if (updated && updated !== selectedRepository)
+      {
         setSelectedRepository(updated);
-      } else if (!updated) {
+      }
+      else if (!updated)
+      {
         setSelectedRepository(undefined);
       }
     }
   }, [repositories, selectedRepository]);
 
-  useEffect(() => {
-    if (event?.channel.startsWith(ChannelEnum.REPOSITORY_PREFIX)) {
+  useEffect(() =>
+  {
+    if (event?.channel.startsWith(ChannelEnum.REPOSITORY_PREFIX))
+    {
       void fetchAllRepositories();
     }
   }, [event]);
@@ -80,9 +94,9 @@ export default function RepositoriesScreen() {
       </Table.Td>
       <Table.Td>
         {repository.comment ? (
-           <Text size="md">{repository.comment}</Text>
+          <Text size="md">{repository.comment}</Text>
         ) : (
-          <NoValue />
+          <NoValue/>
         )}
       </Table.Td>
       <Table.Td>
@@ -92,7 +106,7 @@ export default function RepositoriesScreen() {
         <Text size="md"><FormatedDate timestamp={repository.modificationDate}/></Text>
       </Table.Td>
       <Table.Td>
-        <EntityStatus type="repository" status={repository.status} size="md" />
+        <EntityStatus type="repository" status={repository.status} size="md"/>
       </Table.Td>
       <Table.Td>
         <RepositoryActions
@@ -104,16 +118,18 @@ export default function RepositoriesScreen() {
     </Table.Tr>
   ));
 
-  function renderTable() {
-    return <StandardTable head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", "field.status", ""]}
-                          loading={loading}
-                          emptyResults={<EmptyResults
-                            icon={IconFolderSearch}
-                            description={t("emptyRepositories.description")}
-                            title={t("emptyRepositories.title")}
-                            buttonText={t("emptyRepositories.buttonText")}
-                            buttonAction={() => openAddOrUpdateRepositoryModal()}
-                          />}>
+  function renderTable()
+  {
+    return <StandardTable
+      head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", "field.status", ""]}
+      loading={loading}
+      emptyResults={<EmptyResults
+        icon={IconFolderSearch}
+        description={t("emptyRepositories.description")}
+        title={t("emptyRepositories.title")}
+        buttonText={t("emptyRepositories.buttonText")}
+        buttonAction={() => openAddOrUpdateRepositoryModal()}
+      />}>
       {rows}
     </StandardTable>;
   }
@@ -125,12 +141,12 @@ export default function RepositoriesScreen() {
           <Title>{t("repositoryScreen.title")}</Title>
           <Flex gap="sm" align="center">
             <Button
-              leftSection={<IconPlus size={20} />}
+              leftSection={<IconPlus size={20}/>}
               onClick={() => openAddOrUpdateRepositoryModal()}
             >
               {t("button.add")}
             </Button>
-            <RefreshButton onRefresh={() => fetchAllRepositories()} />
+            <RefreshButton onRefresh={() => fetchAllRepositories()}/>
           </Flex>
         </Flex>
         {renderTable()}
@@ -140,10 +156,10 @@ export default function RepositoriesScreen() {
         onClose={() => setSelectedRepository(undefined)}
         title={selectedRepository && <RepositoryTop repository={selectedRepository}
                                                     onEdit={openAddOrUpdateRepositoryModal}
-                                                    onDeleted={nothing} />}
+                                                    onDeleted={nothing}/>}
       >
         {selectedRepository && (
-          <RepositoryDetail repository={selectedRepository} />
+          <RepositoryDetail repository={selectedRepository}/>
         )}
       </Drawer>
     </Container>

@@ -13,17 +13,20 @@ type EntityStatusType = {
 
 export default function EntityStatus({ type, status, size }: EntityStatusType)
 {
-  if (type === "repository") {
-    if (status === RepositoryStatus.Indexing) {
+  if (type === "repository")
+  {
+    if (status === RepositoryStatus.Indexing)
+    {
       return (
-        <Badge color="yellow" size={size} leftSection={<Loader />}>
+        <Badge color="yellow" size={size} leftSection={<Loader/>}>
           {status}
         </Badge>
       );
     }
     return <Badge color={status === RepositoryStatus.Ready ? "green" : "gray"} size={size}>{status}</Badge>;
   }
-  else {
+  else
+  {
     return <Badge color={status === ExtensionStatus.Paused ? "gray" : "green"} size={size}>{status}</Badge>;
   }
 }

@@ -14,19 +14,23 @@ import style from "./ImageItem.module.scss";
 import { useImageDateChanged } from "../../hooks";
 
 
-function useImageRefStatus(src: string): { imgRef: RefObject<HTMLImageElement>, isLoaded: boolean, isError: boolean } {
+function useImageRefStatus(src: string): { imgRef: RefObject<HTMLImageElement>, isLoaded: boolean, isError: boolean }
+{
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const img = imgRef.current;
-    if (img === null || src === undefined) {
+    if (img === null || src === undefined)
+    {
       return;
     }
     setIsLoaded(false);
     setIsError(false);
-    if (img.complete === true && img.naturalWidth !== 0) {
+    if (img.complete === true && img.naturalWidth !== 0)
+    {
       setIsLoaded(true);
       return;
     }
@@ -34,7 +38,8 @@ function useImageRefStatus(src: string): { imgRef: RefObject<HTMLImageElement>, 
     img.addEventListener("load", handleLoad);
     const handleError = () => setIsError(true);
     img.addEventListener("error", handleError);
-    return () => {
+    return () =>
+    {
       img.removeEventListener("load", handleLoad);
       img.removeEventListener("error", handleError);
     };
@@ -42,11 +47,13 @@ function useImageRefStatus(src: string): { imgRef: RefObject<HTMLImageElement>, 
   return { imgRef, isLoaded, isError };
 }
 
-function computeResizeRender(width: number, height: number): ImageResizeRender {
+function computeResizeRender(width: number, height: number): ImageResizeRender
+{
   return width === undefined || height === undefined ? "inbox" : "outbox";
 }
 
-function computeImageSrc(image: ImageOrSummary, width: number, height: number, resizeRender: ImageResizeRender, hasImageDateChanged: boolean): string {
+function computeImageSrc(image: ImageOrSummary, width: number, height: number, resizeRender: ImageResizeRender, hasImageDateChanged: boolean): string
+{
   const url = ImageService.getImageSrc(image.uri, width, height, resizeRender);
   const imageDate = image.fileDates?.modificationDate ?? image.modificationDate;
   return (imageDate && hasImageDateChanged) ? `${url}&t=${imageDate}` : url;
@@ -55,10 +62,12 @@ function computeImageSrc(image: ImageOrSummary, width: number, height: number, r
 function computeExpectedDimensions(width: number, height: number, image: ImageOrSummary): {
   resizeRender: ImageResizeRender,
   expectedDimensions: ImageDimensions
-} {
+}
+{
   const resizeRender = computeResizeRender(width, height);
   let expectedDimensions: ImageDimensions;
-  if (resizeRender === "inbox") {
+  if (resizeRender === "inbox")
+  {
     const scalingRatio = Math.min(1, width !== undefined ? (image.dimensions.width / width) : (image.dimensions.height / height));
     const imageRatio = image.dimensions.width / image.dimensions.height;
     expectedDimensions = {
@@ -66,7 +75,8 @@ function computeExpectedDimensions(width: number, height: number, image: ImageOr
       height: Math.round(scalingRatio * (height !== undefined ? height : (width / imageRatio)))
     };
   }
-  else {
+  else
+  {
     expectedDimensions = ImageService.computeImageDimensions(image.dimensions, { width, height }, resizeRender);
   }
   return { resizeRender, expectedDimensions };
@@ -89,8 +99,9 @@ export default function ImageItem({
   mode = ImageItemMode.VIEW,
   overlay,
   viewMode,
-  onClick,
-}: ImageItemType) {
+  onClick
+}: ImageItemType)
+{
   const [t] = useTranslation();
   const [menuOpened, setMenuOpened] = useState<boolean>(false);
   const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
@@ -99,7 +110,8 @@ export default function ImageItem({
   const [imageSrc, setImageSrc] = useState<string>(computeImageSrc(image, width, height, computeResizeRender(width, height), hasImageDateChanged));
   const { imgRef, isLoaded, isError } = useImageRefStatus(imageSrc);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const {
       resizeRender,
       expectedDimensions: newImageExpectedDimensions
@@ -110,18 +122,22 @@ export default function ImageItem({
 
   const handleOnSelectImage = useCallback(() => toggleSelectedImage(image), [image, toggleSelectedImage]);
 
-  const handleOnClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
+  const handleOnClick = useCallback((event: React.MouseEvent<HTMLElement>) =>
+  {
     event.stopPropagation();
     const target = event.target as HTMLElement;
-    if (mode === ImageItemMode.SELECT) {
+    if (mode === ImageItemMode.SELECT)
+    {
       return handleOnSelectImage();
     }
-    if (target.getAttribute("data-action")) {
+    if (target.getAttribute("data-action"))
+    {
       onClick(image);
     }
   }, [mode, handleOnSelectImage, onClick]);
 
-  const handleOnChangeMenuOpened = useCallback((opened: boolean) => {
+  const handleOnChangeMenuOpened = useCallback((opened: boolean) =>
+  {
     setMenuOpened(opened);
   }, []);
 
@@ -146,10 +162,10 @@ export default function ImageItem({
     >
       <Menu.Target>
         <ActionIcon variant="default">
-          <IconDots />
+          <IconDots/>
         </ActionIcon>
       </Menu.Target>
-      {menuOpened && <ImageItemMenu image={image} viewMode={viewMode} />}
+      {menuOpened && <ImageItemMenu image={image} viewMode={viewMode}/>}
     </Menu>
   )), [image, menuOpened, handleOnChangeMenuOpened]);
 
@@ -180,7 +196,8 @@ export default function ImageItem({
     style={imageExpectedDimensions}
   />), [imgRef, isLoaded, imageSrc, imageExpectedDimensions]);
 
-  const overlayElement = useMemo(() => ((overlay && mode !== ImageItemMode.SELECT) && <div className={style.captionContainer}>{overlay}</div>), [overlay, mode]);
+  const overlayElement = useMemo(() => ((overlay && mode !== ImageItemMode.SELECT) &&
+    <div className={style.captionContainer}>{overlay}</div>), [overlay, mode]);
 
   const placeholder = useMemo(() => (isLoaded === false &&
     <Flex className={style.placeholder} align="center" justify="center">{isError === true && (

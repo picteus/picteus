@@ -8,15 +8,16 @@ type OverlayIndicatorType = {
   text: string;
 };
 
-export default function OverlayIndicator({ text }: OverlayIndicatorType) {
- return (<Badge
-     size="lg"
-     variant="filled"
-     color="dark"
-     radius="md"
-     className={style.text}
-   >
-     {text}
-   </Badge>
- );
+export default function OverlayIndicator({ text }: OverlayIndicatorType)
+{
+  return (<Badge
+      size="lg"
+      variant="filled"
+      color="dark"
+      radius="md"
+      className={style.text}
+    >
+      {text}
+    </Badge>
+  );
 }

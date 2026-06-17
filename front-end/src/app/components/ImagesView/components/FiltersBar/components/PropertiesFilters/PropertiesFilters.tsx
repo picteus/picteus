@@ -15,23 +15,29 @@ type PropertiesFiltersType = {
   onChange: (properties?: SearchProperties) => void;
 };
 
-export default function PropertiesFilters({ properties, onChange }: PropertiesFiltersType) {
+export default function PropertiesFilters({ properties, onChange }: PropertiesFiltersType)
+{
   const [t] = useTranslation();
 
-  const handleRangeChange = (key: keyof SearchProperties, bound: "minimum" | "maximum", val: number | undefined) => {
+  const handleRangeChange = (key: keyof SearchProperties, bound: "minimum" | "maximum", val: number | undefined) =>
+  {
     const currentRange = properties?.[key] || {};
     const newRange = { ...currentRange, [bound]: val };
 
-    if (newRange.minimum === undefined && newRange.maximum === undefined) {
+    if (newRange.minimum === undefined && newRange.maximum === undefined)
+    {
       const newProps = { ...properties };
       delete newProps[key];
       onChange(Object.keys(newProps).length > 0 ? newProps : undefined);
-    } else {
+    }
+    else
+    {
       onChange({ ...properties, [key]: newRange });
     }
   };
 
-  const handleRangeSliderChange = (key: keyof SearchProperties, val: [number, number], maxVal: number) => {
+  const handleRangeSliderChange = (key: keyof SearchProperties, val: [number, number], maxVal: number) =>
+  {
     const currentRange = properties?.[key] || {};
     const newRange = {
       ...currentRange,
@@ -39,27 +45,34 @@ export default function PropertiesFilters({ properties, onChange }: PropertiesFi
       maximum: val[1] === maxVal ? undefined : val[1]
     };
 
-    if (newRange.minimum === undefined && newRange.maximum === undefined) {
+    if (newRange.minimum === undefined && newRange.maximum === undefined)
+    {
       const newProps = { ...properties };
       delete newProps[key];
       onChange(Object.keys(newProps).length > 0 ? newProps : undefined);
-    } else {
+    }
+    else
+    {
       onChange({ ...properties, [key]: newRange });
     }
   };
 
-  const handleDateRange = (key: "creationDate" | "modificationDate", bound: "minimum" | "maximum", val: string | null) => {
+  const handleDateRange = (key: "creationDate" | "modificationDate", bound: "minimum" | "maximum", val: string | null) =>
+  {
     const currentRange = properties?.[key] || {};
     const newRange = {
       ...currentRange,
-      [bound]: val ? dayjs(val).valueOf() : undefined,
+      [bound]: val ? dayjs(val).valueOf() : undefined
     };
 
-    if (newRange.minimum === undefined && newRange.maximum === undefined) {
+    if (newRange.minimum === undefined && newRange.maximum === undefined)
+    {
       const newProps = { ...properties };
       delete newProps[key];
       onChange(Object.keys(newProps).length > 0 ? newProps : undefined);
-    } else {
+    }
+    else
+    {
       onChange({ ...properties, [key]: newRange });
     }
   };

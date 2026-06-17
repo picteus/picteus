@@ -12,7 +12,8 @@ import { Common, EmptyResults, Notification } from "app/components";
 import style from "./Notifications.module.scss";
 
 
-export default function Notifications() {
+export default function Notifications()
+{
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
   const notification = useSyncExternalStore(eventStore.subscribeToNotifications, eventStore.getNotification);
@@ -20,7 +21,8 @@ export default function Notifications() {
   const [seed, setSeed] = useState<string>(randomId());
   const [hoverCardKey, setHoverCardKey] = useState<string>(randomId());
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     EventService.getNotifications().then(setNotifications);
   }, [notification, seed]);
 
@@ -35,7 +37,8 @@ export default function Notifications() {
     </div>
   )), [notifications]);
 
-  async function handleOnClearAll() {
+  async function handleOnClearAll()
+  {
     await EventService.deleteAllNotifications();
     setSeed(randomId());
   }
@@ -54,19 +57,19 @@ export default function Notifications() {
     <HoverCard.Target>
       <Indicator inline color="orange" label={notifications.length} size={16}>
         <ActionIcon variant="outline" size="md">
-          <IconBell stroke={Common.IconStrokeSize} />
+          <IconBell stroke={Common.IconStrokeSize}/>
         </ActionIcon>
       </Indicator>
     </HoverCard.Target>
     <HoverCard.Dropdown>
       <Stack gap={10} className={style.container}>
         {notifications?.length === 0 ? (
-            <EmptyResults
-              icon={IconBellZ}
-              isSmall={true}
-              title={t("notifications.empty.title")}
-              description={t("notifications.empty.description")}
-            />
+          <EmptyResults
+            icon={IconBellZ}
+            isSmall={true}
+            title={t("notifications.empty.title")}
+            description={t("notifications.empty.description")}
+          />
         ) : (
           <>
             <Flex mr="sm" align="flex-end" justify="flex-end">

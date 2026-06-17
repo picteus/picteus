@@ -17,20 +17,25 @@ type ImageFeatureType = {
   viewMode: ViewMode;
 };
 
-export default function ImageFeature({ feature, viewMode }: ImageFeatureType) {
+export default function ImageFeature({ feature, viewMode }: ImageFeatureType)
+{
 
-  return useMemo(()=> {
+  return useMemo(() =>
+  {
     const value = feature.value;
-    switch (feature.format) {
+    switch (feature.format)
+    {
       default:
         return "Unexpected";
       case "json":
-        if (feature.type === PicteusImageFeatureType.Recipe) {
-          return <ImageRecipe recipe={GenerationRecipeFromJSON(JSON.parse(feature.value as string))} viewMode={viewMode}/>;
+        if (feature.type === PicteusImageFeatureType.Recipe)
+        {
+          return <ImageRecipe recipe={GenerationRecipeFromJSON(JSON.parse(feature.value as string))}
+                              viewMode={viewMode}/>;
         }
-        return  <CodeViewer code={feature.value as string} />;
+        return <CodeViewer code={feature.value as string}/>;
       case "markdown":
-        return <CopyText value={value as string}><Markdown content={value as string} /></CopyText>;
+        return <CopyText value={value as string}><Markdown content={value as string}/></CopyText>;
       case "xml":
         return value as string;
       case "html":

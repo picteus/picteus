@@ -1,48 +1,59 @@
 .imageContainer,
 .imageWrapper,
-.informationContainer {
+.informationContainer
+{
   height: 100%;
 }
 
 .imageWrapper,
-.image {
+.image
+{
   margin-left: auto;
   margin-right: auto;
   display: block;
 }
 
-.imageContainer {
+.imageContainer
+{
   padding-top: 15px;
   padding-bottom: 15px;
   background: var(--mantine-color-body);
 }
 
-.imageWrapper {
+.imageWrapper
+{
   flex: 1;
   align-content: center;
   position: relative;
 }
 
-.image {
+.image
+{
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
-.image.notLoaded {
+
+.image.notLoaded
+{
   opacity: 0;
 }
-.image.loaded {
+
+.image.loaded
+{
   opacity: 1;
 }
 
-.scalingRatio {
+.scalingRatio
+{
   position: absolute;
   top: 10px;
   right: 10px;
 }
 
-.placeholder {
+.placeholder
+{
   position: absolute;
   top: 0;
   left: 0;
@@ -54,11 +65,15 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
-@keyframes shimmer {
-  0% {
+
+@keyframes shimmer
+{
+  0%
+  {
     background-position: -200% 0;
   }
-  100% {
+  100%
+  {
     background-position: 200% 0;
   }
 }

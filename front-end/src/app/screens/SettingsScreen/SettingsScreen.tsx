@@ -6,25 +6,31 @@ import { Container } from "app/components";
 import { IconActivity, IconDeviceLaptop, IconMoonStars, IconSun } from "@tabler/icons-react";
 import { StorageService } from "app/services";
 
-export default function SettingsScreen() {
+
+export default function SettingsScreen()
+{
   const [t] = useTranslation();
   const [shouldConfirmRedirection, setShouldConfirmRedirection] = useState<boolean>(StorageService.getExtensionIntentShowShouldConfirm());
   const [autoReloadImagesViews, setAutoReloadImagesViews] = useState<boolean>(StorageService.getAutoReloadImagesViews);
   const { colorScheme, setColorScheme } = useMantineColorScheme({ keepTransitions: true });
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     StorageService.setExtensionIntentShowShouldConfirm(shouldConfirmRedirection);
   }, [shouldConfirmRedirection]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     StorageService.setAutoReloadImagesViews(autoReloadImagesViews);
   }, [autoReloadImagesViews]);
 
-  function handleOnChangeColorScheme({ target: { checked: value } }: { target: { checked: boolean } }) {
+  function handleOnChangeColorScheme({ target: { checked: value } }: { target: { checked: boolean } })
+  {
     setColorScheme(value ? "dark" : "light");
   }
 
-  function handleOnChangeAutoReloadImagesViews({ target: { checked: value } }: { target: { checked: boolean } }) {
+  function handleOnChangeAutoReloadImagesViews({ target: { checked: value } }: { target: { checked: boolean } })
+  {
     setAutoReloadImagesViews(value);
   }
 
@@ -36,13 +42,13 @@ export default function SettingsScreen() {
           <Tabs.List>
             <Tabs.Tab
               value="gallery"
-              leftSection={<IconDeviceLaptop size={16} />}
+              leftSection={<IconDeviceLaptop size={16}/>}
             >
               {t("settingsScreen.tabs.display")}
             </Tabs.Tab>
             <Tabs.Tab
               value="extensions"
-              leftSection={<IconActivity size={16} />}
+              leftSection={<IconActivity size={16}/>}
             >
               {t("settingsScreen.tabs.extensions")}
             </Tabs.Tab>

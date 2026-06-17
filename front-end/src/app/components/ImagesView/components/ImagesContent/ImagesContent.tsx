@@ -41,14 +41,15 @@ type ImagesContentType = {
 };
 
 export const ImagesContent = forwardRef<ImagesContentRef, ImagesContentType>(({
-                                    viewMode,
-                                    containerRef,
-                                    contentRef,
-                                    scrollRootRef,
-                                    onEmptyResults,
-                                    onFetchData,
-                                    refreshTrigger,
-                                  }: ImagesContentType, ref: ForwardedRef<ImagesContentRef>) => {
+  viewMode,
+  containerRef,
+  contentRef,
+  scrollRootRef,
+  onEmptyResults,
+  onFetchData,
+  refreshTrigger
+}: ImagesContentType, ref: ForwardedRef<ImagesContentRef>) =>
+{
   const [pagination, setPagination] = useState<PaginationType>({ currentPage: 1, take: imagesPerPage, skip: 0 });
   const [totalImagesCount, setTotalImagesCount] = useState<number>(-1);
   const [accumulatedImages, setAccumulatedImages] = useState<ImageOrSummary[]>([]);
@@ -58,10 +59,13 @@ export const ImagesContent = forwardRef<ImagesContentRef, ImagesContentType>(({
   const onFetchDataRef = useRef<(searchRange: SearchRange) => Promise<ImageExplorerDataType>>(onFetchData);
 
   useImperativeHandle(ref, () => ({
-    onImageDeleted(imageId: string): void {
-      setAccumulatedImages(previousValue => {
+    onImageDeleted(imageId: string): void
+    {
+      setAccumulatedImages(previousValue =>
+      {
         const index = previousValue.findIndex(image => image.id === imageId);
-        if (index !== -1) {
+        if (index !== -1)
+        {
           const updatedAccumulatedImages = [...previousValue];
           updatedAccumulatedImages.splice(index, 1);
           return updatedAccumulatedImages;
@@ -69,10 +73,13 @@ export const ImagesContent = forwardRef<ImagesContentRef, ImagesContentType>(({
         return previousValue;
       });
     },
-    onImageUpdated(image: ImageOrSummary): void {
-      setAccumulatedImages(previousValue => {
+    onImageUpdated(image: ImageOrSummary): void
+    {
+      setAccumulatedImages(previousValue =>
+      {
         const index = previousValue.findIndex(anImage => anImage.id === image.id);
-        if (index !== -1) {
+        if (index !== -1)
+        {
           const updatedAccumulatedImages = [...previousValue];
           updatedAccumulatedImages.splice(index, 1, image);
           return updatedAccumulatedImages;
@@ -82,8 +89,10 @@ export const ImagesContent = forwardRef<ImagesContentRef, ImagesContentType>(({
     }
   }), []);
 
-  useEffect(() => {
-    if (refreshTrigger >= 1) {
+  useEffect(() =>
+  {
+    if (refreshTrigger >= 1)
+    {
       allImagesLoadedRef.current = false;
       fetchSessionIdRef.current += 1;
       isFetchingDataRef.current = false;
@@ -94,24 +103,32 @@ export const ImagesContent = forwardRef<ImagesContentRef, ImagesContentType>(({
     }
   }, [refreshTrigger]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     onFetchDataRef.current = onFetchData;
   }, [onFetchData]);
 
-  useEffect(() => {
-    if (isFetchingDataRef.current === false && allImagesLoadedRef.current === false) {
+  useEffect(() =>
+  {
+    if (isFetchingDataRef.current === false && allImagesLoadedRef.current === false)
+    {
       const currentSessionId = fetchSessionIdRef.current;
       isFetchingDataRef.current = true;
-      onFetchDataRef.current(pagination).then((data: ImageExplorerDataType)=> {
-        if (currentSessionId !== fetchSessionIdRef.current) {
+      onFetchDataRef.current(pagination).then((data: ImageExplorerDataType) =>
+      {
+        if (currentSessionId !== fetchSessionIdRef.current)
+        {
           return;
         }
         isFetchingDataRef.current = false;
         setTotalImagesCount(data.total);
-        if (data.images.length > 0) {
-          setAccumulatedImages((previousAccumulatedImages) => {
+        if (data.images.length > 0)
+        {
+          setAccumulatedImages((previousAccumulatedImages) =>
+          {
             const newAccumulatedData = [...previousAccumulatedImages, ...data.images];
-            if (newAccumulatedData.length >= data.total) {
+            if (newAccumulatedData.length >= data.total)
+            {
               allImagesLoadedRef.current = true;
             }
             return newAccumulatedData;
@@ -121,14 +138,19 @@ export const ImagesContent = forwardRef<ImagesContentRef, ImagesContentType>(({
     }
   }, [pagination]);
 
-  const loadMore = useCallback(() => {
-    if (isFetchingDataRef.current || allImagesLoadedRef.current === true) {
+  const loadMore = useCallback(() =>
+  {
+    if (isFetchingDataRef.current || allImagesLoadedRef.current === true)
+    {
       return;
     }
-    setPagination(previousPagination => {
-      if (totalImagesCount !== -1) {
+    setPagination(previousPagination =>
+    {
+      if (totalImagesCount !== -1)
+      {
         const maximumPage = Math.ceil(totalImagesCount / previousPagination.take);
-        if (previousPagination.currentPage >= maximumPage) {
+        if (previousPagination.currentPage >= maximumPage)
+        {
           allImagesLoadedRef.current = true;
           return previousPagination;
         }
@@ -141,42 +163,46 @@ export const ImagesContent = forwardRef<ImagesContentRef, ImagesContentType>(({
     });
   }, [totalImagesCount]);
 
-  if (totalImagesCount === 0) {
+  if (totalImagesCount === 0)
+  {
     return onEmptyResults();
   }
 
   const imagesCountIndicator = totalImagesCount > 0 ? (
     <Portal target={contentRef.current}>
       <Box className={style.imagesCountIndicator}>
-        <OverlayIndicator text={`${accumulatedImages.length} / ${totalImagesCount}`} />
+        <OverlayIndicator text={`${accumulatedImages.length} / ${totalImagesCount}`}/>
       </Box>
     </Portal>
   ) : null;
 
-  if (viewMode === "masonry") {
+  if (viewMode === "masonry")
+  {
     return (
       <>
         <ImageMasonry images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
-                      scrollRootRef={scrollRootRef} />
+                      scrollRootRef={scrollRootRef}/>
         {imagesCountIndicator}
       </>
     );
   }
 
-  if (viewMode === "gallery") {
+  if (viewMode === "gallery")
+  {
     return (
       <>
         <ImageGallery images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}
-                      scrollRootRef={scrollRootRef} />
+                      scrollRootRef={scrollRootRef}/>
         {imagesCountIndicator}
       </>
     );
   }
 
-  if (viewMode === "table") {
+  if (viewMode === "table")
+  {
     return (
       <>
-        <ImageTable images={accumulatedImages} loadMore={loadMore} containerRef={containerRef} />
+        <ImageTable images={accumulatedImages} loadMore={loadMore} containerRef={containerRef}/>
         {imagesCountIndicator}
       </>
     );

@@ -12,29 +12,34 @@ import "assets/style/style.scss";
 import "assets/style/override.scss";
 import { EventService, StorageService } from "./app/services";
 
+
 const theme = createTheme({
-  fontFamily: "Roboto, sans-serif",
+  fontFamily: "Roboto, sans-serif"
 });
 
 DefaultConfig.config = new Configuration({
   basePath: BASE_PATH,
-  apiKey: API_KEY || "",
+  apiKey: API_KEY || ""
 });
 
-function App() {
+function App()
+{
   const [bootstrapping, setBootstrapping] = useState<boolean>(true);
   const [bootstrapLogs, setBootstrapLogs] = useState<string[]>([]);
 
-  async function upgrade(previousVersion: string, currentVersion: string): Promise<void> {
+  async function upgrade(previousVersion: string, currentVersion: string): Promise<void>
+  {
     EventService.upgrade(previousVersion, currentVersion);
   }
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const run = async () =>
     {
       const currentVersion = import.meta.env.PACKAGE_VERSION;
       const previousVersion = StorageService.getVersion();
-      if (previousVersion !== currentVersion) {
+      if (previousVersion !== currentVersion)
+      {
         await upgrade(previousVersion ?? currentVersion, currentVersion);
         StorageService.setVersion(currentVersion);
       }
@@ -63,15 +68,15 @@ function App() {
   }, []);
 
   const colorSchemeManager = localStorageColorSchemeManager({
-    key: StorageService.COLOR_SCHEME,
+    key: StorageService.COLOR_SCHEME
   });
 
   return (
     <MantineProvider colorSchemeManager={colorSchemeManager} theme={theme}>
       {bootstrapping ? (
-        <BootstrapScreen logs={bootstrapLogs} />
+        <BootstrapScreen logs={bootstrapLogs}/>
       ) : (
-        <Initializer />
+        <Initializer/>
       )}
     </MantineProvider>
   );

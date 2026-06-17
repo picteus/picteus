@@ -6,10 +6,12 @@ type AiModelTagType = {
   tag: string;
 };
 
-export default function AiModelTag({ tag }: AiModelTagType) {
+export default function AiModelTag({ tag }: AiModelTagType)
+{
   const match = tag.match(/^(([^/]+)\/)?([^:]+)(:(.+))?$/);
 
-  if (match === null) {
+  if (match === null)
+  {
     return (<Badge tt="none" variant="outline">        {tag}      </Badge>);
   }
   const editor = match[2];

@@ -1,11 +1,14 @@
-.loader {
+.loader
+{
   width: 16px;
   height: 16px;
   display: inline-block;
   position: relative;
 }
+
 .loader::after,
-.loader::before {
+.loader::before
+{
   content: '';
   width: 16px;
   height: 16px;
@@ -17,16 +20,21 @@
   box-sizing: border-box;
   animation: animloader 2s ease-in-out infinite;
 }
-.loader::after {
+
+.loader::after
+{
   animation-delay: 0s;
 }
 
-@keyframes animloader {
-  0%, 100% {
+@keyframes animloader
+{
+  0%, 100%
+  {
     transform: scale(0.1);
     opacity: 1;
   }
-  50% {
+  50%
+  {
     transform: scale(1);
     opacity: 0;
   }

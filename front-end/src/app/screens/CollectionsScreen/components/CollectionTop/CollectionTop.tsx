@@ -15,17 +15,18 @@ type CollectionTopType = {
   onDeleted: () => void;
 };
 
-export default function CollectionTop({ collection, onEdit, onDeleted }: CollectionTopType) {
+export default function CollectionTop({ collection, onEdit, onDeleted }: CollectionTopType)
+{
   const { t } = useTranslation();
 
   return (<>
-      <ContentTitle text={collection.name} icon={{ icon: <IconLibrary stroke={Common.IconStrokeSize} /> }} />
+      <ContentTitle text={collection.name} icon={{ icon: <IconLibrary stroke={Common.IconStrokeSize}/> }}/>
       <Stack gap="md" pos="relative">
         <FieldValue name={t("field.id")} value={<CopyText value={collection.id.toString()} inline={true}>
           <Text size="xs" c="dimmed">{collection.id}</Text>
-        </CopyText>} />
+        </CopyText>}/>
         <FieldValue name={t("field.comment")}
-                    value={collection.comment ? <Text>{collection.comment}</Text> : <NoValue />} />
+                    value={collection.comment ? <Text>{collection.comment}</Text> : <NoValue/>}/>
         <Flex gap="sm" mt="lg">
           <CollectionActions
             collection={collection}

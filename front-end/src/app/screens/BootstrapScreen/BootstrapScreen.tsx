@@ -7,18 +7,23 @@ import style from "./BootstrapScreen.module.scss";
 import { useTranslation } from "react-i18next";
 import { hexToRgb } from "utils";
 
-export default function BootstrapScreen({ logs }: { logs: string[] }) {
+
+export default function BootstrapScreen({ logs }: { logs: string[] })
+{
   const [t] = useTranslation();
   const { colorScheme } = useMantineColorScheme();
   const theme = useMantineTheme();
   const [previousLogs, setPreviousLogs] = useState<string[]>([]);
 
-  const lastLog = useMemo(() => {
+  const lastLog = useMemo(() =>
+  {
     return logs?.[logs.length - 1] || t("bootstrap.loading");
   }, [logs]);
 
-  useEffect(() => {
-    if (logs.length > 1) {
+  useEffect(() =>
+  {
+    if (logs.length > 1)
+    {
       setPreviousLogs(logs.slice(0, logs.length - 1).map((log) => "✓ " + log));
     }
   }, [logs]);
@@ -38,7 +43,7 @@ export default function BootstrapScreen({ logs }: { logs: string[] }) {
         align={"flex-end"}
         className={style.logsContainer}
         style={{
-          "--mantine-color-body": hexToRgb(bodyColor),
+          "--mantine-color-body": hexToRgb(bodyColor)
         }}
       >
         <div className={style.blurGradient}></div>
@@ -49,9 +54,9 @@ export default function BootstrapScreen({ logs }: { logs: string[] }) {
             </Text>
           ))}
           <Flex gap={8} align={"flex-start"}>
-            <Spinner />
+            <Spinner/>
             <Text size="md">
-              <ReactTyped strings={[lastLog]} typeSpeed={2} backSpeed={10} />
+              <ReactTyped strings={[lastLog]} typeSpeed={2} backSpeed={10}/>
             </Text>
           </Flex>
         </div>

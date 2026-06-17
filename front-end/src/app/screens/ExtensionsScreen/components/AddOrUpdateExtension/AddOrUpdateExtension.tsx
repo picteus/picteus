@@ -17,7 +17,7 @@ type FormValueType = {
 };
 
 const initialValues: FormValueType = {
-  file: undefined,
+  file: undefined
 };
 
 type AddOrUpdateExtensionType = {
@@ -27,8 +27,9 @@ type AddOrUpdateExtensionType = {
 
 export default function AddOrUpdateExtension({
   extension,
-  onSuccess,
-}: AddOrUpdateExtensionType) {
+  onSuccess
+}: AddOrUpdateExtensionType)
+{
   const [t] = useTranslation();
   const [fileIsValid, setFileIsValid] = useState(false);
   const dropzoneRef = useRef<() => void>(null);
@@ -36,7 +37,7 @@ export default function AddOrUpdateExtension({
 
   const messagePrefix = useMemo(
     () => (extension ? "updateExtensionModal" : "addExtensionModal"),
-    [extension],
+    [extension]
   );
 
   const form = useForm({
@@ -44,69 +45,82 @@ export default function AddOrUpdateExtension({
     validateInputOnChange: true,
     initialValues,
     validate: {
-      file: (file: File) => {
-        if (!file) {
+      file: (file: File) =>
+      {
+        if (!file)
+        {
           return t("fieldError.empty");
         }
         if (
           !Validators.isMimeType(file, [
             mimeTypes.gzip,
             mimeTypes.zip,
-            mimeTypes.tarGz,
+            mimeTypes.tarGz
           ])
-        ) {
+        )
+        {
           return t("fieldError.wrongFileFormat", {
-            extensions: "ZIP, GZIP, or TAR.GZ",
+            extensions: "ZIP, GZIP, or TAR.GZ"
           });
         }
         setFileIsValid(true);
-      },
-    },
+      }
+    }
   });
 
-  async function handleSubmit(values: FormValueType) {
+  async function handleSubmit(values: FormValueType)
+  {
     setLoading(true);
     const blob = await fileToBlob(values.file);
 
-    try {
+    try
+    {
       const _extension = extension
         ? await ExtensionsService.update({
-            id: extension.manifest.id,
-            body: blob,
-          })
+          id: extension.manifest.id,
+          body: blob
+        })
         : await ExtensionsService.add({ body: blob });
 
       onSuccess(_extension);
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallI18nError(error, `${messagePrefix}.errorAdd`);
-    } finally {
+    }
+    finally
+    {
       setLoading(false);
     }
   }
 
-  function renderDropzone() {
-    const getIconStyle = (color) => {
+  function renderDropzone()
+  {
+    const getIconStyle = (color) =>
+    {
       return { width: 52, height: 52, color: `var(--mantine-color-${color})` };
     };
 
     const file = form.getValues().file;
-    if (file) {
+    if (file)
+    {
       return (
         <Flex mb="lg" align={"center"} justify="space-between">
           <Flex gap="5">
-            <IconFileZip style={{ width: 24, height: 24 }} stroke={1.3} />
+            <IconFileZip style={{ width: 24, height: 24 }} stroke={1.3}/>
             <Text>{file.name?.substring(0, 60)}</Text>
           </Flex>
           <ActionIcon
             variant="light"
             disabled={loading}
             color="red"
-            onClick={() => {
+            onClick={() =>
+            {
               setFileIsValid(false);
               form.setFieldValue("file", undefined);
             }}
           >
-            <IconTrash stroke={1.2} />
+            <IconTrash stroke={1.2}/>
           </ActionIcon>
         </Flex>
       );
@@ -122,8 +136,8 @@ export default function AddOrUpdateExtension({
           form.setFieldError(
             "files",
             t("fieldError.wrongFileFormat", {
-              extensions: "ZIP, GZIP, or TAR.GZ",
-            }),
+              extensions: "ZIP, GZIP, or TAR.GZ"
+            })
           )
         }
       >
@@ -135,13 +149,13 @@ export default function AddOrUpdateExtension({
           style={{ pointerEvents: "none" }}
         >
           <Dropzone.Accept>
-            <IconUpload style={getIconStyle("blue-6")} stroke={1.3} />
+            <IconUpload style={getIconStyle("blue-6")} stroke={1.3}/>
           </Dropzone.Accept>
           <Dropzone.Reject>
-            <IconX style={getIconStyle("red-6")} stroke={1.3} />
+            <IconX style={getIconStyle("red-6")} stroke={1.3}/>
           </Dropzone.Reject>
           <Dropzone.Idle>
-            <IconFileZip style={getIconStyle("dimmed")} stroke={1.3} />
+            <IconFileZip style={getIconStyle("dimmed")} stroke={1.3}/>
           </Dropzone.Idle>
 
           <div>
@@ -160,10 +174,10 @@ export default function AddOrUpdateExtension({
   return (
     <>
       {extension && (
-        <Alert mb="sm" color="orange" icon={<IconAlertTriangle />}>
+        <Alert mb="sm" color="orange" icon={<IconAlertTriangle/>}>
           <Trans
             i18nKey="updateExtensionModal.warning"
-            components={{ strong: <b /> }}
+            components={{ strong: <b/> }}
             values={{ name: extension.manifest.id }}
           />
         </Alert>

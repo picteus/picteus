@@ -18,23 +18,24 @@ export default function Drawer({
   onClose,
   title,
   children
-}: DrawerType) {
+}: DrawerType)
+{
   const childrenRef = useRef<HTMLDivElement>(null);
   useEscapeKey(childrenRef, onClose);
 
   return (<MantineDrawer
-    opened={opened}
-    onClose={onClose}
-    title={title}
-    closeOnEscape={false}
-    position="right"
-    size="lg"
-    radius="lg"
-    offset={8}
-    classNames={{ header: style.header }}
-    zIndex={9}
-  >
-    {opened && <div ref={childrenRef} className={style.children} style={{ width: "100%" }}>{children}</div>}
-  </MantineDrawer>
-  )
+      opened={opened}
+      onClose={onClose}
+      title={title}
+      closeOnEscape={false}
+      position="right"
+      size="lg"
+      radius="lg"
+      offset={8}
+      classNames={{ header: style.header }}
+      zIndex={9}
+    >
+      {opened && <div ref={childrenRef} className={style.children} style={{ width: "100%" }}>{children}</div>}
+    </MantineDrawer>
+  );
 }

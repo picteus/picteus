@@ -1,16 +1,19 @@
-.container {
+.container
+{
   border-right: 1px solid var(--override-divider-color);
   width: $left-sidebar-width;
   padding: 20px;
-  height : 100%;
+  height: 100%;
   position: fixed;
 }
 
-.wrapper {
+.wrapper
+{
   height: 100%;
 }
 
-.additional {
+.additional
+{
   overflow-y: auto;
   width: $left-sidebar-width - 30px;
 }

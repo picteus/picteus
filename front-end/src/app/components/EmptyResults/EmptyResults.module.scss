@@ -1,9 +1,12 @@
-.container {
+.container
+{
   height: 100%;
   align-self: center;
-  margin : auto;
-  .icon {
-    color : var(--mantine-color-gray-5);
+  margin: auto;
+
+  .icon
+  {
+    color: var(--mantine-color-gray-5);
   }
 }
 

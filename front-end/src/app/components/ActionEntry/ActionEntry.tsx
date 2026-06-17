@@ -8,12 +8,14 @@ import { UiCommandType } from "types";
 import { Common, ExtensionIcon } from "app/components";
 
 
-export function computeIcon(action: "synchronize" | "delete"): ReactElement {
-  switch (action) {
+export function computeIcon(action: "synchronize" | "delete"): ReactElement
+{
+  switch (action)
+  {
     case "synchronize":
-      return <IconRefresh style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />;
+      return <IconRefresh style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }}/>;
     case "delete":
-      return <IconTrash color="red" style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }} />;
+      return <IconTrash color="red" style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }}/>;
   }
 }
 
@@ -26,10 +28,11 @@ type MenuItemEntryType = {
   onClick: () => void;
 };
 
-export function MenuItemEntry({extensionId, icon, label, subLabel, keyShortcut, onClick} : MenuItemEntryType)  {
+export function MenuItemEntry({ extensionId, icon, label, subLabel, keyShortcut, onClick }: MenuItemEntryType)
+{
   return (<Menu.Item
     onClick={onClick}
-    leftSection={icon ?? <ExtensionIcon idOrExtension={extensionId} size="sm" />}
+    leftSection={icon ?? <ExtensionIcon idOrExtension={extensionId} size="sm"/>}
     rightSection={keyShortcut}
   >
     <Text size="sm">{label}</Text>
@@ -43,7 +46,8 @@ type ImageMenuSelectEntryType = {
   subLabel: string;
 };
 
-export function ImageMenuSelectEntry({icon, label, subLabel} : ImageMenuSelectEntryType)  {
+export function ImageMenuSelectEntry({ icon, label, subLabel }: ImageMenuSelectEntryType)
+{
   return (<Flex align="center" gap={10}>
     {icon}
     <Flex direction="column">
@@ -60,7 +64,8 @@ type ImageMenuSelectCommandEntryType = {
   command: UiCommandType;
 };
 
-export function ImageMenuSelectCommandEntry({manifest, command} : ImageMenuSelectCommandEntryType)  {
-  return (<ImageMenuSelectEntry icon={<ExtensionIcon idOrExtension={manifest.id} size="sm" />} label={command.label}
-                                subLabel={manifest.name} />);
+export function ImageMenuSelectCommandEntry({ manifest, command }: ImageMenuSelectCommandEntryType)
+{
+  return (<ImageMenuSelectEntry icon={<ExtensionIcon idOrExtension={manifest.id} size="sm"/>} label={command.label}
+                                subLabel={manifest.name}/>);
 }

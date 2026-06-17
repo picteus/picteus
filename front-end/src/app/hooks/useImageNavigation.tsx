@@ -18,48 +18,64 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
   setSelectedImage: (selectedImage: ImageOrSummary) => void,
   selectedImage: ImageOrSummary | undefined
   updateImage: (image: Image) => void,
-} {
-  const [state, setState] = useState<ImageVisualizerContextValue>(initialValue ?? { selectedImage: undefined, images: [], viewMode: "masonry" });
+}
+{
+  const [state, setState] = useState<ImageVisualizerContextValue>(initialValue ?? {
+    selectedImage: undefined,
+    images: [],
+    viewMode: "masonry"
+  });
   const stateRef = useRef<ImageVisualizerContextValue>(state);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     stateRef.current = state;
-  }, [state])
+  }, [state]);
 
-  const setImages = useCallback((images: ImageOrSummary[]): void => {
+  const setImages = useCallback((images: ImageOrSummary[]): void =>
+  {
     setState((previousState) => ({ ...previousState, images }));
   }, []);
 
-  const containsImage = useCallback((imageId: string) => {
+  const containsImage = useCallback((imageId: string) =>
+  {
     return stateRef.current.images.find(image => image.id === imageId) !== undefined || stateRef.current.selectedImage?.id === imageId;
   }, []);
 
-  const setSelectedImage = useCallback((selectedImage: ImageOrSummary): void => {
+  const setSelectedImage = useCallback((selectedImage: ImageOrSummary): void =>
+  {
     setState((previousState) => ({ ...previousState, selectedImage }));
   }, []);
 
-  const updateImage = useCallback((image: Image) => {
-    setState((previousState) => {
+  const updateImage = useCallback((image: Image) =>
+  {
+    setState((previousState) =>
+    {
       const images = previousState.images;
       const index = images.findIndex(anImage => anImage.id === image.id);
-      if (index !== -1) {
+      if (index !== -1)
+      {
         images.splice(index, 1, image);
       }
       const selectedImage = previousState.selectedImage?.id === image.id ? image : previousState.selectedImage;
-      return {...previousState, images, selectedImage};
+      return { ...previousState, images, selectedImage };
     });
   }, []);
 
-  const computeHas = useCallback((direction: string) => {
+  const computeHas = useCallback((direction: string) =>
+  {
     const previousAndNextImages = state.images;
-    if (previousAndNextImages.length <= 1) {
+    if (previousAndNextImages.length <= 1)
+    {
       return false;
     }
     const index = previousAndNextImages.findIndex((image) => image.id === state.selectedImage?.id);
-    if (direction === "previous") {
+    if (direction === "previous")
+    {
       return index > 0;
     }
-    else if (direction === "next") {
+    else if (direction === "next")
+    {
       return index < previousAndNextImages.length - 1;
     }
   }, [state]);
@@ -68,16 +84,20 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
 
   const hasNext = useMemo<boolean>(() => computeHas("next"), [computeHas]);
 
-  const handleOnNavigate = useCallback((direction: number): void => {
-    if (state.selectedImage !== undefined) {
+  const handleOnNavigate = useCallback((direction: number): void =>
+  {
+    if (state.selectedImage !== undefined)
+    {
       const previousAndNextImages = state.images;
       const index = previousAndNextImages.findIndex(
         (image) => image.id === state.selectedImage?.id
       );
       const newIndex = index + direction;
-      if (newIndex >= 0 && newIndex < previousAndNextImages.length) {
+      if (newIndex >= 0 && newIndex < previousAndNextImages.length)
+      {
         // We make a call to make sure that the data is up to date
-        ImageService.get({ id: previousAndNextImages[newIndex].id }).then(image => setState((previousValue) => {
+        ImageService.get({ id: previousAndNextImages[newIndex].id }).then(image => setState((previousValue) =>
+        {
           previousValue.selectedImage = image;
           return { ...previousValue };
         }));
@@ -85,11 +105,13 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
     }
   }, [state]);
 
-  const onPrevious = useCallback(() => {
+  const onPrevious = useCallback(() =>
+  {
     void handleOnNavigate(-1);
   }, [handleOnNavigate]);
 
-  const onNext = useCallback(() => {
+  const onNext = useCallback(() =>
+  {
     void handleOnNavigate(1);
   }, [handleOnNavigate]);
 

@@ -16,35 +16,41 @@ type ExternalLinkType = {
 
 export default function ExternalLink({
   url,
-  type,
-}: ExternalLinkType) {
+  type
+}: ExternalLinkType)
+{
   const [t] = useTranslation();
   const cleanUrl = removeFilePrefixFromUrl(url);
   const openExplorer = useOpenExplorer(cleanUrl);
 
-  function handleOnClick() {
-    if (url.startsWith("file://") === true) {
+  function handleOnClick()
+  {
+    if (url.startsWith("file://") === true)
+    {
       void openExplorer();
     }
-    else {
+    else
+    {
       window.open(url, "_blank");
     }
   }
 
-  if (type === "action") {
+  if (type === "action")
+  {
     return (<Tooltip label={t("button.externalLinkOpen")} position="bottom">
       <ActionIcon
         variant="default"
         onClick={handleOnClick}
       >
-        <IconExternalLink size={20} stroke={1} />
+        <IconExternalLink size={20} stroke={1}/>
       </ActionIcon>
     </Tooltip>);
   }
-  else if (type === "button") {
+  else if (type === "button")
+  {
     return (<Tooltip label={t("button.externalLinkOpen")} position="bottom">
         <Button
-          leftSection={<IconExternalLink size={16} />}
+          leftSection={<IconExternalLink size={16}/>}
           onClick={handleOnClick}
         >
           {t("button.open")}
@@ -52,7 +58,8 @@ export default function ExternalLink({
       </Tooltip>
     );
   }
-  else {
+  else
+  {
     return (
       <Group className={style.container} gap={10} wrap="nowrap" maw="100%" onClick={handleOnClick}>
         <Text size={"sm"} td="underline" c={"blue"} truncate="start" style={{ flex: 1, minWidth: 0 }}>

@@ -14,16 +14,17 @@ import style from "./BottomBar.module.scss";
 
 type BottomBarType = { containerRef: RefObject<HTMLElement> };
 
-export default function BottomBar({ containerRef }: BottomBarType) {
+export default function BottomBar({ containerRef }: BottomBarType)
+{
   const [t] = useTranslation();
   const { height } = useContainerDimensions(containerRef);
 
   return (
     <>
       <Flex align="center" className={style.bottomBar} gap={10}>
-        <NavbarLink icon={<IconActivity stroke={Common.IconStrokeSize} />} label={t("menu.activity")}
-                    route={ROUTES.activity} />
-        <EventInformation containerHeight={height} />
+        <NavbarLink icon={<IconActivity stroke={Common.IconStrokeSize}/>} label={t("menu.activity")}
+                    route={ROUTES.activity}/>
+        <EventInformation containerHeight={height}/>
       </Flex>
     </>
   );

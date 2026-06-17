@@ -24,8 +24,9 @@ export default function CommandForm({
   extensionId,
   imageIds,
   onSend,
-  onCancel,
-}: CommandFormType) {
+  onCancel
+}: CommandFormType)
+{
   const [commandParameters, setCommandParameters] = useState<object>();
   const [t] = useTranslation();
 
@@ -36,14 +37,14 @@ export default function CommandForm({
   return (
     <>
       {form.dialogContent && (<Flex mt={"md"} direction={"column"} gap={15}>
-        <Alert icon={<IconInfoCircle />}>
-          <Markdown content={form.dialogContent.description} />
+        <Alert icon={<IconInfoCircle/>}>
+          <Markdown content={form.dialogContent.description}/>
         </Alert>
         {form.dialogContent.details && (
-          <div className={style.details}><Markdown content={form.dialogContent.details} /></div>)}
+          <div className={style.details}><Markdown content={form.dialogContent.details}/></div>)}
       </Flex>)}
-      {imageIds && <ImagesCollection imageIds={imageIds} />}
-      <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setCommandParameters} />
+      {imageIds && <ImagesCollection imageIds={imageIds}/>}
+      <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setCommandParameters}/>
       <Flex mt={"md"} align="flex-end" justify="flex-end" gap={5}>
         {<Button variant="subtle" onClick={onCancel}>
           {t("button.cancel")}

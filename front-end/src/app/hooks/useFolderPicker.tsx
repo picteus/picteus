@@ -2,16 +2,19 @@ import { useCommandSocket } from "app/context";
 import { StorageService } from "app/services";
 import { FolderTypes } from "types";
 
-export default function useFolderPicker() {
+
+export default function useFolderPicker()
+{
   const { sendCommand } = useCommandSocket();
 
-  return () => {
+  return () =>
+  {
     const defaultPath = StorageService.getLastFolderLocation(
-      FolderTypes.REPOSITORY,
+      FolderTypes.REPOSITORY
     );
     return sendCommand("pickDirectory", {
       title: "Please, select a directory",
-      defaultPath,
+      defaultPath
     });
   };
 }

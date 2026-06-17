@@ -13,34 +13,45 @@ type StoreKind = "socketEvents" | "notifications";
 let indexedDbSocketEventsInstance: IDBDatabase | null = null;
 let indexedDbNotificationsInstance: IDBDatabase | null = null;
 
-const upgrade = (_previousVersion: string, currentVersion: string)=>{
-  if (currentVersion === "0.4.0" || currentVersion === "0.5.0") {
+const upgrade = (_previousVersion: string, currentVersion: string) =>
+{
+  if (currentVersion === "0.4.0" || currentVersion === "0.5.0")
+  {
     indexedDB.deleteDatabase(INDEXED_DB_NAME);
   }
-}
+};
 
-const initializeIndexedDB = (kind: StoreKind): Promise<IDBDatabase> => {
+const initializeIndexedDB = (kind: StoreKind): Promise<IDBDatabase> =>
+{
   let instance: IDBDatabase | null = kind === "socketEvents" ? indexedDbSocketEventsInstance : indexedDbNotificationsInstance;
-  if (instance) {
+  if (instance)
+  {
     return Promise.resolve(instance);
   }
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) =>
+  {
     const request = indexedDB.open(INDEXED_DB_NAME, 1);
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = () =>
+    {
       const db = request.result;
       const stores = [INDEXED_DB_SOCKET_EVENTS_STORE, INDEXED_DB_NOTIFICATIONS_STORE];
-      for (const store of stores) {
-        if (!db.objectStoreNames.contains(store)) {
+      for (const store of stores)
+      {
+        if (!db.objectStoreNames.contains(store))
+        {
           db.createObjectStore(store, { keyPath: "id" });
         }
       }
     };
-    request.onsuccess = () => {
+    request.onsuccess = () =>
+    {
       instance = request.result;
-      if (kind === "socketEvents") {
+      if (kind === "socketEvents")
+      {
         indexedDbSocketEventsInstance = instance;
       }
-      else if (kind === "notifications") {
+      else if (kind === "notifications")
+      {
         indexedDbNotificationsInstance = instance;
       }
       resolve(instance);
@@ -49,13 +60,16 @@ const initializeIndexedDB = (kind: StoreKind): Promise<IDBDatabase> => {
   });
 };
 
-async function getSocketEvents(): Promise<SocketEventType []> {
+async function getSocketEvents(): Promise<SocketEventType []>
+{
   const db = await initializeIndexedDB("socketEvents");
   const transaction = db.transaction(INDEXED_DB_SOCKET_EVENTS_STORE, "readonly");
   const store = transaction.objectStore(INDEXED_DB_SOCKET_EVENTS_STORE);
-  return new Promise<SocketEventType[]>((resolve, reject) => {
+  return new Promise<SocketEventType[]>((resolve, reject) =>
+  {
     const request = store.getAll();
-    request.onsuccess = () => {
+    request.onsuccess = () =>
+    {
       const events: SocketEventType[] = request.result;
       resolve(events.sort((event1, event2) => event2.milliseconds - event1.milliseconds));
     };
@@ -63,20 +77,24 @@ async function getSocketEvents(): Promise<SocketEventType []> {
   });
 }
 
-async function storeSocketEvent(event: SocketEventType) {
+async function storeSocketEvent(event: SocketEventType)
+{
   const db = await initializeIndexedDB("socketEvents");
   const transaction = db.transaction(INDEXED_DB_SOCKET_EVENTS_STORE, "readwrite");
   const store = transaction.objectStore(INDEXED_DB_SOCKET_EVENTS_STORE);
   store.add(event);
 }
 
-async function getNotifications(): Promise<EventNotificationType []> {
+async function getNotifications(): Promise<EventNotificationType []>
+{
   const db = await initializeIndexedDB("notifications");
   const transaction = db.transaction(INDEXED_DB_NOTIFICATIONS_STORE, "readonly");
   const store = transaction.objectStore(INDEXED_DB_NOTIFICATIONS_STORE);
-  return new Promise<EventNotificationType[]>((resolve, reject) => {
+  return new Promise<EventNotificationType[]>((resolve, reject) =>
+  {
     const request = store.getAll();
-    request.onsuccess = () => {
+    request.onsuccess = () =>
+    {
       const events: EventNotificationType[] = request.result;
       resolve(events.sort((event1, event2) => event2.milliseconds - event1.milliseconds));
     };
@@ -84,62 +102,82 @@ async function getNotifications(): Promise<EventNotificationType []> {
   });
 }
 
-async function storeNotification(notification: EventNotificationType) {
+async function storeNotification(notification: EventNotificationType)
+{
   const db = await initializeIndexedDB("notifications");
   const transaction = db.transaction(INDEXED_DB_NOTIFICATIONS_STORE, "readwrite");
   const store = transaction.objectStore(INDEXED_DB_NOTIFICATIONS_STORE);
   store.add(notification);
 }
 
-function computeLogLevelColor(logLevel: string): string {
-  if (logLevel === "info") {
+function computeLogLevelColor(logLevel: string): string
+{
+  if (logLevel === "info")
+  {
     return "blue";
-  } else if (logLevel === "warn") {
+  }
+  else if (logLevel === "warn")
+  {
     return "orange";
-  } else if (logLevel === "error") {
+  }
+  else if (logLevel === "error")
+  {
     return "red";
-  } else {
+  }
+  else
+  {
     return "gray";
   }
 }
 
-function computeEventEntityId<T>(event: SocketEventType): T | undefined {
+function computeEventEntityId<T>(event: SocketEventType): T | undefined
+{
   return event.value["id"] as T;
 }
 
-function computeEventExtensionId(event: SocketEventType): string | undefined {
-  if (event.channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
+function computeEventExtensionId(event: SocketEventType): string | undefined
+{
+  if (event.channel.startsWith(ChannelEnum.EXTENSION_PREFIX))
+  {
     return computeEventEntityId<string>(event);
   }
   return undefined;
 }
 
-function computeLog(event: SocketEventType): LogType {
+function computeLog(event: SocketEventType): LogType
+{
   const { id, milliseconds, channel, value } = event;
   const entityId = computeEventEntityId<string | number>(event);
   let type: "image" | "repository" | "collection" | "extension" | "unknown";
-  if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
+  if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX))
+  {
     type = "extension";
   }
-  else if (channel.startsWith(ChannelEnum.IMAGE_PREFIX)) {
+  else if (channel.startsWith(ChannelEnum.IMAGE_PREFIX))
+  {
     type = "image";
   }
-  else if (channel.startsWith(ChannelEnum.REPOSITORY_PREFIX)) {
+  else if (channel.startsWith(ChannelEnum.REPOSITORY_PREFIX))
+  {
     type = "repository";
   }
-  else if (channel.startsWith(ChannelEnum.COLLECTION_PREFIX)) {
+  else if (channel.startsWith(ChannelEnum.COLLECTION_PREFIX))
+  {
     type = "collection";
   }
-  else {
+  else
+  {
     type = "unknown";
   }
 
   let extensionId: string;
-  if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX)) {
+  if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX))
+  {
     extensionId = entityId as string;
   }
 
-  if (channel === ChannelEnum.EXTENSION_LOG) {
+  if (channel === ChannelEnum.EXTENSION_LOG)
+  {
     const message = value.message;
     return { type, id, milliseconds, text: message.message, level: message.level, entityId, extensionId };
   }
@@ -147,36 +185,64 @@ function computeLog(event: SocketEventType): LogType {
   const i18nMnemonic = `eventInformation.${channel}`;
   const level = "info";
 
-  if (channel === ChannelEnum.EXTENSION_INTENT) {
+  if (channel === ChannelEnum.EXTENSION_INTENT)
+  {
     const intent = (value as ExtensionIntentType).intent;
     let intentType: string;
-    if (intent.form) {
+    if (intent.form)
+    {
       intentType = "a form";
-    } else if (intent.ui) {
+    }
+    else if (intent.ui)
+    {
       intentType = "a ui";
-    } else if (intent.dialog) {
+    }
+    else if (intent.dialog)
+    {
       intentType = "a dialog";
-    } else if (intent.show) {
+    }
+    else if (intent.show)
+    {
       intentType = "a show";
-    } else if (intent.images) {
+    }
+    else if (intent.images)
+    {
       intentType = "some images";
     }
-    else {
+    else
+    {
       intentType = "an unknown";
     }
-    return { type, id, milliseconds, text: i18n.t(i18nMnemonic, { id: entityId, type: intentType}), level, entityId, extensionId };
+    return {
+      type,
+      id,
+      milliseconds,
+      text: i18n.t(i18nMnemonic, { id: entityId, type: intentType }),
+      level,
+      entityId,
+      extensionId
+    };
   }
 
   return { type, id, milliseconds, text: i18n.t(i18nMnemonic, { id: entityId }), level, entityId, extensionId };
 }
 
-async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<EventNotificationType> {
+async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<EventNotificationType>
+{
   const imageId = event?.value?.id;
   const image = await ImageService.get({ id: imageId });
   const suffix = event.channel === ChannelEnum.IMAGE_CREATED ? "imageCreated" : "imageUpdated";
   const title = i18n.t(`notifications.${suffix}`);
   const description = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
-  return { id: event.id, title, type: "image", description, milliseconds: event.milliseconds, entityId: imageId, entityUrl: image.url };
+  return {
+    id: event.id,
+    title,
+    type: "image",
+    description,
+    milliseconds: event.milliseconds,
+    entityId: imageId,
+    entityUrl: image.url
+  };
 }
 
 /*async function generateRepositoryNotification(
@@ -197,9 +263,11 @@ async function generateImageCreatedOrUpdatedNotification(event: SocketEventType)
   };
 }*/
 
-async function generateNotification(event: SocketEventType): Promise<EventNotificationType | undefined> {
+async function generateNotification(event: SocketEventType): Promise<EventNotificationType | undefined>
+{
   const channel = event.channel;
-  if (channel === ChannelEnum.IMAGE_CREATED || channel === ChannelEnum.IMAGE_UPDATED) {
+  if (channel === ChannelEnum.IMAGE_CREATED || channel === ChannelEnum.IMAGE_UPDATED)
+  {
     return generateImageCreatedOrUpdatedNotification(event);
   }
   /*  if (channel.startsWith("repository")) {
@@ -207,33 +275,40 @@ async function generateNotification(event: SocketEventType): Promise<EventNotifi
   }*/
 }
 
-async function deleteNotification(id: string) {
+async function deleteNotification(id: string)
+{
   const db = await initializeIndexedDB("notifications");
   const transaction = db.transaction(INDEXED_DB_NOTIFICATIONS_STORE, "readwrite");
   const store = transaction.objectStore(INDEXED_DB_NOTIFICATIONS_STORE);
 
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) =>
+  {
     const deleteRequest = store.delete(id);
-    deleteRequest.onsuccess = () => {
+    deleteRequest.onsuccess = () =>
+    {
       resolve();
     };
     deleteRequest.onerror = () => reject(deleteRequest.error);
   });
 }
 
-async function deleteAllNotifications() {
+async function deleteAllNotifications()
+{
   const db = await initializeIndexedDB("notifications");
   const transaction = db.transaction(INDEXED_DB_NOTIFICATIONS_STORE, "readwrite");
   const store = transaction.objectStore(INDEXED_DB_NOTIFICATIONS_STORE);
 
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) =>
+  {
     const clearRequest = store.clear();
-    clearRequest.onsuccess = () => {
+    clearRequest.onsuccess = () =>
+    {
       resolve();
     };
     clearRequest.onerror = () => reject(clearRequest.error);
   });
 }
+
 export default {
   upgrade,
   getSocketEvents,

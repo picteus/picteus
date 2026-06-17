@@ -23,7 +23,8 @@ import { ImagesNavbarLink, NavbarLink } from "./components";
 import style from "./Sidebar.module.scss";
 
 
-export default function Sidebar() {
+export default function Sidebar()
+{
   const navigate = useNavigate();
   const [additionalUiContextValue, refreshAdditionalUi] = useAdditionalUiContext();
   const { eventStore } = useEventSocket();
@@ -31,12 +32,16 @@ export default function Sidebar() {
   const openWindow = useOpenWindow();
   const [t] = useTranslation();
 
-  useEffect(() => {
-    if (event === undefined) {
+  useEffect(() =>
+  {
+    if (event === undefined)
+    {
       return;
     }
-    if (event.channel === ChannelEnum.EXTENSION_UPDATED || event.channel === ChannelEnum.EXTENSION_INSTALLED || event.channel === ChannelEnum.EXTENSION_UNINSTALLED || event.channel === ChannelEnum.EXTENSION_PAUSED || event.channel === ChannelEnum.EXTENSION_RESUMED) {
-      void ExtensionsService.fetchAll().then(() => {
+    if (event.channel === ChannelEnum.EXTENSION_UPDATED || event.channel === ChannelEnum.EXTENSION_INSTALLED || event.channel === ChannelEnum.EXTENSION_UNINSTALLED || event.channel === ChannelEnum.EXTENSION_PAUSED || event.channel === ChannelEnum.EXTENSION_RESUMED)
+    {
+      void ExtensionsService.fetchAll().then(() =>
+      {
         refreshAdditionalUi();
       });
     }
@@ -49,12 +54,14 @@ export default function Sidebar() {
     { route: ROUTES.home, label: "images", icon: <IconPhotoMinus {...commonIconStyle} /> },
     { route: ROUTES.repositories, label: "repositories", icon: <IconFolderOpen {...commonIconStyle} /> },
     { route: ROUTES.collections, label: "collections", icon: <IconLibraryPhoto {...commonIconStyle} /> },
-    { route: ROUTES.extensions, label: "extensions", icon: <IconBox {...commonIconStyle} /> },
+    { route: ROUTES.extensions, label: "extensions", icon: <IconBox {...commonIconStyle} /> }
     // { route: ROUTES.test, label: "test", icon: <IconFlask2 {...commonIconStyle} /> }
   ];
 
-  const mainElements = useMemo(() => (mainElementData.map(element => {
-    if (element.route === ROUTES.home) {
+  const mainElements = useMemo(() => (mainElementData.map(element =>
+  {
+    if (element.route === ROUTES.home)
+    {
       return (
         <ImagesNavbarLink
           key={element.route}
@@ -74,48 +81,61 @@ export default function Sidebar() {
     );
   })), [mainElementData]);
 
-  const additionalElements = useMemo(() => {
-    return additionalUiContextValue.sidebar.map((element) => {
+  const additionalElements = useMemo(() =>
+  {
+    return additionalUiContextValue.sidebar.map((element) =>
+    {
       const routePathFragment = computeExtensionSidebarRoute(element.uuid);
       return (
         // TODO: handle the case of the closeable items
         <NavbarLink
           key={element.uuid}
-          icon={<ExtensionIcon idOrExtension={element.extensionId} url={computeResourceTypeUrl(element.icon)} size="md" />}
+          icon={<ExtensionIcon idOrExtension={element.extensionId} url={computeResourceTypeUrl(element.icon)}
+                               size="md"/>}
           externalLink={element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === true}
           label={element.title}
           route={routePathFragment}
-          onClick={() => {
-            if (element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === false) {
+          onClick={() =>
+          {
+            if (element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === false)
+            {
               navigate(routePathFragment);
             }
-            else {
+            else
+            {
               const content = element.content;
-              if (isAvailable() === false){
-                if ("url" in content) {
+              if (isAvailable() === false)
+              {
+                if ("url" in content)
+                {
                   const url = content.url;
                   window.open(url, "_blank");
                 }
-                else {
+                else
+                {
                   NotificationsService.withMessage("Cannot handle a content with no 'url' property when no host is available");
                 }
               }
-              else {
+              else
+              {
                 let parameters;
-                if ("url" in content) {
+                if ("url" in content)
+                {
                   parameters = { url: content.url };
                 }
-                else if ("html" in content) {
+                else if ("html" in content)
+                {
                   parameters = { html: content.html };
                 }
-                else {
+                else
+                {
                   return NotificationsService.withMessage("Cannot handle a content with no 'frameContent.url' nor 'frameContent.html' property");
                 }
                 openWindow(element.uuid, parameters, false).catch(error => NotificationsService.errorWithMessage(error, "Cannot open the window"));
-                }
               }
+            }
           }
-        }
+          }
         />
       );
     });
@@ -127,7 +147,7 @@ export default function Sidebar() {
         <Stack gap={15}>
           {mainElements}
         </Stack>
-        <Divider />
+        <Divider/>
         <ScrollArea flex={1} scrollbarSize={5} scrollbars="y" className={style.additional}>
           <Stack gap={15} justify="start">
             {additionalElements}

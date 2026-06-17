@@ -11,13 +11,15 @@ import { SelectedImages } from "../index.ts";
 import style from "./SelectedImagesAffix.module.scss";
 
 
-export default function SelectedImagesAffix() {
+export default function SelectedImagesAffix()
+{
   const [t] = useTranslation();
   const location = useLocation();
-  const { selectedImages} = useImagesSelectedContext();
+  const { selectedImages } = useImagesSelectedContext();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  function shouldAffixBeVisible() {
+  function shouldAffixBeVisible()
+  {
     return location.pathname === ROUTES.home && selectedImages?.length >= 1 && isProcessing === false;
   }
 
@@ -38,11 +40,11 @@ export default function SelectedImagesAffix() {
                 variant={"gradient"}
                 size="lg"
                 style={transitionStyles}
-                rightSection={<IconPhoto size={23} />}
+                rightSection={<IconPhoto size={23}/>}
               >
                 {selectedImages?.length}{" "}
                 {t("selectedImages.buttonLabelWithCount", {
-                  count: selectedImages?.length,
+                  count: selectedImages?.length
                 })}
               </Button>
             </HoverCard.Target>

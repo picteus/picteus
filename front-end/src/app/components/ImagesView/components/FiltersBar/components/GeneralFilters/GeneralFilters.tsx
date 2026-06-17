@@ -17,7 +17,8 @@ type GeneralFiltersProps = {
   onChangeFilter: (key: string, value?: string []) => void;
 };
 
-export default function GeneralFilters({ repositories, filters, onChangeFilter }: GeneralFiltersProps) {
+export default function GeneralFilters({ repositories, filters, onChangeFilter }: GeneralFiltersProps)
+{
   const [t] = useTranslation();
 
   return (

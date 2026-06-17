@@ -9,26 +9,35 @@ import { NotificationsService } from "utils";
 import { useConfirmAction } from "app/hooks";
 import { CollectionService } from "app/services";
 
-interface CollectionActionsType {
+
+interface CollectionActionsType
+{
   collection: Collection;
+
   onEdit?: (collection: Collection) => void;
+
   onDeleted: () => void;
 }
 
 export default function CollectionActions({
   collection,
   onEdit,
-  onDeleted,
-}: CollectionActionsType) {
+  onDeleted
+}: CollectionActionsType)
+{
   const [t] = useTranslation();
   const confirmAction = useConfirmAction();
 
-  async function handleOnDeleteCollection(id: number) {
-    try {
+  async function handleOnDeleteCollection(id: number)
+  {
+    try
+    {
       await CollectionService.delete(id);
       NotificationsService.success(t("collectionsScreen.successDelete"));
       onDeleted();
-    } catch (error) {
+    }
+    catch (error)
+    {
       NotificationsService.apiCallI18nError(error, "collectionsScreen.errorDelete");
     }
   }
@@ -41,7 +50,7 @@ export default function CollectionActions({
           variant="default"
           onClick={() => onEdit(collection)}
         >
-          <IconEdit size={20} stroke={1} />
+          <IconEdit size={20} stroke={1}/>
         </ActionIcon>
       </Tooltip>}
       <Tooltip label={t("button.delete")}>
@@ -52,12 +61,12 @@ export default function CollectionActions({
             confirmAction(() => handleOnDeleteCollection(collection.id), {
               title: t("collectionsScreen.confirmDeleteTitle"),
               message: t("collectionsScreen.confirmDeleteMessage", {
-                name: collection.name,
-              }),
+                name: collection.name
+              })
             })
           }
         >
-          <IconTrash color="red" size={20} stroke={1} />
+          <IconTrash color="red" size={20} stroke={1}/>
         </ActionIcon>
       </Tooltip>
     </Flex>

@@ -16,33 +16,41 @@ type ImageCollectionType = {
   imageIds: string[]
 };
 
-export default function ImagesCollection({imageIds}: ImageCollectionType) {
+export default function ImagesCollection({ imageIds }: ImageCollectionType)
+{
   const edge = 100;
   const containerRef = useRef<HTMLDivElement>(null);
   const [images, setImages] = useState<ImageSummary[]>([]);
   const [, addModal, removeModal] = useActionModalContext();
 
-  useEffect(() => {
-    async function load() {
-      try {
+  useEffect(() =>
+  {
+    async function load()
+    {
+      try
+      {
         const result = await ImageService.searchSummaries({ filter: { origin: { kind: "images", ids: imageIds } } });
         setImages(result.items);
       }
-      catch (error) {
+      catch (error)
+      {
         NotificationsService.apiCallError(error, "An error occurred while retrieving the images");
       }
     }
+
     void load();
   }, [imageIds]);
 
-  const handleOnClick = useCallback((image: ImageOrSummary): void => {
+  const handleOnClick = useCallback((image: ImageOrSummary): void =>
+  {
     const id = addModal({
       component: (
         <ImageDetail
           image={image}
           images={images}
           viewMode="gallery"
-          onClose={() => {
+          onClose={() =>
+          {
             removeModal(id);
           }}
         />),

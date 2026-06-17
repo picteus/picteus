@@ -1,14 +1,17 @@
-.container {
+.container
+{
   flex-grow: 1;
-  max-height : $bottom-bar-width;
+  max-height: $bottom-bar-width;
 }
 
-.logLevelBadge {
+.logLevelBadge
+{
   flex-shrink: 0;
   white-space: nowrap
 }
 
-.logDate {
+.logDate
+{
   flex-shrink: 0;
   white-space: nowrap
 }

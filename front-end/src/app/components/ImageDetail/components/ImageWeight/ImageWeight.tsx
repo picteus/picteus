@@ -8,22 +8,26 @@ type ImageWeightType = {
   image: ImageOrSummary;
 };
 
-export default function ImageWeight({ image }: ImageWeightType) {
+export default function ImageWeight({ image }: ImageWeightType)
+{
   const bytes = image.sizeInBytes;
   let value: number;
   let unit: string;
-  if (bytes < 1024) {
+  if (bytes < 1024)
+  {
     value = bytes;
     unit = "B";
   }
-  else if (bytes < 1024 * 1024) {
+  else if (bytes < 1024 * 1024)
+  {
     value = bytes / 1024;
     unit = "kB";
-  } else
+  }
+  else
   {
     value = bytes / (1024 * 1024);
     unit = "MB";
   }
-  return <NumberFormatter value={value} decimalScale={2} suffix={` ${unit}`} thousandSeparator />;
+  return <NumberFormatter value={value} decimalScale={2} suffix={` ${unit}`} thousandSeparator/>;
 
 }

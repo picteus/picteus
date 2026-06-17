@@ -9,7 +9,8 @@ import { EventService, StorageService } from "app/services";
 import { Container, EmptyResults, ExtensionIcon, FormatedDate, StandardTable } from "app/components";
 
 
-export default function ActivityScreen() {
+export default function ActivityScreen()
+{
   const [t] = useTranslation();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
@@ -22,11 +23,14 @@ export default function ActivityScreen() {
   const endIndex = startIndex + pagination.take;
   const paginatedRows = rows?.slice(startIndex, endIndex);
 
-  useEffect(() => {
-    async function load() {
+  useEffect(() =>
+  {
+    async function load()
+    {
       const events: SocketEventType[] = await EventService.getSocketEvents();
-      setRows(events.map((event) => ({log: EventService.computeLog(event)})));
+      setRows(events.map((event) => ({ log: EventService.computeLog(event) })));
     }
+
     void load();
   }, [event]);
 
@@ -35,22 +39,24 @@ export default function ActivityScreen() {
 
   }, [pagination]);
 
-  function handleOnPaginationChange(newPage: number) {
+  function handleOnPaginationChange(newPage: number)
+  {
     setPagination((previousPagination) => ({ ...previousPagination, currentPage: newPage }));
   }
 
-  function handleOnTakeChange(newTake: number) {
+  function handleOnTakeChange(newTake: number)
+  {
     StorageService.setActivityLogsBatchSize(newTake);
   }
 
   const renderedRows = paginatedRows?.map((row) => (
     <Table.Tr key={row.log.id}>
       <Table.Td w={160}>
-        <Text size="sm"><FormatedDate timestamp={row.log.milliseconds} /></Text>
+        <Text size="sm"><FormatedDate timestamp={row.log.milliseconds}/></Text>
       </Table.Td>
       <Table.Td w={60}>
         {row.log.extensionId ?
-          <ExtensionIcon idOrExtension={row.log.extensionId} size="sm" />
+          <ExtensionIcon idOrExtension={row.log.extensionId} size="sm"/>
           :
           (<Text size="md">
             {row.log.extensionId ?? t("field.noValue")}
@@ -74,7 +80,8 @@ export default function ActivityScreen() {
     </Table.Tr>
   ));
 
-  function renderTable() {
+  function renderTable()
+  {
     return <StandardTable
       // head={["field.date", "field.extension", "field.logLevel", "field.entity", "field.message"]}
       head={["field.date", "field.extension", "field.logLevel", "field.message"]}

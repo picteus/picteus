@@ -21,7 +21,8 @@ type ImageVisualType = {
   withNavigation: WithNavigationType;
 };
 
-export default function ImageVisual({ image, withNavigation }: ImageVisualType) {
+export default function ImageVisual({ image, withNavigation }: ImageVisualType)
+{
   const resizeRender: ImageResizeRender = "inbox";
   const [t] = useTranslation();
   const leftArrowRef = useRef<HTMLButtonElement>(null);
@@ -36,10 +37,15 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
   const [error, setError] = useState<string | undefined>();
   const hasImageDateChanged = useImageDateChanged(image);
 
-  useEffect(() => {
-    const newImageWrapperDimensions = {width: Math.round(imageWrapperRectangle.width), height: Math.round(imageWrapperRectangle.height)};
+  useEffect(() =>
+  {
+    const newImageWrapperDimensions = {
+      width: Math.round(imageWrapperRectangle.width),
+      height: Math.round(imageWrapperRectangle.height)
+    };
     setImageWrapperDimensions(newImageWrapperDimensions);
-    if (image !== undefined && (imageWrapperRectangle.width > 0 || imageWrapperRectangle.height > 0)) {
+    if (image !== undefined && (imageWrapperRectangle.width > 0 || imageWrapperRectangle.height > 0))
+    {
       const newImageExpectedDimensions = ImageService.computeImageDimensions(image.dimensions, {
         width: imageWrapperRectangle.width,
         height: imageWrapperRectangle.height
@@ -52,14 +58,19 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
     }
   }, [imageWrapperRectangle, hasImageDateChanged, image]);
 
-  useEffect(() => {
-    if (withNavigation.hasPrevious === false) {
-      if (withNavigation.hasNext === true && rightArrowRef.current !== null) {
+  useEffect(() =>
+  {
+    if (withNavigation.hasPrevious === false)
+    {
+      if (withNavigation.hasNext === true && rightArrowRef.current !== null)
+      {
         rightArrowRef.current.focus();
       }
     }
-    else if (withNavigation.hasNext === false) {
-      if (withNavigation.hasPrevious === true && leftArrowRef.current !== null) {
+    else if (withNavigation.hasNext === false)
+    {
+      if (withNavigation.hasPrevious === true && leftArrowRef.current !== null)
+      {
         leftArrowRef.current.focus();
       }
     }
@@ -74,27 +85,29 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
       variant="default"
       onClick={withNavigation.onPrevious}
     >
-      <IconArrowLeft />
+      <IconArrowLeft/>
     </ActionIcon>
     <div ref={imageWrapperRef} className={style.imageWrapper}>
-      {imageExpectedDimensions && imageWrapperDimensions && imageWrapperDimensions.width > 0 && imageWrapperDimensions.height > 0 && <img
-        ref={imageRef}
-        className={`${style.image} ${placeholder === false ? style.loaded : style.unLoaded}`}
-        onLoad={() => {
-          setPlaceholder(false);
-          setError(undefined);
-        }}
-        onError={() => setError(t("errors.imageDetail"))}
-        src={imageSrc}
-        alt={image.name}
-        width={imageExpectedDimensions.width}
-        height={imageExpectedDimensions.height}
-        style={{ width: imageExpectedDimensions.width, height: imageExpectedDimensions.height }}
-      />}
+      {imageExpectedDimensions && imageWrapperDimensions && imageWrapperDimensions.width > 0 && imageWrapperDimensions.height > 0 &&
+        <img
+          ref={imageRef}
+          className={`${style.image} ${placeholder === false ? style.loaded : style.unLoaded}`}
+          onLoad={() =>
+          {
+            setPlaceholder(false);
+            setError(undefined);
+          }}
+          onError={() => setError(t("errors.imageDetail"))}
+          src={imageSrc}
+          alt={image.name}
+          width={imageExpectedDimensions.width}
+          height={imageExpectedDimensions.height}
+          style={{ width: imageExpectedDimensions.width, height: imageExpectedDimensions.height }}
+        />}
       {placeholder && <Flex className={style.placeholder} align="center" justify="center">{error && (
         <Alert variant="light" color="red" title={t("errors.imageTitle")}
-               icon={<IconCircleX />}>{error}</Alert>)}</Flex>}
-      {scalingRatio && <Box className={style.scalingRatio}><OverlayIndicator text={`${scalingRatio}%`} /></Box>}
+               icon={<IconCircleX/>}>{error}</Alert>)}</Flex>}
+      {scalingRatio && <Box className={style.scalingRatio}><OverlayIndicator text={`${scalingRatio}%`}/></Box>}
     </div>
     <ActionIcon
       ref={rightArrowRef}
@@ -104,7 +117,7 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType) 
       variant="default"
       onClick={withNavigation.onNext}
     >
-      <IconArrowRight />
+      <IconArrowRight/>
     </ActionIcon>
   </Flex>);
 }

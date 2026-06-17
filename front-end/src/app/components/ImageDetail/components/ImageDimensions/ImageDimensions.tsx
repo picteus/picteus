@@ -8,11 +8,12 @@ type ImageDimensionsType = {
   dimensions: PicteusImageDimensions;
 };
 
-export default function ImageDimensions({ dimensions }: ImageDimensionsType) {
+export default function ImageDimensions({ dimensions }: ImageDimensionsType)
+{
   return <>
-    <NumberFormatter value={dimensions.width} thousandSeparator />
+    <NumberFormatter value={dimensions.width} thousandSeparator/>
     {"x"}
-    <NumberFormatter value={dimensions.height} thousandSeparator />
+    <NumberFormatter value={dimensions.height} thousandSeparator/>
   </>;
 
 }

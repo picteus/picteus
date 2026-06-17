@@ -6,26 +6,31 @@ import i18n from "i18next";
 import { useActionModalContext } from "app/context";
 
 
-interface ConfirmOptions {
+interface ConfirmOptions
+{
   title: string;
+
   message: string;
 }
 
-export default function useConfirmAction() {
+export default function useConfirmAction()
+{
   const [, addModal, removeModal] = useActionModalContext();
 
-  return useCallback((onConfirm: () => void, options: ConfirmOptions) => {
+  return useCallback((onConfirm: () => void, options: ConfirmOptions) =>
+  {
     const modalId = addModal({
       title: options.title,
       size: "s",
       component: <>
-        <Alert icon={<IconAlertTriangle />} color="orange">
+        <Alert icon={<IconAlertTriangle/>} color="orange">
           {options.message}
         </Alert>
         <Flex justify="flex-end" gap="md" mt="md">
           <Button
             variant="subtle"
-            onClick={() => {
+            onClick={() =>
+            {
               removeModal(modalId);
             }}
           >
@@ -33,7 +38,8 @@ export default function useConfirmAction() {
           </Button>
           <Button
             color="red"
-            onClick={() => {
+            onClick={() =>
+            {
               onConfirm();
               removeModal(modalId);
             }}
