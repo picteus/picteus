@@ -1,16 +1,27 @@
 import { useEffect, useState } from "react";
-import { createTheme, localStorageColorSchemeManager, MantineProvider } from "@mantine/core";
-import { Configuration, DefaultConfig } from "@picteus/ws-client";
-import "@mantine/core/styles.css";
+import {
+  Alert,
+  Button,
+  Code,
+  Container,
+  createTheme,
+  localStorageColorSchemeManager,
+  MantineProvider
+} from "@mantine/core";
+import { ErrorBoundary } from "react-error-boundary";
+import { useTranslation } from "react-i18next";
 import "react-toastify/dist/ReactToastify.css";
+import "@mantine/core/styles.css";
+
+import { Configuration, DefaultConfig } from "@picteus/ws-client";
 
 import { API_KEY, BASE_PATH } from "utils";
+import { EventService, StorageService } from "./app/services";
 import { BootstrapScreen } from "app/screens";
-import Initializer from "./Initializer.tsx";
 import "i18n/i18n.ts";
+import Initializer from "./Initializer.tsx";
 import "assets/style/style.scss";
 import "assets/style/override.scss";
-import { EventService, StorageService } from "./app/services";
 
 
 const theme = createTheme({
@@ -21,6 +32,27 @@ DefaultConfig.config = new Configuration({
   basePath: BASE_PATH,
   apiKey: API_KEY || ""
 });
+
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void })
+{
+  const [t] = useTranslation();
+
+  return (
+    <Container fluid style={{
+      width: "100vw",
+      height: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}>
+      <Alert className="error-alert" color="red" title={t("errorBoundary.message")} variant="light"
+             style={{ width: "90vw", maxHeight: "42vh" }}>
+        <Code block mb="md" style={{maxWidth: "87vw", maxHeight: "30vh"}}>{error.stack || error.message}</Code>
+        <Button color="red" onClick={resetErrorBoundary}>{t("errorBoundary.button")}</Button>
+      </Alert>
+    </Container>
+  );
+}
 
 function App()
 {
@@ -73,11 +105,13 @@ function App()
 
   return (
     <MantineProvider colorSchemeManager={colorSchemeManager} theme={theme}>
-      {bootstrapping ? (
-        <BootstrapScreen logs={bootstrapLogs}/>
-      ) : (
-        <Initializer/>
-      )}
+      <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
+        {bootstrapping ? (
+          <BootstrapScreen logs={bootstrapLogs}/>
+        ) : (
+          <Initializer/>
+        )}
+      </ErrorBoundary>
     </MantineProvider>
   );
 }

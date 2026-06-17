@@ -1,4 +1,8 @@
 export default {
+  errorBoundary: {
+    message: "Something went wrong!!!",
+    button: "Try again"
+  },
   bootstrap: {
     loading: "Loading application…"
   },
