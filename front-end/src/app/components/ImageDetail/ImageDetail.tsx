@@ -35,18 +35,25 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
 
   useEffect(() =>
   {
-    if (event !== undefined)
+    if (event)
     {
-      if (event.channel === ChannelEnum.IMAGE_UPDATED || event.channel === ChannelEnum.IMAGE_TAGS_UPDATED || event.channel === ChannelEnum.IMAGE_FEATURES_UPDATED)
+      if (event.channel === ChannelEnum.IMAGE_UPDATED || event.channel === ChannelEnum.IMAGE_TAGS_UPDATED || event.channel === ChannelEnum.IMAGE_FEATURES_UPDATED || event.channel === ChannelEnum.IMAGE_DELETED)
       {
         const imageId = EventService.computeEventEntityId<string>(event);
-        if (navigation.containsImage(imageId))
+        if (event.channel === ChannelEnum.IMAGE_DELETED)
+        {
+          if (navigation.removeImage(imageId) === 0)
+          {
+            onClose();
+          }
+        }
+        else if (navigation.containsImage(imageId))
         {
           ImageService.get({ id: imageId }).then(image => navigation.updateImage(image)).catch(NotificationsService.apiCallError);
         }
       }
     }
-  }, [event, navigation.containsImage, navigation.updateImage]);
+  }, [event, navigation.containsImage, navigation.removeImage, navigation.updateImage]);
 
   useEffect(() =>
   {

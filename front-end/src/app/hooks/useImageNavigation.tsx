@@ -18,6 +18,7 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
   setSelectedImage: (selectedImage: ImageOrSummary) => void,
   selectedImage: ImageOrSummary | undefined
   updateImage: (image: Image) => void,
+  removeImage: (imageId: string) => number
 }
 {
   const [state, setState] = useState<ImageVisualizerContextValue>(initialValue ?? {
@@ -60,6 +61,26 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
       const selectedImage = previousState.selectedImage?.id === image.id ? image : previousState.selectedImage;
       return { ...previousState, images, selectedImage };
     });
+  }, []);
+
+  const removeImage = useCallback((imageId: string) =>
+  {
+    const initialIndex = stateRef.current.images.findIndex(anImage => anImage.id === imageId);
+    const newLength = initialIndex !== -1 ? stateRef.current.images.length - 1 : stateRef.current.images.length;
+
+    setState((previousState) =>
+    {
+      const images = previousState.images;
+      const index = images.findIndex(anImage => anImage.id === imageId);
+      if (index !== -1)
+      {
+        images.splice(index, 1);
+      }
+      const selectedImage = previousState.selectedImage?.id === imageId ? (index >= 1 ? images[index - 1] : (images.length === 0 ? undefined : images[index])) : previousState.selectedImage;
+      return { ...previousState, images, selectedImage };
+    });
+
+    return newLength;
   }, []);
 
   const computeHas = useCallback((direction: string) =>
@@ -121,6 +142,7 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
     setSelectedImage,
     selectedImage: state.selectedImage,
     updateImage,
+    removeImage,
     hasPrevious,
     hasNext,
     onPrevious,

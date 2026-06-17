@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Collection, SearchFilterFromJSON } from "@picteus/ws-client";
 
 import { FilterOrCollectionId, ViewMode } from "types";
+import { FiltersService } from "app/services";
 import { RefreshButton } from "app/components";
 import { CollectionsBar, CollectionsBarRef, FiltersBar, FiltersBarRef } from "../index.ts";
 
@@ -44,11 +45,11 @@ export default function ControllerBar({
   const collectionsBarRef = useRef<CollectionsBarRef>(null);
   const filtersBarRef = useRef<FiltersBarRef>(null);
 
-  const handleOnCollection = useCallback((collection: Collection) =>
+  const handleOnCollection = useCallback((collection: Collection | undefined) =>
   {
     setCurrentCollection(collection);
-    filtersBarRef.current?.setFilter(collection.filter);
-    onFilterOrCollectionId({ collectionId: collection.id });
+    filtersBarRef.current?.setFilter(collection ? collection.filter : FiltersService.defaultFilter);
+    onFilterOrCollectionId(collection ? { collectionId: collection.id } : { filter: FiltersService.defaultFilter });
   }, [onFilterOrCollectionId]);
 
   const handleOnFilterOrCollectionId = useCallback((filterOrCollectionId: FilterOrCollectionId) =>

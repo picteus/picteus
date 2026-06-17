@@ -23,7 +23,7 @@ export interface CollectionsBarRef
 type CollectionsBarType = {
   searchFilter?: SearchFilter;
   initialCollectionId?: number;
-  onCollection: (collection: PicteusCollection) => void;
+  onCollection: (collection: PicteusCollection | undefined) => void;
 };
 
 export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(({
@@ -56,6 +56,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
       if (EventService.computeEventEntityId<number>(event) === selectedCollection?.id)
       {
         setSelectedCollection(undefined);
+        onCollection(undefined);
       }
     }
   }, [event]);
