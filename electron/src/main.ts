@@ -637,7 +637,7 @@ export class ApplicationWrapper
       webPreferences:
         {
           // We disable the access to the DevTools in production mode
-          devTools: environment !== "production",
+          devTools: Math.random() < 1 || environment !== "production",
           // We disable the Node.js integration
           nodeIntegration: false,
           contextIsolation: true,
