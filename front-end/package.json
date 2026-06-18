@@ -34,7 +34,7 @@
   "type": "module",
   "scripts": {
     "reset": "npm run clean && shx rm -rf ./node_modules",
-    "clean": "shx rm -rf ../build/web",
+    "clean": "shx rm -rf ../build/front-end",
     "updateVersion": "gulp -f gulpfile.mjs updateVersion",
     "build": "tsc -b && vite build",
     "profile": "vite build --mode profiling",

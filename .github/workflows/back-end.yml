@@ -1,5 +1,5 @@
-name: Server CI
-run-name: Manages the server dependencies installation, compilation and tests
+name: Back-end CI
+run-name: Manages the back-end dependencies installation, compilation and tests
 
 on:
   push:
@@ -46,11 +46,11 @@ jobs:
           cache: 'npm'
       - id: install
         if: ${{ env.skip != 'true' }}
-        name: Installs the prerequisites and server dependencies
-        run: npm install && npm run this:prerequisites && npm run shared-back-end:prerequisites && npm run server:prerequisites && npm run extensions:prerequisites && npm run extensions:sdk:build
+        name: Installs the prerequisites and back-end dependencies
+        run: npm install && npm run this:prerequisites && npm run shared-back-end:prerequisites && npm run back-end:prerequisites && npm run extensions:prerequisites && npm run extensions:sdk:build
       - id: compile
         name: Generates some code and compiles
-        run: npm --prefix server run prisma:generate && npm --prefix server run compile
+        run: npm --prefix back-end run prisma:generate && npm --prefix back-end run compile
       - id: tests
         name: Runs the tests
-        run: npm --prefix server run ci:test
+        run: npm --prefix back-end run ci:test
