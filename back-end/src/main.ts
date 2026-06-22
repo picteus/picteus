@@ -20,6 +20,7 @@ import { types } from "http-constants";
 import { HttpLlm, IHttpLlmApplication, OpenApi, OpenApiV3, OpenApiV3_1, SwaggerV2 } from "@samchon/openapi";
 
 import {
+  addFileTransport,
   CliOptions,
   computeParseCommandLineAndRun,
   defaultCommand,
@@ -355,8 +356,9 @@ async function run(): Promise<void>
   type ActionParameters = Caporal.ActionParameters;
   const { chalk } = Caporal;
 
-  const storageDirectoryPathOption = "storageDirectoryPath";
   const webDirectoryPathOption = "webDirectoryPath";
+  const logsDirectoryPathOption = "logsDirectoryPath";
+  const storageDirectoryPathOption = "storageDirectoryPath";
   const cliArguments = process.argv.slice(2);
   const parseCommandLineAndRun = await computeParseCommandLineAndRun();
   await parseCommandLineAndRun(logger, cliArguments, product.name, product.applicationVersion, true, async (program: Program): Promise<void> =>
@@ -370,7 +372,11 @@ async function run(): Promise<void>
             validator: CaporalValidator.STRING,
             default: undefined
           });
-          command.option(`--${storageDirectoryPathOption} <path>`, `Indicates the path of the directory where the server will store some files. This will set the '${paths.regularDatabaseFilePathEnvironmentVariable}', '${paths.vectorDatabaseDirectoryPathEnvironmentVariableName}', '${paths.repositoriesDirectoryPathEnvironmentVariableName}', '${paths.installedExtensionsDirectoryPathEnvironmentVariableName}', '${paths.modelsCacheDirectoryPathEnvironmentVariableName}', '${paths.runtimesDirectoryPathEnvironmentVariableName}' environment variables with a value prefixed with that directory path if they are not set`, {
+          command.option(`--${logsDirectoryPathOption} <path>`, "Indicates the path of the directory where the back-end will store its logs files", {
+            validator: CaporalValidator.STRING,
+            default: undefined
+          });
+          command.option(`--${storageDirectoryPathOption} <path>`, `Indicates the path of the directory where the back-end will store some files. This will set the '${paths.regularDatabaseFilePathEnvironmentVariable}', '${paths.vectorDatabaseDirectoryPathEnvironmentVariableName}', '${paths.repositoriesDirectoryPathEnvironmentVariableName}', '${paths.installedExtensionsDirectoryPathEnvironmentVariableName}', '${paths.modelsCacheDirectoryPathEnvironmentVariableName}', '${paths.runtimesDirectoryPathEnvironmentVariableName}' environment variables with a value prefixed with that directory path if they are not set`, {
             validator: CaporalValidator.STRING,
             default: undefined
           });
@@ -456,10 +462,17 @@ async function run(): Promise<void>
         paths.unpackedExtensionsDirectoryPath = cliOptions.unpackedExtensionsDirectoryPath;
       }
       {
-        const storeDirectoryPath = actionParameters.options[storageDirectoryPathOption] as string;
-        if (storeDirectoryPath !== undefined)
+        const logsDirectoryPath = actionParameters.options[logsDirectoryPathOption] as string;
+        if (logsDirectoryPath !== undefined)
         {
-          paths.setStoreDirectoryPath(storeDirectoryPath);
+          addFileTransport(logger, { name: "back-end", directoryPath: logsDirectoryPath });
+        }
+      }
+      {
+        const storageDirectoryPath = actionParameters.options[storageDirectoryPathOption] as string;
+        if (storageDirectoryPath !== undefined)
+        {
+          paths.setStorageDirectoryPath(storageDirectoryPath);
         }
       }
 
@@ -526,7 +539,7 @@ async function run(): Promise<void>
 
 async function main(): Promise<void>
 {
-  logger.info(`Starting the server running under Node.js ${process.version} with working directory set to '${process.cwd()}'`);
+  logger.info(`Starting the back-end running under Node.js ${process.version} with working directory set to '${process.cwd()}'`);
 
   setExceptionHandlers();
 

@@ -35,7 +35,7 @@ const bootstrapLogger = new LogsBlotter();
 export const getBootstrapLogs: () => string[] = bootstrapLogger.getLogs.bind(bootstrapLogger);
 export const stopBootstrapLogs: () => void = bootstrapLogger.stop.bind(bootstrapLogger);
 
-export const logger: Logger = createLogger((level: string, message: string): void =>
+export const logger: Logger = createLogger(undefined, (level: string, message: string): void =>
 {
   if (level === "error" || level === "warn" || level === "info")
   {

@@ -49,6 +49,7 @@ const environment: "development" | "production" = app.isPackaged === true ? "pro
 const applicationQuitting = "The application will quit";
 const referenceDirectoryPath = dirname(fileURLToPath(import.meta.url));
 const applicationDirectoryPath = app.getPath("userData");
+const logsDirectoryPath = app.getPath("logs");
 
 
 interface BackendServerApplicationCoordinator
@@ -129,7 +130,7 @@ class BackendServer
       logger.debug(`The SDK directory path is set to '${sdkDirectoryPath}'`);
       environmentVariables.SDK_DIRECTORY_PATH = sdkDirectoryPath;
     }
-    const forkArguments = ["--storageDirectoryPath", applicationDirectoryPath, "--apiServerPort", portNumber.toString()];
+    const forkArguments = ["--logsDirectoryPath", logsDirectoryPath, "--storageDirectoryPath", applicationDirectoryPath, "--apiServerPort", portNumber.toString()];
     if (useSsl !== undefined)
     {
       forkArguments.push("--useSsl", useSsl.toString());
@@ -828,6 +829,26 @@ export class ApplicationWrapper
                       type: "error",
                       title: app.getName(),
                       message: `Cannot open the application folder located at '${directoryPath}'`,
+                      buttons: ["OK"]
+                    });
+                  }
+                }
+              }
+            ));
+            subMenu.insert(index++, new MenuItem({
+                type: "normal",
+                id: "logsFolder",
+                label: "Logs Folder",
+                click: async (): Promise<void> =>
+                {
+                  const directoryPath = logsDirectoryPath;
+                  const result = await shell.openPath(directoryPath);
+                  if (result !== "")
+                  {
+                    await dialog.showMessageBox({
+                      type: "error",
+                      title: app.getName(),
+                      message: `Cannot open the logs folder located at '${directoryPath}'`,
                       buttons: ["OK"]
                     });
                   }

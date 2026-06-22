@@ -124,7 +124,7 @@ export class Paths
     ];
   }
 
-  setStoreDirectoryPath(directoryPath: string): void
+  setStorageDirectoryPath(directoryPath: string): void
   {
     const entries =
       [

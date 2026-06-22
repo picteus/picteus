@@ -1,4 +1,4 @@
-import { createLogger } from "./logger";
+import { addFileTransport, createLogger } from "./logger";
 import { CliOptions, computeParseCommandLineAndRun, defaultCliOptions, defaultCommand } from "./cliInterpreter";
 import { WebCoordinates, WebServer } from "./webServer";
 import {
@@ -10,7 +10,8 @@ import {
   UninstallChromeExtensionHostCommand
 } from "./hostCommands";
 
-export { createLogger };
+
+export { createLogger, addFileTransport };
 export { CliOptions, defaultCliOptions, defaultCommand, computeParseCommandLineAndRun };
 export { WebCoordinates, WebServer };
 export {
