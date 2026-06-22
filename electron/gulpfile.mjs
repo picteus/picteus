@@ -48,11 +48,17 @@ export const preparePackageBuilder = async () =>
     const newEntry = isExclude === true ? entry.substring(1) : entry;
     return `"${prefix}node_modules/${newEntry}"`;
   }).join(",\n");
-  const backendReplaceValue = "";
+  const backendReplaceValue = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", "back-end", "package-pruning.json"), { encoding: "utf8" })).map(entry =>
+  {
+    const isExclude = entry.startsWith("!") === true;
+    const prefix = isExclude === true ? "!" : "";
+    const newEntry = isExclude === true ? entry.substring(1) : entry;
+    return `"${prefix}${newEntry}"`;
+  }).join(",\n");
   const keysAndValues =
     [
       { key: "extraElectronFilter", value: electronReplaceValue.substring(1, electronReplaceValue.length - 2) },
-      { key: "extraBackendFilter", value: backendReplaceValue },
+      { key: "extraBackendFilter", value: backendReplaceValue.substring(1, backendReplaceValue.length - 2) },
       { key: "entitlementFilePath", value: entitlementFilePath },
       { key: "appleIdentityCompany", value: appleIdentityCompany }
     ];

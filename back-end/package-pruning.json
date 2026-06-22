@@ -24,7 +24,7 @@
   "!onnxruntime-web",
   "!onnxruntime-node/bin/napi-v3",
   "onnxruntime-node/bin/napi-v3/${platform}/${arch}",
-  "!@huggingface/transformers/{src,dist/transformers.web.*,dist/*.min.*,**/*.cjs,**/*.wasm}",
+  "!@huggingface/transformers/{src,dist/transformers.web.*,node_modules,,dist/*.min.*,**/*.cjs,**/*.wasm}",
   "!@prisma/{get-platform,fetch-engine,engines/schema-engine-*,engines/libquery_engine-*,client/runtime/*.mjs}",
   "!@prisma/client/runtime/{query_engine_bg.*,*.wasm}",
   "!@prisma/client/runtime/*sqlite*",

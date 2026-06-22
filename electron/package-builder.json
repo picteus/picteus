@@ -20,8 +20,8 @@
       "from": "build/back-end/node_modules",
       "to": "build/back-end/node_modules",
       "filter": [
-        "**/*",
-        "${extraBackendFilter}"
+        "${extraBackendFilter}",
+        "!@img/sharp-wasm32/**/*"
       ]
     }
   ],
