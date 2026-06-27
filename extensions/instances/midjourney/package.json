@@ -6,7 +6,7 @@
   "keywords": [
     "picteus",
     "extension",
-    "midjourney"
+    "Midjourney"
   ],
   "author": {
     "name": "Édouard Mercier",
@@ -34,16 +34,20 @@
     "icon.png"
   ],
   "scripts": {
-    "prerequisites": "npm --no-save link ../../sdk/typescript",
-    "build": "tsc"
+    "chrome-extension:prerequisites": "git submodule add --force git@github.com:picteus/picteus-chrome-extensions.git picteus-chrome-extensions",
+    "chrome-extension:build": "npm --prefix picteus-chrome-extensions install && npm --prefix picteus-chrome-extensions run midjourney:package -- $(npm prefix)/dist",
+    "self:build": "tsc",
+    "build": "npm run chrome-extension:prerequisites && npm run chrome-extension:build && npm run self:build"
   },
   "devDependencies": {
     "typescript": "5.9.2",
     "@types/node": "22.17.1",
+    "@types/adm-zip": "0.5.8",
     "jest": "30.2.0"
   },
   "dependencies": {
-    "fast-xml-parser": "5.3.3",
+    "fast-xml-parser": "5.9.3",
+    "adm-zip": "0.5.17",
     "@picteus/internal-extension-sdk": "0.12.0"
   }
 }

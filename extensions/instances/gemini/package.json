@@ -6,8 +6,8 @@
   "keywords": [
     "picteus",
     "extension",
-    "google",
-    "gemini",
+    "Google",
+    "Gemini",
     "nano banana"
   ],
   "author": {
@@ -38,21 +38,18 @@
   ],
   "scripts": {
     "chrome-extension:prerequisites": "git submodule add --force git@github.com:picteus/picteus-chrome-extensions.git picteus-chrome-extensions",
-    "chrome-extension:build": "npm --prefix picteus-chrome-extensions run gemini:package && mkdirp -p dist && shx mv picteus-chrome-extensions/gemini/*.tgz dist && cd dist && tar2zip picteus-gemini-chrome-extension-0.1.0.tgz && shx rm -rf *.tgz",
+    "chrome-extension:build": "npm --prefix picteus-chrome-extensions install && npm --prefix picteus-chrome-extensions run gemini:package -- $(npm prefix)/dist",
     "self:build": "tsc",
     "build": "npm run chrome-extension:prerequisites && npm run chrome-extension:build && npm run self:build"
   },
   "devDependencies": {
-    "shx": "0.4.0",
-    "tar-to-zip": "3.0.0",
     "typescript": "5.9.2",
     "@types/node": "22.17.1",
-    "@types/adm-zip": "0.5.5",
-    "mkdirp": "3.0.1"
+    "@types/adm-zip": "0.5.8"
   },
   "dependencies": {
     "@google/genai": "1.25.0",
-    "adm-zip": "0.5.16",
+    "adm-zip": "0.5.17",
     "@picteus/internal-extension-sdk": "0.12.0"
   }
 }

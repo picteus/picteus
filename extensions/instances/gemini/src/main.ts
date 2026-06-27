@@ -32,18 +32,7 @@ class GeminiExtension extends PicteusExtension
   protected async onReady(communicator?: Communicator): Promise<void>
   {
     await this.setup(await this.getSettings());
-    const ensureRepository = async (): Promise<void> =>
-    {
-      const name = PicteusExtension.getManifest().name;
-      this.repository = await this.getRepositoryApi().repositoryEnsure({
-        technicalId: this.extensionId,
-        name,
-        comment: `The ${name} repository`,
-        watch: true
-      });
-      communicator.sendLog(`The repository '${name}' is available`, "info");
-    };
-    await ensureRepository();
+    await this.ensureRepository();
     await this.installChromeExtension();
   }
 
@@ -238,7 +227,7 @@ class GeminiExtension extends PicteusExtension
         const blob = new Blob([Buffer.from(buffer)]);
         await this.getExtensionApi().extensionInstallChromeExtension({
           id: this.extensionId,
-          chromeExtensionName: "Picteus",
+          chromeExtensionName: this.extensionId,
           body: blob
         });
         break;
@@ -297,6 +286,18 @@ class GeminiExtension extends PicteusExtension
       }
     }
     return true;
+  }
+
+  private async ensureRepository(communicator?: Communicator): Promise<void>
+  {
+    const name = PicteusExtension.getManifest().name;
+    this.repository = await this.getRepositoryApi().repositoryEnsure({
+      technicalId: this.extensionId,
+      name,
+      comment: `The ${name} repository`,
+      watch: true
+    });
+    communicator.sendLog(`The repository '${name}' is available`, "info");
   }
 
 }

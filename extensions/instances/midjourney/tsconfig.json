@@ -8,6 +8,7 @@
     "declaration": false,
     "emitDecoratorMetadata": false,
     "experimentalDecorators": false,
+    "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "sourceMap": false
   },

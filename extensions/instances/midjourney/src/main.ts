@@ -1,4 +1,8 @@
+import path from "node:path";
+import fs from "node:fs";
+
 import { XMLParser } from "fast-xml-parser";
+import AdmZip from "adm-zip";
 
 import {
   Communicator,
@@ -294,6 +298,7 @@ class MidjourneyExtension extends PicteusExtension
   {
     await this.setup(await this.getSettings());
     await this.ensureRepository(communicator);
+    await this.installChromeExtension();
   }
 
   protected async onSettings(_communicator: Communicator, value: SettingsValue): Promise<void>
@@ -386,6 +391,50 @@ class MidjourneyExtension extends PicteusExtension
   {
   }
 
+  private async installChromeExtension()
+  {
+    const distributionDirectoryPath = path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "dist");
+    const fileNames = fs.readdirSync(distributionDirectoryPath);
+    for (const fileName of fileNames)
+    {
+      if (fileName.endsWith(".zip") === true)
+      {
+        this.logger.debug("Repackaging the Chrome extension");
+        // We need a fresh new zip to avoid issues with AdmZip when modifying entries
+        const newZip: AdmZip = new AdmZip();
+        {
+          const zip: AdmZip = new AdmZip(fs.readFileSync(path.join(distributionDirectoryPath, fileName)));
+          // We add all existing entries
+          const entryPrefix = "package/";
+          const entryName = `${entryPrefix}manifest.json`;
+          for (const entry of zip.getEntries())
+          {
+            if (entry.entryName !== entryName)
+            {
+              newZip.addFile(entry.entryName.substring(entryPrefix.length), entry.getData(), entry.comment, entry.attr);
+            }
+          }
+          const entry = zip.getEntry(entryName);
+          const manifest = JSON.parse(entry.getData().toString("utf-8"));
+          manifest["action"]["default_title"] = JSON.stringify({
+            webServicesBaseUrl: this.webServicesBaseUrl,
+            apiKey: this.apiKey
+          });
+          newZip.addFile(entryName.substring(entryPrefix.length), Buffer.from(JSON.stringify(manifest)));
+        }
+
+        const buffer: Buffer = await newZip.toBufferPromise();
+        const blob = new Blob([Buffer.from(buffer)]);
+        await this.getExtensionApi().extensionInstallChromeExtension({
+          id: this.extensionId,
+          chromeExtensionName: this.extensionId,
+          body: blob
+        });
+        break;
+      }
+    }
+  }
+
   private async ensureRepository(communicator?: Communicator): Promise<void>
   {
     const name = PicteusExtension.getManifest().name;
@@ -395,7 +444,7 @@ class MidjourneyExtension extends PicteusExtension
       comment: `The ${name} repository`,
       watch: true
     });
-    communicator?.sendLog(`The repository '${name}' was created`, "info");
+    communicator.sendLog(`The repository '${name}' is available`, "info");
   }
 
 }
