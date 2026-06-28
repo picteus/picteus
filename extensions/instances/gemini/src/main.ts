@@ -32,7 +32,7 @@ class GeminiExtension extends PicteusExtension
   protected async onReady(communicator?: Communicator): Promise<void>
   {
     await this.setup(await this.getSettings());
-    await this.ensureRepository();
+    await this.ensureRepository(communicator);
     await this.installChromeExtension();
   }
 
