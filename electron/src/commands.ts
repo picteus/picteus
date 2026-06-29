@@ -4,7 +4,7 @@ import os from "node:os";
 import { ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 
-import { Server as SocketServer, ServerOptions, Socket } from "socket.io";
+import { DisconnectReason, Server as SocketServer, ServerOptions, Socket } from "socket.io";
 import * as electron from "electron";
 import { dialog } from "electron";
 
@@ -61,9 +61,25 @@ export class CommandsManager
     {
       let isAuthorized = false;
       logger.debug(`A new socket client with id '${socket.id}' has connected`);
-      socket.on("disconnect", (): void =>
+      socket.on("connect", (): void =>
       {
-        logger.debug(`The socket client with id '${socket.id}' was disconnected`);
+        logger.debug(`The socket client with id '${socket.id}' is connected`);
+      });
+      socket.on("disconnect", (reason: DisconnectReason): void =>
+      {
+        logger.warn(`The socket client with id '${socket.id}' was disconnected with reason '${reason}'`);
+      });
+      socket.on("disconnecting", (reason: DisconnectReason): void =>
+      {
+        logger.warn(`The socket client with id '${socket.id}' was disconnecting with reason '${reason}'`);
+      });
+      socket.on("connect_error", (error): void =>
+      {
+        logger.warn(`A connection issue occurred with the socket client with id '${socket.id}'`, error);
+      });
+      socket.on("error", (error): void =>
+      {
+        logger.warn(`The socket client with id '${socket.id}' received an error`, error);
       });
       socket.on("initialize", ({ secret: clientSecret }: { secret: string }): void =>
       {
@@ -83,6 +99,11 @@ export class CommandsManager
         {
           logger.debug(`The socket client with id '${socket.id}' received the command '${command}' with id '${id}'`);
           await this.handleCommand(socket, id, command, parameters);
+        }
+        else
+        {
+          logger.warn(`The socket client with id '${socket.id}' received the unauthorized command '${command}' with id '${id}'`);
+          this.sendCommandError(socket, id, `The socket client with id '${socket.id}' is not authorized to run commands`);
         }
       });
     });

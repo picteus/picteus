@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { io, ManagerOptions, Socket, SocketOptions } from "socket.io-client";
 
 import { API_KEY, BASE_PATH, generateRandomId } from "utils";
 import { EventInformationType, EventNotificationType, EventOnResultType, SocketEventType } from "types";
@@ -32,20 +32,28 @@ class SocketClient
 
   constructor(url: string, apiKey: string)
   {
-    const options = {
-      autoConnect: true,
-      transports: ["websocket"]
-    };
+    const options: Partial<ManagerOptions & SocketOptions> =
+      {
+        autoConnect: true,
+        reconnection: true,
+        transports: ["websocket"]
+      };
     this.socket = io(url, options);
-    this.socket.on("connect", (): void =>
+    const socket = this.socket;
+    socket.on("connect", (): void =>
     {
-      console.debug("The socket is now connected");
+      console.debug(`The events socket client with id '${socket.id}' is connected`);
+      socket.emit("connection", { apiKey, isOpen: true });
     });
-    this.socket.on("connect_error", (): void =>
+    socket.on("connect_error", (error): void =>
     {
-      console.debug("The socket connection is erroneous");
+      console.warn(`A connection issue occurred with the events socket client with id '${socket.id}'`, error);
     });
-    this.socket.on("events", async (
+    socket.on("disconnect", (reason: Socket.DisconnectReason) =>
+    {
+      console.warn(`The events socket client is disconnected with reason '${reason}'`);
+    });
+    socket.on("events", async (
         { channel, contextId, isActivity, milliseconds, value }: SocketEventType,
         onResult: EventOnResultType
       ) =>
@@ -79,7 +87,6 @@ class SocketClient
         }
       }
     );
-    this.socket.emit("connection", { apiKey, isOpen: true });
   }
 
   disconnect(): void

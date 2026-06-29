@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
+import { io, ManagerOptions, Socket, SocketOptions } from "socket.io-client";
 
 import { CommandContextType, CommandParameters, CommandSocketEventType, JsonType } from "types";
 
@@ -29,24 +29,33 @@ export function CommandSocketProvider({ children }: { children: ReactNode })
 
   useEffect(() =>
   {
-    const options = {
-      autoConnect: true,
-      transports: ["websocket"]
-    };
+    const options: Partial<ManagerOptions & SocketOptions> =
+      {
+        autoConnect: true,
+        reconnection: true,
+        transports: ["websocket"]
+      };
     const urlSearchParams = new URLSearchParams(window.location.search);
     const commandsSocketBaseUrl = urlSearchParams.get("commandsSocketBaseUrl");
     const commandsSocketSecret = urlSearchParams.get("commandsSocketSecret");
-    const ioClient = io(commandsSocketBaseUrl, options);
-    ioClient.on("connect", () =>
+    console.debug(`Connecting to the command server socket at '${commandsSocketBaseUrl}'`);
+    const socket = io(commandsSocketBaseUrl, options);
+    socket.on("connect", () =>
     {
+      console.debug(`The command socket client with id '${socket.id}' is connected`);
       setConnected(true);
+      socket.emit("initialize", { secret: commandsSocketSecret });
     });
-    ioClient.on("disconnect", async (): Promise<void> =>
+    socket.on("connect_error", (error): void =>
     {
+      console.warn(`A connection issue occurred with the command socket client with id '${socket.id}'`, error);
+    });
+    socket.on("disconnect", (reason: Socket.DisconnectReason) =>
+    {
+      console.warn(`The command socket client is disconnected with reason '${reason}'`);
       setConnected(false);
     });
-    ioClient.emit("initialize", { secret: commandsSocketSecret });
-    ioClient.on("result", (response: CommandSocketEventType) =>
+    socket.on("result", (response: CommandSocketEventType) =>
     {
       const { id, error, value } = response;
       if (callbacks.current[id])
@@ -63,11 +72,11 @@ export function CommandSocketProvider({ children }: { children: ReactNode })
       }
     });
 
-    setSocket(ioClient);
+    setSocket(socket);
 
     return () =>
     {
-      ioClient.disconnect();
+      socket.disconnect();
       console.debug("Disconnected the command socket");
     };
   }, []);
