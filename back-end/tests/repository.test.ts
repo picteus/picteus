@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { fdir } from "fdir";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "@jest/globals";
 import waitForExpect from "wait-for-expect";
+import { exiftool } from "exiftool-vendored";
 import HttpCodes from "http-codes";
 import moment from "moment";
 
@@ -43,6 +44,8 @@ import { Base, Core, Defaults } from "./base";
 import { RepositoryWatcher } from "../src/services/utils/repositoryWatcher";
 import { EventEntity, ImageEventAction, NotifierService, RepositoryEventAction } from "../src/services/notifierService";
 import { computeFormat, readApplicationMetadata, writeMetadata } from "../src/services/utils/images";
+import { deepCopy } from "../src/utils";
+
 
 const { BAD_REQUEST } = HttpCodes;
 
@@ -1079,7 +1082,8 @@ describe("Repository", () =>
     const withUserCommentFilePath = path.join(base.getWorkingDirectoryPath(), `image-${randomUUID()}`);
     await base.imageFeeder.prepareAutomatic1111Image(withUserCommentFilePath);
     const withUserCommentBuffer = readFileSync(withUserCommentFilePath);
-    const buffers = [noUserCommentBuffer, withUserCommentBuffer];
+    const withDescriptionBuffer = readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, "image-description.png"));
+    const buffers = [noUserCommentBuffer, withUserCommentBuffer, withDescriptionBuffer];
     const metadataArray = [undefined, new ApplicationMetadata([new ApplicationMetadataItem(extension.manifest.id, new GenerationRecipe([], new TextualPrompt("prompt")))]), new ApplicationMetadata([new ApplicationMetadataItem(extension.manifest.id, { key: "value" })])];
 
     {
@@ -1106,6 +1110,9 @@ describe("Repository", () =>
         const fileName = nameWithoutExtension + "." + toFileExtension(imageFormat);
         const pathSeparator = path.sep;
         {
+          const bufferFilePath = path.join(fs.mkdtempSync("picteus-"), "image");
+          fs.writeFileSync(bufferFilePath, buffer);
+          const originalTags = deepCopy(await exiftool.read(bufferFilePath));
           const originalApplicationMetadata = await readApplicationMetadata(buffer, imageFormat);
           expect(originalApplicationMetadata).toBeUndefined();
           const listener = base.computeEventListener();
@@ -1120,8 +1127,22 @@ describe("Repository", () =>
           expect(image.sourceUrl).toBe(sourceUrl);
           expect(image.parentId).toBe(parentImageId);
           expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).totalCount).toBe(imagesCount);
-          const newApplicationMetadata = await readApplicationMetadata(fs.readFileSync(image.url.substring(fileWithProtocol.length)), imageFormat);
+          const storedImageFilePath = image.url.substring(fileWithProtocol.length);
+          const newApplicationMetadata = await readApplicationMetadata(fs.readFileSync(storedImageFilePath), imageFormat);
           expect(newApplicationMetadata).toEqual(metadata);
+          const newTags = deepCopy(await exiftool.read(storedImageFilePath));
+          const picteusTag = imageFormat === ImageFormat.JPEG ? "TargetPrinter" : "Picteus";
+          if (metadata !== undefined)
+          {
+            expect(newTags[picteusTag]).toEqual(JSON.stringify(imageFormat === ImageFormat.JPEG ? { picteus: metadata } : metadata));
+          }
+          const toIgnoreTags = ["Directory", "FileName", "FileSize", "SourceFile", "FileModifyDate", "FileInodeChangeDate", "FileAccessDate", "CreationTime", "ProfileDateTime", picteusTag, "ExifByteOrder"];
+          for (const tag of toIgnoreTags)
+          {
+            delete originalTags[tag];
+            delete newTags[tag];
+          }
+          expect(newTags).toEqual(originalTags);
         }
         {
           const relativeDirectoryPath = `relative${pathSeparator}path`;
