@@ -1,6 +1,6 @@
 {
   "name": "@picteus/back-end",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "productName": "Picteus back-end",
   "description": "The Picteus back-end server application.",
   "keywords": [

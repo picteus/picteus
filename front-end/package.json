@@ -1,6 +1,6 @@
 {
   "name": "@picteus/front-end",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "productName": "Picteus front-end",
   "description": "The Picteus front-end web application.",
   "keywords": [
@@ -88,7 +88,7 @@
     "react-typed": "2.0.12",
     "react-markdown": "10.1.0",
     "socket.io-client": "4.8.3",
-    "@picteus/ws-client": "file:../generated/openapi/typescript-fetch/picteus-ws-client-0.16.0.tgz"
+    "@picteus/ws-client": "file:../generated/openapi/typescript-fetch/picteus-ws-client-0.17.0.tgz"
   },
   "prettier": {
     "singleQuote": false

@@ -1,6 +1,6 @@
 {
   "name": "@picteus/main",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "productName": "Picteus",
   "description": "An advanced pictures explorer application.",
   "keywords": [
@@ -31,11 +31,11 @@
     "url": "https://github.com/picteus/Picteus/issues"
   },
   "config": {
-    "applicationVersion": "0.9.1",
-    "backendVersion": "0.9.1",
-    "frontEndVersion": "0.5.1",
-    "apiVersion": "0.16.0",
-    "sdkVersion": "0.12.0",
+    "applicationVersion": "0.10.0",
+    "backendVersion": "0.10.0",
+    "frontEndVersion": "0.6.0",
+    "apiVersion": "0.17.0",
+    "sdkVersion": "0.13.0",
     "dockerImageName": "koppasoft/picteus"
   },
   "scripts": {
