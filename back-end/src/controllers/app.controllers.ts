@@ -127,6 +127,7 @@ import {
   imageSupportedMimeTypes
 } from "./tech.controllers";
 
+
 const { CREATED, NO_CONTENT, OK } = HttpCodes;
 
 export { validationPipeFactory };
@@ -693,7 +694,13 @@ export class ExtensionController
   @ApiProduces(types.text)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiBody({ description: "The extension settings", type: ExtensionSettings, required: true })
+  @ApiBody({
+    description: "The extension settings",
+    type: ExtensionSettings,
+    // schema: { $ref: getSchemaPath(ExtensionSettings) },
+    // encoding:{"dummy": {contentType: "application/json"}},
+    required: true
+  })
   @ApiResponse(
     {
       status: NO_CONTENT,
@@ -1308,9 +1315,18 @@ export class RepositoryController
       format: "uri",
       minimum: 8,
       maxLength: FieldLengths.url,
-      example: "https://inovexus.com/wp-content/uploads/2024/09/Inovexus_Aive.png"
+      example: "https://i.pinimg.com/736x/ff/6e/fc/ff6efca1dbea44c34bc18614a3cc5320.jpg"
     },
     required: false
+  })
+  @ApiQuery({
+    name: "inceptionDate",
+    description: "The moment when the image was incepted",
+    type: Number,
+    format: "int64",
+    minimum: 0,
+    required: false,
+    example: 17825836341234
   })
   @ApiConsumes(...imageSupportedMimeTypes)
   @ApiBody({
@@ -1327,9 +1343,9 @@ export class RepositoryController
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryStoreImage]))
   @Throttle({ default: { ttl: 1_000, limit: 10 } })
-  async storeImage(@Param("id") id: string, @Query("nameWithoutExtension") nameWithoutExtension: string | undefined, @Query("relativeDirectoryPath") relativeDirectoryPath: string | undefined, @Query("applicationMetadata"/*, StringifiedJsonPipeTransform<ApplicationMetadata>*/) applicationMetadata: /*ApplicationMetadata*/string | undefined, @Query("parentId") parentId: string | undefined, @Query("sourceUrl") sourceUrl: string | undefined, @Body() buffer: Buffer): Promise<Image>
+  async storeImage(@Param("id") id: string, @Query("nameWithoutExtension") nameWithoutExtension: string | undefined, @Query("relativeDirectoryPath") relativeDirectoryPath: string | undefined, @Query("applicationMetadata"/*, StringifiedJsonPipeTransform<ApplicationMetadata>*/) applicationMetadata: /*ApplicationMetadata*/string | undefined, @Query("parentId") parentId: string | undefined, @Query("sourceUrl") sourceUrl: string | undefined, @Query("inceptionDate") inceptionDate: number | undefined, @Body() buffer: Buffer): Promise<Image>
   {
-    return await this.repositoryService.storeImage(id, buffer, nameWithoutExtension, relativeDirectoryPath, applicationMetadata, parentId, sourceUrl);
+    return await this.repositoryService.storeImage(id, buffer, nameWithoutExtension, relativeDirectoryPath, applicationMetadata, parentId, sourceUrl, inceptionDate);
   }
 
 }

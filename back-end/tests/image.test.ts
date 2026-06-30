@@ -66,6 +66,7 @@ import { Base, Core, Defaults, ImageFeeder } from "./base";
 import { EventEntity, ImageEventAction, NotifierService } from "../src/services/notifierService";
 import waitForExpect from "wait-for-expect";
 
+
 const { OK, BAD_REQUEST } = HttpCodes;
 
 
@@ -1761,7 +1762,7 @@ describe("Image with module", () =>
     const repository = await base.prepareEmptyRepository();
     const value1 = { key: "value" };
     const value2 = new GenerationRecipe(["model"], new TextualPrompt("prompt"));
-    const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([new ApplicationMetadataItem(extension1.manifest.id, value1), new ApplicationMetadataItem(extension2.manifest.id, value2)])), undefined, undefined, fs.readFileSync(base.imageFeeder.getImageFilePath(base.imageFeeder.pngImageFileName)));
+    const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([new ApplicationMetadataItem(extension1.manifest.id, value1), new ApplicationMetadataItem(extension2.manifest.id, value2)])), undefined, undefined, undefined, fs.readFileSync(base.imageFeeder.getImageFilePath(base.imageFeeder.pngImageFileName)));
 
     // We copy an image with application metadata
     const buffer = fs.readFileSync(image.url.substring(fileWithProtocol.length));

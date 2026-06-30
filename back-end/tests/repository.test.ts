@@ -42,6 +42,7 @@ import {
 import { ServiceError } from "../src/app.exceptions";
 import { Base, Core, Defaults } from "./base";
 import { RepositoryWatcher } from "../src/services/utils/repositoryWatcher";
+import { getTemporaryDirectoryPath } from "../src/services/utils/downloader";
 import { EventEntity, ImageEventAction, NotifierService, RepositoryEventAction } from "../src/services/notifierService";
 import { computeFormat, readApplicationMetadata, writeMetadata } from "../src/services/utils/images";
 import { deepCopy } from "../src/utils";
@@ -812,7 +813,7 @@ describe("Repository", () =>
       const serviceError = new ServiceError(`The repository with id '${repository.id}' is not available`, BAD_REQUEST, base.badParameterCode);
       await expect(async () =>
       {
-        await base.getRepositoryController().storeImage(repository.id, "name", undefined, undefined, undefined, undefined, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
+        await base.getRepositoryController().storeImage(repository.id, "name", undefined, undefined, undefined, undefined, undefined, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
       }).rejects.toThrow(serviceError);
       await expect(async () =>
       {
@@ -1061,20 +1062,20 @@ describe("Repository", () =>
         const nameWithoutExtension = "../file";
         await expect(async () =>
         {
-          await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, undefined, undefined, undefined, noUserCommentBuffer);
+          await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, undefined, undefined, undefined, undefined, noUserCommentBuffer);
         }).rejects.toThrow(new ServiceError(`The parameter 'nameWithoutExtension' with value '${nameWithoutExtension}' is invalid because it contains illegal characters`, BAD_REQUEST, base.badParameterCode));
       }
       {
         const relativeDirectoryPath = "..";
         await expect(async () =>
         {
-          await base.getRepositoryController().storeImage(repository.id, undefined, relativeDirectoryPath, undefined, undefined, undefined, noUserCommentBuffer);
+          await base.getRepositoryController().storeImage(repository.id, undefined, relativeDirectoryPath, undefined, undefined, undefined, undefined, noUserCommentBuffer);
         }).rejects.toThrow(new ServiceError(`The parameter 'relativeDirectoryPath' with value '${relativeDirectoryPath}' is invalid because it is a traversal path pointing to a location higher that the repository's on the file system`, BAD_REQUEST, base.badParameterCode));
       }
       {
         await expect(async () =>
         {
-          await base.getRepositoryController().storeImage(repository.id, undefined, undefined, undefined, undefined, undefined, Buffer.alloc(base.imageMaximumBinaryWeightInBytes + 1));
+          await base.getRepositoryController().storeImage(repository.id, undefined, undefined, undefined, undefined, undefined, undefined, Buffer.alloc(base.imageMaximumBinaryWeightInBytes + 1));
         }).rejects.toThrow(new ServiceError(`The provided image exceeds the maximum allowed binary weight of ${base.imageMaximumBinaryWeightInBytes} bytes`, BAD_REQUEST, base.badParameterCode));
       }
     }
@@ -1091,7 +1092,7 @@ describe("Repository", () =>
       const extensionId = "inexistent";
       await expect(async () =>
       {
-        await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([new ApplicationMetadataItem(extensionId, {})])), undefined, undefined, noUserCommentBuffer);
+        await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([new ApplicationMetadataItem(extensionId, {})])), undefined, undefined, undefined, noUserCommentBuffer);
       }).rejects.toThrow(new ServiceError(`The parameter 'applicationMetadata.items[0]' with value '${extensionId}' is invalid because that extension is not installed`, BAD_REQUEST, base.badParameterCode));
     }
 
@@ -1103,21 +1104,22 @@ describe("Repository", () =>
       {
         const stringifiedMetadata = JSON.stringify(metadata);
         const parentImageId = existingImage.id;
-        const sourceUrl = "https://inovexus.com/wp-content/uploads/2024/09/Inovexus_Aive.png";
+        const sourceUrl = "https://i.pinimg.com/736x/ff/6e/fc/ff6efca1dbea44c34bc18614a3cc5320.jpg";
+        const inceptionDate = Date.now();
         const imageFormat = await computeFormat(buffer);
         const suffix = `-${imageFormat}-${metadata === undefined ? "no" : "with"}-metadata-${index++}`;
         const nameWithoutExtension = `nameWithoutExtension${suffix}`;
         const fileName = nameWithoutExtension + "." + toFileExtension(imageFormat);
         const pathSeparator = path.sep;
         {
-          const bufferFilePath = path.join(fs.mkdtempSync("picteus-"), "image");
+          const bufferFilePath = path.join(getTemporaryDirectoryPath(), "image");
           fs.writeFileSync(bufferFilePath, buffer);
           const originalTags = deepCopy(await exiftool.read(bufferFilePath));
           const originalApplicationMetadata = await readApplicationMetadata(buffer, imageFormat);
           expect(originalApplicationMetadata).toBeUndefined();
           const listener = base.computeEventListener();
           base.getNotifierService().once(EventEntity.Image, ImageEventAction.Created, undefined, listener);
-          const image = await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, stringifiedMetadata, parentImageId, sourceUrl, buffer);
+          const image = await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, buffer);
           expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Created, { id: image.id });
           imagesCount++;
           expect(image.repositoryId).toBe(repository.id);
@@ -1128,6 +1130,17 @@ describe("Repository", () =>
           expect(image.parentId).toBe(parentImageId);
           expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).totalCount).toBe(imagesCount);
           const storedImageFilePath = image.url.substring(fileWithProtocol.length);
+          const fd = fs.openSync(storedImageFilePath, "r");
+          try
+          {
+            const stats = fs.fstatSync(fd);
+            expect(stats.mtime).toEqual(new Date(inceptionDate));
+            expect(stats.birthtime).toEqual(new Date(inceptionDate));
+          }
+          finally
+          {
+            fs.close(fd);
+          }
           const newApplicationMetadata = await readApplicationMetadata(fs.readFileSync(storedImageFilePath), imageFormat);
           expect(newApplicationMetadata).toEqual(metadata);
           const newTags = deepCopy(await exiftool.read(storedImageFilePath));
@@ -1146,7 +1159,7 @@ describe("Repository", () =>
         }
         {
           const relativeDirectoryPath = `relative${pathSeparator}path`;
-          const image = await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, relativeDirectoryPath, stringifiedMetadata, parentImageId, sourceUrl, buffer);
+          const image = await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, relativeDirectoryPath, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, buffer);
           imagesCount++;
           expect(image.repositoryId).toBe(repository.id);
           expect(image.format).toBe(imageFormat);
@@ -1154,7 +1167,7 @@ describe("Repository", () =>
           expect(image.name).toBe(nameWithoutExtension + "." + toFileExtension(imageFormat));
         }
         {
-          const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, stringifiedMetadata, parentImageId, sourceUrl, buffer);
+          const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, buffer);
           imagesCount++;
           expect(image.repositoryId).toBe(repository.id);
           expect(image.format).toBe(imageFormat);
@@ -1164,12 +1177,12 @@ describe("Repository", () =>
 
         await expect(async () =>
         {
-          await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, stringifiedMetadata, parentImageId, sourceUrl, buffer);
+          await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, buffer);
         }).rejects.toThrow(new ServiceError(`The parameter 'nameWithoutExtension' with value '${nameWithoutExtension}' is invalid because a file with the same name already exists in the repository`, BAD_REQUEST, base.badParameterCode));
 
         await expect(async () =>
         {
-          await base.getRepositoryController().storeImage(repository.id, undefined, undefined, stringifiedMetadata, parentImageId, sourceUrl, Buffer.from("dummyString"));
+          await base.getRepositoryController().storeImage(repository.id, undefined, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, Buffer.from("dummyString"));
         }).rejects.toThrow(new ServiceError("The provided file is not a supported image. Reason: 'Unable to parse the image metadata. Reason: 'Input buffer contains unsupported image format''", BAD_REQUEST, base.badParameterCode));
       }
     }
@@ -1184,9 +1197,9 @@ describe("Repository", () =>
     const item2 = new ApplicationMetadataItem(extension2.manifest.id, { key: "value" });
 
     const imageBuffer = readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName));
-    const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([item1])), undefined, undefined, imageBuffer);
+    const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([item1])), undefined, undefined, undefined, imageBuffer);
     const storedBuffer = fs.readFileSync(image.url.substring(fileWithProtocol.length));
-    const newImage = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([item2])), undefined, undefined, storedBuffer);
+    const newImage = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([item2])), undefined, undefined, undefined, storedBuffer);
     const applicationMetadata = await readApplicationMetadata(fs.readFileSync(newImage.url.substring(fileWithProtocol.length)), newImage.format);
     expect(applicationMetadata).toEqual(new ApplicationMetadata([item1, item2]));
   });

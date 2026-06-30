@@ -501,10 +501,11 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     return await this.moduleRef.get(ImageService).get(imageId);
   }
 
-  async storeImage(id: string, buffer: Buffer, nameWithoutExtension?: string, relativeDirectoryPath?: string, applicationMetadata?: string, parentId?: string, sourceUrl?: string): Promise<Image>
+  async storeImage(id: string, buffer: Buffer, nameWithoutExtension?: string, relativeDirectoryPath?: string, applicationMetadata?: string, parentId?: string, sourceUrl?: string, inceptionDate?: number): Promise<Image>
   {
     const actualNameWithoutExtension = nameWithoutExtension === undefined ? `image-${randomUUID()}` : nameWithoutExtension;
-    logger.info(`Storing an image with name '${actualNameWithoutExtension}' in the the repository with id '${id}'${relativeDirectoryPath === undefined ? "" : ` in relative path '${relativeDirectoryPath}'`}${parentId === undefined ? "" : ` with the parent image with id '${parentId}'`}${sourceUrl === undefined ? "" : ` from the source URL '${sourceUrl}'`}`);
+    const actualInceptionDate = inceptionDate === undefined ? undefined : new Date(inceptionDate);
+    logger.info(`Storing an image with name '${actualNameWithoutExtension}' in the the repository with id '${id}'${relativeDirectoryPath === undefined ? "" : ` in relative path '${relativeDirectoryPath}'`}${parentId === undefined ? "" : ` with the parent image with id '${parentId}'`}${sourceUrl === undefined ? "" : ` from the source URL '${sourceUrl}'`}${actualInceptionDate === undefined ? "" : ` with inception date '${actualInceptionDate}'`}`);
     if (buffer.length > Image.IMAGE_MAXIMUM_BINARY_WEIGHT_IN_BYTES)
     {
       parametersChecker.throwBadParameterError(`The provided image exceeds the maximum allowed binary weight of ${Image.IMAGE_MAXIMUM_BINARY_WEIGHT_IN_BYTES} bytes`);
@@ -596,6 +597,10 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       // We ensure that the image parent directory exists
       fs.mkdirSync(path.join(filePath, ".."), { recursive: true });
       fs.writeFileSync(filePath, buffer);
+      if (actualInceptionDate !== undefined)
+      {
+        fs.utimesSync(filePath, actualInceptionDate, actualInceptionDate);
+      }
       const imageDeclarationManager = new ImageDeclarationManager(1);
       try
       {
