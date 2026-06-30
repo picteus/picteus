@@ -144,7 +144,9 @@ describe("WebServices", () =>
     const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName, "initial");
     const extension = await base.prepareExtension();
     const extensionDirectoryPath = path.join(paths.installedExtensionsDirectoryPath, extension.manifest.id);
-    const webServicesWrapper = new WebServicesWrapper(JSON.parse(fs.readFileSync(path.join(extensionDirectoryPath, Base.extensionParametersFileName), "utf-8"))["apiKey"]);
+    const extensionParametersFilePath = path.join(extensionDirectoryPath, Base.extensionParametersFileName);
+    const extensionParametersJson = JSON.parse(fs.readFileSync(extensionParametersFilePath, "utf-8"));
+    const webServicesWrapper = new WebServicesWrapper(extensionParametersJson["apiKey"]);
     const repositoryApi = await webServicesWrapper.computeController<RepositoryApi>(RepositoryApi);
     const newRepository = await repositoryApi.repositoryEnsure({
       technicalId: extension.manifest.id,
