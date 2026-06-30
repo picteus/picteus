@@ -1,17 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 
 import type { Config } from "@jest/types";
 import { createDefaultEsmPreset, pathsToModuleNameMapper } from "ts-jest";
 
 
-const currentDirectoryPath = path.dirname(fileURLToPath(import.meta.url));
-const rootDirectoryPath = path.resolve(currentDirectoryPath, "..");
-const stConfigFileName = "tsconfig.json";
-const tsConfigJsonFilePath = path.join(rootDirectoryPath, stConfigFileName);
-const testTsConfigJsonFilePath = path.join(currentDirectoryPath, stConfigFileName);
+const tsConfigFileName = "tsconfig.json";
+const testTsConfigJsonFilePath = tsConfigFileName;
+const rootDirectoryPath = path.join("..");
+const tsConfigJsonFilePath = path.join(rootDirectoryPath, tsConfigFileName);
 const tsConfigJson = JSON.parse(fs.readFileSync(tsConfigJsonFilePath, { encoding: "utf8" }));
 
 // This work-around comes from https://github.com/kulshekhar/ts-jest/issues/414 and at https://stackoverflow.com/questions/52860868/typescript-paths-not-resolving-when-running-jest
