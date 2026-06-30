@@ -1,13 +1,7 @@
 import { types } from "http-constants";
 import { applyDecorators, Type } from "@nestjs/common";
-import {
-  ApiExtraModels,
-  ApiQuery,
-  ApiQueryMetadata,
-  ApiQueryOptions,
-  DECORATORS,
-  getSchemaPath
-} from "@nestjs/swagger";
+import { ApiExtraModels, ApiQuery, ApiQueryMetadata, ApiQueryOptions, getSchemaPath } from "@nestjs/swagger";
+import { DECORATORS } from "@nestjs/swagger/dist/constants.js";
 import { ContentObject, SchemaObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
 
 import { ImageFormats, toMimeType } from "../dtos/common.dtos";

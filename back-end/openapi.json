@@ -59,7 +59,14 @@
         "parameters": [],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Migrates the database",
@@ -290,7 +297,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Deletes an API secret",
@@ -549,7 +563,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Uninstalls an extension",
@@ -589,7 +610,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Pauses or resumes an extension",
@@ -669,7 +697,14 @@
         },
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Sets an extension settings",
@@ -700,7 +735,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Synchronizes the images via an extension",
@@ -751,7 +793,14 @@
         },
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Runs a command exposed by an extension, on the process",
@@ -814,7 +863,14 @@
         },
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Runs a command exposed by an extension, on images",
@@ -882,7 +938,14 @@
         },
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Installs a Chrome extension",
@@ -1260,7 +1323,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Starts or stop the repositories",
@@ -1291,7 +1361,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Synchronizes a repository",
@@ -1331,7 +1408,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Starts or stops watching a repository",
@@ -1362,7 +1446,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Deletes a repository",
@@ -1582,6 +1673,18 @@
             }
           },
           {
+            "name": "inceptionDate",
+            "required": false,
+            "in": "query",
+            "description": "The moment when the image was incepted",
+            "schema": {
+              "minimum": 0,
+              "format": "int64",
+              "example": 17825836341234,
+              "type": "number"
+            }
+          },
+          {
             "name": "sourceUrl",
             "required": false,
             "in": "query",
@@ -1591,7 +1694,7 @@
               "format": "uri",
               "minimum": 8,
               "maxLength": 4096,
-              "example": "https://inovexus.com/wp-content/uploads/2024/09/Inovexus_Aive.png"
+              "example": "https://i.pinimg.com/736x/ff/6e/fc/ff6efca1dbea44c34bc18614a3cc5320.jpg"
             }
           },
           {
@@ -1921,7 +2024,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Deletes collection",
@@ -2377,7 +2487,14 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Deletes an image",
@@ -2770,7 +2887,14 @@
         },
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Sets the features of an image",
@@ -2930,7 +3054,14 @@
         },
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Sets the tags of an image",
@@ -2996,7 +3127,14 @@
         },
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Ensures that the tags are set on an image",
@@ -3186,7 +3324,14 @@
         },
         "responses": {
           "204": {
-            "description": ""
+            "description": "No content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "summary": "Sets the embeddings of an image",

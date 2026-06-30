@@ -142,7 +142,7 @@
     "@nestjs/common": "11.1.26",
     "@nestjs/core": "11.1.26",
     "@nestjs/platform-express": "11.1.26",
-    "@nestjs/swagger": "11.4.4",
+    "@nestjs/swagger": "11.2.1",
     "@nestjs/event-emitter": "3.1.0",
     "@nestjs/websockets": "11.1.26",
     "@nestjs/platform-socket.io": "11.1.26",

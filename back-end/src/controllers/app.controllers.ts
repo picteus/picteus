@@ -28,6 +28,7 @@ import {
   ApiProperty,
   ApiQuery,
   ApiResponse,
+  ApiResponseOptions,
   ApiSecurity,
   ApiTags,
   getSchemaPath
@@ -133,6 +134,17 @@ const { CREATED, NO_CONTENT, OK } = HttpCodes;
 export { validationPipeFactory };
 
 
+const noContentApiResponseOptions: ApiResponseOptions =
+  {
+    status: NO_CONTENT,
+    description: "No content",
+    schema:
+      {
+        type: "string"
+      }
+  };
+
+
 const mismatchingAPISecretAndExtensionIdentifiers = "Mismatching API secret and extension identifiers";
 
 const miscellaneousResourceName: string = "miscellaneous";
@@ -223,15 +235,10 @@ export class AdministrationController
       description: "Runs the migration scripts on the database."
     }
   )
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   async migrateDatabase(): Promise<void>
   {
     return await this.administrationService.migrateDatabase();
@@ -440,15 +447,10 @@ export class ApiSecretController
     schema: integerIdSchema,
     required: true
   })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ApiSecretWrite]))
   async delete(@Param("id") id: number): Promise<void>
   {
@@ -619,15 +621,10 @@ export class ExtensionController
     }
   )
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionWrite]))
   async uninstall(@Param("id") id: ExtensionIdType): Promise<void>
   {
@@ -643,15 +640,10 @@ export class ExtensionController
   )
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
   @ApiQuery({ name: "isPause", description: "Whether the extension should be paused", type: Boolean })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionManage]))
   async pauseOrResume(@Param("id") id: ExtensionIdType, @Query("isPause") isPause: boolean): Promise<void>
   {
@@ -691,7 +683,7 @@ export class ExtensionController
     }
   )
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiBody({
@@ -701,12 +693,7 @@ export class ExtensionController
     // encoding:{"dummy": {contentType: "application/json"}},
     required: true
   })
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionSettingsWrite]))
   async setSettings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Body() settings: ExtensionSettings): Promise<void>
   {
@@ -725,15 +712,10 @@ export class ExtensionController
     }
   )
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionManage]))
   async synchronize(@Param("id") id: ExtensionIdType): Promise<void>
   {
@@ -750,15 +732,10 @@ export class ExtensionController
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
   @ApiQuery({ name: "commandId", description: "The identifier of the command", type: String, required: true })
   @ApiBody({ description: "The command parameters", type: Object, required: false })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRun]))
   async runProcessCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("commandId") commandId: string, @Body() parameters: Record<string, any> | undefined): Promise<void>
   {
@@ -786,15 +763,10 @@ export class ExtensionController
     schema: imageIdSchema,
     isArray: true
   })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRun]))
   async runImageCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("commandId") commandId: string, @Body() parameters: Record<string, any> | undefined, @Query("imageIds", new ArrayValidationPipe<String>()) imageIds: string[]): Promise<void>
   {
@@ -825,14 +797,9 @@ export class ExtensionController
     schema: binarySchemaWithMaxLength(Extension.CHROME_EXTENSION_MAXIMUM_BINARY_WEIGHT_IN_BYTES),
     required: true
   })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionChromeExtensionInstall]))
   async installChromeExtension(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("chromeExtensionName") chromeExtensionName: string, @Body() archive: Buffer): Promise<void>
   {
@@ -895,6 +862,8 @@ export class ExtensionController
   }
 
 }
+
+console.log("[DEBUG_POST_LOAD] ExtensionController metadata:", Reflect.getMetadata("swagger/apiConsumes", ExtensionController));
 
 const repositoryResourceName: string = "repository";
 
@@ -1050,15 +1019,10 @@ export class RepositoryController
     description: "Whether the repositories should be started or stopped",
     type: Boolean
   })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryManage]))
   async startOrStop(@Query("isStart", ParseBoolPipe) isStart: boolean): Promise<void>
   {
@@ -1073,15 +1037,10 @@ export class RepositoryController
     }
   )
   @ApiParam({ name: "id", description: "The repository identifier", schema: repositoryIdSchema, required: true })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryManage]))
   async synchronize(@Param("id") id: string): Promise<void>
   {
@@ -1101,15 +1060,10 @@ export class RepositoryController
     description: "Whether the repository should start or stop watching",
     type: Boolean
   })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryManage]))
   async watch(@Param("id") id: string, @Query("isStart", ParseBoolPipe) isStart: boolean): Promise<void>
   {
@@ -1124,15 +1078,10 @@ export class RepositoryController
     }
   )
   @ApiParam({ name: "id", description: "The repository identifier", schema: repositoryIdSchema, required: true })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryWrite]))
   async delete(@Param("id") id: string): Promise<void>
   {
@@ -1519,15 +1468,10 @@ export class CollectionController
     schema: integerIdSchema,
     required: true
   })
-  @ApiProduces(types.text)
+  @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.CollectionWrite]))
   async delete(@Param("id") id: number): Promise<void>
   {
@@ -1823,12 +1767,7 @@ export class ImageController
   )
   @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageDelete]))
   async delete(@Param("id") id: string): Promise<void>
   {
@@ -2010,12 +1949,7 @@ export class ImageController
     required: true
   })
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageFeatureWrite]))
   // The usage of the "ParseArrayPipe" object is necessary for enabling the validation and discussed at https://stackoverflow.com/a/73468385/808618
   async setFeatures(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body(new ParseArrayPipe({
@@ -2105,12 +2039,7 @@ export class ImageController
     required: true
   })
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageTagWrite]))
   async setTags(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() tags: ImageTag[]): Promise<void>
   {
@@ -2147,12 +2076,7 @@ export class ImageController
     required: true
   })
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageTagWrite]))
   async ensureTags(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() tags: ImageTag[]): Promise<void>
   {
@@ -2260,12 +2184,7 @@ export class ImageController
   })
   @ApiBody({ description: "The image embeddings", type: ImageEmbeddings, required: true })
   @HttpCode(NO_CONTENT)
-  @ApiResponse(
-    {
-      status: NO_CONTENT,
-      type: types.text
-    }
-  )
+  @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ApiScope.ImageEmbeddingsWrite]))
   @Throttle({ default: { ttl: 1_000, limit: 10 } })
   async setEmbeddings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() embeddings: ImageEmbeddings): Promise<void>
@@ -2495,7 +2414,6 @@ export class ImageAttachmentController
   @ApiResponse(
     {
       status: CREATED,
-      type: types.text,
       description: "The URI of the created attachment",
       schema: attachmentUriSchema
     }
