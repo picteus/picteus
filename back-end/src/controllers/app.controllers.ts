@@ -863,8 +863,6 @@ export class ExtensionController
 
 }
 
-console.log("[DEBUG_POST_LOAD] ExtensionController metadata:", Reflect.getMetadata("swagger/apiConsumes", ExtensionController));
-
 const repositoryResourceName: string = "repository";
 
 /**
