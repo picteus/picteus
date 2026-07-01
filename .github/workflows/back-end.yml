@@ -17,33 +17,38 @@ on:
         options:
           - '["windows-latest"]'
           - '["windows-11-arm"]'
-          - '["macos-latest"]'
+          - '["macos-26"]'
           - '["macos-15-intel"]'
           - '["ubuntu-latest"]'
-        default: '["macos-latest"]'
+        default: '["macos-26"]'
 
 jobs:
   build:
     name: Build
     strategy:
       matrix:
-        os: ${{ (github.event_name == 'push' && fromJson('["macos-latest"]')) || fromJson(inputs.os) }}
+        os: ${{ (github.event_name == 'push' && fromJson('["macos-26"]')) || fromJson(inputs.os) }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - id: checkout
+        name: Checks out the project
+        uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          fetch-depth: 0
+          persist-credentials: true
+      - id: node-setup
+        name: Sets up Node
+        uses: actions/setup-node@v6
         with:
           node-version: '22.x'
-      - id: java
+          cache: 'npm'
+      - id: java-setup
+        name: Sets up Java
         uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
-      - name: Check-out on "${{ matrix.os }}" OS and Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
       - id: install
         if: ${{ env.skip != 'true' }}
         name: Installs the prerequisites and back-end dependencies

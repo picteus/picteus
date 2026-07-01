@@ -11,11 +11,11 @@ on:
         options:
           - '["windows-latest"]'
           - '["windows-11-arm"]'
-          - '["macos-latest"]'
+          - '["macos-26"]'
           - '["macos-15-intel"]'
           - '["ubuntu-latest"]'
-          - '["windows-latest", "macos-latest"]'
-        default: '["windows-latest", "macos-latest"]'
+          - '["windows-latest", "macos-26"]'
+        default: '["windows-latest", "macos-26"]'
       deploy:
         description: 'Deploy?'
         type: boolean
@@ -36,26 +36,25 @@ jobs:
       MACOS_APPLICATION_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_APPLICATION_CERTIFICATE_PASSWORD }}
     steps:
       - id: checkout
+        name: Checks out the project
         uses: actions/checkout@v7
-      - id: node
+      - id: node-setup
+        name: Sets up Node
         uses: actions/setup-node@v6
         with:
           node-version: '22.x'
-      - id: python
+          cache: 'npm'
+      - id: python-setup
+        name: Sets up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - id: java
+      - id: java-setup
+        name: Sets up Java
         uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
-      - id: setup
-        name: Sets up on "${{ matrix.os }}" OS
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
       - id: install
         name: Installs the root dependencies
         run: npm install
