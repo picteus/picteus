@@ -79,7 +79,8 @@ import {
   generateTarGz,
   getTemporaryDirectoryPath,
   inflateZip,
-  move
+  move,
+  symlinkType
 } from "./utils/downloader";
 import { fromCapacityToImageEventAction, Json } from "../bos";
 import { resize } from "./utils/images";
@@ -658,7 +659,7 @@ export class ExtensionService
       const targetDirectoryPath = this.extensionsRegistry.computeExtensionDirectoryPath(manifest.id);
       if (fs.existsSync(targetDirectoryPath) === false)
       {
-        fs.symlinkSync(directoryPath, targetDirectoryPath, "dir");
+        fs.symlinkSync(directoryPath, targetDirectoryPath, symlinkType);
         logger.debug(`Created a symbolic link from the unpacked extension directory '${directoryPath}' to the installed extensions directory '${targetDirectoryPath}'`);
       }
       if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true && fs.realpathSync(targetDirectoryPath) === directoryPath)

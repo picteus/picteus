@@ -6,7 +6,7 @@ import { ChildProcess } from "node:child_process";
 import { paths } from "../../paths";
 import { logger } from "../../logger";
 import { fork, waitFor } from "./processWrapper";
-import { downloadAndStoreFile, getTemporaryDirectoryPath, inflateGzippedTarball } from "./downloader";
+import { downloadAndStoreFile, getTemporaryDirectoryPath, inflateGzippedTarball, symlinkType } from "./downloader";
 
 
 export const npmVersion = "10.2.4";
@@ -105,7 +105,7 @@ export async function installPackages(packageJsonFilePath: string, isProduction:
     const nodeModules = "node_modules";
     const internalDirectoryPath = path.join(packageJsonDirectoryPath, nodeModules, `@${nodeSdkScope}`, internalExtensionSdk);
     const publicDirectoryPath = path.join(packageJsonDirectoryPath, nodeModules, `@${nodeSdkScope}`, extensionSdk);
-    fs.symlinkSync(internalDirectoryPath, publicDirectoryPath, "dir");
+    fs.symlinkSync(internalDirectoryPath, publicDirectoryPath, symlinkType);
     logger.debug(`Created a symbolic link from directory '${internalDirectoryPath}' to '${publicDirectoryPath}'`);
   }
 }

@@ -9,6 +9,8 @@ import tar from "tar-fs";
 import { logger } from "../../logger";
 
 
+export const symlinkType = os.platform() === "win32" ? "junction" : "dir";
+
 export function getTemporaryDirectoryPath(): string
 {
   return fs.mkdtempSync(path.join(os.tmpdir(), "picteus-"));
@@ -210,7 +212,14 @@ export function ensureDirectory(directoryPath: string, symbolicLinkTargetDirecto
     if (overwrite === true)
     {
       logger.debug(`Deleting the symbolic with path '${directoryPath}'`);
-      fs.rmSync(directoryPath, { recursive: true, force: true });
+      try
+      {
+        fs.unlinkSync(directoryPath);
+      }
+      catch
+      {
+        fs.rmSync(directoryPath, { recursive: true, force: true });
+      }
     }
     else
     {
@@ -222,7 +231,7 @@ export function ensureDirectory(directoryPath: string, symbolicLinkTargetDirecto
     logger.debug(symbolicLinkTargetDirectoryPath !== undefined ? `Creating the symbolic link directory from path '${directoryPath}' to '${symbolicLinkTargetDirectoryPath}'` : `Creating the directory '${directoryPath}'`);
     if (symbolicLinkTargetDirectoryPath !== undefined)
     {
-      fs.symlinkSync(symbolicLinkTargetDirectoryPath, directoryPath, "dir");
+      fs.symlinkSync(symbolicLinkTargetDirectoryPath, directoryPath, symlinkType);
     }
     else
     {
