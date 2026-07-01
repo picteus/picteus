@@ -8,10 +8,10 @@ import { CustomPublishOptions, ProgressInfo, UpdateInfo } from "builder-util-run
 import ElectronUpdater from "electron-updater";
 import { ResolvedUpdateFileInfo, UpdateDownloadedEvent } from "electron-updater/out/types";
 import { ProviderRuntimeOptions } from "electron-updater/out/providers/Provider";
-import { ElectronAppAdapter } from "electron-updater/out/ElectronAppAdapter";
 import { AppUpdater } from "electron-updater/out/AppUpdater";
 
 import { logger } from "./logger";
+
 
 const { autoUpdater: electronUpdaterAutoUpdater, Provider } = ElectronUpdater;
 
@@ -161,11 +161,11 @@ class CustomProvider extends Provider<UpdateInfo>
   constructor(private readonly options: CustomPublishOptions, updater: AppUpdater, runtimeOptions: ProviderRuntimeOptions)
   {
     super(runtimeOptions);
-    // @ts-ignore
-    const appAdapter: ElectronAppAdapter = updater.app as ElectronAppAdapter;
-    const configurationFilePath = appAdapter.appUpdateConfigPath;
+    // To avoid EPERM errors on Windows, we write it to the user's writable userData folder instead
+    const configurationFilePath = path.join(app.getPath("userData"), "app-update.yml");
     // We need to manually write that configuration file, otherwise the auto-update process fails
     fs.writeFileSync(configurationFilePath, `updaterCacheDirName: ${app.name}`);
+    updater.updateConfigPath = configurationFilePath;
   }
 
   async getLatestVersion(): Promise<UpdateInfo>
