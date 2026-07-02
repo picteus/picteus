@@ -99,7 +99,15 @@ export async function getChildProcessIds(childProcessOrId: ChildProcess | number
       // On other platforms (Linux), we use "ps"
       command = `ps -o pid= --ppid ${parentProcessId}`;
     }
-    const processResultPromise = execute(command, null);
+    const processResultPromise = execute(command, null).catch((error) =>
+    {
+      // This is expected on Linux when the parent process does not exist anymore
+      if (os.platform() !== "win32" && os.platform() !== "darwin")
+      {
+        return undefined;
+      }
+      throw error;
+    });
     let gotProcessResult: ProcessResult | undefined;
     const timeoutPromise = new Promise<ProcessResult>((resolve, reject) =>
     {
@@ -118,7 +126,7 @@ export async function getChildProcessIds(childProcessOrId: ChildProcess | number
     });
     const processResult = await Promise.race([processResultPromise, timeoutPromise]);
     gotProcessResult = processResult;
-    const processIds = processResult.stdout.split(/\r?\n/).map(line => line.trim()).filter(line => /^\d+$/.test(line)).map(Number);
+    const processIds = processResult === undefined ? [] : processResult.stdout.split(/\r?\n/).map(line => line.trim()).filter(line => /^\d+$/.test(line)).map(Number);
     const index = processIds.indexOf(parentProcessId);
     if (index !== -1)
     {
