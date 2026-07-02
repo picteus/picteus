@@ -1290,7 +1290,7 @@ export class RepositoryController
   )
   @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryStoreImage]))
   @Throttle({ default: { ttl: 1_000, limit: 10 } })
-  async storeImage(@Param("id") id: string, @Query("nameWithoutExtension") nameWithoutExtension: string | undefined, @Query("relativeDirectoryPath") relativeDirectoryPath: string | undefined, @Query("applicationMetadata"/*, StringifiedJsonPipeTransform<ApplicationMetadata>*/) applicationMetadata: /*ApplicationMetadata*/string | undefined, @Query("parentId") parentId: string | undefined, @Query("sourceUrl") sourceUrl: string | undefined, @Query("inceptionDate") inceptionDate: number | undefined, @Body() buffer: Buffer): Promise<Image>
+  async storeImage(@Param("id") id: string, @Query("nameWithoutExtension") nameWithoutExtension: string | undefined, @Query("relativeDirectoryPath") relativeDirectoryPath: string | undefined, @Query("applicationMetadata"/*, StringifiedJsonPipeTransform<ApplicationMetadata>*/) applicationMetadata: /*ApplicationMetadata*/string | undefined, @Query("parentId") parentId: string | undefined, @Query("sourceUrl") sourceUrl: string | undefined, @Query("inceptionDate", new ParseIntPipe({ optional: true })) inceptionDate: number | undefined, @Body() buffer: Buffer): Promise<Image>
   {
     return await this.repositoryService.storeImage(id, buffer, nameWithoutExtension, relativeDirectoryPath, applicationMetadata, parentId, sourceUrl, inceptionDate);
   }
