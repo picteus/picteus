@@ -50,6 +50,27 @@ export function isProcessAlive(processId: number): boolean
   {
     // Taken from https://stackoverflow.com/questions/14390930/how-to-check-if-an-arbitrary-pid-is-running-using-node-js and https://stackoverflow.com/questions/57285590/nodejs-how-to-check-independently-a-process-is-running-by-pid
     isAlive = process.kill(processId, 0);
+    if (os.platform() === "linux")
+    {
+      // We check that the process is not a zombie / defunct
+      function isZombie(TheProcessId: number): boolean
+      {
+        try
+        {
+          const data = fs.readFileSync(`/proc/${TheProcessId}/stat`, "utf8");
+          // The state is the character after the last ')', to handle command names that might contain spaces/parentheses
+          const state = data.split(") ")[1].split(" ")[0];
+          return state === "Z";
+        }
+        catch (error)
+        {
+          // This is expected when the process does not exist
+          return false;
+        }
+      }
+
+      isAlive = isZombie(processId) === false;
+    }
   }
   catch (error)
   {
@@ -420,7 +441,7 @@ export async function killProcess(childProcess: ChildProcess, signal: NodeJS.Sig
 
 export function killProcessViaId(processId: number, signal?: NodeJS.Signals | number): void
 {
-  logger.debug(`Stopping the process with id '${processId}' via the '${signal}' signal`);
+  logger.debug(`Killing the process with id '${processId}' via the '${signal}' signal`);
   try
   {
     process.kill(processId, signal);
