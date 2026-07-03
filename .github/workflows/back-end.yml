@@ -37,8 +37,8 @@ jobs:
           submodules: 'recursive'
           fetch-depth: 0
           persist-credentials: true
-      - id: node-setup
-        name: Sets up Node
+      - id: node-setup-22
+        name: Sets up Node.js 22
         uses: actions/setup-node@v6
         with:
           node-version: '22.x'
@@ -49,6 +49,12 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+      - id: node-setup
+        name: Sets up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
       - id: install
         if: ${{ env.skip != 'true' }}
         name: Installs the prerequisites and back-end dependencies

@@ -663,6 +663,11 @@ describe("Repository", () =>
         };
       fs.writeFileSync(filePath, await writeMetadata(filePath, ImageFormat.JPEG, metadata));
       const now = new Date();
+      if (process.platform === "linux")
+      {
+        // Because, on Linux, the precision is at the level of the second
+        now.setMilliseconds(0);
+      }
       fs.utimesSync(filePath, accessDate, now);
       await base.getRepositoryController().synchronize(id);
       await base.waitUntilRepositoryReady(id);
@@ -1105,7 +1110,13 @@ describe("Repository", () =>
         const stringifiedMetadata = JSON.stringify(metadata);
         const parentImageId = existingImage.id;
         const sourceUrl = "https://i.pinimg.com/736x/ff/6e/fc/ff6efca1dbea44c34bc18614a3cc5320.jpg";
-        const inceptionDate = Date.now();
+        const inceptionDate = new Date();
+        if (process.platform === "linux")
+        {
+          // Because, on Linux, the precision is at the level of the second
+          inceptionDate.setMilliseconds(0);
+        }
+        const inceptionDateMilliseconds = inceptionDate.getTime();
         const imageFormat = await computeFormat(buffer);
         const suffix = `-${imageFormat}-${metadata === undefined ? "no" : "with"}-metadata-${index++}`;
         const nameWithoutExtension = `nameWithoutExtension${suffix}`;
@@ -1119,7 +1130,7 @@ describe("Repository", () =>
           expect(originalApplicationMetadata).toBeUndefined();
           const listener = base.computeEventListener();
           base.getNotifierService().once(EventEntity.Image, ImageEventAction.Created, undefined, listener);
-          const image = await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, buffer);
+          const image = await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDateMilliseconds, buffer);
           expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Created, { id: image.id });
           imagesCount++;
           expect(image.repositoryId).toBe(repository.id);
@@ -1134,8 +1145,8 @@ describe("Repository", () =>
           try
           {
             const stats = fs.fstatSync(fd);
-            expect(stats.mtime).toEqual(new Date(inceptionDate));
-            expect(stats.birthtime).toEqual(new Date(inceptionDate));
+            expect(stats.mtime).toEqual(inceptionDate);
+            expect(stats.birthtime).toEqual(inceptionDate);
           }
           finally
           {
@@ -1159,7 +1170,7 @@ describe("Repository", () =>
         }
         {
           const relativeDirectoryPath = `relative${pathSeparator}path`;
-          const image = await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, relativeDirectoryPath, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, buffer);
+          const image = await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, relativeDirectoryPath, stringifiedMetadata, parentImageId, sourceUrl, inceptionDateMilliseconds, buffer);
           imagesCount++;
           expect(image.repositoryId).toBe(repository.id);
           expect(image.format).toBe(imageFormat);
@@ -1167,7 +1178,7 @@ describe("Repository", () =>
           expect(image.name).toBe(nameWithoutExtension + "." + toFileExtension(imageFormat));
         }
         {
-          const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, buffer);
+          const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDateMilliseconds, buffer);
           imagesCount++;
           expect(image.repositoryId).toBe(repository.id);
           expect(image.format).toBe(imageFormat);
@@ -1177,12 +1188,12 @@ describe("Repository", () =>
 
         await expect(async () =>
         {
-          await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, buffer);
+          await base.getRepositoryController().storeImage(repository.id, nameWithoutExtension, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDateMilliseconds, buffer);
         }).rejects.toThrow(new ServiceError(`The parameter 'nameWithoutExtension' with value '${nameWithoutExtension}' is invalid because a file with the same name already exists in the repository`, BAD_REQUEST, base.badParameterCode));
 
         await expect(async () =>
         {
-          await base.getRepositoryController().storeImage(repository.id, undefined, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDate, Buffer.from("dummyString"));
+          await base.getRepositoryController().storeImage(repository.id, undefined, undefined, stringifiedMetadata, parentImageId, sourceUrl, inceptionDateMilliseconds, Buffer.from("dummyString"));
         }).rejects.toThrow(new ServiceError("The provided file is not a supported image. Reason: 'Unable to parse the image metadata. Reason: 'Input buffer contains unsupported image format''", BAD_REQUEST, base.badParameterCode));
       }
     }

@@ -65,6 +65,7 @@ import {
 } from "../src/services/utils/pythonWrapper";
 import { Resizer } from "../src/resizer";
 
+
 const { io } = IO;
 
 const { OK, BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR } = HttpCodes;
@@ -130,7 +131,7 @@ describe("Miscellaneous bare", () =>
     const directoryPath = core.getWorkingDirectoryPath();
     const pidFileName = "pid.txt";
     const pidFilePath = path.join(directoryPath, pidFileName);
-    const childNodeJavaScript = `console.log('Child process with id ' + process.pid + ' started'); const fs = require('fs'); fs.writeFileSync('${pidFileName}', process.pid.toString(), { encoding: 'utf8' }); setTimeout(() => { process.exit(0); }, 1_000_000);`;
+    const childNodeJavaScript = `console.log('Child process with id ' + process.pid + ' started'); const fs = require('fs'); fs.writeFileSync('${pidFileName}', process.pid.toString(), { encoding: 'utf8' }); setTimeout(() => { process.exit(0); }, 1_000_000); setInterval(() => { console.log('Child process with id ' + process.pid + ' still running'); }, (1_000 / 60) * 5);`;
     const javaScriptFileName = "javascript.js";
     const javaScriptFilePath = path.join(core.getWorkingDirectoryPath(), javaScriptFileName);
     fs.writeFileSync(javaScriptFilePath, childNodeJavaScript);
@@ -147,7 +148,7 @@ describe("Miscellaneous bare", () =>
         return fs.existsSync(pidFilePath);
       });
       const childProcessIds = await getChildProcessIds(parentProcess);
-      expect(childProcessIds.length).toEqual((isPlatformWindows === true && shell === true) ? 2 : 1);
+      expect(childProcessIds.length).toEqual(((isPlatformWindowsOrLinux === true) && shell === true) ? 2 : 1);
       const expectedChildProcessId = Number.parseInt(fs.readFileSync(pidFilePath, { encoding: "utf8" }), 10);
       const knownChildProcessId = childProcessIds[childProcessIds.length - 1];
       expect(knownChildProcessId).toEqual(expectedChildProcessId);
