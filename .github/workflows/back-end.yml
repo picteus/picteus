@@ -58,7 +58,7 @@ jobs:
       - id: install
         if: ${{ env.skip != 'true' }}
         name: Installs the prerequisites and back-end dependencies
-        run: npm install && npm run this:prerequisites && npm run shared-back-end:prerequisites && npm run back-end:prerequisites && npm run extensions:prerequisites && npm run extensions:sdk:build
+        run: npm install && npm run this:prerequisites && npm run shared-back-end:prerequisites && npm run back-end:prerequisites && npm run extensions:prerequisites && npm run extensions:sdk:build && npm run back-end:prerequisites:install
       - id: compile
         name: Generates some code and compiles
         run: npm --prefix back-end run prisma:generate && npm --prefix back-end run compile
