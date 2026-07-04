@@ -182,6 +182,7 @@ The Electron application:
   - `MACOS_APPLICATION_CERTIFICATE_BASE64_CONTENT`: the base64 encoded content of the application certificate. This content is obtained via the `base64 -i <certificate.p12>` command, where `<certificate.p12>` is the path of the "Developer ID Application" certificate file in P12 format ;
   - `MACOS_APPLICATION_CERTIFICATE_PASSWORD`: the password of the previous certificate ;
   - `MACOS_NOTARIZE_APPLICATION_PASSWORD`: the [Apple application-specific](https://discussions.apple.com/thread/254805086?sortBy=rank) password related to the `Picteus` entry, used to notarize the application package ;
+  - `PICTEUS_CHROME_EXTENSIONS_TOKEN`: the Personal Access Token (PAT) value for access the private GitHub repository containing the Chrome extensions ;
 3. is deployed via the `npm run deploy` script, which uploads the previously generated application distribution package: the `gcloud login` command should have been run beforehand, with GCP credentials having permissions over the destination GCS bucket, or with the `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE` environment variable set with the contents of a GCP account service key with writing permissions over the GCS bucket.
 
 ## Continuous Integration (CI)

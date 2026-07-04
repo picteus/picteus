@@ -137,11 +137,7 @@ export { validationPipeFactory };
 const noContentApiResponseOptions: ApiResponseOptions =
   {
     status: NO_CONTENT,
-    description: "No content",
-    schema:
-      {
-        type: "string"
-      }
+    description: "No content"
   };
 
 
