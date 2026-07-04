@@ -149,7 +149,7 @@ const stringifyWithStrippedBuffers = (object: object): string =>
   return JSON.stringify(object, (_key, value) =>
   {
     // We check if the value is a Buffer
-    if (value !== undefined && value.type === "Buffer" && Array.isArray(value.data) === true)
+    if (value !== undefined && value !== null && value.type === "Buffer" && Array.isArray(value.data) === true)
     {
       return bufferReplacement;
     }
