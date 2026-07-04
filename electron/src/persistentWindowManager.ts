@@ -50,10 +50,10 @@ export class PersistentWindowManager
     this.loadStates();
   }
 
-  async open(idUrl: IdUrl, automaticallyReopen: boolean, focus: boolean): Promise<BrowserWindow>
+  async open(idUrl: IdUrl, isTransient: boolean, automaticallyReopen: boolean, focus: boolean): Promise<BrowserWindow>
   {
     {
-      const existingEntry: WindowWithUrl | undefined = this.perIdWindowWithUrls.get(idUrl.id);
+      const existingEntry: WindowWithUrl | undefined = isTransient === true ? undefined : this.perIdWindowWithUrls.get(idUrl.id);
       if (existingEntry !== undefined && existingEntry.window.isDestroyed() === false)
       {
         if (focus === true)
@@ -64,7 +64,7 @@ export class PersistentWindowManager
       }
     }
 
-    const savedState = this.perIdStates[idUrl.id];
+    const savedState = isTransient === true ? undefined : this.perIdStates[idUrl.id];
     const options: Electron.BrowserWindowConstructorOptions = { ...this.options, closable: true };
     if (savedState !== undefined)
     {
@@ -78,7 +78,10 @@ export class PersistentWindowManager
     this.windowTuner(window);
     window.setMenu(null);
     window.setMenuBarVisibility(false);
-    this.perIdWindowWithUrls.set(idUrl.id, { window, url: idUrl.url, automaticallyReopen });
+    if (isTransient === false)
+    {
+      this.perIdWindowWithUrls.set(idUrl.id, { window, url: idUrl.url, automaticallyReopen });
+    }
 
     const actualUrl = savedState?.currentUrl || idUrl.url;
     const filePrefix = "file://";
@@ -97,7 +100,10 @@ export class PersistentWindowManager
       }
       this.saveWindowState(window, idUrl, automaticallyReopen, false);
       this.saveStates();
-      this.perIdWindowWithUrls.delete(idUrl.id);
+      if (isTransient === false)
+      {
+        this.perIdWindowWithUrls.delete(idUrl.id);
+      }
     });
 
     return window;
@@ -109,7 +115,7 @@ export class PersistentWindowManager
     {
       if (state.open === true && state.automaticallyReopen === true)
       {
-        await this.open({ id, url: state.currentUrl }, state.automaticallyReopen, false);
+        await this.open({ id, url: state.currentUrl }, false, state.automaticallyReopen, false);
       }
     }
   }

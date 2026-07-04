@@ -236,8 +236,9 @@ export class CommandsManager
         break;
       case "openWindow":
       {
-        const { id: parametersId, automaticallyReopen, url, html }: {
+        const { id: parametersId, isTransient, automaticallyReopen, url, html }: {
           id?: string,
+          isTransient?: boolean,
           automaticallyReopen?: boolean,
           url?: string,
           html?: string
@@ -267,7 +268,7 @@ export class CommandsManager
           actualUrl = url!;
         }
         logger.info(`Opening the window with id '${id}' and with URL '${actualUrl}'`);
-        await ApplicationWrapper.instance().openWindow(parametersId, actualUrl, automaticallyReopen ?? false);
+        await ApplicationWrapper.instance().openWindow(parametersId, actualUrl, isTransient ?? true, automaticallyReopen ?? false);
         this.sendCommandSuccess(socket, id, undefined);
       }
         break;

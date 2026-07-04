@@ -569,9 +569,9 @@ export class ApplicationWrapper
     });
   }
 
-  async openWindow(id: string, url: string, automaticallyReopen: boolean): Promise<void>
+  async openWindow(id: string, url: string, isTransient: boolean, automaticallyReopen: boolean): Promise<void>
   {
-    await this.persistentWindowManager.open({ id, url }, automaticallyReopen, true);
+    await this.persistentWindowManager.open({ id, url }, isTransient, automaticallyReopen, true);
   }
 
   private tweakCommandLine(logBrowser: boolean): void
@@ -861,7 +861,7 @@ export class ApplicationWrapper
                 label: "Swagger UI",
                 click: async (): Promise<void> =>
                 {
-                  await this.openWindow("picteus-swagger-ui", BackendServer.instance.swaggerUiUrl!, false);
+                  await this.openWindow("picteus-swagger-ui", BackendServer.instance.swaggerUiUrl!, false, false);
                 }
               }
             ));

@@ -46,7 +46,7 @@ export function AdditionalUiProvider({ children })
     {
       return;
     }
-    // We open the extensions UI fragments with a "window" integration
+    // We open the extensions' UI fragments with a "window" integration
     for (const additionalUi of additionalUis)
     {
       if (additionalUi.integration.anchor === UserInterfaceAnchor.Window)
