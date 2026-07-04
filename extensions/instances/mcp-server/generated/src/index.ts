@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * MCP Server generated from OpenAPI spec for picteus-mcp-server v0.14.1
- * Generated on: 2026-04-04T14:41:44.375Z
+ * MCP Server generated from OpenAPI spec for picteus-mcp-server v0.17.1
+ * Generated on: 2026-07-04T16:22:24.429Z
  */
 
 // Load environment variables from .env file
-import { config } from "dotenv";
+import dotenv from "dotenv";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   type CallToolRequest,
@@ -20,7 +20,8 @@ import { z, ZodError } from "zod";
 import { jsonSchemaToZod } from "json-schema-to-zod";
 import axios, { type AxiosError, type AxiosRequestConfig } from "axios";
 
-config();
+
+dotenv.config();
 
 /**
  * Type definition for JSON objects
@@ -39,13 +40,15 @@ interface McpToolDefinition {
     executionParameters: { name: string, in: string }[];
     requestBodyContentType?: string;
     securityRequirements: any[];
+    tags?: string[];
+    deprecated?: boolean;
 }
 
 /**
  * Server configuration
  */
 export const SERVER_NAME = "picteus-mcp-server";
-export const SERVER_VERSION = "0.14.1";
+export const SERVER_VERSION = "0.17.1";
 // Base URL for the API, can be set via environment variable or determined from OpenAPI spec
 export const API_BASE_URL = process.env.API_BASE_URL || "https://localhost:3001";
 console.error("API_BASE_URL is set to:", API_BASE_URL);
@@ -65,743 +68,991 @@ const toolDefinitionMap: Map<string, McpToolDefinition> = new Map([
 
   ["miscellaneous_ping", {
     name: "miscellaneous_ping",
-    description: `Enables to check that the service is accessible.`,
+    description: `Enables to check that the service is accessible.
+(Tags: miscellaneous)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/miscellaneous/ping",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"none":[]}]
+    securityRequirements: [{"none":[]}],
+    tags: ["miscellaneous"],
+    deprecated: false
   }],
   ["miscellaneous_test", {
     name: "miscellaneous_test",
-    description: `This endpoint is for experimentation only.`,
+    description: `This endpoint is for experimentation only.
+(Tags: miscellaneous)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/miscellaneous/test",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["miscellaneous"],
+    deprecated: false
   }],
   ["administration_migrateDatabase", {
     name: "administration_migrateDatabase",
-    description: `Runs the migration scripts on the database.`,
+    description: `Runs the migration scripts on the database.
+(Tags: administration)`,
     inputSchema: {"type":"object","properties":{}},
     method: "put",
     pathTemplate: "/administration/migrateDatabase",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["administration"],
+    deprecated: false
   }],
   ["settings_get", {
     name: "settings_get",
-    description: `Returns all the application settings.`,
+    description: `Returns all the application settings.
+(Tags: settings)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/settings/get",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["settings"],
+    deprecated: false
   }],
   ["settings_set", {
     name: "settings_set",
-    description: `This enables to tune the application settings.`,
+    description: `This enables to tune the application settings.
+(Tags: settings)`,
     inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","properties":{"comfyUiBaseUrl":{"type":"string","description":"The ComfyUI base URL","pattern":"^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$"}},"description":"The extension archive"}},"required":["requestBody"]},
     method: "put",
     pathTemplate: "/settings/set",
     executionParameters: [],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["settings"],
+    deprecated: false
   }],
   ["apisecret_list", {
     name: "apisecret_list",
-    description: `Returns all available API secrets without their values.`,
+    description: `Returns all available API secrets without their values.
+(Tags: apiSecret)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/apiSecret/list",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["apiSecret"],
+    deprecated: false
   }],
   ["apisecret_create", {
     name: "apisecret_create",
-    description: `Declares a new API secret with the provided metadata.`,
+    description: `Declares a new API secret with the provided metadata.
+(Tags: apiSecret)`,
     inputSchema: {"type":"object","properties":{"type":{"type":"string","enum":["key","token"],"description":"The API secret type"},"name":{"minLength":1,"maxLength":128,"type":"string","description":"The API secret name"},"expirationDate":{"minimum":0,"format":"int64","type":"number","description":"The expiration date"},"comment":{"minLength":1,"maxLength":1024,"type":"string","description":"A comment about the API secret"},"scope":{"minLength":1,"maxLength":64,"type":"string","description":"The API secret scope"}},"required":["type","name"]},
     method: "post",
     pathTemplate: "/apiSecret/create",
     executionParameters: [{"name":"type","in":"query"},{"name":"name","in":"query"},{"name":"expirationDate","in":"query"},{"name":"comment","in":"query"},{"name":"scope","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["apiSecret"],
+    deprecated: false
   }],
   ["apisecret_get", {
     name: "apisecret_get",
-    description: `Returns the details about an API secret.`,
+    description: `Returns the details about an API secret.
+(Tags: apiSecret)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The API secret identifier","type":"number","format":"int32","minimum":0}},"required":["id"]},
     method: "get",
     pathTemplate: "/apiSecret/{id}/get",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["apiSecret"],
+    deprecated: false
   }],
   ["apisecret_delete", {
     name: "apisecret_delete",
-    description: `Once deleted, it cannot be used anymore.`,
+    description: `Once deleted, it cannot be used anymore.
+(Tags: apiSecret)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The API secret identifier","type":"number","format":"int32","minimum":0}},"required":["id"]},
     method: "delete",
     pathTemplate: "/apiSecret/{id}/delete",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["apiSecret"],
+    deprecated: false
   }],
   ["extension_getConfiguration", {
     name: "extension_getConfiguration",
-    description: `Returns the details in terms of all installed extensions capabilities, i.e. what they can offer, and the command they offer.`,
+    description: `Returns the details in terms of all installed extensions capabilities, i.e. what they can offer, and the command they offer.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/extension/getConfiguration",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_list", {
     name: "extension_list",
-    description: `Returns all installed extensions.`,
+    description: `Returns all installed extensions.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/extension/list",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_activities", {
     name: "extension_activities",
-    description: `Returns all the installed and active extensions activities.`,
+    description: `Returns all the installed and active extensions activities.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/extension/activities",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_get", {
     name: "extension_get",
-    description: `Returns the details about an extension.`,
+    description: `Returns the details about an extension.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32}},"required":["id"]},
     method: "get",
     pathTemplate: "/extension/{id}/get",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_install", {
     name: "extension_install",
-    description: `Analyzes the extension and installs it.`,
+    description: `Analyzes the extension and installs it.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"requestBody":{"type":"string","description":"The extension archive"}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/extension/install",
     executionParameters: [],
     requestBodyContentType: "application/zip",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_update", {
     name: "extension_update",
-    description: `Analyzes the extension and updates it.`,
+    description: `Analyzes the extension and updates it.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"requestBody":{"type":"string","description":"The extension archive"}},"required":["id","requestBody"]},
     method: "put",
     pathTemplate: "/extension/{id}/update",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: "application/zip",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_uninstall", {
     name: "extension_uninstall",
-    description: `Stops the extension and uninstalls it.`,
+    description: `Stops the extension and uninstalls it.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32}},"required":["id"]},
     method: "delete",
     pathTemplate: "/extension/{id}/uninstall",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_pauseOrResume", {
     name: "extension_pauseOrResume",
-    description: `Either stops and marks it as paused the extension or starts it.`,
+    description: `Either stops and marks it as paused the extension or starts it.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"isPause":{"type":"boolean","description":"Whether the extension should be paused"}},"required":["id","isPause"]},
     method: "put",
     pathTemplate: "/extension/{id}/pauseOrResume",
     executionParameters: [{"name":"id","in":"path"},{"name":"isPause","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_getSettings", {
     name: "extension_getSettings",
-    description: `Returns the settings of an extension.`,
+    description: `Returns the settings of an extension.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32}},"required":["id"]},
     method: "get",
     pathTemplate: "/extension/{id}/getSettings",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_setSettings", {
     name: "extension_setSettings",
-    description: `Defines the settings of an extension.`,
+    description: `Defines the settings of an extension.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"requestBody":{"type":"object","properties":{"value":{"type":"object","description":"The extension settings"}},"description":"The extension settings","required":["value"]}},"required":["id","requestBody"]},
     method: "put",
     pathTemplate: "/extension/{id}/setSettings",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_synchronize", {
     name: "extension_synchronize",
-    description: `Iterates over all images available in the repositories and asks the extension to operate its work if the image is not indexed by it.`,
+    description: `Iterates over all images available in the repositories and asks the extension to operate its work if the image is not indexed by it.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32}},"required":["id"]},
     method: "put",
     pathTemplate: "/extension/{id}/synchronize",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_runProcessCommand", {
     name: "extension_runProcessCommand",
-    description: `Runs the command defined for the process, by triggering the relevant event to the extension.`,
+    description: `Runs the command defined for the process, by triggering the relevant event to the extension.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"commandId":{"type":"string","description":"The identifier of the command"},"requestBody":{"type":"object","properties":{},"description":"The command parameters"}},"required":["id","commandId"]},
     method: "put",
     pathTemplate: "/extension/{id}/runProcessCommand",
     executionParameters: [{"name":"id","in":"path"},{"name":"commandId","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_runImageCommand", {
     name: "extension_runImageCommand",
-    description: `Runs the command defined for images, by triggering the relevant event to the extension.`,
+    description: `Runs the command defined for images, by triggering the relevant event to the extension.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"commandId":{"type":"string","description":"The identifier of the command"},"imageIds":{"type":"array","items":{"type":"string"},"description":"The identifiers of the images the command should be run against"},"requestBody":{"type":"object","properties":{},"description":"The command parameters"}},"required":["id","commandId","imageIds"]},
     method: "put",
     pathTemplate: "/extension/{id}/runImageCommand",
     executionParameters: [{"name":"id","in":"path"},{"name":"commandId","in":"query"},{"name":"imageIds","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_installChromeExtension", {
     name: "extension_installChromeExtension",
-    description: `It will only work provided the server is hosted by an Electron application.`,
+    description: `It will only work provided the server is hosted by an Electron application.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"chromeExtensionName":{"minLength":1,"type":"string","description":"The name of the Chrome extension, which should match with the content of its manifest file provided in the payload"},"requestBody":{"type":"string","description":"The Chrome extension compressed tarball or zip archive"}},"required":["id","chromeExtensionName","requestBody"]},
     method: "put",
     pathTemplate: "/extension/{id}/installChromeExtension",
     executionParameters: [{"name":"id","in":"path"},{"name":"chromeExtensionName","in":"query"}],
     requestBodyContentType: "application/zip",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_generate", {
     name: "extension_generate",
-    description: `Scaffolds an extension respecting a set of specifications.`,
+    description: `Scaffolds an extension respecting a set of specifications.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"withPublicSdk":{"type":"boolean","description":"Should the extension be dependent on the public extension SDK or the internal private one"},"requestBody":{"type":"object","properties":{"id":{"type":"string","description":"The identifier of the extension","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"version":{"type":"string","description":"The version of the extension, which should follow the semver convention","pattern":"^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$","minLength":5,"maxLength":32},"name":{"type":"string","description":"The name of the extension","pattern":"^[a-z0-9A-Z-_. ]{1,128}$","minLength":1,"maxLength":128},"description":{"type":"string","description":"The description of the extension's purpose","minLength":1,"maxLength":1024},"author":{"type":"string","description":"The author of the extension","minLength":1,"maxLength":128},"environment":{"description":"The runtime the extension relies on","allOf":[{"type":"string","enum":["python","node"],"description":"The unique identifier of the runtime environment"}]}},"description":"The extension specifications","required":["id","version","name","description","author","environment"]}},"required":["withPublicSdk","requestBody"]},
     method: "put",
     pathTemplate: "/extension/generate",
     executionParameters: [{"name":"withPublicSdk","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["extension_build", {
     name: "extension_build",
-    description: `Compiles and packages an extension from its source code.`,
+    description: `Compiles and packages an extension from its source code.
+(Tags: extension)`,
     inputSchema: {"type":"object","properties":{"requestBody":{"type":"string","description":"The extension archive"}},"required":["requestBody"]},
     method: "put",
     pathTemplate: "/extension/build",
     executionParameters: [],
     requestBodyContentType: "application/zip",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["extension"],
+    deprecated: false
   }],
   ["repository_list", {
     name: "repository_list",
-    description: `Lists all the declared repositories.`,
+    description: `Lists all the declared repositories.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/repository/list",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_get", {
     name: "repository_get",
-    description: `Returns a single repository.`,
+    description: `Returns a single repository.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The repository identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "get",
     pathTemplate: "/repository/{id}/get",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_create", {
     name: "repository_create",
-    description: `Declares a new repository.`,
+    description: `Declares a new repository.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{"type":{"enum":["file"],"type":"string","description":"The repository type"},"url":{"type":"string","description":"The repository URL"},"name":{"type":"string","description":"The repository name"},"comment":{"type":"string","description":"The repository comment"},"watch":{"type":"boolean","description":"Whether the repository should be watched immediately ; when not defined, this parameter has the implicit 'false' value"},"technicalId":{"type":"string","description":"The technical identifier"}},"required":["type","url","name"]},
     method: "post",
     pathTemplate: "/repository/create",
     executionParameters: [{"name":"type","in":"query"},{"name":"url","in":"query"},{"name":"name","in":"query"},{"name":"comment","in":"query"},{"name":"watch","in":"query"},{"name":"technicalId","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
+  }],
+  ["repository_update", {
+    name: "repository_update",
+    description: `Updates the name and comment of a repository.
+(Tags: repository)`,
+    inputSchema: {"type":"object","properties":{"id":{"description":"The repository identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"name":{"type":"string","description":"The repository name"},"comment":{"type":"string","description":"The repository comment"}},"required":["id"]},
+    method: "put",
+    pathTemplate: "/repository/{id}/update",
+    executionParameters: [{"name":"id","in":"path"},{"name":"name","in":"query"},{"name":"comment","in":"query"}],
+    requestBodyContentType: undefined,
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_ensure", {
     name: "repository_ensure",
-    description: `Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it.`,
+    description: `Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{"technicalId":{"type":"string","description":"The repository technical identifier"},"name":{"type":"string","description":"The repository name"},"comment":{"type":"string","description":"The repository comment"},"watch":{"type":"boolean","description":"Whether the repository should be watched immediately ; when not defined, this parameter has the implicit 'false' value"}},"required":["technicalId","name"]},
     method: "put",
     pathTemplate: "/repository/ensure",
     executionParameters: [{"name":"technicalId","in":"query"},{"name":"name","in":"query"},{"name":"comment","in":"query"},{"name":"watch","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_startOrStop", {
     name: "repository_startOrStop",
-    description: `Starts all the repositories, resume synchronization if necessary and starts watching them, or stops them.`,
+    description: `Starts all the repositories, resume synchronization if necessary and starts watching them, or stops them.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{"isStart":{"type":"boolean","description":"Whether the repositories should be started or stopped"}},"required":["isStart"]},
     method: "put",
     pathTemplate: "/repository/startOrStop",
     executionParameters: [{"name":"isStart","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_synchronize", {
     name: "repository_synchronize",
-    description: `Synchronizes a repository against its back-end.`,
+    description: `Synchronizes a repository against its back-end.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The repository identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "put",
     pathTemplate: "/repository/{id}/synchronize",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_watch", {
     name: "repository_watch",
-    description: `Starts or stops listening to the repository back-end images changes.`,
+    description: `Starts or stops listening to the repository back-end images changes.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The repository identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"isStart":{"type":"boolean","description":"Whether the repository should start or stop watching"}},"required":["id","isStart"]},
     method: "put",
     pathTemplate: "/repository/{id}/watch",
     executionParameters: [{"name":"id","in":"path"},{"name":"isStart","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_delete", {
     name: "repository_delete",
-    description: `Deletes a repository along with all the images attached to it.`,
+    description: `Deletes a repository along with all the images attached to it.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The repository identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "delete",
     pathTemplate: "/repository/{id}/delete",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_activities", {
     name: "repository_activities",
-    description: `Returns all the declared repositories activities.`,
+    description: `Returns all the declared repositories activities.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/repository/activities",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_getFeatureNames", {
     name: "repository_getFeatureNames",
-    description: `Returns the feature names of all images extensions.`,
+    description: `Returns the feature names of all images extensions.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/repository/featureNames",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_getTags", {
     name: "repository_getTags",
-    description: `Returns the tags of all images extensions.`,
+    description: `Returns the tags of all images extensions.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/repository/tags",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_getImageByUrl", {
     name: "repository_getImageByUrl",
-    description: `Returns the details about an image.`,
+    description: `Returns the details about an image.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{"url":{"description":"The image URL","type":"string","format":"uri","pattern":"file://.*","minLength":8,"maxLength":4096}},"required":["url"]},
     method: "get",
     pathTemplate: "/repository/getImageByUrl",
     executionParameters: [{"name":"url","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_renameImage", {
     name: "repository_renameImage",
-    description: `Renames the file of an image in a repository.`,
+    description: `Renames the file of an image in a repository.
+(Tags: repository)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The repository identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"imageId":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"nameWithoutExtension":{"pattern":"^[^<>:,?\"*|/\\]+$","type":"string","description":"The new file name without the file extension"},"relativeDirectoryPath":{"pattern":"^[^<>:,?\"*|]+$","type":"string","description":"The relative directory path within the repository that will host the image"}},"required":["id","imageId","nameWithoutExtension"]},
     method: "put",
     pathTemplate: "/repository/{id}/renameImage",
     executionParameters: [{"name":"id","in":"path"},{"name":"imageId","in":"query"},{"name":"nameWithoutExtension","in":"query"},{"name":"relativeDirectoryPath","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["repository_storeImage", {
     name: "repository_storeImage",
-    description: `Declares an image in the repository and returns it.`,
-    inputSchema: {"type":"object","properties":{"id":{"description":"The repository identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"sourceUrl":{"type":"string","format":"uri","minimum":8,"maxLength":4096,"description":"The URL of the image source"},"parentId":{"description":"The identifier of the image parent image","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"applicationMetadata":{"type":"string","description":"The JSON string representing the application metadata"},"relativeDirectoryPath":{"pattern":"^[^<>:,?\"*|]+$","type":"string","description":"The relative directory path within the repository that will host the image"},"nameWithoutExtension":{"pattern":"^[^<>:,?\"*|/\\]+$","type":"string","description":"The image file name, without its extension"},"requestBody":{"type":"string","description":"The image file"}},"required":["id","requestBody"]},
+    description: `Declares an image in the repository and returns it.
+(Tags: repository)`,
+    inputSchema: {"type":"object","properties":{"id":{"description":"The repository identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"inceptionDate":{"minimum":0,"format":"int64","type":"number","description":"The moment when the image was incepted"},"sourceUrl":{"type":"string","format":"uri","minimum":8,"maxLength":4096,"description":"The URL of the image source"},"parentId":{"description":"The identifier of the image parent image","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"applicationMetadata":{"type":"string","description":"The JSON string representing the application metadata"},"relativeDirectoryPath":{"pattern":"^[^<>:,?\"*|]+$","type":"string","description":"The relative directory path within the repository that will host the image"},"nameWithoutExtension":{"pattern":"^[^<>:,?\"*|/\\]+$","type":"string","description":"The image file name, without its extension"},"requestBody":{"type":"string","description":"The image file"}},"required":["id","requestBody"]},
     method: "post",
     pathTemplate: "/repository/{id}/storeImage",
-    executionParameters: [{"name":"id","in":"path"},{"name":"sourceUrl","in":"query"},{"name":"parentId","in":"query"},{"name":"applicationMetadata","in":"query"},{"name":"relativeDirectoryPath","in":"query"},{"name":"nameWithoutExtension","in":"query"}],
+    executionParameters: [{"name":"id","in":"path"},{"name":"inceptionDate","in":"query"},{"name":"sourceUrl","in":"query"},{"name":"parentId","in":"query"},{"name":"applicationMetadata","in":"query"},{"name":"relativeDirectoryPath","in":"query"},{"name":"nameWithoutExtension","in":"query"}],
     requestBodyContentType: "image/png",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["repository"],
+    deprecated: false
   }],
   ["collection_list", {
     name: "collection_list",
-    description: `Returns all the collections.`,
+    description: `Returns all the collections.
+(Tags: collection)`,
     inputSchema: {"type":"object","properties":{}},
     method: "get",
     pathTemplate: "/collection/list",
     executionParameters: [],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["collection"],
+    deprecated: false
   }],
   ["collection_create", {
     name: "collection_create",
-    description: `Declares a new collection.`,
-    inputSchema: {"type":"object","properties":{"name":{"minLength":1,"maxLength":128,"type":"string","description":"The collection name"},"comment":{"minLength":1,"maxLength":1024,"type":"string","description":"A comment about the collection"},"requestBody":{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"The filter"}},"required":["name","requestBody"]},
+    description: `Declares a new collection.
+(Tags: collection)`,
+    inputSchema: {"type":"object","properties":{"name":{"minLength":1,"maxLength":128,"type":"string","description":"The collection name"},"comment":{"minLength":1,"maxLength":1024,"type":"string","description":"A comment about the collection"},"requestBody":{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"features":{"description":"A filter which limits the result entities with the provided features specifications","allOf":[{"type":"object","properties":{"operator":{"description":"The logical operator","example":"or","allOf":[{"type":"string","enum":["or","and","not"],"description":"The logical operator"}]},"conditions":{"description":"The search conditions","type":"array","items":{"type":"object","properties":{"extensionId":{"type":"string","description":"The extension identifier","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32,"example":"extension-id"},"type":{"description":"The image feature type","example":"nature","allOf":[{"type":"string","enum":["caption","description","comment","annotation","metadata","recipe","identity","other"],"description":"All the possible types for an image feature.","default":"other"}]},"format":{"description":"The image feature format","allOf":[{"type":"string","enum":["string","integer","float","boolean","json","xml","markdown","html","binary"],"description":"All the possible formats for an image feature.","default":"string"}]},"name":{"type":"string","description":"The image feature name","minLength":1,"maxLength":64,"example":"field"},"operator":{"description":"The image feature comparison operator","allOf":[{"type":"string","enum":["equals","different","contains","greaterThan","greaterThanOrEqual","lessThan","lessThanOrEqual"],"description":"The image feature comparison operator"}]},"value":{"description":"The image feature value","anyOf":[{"type":"string","maxLength":524288},{"type":"number","format":"int64"},{"type":"number","format":"double"},{"type":"boolean"}],"example":"Three women in a flower arrangement"}},"description":"A condition expression for filtering image features","required":["format","operator","value"]}}},"description":"The expression for filtering image features","required":["operator","conditions"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"The filter"}},"required":["name","requestBody"]},
     method: "post",
     pathTemplate: "/collection/create",
     executionParameters: [{"name":"name","in":"query"},{"name":"comment","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["collection"],
+    deprecated: false
   }],
   ["collection_get", {
     name: "collection_get",
-    description: `Returns the details about a collection.`,
+    description: `Returns the details about a collection.
+(Tags: collection)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The collection identifier","type":"number","format":"int32","minimum":0}},"required":["id"]},
     method: "get",
     pathTemplate: "/collection/{id}/get",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["collection"],
+    deprecated: false
   }],
   ["collection_update", {
     name: "collection_update",
-    description: `Enables to modify its name, comment and parameters.`,
-    inputSchema: {"type":"object","properties":{"id":{"description":"The collection identifier","type":"number","format":"int32","minimum":0},"name":{"minLength":1,"maxLength":128,"type":"string","description":"The collection name"},"comment":{"minLength":1,"maxLength":1024,"type":"string","description":"A comment about the collection"},"requestBody":{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"The filter"}},"required":["id"]},
+    description: `Enables to modify its name, comment and parameters.
+(Tags: collection)`,
+    inputSchema: {"type":"object","properties":{"id":{"description":"The collection identifier","type":"number","format":"int32","minimum":0},"name":{"minLength":1,"maxLength":128,"type":"string","description":"The collection name"},"comment":{"minLength":1,"maxLength":1024,"type":"string","description":"A comment about the collection"},"requestBody":{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"features":{"description":"A filter which limits the result entities with the provided features specifications","allOf":[{"type":"object","properties":{"operator":{"description":"The logical operator","example":"or","allOf":[{"type":"string","enum":["or","and","not"],"description":"The logical operator"}]},"conditions":{"description":"The search conditions","type":"array","items":{"type":"object","properties":{"extensionId":{"type":"string","description":"The extension identifier","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32,"example":"extension-id"},"type":{"description":"The image feature type","example":"nature","allOf":[{"type":"string","enum":["caption","description","comment","annotation","metadata","recipe","identity","other"],"description":"All the possible types for an image feature.","default":"other"}]},"format":{"description":"The image feature format","allOf":[{"type":"string","enum":["string","integer","float","boolean","json","xml","markdown","html","binary"],"description":"All the possible formats for an image feature.","default":"string"}]},"name":{"type":"string","description":"The image feature name","minLength":1,"maxLength":64,"example":"field"},"operator":{"description":"The image feature comparison operator","allOf":[{"type":"string","enum":["equals","different","contains","greaterThan","greaterThanOrEqual","lessThan","lessThanOrEqual"],"description":"The image feature comparison operator"}]},"value":{"description":"The image feature value","anyOf":[{"type":"string","maxLength":524288},{"type":"number","format":"int64"},{"type":"number","format":"double"},{"type":"boolean"}],"example":"Three women in a flower arrangement"}},"description":"A condition expression for filtering image features","required":["format","operator","value"]}}},"description":"The expression for filtering image features","required":["operator","conditions"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"The filter"}},"required":["id"]},
     method: "put",
     pathTemplate: "/collection/{id}/update",
     executionParameters: [{"name":"id","in":"path"},{"name":"name","in":"query"},{"name":"comment","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["collection"],
+    deprecated: false
   }],
   ["collection_delete", {
     name: "collection_delete",
-    description: `Once deleted, it cannot be used anymore.`,
+    description: `Once deleted, it cannot be used anymore.
+(Tags: collection)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The collection identifier","type":"number","format":"int32","minimum":0}},"required":["id"]},
     method: "delete",
     pathTemplate: "/collection/{id}/delete",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["collection"],
+    deprecated: false
+  }],
+  ["image_searchIds", {
+    name: "image_searchIds",
+    description: `Retrieves image ids following search parameters.
+(Tags: image)`,
+    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"features":{"description":"A filter which limits the result entities with the provided features specifications","allOf":[{"type":"object","properties":{"operator":{"description":"The logical operator","example":"or","allOf":[{"type":"string","enum":["or","and","not"],"description":"The logical operator"}]},"conditions":{"description":"The search conditions","type":"array","items":{"type":"object","properties":{"extensionId":{"type":"string","description":"The extension identifier","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32,"example":"extension-id"},"type":{"description":"The image feature type","example":"nature","allOf":[{"type":"string","enum":["caption","description","comment","annotation","metadata","recipe","identity","other"],"description":"All the possible types for an image feature.","default":"other"}]},"format":{"description":"The image feature format","allOf":[{"type":"string","enum":["string","integer","float","boolean","json","xml","markdown","html","binary"],"description":"All the possible formats for an image feature.","default":"string"}]},"name":{"type":"string","description":"The image feature name","minLength":1,"maxLength":64,"example":"field"},"operator":{"description":"The image feature comparison operator","allOf":[{"type":"string","enum":["equals","different","contains","greaterThan","greaterThanOrEqual","lessThan","lessThanOrEqual"],"description":"The image feature comparison operator"}]},"value":{"description":"The image feature value","anyOf":[{"type":"string","maxLength":524288},{"type":"number","format":"int64"},{"type":"number","format":"double"},{"type":"boolean"}],"example":"Three women in a flower arrangement"}},"description":"A condition expression for filtering image features","required":["format","operator","value"]}}},"description":"The expression for filtering image features","required":["operator","conditions"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
+    method: "post",
+    pathTemplate: "/image/search/ids",
+    executionParameters: [],
+    requestBodyContentType: "application/json",
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_searchSummaries", {
     name: "image_searchSummaries",
-    description: `Retrieves image summaries following search parameters.`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
+    description: `Retrieves image summaries following search parameters.
+(Tags: image)`,
+    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"features":{"description":"A filter which limits the result entities with the provided features specifications","allOf":[{"type":"object","properties":{"operator":{"description":"The logical operator","example":"or","allOf":[{"type":"string","enum":["or","and","not"],"description":"The logical operator"}]},"conditions":{"description":"The search conditions","type":"array","items":{"type":"object","properties":{"extensionId":{"type":"string","description":"The extension identifier","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32,"example":"extension-id"},"type":{"description":"The image feature type","example":"nature","allOf":[{"type":"string","enum":["caption","description","comment","annotation","metadata","recipe","identity","other"],"description":"All the possible types for an image feature.","default":"other"}]},"format":{"description":"The image feature format","allOf":[{"type":"string","enum":["string","integer","float","boolean","json","xml","markdown","html","binary"],"description":"All the possible formats for an image feature.","default":"string"}]},"name":{"type":"string","description":"The image feature name","minLength":1,"maxLength":64,"example":"field"},"operator":{"description":"The image feature comparison operator","allOf":[{"type":"string","enum":["equals","different","contains","greaterThan","greaterThanOrEqual","lessThan","lessThanOrEqual"],"description":"The image feature comparison operator"}]},"value":{"description":"The image feature value","anyOf":[{"type":"string","maxLength":524288},{"type":"number","format":"int64"},{"type":"number","format":"double"},{"type":"boolean"}],"example":"Three women in a flower arrangement"}},"description":"A condition expression for filtering image features","required":["format","operator","value"]}}},"description":"The expression for filtering image features","required":["operator","conditions"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/image/search/summaries",
     executionParameters: [],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_searchImages", {
     name: "image_searchImages",
-    description: `Retrieves image details following search parameters.`,
-    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
+    description: `Retrieves image details following search parameters.
+(Tags: image)`,
+    inputSchema: {"type":"object","properties":{"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"features":{"description":"A filter which limits the result entities with the provided features specifications","allOf":[{"type":"object","properties":{"operator":{"description":"The logical operator","example":"or","allOf":[{"type":"string","enum":["or","and","not"],"description":"The logical operator"}]},"conditions":{"description":"The search conditions","type":"array","items":{"type":"object","properties":{"extensionId":{"type":"string","description":"The extension identifier","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32,"example":"extension-id"},"type":{"description":"The image feature type","example":"nature","allOf":[{"type":"string","enum":["caption","description","comment","annotation","metadata","recipe","identity","other"],"description":"All the possible types for an image feature.","default":"other"}]},"format":{"description":"The image feature format","allOf":[{"type":"string","enum":["string","integer","float","boolean","json","xml","markdown","html","binary"],"description":"All the possible formats for an image feature.","default":"string"}]},"name":{"type":"string","description":"The image feature name","minLength":1,"maxLength":64,"example":"field"},"operator":{"description":"The image feature comparison operator","allOf":[{"type":"string","enum":["equals","different","contains","greaterThan","greaterThanOrEqual","lessThan","lessThanOrEqual"],"description":"The image feature comparison operator"}]},"value":{"description":"The image feature value","anyOf":[{"type":"string","maxLength":524288},{"type":"number","format":"int64"},{"type":"number","format":"double"},{"type":"boolean"}],"example":"Three women in a flower arrangement"}},"description":"A condition expression for filtering image features","required":["format","operator","value"]}}},"description":"The expression for filtering image features","required":["operator","conditions"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/image/search/images",
     executionParameters: [],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_searchFeatures", {
     name: "image_searchFeatures",
-    description: `Retrieves image features following search parameters.`,
-    inputSchema: {"type":"object","properties":{"extensionIds":{"type":"array","items":{"type":"string"},"description":"The extension identifiers the features must belong to"},"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
+    description: `Retrieves image features following search parameters.
+(Tags: image)`,
+    inputSchema: {"type":"object","properties":{"extensionIds":{"type":"array","items":{"type":"string"},"description":"The extension identifiers the features must belong to"},"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"features":{"description":"A filter which limits the result entities with the provided features specifications","allOf":[{"type":"object","properties":{"operator":{"description":"The logical operator","example":"or","allOf":[{"type":"string","enum":["or","and","not"],"description":"The logical operator"}]},"conditions":{"description":"The search conditions","type":"array","items":{"type":"object","properties":{"extensionId":{"type":"string","description":"The extension identifier","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32,"example":"extension-id"},"type":{"description":"The image feature type","example":"nature","allOf":[{"type":"string","enum":["caption","description","comment","annotation","metadata","recipe","identity","other"],"description":"All the possible types for an image feature.","default":"other"}]},"format":{"description":"The image feature format","allOf":[{"type":"string","enum":["string","integer","float","boolean","json","xml","markdown","html","binary"],"description":"All the possible formats for an image feature.","default":"string"}]},"name":{"type":"string","description":"The image feature name","minLength":1,"maxLength":64,"example":"field"},"operator":{"description":"The image feature comparison operator","allOf":[{"type":"string","enum":["equals","different","contains","greaterThan","greaterThanOrEqual","lessThan","lessThanOrEqual"],"description":"The image feature comparison operator"}]},"value":{"description":"The image feature value","anyOf":[{"type":"string","maxLength":524288},{"type":"number","format":"int64"},{"type":"number","format":"double"},{"type":"boolean"}],"example":"Three women in a flower arrangement"}},"description":"A condition expression for filtering image features","required":["format","operator","value"]}}},"description":"The expression for filtering image features","required":["operator","conditions"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/image/search/features",
     executionParameters: [{"name":"extensionIds","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_searchTags", {
     name: "image_searchTags",
-    description: `Retrieves image tags following search parameters.`,
-    inputSchema: {"type":"object","properties":{"extensionIds":{"type":"array","items":{"type":"string"},"description":"The extension identifiers the tags must belong to"},"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
+    description: `Retrieves image tags following search parameters.
+(Tags: image)`,
+    inputSchema: {"type":"object","properties":{"extensionIds":{"type":"array","items":{"type":"string"},"description":"The extension identifiers the tags must belong to"},"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"features":{"description":"A filter which limits the result entities with the provided features specifications","allOf":[{"type":"object","properties":{"operator":{"description":"The logical operator","example":"or","allOf":[{"type":"string","enum":["or","and","not"],"description":"The logical operator"}]},"conditions":{"description":"The search conditions","type":"array","items":{"type":"object","properties":{"extensionId":{"type":"string","description":"The extension identifier","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32,"example":"extension-id"},"type":{"description":"The image feature type","example":"nature","allOf":[{"type":"string","enum":["caption","description","comment","annotation","metadata","recipe","identity","other"],"description":"All the possible types for an image feature.","default":"other"}]},"format":{"description":"The image feature format","allOf":[{"type":"string","enum":["string","integer","float","boolean","json","xml","markdown","html","binary"],"description":"All the possible formats for an image feature.","default":"string"}]},"name":{"type":"string","description":"The image feature name","minLength":1,"maxLength":64,"example":"field"},"operator":{"description":"The image feature comparison operator","allOf":[{"type":"string","enum":["equals","different","contains","greaterThan","greaterThanOrEqual","lessThan","lessThanOrEqual"],"description":"The image feature comparison operator"}]},"value":{"description":"The image feature value","anyOf":[{"type":"string","maxLength":524288},{"type":"number","format":"int64"},{"type":"number","format":"double"},{"type":"boolean"}],"example":"Three women in a flower arrangement"}},"description":"A condition expression for filtering image features","required":["format","operator","value"]}}},"description":"The expression for filtering image features","required":["operator","conditions"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/image/search/tags",
     executionParameters: [{"name":"extensionIds","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_searchMediaUrl", {
     name: "image_searchMediaUrl",
-    description: `Retrieves image media URLs following search parameters.`,
-    inputSchema: {"type":"object","properties":{"format":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"},"width":{"format":"int32","type":"number","description":"The image maximum width ; if not defined, the original width is used"},"height":{"format":"int32","type":"number","description":"The image maximum height ; if not defined, the original height is used"},"resizeRender":{"type":"string","enum":["inbox","outbox"],"description":"The way the image should be resized"},"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be sorted","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be sorted"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
+    description: `Retrieves image media URLs following search parameters.
+(Tags: image)`,
+    inputSchema: {"type":"object","properties":{"format":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"},"width":{"format":"int32","type":"number","description":"The image maximum width ; if not defined, the original width is used"},"height":{"format":"int32","type":"number","description":"The image maximum height ; if not defined, the original height is used"},"resizeRender":{"type":"string","enum":["inbox","outbox"],"description":"The way the image should be resized"},"requestBody":{"type":"object","properties":{"filter":{"description":"The filter which will be used to narrow down the returned items","allOf":[{"type":"object","properties":{"criteria":{"description":"The criteria that will be applied when applying filter","allOf":[{"type":"object","properties":{"formats":{"type":"array","description":"A filter used by the search which will limit the result entities to those having one of the provided image formats","default":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"example":["PNG","JPEG"],"items":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"}},"keyword":{"description":"A filter which limits the result entities with the provided text specifications","allOf":[{"type":"object","properties":{"text":{"type":"string","description":"The text to search for","example":"comfy"},"inName":{"type":"boolean","description":"Whether the text should be searched in the image name"},"inMetadata":{"type":"boolean","description":"Whether the text should be searched in the image metadata"},"inFeatures":{"type":"boolean","description":"Whether the text should be searched in the image features"}},"description":"The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts","required":["text","inName","inMetadata","inFeatures"]}]},"tags":{"description":"A filter which limits the result entities with the provided tags specifications","allOf":[{"type":"object","properties":{"values":{"description":"The tags to search for, i.e. images matching at least of the tags will be included in the result","example":["nature"],"type":"array","items":{"type":"string","maxLength":64,"minLength":1,"pattern":"^[a-z0-9A-Z-_.]{1,64}$"}}},"description":"The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags","required":["values"]}]},"features":{"description":"A filter which limits the result entities with the provided features specifications","allOf":[{"type":"object","properties":{"operator":{"description":"The logical operator","example":"or","allOf":[{"type":"string","enum":["or","and","not"],"description":"The logical operator"}]},"conditions":{"description":"The search conditions","type":"array","items":{"type":"object","properties":{"extensionId":{"type":"string","description":"The extension identifier","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32,"example":"extension-id"},"type":{"description":"The image feature type","example":"nature","allOf":[{"type":"string","enum":["caption","description","comment","annotation","metadata","recipe","identity","other"],"description":"All the possible types for an image feature.","default":"other"}]},"format":{"description":"The image feature format","allOf":[{"type":"string","enum":["string","integer","float","boolean","json","xml","markdown","html","binary"],"description":"All the possible formats for an image feature.","default":"string"}]},"name":{"type":"string","description":"The image feature name","minLength":1,"maxLength":64,"example":"field"},"operator":{"description":"The image feature comparison operator","allOf":[{"type":"string","enum":["equals","different","contains","greaterThan","greaterThanOrEqual","lessThan","lessThanOrEqual"],"description":"The image feature comparison operator"}]},"value":{"description":"The image feature value","anyOf":[{"type":"string","maxLength":524288},{"type":"number","format":"int64"},{"type":"number","format":"double"},{"type":"boolean"}],"example":"Three women in a flower arrangement"}},"description":"A condition expression for filtering image features","required":["format","operator","value"]}}},"description":"The expression for filtering image features","required":["operator","conditions"]}]},"properties":{"description":"A filter which limits the result entities with the provided technical properties","allOf":[{"type":"object","properties":{"width":{"description":"The range of the image width","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"height":{"description":"The range of the image height","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"weightInBytes":{"description":"The range of the image binary weight","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"creationDate":{"description":"The range of the image creation dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]},"modificationDate":{"description":"The range of the image modification dates, expressed in milliseconds from 1970, January 1st","allOf":[{"type":"object","properties":{"minimum":{"type":"number","description":"The minimal value","format":"int64","minimum":0,"example":0},"maximum":{"type":"number","description":"The maximal value","format":"int64","example":100}},"description":"The minimal and maximal value of a technical property when searching for images"}]}},"description":"Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"}]}},"description":"Criteria when searching for images"}]},"origin":{"description":"The origin of the images to search in","oneOf":[{"description":"In case of a repositories-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The repository identifiers","example":"9aa0820f-6405-4b54-a01a-a6b56489a77f","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]},{"description":"In case of a images-based origin","type":"object","properties":{"kind":{"description":"Indicates how the search result entities should be filtered","example":"repositories","allOf":[{"type":"string","enum":["repositories","images"],"description":"Indicates how the search result entities should be filtered"}]},"ids":{"description":"The image identifiers","example":"fb6af249-1061-48a0-9e47-026d7428d709","type":"array","items":{"type":"string","maxLength":36,"minLength":36,"pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"}}},"required":["kind","ids"]}],"discriminator":{"propertyName":"kind","mapping":{"repositories":"#/components/schemas/SearchRepositoriesOrigin","images":"#/components/schemas/SearchImagesOrigin"}}},"sorting":{"description":"Indicates how the images should be sorted","allOf":[{"type":"object","properties":{"property":{"description":"Indicates how the search result entities should be sorted","default":"name","example":"name","allOf":[{"type":"string","enum":["name","creationDate","modificationDate","importDate","updateDate","binarySize","width","height"],"description":"Indicates how the search result entities should be sorted"}]},"isAscending":{"type":"boolean","description":"Whether the returned entities should be sorted in ascending or descending order in respect of the property"}},"description":"Sorting instructions when searching for images","required":["property"]}]}},"description":"A search criteria combined to sorting specifications"}]},"collectionId":{"type":"number","description":"The collection identifier to filter with to narrow down the returned items","format":"int32","minimum":0},"range":{"description":"The range of items to consider following the search","allOf":[{"type":"object","properties":{"take":{"type":"integer","description":"The number of items to return","format":"int64","minimum":1,"maximum":1000,"default":20,"example":20},"skip":{"type":"integer","description":"The number of items to skip","format":"int64","minimum":0,"default":0,"example":0}},"description":"A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"}]}},"description":"Filtering and range parameters when searching for images"}},"required":["requestBody"]},
     method: "post",
     pathTemplate: "/image/search/mediaUrls",
     executionParameters: [{"name":"format","in":"query"},{"name":"width","in":"query"},{"name":"height","in":"query"},{"name":"resizeRender","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_get", {
     name: "image_get",
-    description: `Returns the details about an image.`,
+    description: `Returns the details about an image.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "get",
     pathTemplate: "/image/{id}/get",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_synchronize", {
     name: "image_synchronize",
-    description: `Runs all extensions capabilities against the image.`,
+    description: `Runs all extensions capabilities against the image.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "put",
     pathTemplate: "/image/{id}/synchronize",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_modify", {
     name: "image_modify",
-    description: `Updates the content of an image via a file.`,
+    description: `Updates the content of an image via a file.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"requestBody":{"type":"string","description":"The image file"}},"required":["id","requestBody"]},
     method: "put",
     pathTemplate: "/image/{id}/modify",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: "image/png",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_delete", {
     name: "image_delete",
-    description: `Deletes the image from the back-end and from the databases.`,
+    description: `Deletes the image from the back-end and from the databases.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "delete",
     pathTemplate: "/image/{id}/delete",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_download", {
     name: "image_download",
-    description: `Returns the binary form of an image.`,
+    description: `Returns the binary form of an image.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"format":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"},"width":{"format":"int32","type":"number","description":"The image maximum width ; if not defined, the original width is used"},"height":{"format":"int32","type":"number","description":"The image maximum height ; if not defined, the original height is used"},"resizeRender":{"type":"string","enum":["inbox","outbox"],"description":"The way the image should be resized"},"stripMetadata":{"type":"boolean","description":"Whether the image metadata should be stripped"}},"required":["id"]},
     method: "get",
     pathTemplate: "/image/{id}/download",
     executionParameters: [{"name":"id","in":"path"},{"name":"format","in":"query"},{"name":"width","in":"query"},{"name":"height","in":"query"},{"name":"resizeRender","in":"query"},{"name":"stripMetadata","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_mediaUrl", {
     name: "image_mediaUrl",
-    description: `Returns the URL of the image, given some given dimensions and format, which may used to display it.`,
+    description: `Returns the URL of the image, given some given dimensions and format, which may used to display it.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"format":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"},"width":{"format":"int32","type":"number","description":"The image maximum width ; if not defined, the original width is used"},"height":{"format":"int32","type":"number","description":"The image maximum height ; if not defined, the original height is used"},"resizeRender":{"type":"string","enum":["inbox","outbox"],"description":"The way the image should be resized"}},"required":["id"]},
     method: "get",
     pathTemplate: "/image/{id}/mediaUrl",
     executionParameters: [{"name":"id","in":"path"},{"name":"format","in":"query"},{"name":"width","in":"query"},{"name":"height","in":"query"},{"name":"resizeRender","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_getMetadata", {
     name: "image_getMetadata",
-    description: `Returns all the metadata of an image available in its representation file.`,
+    description: `Returns all the metadata of an image available in its representation file.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "get",
     pathTemplate: "/image/{id}/metadata",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_getFeatures", {
     name: "image_getFeatures",
-    description: `Returns the features of an image given an extension.`,
+    description: `Returns the features of an image given an extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32}},"required":["id","extensionId"]},
     method: "get",
     pathTemplate: "/image/{id}/getFeatures",
     executionParameters: [{"name":"id","in":"path"},{"name":"extensionId","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_getAllFeatures", {
     name: "image_getAllFeatures",
-    description: `Returns the features of an image for all extensions.`,
+    description: `Returns the features of an image for all extensions.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "get",
     pathTemplate: "/image/{id}/getAllFeatures",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_setFeatures", {
     name: "image_setFeatures",
-    description: `Stores the provided features of an image for a given extension.`,
+    description: `Stores the provided features of an image for a given extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"requestBody":{"type":"array","items":{"type":"object","properties":{"type":{"description":"The image feature type","allOf":[{"type":"string","enum":["caption","description","comment","annotation","metadata","recipe","identity","other"],"description":"All the possible types for an image feature.","default":"other"}]},"format":{"description":"The image feature format","allOf":[{"type":"string","enum":["string","integer","float","boolean","json","xml","markdown","html","binary"],"description":"All the possible formats for an image feature.","default":"string"}]},"name":{"type":"string","description":"The image feature name","minLength":1,"maxLength":64},"value":{"description":"The image feature value","anyOf":[{"type":"string","minLength":1,"maxLength":524288},{"type":"integer","format":"int64"},{"type":"number","format":"double"},{"type":"boolean"}]}},"description":"An image feature","required":["type","format","value"]},"minItems":0,"maxItems":32,"description":"The image features"}},"required":["id","extensionId","requestBody"]},
     method: "put",
     pathTemplate: "/image/{id}/setFeatures",
     executionParameters: [{"name":"id","in":"path"},{"name":"extensionId","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_getTags", {
     name: "image_getTags",
-    description: `Returns the tags of an image given an extension.`,
+    description: `Returns the tags of an image given an extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32}},"required":["id","extensionId"]},
     method: "get",
     pathTemplate: "/image/{id}/getTags",
     executionParameters: [{"name":"id","in":"path"},{"name":"extensionId","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_getAllTags", {
     name: "image_getAllTags",
-    description: `Returns the tags of an image for all extensions.`,
+    description: `Returns the tags of an image for all extensions.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "get",
     pathTemplate: "/image/{id}/getAllTags",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_setTags", {
     name: "image_setTags",
-    description: `Sets the tags of an image for a given extension.`,
+    description: `Sets the tags of an image for a given extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"requestBody":{"type":"array","items":{"type":"string","pattern":"a-z0-9A-Z-_.","minLength":1,"maxLength":64},"minItems":0,"maxItems":256,"description":"The image tags"}},"required":["id","extensionId","requestBody"]},
     method: "put",
     pathTemplate: "/image/{id}/setTags",
     executionParameters: [{"name":"id","in":"path"},{"name":"extensionId","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_ensureTags", {
     name: "image_ensureTags",
-    description: `Ensures that some tags are set on an image for a given extension.`,
+    description: `Ensures that some tags are set on an image for a given extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"requestBody":{"type":"array","items":{"description":"A technical identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,64}$","minLength":1,"maxLength":64},"minItems":1,"maxItems":256,"description":"The image tags"}},"required":["id","extensionId","requestBody"]},
     method: "put",
     pathTemplate: "/image/{id}/ensureTags",
     executionParameters: [{"name":"id","in":"path"},{"name":"extensionId","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_getAllRecipes", {
     name: "image_getAllRecipes",
-    description: `Returns the recipes of an image for all extensions.`,
+    description: `Returns the recipes of an image for all extensions.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "get",
     pathTemplate: "/image/{id}/getAllRecipes",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_getAllEmbeddings", {
     name: "image_getAllEmbeddings",
-    description: `Returns the computed embeddings of an image for all extensions.`,
+    description: `Returns the computed embeddings of an image for all extensions.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36}},"required":["id"]},
     method: "get",
     pathTemplate: "/image/{id}/getAllEmbeddings",
     executionParameters: [{"name":"id","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_getEmbeddings", {
     name: "image_getEmbeddings",
-    description: `Returns the computed embeddings of an image for a given extension.`,
+    description: `Returns the computed embeddings of an image for a given extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32}},"required":["id","extensionId"]},
     method: "get",
     pathTemplate: "/image/{id}/getEmbeddings",
     executionParameters: [{"name":"id","in":"path"},{"name":"extensionId","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_setEmbeddings", {
     name: "image_setEmbeddings",
-    description: `Sets the computed embeddings of an image for a given extension.`,
+    description: `Sets the computed embeddings of an image for a given extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"requestBody":{"type":"object","properties":{"values":{"description":"The image embeddings vector","minItems":1,"maxItems":4096,"type":"array","items":{"type":"number","format":"double"}}},"description":"The image embeddings","required":["values"]}},"required":["id","extensionId","requestBody"]},
     method: "put",
     pathTemplate: "/image/{id}/setEmbeddings",
     executionParameters: [{"name":"id","in":"path"},{"name":"extensionId","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_closestImages", {
     name: "image_closestImages",
-    description: `Returns the closest images for a given an image, following the embeddings of a given extension.`,
+    description: `Returns the closest images for a given an image, following the embeddings of a given extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"id":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"count":{"format":"int64","type":"number","description":"The number of images to return"}},"required":["id","extensionId","count"]},
     method: "get",
     pathTemplate: "/image/{id}/closestImages",
     executionParameters: [{"name":"id","in":"path"},{"name":"extensionId","in":"query"},{"name":"count","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_closestEmbeddingsImages", {
     name: "image_closestEmbeddingsImages",
-    description: `Returns the closest images given some embeddings and for a given extension.`,
+    description: `Returns the closest images given some embeddings and for a given extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"count":{"type":"number","description":"The number of images to return"},"requestBody":{"type":"object","properties":{"values":{"description":"The image embeddings vector","minItems":1,"maxItems":4096,"type":"array","items":{"type":"number","format":"double"}}},"description":"The image embeddings","required":["values"]}},"required":["extensionId","count","requestBody"]},
     method: "put",
     pathTemplate: "/image/closestEmbeddingsImages",
     executionParameters: [{"name":"extensionId","in":"query"},{"name":"count","in":"query"}],
     requestBodyContentType: "application/json",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_textToImages", {
     name: "image_textToImages",
-    description: `Returns the closest images for a given text which will be turned into embeddings, following the embeddings of a given extension.`,
+    description: `Returns the closest images for a given text which will be turned into embeddings, following the embeddings of a given extension.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"text":{"type":"string","description":"The text"},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"count":{"type":"number","description":"The number of images to return"}},"required":["text","extensionId","count"]},
     method: "get",
     pathTemplate: "/image/textToImages",
     executionParameters: [{"name":"text","in":"query"},{"name":"extensionId","in":"query"},{"name":"count","in":"query"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_computeFormat", {
     name: "image_computeFormat",
-    description: `Analyzes the provided image, computes its format and returns it.`,
+    description: `Analyzes the provided image, computes its format and returns it.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"requestBody":{"type":"string","description":"The image file"}},"required":["requestBody"]},
     method: "put",
     pathTemplate: "/image/format",
     executionParameters: [],
     requestBodyContentType: "image/png",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["image_convert", {
     name: "image_convert",
-    description: `Converts the provided image into the requested format and returns it.`,
+    description: `Converts the provided image into the requested format and returns it.
+(Tags: image)`,
     inputSchema: {"type":"object","properties":{"format":{"type":"string","enum":["PNG","JPEG","WEBP","GIF","AVIF","HEIF"],"description":"The image format"},"quality":{"minimum":1,"maximum":100,"format":"int32","type":"number","description":"The image quality, in case of a lossy format like JPEG or WEBP"},"requestBody":{"type":"string","description":"The image file"}},"required":["format","requestBody"]},
     method: "put",
     pathTemplate: "/image/convert",
     executionParameters: [{"name":"format","in":"query"},{"name":"quality","in":"query"}],
     requestBodyContentType: "image/png",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["image"],
+    deprecated: false
   }],
   ["imageattachment_create", {
     name: "imageattachment_create",
-    description: `Stores a binary attachment related to an image for a given extension.`,
+    description: `Stores a binary attachment related to an image for a given extension.
+(Tags: imageAttachment)`,
     inputSchema: {"type":"object","properties":{"imageId":{"description":"The image identifier","type":"string","pattern":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}","minLength":36,"maxLength":36},"extensionId":{"description":"The extension identifier","type":"string","pattern":"^[a-z0-9A-Z-_.]{1,32}$","minLength":1,"maxLength":32},"mimeType":{"minLength":1,"maxLength":32,"type":"string","description":"The MIME type of the attachment payload"},"requestBody":{"type":"string","description":"The attachment payload"}},"required":["imageId","extensionId","mimeType","requestBody"]},
     method: "post",
     pathTemplate: "/imageAttachment/create",
     executionParameters: [{"name":"imageId","in":"query"},{"name":"extensionId","in":"query"},{"name":"mimeType","in":"query"}],
     requestBodyContentType: "image/png",
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["imageAttachment"],
+    deprecated: false
   }],
   ["imageattachment_download", {
     name: "imageattachment_download",
-    description: `Retrieves the payload of a binary attachment related to an image for a given extension.`,
+    description: `Retrieves the payload of a binary attachment related to an image for a given extension.
+(Tags: imageAttachment)`,
     inputSchema: {"type":"object","properties":{"uri":{"description":"The attachment URI","type":"string","format":"uri","pattern":"^(attachment://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]","minLength":8,"maxLength":4096}},"required":["uri"]},
     method: "get",
     pathTemplate: "/imageAttachment/{uri}/download",
     executionParameters: [{"name":"uri","in":"path"}],
     requestBodyContentType: undefined,
-    securityRequirements: [{"api-key":[]}]
+    securityRequirements: [{"api-key":[]}],
+    tags: ["imageAttachment"],
+    deprecated: false
   }],
 ]);
 
@@ -864,10 +1115,10 @@ declare global {
  */
 async function acquireOAuth2Token(schemeName: string, scheme: any): Promise<string | null | undefined> {
     try {
-        // Check if we have the necessary credentials
-        const clientId = process.env[`OAUTH_CLIENT_ID_SCHEMENAME`];
-        const clientSecret = process.env[`OAUTH_CLIENT_SECRET_SCHEMENAME`];
-        const scopes = process.env[`OAUTH_SCOPES_SCHEMENAME`];
+        // Check if we have the necessary credentials (resolved per-scheme at runtime)
+        const clientId = process.env[`OAUTH_CLIENT_ID_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`];
+        const clientSecret = process.env[`OAUTH_CLIENT_SECRET_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`];
+        const scopes = process.env[`OAUTH_SCOPES_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`];
 
         if (!clientId || !clientSecret) {
             console.error(`Missing client credentials for OAuth2 scheme '${schemeName}'`);
@@ -1017,7 +1268,6 @@ async function executeApiTool(
         headers['content-type'] = definition.requestBodyContentType;
     }
 
-
     // Apply security requirements if available
     // Security requirements use OR between array items and AND within each object
     const appliedSecurity = definition.securityRequirements?.find(req => {
@@ -1037,8 +1287,8 @@ async function executeApiTool(
                     return !!process.env[`BEARER_TOKEN_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`];
                 }
                 else if (scheme.scheme?.toLowerCase() === 'basic') {
-                    return !!process.env[`BASIC_USERNAME_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`] &&
-                           !!process.env[`BASIC_PASSWORD_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`];
+                    // Username is sufficient; an empty password is valid per RFC 7617 (issue #66)
+                    return process.env[`BASIC_USERNAME_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`] != null;
                 }
             }
 
@@ -1107,8 +1357,9 @@ async function executeApiTool(
                 else if (scheme.scheme?.toLowerCase() === 'basic') {
                     const username = process.env[`BASIC_USERNAME_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`];
                     const password = process.env[`BASIC_PASSWORD_${schemeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`];
-                    if (username && password) {
-                        headers['authorization'] = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
+                    // Empty password is valid per RFC 7617 (issue #66); only username is required.
+                    if (username != null) {
+                        headers['authorization'] = `Basic ${Buffer.from(`${username}:${password ?? ''}`).toString('base64')}`;
                         console.error(`Applied Basic authentication for '${schemeName}'`);
                     }
                 }
@@ -1178,6 +1429,15 @@ async function executeApiTool(
       url: requestUrl,
       params: queryParams,
       headers: headers,
+      // Serialize array query params as comma-separated values (issue #41)
+      paramsSerializer: (params: Record<string, any>) => {
+        const search = new URLSearchParams();
+        for (const [key, value] of Object.entries(params)) {
+          if (value === undefined || value === null) continue;
+          search.append(key, Array.isArray(value) ? value.join(',') : String(value));
+        }
+        return search.toString();
+      },
       ...(requestBodyData !== undefined && { data: requestBodyData }),
     };
 
@@ -1189,7 +1449,8 @@ async function executeApiTool(
 
     // Process and format the response
     let responseText = '';
-    const contentType = response.headers['content-type']?.toLowerCase() || '';
+    // Coerce header value to string before lowercasing (issue #65)
+    const contentType = String(response.headers['content-type'] ?? '').toLowerCase();
 
     // Handle JSON responses
     if (contentType.includes('application/json') && typeof response.data === 'object' && response.data !== null) {
@@ -1253,15 +1514,16 @@ async function executeApiTool(
  */
 export async function main() {
 // Set up Web Server transport
-
   try {
-    await setupWebServer(server, process.env["PORT"] === undefined ? undefined : parseInt(process.env["PORT"], 10));
-    return ()=>{ server.close(); };
+    await setupWebServer(server, Number(process.env.PORT) || 3000);
   } catch (error) {
     console.error("Error setting up web server:", error);
     process.exit(1);
   }
 }
+
+// Library mode: main() is exported above; the importing application is
+// responsible for invoking it and handling process lifecycle/signals.
 
 /**
  * Formats API errors for better readability
