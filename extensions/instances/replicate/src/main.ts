@@ -341,7 +341,7 @@ class ReplicateExtension extends PicteusExtension
       }
     }
 
-    function deleteTitleAndXOrderProperties(schema: Record<string, any>): void
+    function deleteTitleAndXLikeProperties(schema: Record<string, any>): void
     {
       delete schema["title"];
       if (schema.properties !== undefined)
@@ -351,6 +351,7 @@ class ReplicateExtension extends PicteusExtension
         {
           const jsonProperty = property as Record<string, any>;
           delete jsonProperty["x-order"];
+          delete jsonProperty["x-cog-secret"];
         }
       }
     }
@@ -359,6 +360,10 @@ class ReplicateExtension extends PicteusExtension
     {
       for (const property of Object.values(object))
       {
+        if (property === null || property === undefined)
+        {
+          continue;
+        }
         if (property["$ref"] !== undefined)
         {
           const tokens = property["$ref"].split("/");
@@ -392,6 +397,10 @@ class ReplicateExtension extends PicteusExtension
     {
       for (const property of Object.values(object))
       {
+        if (property === null || property === undefined)
+        {
+          continue;
+        }
         if (property["anyOf"] !== undefined)
         {
           const anyOf: any[] = property["anyOf"];
@@ -414,7 +423,7 @@ class ReplicateExtension extends PicteusExtension
       }
     }
 
-    deleteTitleAndXOrderProperties(inputSchema);
+    deleteTitleAndXLikeProperties(inputSchema);
     inlineSchemaReferences(inputSchema, otherSchemas);
     fixAnyOf(inputSchema);
     return inputSchema;
