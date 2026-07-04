@@ -61,6 +61,7 @@ import {
 import { readMetadata } from "../src/services/utils/images";
 import { ExtensionGenerator } from "../src/services/extensionGenerator";
 
+
 const { io } = IO;
 
 const { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK } = HttpCodes;
@@ -1966,8 +1967,7 @@ describe("Extensions", () =>
     await builder.checkExtensionRunning(false, false);
   }, base.xxLargeTimeoutInMilliseconds);
 
-  // TODO: add a test for Python
-  test("sdk", async () =>
+  test.each([ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python])("sdk", async (environment: ManifestRuntimeEnvironment) =>
   {
     base.setSdkDirectoryPath();
     const options =
@@ -1977,13 +1977,20 @@ describe("Extensions", () =>
         version: "1.0.0",
         author: "author",
         description: "description",
-        environment: ManifestRuntimeEnvironment.Node
+        environment: environment
       };
     const generatedStreamableFile = await base.getExtensionController().generate(false, options);
     const generatedDirectoryPath = path.join(base.getWorkingDirectoryPath(), "generated");
     new AdmZip(await buffer(generatedStreamableFile.getStream())).extractAllTo(generatedDirectoryPath);
     // We replace the generated main file with a custom one to test the SDK
-    fs.copyFileSync(path.join(Base.directoryPath, "extensions", "node", "main.ts"), path.join(generatedDirectoryPath, "src", "main.ts"));
+    if (environment == ManifestRuntimeEnvironment.Node)
+    {
+      fs.copyFileSync(path.join(Base.directoryPath, "extensions", "node", "main.ts"), path.join(generatedDirectoryPath, "src", "main.ts"));
+    }
+    else if (environment == ManifestRuntimeEnvironment.Python)
+    {
+      fs.copyFileSync(path.join(Base.directoryPath, "extensions", "python", "main.py"), path.join(generatedDirectoryPath, "main.py"));
+    }
     const zip = new AdmZip();
     zip.addLocalFolder(generatedDirectoryPath);
     const zipBuffer = zip.toBuffer();
