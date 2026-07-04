@@ -38,6 +38,12 @@ jobs:
       - id: checkout
         name: Checks out the project
         uses: actions/checkout@v7
+      - id: pat-setup
+        name: Sets a Personal Access Token
+        env:
+          GH_TOKEN: ${{ secrets.PICTEUS_CHROME_EXTENSIONS_TOKEN }}
+        run:
+          git config --global url."https://${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
       - id: node-setup
         name: Sets up Node
         uses: actions/setup-node@v6

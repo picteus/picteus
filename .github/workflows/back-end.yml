@@ -33,10 +33,6 @@ jobs:
       - id: checkout
         name: Checks out the project
         uses: actions/checkout@v7
-        with:
-          submodules: 'recursive'
-          fetch-depth: 0
-          persist-credentials: true
       - id: node-setup-22
         name: Sets up Node.js 22
         uses: actions/setup-node@v6

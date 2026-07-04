@@ -34,7 +34,7 @@
     "icon.png"
   ],
   "scripts": {
-    "chrome-extension:prerequisites": "git submodule add --force git@github.com:picteus/picteus-chrome-extensions.git picteus-chrome-extensions",
+    "chrome-extension:prerequisites": "git submodule add --force https://github.com/picteus/picteus-chrome-extensions.git picteus-chrome-extensions",
     "chrome-extension:build": "npm --prefix picteus-chrome-extensions install && npm --prefix picteus-chrome-extensions run midjourney:package -- $(npm prefix)/dist",
     "self:build": "tsc",
     "build": "npm run chrome-extension:prerequisites && npm run chrome-extension:build && npm run self:build"
