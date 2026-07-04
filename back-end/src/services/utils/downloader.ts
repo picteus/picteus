@@ -7,6 +7,7 @@ import AdmZip from "adm-zip";
 import tar from "tar-fs";
 
 import { logger } from "../../logger";
+import { execSync } from "node:child_process";
 
 
 export const symlinkType = os.platform() === "win32" ? "junction" : "dir";
@@ -20,6 +21,27 @@ export function computeAttachmentDisposition(fileName: string): string
 {
   // See the discussion regarding the encoding of the file name at https://stackoverflow.com/questions/70804280/utf-8-characters-in-filename-for-content-disposition-yield-illegalargumente
   return `attachment; filename*=utf-8''${encodeURIComponent(fileName)}`;
+}
+
+export function fixUtimesSync(filePath: string, date: Date): void
+{
+  fs.utimesSync(filePath, date, date);
+  if (process.platform === "win32")
+  {
+    // On Windows, the "fs.utimesSync()" does not impact the "stats.birthtime" attribute
+    const absolutePath = path.resolve(filePath);
+    // We convert the date object to a format PowerShell understands, e.g., "MM/dd/yyyy HH:mm:ss"
+    const dateString = date.toLocaleString("en-US", { hour12: false });
+    const psCommand = `(Get-Item "${absolutePath}").CreationTime = Get-Date "${dateString}"`;
+    try
+    {
+      execSync(`powershell -Command "${psCommand}"`);
+    }
+    catch (error)
+    {
+      console.error(`An error occurred while updating the birth time of the file '${absolutePath}'. Reason: '${(error as Error).message}'`, error);
+    }
+  }
 }
 
 export type CompressedType = "tar.gz" | "zip";

@@ -41,6 +41,7 @@ import {
   writeApplicationMetadata
 } from "./utils/images";
 import { plainToInstanceViaJSON } from "../utils";
+import { fixUtimesSync } from "./utils/downloader";
 import { ExtensionRegistry } from "./extensionRegistry";
 import { ImageService, SearchService } from "./imageServices";
 import { CollectionService } from "./collectionService";
@@ -599,7 +600,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       fs.writeFileSync(filePath, buffer);
       if (actualInceptionDate !== undefined)
       {
-        fs.utimesSync(filePath, actualInceptionDate, actualInceptionDate);
+        fixUtimesSync(filePath, actualInceptionDate);
       }
       const imageDeclarationManager = new ImageDeclarationManager(1);
       try
