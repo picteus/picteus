@@ -47,7 +47,7 @@ import {
   wasSpawnViaShellWithFaultyProcessId,
   which
 } from "../src/services/utils/processWrapper";
-import { ensureDirectory, getTemporaryDirectoryPath, move } from "../src/services/utils/downloader";
+import { ensureDirectory, fixUtimesSync, getTemporaryDirectoryPath, move } from "../src/services/utils/downloader";
 import {
   environmentVariableChecker,
   parametersChecker,
@@ -461,6 +461,22 @@ describe("Miscellaneous bare", () =>
         expect(recipe.prompt).toEqual(recipe.prompt.kind === PromptKind.Textual ? new TextualPrompt(text) : new InstructionsPrompt(JSON.parse(instructions)));
       }
     }
+  });
+
+  test("fixUtimesSync", async () =>
+  {
+    const filePath = path.join(core.getWorkingDirectoryPath(), "file.txt");
+    fs.writeFileSync(filePath, "content");
+    const date = new Date(Date.now() - 5 * 1_000);
+    if (process.platform === "win32")
+    {
+      date.setMilliseconds(0);
+    }
+    fixUtimesSync(filePath, date);
+    const stats = fs.lstatSync(filePath);
+    expect(stats.mtime).toEqual(date);
+    expect(stats.atime).toEqual(date);
+    expect(stats.birthtime).toEqual(date);
   });
 
   test("ensureDirectory", async () =>
