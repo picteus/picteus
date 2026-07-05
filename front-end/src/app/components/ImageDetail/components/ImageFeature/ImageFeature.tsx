@@ -7,7 +7,6 @@ import {
 } from "@picteus/ws-client";
 
 import { ViewMode } from "types";
-import { capitalizeText } from "utils";
 import { CodeViewer, CopyText, Markdown } from "app/components";
 import { ImageRecipe } from "../index";
 
@@ -43,7 +42,7 @@ export default function ImageFeature({ feature, viewMode }: ImageFeatureType)
       case "binary":
         return "";
       case "string":
-        return <CopyText value={capitalizeText(value as string)}>{capitalizeText(value as string)}</CopyText>;
+        return <CopyText value={value as string}>{value as string}</CopyText>;
       case "integer":
       case "float":
       case "boolean":
