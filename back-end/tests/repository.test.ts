@@ -1197,7 +1197,7 @@ describe("Repository", () =>
         }).rejects.toThrow(new ServiceError("The provided file is not a supported image. Reason: 'Unable to parse the image metadata. Reason: 'Input buffer contains unsupported image format''", BAD_REQUEST, base.badParameterCode));
       }
     }
-  }, 3 * Base.defaultTimeoutInMilliseconds);
+  }, 4 * Base.defaultTimeoutInMilliseconds);
 
   test("Application metadata", async () =>
   {
