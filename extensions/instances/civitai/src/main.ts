@@ -61,7 +61,7 @@ class CivitaiExtension extends PicteusExtension
   {
     const client = new CivitaiRESTAPIClient();
     communicator.sendLog(`Fetching ${count} image(s) from Civitai ${isFromPost === true ? `related to the post with id '${userNameOrPostId}'` : `for the user '${userNameOrPostId}'`}`, "info");
-    const options: Record<string, any> = { limit: count };
+    const options: Record<string, any> = { limit: count, withMeta: true };
     if (isFromPost === true)
     {
       options.postId = userNameOrPostId;
