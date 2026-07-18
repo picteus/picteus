@@ -306,9 +306,14 @@ class ChromeExtensionManager
     });
   }
 
-  async load(extensionPath: string): Promise<void>
+  async load(extensionPath: string, extensionName: string): Promise<void>
   {
-    logger.info(`Loading the Chrome extension located at '${extensionPath}'`);
+    logger.info(`Loading the Chrome extension with name '${extensionName}' located at '${extensionPath}'`);
+    const existingExtension = this.getLoadedExtension(extensionName);
+    if (existingExtension !== undefined)
+    {
+      throw new Error(`A Chrome extension with the same name '${extensionName}' is already loaded`);
+    }
     const extension: Electron.Extension = await this.getExtensions().loadExtension(extensionPath, { allowFileAccess: true });
     logger.debug("The Chrome extension with id '" + extension.id + `' with version '${extension.version}' under path '${extension.path}' is being loaded`);
     const extensionId = extension.id;
@@ -335,16 +340,15 @@ class ChromeExtensionManager
   removeByExtensionName(extensionName: string): void
   {
     logger.info(`Removing the Chrome extension with name '${extensionName}'`);
-    const extensions = this.getExtensions().getAllExtensions();
-    for (const extension of extensions)
+    const extension = this.getLoadedExtension(extensionName);
+    if (extension !== undefined)
     {
-      if (extension.name === extensionName)
-      {
-        this.removeByExtensionId(extension.id);
-        return;
-      }
+      this.removeByExtensionId(extension.id);
     }
-    throw new Error("There is no currently installed Chrome extension with name '" + extensionName + "'");
+    else
+    {
+      throw new Error(`There is no currently installed Chrome extension with name '${extensionName}'`);
+    }
   }
 
   removeByExtensionId(extensionId: string): void
@@ -353,6 +357,20 @@ class ChromeExtensionManager
     this.removeIntervalListener(extensionId);
     this.getExtensions().removeExtension(extensionId);
     logger.debug("The Chrome extension with id '" + extensionId + `has been removed`);
+  }
+
+  getLoadedExtension(extensionName: string): Electron.Extension | undefined
+  {
+    logger.info(`Getting the loaded Chrome extension with name '${extensionName}'`);
+    const extensions = this.getExtensions().getAllExtensions();
+    for (const extension of extensions)
+    {
+      if (extension.name === extensionName)
+      {
+        return extension;
+      }
+    }
+    return undefined;
   }
 
   private removeIntervalListener(extensionId: string): void
@@ -594,7 +612,6 @@ export class ApplicationWrapper
     await this.chromeExtensionManager.listenToChromeExtensionEvents();
     CommandsManager.instance.on(HostCommandType.InstallChromeExtension, async (command: InstallChromeExtensionHostCommand) =>
     {
-      // TODO: check that provided Chrome extension name matches the manifest in the archive
       async function inflateArchive(archive: Buffer): Promise<string>
       {
         const temporaryDirectoryPath = fs.mkdtempSync(path.join(os.tmpdir(), "picteus-"));
@@ -617,9 +634,35 @@ export class ApplicationWrapper
         return directoryPath;
       }
 
+      function checkManifest(directoryPath: string): string
+      {
+        // We check that provided Chrome extension name matches the manifest in the archive
+        const manifestFileName = "manifest.json";
+        const manifestFilePath = path.join(directoryPath, manifestFileName);
+        if (fs.existsSync(manifestFilePath) === false)
+        {
+          throw new Error(`The Chrome extension '${manifestFileName}' file is missing`);
+        }
+        let manifestJson: Record<string, any>;
+        try
+        {
+          manifestJson = JSON.parse(fs.readFileSync(manifestFilePath, "utf8"));
+        }
+        catch (error)
+        {
+          throw new Error(`The Chrome extension '${manifestFileName}' file does not contain a well-formed JSON content`);
+        }
+        if (manifestJson.name !== command.name)
+        {
+          throw new Error(`The Chrome extension '${manifestFileName}' file extension name '${manifestJson.name}' mismatches with the command name '${command.name}'`);
+        }
+        return manifestJson.name;
+      }
+
       const buffer = Buffer.from(command.archive, "base64");
       const directoryPath = await inflateArchive(buffer);
-      await this.chromeExtensionManager.load(directoryPath);
+      const extensionName = checkManifest(directoryPath);
+      await this.chromeExtensionManager.load(directoryPath, extensionName);
     });
     CommandsManager.instance.on(HostCommandType.UninstallChromeExtension, async (command: UninstallChromeExtensionHostCommand) =>
     {

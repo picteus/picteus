@@ -162,8 +162,7 @@ export class CommandsManager
       }
       catch (error)
       {
-        logger.error(`The '${commandType}' host command execution has failed`, error);
-        console.dir(error);
+        logger.error(`The '${commandType}' host command execution has failed. Reason: '${(error as Error).message}'`, error);
       }
       finally
       {

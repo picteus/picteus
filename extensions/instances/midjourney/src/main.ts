@@ -427,7 +427,7 @@ class MidjourneyExtension extends PicteusExtension
         const blob = new Blob([Buffer.from(buffer)]);
         await this.getExtensionApi().extensionInstallChromeExtension({
           id: this.extensionId,
-          chromeExtensionName: this.extensionId,
+          chromeExtensionName: "Picteus Midjourney",
           body: blob
         });
         break;

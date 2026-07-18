@@ -227,7 +227,7 @@ class GeminiExtension extends PicteusExtension
         const blob = new Blob([Buffer.from(buffer)]);
         await this.getExtensionApi().extensionInstallChromeExtension({
           id: this.extensionId,
-          chromeExtensionName: this.extensionId,
+          chromeExtensionName: "Picteus Gemini",
           body: blob
         });
         break;
