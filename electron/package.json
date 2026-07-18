@@ -46,7 +46,8 @@
     "apple_email": "register@koppasoft.com",
     "apple_password": "@keychain:Picteus",
     "apple_asc_provider": "282H9F7ZPF",
-    "google_cloud_storage_bucket_folder": "gs://understitiel/picteus/"
+    "google_cloud_storage_bucket_folder": "gs://understitiel/picteus/",
+    "github_project_url": "https://github.com/picteus/picteus"
   },
   "type": "module",
   "scripts": {
@@ -106,18 +107,10 @@
     "distribute:linux": "npm-run-all package zip",
     "distribute:windows": "npm-run-all package zip",
     "distribute": "run-script-os",
-    "updateFeed:generate": "cross-var gulp generateUpdateFeed --inputFilePath \"$npm_package_config_distribution_directoryPath/update.yml\" --directoryPath \"$npm_package_config_temporary_directoryPath/electron-builder\" --bucket $npm_package_config_google_cloud_storage_bucket_folder",
-    "deploy:darwin:dotenv": "gcloud storage cp --no-clobber --canned-acl publicRead \"$npm_package_config_distribution_directoryPath/$npm_package_config_package_fileName-v$npm_package_version-darwin-$ARCHITECTURE.zip\" $npm_package_config_google_cloud_storage_bucket_folder",
-    "predeploy:darwin": "npm run .env",
-    "deploy:darwin": "dotenv -- npm run deploy:darwin:dotenv",
-    "deploy:linux:dotenv": "",
-    "predeploy:linux": "npm run .env",
-    "deploy:linux": "dotenv -- npm run deploy:linux:dotenv",
-    "deploy:windows:dotenv": "gcloud storage cp --no-clobber --canned-acl publicRead \"%npm_package_config_distribution_directoryPath%/%npm_package_config_package_fileName%-v%npm_package_version%-win32-%ARCHITECTURE%.exe\" %npm_package_config_google_cloud_storage_bucket_folder%",
-    "predeploy:windows": "npm run .env",
-    "deploy:windows": "dotenv -- npm run deploy:windows:dotenv",
-    "updateFeed:deploy": "cross-var gulp deployUpdateFeed --directoryPath \"$npm_package_config_temporary_directoryPath/electron-builder\" --bucket $npm_package_config_google_cloud_storage_bucket_folder",
-    "deploy": "run-script-os && npm-run-all updateFeed:generate updateFeed:deploy"
+    "artefact:deploy": "cross-var gulp deployArtefact --distributionDirectoryPath $npm_package_config_distribution_directoryPath",
+    "updateFeed:generate": "cross-var gulp generateUpdateFeed --inputFilePath \"$npm_package_config_distribution_directoryPath/update.yml\" --directoryPath \"$npm_package_config_temporary_directoryPath/electron-builder\" --githubprojecturl $npm_package_config_github_project_url",
+    "updateFeed:deploy": "cross-var gulp deployUpdateFeed --directoryPath \"$npm_package_config_temporary_directoryPath/electron-builder\" --bucket $npm_package_config_google_cloud_storage_bucket_folder && shx mkdir -p ../docs/static/feed && shx cp \"$npm_package_config_temporary_directoryPath/electron-builder/feed*.json\" ../docs/static/feed && npm --prefix ../docs run build && npm --prefix ../docs run deploy",
+    "deploy": "npm-run-all artefact:deploy updateFeed:generate updateFeed:deploy"
   },
   "main": "./build/electron/src/main.js",
   "devDependencies": {
