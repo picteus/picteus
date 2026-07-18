@@ -42,7 +42,7 @@ jobs:
         name: Sets a Personal Access Token
         env:
           GH_TOKEN: ${{ secrets.PICTEUS_CHROME_EXTENSIONS_TOKEN }}
-        run:
+        run: |
           git config --global url."https://${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
           git config --global credential.helper ""
           git config --global credential.useHttpPath true
