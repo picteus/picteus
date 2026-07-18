@@ -12,9 +12,9 @@ export class MiscellaneousService
     logger.debug("Instantiating a MiscellaneousService");
   }
 
-  ping(): string
+  ping(request: Request, ipAddress: string): string
   {
-    logger.debug("Received a ping request");
+    logger.debug(`Received a ping request from IP address '${ipAddress}' with headers ${JSON.stringify(request.headers)}`);
     return "pong";
   }
 

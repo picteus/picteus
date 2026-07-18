@@ -9,6 +9,7 @@ import {
   Get,
   Header,
   HttpCode,
+  Ip,
   Param,
   ParseArrayPipe,
   ParseBoolPipe,
@@ -16,6 +17,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   StreamableFile
 } from "@nestjs/common";
 import {
@@ -177,9 +179,9 @@ export class MiscellaneousController
   )
   @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
-  ping(): string
+  ping(@Req() request: Request, @Ip() ipAddress: string): string
   {
-    return this.service.ping();
+    return this.service.ping(request, ipAddress);
   }
 
   @Get("test")
