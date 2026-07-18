@@ -44,6 +44,8 @@ jobs:
           GH_TOKEN: ${{ secrets.PICTEUS_CHROME_EXTENSIONS_TOKEN }}
         run:
           git config --global url."https://${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git config --global credential.helper ""
+          git config --global credential.useHttpPath true
       - id: node-setup
         name: Sets up Node
         uses: actions/setup-node@v6
@@ -69,6 +71,8 @@ jobs:
         run: npm run prerequisites
       - id: build
         name: Builds the components
+        env:
+          GIT_TERMINAL_PROMPT: 0
         run: npm run build
       - id: distribute
         name: Packages and signs the Electron application
