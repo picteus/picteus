@@ -1,6 +1,6 @@
 {
   "id": "embeddings",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "name": "Embeddings",
   "description": "Computes the embeddings of an image.",
   "runtimes": [

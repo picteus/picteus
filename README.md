@@ -102,7 +102,7 @@ For building the SDKs and extensions:
 - run the `npm run instances:build` script to build the extensions ;
 - run the `npm run build` script to build both.
 
-When a new version should be applied to all extension, run the `npm run incrementVersion` script to increment their version.
+When a new version should be applied to all extensions, run the `npm run incrementVersion` script to increment their minor version.
 
 ### SDKs publication
 

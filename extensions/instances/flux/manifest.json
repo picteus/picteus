@@ -1,6 +1,6 @@
 {
   "id": "flux",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Flux",
   "description": "Generates an image via the Flux model.",
   "runtimes": [

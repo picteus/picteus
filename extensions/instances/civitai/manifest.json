@@ -1,6 +1,6 @@
 {
   "id": "civitai",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Civitai",
   "description": "Interacts with Civitai images.",
   "runtimes": [

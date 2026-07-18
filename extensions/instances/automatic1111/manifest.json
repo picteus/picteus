@@ -1,6 +1,6 @@
 {
   "id": "automatic1111",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "name": "Automatic1111",
   "description": "Interacts with Automatic1111.",
   "runtimes": [

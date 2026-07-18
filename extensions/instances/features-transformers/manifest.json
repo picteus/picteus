@@ -1,6 +1,6 @@
 {
   "id": "features-transformers",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "name": "Features Transformers",
   "description": "Computes the caption features of an image through transformers.",
   "runtimes": [
