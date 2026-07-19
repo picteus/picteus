@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "$id": "https://picteus.github.io/picteus/jsonschema/manifest.schema.json",
+  "$id": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
   "title": "Manifest",
   "type": "object",
   "properties": {
