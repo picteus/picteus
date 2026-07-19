@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { ActionIcon, Alert, Button, Flex, Text } from "@mantine/core";
+import { ActionIcon, Alert, Button, Flex, SegmentedControl, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { Dropzone } from "@mantine/dropzone";
 import "@mantine/dropzone/styles.css";
@@ -13,11 +13,15 @@ import { ExtensionsService } from "app/services";
 
 
 type FormValueType = {
+  source: "file" | "url";
   file: File | undefined;
+  url: string;
 };
 
 const initialValues: FormValueType = {
-  file: undefined
+  source: "file",
+  file: undefined,
+  url: ""
 };
 
 type InstallOrUpdateExtensionType = {
@@ -30,23 +34,27 @@ export default function InstallOrUpdateExtension({
   onSuccess
 }: InstallOrUpdateExtensionType)
 {
-  const [t] = useTranslation();
-  const [fileIsValid, setFileIsValid] = useState(false);
+  const [ t ] = useTranslation();
+  const [ fileIsValid, setFileIsValid ] = useState(false);
   const dropzoneRef = useRef<() => void>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [ loading, setLoading ] = useState<boolean>(false);
 
   const messagePrefix = useMemo(
     () => (extension ? "updateExtensionModal" : "installExtensionModal"),
-    [extension]
+    [ extension ]
   );
 
-  const form = useForm({
+  const form = useForm<FormValueType>({
     mode: "uncontrolled",
     validateInputOnChange: true,
     initialValues,
     validate: {
-      file: (file: File) =>
+      file: (file: File | undefined, values) =>
       {
+        if (values.source !== "file")
+        {
+          return null;
+        }
         if (!file)
         {
           return t("fieldError.empty");
@@ -64,6 +72,26 @@ export default function InstallOrUpdateExtension({
           });
         }
         setFileIsValid(true);
+      },
+      url: (url: string | undefined, values) =>
+      {
+        if (values.source !== "url")
+        {
+          return null;
+        }
+        if (!url || url.trim() === "")
+        {
+          return t("fieldError.empty");
+        }
+        try
+        {
+          new URL(url);
+          return null;
+        }
+        catch (error)
+        {
+          return t("fieldError.badUrl");
+        }
       }
     }
   });
@@ -71,22 +99,30 @@ export default function InstallOrUpdateExtension({
   async function handleSubmit(values: FormValueType)
   {
     setLoading(true);
-    const blob = await fileToBlob(values.file);
-
     try
     {
-      const _extension = extension
-        ? await ExtensionsService.update({
-          id: extension.manifest.id,
-          body: blob
-        })
-        : await ExtensionsService.add({ body: blob });
+      let blob: Blob;
+      if (values.source === "url")
+      {
+        const response = await fetch(values.url);
+        blob = await response.blob();
+      }
+      else
+      {
+        blob = await fileToBlob(values.file);
+      }
+
+      const _extension = extension ? await ExtensionsService.update({
+        id: extension.manifest.id,
+        body: blob
+      }) : await ExtensionsService.add({ body: blob });
 
       onSuccess(_extension);
     }
     catch (error)
     {
-      NotificationsService.apiCallI18nError(error, `${messagePrefix}.errorAdd`);
+      const errorAsError = error as Error;
+      NotificationsService.errorWithMessage(errorAsError, t(`${messagePrefix}.errorAdd`, { error: errorAsError.message }));
     }
     finally
     {
@@ -130,7 +166,7 @@ export default function InstallOrUpdateExtension({
       <Dropzone
         mb="lg"
         openRef={dropzoneRef}
-        accept={[mimeTypes.zip, mimeTypes.gzip, mimeTypes.tarGz]}
+        accept={[ mimeTypes.zip, mimeTypes.gzip, mimeTypes.tarGz ]}
         onDrop={(file) => form.setFieldValue("file", file[0])}
         onReject={() =>
           form.setFieldError(
@@ -171,6 +207,8 @@ export default function InstallOrUpdateExtension({
     );
   }
 
+  const canSubmit = form.getValues().source === "url" ? true : fileIsValid;
+
   return (
     <>
       {extension && (
@@ -183,15 +221,39 @@ export default function InstallOrUpdateExtension({
         </Alert>
       )}
       <form onSubmit={form.onSubmit(handleSubmit)}>
-        {renderDropzone()}
+        <SegmentedControl
+          mb="lg"
+          fullWidth
+          value={form.getValues().source}
+          onChange={(value: "file" | "url") =>
+          {
+            form.setFieldValue("source", value);
+          }}
+          data={[
+            { label: t("installExtensionModal.sourceFile"), value: "file" },
+            { label: t("installExtensionModal.sourceUrl"), value: "url" }
+          ]}
+        />
+
+        {form.getValues().source === "file" ? (
+          renderDropzone()
+        ) : (
+          <TextInput
+            mb="lg"
+            withAsterisk
+            label={t("installExtensionModal.urlLabel")}
+            placeholder={t("installExtensionModal.urlPlaceholder")}
+            {...form.getInputProps("url")}
+          />
+        )}
 
         <Flex justify="flex-end">
           <Button
             loading={loading}
-            disabled={loading || !fileIsValid}
+            disabled={loading || !canSubmit}
             type="submit"
           >
-            {t(extension ? "button.update" : "button.add")}
+            {t(extension ? "button.update" : "button.install")}
           </Button>
         </Flex>
         {loading && (

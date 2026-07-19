@@ -191,9 +191,9 @@ export default {
     resultsPerPage: "Show {{count}} entries "
   },
   fieldError: {
-    wrongFileFormat:
-      "Invalid file format. Please upload a {{extensions}} file.",
+    wrongFileFormat: "Invalid file format. Please upload a {{extensions}} file",
     badFileUrl: "The file URL must start with : 'file://' ",
+    badUrl: "The URL is not valid",
     empty: "This field can not be empty"
   },
   addOrUpdateRepositoryModal: {
@@ -222,6 +222,10 @@ export default {
     errorAdd: "An error occurred while installing the extension : {{error}}",
     title: "Install extension",
     filePlaceholder: "Select a .ZIP file",
+    sourceFile: "File",
+    sourceUrl: "URL",
+    urlLabel: "URL of the extension file",
+    urlPlaceholder: "https://example.com/extension.zip",
     dropzone: {
       select: "Select file",
       dragAndDrop: "Or drag and drop"
@@ -412,8 +416,8 @@ export default {
     countPlaceholder: "The amount of images to retrieve"
   },
   command: {
-      pickDirectory: "Please, select a directory"
-    },
+    pickDirectory: "Please, select a directory"
+  },
   commands: {
     coreFeatures: "Core features",
     extensionsCommands: "Extensions commands",
