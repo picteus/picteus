@@ -7,9 +7,9 @@ import { useForm } from "@mantine/form";
 import { Repository, RepositoryApiRepositoryCreateRequest } from "@picteus/ws-client";
 
 import { FolderTypes } from "types";
-import { detectPlatformFromPath, NotificationsService, Validators } from "utils";
+import { computePathSeparator, NotificationsService, Validators } from "utils";
 import { useFolderPicker } from "app/hooks";
-import { RepositoriesService, StorageService } from "app/services";
+import { RepositoriesService } from "app/services";
 
 
 const initialValues: RepositoryApiRepositoryCreateRequest = {
@@ -27,7 +27,7 @@ type AddOrUpdateRepositoryType = {
 
 export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUpdateRepositoryType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const openFolderPicker = useFolderPicker();
 
   const form = useForm({
@@ -45,7 +45,7 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
         value.startsWith("file://") ? null : t("fieldError.badFileUrl")
     }
   });
-  const [loading, setLoading] = useState<boolean>(false);
+  const [ loading, setLoading ] = useState<boolean>(false);
 
   async function handleSubmit(values: RepositoryApiRepositoryCreateRequest)
   {
@@ -79,21 +79,18 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
 
   async function handleOnClickBrowseFolder()
   {
-    const folderUrl = await openFolderPicker();
-    if (folderUrl)
+    const directoryPath = await openFolderPicker(FolderTypes.REPOSITORY);
+    if (directoryPath === undefined)
     {
-      StorageService.setLastFolderLocation(FolderTypes.REPOSITORY, folderUrl);
-      const currentRepositoryName = form.getValues().name;
-      if (!currentRepositoryName || currentRepositoryName?.trim() === "")
-      {
-        const lastUrlSegment = folderUrl
-          .split(detectPlatformFromPath(folderUrl) === "windows" ? "\\" : "/")
-          .filter((segment) => segment !== "")
-          .pop();
-        form.setFieldValue("name", lastUrlSegment);
-      }
-      form.setFieldValue("url", "file://" + folderUrl);
+      return;
     }
+    const currentRepositoryName = form.getValues().name;
+    if (!currentRepositoryName || currentRepositoryName?.trim() === "")
+    {
+      const lastUrlSegment = directoryPath.split(computePathSeparator(directoryPath)).filter((segment) => segment !== "").pop();
+      form.setFieldValue("name", lastUrlSegment);
+    }
+    form.setFieldValue("url", "file://" + directoryPath);
   }
 
   return (

@@ -57,7 +57,7 @@ export function hexToRgb(hex)
   return `${r}, ${g}, ${b}`;
 }
 
-export function detectPlatformFromPath(filePath: string): "windows" | "unix"
+function detectPlatformFromPath(filePath: string): "windows" | "unix"
 {
   if (filePath.includes("\\"))
   {
@@ -67,6 +67,17 @@ export function detectPlatformFromPath(filePath: string): "windows" | "unix"
     }
   }
   return "unix";
+}
+
+export function computePathSeparator(nodePath: string): string
+{
+  return detectPlatformFromPath(nodePath) === "windows" ? "\\" : "/";
+}
+
+export function computeFilePath(directoryPath: string, fileName: string): string
+{
+  const separator = computePathSeparator(directoryPath);
+  return `${directoryPath}${separator}${fileName}`;
 }
 
 export function recursivelyIncludes(value: unknown, search: string): boolean

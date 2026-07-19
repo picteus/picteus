@@ -21,13 +21,13 @@ export default function ExternalLink({
 {
   const [t] = useTranslation();
   const cleanUrl = removeFilePrefixFromUrl(url);
-  const openExplorer = useOpenExplorer(cleanUrl);
+  const openExplorer = useOpenExplorer();
 
   function handleOnClick()
   {
     if (url.startsWith("file://") === true)
     {
-      void openExplorer();
+      void openExplorer(cleanUrl);
     }
     else
     {

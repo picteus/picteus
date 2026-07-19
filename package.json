@@ -31,9 +31,9 @@
     "url": "https://github.com/picteus/Picteus/issues"
   },
   "config": {
-    "applicationVersion": "0.10.0",
-    "backendVersion": "0.10.0",
-    "frontEndVersion": "0.6.0",
+    "applicationVersion": "0.11.0",
+    "backendVersion": "0.11.0",
+    "frontEndVersion": "0.7.0",
     "apiVersion": "0.17.1",
     "sdkVersion": "0.13.1",
     "dockerImageName": "koppasoft/picteus"

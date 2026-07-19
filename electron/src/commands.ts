@@ -98,7 +98,14 @@ export class CommandsManager
         if (isAuthorized === true)
         {
           logger.debug(`The socket client with id '${socket.id}' received the command '${command}' with id '${id}'`);
-          await this.handleCommand(socket, id, command, parameters);
+          try
+          {
+            await this.handleCommand(socket, id, command, parameters);
+          }
+          catch (error)
+          {
+            this.sendCommandError(socket, id, `An error occurred while executing the command from socket client with id '${socket.id}' received the command '${command}' with id '${id}'. Reason: '${(error as Error).message}'`);
+          }
         }
         else
         {
@@ -200,7 +207,7 @@ export class CommandsManager
           message: parameters.title,
           defaultPath: parameters.defaultPath,
           filters: parameters.filters,
-          properties: ["openDirectory", "createDirectory"]
+          properties: [ "openDirectory", "createDirectory" ]
         });
         const value = object.filePaths.length === 0 ? undefined : object.filePaths[0];
         this.sendCommandSuccess(socket, id, value);
@@ -269,6 +276,25 @@ export class CommandsManager
         logger.info(`Opening the window with id '${id}' and with URL '${actualUrl}'`);
         await ApplicationWrapper.instance().openWindow(parametersId, actualUrl, isTransient ?? true, automaticallyReopen ?? false);
         this.sendCommandSuccess(socket, id, undefined);
+      }
+        break;
+      case "saveFile":
+      {
+        const { filePath, content }: { filePath?: string; content?: string } = parameters;
+        if (filePath === undefined)
+        {
+          this.sendCommandError(socket, id, "Missing 'filePath' parameter");
+        }
+        else if (content === undefined)
+        {
+          this.sendCommandError(socket, id, "Missing 'content' parameter");
+        }
+        else
+        {
+          const buffer = Buffer.from(content, "base64");
+          fs.writeFileSync(filePath, buffer);
+          this.sendCommandSuccess(socket, id, undefined);
+        }
       }
         break;
     }

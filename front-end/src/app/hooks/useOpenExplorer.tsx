@@ -1,13 +1,11 @@
 import { useCommandSocket } from "app/context";
 
 
-export default function useOpenExplorer(path: string)
+export default function useOpenExplorer()
 {
   const { sendCommand } = useCommandSocket();
-  return () =>
+  return (path: string) =>
   {
-    return sendCommand("openExplorer", {
-      path
-    });
+    return sendCommand("openExplorer", { path });
   };
 }

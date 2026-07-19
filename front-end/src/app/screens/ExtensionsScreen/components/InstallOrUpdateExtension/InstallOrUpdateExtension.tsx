@@ -20,15 +20,15 @@ const initialValues: FormValueType = {
   file: undefined
 };
 
-type AddOrUpdateExtensionType = {
+type InstallOrUpdateExtensionType = {
   extension?: Extension;
   onSuccess: (extension: Extension) => void;
 };
 
-export default function AddOrUpdateExtension({
+export default function InstallOrUpdateExtension({
   extension,
   onSuccess
-}: AddOrUpdateExtensionType)
+}: InstallOrUpdateExtensionType)
 {
   const [t] = useTranslation();
   const [fileIsValid, setFileIsValid] = useState(false);
@@ -36,7 +36,7 @@ export default function AddOrUpdateExtension({
   const [loading, setLoading] = useState<boolean>(false);
 
   const messagePrefix = useMemo(
-    () => (extension ? "updateExtensionModal" : "addExtensionModal"),
+    () => (extension ? "updateExtensionModal" : "installExtensionModal"),
     [extension]
   );
 
@@ -160,10 +160,10 @@ export default function AddOrUpdateExtension({
 
           <div>
             <Button variant="light" style={{ pointerEvents: "all" }}>
-              {t("addExtensionModal.dropzone.select")}
+              {t("installExtensionModal.dropzone.select")}
             </Button>
             <Text size="sm" c="dimmed" inline mt={7}>
-              {t("addExtensionModal.dropzone.dragAndDrop")}
+              {t("installExtensionModal.dropzone.dragAndDrop")}
             </Text>
           </div>
         </Flex>

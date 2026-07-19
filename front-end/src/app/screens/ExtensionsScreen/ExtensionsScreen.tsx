@@ -18,22 +18,23 @@ import {
   StandardTable
 } from "app/components";
 import {
-  AddOrUpdateExtension,
+  CreateExtensionModal,
   ExtensionActions,
   ExtensionDetail,
   ExtensionSettingsModal,
-  ExtensionTop
+  ExtensionTop,
+  InstallOrUpdateExtension
 } from "./components";
 
 
 export default function ExtensionsScreen()
 {
-  const [t] = useTranslation();
-  const [extensions, setExtensions] = useState<Extension[]>(ExtensionsService.list());
-  const [, addModal] = useActionModalContext();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [selectedExtension, setSelectedExtension] = useState<Extension>();
-  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [ t ] = useTranslation();
+  const [ extensions, setExtensions ] = useState<Extension[]>(ExtensionsService.list());
+  const [ , addModal ] = useActionModalContext();
+  const [ loading, setLoading ] = useState<boolean>(false);
+  const [ selectedExtension, setSelectedExtension ] = useState<Extension>();
+  const [ viewMode, setViewMode ] = useState<"table" | "card">("table");
 
   useEffect(() =>
   {
@@ -41,7 +42,7 @@ export default function ExtensionsScreen()
     {
       setSelectedExtension(extensions.find((extension) => extension.manifest.id === selectedExtension.manifest.id));
     }
-  }, [extensions]);
+  }, [ extensions ]);
 
   function openExtensionSettingsModal(extension: Extension)
   {
@@ -58,21 +59,39 @@ export default function ExtensionsScreen()
     });
   }
 
-  function openAddOrUpdateExtensionModal(extension?: Extension)
+  function openInstallOrUpdateExtensionModal(extension?: Extension)
   {
     addModal({
-      title: t(`${extension ? "updateExtensionModal" : "addExtensionModal"}.title`),
+      title: t(`${extension ? "updateExtensionModal" : "installExtensionModal"}.title`),
       icon: extension ? { url: ExtensionsService.getIconURL(extension) } : {
         icon: <IconBox stroke={Common.IconStrokeSize}/>
       },
       size: "m",
       component: (
-        <AddOrUpdateExtension
+        <InstallOrUpdateExtension
           extension={extension}
           onSuccess={(extension: Extension) =>
           {
             openExtensionSettingsModal(extension);
             void fetchAllExtensions();
+          }}
+        />
+      )
+    });
+  }
+
+  function openCreateExtensionModal()
+  {
+    addModal({
+      title: t("createExtensionModal.title"),
+      icon: {
+        icon: <IconBox stroke={Common.IconStrokeSize}/>
+      },
+      size: "m",
+      component: (
+        <CreateExtensionModal
+          onSuccess={() =>
+          {
           }}
         />
       )
@@ -114,25 +133,25 @@ export default function ExtensionsScreen()
         <Table.Td>
           <ExtensionActions
             extension={extension}
-            onUpdate={openAddOrUpdateExtensionModal}
+            onUpdate={openInstallOrUpdateExtensionModal}
             onSettings={openExtensionSettingsModal}
             onUninstalled={fetchAllExtensions}
           />
         </Table.Td>
       </Table.Tr>
-    )), [extensions]);
+    )), [ extensions ]);
 
   function renderTable()
   {
     return <StandardTable
-      head={["", "field.id", "field.version", "field.name", "field.description", "field.status", ""]}
+      head={[ "", "field.id", "field.version", "field.name", "field.description", "field.status", "" ]}
       loading={loading}
       emptyResults={<EmptyResults
         icon={IconPuzzle}
         description={t("emptyExtensions.description")}
         title={t("emptyExtensions.title")}
         buttonText={t("emptyExtensions.buttonText")}
-        buttonAction={() => openAddOrUpdateExtensionModal()}
+        buttonAction={() => openInstallOrUpdateExtensionModal()}
       />}>
       {rows}
     </StandardTable>;
@@ -147,7 +166,7 @@ export default function ExtensionsScreen()
         description={t("emptyExtensions.description")}
         title={t("emptyExtensions.title")}
         buttonText={t("emptyExtensions.buttonText")}
-        buttonAction={() => openAddOrUpdateExtensionModal()}
+        buttonAction={() => openInstallOrUpdateExtensionModal()}
       />;
     }
 
@@ -157,7 +176,7 @@ export default function ExtensionsScreen()
           <Card key={extension.manifest.id} shadow="sm" padding="lg" radius="md" withBorder>
             <ExtensionTop
               extension={extension}
-              openAddOrUpdateExtensionModal={openAddOrUpdateExtensionModal}
+              openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
               openExtensionSettingsModal={openExtensionSettingsModal}
               onUninstalled={fetchAllExtensions}
             />
@@ -193,10 +212,16 @@ export default function ExtensionsScreen()
             </ActionIcon.Group>
             } <Button
             leftSection={<IconPlus size={20}/>}
-            onClick={() => openAddOrUpdateExtensionModal()}
+            onClick={() => openInstallOrUpdateExtensionModal()}
           >
-            {t("button.add")}
+            {t("button.install")}
           </Button>
+            <Button
+              leftSection={<IconPlus size={20}/>}
+              onClick={() => openCreateExtensionModal()}
+            >
+              {t("button.create")}
+            </Button>
             <RefreshButton onRefresh={() => fetchAllExtensions()}/>
           </Flex>
         </Flex>
@@ -207,7 +232,7 @@ export default function ExtensionsScreen()
         onClose={() => setSelectedExtension(undefined)}
         title={selectedExtension &&
           <ExtensionTop extension={selectedExtension}
-                        openAddOrUpdateExtensionModal={openAddOrUpdateExtensionModal}
+                        openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
                         openExtensionSettingsModal={openExtensionSettingsModal}
                         onUninstalled={fetchAllExtensions}/>}
       >
