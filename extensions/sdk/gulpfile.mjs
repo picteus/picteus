@@ -1,8 +1,11 @@
 import path from "node:path";
 import fs from "node:fs";
+import process from "node:process";
 
 import gulp from "gulp";
 import gulpRun from "gulp-run";
+import $RefParser from "@apidevtools/json-schema-ref-parser";
+import toJSONSchema from "openapi-schema-to-json-schema";
 
 
 const pythonPublicSdkName = "picteus-extension-sdk";
@@ -57,6 +60,7 @@ export const updateVersion = gulp.series(
   }
 );
 
+// noinspection JSUnusedGlobalSymbols
 export const tweakForPublicSdk = gulp.series(
   () =>
   {
@@ -125,3 +129,61 @@ export const tweakForPublicSdk = gulp.series(
 
   }
 );
+
+// noinspection JSUnusedGlobalSymbols
+export const generateManifestSchema = async () =>
+{
+  const cliArguments = process.argv;
+  const inputFilePathOption = "--inputFilePath";
+  const outputFilePathOption = "--outputFilePath";
+  const schemaIdOption = "--schemaId";
+  const usage = `Usage: gulp generateManifestSchema ${inputFilePathOption} <openApiFilePath> ${outputFilePathOption} <jsonSchemaFilePath> ${schemaIdOption} <schemaId>`;
+  let inputFilePath;
+  {
+    const index = cliArguments.indexOf(inputFilePathOption);
+    if (index === -1 || index > cliArguments.length)
+    {
+      throw new Error(usage);
+    }
+    inputFilePath = cliArguments[index + 1];
+  }
+  let outputFilePath;
+  {
+    const index = cliArguments.indexOf(outputFilePathOption);
+    if (index === -1 || index > cliArguments.length)
+    {
+      throw new Error(usage);
+    }
+    outputFilePath = cliArguments[index + 1];
+  }
+  let schemaId;
+  {
+    const index = cliArguments.indexOf(schemaIdOption);
+    if (index === -1 || index > cliArguments.length)
+    {
+      throw new Error(usage);
+    }
+    schemaId = cliArguments[index + 1];
+  }
+
+  // We dereference the entire openapi.json file
+  const dereferencedOpenApi = await $RefParser.dereference(inputFilePath);
+
+  // We extract the "Manifest" schema
+  const manifestOpenApiSchema = dereferencedOpenApi.components?.schemas?.Manifest;
+
+  // We convert the OpenAPI schema to JSON schema
+  const jsonSchema = toJSONSchema(manifestOpenApiSchema);
+
+  const finalSchema =
+    {
+      $schema: 'http://json-schema.org/draft-04/schema#',
+      $id: schemaId,
+      title: "Manifest",
+      ...jsonSchema
+    };
+
+  fs.writeFileSync(outputFilePath, JSON.stringify(finalSchema, null, 2) + '\n');
+  console.log(`Successfully generated the JSON Schema for 'Manifest' into file '${outputFilePath}'`);
+  return Promise.resolve();
+};

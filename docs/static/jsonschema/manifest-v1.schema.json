@@ -1,0 +1,425 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$id": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "title": "Manifest",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "The identifier of the extension",
+      "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "version": {
+      "type": "string",
+      "description": "The version of the extension, which should follow the semver convention",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "minLength": 5,
+      "maxLength": 32
+    },
+    "name": {
+      "type": "string",
+      "description": "The name of the extension",
+      "pattern": "^[a-z0-9A-Z-_. ]{1,128}$",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "description": {
+      "type": "string",
+      "description": "The description of the extension's purpose",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "runtimes": {
+      "description": "The required runtime environments",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "description": "The unique identifier of the runtime environment",
+            "allOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "python",
+                  "node"
+                ],
+                "description": "The unique identifier of the runtime environment"
+              }
+            ]
+          }
+        },
+        "description": "The expression of an extension's runtime environment",
+        "required": [
+          "environment"
+        ]
+      }
+    },
+    "instructions": {
+      "description": "The instructions regarding the way the extension handle events",
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "description": "The events which will trigger the instructions",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": [
+                "process.started",
+                "process.runCommand",
+                "extension.settings",
+                "image.created",
+                "image.updated",
+                "image.tags.updated",
+                "image.features.updated",
+                "image.deleted",
+                "image.computeFeatures",
+                "image.computeEmbeddings",
+                "image.computeTags",
+                "image.runCommand",
+                "text.computeEmbeddings"
+              ],
+              "description": "The events which will trigger the instructions"
+            }
+          },
+          "capabilities": {
+            "description": "The capabilities attached to the instructions",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "description": "The identifier of the extension capability",
+                  "allOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "image.features",
+                        "image.embeddings",
+                        "image.tags",
+                        "text.embeddings"
+                      ],
+                      "description": "The identifier of the extension capability"
+                    }
+                  ]
+                }
+              },
+              "description": "The expression of an extension's capability",
+              "required": [
+                "id"
+              ]
+            }
+          },
+          "throttlingPolicies": {
+            "description": "The throttling policies for some events",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "events": {
+                  "type": "array",
+                  "description": "The events which are involved in the throttling",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "process.started",
+                      "process.runCommand",
+                      "extension.settings",
+                      "image.created",
+                      "image.updated",
+                      "image.tags.updated",
+                      "image.features.updated",
+                      "image.deleted",
+                      "image.computeFeatures",
+                      "image.computeEmbeddings",
+                      "image.computeTags",
+                      "image.runCommand",
+                      "text.computeEmbeddings"
+                    ],
+                    "description": "The events which will trigger the instructions"
+                  }
+                },
+                "durationInMilliseconds": {
+                  "type": "number",
+                  "description": "The duration during which a maximal number of events can be handled",
+                  "format": "int32",
+                  "minimum": -2147483648,
+                  "exclusiveMinimum": true,
+                  "maximum": 2147483647
+                },
+                "maximumCount": {
+                  "type": "number",
+                  "description": "The maximal number of events that be handled during the duration",
+                  "format": "int32",
+                  "minimum": -2147483648,
+                  "exclusiveMinimum": true,
+                  "maximum": 2147483647
+                }
+              },
+              "description": "The definition on how events should be throttled",
+              "required": [
+                "events"
+              ]
+            }
+          },
+          "execution": {
+            "description": "The execution to run when one of the event of the instructions occurs",
+            "allOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "executable": {
+                    "type": "string",
+                    "description": "The executable to run",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  "arguments": {
+                    "description": "The arguments to provide to the executable",
+                    "maxItems": 64,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 512,
+                      "minLength": 1
+                    }
+                  }
+                },
+                "description": "The specifications regarding the execution of an extension",
+                "required": [
+                  "executable",
+                  "arguments"
+                ]
+              }
+            ]
+          },
+          "commands": {
+            "description": "The possible commands of the event",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The identifier of the command",
+                  "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+                  "minLength": 1,
+                  "maxLength": 32
+                },
+                "on": {
+                  "description": "The kind of entity and the conditions the command applies to",
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "entity": {
+                          "description": "The entity the command applies to",
+                          "allOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "Process",
+                                "Images",
+                                "Image"
+                              ],
+                              "description": "The entity the command applies to"
+                            }
+                          ]
+                        },
+                        "withTags": {
+                          "description": "The tags the entity should be attached to for the command to apply",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 64,
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "description": "The information on what entity an extension command applies on",
+                      "required": [
+                        "entity"
+                      ]
+                    }
+                  ]
+                },
+                "parameters": {
+                  "type": "object",
+                  "description": "The definition of the parameters the command requires"
+                },
+                "specifications": {
+                  "description": "The specifications for the command",
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "locale": {
+                        "type": "string",
+                        "description": "The locale the specification applies on",
+                        "minLength": 1,
+                        "maxLength": 8,
+                        "default": "en"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "The command label for the corresponding locale",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "description": {
+                        "type": "string",
+                        "description": "The command description for the corresponding locale",
+                        "minLength": 1,
+                        "maxLength": 1024
+                      }
+                    },
+                    "description": "The specifications of an extension's command",
+                    "required": [
+                      "locale",
+                      "label",
+                      "description"
+                    ]
+                  }
+                }
+              },
+              "description": "The definition of an extension's command",
+              "required": [
+                "id",
+                "on",
+                "specifications"
+              ]
+            }
+          }
+        },
+        "description": "The full specifications of an extension, including the events it handles, its capabilities, its execution and its commands",
+        "required": [
+          "events",
+          "execution"
+        ]
+      }
+    },
+    "settings": {
+      "type": "object",
+      "description": "The extension settings definition"
+    },
+    "ui": {
+      "description": "The User Interface definition of the extensions",
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "elements": {
+              "description": "The various elements of the User Interface",
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "The identifier of the UI fragment",
+                    "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+                    "minLength": 1,
+                    "maxLength": 32
+                  },
+                  "integration": {
+                    "description": "The way it is integrated within the application overall UI",
+                    "oneOf": [
+                      {
+                        "description": "In case of a sidebar UI fragment",
+                        "type": "object",
+                        "properties": {
+                          "anchor": {
+                            "description": "The location where an UI fragment is anchored",
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "sidebar",
+                                  "window",
+                                  "imageDetail"
+                                ],
+                                "description": "The location where an UI fragment is anchored"
+                              }
+                            ]
+                          },
+                          "isExternal": {
+                            "type": "boolean",
+                            "description": "Whether the element should be displayed via an external window or through an internal frame"
+                          }
+                        },
+                        "required": [
+                          "anchor",
+                          "isExternal"
+                        ]
+                      },
+                      {
+                        "description": "In case of a window UI fragment",
+                        "type": "object",
+                        "properties": {
+                          "anchor": {
+                            "description": "The location where an UI fragment is anchored",
+                            "allOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "sidebar",
+                                  "window",
+                                  "imageDetail"
+                                ],
+                                "description": "The location where an UI fragment is anchored"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "anchor"
+                        ]
+                      }
+                    ]
+                  },
+                  "url": {
+                    "type": "string",
+                    "description": "The URL of the content",
+                    "format": "uri",
+                    "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
+                    "minLength": 1,
+                    "maxLength": 4096
+                  }
+                },
+                "description": "The definition of an extension's User Interface (UI) fragment",
+                "required": [
+                  "id",
+                  "integration",
+                  "url"
+                ]
+              }
+            }
+          },
+          "description": "The definition of all extension's User Interface fragments",
+          "required": [
+            "elements"
+          ]
+        }
+      ]
+    }
+  },
+  "description": "The manifest of an extension",
+  "required": [
+    "id",
+    "version",
+    "name",
+    "description",
+    "runtimes",
+    "instructions",
+    "settings"
+  ]
+}

@@ -64,7 +64,7 @@
     "electron:build": "npm --prefix electron run build",
     "docker:build:build": "cross-var \"docker build -t $npm_package_config_dockerImageName:latest .\"",
     "docker:build": "npm-run-all shared-back-end:build back-end:prerequisites extensions:build front-end:build docker:build:build",
-    "docker:publish": "cross-var \"docker tag $npm_package_config_dockerImageName:latest $npm_package_config_dockerImageName:$npm_package_config_backendVersion && docker push $npm_package_config_dockerImageName:$npm_package_config_back-endVersion\"",
+    "docker:publish": "cross-var \"docker tag $npm_package_config_dockerImageName:latest $npm_package_config_dockerImageName:$npm_package_config_backendVersion && docker push $npm_package_config_dockerImageName:$npm_package_config_backendVersion\"",
     "build": "npm-run-all back-end:build extensions:build front-end:build electron:build",
     "start": "npm --prefix electron run start",
     "package": "npm --prefix electron run package",

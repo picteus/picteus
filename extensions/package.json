@@ -76,7 +76,8 @@
     "instances:build:dotenv": "cross-var gulp -f instances/gulpfile.mjs buildAll --targetDirectoryPath \"$BUILD_EXTENSIONS_DIRECTORY_PATH\"",
     "preinstances:build": "npm run .env",
     "instances:build": "dotenv -- npm run instances:build:dotenv --",
-    "build": "npm run sdk:build && npm run instances:build"
+    "build": "npm run sdk:build && npm run instances:build",
+    "manifest:schema": "cross-var gulp -f sdk/gulpfile.mjs generateManifestSchema --inputFilePath $npm_config_local_prefix/../back-end/openapi.json --outputFilePath $npm_config_local_prefix/../docs/static/jsonschema/manifest-v1.schema.json --schemaId https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json"
   },
   "devDependencies": {
     "gulp": "4.0.2",
@@ -86,7 +87,9 @@
     "dotenv-cli": "10.0.0",
     "cross-var": "1.1.0",
     "symlink-dir": "6.0.5",
-    "mkdirp": "3.0.1"
+    "mkdirp": "3.0.1",
+    "openapi-schema-to-json-schema": "2.2.0",
+    "@apidevtools/json-schema-ref-parser": "15.5.0"
   },
   "dependencies": {
   }
