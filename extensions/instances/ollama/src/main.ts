@@ -1,4 +1,4 @@
-import { ChatResponse, Ollama } from "ollama";
+import { type ChatResponse, Ollama } from "ollama";
 
 import {
   Communicator,
@@ -7,9 +7,9 @@ import {
   ImageFormat,
   IntentDialogType,
   NotificationEvent,
-  NotificationValue,
+  type NotificationValue,
   PicteusExtension,
-  SettingsValue
+  type SettingsValue
 } from "@picteus/extension-sdk";
 
 
@@ -18,9 +18,19 @@ class OllamaExtension extends PicteusExtension
 
   private ollamaUrl?: string;
 
-  private models?: string[];
+  private captionEnabled?: boolean;
 
-  private questions?: string[];
+  private captionModels?: string[];
+
+  private captionQuestions?: string[];
+
+  private tagsEnabled?: boolean;
+
+  private tagsModel?: string;
+
+  private tagsList?: string[];
+
+  private tagsQuestionTemplate?: string;
 
   private ollama?: Ollama;
 
@@ -38,10 +48,30 @@ class OllamaExtension extends PicteusExtension
 
   protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
   {
-    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeFeatures)
+    if ((event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeFeatures) || event === NotificationEvent.ImageComputeTags)
     {
       const imageId = value["id"];
-      await this.computeCaption(communicator, imageId);
+      let imageUint8Array: Uint8Array | undefined;
+      const getUint8Array = async (): Promise<Uint8Array> =>
+      {
+        if (imageUint8Array === undefined)
+        {
+          imageUint8Array = await this.downloadImage(imageId);
+        }
+        return imageUint8Array;
+      };
+
+      if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeFeatures)
+      {
+        if (this.captionEnabled)
+        {
+          await this.computeCaption(communicator, imageId, await getUint8Array());
+        }
+      }
+      if (this.tagsEnabled)
+      {
+        await this.computeTags(communicator, imageId, await getUint8Array());
+      }
     }
     else if (event === NotificationEvent.ImageRunCommand)
     {
@@ -52,23 +82,22 @@ class OllamaExtension extends PicteusExtension
     }
   }
 
-  private async computeCaption(communicator: Communicator, imageId: string): Promise<void>
+  private async computeCaption(communicator: Communicator, imageId: string, imageUint8Array: Uint8Array): Promise<void>
   {
     if (await this.ensureOllamaServer(communicator, false) === false)
     {
       return;
     }
-    if (this.models !== undefined)
+    if (this.captionModels !== undefined)
     {
-      const uint8Array = await this.downloadImage(imageId);
       const modelAndCaptions = [];
-      for (const model of this.models)
+      for (const model of this.captionModels)
       {
-        if (await this.ensureOllamaModels(communicator, [model], false) === true)
+        if (await this.ensureOllamaModels(communicator, [ model ], false) === true)
         {
-          for (const question of this.questions)
+          for (const question of this.captionQuestions || [])
           {
-            const caption: string = await this.requestOllama(communicator, model, uint8Array, question);
+            const caption: string = await this.requestOllama(communicator, model, imageUint8Array, question);
             modelAndCaptions.push({ model, caption });
           }
         }
@@ -86,13 +115,49 @@ class OllamaExtension extends PicteusExtension
     }
   }
 
+  private async computeTags(communicator: Communicator, imageId: string, imageUint8Array: Uint8Array): Promise<void>
+  {
+    if (await this.ensureOllamaServer(communicator, false) === false)
+    {
+      return;
+    }
+    const tagsToQuery = this.tagsList || [];
+    if (tagsToQuery.length === 0)
+    {
+      return;
+    }
+    if (this.tagsModel !== undefined)
+    {
+      const question = (this.tagsQuestionTemplate + " Respond only with a comma-separated list of selected tags.").replace("{tags}", tagsToQuery.join(", "));
+      const chosenTagsSet = new Set<string>();
+      if (await this.ensureOllamaModels(communicator, [ this.tagsModel ], false) === true)
+      {
+        const response: string = await this.requestOllama(communicator, this.tagsModel, imageUint8Array, question);
+        for (const tag of tagsToQuery)
+        {
+          const escapedTag = tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+          const regex = new RegExp(`\\b${escapedTag}\\b`, "i");
+          if (regex.test(response) === true)
+          {
+            chosenTagsSet.add(tag);
+          }
+        }
+      }
+      await this.getImageApi().imageSetTags({
+        id: imageId,
+        extensionId: this.parameters.extensionId,
+        requestBody: Array.from(chosenTagsSet)
+      });
+    }
+  }
+
   private async askQuestion(communicator: Communicator, imageId: string, model: string, question: string): Promise<void>
   {
     if (await this.ensureOllamaServer(communicator, false) === false)
     {
       throw new Error("The Ollama server is not available");
     }
-    if (await this.ensureOllamaModels(communicator, [model], false) === false)
+    if (await this.ensureOllamaModels(communicator, [ model ], false) === false)
     {
       throw new Error(`The Ollama model '${model}' is not available`);
     }
@@ -124,7 +189,7 @@ class OllamaExtension extends PicteusExtension
             {
               role: "user",
               content: question,
-              images: [unint8Array]
+              images: [ unint8Array ]
             }
           ]
       });
@@ -142,10 +207,23 @@ class OllamaExtension extends PicteusExtension
   private async setup(communicator: Communicator, value: SettingsValue): Promise<void>
   {
     this.ollamaUrl = value["ollamaUrl"];
-    this.models = value["models"] || [];
-    this.questions = value["questions"];
+
+    const caption = value["caption"];
+    this.captionEnabled = caption["enabled"] !== false;
+    this.captionModels = caption["models"] || [];
+    this.captionQuestions = caption["questions"] || [];
+
+    const tags = value["tags"];
+    this.tagsEnabled = tags["enabled"] !== false;
+    this.tagsModel = tags["model"];
+    this.tagsList = tags["tags"] || [];
+    this.tagsQuestionTemplate = tags["question"];
+
     await this.ensureOllamaServer(communicator, true);
-    await this.ensureOllamaModels(communicator, this.models, true);
+
+    const toPullModels = new Set<string>(this.captionModels);
+    toPullModels.add(this.tagsModel);
+    await this.ensureOllamaModels(communicator, Array.from(toPullModels), true);
   }
 
   private async ensureOllamaServer(communicator: Communicator, force: boolean): Promise<boolean>
@@ -159,7 +237,7 @@ class OllamaExtension extends PicteusExtension
       try
       {
         const version = await this.ollama.version();
-        communicator.sendLog(`Ollama server v${version.version} is running`, "info");
+        communicator.sendLog(`Ollama server v${version.version} is running`, "debug");
       }
       catch (error)
       {

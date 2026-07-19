@@ -22,6 +22,7 @@
         "image.created",
         "image.updated",
         "image.computeFeatures",
+        "image.computeTags",
         "image.runCommand"
       ],
       "throttlingPolicies": [
@@ -30,6 +31,7 @@
             "image.created",
             "image.updated",
             "image.computeFeatures",
+            "image.computeTags",
             "image.runCommand"
           ],
           "durationInMilliseconds": 200,
@@ -39,6 +41,9 @@
       "capabilities": [
         {
           "id": "image.features"
+        },
+        {
+          "id": "image.tags"
         }
       ],
       "commands": [
@@ -103,50 +108,137 @@
         "description": "The URL of the Ollama server which is running on the same computer.",
         "default": "http://127.0.0.1:11434"
       },
-      "models": {
-        "type": "array",
-        "title": "Models",
-        "description": "The Vision Languages (VL) models to use for computing the image features.",
-        "items": {
-          "type": "string",
-          "description": "A Vision Language model.",
-          "enum": [
-            "llava",
-            "llava-llama3",
-            "llava-phi3",
-            "bakllava",
-            "qwen3-vl",
-            "qwen2.5vl",
-            "llama3.2-vision",
-            "minicpm-v",
-            "granite3.2-vision",
-            "gemma3",
-            "mistral-small3.2",
-            "moondream",
-            "nemotron3"
-          ],
-          "default": "llava"
+      "caption": {
+        "type": "object",
+        "title": "Caption",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Whether auto-captioning is enabled.",
+            "default": true
+          },
+          "models": {
+            "type": "array",
+            "title": "Models",
+            "description": "The Vision Languages (VL) models to use for computing the image features.",
+            "items": {
+              "type": "string",
+              "description": "A Vision Language model.",
+              "enum": [
+                "llava",
+                "llava-llama3",
+                "llava-phi3",
+                "bakllava",
+                "qwen3-vl",
+                "qwen2.5vl",
+                "llama3.2-vision",
+                "minicpm-v",
+                "granite3.2-vision",
+                "gemma3",
+                "mistral-small3.2",
+                "moondream",
+                "nemotron3"
+              ],
+              "default": "llava"
+            },
+            "default": [
+              "llava"
+            ]
+          },
+          "questions": {
+            "type": "array",
+            "title": "Questions",
+            "description": "The questions which will be used to request the VL models",
+            "items": {
+              "type": "string",
+              "description": "A question that will be asked to the VL model to compute the image caption."
+            },
+            "default": [
+              "Describe in details through nominal or noun sentences the image. Your sentences should not mention the fact that the image was provided, and you should not start your sentences with \"the image is\" or \"the image displays\" or the \"the image shows\"."
+            ]
+          }
         },
-        "default": [
-          "llava"
+        "required": [
+          "enabled",
+          "models",
+          "questions"
         ]
       },
-      "questions": {
-        "type": "array",
-        "title": "Questions",
-        "description": "The questions which will be used to request the VL models",
-        "items": {
-          "type": "string",
-          "description": "A question that will be asked to the VL model to compute the image caption."
+      "tags": {
+        "type": "object",
+        "title": "Tags",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Whether auto-tagging is enabled.",
+            "default": true
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "The Vision Languages (VL) model to use for computing the tags.",
+            "enum": [
+              "llava",
+              "llava-llama3",
+              "llava-phi3",
+              "bakllava",
+              "qwen3-vl",
+              "qwen2.5vl",
+              "llama3.2-vision",
+              "minicpm-v",
+              "granite3.2-vision",
+              "gemma3",
+              "mistral-small3.2",
+              "moondream",
+              "nemotron3"
+            ],
+            "default": "llava"
+          },
+          "tags": {
+            "type": "array",
+            "title": "Tags",
+            "description": "The tags to pick from when tagging the image, spaces are not allowed.",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,64}$",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "default": [
+              "animal",
+              "insect",
+              "mammal",
+              "vegetal",
+              "mineral",
+              "architecture",
+              "food",
+              "landscape",
+              "portrait",
+              "vehicle",
+              "art",
+              "fashion"
+            ]
+          },
+          "question": {
+            "type": "string",
+            "title": "Question template",
+            "description": "The question template to use for requesting the tags from the VL model. It should contain the '{tags}' string, which will be replaced by the provided tags.",
+            "default": "Pick the tags that best fit the image from this list: {tags}."
+          }
         },
-        "default": [
-          "Describe in details through nominal or noun sentences the image. Your sentences should not mention the fact that the image was provided, and you should not start your sentences with \"the image is\" or \"the image displays\" or the \"the image shows\"."
+        "required": [
+          "enabled",
+          "model",
+          "question"
         ]
       }
     },
     "required": [
       "ollamaUrl",
-      "models"
+      "caption",
+      "tags"
     ]
   }
 }
