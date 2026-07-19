@@ -1,4 +1,5 @@
 {
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
   "id": "replicate",
   "version": "0.3.0",
   "name": "Replicate",
