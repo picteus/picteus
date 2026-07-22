@@ -122,7 +122,7 @@ describe("Miscellaneous bare", () =>
     }
   });
 
-  test.each([false, true])("getChildProcessIds with shell=%p", async (shell) =>
+  test.each([ false, true ])("getChildProcessIds with shell=%p", async (shell) =>
   {
     {
       // We assess with a non-existent process
@@ -138,7 +138,7 @@ describe("Miscellaneous bare", () =>
     const childProcessArguments = `'${javaScriptFileName}'`;
     const parentProcessForkJavaScriptStatement = `const { fork } = require('node:child_process'); const childProcess = fork(${childProcessArguments}, { cwd: process.cwd() }); console.log('The parent started the process with id ' + childProcess.pid + ' started'); childProcess.on('exit', (code) => { console.info('Child process exited with code ' + code); }); childProcess.on('error', (error) => { console.error(error); });`;
     const parentProcessJavaScript = `console.info('Parent process starting with id ' + process.pid); setTimeout(() => { process.exit(0); }, 1_000_000); ${parentProcessForkJavaScriptStatement}`;
-    const parentProcess = spawn(process.execPath, ["--eval", shell === true ? `"${parentProcessJavaScript}"` : parentProcessJavaScript], path.resolve(pidFilePath, ".."), undefined, shell);
+    const parentProcess = spawn(process.execPath, [ "--eval", shell === true ? `"${parentProcessJavaScript}"` : parentProcessJavaScript ], path.resolve(pidFilePath, ".."), undefined, shell);
     try
     {
       await core.wait(Core.fastestIntervalInMilliseconds * 5);
@@ -162,7 +162,7 @@ describe("Miscellaneous bare", () =>
         killProcessViaId(childProcessId, signal);
       }
       await killProcess(parentProcess, signal);
-      const allProcessIds = [...childProcessIds];
+      const allProcessIds = [ ...childProcessIds ];
       if (parentProcess.pid !== undefined)
       {
         allProcessIds.push(parentProcess.pid);
@@ -174,7 +174,7 @@ describe("Miscellaneous bare", () =>
     }
   });
 
-  test.each([true, false])("execute with stdio=%p", async (withCallback: boolean) =>
+  test.each([ true, false ])("execute with stdio=%p", async (withCallback: boolean) =>
   {
     const env = undefined;
     {
@@ -182,7 +182,7 @@ describe("Miscellaneous bare", () =>
       const parameters = "--help";
       await expect(async () =>
       {
-        await execute(dummyExecutable, [parameters], undefined, env, withCallback);
+        await execute(dummyExecutable, [ parameters ], undefined, env, withCallback);
       }).rejects.toThrow(new Error(`Will not execute the the process command '${dummyExecutable} ${parameters}' because the executable binary '${dummyExecutable}' does not exist`));
     }
 
@@ -205,7 +205,7 @@ describe("Miscellaneous bare", () =>
         }
       }
 
-      const parameters = isPlatformWindows ? ["localhost"] : [];
+      const parameters = isPlatformWindows ? [ "localhost" ] : [];
       const executable = isPlatformWindows ? windowsPingExecutableFilePath : ((process.platform === "linux" ? "/usr" : "") + "/bin/ls");
       {
         // We separate the executable and the parameters
@@ -214,7 +214,7 @@ describe("Miscellaneous bare", () =>
       }
       {
         // We combine both
-        const result = await execute([executable, ...parameters].join(" "), null, directoryPath, env, withCallback);
+        const result = await execute([ executable, ...parameters ].join(" "), null, directoryPath, env, withCallback);
         checkResult(result, fileName);
       }
     }
@@ -227,7 +227,7 @@ describe("Miscellaneous bare", () =>
       const option = "--help";
       expect(() =>
       {
-        spawn(dummyExecutable, [option], undefined, undefined);
+        spawn(dummyExecutable, [ option ], undefined, undefined);
       }).toThrow(new Error(`Could not spawn with no shell the process through the command '${dummyExecutable} ${option}' because the binary '${dummyExecutable}' does not exist`));
     }
     {
@@ -239,12 +239,12 @@ describe("Miscellaneous bare", () =>
         await waitFor(childProcess);
       }).rejects.toThrow(new Error(`The process with id '${childProcess.pid}' exited with code ${isPlatformWindows === true ? 1 : 127}`));
     }
-    for (const shell of [false, true])
+    for (const shell of [ false, true ])
     {
       // We assess with a command which exits with a non-zero code
       const command = process.execPath;
       const exitCode = 10;
-      const options = ["--eval", `process.exit(${exitCode});`];
+      const options = [ "--eval", `process.exit(${exitCode});` ];
       const childProcess = spawn(command, options, undefined, undefined, shell);
       await expect(async () =>
       {
@@ -263,11 +263,11 @@ describe("Miscellaneous bare", () =>
     expect(version.startsWith("3.")).toBe(true);
   });
 
-  test.each(fastCartesian([[0, 400], [true, false]]))("spawn Node.js --eval with timeout=%p and shell=%p", async (timeoutInMilliseconds, shell) =>
+  test.each(fastCartesian([ [ 0, 400 ], [ true, false ] ]))("spawn Node.js --eval with timeout=%p and shell=%p", async (timeoutInMilliseconds, shell) =>
   {
     const milliseconds = Date.now();
     // When Node.js is not run through a shell intermediate process, the spawn Node.js process exits immediately
-    const childProcess = spawn(process.execPath, ["--eval", `"setTimeout(() => {}, ${timeoutInMilliseconds});"`], undefined, undefined, shell);
+    const childProcess = spawn(process.execPath, [ "--eval", `"setTimeout(() => {}, ${timeoutInMilliseconds});"` ], undefined, undefined, shell);
     let withExitCode: number | null = null;
     let withSignal: string | null = null;
     childProcess.on("exit", (exitCode: number | null, signal: string | null) =>
@@ -296,7 +296,7 @@ describe("Miscellaneous bare", () =>
   {
     const getPs = async (processIds: number []): Promise<Map<number, string>> =>
     {
-      const psProcess = spawn("ps", ["-aef", "|", "cat"], core.getWorkingDirectoryPath(), undefined, true, "pipe");
+      const psProcess = spawn("ps", [ "-aef", "|", "cat" ], core.getWorkingDirectoryPath(), undefined, true, "pipe");
       let psStdout = "";
       psProcess.stdout?.on("data", (stdout: string) =>
       {
@@ -336,7 +336,7 @@ describe("Miscellaneous bare", () =>
       return perIdString;
     };
     const filePath = path.join(core.getWorkingDirectoryPath(), "running.txt");
-    const childProcess = spawn(process.execPath, ["--eval", `"${core.computeProcessJavaScriptCode(path.basename(filePath), false)}"`], core.getWorkingDirectoryPath(), undefined, true);
+    const childProcess = spawn(process.execPath, [ "--eval", `"${core.computeProcessJavaScriptCode(path.basename(filePath), false)}"` ], core.getWorkingDirectoryPath(), undefined, true);
     await core.wait(Core.fastestIntervalInMilliseconds * 15);
     const childProcessIds = await getChildProcessIds(childProcess);
     expect(childProcessIds.length).toBe(isPlatformWindowsOrLinux === true ? 1 : 0);
@@ -344,7 +344,7 @@ describe("Miscellaneous bare", () =>
 
     const assessViaPs = process.platform === "linux" || process.platform === "darwin";
     const processId = childProcess.pid!;
-    const allProcessesIds = [processId];
+    const allProcessesIds = [ processId ];
     if (childProcessId !== undefined)
     {
       allProcessesIds.push(childProcessId);
@@ -373,10 +373,10 @@ describe("Miscellaneous bare", () =>
     }
   });
 
-  test.each([false, true])("stop shell process and reject SIGTERM=%p", async (willNotRespondToTermination) =>
+  test.each([ false, true ])("stop shell process and reject SIGTERM=%p", async (willNotRespondToTermination) =>
   {
     const filePath = path.join(core.getWorkingDirectoryPath(), "running.txt");
-    const childProcess = spawn(process.execPath, ["--eval", `"${core.computeProcessJavaScriptCode(path.basename(filePath), false, undefined, willNotRespondToTermination)}"`], core.getWorkingDirectoryPath(), undefined, true);
+    const childProcess = spawn(process.execPath, [ "--eval", `"${core.computeProcessJavaScriptCode(path.basename(filePath), false, undefined, willNotRespondToTermination)}"` ], core.getWorkingDirectoryPath(), undefined, true);
     const processIds = await getChildProcessIds(childProcess);
     const effectDurationInMilliseconds = Core.fastestIntervalInMilliseconds * 30;
     await core.wait(effectDurationInMilliseconds);
@@ -404,11 +404,11 @@ describe("Miscellaneous bare", () =>
     }
   });
 
-  test.each([false, true])("stop gracefully shell process and reject SIGTERM=%p", async (willNotRespondToTermination: boolean) =>
+  test.each([ false, true ])("stop gracefully shell process and reject SIGTERM=%p", async (willNotRespondToTermination: boolean) =>
   {
     const filePath = path.join(core.getWorkingDirectoryPath(), "running.txt");
     const milliseconds = Core.fastestIntervalInMilliseconds;
-    const childProcess = spawn(process.execPath, ["--eval", `"${core.computeProcessJavaScriptCode(path.basename(filePath), false, undefined, willNotRespondToTermination, milliseconds, milliseconds * 3)}"`], core.getWorkingDirectoryPath(), undefined, true);
+    const childProcess = spawn(process.execPath, [ "--eval", `"${core.computeProcessJavaScriptCode(path.basename(filePath), false, undefined, willNotRespondToTermination, milliseconds, milliseconds * 3)}"` ], core.getWorkingDirectoryPath(), undefined, true);
     const effectDurationInMilliseconds = milliseconds * 30;
     await core.wait(effectDurationInMilliseconds);
     const gracePeriodDurationInMilliseconds = 200;
@@ -447,7 +447,7 @@ describe("Miscellaneous bare", () =>
       const inputAsset = "b9fa5182-0a9f-4c3c-a74c-70d860939651";
       const text = "Closeup body, a hyper-stylistic,, extremely detailed image is a breathtaking painting created from a combination of smeared black and gold metallic colors. the silhouette of a young woman is captured in streaks as if they were moving rapidly in the same direction. the black paint is applied in bold, dynamic strokes, creating a sense of energy and movement that contrasts beautifully with the gold accents. gold paint is used to highlight the female silhouette, adding a sense of depth and dimension to the image. the overall effect is an exciting, surreal dynamism, as if the viewer has captured a fleeting moment in time. every detail of the image is meticulously detailed, from the subtle, swirling patterns of the gold paint to the complex, textural patterns of the black paint. the contrasts between light and dark, color and texture create a sense of tension and energy that draws the viewer in, inviting them to explore the kinetic world of the painting. the highest quality, intricate detail, visually stunning, masterpiece, black and gold street backdrop";
       const instructions = `{"id":98780806,"url":"https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/13744eea-8388-41c5-9f34-2fb155df2bea/original=true/13744eea-8388-41c5-9f34-2fb155df2bea.jpeg","hash":"UHB{Y{9#NHxZ~UEQRkxZ%LxFE4bb-oxY9vxY","width":768,"height":1344,"nsfwLevel":"None","type":"image","nsfw":false,"browsingLevel":1,"createdAt":"2025-09-07T19:58:26.745Z","postId":21918779,"stats":{"cryCount":333,"laughCount":588,"likeCount":4816,"dislikeCount":0,"heartCount":1832,"commentCount":7},"meta":{"seed":3971715163,"vaes":["ae.sft"],"comfy":"{\\"prompt\\": {\\"10005\\": {\\"class_type\\": \\"UnetLoaderGGUF\\", \\"inputs\\": {\\"unet_name\\": \\"EMS-1085410-EMS.gguf\\"}, \\"_properties\\": null}, \\"10019\\": {\\"class_type\\": \\"CLIPLoader\\", \\"inputs\\": {\\"clip_name\\": \\"t5xxl_fp8_e4m3fn.safetensors\\", \\"device\\": \\"default\\", \\"type\\": \\"chroma\\"}, \\"_properties\\": null}, \\"10021\\": {\\"class_type\\": \\"T5TokenizerOptions\\", \\"inputs\\": {\\"clip\\": [\\"10019\\", 0], \\"min_length\\": 3, \\"min_padding\\": 0}, \\"_properties\\": null}, \\"10022\\": {\\"class_type\\": \\"LoraTagLoader\\", \\"inputs\\": {\\"clip\\": [\\"10021\\", 0], \\"model\\": [\\"10005\\", 0], \\"text\\": \\"ECHO_EMPTY\\"}, \\"_properties\\": null}, \\"10023\\": {\\"class_type\\": \\"VAELoader\\", \\"inputs\\": {\\"vae_name\\": \\"ae.sft\\"}, \\"_properties\\": null}, \\"10038\\": {\\"class_type\\": \\"CLIPTextEncode\\", \\"inputs\\": {\\"clip\\": [\\"10022\\", 1], \\"text\\": \\"Closeup body, A hyper-stylistic,, extremely detailed image is a breathtaking painting created from a combination of smeared black and gold metallic colors. The silhouette of a young  woman is captured in streaks as if they were moving rapidly in the same direction. The black paint is applied in bold, dynamic strokes, creating a sense of energy and movement that contrasts beautifully with the gold accents. Gold paint is used to highlight the female silhouette, adding a sense of depth and dimension to the image. The overall effect is an exciting, surreal dynamism, as if the viewer has captured a fleeting moment in time. Every detail of the image is meticulously detailed, from the subtle, swirling patterns of the gold paint to the complex, textural patterns of the black paint. The contrasts between light and dark, color and texture create a sense of tension and energy that draws the viewer in, inviting them to explore the kinetic world of the painting. the highest quality, intricate detail, visually stunning, masterpiece, black and gold street backdrop\\", \\"token_normalization\\": \\"none\\", \\"weight_interpretation\\": \\"comfy\\"}, \\"_properties\\": null}, \\"10039\\": {\\"class_type\\": \\"CLIPTextEncode\\", \\"inputs\\": {\\"clip\\": [\\"10022\\", 1], \\"text\\": \\"neck,(worst quality:1.2), (low quality:1.2), (normal quality:1.2), lowres, bad anatomy, bad hands, (Integration of fingers and fingers, melting fingers), signature, watermarks, ugly, imperfect eyes, error, extra limb, missing limbs, painting by , 3d art\\\\n\\\\nembedding:bad-artist\\", \\"token_normalization\\": \\"none\\", \\"weight_interpretation\\": \\"comfy\\"}, \\"_properties\\": null}, \\"10064\\": {\\"class_type\\": \\"EmptySD3LatentImage\\", \\"inputs\\": {\\"batch_size\\": 2, \\"height\\": 1344, \\"width\\": 768}, \\"_properties\\": null}, \\"11002\\": {\\"class_type\\": \\"KSampler\\", \\"inputs\\": {\\"cfg\\": 3.5, \\"denoise\\": 1, \\"ensd\\": 31337, \\"latent_image\\": [\\"10064\\", 0], \\"model\\": [\\"10022\\", 0], \\"negative\\": [\\"10039\\", 0], \\"positive\\": [\\"10038\\", 0], \\"sampler_name\\": \\"dpmpp_2m\\", \\"scheduler\\": \\"sgm_uniform\\", \\"seed\\": 3971715163, \\"seed_mode\\": \\"A1111\\", \\"steps\\": 25}, \\"_properties\\": null}, \\"11021\\": {\\"class_type\\": \\"VAEDecode\\", \\"inputs\\": {\\"samples\\": [\\"11002\\", 0], \\"vae\\": [\\"10023\\", 0]}, \\"_properties\\": null}, \\"12005\\": {\\"class_type\\": \\"SaveImage\\", \\"inputs\\": {\\"filename_prefix\\": \\"903908994664570572\\", \\"images\\": [\\"11021\\", 0]}, \\"_properties\\": null}}, \\"workflow\\": undefined}","steps":25,"width":768,"height":1344,"prompt":"Closeup body, A hyper-stylistic,, extremely detailed image is a breathtaking painting created from a combination of smeared black and gold metallic colors. The silhouette of a young  woman is captured in streaks as if they were moving rapidly in the same direction. The black paint is applied in bold, dynamic strokes, creating a sense of energy and movement that contrasts beautifully with the gold accents. Gold paint is used to highlight the female silhouette, adding a sense of depth and dimension to the image. The overall effect is an exciting, surreal dynamism, as if the viewer has captured a fleeting moment in time. Every detail of the image is meticulously detailed, from the subtle, swirling patterns of the gold paint to the complex, textural patterns of the black paint. The contrasts between light and dark, color and texture create a sense of tension and energy that draws the viewer in, inviting them to explore the kinetic world of the painting. the highest quality, intricate detail, visually stunning, masterpiece, black and gold street backdrop","denoise":1,"sampler":"DPM++ 2M","cfgScale":3.5,"scheduler":"sgm_uniform","negativePrompt":"neck,(worst quality:1.2), (low quality:1.2), (normal quality:1.2), lowres, bad anatomy, bad hands, (Integration of fingers and fingers, melting fingers), signature, watermarks, ugly, imperfect eyes, error, extra limb, missing limbs, painting by , 3d art\\n\\nembedding:bad-artist"},"username":"Sheat13","baseModel":"Chroma","modelVersionIds":[]}`;
-      const prompts = [`{"kind":"textual","text":"${text}"}`, `{"kind":"instructions","value":${instructions}}`];
+      const prompts = [ `{"kind":"textual","text":"${text}"}`, `{"kind":"instructions","value":${instructions}}` ];
       for (const prompt of prompts)
       {
         const string = `{"schemaVersion":1,"id":"${id}","url":"${url}","modelTags":["${modelTag}"],"software":"picteus","inputAssets":["${inputAsset}"],"aspectRatio":${aspectRatio},"prompt":${prompt}}`;
@@ -597,7 +597,7 @@ describe("Miscellaneous bare", () =>
       // We assess the file system node name
       {
         // We assess with an invalid value
-        const values = [`directory\\a-file-path`, `directory/a-file-path`];
+        const values = [ `directory\\a-file-path`, `directory/a-file-path` ];
         for (const value of values)
         {
           await expect(async () =>
@@ -608,7 +608,7 @@ describe("Miscellaneous bare", () =>
       }
       {
         // We assess with a valid value
-        const values = [`a-file-path`, `a file path`];
+        const values = [ `a-file-path`, `a file path` ];
         for (const value of values)
         {
           parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemFileName);
@@ -631,30 +631,30 @@ describe("Miscellaneous bare", () =>
 
       {
         // We assess with invalid values
-        for (const value of [".", "..", "./name", "../name", "path/name", "nameWith<", "nameWith>", "nameWith:", "nameWith\\", "nameWith*", "nameWith|", "nameWith?", "nameWith\"", "nameWith" + String.fromCodePoint(0)])
+        for (const value of [ ".", "..", "./name", "../name", "path/name", "nameWith<", "nameWith>", "nameWith:", "nameWith\\", "nameWith*", "nameWith|", "nameWith?", "nameWith\"", "nameWith" + String.fromCodePoint(0) ])
         {
           await expect(async () =>
           {
             parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemFileName);
           }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it contains illegal characters`, BAD_REQUEST, errorCode));
         }
-        for (const value of [filePath, validSymbolicLinkFilePath])
+        for (const value of [ filePath, validSymbolicLinkFilePath ])
         {
           await expect(async () =>
           {
             parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemDirectoryPath);
           }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it does corresponds to a directory`, BAD_REQUEST, errorCode));
         }
-        for (const value of [directoryPath, validSymbolicLinkDirectoryPath])
+        for (const value of [ directoryPath, validSymbolicLinkDirectoryPath ])
         {
           await expect(async () =>
           {
             parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemFilePath);
           }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it does corresponds to a file`, BAD_REQUEST, errorCode));
         }
-        for (const value of [brokenSymbolicLinkDirectoryPath, brokenSymbolicLinkFilePath])
+        for (const value of [ brokenSymbolicLinkDirectoryPath, brokenSymbolicLinkFilePath ])
         {
-          for (const nature of [StringNature.FileSystemDirectoryPath, StringNature.FileSystemFilePath])
+          for (const nature of [ StringNature.FileSystemDirectoryPath, StringNature.FileSystemFilePath ])
           {
             await expect(async () =>
             {
@@ -701,7 +701,7 @@ describe("Miscellaneous bare", () =>
           {
             foo: { type: "int" }
           },
-        required: ["foo"]
+        required: [ "foo" ]
       })).toBeFalsy();
       expect(validate?.errors).toBeDefined();
       expect(validate?.errors?.length).toEqual(3);
@@ -714,7 +714,7 @@ describe("Miscellaneous bare", () =>
             foo: { type: "integer" },
             bar: { type: "string" }
           },
-        required: ["foo"]
+        required: [ "foo" ]
       })).toBeTruthy();
       expect(validate?.errors).toBeNull();
     }
@@ -769,7 +769,7 @@ describe("Miscellaneous bare", () =>
                     type: "boolean"
                   }
               },
-            required: ["favoriteColor"],
+            required: [ "favoriteColor" ],
             additionalProperties: false
           };
         const value = { favoriteColor: "pink", age: 35, likeChocolate: true };
@@ -906,7 +906,7 @@ describe("Miscellaneous bare", () =>
     }
   });
 
-  test.each([[false, false], [true, false], [true, true]])("watchPath with file preexisting=%p and with path as file=%p", async (isFilePreexisting: boolean, isNodeFile: boolean) =>
+  test.each([ [ false, false ], [ true, false ], [ true, true ] ])("watchPath with file preexisting=%p and with path as file=%p", async (isFilePreexisting: boolean, isNodeFile: boolean) =>
   {
     const directoryPath = core.prepareEmptyDirectory("watch");
     const fileName = "file";
@@ -926,7 +926,7 @@ describe("Miscellaneous bare", () =>
       });
     });
 
-    const terminator = await watchPath(isNodeFile === true ? filePath : directoryPath, eventListener, undefined);
+    const terminator = await watchPath(isNodeFile === true ? filePath : directoryPath, undefined, eventListener, undefined);
     try
     {
       let calledTimes = 1;
@@ -1137,13 +1137,13 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
     await base.getAdministrationController().migrateDatabase();
 
     // noinspection SqlResolve
-    expect(await persistence.prisma.$queryRaw(Prisma.sql([`SELECT value
-                                                           from Test
-                                                           WHERE type = "${type1}";`]))).toEqual([{ value: value1 }]);
+    expect(await persistence.prisma.$queryRaw(Prisma.sql([ `SELECT value
+                                                            from Test
+                                                            WHERE type = "${type1}";` ]))).toEqual([ { value: value1 } ]);
     // noinspection SqlResolve
-    expect(await persistence.prisma.$queryRaw(Prisma.sql([`SELECT value
-                                                           from Test
-                                                           WHERE type = "${type2}";`]))).toEqual([{ value: value2 }]);
+    expect(await persistence.prisma.$queryRaw(Prisma.sql([ `SELECT value
+                                                            from Test
+                                                            WHERE type = "${type2}";` ]))).toEqual([ { value: value2 } ]);
     expect(await persistence.getMigration()).toEqual(thirdMigrationDirectoryName);
   });
 
@@ -1216,7 +1216,7 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
       const eventEntity = EventEntity.Extension;
       const action = RepositoryEventAction.Created;
       const state = "state";
-      const markers = [undefined, "marker"];
+      const markers = [ undefined, "marker" ];
       for (const marker of markers)
       {
         const listener: (event: string, value: object, marker?: string) => Promise<void> = jest.fn(() =>
@@ -1332,7 +1332,7 @@ describe("Miscellaneous via application", () =>
   {
     const ioClient = io(paths.webServicesBaseUrl, {
       autoConnect: false,
-      transports: ["websocket"]
+      transports: [ "websocket" ]
     });
     ioClient.connect();
     await new Promise<void>((resolve) =>

@@ -16,9 +16,16 @@ export enum WatcherEvent
   Changed = "changed"
 }
 
+export type WatchOptions =
+  {
+    depth?: number;
+    withDirectories?: boolean;
+    onlyDirectories?: boolean;
+  };
+
 export type WatcherTerminator = () => Promise<void>;
 
-export async function watchPath(nodePath: string, onEvent: (event: WatcherEvent, relativePath: string) => Promise<void>, onError?: (error: Error) => void, finishOptions?: {
+export async function watchPath(nodePath: string, options: WatchOptions | undefined, onEvent: (event: WatcherEvent, relativePath: string) => Promise<void>, onError?: (error: Error) => void, finishOptions?: {
   stabilityThresholdInMilliseconds: number;
   pollIntervalInMilliseconds: number
 }): Promise<WatcherTerminator>
@@ -33,7 +40,7 @@ export async function watchPath(nodePath: string, onEvent: (event: WatcherEvent,
     logger.debug("Received the '" + event + "' event for the file with relative path '" + relativePath + "'");
     await onEvent(event, relativePath);
   };
-  const options: ChokidarOptions =
+  const chokidarOptions: ChokidarOptions =
     {
       cwd: isFile === false ? nodePath : path.join(nodePath, ".."),
       ignoreInitial: true,
@@ -42,13 +49,12 @@ export async function watchPath(nodePath: string, onEvent: (event: WatcherEvent,
           stabilityThreshold: finishOptions?.stabilityThresholdInMilliseconds ?? 250,
           pollInterval: finishOptions?.pollIntervalInMilliseconds ?? 100
         },
-      depth: undefined,
+      depth: options?.depth,
       ignored: (_relativePath: string, _stats?: Stats) =>
       {
         return false;
       }
     };
-
 
   function createAsynchronousQueue(): (callback: () => Promise<void>) => Promise<void>
   {
@@ -72,8 +78,25 @@ export async function watchPath(nodePath: string, onEvent: (event: WatcherEvent,
   logger.info(`Preparing to watch to the events for the ${logFragment}`);
   return new Promise<WatcherTerminator>((resolve, _reject) =>
   {
-    const watcher: FSWatcher = watch(isFile === false ? nodePath : path.basename(nodePath), options)
-      .on("add", (relativePath) =>
+    const watcher: FSWatcher = watch(isFile === false ? nodePath : path.basename(nodePath), chokidarOptions).on("ready", () =>
+    {
+      // We wait for the next tick before returning, otherwise some file events may be missed
+      Timers.setTimeout(() =>
+      {
+        logger.info(`Now watching the events for the ${logFragment}`);
+        resolve(async () =>
+        {
+          logger.info(`Stopping from watching the events for the ${logFragment}`);
+          await watcher.close();
+        });
+      }, 0);
+    }).on("error", (error: unknown) =>
+    {
+      onError?.(error as Error);
+    });
+    if (options?.onlyDirectories !== true)
+    {
+      watcher.on("add", (relativePath) =>
       {
         enqueue(async () => await onEventInternal(WatcherEvent.Added, relativePath));
       }).on("unlink", (relativePath) =>
@@ -82,22 +105,18 @@ export async function watchPath(nodePath: string, onEvent: (event: WatcherEvent,
       }).on("change", (relativePath) =>
       {
         enqueue(async () => await onEventInternal(WatcherEvent.Changed, relativePath));
-      }).on("ready", () =>
-      {
-        // We wait for the next tick before returning, otherwise some file events may be missed
-        Timers.setTimeout(() =>
-        {
-          logger.info(`Now watching the events for the ${logFragment}`);
-          resolve(async () =>
-          {
-            logger.info(`Stopping from watching the events for the ${logFragment}`);
-            await watcher.close();
-          });
-        }, 0);
-      }).on("error", (error: unknown) =>
-      {
-        onError?.(error as Error);
       });
+    }
+    if (options?.withDirectories === true)
+    {
+      watcher.on("addDir", (relativePath) =>
+      {
+        enqueue(async () => await onEventInternal(WatcherEvent.Added, relativePath));
+      }).on("unlinkDir", (relativePath) =>
+      {
+        enqueue(async () => await onEventInternal(WatcherEvent.Deleted, relativePath));
+      });
+    }
   });
 
 }

@@ -459,7 +459,7 @@ async function run(): Promise<void>
       }
       if (cliOptions.unpackedExtensionsDirectoryPath !== undefined)
       {
-        paths.unpackedExtensionsDirectoryPath = cliOptions.unpackedExtensionsDirectoryPath;
+        paths.unpackedExtensionsDirectoryPath = path.resolve(cliOptions.unpackedExtensionsDirectoryPath);
       }
       {
         const logsDirectoryPath = actionParameters.options[logsDirectoryPathOption] as string;

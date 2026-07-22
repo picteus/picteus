@@ -1182,7 +1182,7 @@ describe("Image with module", () =>
         }
       }
 
-      if (Math.random() > 1)
+      if (Core.disabled)
       {
         // TODO: re-enable this once we have a proper Markdown validator
         for (const type of [ImageFeatureType.DESCRIPTION, ImageFeatureType.COMMENT, ImageFeatureType.METADATA, ImageFeatureType.OTHER])

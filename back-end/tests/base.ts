@@ -106,7 +106,9 @@ const { directoryPath, rootDirectoryPath } = computePaths();
 export class Defaults
 {
   static readonly locationType = RepositoryLocationType.File;
+
   static readonly repositoryName = "name";
+
   static readonly emptyDirectoryName = "empty";
 }
 
@@ -173,8 +175,8 @@ export class ImageFeeder
   async prepareComfyUiImage(filePath: string): Promise<{ prompt: Record<string, any>; workflow: Record<string, any>; }>
   {
     this.duplicateImage(path.join(this.imagesDirectoryPath, this.pngImageFileName), filePath);
-    const prompt = { 1: { inputs: [{ title: "Super node" }] } };
-    const workflow = { nodes: [{ id: 1, type: "Super workflow" }] };
+    const prompt = { 1: { inputs: [ { title: "Super node" } ] } };
+    const workflow = { nodes: [ { id: 1, type: "Super workflow" } ] };
     const metadata =
       {
         prompt: JSON.stringify(prompt),
@@ -194,7 +196,7 @@ export class ImageFeeder
   {
     const textualPrompt = new TextualPrompt("a beautiful photo");
     const instructionsPrompt = new InstructionsPrompt({ key1: "value1" });
-    return new GenerationRecipe([modelTag], kind === PromptKind.Textual ? textualPrompt : instructionsPrompt, "id", "https//generated.image/id", "picteus", [], 1.25);
+    return new GenerationRecipe([ modelTag ], kind === PromptKind.Textual ? textualPrompt : instructionsPrompt, "id", "https//generated.image/id", "picteus", [], 1.25);
   }
 
 }
@@ -205,6 +207,8 @@ export class Core
   static readonly directoryPath: string = directoryPath;
 
   static readonly rootDirectoryPath: string = rootDirectoryPath;
+
+  static readonly temporaryDirectoryPath: string = path.resolve(path.join(Core.rootDirectoryPath, "tmp"));
 
   private static readonly timeoutPlatformFactor: number = (process.platform === "win32" ? 1.5 : 1);
 
@@ -226,6 +230,10 @@ export class Core
 
   protected intervals: NodeJS.Timeout[] = [];
 
+  static readonly enabled: boolean = Math.random() <= 1;
+
+  static readonly disabled: boolean = !Core.enabled;
+
   static async beforeAll(): Promise<void>
   {
   }
@@ -237,7 +245,7 @@ export class Core
   async beforeEach(): Promise<void>
   {
     logger.info(`\n---\nRunning the '${expect.getState().currentTestName}' test\n---`);
-    this.workingDirectoryPath = path.join(path.resolve(path.join(Core.rootDirectoryPath, "tmp")), `test-${randomUUID()}`);
+    this.workingDirectoryPath = path.join(Core.temporaryDirectoryPath, `test-${randomUUID()}`);
     fs.mkdirSync(this.workingDirectoryPath, { recursive: true });
     logger.debug(`Using the working directory with path '${this.workingDirectoryPath}'`);
   }
@@ -361,7 +369,7 @@ export class ExtensionBasisBuilder
 export class Base extends Core
 {
 
-  public static readonly allPolicyContext = { scopes: [ApiScope.All] };
+  public static readonly allPolicyContext = { scopes: [ ApiScope.All ] };
 
   public static readonly extensionParametersFileName = "parameters.json";
 
@@ -569,7 +577,7 @@ export class Base extends Core
 
   private async createTestingModule(): Promise<TestingModule>
   {
-    return await Test.createTestingModule({ imports: [computeMainModule(false)] }).compile();
+    return await Test.createTestingModule({ imports: [ computeMainModule(false) ] }).compile();
   }
 
   setSdkDirectoryPath(): void
@@ -669,7 +677,7 @@ export class Base extends Core
     image: Image
   }>
   {
-    const { repository, images } = await this.prepareRepositoryWithImages([fileName], directoryName, watch);
+    const { repository, images } = await this.prepareRepositoryWithImages([ fileName ], directoryName, watch);
     return { repository, image: images[0] };
   }
 
@@ -694,7 +702,7 @@ export class Base extends Core
     return { repository, images };
   }
 
-  async prepareExtension(extensionId: string = "extensionId", events: ManifestEvent[] = [ManifestEvent.ProcessStarted], commands: ManifestExtensionCommand [] = [], capabilities: ManifestCapability[] | undefined = undefined): Promise<Extension>
+  async prepareExtension(extensionId: string = "extensionId", events: ManifestEvent[] = [ ManifestEvent.ProcessStarted ], commands: ManifestExtensionCommand [] = [], capabilities: ManifestCapability[] | undefined = undefined): Promise<Extension>
   {
     const zip = new AdmZip();
     const manifest: Manifest =
@@ -703,7 +711,7 @@ export class Base extends Core
         version: "1.0.0",
         name: "Extension",
         description: "An extension for testing.",
-        runtimes: [{ environment: ManifestRuntimeEnvironment.Node }],
+        runtimes: [ { environment: ManifestRuntimeEnvironment.Node } ],
         instructions: [
           {
             events,
@@ -711,7 +719,7 @@ export class Base extends Core
             execution:
               {
                 executable: capabilities === undefined ? "${node}" : ExtensionBasisBuilder.nodeExecutable,
-                arguments: capabilities === undefined ? ["--eval", this.computeExtensionJavaScriptCode("started.txt", false)] : [ExtensionBasisBuilder.startedJsFileName]
+                arguments: capabilities === undefined ? [ "--eval", this.computeExtensionJavaScriptCode("started.txt", false) ] : [ ExtensionBasisBuilder.startedJsFileName ]
               },
             commands
           }

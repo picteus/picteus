@@ -84,8 +84,10 @@ describe("Extensions", () =>
   {
     await Base.beforeAll();
     paths.requiresApiKey = true;
-    const relativePath: string[] = process.platform === "win32" ? [".."] : ["..", ".."];
+    const relativePath: string[] = process.platform === "win32" ? [ ".." ] : [ "..", ".." ];
     paths.npmDirectoryPath = path.join(ExtensionBuilder.nodeExecutable, ...relativePath);
+    paths.unpackedExtensionsDirectoryPath = path.join(Core.temporaryDirectoryPath, `extensions-${randomUUID()}`);
+    fs.mkdirSync(paths.unpackedExtensionsDirectoryPath, { recursive: true });
   });
 
   beforeEach(async () =>
@@ -110,7 +112,7 @@ describe("Extensions", () =>
     static readonly dummyExecution: ManifestExecution =
       {
         executable: ExtensionBuilder.nodeExecutable,
-        arguments: ["--eval", "console.info('Started'); setTimeout(() => {}, 1_000_000);"]
+        arguments: [ "--eval", "console.info('Started'); setTimeout(() => {}, 1_000_000);" ]
       };
 
     static readonly javaScriptFileName = "main.js";
@@ -168,20 +170,20 @@ describe("Extensions", () =>
       }
       return this.computeWithInstructionsManifest([
         {
-          events: [ManifestEvent.ProcessStarted],
+          events: [ ManifestEvent.ProcessStarted ],
           execution:
             {
               // In case of the "--eval" CLI option, we need to run Node.js go through a shell intermediate process, otherwise the spawn Node.js process exits immediately
               executable: processStartedExecutable ?? (viaNode === true ? "${node}" : (javascriptFilePath !== undefined ? ExtensionBuilder.nodeExecutable : "${shell}")),
-              arguments: javascriptFilePath !== undefined ? [javascriptFilePath] : [ExtensionBuilder.nodeExecutable, "--eval", `"${nodeScriptCode}"`]
+              arguments: javascriptFilePath !== undefined ? [ javascriptFilePath ] : [ ExtensionBuilder.nodeExecutable, "--eval", `"${nodeScriptCode}"` ]
             }
         },
         {
-          events: [ManifestEvent.ImageCreated],
+          events: [ ManifestEvent.ImageCreated ],
           execution:
             {
               executable: "${shell}",
-              arguments: os.platform() === "win32" ? ["echo", ".>", `"${this.touchedFileName}"`] : ["touch", `"${this.touchedFileName}"`]
+              arguments: os.platform() === "win32" ? [ "echo", ".>", `"${this.touchedFileName}"` ] : [ "touch", `"${this.touchedFileName}"` ]
             }
         }
       ], this.extensionVersion, this.extensionName, "A test extension.", settings, ui);
@@ -189,10 +191,10 @@ describe("Extensions", () =>
 
     computeStartedManifest(entity: CommandEntity = CommandEntity.Image, commands?: ManifestExtensionCommand[], throttlingDurationInMilliseconds?: number): Manifest
     {
-      const throttableEvents = [ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeTags, ManifestEvent.TextComputeEmbeddings, entity == CommandEntity.Image ? ManifestEvent.ImageRunCommand : ManifestEvent.ProcessRunCommand];
+      const throttableEvents = [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeTags, ManifestEvent.TextComputeEmbeddings, entity == CommandEntity.Image ? ManifestEvent.ImageRunCommand : ManifestEvent.ProcessRunCommand ];
       return this.computeWithInstructionsManifest([
           {
-            events: [ManifestEvent.ProcessStarted, ...throttableEvents],
+            events: [ ManifestEvent.ProcessStarted, ...throttableEvents ],
             throttlingPolicies:
               [
                 {
@@ -201,11 +203,11 @@ describe("Extensions", () =>
                   durationInMilliseconds: Math.round(throttlingDurationInMilliseconds ?? Core.fastestIntervalInMilliseconds)
                 }
               ],
-            capabilities: [{ id: ManifestCapabilityId.ImageTags }, { id: ManifestCapabilityId.ImageFeatures }, { id: ManifestCapabilityId.TextEmbeddings }],
+            capabilities: [ { id: ManifestCapabilityId.ImageTags }, { id: ManifestCapabilityId.ImageFeatures }, { id: ManifestCapabilityId.TextEmbeddings } ],
             execution:
               {
                 executable: ExtensionBuilder.nodeExecutable,
-                arguments: [ExtensionBuilder.startedJsFileName]
+                arguments: [ ExtensionBuilder.startedJsFileName ]
               },
             commands: commands ?? [
               {
@@ -248,7 +250,7 @@ describe("Extensions", () =>
         version: extensionVersion,
         name: extensionName,
         description: extensionDescription,
-        runtimes: [{ environment: ManifestRuntimeEnvironment.Node }],
+        runtimes: [ { environment: ManifestRuntimeEnvironment.Node } ],
         instructions,
         settings,
         ui
@@ -425,7 +427,10 @@ describe("Extensions", () =>
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'instructions' is invalid, because instructions should not be null or undefined", BAD_REQUEST, base.badParameterCode));
     }
     {
-      manifest.instructions = [{ events: [ManifestEvent.ProcessStarted], execution: ExtensionBuilder.dummyExecution }];
+      manifest.instructions = [ {
+        events: [ ManifestEvent.ProcessStarted ],
+        execution: ExtensionBuilder.dummyExecution
+      } ];
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
@@ -558,8 +563,8 @@ describe("Extensions", () =>
       const capabilityId = ManifestCapabilityId.TextEmbeddings;
       const manifest = builder.computeWithInstructionsManifest([
         {
-          events: [ManifestEvent.ImageCreated],
-          capabilities: [new ManifestCapability(capabilityId)],
+          events: [ ManifestEvent.ImageCreated ],
+          capabilities: [ new ManifestCapability(capabilityId) ],
           execution: ExtensionBuilder.dummyExecution
         }
       ]);
@@ -574,11 +579,11 @@ describe("Extensions", () =>
       // We assess with an invalid throttling policy
       const manifest = builder.computeWithInstructionsManifest([
         {
-          events: [ManifestEvent.ProcessStarted],
+          events: [ ManifestEvent.ProcessStarted ],
           throttlingPolicies:
             [
               {
-                events: [ManifestEvent.ImageCreated],
+                events: [ ManifestEvent.ImageCreated ],
                 maximumCount: 1,
                 durationInMilliseconds: -1
               }
@@ -597,11 +602,11 @@ describe("Extensions", () =>
       // We assess missing events when setting throttling policies
       const manifest = builder.computeWithInstructionsManifest([
         {
-          events: [ManifestEvent.ProcessStarted],
+          events: [ ManifestEvent.ProcessStarted ],
           throttlingPolicies:
             [
               {
-                events: [ManifestEvent.ImageCreated],
+                events: [ ManifestEvent.ImageCreated ],
                 maximumCount: 1,
                 durationInMilliseconds: 1_000
               }
@@ -620,8 +625,8 @@ describe("Extensions", () =>
       const capabilityId = ManifestCapabilityId.TextEmbeddings;
       const manifest = builder.computeWithInstructionsManifest([
         {
-          events: [ManifestEvent.ProcessStarted],
-          capabilities: [new ManifestCapability(capabilityId)],
+          events: [ ManifestEvent.ProcessStarted ],
+          capabilities: [ new ManifestCapability(capabilityId) ],
           execution: ExtensionBuilder.dummyExecution
         }
       ]);
@@ -634,15 +639,15 @@ describe("Extensions", () =>
     }
     {
       const commandId = "commandId";
-      const commands = [{
+      const commands = [ {
         id: commandId,
         on: { entity: CommandEntity.Process },
-        specifications: [{ locale: "en", label: "A command" }]
-      }];
+        specifications: [ { locale: "en", label: "A command" } ]
+      } ];
       {
         const manifest = builder.computeWithInstructionsManifest([
           {
-            events: [ManifestEvent.ImageComputeFeatures],
+            events: [ ManifestEvent.ImageComputeFeatures ],
             execution: ExtensionBuilder.dummyExecution,
             commands
           }
@@ -654,12 +659,12 @@ describe("Extensions", () =>
           await base.getExtensionController().install(zip.toBuffer());
         }).rejects.toThrow(new ServiceError(`The command of the extension with id '${manifest.id}', with '${commandId}' on entity 'Process' is missing the ['${ManifestEvent.ProcessStarted}', '${ManifestEvent.ProcessRunCommand}'] events`, BAD_REQUEST, base.badParameterCode));
       }
-      const additionEvents = [ManifestEvent.ProcessStarted, ManifestEvent.ProcessRunCommand];
+      const additionEvents = [ ManifestEvent.ProcessStarted, ManifestEvent.ProcessRunCommand ];
       for (const additionEvent of additionEvents)
       {
         const manifest = builder.computeWithInstructionsManifest([
           {
-            events: [ManifestEvent.ImageComputeFeatures, additionEvent],
+            events: [ ManifestEvent.ImageComputeFeatures, additionEvent ],
             execution: ExtensionBuilder.dummyExecution,
             commands
           }
@@ -675,7 +680,7 @@ describe("Extensions", () =>
     {
       const manifest = builder.computeWithInstructionsManifest([
         {
-          events: [ManifestEvent.ProcessStarted],
+          events: [ ManifestEvent.ProcessStarted ],
           capabilities: [],
           execution: ExtensionBuilder.dummyExecution
         }
@@ -692,7 +697,7 @@ describe("Extensions", () =>
       const url = "/sidebar/index.html";
       const manifest = builder.computeWithInstructionsManifest([
         {
-          events: [ManifestEvent.ProcessStarted],
+          events: [ ManifestEvent.ProcessStarted ],
           capabilities: [],
           execution: ExtensionBuilder.dummyExecution
         }
@@ -718,7 +723,7 @@ describe("Extensions", () =>
       const id = uiId;
       const manifest = builder.computeWithInstructionsManifest([
         {
-          events: [ManifestEvent.ProcessStarted],
+          events: [ ManifestEvent.ProcessStarted ],
           capabilities: [],
           execution: ExtensionBuilder.dummyExecution
         }
@@ -803,7 +808,7 @@ describe("Extensions", () =>
 
     }
 
-    const cases = [new Case("index.html", "Content", types.html), new Case("style.css", "body {}", types.css), new Case("javascript.js", "var dummy = value;", types.js), new Case("json.json", JSON.stringify({ key: "value" }), types.json)];
+    const cases = [ new Case("index.html", "Content", types.html), new Case("style.css", "body {}", types.css), new Case("javascript.js", "var dummy = value;", types.js), new Case("json.json", JSON.stringify({ key: "value" }), types.json) ];
     for (const aCase of cases)
     {
       zip.addFile(elementBasePath + aCase.path, Buffer.from(aCase.content, "utf8"));
@@ -909,14 +914,14 @@ describe("Extensions", () =>
       const stringFeature = new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, undefined, "A feature");
       const attachmentUri = await base.getImageAttachmentController().create(Base.allPolicyContext, imageId, id, toMimeType(ImageFormat.JPEG), fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
       const binaryFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.BINARY, undefined, attachmentUri);
-      const features = [stringFeature, binaryFeature];
+      const features = [ stringFeature, binaryFeature ];
       await base.getImageController().setFeatures(Base.allPolicyContext, imageId, id, features);
       const storedFeatures = await base.getImageController().getAllFeatures(imageId);
       expect(storedFeatures[0]).toEqual({ id, ...stringFeature });
       expect(storedFeatures[1]).toEqual({ id, ...binaryFeature });
       expect((await base.getModuleProvider(ImageAttachmentService).list(imageId)).length).toEqual(1);
       expect((await base.getEntitiesProvider().imageFeature.findMany({ where: { extensionId: id } })).length).toEqual(features.length);
-      const values = [0, 1, 2, 3, 4];
+      const values = [ 0, 1, 2, 3, 4 ];
       await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, id, { values: values });
       expect((await base.getImageController().getEmbeddings(imageId, id)).values).toEqual(values);
       expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageId, id)).toEqual(values);
@@ -962,7 +967,7 @@ describe("Extensions", () =>
     }, false);
   });
 
-  test.each([0, 50])("failing binary file with timeout=%p", async (timeoutInMilliseconds) =>
+  test.each([ 0, 50 ])("failing binary file with timeout=%p", async (timeoutInMilliseconds) =>
   {
     const builder = new ExtensionBuilder();
     const manifest = builder.computeSimpleManifest(undefined, false, true, undefined, `const process = require('process'); setTimeout(() => { console.info('Exiting process with id \\'' + process.pid + '\\''); process.exit(1); }, ${timeoutInMilliseconds});`);
@@ -1121,8 +1126,8 @@ describe("Extensions", () =>
       const summaries = (await base.getImageController().searchSummaries({})).items;
       for (const summary of summaries)
       {
-        await base.getImageController().setTags(Base.allPolicyContext, summary.id, manifest.id, ["tag"]);
-        await base.getImageController().setFeatures(Base.allPolicyContext, summary.id, manifest.id, [new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.STRING, undefined, "string")]);
+        await base.getImageController().setTags(Base.allPolicyContext, summary.id, manifest.id, [ "tag" ]);
+        await base.getImageController().setFeatures(Base.allPolicyContext, summary.id, manifest.id, [ new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.STRING, undefined, "string") ]);
       }
       await base.getExtensionController().pauseOrResume(builder.extensionId, false);
       await base.wait();
@@ -1187,7 +1192,7 @@ describe("Extensions", () =>
                     default: 35
                   }
               },
-            required: [age]
+            required: [ age ]
           },
         specifications:
           [
@@ -1227,7 +1232,7 @@ describe("Extensions", () =>
                       },
                     likeChocolate: { title: "Chocolate?", description: "Do you like chocolate?", type: "boolean" }
                   },
-                required: ["favoriteColor"],
+                required: [ "favoriteColor" ],
                 additionalProperties: false
               }
           }
@@ -1377,7 +1382,7 @@ describe("Extensions", () =>
     for (const aCase of cases)
     {
       // We simulate a GUI master socket client
-      const ioClient = io(paths.webServicesBaseUrl, { autoConnect: true, transports: ["websocket"] });
+      const ioClient = io(paths.webServicesBaseUrl, { autoConnect: true, transports: [ "websocket" ] });
       let eventsCommand: Record<string, any> | undefined;
       try
       {
@@ -1399,7 +1404,7 @@ describe("Extensions", () =>
         ioClient.emit(connectionChannelName, { apiKey, isOpen: true });
 
         const builder = new ExtensionBuilder(undefined, undefined, randomUUID().substring(0, 32));
-        const manifest = builder.computeStartedManifest(CommandEntity.Process, [aCase.command]);
+        const manifest = builder.computeStartedManifest(CommandEntity.Process, [ aCase.command ]);
         const zip = new AdmZip();
         zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
         zip.addFile(ExtensionBuilder.startedJsFileName, Buffer.from(builder.computeStartedFileContent(), "utf8"));
@@ -1488,18 +1493,18 @@ describe("Extensions", () =>
       const commandId = "nonExistentCommandId";
       await expect(async () =>
       {
-        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, [image.id]);
+        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, [ image.id ]);
       }).rejects.toThrow(new ServiceError(`The parameter 'commandId' with value '${commandId}' is invalid because the extension with id '${manifest.id}' has no command with id '${commandId}'`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const imageId = "nonExistentImageId";
       await expect(async () =>
       {
-        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, [imageId]);
+        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, [ imageId ]);
       }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageId}]' is invalid because one or more image do not exist`, BAD_REQUEST, base.badParameterCode));
     }
     {
-      const imageIds = [image.id, images[1].id];
+      const imageIds = [ image.id, images[1].id ];
       await expect(async () =>
       {
         await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, imageIds);
@@ -1507,14 +1512,14 @@ describe("Extensions", () =>
     }
     {
       const parameters = { key: "value" };
-      await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, parameters, [image.id]);
+      await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, parameters, [ image.id ]);
       const filePath = path.join(builder.extensionDirectoryPath, "image.runCommand");
       await waitForExpect(() =>
       {
         expect(fs.existsSync(filePath)).toEqual(true);
       });
       const receivedValue = JSON.parse(fs.readFileSync(filePath, { encoding: "utf8" }));
-      expect(receivedValue).toEqual({ commandId, parameters, imageIds: [image.id] });
+      expect(receivedValue).toEqual({ commandId, parameters, imageIds: [ image.id ] });
     }
   });
 
@@ -1543,14 +1548,14 @@ describe("Extensions", () =>
     for (let index = 0; index < 3; index++)
     {
       const parameters = { key: "value" };
-      await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, parameters, [image.id]);
+      await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, parameters, [ image.id ]);
       const filePath = path.join(builder.extensionDirectoryPath, "image.runCommand");
       await waitForExpect(() =>
       {
         expect(fs.existsSync(filePath)).toEqual(true);
       });
       const receivedValue = JSON.parse(fs.readFileSync(filePath, { encoding: "utf8" }));
-      expect(receivedValue).toEqual({ commandId, parameters, imageIds: [image.id] });
+      expect(receivedValue).toEqual({ commandId, parameters, imageIds: [ image.id ] });
       fs.rmSync(filePath);
       const now = Date.now();
       if (milliseconds !== -1)
@@ -1605,14 +1610,14 @@ describe("Extensions", () =>
     const command2Id = "command2";
     const manifest2 = new ExtensionBuilder(false, undefined, "id2", "B").computeWithInstructionsManifest([
       {
-        events: [ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings, ManifestEvent.ImageRunCommand],
-        capabilities: [{ id: ManifestCapabilityId.ImageEmbeddings }, { id: ManifestCapabilityId.ImageFeatures }],
+        events: [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings, ManifestEvent.ImageRunCommand ],
+        capabilities: [ { id: ManifestCapabilityId.ImageEmbeddings }, { id: ManifestCapabilityId.ImageFeatures } ],
         execution: ExtensionBuilder.dummyExecution,
         commands: [
           {
             id: command2Id,
             on: { entity: CommandEntity.Image },
-            specifications: [{ locale: "en", label: "A dummy command" }]
+            specifications: [ { locale: "en", label: "A dummy command" } ]
           }
         ]
       }
@@ -1625,14 +1630,14 @@ describe("Extensions", () =>
     const command1Id = "command1";
     const manifest1 = new ExtensionBuilder(false, undefined, "id1", "A").computeWithInstructionsManifest([
       {
-        events: [ManifestEvent.ProcessStarted, ManifestEvent.ProcessRunCommand, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings, ManifestEvent.TextComputeEmbeddings],
-        capabilities: [{ id: ManifestCapabilityId.ImageEmbeddings }, { id: ManifestCapabilityId.TextEmbeddings }],
+        events: [ ManifestEvent.ProcessStarted, ManifestEvent.ProcessRunCommand, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings, ManifestEvent.TextComputeEmbeddings ],
+        capabilities: [ { id: ManifestCapabilityId.ImageEmbeddings }, { id: ManifestCapabilityId.TextEmbeddings } ],
         execution: ExtensionBuilder.dummyExecution,
         commands: [
           {
             id: command1Id,
             on: { entity: CommandEntity.Process },
-            specifications: [{ locale: "en", label: "A dummy command" }]
+            specifications: [ { locale: "en", label: "A dummy command" } ]
           }
         ]
       }
@@ -1646,11 +1651,11 @@ describe("Extensions", () =>
     expect(configuration.capabilities).toBeDefined();
     expect(configuration.capabilities.length).toEqual(3);
     expect(configuration.capabilities[0].capability.id).toEqual(ManifestCapabilityId.ImageEmbeddings);
-    expect(configuration.capabilities[0].extensionIds).toEqual([manifest1.id, manifest2.id]);
+    expect(configuration.capabilities[0].extensionIds).toEqual([ manifest1.id, manifest2.id ]);
     expect(configuration.capabilities[1].capability.id).toEqual(ManifestCapabilityId.ImageFeatures);
-    expect(configuration.capabilities[1].extensionIds).toEqual([manifest2.id]);
+    expect(configuration.capabilities[1].extensionIds).toEqual([ manifest2.id ]);
     expect(configuration.capabilities[2].capability.id).toEqual(ManifestCapabilityId.TextEmbeddings);
-    expect(configuration.capabilities[2].extensionIds).toEqual([manifest1.id]);
+    expect(configuration.capabilities[2].extensionIds).toEqual([ manifest1.id ]);
     expect(configuration.commands).toBeDefined();
     expect(configuration.commands.length).toEqual(2);
     expect(configuration.commands[0].extensionId).toEqual(manifest1.id);
@@ -1698,32 +1703,54 @@ describe("Extensions", () =>
     zip.addFile(path.basename(javaScriptFilePath), fs.readFileSync(javaScriptFilePath));
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
 
-    const directoryPath = base.prepareEmptyDirectory(manifest.id);
-    zip.extractAllTo(directoryPath);
-    await base.getExtensionService().registerUnpackedExtension(directoryPath, true);
-    await waitForExpect(async () =>
     {
-      await builder.checkExtensionRunning(true, false);
-    });
+      // We assess in a directory located outside from the "paths.unpackedExtensionsDirectoryPath" directory
+      const directoryPath = base.prepareEmptyDirectory(manifest.id);
+      zip.extractAllTo(directoryPath);
+      await base.getExtensionService().registerUnpackedExtension(directoryPath, true, true);
+      await waitForExpect(async () =>
+      {
+        await builder.checkExtensionRunning(true, false);
+      });
 
-    builder.deleteStartedFile();
-    builder.checkStartedFileNotFound();
-    // We touch the extension manifest file
-    const now = new Date();
-    fs.utimesSync(path.join(directoryPath, ExtensionRegistry.manifestFileName), now, now);
-    // And we make sure that the extension process has been restarted
-    await waitForExpect(async () =>
+      builder.deleteStartedFile();
+      builder.checkStartedFileNotFound();
+      // We touch the extension manifest file
+      const now = new Date();
+      fs.utimesSync(path.join(directoryPath, ExtensionRegistry.manifestFileName), now, now);
+      // And we make sure that the extension process has been restarted
+      await waitForExpect(async () =>
+      {
+        await builder.checkExtensionRunning(true, false);
+      });
+
+      builder.deleteStartedFile();
+      builder.checkStartedFileNotFound();
+      // We uninstall the extension
+      await base.getExtensionService().uninstall(manifest.id);
+      // And we make sure that the extension process does not restart
+      await base.wait();
+      builder.checkStartedFileNotFound();
+    }
+
     {
-      await builder.checkExtensionRunning(true, false);
-    });
+      // We assess in a directory located inside the "paths.unpackedExtensionsDirectoryPath" directory
+      const directoryPath = path.join(paths.unpackedExtensionsDirectoryPath!, manifest.id);
+      zip.extractAllTo(directoryPath);
+      await waitForExpect(async () =>
+      {
+        await builder.checkExtensionRunning(true, false);
+      });
 
-    builder.deleteStartedFile();
-    builder.checkStartedFileNotFound();
-    // We uninstall the extension
-    await base.getExtensionService().uninstall(manifest.id);
-    // And we make sure that the extension process does not restart
-    await base.wait();
-    builder.checkStartedFileNotFound();
+      // We delete the extension's directory and make sure that it gets uninstalled
+      const listener = base.computeEventListener();
+      base.getNotifierService().once(EventEntity.Extension, ExtensionEventAction.Uninstalled, undefined, listener);
+      fs.rmSync(directoryPath, { recursive: true });
+      await waitForExpect(() =>
+      {
+        expect(listener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Uninstalled, { id: manifest.id });
+      });
+    }
   });
 
   test("settings", async () =>
@@ -1735,7 +1762,7 @@ describe("Extensions", () =>
     const key3 = "key3";
     const manifest = builder.computeWithInstructionsManifest([
       {
-        events: [ManifestEvent.ProcessStarted],
+        events: [ ManifestEvent.ProcessStarted ],
         capabilities: [],
         execution: ExtensionBuilder.dummyExecution
       }
@@ -1743,10 +1770,10 @@ describe("Extensions", () =>
       type: "object",
       properties: {
         [key1]: { type: "string" },
-        [key2]: { type: "object", properties: { [key2SubKey]: { type: "number" } }, required: [key2SubKey] },
+        [key2]: { type: "object", properties: { [key2SubKey]: { type: "number" } }, required: [ key2SubKey ] },
         [key3]: { type: "boolean" }
       },
-      required: [key1, key2]
+      required: [ key1, key2 ]
     });
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -1827,7 +1854,7 @@ describe("Extensions", () =>
     await upgradeBuiltInExtension("0.9.0", filePath);
   });
 
-  test.each([ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python])("getSdkInfo for %p environment", async (environment: ManifestRuntimeEnvironment) =>
+  test.each([ ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python ])("getSdkInfo for %p environment", async (environment: ManifestRuntimeEnvironment) =>
   {
     const directoryPath = base.prepareEmptyDirectory("sdk");
     paths.sdkDirectoryPath = directoryPath;
@@ -1849,7 +1876,7 @@ describe("Extensions", () =>
     expect((await ExtensionRegistry.getSdkInfo(environment)).version).toEqual(sdkVersion);
   }, base.xLargeTimeoutInMilliseconds);
 
-  test.each([ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python])("ExtensionGenerator for %p environment", async (environment: ManifestRuntimeEnvironment) =>
+  test.each([ ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python ])("ExtensionGenerator for %p environment", async (environment: ManifestRuntimeEnvironment) =>
   {
     base.setSdkDirectoryPath();
     const extensionsDirectoryPath = path.join(base.getWorkingDirectoryPath(), `generated-${environment}`);
@@ -1872,7 +1899,7 @@ describe("Extensions", () =>
     expect(manifest.description).toBe(options.description);
   });
 
-  test.each(fastCartesian([[ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python], [false, true]]))("generate for %p environment with public SDK=%p", async (environment: ManifestRuntimeEnvironment, withPublicSdk: boolean) =>
+  test.each(fastCartesian([ [ ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python ], [ false, true ] ]))("generate for %p environment with public SDK=%p", async (environment: ManifestRuntimeEnvironment, withPublicSdk: boolean) =>
   {
     base.setSdkDirectoryPath();
     const options =
@@ -1932,7 +1959,7 @@ describe("Extensions", () =>
     builder.checkExtensionProcessStarted();
   }, base.xxLargeTimeoutInMilliseconds);
 
-  test.each(fastCartesian([[ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python], [false, true]]))("build for %p environment with public SDK=%p", async (environment: ManifestRuntimeEnvironment, withPublicSdk: boolean) =>
+  test.each(fastCartesian([ [ ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python ], [ false, true ] ]))("build for %p environment with public SDK=%p", async (environment: ManifestRuntimeEnvironment, withPublicSdk: boolean) =>
   {
     base.setSdkDirectoryPath();
     const options =
@@ -1967,7 +1994,7 @@ describe("Extensions", () =>
     await builder.checkExtensionRunning(false, false);
   }, base.xxLargeTimeoutInMilliseconds);
 
-  test.each([ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python])("sdk", async (environment: ManifestRuntimeEnvironment) =>
+  test.each([ ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python ])("sdk", async (environment: ManifestRuntimeEnvironment) =>
   {
     base.setSdkDirectoryPath();
     const options =
@@ -2027,7 +2054,7 @@ describe("Extensions", () =>
 
     const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
     // We send an image command to check that the throttling bottleneck keeps not waiting for a socket response coming from the extension
-    await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, "logDimensions", undefined, [image.id]);
+    await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, "logDimensions", undefined, [ image.id ]);
     await base.getExtensionService().pauseOrResume(manifest.id, true);
     if (process.platform !== "win32")
     {
@@ -2038,7 +2065,7 @@ describe("Extensions", () =>
 
   test("events", async () =>
   {
-    const ioClient = io(paths.webServicesBaseUrl, { autoConnect: true, transports: ["websocket"] });
+    const ioClient = io(paths.webServicesBaseUrl, { autoConnect: true, transports: [ "websocket" ] });
 
     type TypeOfMessage =
       {

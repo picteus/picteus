@@ -16,7 +16,7 @@ function computeFileTransport(options: FileLoggerOptions): typeof transports.Fil
 {
   return new transports.File({
     dirname: options.directoryPath,
-    filename: "picteus-" + options.name + ".log",
+    filename: `picteus-${options.name}.log`,
     format: format.uncolorize(),
     maxFiles: 20,
     maxsize: 1_024 * 1_024

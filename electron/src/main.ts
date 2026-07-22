@@ -122,7 +122,7 @@ class BackendServer
       };
     const applicationFilePath = app.getAppPath();
     const unpackedAsarDirectoryPath = applicationFilePath + ".unpacked";
-    const sdkDirectoryPaths = ["build", "sdk"];
+    const sdkDirectoryPaths = [ "build", "sdk" ];
     const unpackedSdkDirectoryPath = path.join(unpackedAsarDirectoryPath, ...sdkDirectoryPaths);
     const sdkDirectoryPath = environment === "production" ? (fs.existsSync(unpackedSdkDirectoryPath) === true ? unpackedSdkDirectoryPath : path.join(applicationFilePath, ...sdkDirectoryPaths)) : process.env.SDK_DIRECTORY_PATH;
     if (sdkDirectoryPath !== undefined)
@@ -130,7 +130,7 @@ class BackendServer
       logger.debug(`The SDK directory path is set to '${sdkDirectoryPath}'`);
       environmentVariables.SDK_DIRECTORY_PATH = sdkDirectoryPath;
     }
-    const forkArguments = ["--logsDirectoryPath", logsDirectoryPath, "--storageDirectoryPath", applicationDirectoryPath, "--apiServerPort", portNumber.toString()];
+    const forkArguments = [ "--logsDirectoryPath", logsDirectoryPath, "--storageDirectoryPath", applicationDirectoryPath, "--apiServerPort", portNumber.toString() ];
     if (useSsl !== undefined)
     {
       forkArguments.push("--useSsl", useSsl.toString());
@@ -143,11 +143,21 @@ class BackendServer
     {
       forkArguments.push("--requiresApiKeys", requiresApiKeys.toString());
     }
-    if (unpackedExtensionsDirectoryPath !== undefined)
     {
-      forkArguments.push("--unpackedExtensionsDirectoryPath", unpackedExtensionsDirectoryPath);
+      let actualUnpackedExtensionsDirectoryPath: string;
+      if (unpackedExtensionsDirectoryPath === undefined)
+      {
+        const homeDirectoryPath = app.getPath("home");
+        actualUnpackedExtensionsDirectoryPath = path.join(homeDirectoryPath, "picteus", "extensions");
+        fs.mkdirSync(actualUnpackedExtensionsDirectoryPath, { recursive: true });
+      }
+      else
+      {
+        actualUnpackedExtensionsDirectoryPath = unpackedExtensionsDirectoryPath;
+      }
+      forkArguments.push("--unpackedExtensionsDirectoryPath", actualUnpackedExtensionsDirectoryPath);
     }
-    const backendProcess = fork(filePath, [...forkArguments], {
+    const backendProcess = fork(filePath, [ ...forkArguments ], {
       execArgv,
       env: { ...process.env, ...environmentVariables }
     });
@@ -290,7 +300,7 @@ class ChromeExtensionManager
     logger.info("Listening to the Chrome extension events");
     const theSession: Electron.Session = session.defaultSession;
     // We clean the service workers cache so that the Chromium extension new version overwrites the previous version
-    await theSession.clearStorageData({ storages: ["serviceworkers"] });
+    await theSession.clearStorageData({ storages: [ "serviceworkers" ] });
     const extensions = theSession.extensions || session;
     extensions.on("extension-loaded", (_event: Electron.Event, extension: Electron.Extension): void =>
     {
@@ -726,7 +736,7 @@ export class ApplicationWrapper
       const apiServerBaseUrl = `${httpPrefix}${apiServerHostAndPortNumber}`;
       const webServerHostAndPortNumber = LocalhostComputer.instance.computeHostAndPort(webServerPortNumber);
       const webServerBaseUrl = `${httpPrefix}${webServerHostAndPortNumber}`;
-      const styleSrcSha256s = ["sha256-AkGc/9SiOd74zk72UnCdLs+k10sM4iy2uKmgoXkaHe0="];
+      const styleSrcSha256s = [ "sha256-AkGc/9SiOd74zk72UnCdLs+k10sM4iy2uKmgoXkaHe0=" ];
       const contentSecurityPolicy = `default-src 'none'; connect-src ${apiServerBaseUrl} ${wsPrefix}${apiServerHostAndPortNumber} ${wsPrefix}${webServerHostAndPortNumber}; script-src 'self' 'unsafe-eval'; script-src-elem 'self'; frame-src ${apiServerBaseUrl}; style-src 'self' ${styleSrcSha256s.map(string => `'${string}'`).join(" ")}; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.googleapis.com https://fonts.gstatic.com; img-src ${apiServerHostAndPortNumber};`;
       // noinspection HttpUrlsUsage
       // const additionalLocalhostItems = [`http://${this.localhost}:*`, `https://${this.localhost}:*`, `http://${this.loopBackIpAddress}:*`, `https://${this.loopBackIpAddress}:*`].join(" ");
@@ -738,7 +748,7 @@ export class ApplicationWrapper
         const responseHeaders = details.responseHeaders || {};
         if (isSelfUrl === true)
         {
-          responseHeaders["Content-Security-Policy"] = [contentSecurityPolicy];
+          responseHeaders["Content-Security-Policy"] = [ contentSecurityPolicy ];
         }
         callback({ responseHeaders });
       });
@@ -872,7 +882,7 @@ export class ApplicationWrapper
                       type: "error",
                       title: app.getName(),
                       message: `Cannot open the application folder located at '${directoryPath}'`,
-                      buttons: ["OK"]
+                      buttons: [ "OK" ]
                     });
                   }
                 }
@@ -892,7 +902,7 @@ export class ApplicationWrapper
                       type: "error",
                       title: app.getName(),
                       message: `Cannot open the logs folder located at '${directoryPath}'`,
-                      buttons: ["OK"]
+                      buttons: [ "OK" ]
                     });
                   }
                 }

@@ -361,11 +361,16 @@ export class ExtensionService
 
   private readonly errorExtensionIds: Set<string> = new Set<string>();
 
-  private readonly perUnpackedExtensionIdDirectoryPaths: Map<string, string> = new Map<string, string>();
+  private unpackedExtensionDirectoryWatcherTerminator?: WatcherTerminator;
 
-  private readonly perExtensionIdWatcherTerminators: Map<string, WatcherTerminator> = new Map<string, WatcherTerminator>();
+  private readonly perUnpackedExtensionIdPathsMap: Map<string, {
+    source: string,
+    target: string
+  }> = new Map<string, { source: string, target: string }>();
 
-  private readonly perExtensionIdChromeExtensionNames: Map<string, string[]> = new Map<string, string[]>();
+  private readonly perExtensionIdWatcherTerminatorMap: Map<string, WatcherTerminator> = new Map<string, WatcherTerminator>();
+
+  private readonly perExtensionIdChromeExtensionNameMap: Map<string, string[]> = new Map<string, string[]>();
 
   constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionsRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifierService: NotifierService)
   {
@@ -464,7 +469,7 @@ export class ExtensionService
       {
         while (runnables.length > 0)
         {
-          const [runnable] = runnables.splice(0, 1);
+          const [ runnable ] = runnables.splice(0, 1);
           // We do not make the call synchronous, as we do not want to block the main thread
           // noinspection JSIgnoredPromiseFromCall
           runnable();
@@ -504,7 +509,7 @@ export class ExtensionService
         }
       }
     }
-    const capabilities: ConfigurationCapability[] = Array.from(perCapabilityExtensionIds.entries()).map(([capability, extensionIds]) =>
+    const capabilities: ConfigurationCapability[] = Array.from(perCapabilityExtensionIds.entries()).map(([ capability, extensionIds ]) =>
     {
       return new ConfigurationCapability(capability, extensionIds.sort((extensionId1: string, extensionId2: string) =>
       {
@@ -578,21 +583,24 @@ export class ExtensionService
   async install(idWhenUpdating: string | undefined, archive: Buffer, shouldHandleProcesses: boolean): Promise<Extension>
   {
     this.checkExtensionArchiveBinaryWeight(archive);
-    const manifest = await this.installUpdateOrUnpack(idWhenUpdating, new ExtensionArchiveReader(archive), shouldHandleProcesses);
+    const manifest = await this.installUpdateOrUnpack(idWhenUpdating, new ExtensionArchiveReader(archive), true, shouldHandleProcesses);
     return plainToInstanceViaJSON(Extension, {
       manifest,
       status: this.extensionsRegistry.getStatus(manifest.id)
     });
   }
 
-  async uninstall(id: string): Promise<void>
+  async uninstall(id: string, checkExistence: boolean = false): Promise<void>
   {
     // TODO: forbid this while a repository is synchronizing
     logger.info(`Uninstalling the extension with id '${id}'`);
-    this.checkExtensionExists(id);
-    await this.extensionsManager.stopProcesses([id]);
+    if (checkExistence === true)
+    {
+      this.checkExtensionExists(id);
+    }
+    await this.extensionsManager.stopProcesses([ id ]);
     this.uninstallChromeExtensions(id);
-    const isUnpackedExtension = this.perUnpackedExtensionIdDirectoryPaths.has(id);
+    const isUnpackedExtension = this.perUnpackedExtensionIdPathsMap.has(id);
     if (isUnpackedExtension === true)
     {
       // In case the extension is unpacked, we unregister it
@@ -637,42 +645,45 @@ export class ExtensionService
     await this.notifyTaskExecutor(extensionAndManual.manifest, isPause === false);
     if (isPause === true)
     {
-      await this.extensionsManager.stopProcesses([id]);
+      await this.extensionsManager.stopProcesses([ id ]);
       AuthenticationGuard.unregisterExtensionApiKeys(id);
     }
     else
     {
-      await this.extensionsManager.startProcesses([AuthenticationGuard.registerExtensionApiKey(id)]);
+      await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(id) ]);
       // We synchronize the images via this extension, once it is resumed
       await this.synchronize(id);
     }
     this.notifierService.emit(EventEntity.Extension, isPause === true ? ExtensionEventAction.Paused : ExtensionEventAction.Resumed, undefined, { id });
   }
 
-  async registerUnpackedExtension(directoryPath: string, shouldHandleProcesses: boolean): Promise<void>
+  async registerUnpackedExtension(sourceDirectoryPath: string, installDependencies: boolean, shouldHandleProcesses: boolean): Promise<void>
   {
-    logger.info(`Analyzing the unpacked extension under directory '${directoryPath}'`);
-    if (fs.existsSync(path.join(directoryPath, ExtensionRegistry.manifestFileName)) === true)
+    logger.info(`Analyzing the unpacked extension under directory '${sourceDirectoryPath}'`);
+    if (fs.existsSync(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)) === true)
     {
-      const manifest = this.extensionsRegistry.parseManifest(path.join(directoryPath, ExtensionRegistry.manifestFileName));
-      logger.info(`Registering the unpacked extension with id '${manifest.id}' in directory '${directoryPath}'`);
+      const manifest = this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName));
+      logger.info(`Registering the unpacked extension with id '${manifest.id}' in directory '${sourceDirectoryPath}'`);
       const targetDirectoryPath = this.extensionsRegistry.computeExtensionDirectoryPath(manifest.id);
       if (fs.existsSync(targetDirectoryPath) === false)
       {
-        fs.symlinkSync(directoryPath, targetDirectoryPath, symlinkType);
-        logger.debug(`Created a symbolic link from the unpacked extension directory '${directoryPath}' to the installed extensions directory '${targetDirectoryPath}'`);
+        fs.symlinkSync(sourceDirectoryPath, targetDirectoryPath, symlinkType);
+        logger.debug(`Created a symbolic link from the unpacked extension directory '${sourceDirectoryPath}' to the installed extensions directory '${targetDirectoryPath}'`);
       }
-      if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true && fs.realpathSync(targetDirectoryPath) === directoryPath)
+      if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true && fs.realpathSync(targetDirectoryPath) === sourceDirectoryPath)
       {
         try
         {
-          await this.installUpdateOrUnpack(undefined, manifest, shouldHandleProcesses);
-          this.perUnpackedExtensionIdDirectoryPaths.set(manifest.id, targetDirectoryPath);
+          await this.installUpdateOrUnpack(undefined, manifest, installDependencies, shouldHandleProcesses);
+          this.perUnpackedExtensionIdPathsMap.set(manifest.id, {
+            source: sourceDirectoryPath,
+            target: targetDirectoryPath
+          });
         }
         catch (error)
         {
           logger.error(`The installation of update of the unpacked extension with id '${manifest.id}' failed`, error);
-          this.perUnpackedExtensionIdDirectoryPaths.delete(manifest.id);
+          this.perUnpackedExtensionIdPathsMap.delete(manifest.id);
           if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true)
           {
             fs.rmSync(targetDirectoryPath);
@@ -686,19 +697,19 @@ export class ExtensionService
       }
 
       const filePath = path.join(targetDirectoryPath, ExtensionRegistry.manifestFileName);
-      const watcherTerminator = await watchPath(filePath, async (event: WatcherEvent, _relativePath: string) =>
+      const watcherTerminator = await watchPath(filePath, undefined, async (event: WatcherEvent, _relativePath: string) =>
       {
         if (event === WatcherEvent.Changed)
         {
           // TODO: do not stop or start the process if the extension is already being restarted because of a previous change and do not anything if the ExtensionRunner is not ready
           logger.info(`The manifest file '${filePath}' of the unpacked extension with id '${manifest.id}' has changed: reloading the extension`);
-          await this.installUpdateOrUnpack(manifest.id, this.extensionsRegistry.parseManifest(path.join(directoryPath, ExtensionRegistry.manifestFileName)), true);
+          await this.installUpdateOrUnpack(manifest.id, this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)), true, true);
         }
       }, (error: Error) =>
       {
         console.error(`An unexpected error occurred when watching the manifest file '${filePath}' of the unpacked extension with id '${manifest.id}'`, error);
       });
-      this.perExtensionIdWatcherTerminators.set(manifest.id, watcherTerminator);
+      this.perExtensionIdWatcherTerminatorMap.set(manifest.id, watcherTerminator);
     }
   }
 
@@ -984,11 +995,11 @@ export class ExtensionService
         name: chromeExtensionName,
         archive: buffer.toString("base64")
       });
-      let chromeExtensionNames = this.perExtensionIdChromeExtensionNames.get(id);
+      let chromeExtensionNames = this.perExtensionIdChromeExtensionNameMap.get(id);
       if (chromeExtensionNames === undefined)
       {
         chromeExtensionNames = [];
-        this.perExtensionIdChromeExtensionNames.set(id, chromeExtensionNames);
+        this.perExtensionIdChromeExtensionNameMap.set(id, chromeExtensionNames);
       }
       chromeExtensionNames.push(chromeExtensionName);
     }
@@ -1044,7 +1055,7 @@ export class ExtensionService
         const sdkInfo = await ExtensionRegistry.getSdkInfo(ManifestRuntimeEnvironment.Node);
         await installPackages(packageJsonFilePath, false, sdkInfo.version, sdkInfo.filePath);
         {
-          const childProcess = await runNpm(["run", "build"], buildDirectoryPath);
+          const childProcess = await runNpm([ "run", "build" ], buildDirectoryPath);
           await waitFor(childProcess);
         }
         {
@@ -1058,7 +1069,7 @@ export class ExtensionService
           }
         }
         {
-          const childProcess = await runNpm(["pack"], buildDirectoryPath);
+          const childProcess = await runNpm([ "pack" ], buildDirectoryPath);
           await waitFor(childProcess);
         }
         const tarballFilePaths = new fdir().withFullPaths().withMaxDepth(0).crawl(buildDirectoryPath).sync().filter(filePath => filePath.endsWith(".tgz"));
@@ -1110,39 +1121,76 @@ export class ExtensionService
     logger.debug(`Found ${directoryPaths.length} potential extension(s) in the unpacked directory '${unpackedExtensionsDirectoryPath}'`);
     for (const directoryPath of directoryPaths)
     {
-      await this.registerUnpackedExtension(directoryPath, false);
+      await this.registerUnpackedExtension(directoryPath, false, false);
     }
+
+    // We monitor any added directory, which might be a new extension, or deleted directory, which might require an uninstallation
+    logger.info(`Monitoring the unpacked extensions directory '${unpackedExtensionsDirectoryPath}'`);
+    this.unpackedExtensionDirectoryWatcherTerminator = await watchPath(unpackedExtensionsDirectoryPath, {
+      depth: 0,
+      withDirectories: true,
+      onlyDirectories: true
+    }, async (event: WatcherEvent, relativePath: string) =>
+    {
+      if (event === WatcherEvent.Added || event === WatcherEvent.Deleted)
+      {
+        const nodePath = path.join(unpackedExtensionsDirectoryPath, relativePath);
+        logger.info(`The directory '${nodePath}' in the unpacked extensions was ${event === WatcherEvent.Added ? "added" : "deleted"}`);
+        if (event === WatcherEvent.Added)
+        {
+          await this.registerUnpackedExtension(nodePath, true, true);
+        }
+        else
+        {
+          const entry = this.perUnpackedExtensionIdPathsMap.entries().find(([ _id, { source } ]) => source === nodePath);
+          if (entry !== undefined)
+          {
+            const extensionId = entry[0];
+            await this.uninstall(extensionId, false);
+          }
+        }
+      }
+    }, (error: Error) =>
+    {
+      console.error(`An unexpected error occurred when watching the directory '${unpackedExtensionsDirectoryPath}' for unpacked extensions`, error);
+    });
   }
 
   private async unregisterUnpackedExtensions(): Promise<void>
   {
-    for (const id of this.perUnpackedExtensionIdDirectoryPaths.keys())
+    for (const id of this.perUnpackedExtensionIdPathsMap.keys())
     {
       await this.unregisterUnpackedExtension(id);
+    }
+    if (this.unpackedExtensionDirectoryWatcherTerminator !== undefined)
+    {
+      await this.unpackedExtensionDirectoryWatcherTerminator();
+      this.unpackedExtensionDirectoryWatcherTerminator = undefined;
     }
   }
 
   private async unregisterUnpackedExtension(id: string): Promise<void>
   {
-    const directoryPath = this.perUnpackedExtensionIdDirectoryPaths.get(id);
-    if (directoryPath === undefined)
+    const paths = this.perUnpackedExtensionIdPathsMap.get(id);
+    if (paths === undefined)
     {
       throw new Error(`Cannot unregister an unregistered unpacked extension with id '${id}'`);
     }
 
-    logger.info(`Unregistering the unpacked extension in directory '${directoryPath}'`);
-    const terminator = this.perExtensionIdWatcherTerminators.get(id);
+    const { target: targetDirectoryPath } = paths;
+    logger.info(`Unregistering the unpacked extension in directory '${targetDirectoryPath}'`);
+    const terminator = this.perExtensionIdWatcherTerminatorMap.get(id);
     if (terminator !== undefined)
     {
       await terminator();
-      this.perExtensionIdWatcherTerminators.delete(id);
+      this.perExtensionIdWatcherTerminatorMap.delete(id);
     }
-    if (fs.lstatSync(directoryPath).isSymbolicLink() === true)
+    if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true)
     {
       // We add an extra protection, which consists in only removing symbolic links
-      fs.unlinkSync(directoryPath);
+      fs.unlinkSync(targetDirectoryPath);
     }
-    this.perUnpackedExtensionIdDirectoryPaths.delete(id);
+    this.perUnpackedExtensionIdPathsMap.delete(id);
   }
 
   private async installOrUpdateBuiltInExtensions(): Promise<void>
@@ -1198,7 +1246,7 @@ export class ExtensionService
     parametersChecker.throwBadParameter("id", id, "there is no extension with that identifier");
   }
 
-  private async installUpdateOrUnpack(idWhenUpdating: string | undefined, readerOrManifest: ExtensionArchiveReader | Manifest, shouldHandleProcesses: boolean): Promise<Manifest>
+  private async installUpdateOrUnpack(idWhenUpdating: string | undefined, readerOrManifest: ExtensionArchiveReader | Manifest, installDependencies: boolean, shouldHandleProcesses: boolean): Promise<Manifest>
   {
     // TODO: forbid this while a repository is synchronizing
     const useReader = readerOrManifest instanceof ExtensionArchiveReader;
@@ -1238,19 +1286,19 @@ export class ExtensionService
     {
       if (shouldHandleProcesses === true)
       {
-        await this.extensionsManager.stopProcesses([manifest.id]);
+        await this.extensionsManager.stopProcesses([ manifest.id ]);
       }
       AuthenticationGuard.unregisterExtensionApiKeys(manifest.id);
     }
-    if (useReader === true && (idWhenUpdating === undefined || this.perUnpackedExtensionIdDirectoryPaths.has(manifest.id) === true))
+    if (useReader === true && (idWhenUpdating === undefined || this.perUnpackedExtensionIdPathsMap.has(manifest.id) === true))
     {
-      const terminator = this.perExtensionIdWatcherTerminators.get(manifest.id);
+      const terminator = this.perExtensionIdWatcherTerminatorMap.get(manifest.id);
       if (terminator !== undefined)
       {
         await terminator();
-        this.perExtensionIdWatcherTerminators.delete(manifest.id);
+        this.perExtensionIdWatcherTerminatorMap.delete(manifest.id);
       }
-      this.perUnpackedExtensionIdDirectoryPaths.delete(manifest.id);
+      this.perUnpackedExtensionIdPathsMap.delete(manifest.id);
       // We delete any previous extension folder and create a new empty one
       if (fs.existsSync(directoryPath) === true)
       {
@@ -1313,7 +1361,7 @@ export class ExtensionService
 
     try
     {
-      await this.prepareRuntimeEnvironment(extendedManifest, useReader);
+      await this.prepareRuntimeEnvironment(extendedManifest, installDependencies);
     }
     catch (error)
     {
@@ -1336,7 +1384,7 @@ export class ExtensionService
     // We do not start the extension if it was initially paused
     if (shouldHandleProcesses === true && this.extensionsRegistry.isPaused(manifest.id) === false)
     {
-      await this.extensionsManager.startProcesses([AuthenticationGuard.registerExtensionApiKey(manifest.id)]);
+      await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(manifest.id) ]);
       if (idWhenUpdating === undefined)
       {
         // We automatically synchronize the images via this extension, once it is installed
@@ -1388,16 +1436,16 @@ export class ExtensionService
                 default:
                   parametersChecker.throwInternalError(`The capability with id '${capability.id}' is not handled`);
                 case ManifestCapabilityId.ImageFeatures:
-                  requiredEvents = [ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeFeatures];
+                  requiredEvents = [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeFeatures ];
                   break;
                 case ManifestCapabilityId.ImageEmbeddings:
-                  requiredEvents = [ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeEmbeddings];
+                  requiredEvents = [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeEmbeddings ];
                   break;
                 case ManifestCapabilityId.ImageTags:
-                  requiredEvents = [ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags];
+                  requiredEvents = [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags ];
                   break;
                 case ManifestCapabilityId.TextEmbeddings:
-                  requiredEvents = [ManifestEvent.TextComputeEmbeddings];
+                  requiredEvents = [ ManifestEvent.TextComputeEmbeddings ];
                   break;
               }
               requiredEvents = requiredEvents.filter((event) =>
@@ -1414,7 +1462,7 @@ export class ExtensionService
           {
             for (const command of instructions.commands)
             {
-              const expectedCommands = [ManifestEvent.ProcessStarted, command.on.entity === CommandEntity.Process ? ManifestEvent.ProcessRunCommand : ManifestEvent.ImageRunCommand];
+              const expectedCommands = [ ManifestEvent.ProcessStarted, command.on.entity === CommandEntity.Process ? ManifestEvent.ProcessRunCommand : ManifestEvent.ImageRunCommand ];
               const requiredEvents: ManifestEvent[] = expectedCommands.filter((event) =>
               {
                 return instructions.events.indexOf(event) === -1;
@@ -1509,6 +1557,7 @@ export class ExtensionService
 
   private async prepareRuntimeEnvironment(extendedManifest: ExtendedManifest, installDependencies: boolean): Promise<void>
   {
+    logger.debug(`Preparing the runtime environment for the extension with id '${extendedManifest.id}'`);
     try
     {
       const directoryPath = extendedManifest.directoryPath;
@@ -1759,14 +1808,14 @@ export class ExtensionService
 
   private uninstallChromeExtensions(id: string): void
   {
-    const chromeExtensionNames = this.perExtensionIdChromeExtensionNames.get(id);
+    const chromeExtensionNames = this.perExtensionIdChromeExtensionNameMap.get(id);
     if (chromeExtensionNames !== undefined)
     {
       for (const chromeExtensionName of chromeExtensionNames)
       {
         this.hostService.send({ type: HostCommandType.UninstallChromeExtension, name: chromeExtensionName });
       }
-      this.perExtensionIdChromeExtensionNames.delete(id);
+      this.perExtensionIdChromeExtensionNameMap.delete(id);
     }
   }
 

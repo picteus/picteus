@@ -151,7 +151,7 @@ export class RepositoryWatcher
             const addedStatss: Record<string, SearchFileStats> = {};
             const unlinkedFilePaths = [];
             // We inspect the added and deleted files
-            for (const [relativeFilePath, events] of ledgerEvents.entries())
+            for (const [ relativeFilePath, events ] of ledgerEvents.entries())
             {
               const addedIndex = events.indexOf(WatcherEvent.Added);
               const unlinkedIndex = events.indexOf(WatcherEvent.Deleted);
@@ -214,7 +214,7 @@ export class RepositoryWatcher
             }
           }
           const toBeDeclaredFilePaths = [];
-          for (const [relativeFilePath, events] of ledgerEvents.entries())
+          for (const [ relativeFilePath, events ] of ledgerEvents.entries())
           {
             const filePath = path.join(repositoryDirectoryPath, relativeFilePath);
             if (events.length === 1 && events[0] === WatcherEvent.Added)
@@ -234,7 +234,7 @@ export class RepositoryWatcher
               if (image !== undefined)
               {
                 // We delete the image embeddings
-                await this.vectorDatabaseAccessor.deleteImagesEmbeddings([image.id]);
+                await this.vectorDatabaseAccessor.deleteImagesEmbeddings([ image.id ]);
                 // We remove the image from collections
                 await this.collectionService.clearFromOrigin(SearchOriginKind.Images, image.id);
                 await imageDelegate.delete({ where: { id: image.id } });
@@ -310,7 +310,7 @@ export class RepositoryWatcher
       logger.debug(`Set a time-out function with id ${timeout} for the watcher attached to the repository with id '${repositoryId}' following the '${event}' on file '${relativeFilePath}'`);
     };
 
-    this.watcherTerminator = await watchPath(repositoryDirectoryPath, handleEvent, (error: Error) =>
+    this.watcherTerminator = await watchPath(repositoryDirectoryPath, undefined, handleEvent, (error: Error) =>
     {
       logger.error(`An unexpected error occurred in the watcher attached to the repository with id '${this.repositoryId}' while watching for the files`, error);
     });
