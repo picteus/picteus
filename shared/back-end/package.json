@@ -52,6 +52,8 @@
   },
   "dependencies": {
     "winston": "3.19.0",
-    "@caporal/core": "3.1.5"
+    "@caporal/core": "3.1.5",
+    "adm-zip": "0.6.0",
+    "tar-fs": "3.1.3"
   }
 }

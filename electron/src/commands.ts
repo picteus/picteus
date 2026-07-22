@@ -3,8 +3,12 @@ import path from "node:path";
 import os from "node:os";
 import { ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import zlib from "node:zlib";
+import { Readable } from "node:stream";
 
 import { DisconnectReason, Server as SocketServer, ServerOptions, Socket } from "socket.io";
+import AdmZip from "adm-zip";
+import tar from "tar-fs";
 import * as electron from "electron";
 import { dialog } from "electron";
 
@@ -278,8 +282,58 @@ export class CommandsManager
         this.sendCommandSuccess(socket, id, undefined);
       }
         break;
+      case "inflateZip":
+      case "inflateTarball":
+      {
+        // TODO: check that the directoryPath is harmless
+        const { directoryPath, content }: { directoryPath?: string; content?: string } = parameters;
+        if (directoryPath === undefined)
+        {
+          this.sendCommandError(socket, id, "Missing 'directoryPath' parameter");
+        }
+        else if (content === undefined)
+        {
+          this.sendCommandError(socket, id, "Missing 'content' parameter");
+        }
+        else
+        {
+          if (fs.existsSync(directoryPath) === true)
+          {
+            return this.sendCommandError(socket, id, `The directory with path '${directoryPath}' already exists`);
+          }
+          fs.mkdirSync(directoryPath, { recursive: true });
+          const buffer = Buffer.from(content, "base64");
+          if (command === "inflateZip")
+          {
+            const zip = new AdmZip(buffer);
+            zip.extractAllTo(directoryPath, true);
+          }
+          else
+          {
+            const decompressedBuffer = zlib.gunzipSync(buffer);
+            await new Promise<void>((resolve, reject) =>
+            {
+              const packagesPrefix = "package/";
+              Readable.from(decompressedBuffer).pipe(tar.extract(directoryPath, {
+                  map: (header) =>
+                  {
+                    if (header.name.startsWith(packagesPrefix))
+                    {
+                      header.name = header.name.substring(packagesPrefix.length);
+                    }
+                    return header;
+                  }
+                })
+              ).on("finish", resolve).on("error", reject);
+            });
+          }
+          this.sendCommandSuccess(socket, id, undefined);
+        }
+      }
+        break;
       case "saveFile":
       {
+        // TODO: check that the filePath is harmless
         const { filePath, content }: { filePath?: string; content?: string } = parameters;
         if (filePath === undefined)
         {
