@@ -29,24 +29,24 @@
         ]
       }
     },
-    "/miscellaneous/test": {
+    "/miscellaneous/configuration": {
       "get": {
-        "description": "This endpoint is for experimentation only.",
-        "operationId": "miscellaneous_test",
+        "description": "Returns all the application configuration details.",
+        "operationId": "miscellaneous_getConfiguration",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "The response",
+            "description": "The configuration",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/ApplicationConfiguration"
                 }
               }
             }
           }
         },
-        "summary": "Runs a test",
+        "summary": "Gets the application configuration",
         "tags": [
           "miscellaneous"
         ]
@@ -79,7 +79,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Settings"
+                  "$ref": "#/components/schemas/ApplicationSettings"
                 }
               }
             }
@@ -98,11 +98,11 @@
         "parameters": [],
         "requestBody": {
           "required": true,
-          "description": "The extension archive",
+          "description": "The settings",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Settings"
+                "$ref": "#/components/schemas/ApplicationSettings"
               }
             }
           }
@@ -113,7 +113,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Settings"
+                  "$ref": "#/components/schemas/ApplicationSettings"
                 }
               }
             }
@@ -3801,7 +3801,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.17.1",
+    "version": "0.18.0",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",
@@ -3857,7 +3857,17 @@
       }
     },
     "schemas": {
-      "Settings": {
+      "ApplicationConfiguration": {
+        "type": "object",
+        "properties": {
+          "unpackedExtensionsDirectoryPath": {
+            "type": "string",
+            "description": "The directory path where unpacked extensions are located"
+          }
+        },
+        "description": "The application configuration"
+      },
+      "ApplicationSettings": {
         "type": "object",
         "properties": {
           "comfyUiBaseUrl": {

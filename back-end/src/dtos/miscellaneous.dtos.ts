@@ -4,11 +4,32 @@ import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 
 import { urlPattern } from "./common.dtos";
 
-/**
- * The application settings.
- */
+
+@ApiSchema({ description: "The application configuration" })
+export class ApplicationConfiguration
+{
+
+  constructor(unpackedExtensionsDirectoryPath?: string)
+  {
+    this.unpackedExtensionsDirectoryPath = unpackedExtensionsDirectoryPath;
+  }
+
+  @ApiProperty(
+    {
+      description: "The directory path where unpacked extensions are located",
+      type: String,
+      required: false
+    }
+  )
+  @IsString()
+  @IsOptional()
+  @Expose()
+  unpackedExtensionsDirectoryPath?: string;
+
+}
+
 @ApiSchema({ description: "The application overall settings" })
-export class Settings
+export class ApplicationSettings
 {
 
   constructor(comfyUiBaseUrl?: string)

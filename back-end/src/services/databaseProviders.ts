@@ -10,7 +10,7 @@ import { Prisma, PrismaClient } from ".prisma/client";
 import { paths } from "../paths";
 import { logger } from "../logger";
 import { killProcess, spawn } from "./utils/processWrapper";
-import { Settings } from "../dtos/app.dtos";
+import { ApplicationSettings } from "../dtos/app.dtos";
 import { Persistence, PersistenceProvider } from "../persistence";
 import {
   computeVirtualEnvironmentBinaryDirectoryPath,
@@ -68,14 +68,14 @@ export class EntitiesProvider implements OnModuleInit, OnModuleDestroy, Persiste
     return this.persistence.prisma;
   }
 
-  get settings(): Promise<Settings>
+  get applicationSettings(): Promise<ApplicationSettings>
   {
-    return this.persistence.settings;
+    return this.persistence.applicationSettings;
   }
 
-  setSettings(settings: Settings): Promise<void>
+  setApplicationSettings(settings: ApplicationSettings): Promise<void>
   {
-    return this.persistence.setSettings(settings);
+    return this.persistence.setApplicationSettings(settings);
   }
 
   get apiSecrets(): Prisma.ApiSecretDelegate

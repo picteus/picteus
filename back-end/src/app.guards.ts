@@ -39,6 +39,7 @@ export enum ApiScope
   ApiSecretList = "apisecret:list",
   ApiSecretRead = "apisecret:read",
   ApiSecretWrite = "apisecret:write",
+  ConfigurationRead = "configuration:read",
   ExtensionChromeExtensionInstall = "extension:chrome:install",
   ExtensionManage = "extension:manage",
   ExtensionRead = "extension:read",
@@ -244,7 +245,7 @@ export class AuthenticationGuard implements CanActivate
 
   async canActivate(context: ExecutionContext): Promise<boolean>
   {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [ context.getHandler(), context.getClass() ]);
     if (isPublic === true)
     {
       return true;
@@ -281,7 +282,7 @@ export class AuthenticationGuard implements CanActivate
     if (paths.requiresApiKey === false)
     {
       // No authentication via an API key is required
-      return { scopes: [ApiScope.All] };
+      return { scopes: [ ApiScope.All ] };
     }
     if (apiKey === undefined)
     {
@@ -289,7 +290,7 @@ export class AuthenticationGuard implements CanActivate
     }
     if (apiKey === AuthenticationGuard._masterApiKey)
     {
-      return { scopes: [ApiScope.All] };
+      return { scopes: [ ApiScope.All ] };
     }
     const extensionsApiKey = AuthenticationGuard.getExtensionsApiKey(apiKey);
     if (extensionsApiKey !== undefined)
@@ -317,7 +318,7 @@ export class AuthenticationGuard implements CanActivate
   {
     return {
       extensionId,
-      scopes: [ApiScope.ExtensionChromeExtensionInstall, ApiScope.ExtensionRun, ApiScope.ExtensionSettingsRead, ApiScope.ExtensionSettingsWrite, ApiScope.ImageAttachmentWrite, ApiScope.ImageEmbeddingsWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageRead, ApiScope.ImageTagWrite, ApiScope.RepositoryEnsure, ApiScope.RepositoryRead, ApiScope.RepositoryStoreImage]
+      scopes: [ ApiScope.ExtensionChromeExtensionInstall, ApiScope.ExtensionRun, ApiScope.ExtensionSettingsRead, ApiScope.ExtensionSettingsWrite, ApiScope.ImageAttachmentWrite, ApiScope.ImageEmbeddingsWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageRead, ApiScope.ImageTagWrite, ApiScope.RepositoryEnsure, ApiScope.RepositoryRead, ApiScope.RepositoryStoreImage ]
     };
   }
 
@@ -355,7 +356,7 @@ export class AuthenticationGuard implements CanActivate
   {
     if (apiSecret.scope === null)
     {
-      return [ApiScope.All];
+      return [ ApiScope.All ];
     }
     const tokens = apiSecret.scope.split(apiScopesSeparator);
     const scopes: ApiScope[] = [];

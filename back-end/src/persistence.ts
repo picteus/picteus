@@ -4,7 +4,7 @@ import { isMainThread } from "node:worker_threads";
 import { Prisma, PrismaClient } from ".prisma/client";
 import { logger } from "./logger";
 import { paths } from "./paths";
-import { Settings } from "./dtos/app.dtos";
+import { ApplicationSettings } from "./dtos/app.dtos";
 
 
 const defaultSettingsType = "default";
@@ -19,9 +19,9 @@ export interface PersistenceProvider
 
   get prisma(): PrismaClient;
 
-  get settings(): Promise<Settings>;
+  get applicationSettings(): Promise<ApplicationSettings>;
 
-  setSettings(settings: Settings): Promise<void>;
+  setApplicationSettings(settings: ApplicationSettings): Promise<void>;
 
   get apiSecrets(): Prisma.ApiSecretDelegate;
 
@@ -135,12 +135,12 @@ export class Persistence implements PersistenceProvider
     return this.prismaClient!;
   }
 
-  get settings(): Promise<Settings>
+  get applicationSettings(): Promise<ApplicationSettings>
   {
     return this.getSettings();
   }
 
-  async setSettings(settings: Settings): Promise<void>
+  async setApplicationSettings(settings: ApplicationSettings): Promise<void>
   {
     const data = JSON.stringify(settings);
     await this.settingsDelegate().update({ where: { type: defaultSettingsType }, data: { value: data } });
@@ -206,7 +206,7 @@ export class Persistence implements PersistenceProvider
     await this.settingsDelegate().update({ where: { type: migrationSettingsType }, data: { value: migration } });
   }
 
-  private async getSettings(): Promise<Settings>
+  private async getSettings(): Promise<ApplicationSettings>
   {
     const settings = await this.settingsDelegate().findUnique({
       where: { type: defaultSettingsType },

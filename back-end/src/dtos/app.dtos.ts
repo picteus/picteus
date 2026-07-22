@@ -124,7 +124,7 @@ import {
   TextualPrompt
 } from "./image.dtos";
 import { apiScopesSeparator, ApiSecret, ApiSecretSummary, ApiSecretType } from "./apiSecret.dtos";
-import { Settings } from "./miscellaneous.dtos";
+import { ApplicationConfiguration, ApplicationSettings } from "./miscellaneous.dtos";
 
 
 /**
@@ -167,6 +167,8 @@ export {
   ApiSecretSummary,
   ApiSecretType,
   apiScopesSeparator,
+  ApplicationConfiguration,
+  ApplicationSettings,
   ApplicationMetadata,
   ApplicationMetadataItem,
   ApplicationMetadataItemFreeValue,
@@ -267,7 +269,6 @@ export {
   SearchSortingProperty,
   SearchTagsResult,
   SearchTags,
-  Settings,
   shortTechnicalSchema,
   Software,
   technicalSchema,

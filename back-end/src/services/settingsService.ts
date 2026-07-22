@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { logger } from "../logger";
 import { EntitiesProvider } from "./databaseProviders";
-import { Settings } from "../dtos/app.dtos";
+import { ApplicationSettings } from "../dtos/app.dtos";
 import { plainToInstanceViaJSON } from "../utils";
 
 
@@ -15,14 +15,14 @@ export class SettingsService
     logger.debug("Instantiating a SettingsService");
   }
 
-  async get(): Promise<Settings>
+  async get(): Promise<ApplicationSettings>
   {
-    return plainToInstanceViaJSON(Settings, await this.entitiesProvider.settings);
+    return plainToInstanceViaJSON(ApplicationSettings, await this.entitiesProvider.applicationSettings);
   }
 
-  async set(settings: Settings): Promise<Settings>
+  async set(settings: ApplicationSettings): Promise<ApplicationSettings>
   {
-    await this.entitiesProvider.setSettings(settings);
+    await this.entitiesProvider.setApplicationSettings(settings);
     return settings;
   }
 

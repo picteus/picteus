@@ -14,6 +14,7 @@ import {
   ImageApi,
   ImageFeatureFormat,
   ImageFeatureType,
+  MiscellaneousApi,
   RepositoryApi
 } from "@picteus/ws-client";
 import { ApiCallError } from "@picteus/internal-extension-sdk";
@@ -22,12 +23,15 @@ import { Resizer } from "../src/resizer";
 import { Base, Core, Defaults } from "./base";
 import { AuthenticationGuard } from "../src/app.guards";
 import { WebServicesWrapper } from "./webServicesWrapper";
+import { randomUUID } from "node:crypto";
 
 
 describe("WebServices", () =>
 {
 
   const base = new Base(true);
+
+  const unpackedExtensionsDirectoryPath = path.join(Core.temporaryDirectoryPath, `extensions-${randomUUID()}`);
 
   function computeWrapper(): WebServicesWrapper
   {
@@ -40,6 +44,7 @@ describe("WebServices", () =>
   {
     await Base.beforeAll();
     paths.requiresApiKey = true;
+    paths.unpackedExtensionsDirectoryPath = unpackedExtensionsDirectoryPath;
   });
 
   beforeEach(async () =>
@@ -96,6 +101,13 @@ describe("WebServices", () =>
     }), additionalMessage));
   });
 
+  test("Miscellaneous.configuration", async () =>
+  {
+    const miscellaneousApi = await computeWrapper().computeController<MiscellaneousApi>(MiscellaneousApi);
+    const configuration = await miscellaneousApi.miscellaneousGetConfiguration({});
+    expect(configuration.unpackedExtensionsDirectoryPath).toEqual(unpackedExtensionsDirectoryPath);
+  });
+
   test("Collections", async () =>
   {
     const collectionApi = await computeWrapper().computeController<CollectionApi>(CollectionApi);
@@ -122,7 +134,7 @@ describe("WebServices", () =>
         filter: {
           origin: {
             kind: "images",
-            ids: [image.id]
+            ids: [ image.id ]
           }
         }
       },
@@ -153,16 +165,21 @@ describe("WebServices", () =>
       name: "name"
     });
     const imageApi = await webServicesWrapper.computeController<ImageApi>(ImageApi);
-    await imageApi.imageSetTags({ id: image.id, extensionId: extension.manifest.id, requestBody: ["tag1"] });
+    await imageApi.imageSetTags({ id: image.id, extensionId: extension.manifest.id, requestBody: [ "tag1" ] });
     await imageApi.imageSetFeatures({
       id: image.id,
       extensionId: extension.manifest.id,
-      imageFeature: [{ type: ImageFeatureType.Other, format: ImageFeatureFormat.String, name: "name", value: "string" }]
+      imageFeature: [ {
+        type: ImageFeatureType.Other,
+        format: ImageFeatureFormat.String,
+        name: "name",
+        value: "string"
+      } ]
     });
     await imageApi.imageSetEmbeddings({
       id: image.id,
       extensionId: extension.manifest.id,
-      imageEmbeddings: { values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] }
+      imageEmbeddings: { values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ] }
     });
     const blob = await imageApi.imageDownload({ id: image.id });
     await repositoryApi.repositoryStoreImage({ id: newRepository.id, body: blob });

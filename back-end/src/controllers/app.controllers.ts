@@ -23,6 +23,7 @@ import {
 import {
   ApiBody,
   ApiConsumes,
+  ApiExcludeEndpoint,
   ApiExtraModels,
   ApiOperation,
   ApiParam,
@@ -57,7 +58,9 @@ import {
   ApiSecret,
   ApiSecretSummary,
   ApiSecretType,
+  ApplicationConfiguration,
   ApplicationMetadata,
+  ApplicationSettings,
   applicationXGzipMimeType,
   attachmentUriSchema,
   Collection,
@@ -106,7 +109,6 @@ import {
   SearchMediaUrlResult,
   SearchParameters,
   SearchTagsResult,
-  Settings,
   technicalSchema
 } from "../dtos/app.dtos";
 import {
@@ -160,7 +162,6 @@ export class MiscellaneousController
     logger.debug("Instantiating a MiscellaneousController");
   }
 
-  // noinspection JSUnresolvedReference
   @Get("ping")
   @Public()
   @ApiSecurity(noSecurity)
@@ -185,7 +186,7 @@ export class MiscellaneousController
   }
 
   @Get("test")
-  //@ApiExcludeEndpoint()
+  @ApiExcludeEndpoint()
   @ApiOperation(
     {
       summary: "Runs a test",
@@ -206,6 +207,26 @@ export class MiscellaneousController
     return this.service.test();
   }
 
+  @Get("configuration")
+  @ApiOperation(
+    {
+      summary: "Gets the application configuration",
+      description: "Returns all the application configuration details."
+    }
+  )
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The configuration",
+      type: ApplicationConfiguration
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ConfigurationRead ]))
+  async getConfiguration(): Promise<ApplicationConfiguration>
+  {
+    return this.service.getConfiguration();
+  }
+
 }
 
 const administrationResourceName: string = "administration";
@@ -215,7 +236,7 @@ const administrationResourceName: string = "administration";
  */
 @ApiTags(administrationResourceName)
 @Controller(computeControllerPath(administrationResourceName))
-@CheckPolicies(withOneOfPolicies([ApiScope.Administration]))
+@CheckPolicies(withOneOfPolicies([ ApiScope.Administration ]))
 @ApiConsumes(types.json)
 @ApiProduces(types.json)
 export class AdministrationController
@@ -272,11 +293,11 @@ export class SettingsController
     {
       status: OK,
       description: "The settings",
-      type: Settings
+      type: ApplicationSettings
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.SettingsRead]))
-  async get(): Promise<Settings>
+  @CheckPolicies(withOneOfPolicies([ ApiScope.SettingsRead ]))
+  async get(): Promise<ApplicationSettings>
   {
     return await this.settingsService.get();
   }
@@ -288,16 +309,16 @@ export class SettingsController
       description: "This enables to tune the application settings."
     }
   )
-  @ApiBody({ description: "The extension archive", type: Settings, required: true })
+  @ApiBody({ description: "The settings", type: ApplicationSettings, required: true })
   @ApiResponse(
     {
       status: OK,
       description: "The settings",
-      type: Settings
+      type: ApplicationSettings
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.SettingsWrite]))
-  async set(@Body() settings: Settings): Promise<Settings>
+  @CheckPolicies(withOneOfPolicies([ ApiScope.SettingsWrite ]))
+  async set(@Body() settings: ApplicationSettings): Promise<ApplicationSettings>
   {
     return await this.settingsService.set(settings);
   }
@@ -336,7 +357,7 @@ export class ApiSecretController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ApiSecretList]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ApiSecretList ]))
   async list(): Promise<ApiSecretSummary[]>
   {
     return await this.apiSecretService.list();
@@ -400,7 +421,7 @@ export class ApiSecretController
       type: ApiSecret
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ApiSecretWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ApiSecretWrite ]))
   async create(@Query("type") type: string, @Query("name") name: string, @Query("expirationDate") expirationDate?: number, @Query("comment") comment?: string, @Query("scope") scope?: string): Promise<ApiSecret>
   {
     return await this.apiSecretService.create(type, name, expirationDate, comment, scope);
@@ -426,7 +447,7 @@ export class ApiSecretController
       type: ApiSecret
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ApiSecretRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ApiSecretRead ]))
   async get(@Param("id") id: number): Promise<ApiSecret>
   {
     return await this.apiSecretService.get(id);
@@ -449,7 +470,7 @@ export class ApiSecretController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ApiSecretWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ApiSecretWrite ]))
   async delete(@Param("id") id: number): Promise<void>
   {
     return await this.apiSecretService.delete(id);
@@ -464,7 +485,7 @@ const extensionResourceName: string = "extension";
  */
 @ApiTags(extensionResourceName)
 @Controller(computeControllerPath(extensionResourceName))
-@CheckPolicies(withOneOfPolicies([ApiScope.ExtensionWrite, ApiScope.ExtensionRead]))
+@CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite, ApiScope.ExtensionRead ]))
 @ApiConsumes(types.json)
 @ApiProduces(types.json)
 export class ExtensionController
@@ -489,7 +510,7 @@ export class ExtensionController
       type: ExtensionsConfiguration
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
   async getConfiguration(): Promise<ExtensionsConfiguration>
   {
     return await this.extensionService.getConfiguration();
@@ -510,7 +531,7 @@ export class ExtensionController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
   async list(): Promise<Extension[]>
   {
     return await this.extensionService.list();
@@ -531,7 +552,7 @@ export class ExtensionController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
   async activities(): Promise<ExtensionActivities>
   {
     return await this.extensionService.activities();
@@ -552,7 +573,7 @@ export class ExtensionController
       type: ExtensionAndManual
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
   async get(@Param("id") id: ExtensionIdType): Promise<ExtensionAndManual>
   {
     return await this.extensionService.get(id);
@@ -578,7 +599,7 @@ export class ExtensionController
       type: Extension
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
   async install(@Body() archive: Buffer): Promise<Extension>
   {
     return await this.extensionService.install(undefined, archive, true);
@@ -605,7 +626,7 @@ export class ExtensionController
       type: Extension
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
   async update(@Param("id") id: ExtensionIdType, @Body() archive: Buffer): Promise<Extension>
   {
     return await this.extensionService.install(id, archive, true);
@@ -623,7 +644,7 @@ export class ExtensionController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
   async uninstall(@Param("id") id: ExtensionIdType): Promise<void>
   {
     return await this.extensionService.uninstall(id);
@@ -642,7 +663,7 @@ export class ExtensionController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionManage]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionManage ]))
   async pauseOrResume(@Param("id") id: ExtensionIdType, @Query("isPause") isPause: boolean): Promise<void>
   {
     return await this.extensionService.pauseOrResume(id, isPause);
@@ -663,7 +684,7 @@ export class ExtensionController
       type: ExtensionSettings
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionSettingsRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionSettingsRead ]))
   async getSettings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType): Promise<ExtensionSettings>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
@@ -692,7 +713,7 @@ export class ExtensionController
     required: true
   })
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionSettingsWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionSettingsWrite ]))
   async setSettings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Body() settings: ExtensionSettings): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
@@ -714,7 +735,7 @@ export class ExtensionController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionManage]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionManage ]))
   async synchronize(@Param("id") id: ExtensionIdType): Promise<void>
   {
     return await this.extensionService.synchronize(id);
@@ -734,7 +755,7 @@ export class ExtensionController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRun]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRun ]))
   async runProcessCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("commandId") commandId: string, @Body() parameters: Record<string, any> | undefined): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
@@ -765,7 +786,7 @@ export class ExtensionController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRun]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRun ]))
   async runImageCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("commandId") commandId: string, @Body() parameters: Record<string, any> | undefined, @Query("imageIds", new ArrayValidationPipe<String>()) imageIds: string[]): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
@@ -798,7 +819,7 @@ export class ExtensionController
   @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionChromeExtensionInstall]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionChromeExtensionInstall ]))
   async installChromeExtension(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("chromeExtensionName") chromeExtensionName: string, @Body() archive: Buffer): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
@@ -826,7 +847,7 @@ export class ExtensionController
     description: "A zip file of the generated extension",
     content: { [types.zip]: { schema: binarySchemaWithMaxLength(Extension.ARCHIVE_MAXIMUM_BINARY_WEIGHT_IN_BYTES) } }
   })
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
   async generate(@Query("withPublicSdk") withPublicSdk: boolean, @Body() options: ExtensionGenerationOptions): Promise<StreamableFile>
   {
     return await this.extensionService.generate(options, withPublicSdk);
@@ -853,7 +874,7 @@ export class ExtensionController
       [applicationXGzipMimeType]: { schema: binarySchemaWithMaxLength(Extension.ARCHIVE_MAXIMUM_BINARY_WEIGHT_IN_BYTES) }
     }
   })
-  @CheckPolicies(withOneOfPolicies([ApiScope.ExtensionRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
   async build(@Body() archive: Buffer): Promise<StreamableFile>
   {
     return await this.extensionService.build(archive);
@@ -893,7 +914,7 @@ export class RepositoryController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryRead ]))
   async list(): Promise<RepositoryList>
   {
     return await this.repositoryService.list();
@@ -914,7 +935,7 @@ export class RepositoryController
       type: Repository
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryRead ]))
   async get(@Param("id") id: string): Promise<Repository>
   {
     return await this.repositoryService.get(id);
@@ -945,7 +966,7 @@ export class RepositoryController
       type: Repository
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryWrite ]))
   async create(@Query("type") type: RepositoryLocationType, @Query("url") url: string, @Query("technicalId") technicalId: string | undefined, @Query("name") name: string, @Query("comment") comment?: string, @Query("watch", new ParseBoolPipe({ optional: true })) watch?: boolean): Promise<Repository>
   {
     return await this.repositoryService.create(type, url, technicalId, name, comment, watch);
@@ -968,7 +989,7 @@ export class RepositoryController
       type: Repository
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryManage]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryManage ]))
   async update(@Param("id") id: string, @Query("name") name?: string, @Query("comment") comment?: string): Promise<Repository>
   {
     return await this.repositoryService.update(id, name, comment);
@@ -997,7 +1018,7 @@ export class RepositoryController
       type: Repository
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryEnsure]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryEnsure ]))
   async ensure(@Query("technicalId") technicalId: string, @Query("name") name: string, @Query("comment") comment?: string, @Query("watch", new ParseBoolPipe({ optional: true })) watch?: boolean): Promise<Repository>
   {
     return await this.repositoryService.ensure(technicalId, name, comment, watch);
@@ -1019,7 +1040,7 @@ export class RepositoryController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryManage]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryManage ]))
   async startOrStop(@Query("isStart", ParseBoolPipe) isStart: boolean): Promise<void>
   {
     return await this.repositoryService.startOrStopAll(isStart);
@@ -1037,7 +1058,7 @@ export class RepositoryController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryManage]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryManage ]))
   async synchronize(@Param("id") id: string): Promise<void>
   {
     return await this.repositoryService.synchronize(id);
@@ -1060,7 +1081,7 @@ export class RepositoryController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryManage]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryManage ]))
   async watch(@Param("id") id: string, @Query("isStart", ParseBoolPipe) isStart: boolean): Promise<void>
   {
     return await this.repositoryService.watch(id, isStart, true);
@@ -1078,7 +1099,7 @@ export class RepositoryController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryWrite ]))
   async delete(@Param("id") id: string): Promise<void>
   {
     const repository = await this.repositoryService.get(id);
@@ -1100,7 +1121,7 @@ export class RepositoryController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryRead ]))
   async activities(): Promise<RepositoryActivities>
   {
     return await this.repositoryService.activities();
@@ -1121,7 +1142,7 @@ export class RepositoryController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryRead ]))
   async getFeatureNames(): Promise<AllExtensionImageFeatureNames>
   {
     return await this.repositoryService.getFeatureNames();
@@ -1142,7 +1163,7 @@ export class RepositoryController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryRead ]))
   async getTags(): Promise<AllExtensionImageTags>
   {
     return await this.repositoryService.getTags();
@@ -1167,7 +1188,7 @@ export class RepositoryController
       type: Image
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryRead ]))
   async getImageByUrl(@Query("url") url: string): Promise<Image>
   {
     return await this.imageService.getImageByUrl(url);
@@ -1205,7 +1226,7 @@ export class RepositoryController
       type: Image
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryWrite ]))
   async renameImage(@Param("id") id: string, @Query("imageId") imageId: string, @Query("nameWithoutExtension") nameWithoutExtension: string, @Query("relativeDirectoryPath") relativeDirectoryPath: string | undefined): Promise<Image>
   {
     return await this.repositoryService.renameImage(id, imageId, nameWithoutExtension, relativeDirectoryPath);
@@ -1286,7 +1307,7 @@ export class RepositoryController
       type: Image
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.RepositoryStoreImage]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryStoreImage ]))
   @Throttle({ default: { ttl: 1_000, limit: 10 } })
   async storeImage(@Param("id") id: string, @Query("nameWithoutExtension") nameWithoutExtension: string | undefined, @Query("relativeDirectoryPath") relativeDirectoryPath: string | undefined, @Query("applicationMetadata"/*, StringifiedJsonPipeTransform<ApplicationMetadata>*/) applicationMetadata: /*ApplicationMetadata*/string | undefined, @Query("parentId") parentId: string | undefined, @Query("sourceUrl") sourceUrl: string | undefined, @Query("inceptionDate", new ParseIntPipe({ optional: true })) inceptionDate: number | undefined, @Body() buffer: Buffer): Promise<Image>
   {
@@ -1327,7 +1348,7 @@ export class CollectionController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.CollectionRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.CollectionRead ]))
   async list(): Promise<Collection[]>
   {
     return this.collectionService.list();
@@ -1370,7 +1391,7 @@ export class CollectionController
       type: Collection
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.CollectionWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.CollectionWrite ]))
   async create(@Query("name") name: string, @Query("comment") comment: string | undefined, @Body() filter: SearchFilter): Promise<Collection>
   {
     return this.collectionService.create(name, comment, filter);
@@ -1396,7 +1417,7 @@ export class CollectionController
       type: Collection
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.CollectionRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.CollectionRead ]))
   async get(@Param("id") id: number): Promise<Collection>
   {
     return this.collectionService.get(id);
@@ -1445,7 +1466,7 @@ export class CollectionController
       type: Collection
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.CollectionWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.CollectionWrite ]))
   async update(@Param("id") id: number, @Query("name") name?: string, @Query("comment") comment?: string, @Body() filter?: SearchFilter): Promise<Collection>
   {
     return this.collectionService.update(id, name, comment, filter);
@@ -1468,7 +1489,7 @@ export class CollectionController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.CollectionWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.CollectionWrite ]))
   async delete(@Param("id") id: number): Promise<void>
   {
     return this.collectionService.delete(id);
@@ -1557,7 +1578,7 @@ export class ImageController
       type: SearchImageIdResult
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async searchIds(@Body() parameters: SearchParameters): Promise<SearchImageIdResult>
   {
     return await this.imageService.searchForImageIds(parameters);
@@ -1578,7 +1599,7 @@ export class ImageController
       type: SearchImageSummaryResult
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async searchSummaries(@Body() parameters: SearchParameters): Promise<SearchImageSummaryResult>
   {
     return await this.imageService.searchForImageSummaries(parameters);
@@ -1599,7 +1620,7 @@ export class ImageController
       type: SearchImageResult
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async searchImages(@Body() parameters: SearchParameters): Promise<SearchImageResult>
   {
     return await this.imageService.searchForImages(parameters);
@@ -1626,7 +1647,7 @@ export class ImageController
       type: SearchFeaturesResult
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async searchFeatures(@Body() parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds?: string[]): Promise<SearchFeaturesResult>
   {
     return await this.imageService.searchForImageFeatures(parameters, extensionIds);
@@ -1653,7 +1674,7 @@ export class ImageController
       type: SearchTagsResult
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async searchTags(@Body() parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds?: string[]): Promise<SearchTagsResult>
   {
     return await this.imageService.searchForImageTags(parameters, extensionIds);
@@ -1674,7 +1695,7 @@ export class ImageController
       type: SearchMediaUrlResult
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async searchMediaUrl(@Body() parameters: SearchParameters, @Query(DeepObjectPipeTransform<ImageMediaUrlQuery>) query?: ImageMediaUrlQuery): Promise<SearchMediaUrlResult>
   {
     return await this.imageService.searchForMediaUrls(parameters, {
@@ -1700,7 +1721,7 @@ export class ImageController
       type: Image
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async get(@Param("id") id: string): Promise<Image>
   {
     return await this.imageService.get(id);
@@ -1721,7 +1742,7 @@ export class ImageController
       type: Image
     }
   )
-  @CheckPolicies(withAllPolicies([ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingsWrite]))
+  @CheckPolicies(withAllPolicies([ ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingsWrite ]))
   async synchronize(@Param("id") id: string): Promise<Image>
   {
     return await this.imageService.synchronize(id);
@@ -1748,7 +1769,7 @@ export class ImageController
       type: Image
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageWrite ]))
   async modify(@Param("id") id: string, @Body() buffer: Buffer): Promise<Image>
   {
     return await this.imageService.modify(id, buffer);
@@ -1764,7 +1785,7 @@ export class ImageController
   @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageDelete]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageDelete ]))
   async delete(@Param("id") id: string): Promise<void>
   {
     await this.imageService.delete(id);
@@ -1819,7 +1840,7 @@ export class ImageController
       content: imageContent
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   @ApiProduces(...imageSupportedMimeTypes)
   async download(@Param("id") id: string, @Query("format") format?: ImageFormat, @Query("width", new ParseIntPipe({ optional: true })) width?: number, @Query("height", new ParseIntPipe({ optional: true })) height?: number, @Query("resizeRender") resizeRender?: ImageResizeRender, @Query("stripMetadata", new ParseBoolPipe({ optional: true })) stripMetadata?: boolean): Promise<StreamableFile>
   {
@@ -1842,7 +1863,7 @@ export class ImageController
       type: ImageMediaUrl
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async mediaUrl(@Param("id") id: string, @Query(DeepObjectPipeTransform<ImageMediaUrlQuery>) query?: ImageMediaUrlQuery): Promise<ImageMediaUrl>
   {
     return await this.imageService.mediaUrl(id, {
@@ -1868,7 +1889,7 @@ export class ImageController
       type: ImageMetadata
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async getMetadata(@Param("id") id: string): Promise<ImageMetadata>
   {
     return await this.imageService.getMetadata(id);
@@ -1891,7 +1912,7 @@ export class ImageController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async getFeatures(@Param("id") id: ExtensionIdType, @Query("extensionId") extensionId: string): Promise<ImageFeature[]>
   {
     return await this.imageService.getFeatures(id, extensionId);
@@ -1913,7 +1934,7 @@ export class ImageController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async getAllFeatures(@Param("id") id: string): Promise<AllImageFeatures>
   {
     return await this.imageService.getAllFeatures(id);
@@ -1946,7 +1967,7 @@ export class ImageController
   })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageFeatureWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageFeatureWrite ]))
   // The usage of the "ParseArrayPipe" object is necessary for enabling the validation and discussed at https://stackoverflow.com/a/73468385/808618
   async setFeatures(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body(new ParseArrayPipe({
     items: ImageFeature, exceptionFactory
@@ -1976,7 +1997,7 @@ export class ImageController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async getTags(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType): Promise<ImageTag[]>
   {
     return await this.imageService.getTags(id, extensionId);
@@ -1998,7 +2019,7 @@ export class ImageController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async getAllTags(@Param("id") id: string): Promise<AllExtensionImageTags>
   {
     return await this.imageService.getAllTags(id);
@@ -2036,7 +2057,7 @@ export class ImageController
   })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageTagWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageTagWrite ]))
   async setTags(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() tags: ImageTag[]): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
@@ -2073,7 +2094,7 @@ export class ImageController
   })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageTagWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageTagWrite ]))
   async ensureTags(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() tags: ImageTag[]): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
@@ -2099,7 +2120,7 @@ export class ImageController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async getAllRecipes(@Param("id") id: string): Promise<GenerationRecipe[]>
   {
     return await this.imageService.getAllRecipes(id);
@@ -2121,7 +2142,7 @@ export class ImageController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async getAllEmbeddings(@Param("id") id: string): Promise<AllImageEmbeddings>
   {
     return await this.imageService.getAllEmbeddings(id);
@@ -2153,7 +2174,7 @@ export class ImageController
       type: ImageEmbeddings
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async getEmbeddings(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType): Promise<ImageEmbeddings>
   {
     return await this.imageService.getEmbeddings(id, extensionId);
@@ -2181,7 +2202,7 @@ export class ImageController
   @ApiBody({ description: "The image embeddings", type: ImageEmbeddings, required: true })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageEmbeddingsWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageEmbeddingsWrite ]))
   @Throttle({ default: { ttl: 1_000, limit: 10 } })
   async setEmbeddings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() embeddings: ImageEmbeddings): Promise<void>
   {
@@ -2222,7 +2243,7 @@ export class ImageController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async closestImages(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
   {
     return await this.imageService.closestImages(id, extensionId, count);
@@ -2251,7 +2272,7 @@ export class ImageController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async closestEmbeddingsImages(@Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number, @Body() embeddings: ImageEmbeddings): Promise<ImageDistances>
   {
     return await this.imageService.closestEmbeddingsImages(extensionId, embeddings, count);
@@ -2280,7 +2301,7 @@ export class ImageController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async textToImages(@Query("text") text: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
   {
     return await this.imageService.textToImages(text, extensionId, count);
@@ -2306,7 +2327,7 @@ export class ImageController
       type: ComputedImageFormat
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async computeFormat(@Body() buffer: Buffer): Promise<ComputedImageFormat>
   {
     return new ComputedImageFormat(await this.imageService.computeFormat(buffer));
@@ -2348,7 +2369,7 @@ export class ImageController
       content: imageContent
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   @ApiProduces(...imageSupportedMimeTypes)
   async convert(@Query("format") format: ImageFormat, @Query("quality") quality: NumericRange<1, 100> | undefined = undefined, @Body() buffer: Buffer): Promise<StreamableFile>
   {
@@ -2414,7 +2435,7 @@ export class ImageAttachmentController
       schema: attachmentUriSchema
     }
   )
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageAttachmentWrite]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageAttachmentWrite ]))
   async create(@RequestPolicyContext() policyContext: PolicyContext, @Query("imageId") imageId: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("mimeType") mimeType: string, @Body() payload: Buffer): Promise<string>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
@@ -2445,7 +2466,7 @@ export class ImageAttachmentController
     }
   )
   @ApiProduces(...imageSupportedMimeTypes, types.bin)
-  @CheckPolicies(withOneOfPolicies([ApiScope.ImageRead]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
   async download(@Param("uri") uri: string): Promise<StreamableFile>
   {
     return await this.imageAttachmentService.download(uri);
