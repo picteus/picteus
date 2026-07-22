@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Flex, Select, Textarea, TextInput } from "@mantine/core";
+import { Alert, Button, Flex, Select, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { ExtensionGenerationOptions } from "@picteus/ws-client";
+import { IconAlertTriangle, IconX } from "@tabler/icons-react";
+import { ExtensionGenerationOptions, ManifestRuntimeEnvironment, MiscellaneousApi } from "@picteus/ws-client";
 
 import { computeFilePath, NotificationsService } from "utils";
 import { useFolderPicker, useOpenExplorer } from "app/hooks";
 import { ExtensionsService } from "app/services";
-import { FolderTypes } from "types";
-import { useCommandSocket } from "app/context";
+import { ChannelEnum, FolderTypes } from "types";
+import { useCommandSocket, useEventSocket } from "app/context";
 
 
 type CreateExtensionModalProps = {
@@ -37,17 +38,41 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
   const openFolderPicker = useFolderPicker();
   const { sendCommand } = useCommandSocket();
   const openExplorer = useOpenExplorer();
+  const { eventStore } = useEventSocket();
   const [ loading, setLoading ] = useState(false);
+  const [ submitError, setSubmitError ] = useState<string | undefined>();
+  const [ unpackedExtensionsDirectoryPath, setUnpackedExtensionsDirectoryPath ] = useState<string | undefined>();
+  const [ unpackedPathNotDefined, setUnpackedPathNotDefined ] = useState(false);
+
+  useEffect(() =>
+  {
+    new MiscellaneousApi().miscellaneousGetConfiguration()
+      .then((config) =>
+      {
+        if (config.unpackedExtensionsDirectoryPath)
+        {
+          setUnpackedExtensionsDirectoryPath(config.unpackedExtensionsDirectoryPath);
+        }
+        else
+        {
+          setUnpackedPathNotDefined(true);
+        }
+      })
+      .catch((error) =>
+      {
+        NotificationsService.apiCallError(error, "Failed to load the application configuration");
+      });
+  }, []);
 
   const form = useForm<ExtensionGenerationOptions>({
     mode: "uncontrolled",
     initialValues: {
       id: "",
-      version: "1.0.0",
+      version: "",
       name: "",
       description: "",
       author: "",
-      environment: "python"
+      environment: ManifestRuntimeEnvironment.Python
     },
     validate: {
       id: (value) =>
@@ -77,33 +102,56 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
 
   async function handleSubmit(values: ExtensionGenerationOptions)
   {
+    setSubmitError(undefined);
     try
     {
-      const directoryPath = await openFolderPicker(FolderTypes.EXTENSION);
+      let directoryPath = unpackedExtensionsDirectoryPath;
+      if (directoryPath === undefined)
+      {
+        directoryPath = await openFolderPicker(FolderTypes.EXTENSION);
+      }
       if (directoryPath === undefined)
       {
         return;
       }
       setLoading(true);
 
-      let blob: Blob;
-      try
+      const extensionId = values.id;
+      if (ExtensionsService.list().some((extension) => extension.manifest.id === extensionId) === true)
       {
-        blob = await ExtensionsService.generate({ withPublicSdk: true, extensionGenerationOptions: values });
-      }
-      catch (error)
-      {
-        const errorAsError = error as Error;
-        NotificationsService.errorWithMessage(errorAsError, t("createExtensionModal.error", { error: errorAsError.message }));
+        throw new Error(t("createExtensionModal.extensionAlreadyExistsError", { id: extensionId }));
       }
 
-      const base64String = await blobToBase64(blob);
-      const fileName = `${values.id}-${values.version}.zip`;
-      const filePath = computeFilePath(directoryPath, fileName);
-      await sendCommand("saveFile", { filePath, content: base64String });
+      const blob = await ExtensionsService.generate({ withPublicSdk: true, extensionGenerationOptions: values });
+      const builtBlob = await ExtensionsService.build({ body: blob });
+
+      const base64String = await blobToBase64(builtBlob);
+      const extensionDirectoryPath = computeFilePath(directoryPath, extensionId);
+      await sendCommand(
+        values.environment === ManifestRuntimeEnvironment.Node ? "inflateTarball" : "inflateZip",
+        { directoryPath: extensionDirectoryPath, content: base64String }
+      );
+
+      await new Promise<void>((resolve) =>
+      {
+        const unsubscribe = eventStore.subscribeToSocketEvents((event) =>
+        {
+          if (event.channel === ChannelEnum.EXTENSION_INSTALLED && (event.value)?.id === extensionId)
+          {
+            unsubscribe();
+            resolve();
+          }
+        });
+      });
+
       NotificationsService.success(t("createExtensionModal.success"));
-      await openExplorer(filePath);
+      await openExplorer(extensionDirectoryPath);
       onSuccess();
+    }
+    catch (error)
+    {
+      const errorAsError = error as Error;
+      setSubmitError(errorAsError.message);
     }
     finally
     {
@@ -113,12 +161,19 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
 
   return (
     <form onSubmit={form.onSubmit(handleSubmit)}>
+      {unpackedPathNotDefined && (
+        <Alert mb="md" color="orange"
+               title={t("titles.warning")}
+               icon={<IconAlertTriangle/>}>
+          {t("createExtensionModal.unpackedExtensionsDirectoryPathNotDefinedAlert")}
+        </Alert>
+      )}
       <TextInput
         mb="md"
         withAsterisk
         label={t("field.id")}
         description={t("createExtensionModal.fields.id.description")}
-        placeholder="my-extension"
+        placeholder={t("createExtensionModal.fields.id.placeholder")}
         {...form.getInputProps("id")}
       />
       <TextInput
@@ -126,7 +181,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         withAsterisk
         label={t("field.version")}
         description={t("createExtensionModal.fields.version.description")}
-        placeholder="1.0.0"
+        placeholder={t("createExtensionModal.fields.version.placeholder")}
         {...form.getInputProps("version")}
       />
       <TextInput
@@ -134,7 +189,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         withAsterisk
         label={t("field.name")}
         description={t("createExtensionModal.fields.name.description")}
-        placeholder="My Extension"
+        placeholder={t("createExtensionModal.fields.name.placeholder")}
         {...form.getInputProps("name")}
       />
       <Textarea
@@ -142,7 +197,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         withAsterisk
         label={t("field.description")}
         description={t("createExtensionModal.fields.description.description")}
-        placeholder="Computes embeddings..."
+        placeholder={t("createExtensionModal.fields.description.placeholder")}
         autosize
         minRows={3}
         maxRows={6}
@@ -153,7 +208,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         withAsterisk
         label={t("field.author")}
         description={t("createExtensionModal.fields.author.description")}
-        placeholder="John Doe"
+        placeholder={t("createExtensionModal.fields.author.placeholder")}
         {...form.getInputProps("author")}
       />
       <Select
@@ -167,6 +222,11 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         ]}
         {...form.getInputProps("environment")}
       />
+      {submitError && (
+        <Alert mb="md" color="red" title={t("titles.error")} icon={<IconX />}>
+          {t("createExtensionModal.error", { error: submitError })}
+        </Alert>
+      )}
 
       <Flex justify="flex-end">
         <Button loading={loading} disabled={loading} type="submit">

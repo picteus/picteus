@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Button, Card, Flex, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 import { IconBox, IconLayoutGrid, IconList, IconPlus, IconPuzzle } from "@tabler/icons-react";
 
 import { Extension } from "@picteus/ws-client";
 
-import { useActionModalContext } from "app/context";
+import { useActionModalContext, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
 import {
   Common,
@@ -30,11 +30,21 @@ import {
 export default function ExtensionsScreen()
 {
   const [ t ] = useTranslation();
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const [ extensions, setExtensions ] = useState<Extension[]>(ExtensionsService.list());
   const [ , addModal ] = useActionModalContext();
   const [ loading, setLoading ] = useState<boolean>(false);
   const [ selectedExtension, setSelectedExtension ] = useState<Extension>();
   const [ viewMode, setViewMode ] = useState<"table" | "card">("table");
+
+  useEffect(() =>
+  {
+    if (ExtensionsService.requiresCommandReload(event) === true)
+    {
+      void fetchAllExtensions();
+    }
+  }, [event]);
 
   useEffect(() =>
   {

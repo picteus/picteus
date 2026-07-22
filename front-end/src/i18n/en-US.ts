@@ -21,6 +21,10 @@ export default {
     tags: "Tags",
     features: "Features"
   },
+  titles: {
+    warning: "Warning",
+    error: "Error"
+  },
   message: {
     idCopied: "The image ID has been successfully copied to your clipboard.",
     fileProcessing:
@@ -242,26 +246,33 @@ export default {
   createExtensionModal: {
     success: "The extension has been successfully generated",
     error: "An error occurred while generating the extension: {{error}}",
-    title: "Create extension",
+    title: "Create an extension",
+    unpackedExtensionsDirectoryPathNotDefinedAlert: "The unpacked extensions directory path is not configured. You will be prompted to select a directory manually upon submission.",
+    extensionAlreadyExistsError: "An extension with the identifier '{{id}}' already exists.",
     fields: {
       id: {
         description: "The identifier of the extension",
+        placeholder: "my-extension",
         invalid: "The identifier must be 1-32 characters long and contain only lowercase letters, uppercase letters, numbers, dashes, underscores, and dots."
       },
       version: {
         description: "The version of the extension, which should follow the semver convention",
+        placeholder: "1.0.0",
         invalid: "The version must be 5-32 characters long and follow the semver convention."
       },
       name: {
         description: "The name of the extension",
+        placeholder: "My Extension",
         invalid: "The name must be 1-128 characters long and contain only letters, numbers, spaces, and standard symbols."
       },
       description: {
         description: "The description of the extension's purpose",
+        placeholder: "Computes tags on images.",
         invalid: "The description must be 1-1024 characters long."
       },
       author: {
         description: "The author of the extension",
+        placeholder: "Jonh Doe",
         invalid: "The author must be 1-128 characters long."
       },
       environment: {

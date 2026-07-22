@@ -4,6 +4,7 @@ import {
   CommandEntity,
   Extension,
   ExtensionApi,
+  ExtensionApiExtensionBuildRequest,
   ExtensionApiExtensionGenerateRequest,
   ExtensionApiExtensionGetSettingsRequest,
   ExtensionApiExtensionInstallRequest,
@@ -182,6 +183,13 @@ async function generate(
   return extensionApi.extensionGenerate(parameters);
 }
 
+async function build(
+  parameters: ExtensionApiExtensionBuildRequest
+): Promise<Blob>
+{
+  return extensionApi.extensionBuild(parameters);
+}
+
 function getAdditionalUis(): AdditionalUi[]
 {
   return list().flatMap(
@@ -229,6 +237,7 @@ export default {
   uninstall,
   synchronize,
   generate,
+  build,
   startOrStop,
   getSettings,
   setSettings,
