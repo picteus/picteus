@@ -70,7 +70,7 @@ export async function runNpm(parameters: string[], directoryPath: string): Promi
 
 export async function installPackages(packageJsonFilePath: string, isProduction: boolean, sdkArchiveVersion: string, sdkArchiveFilePath: string): Promise<void>
 {
-  logger.info(`Installing the ${isProduction === true ? "production" : ""} dependency packages relative to the file '${packageJsonFilePath}'`);
+  logger.info(`Installing the ${isProduction === true ? "production " : ""}dependency packages relative to the file '${packageJsonFilePath}'`);
   let installedInternalSdk = false;
   const packageJsonDirectoryPath = path.resolve(packageJsonFilePath, "..");
   {
@@ -96,6 +96,10 @@ export async function installPackages(packageJsonFilePath: string, isProduction:
   if (isProduction === true)
   {
     parameters.push("--omit=dev");
+  }
+  else
+  {
+    parameters.push("--include=dev");
   }
   const childProcess = await runNpm(parameters, packageJsonDirectoryPath);
   await waitFor(childProcess);

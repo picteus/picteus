@@ -670,7 +670,7 @@ export class ExtensionService
         fs.symlinkSync(sourceDirectoryPath, targetDirectoryPath, symlinkType);
         logger.debug(`Created a symbolic link from the unpacked extension directory '${sourceDirectoryPath}' to the installed extensions directory '${targetDirectoryPath}'`);
       }
-      if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true && fs.realpathSync(targetDirectoryPath) === sourceDirectoryPath)
+      if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true && fs.realpathSync(targetDirectoryPath) === fs.realpathSync(sourceDirectoryPath))
       {
         try
         {
@@ -1069,7 +1069,7 @@ export class ExtensionService
           }
         }
         {
-          const childProcess = await runNpm([ "pack" ], buildDirectoryPath);
+          const childProcess = await runNpm([ "pack", "--quiet" ], buildDirectoryPath);
           await waitFor(childProcess);
         }
         const tarballFilePaths = new fdir().withFullPaths().withMaxDepth(0).crawl(buildDirectoryPath).sync().filter(filePath => filePath.endsWith(".tgz"));
