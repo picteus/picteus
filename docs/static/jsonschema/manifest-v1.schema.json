@@ -150,7 +150,7 @@
                   "type": "number",
                   "description": "The duration during which a maximal number of events can be handled",
                   "format": "int32",
-                  "minimum": -2147483648,
+                  "minimum": 0,
                   "exclusiveMinimum": true,
                   "maximum": 2147483647
                 },
@@ -158,7 +158,7 @@
                   "type": "number",
                   "description": "The maximal number of events that be handled during the duration",
                   "format": "int32",
-                  "minimum": -2147483648,
+                  "minimum": 0,
                   "exclusiveMinimum": true,
                   "maximum": 2147483647
                 }

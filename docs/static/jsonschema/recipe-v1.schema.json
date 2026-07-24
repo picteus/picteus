@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$id": "https://picteus.github.io/picteus/jsonschema/recipe-v1.schema.json",
+  "title": "GenerationRecipe",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "description": "The version of the schema the hereby recipe complies to",
+      "format": "int32",
+      "minimum": 1,
+      "maximum": 1
+    },
+    "id": {
+      "type": "string",
+      "description": "The identifier of the recipe instance",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "url": {
+      "type": "string",
+      "description": "The URL of the recipe instance",
+      "format": "uri",
+      "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "modelTags": {
+      "description": "The tags of the model generators",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 4096,
+        "minLength": 1,
+        "pattern": "^(([a-z0-9A-Z-_.]{1,})/)?([a-z0-9A-Z-_.]{1,})(:([a-z0-9A-Z-_.]{1,}))?$"
+      }
+    },
+    "software": {
+      "type": "string",
+      "description": "The software that ran the generation",
+      "pattern": "^(([a-z0-9A-Z-_.]{1,})/)?([a-z0-9A-Z-_.]{1,})(:([a-z0-9A-Z-_.]{1,}))?$",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "inputAssets": {
+      "description": "The identifiers or URLs of the input assets",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 4096,
+        "minLength": 1
+      }
+    },
+    "aspectRatio": {
+      "type": "number",
+      "description": "The required image aspect ratio, i.e. the result of its width by its height",
+      "minimum": 0,
+      "exclusiveMinimum": true
+    },
+    "prompt": {
+      "description": "The prompt which enabled to generate the image",
+      "oneOf": [
+        {
+          "description": "In case of a prompt-based generated image",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "description": "The kind of prompt",
+              "allOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "textual",
+                    "instructions"
+                  ],
+                  "description": "The kind of prompt"
+                }
+              ]
+            },
+            "text": {
+              "type": "string",
+              "description": "The textual prompt",
+              "minLength": 1,
+              "maxLength": 131072
+            }
+          },
+          "required": [
+            "kind",
+            "text"
+          ]
+        },
+        {
+          "description": "In case of a instructions-based generated image",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "description": "The kind of prompt",
+              "allOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "textual",
+                    "instructions"
+                  ],
+                  "description": "The kind of prompt"
+                }
+              ]
+            },
+            "value": {
+              "type": "object",
+              "description": "The instructions-based prompt"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        }
+      ]
+    }
+  },
+  "description": "The image generation recipe",
+  "required": [
+    "schemaVersion",
+    "modelTags",
+    "prompt"
+  ]
+}

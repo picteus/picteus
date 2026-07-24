@@ -130,14 +130,73 @@ export const tweakForPublicSdk = gulp.series(
   }
 );
 
+function restoreCustomBounds(openapiSchema, jsonSchema)
+{
+  if (!openapiSchema || typeof openapiSchema !== "object" || !jsonSchema || typeof jsonSchema !== "object")
+  {
+    return;
+  }
+  if ("minimum" in openapiSchema)
+  {
+    jsonSchema.minimum = openapiSchema.minimum;
+  }
+  if ("maximum" in openapiSchema)
+  {
+    jsonSchema.maximum = openapiSchema.maximum;
+  }
+  if ("exclusiveMinimum" in openapiSchema)
+  {
+    jsonSchema.exclusiveMinimum = openapiSchema.exclusiveMinimum;
+  }
+  if ("exclusiveMaximum" in openapiSchema)
+  {
+    jsonSchema.exclusiveMaximum = openapiSchema.exclusiveMaximum;
+  }
+  if (openapiSchema.properties && jsonSchema.properties)
+  {
+    for (const key in openapiSchema.properties)
+    {
+      if (jsonSchema.properties[key])
+      {
+        restoreCustomBounds(openapiSchema.properties[key], jsonSchema.properties[key]);
+      }
+    }
+  }
+
+  if (openapiSchema.items && jsonSchema.items)
+  {
+    restoreCustomBounds(openapiSchema.items, jsonSchema.items);
+  }
+
+  if (openapiSchema.additionalProperties && typeof openapiSchema.additionalProperties === "object" &&
+    jsonSchema.additionalProperties && typeof jsonSchema.additionalProperties === "object")
+  {
+    restoreCustomBounds(openapiSchema.additionalProperties, jsonSchema.additionalProperties);
+  }
+
+  const combinators = [ "allOf", "anyOf", "oneOf" ];
+  for (const combinator of combinators)
+  {
+    if (Array.isArray(openapiSchema[combinator]) === true && Array.isArray(jsonSchema[combinator]) === true)
+    {
+      const length = Math.min(openapiSchema[combinator].length, jsonSchema[combinator].length);
+      for (let index = 0; index < length; index++)
+      {
+        restoreCustomBounds(openapiSchema[combinator][index], jsonSchema[combinator][index]);
+      }
+    }
+  }
+}
+
 // noinspection JSUnusedGlobalSymbols
-export const generateManifestSchema = async () =>
+export const generateSchema = async () =>
 {
   const cliArguments = process.argv;
   const inputFilePathOption = "--inputFilePath";
   const outputFilePathOption = "--outputFilePath";
+  const entityOption = "--entity";
   const schemaIdOption = "--schemaId";
-  const usage = `Usage: gulp generateManifestSchema ${inputFilePathOption} <openApiFilePath> ${outputFilePathOption} <jsonSchemaFilePath> ${schemaIdOption} <schemaId>`;
+  const usage = `Usage: gulp generateManifestSchema ${inputFilePathOption} <openApiFilePath> ${outputFilePathOption} <jsonSchemaFilePath> ${entityOption} <entity> ${schemaIdOption} <schemaId>`;
   let inputFilePath;
   {
     const index = cliArguments.indexOf(inputFilePathOption);
@@ -156,6 +215,15 @@ export const generateManifestSchema = async () =>
     }
     outputFilePath = cliArguments[index + 1];
   }
+  let entity;
+  {
+    const index = cliArguments.indexOf(entityOption);
+    if (index === -1 || index > cliArguments.length)
+    {
+      throw new Error(usage);
+    }
+    entity = cliArguments[index + 1];
+  }
   let schemaId;
   {
     const index = cliArguments.indexOf(schemaIdOption);
@@ -170,16 +238,21 @@ export const generateManifestSchema = async () =>
   const dereferencedOpenApi = await $RefParser.dereference(inputFilePath);
 
   // We extract the "Manifest" schema
-  const manifestOpenApiSchema = dereferencedOpenApi.components?.schemas?.Manifest;
+  const manifestOpenApiSchema = dereferencedOpenApi.components.schemas[entity];
 
   // We convert the OpenAPI schema to JSON schema
-  const jsonSchema = toJSONSchema(manifestOpenApiSchema);
+  const jsonSchema = toJSONSchema(manifestOpenApiSchema, {
+    supportPatternProperties: true
+  });
+
+  // Restore overwritten custom numerical bounds (minimum, maximum, etc.)
+  restoreCustomBounds(manifestOpenApiSchema, jsonSchema);
 
   const finalSchema =
     {
-      $schema: 'http://json-schema.org/draft-04/schema#',
+      $schema: "http://json-schema.org/draft-04/schema#",
       $id: schemaId,
-      title: "Manifest",
+      title: entity,
       ...jsonSchema
     };
 
