@@ -60,7 +60,7 @@ export class ExtensionGenerator
   {
     const distributionRelativePath = "./dist";
     {
-      const childProcess = await runNpm(["init", "--yes"], moduleDirectoryPath);
+      const childProcess = await runNpm([ "init", "--yes" ], moduleDirectoryPath);
       await waitFor(childProcess);
       const packageJsonFilePath = path.join(moduleDirectoryPath, packageJsonFileName);
       const packageJson = JSON.parse(fs.readFileSync(packageJsonFilePath, "utf8"));
@@ -70,7 +70,7 @@ export class ExtensionGenerator
       packageJson.engines = { node: ">=20" };
       packageJson.type = "module";
       packageJson.main = `${distributionRelativePath}/main.js`;
-      packageJson.files = [distributionRelativePath, `./${ExtensionRegistry.manifestFileName}`];
+      packageJson.files = [ distributionRelativePath, `./${ExtensionRegistry.manifestFileName}` ];
       packageJson.scripts =
         {
           "build": "tsc"
@@ -104,7 +104,7 @@ export class ExtensionGenerator
             "noImplicitAny": true,
             "sourceMap": false
           },
-          "include": ["./src"]
+          "include": [ "./src" ]
         };
       fs.writeFileSync(path.join(moduleDirectoryPath, "tsconfig.json"), stringify(tsConfig), "utf8");
     }
@@ -124,11 +124,11 @@ export class ExtensionGenerator
           instructions:
             [
               {
-                events: [ManifestEvent.ProcessStarted],
+                events: [ ManifestEvent.ProcessStarted ],
                 execution:
                   {
                     executable: "${node}",
-                    arguments: [`${distributionRelativePath}/main.js`]
+                    arguments: [ `${distributionRelativePath}/main.js` ]
                   },
                 commands: []
               }
@@ -143,7 +143,7 @@ export class ExtensionGenerator
                   "description": "A parameter which enables to tune the extension."
                 }
               },
-              "required": ["parameter"]
+              "required": [ "parameter" ]
             }
         };
       fs.writeFileSync(path.join(moduleDirectoryPath, ExtensionRegistry.manifestFileName), stringify(manifest), "utf8");
@@ -175,8 +175,13 @@ export class ExtensionGenerator
     const sourceDirectoryPath = path.join(paths.serverDirectoryPath, "assets", "extensions-generators", `template-${environment}`);
     logger.debug(`Copying the '${environment}' extension template located in '${sourceDirectoryPath}' into the directory '${moduleDirectoryPath}'`);
     this.copyFiles(sourceDirectoryPath, moduleDirectoryPath);
-    const sdkVersion = (await ExtensionRegistry.getSdkInfo(environment)).version;
-    const values = { sdkVersion, author: options.author };
+    const availableSdkVersion = (await ExtensionRegistry.getSdkInfo(environment)).version;
+    if (withPublicSdk === false && options.sdkVersion !== undefined && options.sdkVersion !== availableSdkVersion)
+    {
+      throw new Error(`The internal SDK v${options.sdkVersion} mismatches the available v${availableSdkVersion}`);
+    }
+    const actualSdkVersion = options.sdkVersion ?? availableSdkVersion;
+    const values = { sdkVersion: actualSdkVersion, author: options.author };
     switch (environment)
     {
       default:
@@ -189,7 +194,7 @@ export class ExtensionGenerator
         if (withPublicSdk === false)
         {
           delete dependencies[publicNodeSdkIdentifier];
-          dependencies[internalNodeSdkIdentifier] = sdkVersion;
+          dependencies[internalNodeSdkIdentifier] = actualSdkVersion;
         }
         fs.writeFileSync(packageJsonFilePath, stringify(packageJson));
         break;
@@ -226,7 +231,7 @@ export class ExtensionGenerator
       {
         fs.readdirSync(fileOrDirectoryPath).forEach((fileOrFolderName) =>
         {
-          if (["node_modules", ".venv"].indexOf(fileOrFolderName) === -1)
+          if ([ "node_modules", ".venv" ].indexOf(fileOrFolderName) === -1)
           {
             this.copyFiles(path.join(fileOrDirectoryPath, fileOrFolderName), path.join(destinationDirectoryPath, fileOrFolderName));
           }

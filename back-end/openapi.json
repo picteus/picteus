@@ -4762,6 +4762,14 @@
                 "$ref": "#/components/schemas/ManifestRuntimeEnvironment"
               }
             ]
+          },
+          "sdkVersion": {
+            "type": "string",
+            "description": "The version of the SDK extension will rely on",
+            "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+            "minLength": 5,
+            "maxLength": 32,
+            "example": "1.0.0"
           }
         },
         "description": "The options for generating an extension",

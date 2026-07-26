@@ -1,4 +1,4 @@
-import { Communicator, NotificationEvent, NotificationValue, PicteusExtension } from "@picteus/extension-sdk";
+import { Communicator, NotificationEvent, type NotificationValue, PicteusExtension } from "@picteus/extension-sdk";
 
 
 class TypeScriptExtension extends PicteusExtension

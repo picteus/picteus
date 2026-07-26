@@ -647,7 +647,7 @@ export class ExtensionController
   @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
   async uninstall(@Param("id") id: ExtensionIdType): Promise<void>
   {
-    return await this.extensionService.uninstall(id);
+    return await this.extensionService.uninstall(id, true);
   }
 
   @Put(":id/pauseOrResume")

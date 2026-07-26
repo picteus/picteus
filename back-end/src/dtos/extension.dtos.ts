@@ -905,7 +905,7 @@ export class Manifest extends ExtensionBasis
       example: {
         type: "object",
         properties: { key: { type: "string", title: "Key", description: "A key." } },
-        required: ["key"]
+        required: [ "key" ]
       }
     }
   )
@@ -937,11 +937,12 @@ export class Manifest extends ExtensionBasis
 export class ExtensionGenerationOptions extends ExtensionBasis
 {
 
-  constructor(id: string, version: string, name: string, description: string, author: string, environment: ManifestRuntimeEnvironment)
+  constructor(id: string, version: string, name: string, description: string, author: string, environment: ManifestRuntimeEnvironment, sdkVersion: string | undefined)
   {
     super(id, version, name, description);
     this.author = author;
     this.environment = environment;
+    this.sdkVersion = sdkVersion;
   }
 
   @ApiProperty(
@@ -976,6 +977,25 @@ export class ExtensionGenerationOptions extends ExtensionBasis
   @NotEquals(null)
   @Expose()
   readonly environment: ManifestRuntimeEnvironment;
+
+  @ApiProperty(
+    {
+      description: "The version of the SDK extension will rely on",
+      type: String,
+      pattern: semverPattern,
+      minLength: 5,
+      maxLength: FieldLengths.shortTechnical,
+      required: false,
+      example: "1.0.0"
+    }
+  )
+  @Matches(semverPattern)
+  @MinLength(5)
+  @MaxLength(FieldLengths.shortTechnical)
+  @IsOptional()
+  @IsString()
+  @Expose()
+  readonly sdkVersion?: string;
 
 }
 

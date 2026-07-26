@@ -48,7 +48,7 @@ export async function ensureNpm(directoryPath: string, version: string): Promise
   try
   {
     const npmCliFilePath = path.join(extractionDirectoryPath, "bin", "npm-cli.js");
-    const childProcess = fork(npmCliFilePath, ["install", "-g", `npm@${version}`, "--prefix", directoryPath], extractionDirectoryPath, null);
+    const childProcess = fork(npmCliFilePath, [ "install", "-g", `npm@${version}`, "--prefix", directoryPath ], extractionDirectoryPath, null);
     await waitFor(childProcess);
   }
   catch (error)
@@ -63,7 +63,7 @@ export async function ensureNpm(directoryPath: string, version: string): Promise
 export async function runNpm(parameters: string[], directoryPath: string): Promise<ChildProcess>
 {
   logger.info(`Running the npm command with parameters '${parameters.join(" ")}' in directory '${directoryPath}'`);
-  const fromRootPaths = os.platform() === "win32" ? ["node_modules", "npm", "index.js"] : ["bin", "npm"];
+  const fromRootPaths = os.platform() === "win32" ? [ "node_modules", "npm", "index.js" ] : [ "bin", "npm" ];
   const npmFilePath = path.join(paths.npmDirectoryPath, ...fromRootPaths);
   return fork(npmFilePath, parameters, directoryPath, null);
 }
@@ -82,7 +82,7 @@ export async function installPackages(packageJsonFilePath: string, isProduction:
     {
       if (requiredSdkVersion === sdkArchiveVersion)
       {
-        const childProcess = await runNpm(["install", "--no-package-lock", "--force", sdkArchiveFilePath], packageJsonDirectoryPath);
+        const childProcess = await runNpm([ "install", "--no-save", "--no-package-lock", "--force", sdkArchiveFilePath ], packageJsonDirectoryPath);
         await waitFor(childProcess);
         installedInternalSdk = true;
       }
@@ -92,7 +92,7 @@ export async function installPackages(packageJsonFilePath: string, isProduction:
       }
     }
   }
-  const parameters = ["install", "--no-package-lock", `--os=${os.platform()}`, `--cpu=${os.arch()}`];
+  const parameters = [ "install", "--no-package-lock", `--os=${os.platform()}`, `--cpu=${os.arch()}` ];
   if (isProduction === true)
   {
     parameters.push("--omit=dev");

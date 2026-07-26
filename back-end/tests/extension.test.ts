@@ -1727,7 +1727,7 @@ describe("Extensions", () =>
       builder.deleteStartedFile();
       builder.checkStartedFileNotFound();
       // We uninstall the extension
-      await base.getExtensionService().uninstall(manifest.id);
+      await base.getExtensionService().uninstall(manifest.id, true);
       // And we make sure that the extension process does not restart
       await base.wait();
       builder.checkStartedFileNotFound();
@@ -2054,7 +2054,7 @@ describe("Extensions", () =>
 
     const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
     // We send an image command to check that the throttling bottleneck keeps not waiting for a socket response coming from the extension
-    await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, "logDimensions", undefined, [ image.id ]);
+    await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, "log", undefined, [ image.id ]);
     await base.getExtensionService().pauseOrResume(manifest.id, true);
     if (process.platform !== "win32")
     {

@@ -583,14 +583,14 @@ export class ExtensionService
   async install(idWhenUpdating: string | undefined, archive: Buffer, shouldHandleProcesses: boolean): Promise<Extension>
   {
     this.checkExtensionArchiveBinaryWeight(archive);
-    const manifest = await this.installUpdateOrUnpack(idWhenUpdating, new ExtensionArchiveReader(archive), true, shouldHandleProcesses);
+    const manifest = await this.installUpdateOrUnpack(idWhenUpdating, new ExtensionArchiveReader(archive), true, shouldHandleProcesses, true);
     return plainToInstanceViaJSON(Extension, {
       manifest,
       status: this.extensionsRegistry.getStatus(manifest.id)
     });
   }
 
-  async uninstall(id: string, checkExistence: boolean = false): Promise<void>
+  async uninstall(id: string, checkExistence: boolean): Promise<void>
   {
     // TODO: forbid this while a repository is synchronizing
     logger.info(`Uninstalling the extension with id '${id}'`);
@@ -674,7 +674,7 @@ export class ExtensionService
       {
         try
         {
-          await this.installUpdateOrUnpack(undefined, manifest, installDependencies, shouldHandleProcesses);
+          await this.installUpdateOrUnpack(undefined, manifest, installDependencies, shouldHandleProcesses, false);
           this.perUnpackedExtensionIdPathsMap.set(manifest.id, {
             source: sourceDirectoryPath,
             target: targetDirectoryPath
@@ -703,7 +703,7 @@ export class ExtensionService
         {
           // TODO: do not stop or start the process if the extension is already being restarted because of a previous change and do not anything if the ExtensionRunner is not ready
           logger.info(`The manifest file '${filePath}' of the unpacked extension with id '${manifest.id}' has changed: reloading the extension`);
-          await this.installUpdateOrUnpack(manifest.id, this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)), true, true);
+          await this.installUpdateOrUnpack(manifest.id, this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)), true, true, false);
         }
       }, (error: Error) =>
       {
@@ -1011,7 +1011,7 @@ export class ExtensionService
 
   async generate(options: ExtensionGenerationOptions, withPublicSdk: boolean): Promise<StreamableFile>
   {
-    logger.info(`Generating an extension with id '${options.id}', name '${options.name}' and for the '${options.environment}' runtime environment`);
+    logger.info(`Generating an extension with id '${options.id}', name '${options.name}' and for the '${options.environment}' runtime environment${options.sdkVersion === undefined ? "" : (` with the SDK v${options.sdkVersion}`)}`);
     const temporaryDirectoryPath = getTemporaryDirectoryPath();
     const extensionDirectoryPath = await new ExtensionGenerator().run(temporaryDirectoryPath, options, withPublicSdk);
     const zip = new AdmZip();
@@ -1246,7 +1246,7 @@ export class ExtensionService
     parametersChecker.throwBadParameter("id", id, "there is no extension with that identifier");
   }
 
-  private async installUpdateOrUnpack(idWhenUpdating: string | undefined, readerOrManifest: ExtensionArchiveReader | Manifest, installDependencies: boolean, shouldHandleProcesses: boolean): Promise<Manifest>
+  private async installUpdateOrUnpack(idWhenUpdating: string | undefined, readerOrManifest: ExtensionArchiveReader | Manifest, installDependencies: boolean, shouldHandleProcesses: boolean, isProduction: boolean): Promise<Manifest>
   {
     // TODO: forbid this while a repository is synchronizing
     const useReader = readerOrManifest instanceof ExtensionArchiveReader;
@@ -1361,7 +1361,7 @@ export class ExtensionService
 
     try
     {
-      await this.prepareRuntimeEnvironment(extendedManifest, installDependencies);
+      await this.prepareRuntimeEnvironment(extendedManifest, installDependencies, isProduction);
     }
     catch (error)
     {
@@ -1555,7 +1555,7 @@ export class ExtensionService
     }
   }
 
-  private async prepareRuntimeEnvironment(extendedManifest: ExtendedManifest, installDependencies: boolean): Promise<void>
+  private async prepareRuntimeEnvironment(extendedManifest: ExtendedManifest, installDependencies: boolean, isProduction: boolean): Promise<void>
   {
     logger.debug(`Preparing the runtime environment for the extension with id '${extendedManifest.id}'`);
     try
@@ -1577,7 +1577,7 @@ export class ExtensionService
               if (installDependencies === true)
               {
                 const sdkInfo = await ExtensionRegistry.getSdkInfo(ManifestRuntimeEnvironment.Node);
-                await installPackages(packageJsonFilePath, true, sdkInfo.version, sdkInfo.filePath);
+                await installPackages(packageJsonFilePath, isProduction, sdkInfo.version, sdkInfo.filePath);
               }
             }
             else
