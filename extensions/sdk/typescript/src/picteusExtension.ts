@@ -8,6 +8,7 @@ import { io, Socket } from "socket.io-client";
 
 import {
   ApiSecretApi,
+  CollectionApi,
   Configuration,
   ExtensionApi,
   ImageApi,
@@ -425,6 +426,11 @@ export class PicteusExtension
   protected getRepositoryApi(): RepositoryApi
   {
     return new RepositoryApi(this.configuration);
+  }
+
+  protected getCollectionApi(): CollectionApi
+  {
+    return new CollectionApi(this.configuration);
   }
 
   protected getImageApi(): ImageApi

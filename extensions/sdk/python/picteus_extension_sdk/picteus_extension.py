@@ -365,6 +365,9 @@ class PicteusExtension:
     def get_repository_api(self) -> picteus_ws_client.RepositoryApi:
         return picteus_ws_client.RepositoryApi(self.api_client)
 
+    def get_collection_api(self) -> picteus_ws_client.CollectionApi:
+        return picteus_ws_client.CollectionApi(self.api_client)
+
     def get_image_api(self) -> picteus_ws_client.ImageApi:
         return picteus_ws_client.ImageApi(self.api_client)
 
