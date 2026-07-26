@@ -70,7 +70,7 @@ export default function ImageRecipe({ recipe, viewMode }: ImageRecipeType)
       {prompt && typeof prompt === "object" && <Stack gap={4}>
         <Text fw={700} size="sm">{t(`field.${"text" in prompt ? "prompt" : "instructions"}`)}:</Text>
         {"text" in prompt ? (<Text size="sm">{prompt.text}</Text>) : ("value" in prompt ?
-          <CodeViewer code={JSON.stringify(prompt.value, undefined, 2)}/> : <></>)}
+          <CodeViewer code={JSON.stringify(prompt.value, undefined, 2)} language="json"/> : <></>)}
       </Stack>}
     </Stack>
   );

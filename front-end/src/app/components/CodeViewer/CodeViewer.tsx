@@ -3,18 +3,21 @@ import { useMantineColorScheme } from "@mantine/core";
 // Import the default Highlight.js style
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
+import xml from "highlight.js/lib/languages/xml";
 import beautify from "js-beautify";
 
 import { NotificationsService } from "utils";
 
 
 hljs.registerLanguage("json", json);
+hljs.registerLanguage("xml", xml);
 
 type CodeViewerType = {
   code: string;
+  language?: "json" | "xml" | "html";
 };
 
-export default function CodeViewer({ code }: CodeViewerType)
+export default function CodeViewer({ code, language }: CodeViewerType)
 {
   const codeRef = useRef<HTMLElement>(null);
 
@@ -29,7 +32,7 @@ export default function CodeViewer({ code }: CodeViewerType)
     {
       import("highlight.js/styles/lightfair.min.css");
     }
-  }, [colorScheme]);
+  }, [ colorScheme ]);
 
   useEffect(() =>
   {
@@ -37,7 +40,7 @@ export default function CodeViewer({ code }: CodeViewerType)
     // if (codeRef.current) {
     //   hljs.highlightElement(codeRef.current);
     // }
-  }, [codeRef]);
+  }, [ codeRef ]);
 
   const formattedCode = useMemo(() =>
   {
@@ -54,6 +57,10 @@ export default function CodeViewer({ code }: CodeViewerType)
           brace_style: "expand",
           end_with_newline: false
         };
+      if (language === "xml" || language === "html")
+      {
+        return beautify.html(code, options);
+      }
       return beautify.js(code, options);
     }
     catch (error)
@@ -61,7 +68,7 @@ export default function CodeViewer({ code }: CodeViewerType)
       NotificationsService.errorWithMessage(error, "An error occurred while trying to beautify the code");
       return "Source code is broken";
     }
-  }, [code]);
+  }, [ code ]);
 
   return (
     <pre style={{ maxHeight: 400 }}>

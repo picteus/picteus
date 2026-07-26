@@ -16,7 +16,7 @@ export default function ImageMetadata({ metadata, entry }: ImageMetadataType)
   try
   {
     JSON.parse(value);
-    return <CodeViewer code={value}/>;
+    return <CodeViewer code={value} language="json"/>;
   }
   catch (error)
   {

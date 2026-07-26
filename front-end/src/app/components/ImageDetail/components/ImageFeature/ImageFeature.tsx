@@ -32,13 +32,13 @@ export default function ImageFeature({ feature, viewMode }: ImageFeatureType)
           return <ImageRecipe recipe={GenerationRecipeFromJSON(JSON.parse(feature.value as string))}
                               viewMode={viewMode}/>;
         }
-        return <CodeViewer code={feature.value as string}/>;
+        return <CodeViewer code={feature.value as string} language="json"/>;
       case "markdown":
         return <CopyText value={value as string}><Markdown content={value as string}/></CopyText>;
       case "xml":
-        return value as string;
+        return <CodeViewer code={feature.value as string} language="xml"/>;
       case "html":
-        return value as string;
+        return <span dangerouslySetInnerHTML={{ __html: value as string }}/>;
       case "binary":
         return "";
       case "string":
