@@ -8,7 +8,12 @@ import { z } from "zod";
 import HttpCodes from "http-codes";
 
 import { ServiceError } from "../../app.exceptions";
-import { fileWithProtocol } from "../../dtos/app.dtos";
+import {
+  alphaNumericPlusAdditionalAuthorizedCharactersPattern,
+  alphaNumericPlusPattern,
+  fileWithProtocol
+} from "../../dtos/app.dtos";
+
 
 const { BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_IMPLEMENTED } = HttpCodes;
 
@@ -33,6 +38,7 @@ export enum StringNature
 {
   Free = "free",
   Technical = "technical",
+  Tag = "tag",
   FileSystemFileName = "fileSystemFileName",
   FileSystemRelativeDirectoryPath = "fileSystemRelativeDirectoryPath",
   FileSystemDirectoryPath = "fileSystemDirectoryPath",
@@ -90,9 +96,9 @@ export class ParametersChecker
           this.throwBadParameter(name, value, `${returnType.error.issues[0].code === "too_small" ? "it is empty" : `it exceeds ${maximumLength} characters`}`);
         }
       }
-      if (nature === StringNature.Technical)
+      if (nature === StringNature.Technical || nature === StringNature.Tag)
       {
-        const returnType = z.string().regex(/^[a-z0-9A-Z-_.]*$/).safeParse(value);
+        const returnType = z.string().regex(new RegExp(`^[${nature === StringNature.Technical ? alphaNumericPlusPattern : alphaNumericPlusAdditionalAuthorizedCharactersPattern}]*$`)).safeParse(value);
         if (returnType.success === false)
         {
           this.throwBadParameter(name, value, "it contains illegal characters");
@@ -108,7 +114,7 @@ export class ParametersChecker
         }
         if (isValidValue === true)
         {
-          const forbiddenCharacters = process.platform === "win32" ? Array.from(Array(32), (_, index) => index) : [0];
+          const forbiddenCharacters = process.platform === "win32" ? Array.from(Array(32), (_, index) => index) : [ 0 ];
           for (let index = 0; index < value.length; index++)
           {
             const codePoint = value.codePointAt(index)!;
@@ -122,7 +128,7 @@ export class ParametersChecker
         {
           if (process.platform === "win32")
           {
-            const forbiddenPrefixes = ["CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"];
+            const forbiddenPrefixes = [ "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" ];
             if (forbiddenPrefixes.filter(prefix => value.startsWith(prefix) === true).length > 0)
             {
               isValidValue = false;
@@ -157,7 +163,7 @@ export class ParametersChecker
       }
       else if (nature === StringNature.FileSystemDirectoryPath || nature === StringNature.FileSystemFilePath)
       {
-        const prefix =  process.platform === "win32" ? "[a-zA-Z]:[\\\\\\/]" : "/";
+        const prefix = process.platform === "win32" ? "[a-zA-Z]:[\\\\\\/]" : "/";
         const returnType = z.string().regex(new RegExp(`^${prefix}[^<>:,?"*|]+$`, "")).safeParse(value);
         if (returnType.success === false)
         {

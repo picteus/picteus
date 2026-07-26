@@ -1345,7 +1345,7 @@ describe("Image with module", () =>
         }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it exceeds 64 characters`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const tag = "/";
+        const tag = "\\";
         await expect(async () =>
         {
           await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [tag]);

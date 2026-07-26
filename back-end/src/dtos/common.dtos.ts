@@ -7,14 +7,23 @@ import { SchemaObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.inte
 
 export const alphaNumericPlusPattern = "a-z0-9A-Z-_.";
 
+export const additionalAuthorizedCharacters = ":;|/";
+
+export const alphaNumericPlusAdditionalAuthorizedCharactersPattern = alphaNumericPlusPattern + additionalAuthorizedCharacters;
+
+const computePattern = (pattern: string, maximumLength: number): string =>
+{
+  return `^[${pattern}]{1,${maximumLength}}$`;
+};
+
 const computeIdPattern = (maximumLength: number): string =>
 {
-  return `^[${alphaNumericPlusPattern}]{1,${maximumLength}}$`;
+  return computePattern(alphaNumericPlusPattern, maximumLength);
 };
 
 const computeNamePattern = (maximumLength: number): string =>
 {
-  return `^[${alphaNumericPlusPattern} ]{1,${maximumLength}}$`;
+  return computePattern(`${alphaNumericPlusPattern}${additionalAuthorizedCharacters} `, maximumLength);
 };
 
 export const FieldLengths =
@@ -43,7 +52,7 @@ export type NumericRange<
   access extends number = never,
 > = array["length"] extends end
   ? access | start | end
-  : NumericRange<start, end, [...array, 1], array[start] extends undefined ? access : access | array["length"]>;
+  : NumericRange<start, end, [ ...array, 1 ], array[start] extends undefined ? access : access | array["length"]>;
 
 export const fileWithProtocol = "file://";
 
@@ -58,6 +67,8 @@ export const namePattern = computeNamePattern(FieldLengths.name);
 export const shortTechnicalIdPattern = computeIdPattern(FieldLengths.shortTechnical);
 
 export const extensionIdPattern = shortTechnicalIdPattern;
+
+export const tagPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.shortTechnical);
 
 const noProtocolUriPathPattern = "[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
@@ -444,15 +455,15 @@ export const computeImageFormatsExtensions = (imageFormats: ImageFormat[]): stri
     const extension = toFileExtension(imageFormat);
     if (imageFormat === ImageFormat.JPEG)
     {
-      return [extension, "jpeg"];
+      return [ extension, "jpeg" ];
     }
     else if (imageFormat === ImageFormat.HEIF)
     {
-      return [extension, "heic"];
+      return [ extension, "heic" ];
     }
     else
     {
-      return [extension];
+      return [ extension ];
     }
   }).flat(1);
 };

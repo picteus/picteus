@@ -669,7 +669,7 @@ export class ImageService
     }
     for (let index = 0; index < tags.length; index++)
     {
-      parametersChecker.checkString(`tags[${index}]`, tags[index], FieldLengths.technical, StringNature.Technical);
+      parametersChecker.checkString(`tags[${index}]`, tags[index], FieldLengths.technical, StringNature.Tag);
     }
     const existingEntities = await this.entitiesProvider.imageTag.findMany({
       where: { imageId: id, extensionId }

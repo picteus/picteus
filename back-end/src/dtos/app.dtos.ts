@@ -1,6 +1,7 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 
 import {
+  alphaNumericPlusAdditionalAuthorizedCharactersPattern,
   alphaNumericPlusPattern,
   applicationXGzipMimeType,
   attachmentUriPrefix,
@@ -163,6 +164,7 @@ export {
   AllImageEmbeddings,
   AllImageFeatures,
   alphaNumericPlusPattern,
+  alphaNumericPlusAdditionalAuthorizedCharactersPattern,
   ApiSecret,
   ApiSecretSummary,
   ApiSecretType,

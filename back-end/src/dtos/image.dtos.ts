@@ -43,6 +43,7 @@ import {
   integerIdSchema,
   Json,
   repositoryIdSchema,
+  tagPattern,
   technicalSchema,
   toMimeType,
   uniqueIdPattern,
@@ -422,7 +423,7 @@ export class GenerationRecipe
       minLength: 1,
       maxLength: FieldLengths.url,
       required: false,
-      example: [imageIdSchema.example]
+      example: [ imageIdSchema.example ]
     }
   )
   @IsString({ each: true })
@@ -663,7 +664,7 @@ export class ImageFeature
   @ApiProperty(
     {
       description: "The image feature value",
-      anyOf:
+      oneOf:
         [
           { type: "string", minLength: 1, maxLength: FieldLengths.value },
           { type: "integer", format: "int64" },
@@ -675,7 +676,7 @@ export class ImageFeature
     }
   )
   @TypeBasedValidation({
-    "string": [MinLength(1), MaxLength(FieldLengths.value)],
+    "string": [ MinLength(1), MaxLength(FieldLengths.value) ],
     "number": [],
     "boolean": []
   })
@@ -842,6 +843,7 @@ export class ExtensionImageTag
       ...technicalSchema,
       description: "The image tag value",
       type: String,
+      pattern: tagPattern,
       required: true
     }
   )
@@ -1346,7 +1348,7 @@ export class SearchParameters
 
   static withRepositoryIdAndSearchCriteria(id?: string, criteria?: SearchCriteria): SearchParameters
   {
-    return new SearchParameters(new SearchFilter(criteria || {}, id === undefined ? undefined : new SearchRepositoriesOrigin([id])), undefined);
+    return new SearchParameters(new SearchFilter(criteria || {}, id === undefined ? undefined : new SearchRepositoriesOrigin([ id ])), undefined);
   }
 
   constructor(filter?: SearchFilter, collectionId?: number, range?: SearchRange)

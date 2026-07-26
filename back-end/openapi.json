@@ -4509,7 +4509,7 @@
           "name": {
             "type": "string",
             "description": "The name of the extension",
-            "pattern": "^[a-z0-9A-Z-_. ]{1,128}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
             "minLength": 1,
             "maxLength": 128,
             "example": "My extension"
@@ -4735,7 +4735,7 @@
           "name": {
             "type": "string",
             "description": "The name of the extension",
-            "pattern": "^[a-z0-9A-Z-_. ]{1,128}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
             "minLength": 1,
             "maxLength": 128,
             "example": "My extension"
@@ -4844,7 +4844,7 @@
           "name": {
             "type": "string",
             "description": "The name of the repository",
-            "pattern": "^[a-z0-9A-Z-_. ]{1,128}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
             "minLength": 1,
             "maxLength": 128,
             "example": "myRepository"
@@ -5002,7 +5002,7 @@
           "value": {
             "type": "string",
             "description": "The image tag value",
-            "pattern": "^[a-z0-9A-Z-_.]{1,64}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,32}$",
             "minLength": 1,
             "maxLength": 64,
             "example": "technical-id"
@@ -5282,7 +5282,7 @@
           },
           "value": {
             "description": "The image feature value",
-            "anyOf": [
+            "oneOf": [
               {
                 "type": "string",
                 "minLength": 1,
@@ -5338,7 +5338,7 @@
           },
           "value": {
             "description": "The image feature value",
-            "anyOf": [
+            "oneOf": [
               {
                 "type": "string",
                 "minLength": 1,
