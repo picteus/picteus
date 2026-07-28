@@ -197,7 +197,7 @@ export type TabsType = {
 export enum ChannelEnum
 {
   EXTENSION_PREFIX = "extension",
-  EXTENSION_PROCESS_PREFIX = "extension.process",
+  EXTENSION_PROCESS = "extension.process",
   EXTENSION_INSTALLED = "extension.installed",
   EXTENSION_UPDATED = "extension.updated",
   EXTENSION_PAUSED = "extension.paused",

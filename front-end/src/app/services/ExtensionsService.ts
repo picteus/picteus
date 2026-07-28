@@ -3,6 +3,7 @@ import i18n from "i18next";
 import {
   CommandEntity,
   Extension,
+  ExtensionActivity,
   ExtensionApi,
   ExtensionApiExtensionBuildRequest,
   ExtensionApiExtensionGenerateRequest,
@@ -107,6 +108,11 @@ async function setSettings(
 function getConfiguration(): ExtensionsConfiguration
 {
   return extensionsConfiguration;
+}
+
+async function activities(): Promise<ExtensionActivity[]>
+{
+  return extensionApi.extensionActivities();
 }
 
 function getExtensionsWithCapability(
@@ -246,5 +252,6 @@ export default {
   getAdditionalUis,
   getExtensionsCommands,
   runImageCommand,
-  runProcessCommand
+  runProcessCommand,
+  activities
 };

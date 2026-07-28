@@ -3,15 +3,16 @@ import { Flex, Image, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { IconBox } from "@tabler/icons-react";
 
-import { Extension } from "@picteus/ws-client";
+import { Extension, ExtensionActivityKind } from "@picteus/ws-client";
 
 import { ExtensionsService } from "app/services";
 import { Common, ContentTitle, CopyText, EntityStatus, FieldValue, NoValue } from "app/components";
-import { ExtensionActions } from "../index.ts";
+import { ExtensionActions, ExtensionActivity } from "../index.ts";
 
 
 type ExtensionTopType = {
   extension: Extension;
+  activityKind?: ExtensionActivityKind;
   openAddOrUpdateExtensionModal: (extension: Extension) => void;
   openExtensionSettingsModal: (extension: Extension) => void;
   onUninstalled: () => void;
@@ -19,6 +20,7 @@ type ExtensionTopType = {
 
 export default function ExtensionTop({
   extension,
+  activityKind,
   openAddOrUpdateExtensionModal,
   openExtensionSettingsModal,
   onUninstalled
@@ -40,7 +42,10 @@ export default function ExtensionTop({
                     value={extension.manifest.description ? <Text>{extension.manifest.description}</Text> :
                       <NoValue/>}/>
         <FieldValue name={t("field.status")}
-                    value={<EntityStatus type="extension" status={extension.status} size="sm"/>}/>
+                    value={<Flex align="center" gap="xs">
+                      <EntityStatus type="extension" status={extension.status} size="sm"/>
+                      {activityKind && <ExtensionActivity activityKind={activityKind}/>}
+                    </Flex>}/>
         <Flex gap="sm" mt="lg">
           <ExtensionActions
             extension={extension}

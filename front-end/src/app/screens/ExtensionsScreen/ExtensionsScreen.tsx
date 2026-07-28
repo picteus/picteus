@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { ActionIcon, Button, Card, Flex, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 import { IconBox, IconLayoutGrid, IconList, IconPlus, IconPuzzle } from "@tabler/icons-react";
 
-import { Extension } from "@picteus/ws-client";
+import { Extension, type ExtensionActivityKind } from "@picteus/ws-client";
 
+import { ChannelEnum } from "types";
+import { NotificationsService } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
 import {
@@ -20,6 +22,7 @@ import {
 import {
   CreateExtensionModal,
   ExtensionActions,
+  ExtensionActivity,
   ExtensionDetail,
   ExtensionSettingsModal,
   ExtensionTop,
@@ -37,6 +40,33 @@ export default function ExtensionsScreen()
   const [ loading, setLoading ] = useState<boolean>(false);
   const [ selectedExtension, setSelectedExtension ] = useState<Extension>();
   const [ viewMode, setViewMode ] = useState<"table" | "card">("table");
+  const [ extensionActivities, setExtensionActivities ] = useState<Record<string, ExtensionActivityKind>>({});
+
+  const fetchActivities = () =>
+  {
+    ExtensionsService.activities().then(activities =>
+    {
+      const activitiesMap = activities.reduce((activities, activity) =>
+      {
+        activities[activity.id] = activity.kind;
+        return activities;
+      }, {});
+      setExtensionActivities(activitiesMap);
+    }).catch(NotificationsService.errorWithMessage);
+  };
+
+  useEffect(() =>
+  {
+    fetchActivities();
+  }, []);
+
+  useEffect(() =>
+  {
+    if (event?.channel === ChannelEnum.EXTENSION_PROCESS)
+    {
+      fetchActivities();
+    }
+  }, [ event ]);
 
   useEffect(() =>
   {
@@ -44,7 +74,7 @@ export default function ExtensionsScreen()
     {
       void fetchAllExtensions();
     }
-  }, [event]);
+  }, [ event ]);
 
   useEffect(() =>
   {
@@ -138,7 +168,11 @@ export default function ExtensionsScreen()
           <Text size="md">{extension.manifest.description}</Text>
         </Table.Td>
         <Table.Td>
-          <EntityStatus type="extension" status={extension.status} size="md"/>
+          <Flex align="center" gap="xs">
+            <EntityStatus type="extension" status={extension.status} size="md"/>
+            {extensionActivities[extension.manifest.id] &&
+              <ExtensionActivity activityKind={extensionActivities[extension.manifest.id]}/>}
+          </Flex>
         </Table.Td>
         <Table.Td>
           <ExtensionActions
@@ -149,7 +183,7 @@ export default function ExtensionsScreen()
           />
         </Table.Td>
       </Table.Tr>
-    )), [ extensions ]);
+    )), [ extensions, extensionActivities ]);
 
   function renderTable()
   {
@@ -186,6 +220,7 @@ export default function ExtensionsScreen()
           <Card key={extension.manifest.id} shadow="sm" padding="lg" radius="md" withBorder>
             <ExtensionTop
               extension={extension}
+              activityKind={extensionActivities[extension.manifest.id]}
               openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
               openExtensionSettingsModal={openExtensionSettingsModal}
               onUninstalled={fetchAllExtensions}
@@ -242,6 +277,7 @@ export default function ExtensionsScreen()
         onClose={() => setSelectedExtension(undefined)}
         title={selectedExtension &&
           <ExtensionTop extension={selectedExtension}
+                        activityKind={extensionActivities[selectedExtension.manifest.id]}
                         openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
                         openExtensionSettingsModal={openExtensionSettingsModal}
                         onUninstalled={fetchAllExtensions}/>}
