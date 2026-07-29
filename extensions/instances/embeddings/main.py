@@ -11,7 +11,7 @@ import torch
 from PIL import Image
 from PIL.ImageFile import ImageFile
 from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator
-from picteus_ws_client import ImageEmbeddings, ImageFormat
+from picteus_ws_client import ImageFormat, ImageEmbedding
 
 
 class Embeddings(PicteusExtension):
@@ -34,12 +34,14 @@ class Embeddings(PicteusExtension):
         return None
 
     async def _handle_image(self, communicator: Communicator, image_id: str) -> None:
-        image: bytearray = self.get_image_api().image_download(image_id, ImageFormat.PNG, None, None, None, True)
+        image: bytearray = self.get_image_api().image_download(id=image_id, format=ImageFormat.PNG, width=None,
+                                                               height=None, resize_render=None, strip_metadata=True)
         pil_image: ImageFile = Image.open(io.BytesIO(image))
         image_embeddings: list[float] = await self.run_in_executor(
             lambda: self._compute_image_embeddings(communicator, pil_image))
-        self.get_image_api().image_set_embeddings(image_id, self.extension_id,
-                                                  ImageEmbeddings.from_dict({"values": image_embeddings}))
+        self.get_image_api().image_set_embeddings(id=image_id, extension_id=self.extension_id,
+                                                  image_embedding=[
+                                                      ImageEmbedding(name="default", values=image_embeddings)])
 
     async def _handle_text(self, communicator: Communicator, text: str) -> list[float]:
         return await self.run_in_executor(lambda: self._compute_text_embeddings(communicator, text))
@@ -69,7 +71,7 @@ class Embeddings(PicteusExtension):
                 model_name = "ViT-B/32"
                 try:
                     logging.info(f"Loading the '{model_name}' model")
-                    self.model, self.preprocess = clip.load(model_name, device=self.device,
+                    self.model, self.preprocess = clip.load(name=model_name, device=self.device, jit=False,
                                                             download_root=PicteusExtension.get_cache_directory_path())
                 finally:
                     ssl._create_default_https_context = save_create_default_https_context
