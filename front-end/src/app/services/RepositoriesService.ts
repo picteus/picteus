@@ -1,4 +1,5 @@
 import {
+  ExtensionIdImageEmbeddingName,
   ExtensionImageFeatureName,
   ExtensionImageTag,
   Repository,
@@ -71,6 +72,11 @@ async function getTags(): Promise<ExtensionImageTag[]>
   return repositoryApi.repositoryGetTags();
 }
 
+async function getEmbeddingsNames(): Promise<ExtensionIdImageEmbeddingName[]>
+{
+  return repositoryApi.repositoryGetEmbeddingsNames();
+}
+
 function getRepositoryInformation(repositoryId: string): Repository
 {
   return repositories.find((repository) =>
@@ -92,5 +98,6 @@ export default {
   synchronize,
   getFeatureNames,
   getTags,
+  getEmbeddingsNames,
   remove
 };

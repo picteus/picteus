@@ -5,12 +5,17 @@ import { useFocusTrap } from "@mantine/hooks";
 import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { ImageApiImageClosestImagesRequest, ImageSummary } from "@picteus/ws-client";
+import {
+  ExtensionIdImageEmbeddingName,
+  ImageApiImageClosestImagesRequest,
+  ImageDistance,
+  ImageSummary
+} from "@picteus/ws-client";
 
 import { ImageWithCaption, ViewMode } from "types";
 import { NotificationsService, Validators } from "utils";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmptyResults, ImagesView, ImageThumbnail } from "app/components";
+import { CaptionDistance, EmbeddingSelect, EmptyResults, ImagesView, ImageThumbnail } from "app/components";
 
 
 type ClosestEmbeddingsImagesFormPayload = {
@@ -25,16 +30,16 @@ type ClosestEmbeddingsImagesType = {
 
 export default function ClosestEmbeddingsImages({ extensionId, image, viewMode }: ClosestEmbeddingsImagesType)
 {
-  const [t] = useTranslation();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [images, setImages] = useState<ImageWithCaption[]>([]);
+  const [ t ] = useTranslation();
+  const [ loading, setLoading ] = useState<boolean>(false);
+  const [ images, setImages ] = useState<ImageWithCaption[]>([]);
+  const [ embeddingName, setEmbeddingName ] = useState<ExtensionIdImageEmbeddingName | undefined>();
+  const [ hasInitiallySearched, setHasInitiallySearched ] = useState<boolean>(false);
   const focusTrapRef = useFocusTrap();
 
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
 
-  const initialValues: ClosestEmbeddingsImagesFormPayload = {
-    count: initialResultsCount
-  };
+  const initialValues: ClosestEmbeddingsImagesFormPayload = { count: initialResultsCount };
 
   const form = useForm({
     mode: "uncontrolled",
@@ -44,51 +49,62 @@ export default function ClosestEmbeddingsImages({ extensionId, image, viewMode }
     }
   });
 
+  useEffect(() =>
+  {
+    if (embeddingName && hasInitiallySearched === false)
+    {
+      setHasInitiallySearched(true);
+      void search({
+        count: form.getValues().count,
+        extensionId: embeddingName.extensionId,
+        name: embeddingName.name,
+        id: image.id
+      });
+    }
+  }, [ embeddingName, hasInitiallySearched, image.id ]);
+
   async function handleSubmit(values: ClosestEmbeddingsImagesFormPayload)
   {
     StorageService.setClosestImagesResultsCount(values.count);
+    const { extensionId, name } = embeddingName;
     const parameters: ImageApiImageClosestImagesRequest = {
       count: values.count,
       extensionId,
+      name,
       id: image.id
     };
-    void load(parameters);
+    void search(parameters);
   }
 
-  async function load(parameters: ImageApiImageClosestImagesRequest)
+  async function search(parameters: ImageApiImageClosestImagesRequest)
   {
     setLoading(true);
 
     try
     {
-      const imageDistances = await ImageService.getClosestImages(parameters);
+      let imageDistances: ImageDistance[];
+      try
+      {
+        imageDistances = await ImageService.getClosestImages(parameters);
+      }
+      catch (error)
+      {
+        return NotificationsService.apiCallError(error, "An error occurred while trying to find closes images");
+      }
       setImages(
         imageDistances
-          .sort((a, b) => a.distance - b.distance)
+          .sort((distance1, distance2) => distance1.distance - distance2.distance)
           .map((imageDistance) => ({
             ...imageDistance.image,
             caption: <CaptionDistance distance={imageDistance.distance}/>
           }))
       );
     }
-    catch (error)
-    {
-      NotificationsService.apiCallError(error, "An error occurred while trying to find closes images");
-    }
     finally
     {
       setLoading(false);
     }
   }
-
-  useEffect(() =>
-  {
-    void load({
-      count: initialResultsCount,
-      extensionId,
-      id: image.id
-    });
-  }, []);
 
   function renderForm()
   {
@@ -99,6 +115,9 @@ export default function ClosestEmbeddingsImages({ extensionId, image, viewMode }
           <Input.Wrapper label={t("field.source")}>
             <ImageThumbnail imageOrUrl={image} width={edge} height={edge}/>
           </Input.Wrapper>
+          <Input.Wrapper label={t("field.name")}>
+            <EmbeddingSelect onSelected={setEmbeddingName}/>
+          </Input.Wrapper>
           <NumberInput
             ref={focusTrapRef}
             min={1}
@@ -108,7 +127,7 @@ export default function ClosestEmbeddingsImages({ extensionId, image, viewMode }
             {...form.getInputProps("count")}
           />
 
-          <Button loading={loading} disabled={loading} type="submit">
+          <Button loading={loading} disabled={loading || embeddingName === undefined} type="submit">
             {t("button.find")}
           </Button>
         </Flex>

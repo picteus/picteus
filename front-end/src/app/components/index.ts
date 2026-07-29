@@ -40,3 +40,5 @@ export { default as StandardTable } from "./StandardTable/StandardTable.tsx";
 export { default as Drawer } from "./Drawer/Drawer.tsx";
 export { default as StackNavigator, useStackNavigator } from "./StackNavigator/StackNavigator.tsx";
 export { CaptionDistance } from "./ImageMasonry/components";
+export { default as StandardMenu } from "./StandardMenu/StandardMenu.tsx";
+export { default as EmbeddingSelect } from "./EmbeddingSelect/EmbeddingSelect.tsx";

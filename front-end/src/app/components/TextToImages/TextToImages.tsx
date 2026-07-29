@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Flex, Group, NumberInput, TextInput } from "@mantine/core";
+import { Alert, Button, Flex, Group, Input, NumberInput, Textarea } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useFocusTrap } from "@mantine/hooks";
 import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 
-import { ImageApiImageTextToImagesRequest } from "@picteus/ws-client";
+import { ExtensionIdImageEmbeddingName, ImageApiImageTextToImagesRequest } from "@picteus/ws-client";
 
 import { ImageWithCaption } from "types";
 import { NotificationsService, Validators } from "utils";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmptyResults, ImagesView } from "app/components";
+import { CaptionDistance, EmbeddingSelect, EmptyResults, ImagesView } from "app/components";
 
 
 type TextToImagesFormPayload = {
@@ -24,18 +24,19 @@ type TextToImageType = {
 
 export default function TextToImages({ extensionId }: TextToImageType)
 {
-  const [t] = useTranslation();
-  const [images, setImages] = useState<ImageWithCaption[]>([]);
-  const [emptyResult, setEmptyResult] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [ t ] = useTranslation();
+  const [ images, setImages ] = useState<ImageWithCaption[]>([]);
+  const [ emptyResult, setEmptyResult ] = useState<boolean>(false);
+  const [ loading, setLoading ] = useState<boolean>(false);
+  const [ embeddingName, setEmbeddingName ] = useState<ExtensionIdImageEmbeddingName | undefined>();
+  const [ hasText, setHasText ] = useState<boolean>(false);
   const focusTrapRef = useFocusTrap();
 
-  const initialResultsCount = StorageService.getTextToImagesResultsCount();
-
-  const initialValues: TextToImagesFormPayload = {
-    count: initialResultsCount,
-    text: undefined
-  };
+  const initialValues: TextToImagesFormPayload =
+    {
+      count: StorageService.getTextToImagesResultsCount(),
+      text: undefined
+    };
 
   const form = useForm({
     mode: "uncontrolled",
@@ -49,9 +50,14 @@ export default function TextToImages({ extensionId }: TextToImageType)
   async function handleSubmit(values: TextToImagesFormPayload)
   {
     StorageService.setTextToImagesResultsCount(values.count);
+    if (!embeddingName)
+    {
+      return;
+    }
     const parameters: ImageApiImageTextToImagesRequest = {
       ...values,
-      extensionId
+      name: embeddingName.name,
+      extensionId: embeddingName.extensionId
     };
     void load(parameters);
   }
@@ -96,14 +102,29 @@ export default function TextToImages({ extensionId }: TextToImageType)
       <Group mt="sm">
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Flex ref={focusTrapRef} align="end" gap={10}>
-            <TextInput
+            <Textarea
               data-autofocus
               flex="1"
               withAsterisk
+              autosize
+              minRows={1}
+              maxRows={5}
               label={t("field.search")}
               placeholder={t("textToImagesModal.searchPlaceholder")}
               {...form.getInputProps("text")}
+              onChange={(event) =>
+              {
+                const props = form.getInputProps("text");
+                if (props.onChange)
+                {
+                  props.onChange(event);
+                }
+                setHasText(event.currentTarget.value.trim().length > 0);
+              }}
             />
+            <Input.Wrapper label={t("field.name")}>
+              <EmbeddingSelect onSelected={setEmbeddingName}/>
+            </Input.Wrapper>
             <NumberInput
               min={1}
               withAsterisk
@@ -111,8 +132,7 @@ export default function TextToImages({ extensionId }: TextToImageType)
               placeholder={t("textToImagesModal.countPlaceholder")}
               {...form.getInputProps("count")}
             />
-
-            <Button loading={loading} disabled={loading} type="submit">
+            <Button loading={loading} disabled={loading || embeddingName === undefined || !hasText} type="submit">
               {t("button.find")}
             </Button>
           </Flex>

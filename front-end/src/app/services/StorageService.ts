@@ -11,6 +11,7 @@ const TABS_KEY = `${prefix}tabs`;
 const ACTIVITY_LOGS_BATCH_SIZE = `${prefix}activityLogsBatchSize`;
 const VISUALIZER_PANEL_SIZES_KEY = `${prefix}visualizerPanelSizes`;
 const CLOSEST_IMAGES_RESULTS_COUNT = `${prefix}closestImagesResultsCount`;
+const CLOSEST_IMAGES_EMBEDDING_NAME = `${prefix}closestImagesEmbeddingName`;
 const TEXT_TO_IMAGES_RESULTS_COUNT = `${prefix}textToImagesResultsCount`;
 const FOLDER_PICKER_LAST_LOCATION = `${prefix}extensionPickerLastLocation`;
 const AUTO_RELOAD_IMAGES_VIEWS = `${prefix}autoReloadImagesViews`;
@@ -78,6 +79,14 @@ export default {
   setClosestImagesResultsCount: (value: number): void =>
   {
     set(CLOSEST_IMAGES_RESULTS_COUNT, value.toString());
+  },
+  getClosestImagesEmbeddingName(): string | undefined
+  {
+    return get(CLOSEST_IMAGES_EMBEDDING_NAME);
+  },
+  setClosestImagesEmbeddingName: (value: string): void =>
+  {
+    set(CLOSEST_IMAGES_EMBEDDING_NAME, value);
   },
   getTextToImagesResultsCount: (): number =>
   {

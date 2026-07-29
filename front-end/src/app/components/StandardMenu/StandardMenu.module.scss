@@ -1,0 +1,12 @@
+.content
+{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+  background-color: var(--mantine-color-default);
+  min-width: 150px;
+  height: 35px;
+}
