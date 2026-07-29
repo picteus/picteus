@@ -22,6 +22,7 @@ import { jsonTransform } from "./transformers.dtos";
 import {
   extensionIdPattern,
   extensionIdSchema,
+  ExtensionIdType,
   FieldLengths,
   ImageTag,
   Json,
@@ -785,7 +786,7 @@ class ExtensionBasis
   @NotEquals(null)
   @IsString()
   @Expose()
-  readonly id: string;
+  readonly id: ExtensionIdType;
 
   @ApiProperty(
     {
@@ -1041,7 +1042,7 @@ export class ExtensionActivity
   )
   @IsString()
   @Expose()
-  readonly id: string;
+  readonly id: ExtensionIdType;
 
   @ApiProperty(
     {
@@ -1204,7 +1205,7 @@ export class ExtensionSettings
 export class ConfigurationCapability
 {
 
-  constructor(capability: ManifestCapability, extensionIds: string[])
+  constructor(capability: ManifestCapability, extensionIds: ExtensionIdType[])
   {
     this.capability = capability;
     this.extensionIds = extensionIds;
@@ -1233,7 +1234,7 @@ export class ConfigurationCapability
   @IsString({ each: true })
   @IsArray()
   @Expose()
-  readonly extensionIds: string[];
+  readonly extensionIds: ExtensionIdType[];
 
 }
 
@@ -1244,7 +1245,7 @@ export class ConfigurationCapability
 export class ConfigurationExtensionCommand
 {
 
-  constructor(extensionId: string, command: ManifestExtensionCommand)
+  constructor(extensionId: ExtensionIdType, command: ManifestExtensionCommand)
   {
     this.extensionId = extensionId;
     this.command = command;
@@ -1265,7 +1266,7 @@ export class ConfigurationExtensionCommand
   @NotEquals(null)
   @IsString()
   @Expose()
-  readonly extensionId: string;
+  readonly extensionId: ExtensionIdType;
 
   @ApiProperty(
     {

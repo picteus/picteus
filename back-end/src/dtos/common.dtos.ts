@@ -68,7 +68,7 @@ export const shortTechnicalIdPattern = computeIdPattern(FieldLengths.shortTechni
 
 export const extensionIdPattern = shortTechnicalIdPattern;
 
-export const tagPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.shortTechnical);
+export const technicalRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.shortTechnical);
 
 const noProtocolUriPathPattern = "[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
@@ -140,6 +140,16 @@ export const shortTechnicalSchema: SchemaObject =
     minLength: 1,
     maxLength: FieldLengths.shortTechnical,
     example: "technical-id"
+  };
+
+export const technicalRelaxedSchema: SchemaObject =
+  {
+    description: "A relaxed technical identifier",
+    type: "string",
+    pattern: technicalRelaxedPattern,
+    minLength: 1,
+    maxLength: FieldLengths.shortTechnical,
+    example: "a:relaxed/id"
   };
 
 export const technicalSchema: SchemaObject =

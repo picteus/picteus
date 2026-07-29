@@ -1449,6 +1449,32 @@
         ]
       }
     },
+    "/repository/embeddingsNames": {
+      "get": {
+        "description": "Returns all the existing pairs of extension identifier and embedding name, restricted to the extensions with the 'image.embeddings' capability.",
+        "operationId": "repository_getEmbeddingsNames",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The existing pairs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExtensionIdImageEmbeddingName"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets all the embeddings identifiers and names",
+        "tags": [
+          "repository"
+        ]
+      }
+    },
     "/repository/getImageByUrl": {
       "get": {
         "description": "Returns the details about an image.",
@@ -3139,7 +3165,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImageEmbeddings"
+                  "$ref": "#/components/schemas/ExtensionImageEmbeddings"
                 }
               }
             }
@@ -3191,7 +3217,10 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ImageEmbeddings"
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ImageEmbedding"
+                }
               }
             }
           }
@@ -3209,7 +3238,7 @@
     },
     "/image/{id}/closestImages": {
       "get": {
-        "description": "Returns the closest images for a given an image, following the embeddings of a given extension.",
+        "description": "Returns the image closest images following its specific embedding computed by an extension.",
         "operationId": "image_closestImages",
         "parameters": [
           {
@@ -3241,6 +3270,15 @@
             }
           },
           {
+            "name": "name",
+            "required": true,
+            "in": "query",
+            "description": "The name of the embeddings",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "count",
             "required": true,
             "in": "query",
@@ -3267,7 +3305,7 @@
             }
           }
         },
-        "summary": "Gets the closest images to the image following the embeddings of an extension",
+        "summary": "Gets the image closest images",
         "tags": [
           "image"
         ]
@@ -3309,7 +3347,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ImageEmbeddings"
+                "$ref": "#/components/schemas/ImageEmbedding"
               }
             }
           }
@@ -3361,6 +3399,15 @@
               "minLength": 1,
               "maxLength": 32,
               "example": "extension-id"
+            }
+          },
+          {
+            "name": "name",
+            "required": true,
+            "in": "query",
+            "description": "The name of the embeddings",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -5012,14 +5059,40 @@
             "description": "The image tag value",
             "pattern": "^[a-z0-9A-Z-_.:;|/]{1,32}$",
             "minLength": 1,
-            "maxLength": 64,
-            "example": "technical-id"
+            "maxLength": 32,
+            "example": "a:relaxed/id"
           }
         },
         "description": "A tag set on an image for a given extension",
         "required": [
           "id",
           "value"
+        ]
+      },
+      "ExtensionIdImageEmbeddingName": {
+        "type": "object",
+        "properties": {
+          "extensionId": {
+            "type": "string",
+            "description": "The extension identifier",
+            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "extension-id"
+          },
+          "name": {
+            "type": "string",
+            "description": "The embedding name",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "a:relaxed/id"
+          }
+        },
+        "description": "An extension identifier, plus an embedding name",
+        "required": [
+          "extensionId",
+          "name"
         ]
       },
       "ImageFormat": {
@@ -6483,9 +6556,17 @@
           "totalCount"
         ]
       },
-      "ExtensionImageEmbeddings": {
+      "ImageEmbedding": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "description": "The image embedding name",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "a:relaxed/id"
+          },
           "values": {
             "description": "The image embeddings vector",
             "minItems": 1,
@@ -6495,7 +6576,17 @@
               "type": "number",
               "format": "double"
             }
-          },
+          }
+        },
+        "description": "A vectorial representation of an image, i.e. an image embedding vector, plus a name for that representation",
+        "required": [
+          "name",
+          "values"
+        ]
+      },
+      "ExtensionImageEmbeddings": {
+        "type": "object",
+        "properties": {
           "id": {
             "type": "string",
             "description": "The extension identifier",
@@ -6503,31 +6594,19 @@
             "minLength": 1,
             "maxLength": 32,
             "example": "extension-id"
+          },
+          "embeddings": {
+            "description": "The image embeddings for the extension",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageEmbedding"
+            }
           }
         },
         "description": "The image embeddings vectors computed by an extension",
         "required": [
-          "values",
-          "id"
-        ]
-      },
-      "ImageEmbeddings": {
-        "type": "object",
-        "properties": {
-          "values": {
-            "description": "The image embeddings vector",
-            "minItems": 1,
-            "maxItems": 4096,
-            "type": "array",
-            "items": {
-              "type": "number",
-              "format": "double"
-            }
-          }
-        },
-        "description": "A vectorial representation of an image, i.e. an image embeddings vector",
-        "required": [
-          "values"
+          "id",
+          "embeddings"
         ]
       },
       "ImageDistance": {

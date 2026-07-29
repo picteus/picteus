@@ -51,7 +51,7 @@ export enum ApiScope
   CollectionWrite = "collection:write",
   ImageAttachmentWrite = "image:attachment:write",
   ImageDelete = "image:delete",
-  ImageEmbeddingsWrite = "image:embeddings:write",
+  ImageEmbeddingWrite = "image:embedding:write",
   ImageFeatureWrite = "image:feature:write",
   ImageRead = "image:read",
   ImageTagWrite = "image:tag:write",
@@ -318,7 +318,7 @@ export class AuthenticationGuard implements CanActivate
   {
     return {
       extensionId,
-      scopes: [ ApiScope.ExtensionChromeExtensionInstall, ApiScope.ExtensionRun, ApiScope.ExtensionSettingsRead, ApiScope.ExtensionSettingsWrite, ApiScope.ImageAttachmentWrite, ApiScope.ImageEmbeddingsWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageRead, ApiScope.ImageTagWrite, ApiScope.RepositoryEnsure, ApiScope.RepositoryRead, ApiScope.RepositoryStoreImage ]
+      scopes: [ ApiScope.ExtensionChromeExtensionInstall, ApiScope.ExtensionRun, ApiScope.ExtensionSettingsRead, ApiScope.ExtensionSettingsWrite, ApiScope.ImageAttachmentWrite, ApiScope.ImageEmbeddingWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageRead, ApiScope.ImageTagWrite, ApiScope.RepositoryEnsure, ApiScope.RepositoryRead, ApiScope.RepositoryStoreImage ]
     };
   }
 

@@ -179,7 +179,7 @@ describe("WebServices", () =>
     await imageApi.imageSetEmbeddings({
       id: image.id,
       extensionId: extension.manifest.id,
-      imageEmbeddings: { values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ] }
+      imageEmbedding: [ { name: "default", values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ] } ]
     });
     const blob = await imageApi.imageDownload({ id: image.id });
     await repositoryApi.repositoryStoreImage({ id: newRepository.id, body: blob });

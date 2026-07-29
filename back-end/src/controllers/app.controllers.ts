@@ -50,10 +50,6 @@ import {
   withOneOfPolicies
 } from "../app.guards";
 import {
-  AllExtensionImageFeatureNames,
-  AllExtensionImageTags,
-  AllImageEmbeddings,
-  AllImageFeatures,
   alphaNumericPlusPattern,
   ApiSecret,
   ApiSecretSummary,
@@ -71,6 +67,7 @@ import {
   ExtensionActivity,
   ExtensionAndManual,
   ExtensionGenerationOptions,
+  ExtensionIdImageEmbeddingName,
   extensionIdSchema,
   ExtensionIdType,
   ExtensionImageEmbeddings,
@@ -84,7 +81,7 @@ import {
   Image,
   ImageDistance,
   ImageDistances,
-  ImageEmbeddings,
+  ImageEmbedding,
   ImageFeature,
   ImageFormat,
   imageIdSchema,
@@ -1143,7 +1140,7 @@ export class RepositoryController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryRead ]))
-  async getFeatureNames(): Promise<AllExtensionImageFeatureNames>
+  async getFeatureNames(): Promise<ExtensionImageFeatureName []>
   {
     return await this.repositoryService.getFeatureNames();
   }
@@ -1164,9 +1161,30 @@ export class RepositoryController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryRead ]))
-  async getTags(): Promise<AllExtensionImageTags>
+  async getTags(): Promise<ExtensionImageTag []>
   {
     return await this.repositoryService.getTags();
+  }
+
+  @Get("embeddingsNames")
+  @ApiOperation(
+    {
+      summary: "Gets all the embeddings identifiers and names",
+      description: "Returns all the existing pairs of extension identifier and embedding name, restricted to the extensions with the 'image.embeddings' capability."
+    }
+  )
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The existing pairs",
+      type: ExtensionIdImageEmbeddingName,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryRead ]))
+  async getEmbeddingsNames(): Promise<ExtensionIdImageEmbeddingName []>
+  {
+    return await this.repositoryService.getEmbeddingsNames();
   }
 
   @Get("getImageByUrl")
@@ -1742,7 +1760,7 @@ export class ImageController
       type: Image
     }
   )
-  @CheckPolicies(withAllPolicies([ ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingsWrite ]))
+  @CheckPolicies(withAllPolicies([ ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingWrite ]))
   async synchronize(@Param("id") id: string): Promise<Image>
   {
     return await this.imageService.synchronize(id);
@@ -1935,7 +1953,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async getAllFeatures(@Param("id") id: string): Promise<AllImageFeatures>
+  async getAllFeatures(@Param("id") id: string): Promise<ExtensionImageFeature []>
   {
     return await this.imageService.getAllFeatures(id);
   }
@@ -2020,7 +2038,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async getAllTags(@Param("id") id: string): Promise<AllExtensionImageTags>
+  async getAllTags(@Param("id") id: string): Promise<ExtensionImageTag []>
   {
     return await this.imageService.getAllTags(id);
   }
@@ -2143,7 +2161,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async getAllEmbeddings(@Param("id") id: string): Promise<AllImageEmbeddings>
+  async getAllEmbeddings(@Param("id") id: string): Promise<ExtensionImageEmbeddings []>
   {
     return await this.imageService.getAllEmbeddings(id);
   }
@@ -2171,11 +2189,11 @@ export class ImageController
     {
       status: OK,
       description: "The image embeddings related to the extension",
-      type: ImageEmbeddings
+      type: ExtensionImageEmbeddings
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async getEmbeddings(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType): Promise<ImageEmbeddings>
+  async getEmbeddings(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType): Promise<ExtensionImageEmbeddings>
   {
     return await this.imageService.getEmbeddings(id, extensionId);
   }
@@ -2199,12 +2217,12 @@ export class ImageController
     schema: extensionIdSchema,
     required: true
   })
-  @ApiBody({ description: "The image embeddings", type: ImageEmbeddings, required: true })
+  @ApiBody({ description: "The image embeddings", type: [ ImageEmbedding ], required: true })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
-  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageEmbeddingsWrite ]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageEmbeddingWrite ]))
   @Throttle({ default: { ttl: 1_000, limit: 10 } })
-  async setEmbeddings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body() embeddings: ImageEmbeddings): Promise<void>
+  async setEmbeddings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body(new ParseArrayPipe({ items: ImageEmbedding })) embeddings: ImageEmbedding[]): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
     {
@@ -2216,8 +2234,8 @@ export class ImageController
   @Get(":id/closestImages")
   @ApiOperation(
     {
-      summary: "Gets the closest images to the image following the embeddings of an extension",
-      description: "Returns the closest images for a given an image, following the embeddings of a given extension."
+      summary: "Gets the image closest images",
+      description: "Returns the image closest images following its specific embedding computed by an extension."
     }
   )
   @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
@@ -2225,6 +2243,12 @@ export class ImageController
     name: "extensionId",
     description: "The extension identifier",
     schema: extensionIdSchema,
+    required: true
+  })
+  @ApiQuery({
+    name: "name",
+    description: "The name of the embeddings",
+    type: String,
     required: true
   })
   @ApiQuery({
@@ -2244,9 +2268,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async closestImages(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
+  async closestImages(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("name") name: string, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
   {
-    return await this.imageService.closestImages(id, extensionId, count);
+    return await this.imageService.closestImages(id, extensionId, name, count);
   }
 
   @Put("closestEmbeddingsImages")
@@ -2262,7 +2286,7 @@ export class ImageController
     schema: extensionIdSchema,
     required: true
   })
-  @ApiBody({ description: "The image embeddings", type: ImageEmbeddings, required: true })
+  @ApiBody({ description: "The image embeddings", type: ImageEmbedding, required: true })
   @ApiQuery({ name: "count", description: "The number of images to return", type: Number, required: true, example: 3 })
   @ApiResponse(
     {
@@ -2273,7 +2297,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async closestEmbeddingsImages(@Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number, @Body() embeddings: ImageEmbeddings): Promise<ImageDistances>
+  async closestEmbeddingsImages(@Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number, @Body() embeddings: ImageEmbedding): Promise<ImageDistances>
   {
     return await this.imageService.closestEmbeddingsImages(extensionId, embeddings, count);
   }
@@ -2292,6 +2316,12 @@ export class ImageController
     schema: extensionIdSchema,
     required: true
   })
+  @ApiQuery({
+    name: "name",
+    description: "The name of the embeddings",
+    type: String,
+    required: true
+  })
   @ApiQuery({ name: "count", description: "The number of images to return", type: Number, required: true, example: 3 })
   @ApiResponse(
     {
@@ -2302,9 +2332,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async textToImages(@Query("text") text: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
+  async textToImages(@Query("text") text: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("name") name: string, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
   {
-    return await this.imageService.textToImages(text, extensionId, count);
+    return await this.imageService.textToImages(text, extensionId, name, count);
   }
 
   @Put("format")

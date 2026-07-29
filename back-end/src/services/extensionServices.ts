@@ -1375,8 +1375,6 @@ export class ExtensionService
 
     if (idWhenUpdating === undefined)
     {
-      // We ensure that the collection of embeddings for this extension exists
-      await this.vectorDatabaseAccessor.ensureCollection(manifest.id);
     }
     this.notifierService.emit(EventEntity.Extension, idWhenUpdating !== undefined ? ExtensionEventAction.Updated : ExtensionEventAction.Installed, undefined, {
       id: manifest.id

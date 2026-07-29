@@ -13,10 +13,11 @@ import { paths } from "../src/paths";
 import {
   ApplicationMetadata,
   ApplicationMetadataItem,
+  ExtensionIdImageEmbeddingName,
   fileWithProtocol,
   GenerationRecipe,
   Image,
-  ImageEmbeddings,
+  ImageEmbedding,
   ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
@@ -56,7 +57,7 @@ describe("Repository", () =>
 
   const base = new Base(false);
 
-  const includedFileNames = [base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName, "Apparition of the town of Delft.jpg", base.imageFeeder.webpImageFileName, base.imageFeeder.gifImageFileName, base.imageFeeder.avifFileName, base.imageFeeder.heifFileName];
+  const includedFileNames = [ base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName, "Apparition of the town of Delft.jpg", base.imageFeeder.webpImageFileName, base.imageFeeder.gifImageFileName, base.imageFeeder.avifFileName, base.imageFeeder.heifFileName ];
 
   const nonExistentPath = (process.platform === "win32" ? "C:" : "") + `${path.sep}non-existent${path.sep}path${path.sep}${randomUUID()}`;
 
@@ -80,7 +81,7 @@ describe("Repository", () =>
     await Base.afterAll();
   });
 
-  test.each([false, true])("Create with watch=%p", async (watch) =>
+  test.each([ false, true ])("Create with watch=%p", async (watch) =>
   {
     const newImageFileName = base.imageFeeder.pngImageFileName;
     const directoryPath = base.prepareEmptyDirectory("images", base.getWorkingDirectoryPath());
@@ -307,8 +308,8 @@ describe("Repository", () =>
     {
       await base.getRepositoryController().update(repository.id, otherRepository.name);
     }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${otherRepository.name}' is invalid because a repository with the same name already exists`, BAD_REQUEST, base.badParameterCode));
-    const names = [repository.name + "-updated", undefined];
-    const comments = [repository.comment + "-updated", undefined];
+    const names = [ repository.name + "-updated", undefined ];
+    const comments = [ repository.comment + "-updated", undefined ];
     for (const name of names)
     {
       for (const comment of comments)
@@ -375,7 +376,7 @@ describe("Repository", () =>
     await base.waitUntilRepositoryReady(repository.id);
 
     {
-      const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria([ImageFormat.JPEG])));
+      const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria([ ImageFormat.JPEG ])));
       const count = 2;
       expect(list.items.length).toBe(count);
       expect(list.totalCount).toBe(count);
@@ -387,17 +388,17 @@ describe("Repository", () =>
       };
       {
         const result = await base.getImageController().searchSummaries(new SearchParameters(
-          new SearchFilter(new SearchCriteria([ImageFormat.JPEG]), new SearchRepositoriesOrigin([repository.id]), new SearchSorting(SearchSortingProperty.Name))));
+          new SearchFilter(new SearchCriteria([ ImageFormat.JPEG ]), new SearchRepositoriesOrigin([ repository.id ]), new SearchSorting(SearchSortingProperty.Name))));
         expect(result.items.map(mapFunction)).toEqual(result.items.map(mapFunction).sort());
       }
       {
         const list = await base.getImageController().searchSummaries(new SearchParameters(
-          new SearchFilter(new SearchCriteria([ImageFormat.JPEG]), new SearchRepositoriesOrigin([repository.id]), new SearchSorting(SearchSortingProperty.Name, false))));
+          new SearchFilter(new SearchCriteria([ ImageFormat.JPEG ]), new SearchRepositoriesOrigin([ repository.id ]), new SearchSorting(SearchSortingProperty.Name, false))));
         expect(list.items.map(mapFunction)).toEqual(list.items.map(mapFunction).sort().reverse());
       }
     }
     {
-      const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria([ImageFormat.PNG])));
+      const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria([ ImageFormat.PNG ])));
       const count = 1;
       expect(list.items.length).toBe(count);
       expect(list.totalCount).toBe(count);
@@ -422,7 +423,7 @@ describe("Repository", () =>
     }
     {
       const take = 2;
-      const list = await base.getImageController().searchSummaries(new SearchParameters(new SearchFilter(new SearchCriteria([ImageFormat.PNG, ImageFormat.JPEG, ImageFormat.WEBP, ImageFormat.GIF]), new SearchRepositoriesOrigin([repository.id])), undefined, new SearchRange(take)));
+      const list = await base.getImageController().searchSummaries(new SearchParameters(new SearchFilter(new SearchCriteria([ ImageFormat.PNG, ImageFormat.JPEG, ImageFormat.WEBP, ImageFormat.GIF ]), new SearchRepositoriesOrigin([ repository.id ])), undefined, new SearchRange(take)));
       expect(list.items.length).toBe(take);
       expect(list.totalCount).toBe(5);
     }
@@ -437,15 +438,15 @@ describe("Repository", () =>
         let index = 0;
         for (const summary of summaries)
         {
-          await base.getImageController().setTags(Base.allPolicyContext, summary.id, extension.manifest.id, [commandTag, `${specificTagPrefix}${index++}`]);
+          await base.getImageController().setTags(Base.allPolicyContext, summary.id, extension.manifest.id, [ commandTag, `${specificTagPrefix}${index++}` ]);
         }
       }
-      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags([commandTag]))))).items.length).toBe(summaries.length);
-      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags(["inexistentTag"]))))).items.length).toBe(0);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags([ commandTag ]))))).items.length).toBe(summaries.length);
+      expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags([ "inexistentTag" ]))))).items.length).toBe(0);
       for (let index = 0; index < summaries.length; index++)
       {
         const summary = summaries[index];
-        const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags([`${specificTagPrefix}${index}`]))));
+        const list = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, new SearchTags([ `${specificTagPrefix}${index}` ]))));
         expect(list.items.length).toBe(1);
         expect(list.items[0].id).toBe(summary.id);
       }
@@ -516,17 +517,17 @@ describe("Repository", () =>
 
   test("getFeatureNames", async () =>
   {
-    const { images } = await base.prepareRepositoryWithImages([base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName, base.imageFeeder.webpImageFileName]);
+    const { images } = await base.prepareRepositoryWithImages([ base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName, base.imageFeeder.webpImageFileName ]);
     const extension1 = await base.prepareExtension("extension1");
     const extension2 = await base.prepareExtension("extension2");
-    const commonImages = [images[0], images[1]];
+    const commonImages = [ images[0], images[1] ];
     const featureName = "string";
     for (const image of commonImages)
     {
-      await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension1.manifest.id, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, featureName, "string"), new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.FLOAT, "float", 3.14)]);
-      await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension2.manifest.id, [new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.STRING, featureName, "string"), new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.JSON, undefined, JSON.stringify({ key: "value" }))]);
+      await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension1.manifest.id, [ new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, featureName, "string"), new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.FLOAT, "float", 3.14) ]);
+      await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension2.manifest.id, [ new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.STRING, featureName, "string"), new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.JSON, undefined, JSON.stringify({ key: "value" })) ]);
     }
-    await base.getImageController().setFeatures(Base.allPolicyContext, images[2].id, extension1.manifest.id, [new ImageFeature(ImageFeatureType.IDENTITY, ImageFeatureFormat.INTEGER, "integer", 42)]);
+    await base.getImageController().setFeatures(Base.allPolicyContext, images[2].id, extension1.manifest.id, [ new ImageFeature(ImageFeatureType.IDENTITY, ImageFeatureFormat.INTEGER, "integer", 42) ]);
 
     const featureNames = await base.getRepositoryController().getFeatureNames();
     expect(featureNames.length).toEqual(4);
@@ -536,14 +537,14 @@ describe("Repository", () =>
 
   test("getTags", async () =>
   {
-    const { images } = await base.prepareRepositoryWithImages([base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName, base.imageFeeder.webpImageFileName]);
+    const { images } = await base.prepareRepositoryWithImages([ base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName, base.imageFeeder.webpImageFileName ]);
     const extension1 = await base.prepareExtension("extension1");
     const extension2 = await base.prepareExtension("extension2");
-    const commonImages = [images[0], images[1]];
+    const commonImages = [ images[0], images[1] ];
     for (const image of commonImages)
     {
-      await base.getImageController().setTags(Base.allPolicyContext, image.id, extension1.manifest.id, ["tag1", image.id]);
-      await base.getImageController().setTags(Base.allPolicyContext, image.id, extension2.manifest.id, ["tag2", image.name]);
+      await base.getImageController().setTags(Base.allPolicyContext, image.id, extension1.manifest.id, [ "tag1", image.id ]);
+      await base.getImageController().setTags(Base.allPolicyContext, image.id, extension2.manifest.id, [ "tag2", image.name ]);
     }
     await base.getImageController().setTags(Base.allPolicyContext, images[2].id, extension1.manifest.id, []);
 
@@ -551,6 +552,45 @@ describe("Repository", () =>
     expect(tags.length).toEqual(commonImages.length * 2 + 2);
     const sortedTags = tags.sort((object1, object2) => object1.id.localeCompare(object2.id));
     expect(sortedTags).toEqual(tags);
+  });
+
+  test("getEmbeddingsNames", async () =>
+  {
+    const { images } = await base.prepareRepositoryWithImages([ base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName ]);
+    const image1Id = images[0].id;
+    const image2Id = images[1].id;
+    const extension1 = await base.prepareExtension("extension1");
+    const extension2 = await base.prepareExtension("extension2");
+    const embedding1 = "embedding1";
+    const embedding2 = "embedding2";
+    const embedding3 = "embedding3";
+    const embeddingValue = [ 1, 2, 3 ];
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image1Id, extension1.manifest.id, [ new ImageEmbedding(embedding1, embeddingValue), new ImageEmbedding(embedding2, embeddingValue) ]);
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image2Id, extension1.manifest.id, [ new ImageEmbedding(embedding3, embeddingValue) ]);
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image1Id, extension2.manifest.id, [ new ImageEmbedding(embedding1, embeddingValue) ]);
+
+    const embeddingsNames = await base.getRepositoryController().getEmbeddingsNames();
+    const expectedNames: ExtensionIdImageEmbeddingName[] =
+      [
+        { extensionId: extension1.manifest.id, name: embedding1 },
+        { extensionId: extension1.manifest.id, name: embedding2 },
+        { extensionId: extension1.manifest.id, name: embedding3 },
+        { extensionId: extension2.manifest.id, name: embedding1 }
+      ];
+    expect(embeddingsNames.length).toEqual(expectedNames.length);
+
+    const sorter = (embeddingName1: ExtensionIdImageEmbeddingName, embeddingName2: ExtensionIdImageEmbeddingName) =>
+    {
+      const result = embeddingName1.extensionId.localeCompare(embeddingName2.extensionId);
+      if (result !== 0)
+      {
+        return result;
+      }
+      return embeddingName1.name.localeCompare(embeddingName2.name);
+    };
+    const sortedEmbeddingsNames: ExtensionIdImageEmbeddingName[] = embeddingsNames.sort(sorter);
+    const expectedEmbeddingNames: ExtensionIdImageEmbeddingName[] = expectedNames.sort(sorter);
+    expect(sortedEmbeddingsNames).toEqual(expectedEmbeddingNames);
   });
 
   test("Image renamed", async () =>
@@ -627,7 +667,10 @@ describe("Repository", () =>
       // We delete a file
       const extensionId = "extensionId";
       // We introduce fake embeddings for a supposedly existing extension
-      await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, extensionId, [1, 2, 3]);
+      await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, extensionId, [ {
+        name: "default",
+        values: [ 1, 2, 3 ]
+      } ]);
       const listener = base.computeEventListener();
       notifier.once(EventEntity.Image, ImageEventAction.Deleted, undefined, listener);
       fs.rmSync(preexistingFilePath);
@@ -642,7 +685,7 @@ describe("Repository", () =>
       expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Deleted, {
         id: preexistingImage.id
       });
-      expect(await base.getVectorDatabaseAccessor().getEmbeddings(preexistingImage.id, extensionId)).toBeUndefined();
+      expect(await base.getVectorDatabaseAccessor().getEmbeddings(preexistingImage.id, extensionId)).toEqual([]);
     }
     {
       // We update a file and change its metadata
@@ -720,7 +763,10 @@ describe("Repository", () =>
       const preexistingImage = await base.getRepositoryController().getImageByUrl(fileWithProtocol + preexistingFilePath);
       const extensionId = "extensionId";
       // We introduce fake embeddings for a supposedly existing extension
-      await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, extensionId, [1, 2, 3]);
+      await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, extensionId, [ {
+        name: "default",
+        values: [ 1, 2, 3 ]
+      } ]);
       const listener = base.computeEventListener();
       notifierService.once(EventEntity.Image, RepositoryEventAction.Deleted, undefined, listener);
       const imageSummary = await base.waitUntilImage(id, preexistingFilePath, false, () =>
@@ -732,7 +778,7 @@ describe("Repository", () =>
         expect(listener).toHaveBeenCalledTimes(1);
       });
       expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Deleted, { id: imageSummary.id });
-      expect(await base.getVectorDatabaseAccessor().getEmbeddings(preexistingImage.id, extensionId)).toBeUndefined();
+      expect(await base.getVectorDatabaseAccessor().getEmbeddings(preexistingImage.id, extensionId)).toEqual([]);
     }
     {
       // We update a file
@@ -892,16 +938,16 @@ describe("Repository", () =>
     const imageSummary = (await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repositoryId))).items[0];
 
     const extension = await base.prepareExtension();
-    await base.getImageController().setTags(Base.allPolicyContext, imageSummary.id, extension.manifest.id, ["tag"]);
-    await base.getImageController().setFeatures(Base.allPolicyContext, imageSummary.id, extension.manifest.id, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "name", "string")]);
-    await base.getImageController().setEmbeddings(Base.allPolicyContext, imageSummary.id, extension.manifest.id, new ImageEmbeddings([1, 2, 3]));
+    await base.getImageController().setTags(Base.allPolicyContext, imageSummary.id, extension.manifest.id, [ "tag" ]);
+    await base.getImageController().setFeatures(Base.allPolicyContext, imageSummary.id, extension.manifest.id, [ new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "name", "string") ]);
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, imageSummary.id, extension.manifest.id, [ new ImageEmbedding("default", [ 1, 2, 3 ]) ]);
     const filter =
       {
-        criteria: { formats: [ImageFormat.PNG] },
+        criteria: { formats: [ ImageFormat.PNG ] },
         origin:
           {
             kind: SearchOriginKind.Repositories,
-            ids: [repositoryId]
+            ids: [ repositoryId ]
           }
       };
     const collection = await base.getCollectionController().create("name", undefined, filter);
@@ -917,7 +963,7 @@ describe("Repository", () =>
     expect((await base.getEntitiesProvider().imageMetadata.findMany()).length).toBe(0);
     expect((await base.getEntitiesProvider().imageTag.findMany()).length).toBe(0);
     expect((await base.getEntitiesProvider().imageFeature.findMany()).length).toBe(0);
-    expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageSummary.id, extension.manifest.id)).toBeUndefined();
+    expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageSummary.id, extension.manifest.id)).toEqual([]);
     {
       // We check that the repository has been removed from the collection, leaving the rest of the filter intact
       const updatedCollection = await base.getCollectionController().get(collection.id);
@@ -992,7 +1038,7 @@ describe("Repository", () =>
       // We assess with invalid parameters
       {
         // We assess with an invalid file name without extension
-        const namesWithoutExtension = ["path/name"];
+        const namesWithoutExtension = [ "path/name" ];
         for (const nameWithoutExtension of namesWithoutExtension)
         {
           await expect(async () =>
@@ -1004,7 +1050,7 @@ describe("Repository", () =>
       {
         // We assess with an invalid directory relative path
         {
-          const relativeDirectoryPaths = ["/", "/file", "/path/file"];
+          const relativeDirectoryPaths = [ "/", "/file", "/path/file" ];
           for (const relativeDirectoryPath of relativeDirectoryPaths)
           {
             await expect(async () =>
@@ -1014,7 +1060,7 @@ describe("Repository", () =>
           }
         }
         {
-          const relativeDirectoryPaths = ["..", "name/../..", "name/path/../../../other/path", `../${path.basename(fileDirectoryPath)}/directory`];
+          const relativeDirectoryPaths = [ "..", "name/../..", "name/path/../../../other/path", `../${path.basename(fileDirectoryPath)}/directory` ];
           for (const relativeDirectoryPath of relativeDirectoryPaths)
           {
             await expect(async () =>
@@ -1029,7 +1075,7 @@ describe("Repository", () =>
       // We assess with valid parameters
       const fileExtension = path.extname(image.name);
       {
-        const namesWithoutExtension = ["newName", ".newName", "newName.dot", "newNameWith'"];
+        const namesWithoutExtension = [ "newName", ".newName", "newName.dot", "newNameWith'" ];
         for (const nameWithoutExtension of namesWithoutExtension)
         {
           const renamedImage = await base.getRepositoryController().renameImage(repository.id, image.id, nameWithoutExtension, undefined);
@@ -1039,7 +1085,7 @@ describe("Repository", () =>
         }
       }
       {
-        const relativeDirectoryPaths = ["path\\directory1", "path/directory2", "path/../directory3", "path\\..\\directory4"];
+        const relativeDirectoryPaths = [ "path\\directory1", "path/directory2", "path/../directory3", "path\\..\\directory4" ];
         const nameWithoutExtension = "name";
         for (const relativeDirectoryPath of relativeDirectoryPaths)
         {
@@ -1089,15 +1135,15 @@ describe("Repository", () =>
     await base.imageFeeder.prepareAutomatic1111Image(withUserCommentFilePath);
     const withUserCommentBuffer = readFileSync(withUserCommentFilePath);
     const withDescriptionBuffer = readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, "image-description.png"));
-    const buffers = [noUserCommentBuffer, withUserCommentBuffer, withDescriptionBuffer];
-    const metadataArray = [undefined, new ApplicationMetadata([new ApplicationMetadataItem(extension.manifest.id, new GenerationRecipe([], new TextualPrompt("prompt")))]), new ApplicationMetadata([new ApplicationMetadataItem(extension.manifest.id, { key: "value" })])];
+    const buffers = [ noUserCommentBuffer, withUserCommentBuffer, withDescriptionBuffer ];
+    const metadataArray = [ undefined, new ApplicationMetadata([ new ApplicationMetadataItem(extension.manifest.id, new GenerationRecipe([], new TextualPrompt("prompt"))) ]), new ApplicationMetadata([ new ApplicationMetadataItem(extension.manifest.id, { key: "value" }) ]) ];
 
     {
       // We assess with metadata referring to an unexisting extension
       const extensionId = "inexistent";
       await expect(async () =>
       {
-        await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([new ApplicationMetadataItem(extensionId, {})])), undefined, undefined, undefined, noUserCommentBuffer);
+        await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([ new ApplicationMetadataItem(extensionId, {}) ])), undefined, undefined, undefined, noUserCommentBuffer);
       }).rejects.toThrow(new ServiceError(`The parameter 'applicationMetadata.items[0]' with value '${extensionId}' is invalid because that extension is not installed`, BAD_REQUEST, base.badParameterCode));
     }
 
@@ -1160,7 +1206,7 @@ describe("Repository", () =>
           {
             expect(newTags[picteusTag]).toEqual(JSON.stringify(imageFormat === ImageFormat.JPEG ? { picteus: metadata } : metadata));
           }
-          const toIgnoreTags = ["Directory", "FileName", "FileSize", "SourceFile", "FileModifyDate", "FileInodeChangeDate", "FileAccessDate", "CreationTime", "ProfileDateTime", picteusTag, "ExifByteOrder"];
+          const toIgnoreTags = [ "Directory", "FileName", "FileSize", "SourceFile", "FileModifyDate", "FileInodeChangeDate", "FileAccessDate", "CreationTime", "ProfileDateTime", picteusTag, "ExifByteOrder" ];
           for (const tag of toIgnoreTags)
           {
             delete originalTags[tag];
@@ -1204,15 +1250,15 @@ describe("Repository", () =>
     const extension1 = await base.prepareExtension("id1");
     const extension2 = await base.prepareExtension("id2");
     const repository = await base.prepareEmptyRepository();
-    const item1 = new ApplicationMetadataItem(extension1.manifest.id, new GenerationRecipe(["model1"], new TextualPrompt("prompt1")));
+    const item1 = new ApplicationMetadataItem(extension1.manifest.id, new GenerationRecipe([ "model1" ], new TextualPrompt("prompt1")));
     const item2 = new ApplicationMetadataItem(extension2.manifest.id, { key: "value" });
 
     const imageBuffer = readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName));
-    const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([item1])), undefined, undefined, undefined, imageBuffer);
+    const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([ item1 ])), undefined, undefined, undefined, imageBuffer);
     const storedBuffer = fs.readFileSync(image.url.substring(fileWithProtocol.length));
-    const newImage = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([item2])), undefined, undefined, undefined, storedBuffer);
+    const newImage = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([ item2 ])), undefined, undefined, undefined, storedBuffer);
     const applicationMetadata = await readApplicationMetadata(fs.readFileSync(newImage.url.substring(fileWithProtocol.length)), newImage.format);
-    expect(applicationMetadata).toEqual(new ApplicationMetadata([item1, item2]));
+    expect(applicationMetadata).toEqual(new ApplicationMetadata([ item1, item2 ]));
   });
 
   async function checkActivity(repositoryId: string, kind: RepositoryActivityKind)

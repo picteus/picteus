@@ -86,14 +86,11 @@ import {
 } from "./repository.dtos";
 import { Collection } from "./collection.dtos";
 import {
-  AllExtensionImageFeatureNames,
-  AllExtensionImageTags,
-  AllImageEmbeddings,
-  AllImageFeatures,
   ApplicationMetadata,
   ApplicationMetadataItem,
   ApplicationMetadataItemFreeValue,
   ComputedImageFormat,
+  ExtensionIdImageEmbeddingName,
   ExtensionImageEmbeddings,
   ExtensionImageFeature,
   ExtensionImageFeatureName,
@@ -105,7 +102,7 @@ import {
   ImageDimensions,
   ImageDistance,
   ImageDistances,
-  ImageEmbeddings,
+  ImageEmbedding,
   ImageFeature,
   ImageFeatureNullValue,
   ImageMediaUrl,
@@ -159,10 +156,6 @@ class ConstantsRegistry
 }
 
 export {
-  AllExtensionImageFeatureNames,
-  AllExtensionImageTags,
-  AllImageEmbeddings,
-  AllImageFeatures,
   alphaNumericPlusPattern,
   alphaNumericPlusAdditionalAuthorizedCharactersPattern,
   ApiSecret,
@@ -211,7 +204,8 @@ export {
   ImageDimensions,
   ImageDistance,
   ImageDistances,
-  ImageEmbeddings,
+  ImageEmbedding,
+  ExtensionIdImageEmbeddingName,
   ImageFeature,
   ImageFeatureFormat,
   ImageFeatureNullValue,

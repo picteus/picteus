@@ -24,9 +24,6 @@ import { parametersChecker, StringNature } from "./utils/parametersChecker";
 import { fileMetadata } from "./utils/fileMetadata";
 import { Resizer } from "../resizer";
 import {
-  AllExtensionImageTags,
-  AllImageEmbeddings,
-  AllImageFeatures,
   ApplicationMetadata,
   Collection,
   computeImageFormatsExtensions,
@@ -43,7 +40,7 @@ import {
   ImageDimensions,
   ImageDistance,
   ImageDistances,
-  ImageEmbeddings,
+  ImageEmbedding,
   ImageFeature,
   ImageFeatureFormat,
   ImageFeatureNullValue,
@@ -111,10 +108,15 @@ type ImageFeatureValueField = "stringValue" | "numericValue";
 
 export class ImageMediaUrlParameters
 {
+
   format?: ImageFormat;
+
   width?: number;
+
   height?: number;
+
   resizeRender?: ImageResizeRender;
+
 }
 
 class ImageMediaUrlComputer
@@ -144,9 +146,9 @@ class ImageMediaUrlComputer
 export class ImageService
 {
 
-  private static readonly DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS = [ImageFeatureFormat.STRING, ImageFeatureFormat.MARKDOWN, ImageFeatureFormat.HTML];
+  private static readonly DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS = [ ImageFeatureFormat.STRING, ImageFeatureFormat.MARKDOWN, ImageFeatureFormat.HTML ];
 
-  private static readonly RECIPE_FEATURES_ALLOWED_FORMATS = [ImageFeatureFormat.JSON];
+  private static readonly RECIPE_FEATURES_ALLOWED_FORMATS = [ ImageFeatureFormat.JSON ];
 
   public static readonly emptyImageTag = "";
 
@@ -165,7 +167,7 @@ export class ImageService
       take,
       skip
     } = await this.computeRequestParameters("Retrieving the image ids", parameters);
-    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({ select: { id: true }, orderBy, where, take, skip }),
       this.entitiesProvider.images.count({ where })
     ]);
@@ -180,7 +182,7 @@ export class ImageService
       take,
       skip
     } = await this.computeRequestParameters("Retrieving the image summaries", parameters);
-    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({ orderBy, where, take, skip }),
       this.entitiesProvider.images.count({ where })
     ]);
@@ -196,7 +198,7 @@ export class ImageService
       take,
       skip
     } = await this.computeRequestParameters("Retrieving the images", parameters);
-    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({
         orderBy,
         where,
@@ -218,7 +220,7 @@ export class ImageService
       skip
     } = await this.computeRequestParameters("Retrieving the image features", parameters);
     extensionIds = this.checkExtensions(extensionIds);
-    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({
         where, orderBy, take, skip, select: { id: true, features: true }
       }),
@@ -236,7 +238,7 @@ export class ImageService
       skip
     } = await this.computeRequestParameters("Retrieving the image tags", parameters);
     extensionIds = this.checkExtensions(extensionIds);
-    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({
         where, orderBy, take, skip, select: { id: true, tags: true }
       }),
@@ -254,7 +256,7 @@ export class ImageService
       take,
       skip
     } = await this.computeRequestParameters(`Getting the media URLs of the images${computer.log()}`, parameters);
-    const [entities, totalCount] = await this.entitiesProvider.prisma.$transaction([
+    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({ orderBy, where, take, skip }),
       this.entitiesProvider.images.count({ where })
     ]);
@@ -433,7 +435,7 @@ export class ImageService
     return entities.map(this.featureToDto.bind(this));
   }
 
-  async getAllFeatures(id: string): Promise<AllImageFeatures>
+  async getAllFeatures(id: string): Promise<ExtensionImageFeature []>
   {
     logger.info(`Getting the features for the image with id '${id}' for all extensions`);
     await this.getPersistedImage(id, false, false, false);
@@ -620,7 +622,7 @@ export class ImageService
         };
       })
     });
-    await this.entitiesProvider.prisma.$transaction([deleteAttachments, deleteFeatures, createFeatures]);
+    await this.entitiesProvider.prisma.$transaction([ deleteAttachments, deleteFeatures, createFeatures ]);
     this.notifierService.emit(EventEntity.Image, ImageEventAction.FeaturesUpdated, undefined, { id });
   }
 
@@ -630,7 +632,7 @@ export class ImageService
     this.checkExtension(extensionId);
     await this.getPersistedImage(id, false, false, false);
     const entities = await this.entitiesProvider.imageTag.findMany({
-      where: { AND: [{ extensionId, imageId: id }, { value: { not: ImageService.emptyImageTag } }] },
+      where: { AND: [ { extensionId, imageId: id }, { value: { not: ImageService.emptyImageTag } } ] },
       orderBy: { value: "asc" }
     });
     return entities.map((entity) =>
@@ -639,12 +641,12 @@ export class ImageService
     });
   }
 
-  async getAllTags(id: string): Promise<AllExtensionImageTags>
+  async getAllTags(id: string): Promise<ExtensionImageTag []>
   {
     logger.info(`Getting the tags for the image with id '${id}' for all extensions`);
     await this.getPersistedImage(id, false, false, false);
     const entities = await this.entitiesProvider.imageTag.findMany({
-      where: { AND: [{ imageId: id }, { value: { not: ImageService.emptyImageTag } }] },
+      where: { AND: [ { imageId: id }, { value: { not: ImageService.emptyImageTag } } ] },
       orderBy: { value: "asc" }
     });
     return entities.map(entity => this.extensionTagToDto(entity));
@@ -678,7 +680,7 @@ export class ImageService
     {
       return entity.value;
     });
-    const actualTags = tags.length === 0 ? [ImageService.emptyImageTag] : tags;
+    const actualTags = tags.length === 0 ? [ ImageService.emptyImageTag ] : tags;
     const newTags = actualTags.filter((tag) =>
     {
       return existingTags.indexOf(tag) === -1;
@@ -731,22 +733,25 @@ export class ImageService
     return entities.map(feature => JSON.parse(feature.stringValue!)).map(feature => plainToInstanceViaJSON(GenerationRecipe, feature));
   }
 
-  async getAllEmbeddings(id: string): Promise<AllImageEmbeddings>
+  async getAllEmbeddings(id: string): Promise<ExtensionImageEmbeddings []>
   {
     logger.info(`Getting all the embeddings for the image with id '${id}'`);
     await this.getPersistedImage(id, false, false, false);
     const extensionIds = await this.vectorDatabaseAccessor.getExtensionIds();
-    const extensionImageEmbeddingsArray: AllImageEmbeddings = [];
+    const extensionImageEmbeddingsArray: ExtensionImageEmbeddings [] = [];
     for (const extensionId of extensionIds)
     {
-      const embeddings = await this.vectorDatabaseAccessor.getEmbeddings(id, extensionId);
-      if (embeddings === undefined)
+      const embeddingsArray = await this.vectorDatabaseAccessor.getEmbeddings(id, extensionId);
+      if (embeddingsArray.length === 0)
       {
         logger.warn(`There are no embeddings for the image with id '${id}' and the extension with id '${extensionId}'`);
       }
       else
       {
-        extensionImageEmbeddingsArray.push(new ExtensionImageEmbeddings(extensionId, embeddings));
+        extensionImageEmbeddingsArray.push(plainToInstanceViaJSON(ExtensionImageEmbeddings, {
+          id: extensionId,
+          embeddings: embeddingsArray
+        }));
       }
     }
     return extensionImageEmbeddingsArray.sort((entity1, entity2) =>
@@ -755,47 +760,65 @@ export class ImageService
     });
   }
 
-  async getEmbeddings(id: string, extensionId: string): Promise<ImageEmbeddings>
+  async getEmbeddings(id: string, extensionId: string): Promise<ExtensionImageEmbeddings>
   {
     logger.info(`Getting the embeddings for the image with id '${id}' and the extension with id '${extensionId}'`);
     this.checkExtension(extensionId);
     await this.getPersistedImage(id, false, false, false);
-    const embeddings = await this.vectorDatabaseAccessor.getEmbeddings(id, extensionId);
-    if (embeddings === undefined)
+    const embeddingsArray = await this.vectorDatabaseAccessor.getEmbeddings(id, extensionId);
+    if (embeddingsArray.length === 0)
     {
       parametersChecker.throwBadParameterError(`There are no embeddings for the image with id '${id}' and the extension with id '${extensionId}'`);
     }
-    return plainToInstanceViaJSON(ImageEmbeddings, { values: embeddings });
+    return plainToInstanceViaJSON(ExtensionImageEmbeddings, { id: extensionId, embeddings: embeddingsArray });
   }
 
-  async setEmbeddings(id: string, extensionId: string, embeddings: ImageEmbeddings): Promise<void>
+  async setEmbeddings(id: string, extensionId: string, embeddingsArray: ImageEmbedding[]): Promise<void>
   {
     logger.info(`Setting the embeddings for the image with id '${id}' and the extension with id '${extensionId}'`);
     this.checkExtension(extensionId);
     await this.getPersistedImage(id, false, false, false);
-    if (embeddings.values.length > ImageEmbeddings.DIMENSION_MAXIMUM)
+    const existingEmbeddingsArray = await this.vectorDatabaseAccessor.getEmbeddings(id, extensionId);
+    for (const embeddings of embeddingsArray)
     {
-      // We limit the number of dimensions to avoid performance issues with the vector database
-      parametersChecker.throwBadParameterError("The embeddings vector cannot have a dimension larger than " + ImageEmbeddings.DIMENSION_MAXIMUM);
+      if (embeddings.values.length > ImageEmbedding.DIMENSION_MAXIMUM)
+      {
+        // We limit the number of dimensions to avoid performance issues with the vector database
+        parametersChecker.throwBadParameterError("The embeddings vector cannot have a dimension larger than " + ImageEmbedding.DIMENSION_MAXIMUM);
+      }
+      const existingEmbeddings = existingEmbeddingsArray.find(nameAndValues => nameAndValues.name === embeddings.name);
+      if (existingEmbeddings !== undefined && embeddings.values.length !== existingEmbeddings.values.length)
+      {
+        parametersChecker.throwBadParameterError(`The embeddings length ${embeddings.values.length} is not the expected one ${existingEmbeddings.values.length}`);
+      }
     }
-    await this.vectorDatabaseAccessor.setEmbeddings(id, extensionId, embeddings.values);
+    await this.vectorDatabaseAccessor.setEmbeddings(id, extensionId, embeddingsArray);
   }
 
-  async closestImages(id: string, extensionId: string, count: number): Promise<ImageDistances>
+  async closestImages(id: string, extensionId: string, name: string, count: number): Promise<ImageDistances>
   {
-    logger.info(`Getting the ${count} closest image(s) to the image with id '${id}' related to the extension with id '${extensionId}'`);
+    logger.info(`Getting the ${count} closest image(s) to the image with id '${id}' related to the extension with id '${extensionId}' and name '${name}'`);
     const imageEmbeddings = await this.getEmbeddings(id, extensionId);
     parametersChecker.checkNumber("count", count, 1);
-    const imageDistances = await this.closestEmbeddingsImages(extensionId, imageEmbeddings, count + 1);
+    const targetEmbeddings = imageEmbeddings.embeddings.find(e => e.name === name);
+    if (targetEmbeddings === undefined)
+    {
+      parametersChecker.throwBadParameterError(`There are no embeddings for the image with id '${id}' and the extension with id '${extensionId}' and name '${name}'`);
+      return [];
+    }
+    const imageDistances = await this.closestEmbeddingsImages(extensionId, targetEmbeddings, count + 1);
     return imageDistances.length <= 1 ? [] : imageDistances.slice(1);
   }
 
-  async closestEmbeddingsImages(extensionId: string, embeddings: ImageEmbeddings, count: number): Promise<ImageDistances>
+  async closestEmbeddingsImages(extensionId: string, embeddings: ImageEmbedding, count: number): Promise<ImageDistances>
   {
     logger.info(`Getting the ${count} closest image(s) to some embeddings related to the extension with id '${extensionId}'`);
     this.checkExtension(extensionId);
     parametersChecker.checkNumber("count", count, 1);
-    const imageIdAndDistances: ImageIdAndDistance[] = await this.vectorDatabaseAccessor.queryEmbeddings(extensionId, embeddings.values, count);
+    const imageIdAndDistances: ImageIdAndDistance[] = await this.vectorDatabaseAccessor.queryEmbeddings({
+      id: extensionId,
+      name: embeddings.name
+    }, embeddings.values, count);
     const imageIds: string[] = imageIdAndDistances.map((imageIdAndDistance) =>
     {
       return imageIdAndDistance.imageId;
@@ -827,13 +850,13 @@ export class ImageService
     }));
   }
 
-  async textToImages(text: string, extensionId: string, count: number): Promise<ImageDistances>
+  async textToImages(text: string, extensionId: string, name: string, count: number): Promise<ImageDistances>
   {
     logger.info(`Getting the ${count} closest image(s) to the text '${text}' related to the extension with id '${extensionId}'`);
     this.checkExtension(extensionId);
     const generativeAIService: GenerativeAIService = this.moduleRef.get(GenerativeAIService);
     const embeddings = await generativeAIService.computeTextEmbeddings(text);
-    return await this.closestEmbeddingsImages(extensionId, new ImageEmbeddings(embeddings), count);
+    return await this.closestEmbeddingsImages(extensionId, new ImageEmbedding(name, embeddings), count);
   }
 
   async computeFormat(buffer: Buffer): Promise<ImageFormat>
@@ -910,7 +933,7 @@ export class ImageService
     const weightInBytesRange = properties?.weightInBytes;
     const creationDateRange = properties?.creationDate;
     const modificationDateRange = properties?.modificationDate;
-    logger.info(`${logPrefix}${repositoryIds === undefined ? "" : ` with a repository id in list [${repositoryIds.map(id => `'${id}'`).join(",")}]`}` + `${keyword === undefined ? "" : (` containing the text '${text}'` + " present in the [" + ([keyword.inName === false ? "" : "file name", keyword.inFeatures === false ? "" : "features", keyword.inMetadata === false ? "" : "metadata"].filter(string => string.length > 0).join(", ")) + "]")}` + `${tags === undefined ? "" : (`, with the tags [${tags.values.map(value => `'${value}'`).join(", ")}]`)}` + `${widthRange === undefined ? "" : (", with " + widthRange.toEntityString("width"))}` + `${heightRange === undefined ? "" : (", with " + heightRange.toEntityString("height"))}` + `${weightInBytesRange === undefined ? "" : (", with " + weightInBytesRange.toEntityString("binary weight"))}` + `${creationDateRange === undefined ? "" : (", with " + creationDateRange.toEntityString("creation date"))}` + `${modificationDateRange === undefined ? "" : (", with " + modificationDateRange.toEntityString("modification date"))}` + (sorting === undefined ? "" : ` sorted by '${sorting.property}' in ${sorting.isAscending === true ? "ascending" : "descending"} order`) + ((range === undefined || range.take === undefined) ? "" : ` with a range of [${range.skip}, ${range.take}]`));
+    logger.info(`${logPrefix}${repositoryIds === undefined ? "" : ` with a repository id in list [${repositoryIds.map(id => `'${id}'`).join(",")}]`}` + `${keyword === undefined ? "" : (` containing the text '${text}'` + " present in the [" + ([ keyword.inName === false ? "" : "file name", keyword.inFeatures === false ? "" : "features", keyword.inMetadata === false ? "" : "metadata" ].filter(string => string.length > 0).join(", ")) + "]")}` + `${tags === undefined ? "" : (`, with the tags [${tags.values.map(value => `'${value}'`).join(", ")}]`)}` + `${widthRange === undefined ? "" : (", with " + widthRange.toEntityString("width"))}` + `${heightRange === undefined ? "" : (", with " + heightRange.toEntityString("height"))}` + `${weightInBytesRange === undefined ? "" : (", with " + weightInBytesRange.toEntityString("binary weight"))}` + `${creationDateRange === undefined ? "" : (", with " + creationDateRange.toEntityString("creation date"))}` + `${modificationDateRange === undefined ? "" : (", with " + modificationDateRange.toEntityString("modification date"))}` + (sorting === undefined ? "" : ` sorted by '${sorting.property}' in ${sorting.isAscending === true ? "ascending" : "descending"} order`) + ((range === undefined || range.take === undefined) ? "" : ` with a range of [${range.skip}, ${range.take}]`));
 
     if (keyword !== undefined && (keyword.inName === false && keyword.inMetadata === false && keyword.inFeatures === false))
     {
@@ -1056,7 +1079,7 @@ export class ImageService
         featuresFilter.some = inputs;
       }
     }
-    const [widthFilter, heightFilter, weightInBytesFilter] = [widthRange, heightRange, weightInBytesRange].map((range) =>
+    const [ widthFilter, heightFilter, weightInBytesFilter ] = [ widthRange, heightRange, weightInBytesRange ].map((range) =>
     {
       const filter: Prisma.IntFilter<"Image"> | undefined = range === undefined ? undefined : {};
       if (range !== undefined && filter !== undefined)
@@ -1072,7 +1095,7 @@ export class ImageService
       }
       return filter;
     });
-    const [creationDateFilter, modificationDateFilter] = [creationDateRange, modificationDateRange].map((range) =>
+    const [ creationDateFilter, modificationDateFilter ] = [ creationDateRange, modificationDateRange ].map((range) =>
     {
       const filter: Prisma.DateTimeFilter<"Image"> | undefined = range === undefined ? undefined : {};
       if (range !== undefined && filter !== undefined)
@@ -1158,7 +1181,7 @@ export class ImageService
     let url: string = entity.url;
     {
       // We translate the URL according to the repository mapping paths
-      for (const [key, value] of paths.repositoryMappingPaths.entries())
+      for (const [ key, value ] of paths.repositoryMappingPaths.entries())
       {
         if (url.startsWith(fileWithProtocol + key) === true)
         {

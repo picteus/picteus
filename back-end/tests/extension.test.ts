@@ -922,9 +922,14 @@ describe("Extensions", () =>
       expect((await base.getModuleProvider(ImageAttachmentService).list(imageId)).length).toEqual(1);
       expect((await base.getEntitiesProvider().imageFeature.findMany({ where: { extensionId: id } })).length).toEqual(features.length);
       const values = [ 0, 1, 2, 3, 4 ];
-      await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, id, { values: values });
-      expect((await base.getImageController().getEmbeddings(imageId, id)).values).toEqual(values);
-      expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageId, id)).toEqual(values);
+      const embeddingsName = "default";
+      const embeddings = [ { name: embeddingsName, values } ];
+      await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, id, embeddings);
+      const extensionImageEmbeddings = await base.getImageController().getEmbeddings(imageId, id);
+      expect(extensionImageEmbeddings.embeddings.length).toEqual(1);
+      expect(extensionImageEmbeddings.embeddings[0].name).toEqual(embeddingsName);
+      expect(extensionImageEmbeddings.embeddings[0].values).toEqual(values);
+      expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageId, id)).toEqual(embeddings);
     }
     await base.getExtensionController().uninstall(id);
     await waitForExpect(() =>
@@ -935,7 +940,7 @@ describe("Extensions", () =>
       // We check that the features, their attachments, and the embeddings and the settings attached to the extension are deleted
       expect(await base.getEntitiesProvider().imageFeature.findMany({ where: { extensionId: id } })).toEqual([]);
       expect(await base.getModuleProvider(ImageAttachmentService).list(imageId)).toEqual([]);
-      expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageId, id)).toBeUndefined();
+      expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageId, id)).toEqual([]);
       await expect(async () =>
       {
         await base.getExtensionController().getSettings(Base.allPolicyContext, manifest.id);

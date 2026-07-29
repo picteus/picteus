@@ -43,8 +43,8 @@ import {
   integerIdSchema,
   Json,
   repositoryIdSchema,
-  tagPattern,
-  technicalSchema,
+  technicalRelaxedPattern,
+  technicalRelaxedSchema,
   toMimeType,
   uniqueIdPattern,
   uriPathPattern,
@@ -507,7 +507,7 @@ export class ApplicationMetadataItemFreeValue extends Map<string, any>
 export class ApplicationMetadataItem
 {
 
-  constructor(extensionId: string, value: GenerationRecipe | Json)
+  constructor(extensionId: ExtensionIdType, value: GenerationRecipe | Json)
   {
     this.extensionId = extensionId;
     this.value = value;
@@ -528,7 +528,7 @@ export class ApplicationMetadataItem
   @NotEquals(null)
   @IsString()
   @Expose()
-  readonly extensionId: string;
+  readonly extensionId: ExtensionIdType;
 
   @ApiProperty(
     {
@@ -734,13 +734,11 @@ export class ExtensionImageFeature extends ImageFeature
 
 }
 
-export type AllImageFeatures = ExtensionImageFeature[];
-
 @ApiSchema({ description: "A feature name set on an image for a given extension" })
 export class ExtensionImageFeatureName
 {
 
-  constructor(id: string, type: ImageFeatureType, format: ImageFeatureFormat, name: string)
+  constructor(id: ExtensionIdType, type: ImageFeatureType, format: ImageFeatureFormat, name: string)
   {
     this.id = id;
     this.type = type;
@@ -761,7 +759,7 @@ export class ExtensionImageFeatureName
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()
-  readonly id: string;
+  readonly id: ExtensionIdType;
 
   @ApiProperty(
     {
@@ -805,8 +803,6 @@ export class ExtensionImageFeatureName
 
 }
 
-export type AllExtensionImageFeatureNames = ExtensionImageFeatureName[];
-
 @ApiSchema({ description: "A tag set on an image for a given extension" })
 export class ExtensionImageTag
 {
@@ -817,7 +813,7 @@ export class ExtensionImageTag
   // The maximum number of features an image can have for a single extension
   static readonly PER_EXTENSION_FEATURES_MAXIMUM = 32;
 
-  constructor(id: string, value: string)
+  constructor(id: ExtensionIdType, value: string)
   {
     this.id = id;
     this.value = value;
@@ -836,14 +832,13 @@ export class ExtensionImageTag
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()
-  readonly id: string;
+  readonly id: ExtensionIdType;
 
   @ApiProperty(
     {
-      ...technicalSchema,
+      ...technicalRelaxedSchema,
       description: "The image tag value",
       type: String,
-      pattern: tagPattern,
       required: true
     }
   )
@@ -855,24 +850,38 @@ export class ExtensionImageTag
 
 }
 
-export type AllExtensionImageTags = ExtensionImageTag[];
-
 /**
- * An image embeddings individual element.
+ * The value of an image embedding.
  */
-export type ImageEmbedding = number;
+export type ImageEmbeddingValue = number;
 
-@ApiSchema({ description: "A vectorial representation of an image, i.e. an image embeddings vector" })
-export class ImageEmbeddings
+@ApiSchema({ description: "A vectorial representation of an image, i.e. an image embedding vector, plus a name for that representation" })
+export class ImageEmbedding
 {
 
   // The value for the "VGG-16 / VGG-19" models, https://en.wikipedia.org/wiki/VGGNet, which is known to be the second largest commonly used image embeddings dimension, after the "ViT-22B" with a dimension of 6144, https://arxiv.org/abs/2302.05442
   static readonly DIMENSION_MAXIMUM = 4_096;
 
-  constructor(values: ImageEmbedding[])
+  constructor(name: string, values: ImageEmbeddingValue[])
   {
+    this.name = name;
     this.values = values;
   }
+
+  @ApiProperty(
+    {
+      ...technicalRelaxedSchema,
+      description: "The image embedding name",
+      type: String,
+      required: true
+    }
+  )
+  @IsString()
+  @Matches(technicalRelaxedPattern)
+  @MinLength(1)
+  @MaxLength(FieldLengths.shortTechnical)
+  @Expose()
+  readonly name: string;
 
   @ApiProperty(
     {
@@ -881,27 +890,27 @@ export class ImageEmbeddings
       format: "double",
       isArray: true,
       minItems: 1,
-      maxItems: ImageEmbeddings.DIMENSION_MAXIMUM,
+      maxItems: ImageEmbedding.DIMENSION_MAXIMUM,
       required: true
     }
   )
   @IsNumber({}, { each: true })
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(ImageEmbeddings.DIMENSION_MAXIMUM)
+  @ArrayMaxSize(ImageEmbedding.DIMENSION_MAXIMUM)
   @Expose()
-  readonly values: ImageEmbedding[];
+  readonly values: ImageEmbeddingValue[];
 
 }
 
 @ApiSchema({ description: "The image embeddings vectors computed by an extension" })
-export class ExtensionImageEmbeddings extends ImageEmbeddings
+export class ExtensionImageEmbeddings
 {
 
-  constructor(id: string, values: ImageEmbedding[])
+  constructor(id: string, embeddings: ImageEmbedding[])
   {
-    super(values);
     this.id = id;
+    this.embeddings = embeddings;
   }
 
   @ApiProperty(
@@ -918,9 +927,62 @@ export class ExtensionImageEmbeddings extends ImageEmbeddings
   @Expose()
   readonly id: string;
 
+  @ApiProperty(
+    {
+      description: "The image embeddings for the extension",
+      type: ImageEmbedding,
+      isArray: true,
+      required: true
+    }
+  )
+  @ValidateNested({ each: true })
+  @Type(() => ImageEmbedding)
+  @IsArray()
+  @Expose()
+  readonly embeddings: ImageEmbedding[];
+
 }
 
-export type AllImageEmbeddings = ExtensionImageEmbeddings[];
+@ApiSchema({ description: "An extension identifier, plus an embedding name" })
+export class ExtensionIdImageEmbeddingName
+{
+
+  constructor(extensionId: ExtensionIdType, name: string)
+  {
+    this.extensionId = extensionId;
+    this.name = name;
+  }
+
+  @ApiProperty(
+    {
+      ...extensionIdSchema,
+      description: "The extension identifier",
+      type: String,
+      required: true
+    }
+  )
+  @Matches(extensionIdPattern)
+  @MinLength(1)
+  @MaxLength(FieldLengths.shortTechnical)
+  @Expose()
+  readonly extensionId: ExtensionIdType;
+
+  @ApiProperty(
+    {
+      ...technicalRelaxedSchema,
+      description: "The embedding name",
+      type: String,
+      required: true
+    }
+  )
+  @IsString()
+  @Matches(technicalRelaxedPattern)
+  @MinLength(1)
+  @MaxLength(FieldLengths.shortTechnical)
+  @Expose()
+  readonly name: string;
+
+}
 
 @ApiSchema({ description: "Basic information about an image, i.e. a summary information about an image" })
 export class ImageSummary extends Dates

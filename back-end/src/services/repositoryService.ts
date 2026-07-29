@@ -9,9 +9,8 @@ import { Prisma, Repository as PersistedRepository } from ".prisma/client";
 import { logger } from "../logger";
 import { paths } from "../paths";
 import {
-  AllExtensionImageFeatureNames,
-  AllExtensionImageTags,
   ApplicationMetadata,
+  ExtensionIdImageEmbeddingName,
   ExtensionImageFeatureName,
   ExtensionImageTag,
   fileWithProtocol,
@@ -79,7 +78,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
 
   getImageRepositoryStatus(nodePath: string): undefined | RepositoryStatus
   {
-    for (const [path, repository] of this.perPathFileRepositories.entries())
+    for (const [ path, repository ] of this.perPathFileRepositories.entries())
     {
       if (nodePath.startsWith(path) === true)
       {
@@ -116,7 +115,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       {
         // We translate the URL according to the repository mapping paths
-        for (const [key, value] of paths.repositoryMappingPaths.entries())
+        for (const [ key, value ] of paths.repositoryMappingPaths.entries())
         {
           if (directoryPath.startsWith(value) === true)
           {
@@ -385,7 +384,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     await this.vectorDatabaseAccessor.deleteImagesEmbeddings(imageIds);
     // Thanks to the cascading effect, we do not need to delete the "metadata" nor the "feature" entities
     const deleteRepository = this.entitiesProvider.repositories.delete({ where: { id } });
-    await this.entitiesProvider.prisma.$transaction([deleteRepository]);
+    await this.entitiesProvider.prisma.$transaction([ deleteRepository ]);
     for (const imageId of imageIds)
     {
       this.notifierService.emit(EventEntity.Image, RepositoryEventAction.Deleted, undefined, { id: imageId });
@@ -415,13 +414,13 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     });
   }
 
-  async getFeatureNames(): Promise<AllExtensionImageFeatureNames>
+  async getFeatureNames(): Promise<ExtensionImageFeatureName []>
   {
     logger.info("Getting all the extensions image feature names");
     const features = await this.entitiesProvider.imageFeature.findMany({
-      distinct: ["extensionId", "format", "type", "name"],
+      distinct: [ "extensionId", "format", "type", "name" ],
       where: { name: { not: null } },
-      orderBy: [{ extensionId: "asc" }, { name: "asc" }]
+      orderBy: [ { extensionId: "asc" }, { name: "asc" } ]
     });
     return features.map((feature) =>
     {
@@ -429,11 +428,11 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     });
   }
 
-  async getTags(): Promise<AllExtensionImageTags>
+  async getTags(): Promise<ExtensionImageTag []>
   {
     logger.info("Getting all the extensions image tags");
     const tags = await this.entitiesProvider.imageTag.findMany({
-      distinct: ["extensionId", "value"],
+      distinct: [ "extensionId", "value" ],
       where: { value: { not: ImageService.emptyImageTag } },
       orderBy: { extensionId: "asc" }
     });
@@ -441,6 +440,16 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       return new ExtensionImageTag(tag.extensionId, tag.value);
     });
+  }
+
+  async getEmbeddingsNames(): Promise<ExtensionIdImageEmbeddingName []>
+  {
+    logger.info("Getting all the embeddings identifiers and names");
+    const embeddingsNames = await this.vectorDatabaseAccessor.getExtensionEmbeddingsNames();
+    return embeddingsNames.map(embeddingsName => plainToInstanceViaJSON(ExtensionIdImageEmbeddingName, {
+      extensionId: embeddingsName.id,
+      name: embeddingsName.name
+    }));
   }
 
   async renameImage(id: string, imageId: string, nameWithoutExtension: string, relativeDirectoryPath: string | undefined): Promise<Image>

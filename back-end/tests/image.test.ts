@@ -18,7 +18,7 @@ import {
   fileWithProtocol,
   GenerationRecipe,
   Image,
-  ImageEmbeddings,
+  ImageEmbedding,
   ImageFeature,
   ImageFeatureFormat,
   ImageFeatureNullValue,
@@ -867,7 +867,7 @@ describe("Image with module", () =>
     const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
     await base.getImageController().setTags(Base.allPolicyContext, image.id, extension.manifest.id, ["tag"]);
     await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension.manifest.id, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "name", "string")]);
-    await base.getImageController().setEmbeddings(Base.allPolicyContext, image.id, extension.manifest.id, new ImageEmbeddings([1, 2, 3]));
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image.id, extension.manifest.id, [new ImageEmbedding("default", [1, 2, 3])]);
     const filter =
       {
         criteria: { formats: [ImageFormat.PNG] },
@@ -903,7 +903,7 @@ describe("Image with module", () =>
       expect((await base.getEntitiesProvider().imageMetadata.findMany()).length).toBe(0);
       expect((await base.getEntitiesProvider().imageTag.findMany()).length).toBe(0);
       expect((await base.getEntitiesProvider().imageFeature.findMany()).length).toBe(0);
-      expect(await base.getVectorDatabaseAccessor().getEmbeddings(image.id, extension.manifest.id)).toBeUndefined();
+      expect((await base.getVectorDatabaseAccessor().getEmbeddings(image.id, extension.manifest.id)).length).toBe(0);
       {
         // We check that the image has been removed from the collection, leaving the rest of the filter intact
         const updatedCollection = await base.getCollectionController().get(collection.id);
@@ -1520,7 +1520,7 @@ describe("Image with module", () =>
   {
     const { image, extensionId } = await preparedRepositoryAndExtension();
     const imageId = image.id;
-    const imageEmbeddings = new ImageEmbeddings([1, 2, 3, 4, 5]);
+    const imageEmbeddings = [new ImageEmbedding("default", [1, 2, 3, 4, 5])];
 
     {
       // We assess with a non-existing extension
@@ -1534,7 +1534,7 @@ describe("Image with module", () =>
       // We assess with a too-long embeddings dimension
       await expect(async () =>
       {
-        await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, new ImageEmbeddings([...Array(4_097).keys()]));
+        await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, [new ImageEmbedding("default", [...Array(4_097).keys()])]);
       }).rejects.toThrow(new ServiceError("The embeddings vector cannot have a dimension larger than 4096", BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -1547,19 +1547,21 @@ describe("Image with module", () =>
     {
       await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, imageEmbeddings);
       const updatedImageEmbeddings = await base.getImageController().getEmbeddings(imageId, extensionId);
-      expect(updatedImageEmbeddings).toEqual(imageEmbeddings);
+      expect(updatedImageEmbeddings.id).toEqual(extensionId);
+      expect(updatedImageEmbeddings.embeddings).toEqual(imageEmbeddings);
       const addedImageEmbeddings = await base.getImageController().getEmbeddings(imageId, extensionId);
-      expect(addedImageEmbeddings).toEqual(imageEmbeddings);
+      expect(addedImageEmbeddings.id).toEqual(extensionId);
+      expect(addedImageEmbeddings.embeddings).toEqual(imageEmbeddings);
       const allImageEmbeddings = await base.getImageController().getAllEmbeddings(imageId);
       expect(allImageEmbeddings.length).toEqual(1);
       expect(allImageEmbeddings[0].id).toEqual(extensionId);
-      expect(allImageEmbeddings[0].values).toEqual(imageEmbeddings.values);
+      expect(allImageEmbeddings[0].embeddings[0].values).toEqual(imageEmbeddings[0].values);
     }
     {
       // We assess with non-homogeneous embeddings
       await expect(async () =>
       {
-        await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, new ImageEmbeddings([1]));
+        await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, [new ImageEmbedding("default", [1])]);
       }).rejects.toThrow(new ServiceError(`The embeddings length 1 is not the expected one 5`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -1570,7 +1572,7 @@ describe("Image with module", () =>
       {
         fs.rmSync(filePath);
       });
-      expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageId, extensionId)).toBeUndefined();
+      expect((await base.getVectorDatabaseAccessor().getEmbeddings(imageId, extensionId)).length).toBe(0);
     }
   });
 
