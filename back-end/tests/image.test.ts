@@ -253,8 +253,8 @@ describe("Image bare", () =>
     }
     {
       const buffer = fs.readFileSync(imageFilePath);
-      const strippedBuffers = [await stripMetadata(buffer, imageFormat), await stripMetadata(buffer, imageFormat, imageFormat === ImageFormat.PNG ? ImageMetadataAlgorithm.internal : ImageMetadataAlgorithm.sharp)];
-      const withSharps = [false, true];
+      const strippedBuffers = [ await stripMetadata(buffer, imageFormat), await stripMetadata(buffer, imageFormat, imageFormat === ImageFormat.PNG ? ImageMetadataAlgorithm.internal : ImageMetadataAlgorithm.sharp) ];
+      const withSharps = [ false, true ];
       for (let index = 0; index < strippedBuffers.length; index++)
       {
         const strippedBuffer = strippedBuffers[index];
@@ -318,7 +318,7 @@ describe("Image bare", () =>
 
     {
       // We assess with a uni-code value
-      for (const buffer of [notGeneratedJpegBuffer, notGeneratedPngBuffer])
+      for (const buffer of [ notGeneratedJpegBuffer, notGeneratedPngBuffer ])
       {
         const imageFormat = await computeFormat(buffer);
         const newApplicationMetadata = { key: "高清" };
@@ -328,7 +328,7 @@ describe("Image bare", () =>
       }
     }
 
-    const buffers = [iptcJpegBuffer, generatedJpegBuffer, notGeneratedJpegBuffer, notGeneratedPngBuffer, automatic1111Buffer, comfyUiBuffer];
+    const buffers = [ iptcJpegBuffer, generatedJpegBuffer, notGeneratedJpegBuffer, notGeneratedPngBuffer, automatic1111Buffer, comfyUiBuffer ];
     for (const buffer of buffers)
     {
       const imageFormat = await computeFormat(buffer);
@@ -357,14 +357,14 @@ describe("Image bare", () =>
 
   test.each(imageCases)("resize image '$fileName'", async ({ fileName }) =>
   {
-    const sizes = [undefined, 100, 200];
-    for (const requestedFormat of [undefined, ...ImageFormats])
+    const sizes = [ undefined, 100, 200 ];
+    for (const requestedFormat of [ undefined, ...ImageFormats ])
     {
       for (const requestedWidth of sizes)
       {
         for (const requestedHeight of sizes)
         {
-          for (const requestedRender of [undefined, "inbox" as ResizeRender])
+          for (const requestedRender of [ undefined, "inbox" as ResizeRender ])
           {
             const filePath = path.join(imageFeeder.imagesDirectoryPath, fileName);
             const imageMiscellaneousMetadata = await readMetadata(filePath);
@@ -436,16 +436,16 @@ describe("Image with module", () =>
     const integerFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.INTEGER, "rating", 5);
     const floatFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.FLOAT, "popularity", 3.14);
     const booleanFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.BOOLEAN, "validated", false);
-    const features = [stringFeature, integerFeature, floatFeature, booleanFeature];
+    const features = [ stringFeature, integerFeature, floatFeature, booleanFeature ];
     await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension.manifest.id, features);
     await base.getImageController().setFeatures(Base.allPolicyContext, image.id, otherExtension.manifest.id, features);
     await base.getImageController().setFeatures(Base.allPolicyContext, withFeaturesAndTagsImage.id, extension.manifest.id, features);
-    const tags = ["tag1", "tag2"];
+    const tags = [ "tag1", "tag2" ];
     await base.getImageController().setTags(Base.allPolicyContext, image.id, extension.manifest.id, tags);
     await base.getImageController().setTags(Base.allPolicyContext, image.id, otherExtension.manifest.id, tags);
     await base.getImageController().setTags(Base.allPolicyContext, withFeaturesAndTagsImage.id, extension.manifest.id, tags);
     const collection = await base.getCollectionController().create("name", undefined, {
-      origin: new SearchRepositoriesOrigin([repository.id])
+      origin: new SearchRepositoriesOrigin([ repository.id ])
     });
 
     const imagesCount = 3;
@@ -460,7 +460,7 @@ describe("Image with module", () =>
     const searchIds = base.getImageController().searchIds;
     const searchFeatures = base.getImageController().searchFeatures;
     const searchTags = base.getImageController().searchTags;
-    const webServices = [base.getImageController().searchSummaries, base.getImageController().searchImages, searchIds, searchFeatures, searchTags];
+    const webServices = [ base.getImageController().searchSummaries, base.getImageController().searchImages, searchIds, searchFeatures, searchTags ];
     for (const unboundWebService of webServices)
     {
       const webService = unboundWebService.bind(base.getImageController());
@@ -606,7 +606,7 @@ describe("Image with module", () =>
                           features:
                             {
                               operator: SearchFeatureLogicalOperator.AND,
-                              conditions: [condition]
+                              conditions: [ condition ]
                             }
                         }
 
@@ -627,13 +627,13 @@ describe("Image with module", () =>
                 expect((await webService(SearchParameters.withSearchCriteria({
                   features: {
                     operator: SearchFeatureLogicalOperator.AND,
-                    conditions: [condition]
+                    conditions: [ condition ]
                   }
                 }))).items.length).toBe(shouldNotMatch === true ? zero : withFeaturesAndTagsCount);
                 expect((await webService(SearchParameters.withSearchCriteria({
                   features: {
                     operator: SearchFeatureLogicalOperator.NOT,
-                    conditions: [condition]
+                    conditions: [ condition ]
                   }
                 }))).items.length).toBe(shouldNotMatch === false ? onlyOne : imagesCount);
               }
@@ -740,9 +740,9 @@ describe("Image with module", () =>
       {
         // We add a repository and an image on it
         const { repository: newRepository } = await base.prepareRepositoryWithImage(base.imageFeeder.webpImageFileName, "new");
-        expect((await webService(new SearchParameters(new SearchFilter(undefined, new SearchRepositoriesOrigin([repository.id, newRepository.id]))))).items.length).toBe(imagesCount + 1);
+        expect((await webService(new SearchParameters(new SearchFilter(undefined, new SearchRepositoriesOrigin([ repository.id, newRepository.id ]))))).items.length).toBe(imagesCount + 1);
         expect((await webService(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items.length).toBe(imagesCount);
-        expect((await webService(new SearchParameters(new SearchFilter(undefined, new SearchImagesOrigin([image.id]))))).items.length).toBe(onlyOne);
+        expect((await webService(new SearchParameters(new SearchFilter(undefined, new SearchImagesOrigin([ image.id ]))))).items.length).toBe(onlyOne);
         await base.getRepositoryController().delete(newRepository.id);
       }
       {
@@ -755,7 +755,7 @@ describe("Image with module", () =>
         {
           return typeof object === "string" ? object : ("id" in object ? object.id as string : undefined);
         };
-        const extensionIdsArray = [[extension.manifest.id], [], undefined];
+        const extensionIdsArray = [ [ extension.manifest.id ], [], undefined ];
         for (const extensionIds of extensionIdsArray)
         {
           const rawResult = await webService({
@@ -865,16 +865,16 @@ describe("Image with module", () =>
   {
     const extension = await base.prepareExtension();
     const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
-    await base.getImageController().setTags(Base.allPolicyContext, image.id, extension.manifest.id, ["tag"]);
-    await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension.manifest.id, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "name", "string")]);
-    await base.getImageController().setEmbeddings(Base.allPolicyContext, image.id, extension.manifest.id, [new ImageEmbedding("default", [1, 2, 3])]);
+    await base.getImageController().setTags(Base.allPolicyContext, image.id, extension.manifest.id, [ "tag" ]);
+    await base.getImageController().setFeatures(Base.allPolicyContext, image.id, extension.manifest.id, [ new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "name", "string") ]);
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image.id, extension.manifest.id, [ new ImageEmbedding("default", [ 1, 2, 3 ]) ]);
     const filter =
       {
-        criteria: { formats: [ImageFormat.PNG] },
+        criteria: { formats: [ ImageFormat.PNG ] },
         origin:
           {
             kind: SearchOriginKind.Images,
-            ids: [image.id]
+            ids: [ image.id ]
           }
       };
     const collection = await base.getCollectionController().create("name", undefined, filter);
@@ -931,18 +931,18 @@ describe("Image with module", () =>
     const summaries = (await base.getImageController().searchSummaries({})).items;
     for (const summary of summaries)
     {
-      const stripMetadatas = [undefined, true, false];
+      const stripMetadatas = [ undefined, true, false ];
       for (const stripMetadata of stripMetadatas)
       {
-        const imageFormats = [undefined, ImageFormat.PNG, ImageFormat.JPEG, ImageFormat.WEBP];
+        const imageFormats = [ undefined, ImageFormat.PNG, ImageFormat.JPEG, ImageFormat.WEBP ];
         for (const requestedImageFormat of imageFormats)
         {
-          const sizes = [undefined, 100, 200];
+          const sizes = [ undefined, 100, 200 ];
           for (const requestedWidth of sizes)
           {
             for (const requestedHeight of sizes)
             {
-              for (const requestedRender of [undefined, ImageResizeRender.Inbox, ImageResizeRender.Outbox])
+              for (const requestedRender of [ undefined, ImageResizeRender.Inbox, ImageResizeRender.Outbox ])
               {
                 const imageId = summary.id;
                 const willStripMetadata = stripMetadata === true;
@@ -1048,7 +1048,7 @@ describe("Image with module", () =>
         const nonExistingId = "non-existing-id";
         await expect(async () =>
         {
-          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, nonExistingId, [imageFeature]);
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, nonExistingId, [ imageFeature ]);
         }).rejects.toThrow(new ServiceError(`The parameter 'extensionId' with value '${nonExistingId}' is invalid because that extension is not installed`, BAD_REQUEST, base.badParameterCode));
       }
       {
@@ -1062,14 +1062,14 @@ describe("Image with module", () =>
         // We assess with a feature with an empty name
         await expect(async () =>
         {
-          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "", "value")]);
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "", "value") ]);
         }).rejects.toThrow(new ServiceError("The parameter 'features[0].name' with value '' is invalid because it is empty", BAD_REQUEST, base.badParameterCode));
       }
       {
         // We assess with a feature with an empty value
         await expect(async () =>
         {
-          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, name, "")]);
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, name, "") ]);
         }).rejects.toThrow(new ServiceError("The parameter 'features[0].value' with value '' is invalid because it is empty", BAD_REQUEST, base.badParameterCode));
       }
       {
@@ -1096,58 +1096,58 @@ describe("Image with module", () =>
           {
             await expect(async () =>
             {
-              await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.ANNOTATION, aCase.type, undefined, aCase.value)]);
+              await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.ANNOTATION, aCase.type, undefined, aCase.value) ]);
             }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it should be ${aCase.errorSuffix}`, BAD_REQUEST, base.badParameterCode));
           }
         }
 
         // We assess with a mismatching between the "type" and the "format" for the "caption" type
-        for (const featureFormat of [ImageFeatureFormat.JSON, ImageFeatureFormat.XML, ImageFeatureFormat.BINARY])
+        for (const featureFormat of [ ImageFeatureFormat.JSON, ImageFeatureFormat.XML, ImageFeatureFormat.BINARY ])
         {
           await expect(async () =>
           {
-            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.CAPTION, featureFormat, undefined, "dummyAttachment")]);
+            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.CAPTION, featureFormat, undefined, "dummyAttachment") ]);
           }).rejects.toThrow(new ServiceError(`The parameter '[0].format' with value '${featureFormat}' is invalid because it should be equal to 'string' when the feature type is 'caption'`, BAD_REQUEST, base.badParameterCode));
         }
       }
 
       // We assess with a mismatching between the "type" and the "format" for the "description" and "comment" types
-      for (const type of [ImageFeatureType.DESCRIPTION, ImageFeatureType.COMMENT])
+      for (const type of [ ImageFeatureType.DESCRIPTION, ImageFeatureType.COMMENT ])
       {
-        for (const featureFormat of [ImageFeatureFormat.JSON, ImageFeatureFormat.XML, ImageFeatureFormat.BINARY])
+        for (const featureFormat of [ ImageFeatureFormat.JSON, ImageFeatureFormat.XML, ImageFeatureFormat.BINARY ])
         {
           await expect(async () =>
           {
-            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, featureFormat, undefined, "dummyAttachment")]);
+            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, featureFormat, undefined, "dummyAttachment") ]);
           }).rejects.toThrow(new ServiceError(`The parameter '[0].format' with value '${featureFormat}' is invalid because it should be one of ['string', 'markdown', 'html'] when the feature type is '${type}'`, BAD_REQUEST, base.badParameterCode));
         }
       }
 
       // We assess with a mismatching between the "type" and the "format" for the "recipe" type
-      for (const featureFormat of [ImageFeatureFormat.STRING, ImageFeatureFormat.XML, ImageFeatureFormat.MARKDOWN, ImageFeatureFormat.HTML, ImageFeatureFormat.BINARY])
+      for (const featureFormat of [ ImageFeatureFormat.STRING, ImageFeatureFormat.XML, ImageFeatureFormat.MARKDOWN, ImageFeatureFormat.HTML, ImageFeatureFormat.BINARY ])
       {
         await expect(async () =>
         {
-          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.RECIPE, featureFormat, undefined, "dummyAttachment")]);
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.RECIPE, featureFormat, undefined, "dummyAttachment") ]);
         }).rejects.toThrow(new ServiceError(`The parameter '[0].format' with value '${featureFormat}' is invalid because it should be one of ['json'] when the feature type is 'recipe'`, BAD_REQUEST, base.badParameterCode));
       }
 
       // We assess with malformed JSON contents
-      for (const type of [ImageFeatureType.METADATA, ImageFeatureType.RECIPE, ImageFeatureType.OTHER])
+      for (const type of [ ImageFeatureType.METADATA, ImageFeatureType.RECIPE, ImageFeatureType.OTHER ])
       {
         const value = "malformedJSON";
         await expect(async () =>
         {
-          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, ImageFeatureFormat.JSON, undefined, value)]);
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.JSON, undefined, value) ]);
         }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it should be a well-formed JSON content`, BAD_REQUEST, base.badParameterCode));
       }
       // We assess with malformed XML contents
-      for (const type of [ImageFeatureType.METADATA, ImageFeatureType.OTHER])
+      for (const type of [ ImageFeatureType.METADATA, ImageFeatureType.OTHER ])
       {
         const value = "malformedXML";
         await expect(async () =>
         {
-          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, ImageFeatureFormat.XML, undefined, value)]);
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.XML, undefined, value) ]);
         }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it should be a well-formed XML content`, BAD_REQUEST, base.badParameterCode));
       }
       {
@@ -1158,25 +1158,25 @@ describe("Image with module", () =>
           const value = JSON.stringify({ key: "value" });
           await expect(async () =>
           {
-            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, format, undefined, value)]);
+            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, format, undefined, value) ]);
           }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
         }
         const prompt = new TextualPrompt("prompt");
-        for (const modelTag of ["", "a model", "model:version1:version2", "model!", "model?"])
+        for (const modelTag of [ "", "a model", "model:version1:version2", "model!", "model?" ])
         {
-          const value = JSON.stringify(new GenerationRecipe([modelTag], prompt));
+          const value = JSON.stringify(new GenerationRecipe([ modelTag ], prompt));
           await expect(async () =>
           {
-            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, format, undefined, value)]);
+            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, format, undefined, value) ]);
           }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
         }
         {
-          for (const recipe of [new GenerationRecipe([], prompt, "a".repeat(FieldLengths.technical + 1)), new GenerationRecipe([], prompt, undefined, "malformed URL"), new GenerationRecipe([], prompt, undefined, undefined, "malformed software"), new GenerationRecipe([], prompt, undefined, undefined, undefined, [""]), new GenerationRecipe([], prompt, undefined, undefined, undefined, undefined, -1)])
+          for (const recipe of [ new GenerationRecipe([], prompt, "a".repeat(FieldLengths.technical + 1)), new GenerationRecipe([], prompt, undefined, "malformed URL"), new GenerationRecipe([], prompt, undefined, undefined, "malformed software"), new GenerationRecipe([], prompt, undefined, undefined, undefined, [ "" ]), new GenerationRecipe([], prompt, undefined, undefined, undefined, undefined, -1) ])
           {
             const value = JSON.stringify(recipe);
             await expect(async () =>
             {
-              await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, format, undefined, value)]);
+              await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, format, undefined, value) ]);
             }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
           }
         }
@@ -1185,12 +1185,12 @@ describe("Image with module", () =>
       if (Core.disabled)
       {
         // TODO: re-enable this once we have a proper Markdown validator
-        for (const type of [ImageFeatureType.DESCRIPTION, ImageFeatureType.COMMENT, ImageFeatureType.METADATA, ImageFeatureType.OTHER])
+        for (const type of [ ImageFeatureType.DESCRIPTION, ImageFeatureType.COMMENT, ImageFeatureType.METADATA, ImageFeatureType.OTHER ])
         {
           const value = "malformedMarkdown()[";
           await expect(async () =>
           {
-            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, ImageFeatureFormat.MARKDOWN, undefined, value)]);
+            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.MARKDOWN, undefined, value) ]);
           }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it should be a well-formed Markdown content`, BAD_REQUEST, base.badParameterCode));
         }
       }
@@ -1219,7 +1219,7 @@ describe("Image with module", () =>
         const markdownImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.MARKDOWN, undefined, `# Title\n##Subtitle\nHere is some **markdown** _content!`);
         const jsonImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.JSON, undefined, `{"key":"value"}`);
         const xmlImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.XML, "xml", `<element attribute="value"></element>`);
-        const imageFeatures = [stringImageFeature, integerImageFeature, floatImageFeature, booleanImageFeature, markdownImageFeature, jsonImageFeature, xmlImageFeature];
+        const imageFeatures = [ stringImageFeature, integerImageFeature, floatImageFeature, booleanImageFeature, markdownImageFeature, jsonImageFeature, xmlImageFeature ];
         const listener = base.computeEventListener();
         base.getNotifierService().once(EventEntity.Image, ImageEventAction.FeaturesUpdated, undefined, listener);
         await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, imageFeatures);
@@ -1245,12 +1245,12 @@ describe("Image with module", () =>
         const model = "mod-_.el";
         const company = "comp-_.any";
         const version = "1-_.5";
-        for (const modelTag of [model, `${company}/${model}`, `${model}:${version}`, `${company}/${model}:${version}`])
+        for (const modelTag of [ model, `${company}/${model}`, `${model}:${version}`, `${company}/${model}:${version}` ])
         {
-          for (const kind of [PromptKind.Textual, PromptKind.Instructions])
+          for (const kind of [ PromptKind.Textual, PromptKind.Instructions ])
           {
             const recipe = base.imageFeeder.computeRecipe(kind, modelTag);
-            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(recipe))]);
+            await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(recipe)) ]);
             const features = await base.getImageController().getAllFeatures(imageId);
             expect(features.length).toEqual(1);
             const feature = features[0];
@@ -1265,9 +1265,9 @@ describe("Image with module", () =>
       const secondExtensionId = secondExtension.manifest.id;
       {
         // We assess the single extension features retrieval
-        await base.getImageController().setFeatures(Base.allPolicyContext, imageId, secondExtensionId, [new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.STRING, undefined, "string")]);
+        await base.getImageController().setFeatures(Base.allPolicyContext, imageId, secondExtensionId, [ new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.STRING, undefined, "string") ]);
         const allFeatures = await base.getImageController().getAllFeatures(imageId);
-        for (const anExtensionId of [extensionId, secondExtensionId])
+        for (const anExtensionId of [ extensionId, secondExtensionId ])
         {
           const features = await base.getImageController().getFeatures(imageId, anExtensionId);
           const expectedExtensionFeatures = allFeatures.filter(feature => feature.id === anExtensionId);
@@ -1334,27 +1334,27 @@ describe("Image with module", () =>
         const tag = "";
         await expect(async () =>
         {
-          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [tag]);
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [ tag ]);
         }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
       }
       {
         const tag = "a".repeat(64 + 1);
         await expect(async () =>
         {
-          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [tag]);
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [ tag ]);
         }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it exceeds 64 characters`, BAD_REQUEST, base.badParameterCode));
       }
       {
         const tag = "\\";
         await expect(async () =>
         {
-          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [tag]);
+          await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [ tag ]);
         }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '${tag}' is invalid because it contains illegal characters`, BAD_REQUEST, base.badParameterCode));
       }
 
       await expect(async () =>
       {
-        await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [""]);
+        await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [ "" ]);
       }).rejects.toThrow(new ServiceError(`The parameter 'tags[0]' with value '' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
 
       await expect(async () =>
@@ -1367,7 +1367,7 @@ describe("Image with module", () =>
 
       await expect(async () =>
       {
-        await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, ["tag", "tag"]);
+        await base.getImageController().setTags(Base.allPolicyContext, imageId, extensionId, [ "tag", "tag" ]);
       }).rejects.toThrow(new ServiceError("The parameter 'tags' is invalid because it contains duplicate values", BAD_REQUEST, base.badParameterCode));
     }
 
@@ -1387,14 +1387,14 @@ describe("Image with module", () =>
       });
       const persistedTags = persistedImage!.tags.filter((tag) => tag.extensionId === extensionId);
       expect(persistedTags.length).toEqual(expectedTags.length == 0 ? 1 : expectedTags.length);
-      expect(persistedTags.map(persistedTag => persistedTag.value).sort()).toEqual(expectedTags.length === 0 ? [""] : sortedExpectedTags);
+      expect(persistedTags.map(persistedTag => persistedTag.value).sort()).toEqual(expectedTags.length === 0 ? [ "" ] : sortedExpectedTags);
     };
 
-    const firstTags = ["tag4"];
+    const firstTags = [ "tag4" ];
     {
       const tag1 = "tag.1";
-      const secondTags = ["tag-2", tag1];
-      const thirdTags = [tag1, "tag_3"];
+      const secondTags = [ "tag-2", tag1 ];
+      const thirdTags = [ tag1, "tag_3" ];
       {
         const emptyTags: string[] = [];
         {
@@ -1405,8 +1405,8 @@ describe("Image with module", () =>
         {
           const listener = base.computeEventListener();
           base.getNotifierService().once(EventEntity.Image, ImageEventAction.TagsUpdated, undefined, listener);
-          await base.getImageController().ensureTags(Base.allPolicyContext, imageId, extensionId, [tag1]);
-          await checkTags([tag1]);
+          await base.getImageController().ensureTags(Base.allPolicyContext, imageId, extensionId, [ tag1 ]);
+          await checkTags([ tag1 ]);
           await waitForExpect(() =>
           {
             expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.TagsUpdated, { id: imageId });
@@ -1441,32 +1441,32 @@ describe("Image with module", () =>
     // We install a second extension
     const extensionTag = "newExtensionTag";
     const commandId = "commandId";
-    const secondExtension = await base.prepareExtension("second", [ManifestEvent.ProcessStarted, ManifestEvent.ImageRunCommand], [
+    const secondExtension = await base.prepareExtension("second", [ ManifestEvent.ProcessStarted, ManifestEvent.ImageRunCommand ], [
         {
           id: commandId,
-          on: { entity: CommandEntity.Images, withTags: [extensionTag] },
-          specifications: [{ locale: "en", label: "Command" }]
+          on: { entity: CommandEntity.Images, withTags: [ extensionTag ] },
+          specifications: [ { locale: "en", label: "Command" } ]
         }
       ]
     );
     const secondExtensionId = secondExtension.manifest.id;
     {
       // We check that it is not possible to run an image command, which expects a tag to be defined while the image does not have it
-      const imageIds = [imageId];
+      const imageIds = [ imageId ];
       await expect(async () =>
       {
         await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, [], imageIds);
       }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageIds.join(",")}]' is invalid because one or more image do not have the required tags`, BAD_REQUEST, base.badParameterCode));
       // We set the missing tag
-      await base.getImageController().ensureTags(Base.allPolicyContext, imageId, secondExtensionId, [extensionTag]);
+      await base.getImageController().ensureTags(Base.allPolicyContext, imageId, secondExtensionId, [ extensionTag ]);
       // We check that it is now possible to run the previous image command
       await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, [], imageIds);
     }
     {
       // We assess the single extension features retrieval
-      await base.getImageController().setTags(Base.allPolicyContext, imageId, secondExtensionId, ["secondExtensionTag"]);
+      await base.getImageController().setTags(Base.allPolicyContext, imageId, secondExtensionId, [ "secondExtensionTag" ]);
       const allTags = await base.getImageController().getAllTags(imageId);
-      for (const anExtensionId of [extensionId, secondExtensionId])
+      for (const anExtensionId of [ extensionId, secondExtensionId ])
       {
         const tags = await base.getImageController().getTags(imageId, anExtensionId);
         const expectedExtensionTags = allTags.filter(tag => tag.id === anExtensionId).map(tag => tag.value);
@@ -1506,9 +1506,9 @@ describe("Image with module", () =>
     const secondExtension = await base.prepareExtension("second");
     const secondExtensionId = secondExtension.manifest.id;
     const extensionRecipe = base.imageFeeder.computeRecipe(PromptKind.Textual);
-    await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(extensionRecipe))]);
+    await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(extensionRecipe)) ]);
     const secondExtensionRecipe = base.imageFeeder.computeRecipe(PromptKind.Instructions);
-    await base.getImageController().setFeatures(Base.allPolicyContext, imageId, secondExtensionId, [new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(secondExtensionRecipe))]);
+    await base.getImageController().setFeatures(Base.allPolicyContext, imageId, secondExtensionId, [ new ImageFeature(ImageFeatureType.RECIPE, ImageFeatureFormat.JSON, undefined, JSON.stringify(secondExtensionRecipe)) ]);
 
     const recipes = await base.getImageController().getAllRecipes(imageId);
     expect(recipes.length).toEqual(2);
@@ -1520,7 +1520,7 @@ describe("Image with module", () =>
   {
     const { image, extensionId } = await preparedRepositoryAndExtension();
     const imageId = image.id;
-    const imageEmbeddings = [new ImageEmbedding("default", [1, 2, 3, 4, 5])];
+    const imageEmbeddings = [ new ImageEmbedding("default", [ 1, 2, 3, 4, 5 ]) ];
 
     {
       // We assess with a non-existing extension
@@ -1534,15 +1534,14 @@ describe("Image with module", () =>
       // We assess with a too-long embeddings dimension
       await expect(async () =>
       {
-        await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, [new ImageEmbedding("default", [...Array(4_097).keys()])]);
+        await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, [ new ImageEmbedding("default", [ ...Array(4_097).keys() ]) ]);
       }).rejects.toThrow(new ServiceError("The embeddings vector cannot have a dimension larger than 4096", BAD_REQUEST, base.badParameterCode));
     }
     {
       // We assess with non-existing embeddings
-      await expect(async () =>
-      {
-        await base.getImageController().getEmbeddings(imageId, extensionId);
-      }).rejects.toThrow(new ServiceError(`There are no embeddings for the image with id '${imageId}' and the extension with id '${extensionId}'`, BAD_REQUEST, base.badParameterCode));
+      const emptyEmbeddings = await base.getImageController().getEmbeddings(imageId, extensionId);
+      expect(emptyEmbeddings.id).toEqual(extensionId);
+      expect(emptyEmbeddings.embeddings).toEqual([]);
     }
     {
       await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, imageEmbeddings);
@@ -1561,7 +1560,7 @@ describe("Image with module", () =>
       // We assess with non-homogeneous embeddings
       await expect(async () =>
       {
-        await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, [new ImageEmbedding("default", [1])]);
+        await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, [ new ImageEmbedding("default", [ 1 ]) ]);
       }).rejects.toThrow(new ServiceError(`The embeddings length 1 is not the expected one 5`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -1573,6 +1572,70 @@ describe("Image with module", () =>
         fs.rmSync(filePath);
       });
       expect((await base.getVectorDatabaseAccessor().getEmbeddings(imageId, extensionId)).length).toBe(0);
+    }
+  });
+
+  test("closestImages and closestEmbeddingsImages", async () =>
+  {
+    const { image: image1, extensionId } = await preparedRepositoryAndExtension();
+    const repositoryId = image1.repositoryId;
+    const image1Id = image1.id;
+    const name = "default";
+    const imageEmbedding1 = new ImageEmbedding(name, [ 1, 2, 3, 4, 5 ]);
+    const imageEmbeddings = [ imageEmbedding1 ];
+
+    {
+      // We assess the "closestImages" method with non-existing embeddings
+      await expect(async () =>
+      {
+        await base.getImageController().closestImages(image1Id, extensionId, name, 1);
+      }).rejects.toThrow(new ServiceError(`There are no embeddings for the image with id '${image1Id}' and the extension with id '${extensionId}' and name '${name}'`, BAD_REQUEST, base.badParameterCode));
+    }
+
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image1Id, extensionId, imageEmbeddings);
+
+    {
+      const errorMessage = "The parameter 'count' with value '0' is invalid because it is lower than 1";
+      {
+        // We assess the "closestImages" method with an invalid count
+        await expect(async () =>
+        {
+          await base.getImageController().closestImages(image1Id, extensionId, name, 0);
+        }).rejects.toThrow(new ServiceError(errorMessage, BAD_REQUEST, base.badParameterCode));
+      }
+      {
+        // We assess the "closestEmbeddingsImages" method with an invalid count
+        await expect(async () =>
+        {
+          await base.getImageController().closestEmbeddingsImages(extensionId, 0, imageEmbedding1);
+        }).rejects.toThrow(new ServiceError(errorMessage, BAD_REQUEST, base.badParameterCode));
+      }
+    }
+
+    const image2Id = (await base.addImage(repositoryId, base.imageFeeder.jpegImageFileName)).id;
+    const image2Embeddings = [ new ImageEmbedding(name, [ 1, 2, 3, 4, 6 ]) ];
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image2Id, extensionId, image2Embeddings);
+    const image3Id = (await base.addImage(repositoryId, base.imageFeeder.webpImageFileName)).id;
+    const image3Embeddings = [ new ImageEmbedding(name, [ 1, 2, 3, 5, 6 ]) ];
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image3Id, extensionId, image3Embeddings);
+
+    {
+      // We assess the "closestImages" method
+      const closestImages = await base.getImageController().closestImages(image1Id, extensionId, name, 2);
+      expect(closestImages.length).toEqual(2);
+      expect(closestImages[0].image.id).toEqual(image2Id);
+      expect(closestImages[1].image.id).toEqual(image3Id);
+      const singleClosestImage = await base.getImageController().closestImages(image1Id, extensionId, name, 1);
+      expect(singleClosestImage.length).toEqual(1);
+      expect(singleClosestImage[0].image.id).toEqual(image2Id);
+    }
+    {
+      // We assess the "closestEmbeddingsImages" method
+      const closestImages = await base.getImageController().closestEmbeddingsImages(extensionId, 3, imageEmbedding1);
+      expect(closestImages.length).toEqual(3);
+      expect(closestImages[0].image.id).toEqual(image1Id);
+      expect(closestImages[1].image.id).toEqual(image2Id);
+      expect(closestImages[2].image.id).toEqual(image3Id);
     }
   });
 
@@ -1714,41 +1777,41 @@ describe("Image with module", () =>
     const otherExtensionId = (await base.prepareExtension("other")).manifest.id;
     const otherExtensionAttachmentUri = await base.getImageAttachmentController().create(Base.allPolicyContext, imageId, otherExtensionId, mimeType, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
     // We attempt to set a binary feature with an invalid attachment URI
-    for (const type of [ImageFeatureType.METADATA, ImageFeatureType.OTHER])
+    for (const type of [ ImageFeatureType.METADATA, ImageFeatureType.OTHER ])
     {
       {
         const value = "dummyUri";
         await expect(async () =>
         {
-          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, value)]);
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, value) ]);
         }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not start with '${attachmentPrefix}'`, BAD_REQUEST, base.badParameterCode));
       }
       {
         const value = attachmentPrefix + "123string";
         await expect(async () =>
         {
-          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, value)]);
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, value) ]);
         }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because its suffix is not an integer`, BAD_REQUEST, base.badParameterCode));
       }
       {
         const value = attachmentPrefix + 123;
         await expect(async () =>
         {
-          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, value)]);
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, value) ]);
         }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because there is no attachment with that URI`, BAD_REQUEST, base.badParameterCode));
       }
       await expect(async () =>
       {
-        await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, otherImageAttachmentUri)]);
+        await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, otherImageAttachmentUri) ]);
       }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${otherImageAttachmentUri}' is invalid because the attachment with that URI is not bound to the image with id '${imageId}'`, BAD_REQUEST, base.badParameterCode));
       await expect(async () =>
       {
-        await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, otherExtensionAttachmentUri)]);
+        await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.BINARY, undefined, otherExtensionAttachmentUri) ]);
       }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${otherExtensionAttachmentUri}' is invalid because the attachment with that URI is not bound to the extension with id '${extensionId}'`, BAD_REQUEST, base.badParameterCode));
     }
     {
       // We change the features and assess the presence of their corresponding attachements
-      await base.getImageController().setFeatures(Base.allPolicyContext, imageId, otherExtensionId, [new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.BINARY, undefined, otherExtensionAttachmentUri)]);
+      await base.getImageController().setFeatures(Base.allPolicyContext, imageId, otherExtensionId, [ new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.BINARY, undefined, otherExtensionAttachmentUri) ]);
       expect((await base.getModuleProvider(ImageAttachmentService).list(imageId)).length).toEqual(2);
       await base.getImageController().setFeatures(Base.allPolicyContext, imageId, otherExtensionId, []);
       const entities = await base.getModuleProvider(ImageAttachmentService).list(imageId);
@@ -1763,8 +1826,8 @@ describe("Image with module", () =>
     const extension2 = await base.prepareExtension("id2");
     const repository = await base.prepareEmptyRepository();
     const value1 = { key: "value" };
-    const value2 = new GenerationRecipe(["model"], new TextualPrompt("prompt"));
-    const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([new ApplicationMetadataItem(extension1.manifest.id, value1), new ApplicationMetadataItem(extension2.manifest.id, value2)])), undefined, undefined, undefined, fs.readFileSync(base.imageFeeder.getImageFilePath(base.imageFeeder.pngImageFileName)));
+    const value2 = new GenerationRecipe([ "model" ], new TextualPrompt("prompt"));
+    const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([ new ApplicationMetadataItem(extension1.manifest.id, value1), new ApplicationMetadataItem(extension2.manifest.id, value2) ])), undefined, undefined, undefined, fs.readFileSync(base.imageFeeder.getImageFilePath(base.imageFeeder.pngImageFileName)));
 
     // We copy an image with application metadata
     const buffer = fs.readFileSync(image.url.substring(fileWithProtocol.length));
@@ -1773,8 +1836,8 @@ describe("Image with module", () =>
     const newImage = await base.waitUntilImage(repository.id, filePath, true);
     const features = await base.getImageController().getAllFeatures(newImage.id);
     expect(features.length).toEqual(2);
-    const extensions = [extension1, extension2];
-    const values = [value1, value2];
+    const extensions = [ extension1, extension2 ];
+    const values = [ value1, value2 ];
     for (let index = 0; index < features.length; index++)
     {
       const feature = features[index];
@@ -1833,7 +1896,7 @@ describe("Image with module", () =>
       }
       {
         // We assess with an invalid "quality" parameter
-        for (const quality of [0, 101])
+        for (const quality of [ 0, 101 ])
         {
           await expect(async () =>
           {
@@ -1848,7 +1911,7 @@ describe("Image with module", () =>
     {
       for (const format of ImageFormats)
       {
-        const qualities: (NumericRange<1, 100> | undefined)[] = (format === ImageFormat.JPEG || format === ImageFormat.WEBP || format === ImageFormat.AVIF) ? [1, 50, 100] : [undefined];
+        const qualities: (NumericRange<1, 100> | undefined)[] = (format === ImageFormat.JPEG || format === ImageFormat.WEBP || format === ImageFormat.AVIF) ? [ 1, 50, 100 ] : [ undefined ];
         const lengths: number[] = [];
         for (const quality of qualities)
         {
@@ -1908,11 +1971,11 @@ describe("Image with application", () =>
   test("synchronize", async () =>
   {
     const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
-    const extension1 = await base.prepareExtension("extension1", [ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings], [], [{ id: ManifestCapabilityId.ImageTags }, { id: ManifestCapabilityId.ImageFeatures }, { id: ManifestCapabilityId.ImageEmbeddings }]);
-    const extension2 = await base.prepareExtension("extension2", [ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags], [], [{ id: ManifestCapabilityId.ImageTags }]);
+    const extension1 = await base.prepareExtension("extension1", [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings ], [], [ { id: ManifestCapabilityId.ImageTags }, { id: ManifestCapabilityId.ImageFeatures }, { id: ManifestCapabilityId.ImageEmbeddings } ]);
+    const extension2 = await base.prepareExtension("extension2", [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags ], [], [ { id: ManifestCapabilityId.ImageTags } ]);
 
-    const file1Paths = [`tag-${image.id}`, `feature-${image.id}`, `embeddings-${image.id}`].map(fileName => path.join(path.join(paths.installedExtensionsDirectoryPath, extension1.manifest.id), fileName));
-    const file2Paths = [`tag-${image.id}`].map(fileName => path.join(path.join(paths.installedExtensionsDirectoryPath, extension2.manifest.id), fileName));
+    const file1Paths = [ `tag-${image.id}`, `feature-${image.id}`, `embeddings-${image.id}` ].map(fileName => path.join(path.join(paths.installedExtensionsDirectoryPath, extension1.manifest.id), fileName));
+    const file2Paths = [ `tag-${image.id}` ].map(fileName => path.join(path.join(paths.installedExtensionsDirectoryPath, extension2.manifest.id), fileName));
     await base.waitUntil(async () =>
     {
       return file1Paths.filter(filePath => fs.existsSync(filePath) === true).length === file1Paths.length && file2Paths.filter(filePath => fs.existsSync(filePath) === true).length === file2Paths.length;
@@ -1932,14 +1995,14 @@ describe("Image with application", () =>
   test.each(imageCases)("mediaUrl with image '$fileName'", async ({ format, fileName, width, height }: ImageCase) =>
   {
     const { image } = await base.prepareRepositoryWithImage(fileName);
-    const sizes = [undefined, 100, 200];
-    for (const requestedFormat of [undefined, ...ImageFormats])
+    const sizes = [ undefined, 100, 200 ];
+    for (const requestedFormat of [ undefined, ...ImageFormats ])
     {
       for (const requestedWidth of sizes)
       {
         for (const requestedHeight of sizes)
         {
-          for (const requestedResizeRender of [undefined, ImageResizeRender.Inbox, ImageResizeRender.Outbox])
+          for (const requestedResizeRender of [ undefined, ImageResizeRender.Inbox, ImageResizeRender.Outbox ])
           {
             const mediaUrl = await base.getImageController().mediaUrl(image.id, {
               format: requestedFormat,

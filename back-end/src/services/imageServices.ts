@@ -742,17 +742,10 @@ export class ImageService
     for (const extensionId of extensionIds)
     {
       const embeddingsArray = await this.vectorDatabaseAccessor.getEmbeddings(id, extensionId);
-      if (embeddingsArray.length === 0)
-      {
-        logger.warn(`There are no embeddings for the image with id '${id}' and the extension with id '${extensionId}'`);
-      }
-      else
-      {
-        extensionImageEmbeddingsArray.push(plainToInstanceViaJSON(ExtensionImageEmbeddings, {
-          id: extensionId,
-          embeddings: embeddingsArray
-        }));
-      }
+      extensionImageEmbeddingsArray.push(plainToInstanceViaJSON(ExtensionImageEmbeddings, {
+        id: extensionId,
+        embeddings: embeddingsArray
+      }));
     }
     return extensionImageEmbeddingsArray.sort((entity1, entity2) =>
     {
@@ -766,10 +759,6 @@ export class ImageService
     this.checkExtension(extensionId);
     await this.getPersistedImage(id, false, false, false);
     const embeddingsArray = await this.vectorDatabaseAccessor.getEmbeddings(id, extensionId);
-    if (embeddingsArray.length === 0)
-    {
-      parametersChecker.throwBadParameterError(`There are no embeddings for the image with id '${id}' and the extension with id '${extensionId}'`);
-    }
     return plainToInstanceViaJSON(ExtensionImageEmbeddings, { id: extensionId, embeddings: embeddingsArray });
   }
 
@@ -800,11 +789,10 @@ export class ImageService
     logger.info(`Getting the ${count} closest image(s) to the image with id '${id}' related to the extension with id '${extensionId}' and name '${name}'`);
     const imageEmbeddings = await this.getEmbeddings(id, extensionId);
     parametersChecker.checkNumber("count", count, 1);
-    const targetEmbeddings = imageEmbeddings.embeddings.find(e => e.name === name);
+    const targetEmbeddings = imageEmbeddings.embeddings.find(imageEmbedding => imageEmbedding.name === name);
     if (targetEmbeddings === undefined)
     {
       parametersChecker.throwBadParameterError(`There are no embeddings for the image with id '${id}' and the extension with id '${extensionId}' and name '${name}'`);
-      return [];
     }
     const imageDistances = await this.closestEmbeddingsImages(extensionId, targetEmbeddings, count + 1);
     return imageDistances.length <= 1 ? [] : imageDistances.slice(1);
@@ -837,7 +825,7 @@ export class ImageService
       {
         return entitiesIds.indexOf(id) === -1;
       });
-      // This should only happen when an image has been deleted while the repository was not watching and should be solved by synchronizing the repository or by synchronising the extension
+      // This should only happen when an image has been deleted while the repository was not watching and should be solved by synchronizing the repository or by synchronizing the extension
       logger.warn(`Could not find the images with ids '${missingImageIds.join("', '")}'`);
     }
     // We need to sort the entities because they are not sorted in the same way as the 'imageIds'

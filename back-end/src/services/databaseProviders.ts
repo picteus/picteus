@@ -386,7 +386,7 @@ class MemoryEmbeddingsManager
     }
   }
 
-  async query(extensionId: string, name: string, _embeddings: number[], _count: number): Promise<ImageIdAndDistance[]>
+  async query(extensionId: string, name: string, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>
   {
     const perEmbeddingNameMap = this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.get(extensionId);
     if (perEmbeddingNameMap === undefined)
@@ -398,8 +398,19 @@ class MemoryEmbeddingsManager
     {
       return [];
     }
-    const imageId: string | undefined = perImageIdEmbeddingMap.keys().next().value;
-    return imageId === undefined ? [] : [ { imageId, distance: 0.12345 } ];
+    const results: ImageIdAndDistance[] = [];
+    for (const [imageId, storedEmbeddings] of perImageIdEmbeddingMap.entries())
+    {
+      let distance = 0;
+      for (let index = 0; index < embeddings.length; index++)
+      {
+        distance += Math.pow(embeddings[index] - (storedEmbeddings[index] || 0), 2);
+      }
+      distance = Math.sqrt(distance);
+      results.push({ imageId, distance });
+    }
+    results.sort((item1, item2) => item1.distance - item2.distance);
+    return results.slice(0, count);
   }
 
   deleteImage(imageIds: string[], extensionId?: string): void

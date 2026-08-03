@@ -1109,8 +1109,7 @@ describe("Extensions", () =>
     {
       // We make sure that no tags nor features' computation event is processed when the extension is paused
       await base.getRepositoryController().watch(repository.id, true);
-      const newImageFilePath = base.imageFeeder.copyImage(repository.url.substring(fileWithProtocol.length), base.imageFeeder.jpegImageFileName);
-      await base.waitUntilImage(repository.id, newImageFilePath, true);
+      await base.addImage(repository.id, base.imageFeeder.jpegImageFileName);
       expect(fs.existsSync(tagsEventFilePath)).toEqual(false);
       expect(fs.existsSync(featuresEventFilePath)).toEqual(false);
     }

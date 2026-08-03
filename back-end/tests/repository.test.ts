@@ -816,8 +816,7 @@ describe("Repository", () =>
     await base.getRepositoryController().startOrStop(true);
 
     // We add a file
-    const filePath = base.imageFeeder.copyImage(directoryPath, base.imageFeeder.jpegImageFileName);
-    await base.waitUntilImage(id, filePath, true);
+    await base.addImage(repository.id, base.imageFeeder.jpegImageFileName);
 
     await base.getRepositoryController().startOrStop(false);
     expect(RepositoryWatcher.get(id)).toBeUndefined();

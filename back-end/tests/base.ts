@@ -812,6 +812,13 @@ export class Base extends Core
     });
   }
 
+  async addImage(repositoryId: string, imageName: string): Promise<ImageSummary>
+  {
+    const repository = await this.getRepositoryController().get(repositoryId);
+    const filePath = this.imageFeeder.copyImage(repository.getLocation().toFilePath(), imageName);
+    return await this.waitUntilImage(repositoryId, filePath, true);
+  }
+
   computeEventListener(): ListenerMock
   {
     return jest.fn((command: string): Promise<void> =>
