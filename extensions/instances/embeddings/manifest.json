@@ -47,6 +47,20 @@
     }
   ],
   "settings": {
-    "type": "object"
+    "type": "object",
+    "properties": {
+      "clipEnabled": {
+        "type": "boolean",
+        "title": "CLIP",
+        "description": "Whether the CLIP model should be used to compute the embedding of an image.",
+        "default": true
+      },
+      "dinoEnabled": {
+        "type": "boolean",
+        "title": "DINO",
+        "description": "Whether the DINO v2 model should be used to compute the embedding of an image.",
+        "default": true
+      }
+    }
   }
 }
