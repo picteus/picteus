@@ -17,11 +17,11 @@ import { NotificationsService } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useConfirmAction, useExtensionCommand } from "app/hooks";
 import { ExtensionsService, ImageService } from "app/services";
-import { Common, computeIcon, MenuItemEntry } from "app/components";
+import { CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
 import { ClosestEmbeddingsImages } from "./components";
 
 
-const commandEntities = [CommandEntity.Images, CommandEntity.Image];
+const commandEntities = [ CommandEntity.Images, CommandEntity.Image ];
 
 type ImageItemMenuType = {
   image: ImageSummary;
@@ -30,16 +30,16 @@ type ImageItemMenuType = {
 
 export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
 {
-  const [, addModal] = useActionModalContext();
+  const [ , addModal ] = useActionModalContext();
   const confirmAction = useConfirmAction();
-  const [imageTags, setImageTags] = useState<ExtensionImageTag[]>([]);
-  const [extensionsImageCommands, setExtensionsImageCommands] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands(commandEntities));
-  const [extensionsWithImageEmbeddingsCapability, setExtensionsWithImageEmbeddingsCapability] = useState<Extension[]>(ExtensionsService.getExtensionsWithCapability(
+  const [ imageTags, setImageTags ] = useState<ExtensionImageTag[]>([]);
+  const [ extensionsImageCommands, setExtensionsImageCommands ] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands(commandEntities));
+  const [ extensionsWithImageEmbeddingsCapability, setExtensionsWithImageEmbeddingsCapability ] = useState<Extension[]>(ExtensionsService.getExtensionsWithCapability(
     ManifestCapabilityId.ImageEmbeddings));
   const callCommand = useExtensionCommand();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
 
   async function load()
   {
@@ -63,7 +63,7 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
           ManifestCapabilityId.ImageEmbeddings));
       });
     }
-  }, [event]);
+  }, [ event ]);
 
   function handleOnClickClosestImages(extensionId: string)
   {
@@ -154,8 +154,9 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
               const manifest = extensionCommand.extension.manifest;
               return (<MenuItemEntry
                 key={`${extensionCommand.extension.manifest.id}-${extensionCommand.command.id}`}
-                onClick={() => callCommand(manifest.id, extensionCommand.command, [image.id])}
+                onClick={() => callCommand(manifest.id, extensionCommand.command, [ image.id ])}
                 extensionId={manifest.id}
+                icon={<CommandIcon extensionId={manifest.id} command={extensionCommand.command} size="sm"/>}
                 label={extensionCommand.command.label}
                 subLabel={extensionCommand.extension.manifest.name}
               />);
@@ -170,7 +171,7 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
         {extensionsImageCommands && renderExtensionsCommands()}
       </>
     );
-  }, [image, imageTags, extensionsImageCommands, extensionsWithImageEmbeddingsCapability]);
+  }, [ image, imageTags, extensionsImageCommands, extensionsWithImageEmbeddingsCapability ]);
 
   return (
     <>

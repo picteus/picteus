@@ -26,6 +26,7 @@ export { default as DialogForm } from "./DialogForm/DialogForm.tsx";
 export { default as CopyText } from "./CopyText/CopyText.tsx";
 export { default as Markdown } from "./Markdown/Markdown.tsx";
 export { default as ExtensionIcon } from "./ExtensionIcon/ExtensionIcon.tsx";
+export { default as CommandIcon } from "./CommandIcon/CommandIcon.tsx";
 export { default as ImageThumbnail } from "./ImageThumbnail/ImageThumbnail.tsx";
 export { default as ImageTag } from "./ImageTag/ImageTag.tsx";
 export { default as EntityStatus } from "./EntityStatus/EntityStatus.tsx";

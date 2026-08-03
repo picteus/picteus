@@ -5,7 +5,7 @@ import { IconRefresh, IconTrash } from "@tabler/icons-react";
 import { Manifest } from "@picteus/ws-client";
 
 import { UiCommandType } from "types";
-import { Common, ExtensionIcon } from "app/components";
+import { CommandIcon, Common, ExtensionIcon } from "app/components";
 
 
 export function computeIcon(action: "synchronize" | "delete"): ReactElement
@@ -66,6 +66,7 @@ type ImageMenuSelectCommandEntryType = {
 
 export function ImageMenuSelectCommandEntry({ manifest, command }: ImageMenuSelectCommandEntryType)
 {
-  return (<ImageMenuSelectEntry icon={<ExtensionIcon idOrExtension={manifest.id} size="sm"/>} label={command.label}
+  return (<ImageMenuSelectEntry icon={<CommandIcon extensionId={manifest.id} command={command} size="sm"/>}
+                                label={command.label}
                                 subLabel={manifest.name}/>);
 }

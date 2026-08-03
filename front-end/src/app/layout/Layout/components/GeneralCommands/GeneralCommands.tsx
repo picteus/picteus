@@ -9,20 +9,20 @@ import { UiCommandType } from "types";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useExtensionCommand } from "app/hooks";
 import { ExtensionsService } from "app/services";
-import { Common, MenuItemEntry, TextToImages } from "app/components";
+import { CommandIcon, Common, MenuItemEntry, TextToImages } from "app/components";
 
 
 export default function GeneralCommands()
 {
   const callCommand = useExtensionCommand();
-  const [, addModal] = useActionModalContext();
+  const [ , addModal ] = useActionModalContext();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
 
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
 
-  const [extensionsProcessCommands, setExtensionsProcessCommands] = useState(
-    ExtensionsService.getExtensionsCommands([CommandEntity.Process])
+  const [ extensionsProcessCommands, setExtensionsProcessCommands ] = useState(
+    ExtensionsService.getExtensionsCommands([ CommandEntity.Process ])
   );
 
   const [
@@ -41,7 +41,7 @@ export default function GeneralCommands()
       void ExtensionsService.fetchAll().then(() =>
       {
         setExtensionsProcessCommands(
-          ExtensionsService.getExtensionsCommands([CommandEntity.Process])
+          ExtensionsService.getExtensionsCommands([ CommandEntity.Process ])
         );
         setExtensionsWithTextEmbeddingsCapability(
           ExtensionsService.getExtensionsWithCapability(
@@ -50,7 +50,7 @@ export default function GeneralCommands()
         );
       });
     }
-  }, [event]);
+  }, [ event ]);
 
   useEffect(() =>
   {
@@ -73,7 +73,7 @@ export default function GeneralCommands()
     {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [extensionsWithTextEmbeddingsCapability]);
+  }, [ extensionsWithTextEmbeddingsCapability ]);
 
   async function handleOnClickExtensionCommand(
     extensionId: string,
@@ -115,13 +115,14 @@ export default function GeneralCommands()
           const manifest = extension.manifest;
           return (
             <MenuItemEntry key={`${manifest.id}-${command.id}`} extensionId={manifest.id}
+                           icon={<CommandIcon extensionId={manifest.id} command={command} size="sm"/>}
                            label={command.label}
                            subLabel={manifest.name}
                            onClick={() => handleOnClickExtensionCommand(manifest.id, command)}/>);
         })}
       </>
     );
-  }, [extensionsProcessCommands, extensionsWithTextEmbeddingsCapability]);
+  }, [ extensionsProcessCommands, extensionsWithTextEmbeddingsCapability ]);
 
   return (
     <Menu

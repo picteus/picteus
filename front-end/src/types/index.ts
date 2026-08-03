@@ -154,6 +154,7 @@ export type UiCommandType = {
   context?: ContextType;
   id?: string;
   label?: string;
+  iconUri?: string;
   form?: { parameters: RJSFSchema, dialogContent?: DialogIconSizeContent };
   withTags?: string[];
   ui?: {

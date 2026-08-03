@@ -16,6 +16,6 @@ type ExtensionIconType = {
 export default function ExtensionIcon({ idOrExtension, size, url }: ExtensionIconType)
 {
   const imageSrc = url ?? ExtensionsService.getIconURL(typeof idOrExtension === "string" ? idOrExtension : idOrExtension.manifest.id);
-  const edge = size == "sm" ? Common.IconSmallSize : 24;
+  const edge = size == "sm" ? Common.IconSmallSize : Common.IconLargeSize;
   return (<Image src={imageSrc} w={edge} h={edge} fit="contain" radius="sm"/>);
 }

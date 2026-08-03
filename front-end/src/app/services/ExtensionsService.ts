@@ -42,7 +42,7 @@ function requiresCommandReload(event?: EventInformationType): boolean
   return channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_PAUSED || channel === ChannelEnum.EXTENSION_RESUMED;
 }
 
-async function fetchAll(): Promise<{
+  async function fetchAll(): Promise<{
   extensions: Extension[];
   extensionsConfiguration: ExtensionsConfiguration;
 }>
@@ -155,7 +155,8 @@ function getExtensionsCommands(
           label: entity.command.specifications.find(
             (specification) => specification.locale === language
           ).label,
-          form: { parameters: entity.command.parameters }
+          form: { parameters: entity.command.parameters },
+          iconUri: entity.command.ui?.iconUri
         }
       };
     });
@@ -232,6 +233,11 @@ function getIconURL(extensionIdOrExtension: string | Extension)
   return buildUiURL(typeof extensionIdOrExtension === "string" ? extensionIdOrExtension : (extensionIdOrExtension as Extension).manifest.id, "/icon.png");
 }
 
+function getCommandIconURL(extensionId: string, uri: string)
+{
+  return buildUiURL(extensionId, uri);
+}
+
 export default {
   requiresCommandReload,
   fetchAll,
@@ -239,6 +245,7 @@ export default {
   isPaused,
   add,
   getIconURL,
+  getCommandIconURL,
   update,
   uninstall,
   synchronize,
