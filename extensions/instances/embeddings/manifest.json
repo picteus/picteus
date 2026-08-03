@@ -12,6 +12,7 @@
   "instructions": [
     {
       "events": [
+        "process.runCommand",
         "process.started",
         "image.created",
         "image.updated",
@@ -38,29 +39,72 @@
           "id": "text.embeddings"
         }
       ],
-      "execution": {
+      "commands": [
+        {
+          "id": "compute",
+          "on": {
+            "entity": "Process"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "collectionId": {
+                "type": "integer",
+                "title": "Collection",
+                "description": "What is the collection the images the computation should be run for?",
+                "ui": {
+                  "widget": "collection"
+                }
+              },
+              "clipEnabled": {
+                "type": "boolean",
+                "title": "CLIP",
+                "description": "Whether the CLIP model should be used to compute the embedding of an image."
+              },
+              "dinoEnabled": {
+                "type": "boolean",
+                "title": "DINO",
+                "description": "Whether the DINO v2 model should be used to compute the embedding of an image."
+              }
+            },
+            "required": [
+              "collectionId",
+              "clipEnabled",
+              "dinoEnabled"
+            ]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Embeddings",
+              "description": "Compute embeddings for images in a collection."
+            }
+          ]
+        }
+      ],
+        "execution": {
         "executable": "${venvPython}",
         "arguments": [
-          "./main.py"
+        "./main.py"
         ]
+        }
       }
-    }
   ],
-  "settings": {
+    "settings": {
     "type": "object",
     "properties": {
-      "clipEnabled": {
-        "type": "boolean",
-        "title": "CLIP",
-        "description": "Whether the CLIP model should be used to compute the embedding of an image.",
-        "default": true
-      },
-      "dinoEnabled": {
-        "type": "boolean",
-        "title": "DINO",
-        "description": "Whether the DINO v2 model should be used to compute the embedding of an image.",
-        "default": true
-      }
+    "clipEnabled": {
+    "type": "boolean",
+    "title": "CLIP",
+    "description": "Whether the CLIP model should be used to compute the embedding of an image.",
+    "default": true
+    },
+    "dinoEnabled": {
+    "type": "boolean",
+    "title": "DINO",
+    "description": "Whether the DINO v2 model should be used to compute the embedding of an image.",
+    "default": true
+    }
+    }
     }
   }
-}
