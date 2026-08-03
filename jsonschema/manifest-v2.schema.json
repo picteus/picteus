@@ -295,7 +295,7 @@
                     {
                       "type": "object",
                       "properties": {
-                        "uri": {
+                        "iconUri": {
                           "type": "string",
                           "description": "The URI of the command SVG icon",
                           "format": "uri",
@@ -306,7 +306,7 @@
                       },
                       "description": "The User Interface (UI) specifications of an extension command",
                       "required": [
-                        "uri"
+                        "iconUri"
                       ]
                     }
                   ]
