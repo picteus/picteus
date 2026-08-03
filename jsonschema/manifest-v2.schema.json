@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "$id": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$id": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "title": "Manifest",
   "type": "object",
   "properties": {
@@ -21,7 +21,7 @@
     "name": {
       "type": "string",
       "description": "The name of the extension",
-      "pattern": "^[a-z0-9A-Z-_. ]{1,128}$",
+      "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
       "minLength": 1,
       "maxLength": 128
     },
@@ -288,6 +288,28 @@
                       "description"
                     ]
                   }
+                },
+                "ui": {
+                  "description": "The UI specifications of the command",
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "uri": {
+                          "type": "string",
+                          "description": "The URI of the command SVG icon",
+                          "format": "uri",
+                          "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
+                          "minLength": 1,
+                          "maxLength": 4096
+                        }
+                      },
+                      "description": "The User Interface (UI) specifications of an extension command",
+                      "required": [
+                        "uri"
+                      ]
+                    }
+                  ]
                 }
               },
               "description": "The definition of an extension's command",
@@ -311,13 +333,13 @@
       "description": "The extension settings definition"
     },
     "ui": {
-      "description": "The User Interface definition of the extensions",
+      "description": "The UI definition of the extensions",
       "allOf": [
         {
           "type": "object",
           "properties": {
             "elements": {
-              "description": "The various elements of the User Interface",
+              "description": "The various elements of the UI",
               "minItems": 1,
               "type": "array",
               "items": {
@@ -404,7 +426,7 @@
               }
             }
           },
-          "description": "The definition of all extension's User Interface fragments",
+          "description": "The definition of all extension's User Interface (UI) fragments",
           "required": [
             "elements"
           ]
