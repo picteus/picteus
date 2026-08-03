@@ -58,17 +58,16 @@ export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
         }
       }
       setSelectedEmbedding(selected);
-      onSelected(splitExtensionIdAndEmbeddingName(selected));
+      onSelected(selected === undefined ? undefined : splitExtensionIdAndEmbeddingName(selected));
     }
 
     void initialize();
   }, []);
 
-  if (!selectedEmbedding || embeddingsNames.length === 0)
-  {
-    return null;
-  }
-  const { extensionId, name } = splitExtensionIdAndEmbeddingName(selectedEmbedding);
+  const {
+    extensionId,
+    name
+  } = selectedEmbedding === undefined ? {} : splitExtensionIdAndEmbeddingName(selectedEmbedding);
   const selectedItem = embeddingsNames.find(embeddingName => embeddingName.extensionId === extensionId && embeddingName.name === name);
 
   function handleSelectEmbedding(extensionId: string, name: string)

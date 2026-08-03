@@ -142,8 +142,8 @@ export default function ClosestEmbeddingsImages({ extensionId, image, viewMode }
       isDefault={false}
       onEmptyResults={() => (<EmptyResults
         icon={IconPhotoSearch}
-        description={t("emptyImages.description")}
-        title={t("emptyImages.title")}
+        title={t(`emptyImages.${embeddingName === undefined ? "titleNoEmbedding" : "title"}`)}
+        description={t(`emptyImages.${embeddingName === undefined ? "descriptionNoEmbedding" : "description"}`)}
       />)}
       controlBarChildren={renderForm()}
     />);

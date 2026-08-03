@@ -159,12 +159,14 @@ export default {
   },
   emptyImages: {
     title: "No available image",
+    titleNoEmbedding: "No image",
     description:
       "There are currently no images corresponding to your search criteria. Please try again with different criteria.",
     descriptionNoRepository:
       "There are currently no images stored in your repositories. Please upload or add images to your repositories to see them listed here.",
     descriptionNoData:
       "There is no more image in the collection or in the initial set.",
+    descriptionNoEmbedding: "There is no image displayed, because no embedding was computed so far: install or enable an extension which compute embeddings.",
     buttonTextNoRepository: "Manage repositories"
   },
   emptySelectedImages: {
