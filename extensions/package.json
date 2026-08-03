@@ -77,7 +77,7 @@
     "preinstances:build": "npm run .env",
     "instances:build": "dotenv -- npm run instances:build:dotenv --",
     "build": "npm run sdk:build && npm run instances:build",
-    "schema:manifest": "cross-var gulp -f sdk/gulpfile.mjs generateSchema --inputFilePath $npm_config_local_prefix/../back-end/openapi.json --outputFilePath $npm_config_local_prefix/../docs/static/jsonschema/manifest-v1.schema.json --entity Manifest --schemaId https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+    "schema:manifest": "cross-var gulp -f sdk/gulpfile.mjs generateSchema --inputFilePath $npm_config_local_prefix/../back-end/openapi.json --outputFilePath $npm_config_local_prefix/../docs/static/jsonschema/manifest-v2.schema.json --entity Manifest --schemaId https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
     "schema:recipe": "cross-var gulp -f sdk/gulpfile.mjs generateSchema --inputFilePath $npm_config_local_prefix/../back-end/openapi.json --outputFilePath $npm_config_local_prefix/../docs/static/jsonschema/recipe-v1.schema.json --entity GenerationRecipe --schemaId https://picteus.github.io/picteus/jsonschema/recipe-v1.schema.json",
     "schemas": "npm run schema:manifest && npm run schema:recipe"
   },

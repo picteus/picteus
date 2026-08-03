@@ -4178,6 +4178,24 @@
           "description"
         ]
       },
+      "ManifestExtensionCommandUi": {
+        "type": "object",
+        "properties": {
+          "iconUri": {
+            "type": "string",
+            "description": "The URI of the command icon",
+            "format": "uri",
+            "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
+            "minLength": 1,
+            "maxLength": 4096,
+            "example": "/assets/icon.svg"
+          }
+        },
+        "description": "The User Interface (UI) specifications of an extension command",
+        "required": [
+          "iconUri"
+        ]
+      },
       "ManifestExtensionCommand": {
         "type": "object",
         "properties": {
@@ -4208,6 +4226,14 @@
             "items": {
               "$ref": "#/components/schemas/ManifestExtensionCommandSpecification"
             }
+          },
+          "ui": {
+            "description": "The UI specifications of the command",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ManifestExtensionCommandUi"
+              }
+            ]
           }
         },
         "description": "The definition of an extension's command",
@@ -4507,7 +4533,8 @@
             "format": "uri",
             "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
             "minLength": 1,
-            "maxLength": 4096
+            "maxLength": 4096,
+            "example": "/assets/path/file.ext"
           }
         },
         "description": "The definition of an extension's User Interface (UI) fragment",
@@ -4521,7 +4548,7 @@
         "type": "object",
         "properties": {
           "elements": {
-            "description": "The various elements of the User Interface",
+            "description": "The various elements of the UI",
             "minItems": 1,
             "type": "array",
             "items": {
@@ -4529,7 +4556,7 @@
             }
           }
         },
-        "description": "The definition of all extension's User Interface fragments",
+        "description": "The definition of all extension's User Interface (UI) fragments",
         "required": [
           "elements"
         ]
@@ -4601,7 +4628,7 @@
             }
           },
           "ui": {
-            "description": "The User Interface definition of the extensions",
+            "description": "The UI definition of the extensions",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ManifestUserInterface"

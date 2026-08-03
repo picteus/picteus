@@ -558,7 +558,8 @@ describe("Extensions", () =>
 
   test("Install faulty", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const extensionId = "id";
+    const builder = new ExtensionBuilder(undefined, undefined, extensionId);
     {
       const capabilityId = ManifestCapabilityId.TextEmbeddings;
       const manifest = builder.computeWithInstructionsManifest([
@@ -716,7 +717,7 @@ describe("Extensions", () =>
       await expect(async () =>
       {
         await base.getExtensionController().install(zip.toBuffer());
-      }).rejects.toThrow(new ServiceError(`The UI element of the extension with id '${manifest.id}', with id '${uiId}', with URL '${url}' has no corresponding file`, BAD_REQUEST, base.badParameterCode));
+      }).rejects.toThrow(new ServiceError(`The '${url}' value of the 'url' property of the UI element with id '${uiId}' of the extension with id '${manifest.id}' has no corresponding file`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const url = "/sidebar/index.html";
@@ -748,6 +749,62 @@ describe("Extensions", () =>
       {
         await base.getExtensionController().install(zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`The UI element of the extension with id '${manifest.id}' contain duplicated identifiers`, BAD_REQUEST, base.badParameterCode));
+    }
+    {
+      interface Case
+      {
+        iconUri: string;
+        iconContent?: Buffer;
+        errorMessage: string;
+      }
+
+      const commandId = "commandId";
+      const iconUri = "/path/file.svg";
+      const cases: Case[] =
+        [
+          {
+            iconUri: "invalid/uri.svg",
+            errorMessage: `The 'ui.uri' property of the command with id '${commandId}' of the extension with id '${extensionId}' must start with a '/'`
+          },
+          {
+            iconUri: iconUri,
+            errorMessage: `The '${iconUri}' value of the 'ui.uri' property of the command with id '${commandId}' of the extension with id '${extensionId}' has no corresponding file`
+          },
+          {
+            iconUri: iconUri,
+            iconContent: Buffer.from("string", "utf8"),
+            errorMessage: `The MIME type of the 'ui.uri' property of the command with id '${commandId}' is not one of the formats PNG, JPEG, WEBP, GIF`
+          }
+        ];
+      for (const aCase of cases)
+      {
+        const commands =
+          [
+            {
+              id: commandId,
+              on: { entity: CommandEntity.Process },
+              specifications: [ { locale: "en", label: "A command" } ],
+              ui: { iconUri: aCase.iconUri }
+            }
+          ];
+        const manifest = builder.computeWithInstructionsManifest([
+          {
+            events: [ ManifestEvent.ProcessStarted, ManifestEvent.ProcessRunCommand ],
+            execution: ExtensionBuilder.dummyExecution,
+            commands
+          }
+        ]);
+        const zip = new AdmZip();
+        zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
+        if (aCase.iconContent !== undefined)
+        {
+          zip.addFile(aCase.iconUri, aCase.iconContent);
+        }
+        await expect(async () =>
+        {
+          await base.getExtensionController().install(zip.toBuffer());
+        }).rejects.toThrow(new ServiceError(aCase.errorMessage, BAD_REQUEST, base.badParameterCode));
+      }
     }
   });
 
@@ -872,7 +929,7 @@ describe("Extensions", () =>
     }
   });
 
-  test("icon", async () =>
+  test("extension icon", async () =>
   {
     const builder = new ExtensionBuilder();
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
@@ -883,6 +940,37 @@ describe("Extensions", () =>
     zip.addFile("icon.png", Buffer.from("R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==", "base64"));
     const extension = await base.getExtensionController().install(zip.toBuffer());
     await checkIcon(extension);
+  });
+
+  test("command icon", async () =>
+  {
+    const builder = new ExtensionBuilder();
+    const iconUri = "/path/file.svg";
+    const manifest = builder.computeWithInstructionsManifest([
+      {
+        events: [ ManifestEvent.ProcessStarted, ManifestEvent.ProcessRunCommand ],
+        execution: ExtensionBuilder.dummyExecution,
+        commands: [
+          {
+            id: "id",
+            on: { entity: CommandEntity.Process },
+            specifications: [ { locale: "en", label: "A command" } ],
+            ui: { iconUri }
+          }
+        ]
+      }
+    ]);
+    const zip = new AdmZip();
+    zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
+    const commandIconBuffer = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"/>`, "utf8");
+    zip.addFile(iconUri, commandIconBuffer);
+    const extension = await base.getExtensionController().install(zip.toBuffer());
+
+    const response = await fetch(`${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${extension.manifest.id}${iconUri}`);
+    const blob = await response.blob();
+    expect(blob.type).toEqual("image/svg+xml");
+    const buffer = Buffer.from((await blob.arrayBuffer()));
+    expect(buffer).toEqual(commandIconBuffer);
   });
 
   test("uninstall", async () =>

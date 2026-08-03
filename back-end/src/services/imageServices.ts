@@ -565,7 +565,11 @@ export class ImageService
       else if (format === ImageFeatureFormat.XML)
       {
         const string = checkIsString(index, feature);
-        if (SyntaxValidator.validate(string) !== true)
+        try
+        {
+          SyntaxValidator.validate(string);
+        }
+        catch (_error)
         {
           parametersChecker.throwBadParameter(`[${index}].value`, string, "it should be a well-formed XML content");
         }

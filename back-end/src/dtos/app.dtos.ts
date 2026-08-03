@@ -27,7 +27,9 @@ import {
   shortTechnicalSchema,
   technicalSchema,
   toFileExtension,
-  toMimeType
+  toMimeType,
+  uriPathSchema,
+  urlSchema
 } from "./common.dtos";
 import {
   CommandEntity,
@@ -271,6 +273,8 @@ export {
   TextualPrompt,
   toFileExtension,
   toMimeType,
+  uriPathSchema,
+  urlSchema,
   UserInterfaceBasisIntegration,
   UserInterfaceSidebarIntegration,
   UserInterfaceWindowIntegration,

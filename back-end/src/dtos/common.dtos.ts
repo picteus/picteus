@@ -91,6 +91,17 @@ export const urlSchema: SchemaObject =
     example: "https://static1.smartbear.co/swagger/media/assets/images/swagger_logo.svg"
   };
 
+export const uriPathSchema: SchemaObject =
+  {
+    description: "A URI",
+    type: "string",
+    format: "uri",
+    pattern: uriPathPattern,
+    minLength: 1,
+    maxLength: FieldLengths.url,
+    example: "/assets/path/file.ext"
+  };
+
 export const imageIdSchema: SchemaObject =
   {
     description: "An image identifier",

@@ -17,6 +17,8 @@ import {
   StreamableFile
 } from "@nestjs/common";
 import { Request, Response } from "express";
+import { fileTypeFromFile } from "file-type";
+import { SyntaxValidator } from "fast-xml-validator";
 
 import { HostCommandType } from "@picteus/shared-back-end";
 
@@ -38,6 +40,7 @@ import { AuthenticationGuard, ExtensionApiKey } from "../app.guards";
 import {
   applicationXGzipMimeType,
   CommandEntity,
+  computeImageFormatsExtensions,
   ConfigurationCapability,
   ConfigurationExtensionCommand,
   Extension,
@@ -49,6 +52,7 @@ import {
   ExtensionsConfiguration,
   ExtensionSettings,
   ExtensionStatus,
+  ImageFormats,
   Manifest,
   ManifestCapability,
   ManifestCapabilityId,
@@ -106,6 +110,10 @@ export class ExtensionsUiServer
   private static readonly bundlePathFragment = "bundle";
 
   private static readonly textPlain = types.txt;
+
+  private static readonly imageExtensions: string[] = computeImageFormatsExtensions(ImageFormats);
+
+  private static readonly iconEdgeInPixels = 24;
 
   private readonly defaultIconFilePath: string;
 
@@ -165,8 +173,7 @@ export class ExtensionsUiServer
       if (uiPath === "icon.png")
       {
         const actualFilePath = fs.existsSync(filePath) === false ? this.defaultIconFilePath : filePath;
-        const edgeInPixels = 24;
-        const formatAndBuffer = await resize("extension icon", actualFilePath, "PNG", edgeInPixels, edgeInPixels, "inbox", undefined, undefined, true, false);
+        const formatAndBuffer = await resize("extension icon", actualFilePath, "PNG", ExtensionsUiServer.iconEdgeInPixels, ExtensionsUiServer.iconEdgeInPixels, "inbox", undefined, undefined, true, false);
         response.status(HttpStatus.OK).type(types.png).send(formatAndBuffer.buffer);
         return;
       }
@@ -233,6 +240,13 @@ export class ExtensionsUiServer
     }
     const rawExtension = path.extname(filePath);
     const extension = rawExtension.startsWith(".") ? rawExtension.substring(1) : "";
+    if (ExtensionsUiServer.imageExtensions.indexOf(extension) !== -1)
+    {
+      // This is supposed to be an icon
+      const formatAndBuffer = await resize("icon", filePath, "PNG", ExtensionsUiServer.iconEdgeInPixels, ExtensionsUiServer.iconEdgeInPixels, "inbox", undefined, undefined, true, false);
+      response.status(HttpStatus.OK).type(types.png).send(formatAndBuffer.buffer);
+      return;
+    }
     let mimeType: string;
     switch (extension)
     {
@@ -250,6 +264,9 @@ export class ExtensionsUiServer
         break;
       case "json":
         mimeType = types.json;
+        break;
+      case "svg":
+        mimeType = types.svg;
         break;
     }
     logger.debug(`Serving the file with path '${uiPath}' with MIME type '${mimeType}' related to ${logFragment}`);
@@ -1336,7 +1353,8 @@ export class ExtensionService
     }
 
     try
-    { // We now check that the UI elements are valid, which we cannot perform as long as the archive is not inflated
+    {
+      // We now check that the UI elements are valid, which we cannot perform as long as the archive is not inflated
       await this.checkManifest(manifest, extendedManifest);
     }
     catch (error)
@@ -1533,11 +1551,42 @@ export class ExtensionService
           {
             parametersChecker.throwBadParameterError(`The UI element of the extension with id '${manifest.id}', with id '${element.id}' exposes the unsupported '${element.integration.anchor}' anchor`);
           }
-          if (element.url.startsWith("/") === true)
+          this.checkUri(extendedManifest, `'url' property of the UI element with id '${element.id}'`, element.url, false);
+        }
+      }
+      for (const instructions of manifest.instructions)
+      {
+        if (instructions.commands !== undefined)
+        {
+          for (const command of instructions.commands)
           {
-            if (fs.existsSync(path.join(extendedManifest.directoryPath, element.url)) === false)
+            if (command.ui !== undefined)
             {
-              parametersChecker.throwBadParameterError(`The UI element of the extension with id '${manifest.id}', with id '${element.id}', with URL '${element.url}' has no corresponding file`);
+              const filePath = this.checkUri(extendedManifest, `'ui.uri' property of the command with id '${command.id}'`, command.ui.iconUri, true);
+              if (filePath !== undefined)
+              {
+                const result = await fileTypeFromFile(filePath);
+                let isOk = false;
+                if (result === undefined)
+                {
+                  try
+                  {
+                    SyntaxValidator.validate(fs.readFileSync(filePath, "utf8"), { xmlDeclaraion: { optional: true } });
+                    isOk = true;
+                  }
+                  catch (_error)
+                  {
+                  }
+                }
+                else
+                {
+                  isOk = [ types.svg, types.svg, types.jpeg, types.webp, types.gif ].indexOf(result.mime) !== -1;
+                }
+                if (isOk === false)
+                {
+                  parametersChecker.throwBadParameterError(`The MIME type of the 'ui.uri' property of the command with id '${command.id}' is not one of the formats PNG, JPEG, WEBP, GIF`);
+                }
+              }
             }
           }
         }
@@ -1550,6 +1599,24 @@ export class ExtensionService
     if (archive.length > Extension.ARCHIVE_MAXIMUM_BINARY_WEIGHT_IN_BYTES)
     {
       parametersChecker.throwBadParameterError(`The provided extension archive exceeds the maximum allowed binary weight of ${Extension.ARCHIVE_MAXIMUM_BINARY_WEIGHT_IN_BYTES} bytes`);
+    }
+  }
+
+  private checkUri(extendedManifest: ExtendedManifest, elementName: string, uri: string, shouldStartWithSlash: boolean): string | undefined
+  {
+    const startsWithSlash = uri.startsWith("/") === true;
+    if (shouldStartWithSlash === true && startsWithSlash === false)
+    {
+      parametersChecker.throwBadParameterError(`The ${elementName} of the extension with id '${extendedManifest.id}' must start with a '/'`);
+    }
+    if (startsWithSlash === true)
+    {
+      const filePath = path.join(extendedManifest.directoryPath, uri.substring(1));
+      if (fs.existsSync(filePath) === false)
+      {
+        parametersChecker.throwBadParameterError(`The '${uri}' value of the ${elementName} of the extension with id '${extendedManifest.id}' has no corresponding file`);
+      }
+      return filePath;
     }
   }
 

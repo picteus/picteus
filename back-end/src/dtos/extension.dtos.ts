@@ -30,7 +30,8 @@ import {
   semverPattern,
   shortTechnicalIdPattern,
   shortTechnicalSchema,
-  uriPathPattern
+  uriPathPattern,
+  uriPathSchema
 } from "./common.dtos";
 
 
@@ -187,6 +188,34 @@ export class ManifestExtensionCommandOn
 
 }
 
+@ApiSchema({ description: "The User Interface (UI) specifications of an extension command" })
+export class ManifestExtensionCommandUi
+{
+
+  constructor(iconUri: string)
+  {
+    this.iconUri = iconUri;
+  }
+
+  @ApiProperty(
+    {
+      ...uriPathSchema,
+      description: "The URI of the command icon",
+      type: String,
+      required: true,
+      example: "/assets/icon.svg"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.url)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly iconUri: string;
+
+}
+
 /**
  * An extension manifest extension command.
  */
@@ -194,12 +223,13 @@ export class ManifestExtensionCommandOn
 export class ManifestExtensionCommand
 {
 
-  constructor(id: string, on: ManifestExtensionCommandOn, parameters: Json, specifications: ManifestExtensionCommandSpecification[])
+  constructor(id: string, on: ManifestExtensionCommandOn, parameters: Json, specifications: ManifestExtensionCommandSpecification[], ui?: ManifestExtensionCommandUi)
   {
     this.id = id;
     this.on = on;
     this.parameters = parameters;
     this.specifications = specifications;
+    this.ui = ui;
   }
 
   @ApiProperty(
@@ -263,6 +293,19 @@ export class ManifestExtensionCommand
   @NotEquals(null)
   @Expose()
   readonly specifications: ManifestExtensionCommandSpecification[];
+
+  @ApiProperty(
+    {
+      description: "The UI specifications of the command",
+      type: ManifestExtensionCommandUi,
+      required: false
+    }
+  )
+  @Type(() => ManifestExtensionCommandUi)
+  @ValidateNested()
+  @IsOptional()
+  @Expose()
+  readonly ui?: ManifestExtensionCommandUi;
 
 }
 
@@ -626,9 +669,6 @@ export class UserInterfaceWindowIntegration extends UserInterfaceBasisIntegratio
 
 }
 
-/**
- * The definition of an extension's User Interface fragment.
- */
 @ApiExtraModels(UserInterfaceSidebarIntegration, UserInterfaceWindowIntegration)
 @ApiSchema({ description: "The definition of an extension's User Interface (UI) fragment" })
 export class ManifestInterfaceElement
@@ -705,12 +745,9 @@ export class ManifestInterfaceElement
 
   @ApiProperty(
     {
+      ...uriPathSchema,
       description: "The URL of the content",
       type: String,
-      format: "uri",
-      pattern: uriPathPattern,
-      minLength: 1,
-      maxLength: FieldLengths.url,
       required: true
     }
   )
@@ -725,10 +762,7 @@ export class ManifestInterfaceElement
 
 }
 
-/**
- * The definition of all extension's User Interface fragments.
- */
-@ApiSchema({ description: "The definition of all extension's User Interface fragments" })
+@ApiSchema({ description: "The definition of all extension's User Interface (UI) fragments" })
 export class ManifestUserInterface
 {
 
@@ -739,7 +773,7 @@ export class ManifestUserInterface
 
   @ApiProperty(
     {
-      description: "The various elements of the User Interface",
+      description: "The various elements of the UI",
       type: ManifestInterfaceElement,
       isArray: true,
       minItems: 1,
@@ -919,7 +953,7 @@ export class Manifest extends ExtensionBasis
 
   @ApiProperty(
     {
-      description: "The User Interface definition of the extensions",
+      description: "The UI definition of the extensions",
       type: ManifestUserInterface,
       required: false
     }
