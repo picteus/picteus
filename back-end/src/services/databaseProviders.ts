@@ -3,7 +3,7 @@ import fs from "node:fs";
 import { ChildProcess } from "node:child_process";
 import Timers from "node:timers";
 
-import { ChromaClient, Collection, GetResult, IncludeEnum } from "chromadb";
+import { ChromaClient, ChromaValueError, Collection, EmbeddingFunction, GetResult, IncludeEnum } from "chromadb";
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 
 import { Prisma, PrismaClient } from ".prisma/client";
@@ -399,7 +399,7 @@ class MemoryEmbeddingsManager
       return [];
     }
     const results: ImageIdAndDistance[] = [];
-    for (const [imageId, storedEmbeddings] of perImageIdEmbeddingMap.entries())
+    for (const [ imageId, storedEmbeddings ] of perImageIdEmbeddingMap.entries())
     {
       let distance = 0;
       for (let index = 0; index < embeddings.length; index++)
@@ -439,6 +439,40 @@ class MemoryEmbeddingsManager
 }
 
 export type ExtensionIdAndEmbeddingName = { id: string, name: string };
+
+interface NopeEmbeddingConfig
+{
+}
+
+class NopeEmbeddingFunction implements EmbeddingFunction
+{
+
+  public readonly name = "nope-embedding-function";
+
+  constructor(_args: {})
+  {
+  }
+
+  async generate(texts: string[]): Promise<number[][]>
+  {
+    return [];
+  }
+
+  getConfig(): NopeEmbeddingConfig
+  {
+    return {};
+  }
+
+  validateConfigUpdate(_config: Record<string, any>)
+  {
+    throw new ChromaValueError("Model cannot be updated");
+  }
+
+  static buildFromConfig(config: NopeEmbeddingConfig, _client?: ChromaClient): NopeEmbeddingFunction
+  {
+    return new NopeEmbeddingFunction(config);
+  }
+}
 
 @Injectable()
 export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleInit, OnModuleDestroy
@@ -742,6 +776,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
     logger.info(`Initializing the Chroma collection for the extension with id '${extensionId}' and name '${name}'`);
     const collection: Collection = await (await this.getClient()).getOrCreateCollection({
       name: collectionName,
+      embeddingFunction: new NopeEmbeddingFunction({}),
       metadata:
         {
           id: extensionId,
