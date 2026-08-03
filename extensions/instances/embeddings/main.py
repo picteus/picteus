@@ -27,13 +27,13 @@ class Embeddings(PicteusExtension):
         self.clip_preprocess: Optional[Callable] = None
         self.dino_model = None
         self.dino_processor: Optional[Callable] = None
-        self.clip_enabled: bool = True
-        self.dino_enabled: bool = True
+        self.clip_enabled: bool = False
+        self.dino_enabled: bool = False
 
     async def on_event(self, communicator: Communicator, event, value) -> Any | None:
         if event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED or event == NotificationEvent.IMAGE_COMPUTE_EMBEDDINGS:
             image_id: str = value["id"]
-            return await self._handle_image(communicator, image_id)
+            return await self._handle_image(communicator, image_id, self.clip_enabled, self.dino_enabled)
         elif event == NotificationEvent.TEXT_COMPUTE_EMBEDDINGS:
             text: str = value["text"]
             return await self._handle_text(communicator, text)
@@ -44,20 +44,23 @@ class Embeddings(PicteusExtension):
         self.clip_enabled = value.get("clipEnabled", False)
         self.dino_enabled = value.get("dinoEnabled", False)
 
-    async def _handle_image(self, communicator: Communicator, image_id: str) -> None:
+    async def _handle_image(self, communicator: Communicator, image_id: str, clip_enabled: bool,
+                            dino_enabled: bool) -> None:
         image: bytearray = self.get_image_api().image_download(id=image_id, format=ImageFormat.PNG, width=1_000,
                                                                height=1_000, resize_render=ImageResizeRender.OUTBOX,
                                                                strip_metadata=True)
         pil_image: ImageFile = Image.open(io.BytesIO(image))
 
+        self._ensure_models(clip_enabled, dino_enabled)
+
         embeddings = []
 
-        if self.clip_enabled == True:
+        if clip_enabled == True:
             image_embedding: list[float] = await self.run_in_executor(
                 lambda: self._compute_clip_image_embedding(communicator, image_id, pil_image))
             embeddings.append(ImageEmbedding(name="clip", values=image_embedding))
 
-        if self.dino_enabled == True:
+        if dino_enabled == True:
             dino_embedding: list[float] = await self.run_in_executor(
                 lambda: self._compute_dino_image_embedding(communicator, image_id, pil_image))
             embeddings.append(ImageEmbedding(name="dino", values=dino_embedding))
@@ -71,33 +74,31 @@ class Embeddings(PicteusExtension):
 
     def _compute_clip_image_embedding(self, communicator: Communicator, image_id: str, image: ImageFile) -> list[float]:
         communicator.send_log(f"Computing the CLIP image embeddings for the image with id '{image_id}'", "info")
-        self._ensure_models()
         image_preprocess = self.clip_preprocess(image).unsqueeze(0).to(self.device)
         image_features = self.clip_model.encode_image(image_preprocess)
         return image_features.cpu().detach().numpy().tolist()[0]
 
     def _compute_clip_text_embedding(self, communicator: Communicator, text: str) -> list[float]:
         communicator.send_log(f"Computing text embeddings for the text {text}", "info")
-        self._ensure_models()
+        self._ensure_models(True, False)
         tokens = clip.tokenize([text]).to(self.device)
         text_features = self.clip_model.encode_text(tokens)
         return text_features.cpu().detach().numpy().tolist()[0]
 
     def _compute_dino_image_embedding(self, communicator: Communicator, image_id: str, image: ImageFile) -> list[float]:
         communicator.send_log(f"Computing the DINO image embeddings for the image with id '{image_id}'", "info")
-        self._ensure_models()
         inputs = self.dino_processor(images=image.convert("RGB"), return_tensors="pt").to(self.device)
         with torch.no_grad():
             outputs = self.dino_model(**inputs)
             image_features = outputs.last_hidden_state[:, 0, :]
         return image_features.cpu().detach().numpy().tolist()[0]
 
-    def _ensure_models(self) -> None:
+    def _ensure_models(self, clip_enabled: bool, dino_enabled: bool) -> None:
         with self.models_lock:
             if self.device is None:
                 torch.no_grad()
                 self.device = "cuda" if torch.cuda.is_available() else ("mps" if torch.mps.is_available() else "cpu")
-            if self.clip_model is None and self.clip_enabled == True:
+            if self.clip_model is None and clip_enabled == True:
                 # We need to go through this horrible monkey-patch inspired from https://stackoverflow.com/a/28052583/808618, because the location of the CLIP tensor files causes issue as far as their SSL certificate are concerned
                 save_create_default_https_context = ssl._create_default_https_context
                 ssl._create_default_https_context = ssl._create_unverified_context
@@ -108,7 +109,7 @@ class Embeddings(PicteusExtension):
                                                                       download_root=PicteusExtension.get_cache_directory_path())
                 finally:
                     ssl._create_default_https_context = save_create_default_https_context
-            if self.dino_model is None and self.dino_enabled == True:
+            if self.dino_model is None and dino_enabled == True:
                 model_name = "facebook/dinov2-base"
                 logging.info(f"Loading the '{model_name}' model")
                 cache_dir = PicteusExtension.get_cache_directory_path()
