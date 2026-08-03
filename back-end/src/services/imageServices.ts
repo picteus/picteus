@@ -6,7 +6,7 @@ import { ClassConstructor } from "class-transformer";
 import { ModuleRef } from "@nestjs/core";
 import { forwardRef, Inject, Injectable, StreamableFile } from "@nestjs/common";
 import { fdir } from "fdir";
-import { XMLValidator } from "fast-xml-parser";
+import { SyntaxValidator } from "fast-xml-validator";
 
 import {
   Image as PersistedImage,
@@ -565,7 +565,7 @@ export class ImageService
       else if (format === ImageFeatureFormat.XML)
       {
         const string = checkIsString(index, feature);
-        if (XMLValidator.validate(string) !== true)
+        if (SyntaxValidator.validate(string) !== true)
         {
           parametersChecker.throwBadParameter(`[${index}].value`, string, "it should be a well-formed XML content");
         }
