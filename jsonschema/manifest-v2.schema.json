@@ -297,7 +297,7 @@
                       "properties": {
                         "iconUri": {
                           "type": "string",
-                          "description": "The URI of the command SVG icon",
+                          "description": "The URI of the command icon",
                           "format": "uri",
                           "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
                           "minLength": 1,
