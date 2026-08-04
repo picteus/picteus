@@ -31,6 +31,23 @@
       "minLength": 1,
       "maxLength": 1024
     },
+    "categories": {
+      "type": "array",
+      "description": "The categories the extension belongs to",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "capture",
+          "generation",
+          "enrichment",
+          "integration",
+          "utility",
+          "other"
+        ],
+        "description": "The categories the extension belongs to"
+      }
+    },
     "runtimes": {
       "description": "The required runtime environments",
       "type": "array",
@@ -440,6 +457,7 @@
     "version",
     "name",
     "description",
+    "categories",
     "runtimes",
     "instructions",
     "settings"

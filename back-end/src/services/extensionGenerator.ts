@@ -115,6 +115,7 @@ export class ExtensionGenerator
           version: options.version,
           name: options.name,
           description: options.description,
+          categories: options.categories,
           runtimes:
             [
               {
@@ -146,7 +147,7 @@ export class ExtensionGenerator
               "required": [ "parameter" ]
             }
         };
-      fs.writeFileSync(path.join(moduleDirectoryPath, ExtensionRegistry.manifestFileName), stringify(manifest), "utf8");
+      fs.writeFileSync(path.join(moduleDirectoryPath, ExtensionRegistry.manifestFileName), stringify({ $schema: "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json", ...manifest }), "utf8");
     }
   }
 
@@ -248,6 +249,7 @@ export class ExtensionGenerator
     manifest.name = options.name;
     manifest.version = ExtensionGenerator.version;
     manifest.description = options.description;
+    manifest.categories = options.categories;
     fs.writeFileSync(manifestFilePath, stringify(manifest), "utf8");
   }
 

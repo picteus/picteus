@@ -4293,6 +4293,18 @@
           "commands"
         ]
       },
+      "ExtensionCategory": {
+        "type": "string",
+        "enum": [
+          "capture",
+          "generation",
+          "enrichment",
+          "integration",
+          "utility",
+          "other"
+        ],
+        "description": "The categories the extension belongs to"
+      },
       "ManifestRuntimeEnvironment": {
         "type": "string",
         "enum": [
@@ -4595,6 +4607,14 @@
             "maxLength": 1024,
             "example": "Computes the embeddings of images."
           },
+          "categories": {
+            "type": "array",
+            "description": "The categories the extension belongs to",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/ExtensionCategory"
+            }
+          },
           "runtimes": {
             "description": "The required runtime environments",
             "type": "array",
@@ -4642,6 +4662,7 @@
           "version",
           "name",
           "description",
+          "categories",
           "runtimes",
           "instructions",
           "settings"
@@ -4821,6 +4842,14 @@
             "maxLength": 1024,
             "example": "Computes the embeddings of images."
           },
+          "categories": {
+            "type": "array",
+            "description": "The categories the extension belongs to",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/ExtensionCategory"
+            }
+          },
           "author": {
             "type": "string",
             "description": "The author of the extension",
@@ -4852,6 +4881,7 @@
           "version",
           "name",
           "description",
+          "categories",
           "author",
           "environment"
         ]

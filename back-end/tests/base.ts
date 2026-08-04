@@ -34,6 +34,7 @@ import {
 import { computeMainModule, fineTuneApplication } from "../src/app.module";
 import {
   Extension,
+  ExtensionCategory,
   fileWithProtocol,
   GenerationRecipe,
   Image,
@@ -711,6 +712,7 @@ export class Base extends Core
         version: "1.0.0",
         name: "Extension",
         description: "An extension for testing.",
+        categories: [ ExtensionCategory.Other ],
         runtimes: [ { environment: ManifestRuntimeEnvironment.Node } ],
         instructions: [
           {

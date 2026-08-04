@@ -791,18 +791,32 @@ export class ManifestUserInterface
 }
 
 /**
+ * All the categories an extension belongs to.
+ */
+export enum ExtensionCategory
+{
+  Capture = "capture",
+  Generation = "generation",
+  Enrichment = "enrichment",
+  Integration = "integration",
+  Utility = "utility",
+  Other = "other"
+}
+
+/**
  * The basis information about an extension.
  */
 @ApiSchema({ description: "The basis information about an extension" })
 class ExtensionBasis
 {
 
-  constructor(id: string, version: string, name: string, description: string)
+  constructor(id: string, version: string, name: string, description: string, categories: ExtensionCategory[])
   {
     this.id = id;
     this.version = version;
     this.name = name;
     this.description = description;
+    this.categories = categories;
   }
 
   @ApiProperty(
@@ -880,6 +894,23 @@ class ExtensionBasis
   @Expose()
   readonly description: string;
 
+  @ApiProperty(
+    {
+      description: "The categories the extension belongs to",
+      enum: ExtensionCategory,
+      enumName: "ExtensionCategory",
+      isArray: true,
+      minItems: 1,
+      required: true
+    }
+  )
+  @IsEnum(ExtensionCategory, { each: true })
+  @ArrayMinSize(1)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly categories: ExtensionCategory[];
+
 }
 
 /**
@@ -889,9 +920,9 @@ class ExtensionBasis
 export class Manifest extends ExtensionBasis
 {
 
-  constructor(id: string, version: string, name: string, description: string, runtimes: ManifestRuntime[], instructions: ManifestInstructions[], settings: Object, ui: ManifestUserInterface)
+  constructor(id: string, version: string, name: string, description: string, categories: ExtensionCategory[], runtimes: ManifestRuntime[], instructions: ManifestInstructions[], settings: Object, ui: ManifestUserInterface)
   {
-    super(id, version, name, description);
+    super(id, version, name, description, categories);
     this.runtimes = runtimes;
     this.instructions = instructions;
     this.settings = settings;
@@ -972,9 +1003,9 @@ export class Manifest extends ExtensionBasis
 export class ExtensionGenerationOptions extends ExtensionBasis
 {
 
-  constructor(id: string, version: string, name: string, description: string, author: string, environment: ManifestRuntimeEnvironment, sdkVersion: string | undefined)
+  constructor(id: string, version: string, name: string, description: string, categories: ExtensionCategory[], author: string, environment: ManifestRuntimeEnvironment, sdkVersion: string | undefined)
   {
-    super(id, version, name, description);
+    super(id, version, name, description, categories);
     this.author = author;
     this.environment = environment;
     this.sdkVersion = sdkVersion;

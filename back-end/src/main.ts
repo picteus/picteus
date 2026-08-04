@@ -32,7 +32,7 @@ import { getBootstrapLogs, logger, stopBootstrapLogs } from "./logger";
 import { product } from "./constants";
 import { paths } from "./paths";
 import { environmentVariableChecker, StringLengths, StringNature } from "./services/utils/parametersChecker";
-import { ConstantsRegistry, ManifestRuntimeEnvironment } from "./dtos/app.dtos";
+import { ConstantsRegistry, ExtensionCategory, ManifestRuntimeEnvironment } from "./dtos/app.dtos";
 import { deepCopy, stringify } from "./utils";
 import { apiKeyHeaderName, AuthenticationGuard } from "./app.guards";
 import { computeMainModule, fineTuneApplication } from "./app.module";
@@ -243,7 +243,7 @@ class InternalServer
     const document: OpenAPIObject = SwaggerModule.createDocument(application, documentBuilder.build(),
       {
         // We add an extra model which exposes all the constants
-        extraModels: [ConstantsRegistry],
+        extraModels: [ ConstantsRegistry ],
         // We change the generated Open API "operationId" property
         operationIdFactory: (controllerKey, methodKey) =>
         {
@@ -280,7 +280,7 @@ class InternalServer
       Object.values(document.paths).forEach((pathItemObject: PathItemObject) =>
       {
         const values: OperationObject[] = [];
-        const properties = ["get", "put", "post", "delete", "options", "head", "patch", "trace"] as const;
+        const properties = [ "get", "put", "post", "delete", "options", "head", "patch", "trace" ] as const;
         for (const property of properties)
         {
           if (property in pathItemObject)
@@ -433,6 +433,7 @@ async function run(): Promise<void>
             version: ExtensionGenerator.version,
             name: "name",
             description: "description",
+            categories: [ ExtensionCategory.Other ],
             author: "author",
             environment: actionParameters.options["environment"] as ManifestRuntimeEnvironment
           }, true);

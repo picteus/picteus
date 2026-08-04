@@ -26,6 +26,7 @@ import {
   CommandEntity,
   Extension,
   ExtensionActivityKind,
+  ExtensionCategory,
   ExtensionGenerationOptions,
   ExtensionSettings,
   ExtensionStatus,
@@ -250,6 +251,7 @@ describe("Extensions", () =>
         version: extensionVersion,
         name: extensionName,
         description: extensionDescription,
+        categories: [ ExtensionCategory.Other ],
         runtimes: [ { environment: ManifestRuntimeEnvironment.Node } ],
         instructions,
         settings,
@@ -1978,6 +1980,7 @@ describe("Extensions", () =>
         version: ExtensionGenerator.version,
         name: "name",
         description: "description",
+        categories: [ ExtensionCategory.Utility, ExtensionCategory.Capture ],
         author: "author",
         environment
       };
@@ -2001,6 +2004,7 @@ describe("Extensions", () =>
         version: "1.0.0",
         author: "author",
         description: "description",
+        categories: [ ExtensionCategory.Other ],
         environment
       };
     const streamableFile = await base.getExtensionController().generate(withPublicSdk, options);
@@ -2061,6 +2065,7 @@ describe("Extensions", () =>
         version: "1.0.0",
         author: "author",
         description: "description",
+        categories: [ ExtensionCategory.Other ],
         environment
       };
     const generatedStreamableFile = await base.getExtensionController().generate(withPublicSdk, options);
@@ -2096,6 +2101,7 @@ describe("Extensions", () =>
         version: "1.0.0",
         author: "author",
         description: "description",
+        categories: [ ExtensionCategory.Other ],
         environment: environment
       };
     const generatedStreamableFile = await base.getExtensionController().generate(false, options);
