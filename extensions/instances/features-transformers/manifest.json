@@ -1,9 +1,10 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "features-transformers",
   "version": "0.3.0",
   "name": "Features Transformers",
   "description": "Computes the caption features of an image through transformers.",
+  "categories": ["enrichment"],
   "runtimes": [
     {
       "environment": "node"

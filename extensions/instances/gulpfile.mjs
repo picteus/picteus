@@ -1,7 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import process from "node:process";
-import { exec } from "node:child_process";
+import {exec} from "node:child_process";
 
 import gulp from "gulp";
 import gulpRun from "gulp-run";
@@ -55,7 +55,8 @@ async function inspectExtensionRuntimes(directoryName, callback)
 {
   const directoryPath = path.join(rootDirectoryPath, directoryName);
   console.info(`Analyzing the extension in directory '${directoryPath}'`);
-  const manifest = parseJsonFile(path.join(directoryPath, manifestFileName));
+  const manifestFilePath = path.join(directoryPath, manifestFileName);
+  const manifest = parseJsonFile(manifestFilePath);
   for (const runtime of manifest["runtimes"])
   {
     const environment = runtime["environment"];
@@ -66,7 +67,7 @@ async function inspectExtensionRuntimes(directoryName, callback)
       if (fs.existsSync(filePath) === true)
       {
         console.info(`Found a Node.js runtime environment depending on file '${filePath}'`);
-        await callback("node", filePath);
+        await callback(manifest, manifestFilePath, "node", filePath);
       }
     }
     else if (environment === "python")
@@ -77,7 +78,7 @@ async function inspectExtensionRuntimes(directoryName, callback)
       if (fs.existsSync(filePath) === true)
       {
         console.info(`Found a Python runtime environment depending on file '${filePath}'`);
-        await callback("python", filePath);
+        await callback(manifest, manifestFilePath, "python", filePath);
       }
     }
   }
@@ -91,16 +92,19 @@ async function build(directoryName, targetDirectoryPath, forceReinstall)
   let hasPackageJson = false;
   let hasPythonRequirements = false;
   const execOptions = { cwd: directoryPath, verbosity: 3 };
-  const manifest = await inspectExtensionRuntimes(directoryName, async (environment, filePath) =>
+  const manifest = await inspectExtensionRuntimes(directoryName, async (manifest, manifestFilePath, environment, filePath) =>
   {
     if (environment === "node")
     {
       hasPackageJson = true;
       const sdkDirectoryPath = path.join(rootDirectoryPath, "..", "sdk", "typescript");
       await runGulpRun(`npm --no-save link ${sdkDirectoryPath}`, execOptions);
-      await runGulpRun("npm install", execOptions);
+      await runGulpRun("npm install --no-save", execOptions);
       const publicSdkDirectoryPath = path.join(directoryPath, "node_modules", `@${nodeSdkScope}`, extensionSdk);
-      fs.symlinkSync(sdkDirectoryPath, publicSdkDirectoryPath, "dir");
+      if (fs.existsSync(publicSdkDirectoryPath) === false)
+      {
+        fs.symlinkSync(sdkDirectoryPath, publicSdkDirectoryPath, "dir");
+      }
       // The "build" script is required!
       await runGulpRun("npm run build", execOptions);
     }
@@ -242,7 +246,7 @@ export const clean = gulp.series(async () =>
     };
     await crawl(undefined, async (directoryName, directoryPath) =>
     {
-      await inspectExtensionRuntimes(directoryName, (environment, _filePath) =>
+      await inspectExtensionRuntimes(directoryName, (manifest, manifestFilePath, environment, _filePath) =>
       {
         if (environment === "node")
         {
@@ -280,12 +284,10 @@ export const incrementVersion = gulp.series(async () =>
         throw new Error(`Wrong CLI arguments\n${usage}`);
       }
     }
-    await crawl(undefined, async (directoryName, directoryPath) =>
+    await crawl(undefined, async (directoryName, _directoryPath) =>
     {
-      await inspectExtensionRuntimes(directoryName, (environment, filePath) =>
+      await inspectExtensionRuntimes(directoryName, (manifest, manifestFilePath, environment, filePath) =>
       {
-        const manifestFilePath = path.join(directoryPath, manifestFileName);
-        const manifest = parseJsonFile(manifestFilePath);
         const manifestVersion = manifest["version"];
         const [, major, minor, patch] = manifestVersion.match(/^(\d+)\.(\d+)\.(\d+)$/);
         const newVersion = versionComponent === "M" ? (`${parseInt(major) + 1}.${minor}.${patch}`) : (versionComponent === "m" ? (`${major}.${parseInt(minor) + 1}.${patch}`) : (`${major}.${minor}.${parseInt(patch) + 1}`));
@@ -317,7 +319,7 @@ export const updateVersion = gulp.series(async () =>
         dependencies[picteusClientPackageName] = apiVersion;
         save(json);
       });
-      await inspectExtensionRuntimes(directoryName, (environment, filePath) =>
+      await inspectExtensionRuntimes(directoryName, (manifest, manifestFilePath, environment, filePath) =>
       {
         if (environment === "node")
         {

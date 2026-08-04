@@ -1,9 +1,10 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "flux",
   "version": "1.2.0",
   "name": "Flux",
   "description": "Generates an image via the Flux model.",
+  "categories": ["generation"],
   "runtimes": [
     {
       "environment": "python"

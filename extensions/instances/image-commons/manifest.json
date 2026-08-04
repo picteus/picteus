@@ -1,9 +1,10 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "image-commons",
   "version": "1.2.0",
   "name": "Image Commons",
   "description": "Proposes common operations on images",
+  "categories": ["utility"],
   "runtimes": [
     {
       "environment": "node"

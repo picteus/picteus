@@ -1,8 +1,9 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "stable-diffusion-upscaler",
   "version": "0.3.0",
   "name": "Stable Diffusion Upscaler",
+  "categories": ["utility"],
   "description": "Upscales an image.",
   "runtimes": [
     {

@@ -1,9 +1,10 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "mcp-server",
   "version": "1.2.0",
   "name": "Picteus MCP Server",
   "description": "Exposes a MCP server over the Picteus API.",
+  "categories": ["integration"],
   "runtimes": [
     {
       "environment": "node"

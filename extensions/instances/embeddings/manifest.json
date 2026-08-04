@@ -1,9 +1,10 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "embeddings",
   "version": "0.3.0",
   "name": "Embeddings",
   "description": "Computes the embeddings of an image.",
+  "categories": ["enrichment"],
   "runtimes": [
     {
       "environment": "python"

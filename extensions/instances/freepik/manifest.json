@@ -1,9 +1,10 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "freepik",
   "version": "1.2.0",
   "name": "Freepik",
   "description": "Accesses to all sorts of Google Gemini image-related features.",
+  "categories": ["capture", "generation"],
   "runtimes": [
     {
       "environment": "node"

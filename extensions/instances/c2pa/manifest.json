@@ -1,9 +1,10 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "c2pa",
   "version": "1.2.0",
   "name": "C2PA",
   "description": "Reveals the Content Authenticity Initiative metadata.",
+  "categories": ["enrichment"],
   "runtimes": [
     {
       "environment": "node"

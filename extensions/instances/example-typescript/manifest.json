@@ -1,9 +1,10 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "example-typescript",
   "version": "1.2.0",
   "name": "TypeScript example",
   "description": "An example of a TypeScript extension.",
+  "categories": ["enrichment", "utility"],
   "runtimes": [
     {
       "environment": "node"
@@ -64,7 +65,10 @@
               "label": "Logs the image dimensions",
               "description": "Reads the provided images and logs their dimensions in the application."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/logs.svg"
+          }
         },
         {
           "id": "convert",
@@ -136,10 +140,13 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Convert an image into a format",
+              "label": "Convert",
               "description": "Given a format, converts the provided images into the desired format and stores them in the same repository."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/convert.svg"
+          }
         },
         {
           "id": "askForSomething",
@@ -171,7 +178,10 @@
               "label": "Ask something",
               "description": "Asks questions to the user and if the answer on whether she likes chocolate, opens a modal on a website."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/askForSomething.svg"
+          }
         },
         {
           "id": "dialog",
