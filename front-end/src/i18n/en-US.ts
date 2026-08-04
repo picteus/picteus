@@ -272,6 +272,10 @@ export default {
         placeholder: "Computes tags on images.",
         invalid: "The description must be 1-1024 characters long."
       },
+      categories: {
+        description: "The categories the extension belongs to",
+        placeholder: "utility"
+      },
       author: {
         description: "The author of the extension",
         placeholder: "Jonh Doe",

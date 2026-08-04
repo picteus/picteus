@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Flex, Select, Textarea, TextInput } from "@mantine/core";
+import { Alert, Button, Flex, MultiSelect, Select, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconAlertTriangle, IconX } from "@tabler/icons-react";
-import { ExtensionGenerationOptions, ManifestRuntimeEnvironment, MiscellaneousApi } from "@picteus/ws-client";
+import {
+  ExtensionCategory,
+  ExtensionGenerationOptions,
+  ManifestRuntimeEnvironment,
+  MiscellaneousApi
+} from "@picteus/ws-client";
 
 import { computeFilePath, NotificationsService } from "utils";
 import { useFolderPicker, useOpenExplorer } from "app/hooks";
@@ -71,6 +76,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
       version: "",
       name: "",
       description: "",
+      categories: [],
       author: "",
       environment: ManifestRuntimeEnvironment.Python
     },
@@ -91,6 +97,10 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         value && value.length >= 1 && value.length <= 1024
           ? null
           : t("createExtensionModal.fields.description.invalid"),
+      categories: (value) =>
+        value && value.length > 0
+          ? null
+          : t("fieldError.empty"),
       author: (value) =>
         value && value.length >= 1 && value.length <= 128
           ? null
@@ -202,6 +212,15 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         minRows={3}
         maxRows={6}
         {...form.getInputProps("description")}
+      />
+      <MultiSelect
+        mb="md"
+        withAsterisk
+        label={t("field.categories")}
+        description={t("createExtensionModal.fields.categories.description")}
+        placeholder={t("createExtensionModal.fields.categories.placeholder")}
+        data={Object.values(ExtensionCategory).map((value) => ({ value, label: value }))}
+        {...form.getInputProps("categories")}
       />
       <TextInput
         mb="md"
