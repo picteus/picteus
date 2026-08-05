@@ -1,0 +1,98 @@
+{
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
+  "id": "color-embeddings",
+  "version": "0.1.0",
+  "name": "Color Embeddings",
+  "description": "Compute embedding of the image dominant colors.",
+  "categories": [
+    "enrichment"
+  ],
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "events": [
+        "process.started",
+        "image.created",
+        "image.updated",
+        "image.deleted",
+        "image.computeEmbeddings",
+        "image.runCommand"
+      ],
+      "throttlingPolicies": [
+        {
+          "events": [
+            "image.created",
+            "image.updated",
+            "image.computeEmbeddings",
+            "image.runCommand"
+          ],
+          "durationInMilliseconds": 100,
+          "maximumCount": 10
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "image.embeddings"
+        }
+      ],
+      "execution": {
+        "executable": "${node}",
+        "arguments": [
+          "./dist/main.js"
+        ]
+      },
+      "commands": [
+        {
+          "id": "compute-embeddings",
+          "on": {
+            "entity": "Images"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Compute embeddings",
+              "name": "Compute color embeddings",
+              "description": "Manually computes or refreshes the color embeddings for the selected images."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "colorLibrary": {
+        "type": "string",
+        "enum": [
+          "color-thief"
+        ],
+        "title": "Color Extraction Library",
+        "description": "Which library to use to extract the dominant colors of an image.",
+        "default": "color-thief"
+      },
+      "colorCount": {
+        "type": "integer",
+        "minimum": 2,
+        "maximum": 20,
+        "title": "Number of Dominant Colors",
+        "description": "How many dominant colors to extract from each image.",
+        "default": 8
+      },
+      "usePCA": {
+        "type": "boolean",
+        "title": "Enable PCA Dimensionality Reduction",
+        "description": "Reduces the embedding dimensionality using PCA for faster similarity search. Not yet available: the full vector is used until this is implemented.",
+        "default": false
+      }
+    },
+    "required": [
+      "colorLibrary",
+      "colorCount"
+    ]
+  }
+}

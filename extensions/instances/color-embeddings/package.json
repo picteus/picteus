@@ -1,0 +1,51 @@
+{
+  "name": "@picteus/color-embeddings",
+  "version": "0.1.0",
+  "productName": "Picteus Color Embeddings",
+  "description": "Computes embedding of the image dominant colors.",
+  "keywords": [
+    "picteus",
+    "extension",
+    "colors",
+    "embedding"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "GNU Affero General Public License",
+  "private": false,
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "homepage": "https://github.com/picteus/Picteus",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/Picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "type": "module",
+  "main": "./dist/main.js",
+  "files": [
+    "dist",
+    "manifest.json",
+    "icon.svg"
+  ],
+  "scripts": {
+    "build": "tsc && tsc-alias --resolve-full-paths"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2",
+    "@types/node": "22.17.1",
+    "tsc-alias": "1.9.1",
+    "tsx": "4.23.8"
+  },
+  "dependencies": {
+    "@picteus/internal-extension-sdk": "0.14.0",
+    "colorthief": "3.5.0",
+    "sharp": "0.35.3"
+  }
+}
