@@ -1152,7 +1152,14 @@ export class ExtensionService
     logger.debug(`Found ${directoryPaths.length} potential extension(s) in the unpacked directory '${unpackedExtensionsDirectoryPath}'`);
     for (const directoryPath of directoryPaths)
     {
-      await this.registerUnpackedExtension(directoryPath, false, false);
+      try
+      {
+        await this.registerUnpackedExtension(directoryPath, false, false);
+      }
+      catch (error)
+      {
+        logger.error(`Could not register the unpacked extension located in '${directoryPath}'`, error);
+      }
     }
 
     // We monitor any added directory, which might be a new extension, or deleted directory, which might require an uninstallation

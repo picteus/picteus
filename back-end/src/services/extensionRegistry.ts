@@ -46,7 +46,7 @@ export class ExtensionRegistry
 
   public static readonly manifestFileName = "manifest.json";
 
-  public static readonly readmeFileName = "README.md";
+  public static readonly manualFileName = "MANUAL.md";
 
   public static shellVariableName = "shell";
 
@@ -201,7 +201,7 @@ export class ExtensionRegistry
 
   getManual(manifest: Manifest): ExtensionManual | undefined
   {
-    const readmeFilePath = path.join(this.computeExtensionDirectoryPath(manifest.id), ExtensionRegistry.readmeFileName);
+    const readmeFilePath = path.join(this.computeExtensionDirectoryPath(manifest.id), ExtensionRegistry.manualFileName);
     if (fs.existsSync(readmeFilePath) === false)
     {
       return undefined;

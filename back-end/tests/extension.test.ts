@@ -936,7 +936,7 @@ describe("Extensions", () =>
       zip.addFile(path.basename(javaScriptFilePath), fs.readFileSync(javaScriptFilePath));
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       const instructions = "This is the README content!";
-      zip.addFile(ExtensionRegistry.readmeFileName, Buffer.from(instructions, "utf8"));
+      zip.addFile(ExtensionRegistry.manualFileName, Buffer.from(instructions, "utf8"));
       const extension = await base.getExtensionController().install(zip.toBuffer());
 
       const returnedExtension = await base.getExtensionController().get(extension.manifest.id);
