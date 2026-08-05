@@ -166,18 +166,32 @@ export class ExtensionsUiServer
         return;
       }
 
-      // Even if the extension is paused, we want to serve its icon
-      filePath = path.join(manifest.directoryPath, uiPath);
       logFragment = `the extension with id '${extensionId}'`;
+      // Even if the extension is paused, we want to serve its icon
+      const iconPng = "icon.png";
+      const iconSvg = "icon.svg";
+      if (uiPath === "icon")
+      {
+        if (fs.existsSync(path.join(manifest.directoryPath, iconSvg)) === true)
+        {
+          uiPath = iconSvg;
+        }
+        else
+        {
+          uiPath = iconPng;
+        }
+      }
+      filePath = path.join(manifest.directoryPath, uiPath);
+
       // We handle the special elements
-      if (uiPath === "icon.png")
+      if (uiPath === iconPng)
       {
         const actualFilePath = fs.existsSync(filePath) === false ? this.defaultIconFilePath : filePath;
         const formatAndBuffer = await resize("extension icon", actualFilePath, "PNG", ExtensionsUiServer.iconEdgeInPixels, ExtensionsUiServer.iconEdgeInPixels, "inbox", undefined, undefined, true, false);
         response.status(HttpStatus.OK).type(types.png).send(formatAndBuffer.buffer);
         return;
       }
-      if (this.checkExtensionState(response, extensionId) === false)
+      if (uiPath !== iconSvg && this.checkExtensionState(response, extensionId) === false)
       {
         return;
       }
