@@ -302,26 +302,6 @@
                         "description": "The command description",
                         "minLength": 1,
                         "maxLength": 1024
-                      },
-                      "manual": {
-                        "description": "The manual attached to the command",
-                        "allOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "instructions": {
-                                "type": "string",
-                                "description": "The instructions",
-                                "minLength": 1,
-                                "maxLength": 131072
-                              }
-                            },
-                            "description": "The instructions in an extension",
-                            "required": [
-                              "instructions"
-                            ]
-                          }
-                        ]
                       }
                     },
                     "description": "The specifications of an extension's command",
