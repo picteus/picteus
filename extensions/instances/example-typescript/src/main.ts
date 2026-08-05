@@ -8,14 +8,14 @@ import {
   ImageFormat,
   ImageResizeRender,
   IntentDialogType,
-  IntentImage,
+  type IntentImage,
   IntentShowType,
   IntentUiAnchor,
   NotificationEvent,
   NotificationReturnedError,
-  NotificationValue,
+  type NotificationValue,
   PicteusExtension,
-  SettingsValue
+  type SettingsValue
 } from "@picteus/extension-sdk";
 
 

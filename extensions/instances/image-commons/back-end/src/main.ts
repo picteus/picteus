@@ -2,23 +2,24 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import {
-  ApplicationMetadata,
-  ApplicationMetadataItem,
+  type ApplicationMetadata,
+  type ApplicationMetadataItem,
   Communicator,
   GenerationRecipeFromJSON,
-  ImageFeature,
+  type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
   ImageResizeRender,
   IntentDialogType,
-  IntentImage,
+  type IntentImage,
   NotificationEvent,
   NotificationReturnedError,
   NotificationReturnedErrorCause,
-  NotificationValue,
+  type NotificationValue,
   PicteusExtension
 } from "@picteus/extension-sdk";
+
 
 class ImageCommonsExtension extends PicteusExtension
 {
@@ -130,7 +131,7 @@ class ImageCommonsExtension extends PicteusExtension
       try
       {
         result = await communicator.launchIntent<Record<string, any>>({
-          context: { imageIds: [imageId] },
+          context: { imageIds: [ imageId ] },
           form:
             {
               parameters:
@@ -141,7 +142,7 @@ class ImageCommonsExtension extends PicteusExtension
                       rating: {
                         type: "integer",
                         title: "Rating",
-                        enum: [1, 2, 3, 4, 5],
+                        enum: [ 1, 2, 3, 4, 5 ],
                         default: previousRating?.value as number ?? 3,
                         ui: { widget: "radio", inline: true }
                       },
@@ -154,7 +155,7 @@ class ImageCommonsExtension extends PicteusExtension
                         ui: { widget: "textarea" }
                       }
                     },
-                  required: ["rating"]
+                  required: [ "rating" ]
                 }, dialogContent:
                 {
                   title: "Rate and comment",
@@ -282,11 +283,14 @@ class ImageCommonsExtension extends PicteusExtension
       }
 
       let cumulativeValue = 0;
-      const colors = ["#4e79a7", "#f28e2c", "#e15759", "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7", "#9c755f", "#bab0ab"];
+      const colors = [ "#4e79a7", "#f28e2c", "#e15759", "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7", "#9c755f", "#bab0ab" ];
 
       data.forEach((d, i) =>
       {
-        if (d.value === 0) return;
+        if (d.value === 0)
+        {
+          return;
+        }
         const color = colors[i % colors.length];
 
         if (d.value === total)
@@ -349,14 +353,20 @@ class ImageCommonsExtension extends PicteusExtension
         tags.forEach(t =>
         {
           const val = data[p][t] || 0;
-          if (val > maxCount) maxCount = val;
+          if (val > maxCount)
+          {
+            maxCount = val;
+          }
         });
       });
-      if (maxCount === 0) maxCount = 1;
+      if (maxCount === 0)
+      {
+        maxCount = 1;
+      }
 
       maxCount = Math.ceil(maxCount / 5) * 5;
 
-      const colors = ["#4e79a7", "#f28e2c", "#e15759", "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7", "#9c755f", "#bab0ab"];
+      const colors = [ "#4e79a7", "#f28e2c", "#e15759", "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7", "#9c755f", "#bab0ab" ];
 
       let svg = `<svg viewBox="0 0 ${width} ${height}" style="width: 100%; max-width: ${width}; height: auto;">`;
 
