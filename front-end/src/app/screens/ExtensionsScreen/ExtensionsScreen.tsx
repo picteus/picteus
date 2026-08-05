@@ -281,6 +281,7 @@ export default function ExtensionsScreen()
                         openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
                         openExtensionSettingsModal={openExtensionSettingsModal}
                         onUninstalled={fetchAllExtensions}/>}
+        size="xl"
       >
         {selectedExtension && <ExtensionDetail extension={selectedExtension}/>}
       </Drawer>

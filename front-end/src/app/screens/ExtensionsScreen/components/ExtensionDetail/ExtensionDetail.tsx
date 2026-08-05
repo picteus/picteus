@@ -1,10 +1,19 @@
-import React from "react";
-import { Badge, Group, Stack, Table, Text } from "@mantine/core";
+import React, { useEffect, useState } from "react";
+import { Badge, Group, Stack, Table, Text, Tooltip } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
-import { Extension, ManifestExtensionCommand, ManifestExtensionCommandSpecification } from "@picteus/ws-client";
+import {
+  CommandEntity,
+  Extension,
+  ExtensionAndManual,
+  ManifestExtensionCommand,
+  ManifestExtensionCommandSpecification
+} from "@picteus/ws-client";
+import { IconLibraryPhoto, IconPhoto, IconServer } from "@tabler/icons-react";
 
-import { FieldValue, NoValue } from "app/components";
+import { extractMarkdownParagraph, NotificationsService } from "utils";
+import { ExtensionsService } from "app/services";
+import { CommandIcon, FieldValue, Markdown, NoValue } from "app/components";
 
 
 type ExtensionDetailProps = {
@@ -14,6 +23,14 @@ type ExtensionDetailProps = {
 export default function ExtensionDetail({ extension }: ExtensionDetailProps)
 {
   const { t, i18n } = useTranslation();
+  const [ extensionAndManual, setExtensionAndManual ] = useState<ExtensionAndManual>();
+
+  useEffect(() =>
+  {
+    void ExtensionsService.get({ id: extension.manifest.id })
+      .then(setExtensionAndManual)
+      .catch(NotificationsService.errorWithMessage);
+  }, [ extension.manifest.id ]);
 
   const manifestInstructionsArray = extension.manifest.instructions;
   const manifestRuntimes = extension.manifest.runtimes;
@@ -21,11 +38,26 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
   const capabilities = Array.from(new Set(manifestInstructionsArray?.flatMap(instructions => instructions.capabilities?.map(capability => capability.id) || []) || []));
   const commands = manifestInstructionsArray?.flatMap(instructions => instructions.commands || []) || [];
 
-  const getCommandSpecification = (command: ManifestExtensionCommand) =>
+  const getCommandSpecification = (command: ManifestExtensionCommand): Omit<ManifestExtensionCommandSpecification, "locale"> =>
   {
     const locale = i18n.language.split("-")[0];
     const specification = command.specifications.find((aSpecification: ManifestExtensionCommandSpecification) => aSpecification.locale == locale) || command.specifications.find((aSpecification: ManifestExtensionCommandSpecification) => aSpecification.locale = "en");
     return specification || { label: command.id, description: "" };
+  };
+
+  const getEntityIcon = (entity: CommandEntity | undefined) =>
+  {
+    switch (entity)
+    {
+      case CommandEntity.Image:
+        return <Tooltip label={t("field.image")}><IconPhoto size={20}/></Tooltip>;
+      case CommandEntity.Images:
+        return <Tooltip label={t("field.images")}><IconLibraryPhoto size={20}/></Tooltip>;
+      case CommandEntity.Process:
+        return <Tooltip label={t("field.process")}><IconServer size={20}/></Tooltip>;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -57,23 +89,37 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
           <Table>
             <Table.Thead>
               <Table.Tr>
+                <Table.Th/>
                 <Table.Th>{t("field.name")}</Table.Th>
-                <Table.Th>{t("field.description")}</Table.Th>
+                <Table.Th>{t("field.entity")}</Table.Th>
+                <Table.Th>{t("field.manual")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {commands.map((command, index) =>
               {
                 const commandSpecification = getCommandSpecification(command);
+                const commandInstructions = extensionAndManual?.manual?.instructions
+                  ? extractMarkdownParagraph(extensionAndManual.manual.instructions, command.id)
+                  : null;
+
                 return (
                   <Table.Tr key={index}>
                     <Table.Td>
+                      <CommandIcon extensionId={extension.manifest.id} command={command} size="sm"/>
+                    </Table.Td>
+                    <Table.Td>
                       <Text size="sm" fw={500}>{command.id}</Text>
-                      {commandSpecification.label !== command.id &&
-                        <Text size="xs" c="dimmed">{commandSpecification.label}</Text>}
+                      <Text size="xs" c="dimmed">{commandSpecification.label}</Text>
+                      {commandSpecification.name &&
+                        <Text size="xs" c="dimmed" fs="italic">{commandSpecification.name}</Text>}
+                    </Table.Td>
+                    <Table.Td>
+                      {getEntityIcon(command.on?.entity)}
                     </Table.Td>
                     <Table.Td>
                       <Text size="sm">{commandSpecification.description}</Text>
+                      {commandInstructions && <Markdown content={commandInstructions}/>}
                     </Table.Td>
                   </Table.Tr>
                 );
@@ -82,6 +128,11 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
           </Table>
         ) : <NoValue/>
       }/>
+      {extensionAndManual?.manual?.instructions && (
+        <FieldValue name={t("field.manual")} value={
+          <Markdown content={extractMarkdownParagraph(extensionAndManual.manual.instructions, "Summary")}/>
+        }/>
+      )}
     </Stack>
   );
 }

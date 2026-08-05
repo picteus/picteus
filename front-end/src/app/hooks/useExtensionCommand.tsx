@@ -13,8 +13,8 @@ type CallCommandType = (extensionId: string, command: UiCommandType, imageIds?: 
 
 export default function useExtensionCommand(): CallCommandType
 {
-  const [t] = useTranslation();
-  const [, addModal, removeModal] = useActionModalContext();
+  const [ t ] = useTranslation();
+  const [ , addModal, removeModal ] = useActionModalContext();
 
   async function handleOnSendCommand(extensionId: string, commandId: string, parameters?: object, imageIds?: string[], onRunning?: () => void, modalId?: string): Promise<void>
   {
@@ -69,7 +69,7 @@ export default function useExtensionCommand(): CallCommandType
     addModal({
       id: modalId,
       title: command.label,
-      icon: form?.dialogContent?.icon ?? { url: ExtensionsService.getIconURL(extensionId) },
+      icon: form?.dialogContent?.icon ?? { url: command.iconUri ? ExtensionsService.getCommandIconURL(extensionId, command.iconUri) : ExtensionsService.getIconURL(extensionId) },
       // TODO: make this customizable in the definition of a command
       size: "m",
       component: (

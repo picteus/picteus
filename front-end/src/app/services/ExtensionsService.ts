@@ -4,9 +4,11 @@ import {
   CommandEntity,
   Extension,
   ExtensionActivity,
+  ExtensionAndManual,
   ExtensionApi,
   ExtensionApiExtensionBuildRequest,
   ExtensionApiExtensionGenerateRequest,
+  ExtensionApiExtensionGetRequest,
   ExtensionApiExtensionGetSettingsRequest,
   ExtensionApiExtensionInstallRequest,
   ExtensionApiExtensionPauseOrResumeRequest,
@@ -55,6 +57,13 @@ function requiresCommandReload(event?: EventInformationType): boolean
 function list(): Extension[]
 {
   return extensions;
+}
+
+async function get(
+  parameters: ExtensionApiExtensionGetRequest
+): Promise<ExtensionAndManual>
+{
+  return extensionApi.extensionGet(parameters);
 }
 
 function isPaused(extensionId: string): boolean | undefined
@@ -242,6 +251,7 @@ export default {
   requiresCommandReload,
   fetchAll,
   list,
+  get,
   isPaused,
   add,
   getIconURL,

@@ -96,7 +96,11 @@ export default {
     assetIds: "Assets",
     prompt: "Prompt",
     instructions: "Instructions",
-    author: "Author"
+    manual: "Manual",
+    author: "Author",
+    image: "Image",
+    images: "Images",
+    process: "Server"
   },
   filters: {
     title: "Filters",

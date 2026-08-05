@@ -17,6 +17,7 @@ export default function Drawer({
   opened,
   onClose,
   title,
+  size = "lg",
   children
 }: DrawerType)
 {
@@ -29,7 +30,7 @@ export default function Drawer({
       title={title}
       closeOnEscape={false}
       position="right"
-      size="lg"
+      size={size}
       radius="lg"
       offset={8}
       classNames={{ header: style.header }}
