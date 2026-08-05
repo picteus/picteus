@@ -62,7 +62,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Logs the image dimensions",
+              "label": "Log",
+              "name": "Logs the image dimensions",
               "description": "Reads the provided images and logs their dimensions in the application."
             }
           ],
@@ -141,6 +142,7 @@
             {
               "locale": "en",
               "label": "Convert",
+              "name": "Converts an image",
               "description": "Given a format, converts the provided images into the desired format and stores them in the same repository."
             }
           ],
@@ -175,7 +177,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Ask something",
+              "label": "Ask",
+              "name": "Ask something",
               "description": "Asks questions to the user and if the answer on whether she likes chocolate, opens a modal on a website."
             }
           ],
@@ -213,10 +216,14 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Open a dialog",
+              "label": "Dialog",
+              "name": "Open a dialog",
               "description": "Opens a question dialog box to the user."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/dialog.svg"
+          }
         },
         {
           "id": "ui",
@@ -265,10 +272,14 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Open a UI",
+              "label": "UI",
+              "name": "Open a UI",
               "description": "Opens a specific UI, after having asked which one."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/ui.svg"
+          }
         },
         {
           "id": "show",
@@ -298,10 +309,14 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Show item",
+              "label": "Show",
+              "name": "Show item",
               "description": "Asks the user for options to show a specific item."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/show.svg"
+          }
         },
         {
           "id": "application",
@@ -311,10 +326,14 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Open application",
+              "label": "Application",
+              "name": "Open application",
               "description": "Opens an application in a dialog box."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/application.svg"
+          }
         }
       ]
     }
