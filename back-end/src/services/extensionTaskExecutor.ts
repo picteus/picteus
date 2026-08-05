@@ -14,12 +14,21 @@ class ExtensionLimiters
 
 }
 
+export class ExtensionTaskExecutorError extends Error
+{
+
+}
+
 @Injectable()
 export class ExtensionTaskExecutor
   implements OnModuleInit, OnModuleDestroy
 {
 
   private readonly perExtensionIdLimitersMap = new Map<string, ExtensionLimiters>();
+
+  private readonly perExtensionIdControllerMap = new Map<string, AbortController>();
+
+  private readonly gernalAbortController = new AbortController();
 
   constructor()
   {
@@ -34,17 +43,19 @@ export class ExtensionTaskExecutor
   async onModuleDestroy(): Promise<void>
   {
     logger.debug("Destroying an ExtensionTaskExecutor");
-    logger.debug("Destroyed an ExtensionTaskExecutor");
-    const extensionIds = [...this.perExtensionIdLimitersMap.keys()];
+    this.gernalAbortController.abort();
+    const extensionIds = [ ...this.perExtensionIdLimitersMap.keys() ];
     for (const extensionId of extensionIds)
     {
       await this.offExtension(extensionId);
     }
+    logger.debug("Destroyed an ExtensionTaskExecutor");
   }
 
-  onExtension(extensionId: string, index: number, throttlingPolicies: ManifestThrottlingPolicy[] | undefined): void
+  onExtension(extensionId: string, _index: number, throttlingPolicies: ManifestThrottlingPolicy[] | undefined): void
   {
     logger.info(`Registering the throttling for the extension with id '${extensionId}'`);
+    this.perExtensionIdControllerMap.set(extensionId, new AbortController());
     if (throttlingPolicies !== undefined && this.perExtensionIdLimitersMap.get(extensionId) === undefined)
     {
       const limiters = new ExtensionLimiters();
@@ -68,12 +79,15 @@ export class ExtensionTaskExecutor
     {
       // We immediately remove the limiters from the map to avoid new tasks being scheduled while we stop the bottlenecks
       this.perExtensionIdLimitersMap.delete(extensionId);
+      const controller = this.perExtensionIdControllerMap.get(extensionId)!;
+      this.perExtensionIdControllerMap.delete(extensionId);
       const alreadyStoppedBottlenecks = new Set<Bottleneck>();
       for (const bottleneck of limiters.perEventBottlenecksMap.values())
       {
         // Since the bottlenecks are mutually shared between events, we must ensure we stop each only once
         if (alreadyStoppedBottlenecks.has(bottleneck) === false)
         {
+          controller.abort();
           const counts = bottleneck.counts();
           logger.debug(`Stopping a throttling bottleneck for the extension with id '${extensionId}' with ${counts.QUEUED} queued job(s), ${counts.RUNNING} running job(s), ${counts.EXECUTING} executing job(s)`);
           await bottleneck.stop({ dropWaitingJobs: true, dropErrorMessage: null, enqueueErrorMessage: null });
@@ -83,30 +97,52 @@ export class ExtensionTaskExecutor
     }
   }
 
-  async run(extensionId: string | undefined, event: string, callback: () => Promise<void>): Promise<void>
+  async run(extensionId: string | undefined, event: string, callback: (signal: AbortSignal) => Promise<void>): Promise<void>
   {
+    const controller = extensionId === undefined ? this.gernalAbortController : this.perExtensionIdControllerMap.get(extensionId);
+    if (controller === undefined)
+    {
+      throw new Error(extensionId === undefined ? "There is no general abort controller" : ("There is no abort controller for extension '" + extensionId + "'"));
+    }
+
+    function handleError(error: unknown)
+    {
+      // We swallow the error if the job was dropped due to the bottleneck being stopped
+      if (!((error instanceof Bottleneck.BottleneckError && error.message === "This limiter has been stopped.") || (error instanceof ExtensionTaskExecutorError)))
+      {
+        logger.error(`An unexpected error occurred while executing a task for the extension with id '${extensionId}' and for the '${event}' event through a throttling bottleneck${error instanceof Error ? `. Reason: '${error.message}'` : ""}`);
+      }
+    }
+
     if (extensionId === undefined)
     {
-      await callback();
+      try
+      {
+        await callback(controller.signal);
+      }
+      catch (error)
+      {
+        handleError(error);
+      }
     }
     else
     {
       const bottleneck = this.computeBottleneck(extensionId, event);
       if (bottleneck === undefined)
       {
-        await callback();
+        try
+        {
+          await callback(controller.signal);
+        }
+        catch (error)
+        {
+          handleError(error);
+        }
       }
       else
       {
         logger.debug(`Scheduling a task through a throttling bottleneck for the extension with id '${extensionId}' and for the '${event}' event`);
-        bottleneck.schedule(() => callback()).catch((error) =>
-        {
-          // We swallow the error if the job was dropped due to the bottleneck being stopped
-          if (!(error instanceof Bottleneck.BottleneckError && error.message === "This limiter has been stopped."))
-          {
-            logger.error(`An unexpected error occurred while executing a task for the extension with id '${extensionId}' and for the '${event}' event through a throttling bottleneck. Reason: '${error.message}'`);
-          }
-        });
+        bottleneck.schedule(() => callback(controller.signal)).catch(handleError);
       }
     }
   }
@@ -139,7 +175,7 @@ export class ExtensionTaskExecutor
     {
       extensionLimiters.perEventBottlenecksMap.set(anEvent, newBottleneck);
     }
-    logger.debug(`Created a throttling bottleneck for the extension with id '${extensionId}' and for the events [${[...events.map(event => `'${event}'`)].join(", ")}] with a maximum of ${options.maxConcurrent} call(s) every ${options.minTime} milliseconds`);
+    logger.debug(`Created a throttling bottleneck for the extension with id '${extensionId}' and for the events [${[ ...events.map(event => `'${event}'`) ].join(", ")}] with a maximum of ${options.maxConcurrent} call(s) every ${options.minTime} milliseconds`);
     return newBottleneck;
   }
 

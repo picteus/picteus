@@ -506,6 +506,22 @@ describe("Extensions", () =>
     await testApiInstall(builder, manifest, zip.toBuffer());
   });
 
+  test("connection", async () =>
+  {
+    const builder = new ExtensionBuilder();
+    const manifest = builder.computeStartedManifest();
+    const zip = new AdmZip();
+    zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
+    zip.addFile(ExtensionBuilder.startedJsFileName, Buffer.from(builder.computeStartedFileContent(), "utf8"));
+    await base.getExtensionController().install(zip.toBuffer());
+    await waitForExpect(async () =>
+    {
+      const filePath = path.join(builder.extensionDirectoryPath, "connection.json");
+      expect(fs.existsSync(filePath)).toEqual(true);
+      expect(JSON.parse(fs.readFileSync(filePath, "utf8")).maximumPayloadSizeInBytes).toEqual(16 * 1_024 * 1_024);
+    });
+  });
+
   test("Ignores SIGTERM signal", async () =>
   {
     const builder = new ExtensionBuilder();

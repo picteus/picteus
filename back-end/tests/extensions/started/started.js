@@ -1,7 +1,6 @@
 const path = require("path");
 const fs = require("fs");
 
-// @ts-ignore
 const { io } = require("${nodeModulesDirectoryPath}/socket.io-client");
 
 
@@ -13,12 +12,11 @@ async function main()
   const options =
     {
       autoConnect: true,
-      transports: ["websocket"],
+      transports: [ "websocket" ],
       rejectUnauthorized: false
     };
   const ioClient = io(parameters.webServicesBaseUrl, options);
   const commonParameters = { apiKey: parameters.apiKey, extensionId: parameters.extensionId };
-  // @ts-ignore
   ioClient.on("events", ({ channel, contextId, value }, onResult) =>
     {
       console.info(`Received at '${Date.now()}' an event on channel '${channel}'`);
@@ -44,7 +42,7 @@ async function main()
                   },
                 likeChocolate: { title: "Chocolate?", description: "Do you like chocolate?", type: "boolean" }
               },
-            required: ["favoriteColor"]
+            required: [ "favoriteColor" ]
           };
         const intent = value.commandId === "malformedIntent" ? { invalid: "key" } : { form: { parameters } };
         ioClient.emit(notifications, {
@@ -112,7 +110,12 @@ async function main()
       }
     }
   );
-  ioClient.emit("connection", { ...commonParameters, isOpen: true });
+  ioClient.emit("connection", { ...commonParameters, isOpen: true }, (result) =>
+  {
+    const maximumPayloadSizeInBytes = result.maximumPayloadSizeInBytes;
+    console.debug(`The socket has a maximum payload size of ${maximumPayloadSizeInBytes} bytes`);
+    fs.writeFileSync(path.join(directoryPath, "connection.json"), JSON.stringify(result));
+  });
   return await new Promise((resolve) =>
   {
     setTimeout(resolve, 1_000_000);

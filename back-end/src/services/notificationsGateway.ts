@@ -46,7 +46,7 @@ import {
   stripAndExtractParametersUiProperties
 } from "./extensionServices";
 import { ExtensionRegistry } from "./extensionRegistry";
-import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
+import { ExtensionTaskExecutor, ExtensionTaskExecutorError } from "./extensionTaskExecutor";
 import {
   BundleIntent,
   DialogIntent,
@@ -59,6 +59,7 @@ import {
   ShowIntent,
   UiIntent
 } from "./intents";
+
 
 const contextIdPropertyName = "contextId";
 type WithContextId = { [contextIdPropertyName]: string; };
@@ -115,15 +116,21 @@ const zodDialogIconContent = zodDialogContent.extend({
   icon: z.object({ url: z.string().optional(), content: z.instanceof(Buffer).optional() }).optional()
 });
 const zodDialogIconSizeContent = zodDialogIconContent.extend({
-  size: z.enum(["auto", "xs", "s", "m", "l", "xl"]).optional()
+  size: z.enum([ "auto", "xs", "s", "m", "l", "xl" ]).optional()
 });
 
-const zodFrameContent = z.union([z.object({ url: z.string() }), z.object({ html: z.string() })]);
+const zodFrameContent = z.union([ z.object({ url: z.string() }), z.object({ html: z.string() }) ]);
 
-@WebSocketGateway<GatewayMetadata>({ transports: ["websocket"] })
+@WebSocketGateway<GatewayMetadata>({
+  transports: [ "websocket" ],
+  httpCompression: true,
+  maxHttpBufferSize: NotificationsGateway.maximumPayloadSizeInBytes
+})
 export class NotificationsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleInit, OnModuleDestroy
 {
+
+  private static readonly maximumPayloadSizeInBytes = 16 * 1_024 * 1_024;
 
   @WebSocketServer()
   private io?: Server;
@@ -209,7 +216,7 @@ export class NotificationsGateway
       const milliseconds = Date.now();
       for (const socketEntry of sockets)
       {
-        const [socketId, socket] = socketEntry;
+        const [ socketId, socket ] = socketEntry;
         if (this.activeSocketIds.has(socketId) === true)
         {
           const supportedEvents = this.perExtensionsSocketSupportedEvents.get(socketId);
@@ -223,37 +230,55 @@ export class NotificationsGateway
             {
               this.activitiesContextIds.add(contextId);
             }
-            await this.extensionTaskExecutor.run(extensionId, event, async () =>
+            await this.extensionTaskExecutor.run(extensionId, event, async (signal: AbortSignal) =>
             {
-              const logSuffix = `${extensionId === undefined ? "" : (` related to the extension with id '${extensionId}'`)}`;
-              // In case of an extension, we always want to wait for a socket acknowledgment, which is supposed to be issued by the extension SDK, once the processing is completed, because we want the throttling to be effective
-              const waitForAcknowledgment = extensionId === undefined && onResult === undefined;
-              if (waitForAcknowledgment === true)
+
+              async function process(gateway: NotificationsGateway): Promise<void>
               {
-                this.emitEventToSocket(socket, event, { contextId }, milliseconds, value, logSuffix, undefined);
-              }
-              else
-              {
-                await new Promise<void>((resolve, reject) =>
+                const logSuffix = `${extensionId === undefined ? "" : (` related to the extension with id '${extensionId}'`)}`;
+                // In case of an extension, we always want to wait for a socket acknowledgment, which is supposed to be issued by the extension SDK, once the processing is completed, because we want the throttling to be effective
+                const waitForAcknowledgment = extensionId === undefined && onResult === undefined;
+                if (waitForAcknowledgment === true)
                 {
-                  this.emitEventToSocket(socket, event, { contextId }, milliseconds, value, logSuffix, (result) =>
+                  gateway.emitEventToSocket(socket, event, { contextId }, milliseconds, value, logSuffix, undefined);
+                }
+                else
+                {
+                  await new Promise<void>((resolve, reject) =>
                   {
-                    try
+                    gateway.emitEventToSocket(socket, event, { contextId }, milliseconds, value, logSuffix, (result) =>
                     {
-                      logger.debug(`The socket with id '${socketId}' responded following the '${event}' event occurred${marker === undefined ? "" : (` with the marker '${marker}'`)}`);
-                      if (onResult !== undefined)
+                      try
                       {
-                        onResult({ value: result });
+                        logger.debug(`The socket with id '${socketId}' responded following the '${event}' event occurred${marker === undefined ? "" : (` with the marker '${marker}'`)}`);
+                        if (onResult !== undefined)
+                        {
+                          onResult({ value: result });
+                        }
                       }
-                    }
-                    catch (error)
-                    {
-                      return reject(error);
-                    }
-                    resolve();
+                      catch (error)
+                      {
+                        return reject(error);
+                      }
+                      resolve();
+                    });
                   });
-                });
+                }
               }
+
+              await new Promise<void>((topResolve, topReject) =>
+              {
+                const listener = () =>
+                {
+                  topReject(new ExtensionTaskExecutorError("The job has been aborted via the signal"));
+                };
+                signal.addEventListener("abort", listener);
+                process(this).then(() =>
+                {
+                  signal.removeEventListener("abort", listener);
+                  topResolve();
+                }).catch(topReject);
+              });
             });
           }
         }
@@ -263,7 +288,9 @@ export class NotificationsGateway
   }
 
   @SubscribeMessage(paths.connection)
-  handleConnectionMessage(@MessageBody() connectionValue: ConnectionValue, @ConnectedSocket() socket: Socket): void
+  handleConnectionMessage(@MessageBody() connectionValue: ConnectionValue, @ConnectedSocket() socket: Socket): void | {
+    maximumPayloadSizeInBytes: number
+  }
   {
     const { apiKey, isOpen, sdkVersion, environment, extensionId } = connectionValue;
     const socketId = socket.id;
@@ -299,6 +326,7 @@ export class NotificationsGateway
         this.moduleRef.get(ExtensionService).onConnection(extensionId, true);
       }
       this.activeSocketIds.add(socketId);
+      return { maximumPayloadSizeInBytes: NotificationsGateway.maximumPayloadSizeInBytes };
     }
     else
     {
@@ -420,7 +448,7 @@ export class NotificationsGateway
     {
       return fromTextEventActionToManifestEvent(action);
     });
-    return [...processEvents, ...extensionEvents, ...imageEvents, ...textEvents];
+    return [ ...processEvents, ...extensionEvents, ...imageEvents, ...textEvents ];
   }
 
   private get sockets(): Map<string, Socket> | undefined
@@ -435,7 +463,7 @@ export class NotificationsGateway
       if (this.perExtensionsSocketSupportedEvents.has(activeSocketId) === false)
       {
         const sockets = this.sockets!;
-        for (const [socketId, socket] of sockets)
+        for (const [ socketId, socket ] of sockets)
         {
           if (socketId === activeSocketId)
           {
