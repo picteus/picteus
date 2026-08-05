@@ -38,6 +38,7 @@ export class NotificationReturnedError extends Error
 
 }
 
+// noinspection JSUnusedGlobalSymbols
 export enum NotificationEvent
 {
   ProcessRunCommand = "process.runCommand",
@@ -55,6 +56,7 @@ export enum NotificationEvent
 
 const extensionSettingsEvent = "extension.settings";
 
+// noinspection JSUnusedGlobalSymbols
 export class Helper
 {
 
@@ -93,7 +95,7 @@ const dateToString = (date: Date): string =>
 const computeLeveledLogMethod = (logger: Logger, level: string): LeveledLogMethod =>
 {
 
-  return function(message: any, ...meta: any[]): Logger
+  return function (message: any, ...meta: any[]): Logger
   {
     // @ts-ignore
     const consoleFunction: (message: any, ...meta: any[]) => {} = console[level];
@@ -176,6 +178,8 @@ class MessageSender
 
   private readonly contextId?: string;
 
+  private _maximumPayloadSizeInBytes?: number;
+
   constructor(logger: Logger, parameters: ExtensionParameters, socket: Socket, toString: () => string, contextId?: string)
   {
     this.logger = logger;
@@ -183,6 +187,11 @@ class MessageSender
     this.socket = socket;
     this.toString = toString;
     this.contextId = contextId;
+  }
+
+  set maximumPayloadSizeInBytes(value: number)
+  {
+    this._maximumPayloadSizeInBytes = value;
   }
 
   sendMessage(channel: string, body: Record<string, any>, callback?: (result: any) => Promise<void>): void
@@ -236,6 +245,7 @@ export class Communicator
     this.sendMessage(notificationsChannel, { log: { message, level } });
   }
 
+  // noinspection JSUnusedGlobalSymbols
   sendNotification(value: Record<string, any>): void
   {
     this.sendMessage(notificationsChannel, { notification: value });
@@ -390,7 +400,7 @@ export class PicteusExtension
     return true;
   }
 
-  protected async onReady(communicator?: Communicator): Promise<void>
+  protected async onReady(_communicator?: Communicator): Promise<void>
   {
   }
 
@@ -398,36 +408,40 @@ export class PicteusExtension
   {
   }
 
-  protected async onSettings(communicator: Communicator, value: SettingsValue): Promise<void>
+  protected async onSettings(_communicator: Communicator, _value: SettingsValue): Promise<void>
   {
     return Promise.resolve();
   }
 
-  // noinspection JSUnusedLocalSymbols
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(_communicator: Communicator, _event: string, _value: NotificationValue): Promise<any>
   {
   }
 
+  // noinspection JSUnusedGlobalSymbols
   protected getMiscellaneousApi(): MiscellaneousApi
   {
     return new MiscellaneousApi(this.configuration);
   }
 
+  // noinspection JSUnusedGlobalSymbols
   protected getApiSecretApi(): ApiSecretApi
   {
     return new ApiSecretApi(this.configuration);
   }
 
+  // noinspection JSUnusedGlobalSymbols
   protected getExtensionApi(): ExtensionApi
   {
     return new ExtensionApi(this.configuration);
   }
 
+  // noinspection JSUnusedGlobalSymbols
   protected getRepositoryApi(): RepositoryApi
   {
     return new RepositoryApi(this.configuration);
   }
 
+  // noinspection JSUnusedGlobalSymbols
   protected getCollectionApi(): CollectionApi
   {
     return new CollectionApi(this.configuration);
@@ -438,11 +452,13 @@ export class PicteusExtension
     return new ImageApi(this.configuration);
   }
 
+  // noinspection JSUnusedGlobalSymbols
   protected getImageAttachmentApi(): ImageAttachmentApi
   {
     return new ImageAttachmentApi(this.configuration);
   }
 
+  // noinspection JSUnusedGlobalSymbols
   protected async getSettings(): Promise<SettingsValue>
   {
     return (await new ExtensionApi(this.configuration).extensionGetSettings({ id: this.extensionId })).value;
@@ -459,7 +475,7 @@ export class PicteusExtension
     const options =
       {
         autoConnect: true,
-        transports: ["websocket"],
+        transports: [ "websocket" ],
         rejectUnauthorized: false
       };
     this.socket = io(this.parameters.webServicesBaseUrl, options);
@@ -471,7 +487,17 @@ export class PicteusExtension
     this.socket.on("connect", async (): Promise<void> =>
     {
       this.logger.info(`The ${this.toString()} socket is connected`);
-      await this.onReady(this.globalCommunicator);
+      globalSender.sendMessage("connection", {
+        isOpen: true,
+        sdkVersion: PicteusExtension.getSdkVersion(),
+        environment: "node"
+      }, async (result: { maximumPayloadSizeInBytes: number }) =>
+      {
+        const maximumPayloadSizeInBytes = result.maximumPayloadSizeInBytes;
+        this.logger.debug(`The ${this.toString()} socket has a maximum payload size of ${maximumPayloadSizeInBytes} bytes`);
+        globalSender.maximumPayloadSizeInBytes = maximumPayloadSizeInBytes;
+        await this.onReady(this.globalCommunicator);
+      });
     });
     this.socket.on("connect_error", async (): Promise<void> =>
     {
@@ -494,6 +520,7 @@ export class PicteusExtension
         {
           return this.toString();
         }, contextId);
+        sender.maximumPayloadSizeInBytes = globalSender.maximumPayloadSizeInBytes;
         const communicator: Communicator = new Communicator(this.logger, sender);
         const isRegularEvent = channel !== extensionSettingsEvent;
         let result: any;
@@ -519,11 +546,6 @@ export class PicteusExtension
         }
       }
     );
-    globalSender.sendMessage("connection", {
-      isOpen: true,
-      sdkVersion: PicteusExtension.getSdkVersion(),
-      environment: "node"
-    });
   }
 
   private disconnectSocket(): void

@@ -12,7 +12,6 @@ from logging import getLogger, basicConfig
 from typing import Dict, Any, Literal, TypeVar, Callable, Optional
 
 import aiohttp
-import requests
 import socketio
 # noinspection PyPackageRequirements
 import urllib3
@@ -102,6 +101,15 @@ class _MessageSender:
         self.socket: Optional[SimpleClient] = socket
         self.to_string: Callable[[], str] = to_string
         self.context_id: Optional[str] = context_id
+        self._maximum_payload_size_in_bytes: Optional[int] = None
+
+    @property
+    def maximum_payload_size_in_bytes(self):
+        return self._maximum_payload_size_in_bytes
+
+    @maximum_payload_size_in_bytes.setter
+    def maximum_payload_size_in_bytes(self, value):
+        self._maximum_payload_size_in_bytes = value
 
     async def send_log(self, message: str, level: LogLevel) -> None:
         if level == "debug":
@@ -239,7 +247,6 @@ class PicteusExtension:
             f"Instantiating the {self.to_string()} through the process with id '{os.getpid()}' relying on the SDK version '{PicteusExtension.get_sdk_version()}'")
         self.executor: Optional[ThreadPoolExecutor] = None
         self.queue: Optional[asyncio.Queue] = None
-        self.use_event_driven: bool = True
         self.parameters: _ExtensionParameters = _ExtensionParameters(self._get_parameters())
         # noinspection PySimplifyBooleanCheck
         if self.parameters.web_services_base_url.startswith("https://localhost") == True:
@@ -323,11 +330,7 @@ class PicteusExtension:
         async def inner_initialize() -> None:
             # noinspection PySimplifyBooleanCheck
             if (await self.initialize()) == True:
-                # noinspection PySimplifyBooleanCheck
-                if self.use_event_driven == True:
-                    await self._connect_socket_event_driven()
-                else:
-                    await self._connect_socket_simple_client()
+                await self._connect_socket_event_driven()
             else:
                 await self.on_ready(None)
 
@@ -397,7 +400,7 @@ class PicteusExtension:
         self.logger.info(f"Connecting the {self.to_string()} to the server")
         # The Socket.io Python documentation is available at https://python-socketio.readthedocs.io/en/latest/client.html
         use_ssl: bool = self.web_services_base_url.startswith("https")
-        tcp_connector = aiohttp.TCPConnector(ssl=use_ssl, verify_ssl=False if use_ssl else None)
+        tcp_connector = aiohttp.TCPConnector(ssl=use_ssl, verify_ssl=False if use_ssl else True)
         self.session = aiohttp.ClientSession(connector=tcp_connector)
         self.sio = socketio.AsyncClient(logger=self.logger, http_session=self.session)
         global_sender = _MessageSender(self.logger, self.parameters, self.sio, None, self.to_string, None)
@@ -406,7 +409,20 @@ class PicteusExtension:
         @self.sio.event
         async def connect() -> None:
             self.logger.info(f"The {self.to_string()} socket is connected")
-            await self.on_ready(self.global_communicator)
+
+            async def handle_response(result: Dict[str, Any]) -> None:
+                maximum_payload_size_in_bytes: int = result.get("maximumPayloadSizeInBytes", -1)
+                self.logger.debug(
+                    f"The {self.to_string()} socket has a maximum payload size of {maximum_payload_size_in_bytes} bytes")
+                global_sender.maximum_payload_size_in_bytes = maximum_payload_size_in_bytes
+                await self.on_ready(self.global_communicator)
+
+            await global_sender.send_message("connection",
+                                             {
+                                                 "isOpen": True,
+                                                 "sdkVersion": PicteusExtension.get_sdk_version(),
+                                                 "environment": "python"
+                                             }, handle_response)
 
         @self.sio.event
         def connect_error(_data) -> None:
@@ -429,6 +445,7 @@ class PicteusExtension:
             self.logger.info(
                 f"The {self.to_string()} received at {timestamp_string} the command {command} on channel '{channel}' attached to the context with id '{context_id}'")
             sender = _MessageSender(self.logger, self.parameters, self.sio, None, self.to_string, context_id)
+            sender.maximum_payload_size_in_bytes = global_sender.maximum_payload_size_in_bytes
             communicator = Communicator(self.logger, sender, self.queue)
 
             async def handle_event() -> Any | None:
@@ -456,12 +473,6 @@ class PicteusExtension:
             return await handle_event()
 
         await self.sio.connect(self.web_services_base_url, transports=["websocket"])
-        await global_sender.send_message("connection",
-                                         {
-                                             "isOpen": True,
-                                             "sdkVersion": PicteusExtension.get_sdk_version(),
-                                             "environment": "python"
-                                         })
 
         # noinspection PyBroadException
         try:
@@ -484,64 +495,13 @@ class PicteusExtension:
                     await self._disconnect_socket()
             self.logger.debug(f"The {self.to_string()} socket loop is over")
 
-    async def _connect_socket_simple_client(self) -> None:
-        self.logger.info(f"Connecting the {self.to_string()} to the server")
-        # The Socket.io Python documentation is available at https://python-socketio.readthedocs.io/en/latest/client.html
-        http_session = requests.Session()
-        http_session.verify = False
-        with SimpleClient(http_session=http_session) as socket:
-            socket.connect(self.web_services_base_url, transports=["websocket"])
-            self.socket = socket
-            global_sender = _MessageSender(self.logger, self.parameters, None, self.socket, self.to_string, None)
-            self.global_communicator = Communicator(self.logger, global_sender, self.queue)
-            await global_sender.send_message("connection", {"isOpen": True})
-            await self.on_ready(self.global_communicator)
-            while True:
-                try:
-                    event = socket.receive()
-                except Exception as exception:
-                    # noinspection PySimplifyBooleanCheck
-                    if self.terminating == True:
-                        # This is expected
-                        pass
-                    else:
-                        self.logger.error(
-                            f"An error occurred while listening to the server events. Reason: '{str(exception)}'")
-                    break
-
-                command = event[1]
-                channel = command["channel"]
-                milliseconds: int = command["milliseconds"]
-                context_id: str = command["contextId"]
-                self.logger.info(
-                    f"The {self.to_string()} received at {milliseconds} the command {command} on channel '{channel}' attached to the context with id '{context_id}'")
-                sender = _MessageSender(self.logger, self.parameters, self.sio, None, self.to_string, context_id)
-                communicator = Communicator(self.logger, sender, self.queue)
-                success: bool = False
-                try:
-                    await self.on_event(communicator, channel, command["value"])
-                    success = True
-                except Exception as exception:
-                    # We want the process to continue even if an exception occurs
-                    self.logger.exception(f"An error occurred during the handling of the event on channel '{channel}'")
-                    communicator.send_log(f"The handling of the event failed. Reason: '{str(exception)}'",
-                                          "error")
-                finally:
-                    communicator.send_acknowledgment(success)
-
     async def _disconnect_socket(self) -> None:
         self.logger.info(f"Disconnecting the {self.to_string()} from the server")
-        # noinspection PySimplifyBooleanCheck
-        if self.use_event_driven == True:
-            if self.sio is not None:
-                await self.sio.disconnect()
-                self.sio = None
-                await self.session.close()
-                self.session = None
-        else:
-            if self.socket is not None:
-                self.socket.disconnect()
-                self.socket = None
+        if self.sio is not None:
+            await self.sio.disconnect()
+            self.sio = None
+            await self.session.close()
+            self.session = None
 
     def _get_api_web_services_client(self) -> picteus_ws_client.ApiClient:
         configuration = picteus_ws_client.Configuration(host=self.web_services_base_url)
