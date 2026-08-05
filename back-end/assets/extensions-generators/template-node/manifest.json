@@ -27,17 +27,21 @@
       },
       "commands": [
         {
-          "id": "log",
+          "id": "commandId",
           "on": {
             "entity": "Images"
           },
           "specifications": [
             {
               "locale": "en",
-              "label": "Logs",
-              "description": "Sends a log in the application regarding the image."
+              "label": "Command",
+              "name": "Command example",
+              "description": "Logs in the application the identifier of the run command along with the identifiers of the images it applies to."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/assets/commandId.svg"
+          }
         }
       ]
     }
