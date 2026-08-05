@@ -15,7 +15,7 @@ To understand the full scope of what is possible, you can refer to the following
 - **Core Repository**: [https://github.com/picteus/picteus](https://github.com/picteus/picteus)
 - **Python Example**: [https://github.com/picteus/picteus/tree/main/extensions/instances/example-python](https://github.com/picteus/picteus/tree/main/extensions/instances/example-python)
 - **TypeScript Example**: [https://github.com/picteus/picteus/tree/main/extensions/instances/example-typescript](https://github.com/picteus/picteus/tree/main/extensions/instances/example-typescript)
-- **Manifest JSON Schema**: [https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json](https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json)
+- **Manifest JSON Schema**: [https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json](https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json)
 - **OpenAPI JSON Specifications**: [https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/back-end/openapi.json](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/back-end/openapi.json)
 
 ## 2. The Manifest Contract (`manifest.json`)

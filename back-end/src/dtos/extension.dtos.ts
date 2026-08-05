@@ -62,10 +62,11 @@ export enum ManifestEvent
 export class ManifestExtensionCommandSpecification
 {
 
-  constructor(locale: string, label: string, description?: string)
+  constructor(locale: string, label: string, name?: string, description?: string)
   {
     this.locale = locale;
     this.label = label;
+    this.name = name;
     this.description = description;
   }
 
@@ -88,33 +89,53 @@ export class ManifestExtensionCommandSpecification
 
   @ApiProperty(
     {
-      description: "The command label for the corresponding locale",
+      description: "The command label displayed on buttons",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.shortTechnical,
+      required: true,
+      example: "Resize"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @IsDefined()
+  @NotEquals(null)
+  @MaxLength(FieldLengths.shortTechnical)
+  @Expose()
+  readonly label: string;
+
+  @ApiProperty(
+    {
+      description: "The command name displayed on dialog boxes",
       type: String,
       minLength: 1,
       maxLength: FieldLengths.name,
-      required: true,
+      required: false,
       example: "Resize an image"
     }
   )
   @IsString()
   @MinLength(1)
   @MaxLength(FieldLengths.name)
+  @IsOptional()
   @Expose()
-  readonly label: string;
+  readonly name?: string;
 
   @ApiProperty(
     {
-      description: "The command description for the corresponding locale",
+      description: "The command description",
       type: String,
       minLength: 1,
       maxLength: FieldLengths.comment,
-      required: true,
+      required: false,
       example: "Resizes an image given a format asked to the user."
     }
   )
   @IsString()
   @MinLength(1)
   @MaxLength(FieldLengths.comment)
+  @IsOptional()
   @Expose()
   readonly description?: string;
 
@@ -795,6 +816,7 @@ export class ManifestUserInterface
  */
 export enum ExtensionCategory
 {
+  // noinspection JSUnusedGlobalSymbols
   Capture = "capture",
   Generation = "generation",
   Enrichment = "enrichment",

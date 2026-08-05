@@ -95,7 +95,6 @@ export const uriPathSchema: SchemaObject =
   {
     description: "A URI",
     type: "string",
-    format: "uri",
     pattern: uriPathPattern,
     minLength: 1,
     maxLength: FieldLengths.url,

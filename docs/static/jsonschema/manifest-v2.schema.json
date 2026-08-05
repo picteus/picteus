@@ -287,13 +287,19 @@
                       },
                       "label": {
                         "type": "string",
-                        "description": "The command label for the corresponding locale",
+                        "description": "The command label displayed on buttons",
+                        "minLength": 1,
+                        "maxLength": 32
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "The command name displayed on dialog boxes",
                         "minLength": 1,
                         "maxLength": 128
                       },
                       "description": {
                         "type": "string",
-                        "description": "The command description for the corresponding locale",
+                        "description": "The command description",
                         "minLength": 1,
                         "maxLength": 1024
                       }
@@ -301,8 +307,7 @@
                     "description": "The specifications of an extension's command",
                     "required": [
                       "locale",
-                      "label",
-                      "description"
+                      "label"
                     ]
                   }
                 },
@@ -315,7 +320,6 @@
                         "iconUri": {
                           "type": "string",
                           "description": "The URI of the command icon",
-                          "format": "uri",
                           "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
                           "minLength": 1,
                           "maxLength": 4096
@@ -428,7 +432,6 @@
                   "url": {
                     "type": "string",
                     "description": "The URL of the content",
-                    "format": "uri",
                     "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
                     "minLength": 1,
                     "maxLength": 4096
