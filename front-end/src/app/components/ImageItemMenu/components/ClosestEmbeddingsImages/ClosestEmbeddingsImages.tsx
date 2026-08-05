@@ -23,12 +23,11 @@ type ClosestEmbeddingsImagesFormPayload = {
 };
 
 type ClosestEmbeddingsImagesType = {
-  extensionId: string;
   image: ImageSummary;
   viewMode: ViewMode;
 };
 
-export default function ClosestEmbeddingsImages({ extensionId, image, viewMode }: ClosestEmbeddingsImagesType)
+export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbeddingsImagesType)
 {
   const [ t ] = useTranslation();
   const [ loading, setLoading ] = useState<boolean>(false);

@@ -75,6 +75,7 @@ export default {
     version: "Version",
     extension: "Extension",
     collections: "Collections",
+    categories: "Categories",
     imageCount: "Image count",
     source: "Source",
     logLevel: "Level",

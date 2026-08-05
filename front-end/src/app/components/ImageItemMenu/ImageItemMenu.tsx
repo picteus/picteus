@@ -65,13 +65,12 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
     }
   }, [ event ]);
 
-  function handleOnClickClosestImages(extensionId: string)
+  function handleOnClickClosestImages()
   {
     addModal({
       component: (
         <ClosestEmbeddingsImages
           image={image}
-          extensionId={extensionId}
           viewMode={viewMode}
         />
       ),
@@ -103,16 +102,12 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
       return (
         <>
           <Menu.Label>{t("commands.coreFeatures")}</Menu.Label>
-          {extensionsWithImageEmbeddingsCapability?.map((extension, index) => (<MenuItemEntry
-            key={`embeddingCapability-${extension.manifest.id}-${index}`}
-            onClick={() =>
-              handleOnClickClosestImages(extension.manifest.id)
-            }
-            extensionId={extension.manifest.id}
+          {extensionsWithImageEmbeddingsCapability && (<MenuItemEntry
+            onClick={() => handleOnClickClosestImages()}
             icon={<IconTopologyRing3 style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }}/>}
             label={t("commands.closestImages")}
-            subLabel={extension.manifest.name}
-          />))}
+            subLabel={t("commands.allExtensionsDetails")}
+          />)}
           <MenuItemEntry
             key={"synchronize"}
             onClick={handleOnClickSynchronize}

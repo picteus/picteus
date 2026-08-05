@@ -230,7 +230,7 @@ function buildUiURL(extensionId: string, url: string)
 
 function getIconURL(extensionIdOrExtension: string | Extension)
 {
-  return buildUiURL(typeof extensionIdOrExtension === "string" ? extensionIdOrExtension : (extensionIdOrExtension as Extension).manifest.id, "/icon.png");
+  return buildUiURL(typeof extensionIdOrExtension === "string" ? extensionIdOrExtension : (extensionIdOrExtension as Extension).manifest.id, "/icon");
 }
 
 function getCommandIconURL(extensionId: string, uri: string)
