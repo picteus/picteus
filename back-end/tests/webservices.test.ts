@@ -15,7 +15,8 @@ import {
   ImageFeatureFormat,
   ImageFeatureType,
   MiscellaneousApi,
-  RepositoryApi
+  RepositoryApi,
+  SearchOriginNature
 } from "@picteus/ws-client";
 import { ApiCallError } from "@picteus/internal-extension-sdk";
 import { paths } from "../src/paths";
@@ -133,7 +134,7 @@ describe("WebServices", () =>
       searchParameters: {
         filter: {
           origin: {
-            kind: "images",
+            kind: SearchOriginNature.Images,
             ids: [ image.id ]
           }
         }

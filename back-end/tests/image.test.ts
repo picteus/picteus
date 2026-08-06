@@ -457,13 +457,26 @@ describe("Image with module", () =>
     const inFeatures = { inName: false, inMetadata: false, inFeatures: true };
     const inAll = { inName: true, inMetadata: true, inFeatures: true };
     const inNone = { inName: false, inMetadata: false, inFeatures: false };
-    const searchIds = base.getImageController().searchIds;
-    const searchFeatures = base.getImageController().searchFeatures;
-    const searchTags = base.getImageController().searchTags;
-    const webServices = [ base.getImageController().searchSummaries, base.getImageController().searchImages, searchIds, searchFeatures, searchTags ];
-    for (const unboundWebService of webServices)
+    const imageController = base.getImageController();
+    const searchIds = imageController.searchIds.bind(imageController);
+    const searchFeatures = (parameters: SearchParameters, extensionsIds?: string[]) =>
     {
-      const webService = unboundWebService.bind(base.getImageController());
+      return imageController.searchFeatures.bind(imageController)(extensionsIds, parameters);
+    };
+    const searchTags = (parameters: SearchParameters, extensionsIds?: string[]) =>
+    {
+      return imageController.searchTags.bind(imageController)(extensionsIds, parameters);
+    };
+    const searchMediaUrl = (parameters: SearchParameters) =>
+    {
+      return imageController.searchMediaUrl.bind(imageController)(parameters, { format: ImageFormat.PNG });
+    };
+    const webServices: ((parameters: SearchParameters, extensionsIds?: string[]) => Promise<{
+      items: unknown[],
+      totalCount: number
+    }>)[] = [ imageController.searchSummaries.bind(imageController), imageController.searchImages.bind(imageController), searchIds, searchFeatures, searchTags, searchMediaUrl ];
+    for (const webService of webServices)
+    {
       {
         // We assess with invalid parameters
         await expect(async () =>
@@ -476,7 +489,7 @@ describe("Image with module", () =>
           await expect(async () =>
           {
             await webService(SearchParameters.withRepositoryIdAndSearchCriteria(dummyId));
-          }).rejects.toThrow(new ServiceError(`The parameter 'ids' with value '${dummyId}' is invalid because some of those identifiers do not correspond to an existing repository`, BAD_REQUEST, base.badParameterCode));
+          }).rejects.toThrow(new ServiceError(`The parameter 'ids' with value ['${dummyId}'] is invalid because some of those identifiers do not correspond to an existing repository`, BAD_REQUEST, base.badParameterCode));
         }
       }
       {
@@ -749,7 +762,7 @@ describe("Image with module", () =>
         // We assess via a collection
         expect((await webService(new SearchParameters(undefined, collection.id))).items.length).toBe(imagesCount);
       }
-      if (unboundWebService === searchIds || unboundWebService === searchFeatures || unboundWebService === searchTags)
+      if (webService === searchIds || webService === searchFeatures || webService === searchTags)
       {
         const extractId = (object: any): string | undefined =>
         {
@@ -758,22 +771,24 @@ describe("Image with module", () =>
         const extensionIdsArray = [ [ extension.manifest.id ], [], undefined ];
         for (const extensionIds of extensionIdsArray)
         {
-          const rawResult = await webService({
-            filter:
-              {
-                sorting: { property: SearchSortingProperty.ImportDate, isAscending: true }
-              }
-          }, extensionIds);
+          const searchParameters: SearchParameters =
+            {
+              filter:
+                {
+                  sorting: { property: SearchSortingProperty.ImportDate, isAscending: true }
+                }
+            };
+          const rawResult = await webService(searchParameters, extensionIds);
           expect(rawResult.totalCount).toEqual(imagesCount);
           const items = rawResult.items;
           expect(items.length).toEqual(imagesCount);
           expect(extractId(items[0])).toEqual(image.id);
           expect(extractId(items[1])).toEqual(withFeaturesAndTagsImage.id);
           expect(extractId(items[2])).toEqual(otherImage.id);
-          if (unboundWebService !== searchIds)
+          if (webService !== searchIds)
           {
             const result: SearchFeaturesResult | SearchTagsResult = rawResult as SearchFeaturesResult | SearchTagsResult;
-            if (unboundWebService === searchFeatures)
+            if (webService === searchFeatures)
             {
               const extensionFeatures = features.map(attribute =>
               {
@@ -786,7 +801,7 @@ describe("Image with module", () =>
               expect(result.items[0].attribute).toEqual((extensionIds === undefined || extensionIds.length === 0) ? extensionFeatures.concat(otherExtensionFeatures) : extensionFeatures);
               expect(result.items[1].attribute).toEqual(extensionFeatures);
             }
-            if (unboundWebService === searchTags)
+            if (webService === searchTags)
             {
               const extensionTags = tags.map(attribute =>
               {
@@ -1453,14 +1468,18 @@ describe("Image with module", () =>
     {
       // We check that it is not possible to run an image command, which expects a tag to be defined while the image does not have it
       const imageIds = [ imageId ];
+      const commandRunParameters = {
+        command: {},
+        search: { filter: { origin: { kind: SearchOriginKind.Images, ids: imageIds } } }
+      };
       await expect(async () =>
       {
-        await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, [], imageIds);
-      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageIds.join(",")}]' is invalid because one or more image do not have the required tags`, BAD_REQUEST, base.badParameterCode));
+        await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, commandRunParameters);
+      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value [${imageIds.map(imageId => `'${imageId}'`).join(", ")}] is invalid because one or more image do not have the required tags`, BAD_REQUEST, base.badParameterCode));
       // We set the missing tag
       await base.getImageController().ensureTags(Base.allPolicyContext, imageId, secondExtensionId, [ extensionTag ]);
       // We check that it is now possible to run the previous image command
-      await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, [], imageIds);
+      await base.getExtensionController().runImageCommand(Base.allPolicyContext, secondExtensionId, commandId, commandRunParameters);
     }
     {
       // We assess the single extension features retrieval
@@ -1980,16 +1999,31 @@ describe("Image with application", () =>
     {
       return file1Paths.filter(filePath => fs.existsSync(filePath) === true).length === file1Paths.length && file2Paths.filter(filePath => fs.existsSync(filePath) === true).length === file2Paths.length;
     });
-    for (const filePath of file1Paths.concat(file2Paths))
+    const allFilePaths = file1Paths.concat(file2Paths);
+    const deleteAllFilePaths = () =>
     {
-      fs.rmSync(filePath);
-    }
+      for (const filePath of allFilePaths)
+      {
+        fs.rmSync(filePath);
+      }
+    };
+    const checkAllFilePaths = () =>
+    {
+      for (const filePath of allFilePaths)
+      {
+        expect(fs.existsSync(filePath)).toEqual(true);
+      }
+    };
 
-    await base.getImageController().synchronize(image.id);
-    for (const filePath of file1Paths.concat(file2Paths))
-    {
-      expect(fs.existsSync(filePath)).toEqual(true);
-    }
+    deleteAllFilePaths();
+    await base.getImageController().runCapabilities(image.id);
+    checkAllFilePaths();
+
+    deleteAllFilePaths();
+    await base.getImageController().searchRunCapabilities({
+      filter: { origin: { kind: SearchOriginKind.Images, ids: [ image.id ] } }
+    });
+    checkAllFilePaths();
   });
 
   test.each(imageCases)("mediaUrl with image '$fileName'", async ({ format, fileName, width, height }: ImageCase) =>

@@ -168,7 +168,7 @@ export class ImageService
       skip
     } = await this.computeRequestParameters("Retrieving the image ids", parameters);
     const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({ select: { id: true }, orderBy, where, take, skip }),
+      this.entitiesProvider.images.findMany({ where, orderBy, take, skip, select: { id: true } }),
       this.entitiesProvider.images.count({ where })
     ]);
     return new SearchImageIdResult(entities.map(entity => entity.id), totalCount);
@@ -183,7 +183,7 @@ export class ImageService
       skip
     } = await this.computeRequestParameters("Retrieving the image summaries", parameters);
     const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({ orderBy, where, take, skip }),
+      this.entitiesProvider.images.findMany({ where, orderBy, take, skip }),
       this.entitiesProvider.images.count({ where })
     ]);
     return new SearchImageSummaryResult(entities.map((entity) =>
@@ -200,10 +200,7 @@ export class ImageService
     } = await this.computeRequestParameters("Retrieving the images", parameters);
     const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
       this.entitiesProvider.images.findMany({
-        orderBy,
-        where,
-        take,
-        skip,
+        where, orderBy, take, skip,
         include: { metadata: true, features: true, tags: true }
       }),
       this.entitiesProvider.images.count({ where })
@@ -257,10 +254,21 @@ export class ImageService
       skip
     } = await this.computeRequestParameters(`Getting the media URLs of the images${computer.log()}`, parameters);
     const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({ orderBy, where, take, skip }),
+      this.entitiesProvider.images.findMany({ where, orderBy, take, skip }),
       this.entitiesProvider.images.count({ where })
     ]);
     return new SearchMediaUrlResult(entities.map(entity => new ImageMediaUrl(entity.id, computer.computeUrl(entity.url))), totalCount);
+  }
+
+  async searchForRunningCapabilities(parameters: SearchParameters): Promise<void>
+  {
+    const imageIds = await this.requestForImageIds(parameters, "Running the capabilities for the image ids of the search parameters");
+    const manifests: ExtendedManifest[] = await this.extensionsRegistry.list(false);
+    const extensionService: ExtensionService = this.moduleRef.get(ExtensionService);
+    for (const imageId of imageIds)
+    {
+      await this.runCapabilitiesOnImage(imageId, manifests, extensionService);
+    }
   }
 
   async get(id: string): Promise<Image>
@@ -284,16 +292,13 @@ export class ImageService
     return this.toDto(Image, entity as PersistedImage, entity.metadata as PersistedImageMetadata, entity.features, entity.tags);
   }
 
-  async synchronize(id: string): Promise<Image>
+  async runCapability(id: string): Promise<Image>
   {
-    logger.info(`Synchronizing the image with id '${id}'`);
+    logger.info(`Running the capabilities on the image with id '${id}'`);
     await this.getPersistedImage(id, false, false, false);
     const manifests: ExtendedManifest[] = await this.extensionsRegistry.list(false);
     const extensionService: ExtensionService = this.moduleRef.get(ExtensionService);
-    for (const manifest of manifests)
-    {
-      await extensionService.synchronizeImage(manifest, id);
-    }
+    await this.runCapabilitiesOnImage(id, manifests, extensionService);
     const entity: ImageWithIncludes = await this.getPersistedImage(id, true, true, true);
     return this.toDto(Image, entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags);
   }
@@ -487,11 +492,11 @@ export class ImageService
       }
       else if ((type === ImageFeatureType.DESCRIPTION || type === ImageFeatureType.COMMENT) && ImageService.DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS.includes(format) == false)
       {
-        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be one of [${ImageService.DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS.map(item => `'${item}'`).join(", ")}] when the feature type is '${type}'`);
+        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be one of ${parametersChecker.stringify(ImageService.DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS)} when the feature type is '${type}'`);
       }
       else if (type === ImageFeatureType.RECIPE && ImageService.RECIPE_FEATURES_ALLOWED_FORMATS.includes(format) == false)
       {
-        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be one of [${ImageService.RECIPE_FEATURES_ALLOWED_FORMATS.map(item => `'${item}'`).join(", ")}] when the feature type is '${type}'`);
+        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be one of ${parametersChecker.stringify(ImageService.RECIPE_FEATURES_ALLOWED_FORMATS)} when the feature type is '${type}'`);
       }
 
       // Then, we check that the feature value is compatible with the declared format
@@ -905,7 +910,7 @@ export class ImageService
       const collection = await this.entitiesProvider.collections.findUnique({ where: { id: parameters?.collectionId } });
       if (collection === null)
       {
-        parametersChecker.throwBadParameter("collectionId", parameters?.collectionId.toString(), "the collection with that id does not exist");
+        parametersChecker.throwBadParameter("collectionId", parameters?.collectionId.toString(), "there is no collection with that id");
       }
       filter = plainToInstanceViaJSON(Collection, collection).filter;
     }
@@ -913,6 +918,10 @@ export class ImageService
     const sorting: SearchSorting | undefined = filter?.sorting;
     const repositoryIds = origin?.kind === SearchOriginKind.Repositories ? (await this.moduleRef.get(RepositoryService).list(origin.ids)).map(repository => repository.id) : undefined;
     const imageIds = origin?.kind === SearchOriginKind.Images ? origin.ids : undefined;
+    if (imageIds !== undefined && new Set(imageIds).size !== imageIds.length)
+    {
+      parametersChecker.throwBadParameter("imageIds", imageIds, "an image identifier is repeated");
+    }
     const criteria: SearchCriteria | undefined = filter !== undefined ? filter?.criteria : undefined;
     const range: SearchRange | undefined = parameters?.range;
     const keyword = criteria?.keyword;
@@ -925,7 +934,7 @@ export class ImageService
     const weightInBytesRange = properties?.weightInBytes;
     const creationDateRange = properties?.creationDate;
     const modificationDateRange = properties?.modificationDate;
-    logger.info(`${logPrefix}${repositoryIds === undefined ? "" : ` with a repository id in list [${repositoryIds.map(id => `'${id}'`).join(",")}]`}` + `${keyword === undefined ? "" : (` containing the text '${text}'` + " present in the [" + ([ keyword.inName === false ? "" : "file name", keyword.inFeatures === false ? "" : "features", keyword.inMetadata === false ? "" : "metadata" ].filter(string => string.length > 0).join(", ")) + "]")}` + `${tags === undefined ? "" : (`, with the tags [${tags.values.map(value => `'${value}'`).join(", ")}]`)}` + `${widthRange === undefined ? "" : (", with " + widthRange.toEntityString("width"))}` + `${heightRange === undefined ? "" : (", with " + heightRange.toEntityString("height"))}` + `${weightInBytesRange === undefined ? "" : (", with " + weightInBytesRange.toEntityString("binary weight"))}` + `${creationDateRange === undefined ? "" : (", with " + creationDateRange.toEntityString("creation date"))}` + `${modificationDateRange === undefined ? "" : (", with " + modificationDateRange.toEntityString("modification date"))}` + (sorting === undefined ? "" : ` sorted by '${sorting.property}' in ${sorting.isAscending === true ? "ascending" : "descending"} order`) + ((range === undefined || range.take === undefined) ? "" : ` with a range of [${range.skip}, ${range.take}]`));
+    logger.info(`${logPrefix}${repositoryIds === undefined ? "" : ` with a repository id in list ${parametersChecker.stringify(repositoryIds)}`}` + `${keyword === undefined ? "" : (` containing the text '${text}' present in the ${parametersChecker.stringify([ keyword.inName === false ? "" : "file name", keyword.inFeatures === false ? "" : "features", keyword.inMetadata === false ? "" : "metadata" ].filter(string => string.length > 0))}`)}` + `${tags === undefined ? "" : (`, with the tags ${parametersChecker.stringify(tags.values)}`)}` + `${widthRange === undefined ? "" : (", with " + widthRange.toEntityString("width"))}` + `${heightRange === undefined ? "" : (", with " + heightRange.toEntityString("height"))}` + `${weightInBytesRange === undefined ? "" : (", with " + weightInBytesRange.toEntityString("binary weight"))}` + `${creationDateRange === undefined ? "" : (", with " + creationDateRange.toEntityString("creation date"))}` + `${modificationDateRange === undefined ? "" : (", with " + modificationDateRange.toEntityString("modification date"))}` + (sorting === undefined ? "" : ` sorted by '${sorting.property}' in ${sorting.isAscending === true ? "ascending" : "descending"} order`) + ((range === undefined || range.take === undefined) ? "" : ` with a range of [${range.skip}, ${range.take}]`));
 
     if (keyword !== undefined && (keyword.inName === false && keyword.inMetadata === false && keyword.inFeatures === false))
     {
@@ -1120,6 +1129,19 @@ export class ImageService
     return { where, orderBy, take: range?.take, skip: range?.skip };
   }
 
+  async requestForImageIds(parameters: SearchParameters, logPrefix:string): Promise<string[]>
+  {
+    const {
+      where,
+      orderBy,
+      skip,
+      take
+    } = await this.computeRequestParameters(logPrefix, parameters);
+    return (await this.entitiesProvider.images.findMany({
+      where, orderBy, skip, take, select: { id: true }
+    })).map(entity => entity.id);
+  }
+
   private async getPersistedImage(id: string, withMetadata: boolean = true, withFeatures: boolean = true, withTags: boolean = true): Promise<ImageWithIncludes>
   {
     const entity: ImageWithIncludes | null = await this.entitiesProvider.images.findUnique({
@@ -1131,6 +1153,14 @@ export class ImageService
       parametersChecker.throwBadParameter("id", id, `there is no image with that identifier`);
     }
     return entity;
+  }
+
+  private async runCapabilitiesOnImage(id: string, manifests: ExtendedManifest[], extensionService: ExtensionService): Promise<void>
+  {
+    for (const manifest of manifests)
+    {
+      await extensionService.synchronizeImage(manifest, id);
+    }
   }
 
   private checkExtension(extensionId: string): void

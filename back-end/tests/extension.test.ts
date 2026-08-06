@@ -46,6 +46,7 @@ import {
   ManifestRuntimeEnvironment,
   ManifestUserInterface,
   Repository,
+  SearchOriginKind,
   SearchParameters,
   toMimeType,
   UserInterfaceAnchor
@@ -1598,31 +1599,50 @@ describe("Extensions", () =>
     const { images } = await builder.createRepositoryAndGetImages();
     const image = images[0];
     const commandId = manifest.instructions[0].commands![0].id;
+    const searchParameters =
+      {
+        filter: { origin: { kind: SearchOriginKind.Images, ids: [ image.id ] } }
+      };
+    const runCommandParameters = { search: searchParameters };
 
     {
       const commandId = "nonExistentCommandId";
       await expect(async () =>
       {
-        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, [ image.id ]);
+        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, runCommandParameters);
       }).rejects.toThrow(new ServiceError(`The parameter 'commandId' with value '${commandId}' is invalid because the extension with id '${manifest.id}' has no command with id '${commandId}'`, BAD_REQUEST, base.badParameterCode));
     }
     {
-      const imageId = "nonExistentImageId";
+      const nonExistentId = "nonExistentId";
       await expect(async () =>
       {
-        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, [ imageId ]);
-      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageId}]' is invalid because one or more image do not exist`, BAD_REQUEST, base.badParameterCode));
+        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, {
+          search: { filter: { origin: { kind: SearchOriginKind.Repositories, ids: [ nonExistentId ] } } }
+        });
+      }).rejects.toThrow(new ServiceError(`The parameter 'ids' with value ['${nonExistentId}'] is invalid because some of those identifiers do not correspond to an existing repository`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const imageIds = [ image.id, images[1].id ];
       await expect(async () =>
       {
-        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, undefined, imageIds);
-      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value '[${imageIds.join(", ")}]' is invalid because the command with id '${commandId}' can only be run on a single image`, BAD_REQUEST, base.badParameterCode));
+        await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, {
+          search: {
+            filter: {
+              origin: {
+                kind: SearchOriginKind.Images,
+                ids: imageIds
+              }
+            }
+          }
+        });
+      }).rejects.toThrow(new ServiceError(`The parameter 'imageIds' with value [${imageIds.map(imageId => `'${imageId}'`).join(", ")}] is invalid because the command with id '${commandId}' can only be run on a single image`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const parameters = { key: "value" };
-      await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, parameters, [ image.id ]);
+      await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, {
+        command: parameters,
+        search: searchParameters
+      });
       const filePath = path.join(builder.extensionDirectoryPath, "image.runCommand");
       await waitForExpect(() =>
       {
@@ -1658,7 +1678,9 @@ describe("Extensions", () =>
     for (let index = 0; index < 3; index++)
     {
       const parameters = { key: "value" };
-      await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, parameters, [ image.id ]);
+      await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, commandId, {
+        command: parameters, search: { filter: { origin: { kind: SearchOriginKind.Images, ids: [ image.id ] } } }
+      });
       const filePath = path.join(builder.extensionDirectoryPath, "image.runCommand");
       await waitForExpect(() =>
       {
@@ -2168,7 +2190,9 @@ describe("Extensions", () =>
 
     const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
     // We send an image command to check that the throttling bottleneck keeps not waiting for a socket response coming from the extension
-    await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, "log", undefined, [ image.id ]);
+    await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, "commandId", {
+      search: { filter: { origin: { kind: SearchOriginKind.Images, ids: [ image.id ] } } }
+    });
     await base.getExtensionService().pauseOrResume(manifest.id, true);
     if (process.platform !== "win32")
     {

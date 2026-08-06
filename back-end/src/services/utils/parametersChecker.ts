@@ -53,6 +53,12 @@ export class ParametersChecker
   {
   }
 
+  stringify(items: (string | number) []): string
+  {
+    const quotedItems = items.map(item => typeof item === "string" ? `'${item}'` : item.toString());
+    return `[${quotedItems.join(", ")}]`;
+  }
+
   async checkObject<T extends object>(theClass: ClassConstructor<T>, object: Object, errorMessage: string): Promise<T>
   {
     const classObject: T = plainToInstance<T, Record<string, any>>(theClass, object, {});
@@ -263,12 +269,13 @@ export class ParametersChecker
     this.throwBadParameterError(`The '${name}' ${this.entityName} is missing`);
   }
 
-  computeBadParameter(name: string, value: string | undefined, reason: string): ServiceError
+  computeBadParameter(name: string, value: string | string [] | number[] | undefined, reason: string): ServiceError
   {
-    return this.computeBadParameterError(`The ${this.entityName} '${name}'${value === undefined ? "" : ` with value '${value}'`} is invalid because ${reason}`);
+    const valueAsString = value === undefined ? undefined : (typeof value === "string" ? `'${value}'` : this.stringify(value));
+    return this.computeBadParameterError(`The ${this.entityName} '${name}'${value === undefined ? "" : ` with value ${valueAsString}`} is invalid because ${reason}`);
   }
 
-  throwBadParameter(name: string, value: string | undefined, reason: string): never
+  throwBadParameter(name: string, value: string | string [] | number[] | undefined, reason: string): never
   {
     throw this.computeBadParameter(name, value, reason);
   }

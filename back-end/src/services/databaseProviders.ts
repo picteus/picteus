@@ -766,7 +766,16 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
     const { id: extensionId, name } = extensionIdAndEmbeddingName;
     const collectionName = this.computeExtensionCollectionName(extensionIdAndEmbeddingName);
     logger.debug(`Getting the vector database collection for the extension with id '${extensionId}' and name '${name}'`);
-    return this.perExtensionIdEmbeddingNameCollectionsMap.get(collectionName);
+    let collection = this.perExtensionIdEmbeddingNameCollectionsMap.get(collectionName);
+    if (collection === undefined)
+    {
+      collection = await (await this.getClient()).getCollection({ name: collectionName });
+      if (collection !== undefined)
+      {
+        this.perExtensionIdEmbeddingNameCollectionsMap.set(collectionName, collection);
+      }
+    }
+    return collection;
   }
 
   private async createCollection(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName): Promise<Collection>

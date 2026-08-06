@@ -3,6 +3,7 @@ import path from "node:path";
 import Timers from "node:timers";
 import { randomUUID } from "node:crypto";
 
+import { ModuleRef } from "@nestjs/core";
 import { fdir } from "fdir";
 import AdmZip from "adm-zip";
 import semver from "semver";
@@ -58,6 +59,7 @@ import {
   ManifestCapabilityId,
   ManifestEvent,
   ManifestRuntimeEnvironment,
+  SearchParameters,
   UserInterfaceAnchor
 } from "../dtos/app.dtos";
 import { parametersChecker } from "./utils/parametersChecker";
@@ -95,6 +97,7 @@ import { ExtensionGenerator } from "./extensionGenerator";
 import { ImageAttachmentService } from "./imageAttachmentService";
 import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import { HostService } from "./hostService";
+import { ImageService } from "./imageServices";
 
 
 type ExtensionBundleServe = { extensionApiKey: ExtensionApiKey, settings?: Json, directoryPath: string };
@@ -336,6 +339,7 @@ type Runnable = () => Promise<void>;
 export type CapabilityResult<T> = { extensionId: string, value: T };
 
 export type UIProperty = { property: string, ui: Record<string, any> };
+
 const uiPropertyName = "ui";
 
 export function stripAndExtractParametersUiProperties(parameters: Record<string, any>): UIProperty[]
@@ -403,7 +407,7 @@ export class ExtensionService
 
   private readonly perExtensionIdChromeExtensionNameMap: Map<string, string[]> = new Map<string, string[]>();
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionsRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifierService: NotifierService)
+  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionsRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating an ExtensionService");
   }
@@ -882,7 +886,7 @@ export class ExtensionService
     });
   }
 
-  async runCommand(entity: CommandEntity.Process | CommandEntity.Images, id: string, commandId: string, parameters: Record<string, any> | undefined, imageIds: string[] | undefined): Promise<void>
+  async runCommand(entity: CommandEntity.Process | CommandEntity.Images, id: string, commandId: string, commandParameters: Record<string, any> | undefined, searchParameters: SearchParameters | undefined): Promise<void>
   {
     logger.info(`Running on the extension with id '${id}' the command with id '${commandId}' attached to the entity '${entity}'`);
     this.checkExtensionExists(id);
@@ -905,7 +909,7 @@ export class ExtensionService
       const withStrippedUiPropertiesSchema = deepCopy(command.parameters);
       const uiProperties = stripAndExtractParametersUiProperties(withStrippedUiPropertiesSchema);
       addJsonSchemaAdditionalProperties(withStrippedUiPropertiesSchema);
-      const interpretedParameters = parameters || {};
+      const interpretedParameters = commandParameters || {};
       try
       {
         validateSchema(computeAjv(), withStrippedUiPropertiesSchema, interpretedParameters);
@@ -916,19 +920,24 @@ export class ExtensionService
         parametersChecker.throwBadParameter("parameters", stringify(interpretedParameters, false), `it does not comply with the command with id '${commandId}' expected parameters. Reason: '${(error as Error).message}'`);
       }
     }
+    let imageIds: string[] | undefined = undefined;
+    if (searchParameters !== undefined)
+    {
+      imageIds = await this.moduleRef.get(ImageService).requestForImageIds(searchParameters, "Retrieving the image ids of the search parameters");
+    }
     if (entity === CommandEntity.Images)
     {
       if (imageIds === undefined)
       {
-        parametersChecker.throwBadParameter("imageIds", "undefined", "it is undefined");
+        parametersChecker.throwInternalError(`The 'selector' parameter should be defined when the entity is '${CommandEntity.Images}'`);
       }
       if (new Set(imageIds).size !== imageIds.length)
       {
-        parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, "an image identifier is repeated");
+        parametersChecker.throwBadParameter("imageIds", imageIds, "an image identifier is repeated");
       }
       if (command.on.entity === CommandEntity.Image && imageIds.length > 1)
       {
-        parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, `the command with id '${commandId}' can only be run on a single image`);
+        parametersChecker.throwBadParameter("imageIds", imageIds, `the command with id '${commandId}' can only be run on a single image`);
       }
       const entities = await this.entitiesProvider.images.findMany({
         where: { id: { in: imageIds } },
@@ -944,7 +953,7 @@ export class ExtensionService
             return command.on.withTags!.indexOf(tag.value) !== -1;
           }) === undefined)
           {
-            parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, "one or more image do not have the required tags");
+            parametersChecker.throwBadParameter("imageIds", imageIds, "one or more image do not have the required tags");
           }
         }
       }
@@ -958,7 +967,7 @@ export class ExtensionService
       });
       if (notFoundImageIds.length > 0)
       {
-        parametersChecker.throwBadParameter("imageIds", `[${imageIds.join(", ")}]`, "one or more image do not exist");
+        parametersChecker.throwBadParameter("imageIds", imageIds, "one or more image do not exist");
       }
     }
     let eventEntity: EventEntity;
@@ -979,7 +988,7 @@ export class ExtensionService
     }
     this.notifierService.emit(eventEntity, eventAction, undefined, {
       commandId,
-      parameters,
+      parameters: commandParameters,
       imageIds
     }, extension.id);
   }
@@ -1491,7 +1500,7 @@ export class ExtensionService
               });
               if (requiredEvents.length > 0)
               {
-                parametersChecker.throwBadParameterError(`The capability of the extension with id '${manifest.id}', with id '${capability.id}' is missing the [${requiredEvents.map(event => `'${event}'`).join(", ")}] events`);
+                parametersChecker.throwBadParameterError(`The capability of the extension with id '${manifest.id}', with id '${capability.id}' is missing the ${parametersChecker.stringify(requiredEvents)} events`);
               }
             }
           }

@@ -394,12 +394,16 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
 
   async list(ids?: string[]): Promise<RepositoryList>
   {
-    logger.info(`Listing ${ids === undefined ? "all the repositories" : (`the repositories with ids [${ids.join(",")}]`)}`);
+    logger.info(`Listing ${ids === undefined ? "all the repositories" : (`the repositories with ids ${parametersChecker.stringify(ids)}`)}`);
+    if (ids !== undefined && new Set(ids).size !== ids.length)
+    {
+      parametersChecker.throwBadParameter("ids", ids, "a repository identifier is repeated");
+    }
     const where: Prisma.RepositoryWhereInput | undefined = ids === undefined ? undefined : { id: { in: ids } };
     const entities = await this.entitiesProvider.repositories.findMany({ where, orderBy: { name: "asc" } });
     if (ids !== undefined && entities.length !== ids.length)
     {
-      parametersChecker.throwBadParameter("ids", ids.join(","), "some of those identifiers do not correspond to an existing repository");
+      parametersChecker.throwBadParameter("ids", ids, "some of those identifiers do not correspond to an existing repository");
     }
     return entities.map(entity => plainToInstanceViaJSON(Repository, entity));
   }

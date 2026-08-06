@@ -111,7 +111,7 @@ export class SearchTags
       type: String,
       isArray: true,
       required: true,
-      example: ["nature"]
+      example: [ "nature" ]
     }
   )
   @IsString({ each: true })
@@ -239,7 +239,7 @@ export class SearchFeatureCondition
     }
   )
   @TypeBasedValidation({
-    "string": [MaxLength(FieldLengths.value)],
+    "string": [ MaxLength(FieldLengths.value) ],
     "number": [],
     "boolean": []
   })
@@ -461,8 +461,8 @@ export class SearchCriteria
       enumName: "ImageFormat",
       isArray: true,
       required: false,
-      default: [ImageFormat.PNG, ImageFormat.JPEG, ImageFormat.WEBP, ImageFormat.GIF, ImageFormat.AVIF, ImageFormat.HEIF],
-      example: [ImageFormat.PNG, ImageFormat.JPEG]
+      default: [ ImageFormat.PNG, ImageFormat.JPEG, ImageFormat.WEBP, ImageFormat.GIF, ImageFormat.AVIF, ImageFormat.HEIF ],
+      example: [ ImageFormat.PNG, ImageFormat.JPEG ]
     }
   )
   @Transform(forceArray)
@@ -580,7 +580,8 @@ export class SearchRepositoriesOrigin extends BasisSearchOrigin
       description: "The repository identifiers",
       type: String,
       isArray: true,
-      required: true
+      required: true,
+      example: [ "9aa0820f-6405-4b54-a01a-a6b56489a77f" ]
     }
   )
   @Transform(forceArray)
@@ -608,7 +609,8 @@ export class SearchImagesOrigin extends BasisSearchOrigin
       description: "The image identifiers",
       type: String,
       isArray: true,
-      required: true
+      required: true,
+      example: [ "fb6af249-1061-48a0-9e47-026d7428d709" ]
     }
   )
   @Transform(forceArray)

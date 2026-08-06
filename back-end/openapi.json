@@ -762,7 +762,7 @@
     },
     "/extension/{id}/runImageCommand": {
       "put": {
-        "description": "Runs the command defined for images, by triggering the relevant event to the extension.",
+        "description": "Runs the command specified for images, by triggering the relevant event to the extension to images matching search parameters.",
         "operationId": "extension_runImageCommand",
         "parameters": [
           {
@@ -787,27 +787,15 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "imageIds",
-            "required": true,
-            "in": "query",
-            "description": "The identifiers of the images the command should be run against",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "requestBody": {
-          "required": false,
-          "description": "The command parameters",
+          "required": true,
+          "description": "The parameters containing the instructions for running the command",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/RunCommandParameters"
               }
             }
           }
@@ -2008,6 +1996,7 @@
         "parameters": [],
         "requestBody": {
           "required": true,
+          "description": "The search parameters",
           "content": {
             "application/json": {
               "schema": {
@@ -2041,6 +2030,7 @@
         "parameters": [],
         "requestBody": {
           "required": true,
+          "description": "The search parameters",
           "content": {
             "application/json": {
               "schema": {
@@ -2078,15 +2068,21 @@
             "in": "query",
             "description": "The extension identifiers the features must belong to",
             "schema": {
-              "type": "array",
               "items": {
-                "type": "string"
-              }
+                "description": "An extension identifier",
+                "type": "string",
+                "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+                "minLength": 1,
+                "maxLength": 32,
+                "example": "extension-id"
+              },
+              "type": "array"
             }
           }
         ],
         "requestBody": {
           "required": true,
+          "description": "The search parameters",
           "content": {
             "application/json": {
               "schema": {
@@ -2124,15 +2120,21 @@
             "in": "query",
             "description": "The extension identifiers the tags must belong to",
             "schema": {
-              "type": "array",
               "items": {
-                "type": "string"
-              }
+                "description": "An extension identifier",
+                "type": "string",
+                "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+                "minLength": 1,
+                "maxLength": 32,
+                "example": "extension-id"
+              },
+              "type": "array"
             }
           }
         ],
         "requestBody": {
           "required": true,
+          "description": "The search parameters",
           "content": {
             "application/json": {
               "schema": {
@@ -2205,6 +2207,7 @@
         ],
         "requestBody": {
           "required": true,
+          "description": "The search parameters",
           "content": {
             "application/json": {
               "schema": {
@@ -2226,6 +2229,33 @@
           }
         },
         "summary": "Retrieves image media URLs",
+        "tags": [
+          "image"
+        ]
+      }
+    },
+    "/image/search/runCapabilities": {
+      "put": {
+        "description": "Runs all extensions capabilities against the images following search parameters.",
+        "operationId": "image_searchRunCapabilities",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The search parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchParameters"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No content"
+          }
+        },
+        "summary": "Run capabilities on images",
         "tags": [
           "image"
         ]
@@ -2269,10 +2299,10 @@
         ]
       }
     },
-    "/image/{id}/synchronize": {
+    "/image/{id}/runCapabilities": {
       "put": {
         "description": "Runs all extensions capabilities against the image.",
-        "operationId": "image_synchronize",
+        "operationId": "image_runCapabilities",
         "parameters": [
           {
             "name": "id",
@@ -2301,7 +2331,7 @@
             }
           }
         },
-        "summary": "Synchronizes an image",
+        "summary": "Runs capabilities on an image",
         "tags": [
           "image"
         ]
@@ -4812,6 +4842,574 @@
         "type": "object",
         "properties": {}
       },
+      "SearchOriginNature": {
+        "type": "string",
+        "enum": [
+          "repositories",
+          "images"
+        ],
+        "description": "Indicates how the search result entities should be filtered"
+      },
+      "SearchRepositoriesOrigin": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Indicates how the search result entities should be filtered",
+            "example": "repositories",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchOriginNature"
+              }
+            ]
+          },
+          "ids": {
+            "description": "The repository identifiers",
+            "example": [
+              "9aa0820f-6405-4b54-a01a-a6b56489a77f"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 36,
+              "minLength": 36,
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+            }
+          }
+        },
+        "description": "A repositories-based search origin, involving that the images should belong to the designed repositories",
+        "required": [
+          "kind",
+          "ids"
+        ]
+      },
+      "SearchImagesOrigin": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Indicates how the search result entities should be filtered",
+            "example": "repositories",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchOriginNature"
+              }
+            ]
+          },
+          "ids": {
+            "description": "The image identifiers",
+            "example": [
+              "fb6af249-1061-48a0-9e47-026d7428d709"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 36,
+              "minLength": 36,
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+            }
+          }
+        },
+        "description": "A images-based search origin, involving that the images should be part of the designed image identifiers",
+        "required": [
+          "kind",
+          "ids"
+        ]
+      },
+      "ImageFormat": {
+        "type": "string",
+        "enum": [
+          "PNG",
+          "JPEG",
+          "WEBP",
+          "GIF",
+          "AVIF",
+          "HEIF"
+        ],
+        "description": "A filter used by the search which will limit the result entities to those having one of the provided image formats"
+      },
+      "SearchKeyword": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The text to search for",
+            "example": "comfy"
+          },
+          "inName": {
+            "type": "boolean",
+            "description": "Whether the text should be searched in the image name"
+          },
+          "inMetadata": {
+            "type": "boolean",
+            "description": "Whether the text should be searched in the image metadata"
+          },
+          "inFeatures": {
+            "type": "boolean",
+            "description": "Whether the text should be searched in the image features"
+          }
+        },
+        "description": "The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts",
+        "required": [
+          "text",
+          "inName",
+          "inMetadata",
+          "inFeatures"
+        ]
+      },
+      "SearchTags": {
+        "type": "object",
+        "properties": {
+          "values": {
+            "description": "The tags to search for, i.e. images matching at least of the tags will be included in the result",
+            "example": [
+              "nature"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9A-Z-_.]{1,64}$"
+            }
+          }
+        },
+        "description": "The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags",
+        "required": [
+          "values"
+        ]
+      },
+      "SearchFeatureLogicalOperator": {
+        "type": "string",
+        "enum": [
+          "or",
+          "and",
+          "not"
+        ],
+        "description": "The logical operator"
+      },
+      "ImageFeatureType": {
+        "type": "string",
+        "enum": [
+          "caption",
+          "description",
+          "comment",
+          "annotation",
+          "metadata",
+          "recipe",
+          "identity",
+          "other"
+        ],
+        "description": "All the possible types for an image feature.",
+        "default": "other"
+      },
+      "ImageFeatureFormat": {
+        "type": "string",
+        "enum": [
+          "string",
+          "integer",
+          "float",
+          "boolean",
+          "json",
+          "xml",
+          "markdown",
+          "html",
+          "binary"
+        ],
+        "description": "All the possible formats for an image feature.",
+        "default": "string"
+      },
+      "SearchFeatureComparisonOperator": {
+        "type": "string",
+        "enum": [
+          "equals",
+          "different",
+          "contains",
+          "greaterThan",
+          "greaterThanOrEqual",
+          "lessThan",
+          "lessThanOrEqual"
+        ],
+        "description": "The image feature comparison operator"
+      },
+      "SearchFeatureCondition": {
+        "type": "object",
+        "properties": {
+          "extensionId": {
+            "type": "string",
+            "description": "The extension identifier",
+            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "extension-id"
+          },
+          "type": {
+            "description": "The image feature type",
+            "example": "nature",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageFeatureType"
+              }
+            ]
+          },
+          "format": {
+            "description": "The image feature format",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageFeatureFormat"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "The image feature name",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "field"
+          },
+          "operator": {
+            "description": "The image feature comparison operator",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatureComparisonOperator"
+              }
+            ]
+          },
+          "value": {
+            "description": "The image feature value",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 524288
+              },
+              {
+                "type": "number",
+                "format": "int64"
+              },
+              {
+                "type": "number",
+                "format": "double"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "example": "Three women in a flower arrangement"
+          }
+        },
+        "description": "A condition expression for filtering image features",
+        "required": [
+          "format",
+          "operator",
+          "value"
+        ]
+      },
+      "SearchFeatures": {
+        "type": "object",
+        "properties": {
+          "operator": {
+            "description": "The logical operator",
+            "example": "or",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatureLogicalOperator"
+              }
+            ]
+          },
+          "conditions": {
+            "description": "The search conditions",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchFeatureCondition"
+            }
+          },
+          "features": {
+            "description": "Other nested search features",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatures"
+              }
+            ]
+          }
+        },
+        "description": "The expression for filtering image features",
+        "required": [
+          "operator",
+          "conditions"
+        ]
+      },
+      "SearchPropertyRange": {
+        "type": "object",
+        "properties": {
+          "minimum": {
+            "type": "number",
+            "description": "The minimal value",
+            "format": "int64",
+            "minimum": 0,
+            "example": 0
+          },
+          "maximum": {
+            "type": "number",
+            "description": "The maximal value",
+            "format": "int64",
+            "example": 100
+          }
+        },
+        "description": "The minimal and maximal value of a technical property when searching for images"
+      },
+      "SearchProperties": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "description": "The range of the image width",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchPropertyRange"
+              }
+            ]
+          },
+          "height": {
+            "description": "The range of the image height",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchPropertyRange"
+              }
+            ]
+          },
+          "weightInBytes": {
+            "description": "The range of the image binary weight",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchPropertyRange"
+              }
+            ]
+          },
+          "creationDate": {
+            "description": "The range of the image creation dates, expressed in milliseconds from 1970, January 1st",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchPropertyRange"
+              }
+            ]
+          },
+          "modificationDate": {
+            "description": "The range of the image modification dates, expressed in milliseconds from 1970, January 1st",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchPropertyRange"
+              }
+            ]
+          }
+        },
+        "description": "Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"
+      },
+      "SearchCriteria": {
+        "type": "object",
+        "properties": {
+          "formats": {
+            "type": "array",
+            "description": "A filter used by the search which will limit the result entities to those having one of the provided image formats",
+            "default": [
+              "PNG",
+              "JPEG",
+              "WEBP",
+              "GIF",
+              "AVIF",
+              "HEIF"
+            ],
+            "example": [
+              "PNG",
+              "JPEG"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ImageFormat"
+            }
+          },
+          "keyword": {
+            "description": "A filter which limits the result entities with the provided text specifications",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchKeyword"
+              }
+            ]
+          },
+          "tags": {
+            "description": "A filter which limits the result entities with the provided tags specifications",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchTags"
+              }
+            ]
+          },
+          "features": {
+            "description": "A filter which limits the result entities with the provided features specifications",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFeatures"
+              }
+            ]
+          },
+          "properties": {
+            "description": "A filter which limits the result entities with the provided technical properties",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchProperties"
+              }
+            ]
+          }
+        },
+        "description": "Criteria when searching for images"
+      },
+      "SearchSortingProperty": {
+        "type": "string",
+        "enum": [
+          "name",
+          "creationDate",
+          "modificationDate",
+          "importDate",
+          "updateDate",
+          "binarySize",
+          "width",
+          "height"
+        ],
+        "description": "Indicates how the search result entities should be sorted"
+      },
+      "SearchSorting": {
+        "type": "object",
+        "properties": {
+          "property": {
+            "description": "Indicates how the search result entities should be sorted",
+            "default": "name",
+            "example": "name",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchSortingProperty"
+              }
+            ]
+          },
+          "isAscending": {
+            "type": "boolean",
+            "description": "Whether the returned entities should be sorted in ascending or descending order in respect of the property"
+          }
+        },
+        "description": "Sorting instructions when searching for images",
+        "required": [
+          "property"
+        ]
+      },
+      "SearchFilter": {
+        "type": "object",
+        "properties": {
+          "criteria": {
+            "description": "The criteria that will be applied when applying filter",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchCriteria"
+              }
+            ]
+          },
+          "origin": {
+            "description": "The origin of the images to search in",
+            "oneOf": [
+              {
+                "description": "In case of a repositories-based origin",
+                "$ref": "#/components/schemas/SearchRepositoriesOrigin"
+              },
+              {
+                "description": "In case of a images-based origin",
+                "$ref": "#/components/schemas/SearchImagesOrigin"
+              }
+            ],
+            "discriminator": {
+              "propertyName": "kind",
+              "mapping": {
+                "repositories": "#/components/schemas/SearchRepositoriesOrigin",
+                "images": "#/components/schemas/SearchImagesOrigin"
+              }
+            }
+          },
+          "sorting": {
+            "description": "Indicates how the images should be sorted",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchSorting"
+              }
+            ]
+          }
+        },
+        "description": "A search criteria combined to sorting specifications"
+      },
+      "SearchRange": {
+        "type": "object",
+        "properties": {
+          "take": {
+            "type": "integer",
+            "description": "The number of items to return",
+            "format": "int64",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 20,
+            "example": 20
+          },
+          "skip": {
+            "type": "integer",
+            "description": "The number of items to skip",
+            "format": "int64",
+            "minimum": 0,
+            "default": 0,
+            "example": 0
+          }
+        },
+        "description": "A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"
+      },
+      "SearchParameters": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "description": "The filter which will be used to narrow down the returned items",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchFilter"
+              }
+            ]
+          },
+          "collectionId": {
+            "type": "number",
+            "description": "The collection identifier to filter with to narrow down the returned items",
+            "format": "int32",
+            "minimum": 0,
+            "example": 123
+          },
+          "range": {
+            "description": "The range of items to consider following the search",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchRange"
+              }
+            ]
+          }
+        },
+        "description": "Filtering and range parameters when searching for images"
+      },
+      "RunCommandParameters": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "object",
+            "description": "The command parameters"
+          },
+          "search": {
+            "description": "The search parameters",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchParameters"
+              }
+            ]
+          }
+        },
+        "description": "A pair of command parameters and search parameters",
+        "required": [
+          "search"
+        ]
+      },
       "ExtensionGenerationOptions": {
         "type": "object",
         "properties": {
@@ -5030,37 +5628,6 @@
           "kind"
         ]
       },
-      "ImageFeatureType": {
-        "type": "string",
-        "enum": [
-          "caption",
-          "description",
-          "comment",
-          "annotation",
-          "metadata",
-          "recipe",
-          "identity",
-          "other"
-        ],
-        "description": "All the possible types for an image feature.",
-        "default": "other"
-      },
-      "ImageFeatureFormat": {
-        "type": "string",
-        "enum": [
-          "string",
-          "integer",
-          "float",
-          "boolean",
-          "json",
-          "xml",
-          "markdown",
-          "html",
-          "binary"
-        ],
-        "description": "All the possible formats for an image feature.",
-        "default": "string"
-      },
       "ExtensionImageFeatureName": {
         "type": "object",
         "properties": {
@@ -5155,18 +5722,6 @@
           "extensionId",
           "name"
         ]
-      },
-      "ImageFormat": {
-        "type": "string",
-        "enum": [
-          "PNG",
-          "JPEG",
-          "WEBP",
-          "GIF",
-          "AVIF",
-          "HEIF"
-        ],
-        "description": "The image format"
       },
       "ImageDimensions": {
         "type": "object",
@@ -5719,454 +6274,6 @@
           "items"
         ]
       },
-      "SearchOriginNature": {
-        "type": "string",
-        "enum": [
-          "repositories",
-          "images"
-        ],
-        "description": "Indicates how the search result entities should be filtered"
-      },
-      "SearchRepositoriesOrigin": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "description": "Indicates how the search result entities should be filtered",
-            "example": "repositories",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchOriginNature"
-              }
-            ]
-          },
-          "ids": {
-            "description": "The repository identifiers",
-            "example": "9aa0820f-6405-4b54-a01a-a6b56489a77f",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "maxLength": 36,
-              "minLength": 36,
-              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-            }
-          }
-        },
-        "description": "A repositories-based search origin, involving that the images should belong to the designed repositories",
-        "required": [
-          "kind",
-          "ids"
-        ]
-      },
-      "SearchImagesOrigin": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "description": "Indicates how the search result entities should be filtered",
-            "example": "repositories",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchOriginNature"
-              }
-            ]
-          },
-          "ids": {
-            "description": "The image identifiers",
-            "example": "fb6af249-1061-48a0-9e47-026d7428d709",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "maxLength": 36,
-              "minLength": 36,
-              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-            }
-          }
-        },
-        "description": "A images-based search origin, involving that the images should be part of the designed image identifiers",
-        "required": [
-          "kind",
-          "ids"
-        ]
-      },
-      "SearchKeyword": {
-        "type": "object",
-        "properties": {
-          "text": {
-            "type": "string",
-            "description": "The text to search for",
-            "example": "comfy"
-          },
-          "inName": {
-            "type": "boolean",
-            "description": "Whether the text should be searched in the image name"
-          },
-          "inMetadata": {
-            "type": "boolean",
-            "description": "Whether the text should be searched in the image metadata"
-          },
-          "inFeatures": {
-            "type": "boolean",
-            "description": "Whether the text should be searched in the image features"
-          }
-        },
-        "description": "The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts",
-        "required": [
-          "text",
-          "inName",
-          "inMetadata",
-          "inFeatures"
-        ]
-      },
-      "SearchTags": {
-        "type": "object",
-        "properties": {
-          "values": {
-            "description": "The tags to search for, i.e. images matching at least of the tags will be included in the result",
-            "example": [
-              "nature"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string",
-              "maxLength": 64,
-              "minLength": 1,
-              "pattern": "^[a-z0-9A-Z-_.]{1,64}$"
-            }
-          }
-        },
-        "description": "The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags",
-        "required": [
-          "values"
-        ]
-      },
-      "SearchFeatureLogicalOperator": {
-        "type": "string",
-        "enum": [
-          "or",
-          "and",
-          "not"
-        ],
-        "description": "The logical operator"
-      },
-      "SearchFeatureComparisonOperator": {
-        "type": "string",
-        "enum": [
-          "equals",
-          "different",
-          "contains",
-          "greaterThan",
-          "greaterThanOrEqual",
-          "lessThan",
-          "lessThanOrEqual"
-        ],
-        "description": "The image feature comparison operator"
-      },
-      "SearchFeatureCondition": {
-        "type": "object",
-        "properties": {
-          "extensionId": {
-            "type": "string",
-            "description": "The extension identifier",
-            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
-            "minLength": 1,
-            "maxLength": 32,
-            "example": "extension-id"
-          },
-          "type": {
-            "description": "The image feature type",
-            "example": "nature",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ImageFeatureType"
-              }
-            ]
-          },
-          "format": {
-            "description": "The image feature format",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ImageFeatureFormat"
-              }
-            ]
-          },
-          "name": {
-            "type": "string",
-            "description": "The image feature name",
-            "minLength": 1,
-            "maxLength": 64,
-            "example": "field"
-          },
-          "operator": {
-            "description": "The image feature comparison operator",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchFeatureComparisonOperator"
-              }
-            ]
-          },
-          "value": {
-            "description": "The image feature value",
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 524288
-              },
-              {
-                "type": "number",
-                "format": "int64"
-              },
-              {
-                "type": "number",
-                "format": "double"
-              },
-              {
-                "type": "boolean"
-              }
-            ],
-            "example": "Three women in a flower arrangement"
-          }
-        },
-        "description": "A condition expression for filtering image features",
-        "required": [
-          "format",
-          "operator",
-          "value"
-        ]
-      },
-      "SearchFeatures": {
-        "type": "object",
-        "properties": {
-          "operator": {
-            "description": "The logical operator",
-            "example": "or",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchFeatureLogicalOperator"
-              }
-            ]
-          },
-          "conditions": {
-            "description": "The search conditions",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SearchFeatureCondition"
-            }
-          },
-          "features": {
-            "description": "Other nested search features",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchFeatures"
-              }
-            ]
-          }
-        },
-        "description": "The expression for filtering image features",
-        "required": [
-          "operator",
-          "conditions"
-        ]
-      },
-      "SearchPropertyRange": {
-        "type": "object",
-        "properties": {
-          "minimum": {
-            "type": "number",
-            "description": "The minimal value",
-            "format": "int64",
-            "minimum": 0,
-            "example": 0
-          },
-          "maximum": {
-            "type": "number",
-            "description": "The maximal value",
-            "format": "int64",
-            "example": 100
-          }
-        },
-        "description": "The minimal and maximal value of a technical property when searching for images"
-      },
-      "SearchProperties": {
-        "type": "object",
-        "properties": {
-          "width": {
-            "description": "The range of the image width",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchPropertyRange"
-              }
-            ]
-          },
-          "height": {
-            "description": "The range of the image height",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchPropertyRange"
-              }
-            ]
-          },
-          "weightInBytes": {
-            "description": "The range of the image binary weight",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchPropertyRange"
-              }
-            ]
-          },
-          "creationDate": {
-            "description": "The range of the image creation dates, expressed in milliseconds from 1970, January 1st",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchPropertyRange"
-              }
-            ]
-          },
-          "modificationDate": {
-            "description": "The range of the image modification dates, expressed in milliseconds from 1970, January 1st",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchPropertyRange"
-              }
-            ]
-          }
-        },
-        "description": "Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties"
-      },
-      "SearchCriteria": {
-        "type": "object",
-        "properties": {
-          "formats": {
-            "type": "array",
-            "description": "A filter used by the search which will limit the result entities to those having one of the provided image formats",
-            "default": [
-              "PNG",
-              "JPEG",
-              "WEBP",
-              "GIF",
-              "AVIF",
-              "HEIF"
-            ],
-            "example": [
-              "PNG",
-              "JPEG"
-            ],
-            "items": {
-              "$ref": "#/components/schemas/ImageFormat"
-            }
-          },
-          "keyword": {
-            "description": "A filter which limits the result entities with the provided text specifications",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchKeyword"
-              }
-            ]
-          },
-          "tags": {
-            "description": "A filter which limits the result entities with the provided tags specifications",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchTags"
-              }
-            ]
-          },
-          "features": {
-            "description": "A filter which limits the result entities with the provided features specifications",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchFeatures"
-              }
-            ]
-          },
-          "properties": {
-            "description": "A filter which limits the result entities with the provided technical properties",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchProperties"
-              }
-            ]
-          }
-        },
-        "description": "Criteria when searching for images"
-      },
-      "SearchSortingProperty": {
-        "type": "string",
-        "enum": [
-          "name",
-          "creationDate",
-          "modificationDate",
-          "importDate",
-          "updateDate",
-          "binarySize",
-          "width",
-          "height"
-        ],
-        "description": "Indicates how the search result entities should be sorted"
-      },
-      "SearchSorting": {
-        "type": "object",
-        "properties": {
-          "property": {
-            "description": "Indicates how the search result entities should be sorted",
-            "default": "name",
-            "example": "name",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchSortingProperty"
-              }
-            ]
-          },
-          "isAscending": {
-            "type": "boolean",
-            "description": "Whether the returned entities should be sorted in ascending or descending order in respect of the property"
-          }
-        },
-        "description": "Sorting instructions when searching for images",
-        "required": [
-          "property"
-        ]
-      },
-      "SearchFilter": {
-        "type": "object",
-        "properties": {
-          "criteria": {
-            "description": "The criteria that will be applied when applying filter",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchCriteria"
-              }
-            ]
-          },
-          "origin": {
-            "description": "The origin of the images to search in",
-            "oneOf": [
-              {
-                "description": "In case of a repositories-based origin",
-                "$ref": "#/components/schemas/SearchRepositoriesOrigin"
-              },
-              {
-                "description": "In case of a images-based origin",
-                "$ref": "#/components/schemas/SearchImagesOrigin"
-              }
-            ],
-            "discriminator": {
-              "propertyName": "kind",
-              "mapping": {
-                "repositories": "#/components/schemas/SearchRepositoriesOrigin",
-                "images": "#/components/schemas/SearchImagesOrigin"
-              }
-            }
-          },
-          "sorting": {
-            "description": "Indicates how the images should be sorted",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchSorting"
-              }
-            ]
-          }
-        },
-        "description": "A search criteria combined to sorting specifications"
-      },
       "Collection": {
         "type": "object",
         "properties": {
@@ -6220,58 +6327,6 @@
           "modificationDate",
           "filter"
         ]
-      },
-      "SearchRange": {
-        "type": "object",
-        "properties": {
-          "take": {
-            "type": "integer",
-            "description": "The number of items to return",
-            "format": "int64",
-            "minimum": 1,
-            "maximum": 1000,
-            "default": 20,
-            "example": 20
-          },
-          "skip": {
-            "type": "integer",
-            "description": "The number of items to skip",
-            "format": "int64",
-            "minimum": 0,
-            "default": 0,
-            "example": 0
-          }
-        },
-        "description": "A range of images to return when searching for images, i.e. how to restrict the number of entities following a search"
-      },
-      "SearchParameters": {
-        "type": "object",
-        "properties": {
-          "filter": {
-            "description": "The filter which will be used to narrow down the returned items",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchFilter"
-              }
-            ]
-          },
-          "collectionId": {
-            "type": "number",
-            "description": "The collection identifier to filter with to narrow down the returned items",
-            "format": "int32",
-            "minimum": 0,
-            "example": 123
-          },
-          "range": {
-            "description": "The range of items to consider following the search",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchRange"
-              }
-            ]
-          }
-        },
-        "description": "Filtering and range parameters when searching for images"
       },
       "SearchImageIdResult": {
         "type": "object",

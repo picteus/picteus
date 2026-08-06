@@ -98,6 +98,7 @@ import {
   repositoryIdSchema,
   RepositoryList,
   RepositoryLocationType,
+  RunCommandParameters,
   SearchFeaturesResult,
   SearchFilter,
   SearchImageIdResult,
@@ -766,31 +767,28 @@ export class ExtensionController
   @ApiOperation(
     {
       summary: "Runs a command exposed by an extension, on images",
-      description: "Runs the command defined for images, by triggering the relevant event to the extension."
+      description: "Runs the command specified for images, by triggering the relevant event to the extension to images matching search parameters."
     }
   )
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
   @ApiQuery({ name: "commandId", description: "The identifier of the command", type: String, required: true })
-  @ApiBody({ description: "The command parameters", type: Object, required: false })
-  @ApiQuery({
-    name: "imageIds",
-    description: "The identifiers of the images the command should be run against",
-    required: true,
-    schema: imageIdSchema,
-    isArray: true
+  @ApiBody({
+    description: "The parameters containing the instructions for running the command",
+    type: RunCommandParameters,
+    required: true
   })
   @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRun ]))
-  async runImageCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("commandId") commandId: string, @Body() parameters: Record<string, any> | undefined, @Query("imageIds", new ArrayValidationPipe<String>()) imageIds: string[]): Promise<void>
+  async runImageCommand(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Query("commandId") commandId: string, @Body() parameters: RunCommandParameters): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
     {
       throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
     }
-    return await this.extensionService.runCommand(CommandEntity.Images, id, commandId, parameters, imageIds);
+    return await this.extensionService.runCommand(CommandEntity.Images, id, commandId, parameters.command, parameters.search);
   }
 
   @Put(":id/installChromeExtension")
@@ -1609,6 +1607,7 @@ export class ImageController
       description: "Retrieves image summaries following search parameters."
     }
   )
+  @ApiBody({ description: "The search parameters", type: SearchParameters, required: true })
   @HttpCode(OK)
   @ApiResponse(
     {
@@ -1630,6 +1629,7 @@ export class ImageController
       description: "Retrieves image details following search parameters."
     }
   )
+  @ApiBody({ description: "The search parameters", type: SearchParameters, required: true })
   @HttpCode(OK)
   @ApiResponse(
     {
@@ -1657,6 +1657,7 @@ export class ImageController
     schema: { items: extensionIdSchema, type: "array" },
     required: false
   })
+  @ApiBody({ description: "The search parameters", type: SearchParameters, required: true })
   @HttpCode(OK)
   @ApiResponse(
     {
@@ -1666,7 +1667,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async searchFeatures(@Body() parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds?: string[]): Promise<SearchFeaturesResult>
+  async searchFeatures(@Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds: string[] | undefined, @Body() parameters: SearchParameters): Promise<SearchFeaturesResult>
   {
     return await this.imageService.searchForImageFeatures(parameters, extensionIds);
   }
@@ -1684,6 +1685,7 @@ export class ImageController
     schema: { items: extensionIdSchema, type: "array" },
     required: false
   })
+  @ApiBody({ description: "The search parameters", type: SearchParameters, required: true })
   @HttpCode(OK)
   @ApiResponse(
     {
@@ -1693,7 +1695,7 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async searchTags(@Body() parameters: SearchParameters, @Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds?: string[]): Promise<SearchTagsResult>
+  async searchTags(@Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds: string[] | undefined, @Body() parameters: SearchParameters): Promise<SearchTagsResult>
   {
     return await this.imageService.searchForImageTags(parameters, extensionIds);
   }
@@ -1706,6 +1708,7 @@ export class ImageController
     }
   )
   @DeepObjectApiQuery(ImageMediaUrlQuery, false)
+  @ApiBody({ description: "The search parameters", type: SearchParameters, required: true })
   @ApiResponse(
     {
       status: OK,
@@ -1722,6 +1725,22 @@ export class ImageController
       height: query?.height,
       resizeRender: query?.resizeRender
     });
+  }
+
+  @Put("search/runCapabilities")
+  @ApiOperation(
+    {
+      summary: "Run capabilities on images",
+      description: "Runs all extensions capabilities against the images following search parameters."
+    }
+  )
+  @ApiBody({ description: "The search parameters", type: SearchParameters, required: true })
+  @HttpCode(NO_CONTENT)
+  @ApiResponse(noContentApiResponseOptions)
+  @CheckPolicies(withAllPolicies([ ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingWrite ]))
+  async searchRunCapabilities(@Body() parameters: SearchParameters): Promise<void>
+  {
+    return await this.imageService.searchForRunningCapabilities(parameters);
   }
 
   @Get(":id/get")
@@ -1745,10 +1764,10 @@ export class ImageController
     return await this.imageService.get(id);
   }
 
-  @Put(":id/synchronize")
+  @Put(":id/runCapabilities")
   @ApiOperation(
     {
-      summary: "Synchronizes an image",
+      summary: "Runs capabilities on an image",
       description: "Runs all extensions capabilities against the image."
     }
   )
@@ -1761,9 +1780,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withAllPolicies([ ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingWrite ]))
-  async synchronize(@Param("id") id: string): Promise<Image>
+  async runCapabilities(@Param("id") id: string): Promise<Image>
   {
-    return await this.imageService.synchronize(id);
+    return await this.imageService.runCapability(id);
   }
 
   @Put(":id/modify")

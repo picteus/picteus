@@ -33,6 +33,7 @@ import {
   uriPathPattern,
   uriPathSchema
 } from "./common.dtos";
+import { SearchParameters } from "./image.dtos";
 
 
 /**
@@ -1410,5 +1411,45 @@ export class ExtensionsConfiguration
   @ValidateNested({ each: true })
   @Expose()
   readonly commands: ConfigurationExtensionCommand[];
+
+}
+
+/**
+ * A pair of command parameters and search parameters.
+ */
+@ApiSchema({ description: "A pair of command parameters and search parameters" })
+export class RunCommandParameters
+{
+
+  constructor(command: object, search: SearchParameters)
+  {
+    this.command = command;
+    this.search = search;
+  }
+
+  @ApiProperty(
+    {
+      description: "The command parameters",
+      type: Object,
+      required: false
+    }
+  )
+  @IsObject()
+  @Expose()
+  readonly command?: object;
+
+  @ApiProperty(
+    {
+      description: "The search parameters",
+      type: SearchParameters,
+      required: true
+    }
+  )
+  @Type(() => SearchParameters)
+  @ValidateNested()
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly search: SearchParameters;
 
 }
