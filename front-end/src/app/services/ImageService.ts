@@ -86,7 +86,7 @@ async function getClosestImages(
 
 async function synchronize(id: string): Promise<void>
 {
-  await imageApi.imageSynchronize({ id });
+  await imageApi.imageRunCapabilities({ id });
 }
 
 async function destroy(id: string): Promise<void>

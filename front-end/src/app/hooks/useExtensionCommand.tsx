@@ -2,6 +2,8 @@ import React from "react";
 import { randomId } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 
+import { SearchOriginNature } from "@picteus/ws-client";
+
 import { UiCommandType } from "types";
 import { NotificationsService } from "utils";
 import { useActionModalContext } from "app/context";
@@ -20,18 +22,31 @@ export default function useExtensionCommand(): CallCommandType
   {
     try
     {
-      const commonParameters = { id: extensionId, commandId, body: parameters };
+      const commonParameters = { id: extensionId, commandId };
       if (onRunning)
       {
         onRunning();
       }
       if (imageIds)
       {
-        await ExtensionsService.runImageCommand({ ...commonParameters, imageIds });
+        await ExtensionsService.runImageCommand({
+          ...commonParameters,
+          runCommandParameters:
+            {
+              command: parameters,
+              search: imageIds === undefined ? undefined :
+                {
+                  filter:
+                    {
+                      origin: { kind: SearchOriginNature.Images, ids: imageIds }
+                    }
+                }
+            }
+        });
       }
       else
       {
-        await ExtensionsService.runProcessCommand({ ...commonParameters });
+        await ExtensionsService.runProcessCommand({ ...commonParameters, body: parameters });
       }
       if (modalId)
       {

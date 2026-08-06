@@ -44,7 +44,7 @@ function requiresCommandReload(event?: EventInformationType): boolean
   return channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_PAUSED || channel === ChannelEnum.EXTENSION_RESUMED;
 }
 
-  async function fetchAll(): Promise<{
+async function fetchAll(): Promise<{
   extensions: Extension[];
   extensionsConfiguration: ExtensionsConfiguration;
 }>
