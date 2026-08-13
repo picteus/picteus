@@ -6,17 +6,19 @@ import { randomUUID } from "node:crypto";
 import zlib from "node:zlib";
 import { Readable } from "node:stream";
 
+import * as electron from "electron";
 import { DisconnectReason, Server as SocketServer, ServerOptions, Socket } from "socket.io";
 import AdmZip from "adm-zip";
 import tar from "tar-fs";
-import * as electron from "electron";
-import { dialog } from "electron";
 
 import {
   ApiKeyHostCommand,
+  createIPCCommandReceiver,
   HostCommand,
   HostCommandType,
   InstallChromeExtensionHostCommand,
+  NotificationCommandHostCommand,
+  PickFileResourceHostCommand,
   ShowDialogHostCommand,
   UninstallChromeExtensionHostCommand,
   WebCoordinates,
@@ -141,39 +143,64 @@ export class CommandsManager
 
   listenToProcess(backendProcess: ChildProcess): void
   {
-    backendProcess.on("message", async (command: HostCommand) =>
+    this.on(HostCommandType.PickFileResource, async (command: PickFileResourceHostCommand) =>
+    {
+      const nodePath = await this.pickFileOrDirectory(command.message, command.kind, command.nature, command.extensions === undefined ? undefined : {
+        name: "",
+        extensions: command.extensions
+      }, command.defaultPath);
+      return nodePath ?? null;
+    });
+    this.on(HostCommandType.Notification, async (command: NotificationCommandHostCommand) =>
+    {
+      const notification = new electron.Notification({
+        title: command.title,
+        subtitle: command.subtitle,
+        body: command.body,
+        silent: command.silent,
+        icon: command.icon === undefined ? undefined : electron.nativeImage.createFromBuffer(Buffer.from(command.icon)).resize({
+          width: 64,
+          height: 64,
+          quality: "best"
+        })
+      });
+      notification.show();
+    });
+    createIPCCommandReceiver(backendProcess, logger, async <Response>(command: HostCommand): Promise<Response> =>
     {
       const commandType = command.type;
       const callback = this.perEventListenersMap.get(commandType);
       if (callback === undefined)
       {
-        logger.warn(`No listener is registered to handle the '${commandType}' host command`);
-        return;
+        throw new Error(`No listener is registered to handle the '${commandType}' host command`);
       }
       try
       {
+        let callbackArguments;
         switch (commandType)
         {
           case HostCommandType.ApiKey:
-            await callback((command as ApiKeyHostCommand).apiKey);
+            callbackArguments = (command as ApiKeyHostCommand).apiKey;
             break;
           case HostCommandType.InstallChromeExtension:
-            await callback(command as InstallChromeExtensionHostCommand);
+            callbackArguments = command as InstallChromeExtensionHostCommand;
             break;
           case HostCommandType.UninstallChromeExtension:
-            await callback(command as UninstallChromeExtensionHostCommand);
+            callbackArguments = command as UninstallChromeExtensionHostCommand;
             break;
           case HostCommandType.ShowDialog:
-            await callback(command as ShowDialogHostCommand);
+            callbackArguments = command as ShowDialogHostCommand;
+            break;
+          case HostCommandType.PickFileResource:
+            callbackArguments = command as PickFileResourceHostCommand;
+            break;
+          case HostCommandType.Notification:
+            callbackArguments = command as NotificationCommandHostCommand;
             break;
           default:
-            logger.error(`The host command type '${commandType}' is not supported`);
-            break;
+            throw new Error(`The host command type '${commandType}' is not supported`);
         }
-      }
-      catch (error)
-      {
-        logger.error(`The '${commandType}' host command execution has failed. Reason: '${(error as Error).message}'`, error);
+        return await callback(callbackArguments);
       }
       finally
       {
@@ -207,14 +234,8 @@ export class CommandsManager
         logger.warn(`The command '${command}' is not supported`);
         break;
       case "pickDirectory":
-        const object = await dialog.showOpenDialog({
-          message: parameters.title,
-          defaultPath: parameters.defaultPath,
-          filters: parameters.filters,
-          properties: [ "openDirectory", "createDirectory" ]
-        });
-        const value = object.filePaths.length === 0 ? undefined : object.filePaths[0];
-        this.sendCommandSuccess(socket, id, value);
+        const nodePath = await this.pickFileOrDirectory(parameters.title, "directory", "open", parameters.filter, parameters.defaultPath);
+        this.sendCommandSuccess(socket, id, nodePath);
         break;
       case "openFile":
       case "openExplorer":
@@ -364,6 +385,34 @@ export class CommandsManager
   {
     logger.warn(`Sending an error response related to the command with id '${id}'`);
     socket.emit("result", { id, error: error instanceof Error ? error.message : error as string });
+  }
+
+  private async pickFileOrDirectory(message: string, kind: "file" | "directory", nature: "open" | "save", filter?: {
+    name: string,
+    extensions: string[],
+  }, defaultPath?: string): Promise<string | undefined>
+  {
+    const filters = filter === undefined ? undefined : [ filter ];
+    if (nature === "open")
+    {
+      const object = await electron.dialog.showOpenDialog({
+        message,
+        defaultPath,
+        filters,
+        properties: kind === "directory" ? [ "openDirectory", "createDirectory", "showHiddenFiles" ] : [ "openFile", "showHiddenFiles" ]
+      });
+      return object.canceled === true || object.filePaths.length === 0 ? undefined : object.filePaths[0];
+    }
+    else
+    {
+      const object = await electron.dialog.showSaveDialog({
+        message,
+        defaultPath,
+        filters,
+        properties: [ "createDirectory", "showHiddenFiles", "treatPackageAsDirectory", "showOverwriteConfirmation" ]
+      });
+      return object.canceled === true ? undefined : object.filePath;
+    }
   }
 
 }

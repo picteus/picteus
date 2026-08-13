@@ -3,9 +3,13 @@ import { CliOptions, computeParseCommandLineAndRun, defaultCliOptions, defaultCo
 import { WebCoordinates, WebServer } from "./webServer";
 import {
   ApiKeyHostCommand,
+  createIPCCommandReceiver,
+  createIPCCommandSender,
   HostCommand,
   HostCommandType,
   InstallChromeExtensionHostCommand,
+  NotificationCommandHostCommand,
+  PickFileResourceHostCommand,
   ShowDialogHostCommand,
   UninstallChromeExtensionHostCommand
 } from "./hostCommands";
@@ -20,5 +24,9 @@ export {
   ApiKeyHostCommand,
   InstallChromeExtensionHostCommand,
   ShowDialogHostCommand,
-  UninstallChromeExtensionHostCommand
+  UninstallChromeExtensionHostCommand,
+  PickFileResourceHostCommand,
+  NotificationCommandHostCommand,
+  createIPCCommandSender,
+  createIPCCommandReceiver
 };
