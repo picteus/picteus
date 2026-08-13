@@ -53,6 +53,7 @@ import {
   ImageResizeRender,
   ImageSummary,
   ImageTag,
+  IntegerIdType,
   NumericRange,
   RepositoryLocation,
   RepositoryLocationType,
@@ -807,6 +808,31 @@ export class ImageService
     return imageDistances.length <= 1 ? [] : imageDistances.slice(1);
   }
 
+  async getCollectionIds(id: string): Promise<IntegerIdType []>
+  {
+    logger.info(`Getting the identifiers of the collections the image with id '${id}' belongs to`);
+    await this.getPersistedImage(id, false, false, false);
+    const entities = await this.entitiesProvider.collections.findMany({
+      where: {
+        AND: [
+          {
+            filter: {
+              path: "$.origin.kind",
+              equals: SearchOriginKind.Images
+            }
+          }
+        ]
+      },
+      orderBy: { name: "asc" },
+      select: { id: true, filter: true }
+    });
+    return entities.filter((entity) =>
+    {
+      const filter = entity.filter as Record<string, any>;
+      return filter.origin.ids.includes(id);
+    }).map(entity => entity.id);
+  }
+
   async closestEmbeddingsImages(extensionId: string, embeddings: ImageEmbedding, count: number): Promise<ImageDistances>
   {
     logger.info(`Getting the ${count} closest image(s) to some embeddings related to the extension with id '${extensionId}'`);
@@ -1129,7 +1155,7 @@ export class ImageService
     return { where, orderBy, take: range?.take, skip: range?.skip };
   }
 
-  async requestForImageIds(parameters: SearchParameters, logPrefix:string): Promise<string[]>
+  async requestForImageIds(parameters: SearchParameters, logPrefix: string): Promise<string[]>
   {
     const {
       where,

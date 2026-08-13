@@ -91,6 +91,7 @@ import {
   ImageTag,
   imageUrlSchema,
   integerIdSchema,
+  IntegerIdType,
   NumericRange,
   Repository,
   RepositoryActivities,
@@ -202,7 +203,7 @@ export class MiscellaneousController
   @Header(headers.response.CONTENT_TYPE, types.txt)
   async test(): Promise<string>
   {
-    return this.service.test();
+    return await this.service.test();
   }
 
   @Get("configuration")
@@ -1434,7 +1435,7 @@ export class CollectionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.CollectionRead ]))
-  async get(@Param("id") id: number): Promise<Collection>
+  async get(@Param("id") id: IntegerIdType): Promise<Collection>
   {
     return this.collectionService.get(id);
   }
@@ -1483,7 +1484,7 @@ export class CollectionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.CollectionWrite ]))
-  async update(@Param("id") id: number, @Query("name") name?: string, @Query("comment") comment?: string, @Body() filter?: SearchFilter): Promise<Collection>
+  async update(@Param("id") id: IntegerIdType, @Query("name") name?: string, @Query("comment") comment?: string, @Body() filter?: SearchFilter): Promise<Collection>
   {
     return this.collectionService.update(id, name, comment, filter);
   }
@@ -1506,7 +1507,7 @@ export class CollectionController
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ ApiScope.CollectionWrite ]))
-  async delete(@Param("id") id: number): Promise<void>
+  async delete(@Param("id") id: IntegerIdType): Promise<void>
   {
     return this.collectionService.delete(id);
   }
@@ -2290,6 +2291,27 @@ export class ImageController
   async closestImages(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("name") name: string, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
   {
     return await this.imageService.closestImages(id, extensionId, name, count);
+  }
+
+  @Get(":id/collectionIds")
+  @ApiOperation(
+    {
+      summary: "Gets the identifiers of the image collections",
+      description: "Returns the identifiers of the collections the image belongs to."
+    }
+  )
+  @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The collections identifiers",
+      schema: { items: integerIdSchema }
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
+  async getCollectionIds(@Param("id") id: string): Promise<IntegerIdType[]>
+  {
+    return await this.imageService.getCollectionIds(id);
   }
 
   @Put("closestEmbeddingsImages")

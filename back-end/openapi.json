@@ -3341,6 +3341,50 @@
         ]
       }
     },
+    "/image/{id}/collectionIds": {
+      "get": {
+        "description": "Returns the identifiers of the collections the image belongs to.",
+        "operationId": "image_getCollectionIds",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The image identifier",
+            "schema": {
+              "description": "An image identifier",
+              "type": "string",
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+              "minLength": 36,
+              "maxLength": 36,
+              "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The collections identifiers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "description": "An integer identifier",
+                    "type": "number",
+                    "format": "int32",
+                    "minimum": 0,
+                    "example": 123
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the identifiers of the image collections",
+        "tags": [
+          "image"
+        ]
+      }
+    },
     "/image/closestEmbeddingsImages": {
       "put": {
         "description": "Returns the closest images given some embeddings and for a given extension.",

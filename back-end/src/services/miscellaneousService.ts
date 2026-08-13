@@ -20,7 +20,7 @@ export class MiscellaneousService
     return "pong";
   }
 
-  test(): string
+  async test(): Promise<string>
   {
     logger.debug("Received a test request");
     return "none";

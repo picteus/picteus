@@ -241,7 +241,7 @@ export class Dates
 export class WithIdCreationDateNameComment
 {
 
-  constructor(id: number, creationDate: number, name: string, comment?: string)
+  constructor(id: IntegerIdType, creationDate: number, name: string, comment?: string)
   {
     this.id = id;
     this.creationDate = creationDate;
@@ -260,7 +260,7 @@ export class WithIdCreationDateNameComment
   @IsInt()
   @IsDefined()
   @Expose()
-  readonly id: number;
+  readonly id: IntegerIdType;
 
   @ApiProperty(
     {
@@ -489,6 +489,8 @@ export const computeImageFormatsExtensions = (imageFormats: ImageFormat[]): stri
 };
 
 export type ExtensionIdType = string;
+
+export type IntegerIdType = number;
 
 export type ImageFeatureValue = string | number | boolean;
 
