@@ -496,12 +496,16 @@ async function run(): Promise<void>
       catch (error)
       {
         logger.error("The server could not start properly", error);
-        HostService.sendCommand({
-          type: HostCommandType.ShowDialog,
-          nature: "error",
-          title: "The server could not start properly",
-          message: (error as Error).message
-        }, true);
+        const hostService: HostService = server.application.get(HostService);
+        if (hostService.canSend === true)
+        {
+          await hostService.send({
+            type: HostCommandType.ShowDialog,
+            nature: "error",
+            title: "The server could not start properly",
+            message: (error as Error).message
+          });
+        }
         return process.exit(1);
       }
       let alreadyReceived = false;
@@ -522,13 +526,16 @@ async function run(): Promise<void>
         const apiKey = AuthenticationGuard.generateApiKey();
         AuthenticationGuard.masterApiKey = apiKey;
         const hostService: HostService = server.application.get(HostService);
-        try
+        if (hostService.canSend === true)
         {
-          hostService.send({ type: HostCommandType.ApiKey, apiKey }, true);
-        }
-        catch (error)
-        {
-          logger.error("An unexpected error occurred while notifying the parent process that the server is ready", error);
+          try
+          {
+            await hostService.send<void>({ type: HostCommandType.ApiKey, apiKey });
+          }
+          catch (error)
+          {
+            logger.error("An unexpected error occurred while notifying the parent process that the server is ready", error);
+          }
         }
       }
     },

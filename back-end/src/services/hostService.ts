@@ -2,7 +2,7 @@ import process from "node:process";
 
 import { Injectable } from "@nestjs/common";
 
-import { HostCommand } from "@picteus/shared-back-end";
+import { createIPCCommandSender, HostCommand } from "@picteus/shared-back-end";
 
 import { logger } from "../logger";
 
@@ -11,28 +11,19 @@ import { logger } from "../logger";
 export class HostService
 {
 
-  static sendCommand(command: HostCommand, doNotThrowIfNoHost: boolean = false): void
-  {
-    logger.debug(`Sending a '${command.type}' command to the host process`);
-    if (process.send !== undefined)
-    {
-      // This will be run if the process is forked
-      process.send(command);
-    }
-    else if (doNotThrowIfNoHost === false)
-    {
-      throw new Error("Cannot send a command, because there is no host");
-    }
-  }
+  private readonly commandServer = createIPCCommandSender(process, logger);
+
+  readonly canSend = process.send !== undefined;
 
   constructor()
   {
     logger.debug("Instantiating a HostService");
   }
 
-  send(command: HostCommand, doNotThrowIfNoHost: boolean = false): void
+  async send<Response>(command: HostCommand): Promise<Response>
   {
-    HostService.sendCommand(command, doNotThrowIfNoHost);
+    logger.debug(`Sending a '${command.type}' command to the host process`);
+    return await this.commandServer<Response>(command);
   }
 
 }

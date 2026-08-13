@@ -634,7 +634,7 @@ export class ExtensionService
       this.checkExtensionExists(id);
     }
     await this.extensionsManager.stopProcesses([ id ]);
-    this.uninstallChromeExtensions(id);
+    await this.uninstallChromeExtensions(id);
     const isUnpackedExtension = this.perUnpackedExtensionIdPathsMap.has(id);
     if (isUnpackedExtension === true)
     {
@@ -676,7 +676,7 @@ export class ExtensionService
       parametersChecker.throwBadParameter("isPause", isPause === true ? "true" : "false", `the extension with id '${id}' is already ${isPause === true ? "paused" : "resumed"}`);
     }
     this.extensionsRegistry.pauseOrResume(id, isPause);
-    this.uninstallChromeExtensions(id);
+    await this.uninstallChromeExtensions(id);
     await this.notifyTaskExecutor(extensionAndManual.manifest, isPause === false);
     if (isPause === true)
     {
@@ -1030,7 +1030,7 @@ export class ExtensionService
     }
     try
     {
-      this.hostService.send({
+      await this.hostService.send<void>({
         type: HostCommandType.InstallChromeExtension,
         name: chromeExtensionName,
         archive: buffer.toString("base64")
@@ -1901,14 +1901,14 @@ export class ExtensionService
     runnables.push(runnable);
   }
 
-  private uninstallChromeExtensions(id: string): void
+  private async uninstallChromeExtensions(id: string): Promise<void>
   {
     const chromeExtensionNames = this.perExtensionIdChromeExtensionNameMap.get(id);
     if (chromeExtensionNames !== undefined)
     {
       for (const chromeExtensionName of chromeExtensionNames)
       {
-        this.hostService.send({ type: HostCommandType.UninstallChromeExtension, name: chromeExtensionName });
+        await this.hostService.send<void>({ type: HostCommandType.UninstallChromeExtension, name: chromeExtensionName });
       }
       this.perExtensionIdChromeExtensionNameMap.delete(id);
     }

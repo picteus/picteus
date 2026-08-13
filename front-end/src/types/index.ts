@@ -1,6 +1,7 @@
 import { ReactElement, ReactNode } from "react";
 import { RJSFSchema } from "@rjsf/utils";
 
+import { FrontIntent } from "@picteus/shared-core";
 import {
   Extension,
   Image,
@@ -175,7 +176,7 @@ export type UiExtensionCommandType = {
 
 export type ExtensionIntentType = {
   id: string;
-  intent: UiCommandType;
+  intent: FrontIntent;
 };
 
 export type FilterOrCollectionId = { filter: SearchFilter } | { collectionId: number };
@@ -232,7 +233,7 @@ export enum ChannelEnum
 }
 
 
-export type ResourceType = ({ url: string }) | ({ content: ArrayBuffer });
+export type ResourceType = ({ url: string }) | ({ content: Buffer });
 
 export function computeResourceTypeUrl(resourceType: ResourceType)
 {

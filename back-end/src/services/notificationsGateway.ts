@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 
 import { Server, Socket } from "socket.io";
@@ -16,6 +17,27 @@ import { ModuleRef } from "@nestjs/core";
 import { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { z } from "zod";
 import { format } from "fecha";
+
+import {
+  ActionIntent,
+  DialogIntent,
+  FormIntent,
+  ImagesIntent,
+  IntentDialogType,
+  IntentShowType,
+  IntentUiAnchor,
+  isActionIntent,
+  isDialogIntent,
+  isFormIntent,
+  isImagesIntent,
+  isNotificationIntent,
+  isShowIntent,
+  isUiIntent,
+  NotificationIntent,
+  ShowIntent,
+  UiIntent
+} from "@picteus/shared-core";
+import { HostCommandType } from "@picteus/shared-back-end";
 
 import { logger } from "../logger";
 import { paths } from "../paths";
@@ -47,18 +69,8 @@ import {
 } from "./extensionServices";
 import { ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionTaskExecutor, ExtensionTaskExecutorError } from "./extensionTaskExecutor";
-import {
-  BundleIntent,
-  DialogIntent,
-  FormIntent,
-  ImagesIntent,
-  Intent,
-  IntentDialogType,
-  IntentShowType,
-  IntentUiAnchor,
-  ShowIntent,
-  UiIntent
-} from "./intents";
+import { BundleIntent, Intent, ReadFileIntent, WriteFileIntent } from "./intents";
+import { HostService } from "./hostService";
 
 
 const contextIdPropertyName = "contextId";
@@ -82,29 +94,17 @@ type NotificationsValue = SocketMessageValue & {
 }
 export type NotificationsReturnedValue = { value?: any, cancel?: string, error?: string }
 
-const isFormIntent = (intent: Intent): intent is FormIntent =>
-{
-  return (intent as FormIntent).form !== undefined;
-};
-const isUiIntent = (intent: Intent): intent is UiIntent =>
-{
-  return (intent as UiIntent).ui !== undefined;
-};
-const isDialogIntent = (intent: Intent): intent is DialogIntent =>
-{
-  return (intent as DialogIntent).dialog !== undefined;
-};
-const isImagesIntent = (intent: Intent): intent is ImagesIntent =>
-{
-  return (intent as ImagesIntent).images !== undefined;
-};
-const isShowIntent = (intent: Intent): intent is ShowIntent =>
-{
-  return (intent as ShowIntent).show !== undefined;
-};
 const isBundleIntent = (intent: Intent): intent is BundleIntent =>
 {
   return (intent as BundleIntent).serveBundle !== undefined;
+};
+const isReadFileIntent = (intent: Intent): intent is ReadFileIntent =>
+{
+  return (intent as ReadFileIntent).readFile !== undefined;
+};
+const isWriteFileIntent = (intent: Intent): intent is WriteFileIntent =>
+{
+  return (intent as WriteFileIntent).writeFile !== undefined;
 };
 
 const zodDialogContent = z.object({
@@ -120,6 +120,25 @@ const zodDialogIconSizeContent = zodDialogIconContent.extend({
 });
 
 const zodFrameContent = z.union([ z.object({ url: z.string() }), z.object({ html: z.string() }) ]);
+
+const zodUi = z.object({
+  id: z.string(),
+  integration: z.union([
+    z.object({
+      anchor: z.string(IntentUiAnchor.Sidebar),
+      isExternal: z.boolean()
+    }),
+    z.object({ anchor: z.string(IntentUiAnchor.Window) }),
+    z.object({ anchor: z.string(IntentUiAnchor.Modal) })
+  ]),
+  frameContent: zodFrameContent,
+  dialogContent: zodDialogIconContent.optional()
+});
+
+const zodShow = z.object({
+  type: z.enum(IntentShowType),
+  id: z.string()
+});
 
 @WebSocketGateway<GatewayMetadata>({
   transports: [ "websocket" ],
@@ -145,7 +164,7 @@ export class NotificationsGateway
 
   private readonly activitiesContextIds: Set<string> = new Set();
 
-  constructor(private readonly notifierService: NotifierService, private readonly extensionTaskExecutor: ExtensionTaskExecutor, private readonly uiServer: ExtensionsUiServer, private readonly moduleRef: ModuleRef)
+  constructor(private readonly notifierService: NotifierService, private readonly extensionTaskExecutor: ExtensionTaskExecutor, private readonly uiServer: ExtensionsUiServer, private readonly hostService: HostService, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating a NotificationsGateway");
   }
@@ -599,6 +618,23 @@ export class NotificationsGateway
   {
     let intentName: string;
     let onAcknowledged: ((result: any) => void) | null;
+
+    const onAcknowledgedFromMasterSocketFactory = (onValidate?: (value: NotificationsReturnedValue) => boolean): (value: NotificationsReturnedValue) => void =>
+    {
+      return (value: NotificationsReturnedValue) =>
+      {
+        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
+        if (onValidate !== undefined)
+        {
+          if (onValidate(value) === false)
+          {
+            return;
+          }
+        }
+        resolve(value);
+      };
+    };
+
     const resolveWithError = (message: string): undefined =>
     {
       resolve({ error: message });
@@ -621,6 +657,7 @@ export class NotificationsGateway
       }
     };
 
+    const noFileResourceSelected = "No file resource selected";
     if (isFormIntent(intent) === true)
     {
       intentName = "parameters";
@@ -645,9 +682,8 @@ export class NotificationsGateway
       {
         return resolveWithError(`The intent is not compliant with the JSON schema. Reason: '${(error as Error).message}'`);
       }
-      onAcknowledged = (value: NotificationsReturnedValue) =>
+      onAcknowledged = onAcknowledgedFromMasterSocketFactory((value: NotificationsReturnedValue): boolean =>
       {
-        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
         if (value.value !== undefined)
         {
           try
@@ -656,42 +692,27 @@ export class NotificationsGateway
           }
           catch (error)
           {
-            return resolveWithError(`The intent returned value is not compliant with the JSON schema. Reason: '${(error as Error).message}'`);
+            resolveWithError(`The intent returned value is not compliant with the JSON schema. Reason: '${(error as Error).message}'`);
+            return false;
           }
         }
         else if (value.cancel === undefined && value.error === undefined)
         {
-          return resolveWithError("The intent should have been returned an object with either a 'value', 'cancel' or 'error' property");
+          resolveWithError("The intent should have been returned an object with either a 'value', 'cancel' or 'error' property");
+          return false;
         }
-        resolve(value);
-      };
+        return true;
+      });
     }
     else if (isUiIntent(intent) === true)
     {
       intentName = "UI";
       const specificIntent: UiIntent = intent;
-      if (await checkSchema(z.object({
-        id: z.string(),
-        integration: z.union([
-          z.object({
-            anchor: z.string(IntentUiAnchor.Sidebar),
-            isExternal: z.boolean()
-          }),
-          z.object({ anchor: z.string(IntentUiAnchor.Window) }),
-          z.object({ anchor: z.string(IntentUiAnchor.Modal) })
-        ]),
-        frameContent: zodFrameContent,
-        dialogContent: zodDialogIconContent.optional()
-
-      }), specificIntent.ui) === false)
+      if (await checkSchema(zodUi, specificIntent.ui) === false)
       {
         return resolveWithInvalidIntentSchema("UiIntent");
       }
-      onAcknowledged = (value: NotificationsReturnedValue) =>
-      {
-        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
-        resolve(value);
-      };
+      onAcknowledged = onAcknowledgedFromMasterSocketFactory();
     }
     else if (isDialogIntent(intent) === true)
     {
@@ -711,11 +732,7 @@ export class NotificationsGateway
       {
         return resolveWithInvalidIntentSchema("DialogIntent");
       }
-      onAcknowledged = (value: NotificationsReturnedValue) =>
-      {
-        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
-        resolve(value);
-      };
+      onAcknowledged = onAcknowledgedFromMasterSocketFactory();
     }
     else if (isImagesIntent(intent) === true)
     {
@@ -731,28 +748,68 @@ export class NotificationsGateway
       {
         return resolveWithInvalidIntentSchema("ImagesIntent");
       }
-      onAcknowledged = (value: NotificationsReturnedValue) =>
-      {
-        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
-        resolve(value);
-      };
+      onAcknowledged = onAcknowledgedFromMasterSocketFactory();
     }
     else if (isShowIntent(intent) === true)
     {
       intentName = "show";
       const specificIntent: ShowIntent = intent;
-      if (await checkSchema(z.object({
-        type: z.enum(IntentShowType),
-        id: z.string()
-      }), specificIntent.show) === false)
+      if (await checkSchema(zodShow, specificIntent.show) === false)
       {
         return resolveWithInvalidIntentSchema("ShowIntent");
       }
-      onAcknowledged = (value: NotificationsReturnedValue) =>
+      onAcknowledged = onAcknowledgedFromMasterSocketFactory();
+    }
+    else if (isNotificationIntent(intent) === true)
+    {
+      intentName = "notification";
+      const specificIntent: NotificationIntent = intent;
+      if (await checkSchema(z.object({
+        notification: z.object({
+          title: z.string(),
+          subtitle: z.string(),
+          body: z.string(),
+          silent: z.boolean(),
+          icon: z.instanceof(Buffer).optional(),
+          isNative: z.boolean()
+        })
+      }), specificIntent) === false)
       {
-        logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
-        resolve(value);
-      };
+        return resolveWithInvalidIntentSchema("NotificationIntent");
+      }
+      const notification = specificIntent.notification;
+      if (notification.isNative === true)
+      {
+        onAcknowledged = null;
+        await this.hostService.send<void>({
+          type: HostCommandType.Notification,
+          title: notification.title,
+          subtitle: notification.subtitle,
+          body: notification.body,
+          silent: notification.silent,
+          icon: notification.icon
+        });
+        resolve({ value: undefined });
+      }
+      else
+      {
+        onAcknowledged = onAcknowledgedFromMasterSocketFactory();
+      }
+    }
+    else if (isActionIntent(intent) === true)
+    {
+      intentName = "action";
+      const specificIntent: ActionIntent = intent;
+      if (await checkSchema(z.object({
+        action: z.object({
+          what: z.xor([ zodUi, zodShow ]),
+          dialogContent: zodDialogIconSizeContent
+        })
+      }), specificIntent) === false)
+      {
+        return resolveWithInvalidIntentSchema("ActionIntent");
+      }
+      onAcknowledged = onAcknowledgedFromMasterSocketFactory();
     }
     else if (isBundleIntent(intent) === true)
     {
@@ -769,12 +826,77 @@ export class NotificationsGateway
       const extensionApiKey = AuthenticationGuard.registerExtensionApiKey(extensionId);
       try
       {
-        const value = await this.uiServer.serveBundle(extensionApiKey, specificIntent.serveBundle.settings, specificIntent.serveBundle.content);
-        resolve({ value });
+        resolve({ value: await this.uiServer.serveBundle(extensionApiKey, specificIntent.serveBundle.settings, specificIntent.serveBundle.content) });
       }
       catch (error)
       {
         resolveWithError(`Could not inflate the provided bundle archive. Reason:'${(error as Error).message}'`);
+      }
+    }
+    else if (isReadFileIntent(intent) === true)
+    {
+      intentName = "readFile";
+      const specificIntent: ReadFileIntent = intent;
+      if (await checkSchema(z.object({
+        readFile: z.object({
+          extensions: z.string().array(),
+          message: z.string()
+        })
+      }), specificIntent) === false)
+      {
+        return resolveWithInvalidIntentSchema("ReadFileIntent");
+      }
+      const readFile = specificIntent.readFile;
+      onAcknowledged = null;
+      const nodePath: string | null = await this.hostService.send<string | null>({
+        type: HostCommandType.PickFileResource,
+        kind: "file",
+        nature: "open",
+        extensions: readFile.extensions,
+        message: readFile.message
+      });
+      if (nodePath === null)
+      {
+        resolve({ cancel: noFileResourceSelected });
+      }
+      else
+      {
+        resolve({ value: fs.readFileSync(nodePath) });
+      }
+    }
+    else if (isWriteFileIntent(intent) === true)
+    {
+      intentName = "writeFile";
+      const specificIntent: WriteFileIntent = intent;
+      if (await checkSchema(z.object({
+        writeFile: z.object({
+          name: z.string(),
+          extension: z.string(),
+          content: z.instanceof(Buffer),
+          message: z.string()
+        })
+      }), specificIntent) === false)
+      {
+        return resolveWithInvalidIntentSchema("WriteFileIntent");
+      }
+      const writeFile = specificIntent.writeFile;
+      onAcknowledged = null;
+      const nodePath: string | null = await this.hostService.send<string | null>({
+        type: HostCommandType.PickFileResource,
+        kind: "file",
+        nature: "save",
+        extensions: [ writeFile.extension ],
+        defaultPath: writeFile.name,
+        message: writeFile.message
+      });
+      if (nodePath === null)
+      {
+        resolve({ cancel: noFileResourceSelected });
+      }
+      else
+      {
+        fs.writeFileSync(nodePath, specificIntent.writeFile.content);
+        resolve({ value: undefined });
       }
     }
     else

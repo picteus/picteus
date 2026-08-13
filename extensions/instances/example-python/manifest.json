@@ -319,6 +319,109 @@
           }
         },
         {
+          "id": "readFile",
+          "on": {
+            "entity": "Process"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Read",
+              "name": "Reads a file",
+              "description": "Asks the user to pick a file and accesses to its content."
+            }
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/readFile.svg"
+          }
+        },
+        {
+          "id": "writeFile",
+          "on": {
+            "entity": "Process"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Write",
+              "name": "Writes a file",
+              "description": "Asks the user to pick a file for saving some content."
+            }
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/writeFile.svg"
+          }
+        },
+        {
+          "id": "notification",
+          "on": {
+            "entity": "Process"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "title": "Title",
+                "description": "The notification title.",
+                "default": "My Title"
+              },
+              "subtitle": {
+                "type": "string",
+                "title": "Subtitle",
+                "description": "The notification subtitle.",
+                "default": "My subtitle"
+              },
+              "body": {
+                "type": "string",
+                "title": "Body",
+                "description": "The notification body",
+                "default": "This is the notification body."
+              },
+              "isNative": {
+                "type": "boolean",
+                "title": "Is native?",
+                "description": "Should the notification be displayed through the OS native system?",
+                "default": true
+              }
+            },
+            "required": [
+              "title",
+              "subtitle",
+              "body",
+              "isNative"
+            ]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Notification",
+              "name": "Trigger notification",
+              "description": "Triggers a notification based on the user inputs."
+            }
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/notification.svg"
+          }
+        },
+        {
+          "id": "action",
+          "on": {
+            "entity": "Process"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Action",
+              "name": "Trigger action",
+              "description": "Triggers an action, which displays a notification and then runs a process."
+            }
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/action.svg"
+          }
+        },
+        {
           "id": "application",
           "on": {
             "entity": "Process"

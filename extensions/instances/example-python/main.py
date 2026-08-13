@@ -12,11 +12,13 @@ from picteus_extension_sdk import PicteusExtension, NotificationEvent, Notificat
     IntentServeBundle, IntentFrame, IntentFrameUrlContent, IntentFrameHtmlContent, \
     IntentFormContent, IntentDialogIconContent, FormIntent, IntentResourceContent, \
     IntentDialogIconSizeContent, IntentUISidebarIntegration, IntentUIModalIntegration, \
-    IntentUIWindowIntegration
+    IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
+    IntentNotification, ActionIntent, IntentAction
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
 
+# noinspection method-may-be-static
 class PythonExtension(PicteusExtension):
 
     async def initialize(self) -> bool:
@@ -53,6 +55,14 @@ class PythonExtension(PicteusExtension):
                 await self._handle_ui(communicator, parameters)
             elif command_id == "show":
                 await self._handle_show(communicator, parameters)
+            elif command_id == "readFile":
+                await self._handle_read_file(communicator)
+            elif command_id == "writeFile":
+                await self._handle_write_file(communicator)
+            elif command_id == "notification":
+                await self._handle_notification(communicator, parameters)
+            elif command_id == "action":
+                await self._handle_action(communicator)
             elif command_id == "application":
                 await self._handle_application(communicator)
         elif event == NotificationEvent.IMAGE_RUN_COMMAND:
@@ -209,7 +219,41 @@ class PythonExtension(PicteusExtension):
                 return None
         await communicator.launch_intent(
             ShowIntent(show=IntentShow(type=show_type, id=show_id)))
-        return None
+
+    async def _handle_read_file(self, communicator: Communicator) -> None:
+        content: bytearray = await communicator.launch_intent(
+            ReadFileIntent(readFile=IntentReadFile(extensions=["txt", "json"], message="")))
+        await communicator.launch_intent(DialogIntent(dialog=IntentDialog(
+            type=IntentDialogType.INFO,
+            title="File content",
+            description="The content of the file has been accessed and it is displayed below.",
+            details=content.decode("utf-8"),
+            buttons=IntentDialogButtons(yes="OK"))))
+
+    async def _handle_write_file(self, communicator: Communicator) -> None:
+        await communicator.launch_intent(
+            WriteFileIntent(writeFile=IntentWriteFile(name="file", extension="txt",
+                                                      content=bytearray("Hello World!".encode('utf-8')),
+                                                      message="Please, indicate the file into which some content will be saved")))
+        communicator.send_log(f"The content of the file has been written", "info")
+
+    async def _handle_notification(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
+        with open(
+                os.path.join(PicteusExtension.get_extension_home_directory_path(), "swaggerui.png"),
+                mode="rb") as file:
+            icon_bytes: bytes = file.read()
+        await communicator.launch_intent(
+            NotificationIntent(
+                notification=IntentNotification(title=parameters["title"], subtitle=parameters["subtitle"],
+                                                body=parameters["body"], silent=False, icon=bytearray(icon_bytes),
+                                                isNative=parameters["isNative"])))
+
+    async def _handle_action(self, communicator: Communicator) -> None:
+        await communicator.launch_intent(
+            ActionIntent(
+                action=IntentAction(what=IntentShow(type=IntentShowType.EXTENSION_SETTINGS, id=self.extension_id),
+                                    dialogContent=IntentDialogIconSizeContent(title="Title",
+                                                                              description="Description"))))
 
     async def _handle_application(self, communicator: Communicator) -> None:
         summaries = self.get_image_api().image_search_summaries(search_parameters=SearchParameters(

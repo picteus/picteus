@@ -2,6 +2,15 @@ import i18n from "i18n/i18n.ts";
 
 import { ChannelEnum, EventNotificationType, ExtensionIntentType, LogType, SocketEventType } from "types";
 import { ImageService } from "app/services";
+import {
+  isActionIntent,
+  isDialogIntent,
+  isFormIntent,
+  isImagesIntent,
+  isNotificationIntent,
+  isShowIntent,
+  isUiIntent
+} from "@picteus/shared-core";
 
 
 const INDEXED_DB_NAME = "picteus";
@@ -34,7 +43,7 @@ const initializeIndexedDB = (kind: StoreKind): Promise<IDBDatabase> =>
     request.onupgradeneeded = () =>
     {
       const db = request.result;
-      const stores = [INDEXED_DB_SOCKET_EVENTS_STORE, INDEXED_DB_NOTIFICATIONS_STORE];
+      const stores = [ INDEXED_DB_SOCKET_EVENTS_STORE, INDEXED_DB_NOTIFICATIONS_STORE ];
       for (const store of stores)
       {
         if (!db.objectStoreNames.contains(store))
@@ -189,25 +198,33 @@ function computeLog(event: SocketEventType): LogType
   {
     const intent = (value as ExtensionIntentType).intent;
     let intentType: string;
-    if (intent.form)
+    if (isFormIntent(intent))
     {
       intentType = "a form";
     }
-    else if (intent.ui)
+    else if (isUiIntent(intent))
     {
       intentType = "a ui";
     }
-    else if (intent.dialog)
+    else if (isDialogIntent(intent))
     {
       intentType = "a dialog";
     }
-    else if (intent.show)
+    else if (isImagesIntent(intent))
+    {
+      intentType = "some images";
+    }
+    else if (isShowIntent(intent))
     {
       intentType = "a show";
     }
-    else if (intent.images)
+    else if (isNotificationIntent(intent))
     {
-      intentType = "some images";
+      intentType = "a notification";
+    }
+    else if (isActionIntent(intent))
+    {
+      intentType = "an action";
     }
     else
     {

@@ -72,9 +72,9 @@ class _ExtensionParameters:
     def __init__(self, parameters: Dict[str, Any]):
         super().__init__()
         self._parameters: Dict[str, Any] = parameters
-        self.extension_id: str = parameters.get("extensionId")
-        self.web_services_base_url: str = parameters.get("webServicesBaseUrl")
-        self.api_key: str = parameters.get("apiKey")
+        self.extension_id: str = parameters.get("extensionId", "")
+        self.web_services_base_url: str = parameters.get("webServicesBaseUrl", "")
+        self.api_key: str = parameters.get("apiKey", "")
 
 
 def _scrub_bytes(an_object: Any) -> Any:
@@ -128,7 +128,7 @@ class _MessageSender:
         await self.send_message(notificationsChannel, {"notification": value})
 
     async def launch_intent(self, intent: Intent, future: asyncio.Future) -> None:
-        def callback(the_value: [Dict[str, Any]]) -> T:
+        def callback(the_value: Dict[str, Any]) -> T:
             self.logger.debug(
                 f"Received a result related to the intent '{_scrub_bytes(intent)}' for {self.to_string()}")
             if "cancel" in the_value:
@@ -142,10 +142,9 @@ class _MessageSender:
                     NotificationReturnedError(the_value["error"],
                                               NotificationReturnedErrorCause.ERROR))
             else:
-                # noinspection PyUnresolvedReferences
-                future.set_result(the_value["value"])
+                future.set_result(the_value.get("value", None))
 
-        # Removes recursively the "None" values, faken from https://stackoverflow.com/questions/20558699/python-how-to-recursively-remove-none-values-from-a-nested-data-structure-list
+        # Removes recursively the "None" values, taken from https://stackoverflow.com/questions/20558699/python-how-to-recursively-remove-none-values-from-a-nested-data-structure-list
         def remove_none(an_object: T) -> T:
             if isinstance(an_object, (list, tuple, set)):
                 return type(an_object)(
@@ -170,7 +169,7 @@ class _MessageSender:
         await self.send_message(notificationsChannel, {"acknowledgment": {"success": success}})
 
     async def send_message(self, channel: str, body: Dict[str, Any],
-                           callback: Callable[[Dict[str, Any]], T] = None) -> None:
+                           callback: Optional[Callable[[Dict[str, Any]], T]] = None) -> None:
         context_id = self.context_id
         self.logger.debug(f"Sending the message {_scrub_bytes(body)} on channel '{channel}' for {self.to_string()}" + (
             f" attached to the context with id '{context_id}'" if context_id is not None else "") + (
@@ -212,7 +211,7 @@ class Communicator:
         return value
 
     async def _send_message(self, channel: str, body: Dict[str, Any],
-                            callback: Callable[[Dict[str, Any]], T] = None) -> None:
+                            callback: Optional[Callable[[Dict[str, Any]], T]] = None) -> None:
         await self._sender.send_message(channel, body, callback)
 
 
@@ -388,7 +387,7 @@ class PicteusExtension:
 
     def get_settings(self) -> SettingsValue:
         # noinspection PyUnresolvedReferences
-        return picteus_ws_client.ExtensionApi(self.api_client).extension_get_settings(self.extension_id).value
+        return picteus_ws_client.ExtensionApi(self.api_client).extension_get_settings(id=self.extension_id).value
 
     # noinspection PyMethodMayBeStatic
     def _get_parameters(self) -> Dict[str, str]:

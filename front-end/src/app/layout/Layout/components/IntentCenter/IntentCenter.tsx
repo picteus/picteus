@@ -3,6 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { randomId } from "@mantine/hooks";
 
+import {
+  ActionIntent,
+  DialogIntent,
+  FormIntent,
+  ImagesIntent,
+  isActionIntent,
+  isDialogIntent,
+  isFormIntent,
+  isImagesIntent,
+  isNotificationIntent,
+  isShowIntent,
+  isUiIntent,
+  NotificationIntent,
+  ShowIntent,
+  UiIntent
+} from "@picteus/shared-core";
 import { ExtensionSettings, UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { ChannelEnum, EventOnResultValueType, ExtensionIntentType, ResourceType, ShowType } from "types";
@@ -17,196 +33,16 @@ import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/
 
 export default function IntentCenter()
 {
-  const [, addModal, removeModal] = useActionModalContext();
-  const [additionalUiContextValue, , addTransient] = useAdditionalUiContext();
+  const [ t ] = useTranslation();
+  const navigate = useNavigate();
+  const [ , addModal, removeModal ] = useActionModalContext();
+  const [ additionalUiContextValue, , addTransient ] = useAdditionalUiContext();
   const openWindow = useOpenWindow();
   const { addTab } = useImagesTabsContext();
 
   const confirmAction = useConfirmAction();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [t] = useTranslation();
-  const navigate = useNavigate();
-
-  function respondWithValue(value: EventOnResultValueType = {}): void
-  {
-    event.onResult({ value });
-  }
-
-  function respondWithCancel(): void
-  {
-    event.onResult({ cancel: "Cancelled" });
-  }
-
-  function respondWithError(message: string): void
-  {
-    event.onResult({ error: message });
-  }
-
-  function handleOnSend(value: EventOnResultValueType, modalId: string): void
-  {
-    try
-    {
-      respondWithValue(value);
-      removeModal(modalId);
-    }
-    catch (error)
-    {
-      NotificationsService.errorWithMessage(error, t("extensionIntent.onResultError"));
-    }
-  }
-
-  async function handleShow(show: ShowType): Promise<void>
-  {
-    const shouldConfirm = StorageService.getExtensionIntentShowShouldConfirm();
-
-    if (show.type === "extensionSettings")
-    {
-      const action = () =>
-      {
-        const extension = ExtensionsService.list().find(extension => extension.manifest.id === show.id);
-        if (extension === undefined)
-        {
-          return respondWithError(`The extension with id '${show.id}' is not installed`);
-        }
-
-        addModal({
-          title: t("extensionSettingsModal.title"),
-          size: "m",
-          component: (
-            <ExtensionSettingsModal
-              extension={extension}
-              onSuccess={(settings: ExtensionSettings) =>
-              {
-                respondWithValue(settings);
-              }}
-            />
-          ),
-          onBeforeClose: (viaOnSuccess: boolean) =>
-          {
-            if (viaOnSuccess === false)
-            {
-              respondWithCancel();
-            }
-          }
-        });
-      };
-      if (shouldConfirm)
-      {
-        return confirmAction(action, {
-          title: t("extensionIntent.settingsRedirectTitle"),
-          message: t("extensionIntent.settingsRedirectDescription")
-        });
-      }
-      return action();
-    }
-    else if (show.type === "repository")
-    {
-      const action = () =>
-      {
-        const repository = RepositoriesService.list().find(aRepository => aRepository.id === show.id);
-        if (repository === undefined)
-        {
-          return respondWithError(`The repository with id '${show.id}' does not exist`);
-        }
-
-        addModal({
-          title: <RepositoryTop repository={repository} onDeleted={() =>
-          {
-          }}/>,
-          size: "m",
-          component: <RepositoryDetail repository={repository}/>,
-          onBeforeClose: (viaOnSuccess: boolean) =>
-          {
-            if (viaOnSuccess === false)
-            {
-              respondWithCancel();
-            }
-          }
-        });
-      };
-      if (shouldConfirm)
-      {
-        return confirmAction(action, {
-          title: t("extensionIntent.settingsRedirectTitle"),
-          message: t("extensionIntent.settingsRedirectDescription")
-        });
-      }
-      return action();
-    }
-    else if (show.type === "image")
-    {
-      const action = async () =>
-      {
-        const image = await ImageService.get({ id: show.id });
-        const id = addModal({
-          component: (
-            <ImageDetail
-              image={image}
-              images={[image]}
-              viewMode="masonry"
-              onClose={() =>
-              {
-                removeModal(id);
-              }}
-            />),
-          withCloseButton: false,
-          fullScreen: true
-        });
-        respondWithValue();
-      };
-      if (shouldConfirm)
-      {
-        return confirmAction(action, {
-          title: t("extensionIntent.showImageTitle"),
-          message: t("extensionIntent.showImageDescription")
-        });
-      }
-      return action();
-    }
-    else if (show.type === "sidebar")
-    {
-      const action = async () =>
-      {
-        const additionalUi = additionalUiContextValue.sidebar.find((element) => element.uuid === show.id);
-        if (additionalUi === undefined)
-        {
-          respondWithError(`There is no sidebar element with uuid '${show.id}'`);
-        }
-        else if (additionalUi.integration.anchor === "window")
-        {
-          respondWithError(`Cannot handle the sidebar 'window' integration with uuid '${additionalUi.uuid}'`);
-        }
-        else
-        {
-          if (additionalUi.integration.isExternal === false)
-          {
-            navigate(computeExtensionSidebarRoute(show.id));
-            respondWithValue();
-          }
-          else
-          {
-            openWindow(show.id, additionalUi.content, false).then(() =>
-            {
-              respondWithValue();
-            }).catch(error => respondWithError(error.message));
-          }
-        }
-      };
-      if (shouldConfirm)
-      {
-        return confirmAction(action, {
-          title: t("extensionIntent.showSidebarTitle"),
-          message: t("extensionIntent.showSidebarDescription")
-        });
-      }
-      return action();
-    }
-    else
-    {
-      respondWithError(`Unhandled '${JSON.stringify(show)}' show intent`);
-    }
-  }
 
   useEffect(() =>
   {
@@ -224,9 +60,37 @@ export default function IntentCenter()
       };
       const modalId = randomId();
 
-      const handleForm = () =>
+      function respondWithValue(value: EventOnResultValueType = {}): void
       {
-        const form = intent.form;
+        event.onResult({ value });
+      }
+
+      function respondWithCancel(): void
+      {
+        event.onResult({ cancel: "Cancelled" });
+      }
+
+      function respondWithError(message: string): void
+      {
+        event.onResult({ error: message });
+      }
+
+      function handleOnSend(value: EventOnResultValueType, modalId: string): void
+      {
+        try
+        {
+          respondWithValue(value);
+          removeModal(modalId);
+        }
+        catch (error)
+        {
+          NotificationsService.errorWithMessage(error, t("extensionIntent.onResultError"));
+        }
+      }
+
+      const handleForm = (formIntent: FormIntent): void =>
+      {
+        const form = formIntent.form;
         addModal({
           id: modalId,
           icon: computeIcon(form?.dialogContent?.icon),
@@ -234,7 +98,7 @@ export default function IntentCenter()
             <CommandForm
               command={intent}
               extensionId={extensionId}
-              imageIds={intent.context?.imageIds}
+              imageIds={formIntent.context?.imageIds}
               onSend={(_extensionId, _commandId, parameters) =>
                 handleOnSend(parameters, modalId)
               }
@@ -257,13 +121,13 @@ export default function IntentCenter()
         });
       };
 
-      const handleUi = () =>
+      const handleUi = (uiIntent: UiIntent): void =>
       {
-        const ui = intent.ui;
+        const ui = uiIntent.ui;
         const frameContent = ui.frameContent;
         const openWindowFromUi = (id: string) =>
         {
-          let parameters;
+          let parameters: { url: string } | { html: string; };
           if ("url" in frameContent)
           {
             parameters = { url: frameContent.url };
@@ -320,9 +184,9 @@ export default function IntentCenter()
         }
       };
 
-      const handleDialog = () =>
+      const handleDialog = (dialogIntent: DialogIntent): void =>
       {
-        const dialog = intent.dialog;
+        const dialog = dialogIntent.dialog;
         addModal({
           id: modalId,
           icon: computeIcon(dialog.icon),
@@ -332,7 +196,7 @@ export default function IntentCenter()
                 handleOnSend(isYes, modalId)
               }
               dialog={dialog}
-              imageIds={intent.context?.imageIds}
+              imageIds={dialogIntent.context?.imageIds}
             />
           ),
           title: dialog.title,
@@ -347,9 +211,162 @@ export default function IntentCenter()
         });
       };
 
-      const handleImages = () =>
+      async function handleShow(showIntent: ShowIntent): Promise<void>
       {
-        const images = intent.images;
+        const show: ShowType = showIntent.show;
+        const shouldConfirm = StorageService.getExtensionIntentShowShouldConfirm();
+
+        if (show.type === "extensionSettings")
+        {
+          const action = () =>
+          {
+            const extension = ExtensionsService.list().find(extension => extension.manifest.id === show.id);
+            if (extension === undefined)
+            {
+              return respondWithError(`The extension with id '${show.id}' is not installed`);
+            }
+
+            addModal({
+              title: t("extensionSettingsModal.title"),
+              size: "m",
+              component: (
+                <ExtensionSettingsModal
+                  extension={extension}
+                  onSuccess={(settings: ExtensionSettings) =>
+                  {
+                    respondWithValue(settings);
+                  }}
+                />
+              ),
+              onBeforeClose: (viaOnSuccess: boolean) =>
+              {
+                if (viaOnSuccess === false)
+                {
+                  respondWithCancel();
+                }
+              }
+            });
+          };
+          if (shouldConfirm)
+          {
+            return confirmAction(action, {
+              title: t("extensionIntent.settingsRedirectTitle"),
+              message: t("extensionIntent.settingsRedirectDescription")
+            });
+          }
+          return action();
+        }
+        else if (show.type === "repository")
+        {
+          const action = () =>
+          {
+            const repository = RepositoriesService.list().find(aRepository => aRepository.id === show.id);
+            if (repository === undefined)
+            {
+              return respondWithError(`The repository with id '${show.id}' does not exist`);
+            }
+
+            addModal({
+              title: <RepositoryTop repository={repository} onDeleted={() =>
+              {
+              }}/>,
+              size: "m",
+              component: <RepositoryDetail repository={repository}/>,
+              onBeforeClose: (viaOnSuccess: boolean) =>
+              {
+                if (viaOnSuccess === false)
+                {
+                  respondWithCancel();
+                }
+              }
+            });
+          };
+          if (shouldConfirm)
+          {
+            return confirmAction(action, {
+              title: t("extensionIntent.settingsRedirectTitle"),
+              message: t("extensionIntent.settingsRedirectDescription")
+            });
+          }
+          return action();
+        }
+        else if (show.type === "image")
+        {
+          const action = async () =>
+          {
+            const image = await ImageService.get({ id: show.id });
+            const id = addModal({
+              component: (
+                <ImageDetail
+                  image={image}
+                  images={[ image ]}
+                  viewMode="masonry"
+                  onClose={() =>
+                  {
+                    removeModal(id);
+                  }}
+                />),
+              withCloseButton: false,
+              fullScreen: true
+            });
+            respondWithValue();
+          };
+          if (shouldConfirm)
+          {
+            return confirmAction(action, {
+              title: t("extensionIntent.showImageTitle"),
+              message: t("extensionIntent.showImageDescription")
+            });
+          }
+          return action();
+        }
+        else if (show.type === "sidebar")
+        {
+          const action = async () =>
+          {
+            const additionalUi = additionalUiContextValue.sidebar.find((element) => element.uuid === show.id);
+            if (additionalUi === undefined)
+            {
+              respondWithError(`There is no sidebar element with uuid '${show.id}'`);
+            }
+            else if (additionalUi.integration.anchor === "window")
+            {
+              respondWithError(`Cannot handle the sidebar 'window' integration with uuid '${additionalUi.uuid}'`);
+            }
+            else
+            {
+              if (additionalUi.integration.isExternal === false)
+              {
+                navigate(computeExtensionSidebarRoute(show.id));
+                respondWithValue();
+              }
+              else
+              {
+                openWindow(show.id, additionalUi.content, false).then(() =>
+                {
+                  respondWithValue();
+                }).catch(error => respondWithError(error.message));
+              }
+            }
+          };
+          if (shouldConfirm)
+          {
+            return confirmAction(action, {
+              title: t("extensionIntent.showSidebarTitle"),
+              message: t("extensionIntent.showSidebarDescription")
+            });
+          }
+          return action();
+        }
+        else
+        {
+          respondWithError(`Unhandled '${JSON.stringify(show)}' show intent`);
+        }
+      }
+
+      const handleImages = (imagesIntent: ImagesIntent): void =>
+      {
+        const images = imagesIntent.images;
         addTab({
           extensionId,
           content: images.dialogContent,
@@ -369,33 +386,57 @@ export default function IntentCenter()
         respondWithValue();
       };
 
+      const handleNotification = (notificationIntent: NotificationIntent): void =>
+      {
+        const notification = notificationIntent.notification;
+        // TODO: to implement
+
+        respondWithValue();
+      };
+
+      const handleAction = (actionIntent: ActionIntent): void =>
+      {
+        const action = actionIntent.action;
+        // TODO: to implement
+
+        respondWithValue();
+      };
+
       // Determine which modal to show
-      if (intent.form)
+      if (isFormIntent(intent))
       {
-        handleForm();
+        handleForm(intent);
       }
-      else if (intent.ui)
+      else if (isUiIntent(intent))
       {
-        handleUi();
+        handleUi(intent);
       }
-      else if (intent.dialog)
+      else if (isDialogIntent(intent))
       {
-        handleDialog();
+        handleDialog(intent);
       }
-      else if (intent.show)
+      else if (isShowIntent(intent))
       {
-        void handleShow(intent.show);
+        void handleShow(intent);
       }
-      else if (intent.images)
+      else if (isImagesIntent(intent))
       {
-        handleImages();
+        handleImages(intent);
+      }
+      else if (isNotificationIntent(intent))
+      {
+        handleNotification(intent);
+      }
+      else if (isActionIntent(intent))
+      {
+        handleAction(intent);
       }
       else
       {
         respondWithError(`Cannot handle the unexpected intent '${JSON.stringify(intent)}'`);
       }
     }
-  }, [event]);
+  }, [ event ]);
 
   return <></>;
 }

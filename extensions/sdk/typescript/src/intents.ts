@@ -181,6 +181,55 @@ export interface ShowIntent extends BasisIntent
   readonly show: IntentShow;
 }
 
+export interface IntentNotification
+{
+  readonly title: string;
+  readonly subtitle: string;
+  readonly body: string;
+  readonly silent: boolean;
+  readonly icon?: Buffer;
+  readonly isNative: boolean;
+}
+
+export interface NotificationIntent extends WithContextIntent
+{
+  readonly notification: IntentNotification;
+}
+
+export interface IntentRunCommandParameters
+{
+  readonly search: object;
+  readonly command?: Json;
+}
+
+export interface IntentRunCommand
+{
+  readonly extensionId: string;
+  readonly commandId: string;
+  readonly parameters: IntentRunCommandParameters;
+  readonly actionLabel: string;
+}
+
+export interface IntentAction
+{
+  readonly what: IntentShow | IntentUi | IntentRunCommand;
+  readonly dialogContent: IntentDialogIconSizeContent;
+}
+
+export interface ActionIntent extends WithContextIntent
+{
+  readonly action: IntentAction;
+}
+
+export type FrontIntent =
+  FormIntent
+  | UiIntent
+  | DialogIntent
+  | ImagesIntent
+  | ShowIntent
+  | NotificationIntent
+  | ActionIntent;
+
 export interface IntentServeBundle
 {
   readonly content: Buffer;
@@ -192,10 +241,33 @@ export interface BundleIntent extends BasisIntent
   readonly serveBundle: IntentServeBundle;
 }
 
-export type Intent =
-  FormIntent
-  | UiIntent
-  | DialogIntent
-  | ImagesIntent
-  | ShowIntent
+export interface IntentReadFile
+{
+  readonly extensions?: string [];
+  readonly message: string;
+}
+
+export interface ReadFileIntent extends WithContextIntent
+{
+  readonly readFile: IntentReadFile;
+}
+
+export interface IntentWriteFile
+{
+  readonly content: Buffer;
+  readonly name: string;
+  readonly extension: string;
+  readonly message: string;
+}
+
+export interface WriteFileIntent extends WithContextIntent
+{
+  readonly writeFile: IntentWriteFile;
+}
+
+export type BackIntent =
   | BundleIntent
+  | ReadFileIntent
+  | WriteFileIntent;
+
+export type Intent = FrontIntent | BackIntent;

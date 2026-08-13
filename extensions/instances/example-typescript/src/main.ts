@@ -74,6 +74,22 @@ class TypeScriptExtension extends PicteusExtension
       {
         await this.handleShow(communicator, parameters);
       }
+      else if (commandId === "readFile")
+      {
+        await this.handleReadFile(communicator);
+      }
+      else if (commandId === "writeFile")
+      {
+        await this.handleWriteFile(communicator);
+      }
+      else if (commandId === "notification")
+      {
+        await this.handleNotification(communicator, parameters);
+      }
+      else if (commandId === "action")
+      {
+        await this.handleAction(communicator);
+      }
       else if (commandId === "application")
       {
         await this.handleApplication(communicator);
@@ -106,7 +122,7 @@ class TypeScriptExtension extends PicteusExtension
       await this.getImageApi().imageSetTags({
         extensionId: this.extensionId,
         id: imageId,
-        requestBody: [this.extensionId]
+        requestBody: [ this.extensionId ]
       });
     }
     if (isCreatedOrUpdated === true || event === NotificationEvent.ImageComputeFeatures)
@@ -115,12 +131,12 @@ class TypeScriptExtension extends PicteusExtension
       await this.getImageApi().imageSetFeatures({
         extensionId: this.extensionId,
         id: imageId,
-        imageFeature: [{
+        imageFeature: [ {
           type: ImageFeatureType.Other,
           format: ImageFeatureFormat.String,
           name: "example",
           value: "This is a string"
-        }]
+        } ]
       });
     }
   }
@@ -137,7 +153,7 @@ class TypeScriptExtension extends PicteusExtension
                 title: "Favorite color",
                 description: "What is your favorite color?",
                 type: "string",
-                enum: ["pink", "blue", "yellow", "green"],
+                enum: [ "pink", "blue", "yellow", "green" ],
                 default: "pink",
                 ui:
                   {
@@ -152,7 +168,7 @@ class TypeScriptExtension extends PicteusExtension
                 type: "boolean"
               }
           },
-        required: ["favoriteColor"]
+        required: [ "favoriteColor" ]
       };
     try
     {
@@ -289,6 +305,66 @@ class TypeScriptExtension extends PicteusExtension
         return;
     }
     await communicator.launchIntent({ show: { type: showType, id: showId } });
+  }
+
+  private async handleReadFile(communicator: Communicator): Promise<void>
+  {
+    const content: Buffer = await communicator.launchIntent({
+      readFile: {
+        extensions: [ "txt", "json" ],
+        message: "Please, pick a .txt or a .json file"
+      }
+    });
+    await communicator.launchIntent({
+      dialog: {
+        type: IntentDialogType.Info,
+        title: "File content",
+        description: "The content of the file has been accessed and it is displayed below.",
+        details: content.toString("utf8"),
+        size: "m",
+        buttons: { "yes": "OK" }
+      }
+    });
+  }
+
+  private async handleWriteFile(communicator: Communicator): Promise<void>
+  {
+    await communicator.launchIntent({
+      writeFile: {
+        name: "file",
+        extension: "txt",
+        content: Buffer.from("Hello World!"),
+        message: "Please, indicate the file into which some content will be saved"
+      }
+    });
+    communicator.sendLog("The content of the file has been written", "info");
+  }
+
+  private async handleNotification(communicator: Communicator, parameters: Record<string, any>): Promise<void>
+  {
+    await communicator.launchIntent({
+      notification: {
+        title: parameters["title"],
+        subtitle: parameters["subtitle"],
+        body: parameters["body"],
+        silent: false,
+        icon: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "swaggerui.png")),
+        isNative: parameters["isNative"]
+      }
+    });
+  }
+
+  private async handleAction(communicator: Communicator): Promise<void>
+  {
+    await communicator.launchIntent({
+      action: {
+        what: { type: IntentShowType.ExtensionSettings, id: this.extensionId },
+        dialogContent: {
+          title: "Title",
+          description: "Description"
+        }
+      }
+    });
   }
 
   private async handleApplication(communicator: Communicator): Promise<void>

@@ -31,5 +31,14 @@ This showcases how to open a specific element to the user:
 - an image detail page,
 - a repository popup window.
 
+# readFile
+This showcases how to ask the user to pick a file with a given extension and to have access to its content.
+
+# writeFile
+This showcases how to ask the user to pick a file with a suggested name and extension and to write some content in it.
+
+# notification
+This showcases how to submit to the user a notification, which may be native — i.e. displayed at the level of the Operating System (OS) — or may be it displayed in the notifications center of the application.
+
 # application
 This showcases how to open an application within a dialog box, exposed by the extension. That application is self-contained within a zip file, which contains a single HTML file interacting with the Picteus back-end server via its web services, captured via OpenAPI specifications.

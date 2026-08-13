@@ -35,17 +35,17 @@ class IntentIdentity(SuperDataClass):
 
 @dataclass(kw_only=True)
 class IntentContext(SuperDataClass):
-    imageIds: Optional[List[str]] = None
+    imageIds: Optional[List[str]] = field(default=None)
 
 
 @dataclass
 class BasisIntent(SuperDataClass):
-    identity: Optional[IntentIdentity] = None
+    identity: Optional[IntentIdentity] = field(default=None)
 
 
 @dataclass
 class WithContextIntent(BasisIntent):
-    context: Optional[IntentContext] = None
+    context: Optional[IntentContext] = field(default=None)
 
 
 @dataclass
@@ -65,23 +65,23 @@ IntentResource = Union[IntentResourceUrl, IntentResourceContent]
 class IntentDialogContent(SuperDataClass):
     title: str
     description: str
-    details: Optional[str] = None
+    details: Optional[str] = field(default=None)
 
 
 @dataclass(kw_only=True)
 class IntentDialogIconContent(IntentDialogContent):
-    icon: Optional[IntentResource] = None
+    icon: Optional[IntentResource] = field(default=None)
 
 
 @dataclass
 class IntentDialogIconSizeContent(IntentDialogIconContent):
-    size: Optional[Literal["auto", "xs", "s", "m", "l", "xl"]] = None
+    size: Optional[Literal["auto", "xs", "s", "m", "l", "xl"]] = field(default=None)
 
 
 @dataclass
 class IntentFormContent(SuperDataClass):
     parameters: Json
-    dialogContent: Optional[IntentDialogIconSizeContent] = None
+    dialogContent: Optional[IntentDialogIconSizeContent] = field(default=None)
 
 
 @dataclass(kw_only=True)
@@ -90,9 +90,9 @@ class FormIntent(WithContextIntent):
 
 
 class IntentUiAnchor(StrEnum):
-    MODAL = "modal",
-    SIDEBAR = "sidebar",
-    WINDOW = "window",
+    MODAL = "modal"
+    SIDEBAR = "sidebar"
+    WINDOW = "window"
     IMAGE_DETAILS = "imageDetail"
 
 
@@ -134,7 +134,7 @@ class IntentUi(SuperDataClass):
     id: str
     integration: IntentUIIntegration
     frameContent: IntentFrameContent
-    dialogContent: Optional[IntentDialogIconContent]
+    dialogContent: Optional[IntentDialogIconContent]=field(default=None)
 
 
 @dataclass(kw_only=True)
@@ -143,8 +143,8 @@ class UiIntent(WithContextIntent):
 
 
 class IntentDialogType(StrEnum):
-    ERROR = "error",
-    INFO = "info",
+    ERROR = "error"
+    INFO = "info"
     QUESTION = "question"
 
 
@@ -157,13 +157,13 @@ class IntentFrame(SuperDataClass):
 @dataclass
 class IntentDialogButtons(SuperDataClass):
     yes: str
-    no: Optional[str] = None
+    no: Optional[str] = field(default=None)
 
 
 @dataclass(kw_only=True)
 class IntentDialog(IntentDialogIconSizeContent):
     type: IntentDialogType
-    frame: Optional[IntentFrame] = None
+    frame: Optional[IntentFrame] = field(default=None)
     buttons: IntentDialogButtons
 
 
@@ -175,13 +175,13 @@ class DialogIntent(WithContextIntent):
 @dataclass
 class IntentImage(SuperDataClass):
     imageId: str
-    dialogContent: Optional[IntentDialogContent] = None
+    dialogContent: Optional[IntentDialogContent] = field(default=None)
 
 
 @dataclass
 class IntentImages(SuperDataClass):
     images: List[IntentImage]
-    dialogContent: Optional[IntentDialogIconContent] = None
+    dialogContent: Optional[IntentDialogIconContent] = field(default=None)
 
 
 @dataclass(kw_only=True)
@@ -208,9 +208,53 @@ class ShowIntent(BasisIntent):
 
 
 @dataclass(kw_only=True)
+class IntentNotification(SuperDataClass):
+    title: str
+    subtitle: str
+    body: str
+    silent: bool
+    icon: Optional[bytearray] = field(default=None)
+    isNative: bool
+
+
+@dataclass(kw_only=True)
+class NotificationIntent(WithContextIntent):
+    notification: IntentNotification
+
+
+@dataclass(kw_only=True)
+class IntentRunCommandParameters(SuperDataClass):
+    search: object
+    command: Optional[Json] = field(default=None)
+
+
+@dataclass
+class IntentRunCommand(SuperDataClass):
+    extensionId: str
+    commandId: str
+    parameters: IntentRunCommandParameters
+    actionLabel: str
+
+
+@dataclass
+class IntentAction(SuperDataClass):
+    what: Union[IntentShow, IntentUi, IntentRunCommand]
+    dialogContent: IntentDialogIconSizeContent
+
+
+@dataclass(kw_only=True)
+class ActionIntent(WithContextIntent):
+    action: IntentAction
+
+
+FrontIntent = Union[
+    FormIntent, UiIntent, DialogIntent, ImagesIntent, ShowIntent, NotificationIntent, ActionIntent]
+
+
+@dataclass(kw_only=True)
 class IntentServeBundle(SuperDataClass):
     content: bytearray
-    settings: Optional[Json] = None
+    settings: Optional[Json] = field(default=None)
 
 
 @dataclass(kw_only=True)
@@ -218,5 +262,31 @@ class ServeBundleIntent(BasisIntent):
     serveBundle: IntentServeBundle
 
 
-Intent = Union[
-    FormIntent, UiIntent, DialogIntent, ImagesIntent, ShowIntent, ServeBundleIntent]
+@dataclass(kw_only=True)
+class IntentReadFile(SuperDataClass):
+    extensions: Optional[List[str]]=field(default=None)
+    message: str
+
+
+@dataclass(kw_only=True)
+class ReadFileIntent(WithContextIntent):
+    readFile: IntentReadFile
+
+
+@dataclass
+class IntentWriteFile(SuperDataClass):
+    content: bytearray
+    name: str
+    extension: str
+    message: str
+
+
+@dataclass(kw_only=True)
+class WriteFileIntent(WithContextIntent):
+    writeFile: IntentWriteFile
+
+
+BackIntent = Union[
+    ServeBundleIntent, ReadFileIntent, WriteFileIntent]
+
+Intent = Union[FrontIntent, BackIntent]
