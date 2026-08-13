@@ -182,6 +182,7 @@
     "file-type-mime": "0.4.7",
     "semver": "7.8.4",
     "chance": "1.1.13",
+    "@picteus/shared-core": "file:../shared/core",
     "@picteus/shared-back-end": "file:../shared/back-end"
   },
   "overrides": {

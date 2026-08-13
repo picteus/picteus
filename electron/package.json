@@ -140,6 +140,7 @@
     "socket.io": "4.8.3",
     "electron-updater": "6.8.9",
     "semver": "7.8.4",
+    "@picteus/shared-core": "file:../shared/core",
     "@picteus/shared-back-end": "file:../shared/back-end"
   }
 }

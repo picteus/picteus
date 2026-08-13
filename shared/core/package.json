@@ -1,0 +1,52 @@
+{
+  "name": "@picteus/shared-core",
+  "version": "0.1.0",
+  "productName": "Picteus",
+  "description": "The Picteus core common code.",
+  "keywords": [
+    "picture",
+    "image",
+    "lens",
+    "voyager",
+    "explorer",
+    "search",
+    "Odysseus"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "GNU Affero General Public License",
+  "private": false,
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "homepage": "https://github.com/picteus/picteus.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["./dist"],
+  "scripts": {
+    "reset": "npm run clean && shx rm -rf node_modules",
+    "clean": "shx rm -rf ./dist",
+    "compile": "tsc && tsc-alias --resolve-full-paths",
+    "build": "npm run compile"
+  },
+  "devDependencies": {
+    "shx": "0.4.0",
+    "typescript": "5.9.2",
+    "tsc-alias": "1.8.17",
+    "@types/node": "22.17.1"
+  },
+  "dependencies": {
+  }
+}
