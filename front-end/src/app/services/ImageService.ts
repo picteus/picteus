@@ -1,6 +1,7 @@
 import {
   ExtensionImageFeature,
   ExtensionImageTag,
+  Image,
   ImageApi,
   ImageApiImageClosestImagesRequest,
   ImageApiImageGetAllFeaturesRequest,
@@ -50,7 +51,7 @@ async function searchSummaries(
   return await imageApi.imageSearchSummaries({ searchParameters: parameters ?? defaultSearchCriteria });
 }
 
-async function get(parameters: ImageApiImageGetRequest)
+async function get(parameters: ImageApiImageGetRequest): Promise<Image>
 {
   return imageApi.imageGet(parameters);
 }

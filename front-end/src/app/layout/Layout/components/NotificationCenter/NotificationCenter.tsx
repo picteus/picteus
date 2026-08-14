@@ -1,14 +1,13 @@
 import React, { useEffect, useSyncExternalStore } from "react";
 
 import { NotificationsService } from "utils";
-import { useEventSocket } from "app/context";
 import { Notification } from "app/components";
+import { NotificationService } from "app/services";
 
 
 export default function NotificationCenter()
 {
-  const { eventStore } = useEventSocket();
-  const notification = useSyncExternalStore(eventStore.subscribeToNotifications, eventStore.getNotification);
+  const notification = useSyncExternalStore(NotificationService.subscribeToNotifications, NotificationService.getNotification);
 
   useEffect(() =>
   {
@@ -16,7 +15,7 @@ export default function NotificationCenter()
     {
       NotificationsService.toast(<Notification notification={notification} isToast={true}/>);
     }
-  }, [notification]);
+  }, [ notification ]);
 
   return <></>;
 }

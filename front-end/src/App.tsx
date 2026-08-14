@@ -16,7 +16,7 @@ import "@mantine/core/styles.css";
 import { Configuration, DefaultConfig } from "@picteus/ws-client";
 
 import { API_KEY, BASE_PATH } from "utils";
-import { EventService, StorageService } from "./app/services";
+import { EventService, NotificationService, StorageService } from "./app/services";
 import { BootstrapScreen } from "app/screens";
 import "i18n/i18n.ts";
 import Initializer from "./Initializer.tsx";
@@ -35,7 +35,7 @@ DefaultConfig.config = new Configuration({
 
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void })
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
 
   return (
     <Container fluid style={{
@@ -47,7 +47,7 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetError
     }}>
       <Alert className="error-alert" color="red" title={t("errorBoundary.message")} variant="light"
              style={{ width: "90vw", maxHeight: "42vh" }}>
-        <Code block mb="md" style={{maxWidth: "87vw", maxHeight: "30vh"}}>{error.stack || error.message}</Code>
+        <Code block mb="md" style={{ maxWidth: "87vw", maxHeight: "30vh" }}>{error.stack || error.message}</Code>
         <Button color="red" onClick={resetErrorBoundary}>{t("errorBoundary.button")}</Button>
       </Alert>
     </Container>
@@ -56,12 +56,13 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error, resetError
 
 function App()
 {
-  const [bootstrapping, setBootstrapping] = useState<boolean>(true);
-  const [bootstrapLogs, setBootstrapLogs] = useState<string[]>([]);
+  const [ bootstrapping, setBootstrapping ] = useState<boolean>(true);
+  const [ bootstrapLogs, setBootstrapLogs ] = useState<string[]>([]);
 
   async function upgrade(previousVersion: string, currentVersion: string): Promise<void>
   {
-    EventService.upgrade(previousVersion, currentVersion);
+    await EventService.upgrade(previousVersion, currentVersion);
+    await NotificationService.upgrade(previousVersion, currentVersion);
   }
 
   useEffect(() =>

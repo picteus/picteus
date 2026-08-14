@@ -2,8 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { io, ManagerOptions, Socket, SocketOptions } from "socket.io-client";
 
 import { API_KEY, BASE_PATH, generateRandomId } from "utils";
-import { EventInformationType, EventNotificationType, EventOnResultType, SocketEventType } from "types";
-import { EventService } from "app/services";
+import { EventInformationType, EventOnResultType, SocketEventType } from "types";
+import { EventService, NotificationService } from "app/services";
 
 
 type EventSocketContextType = {
@@ -26,17 +26,13 @@ class SocketClient
 
   private readonly socketEventListeners: Set<(event: EventInformationType) => void> = new Set();
 
-  private notification?: EventNotificationType = undefined;
-
-  private readonly notificationListeners: Set<(event: EventNotificationType) => void> = new Set();
-
   constructor(url: string, apiKey: string)
   {
     const options: Partial<ManagerOptions & SocketOptions> =
       {
         autoConnect: true,
         reconnection: true,
-        transports: ["websocket"]
+        transports: [ "websocket" ]
       };
     this.socket = io(url, options);
     const socket = this.socket;
@@ -78,12 +74,7 @@ class SocketClient
         const notification = await EventService.generateNotification(socketEvent);
         if (notification)
         {
-          void EventService.storeNotification(notification);
-          this.notification = notification;
-          for (const listener of this.notificationListeners)
-          {
-            listener(this.notification);
-          }
+          await NotificationService.storeNotification(notification);
         }
       }
     );
@@ -106,23 +97,12 @@ class SocketClient
     return this.socketEvent;
   };
 
-  subscribeToNotifications = (callback: (event: EventNotificationType) => void): () => boolean =>
-  {
-    this.notificationListeners.add(callback);
-    return () => this.notificationListeners.delete(callback);
-  };
-
-  getNotification = (): EventNotificationType =>
-  {
-    return this.notification;
-  };
-
 }
 
 export function EventSocketProvider({ children })
 {
   const socketClient = useMemo<SocketClient>(() => new SocketClient(BASE_PATH, API_KEY), []);
-  const [event, setEvent] = useState<EventInformationType>(undefined);
+  const [ event, setEvent ] = useState<EventInformationType>(undefined);
 
   useEffect(() =>
   {

@@ -51,12 +51,13 @@ export interface CommandContextType
   sendCommandOnConnected: SendCommandType;
 }
 
-export type EventNotificationType = WithIdAndMilliseconds & {
-  type: "image" | "repository";
+export type NotificationType = WithIdAndMilliseconds & {
+  type: "image" | "repository" | "notification";
   title: string;
-  description: string;
+  subtitle: string;
+  body?: string;
+  illustrationUri?: string;
   entityId?: string;
-  entityUrl?: string;
 };
 
 export type LogType = WithIdAndMilliseconds & {

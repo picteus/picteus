@@ -1,7 +1,5 @@
 import i18n from "i18n/i18n.ts";
 
-import { ChannelEnum, EventNotificationType, ExtensionIntentType, LogType, SocketEventType } from "types";
-import { ImageService } from "app/services";
 import {
   isActionIntent,
   isDialogIntent,
@@ -12,68 +10,24 @@ import {
   isUiIntent
 } from "@picteus/shared-core";
 
+import { ChannelEnum, ExtensionIntentType, LogType, NotificationType, SocketEventType } from "types";
+import { ImageService } from "app/services";
+import { getObjectStore, INDEXED_DB_NAME, StoreKind } from "./IndexDbService.ts";
 
-const INDEXED_DB_NAME = "picteus";
-const INDEXED_DB_SOCKET_EVENTS_STORE = "socketEvents";
-const INDEXED_DB_NOTIFICATIONS_STORE = "notifications";
 
-type StoreKind = "socketEvents" | "notifications";
+const socketEventsKind: StoreKind = "socketEvents";
 
-let indexedDbSocketEventsInstance: IDBDatabase | null = null;
-let indexedDbNotificationsInstance: IDBDatabase | null = null;
-
-const upgrade = (_previousVersion: string, currentVersion: string) =>
+async function upgrade(_previousVersion: string, currentVersion: string): Promise<void>
 {
   if (currentVersion === "0.4.0" || currentVersion === "0.5.0")
   {
     indexedDB.deleteDatabase(INDEXED_DB_NAME);
   }
-};
-
-const initializeIndexedDB = (kind: StoreKind): Promise<IDBDatabase> =>
-{
-  let instance: IDBDatabase | null = kind === "socketEvents" ? indexedDbSocketEventsInstance : indexedDbNotificationsInstance;
-  if (instance)
-  {
-    return Promise.resolve(instance);
-  }
-  return new Promise((resolve, reject) =>
-  {
-    const request = indexedDB.open(INDEXED_DB_NAME, 1);
-    request.onupgradeneeded = () =>
-    {
-      const db = request.result;
-      const stores = [ INDEXED_DB_SOCKET_EVENTS_STORE, INDEXED_DB_NOTIFICATIONS_STORE ];
-      for (const store of stores)
-      {
-        if (!db.objectStoreNames.contains(store))
-        {
-          db.createObjectStore(store, { keyPath: "id" });
-        }
-      }
-    };
-    request.onsuccess = () =>
-    {
-      instance = request.result;
-      if (kind === "socketEvents")
-      {
-        indexedDbSocketEventsInstance = instance;
-      }
-      else if (kind === "notifications")
-      {
-        indexedDbNotificationsInstance = instance;
-      }
-      resolve(instance);
-    };
-    request.onerror = () => reject(request.error);
-  });
-};
+}
 
 async function getSocketEvents(): Promise<SocketEventType []>
 {
-  const db = await initializeIndexedDB("socketEvents");
-  const transaction = db.transaction(INDEXED_DB_SOCKET_EVENTS_STORE, "readonly");
-  const store = transaction.objectStore(INDEXED_DB_SOCKET_EVENTS_STORE);
+  const store = await getObjectStore(socketEventsKind, "readonly");
   return new Promise<SocketEventType[]>((resolve, reject) =>
   {
     const request = store.getAll();
@@ -86,37 +40,10 @@ async function getSocketEvents(): Promise<SocketEventType []>
   });
 }
 
-async function storeSocketEvent(event: SocketEventType)
+async function storeSocketEvent(event: SocketEventType): Promise<void>
 {
-  const db = await initializeIndexedDB("socketEvents");
-  const transaction = db.transaction(INDEXED_DB_SOCKET_EVENTS_STORE, "readwrite");
-  const store = transaction.objectStore(INDEXED_DB_SOCKET_EVENTS_STORE);
+  const store = await getObjectStore(socketEventsKind, "readwrite");
   store.add(event);
-}
-
-async function getNotifications(): Promise<EventNotificationType []>
-{
-  const db = await initializeIndexedDB("notifications");
-  const transaction = db.transaction(INDEXED_DB_NOTIFICATIONS_STORE, "readonly");
-  const store = transaction.objectStore(INDEXED_DB_NOTIFICATIONS_STORE);
-  return new Promise<EventNotificationType[]>((resolve, reject) =>
-  {
-    const request = store.getAll();
-    request.onsuccess = () =>
-    {
-      const events: EventNotificationType[] = request.result;
-      resolve(events.sort((event1, event2) => event2.milliseconds - event1.milliseconds));
-    };
-    request.onerror = () => reject(request.error);
-  });
-}
-
-async function storeNotification(notification: EventNotificationType)
-{
-  const db = await initializeIndexedDB("notifications");
-  const transaction = db.transaction(INDEXED_DB_NOTIFICATIONS_STORE, "readwrite");
-  const store = transaction.objectStore(INDEXED_DB_NOTIFICATIONS_STORE);
-  store.add(notification);
 }
 
 function computeLogLevelColor(logLevel: string): string
@@ -244,21 +171,21 @@ function computeLog(event: SocketEventType): LogType
   return { type, id, milliseconds, text: i18n.t(i18nMnemonic, { id: entityId }), level, entityId, extensionId };
 }
 
-async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<EventNotificationType>
+async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<NotificationType>
 {
   const imageId = event?.value?.id;
   const image = await ImageService.get({ id: imageId });
   const suffix = event.channel === ChannelEnum.IMAGE_CREATED ? "imageCreated" : "imageUpdated";
   const title = i18n.t(`notifications.${suffix}`);
-  const description = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
+  const subtitle = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
   return {
     id: event.id,
-    title,
     type: "image",
-    description,
+    title,
+    subtitle,
     milliseconds: event.milliseconds,
-    entityId: imageId,
-    entityUrl: image.url
+    illustrationUri: ImageService.getImageSrc(image.url, 64, 64),
+    entityId: imageId
   };
 }
 
@@ -280,7 +207,7 @@ async function generateImageCreatedOrUpdatedNotification(event: SocketEventType)
   };
 }*/
 
-async function generateNotification(event: SocketEventType): Promise<EventNotificationType | undefined>
+async function generateNotification(event: SocketEventType): Promise<NotificationType | undefined>
 {
   const channel = event.channel;
   if (channel === ChannelEnum.IMAGE_CREATED || channel === ChannelEnum.IMAGE_UPDATED)
@@ -292,49 +219,11 @@ async function generateNotification(event: SocketEventType): Promise<EventNotifi
   }*/
 }
 
-async function deleteNotification(id: string)
-{
-  const db = await initializeIndexedDB("notifications");
-  const transaction = db.transaction(INDEXED_DB_NOTIFICATIONS_STORE, "readwrite");
-  const store = transaction.objectStore(INDEXED_DB_NOTIFICATIONS_STORE);
-
-  return new Promise<void>((resolve, reject) =>
-  {
-    const deleteRequest = store.delete(id);
-    deleteRequest.onsuccess = () =>
-    {
-      resolve();
-    };
-    deleteRequest.onerror = () => reject(deleteRequest.error);
-  });
-}
-
-async function deleteAllNotifications()
-{
-  const db = await initializeIndexedDB("notifications");
-  const transaction = db.transaction(INDEXED_DB_NOTIFICATIONS_STORE, "readwrite");
-  const store = transaction.objectStore(INDEXED_DB_NOTIFICATIONS_STORE);
-
-  return new Promise<void>((resolve, reject) =>
-  {
-    const clearRequest = store.clear();
-    clearRequest.onsuccess = () =>
-    {
-      resolve();
-    };
-    clearRequest.onerror = () => reject(clearRequest.error);
-  });
-}
-
 export default {
   upgrade,
   getSocketEvents,
   storeSocketEvent,
   generateNotification,
-  deleteNotification,
-  deleteAllNotifications,
-  getNotifications,
-  storeNotification,
   computeEventEntityId,
   computeEventExtensionId,
   computeLog,

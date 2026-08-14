@@ -19,12 +19,19 @@ import {
   ShowIntent,
   UiIntent
 } from "@picteus/shared-core";
-import { ExtensionSettings, UserInterfaceAnchor } from "@picteus/ws-client";
+import { detectImageMimeType } from "@picteus/shared-front-end";
+import { ExtensionSettings, SearchOriginNature, UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { ChannelEnum, EventOnResultValueType, ExtensionIntentType, ResourceType, ShowType } from "types";
 import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, NotificationsService } from "utils";
 import { useActionModalContext, useAdditionalUiContext, useEventSocket, useImagesTabsContext } from "app/context";
-import { ExtensionsService, ImageService, RepositoriesService, StorageService } from "app/services";
+import {
+  ExtensionsService,
+  ImageService,
+  NotificationService,
+  RepositoriesService,
+  StorageService
+} from "app/services";
 import { useConfirmAction, useOpenWindow } from "app/hooks";
 import { CommandForm, DialogForm, Iframe, ImageDetail } from "app/components";
 import { ExtensionSettingsModal } from "app/screens/ExtensionsScreen/components";
@@ -58,7 +65,6 @@ export default function IntentCenter()
       {
         return resourceType ?? { url: ExtensionsService.getIconURL(extensionId) };
       };
-      const modalId = randomId();
 
       function respondWithValue(value: EventOnResultValueType = {}): void
       {
@@ -91,6 +97,7 @@ export default function IntentCenter()
       const handleForm = (formIntent: FormIntent): void =>
       {
         const form = formIntent.form;
+        const modalId = randomId();
         addModal({
           id: modalId,
           icon: computeIcon(form?.dialogContent?.icon),
@@ -98,7 +105,12 @@ export default function IntentCenter()
             <CommandForm
               command={intent}
               extensionId={extensionId}
-              imageIds={formIntent.context?.imageIds}
+              searchFilter={formIntent.context?.imageIds === undefined ? undefined : {
+                origin: {
+                  kind: SearchOriginNature.Images,
+                  ids: formIntent.context?.imageIds
+                }
+              }}
               onSend={(_extensionId, _commandId, parameters) =>
                 handleOnSend(parameters, modalId)
               }
@@ -187,6 +199,7 @@ export default function IntentCenter()
       const handleDialog = (dialogIntent: DialogIntent): void =>
       {
         const dialog = dialogIntent.dialog;
+        const modalId = randomId();
         addModal({
           id: modalId,
           icon: computeIcon(dialog.icon),
@@ -389,8 +402,19 @@ export default function IntentCenter()
       const handleNotification = (notificationIntent: NotificationIntent): void =>
       {
         const notification = notificationIntent.notification;
-        // TODO: to implement
 
+        const illustrationIcon: ArrayBuffer = notification.icon === undefined ? undefined : notification.icon as unknown as ArrayBuffer;
+        const illustrationBlob = illustrationIcon === undefined ? undefined : new Blob([ illustrationIcon ], { type: detectImageMimeType(illustrationIcon) });
+
+        void NotificationService.storeNotification({
+          id: event.id,
+          milliseconds: event.milliseconds,
+          type: "notification",
+          title: notification.title,
+          subtitle: notification.subtitle,
+          body: notification.body,
+          illustrationUri: illustrationBlob === undefined ? undefined : URL.createObjectURL(illustrationBlob)
+        });
         respondWithValue();
       };
 

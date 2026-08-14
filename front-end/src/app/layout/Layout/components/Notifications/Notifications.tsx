@@ -4,9 +4,8 @@ import { randomId } from "@mantine/hooks";
 import { IconBell, IconBellZ } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { EventNotificationType } from "types";
-import { useEventSocket } from "app/context";
-import { EventService } from "app/services";
+import { NotificationType } from "types";
+import { NotificationService } from "app/services";
 import { Common, EmptyResults, Notification } from "app/components";
 
 import style from "./Notifications.module.scss";
@@ -14,32 +13,31 @@ import style from "./Notifications.module.scss";
 
 export default function Notifications()
 {
-  const [t] = useTranslation();
-  const { eventStore } = useEventSocket();
-  const notification = useSyncExternalStore(eventStore.subscribeToNotifications, eventStore.getNotification);
-  const [notifications, setNotifications] = useState<EventNotificationType[]>([]);
-  const [seed, setSeed] = useState<string>(randomId());
-  const [hoverCardKey, setHoverCardKey] = useState<string>(randomId());
+  const [ t ] = useTranslation();
+  const notification = useSyncExternalStore(NotificationService.subscribeToNotifications, NotificationService.getNotification);
+  const [ notifications, setNotifications ] = useState<NotificationType[]>([]);
+  const [ seed, setSeed ] = useState<string>(randomId());
+  const [ hoverCardKey, setHoverCardKey ] = useState<string>(randomId());
 
   useEffect(() =>
   {
-    EventService.getNotifications().then(setNotifications);
-  }, [notification, seed]);
+    NotificationService.getNotifications().then(setNotifications);
+  }, [ notification, seed ]);
 
   const renderedNotifications = useMemo(() => notifications.map((notification, index) => (
     <div key={notification.id}>
       <Notification
         notification={notification}
-        onClose={() => setSeed(randomId())}
         onOpen={() => setHoverCardKey(randomId())}
+        onClose={() => setSeed(randomId())}
       />
       {index < (notifications.length - 1) && (<Divider mt={8} mb={8}/>)}
     </div>
-  )), [notifications]);
+  )), [ notifications ]);
 
   async function handleOnClearAll()
   {
-    await EventService.deleteAllNotifications();
+    await NotificationService.deleteAllNotifications();
     setSeed(randomId());
   }
 
