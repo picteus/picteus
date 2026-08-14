@@ -89,6 +89,7 @@
     "react-markdown": "10.1.0",
     "socket.io-client": "4.8.3",
     "@picteus/shared-core": "file:../shared/core",
+    "@picteus/shared-front-end": "file:../shared/front-end",
     "@picteus/ws-client": "file:../generated/openapi/typescript-fetch/picteus-ws-client-0.18.0.tgz"
   },
   "prettier": {

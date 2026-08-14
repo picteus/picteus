@@ -62,7 +62,7 @@
     "build": "cross-var \"npm run compile && npm run obfuscate && shx cp -rf assets \"$npm_package_config_buildDirectoryPath/electron\"\"",
     "start": "cross-env SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" electron . run",
     "start:help": "cross-env SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" electron . run --help",
-    "start:custom": "cross-env SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" electron . run --useSsl false --apiServerPort 3001 --webServerPort 2999 --requiresApiKeys true --unpackedExtensionsDirectoryPath ../extensions/instances",
+    "start:custom": "cross-env SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" electron . run --useSsl false --apiServerPort 3001 --webServerPort 2999 --requiresApiKeys true",
     "debug:main": "cross-env SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" electron . run --inspect=5858 --trace-warnings",
     "debug:main:break": "cross-env SDK_DIRECTORY_PATH=\"$npm_package_config_buildDirectoryPath/sdk\" electron . run --inspect-brk=5858",
     "debug:renderer": "electron . run --remote-debugging-port=9222",
@@ -140,7 +140,9 @@
     "socket.io": "4.8.3",
     "electron-updater": "6.8.9",
     "semver": "7.8.4",
+    "@resvg/resvg-js": "2.6.2",
     "@picteus/shared-core": "file:../shared/core",
-    "@picteus/shared-back-end": "file:../shared/back-end"
+    "@picteus/shared-back-end": "file:../shared/back-end",
+    "@picteus/shared-front-end": "file:../shared/front-end"
   }
 }
