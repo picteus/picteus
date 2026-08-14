@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Alert, Button, Flex } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 
+import { SearchFilter, SearchOriginNature } from "@picteus/ws-client";
+
 import { UiCommandType } from "types";
 import { useKey } from "app/hooks";
 import { ImagesCollection, Markdown, RjsfForm } from "app/components";
@@ -14,7 +16,7 @@ import style from "./CommandForm.module.scss";
 type CommandFormType = {
   command: UiCommandType;
   extensionId: string;
-  imageIds?: string[];
+  searchFilter?: SearchFilter;
   onSend: (extensionId: string, commandId: string, parameters?: object) => void;
   onCancel: () => void;
 };
@@ -22,13 +24,13 @@ type CommandFormType = {
 export default function CommandForm({
   command,
   extensionId,
-  imageIds,
+  searchFilter,
   onSend,
   onCancel
 }: CommandFormType)
 {
-  const [commandParameters, setCommandParameters] = useState<object>();
-  const [t] = useTranslation();
+  const [ commandParameters, setCommandParameters ] = useState<object>();
+  const [ t ] = useTranslation();
 
   useKey("Enter", () => onSend(extensionId, command.id, commandParameters));
 
@@ -43,7 +45,8 @@ export default function CommandForm({
         {form.dialogContent.details && (
           <div className={style.details}><Markdown content={form.dialogContent.details}/></div>)}
       </Flex>)}
-      {imageIds && <ImagesCollection imageIds={imageIds}/>}
+      {searchFilter?.origin?.kind === SearchOriginNature.Images &&
+        <ImagesCollection imageIds={searchFilter.origin.ids}/>}
       <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setCommandParameters}/>
       <Flex mt={"md"} align="flex-end" justify="flex-end" gap={5}>
         {<Button variant="subtle" onClick={onCancel}>

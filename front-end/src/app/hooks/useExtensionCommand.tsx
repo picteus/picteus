@@ -2,7 +2,7 @@ import React from "react";
 import { randomId } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 
-import { SearchOriginNature } from "@picteus/ws-client";
+import { SearchFilter } from "@picteus/ws-client";
 
 import { UiCommandType } from "types";
 import { NotificationsService } from "utils";
@@ -11,14 +11,14 @@ import { ExtensionsService } from "app/services";
 import { CommandForm } from "app/components";
 
 
-type CallCommandType = (extensionId: string, command: UiCommandType, imageIds?: string[], onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void) => Promise<void>;
+type CallCommandType = (extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void) => Promise<void>;
 
 export default function useExtensionCommand(): CallCommandType
 {
   const [ t ] = useTranslation();
   const [ , addModal, removeModal ] = useActionModalContext();
 
-  async function handleOnSendCommand(extensionId: string, commandId: string, parameters?: object, imageIds?: string[], onRunning?: () => void, modalId?: string): Promise<void>
+  async function handleOnSendCommand(extensionId: string, commandId: string, parameters?: object, searchFilter?: SearchFilter, onRunning?: () => void, modalId?: string): Promise<void>
   {
     try
     {
@@ -27,21 +27,11 @@ export default function useExtensionCommand(): CallCommandType
       {
         onRunning();
       }
-      if (imageIds)
+      if (searchFilter)
       {
         await ExtensionsService.runImageCommand({
           ...commonParameters,
-          runCommandParameters:
-            {
-              command: parameters,
-              search: imageIds === undefined ? undefined :
-                {
-                  filter:
-                    {
-                      origin: { kind: SearchOriginNature.Images, ids: imageIds }
-                    }
-                }
-            }
+          runCommandParameters: { command: parameters, search: { filter: searchFilter } }
         });
       }
       else
@@ -62,9 +52,9 @@ export default function useExtensionCommand(): CallCommandType
     }
   }
 
-  function callCommand(extensionId: string, command: UiCommandType, imageIds?: string[], onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void)
+  function callCommand(extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void)
   {
-    console.debug(`Triggering command '${command.id}' of extension '${extensionId}' with imageIds : ${imageIds?.join(", ")}`);
+    console.debug(`Triggering command '${command.id}' of extension '${extensionId}'`);
     const form = command.form;
 
     const modalId = randomId();
@@ -78,7 +68,7 @@ export default function useExtensionCommand(): CallCommandType
     };
     if (!form.parameters)
     {
-      return handleOnSendCommand(extensionId, command.id, undefined, imageIds, onRunning).then(() => handleOnCompleted(false));
+      return handleOnSendCommand(extensionId, command.id, undefined, searchFilter, onRunning).then(() => handleOnCompleted(false));
     }
 
     addModal({
@@ -90,10 +80,10 @@ export default function useExtensionCommand(): CallCommandType
       component: (
         <CommandForm
           extensionId={extensionId}
-          imageIds={imageIds}
+          searchFilter={searchFilter}
           command={command}
           onSend={(extensionId, commandId, commandParameters) =>
-            handleOnSendCommand(extensionId, commandId, commandParameters, imageIds, onRunning, modalId)
+            handleOnSendCommand(extensionId, commandId, commandParameters, searchFilter, onRunning, modalId)
           }
           onCancel={() =>
           {

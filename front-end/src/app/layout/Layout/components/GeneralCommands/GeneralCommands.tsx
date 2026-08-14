@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ActionIcon, Kbd, Menu } from "@mantine/core";
 import { IconBox } from "@tabler/icons-react";
 
-import { CommandEntity, ManifestCapabilityId } from "@picteus/ws-client";
+import { CommandEntity, ManifestCapabilityId, SearchOriginNature } from "@picteus/ws-client";
 
 import { UiCommandType } from "types";
 import { useActionModalContext, useEventSocket } from "app/context";
@@ -81,7 +81,12 @@ export default function GeneralCommands()
     imageIds?: string[]
   )
   {
-    void callCommand(extensionId, command, imageIds);
+    void callCommand(extensionId, command, imageIds === undefined ? undefined : {
+      origin: {
+        kind: SearchOriginNature.Images,
+        ids: imageIds
+      }
+    });
   }
 
   async function handleOnClickTextToImage(extensionId: string)

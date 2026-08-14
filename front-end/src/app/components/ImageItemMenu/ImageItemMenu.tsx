@@ -9,7 +9,8 @@ import {
   ExtensionImageTag,
   Image,
   ImageSummary,
-  ManifestCapabilityId
+  ManifestCapabilityId,
+  SearchOriginNature
 } from "@picteus/ws-client";
 
 import { UiExtensionCommandType, ViewMode } from "types";
@@ -149,7 +150,12 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
               const manifest = extensionCommand.extension.manifest;
               return (<MenuItemEntry
                 key={`${extensionCommand.extension.manifest.id}-${extensionCommand.command.id}`}
-                onClick={() => callCommand(manifest.id, extensionCommand.command, [ image.id ])}
+                onClick={() => callCommand(manifest.id, extensionCommand.command, {
+                  origin: {
+                    kind: SearchOriginNature.Images,
+                    ids: [ image.id ]
+                  }
+                })}
                 extensionId={manifest.id}
                 icon={<CommandIcon extensionId={manifest.id} command={extensionCommand.command} size="sm"/>}
                 label={extensionCommand.command.label}

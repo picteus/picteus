@@ -14,7 +14,7 @@ import { useElementSize } from "@mantine/hooks";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { CommandEntity, Manifest } from "@picteus/ws-client";
+import { CommandEntity, Manifest, SearchOriginNature } from "@picteus/ws-client";
 
 import { ImageItemMode, UiCommandType, UiExtensionCommandType } from "types";
 import { NotificationsService } from "utils";
@@ -41,16 +41,16 @@ type SelectedImagesType = {
 
 export default function SelectedImages({ onProcessing }: SelectedImagesType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
   const imagesContainerRef = useRef<HTMLDivElement>(null);
   const { ref: containerRef, height: containerHeight } = useElementSize();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const { selectedImages, clearSelectedImages } = useImagesSelectedContext();
-  const [extensionsImageCommands, setExtensionsImageCommands] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands([CommandEntity.Images]));
+  const [ extensionsImageCommands, setExtensionsImageCommands ] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands([ CommandEntity.Images ]));
   const callCommand = useExtensionCommand();
-  const [selectedAction, setSelectedAction] = useState<string>();
+  const [ selectedAction, setSelectedAction ] = useState<string>();
 
   useEffect(() =>
   {
@@ -58,10 +58,10 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
     {
       void ExtensionsService.fetchAll().then(() =>
       {
-        setExtensionsImageCommands(ExtensionsService.getExtensionsCommands([CommandEntity.Images]));
+        setExtensionsImageCommands(ExtensionsService.getExtensionsCommands([ CommandEntity.Images ]));
       });
     }
-  }, [event]);
+  }, [ event ]);
 
   useEffect(() =>
   {
@@ -134,7 +134,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
     {
       return computeIcon("delete");
     }
-    const [, extensionId] = selectedAction.split(commandSeparator);
+    const [ , extensionId ] = selectedAction.split(commandSeparator);
     return <ExtensionIcon idOrExtension={extensionId} size="sm"/>;
   }
 
@@ -162,13 +162,13 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
       return;
     }
 
-    const [commandId, extensionId] = selectedAction.split(commandSeparator);
+    const [ commandId, extensionId ] = selectedAction.split(commandSeparator);
 
     const command = extensionsImageCommands.find(
       (imageCommand) => imageCommand.command.id === commandId && imageCommand.extension.manifest.id === extensionId
     );
     onProcessing(true);
-    void callCommand(extensionId, command.command, imageIds, () =>
+    void callCommand(extensionId, command.command, { origin: { kind: SearchOriginNature.Images, ids: imageIds } }, () =>
     {
       onProcessing(false);
     }, (wasAborted: boolean) =>
