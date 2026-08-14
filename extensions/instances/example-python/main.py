@@ -239,7 +239,7 @@ class PythonExtension(PicteusExtension):
 
     async def _handle_notification(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         with open(
-                os.path.join(PicteusExtension.get_extension_home_directory_path(), "swaggerui.png"),
+                os.path.join(PicteusExtension.get_extension_home_directory_path(), "icon.svg"),
                 mode="rb") as file:
             icon_bytes: bytes = file.read()
         await communicator.launch_intent(

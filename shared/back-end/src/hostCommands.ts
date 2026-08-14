@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { ChildProcess } from "node:child_process";
 import crypto from "node:crypto";
 
@@ -122,11 +123,31 @@ export function createIPCCommandSender(targetProcess: NodeJS.Process, logger: Lo
 
 export function createIPCCommandReceiver(targetProcess: ChildProcess, logger: Logger, responseProvider: ResponseProvider): void
 {
-  logger.info("Creating an Inter-Process Communication (IPC) receiver for handling commands");
+  function restoreBuffers(object: unknown): unknown
+  {
+    if (object === null || typeof object !== "object")
+    {
+      return object;
+    }
 
+    const record = object as Record<string, unknown>;
+    if (record.type === "Buffer" && Array.isArray(record.data) === true)
+    {
+      return Buffer.from(record.data as number[]);
+    }
+    for (const key of Object.keys(record))
+    {
+      record[key] = restoreBuffers(record[key]);
+    }
+
+    return record;
+  }
+
+  logger.info("Creating an Inter-Process Communication (IPC) receiver for handling commands");
   targetProcess.on("message", async (message: { correlationId: string, command: HostCommand }) =>
   {
-    const { correlationId, command } = message;
+    const { correlationId } = message;
+    const command = restoreBuffers(message.command) as HostCommand;
     const commandType = command.type;
     logger.debug(`Received a command of type '${commandType}' with correlation id '${correlationId}'`);
     try

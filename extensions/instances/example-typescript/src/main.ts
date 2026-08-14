@@ -348,7 +348,7 @@ class TypeScriptExtension extends PicteusExtension
         subtitle: parameters["subtitle"],
         body: parameters["body"],
         silent: false,
-        icon: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "swaggerui.png")),
+        icon: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "icon.svg")),
         isNative: parameters["isNative"]
       }
     });

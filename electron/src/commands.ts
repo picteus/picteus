@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { Buffer } from "node:buffer";
 import os from "node:os";
 import { ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -10,7 +11,9 @@ import * as electron from "electron";
 import { DisconnectReason, Server as SocketServer, ServerOptions, Socket } from "socket.io";
 import AdmZip from "adm-zip";
 import tar from "tar-fs";
+import { Resvg } from "@resvg/resvg-js";
 
+import { detectImageMimeType } from "@picteus/shared-front-end";
 import {
   ApiKeyHostCommand,
   createIPCCommandReceiver,
@@ -153,16 +156,27 @@ export class CommandsManager
     });
     this.on(HostCommandType.Notification, async (command: NotificationCommandHostCommand) =>
     {
+      let icon: electron.NativeImage | undefined;
+      if (command.icon !== undefined)
+      {
+        const edge = 64;
+        const commandIcon: Buffer = command.icon;
+        const iconBuffer = detectImageMimeType(commandIcon) !== "image/svg+xml" ? commandIcon : new Resvg(commandIcon, {
+          background: "rgba(255, 255, 255, .0)",
+          fitTo: { mode: "width", value: edge }
+        }).render().asPng();
+        icon = electron.nativeImage.createFromBuffer(iconBuffer).resize({
+          width: edge,
+          height: edge,
+          quality: "best"
+        });
+      }
       const notification = new electron.Notification({
         title: command.title,
         subtitle: command.subtitle,
         body: command.body,
         silent: command.silent,
-        icon: command.icon === undefined ? undefined : electron.nativeImage.createFromBuffer(Buffer.from(command.icon)).resize({
-          width: 64,
-          height: 64,
-          quality: "best"
-        })
+        icon
       });
       notification.show();
     });

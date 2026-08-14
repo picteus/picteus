@@ -1066,10 +1066,11 @@ async function main(): Promise<void>
     cliArguments.push(defaultCommand);
   }
   const parseCommandLineAndRun = await computeParseCommandLineAndRun();
+  const isStrict = environment === "production";
   const webApplicationUrlOption = "webApplicationUrl";
   const logBrowserOption = "logBrowser";
   const execArgvOption = "execArgv";
-  await parseCommandLineAndRun(logger, cliArguments, app.getName(), app.getVersion(), environment === "production", async (program: Program): Promise<void> =>
+  await parseCommandLineAndRun(logger, cliArguments, app.getName(), app.getVersion(), isStrict, async (program: Program): Promise<void> =>
   {
     const commands = await program.getAllCommands();
     for (const command of commands)
