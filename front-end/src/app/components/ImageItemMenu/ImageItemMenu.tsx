@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Menu } from "@mantine/core";
 import { IconTopologyRing3 } from "@tabler/icons-react";
 
 import {
   CommandEntity,
-  Extension,
   ExtensionImageTag,
   Image,
   ImageSummary,
@@ -13,11 +12,16 @@ import {
   SearchOriginNature
 } from "@picteus/ws-client";
 
-import { UiExtensionCommandType, ViewMode } from "types";
+import { ViewMode } from "types";
 import { NotificationsService } from "utils";
-import { useActionModalContext, useEventSocket } from "app/context";
-import { useConfirmAction, useExtensionCommand } from "app/hooks";
-import { ExtensionsService, ImageService } from "app/services";
+import { useActionModalContext } from "app/context";
+import {
+  useConfirmAction,
+  useExtensionCommandRunner,
+  useExtensionCommandsWithCapability,
+  useExtensionCommandsWithEntities
+} from "app/hooks";
+import { ImageService } from "app/services";
 import { CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
 import { ClosestEmbeddingsImages } from "./components";
 
@@ -31,16 +35,13 @@ type ImageItemMenuType = {
 
 export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
 {
+  const [ t ] = useTranslation();
   const [ , addModal ] = useActionModalContext();
   const confirmAction = useConfirmAction();
   const [ imageTags, setImageTags ] = useState<ExtensionImageTag[]>([]);
-  const [ extensionsImageCommands, setExtensionsImageCommands ] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands(commandEntities));
-  const [ extensionsWithImageEmbeddingsCapability, setExtensionsWithImageEmbeddingsCapability ] = useState<Extension[]>(ExtensionsService.getExtensionsWithCapability(
-    ManifestCapabilityId.ImageEmbeddings));
-  const callCommand = useExtensionCommand();
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [ t ] = useTranslation();
+  const extensionsImageCommands = useExtensionCommandsWithEntities(commandEntities);
+  const extensionsWithImageEmbeddingsCapability = useExtensionCommandsWithCapability(ManifestCapabilityId.ImageEmbeddings);
+  const commandRunner = useExtensionCommandRunner();
 
   async function load()
   {
@@ -53,18 +54,6 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
     void load();
   }, []);
 
-  useEffect(() =>
-  {
-    if (ExtensionsService.requiresCommandReload(event) === true)
-    {
-      void ExtensionsService.fetchAll().then(() =>
-      {
-        setExtensionsImageCommands(ExtensionsService.getExtensionsCommands(commandEntities));
-        setExtensionsWithImageEmbeddingsCapability(ExtensionsService.getExtensionsWithCapability(
-          ManifestCapabilityId.ImageEmbeddings));
-      });
-    }
-  }, [ event ]);
 
   function handleOnClickClosestImages()
   {
@@ -150,7 +139,7 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
               const manifest = extensionCommand.extension.manifest;
               return (<MenuItemEntry
                 key={`${extensionCommand.extension.manifest.id}-${extensionCommand.command.id}`}
-                onClick={() => callCommand(manifest.id, extensionCommand.command, {
+                onClick={() => commandRunner(manifest.id, extensionCommand.command, {
                   origin: {
                     kind: SearchOriginNature.Images,
                     ids: [ image.id ]

@@ -802,13 +802,24 @@ export class NotificationsGateway
       const specificIntent: ActionIntent = intent;
       if (await checkSchema(z.object({
         action: z.object({
-          what: z.xor([ zodUi, zodShow ]),
-          dialogContent: zodDialogIconSizeContent
+          intent: z.xor([
+            z.object({ ui: zodUi }),
+            z.object({ show: zodShow }),
+            z.object({
+              processCommand: z.object({
+                extensionId: z.string(),
+                commandId: z.string()
+              })
+            })
+          ]),
+          dialogContent: zodDialogIconSizeContent,
+          label: z.string().optional()
         })
       }), specificIntent) === false)
       {
         return resolveWithInvalidIntentSchema("ActionIntent");
       }
+      // TODO: in case of a process command, check that the extension and the command exist
       onAcknowledged = onAcknowledgedFromMasterSocketFactory();
     }
     else if (isBundleIntent(intent) === true)

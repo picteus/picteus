@@ -15,7 +15,10 @@ import {
   NotificationReturnedError,
   type NotificationValue,
   PicteusExtension,
-  type SettingsValue
+  ProcessCommandIntent,
+  type SettingsValue,
+  ShowIntent,
+  UiIntent
 } from "@picteus/extension-sdk";
 
 
@@ -88,7 +91,7 @@ class TypeScriptExtension extends PicteusExtension
       }
       else if (commandId === "action")
       {
-        await this.handleAction(communicator);
+        await this.handleAction(communicator, parameters);
       }
       else if (commandId === "application")
       {
@@ -262,7 +265,7 @@ class TypeScriptExtension extends PicteusExtension
             {
               title,
               description: "Demonstrates how to open a dedicated UI.",
-              icon: { content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), isUrl === true ? "swaggerui.png" : "icon.png")) }
+              icon: { content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), isUrl === true ? "swaggerui.png" : "icon.svg")) }
             }
         }
     });
@@ -354,15 +357,55 @@ class TypeScriptExtension extends PicteusExtension
     });
   }
 
-  private async handleAction(communicator: Communicator): Promise<void>
+  private async handleAction(communicator: Communicator, parameters: Record<string, any>): Promise<void>
   {
+    let description: string;
+    let intent: ShowIntent | UiIntent | ProcessCommandIntent;
+    switch (parameters["intent"])
+    {
+      case "ui":
+        intent = {
+          ui: {
+            id: `${this.extensionId}-action-ui`,
+            integration: { anchor: IntentUiAnchor.Modal },
+            frameContent: { html: `<html lang="en"><body style="width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is the content of the modal.</div></body></html>` }
+          }
+        };
+        description = "This is an action which opens a modal";
+        break;
+      case "show":
+        intent = { show: { type: IntentShowType.ExtensionSettings, id: this.extensionId } };
+        description = "This is an action which opens the settings of the extension";
+        break;
+      case "command":
+        intent = {
+          processCommand: {
+            extensionId: this.extensionId,
+            commandId: "askForSomething"
+          }
+        };
+        description = "This is an action which runs a command";
+        break;
+      default:
+        return await communicator.launchIntent({
+          dialog: {
+            type: IntentDialogType.Error,
+            title: "Unsupported intent",
+            description: "Cannot handle the action",
+            buttons: { yes: "OK" }
+          }
+        });
+    }
     await communicator.launchIntent({
       action: {
-        what: { type: IntentShowType.ExtensionSettings, id: this.extensionId },
+        intent,
         dialogContent: {
-          title: "Title",
-          description: "Description"
-        }
+          title: "Action",
+          description,
+          details: "The action will be executed when the notification is consumed.",
+          icon: { content: fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "icon.svg")) }
+        },
+        label: "Run"
       }
     });
   }

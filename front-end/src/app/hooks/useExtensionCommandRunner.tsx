@@ -11,9 +11,7 @@ import { ExtensionsService } from "app/services";
 import { CommandForm } from "app/components";
 
 
-type CallCommandType = (extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void) => Promise<void>;
-
-export default function useExtensionCommand(): CallCommandType
+export default function useExtensionCommandRunner(): (extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void) => Promise<void>
 {
   const [ t ] = useTranslation();
   const [ , addModal, removeModal ] = useActionModalContext();
@@ -66,7 +64,7 @@ export default function useExtensionCommand(): CallCommandType
         onCompleted(wasAborted);
       }
     };
-    if (!form.parameters)
+    if (form?.parameters === undefined)
     {
       return handleOnSendCommand(extensionId, command.id, undefined, searchFilter, onRunning).then(() => handleOnCompleted(false));
     }

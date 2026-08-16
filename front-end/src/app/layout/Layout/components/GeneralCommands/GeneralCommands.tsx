@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Kbd, Menu } from "@mantine/core";
 import { IconBox } from "@tabler/icons-react";
@@ -6,51 +6,22 @@ import { IconBox } from "@tabler/icons-react";
 import { CommandEntity, ManifestCapabilityId, SearchOriginNature } from "@picteus/ws-client";
 
 import { UiCommandType } from "types";
-import { useActionModalContext, useEventSocket } from "app/context";
-import { useExtensionCommand } from "app/hooks";
-import { ExtensionsService } from "app/services";
+import { useActionModalContext } from "app/context";
+import {
+  useExtensionCommandRunner,
+  useExtensionCommandsWithCapability,
+  useExtensionCommandsWithEntities
+} from "app/hooks";
 import { CommandIcon, Common, MenuItemEntry, TextToImages } from "app/components";
 
 
 export default function GeneralCommands()
 {
-  const callCommand = useExtensionCommand();
-  const [ , addModal ] = useActionModalContext();
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-
   const [ t ] = useTranslation();
-
-  const [ extensionsProcessCommands, setExtensionsProcessCommands ] = useState(
-    ExtensionsService.getExtensionsCommands([ CommandEntity.Process ])
-  );
-
-  const [
-    extensionsWithTextEmbeddingsCapability,
-    setExtensionsWithTextEmbeddingsCapability
-  ] = useState(
-    ExtensionsService.getExtensionsWithCapability(
-      ManifestCapabilityId.TextEmbeddings
-    )
-  );
-
-  useEffect(() =>
-  {
-    if (ExtensionsService.requiresCommandReload(event) === true)
-    {
-      void ExtensionsService.fetchAll().then(() =>
-      {
-        setExtensionsProcessCommands(
-          ExtensionsService.getExtensionsCommands([ CommandEntity.Process ])
-        );
-        setExtensionsWithTextEmbeddingsCapability(
-          ExtensionsService.getExtensionsWithCapability(
-            ManifestCapabilityId.TextEmbeddings
-          )
-        );
-      });
-    }
-  }, [ event ]);
+  const [ , addModal ] = useActionModalContext();
+  const commandRunner = useExtensionCommandRunner();
+  const extensionsProcessCommands = useExtensionCommandsWithEntities([ CommandEntity.Process ]);
+  const extensionsWithTextEmbeddingsCapability = useExtensionCommandsWithCapability(ManifestCapabilityId.TextEmbeddings);
 
   useEffect(() =>
   {
@@ -81,7 +52,7 @@ export default function GeneralCommands()
     imageIds?: string[]
   )
   {
-    void callCommand(extensionId, command, imageIds === undefined ? undefined : {
+    void commandRunner(extensionId, command, imageIds === undefined ? undefined : {
       origin: {
         kind: SearchOriginNature.Images,
         ids: imageIds

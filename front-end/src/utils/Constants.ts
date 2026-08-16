@@ -22,5 +22,3 @@ export function computeExtensionSidebarRoute(uuid: string)
 {
   return `/extension/${uuid}`;
 }
-
-export const VISUALIZER_DEFAULT_PANEL_SIZES: number[] = [60, 30];

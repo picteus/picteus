@@ -5,7 +5,7 @@ import { StorageService } from "app/services";
 import { FolderTypes } from "types";
 
 
-export default function useFolderPicker()
+export default function useFolderPicker(): (type: FolderTypes) => Promise<string>
 {
   const [ t ] = useTranslation();
   const { sendCommand } = useCommandSocket();

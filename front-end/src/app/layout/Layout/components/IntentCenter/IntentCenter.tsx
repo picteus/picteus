@@ -1,5 +1,4 @@
 import React, { useEffect, useSyncExternalStore } from "react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { randomId } from "@mantine/hooks";
 
@@ -15,39 +14,25 @@ import {
   isNotificationIntent,
   isShowIntent,
   isUiIntent,
-  NotificationIntent,
-  ShowIntent,
-  UiIntent
+  NotificationIntent
 } from "@picteus/shared-core";
 import { detectImageMimeType } from "@picteus/shared-front-end";
-import { ExtensionSettings, SearchOriginNature, UserInterfaceAnchor } from "@picteus/ws-client";
+import { SearchOriginNature } from "@picteus/ws-client";
 
-import { ChannelEnum, EventOnResultValueType, ExtensionIntentType, ResourceType, ShowType } from "types";
-import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, NotificationsService } from "utils";
-import { useActionModalContext, useAdditionalUiContext, useEventSocket, useImagesTabsContext } from "app/context";
-import {
-  ExtensionsService,
-  ImageService,
-  NotificationService,
-  RepositoriesService,
-  StorageService
-} from "app/services";
-import { useConfirmAction, useOpenWindow } from "app/hooks";
-import { CommandForm, DialogForm, Iframe, ImageDetail } from "app/components";
-import { ExtensionSettingsModal } from "app/screens/ExtensionsScreen/components";
-import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
+import { ChannelEnum, ContentIconType, EventOnResultValueType, ExtensionIntentType, ResourceType } from "types";
+import { NotificationsService } from "utils";
+import { useActionModalContext, useEventSocket, useImagesTabsContext } from "app/context";
+import { useExtensionIntentRunner } from "app/hooks";
+import { ExtensionsService, NotificationService } from "app/services";
+import { CommandForm, DialogForm } from "app/components";
 
 
 export default function IntentCenter()
 {
   const [ t ] = useTranslation();
-  const navigate = useNavigate();
   const [ , addModal, removeModal ] = useActionModalContext();
-  const [ additionalUiContextValue, , addTransient ] = useAdditionalUiContext();
-  const openWindow = useOpenWindow();
+  const intentRunner = useExtensionIntentRunner();
   const { addTab } = useImagesTabsContext();
-
-  const confirmAction = useConfirmAction();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
 
@@ -61,10 +46,11 @@ export default function IntentCenter()
       const extensionName = ExtensionsService.list().find(
         (extension) => extension.manifest.id === extensionId
       )?.manifest.name;
-      const computeIcon = (resourceType: ResourceType) =>
+
+      function computeIcon(resourceType: ResourceType): ResourceType | ContentIconType
       {
         return resourceType ?? { url: ExtensionsService.getIconURL(extensionId) };
-      };
+      }
 
       function respondWithValue(value: EventOnResultValueType = {}): void
       {
@@ -94,7 +80,29 @@ export default function IntentCenter()
         }
       }
 
-      const handleForm = (formIntent: FormIntent): void =>
+      async function computeIllustrationUriViaBlob(arrayBuffer: ArrayBuffer): Promise<string>
+      {
+        return new Promise<string>((resolve, reject) =>
+        {
+          let mimeType: string;
+          try
+          {
+            mimeType = detectImageMimeType(arrayBuffer);
+          }
+          catch (error)
+          {
+            reject(error);
+          }
+          const blob = new Blob([ arrayBuffer ], { type: mimeType });
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+
+      }
+
+      function handleForm(formIntent: FormIntent): void
       {
         const form = formIntent.form;
         const modalId = randomId();
@@ -131,72 +139,9 @@ export default function IntentCenter()
             }
           }
         });
-      };
+      }
 
-      const handleUi = (uiIntent: UiIntent): void =>
-      {
-        const ui = uiIntent.ui;
-        const frameContent = ui.frameContent;
-        const openWindowFromUi = (id: string) =>
-        {
-          let parameters: { url: string } | { html: string; };
-          if ("url" in frameContent)
-          {
-            parameters = { url: frameContent.url };
-          }
-          else if ("html" in frameContent)
-          {
-            parameters = { html: frameContent.html };
-          }
-          else
-          {
-            respondWithError("Cannot handle the 'ui' intent with no 'frameContent.url' nor 'frameContent.html' property");
-            return;
-          }
-          openWindow(id, parameters, false).then(() =>
-          {
-            respondWithValue();
-          }).catch(error => respondWithError(error.message));
-        };
-        if (ui.integration.anchor === UserInterfaceAnchor.Window)
-        {
-          openWindowFromUi(ui.id);
-        }
-        else if (ui.integration.anchor === UserInterfaceAnchor.Sidebar)
-        {
-          const uuid = computeExtensionSidebarUuid(extensionId, ui.id);
-          addTransient({
-            uuid,
-            integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: ui.integration.isExternal },
-            content: frameContent,
-            icon: computeIcon(ui.dialogContent?.icon),
-            title: ui.dialogContent?.title,
-            extensionId,
-            automaticallyReopen: false
-          });
-          if (ui.integration.isExternal === false)
-          {
-            navigate(computeExtensionSidebarRoute(uuid));
-            respondWithValue();
-          }
-          else
-          {
-            openWindowFromUi(uuid);
-          }
-        }
-        else
-        {
-          addModal({
-            fullScreen: true,
-            component: <Iframe content={frameContent}/>,
-            icon: ui.dialogContent?.icon,
-            title: ui.dialogContent?.title
-          });
-          respondWithValue();
-        }
-      };
-
-      const handleDialog = (dialogIntent: DialogIntent): void =>
+      function handleDialog(dialogIntent: DialogIntent): void
       {
         const dialog = dialogIntent.dialog;
         const modalId = randomId();
@@ -222,162 +167,9 @@ export default function IntentCenter()
             }
           }
         });
-      };
-
-      async function handleShow(showIntent: ShowIntent): Promise<void>
-      {
-        const show: ShowType = showIntent.show;
-        const shouldConfirm = StorageService.getExtensionIntentShowShouldConfirm();
-
-        if (show.type === "extensionSettings")
-        {
-          const action = () =>
-          {
-            const extension = ExtensionsService.list().find(extension => extension.manifest.id === show.id);
-            if (extension === undefined)
-            {
-              return respondWithError(`The extension with id '${show.id}' is not installed`);
-            }
-
-            addModal({
-              title: t("extensionSettingsModal.title"),
-              size: "m",
-              component: (
-                <ExtensionSettingsModal
-                  extension={extension}
-                  onSuccess={(settings: ExtensionSettings) =>
-                  {
-                    respondWithValue(settings);
-                  }}
-                />
-              ),
-              onBeforeClose: (viaOnSuccess: boolean) =>
-              {
-                if (viaOnSuccess === false)
-                {
-                  respondWithCancel();
-                }
-              }
-            });
-          };
-          if (shouldConfirm)
-          {
-            return confirmAction(action, {
-              title: t("extensionIntent.settingsRedirectTitle"),
-              message: t("extensionIntent.settingsRedirectDescription")
-            });
-          }
-          return action();
-        }
-        else if (show.type === "repository")
-        {
-          const action = () =>
-          {
-            const repository = RepositoriesService.list().find(aRepository => aRepository.id === show.id);
-            if (repository === undefined)
-            {
-              return respondWithError(`The repository with id '${show.id}' does not exist`);
-            }
-
-            addModal({
-              title: <RepositoryTop repository={repository} onDeleted={() =>
-              {
-              }}/>,
-              size: "m",
-              component: <RepositoryDetail repository={repository}/>,
-              onBeforeClose: (viaOnSuccess: boolean) =>
-              {
-                if (viaOnSuccess === false)
-                {
-                  respondWithCancel();
-                }
-              }
-            });
-          };
-          if (shouldConfirm)
-          {
-            return confirmAction(action, {
-              title: t("extensionIntent.settingsRedirectTitle"),
-              message: t("extensionIntent.settingsRedirectDescription")
-            });
-          }
-          return action();
-        }
-        else if (show.type === "image")
-        {
-          const action = async () =>
-          {
-            const image = await ImageService.get({ id: show.id });
-            const id = addModal({
-              component: (
-                <ImageDetail
-                  image={image}
-                  images={[ image ]}
-                  viewMode="masonry"
-                  onClose={() =>
-                  {
-                    removeModal(id);
-                  }}
-                />),
-              withCloseButton: false,
-              fullScreen: true
-            });
-            respondWithValue();
-          };
-          if (shouldConfirm)
-          {
-            return confirmAction(action, {
-              title: t("extensionIntent.showImageTitle"),
-              message: t("extensionIntent.showImageDescription")
-            });
-          }
-          return action();
-        }
-        else if (show.type === "sidebar")
-        {
-          const action = async () =>
-          {
-            const additionalUi = additionalUiContextValue.sidebar.find((element) => element.uuid === show.id);
-            if (additionalUi === undefined)
-            {
-              respondWithError(`There is no sidebar element with uuid '${show.id}'`);
-            }
-            else if (additionalUi.integration.anchor === "window")
-            {
-              respondWithError(`Cannot handle the sidebar 'window' integration with uuid '${additionalUi.uuid}'`);
-            }
-            else
-            {
-              if (additionalUi.integration.isExternal === false)
-              {
-                navigate(computeExtensionSidebarRoute(show.id));
-                respondWithValue();
-              }
-              else
-              {
-                openWindow(show.id, additionalUi.content, false).then(() =>
-                {
-                  respondWithValue();
-                }).catch(error => respondWithError(error.message));
-              }
-            }
-          };
-          if (shouldConfirm)
-          {
-            return confirmAction(action, {
-              title: t("extensionIntent.showSidebarTitle"),
-              message: t("extensionIntent.showSidebarDescription")
-            });
-          }
-          return action();
-        }
-        else
-        {
-          respondWithError(`Unhandled '${JSON.stringify(show)}' show intent`);
-        }
       }
 
-      const handleImages = (imagesIntent: ImagesIntent): void =>
+      function handleImages(imagesIntent: ImagesIntent): void
       {
         const images = imagesIntent.images;
         addTab({
@@ -397,15 +189,12 @@ export default function IntentCenter()
           }
         });
         respondWithValue();
-      };
+      }
 
-      const handleNotification = (notificationIntent: NotificationIntent): void =>
+      async function handleNotification(notificationIntent: NotificationIntent): Promise<void>
       {
         const notification = notificationIntent.notification;
-
         const illustrationIcon: ArrayBuffer = notification.icon === undefined ? undefined : notification.icon as unknown as ArrayBuffer;
-        const illustrationBlob = illustrationIcon === undefined ? undefined : new Blob([ illustrationIcon ], { type: detectImageMimeType(illustrationIcon) });
-
         void NotificationService.storeNotification({
           id: event.id,
           milliseconds: event.milliseconds,
@@ -413,35 +202,48 @@ export default function IntentCenter()
           title: notification.title,
           subtitle: notification.subtitle,
           body: notification.body,
-          illustrationUri: illustrationBlob === undefined ? undefined : URL.createObjectURL(illustrationBlob)
+          data: {},
+          illustrationUri: illustrationIcon === undefined ? undefined : await computeIllustrationUriViaBlob(illustrationIcon)
         });
         respondWithValue();
-      };
+      }
 
-      const handleAction = (actionIntent: ActionIntent): void =>
+      async function handleAction(actionIntent: ActionIntent): Promise<void>
       {
         const action = actionIntent.action;
-        // TODO: to implement
-
+        const dialogContent = action.dialogContent;
+        const illustrationIcon: ArrayBuffer = "content" in dialogContent.icon === false ? undefined : dialogContent.icon.content as unknown as ArrayBuffer;
+        void NotificationService.storeNotification({
+          id: event.id,
+          milliseconds: event.milliseconds,
+          type: "action",
+          title: dialogContent.title,
+          subtitle: dialogContent.description,
+          body: dialogContent.details,
+          extensionId: extensionId,
+          data: { extensionId, intent: action.intent },
+          illustrationUri: illustrationIcon === undefined ? ("url" in dialogContent.icon ? dialogContent.icon.url : undefined) : await computeIllustrationUriViaBlob(illustrationIcon),
+          actionLabel: action.label
+        });
         respondWithValue();
-      };
+      }
 
       // Determine which modal to show
       if (isFormIntent(intent))
       {
         handleForm(intent);
       }
-      else if (isUiIntent(intent))
+      else if (isUiIntent(intent) === true || isShowIntent(intent) === true)
       {
-        handleUi(intent);
+        void intentRunner(extensionId, intent, {
+          onSuccess: respondWithValue,
+          onCancel: respondWithCancel,
+          onFailure: respondWithError
+        });
       }
       else if (isDialogIntent(intent))
       {
         handleDialog(intent);
-      }
-      else if (isShowIntent(intent))
-      {
-        void handleShow(intent);
       }
       else if (isImagesIntent(intent))
       {
@@ -449,11 +251,11 @@ export default function IntentCenter()
       }
       else if (isNotificationIntent(intent))
       {
-        handleNotification(intent);
+        void handleNotification(intent);
       }
       else if (isActionIntent(intent))
       {
-        handleAction(intent);
+        void handleAction(intent);
       }
       else
       {

@@ -12,6 +12,7 @@ import {
 
 import { ChannelEnum, ExtensionIntentType, LogType, NotificationType, SocketEventType } from "types";
 import { ImageService } from "app/services";
+import { Common } from "app/components";
 import { getObjectStore, INDEXED_DB_NAME, StoreKind } from "./IndexDbService.ts";
 
 
@@ -180,12 +181,12 @@ async function generateImageCreatedOrUpdatedNotification(event: SocketEventType)
   const subtitle = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
   return {
     id: event.id,
+    milliseconds: event.milliseconds,
     type: "image",
     title,
     subtitle,
-    milliseconds: event.milliseconds,
-    illustrationUri: ImageService.getImageSrc(image.url, 64, 64),
-    entityId: imageId
+    data: { id: imageId },
+    illustrationUri: ImageService.getImageSrc(image.url, Common.NotificationIllustrationEdge, Common.NotificationIllustrationEdge)
   };
 }
 

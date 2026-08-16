@@ -2,6 +2,7 @@ import { ReactElement, ReactNode } from "react";
 import { RJSFSchema } from "@rjsf/utils";
 
 import { FrontIntent } from "@picteus/shared-core";
+import { detectImageMimeType } from "@picteus/shared-front-end";
 import {
   Extension,
   Image,
@@ -52,12 +53,14 @@ export interface CommandContextType
 }
 
 export type NotificationType = WithIdAndMilliseconds & {
-  type: "image" | "repository" | "notification";
+  type: "image" | "repository" | "notification" | "action";
   title: string;
   subtitle: string;
   body?: string;
+  extensionId?: string;
+  data: Record<string, any>;
   illustrationUri?: string;
-  entityId?: string;
+  actionLabel?: string;
 };
 
 export type LogType = WithIdAndMilliseconds & {
@@ -236,9 +239,27 @@ export enum ChannelEnum
 
 export type ResourceType = ({ url: string }) | ({ content: Buffer });
 
-export function computeResourceTypeUrl(resourceType: ResourceType)
+export function computeResourceTypeUrl(resourceType: ResourceType): string | null
 {
-  return "url" in resourceType ? resourceType.url : ("data:image/png;base64," + btoa(String.fromCharCode(...new Uint8Array(resourceType.content))));
+  if ("url" in resourceType)
+  {
+    return resourceType.url;
+  }
+  else
+  {
+    const uint8Array = new Uint8Array(resourceType.content);
+    let mimeType: string;
+    try
+    {
+      mimeType = detectImageMimeType(uint8Array);
+    }
+    catch (error)
+    {
+      return null;
+    }
+    const string = String.fromCharCode(...uint8Array);
+    return `data:${mimeType};base64,` + btoa(string);
+  }
 }
 
 export type AdditionalUi = {

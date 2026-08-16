@@ -196,24 +196,22 @@ export interface NotificationIntent extends WithContextIntent
   readonly notification: IntentNotification;
 }
 
-export interface IntentRunCommandParameters
-{
-  readonly search: object;
-  readonly command?: Json;
-}
-
-export interface IntentRunCommand
+export interface IntentProcessCommand
 {
   readonly extensionId: string;
   readonly commandId: string;
-  readonly parameters: IntentRunCommandParameters;
-  readonly actionLabel: string;
+}
+
+export interface ProcessCommandIntent extends WithContextIntent
+{
+  readonly processCommand: IntentProcessCommand;
 }
 
 export interface IntentAction
 {
-  readonly what: IntentShow | IntentUi | IntentRunCommand;
+  readonly intent: ShowIntent | UiIntent | ProcessCommandIntent;
   readonly dialogContent: IntentDialogIconSizeContent;
+  readonly label?: string;
 }
 
 export interface ActionIntent extends WithContextIntent
@@ -258,6 +256,11 @@ export function isShowIntent(intent: any): intent is ShowIntent
 export function isNotificationIntent(intent: any): intent is NotificationIntent
 {
   return (intent as NotificationIntent).notification !== undefined;
+}
+
+export function isProcessCommandIntent(intent: any): intent is ProcessCommandIntent
+{
+  return (intent as ProcessCommandIntent).processCommand !== undefined;
 }
 
 export function isActionIntent(intent: any): intent is ActionIntent

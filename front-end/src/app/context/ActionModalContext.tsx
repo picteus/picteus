@@ -48,7 +48,6 @@ export function ActionModalProvider({ children })
     return modal.id;
   }, []);
 
-
   const remove = useCallback((id: string): void =>
   {
     const currentModals = modalsRef.current;

@@ -134,7 +134,7 @@ class IntentUi(SuperDataClass):
     id: str
     integration: IntentUIIntegration
     frameContent: IntentFrameContent
-    dialogContent: Optional[IntentDialogIconContent]=field(default=None)
+    dialogContent: Optional[IntentDialogIconContent] = field(default=None)
 
 
 @dataclass(kw_only=True)
@@ -222,24 +222,22 @@ class NotificationIntent(WithContextIntent):
     notification: IntentNotification
 
 
-@dataclass(kw_only=True)
-class IntentRunCommandParameters(SuperDataClass):
-    search: object
-    command: Optional[Json] = field(default=None)
-
-
 @dataclass
-class IntentRunCommand(SuperDataClass):
+class IntentProcessCommand(SuperDataClass):
     extensionId: str
     commandId: str
-    parameters: IntentRunCommandParameters
-    actionLabel: str
+
+
+@dataclass(kw_only=True)
+class ProcessCommandIntent(WithContextIntent):
+    processCommand: IntentProcessCommand
 
 
 @dataclass
 class IntentAction(SuperDataClass):
-    what: Union[IntentShow, IntentUi, IntentRunCommand]
+    intent: Union[ShowIntent, UiIntent, ProcessCommandIntent]
     dialogContent: IntentDialogIconSizeContent
+    label: Optional[str] = field(default=None)
 
 
 @dataclass(kw_only=True)
@@ -264,7 +262,7 @@ class ServeBundleIntent(BasisIntent):
 
 @dataclass(kw_only=True)
 class IntentReadFile(SuperDataClass):
-    extensions: Optional[List[str]]=field(default=None)
+    extensions: Optional[List[str]] = field(default=None)
     message: str
 
 

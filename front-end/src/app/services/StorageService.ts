@@ -1,7 +1,6 @@
 import { SearchFilter } from "@picteus/ws-client";
 
 import { FolderTypes, TabsType, ViewTabDataType } from "types";
-import { VISUALIZER_DEFAULT_PANEL_SIZES } from "utils";
 
 
 const prefix = "picteus_";
@@ -66,8 +65,7 @@ export default {
     set(ACTIVITY_LOGS_BATCH_SIZE, value.toString());
   },
   getVisualizerPanelSizes: (): number[] =>
-    getJsonNullValue<number[]>(VISUALIZER_PANEL_SIZES_KEY) ||
-    VISUALIZER_DEFAULT_PANEL_SIZES,
+    getJsonNullValue<number[]>(VISUALIZER_PANEL_SIZES_KEY) || [ 60, 30 ],
   setVisualizerPanelSizes: (sizes: number[]): void =>
   {
     storeJson(VISUALIZER_PANEL_SIZES_KEY, sizes);

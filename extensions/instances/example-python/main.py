@@ -13,7 +13,8 @@ from picteus_extension_sdk import PicteusExtension, NotificationEvent, Notificat
     IntentFormContent, IntentDialogIconContent, FormIntent, IntentResourceContent, \
     IntentDialogIconSizeContent, IntentUISidebarIntegration, IntentUIModalIntegration, \
     IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
-    IntentNotification, ActionIntent, IntentAction
+    IntentNotification, ActionIntent, IntentAction, IntentDialogContent, Intent, ProcessCommandIntent, \
+    IntentProcessCommand
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -62,7 +63,7 @@ class PythonExtension(PicteusExtension):
             elif command_id == "notification":
                 await self._handle_notification(communicator, parameters)
             elif command_id == "action":
-                await self._handle_action(communicator)
+                await self._handle_action(communicator, parameters)
             elif command_id == "application":
                 await self._handle_application(communicator)
         elif event == NotificationEvent.IMAGE_RUN_COMMAND:
@@ -173,7 +174,7 @@ class PythonExtension(PicteusExtension):
         is_url: bool = nature == "URL"
         title: str = f"{anchor} UI"
         with open(os.path.join(PicteusExtension.get_extension_home_directory_path(),
-                               "swaggerui.png" if is_url == True else "icon.png"),
+                               "swaggerui.png" if is_url == True else "icon.svg"),
                   mode="rb") as file:
             icon_content: bytes = file.read()
         frame_content = IntentFrameUrlContent(
@@ -248,21 +249,52 @@ class PythonExtension(PicteusExtension):
                                                 body=parameters["body"], silent=False, icon=bytearray(icon_bytes),
                                                 isNative=parameters["isNative"])))
 
-    async def _handle_action(self, communicator: Communicator) -> None:
-        await communicator.launch_intent(
-            ActionIntent(
-                action=IntentAction(what=IntentShow(type=IntentShowType.EXTENSION_SETTINGS, id=self.extension_id),
-                                    dialogContent=IntentDialogIconSizeContent(title="Title",
-                                                                              description="Description"))))
+    async def _handle_action(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
+        with open(
+                os.path.join(PicteusExtension.get_extension_home_directory_path(), "icon.svg"),
+                mode="rb") as file:
+            icon_bytes: bytes = file.read()
+        intent = parameters.get("intent", None)
+        if intent == "ui":
+            intent: UiIntent = UiIntent(
+                ui=IntentUi(id=f"{self.extension_id}-action-ui", integration=IntentUIModalIntegration(),
+                            frameContent=IntentFrameHtmlContent(
+                                html='''<html lang="en"><body style="width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is the content of the modal.</div></body></html>'''),
+                            dialogContent=IntentDialogIconContent(title="Modal",
+                                                                  description="The content of the modal")))
+            description: str = "This is an action which opens a modal"
+        elif intent == "show":
+            intent: ShowIntent = ShowIntent(
+                show=IntentShow(type=IntentShowType.EXTENSION_SETTINGS, id=self.extension_id), )
+            description: str = "This is an action which opens the settings of the extension"
+        elif intent == "command":
+            intent: ProcessCommandIntent = ProcessCommandIntent(
+                processCommand=IntentProcessCommand(extensionId=self.extension_id, commandId="askForSomething"))
+            description: str = "This is an action which runs a command"
+        else:
+            return await communicator.launch_intent(DialogIntent(
+                dialog=IntentDialog(
+                    type=IntentDialogType.ERROR,
+                    title="Unsupported intent",
+                    description="Cannot handle the action",
+                    buttons=IntentDialogButtons(yes="OK"))))
+
+        await communicator.launch_intent(ActionIntent(
+            action=IntentAction(
+                intent=intent,
+                dialogContent=IntentDialogIconSizeContent(title="Action",
+                                                          description=description,
+                                                          details="The action will be executed when the notification is consumed.",
+                                                          icon=IntentResourceContent(
+                                                              content=bytearray(icon_bytes))), label="Run")))
 
     async def _handle_application(self, communicator: Communicator) -> None:
         summaries = self.get_image_api().image_search_summaries(search_parameters=SearchParameters(
             filter=SearchFilter(
                 sorting=SearchSorting(property=SearchSortingProperty.IMPORTDATE, isAscending=False)),
             range=SearchRange(take=20)))
-        with open(
-                os.path.join(PicteusExtension.get_extension_home_directory_path(), "application.zip"),
-                mode="rb") as file:
+        with open(os.path.join(PicteusExtension.get_extension_home_directory_path(), "application.zip"),
+                  mode="rb") as file:
             content_types: bytes = file.read()
         result: str = await communicator.launch_intent(ServeBundleIntent(
             serveBundle=IntentServeBundle(content=bytearray(content_types),

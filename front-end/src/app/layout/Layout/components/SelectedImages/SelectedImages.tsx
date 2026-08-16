@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { ReactElement, useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -16,11 +16,11 @@ import { useTranslation } from "react-i18next";
 
 import { CommandEntity, Manifest, SearchOriginNature } from "@picteus/ws-client";
 
-import { ImageItemMode, UiCommandType, UiExtensionCommandType } from "types";
+import { ImageItemMode, UiCommandType } from "types";
 import { NotificationsService } from "utils";
-import { useEventSocket, useImagesSelectedContext } from "app/context";
-import { useConfirmAction, useExtensionCommand } from "app/hooks";
-import { ExtensionsService, ImageService, StorageService } from "app/services";
+import { useImagesSelectedContext } from "app/context";
+import { useConfirmAction, useExtensionCommandRunner, useExtensionCommandsWithEntities } from "app/hooks";
+import { ImageService, StorageService } from "app/services";
 import {
   computeIcon,
   EmptyResults,
@@ -45,23 +45,10 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
   const confirmAction = useConfirmAction();
   const imagesContainerRef = useRef<HTMLDivElement>(null);
   const { ref: containerRef, height: containerHeight } = useElementSize();
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const { selectedImages, clearSelectedImages } = useImagesSelectedContext();
-  const [ extensionsImageCommands, setExtensionsImageCommands ] = useState<UiExtensionCommandType[]>(ExtensionsService.getExtensionsCommands([ CommandEntity.Images ]));
-  const callCommand = useExtensionCommand();
+  const extensionsImageCommands = useExtensionCommandsWithEntities([ CommandEntity.Images ]);
+  const commandRunner = useExtensionCommandRunner();
   const [ selectedAction, setSelectedAction ] = useState<string>();
-
-  useEffect(() =>
-  {
-    if (ExtensionsService.requiresCommandReload(event) === true)
-    {
-      void ExtensionsService.fetchAll().then(() =>
-      {
-        setExtensionsImageCommands(ExtensionsService.getExtensionsCommands([ CommandEntity.Images ]));
-      });
-    }
-  }, [ event ]);
 
   useEffect(() =>
   {
@@ -168,7 +155,12 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
       (imageCommand) => imageCommand.command.id === commandId && imageCommand.extension.manifest.id === extensionId
     );
     onProcessing(true);
-    void callCommand(extensionId, command.command, { origin: { kind: SearchOriginNature.Images, ids: imageIds } }, () =>
+    void commandRunner(extensionId, command.command, {
+      origin: {
+        kind: SearchOriginNature.Images,
+        ids: imageIds
+      }
+    }, () =>
     {
       onProcessing(false);
     }, (wasAborted: boolean) =>

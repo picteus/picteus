@@ -196,24 +196,22 @@ export interface NotificationIntent extends WithContextIntent
   readonly notification: IntentNotification;
 }
 
-export interface IntentRunCommandParameters
-{
-  readonly search: object;
-  readonly command?: Json;
-}
-
-export interface IntentRunCommand
+export interface IntentProcessCommand
 {
   readonly extensionId: string;
   readonly commandId: string;
-  readonly parameters: IntentRunCommandParameters;
-  readonly actionLabel: string;
+}
+
+export interface ProcessCommandIntent extends WithContextIntent
+{
+  readonly processCommand: IntentProcessCommand;
 }
 
 export interface IntentAction
 {
-  readonly what: IntentShow | IntentUi | IntentRunCommand;
+  readonly intent: ShowIntent | UiIntent | ProcessCommandIntent;
   readonly dialogContent: IntentDialogIconSizeContent;
+  readonly label?: string;
 }
 
 export interface ActionIntent extends WithContextIntent

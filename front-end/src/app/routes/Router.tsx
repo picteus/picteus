@@ -1,11 +1,13 @@
+import * as React from "react";
 import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 import { HashRouter, useLocation, useNavigate } from "react-router-dom";
+import { Bounce, ToastContainer } from "react-toastify";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
-import { computeExtensionSidebarRoute, ROUTES } from "utils";
 import { AdditionalUi } from "types";
-import { useAdditionalUiContext } from "app/context";
+import { computeExtensionSidebarRoute, ROUTES } from "utils";
+import Providers, { useAdditionalUiContext } from "app/context";
 import {
   ActivityScreen,
   CollectionsScreen,
@@ -19,32 +21,24 @@ import {
 import { Layout } from "app/layout";
 
 
-export default function AppRouter()
-{
-  return (
-    <HashRouter>
-      <RouterContent/>
-    </HashRouter>
-  );
-}
-
 interface Route
 {
   key: string;
-
   path: string;
-
   layout: JSX.Element;
-
   alwaysRender: boolean;
 }
 
-function RouterContent()
+interface RouterContentType
 {
-  const [additionalUi] = useAdditionalUiContext();
+}
+
+function RouterContent({}: RouterContentType)
+{
+  const [ additionalUi ] = useAdditionalUiContext();
   const location = useLocation();
   const navigate = useNavigate();
-  const [routes, setRoutes] = useState<Route[]>([]);
+  const [ routes, setRoutes ] = useState<Route[]>([]);
 
   const hasBeenRendered = useRef<{ [key: string]: boolean }>({});
   const scrollPositions = useRef<{ [key: string]: number }>({});
@@ -57,7 +51,7 @@ function RouterContent()
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [location.pathname]);
+  }, [ location.pathname ]);
 
   useEffect(() =>
   {
@@ -67,12 +61,12 @@ function RouterContent()
     rootElement.style.scrollBehavior = "auto";
     window.scrollTo(0, savedScrollPosition);
     rootElement.style.scrollBehavior = originalScrollBehavior;
-  }, [location.pathname]);
+  }, [ location.pathname ]);
 
   useEffect(() =>
   {
     hasBeenRendered.current[location.pathname] = true;
-  }, [location.pathname]);
+  }, [ location.pathname ]);
 
   function renderLayout(component: FunctionComponent, props?: object)
   {
@@ -82,7 +76,7 @@ function RouterContent()
 
   const mainRoutes = useMemo<Route []>(() =>
   {
-    return Object.entries(ROUTES).map(([key, path]) =>
+    return Object.entries(ROUTES).map(([ key, path ]) =>
     {
       const ComponentMap: Record<string, FunctionComponent> = {
         home: ImagesScreen,
@@ -95,7 +89,7 @@ function RouterContent()
       };
       return { key, path, layout: renderLayout(ComponentMap[key]), alwaysRender: false };
     });
-  }, [additionalUi, location.pathname]);
+  }, [ additionalUi, location.pathname ]);
 
   const additionalRoutes = useMemo<Route []>(() =>
   {
@@ -104,7 +98,7 @@ function RouterContent()
       const path = computeExtensionSidebarRoute(element.uuid);
       return { key: element.uuid, path, layout: renderLayout(SidebarAnchorScreen, { element }), alwaysRender: true };
     });
-  }, [additionalUi, location.pathname]);
+  }, [ additionalUi, location.pathname ]);
 
   useEffect(() =>
   {
@@ -115,7 +109,7 @@ function RouterContent()
       // In case the current navigation path does not match any route, we fall back to the "home" route
       navigate(ROUTES.home);
     }
-  }, [location.pathname, mainRoutes, additionalRoutes]);
+  }, [ location.pathname, mainRoutes, additionalRoutes ]);
 
   return (
     <Layout>
@@ -132,5 +126,32 @@ function RouterContent()
         })}
       </>
     </Layout>
+  );
+}
+
+interface AppRouterType
+{
+}
+
+export default function AppRouter({}: AppRouterType)
+{
+  return (
+    <HashRouter>
+      <Providers>
+        <ToastContainer
+          position="bottom-center"
+          autoClose={3000}
+          newestOnTop
+          hideProgressBar
+          closeOnClick
+          rtl={false}
+          draggable
+          pauseOnHover
+          theme="light"
+          transition={Bounce}
+        />
+        <RouterContent/>
+      </Providers>
+    </HashRouter>
   );
 }

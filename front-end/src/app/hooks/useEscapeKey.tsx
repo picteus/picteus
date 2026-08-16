@@ -41,7 +41,7 @@ function unregister()
   document.removeEventListener(event, onKeyDown, options);
 }
 
-export default function useEscapeKey(elementRef: RefObject<HTMLElement>, callback: () => void)
+export default function useEscapeKey(elementRef: RefObject<HTMLElement>, callback: () => void): void
 {
   const callbackRef = useRef<() => void>(callback);
   callbackRef.current = callback;
@@ -70,5 +70,5 @@ export default function useEscapeKey(elementRef: RefObject<HTMLElement>, callbac
         unregister();
       }
     };
-  }, [elementRef]);
+  }, [ elementRef ]);
 }

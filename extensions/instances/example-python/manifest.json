@@ -409,6 +409,25 @@
           "on": {
             "entity": "Process"
           },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "intent": {
+                "type": "string",
+                "title": "Intent",
+                "description": "The intent to trigger when the user clicks on the notification.",
+                "enum": [
+                  "ui",
+                  "show",
+                  "command"
+                ],
+                "default": "ui"
+              }
+            },
+            "required": [
+              "intent"
+            ]
+          },
           "specifications": [
             {
               "locale": "en",
