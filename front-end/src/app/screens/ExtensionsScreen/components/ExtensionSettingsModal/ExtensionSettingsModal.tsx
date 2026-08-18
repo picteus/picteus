@@ -6,7 +6,7 @@ import { IconCircleX, IconInfoCircle } from "@tabler/icons-react";
 import { Extension, ExtensionSettings } from "@picteus/ws-client";
 
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { ExtensionsService } from "app/services";
 import { extractSchemaAndUiSchema, RjsfForm } from "app/components";
 
@@ -28,9 +28,9 @@ export default function ExtensionSettingsModal({
   onSuccess
 }: ExtensionSettingsModalType)
 {
-  const [t] = useTranslation();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [extensionSettings, setExtensionSettings] = useState<ExtensionSettings>();
+  const [ t ] = useTranslation();
+  const [ loading, setLoading ] = useState<boolean>(false);
+  const [ extensionSettings, setExtensionSettings ] = useState<ExtensionSettings>();
 
   async function load()
   {
@@ -45,7 +45,7 @@ export default function ExtensionSettingsModal({
     }
     catch (error)
     {
-      NotificationsService.apiCallError(error, t("extensionSettingsModal.errorLoading"));
+      ToastService.apiCallError(error, t("extensionSettingsModal.errorLoading"));
     }
     finally
     {
@@ -62,11 +62,11 @@ export default function ExtensionSettingsModal({
         id: extension.manifest.id,
         extensionSettings
       });
-      NotificationsService.success(t("extensionSettingsModal.successSaving"));
+      ToastService.success(t("extensionSettingsModal.successSaving"));
     }
     catch (error)
     {
-      NotificationsService.apiCallError(error, t("extensionSettingsModal.errorSaving"));
+      ToastService.apiCallError(error, t("extensionSettingsModal.errorSaving"));
     }
     finally
     {

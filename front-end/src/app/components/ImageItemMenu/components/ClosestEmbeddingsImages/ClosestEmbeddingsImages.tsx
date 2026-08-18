@@ -13,7 +13,7 @@ import {
 } from "@picteus/ws-client";
 
 import { ImageWithCaption, ViewMode } from "types";
-import { NotificationsService, Validators } from "utils";
+import { ToastService, Validators } from "utils";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmbeddingSelect, EmptyResults, ImagesView, ImageThumbnail } from "app/components";
 
@@ -88,7 +88,7 @@ export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbe
       }
       catch (error)
       {
-        return NotificationsService.apiCallError(error, "An error occurred while trying to find closes images");
+        return ToastService.apiCallError(error, "An error occurred while trying to find closes images");
       }
       setImages(
         imageDistances

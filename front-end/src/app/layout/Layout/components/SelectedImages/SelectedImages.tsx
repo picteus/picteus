@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import { CommandEntity, Manifest, SearchOriginNature } from "@picteus/ws-client";
 
 import { ImageItemMode, UiCommandType } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useImagesSelectedContext } from "app/context";
 import { useConfirmAction, useExtensionCommandRunner, useExtensionCommandsWithEntities } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
@@ -133,14 +133,14 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
 
     if (selectedAction === synchronizeAction)
     {
-      imageIds.forEach(imageId => ImageService.synchronize(imageId).catch(NotificationsService.apiCallError));
+      imageIds.forEach(imageId => ImageService.synchronize(imageId).catch(ToastService.apiCallError));
       return;
     }
     else if (selectedAction === deleteAction)
     {
       confirmAction(() =>
       {
-        imageIds.forEach(imageId => ImageService.destroy(imageId).catch(NotificationsService.apiCallError));
+        imageIds.forEach(imageId => ImageService.destroy(imageId).catch(ToastService.apiCallError));
         clearSelectedImages();
       }, {
         title: t(`commands.confirmImage${imageIds.length > 1 ? "s" : ""}DeleteTitle`),

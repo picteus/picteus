@@ -8,7 +8,7 @@ import { IconAlertTriangle, IconFileZip, IconTrash, IconUpload, IconX } from "@t
 
 import { Extension } from "@picteus/ws-client";
 
-import { fileToBlob, mimeTypes, NotificationsService, Validators } from "utils";
+import { fileToBlob, mimeTypes, ToastService, Validators } from "utils";
 import { ExtensionsService } from "app/services";
 
 
@@ -122,7 +122,7 @@ export default function InstallOrUpdateExtension({
     catch (error)
     {
       const errorAsError = error as Error;
-      NotificationsService.errorWithMessage(errorAsError, t(`${messagePrefix}.errorAdd`, { error: errorAsError.message }));
+      ToastService.failureAndMessage(errorAsError, t(`${messagePrefix}.errorAdd`, { error: errorAsError.message }));
     }
     finally
     {

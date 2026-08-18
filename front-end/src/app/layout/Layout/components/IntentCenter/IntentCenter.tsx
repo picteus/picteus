@@ -13,14 +13,16 @@ import {
   isImagesIntent,
   isNotificationIntent,
   isShowIntent,
+  isToastIntent,
   isUiIntent,
-  NotificationIntent
+  NotificationIntent,
+  ToastIntent
 } from "@picteus/shared-core";
 import { detectImageMimeType } from "@picteus/shared-front-end";
 import { SearchOriginNature } from "@picteus/ws-client";
 
 import { ChannelEnum, ContentIconType, EventOnResultValueType, ExtensionIntentType, ResourceType } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useActionModalContext, useEventSocket, useImagesTabsContext } from "app/context";
 import { useExtensionIntentRunner } from "app/hooks";
 import { ExtensionsService, NotificationService } from "app/services";
@@ -76,7 +78,7 @@ export default function IntentCenter()
         }
         catch (error)
         {
-          NotificationsService.errorWithMessage(error, t("extensionIntent.onResultError"));
+          ToastService.failureAndMessage(error, t("extensionIntent.onResultError"));
         }
       }
 
@@ -191,6 +193,13 @@ export default function IntentCenter()
         respondWithValue();
       }
 
+      async function handleToast(toastIntent: ToastIntent): Promise<void>
+      {
+        const toast = toastIntent.toast;
+        ToastService.withTitleAndSubtitle(toast.type, toast.title, toast.subtitle);
+        respondWithValue();
+      }
+
       async function handleNotification(notificationIntent: NotificationIntent): Promise<void>
       {
         const notification = notificationIntent.notification;
@@ -252,6 +261,10 @@ export default function IntentCenter()
       else if (isNotificationIntent(intent))
       {
         void handleNotification(intent);
+      }
+      else if (isToastIntent(intent))
+      {
+        void handleToast(intent);
       }
       else if (isActionIntent(intent))
       {

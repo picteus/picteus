@@ -20,7 +20,8 @@
   "files": [
     "dist",
     "manifest.json",
-    "icon.png"
+    "icon.svg",
+    "assets"
   ],
   "scripts": {
     "build": "tsc"

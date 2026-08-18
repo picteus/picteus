@@ -4,7 +4,7 @@ import { Flex } from "@mantine/core";
 import { ImageSummary } from "@picteus/ws-client";
 
 import { ImageItemMode, ImageOrSummary } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useActionModalContext } from "app/context";
 import { ImageService } from "app/services";
 import { ImageDetail, ImageItem } from "app/components";
@@ -20,8 +20,8 @@ export default function ImagesCollection({ imageIds }: ImageCollectionType)
 {
   const edge = 100;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [images, setImages] = useState<ImageSummary[]>([]);
-  const [, addModal, removeModal] = useActionModalContext();
+  const [ images, setImages ] = useState<ImageSummary[]>([]);
+  const [ , addModal, removeModal ] = useActionModalContext();
 
   useEffect(() =>
   {
@@ -34,12 +34,12 @@ export default function ImagesCollection({ imageIds }: ImageCollectionType)
       }
       catch (error)
       {
-        NotificationsService.apiCallError(error, "An error occurred while retrieving the images");
+        ToastService.apiCallError(error, "An error occurred while retrieving the images");
       }
     }
 
     void load();
-  }, [imageIds]);
+  }, [ imageIds ]);
 
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
@@ -58,7 +58,7 @@ export default function ImagesCollection({ imageIds }: ImageCollectionType)
       withCloseButton: false,
       fullScreen: true
     });
-  }, [images]);
+  }, [ images ]);
 
   return (<div ref={containerRef} className={style.container}>
       <Flex className={style.content} align="center" gap={10}>

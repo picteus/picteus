@@ -39,7 +39,7 @@ import {
   SearchFeatures
 } from "@picteus/ws-client";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { FiltersService } from "app/services";
 import { Common, ExtensionIcon } from "app/components";
 
@@ -241,9 +241,9 @@ type FeaturesQueryBuilderType = {
 
 export default function FeaturesQueryBuilder({ searchFeatures, onChange }: FeaturesQueryBuilderType)
 {
-  const [t] = useTranslation();
-  const [featureNames, setFeatureNames] = useState<ExtensionImageFeatureName[]>([]);
-  const [perFeatureNamesDataValueFeaturesNamesOptionMap, setPerFeatureNamesDataValueFeaturesNamesOptionMap] = useState<Map<string, FeatureNameType>>(new Map());
+  const [ t ] = useTranslation();
+  const [ featureNames, setFeatureNames ] = useState<ExtensionImageFeatureName[]>([]);
+  const [ perFeatureNamesDataValueFeaturesNamesOptionMap, setPerFeatureNamesDataValueFeaturesNamesOptionMap ] = useState<Map<string, FeatureNameType>>(new Map());
   const featureNamesData = useMemo<FeatureNamesDataType []>(() =>
   {
     const defaultFeatureNameDatas: FeatureNamesDataType[] = featureNames.filter(imageFeatureName => allowedFeatureNameFormats.indexOf(imageFeatureName.format) !== -1).map((imageFeatureName, index) => ({
@@ -259,20 +259,20 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
       switch (featureType)
       {
         case ImageFeatureType.Caption:
-          formats = [ImageFeatureFormat.String];
+          formats = [ ImageFeatureFormat.String ];
           break;
         case ImageFeatureType.Description:
         case ImageFeatureType.Comment:
-          formats = [ImageFeatureFormat.String, ImageFeatureFormat.Markdown, ImageFeatureFormat.Html];
+          formats = [ ImageFeatureFormat.String, ImageFeatureFormat.Markdown, ImageFeatureFormat.Html ];
           break;
         case ImageFeatureType.Annotation:
           formats = allowedFeatureNameFormats;
           break;
         case ImageFeatureType.Metadata:
-          formats = [ImageFeatureFormat.Json, ImageFeatureFormat.Xml];
+          formats = [ ImageFeatureFormat.Json, ImageFeatureFormat.Xml ];
           break;
         case ImageFeatureType.Recipe:
-          formats = [ImageFeatureFormat.Json];
+          formats = [ ImageFeatureFormat.Json ];
           break;
         case ImageFeatureType.Identity:
           formats = allowedFeatureNameFormats;
@@ -296,7 +296,7 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
       }
     });
     return featureNameDatas;
-  }, [featureNames]);
+  }, [ featureNames ]);
 
   useEffect(() =>
   {
@@ -305,11 +305,11 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
       map.set(imageFeatureName.value, imageFeatureName.reference);
       return map;
     }, new Map<string, FeatureNameType>()));
-  }, [featureNamesData]);
+  }, [ featureNamesData ]);
 
   useEffect(() =>
   {
-    FiltersService.computeFeaturesNamesOptions().then(setFeatureNames).catch(NotificationsService.apiCallError);
+    FiltersService.computeFeaturesNamesOptions().then(setFeatureNames).catch(ToastService.apiCallError);
   }, []);
 
   const handleOperatorChange = (value: string) =>
@@ -334,14 +334,14 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
     };
     onChange({
       operator: searchFeatures?.operator || defaultLogicalOperator,
-      conditions: [...(searchFeatures?.conditions || []), newCondition],
+      conditions: [ ...(searchFeatures?.conditions || []), newCondition ],
       features: searchFeatures?.features
     });
   };
 
   const handleUpdateCondition = (index: number, updatedCondition: Partial<SearchFeatureCondition>) =>
   {
-    const newConditions = [...(searchFeatures?.conditions || [])];
+    const newConditions = [ ...(searchFeatures?.conditions || []) ];
     newConditions[index] = { ...newConditions[index], ...updatedCondition };
     const newCondition = newConditions[index];
     const compatibleOperators = computeCompatibleOperators(newCondition.format);
@@ -363,7 +363,7 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
 
   const handleRemoveCondition = (index: number) =>
   {
-    const newConditions = [...(searchFeatures?.conditions || [])];
+    const newConditions = [ ...(searchFeatures?.conditions || []) ];
     newConditions.splice(index, 1);
     if (newConditions.length === 0 && !searchFeatures?.features)
     {

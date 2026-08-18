@@ -3,7 +3,7 @@ import { Text } from "@mantine/core";
 
 import { ExtensionIdImageEmbeddingName } from "@picteus/ws-client";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { ExtensionsService, RepositoriesService, StorageService } from "app/services";
 import { ExtensionIcon, MenuItemEntry, StandardMenu } from "app/components";
 
@@ -41,7 +41,7 @@ export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
       }
       catch (error)
       {
-        return NotificationsService.apiCallError(error, "An error occurred while fetching embeddings names");
+        return ToastService.apiCallError(error, "An error occurred while fetching embeddings names");
       }
       setEmbeddingsNames(theEmbeddingNames);
       let selected = StorageService.getClosestImagesEmbeddingName();

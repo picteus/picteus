@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Repository } from "@picteus/ws-client";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useConfirmAction } from "app/hooks";
 import { RepositoriesService } from "app/services";
 import { ExternalLink } from "app/components";
@@ -26,7 +26,7 @@ export default function RepositoryActions({
   onDeleted
 }: RepositoryActionsType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
 
   async function handleOnSynchronizeRepository(id: string)
@@ -39,12 +39,12 @@ export default function RepositoryActions({
     try
     {
       await RepositoriesService.remove({ id });
-      NotificationsService.success(t("repositoryScreen.successRemove"));
+      ToastService.success(t("repositoryScreen.successRemove"));
       onDeleted();
     }
     catch (error)
     {
-      NotificationsService.apiCallI18nError(error, "repositoryScreen.errorRemove");
+      ToastService.apiCallI18nError(error, "repositoryScreen.errorRemove");
     }
   }
 

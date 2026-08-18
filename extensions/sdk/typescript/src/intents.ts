@@ -181,6 +181,24 @@ export interface ShowIntent extends BasisIntent
   readonly show: IntentShow;
 }
 
+export enum IntentToastType
+{
+  Info = "info",
+  Error = "error"
+}
+
+export interface IntentToast
+{
+  readonly type: IntentToastType;
+  readonly title: string;
+  readonly subtitle: string;
+}
+
+export interface ToastIntent extends WithContextIntent
+{
+  readonly toast: IntentToast;
+}
+
 export interface IntentNotification
 {
   readonly title: string;
@@ -225,6 +243,7 @@ export type FrontIntent =
   | DialogIntent
   | ImagesIntent
   | ShowIntent
+  | ToastIntent
   | NotificationIntent
   | ActionIntent;
 

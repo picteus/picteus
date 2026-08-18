@@ -8,7 +8,7 @@ import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 import { ExtensionIdImageEmbeddingName, ImageApiImageTextToImagesRequest } from "@picteus/ws-client";
 
 import { ImageWithCaption } from "types";
-import { NotificationsService, Validators } from "utils";
+import { ToastService, Validators } from "utils";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmbeddingSelect, EmptyResults, ImagesView } from "app/components";
 
@@ -88,7 +88,7 @@ export default function TextToImages({ extensionId }: TextToImageType)
     }
     catch (error)
     {
-      NotificationsService.apiCallError(error, "An error occurred while trying to search images from text");
+      ToastService.apiCallError(error, "An error occurred while trying to search images from text");
     }
     finally
     {

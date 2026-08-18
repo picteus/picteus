@@ -10,7 +10,7 @@ import {
   MiscellaneousApi
 } from "@picteus/ws-client";
 
-import { computeFilePath, NotificationsService } from "utils";
+import { computeFilePath, ToastService } from "utils";
 import { useFolderPicker, useOpenExplorer } from "app/hooks";
 import { ExtensionsService } from "app/services";
 import { ChannelEnum, FolderTypes } from "types";
@@ -65,7 +65,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
       })
       .catch((error) =>
       {
-        NotificationsService.apiCallError(error, "Failed to load the application configuration");
+        ToastService.apiCallError(error, "Failed to load the application configuration");
       });
   }, []);
 
@@ -154,7 +154,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         });
       });
 
-      NotificationsService.success(t("createExtensionModal.success"));
+      ToastService.success(t("createExtensionModal.success"));
       await openExplorer(extensionDirectoryPath);
       onSuccess();
     }
@@ -242,7 +242,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         {...form.getInputProps("environment")}
       />
       {submitError && (
-        <Alert mb="md" color="red" title={t("titles.error")} icon={<IconX />}>
+        <Alert mb="md" color="red" title={t("titles.error")} icon={<IconX/>}>
           {t("createExtensionModal.error", { error: submitError })}
         </Alert>
       )}

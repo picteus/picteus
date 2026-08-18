@@ -11,7 +11,7 @@ import {
 } from "@picteus/ws-client";
 import { IconLibraryPhoto, IconPhoto, IconServer } from "@tabler/icons-react";
 
-import { extractMarkdownParagraph, NotificationsService } from "utils";
+import { extractMarkdownParagraph, ToastService } from "utils";
 import { ExtensionsService } from "app/services";
 import { CommandIcon, FieldValue, Markdown, NoValue } from "app/components";
 
@@ -27,9 +27,7 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
 
   useEffect(() =>
   {
-    void ExtensionsService.get({ id: extension.manifest.id })
-      .then(setExtensionAndManual)
-      .catch(NotificationsService.errorWithMessage);
+    void ExtensionsService.get({ id: extension.manifest.id }).then(setExtensionAndManual).catch(ToastService.apiCallError);
   }, [ extension.manifest.id ]);
 
   const manifestInstructionsArray = extension.manifest.instructions;

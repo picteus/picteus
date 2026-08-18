@@ -5,7 +5,7 @@ import { Group as ResizableGroup, Layout, Panel, Separator } from "react-resizab
 import { Image } from "@picteus/ws-client";
 
 import { ChannelEnum, ImageOrSummary, ViewMode } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useEventSocket } from "app/context";
 import { useImageNavigation } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
@@ -49,7 +49,7 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
         }
         else if (navigation.containsImage(imageId))
         {
-          ImageService.get({ id: imageId }).then(image => navigation.updateImage(image)).catch(NotificationsService.apiCallError);
+          ImageService.get({ id: imageId }).then(image => navigation.updateImage(image)).catch(ToastService.apiCallError);
         }
       }
     }
@@ -59,7 +59,7 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
   {
     if (image)
     {
-      ("metadata" in image ? Promise.resolve(image as Image) : ImageService.get({ id: image.id })).then(navigation.setSelectedImage).catch(NotificationsService.apiCallError);
+      ("metadata" in image ? Promise.resolve(image as Image) : ImageService.get({ id: image.id })).then(navigation.setSelectedImage).catch(ToastService.apiCallError);
     }
   }, [image, navigation.setSelectedImage]);
 

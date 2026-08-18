@@ -25,6 +25,7 @@ import {
   ImagesIntent,
   IntentDialogType,
   IntentShowType,
+  IntentToastType,
   IntentUiAnchor,
   isActionIntent,
   isDialogIntent,
@@ -32,9 +33,11 @@ import {
   isImagesIntent,
   isNotificationIntent,
   isShowIntent,
+  isToastIntent,
   isUiIntent,
   NotificationIntent,
   ShowIntent,
+  ToastIntent,
   UiIntent
 } from "@picteus/shared-core";
 import { HostCommandType } from "@picteus/shared-back-end";
@@ -757,6 +760,22 @@ export class NotificationsGateway
       if (await checkSchema(zodShow, specificIntent.show) === false)
       {
         return resolveWithInvalidIntentSchema("ShowIntent");
+      }
+      onAcknowledged = onAcknowledgedFromMasterSocketFactory();
+    }
+    else if (isToastIntent(intent) === true)
+    {
+      intentName = "toast";
+      const specificIntent: ToastIntent = intent;
+      if (await checkSchema(z.object({
+        toast: z.object({
+          type: z.enum(IntentToastType),
+          title: z.string(),
+          subtitle: z.string()
+        })
+      }), specificIntent) === false)
+      {
+        return resolveWithInvalidIntentSchema("ToastIntent");
       }
       onAcknowledged = onAcknowledgedFromMasterSocketFactory();
     }

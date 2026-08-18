@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useRef, useState } from 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { AdditionalUi } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { ExtensionsService } from "app/services";
 import useOpenWindow from "../hooks/useOpenWindow.tsx";
 
@@ -51,7 +51,7 @@ export function AdditionalUiProvider({ children })
     {
       if (additionalUi.integration.anchor === UserInterfaceAnchor.Window)
       {
-        openWindow(additionalUi.uuid, additionalUi.content, true).catch(error => NotificationsService.errorWithMessage(error, `Could not open the window with uuid '${additionalUi.uuid}'`));
+        openWindow(additionalUi.uuid, additionalUi.content, true).catch(error => ToastService.failureAndMessage(error, `Could not open the window with uuid '${additionalUi.uuid}'`));
       }
     }
     windowsOpened.current = true;
@@ -64,29 +64,29 @@ export function AdditionalUiProvider({ children })
     return { sidebar: additionalUis.filter(additionalUi => additionalUi.integration.anchor !== UserInterfaceAnchor.Window) };
   }
 
-  const [additionalContextValue, setAdditionalContextValue] = useState<AdditionalUiContextValue>(computeAdditionalUi());
-  const [transientUis, setTransientUis] = useState<AdditionalUi[]>([]);
+  const [ additionalContextValue, setAdditionalContextValue ] = useState<AdditionalUiContextValue>(computeAdditionalUi());
+  const [ transientUis, setTransientUis ] = useState<AdditionalUi[]>([]);
 
   const refresh = useCallback(() =>
   {
     const newAdditionalUis = transientUis.filter(transientUi => ExtensionsService.isPaused(transientUi.extensionId) === false);
     setTransientUis(newAdditionalUis);
-    const additionalUis = [...computeAdditionalUi().sidebar, ...newAdditionalUis];
-    setAdditionalContextValue({ sidebar: [...additionalUis] });
-  }, [transientUis]);
+    const additionalUis = [ ...computeAdditionalUi().sidebar, ...newAdditionalUis ];
+    setAdditionalContextValue({ sidebar: [ ...additionalUis ] });
+  }, [ transientUis ]);
 
   const addTransient = useCallback((additionalUi: AdditionalUi) =>
   {
     if (transientUis.find(ui => ui.extensionId === additionalUi.extensionId && ui.uuid === additionalUi.uuid) === undefined)
     {
       setTransientUis(transientUis.concat(additionalUi));
-      const additionalUis = [...additionalContextValue.sidebar, additionalUi];
+      const additionalUis = [ ...additionalContextValue.sidebar, additionalUi ];
       setAdditionalContextValue({ sidebar: additionalUis });
     }
-  }, [additionalContextValue, transientUis]);
+  }, [ additionalContextValue, transientUis ]);
 
   return (
-    <AdditionalUiContext.Provider value={[additionalContextValue, refresh, addTransient]}>
+    <AdditionalUiContext.Provider value={[ additionalContextValue, refresh, addTransient ]}>
       {children}
     </AdditionalUiContext.Provider>
   );

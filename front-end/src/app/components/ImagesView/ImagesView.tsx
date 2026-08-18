@@ -20,7 +20,7 @@ import {
   ViewMode,
   ViewTabDataType
 } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useEventSocket, useImagesTabsContext } from "app/context";
 import { useInterceptedState } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
@@ -44,7 +44,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollRootRef = useRef<HTMLDivElement>(null);
   const { addTab } = useImagesTabsContext();
-  const [filterOrCollectionId, setFilterOrCollectionId] = useInterceptedState<FilterOrCollectionId>("filterOrCollectionId" in viewData ? viewData.filterOrCollectionId : {
+  const [ filterOrCollectionId, setFilterOrCollectionId ] = useInterceptedState<FilterOrCollectionId>("filterOrCollectionId" in viewData ? viewData.filterOrCollectionId : {
     filter: {
       origin: {
         kind: "images",
@@ -52,12 +52,12 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       }
     }
   });
-  const hasFilterOrCollectionId = useMemo<boolean>(() => "filterOrCollectionId" in viewData, [viewData]);
-  const pinnable = useMemo<boolean>(() => "pinnable" in viewData ? viewData.pinnable : false, [viewData]);
-  const [images, setImages] = useState<ImageWithCaption[] | undefined>("images" in viewData ? viewData.images : undefined);
-  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  const [viewMode, setViewMode] = useInterceptedState<ViewMode>("mode" in viewData ? viewData.mode : viewData.viewMode);
-  const [displayRefreshAlert, setDisplayRefreshAlert] = useState<boolean>(false);
+  const hasFilterOrCollectionId = useMemo<boolean>(() => "filterOrCollectionId" in viewData, [ viewData ]);
+  const pinnable = useMemo<boolean>(() => "pinnable" in viewData ? viewData.pinnable : false, [ viewData ]);
+  const [ images, setImages ] = useState<ImageWithCaption[] | undefined>("images" in viewData ? viewData.images : undefined);
+  const [ refreshTrigger, setRefreshTrigger ] = useState<number>(0);
+  const [ viewMode, setViewMode ] = useInterceptedState<ViewMode>("mode" in viewData ? viewData.mode : viewData.viewMode);
+  const [ displayRefreshAlert, setDisplayRefreshAlert ] = useState<boolean>(false);
   const autoReloadImagesViews = useMemo<boolean>(() => StorageService.getAutoReloadImagesViews(), []);
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
@@ -96,7 +96,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
     }
 
     handleOnRefresh();
-  }, [viewData, setFilterOrCollectionId, setViewMode]);
+  }, [ viewData, setFilterOrCollectionId, setViewMode ]);
 
   const handleOnRefresh = useCallback(() =>
   {
@@ -125,13 +125,13 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       });
     }).catch((error) =>
     {
-      NotificationsService.apiCallError(error, "Can't fetch images");
+      ToastService.apiCallError(error, "Can't fetch images");
       return Promise.resolve<ImageExplorerDataType>({
         total: 0,
         images: []
       });
     });
-  }, [filterOrCollectionId, images]);
+  }, [ filterOrCollectionId, images ]);
 
   useEffect(() =>
   {
@@ -152,7 +152,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
           }
           else if (event.channel === ChannelEnum.IMAGE_UPDATED)
           {
-            ImageService.get({ id: imageId }).then(image => imagesContentRef.current.onImageUpdated(image)).catch(NotificationsService.apiCallError);
+            ImageService.get({ id: imageId }).then(image => imagesContentRef.current.onImageUpdated(image)).catch(ToastService.apiCallError);
           }
           else
           {
@@ -165,7 +165,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
         setDisplayRefreshAlert(true);
       }
     }
-  }, [event, autoReloadImagesViews, handleOnRefresh]);
+  }, [ event, autoReloadImagesViews, handleOnRefresh ]);
 
   const handleOnFilterOrCollectionId = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId) =>
   {
@@ -182,7 +182,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       }
       handleOnRefresh();
     }
-  }, [filterOrCollectionId, viewMode, pinnable, handleOnRefresh]);
+  }, [ filterOrCollectionId, viewMode, pinnable, handleOnRefresh ]);
 
   const handleOnViewMode = useCallback((updatedViewMode: ViewMode) =>
   {
@@ -192,7 +192,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       StorageService.setMainViewTabData({ mode: updatedViewMode, pinnable, filterOrCollectionId });
     }
     handleOnRefresh();
-  }, [pinnable, filterOrCollectionId, handleOnRefresh]);
+  }, [ pinnable, filterOrCollectionId, handleOnRefresh ]);
 
   const handleOnPin = useMemo(() =>
   {
@@ -207,7 +207,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
       };
     }
     return undefined;
-  }, [pinnable, filterOrCollectionId]);
+  }, [ pinnable, filterOrCollectionId ]);
 
   return (<Flex ref={containerRef} direction="column" className={style.container}>
     <ControllerBar

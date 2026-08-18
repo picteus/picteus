@@ -7,7 +7,7 @@ import { useForm } from "@mantine/form";
 import { Repository, RepositoryApiRepositoryCreateRequest } from "@picteus/ws-client";
 
 import { FolderTypes } from "types";
-import { computePathSeparator, NotificationsService, Validators } from "utils";
+import { computePathSeparator, ToastService, Validators } from "utils";
 import { useFolderPicker } from "app/hooks";
 import { RepositoriesService } from "app/services";
 
@@ -64,12 +64,12 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
       {
         await RepositoriesService.add(values);
       }
-      NotificationsService.success(t(`addOrUpdateRepositoryModal.${repository ? "successUpdate" : "successAdd"}`));
+      ToastService.success(t(`addOrUpdateRepositoryModal.${repository ? "successUpdate" : "successAdd"}`));
       onSuccess();
     }
     catch (error)
     {
-      NotificationsService.apiCallI18nError(error, `addOrUpdateRepositoryModal.${repository ? "errorUpdate" : "errorAdd"}`);
+      ToastService.apiCallI18nError(error, `addOrUpdateRepositoryModal.${repository ? "errorUpdate" : "errorAdd"}`);
     }
     finally
     {

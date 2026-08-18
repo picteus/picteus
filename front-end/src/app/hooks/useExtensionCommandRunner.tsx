@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { SearchFilter } from "@picteus/ws-client";
 
 import { UiCommandType } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useActionModalContext } from "app/context";
 import { ExtensionsService } from "app/services";
 import { CommandForm } from "app/components";
@@ -43,10 +43,7 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
     }
     catch (error)
     {
-      NotificationsService.withMessage(t("commands.extensionCommandFailed", {
-        command: commandId,
-        extension: extensionId
-      }));
+      ToastService.failure(t("commands.extensionCommandFailed", { command: commandId, extension: extensionId }));
     }
   }
 

@@ -6,7 +6,7 @@ import json from "highlight.js/lib/languages/json";
 import xml from "highlight.js/lib/languages/xml";
 import beautify from "js-beautify";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 
 
 hljs.registerLanguage("json", json);
@@ -65,7 +65,7 @@ export default function CodeViewer({ code, language }: CodeViewerType)
     }
     catch (error)
     {
-      NotificationsService.errorWithMessage(error, "An error occurred while trying to beautify the code");
+      ToastService.failureAndMessage(error, "An error occurred while trying to beautify the code");
       return "Source code is broken";
     }
   }, [ code ]);

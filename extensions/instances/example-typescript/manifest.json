@@ -353,6 +353,55 @@
           }
         },
         {
+          "id": "toast",
+          "on": {
+            "entity": "Process"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "title": "Type",
+                "description": "The toast type.",
+                "enum": [
+                  "info",
+                  "error"
+                ],
+                "default": "info"
+              },
+              "title": {
+                "type": "string",
+                "title": "Title",
+                "description": "The toast title.",
+                "default": "My Toast"
+              },
+              "subtitle": {
+                "type": "string",
+                "title": "Subtitle",
+                "description": "The toast subtitle.",
+                "default": "My subtitle"
+              }
+            },
+            "required": [
+              "type",
+              "title",
+              "subtitle"
+            ]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Toast",
+              "name": "Trigger toast",
+              "description": "Triggers a toast based on the user inputs."
+            }
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/toast.svg"
+          }
+        },
+        {
           "id": "notification",
           "on": {
             "entity": "Process"
@@ -364,7 +413,7 @@
                 "type": "string",
                 "title": "Title",
                 "description": "The notification title.",
-                "default": "My Title"
+                "default": "My Notification"
               },
               "subtitle": {
                 "type": "string",

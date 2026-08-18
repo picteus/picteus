@@ -9,15 +9,13 @@ import { FiltersService } from "app/services";
 import { FilterSelect } from "../../..";
 
 
-const { searchInOptions, formatsOptions } = FiltersService;
-
-type GeneralFiltersProps = {
+type GeneralFiltersType = {
   repositories: Repository[];
   filters: LocalFiltersType;
   onChangeFilter: (key: string, value?: string []) => void;
 };
 
-export default function GeneralFilters({ repositories, filters, onChangeFilter }: GeneralFiltersProps)
+export default function GeneralFilters({ repositories, filters, onChangeFilter }: GeneralFiltersType)
 {
   const [t] = useTranslation();
 
@@ -27,7 +25,7 @@ export default function GeneralFilters({ repositories, filters, onChangeFilter }
         <FilterSelect
           label={t("filters.searchTextIn")}
           selectedValues={filters.searchIn ?? []}
-          options={searchInOptions}
+          options={FiltersService.searchInOptions}
           onChange={(values: string[]) => onChangeFilter("searchIn", values)}
         />
       </Stack>
@@ -46,7 +44,7 @@ export default function GeneralFilters({ repositories, filters, onChangeFilter }
         <FilterSelect
           label={t("field.formats")}
           selectedValues={filters.formats ?? []}
-          options={formatsOptions}
+          options={FiltersService.formatsOptions}
           onChange={(values: string[]) => onChangeFilter("formats", values)}
         />
       </Stack>

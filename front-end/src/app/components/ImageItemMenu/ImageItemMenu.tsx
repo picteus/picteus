@@ -13,7 +13,7 @@ import {
 } from "@picteus/ws-client";
 
 import { ViewMode } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useActionModalContext } from "app/context";
 import {
   useConfirmAction,
@@ -72,16 +72,15 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
 
   function handleOnClickSynchronize()
   {
-    ImageService.synchronize(image.id).catch(NotificationsService.apiCallError);
+    ImageService.synchronize(image.id).catch(ToastService.apiCallError);
   }
 
   function handleOnClickDelete()
   {
-    confirmAction(() => ImageService.destroy(image.id).catch(NotificationsService.apiCallError), {
+    confirmAction(() => ImageService.destroy(image.id).catch(ToastService.apiCallError), {
       title: t("commands.confirmImageDeleteTitle"),
       message: t("commands.confirmImageDeleteMessage")
     });
-
   }
 
   const menu = useMemo(() =>

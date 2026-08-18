@@ -6,7 +6,7 @@ import { IconBox, IconLayoutGrid, IconList, IconPlus, IconPuzzle } from "@tabler
 import { Extension, type ExtensionActivityKind } from "@picteus/ws-client";
 
 import { ChannelEnum } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
 import {
@@ -52,7 +52,7 @@ export default function ExtensionsScreen()
         return activities;
       }, {});
       setExtensionActivities(activitiesMap);
-    }).catch(NotificationsService.errorWithMessage);
+    }).catch(ToastService.apiCallError);
   };
 
   useEffect(() =>

@@ -6,7 +6,7 @@ import { ProcessCommandIntent, ShowIntent, UiIntent } from "@picteus/shared-core
 import { Image } from "@picteus/ws-client";
 
 import { NotificationType } from "types";
-import { NotificationsService, timeAgoFromMilliseconds } from "utils";
+import { timeAgoFromMilliseconds, ToastService } from "utils";
 import { useExtensionIntentRunner } from "app/hooks";
 import { useActionModalContext } from "app/context";
 import { ImageService, NotificationService } from "app/services";
@@ -101,8 +101,7 @@ export default function Notification({ notification, isToast = false, onOpen, on
         }
         catch (error)
         {
-          NotificationsService.apiCallError(error);
-          return;
+          return ToastService.apiCallError(error);
         }
         const id = addModal({
           component: (
@@ -129,7 +128,7 @@ export default function Notification({ notification, isToast = false, onOpen, on
           onCancel: () =>
           {
           },
-          onFailure: NotificationsService.withMessage
+          onFailure: ToastService.failure
         });
       }
       if (onOpen !== undefined)

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Collection as PicteusCollection, SearchFilter } from "@picteus/ws-client";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { CollectionService, FiltersService } from "app/services";
 
 
@@ -23,8 +23,8 @@ export default function AddOrUpdateCollection({
   onClose
 }: AddOrUpdateCollectionType)
 {
-  const [t] = useTranslation();
-  const [loading, setLoading] = useState<boolean>(false);
+  const [ t ] = useTranslation();
+  const [ loading, setLoading ] = useState<boolean>(false);
 
   const form = useForm({
     initialValues: {
@@ -50,7 +50,7 @@ export default function AddOrUpdateCollection({
           searchFilter,
           values.comment
         );
-        NotificationsService.success(t("addOrUpdateCollectionModal.successUpdate"));
+        ToastService.success(t("addOrUpdateCollectionModal.successUpdate"));
       }
       else
       {
@@ -59,14 +59,14 @@ export default function AddOrUpdateCollection({
           searchFilter,
           values.comment
         );
-        NotificationsService.success(t("addOrUpdateCollectionModal.successAdd"));
+        ToastService.success(t("addOrUpdateCollectionModal.successAdd"));
       }
       onSuccess(newCollection);
       onClose?.();
     }
     catch (error)
     {
-      NotificationsService.withMessage((error as Error).message);
+      ToastService.apiCallError(error);
     }
     finally
     {

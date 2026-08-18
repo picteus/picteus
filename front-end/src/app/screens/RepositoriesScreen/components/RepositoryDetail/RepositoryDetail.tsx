@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { ImageSummary, Repository, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { ImageService } from "app/services";
 import { FieldValue, FormatedDate, ImagesStack } from "app/components";
 
@@ -15,10 +15,10 @@ type RepositoryDetailType = {
 
 export default function RepositoryDetail({ repository }: RepositoryDetailType)
 {
-  const [t] = useTranslation();
-  const [images, setImages] = useState<ImageSummary[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [ t ] = useTranslation();
+  const [ images, setImages ] = useState<ImageSummary[]>([]);
+  const [ totalCount, setTotalCount ] = useState<number>(0);
+  const [ loading, setLoading ] = useState<boolean>(false);
 
   useEffect(() =>
   {
@@ -26,7 +26,7 @@ export default function RepositoryDetail({ repository }: RepositoryDetailType)
     {
       void fetchRepositoryDetails();
     }
-  }, [repository]);
+  }, [ repository ]);
 
   async function fetchRepositoryDetails()
   {
@@ -35,7 +35,7 @@ export default function RepositoryDetail({ repository }: RepositoryDetailType)
     {
       const result = await ImageService.searchSummaries({
         filter: {
-          origin: { kind: SearchOriginNature.Repositories, ids: [repository!.id] },
+          origin: { kind: SearchOriginNature.Repositories, ids: [ repository!.id ] },
           sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false }
         },
         range: { take: 10 }
@@ -45,7 +45,7 @@ export default function RepositoryDetail({ repository }: RepositoryDetailType)
     }
     catch (error)
     {
-      NotificationsService.errorWithMessage(error);
+      ToastService.failure(error);
     }
     finally
     {

@@ -207,6 +207,23 @@ class ShowIntent(BasisIntent):
     show: IntentShow
 
 
+class IntentToastType(StrEnum):
+    INFO = "info"
+    ERROR = "error"
+
+
+@dataclass(kw_only=True)
+class IntentToast(SuperDataClass):
+    type: IntentToastType
+    title: str
+    subtitle: str
+
+
+@dataclass(kw_only=True)
+class ToastIntent(WithContextIntent):
+    toast: IntentToast
+
+
 @dataclass(kw_only=True)
 class IntentNotification(SuperDataClass):
     title: str
@@ -246,7 +263,7 @@ class ActionIntent(WithContextIntent):
 
 
 FrontIntent = Union[
-    FormIntent, UiIntent, DialogIntent, ImagesIntent, ShowIntent, NotificationIntent, ActionIntent]
+    FormIntent, UiIntent, DialogIntent, ImagesIntent, ShowIntent, ToastIntent, NotificationIntent, ActionIntent]
 
 
 @dataclass(kw_only=True)

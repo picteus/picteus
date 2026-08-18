@@ -47,7 +47,7 @@ import {
 } from "@picteus/ws-client";
 
 import { FilterOrCollectionId, LocalFiltersType } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useDebouncedCallback, useInterceptedState } from "app/hooks";
 import { FiltersService, RepositoriesService } from "app/services";
 
@@ -90,13 +90,13 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
   children
 }, ref) =>
 {
-  const [t] = useTranslation();
-  const [searchText, setSearchText] = useState<string>();
+  const [ t ] = useTranslation();
+  const [ searchText, setSearchText ] = useState<string>();
   const repositories = useMemo<Repository[]>(() => (RepositoriesService.list()), []);
-  const [filters, setFilters] = useInterceptedState<LocalFiltersType>("filter" in initialFilterOrCollectionId ? FiltersService.searchFilterToLocalFilters(initialFilterOrCollectionId.filter) : undefined);
-  const [tags, setTags] = useState<ExtensionImageTag[]>([]);
-  const [tagOptions, setTagOptions] = useState<WithValueAndLabel[]>([]);
-  const [sortingMenuOpened, setSortingMenuOpened] = useState<boolean>(false);
+  const [ filters, setFilters ] = useInterceptedState<LocalFiltersType>("filter" in initialFilterOrCollectionId ? FiltersService.searchFilterToLocalFilters(initialFilterOrCollectionId.filter) : undefined);
+  const [ tags, setTags ] = useState<ExtensionImageTag[]>([]);
+  const [ tagOptions, setTagOptions ] = useState<WithValueAndLabel[]>([]);
+  const [ sortingMenuOpened, setSortingMenuOpened ] = useState<boolean>(false);
 
   useEffect(() =>
   {
@@ -107,7 +107,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
       setTagOptions(tags.map(tag => ({ value: tag.value, label: tag.value })));
     }
 
-    load().catch(NotificationsService.apiCallError);
+    load().catch(ToastService.apiCallError);
   }, []);
 
   useImperativeHandle(ref, () => ({
@@ -125,7 +125,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
     {
       onFilterOrCollectionId({ filter: updatedSearchFilter });
     }
-  }, [filters, onFilterOrCollectionId]);
+  }, [ filters, onFilterOrCollectionId ]);
 
   const onChangeFilterWrapper = useCallback((key: string, value?: string[] | SearchProperties | SearchFeatures | SearchSortingProperty | ("-1" | "1")) =>
   {
@@ -142,14 +142,14 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
       }
       return updatedLocalFilters;
     });
-  }, [setFilters]);
+  }, [ setFilters ]);
 
   const debouncedSearchCallback = useDebouncedCallback(async (searchText: string) =>
   {
     setFilters(previousValue => ({
       ...previousValue,
       keyword: searchText,
-      searchIn: previousValue.searchIn ?? ((searchText === undefined || searchText === "") ? undefined : ["inName", "inMetadata", "inFeatures"])
+      searchIn: previousValue.searchIn ?? ((searchText === undefined || searchText === "") ? undefined : [ "inName", "inMetadata", "inFeatures" ])
     }));
   }, 400);
 
@@ -159,7 +159,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
     {
       debouncedSearchCallback(searchText);
     }
-  }, [searchText]);
+  }, [ searchText ]);
 
   function handleOnClearAll()
   {
@@ -196,7 +196,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
     {
       pills.push(
         <Pill key="formats" withRemoveButton onRemove={() => onChangeFilterWrapper("formats")}>
-          {`${t("field.formats")}: ${[...filters.formats].join(", ")}`}
+          {`${t("field.formats")}: ${[ ...filters.formats ].join(", ")}`}
         </Pill>
       );
     }

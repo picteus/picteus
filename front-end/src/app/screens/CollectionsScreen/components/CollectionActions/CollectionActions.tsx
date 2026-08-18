@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Collection } from "@picteus/ws-client";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useConfirmAction } from "app/hooks";
 import { CollectionService } from "app/services";
 
@@ -25,7 +25,7 @@ export default function CollectionActions({
   onDeleted
 }: CollectionActionsType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
 
   async function handleOnDeleteCollection(id: number)
@@ -33,12 +33,12 @@ export default function CollectionActions({
     try
     {
       await CollectionService.delete(id);
-      NotificationsService.success(t("collectionsScreen.successDelete"));
+      ToastService.success(t("collectionsScreen.successDelete"));
       onDeleted();
     }
     catch (error)
     {
-      NotificationsService.apiCallI18nError(error, "collectionsScreen.errorDelete");
+      ToastService.apiCallI18nError(error, "collectionsScreen.errorDelete");
     }
   }
 

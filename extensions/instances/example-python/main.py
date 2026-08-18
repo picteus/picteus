@@ -13,8 +13,8 @@ from picteus_extension_sdk import PicteusExtension, NotificationEvent, Notificat
     IntentFormContent, IntentDialogIconContent, FormIntent, IntentResourceContent, \
     IntentDialogIconSizeContent, IntentUISidebarIntegration, IntentUIModalIntegration, \
     IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
-    IntentNotification, ActionIntent, IntentAction, IntentDialogContent, Intent, ProcessCommandIntent, \
-    IntentProcessCommand
+    IntentNotification, ActionIntent, IntentAction, ProcessCommandIntent, \
+    IntentProcessCommand, ToastIntent, IntentToast
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -60,6 +60,8 @@ class PythonExtension(PicteusExtension):
                 await self._handle_read_file(communicator)
             elif command_id == "writeFile":
                 await self._handle_write_file(communicator)
+            elif command_id == "toast":
+                await self._handle_toast(communicator, parameters)
             elif command_id == "notification":
                 await self._handle_notification(communicator, parameters)
             elif command_id == "action":
@@ -237,6 +239,11 @@ class PythonExtension(PicteusExtension):
                                                       content=bytearray("Hello World!".encode('utf-8')),
                                                       message="Please, indicate the file into which some content will be saved")))
         communicator.send_log(f"The content of the file has been written", "info")
+
+    async def _handle_toast(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
+        await communicator.launch_intent(
+            ToastIntent(
+                toast=IntentToast(type=parameters["type"], title=parameters["title"], subtitle=parameters["subtitle"])))
 
     async def _handle_notification(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         with open(

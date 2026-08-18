@@ -85,6 +85,10 @@ class TypeScriptExtension extends PicteusExtension
       {
         await this.handleWriteFile(communicator);
       }
+      else if (commandId === "toast")
+      {
+        await this.handleToast(communicator, parameters);
+      }
       else if (commandId === "notification")
       {
         await this.handleNotification(communicator, parameters);
@@ -341,6 +345,17 @@ class TypeScriptExtension extends PicteusExtension
       }
     });
     communicator.sendLog("The content of the file has been written", "info");
+  }
+
+  private async handleToast(communicator: Communicator, parameters: Record<string, any>): Promise<void>
+  {
+    await communicator.launchIntent({
+      toast: {
+        type: parameters["type"],
+        title: parameters["title"],
+        subtitle: parameters["subtitle"]
+      }
+    });
   }
 
   private async handleNotification(communicator: Communicator, parameters: Record<string, any>): Promise<void>

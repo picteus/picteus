@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 
 import { Extension, ExtensionStatus } from "@picteus/ws-client";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useConfirmAction } from "app/hooks";
 import { ExtensionsService } from "app/services";
 
@@ -35,7 +35,7 @@ export default function ExtensionActions({
   onUninstalled
 }: ExtensionActionsType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
 
   const iconSizeAndStroke = {
@@ -48,12 +48,12 @@ export default function ExtensionActions({
     try
     {
       await ExtensionsService.uninstall({ id: extensionId });
-      NotificationsService.success(t("extensionsScreen.successUninstall"));
+      ToastService.success(t("extensionsScreen.successUninstall"));
       onUninstalled();
     }
     catch (error)
     {
-      NotificationsService.apiCallI18nError(error, "extensionsScreen.errorUninstall");
+      ToastService.apiCallI18nError(error, "extensionsScreen.errorUninstall");
     }
   }
 
@@ -69,7 +69,7 @@ export default function ExtensionActions({
     }
     catch (error)
     {
-      NotificationsService.apiCallI18nError(error, "extensionsScreen.errorToggleStatus");
+      ToastService.apiCallI18nError(error, "extensionsScreen.errorToggleStatus");
     }
   }
 
@@ -78,15 +78,11 @@ export default function ExtensionActions({
     try
     {
       await ExtensionsService.synchronize({ id: extension.manifest.id });
-      NotificationsService.success(
-        t("extensionsScreen.successSynchronize", {
-          name: extension.manifest.name
-        })
-      );
+      ToastService.success(t("extensionsScreen.successSynchronize", { name: extension.manifest.name }));
     }
     catch (error)
     {
-      NotificationsService.apiCallI18nError(error, "extensionsScreen.errorToggleStatus");
+      ToastService.apiCallI18nError(error, "extensionsScreen.errorToggleStatus");
     }
   }
 

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Collection, ImageSummary, SearchSortingProperty } from "@picteus/ws-client";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { ImageService } from "app/services";
 import { FieldValue, FormatedDate, ImagesStack } from "app/components";
 
@@ -15,10 +15,10 @@ type CollectionDetailType = {
 
 export default function CollectionDetail({ collection }: CollectionDetailType)
 {
-  const [t] = useTranslation();
-  const [images, setImages] = useState<ImageSummary[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [ t ] = useTranslation();
+  const [ images, setImages ] = useState<ImageSummary[]>([]);
+  const [ totalCount, setTotalCount ] = useState<number>(0);
+  const [ loading, setLoading ] = useState<boolean>(false);
 
   useEffect(() =>
   {
@@ -26,7 +26,7 @@ export default function CollectionDetail({ collection }: CollectionDetailType)
     {
       void fetchCollectionDetails();
     }
-  }, [collection]);
+  }, [ collection ]);
 
   async function fetchCollectionDetails()
   {
@@ -45,7 +45,7 @@ export default function CollectionDetail({ collection }: CollectionDetailType)
     }
     catch (error)
     {
-      NotificationsService.errorWithMessage(error);
+      ToastService.apiCallError(error);
     }
     finally
     {

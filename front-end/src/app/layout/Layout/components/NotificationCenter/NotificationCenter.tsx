@@ -1,6 +1,6 @@
 import React, { useEffect, useSyncExternalStore } from "react";
 
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { Notification } from "app/components";
 import { NotificationService } from "app/services";
 
@@ -13,7 +13,7 @@ export default function NotificationCenter()
   {
     if (notification)
     {
-      NotificationsService.toast(<Notification notification={notification} isToast={true}/>);
+      ToastService.toast(<Notification notification={notification} isToast={true}/>);
     }
   }, [ notification ]);
 

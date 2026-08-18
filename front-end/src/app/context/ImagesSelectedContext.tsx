@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { ImageSummary } from "@picteus/ws-client";
 
 import { ImageOrSummary } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { ImageService, StorageService } from "app/services";
 
 
@@ -21,7 +21,7 @@ export function useImagesSelectedContext()
 
 export function ImagesSelectedProvider({ children })
 {
-  const [selectedImages, setSelectedImages] = useState<ImageOrSummary[]>([]);
+  const [ selectedImages, setSelectedImages ] = useState<ImageOrSummary[]>([]);
 
   useEffect(() =>
   {
@@ -35,14 +35,14 @@ export function ImagesSelectedProvider({ children })
             ids: imagesIds
           }
         }
-      }).then(images => setSelectedImages(images.items)).catch(NotificationsService.apiCallError);
+      }).then(images => setSelectedImages(images.items)).catch(ToastService.apiCallError);
     }
   }, []);
 
   useEffect(() =>
   {
     StorageService.setSelectedImageIds(selectedImages.map(image => image.id));
-  }, [selectedImages]);
+  }, [ selectedImages ]);
 
   const toggleSelectedImage = useCallback((image: ImageSummary) =>
   {
@@ -52,11 +52,11 @@ export function ImagesSelectedProvider({ children })
     }
     else
     {
-      setSelectedImages([...selectedImages, image]);
+      setSelectedImages([ ...selectedImages, image ]);
     }
-  }, [selectedImages]);
+  }, [ selectedImages ]);
 
-  const isSelectedImage = useCallback((image: ImageSummary) => selectedImages.find((anImage) => anImage.id === image.id) !== undefined, [selectedImages]);
+  const isSelectedImage = useCallback((image: ImageSummary) => selectedImages.find((anImage) => anImage.id === image.id) !== undefined, [ selectedImages ]);
 
   const clearSelectedImages = useCallback(() =>
   {

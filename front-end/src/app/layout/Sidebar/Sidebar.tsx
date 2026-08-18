@@ -12,7 +12,7 @@ import {
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
-import { computeExtensionSidebarRoute, NotificationsService, ROUTES } from "utils";
+import { computeExtensionSidebarRoute, ROUTES, ToastService } from "utils";
 import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
 import { ExtensionsService } from "app/services";
 import { Common, ExtensionIcon } from "app/components";
@@ -26,11 +26,11 @@ import style from "./Sidebar.module.scss";
 export default function Sidebar()
 {
   const navigate = useNavigate();
-  const [additionalUiContextValue, refreshAdditionalUi] = useAdditionalUiContext();
+  const [ additionalUiContextValue, refreshAdditionalUi ] = useAdditionalUiContext();
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const openWindow = useOpenWindow();
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
 
   useEffect(() =>
   {
@@ -45,7 +45,7 @@ export default function Sidebar()
         refreshAdditionalUi();
       });
     }
-  }, [event]);
+  }, [ event ]);
   const { isAvailable } = useCommandSocket();
 
   const commonIconStyle = useMemo(() => ({ stroke: Common.IconStrokeSize }), []);
@@ -79,7 +79,7 @@ export default function Sidebar()
         route={element.route}
       />
     );
-  })), [mainElementData]);
+  })), [ mainElementData ]);
 
   const additionalElements = useMemo(() =>
   {
@@ -113,7 +113,7 @@ export default function Sidebar()
                 }
                 else
                 {
-                  NotificationsService.withMessage("Cannot handle a content with no 'url' property when no host is available");
+                  ToastService.failure("Cannot handle a content with no 'url' property when no host is available");
                 }
               }
               else
@@ -129,9 +129,9 @@ export default function Sidebar()
                 }
                 else
                 {
-                  return NotificationsService.withMessage("Cannot handle a content with no 'frameContent.url' nor 'frameContent.html' property");
+                  return ToastService.failure("Cannot handle a content with no 'frameContent.url' nor 'frameContent.html' property");
                 }
-                openWindow(element.uuid, parameters, false).catch(error => NotificationsService.errorWithMessage(error, "Cannot open the window"));
+                openWindow(element.uuid, parameters, false).catch(error => ToastService.failureAndMessage(error, "Cannot open the window"));
               }
             }
           }
@@ -139,7 +139,7 @@ export default function Sidebar()
         />
       );
     });
-  }, [additionalUiContextValue, isAvailable, navigate, openWindow]);
+  }, [ additionalUiContextValue, isAvailable, navigate, openWindow ]);
 
   return (
     <nav className={style.container}>

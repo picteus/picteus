@@ -1,16 +1,23 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore } from "react";
 import { Box, Button, Center, Loader, Menu, Text, Tooltip } from "@mantine/core";
-import { IconChevronDown, IconDeviceFloppy, IconLibrary, IconLibraryPhoto, IconPlus } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconDeviceFloppy,
+  IconLibrary,
+  IconLibraryPhoto,
+  IconPlus,
+  IconWand
+} from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Collection as PicteusCollection, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
+import { Collection as PicteusCollection, CommandEntity, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
 
 import { ChannelEnum } from "types";
-import { NotificationsService } from "utils";
+import { ToastService } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
-import { useAsyncInitialize } from "app/hooks";
+import { useAsyncInitialize, useExtensionCommandRunner, useExtensionCommandsWithEntities } from "app/hooks";
 import { CollectionService, EventService } from "app/services";
-import { Common } from "app/components";
+import { CommandIcon, Common, MenuItemEntry } from "app/components";
 import AddOrUpdateCollection
   from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
@@ -32,21 +39,23 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
   onCollection
 }, ref) =>
 {
-  const [t] = useTranslation();
-  const [, addModal] = useActionModalContext();
-  const [loading, setLoading] = useState<boolean>(false);
+  const [ t ] = useTranslation();
+  const [ , addModal ] = useActionModalContext();
+  const [ loading, setLoading ] = useState<boolean>(false);
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [collections, setCollections] = useState<PicteusCollection[]>([]);
-  const [menuOpened, setMenuOpened] = useState<boolean>(false);
-  const [selectedCollection, setSelectedCollection] = useState<PicteusCollection | undefined>();
-  const [saveDisabled, setSaveDisabled] = useState<boolean>(true);
+  const commandRunner = useExtensionCommandRunner();
+  const extensionsImageCommands = useExtensionCommandsWithEntities([ CommandEntity.Images ]);
+  const [ collections, setCollections ] = useState<PicteusCollection[]>([]);
+  const [ menuOpened, setMenuOpened ] = useState<boolean>(false);
+  const [ selectedCollection, setSelectedCollection ] = useState<PicteusCollection | undefined>();
+  const [ saveDisabled, setSaveDisabled ] = useState<boolean>(true);
   const onCollectionRef = useRef<(collection: PicteusCollection) => void>(onCollection);
 
   useEffect(() =>
   {
     onCollectionRef.current = onCollection;
-  }, [onCollection]);
+  }, [ onCollection ]);
 
   useEffect(() =>
   {
@@ -59,7 +68,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
         onCollection(undefined);
       }
     }
-  }, [event]);
+  }, [ event ]);
 
   useAsyncInitialize<number | undefined>(initialCollectionId, async (value: number) =>
   {
@@ -74,7 +83,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
   useEffect(() =>
   {
     setSaveDisabled(selectedCollection === undefined || searchFilter === undefined || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter)));
-  }, [searchFilter, selectedCollection]);
+  }, [ searchFilter, selectedCollection ]);
 
   useImperativeHandle(ref, () => ({
     clearCollection: () =>
@@ -91,10 +100,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
   function loadCollections(force = false)
   {
     setLoading(true);
-    (force === false ? CollectionService.list() : CollectionService.fetchAll()).then(updatedCollections => setCollections(updatedCollections)).catch(error =>
-    {
-      NotificationsService.withMessage((error as Error).message);
-    }).finally(() =>
+    (force === false ? CollectionService.list() : CollectionService.fetchAll()).then(updatedCollections => setCollections(updatedCollections)).catch(ToastService.failureAndMessage).finally(() =>
     {
       setLoading(false);
     });
@@ -131,12 +137,12 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
   {
     CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment).then((collection: PicteusCollection) =>
     {
-      NotificationsService.success(t("addOrUpdateCollectionModal.successUpdate"));
+      ToastService.success(t("addOrUpdateCollectionModal.successUpdate"));
       loadCollections();
       setSelectedCollection(collection);
       setSaveDisabled(true);
       onCollection(collection);
-    }).catch(error => NotificationsService.withMessage((error as Error).message));
+    }).catch(error => ToastService.failure((error as Error).message));
   }
 
   function truncateName(name: string)
@@ -162,13 +168,36 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
           ))}
         </Menu.Dropdown>
       </Menu>
-      {selectedCollection && (
-        <Tooltip label={t("button.save", { name: selectedCollection.name })}>
-          <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
-            <IconDeviceFloppy size={16}/>
+      {Math.random() > 1 && <Menu shadow="md" width={340} position="bottom" trigger="click-hover" withinPortal={true}>
+        <Menu.Target>
+          <Button variant="default" px="xs"
+                  disabled={!searchFilter || !extensionsImageCommands || extensionsImageCommands.length === 0}>
+            <IconWand size={16}/>
           </Button>
-        </Tooltip>
-      )}
+        </Menu.Target>
+        <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
+          <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
+          {extensionsImageCommands?.map((extensionCommand) =>
+          {
+            const extension = extensionCommand.extension;
+            const command = extensionCommand.command;
+            const manifest = extension.manifest;
+            return (
+              <MenuItemEntry key={`${manifest.id}-${command.id}`} extensionId={manifest.id}
+                             icon={<CommandIcon extensionId={manifest.id} command={command} size="sm"/>}
+                             label={command.label}
+                             subLabel={manifest.name}
+                             onClick={() => commandRunner(manifest.id, command, searchFilter)}/>);
+          })}
+        </Menu.Dropdown>
+      </Menu>
+      } {selectedCollection && (
+      <Tooltip label={t("button.save", { name: selectedCollection.name })}>
+        <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
+          <IconDeviceFloppy size={16}/>
+        </Button>
+      </Tooltip>
+    )}
       <Tooltip label={t("button.add")}>
         <Button variant="default" px="xs" disabled={!searchFilter} onClick={handleOnSaveCurrent}>
           <IconPlus size={16}/>
