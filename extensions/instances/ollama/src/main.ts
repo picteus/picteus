@@ -2,14 +2,15 @@ import { type ChatResponse, Ollama } from "ollama";
 
 import {
   Communicator,
+  EventName,
+  type EventValue,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
   IntentDialogType,
-  NotificationEvent,
-  type NotificationValue,
   PicteusExtension,
-  type SettingsValue
+  type SettingsValue,
+  type Versions
 } from "@picteus/extension-sdk";
 
 
@@ -36,6 +37,15 @@ class OllamaExtension extends PicteusExtension
 
   private readonly pulledModels = new Set<string>();
 
+  protected async onUpgrade(communicator: Communicator, versions: Versions): Promise<void>
+  {
+    if (versions.current === "0.5.0")
+    {
+      const extensionSettings = await this.getExtensionApi().extensionResetSettings({ id: this.extensionId });
+      await this.setup(communicator, extensionSettings);
+    }
+  }
+
   protected async onReady(communicator?: Communicator): Promise<void>
   {
     await this.setup(communicator!, await this.getSettings());
@@ -46,9 +56,9 @@ class OllamaExtension extends PicteusExtension
     await this.setup(communicator, value);
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
-    if ((event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeFeatures) || event === NotificationEvent.ImageComputeTags)
+    if ((event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeFeatures) || event === EventName.ImageComputeTags)
     {
       const imageId = value["id"];
       let imageUint8Array: Uint8Array | undefined;
@@ -61,7 +71,7 @@ class OllamaExtension extends PicteusExtension
         return imageUint8Array;
       };
 
-      if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeFeatures)
+      if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeFeatures)
       {
         if (this.captionEnabled)
         {
@@ -73,7 +83,7 @@ class OllamaExtension extends PicteusExtension
         await this.computeTags(communicator, imageId, await getUint8Array());
       }
     }
-    else if (event === NotificationEvent.ImageRunCommand)
+    else if (event === EventName.ImageRunCommand)
     {
       const imageIds: string[] = value["imageIds"];
       const imageId = imageIds[0];

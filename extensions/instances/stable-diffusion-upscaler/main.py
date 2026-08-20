@@ -8,7 +8,7 @@ from PIL import Image
 from PIL.ImageFile import ImageFile
 from diffusers import StableDiffusionUpscalePipeline
 from diffusers.utils import load_image
-from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator, SettingsValue, IntentImage, \
+from picteus_extension_sdk import PicteusExtension, EventName, EventValue, Communicator, SettingsValue, IntentImage, \
     ImagesIntent, IntentImages, Helper, IntentDialogIconContent
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
@@ -33,8 +33,8 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
     async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
         await self._setup(self.get_settings())
 
-    async def on_event(self, communicator: Communicator, event, value) -> Any | None:
-        if event == NotificationEvent.IMAGE_RUN_COMMAND:
+    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
+        if event == EventName.IMAGE_RUN_COMMAND:
             image_ids: List[str] = value["imageIds"]
             new_images: List[IntentImage] = []
             for image_id in image_ids:
@@ -64,20 +64,22 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
         name_without_extension = os.path.splitext(os.path.basename(image.name))[0]
         relative_directory_path: str = os.path.split(image.url[len(repository.url) + 1:])[0]
 
-        image_bytes: bytearray = self.get_image_api().image_download(image_id, ImageFormat.PNG, None, None, None, True)
+        image_bytes: bytearray = self.get_image_api().image_download(id=image_id, format=ImageFormat.PNG, width=None,
+                                                                     height=None, resize_render=None,
+                                                                     strip_metadata=True)
         image_file: ImageFile = Image.open(io.BytesIO(image_bytes))
         new_image: ImageFile = await self.run_in_executor(lambda: self._upscale_image(image_file))
         scaled_image_bytes_array = io.BytesIO()
         new_image.save(scaled_image_bytes_array, format="PNG")
         new_image_bytes = scaled_image_bytes_array.getvalue()
         recipe: GenerationRecipe = GenerationRecipe(schemaVersion=Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-                                                    software="picteus",
+                                                    software=PicteusExtension.SOFTWARE,
                                                     modelTags=[self._model], inputAssets=[image.id],
                                                     aspectRatio=image.dimensions.width / image.dimensions.height,
                                                     prompt=GenerationRecipePrompt(
                                                         InstructionsPrompt(kind=PromptKind.INSTRUCTIONS, value={})))
-        stored_image: PicteusImage = self.get_repository_api().repository_store_image(repository.id,
-                                                                                      new_image_bytes,
+        stored_image: PicteusImage = self.get_repository_api().repository_store_image(id=repository.id,
+                                                                                      body=new_image_bytes,
                                                                                       name_without_extension=name_without_extension + "_upscaled",
                                                                                       relative_directory_path=relative_directory_path,
                                                                                       application_metadata=ApplicationMetadata(
@@ -87,10 +89,9 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
                                                                                               value=ApplicationMetadataItemValue(
                                                                                                   recipe))]).to_json(),
                                                                                       parent_id=image.id)
-        self.get_image_api().image_set_features(stored_image.id, self.extension_id,
-                                                [ImageFeature(type=ImageFeatureType.RECIPE,
-                                                              format=ImageFeatureFormat.JSON,
-                                                              value=ImageFeatureValue(recipe.to_json()))])
+        self.get_image_api().image_set_features(id=stored_image.id, extension_id=self.extension_id, image_feature=[
+            ImageFeature(type=ImageFeatureType.RECIPE, format=ImageFeatureFormat.JSON,
+                         value=ImageFeatureValue(recipe.to_json()))])
         return stored_image
 
     def _upscale_image(self, pil_image: ImageFile, prompt: str = "") -> ImageFile:

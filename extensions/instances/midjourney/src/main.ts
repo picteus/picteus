@@ -6,29 +6,30 @@ import AdmZip from "adm-zip";
 
 import {
   Communicator,
-  GenerationRecipe,
+  EventName,
+  type EventValue,
+  type GenerationRecipe,
   Helper,
   ImageFeatureFormat,
   ImageFeatureType,
-  ImageMetadata,
+  type ImageMetadata,
   NotificationEvent,
-  NotificationValue,
   PicteusExtension,
   PromptKind,
-  Repository,
-  SettingsValue
+  type Repository,
+  type SettingsValue
 } from "@picteus/extension-sdk";
 
 
-enum MidjourneyConstants
-{
-  Author = "Author",
-  CreationTime = "Creation Time",
-  Description = "Description",
-  DigImageGUID = "DigImageGUID",
-  DigitalSourceType = "DigitalSourceType",
-  XMP = "XML:com.adobe.xmp"
-}
+const MidjourneyConstants =
+  {
+    Author: "Author",
+    CreationTime: "Creation Time",
+    Description: "Description",
+    DigImageGUID: "DigImageGUID",
+    DigitalSourceType: "DigitalSourceType",
+    XMP: "XML:com.adobe.xmp"
+  } as const;
 
 export class MidjourneyInstructions
 {
@@ -306,7 +307,7 @@ class MidjourneyExtension extends PicteusExtension
     await this.setup(value);
   }
 
-  protected async onEvent(_communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(_communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
     if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags || event === NotificationEvent.ImageComputeFeatures)
     {
@@ -334,7 +335,7 @@ class MidjourneyExtension extends PicteusExtension
       await this.getImageApi().imageSetTags({
         id: imageId,
         extensionId: this.extensionId,
-        requestBody: instructions === undefined ? [] : [this.extensionId]
+        requestBody: instructions === undefined ? [] : [ this.extensionId ]
       });
     }
   }
@@ -347,7 +348,7 @@ class MidjourneyExtension extends PicteusExtension
       const recipe: GenerationRecipe =
         {
           schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-          modelTags: instructions.modelVersion === undefined ? [] : [`midjourney/${instructions.modelVersion}`],
+          modelTags: instructions.modelVersion === undefined ? [] : [ `midjourney/${instructions.modelVersion}` ],
           software: "midjourney",
           prompt: { kind: PromptKind.Instructions, value: instructions }
         };
@@ -368,7 +369,7 @@ class MidjourneyExtension extends PicteusExtension
           {
             type: ImageFeatureType.Other,
             format: ImageFeatureFormat.Markdown,
-            value: Array.from(instructions.attributes().entries()).map(([key, value]) =>
+            value: Array.from(instructions.attributes().entries()).map(([ key, value ]) =>
             {
               return `**${key}:** ${value}`;
             }).join("<br>")
@@ -424,7 +425,7 @@ class MidjourneyExtension extends PicteusExtension
         }
 
         const buffer: Buffer = await newZip.toBufferPromise();
-        const blob = new Blob([Buffer.from(buffer)]);
+        const blob = new Blob([ Buffer.from(buffer) ]);
         await this.getExtensionApi().extensionInstallChromeExtension({
           id: this.extensionId,
           chromeExtensionName: "Picteus Midjourney",

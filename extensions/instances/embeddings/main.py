@@ -4,14 +4,14 @@ import logging
 import os
 import ssl
 import threading
-from typing import Any, Optional, Callable
+from typing import Any, Optional, Callable, List
 
 import clip
 import torch
 from PIL import Image
 from PIL.ImageFile import ImageFile
-from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator, SettingsValue
-from picteus_ws_client import ImageFormat, ImageEmbedding, ImageResizeRender, SearchParameters
+from picteus_extension_sdk import PicteusExtension, EventName, Communicator, SettingsValue, EventValue, Versions
+from picteus_ws_client import ImageFormat, ImageEmbedding, ImageResizeRender, SearchParameters, SearchFilter
 
 os.environ["HF_HOME"] = PicteusExtension.get_cache_directory_path()
 from transformers import AutoImageProcessor, AutoModel
@@ -30,8 +30,15 @@ class Embeddings(PicteusExtension):
         self.clip_enabled: bool = False
         self.dino_enabled: bool = False
 
-    async def on_event(self, communicator: Communicator, event, value) -> Any | None:
-        if event == NotificationEvent.PROCESS_RUN_COMMAND:
+    async def on_upgrade(self, communicator: Communicator, versions: Versions) -> None:
+        if versions.current == "0.4.0":
+            await self._reset_embeddings(communicator)
+
+    async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
+        self._setup(value)
+
+    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
+        if event == EventName.PROCESS_RUN_COMMAND:
             command_id = value.get("commandId")
             if command_id == "compute":
                 parameters = value.get("parameters", {})
@@ -41,40 +48,40 @@ class Embeddings(PicteusExtension):
                 if collection_id:
                     return await self._handle_compute_command(communicator, collection_id, clip_enabled, dino_enabled)
                 return None
-        elif event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED or event == NotificationEvent.IMAGE_COMPUTE_EMBEDDINGS:
+        elif event == EventName.IMAGE_CREATED or event == EventName.IMAGE_UPDATED or event == EventName.IMAGE_COMPUTE_EMBEDDINGS:
             image_id: str = value["id"]
-            return await self._handle_image(communicator, image_id, self.clip_enabled, self.dino_enabled)
-        elif event == NotificationEvent.TEXT_COMPUTE_EMBEDDINGS:
+            return await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
+        elif event == EventName.TEXT_COMPUTE_EMBEDDINGS:
             text: str = value["text"]
-            return await self._handle_text(communicator, text)
+            return await self._compute_text_embeddings(communicator, text)
 
         return None
-
-    async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
-        self.clip_enabled = value.get("clipEnabled", False)
-        self.dino_enabled = value.get("dinoEnabled", False)
 
     async def _handle_compute_command(self, communicator: Communicator, collection_id: str, clip_enabled: bool,
                                       dino_enabled: bool) -> None:
         search_result = self.get_image_api().image_search_ids(SearchParameters(collection_id=collection_id))
         items = search_result.items
-        images_count = len(items)
         communicator.send_log(
-            f"Found {images_count} images in the collection with id '{collection_id}': now, computing their embeddings…",
+            f"Found {len(items)} images in the collection with id '{collection_id}': now, computing their embeddings…",
             "info")
-        for index, image_id in enumerate(items):
+        await self._compute_images_embeddings(communicator, items, clip_enabled, dino_enabled)
+
+    async def _compute_images_embeddings(self, communicator: Communicator, ids: List[str], clip_enabled: bool,
+                                         dino_enabled: bool):
+        images_count = len(ids)
+        for index, image_id in enumerate(ids):
             percentage = int(((index + 1) / images_count) * 100)
             communicator.send_log(
                 f"Processing the image at index {index + 1}/{images_count} ({percentage}%), image with id '{image_id}'",
                 "info")
             try:
-                await self._handle_image(communicator, image_id, clip_enabled, dino_enabled)
+                await self._compute_image_embeddings(communicator, image_id, clip_enabled, dino_enabled)
             except Exception as exception:
                 communicator.send_log(f"Failed to process the image with id '{image_id}'. Reason: '{exception}'",
                                       "error")
 
-    async def _handle_image(self, communicator: Communicator, image_id: str, clip_enabled: bool,
-                            dino_enabled: bool) -> None:
+    async def _compute_image_embeddings(self, communicator: Communicator, image_id: str, clip_enabled: bool,
+                                        dino_enabled: bool) -> None:
         image: bytearray = self.get_image_api().image_download(id=image_id, format=ImageFormat.PNG, width=1_000,
                                                                height=1_000, resize_render=ImageResizeRender.OUTBOX,
                                                                strip_metadata=True)
@@ -109,7 +116,7 @@ class Embeddings(PicteusExtension):
             self.get_image_api().image_set_embeddings(id=image_id, extension_id=self.extension_id,
                                                       image_embedding=embeddings)
 
-    async def _handle_text(self, communicator: Communicator, text: str) -> list[float]:
+    async def _compute_text_embeddings(self, communicator: Communicator, text: str) -> list[float]:
         return await self.run_in_executor(lambda: self._compute_clip_text_embedding(communicator, text))
 
     def _compute_clip_image_embedding(self, communicator: Communicator, image_id: str, image: ImageFile) -> list[float]:
@@ -155,6 +162,21 @@ class Embeddings(PicteusExtension):
                 cache_dir = PicteusExtension.get_cache_directory_path()
                 self.dino_processor = AutoImageProcessor.from_pretrained(model_name, cache_dir=cache_dir)
                 self.dino_model = AutoModel.from_pretrained(model_name, cache_dir=cache_dir).to(self.device)
+
+    async def _reset_embeddings(self, communicator: Communicator):
+        self.logger.info("Deleting all existing embeddings")
+        extension_settings = self.get_extension_api().extension_reset_settings(id=self.extension_id)
+        self._setup(extension_settings.value)
+        ids: List[str] = self.get_image_api().image_search_ids(
+            search_parameters=SearchParameters(filter=SearchFilter())).items
+        for image_id in ids:
+            self.get_image_api().image_set_embeddings(id=image_id, extension_id=self.extension_id,
+                                                      image_embedding=[])
+        await self._compute_images_embeddings(communicator, ids, self.clip_enabled, self.dino_enabled)
+
+    def _setup(self, value: SettingsValue):
+        self.clip_enabled = value.get("clipEnabled", False)
+        self.dino_enabled = value.get("dinoEnabled", False)
 
 
 asyncio.run(Embeddings().run())

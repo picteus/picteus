@@ -1,16 +1,22 @@
 import {
   Communicator,
+  EventName,
+  type EventValue,
   type ImageEmbedding,
+  type ImageFeature,
+  ImageFeatureFormat,
+  ImageFeatureType,
   ImageFormat,
   ImageResizeRender,
-  NotificationEvent,
-  type NotificationValue,
   PicteusExtension,
   type SettingsValue
 } from "@picteus/extension-sdk";
 
-import { type ColorLibrary, createColorExtractor } from "./ColorExtractor";
+import { type ColorLibrary, createColorExtractor, rgbToHex } from "./ColorExtractor";
 import { generateColorEmbedding } from "./EmbeddingGenerator";
+
+
+const DOMINANT_COLOR_FEATURE_NAME_PREFIX = "dominant-color-";
 
 
 class ColorEmbeddingsExtension extends PicteusExtension
@@ -34,43 +40,43 @@ class ColorEmbeddingsExtension extends PicteusExtension
     await this.setup(communicator, value);
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
-    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeEmbeddings)
+    if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeEmbeddings || event === EventName.ImageComputeFeatures)
     {
       const imageId: string = value["id"];
-      await this.computeAndStoreEmbeddingImage(communicator, imageId);
+      await this.computeAndStoreColorDataImage(communicator, imageId);
     }
-    else if (event === NotificationEvent.ImageRunCommand)
+    else if (event === EventName.ImageRunCommand)
     {
       const commandId: string = value["commandId"];
-      if (commandId === "compute-embeddings")
+      if (commandId === "computeEmbeddings")
       {
         const imageIds: string[] = value["imageIds"];
-        await this.computeAndStoreEmbeddingsImages(communicator, imageIds);
+        await this.computeAndStoreColorDataImages(communicator, imageIds);
       }
     }
   }
 
-  private async computeAndStoreEmbeddingsImages(communicator: Communicator, imageIds: string[]): Promise<void>
+  private async computeAndStoreColorDataImages(communicator: Communicator, imageIds: string[]): Promise<void>
   {
     const imagesCount = imageIds.length;
-    communicator.sendLog(`Computing the color embeddings for ${imagesCount} image(s)`, "info");
+    communicator.sendLog(`Computing the color embeddings and features for ${imagesCount} image(s)`, "info");
     for (let index = 0; index < imagesCount; index++)
     {
       const imageId = imageIds[index];
       try
       {
-        await this.computeAndStoreEmbeddingImage(communicator, imageId);
+        await this.computeAndStoreColorDataImage(communicator, imageId);
       }
       catch (error)
       {
-        communicator.sendLog(`Failed to compute the color embedding for the image with id '${imageId}'. Reason: '${error.message}'`, "warn");
+        communicator.sendLog(`Failed to compute the color data for the image with id '${imageId}'. Reason: '${error.message}'`, "warn");
       }
     }
   }
 
-  private async computeAndStoreEmbeddingImage(communicator: Communicator, imageId: string): Promise<void>
+  private async computeAndStoreColorDataImage(communicator: Communicator, imageId: string): Promise<void>
   {
     if (this.usePCA === true && this.hasWarnedAboutPCA === false)
     {
@@ -116,7 +122,36 @@ class ColorEmbeddingsExtension extends PicteusExtension
       imageEmbedding: Array.from(embeddingsByName.values())
     });
 
-    communicator.sendLog(`Computed the color embedding for the image with id '${imageId}'`, "info");
+    const dominantColorFeatures: ImageFeature[] = colors.slice(0, this.colorCount).map((color, index) => ({
+      type: ImageFeatureType.Annotation,
+      format: ImageFeatureFormat.String,
+      name: `${DOMINANT_COLOR_FEATURE_NAME_PREFIX}${index + 1}`,
+      value: rgbToHex(color)
+    }));
+
+    let existingFeatures: ImageFeature[];
+    try
+    {
+      existingFeatures = await this.getImageApi().imageGetFeatures({
+        id: imageId,
+        extensionId: this.extensionId
+      });
+    }
+    catch (error)
+    {
+      communicator.sendLog(`Could not retrieve the existing features for the image with id '${imageId}': they will be overwritten. Reason: '${error.message}'`, "warn");
+      existingFeatures = [];
+    }
+
+    const otherFeatures = existingFeatures.filter((feature) => feature.name?.startsWith(DOMINANT_COLOR_FEATURE_NAME_PREFIX) !== true);
+
+    await this.getImageApi().imageSetFeatures({
+      id: imageId,
+      extensionId: this.extensionId,
+      imageFeature: [ ...otherFeatures, ...dominantColorFeatures ]
+    });
+
+    communicator.sendLog(`Computed the color embedding and dominant color features for the image with id '${imageId}'`, "info");
   }
 
   private async setup(_communicator: Communicator, value: SettingsValue): Promise<void>

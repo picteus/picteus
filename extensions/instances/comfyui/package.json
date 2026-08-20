@@ -28,7 +28,7 @@
     "url": "https://github.com/picteus/Picteus/issues"
   },
   "type": "module",
-  "main": "./dist/back-end/src/main.js",
+  "main": "dist/back-end/src/main.js",
   "files": [
     "dist",
     "manifest.json",

@@ -5,20 +5,21 @@ import AdmZip from "adm-zip";
 import { GoogleGenAI } from "@google/genai";
 
 import {
-  ApplicationMetadata,
+  type ApplicationMetadata,
   Communicator,
+  EventName,
+  type EventValue,
   ExtensionApi,
-  GenerationRecipe,
+  type GenerationRecipe,
   Helper,
   ImageFeatureFormat,
   ImageFeatureType,
-  ImageMetadata,
+  type ImageMetadata,
   NotificationEvent,
-  NotificationValue,
   PicteusExtension,
   PromptKind,
-  Repository,
-  SettingsValue
+  type Repository,
+  type SettingsValue
 } from "@picteus/extension-sdk";
 
 
@@ -41,7 +42,7 @@ class GeminiExtension extends PicteusExtension
     await this.setup(value);
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
     if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags)
     {
@@ -81,7 +82,7 @@ class GeminiExtension extends PicteusExtension
     await this.getImageApi().imageSetTags({
       id: imageId,
       extensionId: this.extensionId,
-      requestBody: hasMatchingSoftwareMetadata === false ? [] : [this.extensionId]
+      requestBody: hasMatchingSoftwareMetadata === false ? [] : [ this.extensionId ]
     });
   }
 
@@ -97,7 +98,7 @@ class GeminiExtension extends PicteusExtension
     const prompt: string = parameters["prompt"];
     communicator.sendLog(`Asking Gemini to generate an image with prompt '${prompt}'`, "debug");
     const milliseconds = Date.now();
-    const contents: any[] = [{ text: prompt }];
+    const contents: any[] = [ { text: prompt } ];
     if (imageIds !== undefined)
     {
       for (const imageId of imageIds)
@@ -130,13 +131,13 @@ class GeminiExtension extends PicteusExtension
       {
         const imageData = part.inlineData.data;
         const buffer = Buffer.from(imageData, "base64");
-        const blob = new Blob([buffer], {});
+        const blob = new Blob([ buffer ], {});
         const aspectRatioTokens = aspectRatio.split(":");
         const numericAspectRatio = Number.parseFloat(aspectRatioTokens[0]) / Number.parseFloat(aspectRatioTokens[1]);
         const recipe: GenerationRecipe =
           {
             schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-            modelTags: [`google/${model}`],
+            modelTags: [ `google/${model}` ],
             software: PicteusExtension.SOFTWARE,
             aspectRatio: Number.parseFloat(numericAspectRatio.toFixed(4)),
             prompt: { kind: PromptKind.Textual, text: prompt }
@@ -145,7 +146,12 @@ class GeminiExtension extends PicteusExtension
         {
           recipe.inputAssets = imageIds;
         }
-        const applicationMetadata: ApplicationMetadata = { items: [{ extensionId: this.extensionId, value: recipe }] };
+        const applicationMetadata: ApplicationMetadata = {
+          items: [ {
+            extensionId: this.extensionId,
+            value: recipe
+          } ]
+        };
         const image = await this.getRepositoryApi().repositoryStoreImage({
           id: this.repository!.id,
           nameWithoutExtension: part.inlineData.displayName,
@@ -156,7 +162,7 @@ class GeminiExtension extends PicteusExtension
         await this.getImageApi().imageSetTags({
           id: image.id,
           extensionId: this.extensionId,
-          requestBody: [this.extensionId]
+          requestBody: [ this.extensionId ]
         });
         await this.getImageApi().imageSetFeatures({
           id: image.id,
@@ -178,7 +184,7 @@ class GeminiExtension extends PicteusExtension
         });
         await communicator.launchIntent({
           images: {
-            images: [{ imageId: image.id, dialogContent: { title: image.name, description: prompt } }],
+            images: [ { imageId: image.id, dialogContent: { title: image.name, description: prompt } } ],
             dialogContent:
               {
                 title: "Generated Images",
@@ -224,7 +230,7 @@ class GeminiExtension extends PicteusExtension
         }
 
         const buffer: Buffer = await newZip.toBufferPromise();
-        const blob = new Blob([Buffer.from(buffer)]);
+        const blob = new Blob([ Buffer.from(buffer) ]);
         await this.getExtensionApi().extensionInstallChromeExtension({
           id: this.extensionId,
           chromeExtensionName: "Picteus Gemini",

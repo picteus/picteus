@@ -5,18 +5,19 @@ import {
   type ApplicationMetadata,
   type ApplicationMetadataItem,
   Communicator,
+  EventName,
+  type EventValue,
   GenerationRecipeFromJSON,
   type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
   ImageResizeRender,
+  InstructionReturnedError,
+  InstructionReturnedErrorCause,
   IntentDialogType,
   type IntentImage,
   NotificationEvent,
-  NotificationReturnedError,
-  NotificationReturnedErrorCause,
-  type NotificationValue,
   PicteusExtension
 } from "@picteus/extension-sdk";
 
@@ -24,7 +25,7 @@ import {
 class ImageCommonsExtension extends PicteusExtension
 {
 
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
     if (event === NotificationEvent.ImageRunCommand)
     {
@@ -167,8 +168,8 @@ class ImageCommonsExtension extends PicteusExtension
       }
       catch (error)
       {
-        const intentError: NotificationReturnedError = error as NotificationReturnedError;
-        if (intentError.reason === NotificationReturnedErrorCause.Cancel)
+        const intentError: InstructionReturnedError = error as InstructionReturnedError;
+        if (intentError.reason === InstructionReturnedErrorCause.Cancel)
         {
           return;
         }

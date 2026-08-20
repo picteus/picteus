@@ -1,6 +1,8 @@
 import {
   ApplicationMetadata,
   Communicator,
+  EventName,
+  type EventValue,
   GenerationRecipe,
   Helper,
   type ImageFeature,
@@ -8,8 +10,6 @@ import {
   ImageFeatureType,
   ImageMetadata,
   IntentDialogType,
-  NotificationEvent,
-  NotificationValue,
   PicteusExtension,
   PromptKind,
   Repository,
@@ -190,15 +190,15 @@ class FreepikExtension extends PicteusExtension
     await this.setup(value);
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
-    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags)
+    if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeTags)
     {
       const imageId: string = value["id"];
       const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
       await this.computeTags(imageId, metadata);
     }
-    else if (event === NotificationEvent.ImageRunCommand)
+    else if (event === EventName.ImageRunCommand)
     {
       const commandId: string = value["commandId"];
       const imageIds: string[] = value["imageIds"];
@@ -224,7 +224,7 @@ class FreepikExtension extends PicteusExtension
     await this.getImageApi().imageSetTags({
       id: imageId,
       extensionId: this.extensionId,
-      requestBody: hasMatchingMakeMetadata === false ? [] : [this.extensionId]
+      requestBody: hasMatchingMakeMetadata === false ? [] : [ this.extensionId ]
     });
   }
 
@@ -257,7 +257,7 @@ class FreepikExtension extends PicteusExtension
           // We fetch the generated image
           const response = await fetch(url);
           const arrayBuffer = await response.arrayBuffer();
-          return new Blob([arrayBuffer], {});
+          return new Blob([ arrayBuffer ], {});
 
         };
         const handleImageUrl = async (index: number | undefined, url: string): Promise<void> =>
@@ -266,9 +266,9 @@ class FreepikExtension extends PicteusExtension
           const recipe: GenerationRecipe =
             {
               schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-              modelTags: [generationParameters.model],
+              modelTags: [ generationParameters.model ],
               software: "picteus",
-              inputAssets: [imageId],
+              inputAssets: [ imageId ],
               url,
               prompt:
                 {
@@ -297,7 +297,7 @@ class FreepikExtension extends PicteusExtension
           await this.getImageApi().imageSetTags({
             id: image.id,
             extensionId: this.extensionId,
-            requestBody: [this.extensionId]
+            requestBody: [ this.extensionId ]
           });
           const imageFeature: Array<ImageFeature> =
             [

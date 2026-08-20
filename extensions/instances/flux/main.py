@@ -2,7 +2,7 @@ import asyncio
 import os
 from typing import Dict, Any, Optional
 
-from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator, SettingsValue
+from picteus_extension_sdk import PicteusExtension, EventName, EventValue, Communicator, SettingsValue
 
 os.environ["TRANSFORMERS_CACHE"] = PicteusExtension.get_cache_directory_path()
 os.environ["HF_HOME"] = PicteusExtension.get_cache_directory_path()
@@ -22,8 +22,8 @@ class FluxExtension(PicteusExtension):
     async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
         await self._setup(self.get_settings())
 
-    async def on_event(self, communicator: Communicator, event: str, value: Dict[str, Any]) -> Any | None:
-        if event == NotificationEvent.PROCESS_RUN_COMMAND:
+    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
+        if event == EventName.PROCESS_RUN_COMMAND:
             command_id: str = value["commandId"]
             if command_id == "generate":
                 parameters: Dict[str, Any] = value["parameters"]

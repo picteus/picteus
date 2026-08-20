@@ -1,6 +1,6 @@
 {
   "name": "@picteus/ollama",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "productName": "Picteus Llava extension",
   "description": "A Picteus extension wrapping Llava.",
   "keywords": [
@@ -19,7 +19,7 @@
   "license": "GNU Affero General Public License",
   "private": false,
   "engines": {
-    "node": ">=20"
+    "node": ">=22.17.1"
   },
   "homepage": "https://github.com/picteus/Picteus",
   "repository": {
@@ -30,7 +30,7 @@
     "url": "https://github.com/picteus/Picteus/issues"
   },
   "type": "module",
-  "main": "./dist/main.js",
+  "main": "dist/main.js",
   "files": [
     "dist",
     "manifest.json",

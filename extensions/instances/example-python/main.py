@@ -4,7 +4,7 @@ import json
 import os
 from typing import Dict, Any, List, Optional, Literal
 
-from picteus_extension_sdk import PicteusExtension, NotificationEvent, NotificationReturnedError, Communicator, \
+from picteus_extension_sdk import PicteusExtension, EventName, NotificationReturnedError, Communicator, \
     IntentDialogType, UiIntent, \
     IntentUi, DialogIntent, IntentDialog, IntentDialogButtons, IntentImage, \
     ImagesIntent, IntentImages, ShowIntent, IntentShow, IntentShowType, \
@@ -24,9 +24,7 @@ class PythonExtension(PicteusExtension):
 
     async def initialize(self) -> bool:
         self.logger.debug(f"The {self.to_string()} with name '{PicteusExtension.get_manifest().name}' is initializing")
-        result = await super().initialize()
-        self.logger.debug(f"The {self.to_string()} has the following settings: '{self.get_settings}'")
-        return result
+        return await super().initialize()
 
     async def on_terminate(self) -> None:
         self.logger.debug(f"The {self.to_string()} is terminating")
@@ -37,6 +35,8 @@ class PythonExtension(PicteusExtension):
                               "info")
 
     async def on_ready(self, communicator: Optional[Communicator]) -> None:
+        settings: SettingsValue = self.get_settings()
+        self.logger.debug(f"The {self.to_string()} has the following settings: {settings}")
         if communicator is not None:
             communicator.send_log(f"The {self.to_string()} is ready", "info")
             communicator.send_notification({"key": "value"})
@@ -45,10 +45,10 @@ class PythonExtension(PicteusExtension):
         communicator.send_log(
             f"The extension with id '{self.extension_id}' was notified that the settings have been set", "debug")
 
-    async def on_event(self, communicator: Communicator, event: str, value: EventValue) -> Any | None:
-        if event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED or event == NotificationEvent.IMAGE_TAGS_UPDATED or event == NotificationEvent.IMAGE_FEATURES_UPDATED or event == NotificationEvent.IMAGE_DELETED or event == NotificationEvent.IMAGE_COMPUTE_TAGS or event == NotificationEvent.IMAGE_COMPUTE_FEATURES:
+    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
+        if event == EventName.IMAGE_CREATED or event == EventName.IMAGE_UPDATED or event == EventName.IMAGE_TAGS_UPDATED or event == EventName.IMAGE_FEATURES_UPDATED or event == EventName.IMAGE_DELETED or event == EventName.IMAGE_COMPUTE_TAGS or event == EventName.IMAGE_COMPUTE_FEATURES:
             await self._handle_image_event(communicator, event, value)
-        elif event == NotificationEvent.PROCESS_RUN_COMMAND:
+        elif event == EventName.PROCESS_RUN_COMMAND:
             command_id: str = value["commandId"]
             parameters: Dict[str, Any] = value["parameters"]
             communicator.send_log(
@@ -74,7 +74,7 @@ class PythonExtension(PicteusExtension):
                 await self._handle_action(communicator, parameters)
             elif command_id == "application":
                 await self._handle_application(communicator)
-        elif event == NotificationEvent.IMAGE_RUN_COMMAND:
+        elif event == EventName.IMAGE_RUN_COMMAND:
             command_id: str = value["commandId"]
             image_ids: List[str] = value["imageIds"]
             parameters: Dict[str, Any] = value["parameters"]
@@ -82,19 +82,19 @@ class PythonExtension(PicteusExtension):
         return None
 
     async def _handle_image_event(self, communicator: Communicator, event: Literal[
-        NotificationEvent.IMAGE_CREATED, NotificationEvent.IMAGE_UPDATED, NotificationEvent.IMAGE_TAGS_UPDATED, NotificationEvent.IMAGE_FEATURES_UPDATED, NotificationEvent.IMAGE_DELETED, NotificationEvent.IMAGE_COMPUTE_TAGS, NotificationEvent.IMAGE_COMPUTE_FEATURES],
+        EventName.IMAGE_CREATED, EventName.IMAGE_UPDATED, EventName.IMAGE_TAGS_UPDATED, EventName.IMAGE_FEATURES_UPDATED, EventName.IMAGE_DELETED, EventName.IMAGE_COMPUTE_TAGS, EventName.IMAGE_COMPUTE_FEATURES],
                                   value: dict[str, Any]) -> None:
         image_id: str = value["id"]
-        is_created_or_updated: bool = event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED
-        if is_created_or_updated or event == NotificationEvent.IMAGE_DELETED:
+        is_created_or_updated: bool = event == EventName.IMAGE_CREATED or event == EventName.IMAGE_UPDATED
+        if is_created_or_updated or event == EventName.IMAGE_DELETED:
             communicator.send_log(f"The image with id '{image_id}' was touched", "info")
-        if event == NotificationEvent.IMAGE_TAGS_UPDATED or event == NotificationEvent.IMAGE_FEATURES_UPDATED:
+        if event == EventName.IMAGE_TAGS_UPDATED or event == EventName.IMAGE_FEATURES_UPDATED:
             communicator.send_log(f"The tags or features of the image with id '{image_id}' were updated", "info")
-        if is_created_or_updated or event == NotificationEvent.IMAGE_COMPUTE_TAGS:
+        if is_created_or_updated or event == EventName.IMAGE_COMPUTE_TAGS:
             communicator.send_log(f"Setting the tags for the image with id '{image_id}'", "debug")
             self.get_image_api().image_set_tags(id=image_id, extension_id=self.extension_id,
                                                 request_body=[self.extension_id])
-        if is_created_or_updated or event == NotificationEvent.IMAGE_COMPUTE_FEATURES:
+        if is_created_or_updated or event == EventName.IMAGE_COMPUTE_FEATURES:
             communicator.send_log(f"Setting the features for the image with id '{image_id}'", "debug")
             self.get_image_api().image_set_features(id=image_id, extension_id=self.extension_id,
                                                     image_feature=[ImageFeature(type=ImageFeatureType.OTHER,

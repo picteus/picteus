@@ -3,19 +3,20 @@ import * as fs from "node:fs";
 
 import {
   Communicator,
-  GenerationRecipe,
+  EventName,
+  type EventValue,
+  type GenerationRecipe,
   Helper,
-  ImageFeature,
+  type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
-  ImageMetadata,
+  type ImageMetadata,
   IntentDialogType,
   IntentShowType,
   NotificationEvent,
-  NotificationValue,
   PicteusExtension,
   PromptKind,
-  SettingsValue
+  type SettingsValue
 } from "@picteus/extension-sdk";
 
 
@@ -70,7 +71,7 @@ class ComfyUiExtension extends PicteusExtension
     await this.setup(communicator, value);
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
     if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags || event === NotificationEvent.ImageComputeFeatures)
     {
@@ -160,10 +161,32 @@ class ComfyUiExtension extends PicteusExtension
   private async computeTags(imageId: string, metadata: ImageMetadata): Promise<void>
   {
     const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
+    const tags = new Set<string>();
+    if (promptAndWorkflow !== undefined)
+    {
+      tags.add(this.extensionId);
+      const workflow = promptAndWorkflow.workflow;
+      if (workflow.nodes && Array.isArray(workflow.nodes))
+      {
+        for (const node of workflow.nodes)
+        {
+          const nodeType: string | undefined = node["type"];
+          if (nodeType)
+          {
+            const category = this.getCategoryForNodeType(nodeType);
+            if (category)
+            {
+              tags.add(`comfyui:${category}`);
+            }
+          }
+        }
+      }
+    }
+
     await this.getImageApi().imageSetTags({
       id: imageId,
       extensionId: this.extensionId,
-      requestBody: promptAndWorkflow !== undefined ? [this.extensionId] : []
+      requestBody: Array.from(tags)
     });
   }
 
@@ -172,6 +195,7 @@ class ComfyUiExtension extends PicteusExtension
     const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
     if (promptAndWorkflow !== undefined)
     {
+      const imageFeatures: Array<ImageFeature> = [];
       const recipe: GenerationRecipe =
         {
           schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
@@ -179,23 +203,123 @@ class ComfyUiExtension extends PicteusExtension
           software: "comfyui",
           prompt: { kind: PromptKind.Instructions, value: promptAndWorkflow }
         };
-      await this.getImageApi().imageSetFeatures({
-        id: imageId,
-        extensionId: this.extensionId,
-        imageFeature: [
-          {
-            type: ImageFeatureType.Recipe,
-            format: ImageFeatureFormat.Json,
-            value: JSON.stringify(recipe)
-          }
-        ]
+      imageFeatures.push({
+        type: ImageFeatureType.Recipe,
+        format: ImageFeatureFormat.Json,
+        value: JSON.stringify(recipe)
       });
+
+      const workflow = promptAndWorkflow.workflow;
+      if (workflow.nodes && Array.isArray(workflow.nodes))
+      {
+        const nodeOperations: Record<string, { count: number, types: string[] }> = {};
+        for (const node of workflow.nodes)
+        {
+          const nodeType: string = node["type"];
+          if (nodeType)
+          {
+            const category = this.getCategoryForNodeType(nodeType) || "other";
+            if (!nodeOperations[category])
+            {
+              nodeOperations[category] = { count: 0, types: [] };
+            }
+            nodeOperations[category].count++;
+            if (!nodeOperations[category].types.includes(nodeType))
+            {
+              nodeOperations[category].types.push(nodeType);
+            }
+          }
+        }
+
+        // Add JSON feature
+        imageFeatures.push({
+          type: ImageFeatureType.Metadata,
+          format: ImageFeatureFormat.Json,
+          value: JSON.stringify({ nodeOperations }, null, 2)
+        });
+
+        // Add Markdown feature
+        let markdownContent = "### ComfyUI Node Operations\n\n| Category | Count | Node Types |\n| :--- | :--- | :--- |\n";
+        for (const [ category, data ] of Object.entries(nodeOperations))
+        {
+          markdownContent += `| **${category}** | ${data.count} | ${data.types.join(", ")} |\n`;
+        }
+
+        imageFeatures.push({
+          type: ImageFeatureType.Description,
+          format: ImageFeatureFormat.Markdown,
+          value: markdownContent
+        });
+      }
+
+      try
+      {
+        await this.getImageApi().imageSetFeatures({
+          id: imageId,
+          extensionId: this.extensionId,
+          imageFeature: imageFeatures
+        });
+      }
+      catch (error)
+      {
+        console.log(error);
+      }
     }
+  }
+
+  private getCategoryForNodeType(nodeType: string): string
+  {
+    const lowerType = nodeType.toLowerCase();
+    if (lowerType.includes("lora"))
+    {
+      return "lora";
+    }
+    if (lowerType.includes("controlnet"))
+    {
+      return "controlnet";
+    }
+    if (lowerType.includes("checkpoint") || lowerType.includes("model"))
+    {
+      return "model";
+    }
+    if (lowerType.includes("sampler"))
+    {
+      return "sampling";
+    }
+    if (lowerType.includes("clip") || lowerType.includes("conditioning"))
+    {
+      return "conditioning";
+    }
+    if (lowerType.includes("latent"))
+    {
+      return "latent";
+    }
+    if (lowerType.includes("image"))
+    {
+      return "image";
+    }
+    if (lowerType.includes("mask"))
+    {
+      return "mask";
+    }
+    if (lowerType.includes("face") || lowerType.includes("roop") || lowerType.includes("reactor"))
+    {
+      return "face";
+    }
+    if (lowerType.includes("upscale"))
+    {
+      return "upscaling";
+    }
+    if (lowerType.includes("math") || lowerType.includes("primitive"))
+    {
+      return "utils";
+    }
+    return "other";
   }
 
   private async computeDescription(communicator: Communicator, imageId: string): Promise<void>
   {
-    const directoryPaths = [this.outputDirectoryPath, this.inputDirectoryPath, this.temporaryDirectoryPath].filter(directoryPath => directoryPath !== undefined);
+    const directoryPaths = [ this.outputDirectoryPath, this.inputDirectoryPath, this.temporaryDirectoryPath ].filter(directoryPath => directoryPath !== undefined);
     const imageFeatures: Array<ImageFeature> = [];
     if (directoryPaths.length > 0)
     {

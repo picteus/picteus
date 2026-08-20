@@ -5,8 +5,8 @@ from typing import Any, List, Optional
 
 from PIL import Image
 from PIL.ImageFile import ImageFile
-from picteus_extension_sdk import PicteusExtension, NotificationEvent, Communicator, SettingsValue, IntentImage, \
-    ImagesIntent, IntentImages, Helper, IntentDialogIconContent
+from picteus_extension_sdk import PicteusExtension, Communicator, SettingsValue, IntentImage, \
+    ImagesIntent, IntentImages, Helper, IntentDialogIconContent, EventName, EventValue
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
     InstructionsPrompt, PromptKind, GenerationRecipePrompt, ImageFeatureValue
@@ -28,8 +28,8 @@ class BriaExtension(PicteusExtension):
     async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
         await self._setup(self.get_settings())
 
-    async def on_event(self, communicator: Communicator, event, value) -> Any | None:
-        if event == NotificationEvent.IMAGE_RUN_COMMAND:
+    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
+        if event == EventName.IMAGE_RUN_COMMAND:
             image_ids: List[str] = value["imageIds"]
             new_images: List[IntentImage] = []
             for image_id in image_ids:

@@ -3,6 +3,7 @@ import * as path from "node:path";
 
 import {
   Communicator,
+  EventName,
   type EventValue,
   ImageFeatureFormat,
   ImageFeatureType,
@@ -13,7 +14,6 @@ import {
   type IntentImage,
   IntentShowType,
   IntentUiAnchor,
-  NotificationEvent,
   PicteusExtension,
   type ProcessCommandIntent,
   type SettingsValue,
@@ -29,10 +29,7 @@ class TypeScriptExtension extends PicteusExtension
   protected async initialize(): Promise<boolean>
   {
     this.logger.debug(`The ${this.toString()} with name '${PicteusExtension.getManifest().name}' is initializing`);
-    const result = await super.initialize();
-    const settings = await this.getSettings();
-    this.logger.debug(`The ${this.toString()} has the following settings: ${JSON.stringify(settings)}`);
-    return result;
+    return await super.initialize();
   }
 
   protected async onTerminate(): Promise<void>
@@ -47,6 +44,8 @@ class TypeScriptExtension extends PicteusExtension
 
   protected async onReady(communicator?: Communicator): Promise<void>
   {
+    const settings: SettingsValue = await this.getSettings();
+    this.logger.debug(`The ${this.toString()} has the following settings: ${JSON.stringify(settings)}`);
     if (communicator !== undefined)
     {
       communicator.sendLog(`The ${this.toString()} is ready`, "info");
@@ -59,13 +58,13 @@ class TypeScriptExtension extends PicteusExtension
     communicator.sendLog(`The extension with id '${this.extensionId}' was notified that the settings have been set`, "debug");
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: EventValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
-    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageTagsUpdated || event === NotificationEvent.ImageFeaturesUpdated || event === NotificationEvent.ImageDeleted || event === NotificationEvent.ImageComputeTags || event === NotificationEvent.ImageComputeFeatures)
+    if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageTagsUpdated || event === EventName.ImageFeaturesUpdated || event === EventName.ImageDeleted || event === EventName.ImageComputeTags || event === EventName.ImageComputeFeatures)
     {
       await this.handleImageEvent(communicator, event, value);
     }
-    else if (event === NotificationEvent.ProcessRunCommand)
+    else if (event === EventName.ProcessRunCommand)
     {
       const commandId: string = value["commandId"];
       const parameters: Record<string, any> = value["parameters"];
@@ -111,7 +110,7 @@ class TypeScriptExtension extends PicteusExtension
         await this.handleApplication(communicator);
       }
     }
-    else if (event === NotificationEvent.ImageRunCommand)
+    else if (event === EventName.ImageRunCommand)
     {
       const commandId: string = value["commandId"];
       const imageIds: string[] = value["imageIds"];
@@ -120,19 +119,19 @@ class TypeScriptExtension extends PicteusExtension
     }
   }
 
-  private async handleImageEvent(communicator: Communicator, event: NotificationEvent, value: EventValue): Promise<void>
+  private async handleImageEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<void>
   {
     const imageId: string = value["id"];
-    const isCreatedOrUpdated = event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated;
-    if (isCreatedOrUpdated === true || event === NotificationEvent.ImageDeleted)
+    const isCreatedOrUpdated = event === EventName.ImageCreated || event === EventName.ImageUpdated;
+    if (isCreatedOrUpdated === true || event === EventName.ImageDeleted)
     {
       communicator.sendLog(`The image with id '${imageId}' was touched`, "info");
     }
-    if (event === NotificationEvent.ImageTagsUpdated || event === NotificationEvent.ImageFeaturesUpdated)
+    if (event === EventName.ImageTagsUpdated || event === EventName.ImageFeaturesUpdated)
     {
       communicator.sendLog(`The tags or features of the image with id '${imageId}' were updated`, "info");
     }
-    if (isCreatedOrUpdated === true || event === NotificationEvent.ImageComputeTags)
+    if (isCreatedOrUpdated === true || event === EventName.ImageComputeTags)
     {
       this.logger.debug(`Setting the tags for the image with id '${imageId}'`);
       await this.getImageApi().imageSetTags({
@@ -141,7 +140,7 @@ class TypeScriptExtension extends PicteusExtension
         requestBody: [ this.extensionId ]
       });
     }
-    if (isCreatedOrUpdated === true || event === NotificationEvent.ImageComputeFeatures)
+    if (isCreatedOrUpdated === true || event === EventName.ImageComputeFeatures)
     {
       this.logger.debug(`Setting the features for the image with id '${imageId}'`);
       await this.getImageApi().imageSetFeatures({

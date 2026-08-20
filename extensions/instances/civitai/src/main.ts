@@ -1,17 +1,18 @@
-import { CivitaiRESTAPIClient, ImageMeta } from "@stable-canvas/civitai-rest-api-client";
+import { CivitaiRESTAPIClient, type ImageMeta } from "@stable-canvas/civitai-rest-api-client";
 
 import {
   ApiCallError,
-  ApplicationMetadata,
+  type ApplicationMetadata,
   Communicator,
-  GenerationRecipe,
+  EventName,
+  type EventValue,
+  type GenerationRecipe,
   Helper,
   type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
-  IntentImage,
+  type IntentImage,
   NotificationEvent,
-  NotificationValue,
   PicteusExtension,
   PromptKind,
   type Repository
@@ -39,7 +40,7 @@ class CivitaiExtension extends PicteusExtension
     await ensureRepository();
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
     if (event === NotificationEvent.ProcessRunCommand)
     {
@@ -77,13 +78,13 @@ class CivitaiExtension extends PicteusExtension
       const id = item.id.toString(10);
       const response = await fetch(item.url);
       const arrayBuffer = await response.arrayBuffer();
-      const blob = new Blob([arrayBuffer], {});
+      const blob = new Blob([ arrayBuffer ], {});
       try
       {
         communicator.sendLog(`Handling the Civitai image with id '${id}' and URL '${item.url}' `, "debug");
 
         const modelTags: string[] = [];
-        const baseModelProperties = ["basemodel", "baseModel"];
+        const baseModelProperties = [ "basemodel", "baseModel" ];
         for (const baseModelProperty of baseModelProperties)
         {
           if (baseModelProperty in item)
@@ -117,7 +118,7 @@ class CivitaiExtension extends PicteusExtension
         let aspectRatio: number | undefined;
         if (aspectRatioRawString !== undefined)
         {
-          const [width, height] = aspectRatioRawString.split(":").map(string => parseInt(string));
+          const [ width, height ] = aspectRatioRawString.split(":").map(string => parseInt(string));
           aspectRatio = width / height;
         }
         const sanitizedModelTags = modelTags.map(tag => tag.replaceAll(" ", "_"));
@@ -158,7 +159,7 @@ class CivitaiExtension extends PicteusExtension
         await this.getImageApi().imageSetTags({
           id: image.id,
           extensionId: this.extensionId,
-          requestBody: [this.extensionId]
+          requestBody: [ this.extensionId ]
         });
         const features: ImageFeature[] =
           [
@@ -180,7 +181,7 @@ class CivitaiExtension extends PicteusExtension
             format: ImageFeatureFormat.String,
             value: prompt
           });
-          const items = [{ label: "Prompt", value: prompt }];
+          const items = [ { label: "Prompt", value: prompt } ];
           if (negativePrompt !== undefined)
           {
             items.push({ label: "Negative Prompt", value: negativePrompt });

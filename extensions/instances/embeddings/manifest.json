@@ -1,7 +1,7 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "embeddings",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "name": "Embeddings",
   "description": "Computes the embeddings of an image.",
   "categories": ["enrichment"],
@@ -77,35 +77,35 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Embeddings",
+              "label": "Compute",
               "description": "Compute embeddings for images in a collection."
             }
           ]
         }
       ],
-        "execution": {
+      "execution": {
         "executable": "${venvPython}",
         "arguments": [
-        "./main.py"
+          "./main.py"
         ]
-        }
       }
+    }
   ],
-    "settings": {
+  "settings": {
     "type": "object",
     "properties": {
-    "clipEnabled": {
-    "type": "boolean",
-    "title": "CLIP",
-    "description": "Whether the CLIP model should be used to compute the embedding of an image.",
-    "default": true
-    },
-    "dinoEnabled": {
-    "type": "boolean",
-    "title": "DINO",
-    "description": "Whether the DINO v2 model should be used to compute the embedding of an image.",
-    "default": true
-    }
-    }
+      "clipEnabled": {
+        "type": "boolean",
+        "title": "CLIP",
+        "description": "Whether the CLIP model should be used to compute the embedding of an image.",
+        "default": true
+      },
+      "dinoEnabled": {
+        "type": "boolean",
+        "title": "DINO",
+        "description": "Whether the DINO v2 model should be used to compute the embedding of an image.",
+        "default": true
+      }
     }
   }
+}

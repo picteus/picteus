@@ -1,22 +1,23 @@
-import Replicate, { Model, Prediction } from "replicate";
+import Replicate, { type Model, type Prediction } from "replicate";
 
 import {
-  ApplicationMetadata,
+  type ApplicationMetadata,
   Communicator,
-  GenerationRecipe,
+  EventName,
+  type EventValue,
+  type GenerationRecipe,
   Helper,
-  Image,
-  ImageFeature,
+  type Image,
+  type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
   IntentDialogType,
   NotificationEvent,
-  NotificationValue,
   PicteusExtension,
   PromptKind,
   type Repository,
   SearchOriginNature,
-  SettingsValue
+  type SettingsValue
 } from "@picteus/extension-sdk";
 
 
@@ -58,7 +59,7 @@ class ReplicateExtension extends PicteusExtension
     await this.setup(value);
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
     if (event === NotificationEvent.ImageRunCommand)
     {
@@ -109,7 +110,7 @@ class ReplicateExtension extends PicteusExtension
             {
               filter:
                 {
-                  origin: { kind: SearchOriginNature.Repositories, ids: [this.repository.id] },
+                  origin: { kind: SearchOriginNature.Repositories, ids: [ this.repository.id ] },
                   criteria:
                     {
                       keyword:
@@ -172,7 +173,7 @@ class ReplicateExtension extends PicteusExtension
       input[inputImageParameterName] = Buffer.from(await blob.arrayBuffer());
     }
     const prediction = await this.runReplicateModel(communicator, replicate, model, input);
-    await this.storeImage(communicator, prediction, imageId === undefined ? undefined : [imageId]);
+    await this.storeImage(communicator, prediction, imageId === undefined ? undefined : [ imageId ]);
   }
 
   private async storeImage(communicator: Communicator, prediction: Prediction, imageIds?: string[]): Promise<boolean>
@@ -187,7 +188,7 @@ class ReplicateExtension extends PicteusExtension
     // We strip the images from the input
     const input: Record<string, any> = prediction.input;
     let index = 0;
-    for (const [key, value] of Object.entries(input))
+    for (const [ key, value ] of Object.entries(input))
     {
       if (value instanceof Buffer)
       {
@@ -201,7 +202,7 @@ class ReplicateExtension extends PicteusExtension
     const recipe: GenerationRecipe =
       {
         schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-        modelTags: [prediction.model],
+        modelTags: [ prediction.model ],
         software: PicteusExtension.SOFTWARE,
         url: prediction.urls.get,
         prompt: { kind: PromptKind.Instructions, value: input }
@@ -210,7 +211,7 @@ class ReplicateExtension extends PicteusExtension
     {
       recipe.inputAssets = imageIds;
     }
-    const applicationMetadata: ApplicationMetadata = { items: [{ extensionId: this.extensionId, value: recipe }] };
+    const applicationMetadata: ApplicationMetadata = { items: [ { extensionId: this.extensionId, value: recipe } ] };
     let image: Image;
     try
     {
@@ -234,7 +235,7 @@ class ReplicateExtension extends PicteusExtension
     await this.getImageApi().imageSetTags({
       id: image.id,
       extensionId: this.extensionId,
-      requestBody: [this.extensionId]
+      requestBody: [ this.extensionId ]
     });
     const features: ImageFeature[] =
       [
@@ -265,7 +266,7 @@ class ReplicateExtension extends PicteusExtension
             {
               imageId: image.id,
               dialogContent: { title: image.name, description: input.prompt === undefined ? "Image" : input.prompt }
-            }],
+            } ],
           dialogContent:
             {
               title: "Generated Images",
@@ -331,7 +332,7 @@ class ReplicateExtension extends PicteusExtension
     // @ts-ignore
     const schemas: Record<string, any> = openapiSchema.components.schemas;
     const inputSchema = schemas.Input;
-    const excludeKeys = ["Input", "Output", "Status", "WebhookEvent", "ValidationError", "PredictionRequest", "PredictionResponse", "HTTPValidationError"];
+    const excludeKeys = [ "Input", "Output", "Status", "WebhookEvent", "ValidationError", "PredictionRequest", "PredictionResponse", "HTTPValidationError" ];
     const otherSchemas: Record<string, any> = {};
     for (const key of Object.keys(schemas))
     {
@@ -406,7 +407,7 @@ class ReplicateExtension extends PicteusExtension
           const anyOf: any[] = property["anyOf"];
           if (anyOf.length == 0)
           {
-            Object.assign(property, { anyOf: [{ type: property["type"] || "string" }] });
+            Object.assign(property, { anyOf: [ { type: property["type"] || "string" } ] });
           }
         }
         else if (typeof property === "object")
@@ -431,7 +432,7 @@ class ReplicateExtension extends PicteusExtension
 
   private async checkModelIdentifier(communicator: Communicator, modelIdentifier: string): Promise<ReplicateModel | undefined>
   {
-    const [owner, namePart] = modelIdentifier.split("/");
+    const [ owner, namePart ] = modelIdentifier.split("/");
     if (namePart === undefined)
     {
       await communicator.launchIntent<boolean>({
@@ -445,7 +446,7 @@ class ReplicateExtension extends PicteusExtension
       });
       return undefined;
     }
-    const [name, version] = namePart.split(":");
+    const [ name, version ] = namePart.split(":");
     return { owner, name: name, model: `${owner}/${name}${version === undefined ? "" : (`:${version}`)}`, version };
   }
 

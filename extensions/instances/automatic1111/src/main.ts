@@ -1,23 +1,23 @@
 import {
   Communicator,
-  GenerationRecipe,
+  EventName,
+  type EventValue,
+  type GenerationRecipe,
   Helper,
   ImageFeatureFormat,
   ImageFeatureType,
-  ImageMetadata,
-  NotificationEvent,
-  NotificationValue,
+  type ImageMetadata,
   PicteusExtension,
   PromptKind,
-  SettingsValue
+  type SettingsValue
 } from "@picteus/extension-sdk";
 
 
-enum Automatic1111Constants
-{
-  userComment = "userComment",
-  parameters = "parameters"
-}
+const Automatic1111Constants =
+  {
+    userComment: "userComment",
+    parameters: "parameters"
+  } as const;
 
 class Automatic1111Instruction
 {
@@ -172,17 +172,17 @@ class Automatic1111Extension extends PicteusExtension
     await this.setup(communicator, value);
   }
 
-  protected async onEvent(_communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(_communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
-    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags || event === NotificationEvent.ImageComputeFeatures)
+    if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeTags || event === EventName.ImageComputeFeatures)
     {
       const imageId: string = value["id"];
       const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-      if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags)
+      if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeTags)
       {
         await this.computeTags(imageId, metadata);
       }
-      if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeFeatures)
+      if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeFeatures)
       {
         await this.computeFeatures(imageId, metadata);
       }
@@ -199,7 +199,7 @@ class Automatic1111Extension extends PicteusExtension
     await this.getImageApi().imageSetTags({
       id: imageId,
       extensionId: this.extensionId,
-      requestBody: userComment !== undefined ? [this.extensionId] : []
+      requestBody: userComment !== undefined ? [ this.extensionId ] : []
     });
   }
 

@@ -33,6 +33,12 @@ class ColorThiefExtractor implements IColorExtractor
 
 }
 
+export function rgbToHex(color: RGBColor): string
+{
+  const toHexChannel = (channel: number): string => channel.toString(16).padStart(2, "0");
+  return `#${toHexChannel(color.r)}${toHexChannel(color.g)}${toHexChannel(color.b)}`;
+}
+
 export function createColorExtractor(library: ColorLibrary): IColorExtractor
 {
   if (library === "color-thief")

@@ -20,6 +20,7 @@
         "image.updated",
         "image.deleted",
         "image.computeEmbeddings",
+        "image.computeFeatures",
         "image.runCommand"
       ],
       "throttlingPolicies": [
@@ -28,6 +29,7 @@
             "image.created",
             "image.updated",
             "image.computeEmbeddings",
+            "image.computeFeatures",
             "image.runCommand"
           ],
           "durationInMilliseconds": 100,
@@ -37,6 +39,9 @@
       "capabilities": [
         {
           "id": "image.embeddings"
+        },
+        {
+          "id": "image.features"
         }
       ],
       "execution": {
@@ -47,7 +52,7 @@
       },
       "commands": [
         {
-          "id": "compute-embeddings",
+          "id": "computeEmbeddings",
           "on": {
             "entity": "Images"
           },

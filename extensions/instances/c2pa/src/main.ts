@@ -1,13 +1,14 @@
-import { C2pa, createC2pa, ResolvedManifestStore } from "c2pa-node";
+import { type C2pa, createC2pa, type ResolvedManifestStore } from "c2pa-node";
 
 import {
   Communicator,
-  Image,
-  ImageFeature,
+  EventName,
+  type EventValue,
+  type Image,
+  type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
   NotificationEvent,
-  NotificationValue,
   PicteusExtension
 } from "@picteus/extension-sdk";
 
@@ -15,9 +16,9 @@ import {
 class C2paExtension extends PicteusExtension
 {
 
-  protected async onEvent(communicator: Communicator, channel: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
-    if (channel === NotificationEvent.ImageRunCommand)
+    if (event === NotificationEvent.ImageRunCommand)
     {
       // const commandId: string = value["commandId"];
       const imageIds: string[] = value["imageIds"];

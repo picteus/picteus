@@ -5,11 +5,11 @@ import { LogLevel } from "ts-tiny-log/levels";
 
 import {
   Communicator,
+  EventName,
+  type EventValue,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageResizeRender,
-  NotificationEvent,
-  NotificationValue,
   PicteusExtension
 } from "@picteus/extension-sdk";
 import { Classifiers } from "./classifiers";
@@ -23,9 +23,9 @@ class FeaturesTransformersExtension extends PicteusExtension
     shouldWriteTimestamp: true
   }), path.join(PicteusExtension.getCacheDirectoryPath()));
 
-  protected async onEvent(communicator: Communicator, channel: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
-    if (channel === NotificationEvent.ImageCreated || channel === NotificationEvent.ImageUpdated || channel === NotificationEvent.ImageComputeFeatures)
+    if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeFeatures)
     {
       const imageId = value["id"];
 
@@ -58,7 +58,7 @@ class FeaturesTransformersExtension extends PicteusExtension
         await this.getImageApi().imageSetFeatures({
           id: imageId,
           extensionId: this.extensionId,
-          imageFeature: [{ type: ImageFeatureType.Caption, format: ImageFeatureFormat.String, value: caption }]
+          imageFeature: [ { type: ImageFeatureType.Caption, format: ImageFeatureFormat.String, value: caption } ]
         });
       };
 
