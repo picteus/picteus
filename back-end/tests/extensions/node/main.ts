@@ -4,6 +4,7 @@ import * as process from "node:process";
 
 import {
   Communicator,
+  EventName,
   type EventValue,
   PicteusExtension,
   type SettingsValue,
@@ -58,7 +59,7 @@ class TestNodeExtension extends PicteusExtension
     saveBlotterFile("onSettings", value);
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: EventValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
     return await super.onEvent(communicator, event, value);
   }

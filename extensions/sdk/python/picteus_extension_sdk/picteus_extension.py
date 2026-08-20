@@ -45,7 +45,7 @@ class NotificationReturnedError(Exception):
         self.reason: NotificationReturnedErrorCause = reason
 
 
-class NotificationEvent(StrEnum):
+class EventName(StrEnum):
     PROCESS_RUN_COMMAND = "process.runCommand"
     IMAGE_CREATED = "image.created"
     IMAGE_UPDATED = "image.updated"
@@ -373,7 +373,7 @@ class PicteusExtension:
         return None
 
     # noinspection PyMethodMayBeStatic
-    async def on_event(self, communicator: Communicator, event: str, value: EventValue) -> Any | None:
+    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
         return None
 
     async def run_in_executor(self, function: Callable) -> Any | None:
@@ -485,7 +485,7 @@ class PicteusExtension:
                             self.exit(3, inner_exception,
                                       "an error occurred during the execution of the 'onReady()' method: stopping the process")
                     else:
-                        result: Any | None = await self.on_event(communicator, channel, value)
+                        result: Any | None = await self.on_event(communicator, EventName(channel), value)
                     success = True
                     if requires_result is True and result is not None:
                         return result

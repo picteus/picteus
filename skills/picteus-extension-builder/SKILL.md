@@ -43,7 +43,7 @@ The extension is built by extending the base class `PicteusExtension` provided b
 - `onSettings(communicator, value)` / `on_settings(self, communicator, value)`: Triggered when user settings change.
 
 ### The Event Router
-- `onEvent(communicator, event, value)` / `on_event(self, communicator, event, value)`: This is the core router. You must check the `event` parameter against the `NotificationEvent` enum (e.g., `NotificationEvent.ImageCreated`, `NotificationEvent.ProcessRunCommand`).
+- `onEvent(communicator, event, value)` / `on_event(self, communicator, event, value)`: This is the core router. You must check the `event` parameter against the `EventName` enum (e.g., `EventName.ImageCreated`, `EventName.ProcessRunCommand`).
   - For run commands, extract the `commandId` / `command_id` from `value` to determine the action to perform.
   - Extract any user-provided `parameters` from `value["parameters"]`.
 

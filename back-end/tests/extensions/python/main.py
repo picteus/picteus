@@ -6,7 +6,7 @@ from dataclasses import asdict
 from typing import Dict, Any, List, Optional
 
 from picteus_extension_sdk import PicteusExtension, Communicator, \
-    SettingsValue, Versions, EventValue
+    SettingsValue, Versions, EventValue, EventName
 
 blotter_file_path = os.path.join(os.getcwd(), "blotter.json")
 blotter_events: List[Dict[str, Any]] = []
@@ -56,7 +56,7 @@ class TestPythonExtension(PicteusExtension):
         await super().on_settings(communicator, value)
         save_blotter_file("onSettings", value)
 
-    async def on_event(self, communicator: Communicator, event: str, value: EventValue) -> Any | None:
+    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
         return await super().on_event(communicator, event, value)
 
 

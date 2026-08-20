@@ -1,10 +1,10 @@
-import { Communicator, type EventValue, NotificationEvent, PicteusExtension } from "@picteus/extension-sdk";
+import { Communicator, EventName, type EventValue, NotificationEvent, PicteusExtension } from "@picteus/extension-sdk";
 
 
 class TypeScriptExtension extends PicteusExtension
 {
 
-  protected async onEvent(communicator: Communicator, event: string, value: EventValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
     if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageDeleted)
     {

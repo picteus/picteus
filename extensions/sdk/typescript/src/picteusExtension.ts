@@ -23,7 +23,8 @@ import { Intent } from "./intents";
 
 export type EventValue = Record<string, any>;
 
-export enum InstructionReturnedErrorCause {Cancel, Error}
+export const InstructionReturnedErrorCause = { Cancel: 0, Error: 1 } as const;
+export type InstructionReturnedErrorCause = (typeof InstructionReturnedErrorCause)[keyof typeof InstructionReturnedErrorCause];
 
 export class InstructionReturnedError extends Error
 {
@@ -38,21 +39,21 @@ export class InstructionReturnedError extends Error
 
 }
 
-// noinspection JSUnusedGlobalSymbols
-export enum NotificationEvent
-{
-  ProcessRunCommand = "process.runCommand",
-  ImageCreated = "image.created",
-  ImageUpdated = "image.updated",
-  ImageTagsUpdated = "image.tags.updated",
-  ImageFeaturesUpdated = "image.features.updated",
-  ImageDeleted = "image.deleted",
-  ImageComputeFeatures = "image.computeFeatures",
-  ImageComputeEmbeddings = "image.computeEmbeddings",
-  ImageComputeTags = "image.computeTags",
-  ImageRunCommand = "image.runCommand",
-  TextComputeEmbeddings = "text.computeEmbeddings"
-}
+export const EventName =
+  {
+    ProcessRunCommand: "process.runCommand",
+    ImageCreated: "image.created",
+    ImageUpdated: "image.updated",
+    ImageTagsUpdated: "image.tags.updated",
+    ImageFeaturesUpdated: "image.features.updated",
+    ImageDeleted: "image.deleted",
+    ImageComputeFeatures: "image.computeFeatures",
+    ImageComputeEmbeddings: "image.computeEmbeddings",
+    ImageComputeTags: "image.computeTags",
+    ImageRunCommand: "image.runCommand",
+    TextComputeEmbeddings: "text.computeEmbeddings"
+  } as const;
+export type EventName = (typeof EventName)[keyof typeof EventName];
 
 const extensionVersionsChannel = "extension.versions";
 const extensionReadyChannel = "extension.ready";
@@ -416,7 +417,7 @@ export class PicteusExtension
   {
   }
 
-  protected async onEvent(_communicator: Communicator, _event: string, _value: EventValue): Promise<any>
+  protected async onEvent(_communicator: Communicator, _event: EventName, _value: EventValue): Promise<any>
   {
   }
 
@@ -560,7 +561,7 @@ export class PicteusExtension
           }
           else
           {
-            result = await this.onEvent(communicator, channel, value);
+            result = await this.onEvent(communicator, channel as EventName, value);
           }
           success = true;
         }

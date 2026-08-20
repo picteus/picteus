@@ -1,14 +1,13 @@
 import asyncio
 import json
-from typing import Dict, Any, List
-
-from picteus_extension_sdk import PicteusExtension, EventValue
+from picteus_extension_sdk import PicteusExtension, EventName, EventValue
 from picteus_extension_sdk.picteus_extension import NotificationEvent, Communicator
+from typing import Dict, Any, List
 
 
 class PythonExtension(PicteusExtension):
 
-    async def on_event(self, communicator: Communicator, event: str, value: EventValue) -> Any | None:
+    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
         if event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED or event == NotificationEvent.IMAGE_DELETED:
             image_id: str = value["id"]
             communicator.send_log(f"The image with id '{image_id}' was touched", "info")
