@@ -3,22 +3,23 @@ import * as path from "node:path";
 
 import {
   Communicator,
+  type EventValue,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
   ImageResizeRender,
+  InstructionReturnedError,
   IntentDialogType,
   type IntentImage,
   IntentShowType,
   IntentUiAnchor,
   NotificationEvent,
-  NotificationReturnedError,
-  type NotificationValue,
   PicteusExtension,
-  ProcessCommandIntent,
+  type ProcessCommandIntent,
   type SettingsValue,
-  ShowIntent,
-  UiIntent
+  type ShowIntent,
+  type UiIntent,
+  type Versions
 } from "@picteus/extension-sdk";
 
 
@@ -39,10 +40,18 @@ class TypeScriptExtension extends PicteusExtension
     this.logger.debug(`The ${this.toString()} is terminating`);
   }
 
+  protected async onUpgrade(communicator: Communicator, versions: Versions): Promise<void>
+  {
+    communicator.sendLog(`The ${this.toString()} ${versions.previous === undefined ? `has been installed with v${versions.current}` : `is upgrading from v${versions.previous} to v${versions.current}`}`, "info");
+  }
+
   protected async onReady(communicator?: Communicator): Promise<void>
   {
-    communicator.sendLog(`The ${this.toString()} is ready`, "info");
-    communicator.sendNotification({ key: "value" });
+    if (communicator !== undefined)
+    {
+      communicator.sendLog(`The ${this.toString()} is ready`, "info");
+      communicator.sendNotification({ key: "value" });
+    }
   }
 
   protected async onSettings(communicator: Communicator, _value: SettingsValue): Promise<void>
@@ -50,7 +59,7 @@ class TypeScriptExtension extends PicteusExtension
     communicator.sendLog(`The extension with id '${this.extensionId}' was notified that the settings have been set`, "debug");
   }
 
-  protected async onEvent(communicator: Communicator, event: string, value: NotificationValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: string, value: EventValue): Promise<any>
   {
     if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageTagsUpdated || event === NotificationEvent.ImageFeaturesUpdated || event === NotificationEvent.ImageDeleted || event === NotificationEvent.ImageComputeTags || event === NotificationEvent.ImageComputeFeatures)
     {
@@ -111,7 +120,7 @@ class TypeScriptExtension extends PicteusExtension
     }
   }
 
-  private async handleImageEvent(communicator: Communicator, event: NotificationEvent, value: NotificationValue): Promise<void>
+  private async handleImageEvent(communicator: Communicator, event: NotificationEvent, value: EventValue): Promise<void>
   {
     const imageId: string = value["id"];
     const isCreatedOrUpdated = event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated;
@@ -202,7 +211,7 @@ class TypeScriptExtension extends PicteusExtension
     }
     catch (error)
     {
-      if (error instanceof NotificationReturnedError)
+      if (error instanceof InstructionReturnedError)
       {
         communicator.sendLog(`Received the intent error '${error.message}' with reason '${error.reason}'`, "error");
       }

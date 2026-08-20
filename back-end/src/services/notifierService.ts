@@ -37,6 +37,8 @@ export enum ExtensionEventAction
   Paused = "paused",
   Resumed = "resumed",
   Process = "process",
+  Versions = "versions",
+  Ready = "ready",
   Settings = "settings",
   Error = "error",
   Log = "log",

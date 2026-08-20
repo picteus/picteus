@@ -517,7 +517,7 @@ export async function installViaVirtualEnvironmentRequirements(requirementsFileP
   if (pythonInternalSdkDirectoryPath !== undefined)
   {
     // We want to make sure that no cached version of the SDK is used
-    await spawnAndWait(pipFilePath, ["install", "--no-cache-dir", "--force", "--find-links", pythonInternalSdkDirectoryPath, publicPythonSdkIdentifier], parentDirectoryPath, undefined, false);
+    await spawnAndWait(pipFilePath, ["install", "--no-cache-dir", "--force", "--find-links", pythonInternalSdkDirectoryPath, internalPythonSdkIdentifier], parentDirectoryPath, undefined, false);
   }
 }
 

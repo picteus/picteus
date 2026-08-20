@@ -67,6 +67,7 @@ import { addJsonSchemaAdditionalProperties, computeAjv, validateJsonSchema, vali
 import {
   checkUiProperties,
   ExtensionService,
+  ExtensionSettingsVersions,
   ExtensionsUiServer,
   stripAndExtractParametersUiProperties
 } from "./extensionServices";
@@ -85,17 +86,17 @@ type ConnectionValue = SocketMessageValue & {
   sdkVersion?: string,
   environment?: ManifestRuntimeEnvironment
 };
-type NotificationsAcknowledgment = WithContextId & { success: boolean }
-type NotificationsLog = { log: string, level: string }
-type NotificationsNotification = Record<string, any>
+type InstructionsLog = { log: string, level: string }
+type InstructionsAcknowledgment = WithContextId & { success: boolean }
+type InstructionsNotification = Record<string, any>
 
-type NotificationsValue = SocketMessageValue & {
-  log?: NotificationsLog,
-  notification?: NotificationsNotification,
-  acknowledgment?: NotificationsAcknowledgment,
+type InstructionValue = SocketMessageValue & {
+  log?: InstructionsLog,
+  notification?: InstructionsNotification,
+  acknowledgment?: InstructionsAcknowledgment,
   intent?: Intent
 }
-export type NotificationsReturnedValue = { value?: any, cancel?: string, error?: string }
+export type InstructionReturnedValue = { value?: any, cancel?: string, error?: string }
 
 const isBundleIntent = (intent: Intent): intent is BundleIntent =>
 {
@@ -310,9 +311,9 @@ export class NotificationsGateway
   }
 
   @SubscribeMessage(paths.connection)
-  handleConnectionMessage(@MessageBody() connectionValue: ConnectionValue, @ConnectedSocket() socket: Socket): void | {
+  async handleConnectionMessage(@MessageBody() connectionValue: ConnectionValue, @ConnectedSocket() socket: Socket): Promise<void | {
     maximumPayloadSizeInBytes: number
-  }
+  }>
   {
     const { apiKey, isOpen, sdkVersion, environment, extensionId } = connectionValue;
     const socketId = socket.id;
@@ -332,7 +333,6 @@ export class NotificationsGateway
       {
         // We need to check the manifest to know which events the extension is interested in
         const manifest = this.moduleRef.get(ExtensionRegistry).get(extensionId)!;
-        const events = this.computeManifestEvents(manifest);
         this.perSocketIdExtensionId.set(socketId, extensionId);
         {
           let socketIds = this.perExtensionIdSocketIds.get(extensionId);
@@ -343,9 +343,18 @@ export class NotificationsGateway
           }
           socketIds.push(socketId);
         }
-        this.perExtensionsSocketSupportedEvents.set(socketId, events);
-        logger.debug(`The extension with id '${extensionId}' is interested in the [${events.join(", ")}] event(s)`);
-        this.moduleRef.get(ExtensionService).onConnection(extensionId, true);
+        this.perExtensionsSocketSupportedEvents.set(socketId, this.computeManifestEvents(manifest, true, false));
+        void this.sendExtensionVersionsEvent(extensionId, () =>
+        {
+          this.perExtensionsSocketSupportedEvents.set(socketId, this.computeManifestEvents(manifest, false, true));
+          this.sendExtensionReadyEvent(extensionId, () =>
+          {
+            const events = this.computeManifestEvents(manifest, false, false);
+            this.perExtensionsSocketSupportedEvents.set(socketId, events);
+            logger.debug(`The extension with id '${extensionId}' is interested in the [${events.join(", ")}] event(s)`);
+            this.moduleRef.get(ExtensionService).onConnection(extensionId, true);
+          });
+        });
       }
       this.activeSocketIds.add(socketId);
       return { maximumPayloadSizeInBytes: NotificationsGateway.maximumPayloadSizeInBytes };
@@ -370,22 +379,22 @@ export class NotificationsGateway
     }
   }
 
-  @SubscribeMessage(paths.notifications)
-  async handleNotificationsMessage(@MessageBody() notificationValue: NotificationsValue, @ConnectedSocket() socket: Socket): Promise<NotificationsReturnedValue | undefined>
+  @SubscribeMessage(paths.instructions)
+  async handleInstructionsMessage(@MessageBody() instructionValue: InstructionValue, @ConnectedSocket() socket: Socket): Promise<InstructionReturnedValue | undefined>
   {
-    const { apiKey, extensionId, contextId } = notificationValue;
+    const { apiKey, extensionId, contextId } = instructionValue;
     const socketId = socket.id;
-    if (this.checkPermission(socketId, paths.notifications, apiKey, extensionId, true) === false)
+    if (this.checkPermission(socketId, paths.instructions, apiKey, extensionId, true) === false)
     {
       return;
     }
 
     const masterSocket: Socket | undefined = this.getMasterSocket();
-    if (notificationValue.acknowledgment !== undefined)
+    if (instructionValue.acknowledgment !== undefined)
     {
       // This is an acknowledgment regarding a previously sent event
       const theContextId = contextId!;
-      const success = notificationValue.acknowledgment.success;
+      const success = instructionValue.acknowledgment.success;
       logger.debug(`Received a ${success === true ? "successful" : "failure"} acknowledgment regarding a previously sent event to the extension with id '${extensionId}' related to the context with id '${theContextId}'`);
       if (this.activitiesContextIds.delete(theContextId) === true && masterSocket !== undefined)
       {
@@ -404,27 +413,40 @@ export class NotificationsGateway
 
     if (masterSocket === undefined)
     {
-      logger.debug(`Received a message coming from channel '${paths.notifications}' through the socket client with id '${socketId}' related to the extension with id '${extensionId}'${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}`);
+      logger.debug(`Received a message coming from channel '${paths.instructions}' through the socket client with id '${socketId}' related to the extension with id '${extensionId}'${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}`);
     }
     else
     {
       // It is possible that the server is running headless
       // There is no rejection case, the master's socket error response is handled as a response
-      return this.handleNotification(socketId, masterSocket, notificationValue, extensionId!, contextId);
+      return this.handleInstruction(socketId, masterSocket, instructionValue, extensionId!, contextId);
     }
   }
 
-  private computeManifestEvents(manifest: Manifest): string[]
+  private computeManifestEvents(manifest: Manifest, withVersions: boolean, withReady: boolean): string[]
   {
     const extensionManifestEvents: ManifestEvent[] = [];
-    for (const instruction of manifest.instructions)
+    if (withVersions === false && withReady === false)
     {
-      extensionManifestEvents.push(...instruction.events);
+      for (const instruction of manifest.instructions)
+      {
+        extensionManifestEvents.push(...instruction.events);
+      }
     }
-    // We add the "extension.settings" event because it is implicitly always supported
-    if (extensionManifestEvents.indexOf(ManifestEvent.ExtensionSettings) === -1)
     {
-      extensionManifestEvents.push(ManifestEvent.ExtensionSettings);
+      // We add the "extension.versions", ""extension.ready" and "extension.settings" events because they are implicitly always supported
+      if (withVersions === true && extensionManifestEvents.indexOf(ManifestEvent.ExtensionVersions) === -1)
+      {
+        extensionManifestEvents.push(ManifestEvent.ExtensionVersions);
+      }
+      if (withReady === true && extensionManifestEvents.indexOf(ManifestEvent.ExtensionReady) === -1)
+      {
+        extensionManifestEvents.push(ManifestEvent.ExtensionReady);
+      }
+      if ((withVersions === false && withReady === false) && extensionManifestEvents.indexOf(ManifestEvent.ExtensionSettings) === -1)
+      {
+        extensionManifestEvents.push(ManifestEvent.ExtensionSettings);
+      }
     }
     // We only want the extensions to be able to receive the events related to their manifest
     const manifestEvents: ManifestEvent[] = Object.values(ManifestEvent) as ManifestEvent [];
@@ -471,6 +493,56 @@ export class NotificationsGateway
       return fromTextEventActionToManifestEvent(action);
     });
     return [ ...processEvents, ...extensionEvents, ...imageEvents, ...textEvents ];
+  }
+
+  private async sendExtensionVersionsEvent(extensionId: string, onSuccess: () => void): Promise<void>
+  {
+    const extensionService = this.moduleRef.get(ExtensionService);
+    const extensionSettings = (await extensionService.getPersistedSettings(extensionId));
+    if (extensionSettings === null || extensionSettings.versions === null)
+    {
+      logger.error(`The settings for the extension with id '${extensionId}' are missing`);
+      return;
+    }
+
+    const versions: ExtensionSettingsVersions = JSON.parse(extensionSettings.versions);
+    const upgrade = versions.upgraded === false;
+    this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Versions, undefined, {
+      previous: versions.previous, current: versions.current, upgrade
+    }, extensionId, async (isSuccess: boolean) =>
+    {
+      if (isSuccess === true)
+      {
+        if (upgrade === true)
+        {
+          logger.debug(`The extension with id '${extensionId}' has been properly upgraded to v${versions.current}`);
+          versions.upgraded = true;
+          await extensionService.updatedPersistedSettings(extensionId, versions);
+        }
+        onSuccess();
+      }
+      else
+      {
+        logger.error(`An error occurred in the extension with id '${extensionId}' during the processing of the '${ExtensionEventAction.Versions}' event`);
+      }
+    });
+  }
+
+  private async sendExtensionReadyEvent(extensionId: string, onSuccess: () => void): Promise<void>
+  {
+    this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Ready, undefined, {
+      id: extensionId
+    }, extensionId, async (isSuccess: boolean) =>
+    {
+      if (isSuccess === true)
+      {
+        onSuccess();
+      }
+      else
+      {
+        logger.error(`An error occurred in the extension with id '${extensionId}' during the processing of the '${ExtensionEventAction.Ready}' event`);
+      }
+    });
   }
 
   private get sockets(): Map<string, Socket> | undefined
@@ -535,16 +607,16 @@ export class NotificationsGateway
     return true;
   }
 
-  private handleNotification(socketId: string, masterSocket: Socket, notificationValue: NotificationsValue, extensionId: string, contextId: string | undefined): Promise<NotificationsReturnedValue | undefined>
+  private handleInstruction(socketId: string, masterSocket: Socket, instructionValue: InstructionValue, extensionId: string, contextId: string | undefined): Promise<InstructionReturnedValue | undefined>
   {
-    return new Promise<NotificationsReturnedValue | undefined>(async (resolve) =>
+    return new Promise<InstructionReturnedValue | undefined>(async (resolve) =>
     {
       const { log, notification, intent }:
         {
-          log?: NotificationsLog,
-          notification?: NotificationsNotification,
+          log?: InstructionsLog,
+          notification?: InstructionsNotification,
           intent?: Intent
-        } = notificationValue;
+        } = instructionValue;
       const value: Json = { id: extensionId };
       let isOk = true;
       let messageLogChunk: string;
@@ -595,10 +667,10 @@ export class NotificationsGateway
       }
       if (isOk === false || action === undefined)
       {
-        logger.error(`Cannot handle the message from extension with id '${extensionId}' with value ${stringify(notificationValue)}`);
+        logger.error(`Cannot handle the message from extension with id '${extensionId}' with value ${stringify(instructionValue)}`);
         return;
       }
-      logger.debug(`Received a ${messageLogChunk!} message coming from channel '${paths.notifications}' through the socket client with id '${socketId}' related to the extension with id '${extensionId}'${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}`);
+      logger.debug(`Received a ${messageLogChunk!} message coming from channel '${paths.instructions}' through the socket client with id '${socketId}' related to the extension with id '${extensionId}'${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}`);
       if (onAcknowledged === null)
       {
         return;
@@ -614,7 +686,7 @@ export class NotificationsGateway
     });
   }
 
-  private async handleIntent(extensionId: string, intent: Intent, resolve: (value: NotificationsReturnedValue) => void): Promise<{
+  private async handleIntent(extensionId: string, intent: Intent, resolve: (value: InstructionReturnedValue) => void): Promise<{
     intentName: string;
     onAcknowledged: ((result: any) => void) | null
   } | undefined>
@@ -622,9 +694,9 @@ export class NotificationsGateway
     let intentName: string;
     let onAcknowledged: ((result: any) => void) | null;
 
-    const onAcknowledgedFromMasterSocketFactory = (onValidate?: (value: NotificationsReturnedValue) => boolean): (value: NotificationsReturnedValue) => void =>
+    const onAcknowledgedFromMasterSocketFactory = (onValidate?: (value: InstructionReturnedValue) => boolean): (value: InstructionReturnedValue) => void =>
     {
-      return (value: NotificationsReturnedValue) =>
+      return (value: InstructionReturnedValue) =>
       {
         logger.debug(`Received the intent returned value '${stringify(value)}' from the master socket`);
         if (onValidate !== undefined)
@@ -685,7 +757,7 @@ export class NotificationsGateway
       {
         return resolveWithError(`The intent is not compliant with the JSON schema. Reason: '${(error as Error).message}'`);
       }
-      onAcknowledged = onAcknowledgedFromMasterSocketFactory((value: NotificationsReturnedValue): boolean =>
+      onAcknowledged = onAcknowledgedFromMasterSocketFactory((value: InstructionReturnedValue): boolean =>
       {
         if (value.value !== undefined)
         {

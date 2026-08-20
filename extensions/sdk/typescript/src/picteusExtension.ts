@@ -21,16 +21,16 @@ import {
 import { Intent } from "./intents";
 
 
-export type NotificationValue = Record<string, any>;
+export type EventValue = Record<string, any>;
 
-export enum NotificationReturnedErrorCause {Cancel, Error}
+export enum InstructionReturnedErrorCause {Cancel, Error}
 
-export class NotificationReturnedError extends Error
+export class InstructionReturnedError extends Error
 {
 
-  public readonly reason: NotificationReturnedErrorCause;
+  public readonly reason: InstructionReturnedErrorCause;
 
-  constructor(message: string, reason: NotificationReturnedErrorCause)
+  constructor(message: string, reason: InstructionReturnedErrorCause)
   {
     super(message);
     this.reason = reason;
@@ -54,7 +54,9 @@ export enum NotificationEvent
   TextComputeEmbeddings = "text.computeEmbeddings"
 }
 
-const extensionSettingsEvent = "extension.settings";
+const extensionVersionsChannel = "extension.versions";
+const extensionReadyChannel = "extension.ready";
+const extensionSettingsChannel = "extension.settings";
 
 // noinspection JSUnusedGlobalSymbols
 export class Helper
@@ -194,10 +196,10 @@ class MessageSender
     this._maximumPayloadSizeInBytes = value;
   }
 
-  sendMessage(channel: string, body: Record<string, any>, callback?: (result: any) => Promise<void>): void
+  sendMessage(event: string, body: Record<string, any>, callback?: (result: any) => Promise<void>): void
   {
     const contextId = this.contextId;
-    this.logger.debug(`Sending the message '${stringifyWithStrippedBuffers(body)}' on channel '${channel}' for ${this.toString()}${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}${callback === undefined ? "" : " and waiting for a callback"}`);
+    this.logger.debug(`Sending the message '${stringifyWithStrippedBuffers(body)}' through the '${event}' event for ${this.toString()}${contextId === undefined ? "" : ` attached to the context with id '${contextId}'`}${callback === undefined ? "" : " and waiting for a callback"}`);
     const value: Record<string, any> =
       {
         extensionId: this.parameters.extensionId,
@@ -214,17 +216,17 @@ class MessageSender
     }
     if (callback === undefined)
     {
-      this.socket.emit(channel, value);
+      this.socket.emit(event, value);
     }
     else
     {
-      this.socket.emit(channel, value, callback);
+      this.socket.emit(event, value, callback);
     }
   }
 
 }
 
-const notificationsChannel = "notifications";
+const instructionsEvent = "instructions";
 
 export class Communicator
 {
@@ -242,20 +244,20 @@ export class Communicator
   sendLog(message: string, level: "debug" | "info" | "warn" | "error"): void
   {
     this.logger[level](message);
-    this.sendMessage(notificationsChannel, { log: { message, level } });
+    this.sendMessage(instructionsEvent, { log: { message, level } });
   }
 
   // noinspection JSUnusedGlobalSymbols
   sendNotification(value: Record<string, any>): void
   {
-    this.sendMessage(notificationsChannel, { notification: value });
+    this.sendMessage(instructionsEvent, { notification: value });
   }
 
   async launchIntent<T>(intent: Intent): Promise<T>
   {
     return await new Promise<T>((resolve, reject) =>
     {
-      this.sendMessage(notificationsChannel, { intent }, async ({ value, cancel, error }: {
+      this.sendMessage(instructionsEvent, { intent }, async ({ value, cancel, error }: {
         value: any | undefined,
         cancel: string | undefined,
         error: string | undefined
@@ -264,11 +266,11 @@ export class Communicator
         this.logger.debug(`Received a result related to the intent '${stringifyWithStrippedBuffers(intent)}' for ${this.sender.toString()}`);
         if (cancel !== undefined)
         {
-          reject(new NotificationReturnedError(cancel, NotificationReturnedErrorCause.Cancel));
+          reject(new InstructionReturnedError(cancel, InstructionReturnedErrorCause.Cancel));
         }
         else if (error !== undefined)
         {
-          reject(new NotificationReturnedError(error, NotificationReturnedErrorCause.Error));
+          reject(new InstructionReturnedError(error, InstructionReturnedErrorCause.Error));
         }
         else
         {
@@ -278,14 +280,15 @@ export class Communicator
     });
   }
 
-  private sendMessage(channel: string, body: Record<string, any>, callback?: (result: any) => Promise<void>): void
+  private sendMessage(event: string, body: Record<string, any>, callback?: (result: any) => Promise<void>): void
   {
-    this.sender.sendMessage(channel, body, callback);
+    this.sender.sendMessage(event, body, callback);
   }
 
 }
 
 export type SettingsValue = Record<string, any>;
+export type Versions = { previous: string | undefined, current: string };
 
 export class PicteusExtension
 {
@@ -300,6 +303,7 @@ export class PicteusExtension
     return JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "package.json"), { encoding: "utf8" })).version;
   }
 
+  // noinspection JSUnusedGlobalSymbols
   public static getCacheDirectoryPath(): string
   {
     return path.join(PicteusExtension.getExtensionHomeDirectoryPath(), ".cache");
@@ -325,8 +329,6 @@ export class PicteusExtension
   protected readonly configuration: Configuration;
 
   private socket?: Socket;
-
-  private globalCommunicator?: Communicator;
 
   constructor()
   {
@@ -362,8 +364,7 @@ export class PicteusExtension
     }
     catch (error)
     {
-      this.logger.error(`The initialization of the ${this.toString()} failed. Reason: '${error.message}'`, error);
-      process.exit(1);
+      this.exit(1, error, "the initialization failed");
     }
     try
     {
@@ -375,8 +376,7 @@ export class PicteusExtension
         }
         catch (error)
         {
-          this.logger.error(`The connection of the ${this.toString()} failed. Reason: '${error.message}'`, error);
-          process.exit(2);
+          this.exit(2, error, "the connection failed");
         }
       }
       else
@@ -392,12 +392,16 @@ export class PicteusExtension
 
   protected toString(): string
   {
-    return `extension` + (this.extensionId === undefined ? "" : ` with id '${this.extensionId}'`) + ` of class '${this.constructor.name}'`;
+    return `extension${this.extensionId === undefined ? "" : ` with id '${this.extensionId}'`} of class '${this.constructor.name}'`;
   }
 
   protected async initialize(): Promise<boolean>
   {
     return true;
+  }
+
+  protected async onUpgrade(_communicator: Communicator, _versions: Versions): Promise<void>
+  {
   }
 
   protected async onReady(_communicator?: Communicator): Promise<void>
@@ -410,10 +414,9 @@ export class PicteusExtension
 
   protected async onSettings(_communicator: Communicator, _value: SettingsValue): Promise<void>
   {
-    return Promise.resolve();
   }
 
-  protected async onEvent(_communicator: Communicator, _event: string, _value: NotificationValue): Promise<any>
+  protected async onEvent(_communicator: Communicator, _event: string, _value: EventValue): Promise<any>
   {
   }
 
@@ -483,7 +486,6 @@ export class PicteusExtension
     {
       return this.toString();
     });
-    this.globalCommunicator = new Communicator(this.logger, globalSender);
     this.socket.on("connect", async (): Promise<void> =>
     {
       this.logger.info(`The ${this.toString()} socket is connected`);
@@ -496,7 +498,6 @@ export class PicteusExtension
         const maximumPayloadSizeInBytes = result.maximumPayloadSizeInBytes;
         this.logger.debug(`The ${this.toString()} socket has a maximum payload size of ${maximumPayloadSizeInBytes} bytes`);
         globalSender.maximumPayloadSizeInBytes = maximumPayloadSizeInBytes;
-        await this.onReady(this.globalCommunicator);
       });
     });
     this.socket.on("connect_error", async (): Promise<void> =>
@@ -511,7 +512,7 @@ export class PicteusExtension
         channel: string,
         contextId: string,
         milliseconds: number,
-        value: NotificationValue
+        value: EventValue
       }, onResult: (result: any) => void): Promise<void> =>
       {
         const { channel, contextId, milliseconds, value } = command;
@@ -522,12 +523,45 @@ export class PicteusExtension
         }, contextId);
         sender.maximumPayloadSizeInBytes = globalSender.maximumPayloadSizeInBytes;
         const communicator: Communicator = new Communicator(this.logger, sender);
-        const isRegularEvent = channel !== extensionSettingsEvent;
+        const requiresResult = channel !== extensionSettingsChannel;
         let result: any;
         let success = false;
         try
         {
-          result = await (isRegularEvent === true ? this.onEvent(communicator, channel, value) : this.onSettings(communicator, value.value));
+          if (channel === extensionSettingsChannel)
+          {
+            result = await this.onSettings(communicator, value.value as SettingsValue);
+          }
+          else if (channel === extensionVersionsChannel)
+          {
+            type VersionsWithUpgrade = Versions & { upgrade: boolean };
+            const { upgrade, ...versions } = value as VersionsWithUpgrade;
+            if (upgrade === true)
+            {
+              await this.onUpgrade(communicator, versions);
+              result = true;
+            }
+            else
+            {
+              result = true;
+            }
+          }
+          else if (channel === extensionReadyChannel)
+          {
+            try
+            {
+              await this.onReady(communicator);
+              result = true;
+            }
+            catch (error)
+            {
+              this.exit(3, error, "an error occurred during the execution of the 'onReady()' method: stopping the process");
+            }
+          }
+          else
+          {
+            result = await this.onEvent(communicator, channel, value);
+          }
           success = true;
         }
         catch (error)
@@ -538,9 +572,9 @@ export class PicteusExtension
         }
         finally
         {
-          sender.sendMessage(notificationsChannel, { acknowledgment: { success } });
+          sender.sendMessage(instructionsEvent, { acknowledgment: { success } });
         }
-        if (isRegularEvent === true && onResult !== undefined)
+        if (requiresResult === true && onResult !== undefined)
         {
           onResult(result);
         }
@@ -556,6 +590,12 @@ export class PicteusExtension
       this.socket.close();
       this.socket = undefined;
     }
+  }
+
+  private exit(code: number, error: Error, message: string): never
+  {
+    this.logger.error(`For the ${this.toString()}, ${message}. Reason: '${error.message}'`, error);
+    process.exit(code);
   }
 
   private getApiConfiguration(): Configuration

@@ -27,9 +27,10 @@ model ApiSecret {
 }
 
 model ExtensionSettings {
-  id          Int    @id @default(autoincrement())
-  extensionId String @unique
-  value       String
+  id          Int     @id @default(autoincrement())
+  extensionId String  @unique
+  value       String?
+  versions    String?
 }
 
 model Repository {

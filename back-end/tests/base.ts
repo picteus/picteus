@@ -221,7 +221,7 @@ export class Core
 
   readonly xLargeTimeoutInMilliseconds: number = Math.round(this.largeTimeoutInMilliseconds * 2);
 
-  readonly xxLargeTimeoutInMilliseconds: number = Math.round(this.largeTimeoutInMilliseconds * 4);
+  readonly xxLargeTimeoutInMilliseconds: number = Math.round(this.largeTimeoutInMilliseconds * 6);
 
   static readonly fastestIntervalInMilliseconds: number = 1_000 / 60;
 

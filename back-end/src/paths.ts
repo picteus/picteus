@@ -26,7 +26,7 @@ export class Paths
 
   readonly events: string = "events";
 
-  readonly notifications: string = "notifications";
+  readonly instructions: string = "instructions";
 
   private readonly nodePathVariableName: string = "NODE_PATH";
 
@@ -225,7 +225,7 @@ export class Paths
       };
     // We do not transmit the "referenceDatabaseFilePathEnvironmentVariable" variable because we only want the main process main thread to duplicate the reference database, when required
     // We do not transmit the "regularDatabaseFilePathEnvironmentVariable" variable because it is only defined to set the "databaseUrlEnvironmentVariable" properly
-    [paths.databaseUrlEnvironmentVariable, paths.vectorDatabaseDirectoryPathEnvironmentVariableName, paths.repositoriesDirectoryPathEnvironmentVariableName, paths.installedExtensionsDirectoryPathEnvironmentVariableName, paths.builtInExtensionsDirectoryPathEnvironmentVariableName, paths.modelsCacheDirectoryPathEnvironmentVariableName, paths.runtimesDirectoryPathEnvironmentVariableName, paths.npmDirectoryPathEnvironmentVariableName, paths.sdkDirectoryPathEnvironmentVariableName, paths.workersDirectoryPathEnvironmentVariableName].forEach((variableName) =>
+    [ paths.databaseUrlEnvironmentVariable, paths.vectorDatabaseDirectoryPathEnvironmentVariableName, paths.repositoriesDirectoryPathEnvironmentVariableName, paths.installedExtensionsDirectoryPathEnvironmentVariableName, paths.builtInExtensionsDirectoryPathEnvironmentVariableName, paths.modelsCacheDirectoryPathEnvironmentVariableName, paths.runtimesDirectoryPathEnvironmentVariableName, paths.npmDirectoryPathEnvironmentVariableName, paths.sdkDirectoryPathEnvironmentVariableName, paths.workersDirectoryPathEnvironmentVariableName ].forEach((variableName) =>
     {
       const useDummyModelEnvironmentVariableValue = this.getValue(variableName);
       if (useDummyModelEnvironmentVariableValue !== undefined)
@@ -459,7 +459,7 @@ export class Paths
 
   set repositoryMappingPaths(value: Map<string, string>)
   {
-    this.setValue(this.repositoryMappingPathsEnvironmentVariableName, [...value.entries()].map(([key, value]) => `${key}=${value}`).join("\n"));
+    this.setValue(this.repositoryMappingPathsEnvironmentVariableName, [ ...value.entries() ].map(([ key, value ]) => `${key}=${value}`).join("\n"));
     this.evalRepositoryMappingPaths();
   }
 
@@ -472,7 +472,7 @@ export class Paths
       const lines = string.split("\n");
       for (const line of lines)
       {
-        const [key, value] = line.split("=");
+        const [ key, value ] = line.split("=");
         if (value === undefined)
         {
           throw new Error(`Invalid environment variable '${this.repositoryMappingPathsEnvironmentVariableName}'`);

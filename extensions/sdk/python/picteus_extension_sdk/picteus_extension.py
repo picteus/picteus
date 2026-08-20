@@ -6,10 +6,10 @@ import os
 import signal
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, dataclass
 from enum import StrEnum
 from logging import getLogger, basicConfig
-from typing import Dict, Any, Literal, TypeVar, Callable, Optional
+from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never
 
 import aiohttp
 import socketio
@@ -31,9 +31,10 @@ T = TypeVar("T")
 
 LogLevel = Literal["debug", "info", "warn", "error"]
 
+EventValue = Dict[str, Any]
 
 class NotificationReturnedErrorCause(StrEnum):
-    CANCEL = "cancel",
+    CANCEL = "cancel"
     ERROR = "error"
 
 
@@ -45,22 +46,24 @@ class NotificationReturnedError(Exception):
 
 
 class NotificationEvent(StrEnum):
-    PROCESS_RUN_COMMAND = "process.runCommand",
-    IMAGE_CREATED = "image.created",
-    IMAGE_UPDATED = "image.updated",
-    IMAGE_TAGS_UPDATED = "image.tags.updated",
-    IMAGE_FEATURES_UPDATED = "image.features.updated",
-    IMAGE_DELETED = "image.deleted",
-    IMAGE_COMPUTE_FEATURES = "image.computeFeatures",
+    PROCESS_RUN_COMMAND = "process.runCommand"
+    IMAGE_CREATED = "image.created"
+    IMAGE_UPDATED = "image.updated"
+    IMAGE_TAGS_UPDATED = "image.tags.updated"
+    IMAGE_FEATURES_UPDATED = "image.features.updated"
+    IMAGE_DELETED = "image.deleted"
+    IMAGE_COMPUTE_FEATURES = "image.computeFeatures"
     IMAGE_COMPUTE_EMBEDDINGS = "image.computeEmbeddings"
-    IMAGE_COMPUTE_TAGS = "image.computeTags",
-    IMAGE_RUN_COMMAND = "image.runCommand",
+    IMAGE_COMPUTE_TAGS = "image.computeTags"
+    IMAGE_RUN_COMMAND = "image.runCommand"
     TEXT_COMPUTE_EMBEDDINGS = "text.computeEmbeddings"
 
 
-extension_settings_event: str = "extension.settings"
+extension_versions_channel: str = "extension.versions"
+extension_ready_channel: str = "extension.ready"
+extension_settings_channel: str = "extension.settings"
 
-notificationsChannel: str = "notifications"
+instructions_event: str = "instructions"
 
 
 class Helper:
@@ -122,10 +125,10 @@ class _MessageSender:
             log_level = logging.ERROR
         # noinspection PyUnboundLocalVariable
         self.logger.log(log_level, message)
-        await self.send_message(notificationsChannel, {"log": {"message": message, "level": level}})
+        await self.send_message(instructions_event, {"log": {"message": message, "level": level}})
 
     async def send_notification(self, value: Dict[str, Any]) -> None:
-        await self.send_message(notificationsChannel, {"notification": value})
+        await self.send_message(instructions_event, {"notification": value})
 
     async def launch_intent(self, intent: Intent, future: asyncio.Future) -> None:
         def callback(the_value: Dict[str, Any]) -> T:
@@ -163,15 +166,15 @@ class _MessageSender:
         intent_dictionary: Dict[str, Any] = intent.__dict__
         intent_dictionary = remove_none(intent_dictionary)
         body: Dict[str, Any] = {"intent": intent_dictionary}
-        await self.send_message(notificationsChannel, body, callback)
+        await self.send_message(instructions_event, body, callback)
 
     async def send_acknowledgment(self, success: bool) -> None:
-        await self.send_message(notificationsChannel, {"acknowledgment": {"success": success}})
+        await self.send_message(instructions_event, {"acknowledgment": {"success": success}})
 
-    async def send_message(self, channel: str, body: Dict[str, Any],
+    async def send_message(self, event: str, body: Dict[str, Any],
                            callback: Optional[Callable[[Dict[str, Any]], T]] = None) -> None:
         context_id = self.context_id
-        self.logger.debug(f"Sending the message {_scrub_bytes(body)} on channel '{channel}' for {self.to_string()}" + (
+        self.logger.debug(f"Sending the message {_scrub_bytes(body)} through the '{event}' event for {self.to_string()}" + (
             f" attached to the context with id '{context_id}'" if context_id is not None else "") + (
                               " and waiting for a callback" if callback is not None else ""))
         value: Dict[str, Any] = {"apiKey": self.parameters.api_key, "extensionId": self.parameters.extension_id,
@@ -180,9 +183,9 @@ class _MessageSender:
             value["contextId"] = context_id
         # noinspection PySimplifyBooleanCheck
         if self.sio is not None:
-            await self.sio.emit(event=channel, data=value, namespace=None, callback=callback)
+            await self.sio.emit(event=event, data=value, namespace=None, callback=callback)
         else:
-            await self.socket.emit(channel, value)
+            await self.socket.emit(event, value)
 
 
 class Communicator:
@@ -210,12 +213,18 @@ class Communicator:
         value = await future
         return value
 
-    async def _send_message(self, channel: str, body: Dict[str, Any],
+    async def _send_message(self, event: str, body: Dict[str, Any],
                             callback: Optional[Callable[[Dict[str, Any]], T]] = None) -> None:
-        await self._sender.send_message(channel, body, callback)
+        await self._sender.send_message(event, body, callback)
 
 
 SettingsValue = Dict[str, Any]
+
+
+@dataclass
+class Versions:
+    current: str
+    previous: Optional[str] = None
 
 
 class PicteusExtension:
@@ -258,7 +267,6 @@ class PicteusExtension:
         self.sio: Optional[socketio.AsyncClient] = None
         self.session: Optional[aiohttp.ClientSession] = None
         self.socket: Optional[SimpleClient] = None
-        self.global_communicator: Optional[Communicator] = None
         self.terminating: bool = False
 
     async def run(self) -> None:
@@ -329,12 +337,17 @@ class PicteusExtension:
         async def inner_initialize() -> None:
             # noinspection PySimplifyBooleanCheck
             if (await self.initialize()) == True:
-                await self._connect_socket_event_driven()
+                try:
+                    await self._connect_socket()
+                except Exception as inner_exception:
+                    self.exit(2, inner_exception, "the connection failed")
             else:
                 await self.on_ready(None)
 
         try:
             await inner_initialize()
+        except Exception as exception:
+            self.exit(1, exception, "the initialization failed")
         finally:
             self.logger.info(f"The {self.to_string()} is now over")
 
@@ -345,6 +358,9 @@ class PicteusExtension:
     # noinspection PyMethodMayBeStatic
     async def initialize(self) -> bool:
         return True
+
+    async def on_upgrade(self, communicator: Communicator, versions: Versions) -> None:
+        pass
 
     async def on_ready(self, communicator: Optional[Communicator]) -> None:
         pass
@@ -357,7 +373,7 @@ class PicteusExtension:
         return None
 
     # noinspection PyMethodMayBeStatic
-    async def on_event(self, communicator: Communicator, event: str, value: Dict[str, Any]) -> Any | None:
+    async def on_event(self, communicator: Communicator, event: str, value: EventValue) -> Any | None:
         return None
 
     async def run_in_executor(self, function: Callable) -> Any | None:
@@ -395,7 +411,7 @@ class PicteusExtension:
             parameters = json.load(file)
             return parameters
 
-    async def _connect_socket_event_driven(self) -> None:
+    async def _connect_socket(self) -> None:
         self.logger.info(f"Connecting the {self.to_string()} to the server")
         # The Socket.io Python documentation is available at https://python-socketio.readthedocs.io/en/latest/client.html
         use_ssl: bool = self.web_services_base_url.startswith("https")
@@ -403,7 +419,6 @@ class PicteusExtension:
         self.session = aiohttp.ClientSession(connector=tcp_connector)
         self.sio = socketio.AsyncClient(logger=self.logger, http_session=self.session)
         global_sender = _MessageSender(self.logger, self.parameters, self.sio, None, self.to_string, None)
-        self.global_communicator = Communicator(self.logger, global_sender, self.queue)
 
         @self.sio.event
         async def connect() -> None:
@@ -414,7 +429,6 @@ class PicteusExtension:
                 self.logger.debug(
                     f"The {self.to_string()} socket has a maximum payload size of {maximum_payload_size_in_bytes} bytes")
                 global_sender.maximum_payload_size_in_bytes = maximum_payload_size_in_bytes
-                await self.on_ready(self.global_communicator)
 
             await global_sender.send_message("connection",
                                              {
@@ -448,15 +462,32 @@ class PicteusExtension:
             communicator = Communicator(self.logger, sender, self.queue)
 
             async def handle_event() -> Any | None:
-                is_regular_event: bool = channel != extension_settings_event
+                requires_result: bool = channel != extension_settings_channel
                 success: bool = False
                 try:
-                    if is_regular_event is True:
-                        result: Any | None = await self.on_event(communicator, channel, value)
+                    if channel == extension_settings_channel:
+                        result: None = await self.on_settings(communicator, value["value"])
+                    elif channel == extension_versions_channel:
+                        previous: Optional[str] = value.get("previous", None)
+                        current: str = value["current"]
+                        upgrade: bool = value["upgrade"]
+                        # noinspection simplify-boolean-check
+                        if upgrade == True:
+                            await self.on_upgrade(communicator, Versions(current, previous))
+                            result: bool = True
+                        else:
+                            result: bool = True
+                    elif channel == extension_ready_channel:
+                        try:
+                            await self.on_ready(communicator)
+                            result: bool = True
+                        except Exception as inner_exception:
+                            self.exit(3, inner_exception,
+                                      "an error occurred during the execution of the 'onReady()' method: stopping the process")
                     else:
-                        result: None = await self.on_settings(communicator, value.get("value"))
+                        result: Any | None = await self.on_event(communicator, channel, value)
                     success = True
-                    if is_regular_event is True and result is not None:
+                    if requires_result is True and result is not None:
                         return result
                 except Exception as inner_exception:
                     # We want the process to continue even if an exception occurs
@@ -501,6 +532,10 @@ class PicteusExtension:
             self.sio = None
             await self.session.close()
             self.session = None
+
+    def exit(self, code: int, exception: Exception, message: str) -> Never:
+        self.logger.error(f"For the {self.to_string()}, {message}. Reason: '{str(exception)}'")
+        sys.exit(code)
 
     def _get_api_web_services_client(self) -> picteus_ws_client.ApiClient:
         configuration = picteus_ws_client.Configuration(host=self.web_services_base_url)

@@ -19,7 +19,7 @@ import HttpCodes from "http-codes";
 
 import { paths } from "../src/paths";
 import { stringify } from "../src/utils";
-import { computeAttachmentDisposition } from "../src/services/utils/downloader";
+import { computeAttachmentDisposition, inflateGzippedTarball, inflateZip } from "../src/services/utils/downloader";
 import { Base, Core, ExtensionBasisBuilder, ListenerMock } from "./base";
 import {
   applicationXGzipMimeType,
@@ -2132,11 +2132,13 @@ describe("Extensions", () =>
   test.each([ ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python ])("sdk", async (environment: ManifestRuntimeEnvironment) =>
   {
     base.setSdkDirectoryPath();
+    const extensionId = "id";
+    const extensionVersion = "1.0.0";
     const options =
       {
-        id: "id",
+        id: extensionId,
         name: "name",
-        version: "1.0.0",
+        version: extensionVersion,
         author: "author",
         description: "description",
         categories: [ ExtensionCategory.Other ],
@@ -2150,7 +2152,7 @@ describe("Extensions", () =>
     {
       fs.copyFileSync(path.join(Base.directoryPath, "extensions", "node", "main.ts"), path.join(generatedDirectoryPath, "src", "main.ts"));
     }
-    else if (environment == ManifestRuntimeEnvironment.Python)
+    else
     {
       fs.copyFileSync(path.join(Base.directoryPath, "extensions", "python", "main.py"), path.join(generatedDirectoryPath, "main.py"));
     }
@@ -2159,13 +2161,11 @@ describe("Extensions", () =>
     const zipBuffer = zip.toBuffer();
 
     const builtStreamableFile = await base.getExtensionController().build(zipBuffer);
-    const extension = await base.getExtensionController().install(await buffer(builtStreamableFile.getStream()));
-    const manifest = extension.manifest;
-    const builder = new ExtensionBuilder(false, undefined, manifest.id, manifest.name, manifest.version);
-    await builder.checkExtensionRunning(false, false);
+    const builtArchive = await buffer(builtStreamableFile.getStream());
+
+    const blotterFilePath = path.join(paths.installedExtensionsDirectoryPath, extensionId, "blotter.json");
     const waitForEvent = async (event: string): Promise<Record<string, any> | undefined> =>
     {
-      const blotterFilePath = path.join(paths.installedExtensionsDirectoryPath, manifest.id, "blotter.json");
       return new Promise<Record<string, any> | undefined>((resolve) =>
       {
         base.waitUntil(async () =>
@@ -2183,22 +2183,103 @@ describe("Extensions", () =>
         });
       });
     };
-    await waitForEvent("initialize");
-    await waitForEvent("onReady");
-    await base.getExtensionService().setSettings(manifest.id, new ExtensionSettings({ parameter: "value" }));
-    await waitForEvent("onSettings");
 
-    const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
-    // We send an image command to check that the throttling bottleneck keeps not waiting for a socket response coming from the extension
-    await base.getExtensionController().runImageCommand(Base.allPolicyContext, manifest.id, "commandId", {
-      search: { filter: { origin: { kind: SearchOriginKind.Images, ids: [ image.id ] } } }
-    });
-    await base.getExtensionService().pauseOrResume(manifest.id, true);
-    if (process.platform !== "win32")
     {
-      // Because there is no mechanism on Windows for stopping gracefully the process
-      await waitForEvent("onTerminate");
+      const extension = await base.getExtensionController().install(builtArchive);
+      const manifest = extension.manifest;
+      const builder = new ExtensionBuilder(false, undefined, extensionId, manifest.name, manifest.version);
+      await builder.checkExtensionRunning(false, false);
+      await waitForEvent("initialize");
+      {
+        const versions = await waitForEvent("onUpgrade");
+        expect(versions).toEqual({ current: extensionVersion });
+      }
+      await waitForEvent("onReady");
+      await base.getExtensionService().setSettings(extensionId, new ExtensionSettings({ parameter: "value" }));
+      await waitForEvent("onSettings");
+
+      const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
+      // We send an image command to check that the throttling bottleneck keeps not waiting for a socket response coming from the extension
+      await base.getExtensionController().runImageCommand(Base.allPolicyContext, extensionId, "commandId", {
+        search: { filter: { origin: { kind: SearchOriginKind.Images, ids: [ image.id ] } } }
+      });
+      await base.getExtensionService().pauseOrResume(extensionId, true);
+      if (process.platform !== "win32")
+      {
+        // Because there is no mechanism on Windows for stopping gracefully the process
+        await waitForEvent("onTerminate");
+      }
     }
+
+    const upgrade = async (previousExtensionVersion: string, upgradedExtensionVersion: string, failOnUpgrade: boolean): Promise<void> =>
+    {
+      await base.getExtensionService().pauseOrResume(extensionId, false);
+      fs.rmSync(blotterFilePath);
+      const upgradeWorkingDirectoryPath = path.join(base.getWorkingDirectoryPath(), upgradedExtensionVersion);
+      fs.mkdirSync(upgradeWorkingDirectoryPath, { recursive: true });
+      const filePath = path.join(upgradeWorkingDirectoryPath, "extension.tar.gz");
+      fs.writeFileSync(filePath, builtArchive);
+      const inflatedDirectoryPath = path.join(upgradeWorkingDirectoryPath, "upgraded-extension");
+      const logFragment = "extension archive";
+
+      let upgradedExtensionDirectoryPath: string;
+      let toRenameDirectoryPath: string;
+      if (environment === ManifestRuntimeEnvironment.Node)
+      {
+        await inflateGzippedTarball(filePath, inflatedDirectoryPath, logFragment);
+        upgradedExtensionDirectoryPath = path.join(inflatedDirectoryPath, extensionId);
+        toRenameDirectoryPath = path.join(inflatedDirectoryPath, "package");
+      }
+      else
+      {
+        await inflateZip(filePath, inflatedDirectoryPath, logFragment);
+        upgradedExtensionDirectoryPath = path.join(path.join(inflatedDirectoryPath, ".."), extensionId);
+        toRenameDirectoryPath = inflatedDirectoryPath;
+      }
+      fs.renameSync(toRenameDirectoryPath, upgradedExtensionDirectoryPath);
+      const manifestFilePath = path.join(upgradedExtensionDirectoryPath, ExtensionRegistry.manifestFileName);
+      const manifestJson = JSON.parse(fs.readFileSync(manifestFilePath, "utf8"));
+      manifestJson.version = upgradedExtensionVersion;
+      if (failOnUpgrade === true)
+      {
+        manifestJson.instructions[0].execution.arguments.push("--failOnUpgrade");
+      }
+      fs.writeFileSync(manifestFilePath, JSON.stringify(manifestJson));
+      const zip = new AdmZip();
+      zip.addLocalFolder(upgradedExtensionDirectoryPath);
+      const upgradedExtension = await base.getExtensionController().update(extensionId, zip.toBuffer());
+      expect(upgradedExtension.manifest.version).toEqual(upgradedExtensionVersion);
+
+      async function checkOnUpgrade(): Promise<void>
+      {
+        const versions = await waitForEvent("onUpgrade");
+        expect(versions).toEqual({ previous: previousExtensionVersion, current: upgradedExtensionVersion });
+        const extensionSettings = await base.getExtensionService().getPersistedSettings(extensionId);
+        const expectedExtensionSettingsVersions = { ...versions, upgraded: true };
+        const extensionSettingsVersions = JSON.parse(extensionSettings?.versions!);
+        if (failOnUpgrade === false)
+        {
+          expect(extensionSettingsVersions).toEqual(expectedExtensionSettingsVersions);
+          await waitForEvent("onReady");
+        }
+        else
+        {
+          expect(extensionSettingsVersions).not.toEqual(expectedExtensionSettingsVersions);
+        }
+        await base.getExtensionService().pauseOrResume(extensionId, true);
+      }
+
+      await checkOnUpgrade();
+      if (failOnUpgrade === true)
+      {
+        await base.getExtensionService().pauseOrResume(extensionId, false);
+        await checkOnUpgrade();
+      }
+    };
+    // We now upgrade the package
+    await waitForEvent("onReady");
+    await upgrade(extensionVersion, "1.1.0", false);
+    await upgrade("1.1.0", "1.2.0", true);
   }, base.xxLargeTimeoutInMilliseconds);
 
   test("events", async () =>
@@ -2227,7 +2308,7 @@ describe("Extensions", () =>
     const apiKey = AuthenticationGuard.generateApiKey();
     AuthenticationGuard.masterApiKey = apiKey;
     ioClient.emit(connectionChannelName, { apiKey, isOpen: true });
-    const initialEventsCount = 11;
+    const initialEventsCount = 14;
 
     try
     {
@@ -2296,7 +2377,7 @@ describe("Extensions", () =>
       await base.getExtensionController().pauseOrResume(manifest.id, false);
       await waitForExpect(() =>
       {
-        expectEvent(initialEventsCount + 7, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Resumed, { id: manifest.id });
+        expectEvent(initialEventsCount + 9, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Resumed, { id: manifest.id });
       });
     }
     finally

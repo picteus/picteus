@@ -4,6 +4,7 @@ import Timers from "node:timers";
 import { randomUUID } from "node:crypto";
 
 import { ModuleRef } from "@nestjs/core";
+import { Prisma } from ".prisma/client";
 import { fdir } from "fdir";
 import AdmZip from "adm-zip";
 import semver from "semver";
@@ -342,6 +343,13 @@ export type UIProperty = { property: string, ui: Record<string, any> };
 
 const uiPropertyName = "ui";
 
+export interface ExtensionSettingsVersions
+{
+  previous?: string;
+  current: string;
+  upgraded: boolean;
+}
+
 export function stripAndExtractParametersUiProperties(parameters: Record<string, any>): UIProperty[]
 {
   const uis: UIProperty [] = [];
@@ -650,7 +658,7 @@ export class ExtensionService
     await this.entitiesProvider.imageTag.deleteMany({ where: { extensionId: id } });
     // We delete all the attachments set by the extension
     await this.imageAttachmentService.deleteForExtension(id);
-    if ((await this.entitiesProvider.extensionSettings.findUnique({ where: { extensionId: id } })) !== null)
+    if ((await this.getPersistedSettings(id)) !== null)
     {
       // We delete the extension settings
       await this.entitiesProvider.extensionSettings.delete({ where: { extensionId: id } });
@@ -748,12 +756,25 @@ export class ExtensionService
     }
   }
 
+  async getPersistedSettings(id: string): Promise<Prisma.ExtensionSettingsGetPayload<true> | null>
+  {
+    return await this.entitiesProvider.extensionSettings.findUnique({ where: { extensionId: id } });
+  }
+
+  async updatedPersistedSettings(id: string, versions: ExtensionSettingsVersions): Promise<void>
+  {
+    await this.entitiesProvider.extensionSettings.update({
+      where: { extensionId: id },
+      data: { versions: stringify(versions, false) }
+    });
+  }
+
   async getSettings(id: string): Promise<ExtensionSettings>
   {
     logger.info(`Getting the settings of the extension with id '${id}'`);
     this.checkExtensionExists(id);
-    const entity = await this.entitiesProvider.extensionSettings.findUnique({ where: { extensionId: id } });
-    return new ExtensionSettings(entity === null ? {} : JSON.parse(entity.value));
+    const entity = await this.getPersistedSettings(id);
+    return new ExtensionSettings((entity === null || entity.value === null) ? {} : JSON.parse(entity.value));
   }
 
   async setSettings(id: string, settings: ExtensionSettings): Promise<void>
@@ -1421,14 +1442,54 @@ export class ExtensionService
       throw error;
     }
 
-    if (idWhenUpdating === undefined)
+    const isPaused = this.extensionsRegistry.isPaused(manifest.id);
+    if (isPaused === false)
     {
+      const extensionSettings = await this.getPersistedSettings(manifest.id);
+      if (extensionSettings !== null)
+      {
+        const notDefinedVersion = "";
+        let versions: ExtensionSettingsVersions = { current: notDefinedVersion, upgraded: false };
+        if (extensionSettings.versions !== null)
+        {
+          try
+          {
+            versions = JSON.parse(extensionSettings.versions);
+          }
+          catch (error)
+          {
+          }
+        }
+        const currentVersion = versions.current;
+        if (currentVersion !== manifest.version)
+        {
+          await this.updatedPersistedSettings(manifest.id, {
+            previous: currentVersion !== notDefinedVersion ? currentVersion : undefined,
+            current: manifest.version,
+            upgraded: false
+          });
+        }
+      }
+      else
+      {
+        await this.entitiesProvider.extensionSettings.create({
+          data: {
+            extensionId: manifest.id,
+            value: null,
+            versions: stringify({ current: manifest.version, upgraded: false })
+          }
+        });
+      }
     }
-    this.notifierService.emit(EventEntity.Extension, idWhenUpdating !== undefined ? ExtensionEventAction.Updated : ExtensionEventAction.Installed, undefined, {
-      id: manifest.id
-    });
+
+    if (installDependencies === true)
+    {
+      this.notifierService.emit(EventEntity.Extension, idWhenUpdating !== undefined ? ExtensionEventAction.Updated : ExtensionEventAction.Installed, undefined, {
+        id: manifest.id
+      });
+    }
     // We do not start the extension if it was initially paused
-    if (shouldHandleProcesses === true && this.extensionsRegistry.isPaused(manifest.id) === false)
+    if (shouldHandleProcesses === true && isPaused === false)
     {
       await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(manifest.id) ]);
       if (idWhenUpdating === undefined)
@@ -1908,7 +1969,10 @@ export class ExtensionService
     {
       for (const chromeExtensionName of chromeExtensionNames)
       {
-        await this.hostService.send<void>({ type: HostCommandType.UninstallChromeExtension, name: chromeExtensionName });
+        await this.hostService.send<void>({
+          type: HostCommandType.UninstallChromeExtension,
+          name: chromeExtensionName
+        });
       }
       this.perExtensionIdChromeExtensionNameMap.delete(id);
     }

@@ -23,9 +23,19 @@ async function main()
       const filePath = path.join(directoryPath, channel);
       console.info(`Writing to file '${filePath}'`);
       fs.writeFileSync(filePath, JSON.stringify(value, undefined, 2));
-      const notifications = "notifications";
-      ioClient.emit(notifications, { ...commonParameters, log: { message: "message", level: "info" } });
-      if (channel === "process.runCommand")
+      const instructions = "instructions";
+      ioClient.emit(instructions, { ...commonParameters, log: { message: "message", level: "info" } });
+      if (channel === "extension.versions")
+      {
+        console.info(`The extension receives the 'versions' event`);
+        onResult(true);
+      }
+      else if (channel === "extension.ready")
+      {
+        console.info(`The extension receives the 'ready' event`);
+        onResult(true);
+      }
+      else if (channel === "process.runCommand")
       {
         console.info(`Running the process command with id '${value.commandId}'`);
         const parameters = value.commandId === "faultyIntentParameters" ? { dummy: "value" } :
@@ -45,7 +55,7 @@ async function main()
             required: [ "favoriteColor" ]
           };
         const intent = value.commandId === "malformedIntent" ? { invalid: "key" } : { form: { parameters } };
-        ioClient.emit(notifications, {
+        ioClient.emit(instructions, {
           ...commonParameters,
           contextId,
           intent
@@ -107,6 +117,10 @@ async function main()
       {
         console.info(`Running the image command with id '${value.commandId}'`);
         onResult();
+      }
+      else
+      {
+        console.error(`Cannot handle the event on channel '${channel}''`);
       }
     }
   );

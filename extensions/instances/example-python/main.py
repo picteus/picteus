@@ -14,7 +14,7 @@ from picteus_extension_sdk import PicteusExtension, NotificationEvent, Notificat
     IntentDialogIconSizeContent, IntentUISidebarIntegration, IntentUIModalIntegration, \
     IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
     IntentNotification, ActionIntent, IntentAction, ProcessCommandIntent, \
-    IntentProcessCommand, ToastIntent, IntentToast
+    IntentProcessCommand, ToastIntent, IntentToast, Versions, EventValue
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -31,15 +31,21 @@ class PythonExtension(PicteusExtension):
     async def on_terminate(self) -> None:
         self.logger.debug(f"The {self.to_string()} is terminating")
 
+    async def on_upgrade(self, communicator: Communicator, versions: Versions) -> None:
+        communicator.send_log(f"The {self.to_string()} " + (
+            f"has been installed with v${versions.current}" if versions.previous is None else f"is upgrading from v{versions.previous} to v{versions.current}"),
+                              "info")
+
     async def on_ready(self, communicator: Optional[Communicator]) -> None:
-        communicator.send_log(f"The {self.to_string()} is ready", "info")
-        communicator.send_notification({"key": "value"})
+        if communicator is not None:
+            communicator.send_log(f"The {self.to_string()} is ready", "info")
+            communicator.send_notification({"key": "value"})
 
     async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
         communicator.send_log(
             f"The extension with id '{self.extension_id}' was notified that the settings have been set", "debug")
 
-    async def on_event(self, communicator: Communicator, event: str, value: Dict[str, Any]) -> Any | None:
+    async def on_event(self, communicator: Communicator, event: str, value: EventValue) -> Any | None:
         if event == NotificationEvent.IMAGE_CREATED or event == NotificationEvent.IMAGE_UPDATED or event == NotificationEvent.IMAGE_TAGS_UPDATED or event == NotificationEvent.IMAGE_FEATURES_UPDATED or event == NotificationEvent.IMAGE_DELETED or event == NotificationEvent.IMAGE_COMPUTE_TAGS or event == NotificationEvent.IMAGE_COMPUTE_FEATURES:
             await self._handle_image_event(communicator, event, value)
         elif event == NotificationEvent.PROCESS_RUN_COMMAND:

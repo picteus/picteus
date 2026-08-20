@@ -55,14 +55,18 @@ export function fromExtensionEventActionToManifestEvent(action: ExtensionEventAc
   {
     default:
       return undefined;
-    case ExtensionEventAction.Settings:
-      return ManifestEvent.ExtensionSettings;
     case ExtensionEventAction.Installed:
     case ExtensionEventAction.Updated:
     case ExtensionEventAction.Uninstalled:
     case ExtensionEventAction.Paused:
     case ExtensionEventAction.Resumed:
     case ExtensionEventAction.Process:
+    case ExtensionEventAction.Versions:
+      return ManifestEvent.ExtensionVersions;
+    case ExtensionEventAction.Ready:
+      return ManifestEvent.ExtensionReady;
+    case ExtensionEventAction.Settings:
+      return ManifestEvent.ExtensionSettings;
     case ExtensionEventAction.Error:
     case ExtensionEventAction.Log:
     case ExtensionEventAction.Notification:
