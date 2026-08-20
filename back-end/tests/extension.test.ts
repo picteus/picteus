@@ -1901,9 +1901,13 @@ describe("Extensions", () =>
     ], undefined, undefined, undefined, {
       type: "object",
       properties: {
-        [key1]: { type: "string" },
-        [key2]: { type: "object", properties: { [key2SubKey]: { type: "number" } }, required: [ key2SubKey ] },
-        [key3]: { type: "boolean" }
+        [key1]: { type: "string", default: key1 },
+        [key2]: {
+          type: "object",
+          properties: { [key2SubKey]: { type: "number", default: 3.21 } },
+          required: [ key2SubKey ]
+        },
+        [key3]: { type: "boolean", default: true }
       },
       required: [ key1, key2 ]
     });
@@ -1954,6 +1958,20 @@ describe("Extensions", () =>
             await base.getExtensionController().setSettings(Base.allPolicyContext, manifest.id, new ExtensionSettings(aCase.value));
           }).rejects.toThrow(new ServiceError(`The parameter 'settings' with value '{"value":${JSON.stringify(aCase.value)}}' is invalid because it does not comply with the settings JSON schema. Reason: '` + aCase.reason + "'", BAD_REQUEST, base.badParameterCode));
         }
+      }
+
+      {
+        // We assess the reset of the settings
+        const defaultExtensionSettings = await base.getExtensionController().resetSettings(Base.allPolicyContext, manifest.id);
+        const defaultValue =
+          {
+            [key1]: key1,
+            [key2]: { [key2SubKey]: 3.21 },
+            [key3]: true
+          };
+        expect(defaultExtensionSettings.value).toEqual(defaultValue);
+        const updatedExtensionSettings = await base.getExtensionController().getSettings(Base.allPolicyContext, manifest.id);
+        expect(updatedExtensionSettings.value).toEqual(defaultValue);
       }
     });
   });

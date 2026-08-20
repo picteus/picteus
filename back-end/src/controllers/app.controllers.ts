@@ -722,6 +722,31 @@ export class ExtensionController
     return await this.extensionService.setSettings(id, settings);
   }
 
+  @Put(":id/resetSettings")
+  @ApiOperation(
+    {
+      summary: "Resets the settings of an extension",
+      description: "Reverts the settings of an extension to its default value."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The extension settings",
+      type: ExtensionSettings
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionSettingsWrite ]))
+  async resetSettings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType): Promise<ExtensionSettings>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.extensionService.resetSettings(id);
+  }
+
   @Put(":id/synchronize")
   @ApiOperation(
     {

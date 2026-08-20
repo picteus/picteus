@@ -678,6 +678,44 @@
         ]
       }
     },
+    "/extension/{id}/resetSettings": {
+      "put": {
+        "description": "Reverts the settings of an extension to its default value.",
+        "operationId": "extension_resetSettings",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The extension settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtensionSettings"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Resets the settings of an extension",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
     "/extension/{id}/synchronize": {
       "put": {
         "description": "Iterates over all images available in the repositories and asks the extension to operate its work if the image is not indexed by it.",

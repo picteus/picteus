@@ -78,7 +78,13 @@ import {
   installViaVirtualEnvironmentRequirements,
   pythonVersion
 } from "./utils/pythonWrapper";
-import { addJsonSchemaAdditionalProperties, computeAjv, validateJsonSchema, validateSchema } from "./utils/ajvWrapper";
+import {
+  addJsonSchemaAdditionalProperties,
+  computeAjv,
+  computeDefaultValueFromSchema,
+  validateJsonSchema,
+  validateSchema
+} from "./utils/ajvWrapper";
 import {
   computeAttachmentDisposition,
   computeCompressedType,
@@ -804,6 +810,26 @@ export class ExtensionService
     });
     // We indicate to the extension that its settings have changed so that it can take action
     this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Settings, undefined, { id, value }, id);
+  }
+
+  async resetSettings(id: string): Promise<ExtensionSettings>
+  {
+    logger.info(`Resets the settings of the extension with id '${id}'`);
+    this.checkExtensionExists(id);
+    const extension = this.extensionsRegistry.get(id)!;
+    const withStrippedUiPropertiesExtensionSettings = extension.settings;
+    stripAndExtractParametersUiProperties(withStrippedUiPropertiesExtensionSettings);
+    const value = computeDefaultValueFromSchema(withStrippedUiPropertiesExtensionSettings);
+    const settingsValue = stringify(value);
+    const objectValue = { extensionId: id, value: settingsValue };
+    await this.entitiesProvider.extensionSettings.upsert({
+      where: { extensionId: id },
+      create: objectValue,
+      update: objectValue
+    });
+    // We indicate to the extension that its settings have changed so that it can take action
+    this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Settings, undefined, { id, value }, id);
+    return new ExtensionSettings(value);
   }
 
   async synchronize(id: string): Promise<void>

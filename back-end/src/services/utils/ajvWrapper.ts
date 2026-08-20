@@ -1,4 +1,4 @@
-import Ajv, { ErrorObject } from "ajv";
+import Ajv, { ErrorObject, Schema } from "ajv";
 
 
 type Json = Record<string, any>;
@@ -6,17 +6,53 @@ type Json = Record<string, any>;
 const jsonSchemaUrl = "http://json-schema.org/draft-07/schema#";
 const reUseAjv = Math.random() > 1;
 
-export function computeAjv(): Ajv
+export function computeAjv(useDefaults?: boolean): Ajv
 {
   let ajv: Ajv | undefined;
   return (() =>
   {
     if (ajv === undefined || reUseAjv === false)
     {
-      ajv = new Ajv({ strict: true, formats: { "uri": true } });
+      ajv = new Ajv({ strict: true, formats: { "uri": true }, useDefaults });
     }
     return ajv;
   })();
+}
+
+export function computeDefaultValueFromSchema(schema: Json): Json
+{
+  const defaultValue: Json = {};
+  const validate = computeAjv(true).compile(schema);
+
+  function prefillObjectStructures(schema: Schema, target: Record<string, any>): void
+  {
+    if (!schema || typeof schema !== "object")
+    {
+      return;
+    }
+
+    const properties = (schema as any).properties;
+    if (!properties || typeof properties !== "object")
+    {
+      return;
+    }
+
+    for (const [ key, propSchema ] of Object.entries<any>(properties))
+    {
+      if (propSchema.type === "object" && propSchema.properties)
+      {
+        if (!target[key] || typeof target[key] !== "object")
+        {
+          target[key] = {};
+        }
+        prefillObjectStructures(propSchema, target[key]);
+      }
+    }
+  }
+
+  prefillObjectStructures(schema, defaultValue);
+  validate(defaultValue);
+  return defaultValue;
 }
 
 export function validateSchema(ajv: Ajv, schema: Json, object: Json): void
