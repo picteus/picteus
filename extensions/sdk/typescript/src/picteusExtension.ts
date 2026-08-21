@@ -39,6 +39,8 @@ export class InstructionReturnedError extends Error
 
 }
 
+export type CommandParameters = Record<string, any>;
+
 export const EventName =
   {
     ProcessRunCommand: "process.runCommand",
@@ -417,8 +419,111 @@ export class PicteusExtension
   {
   }
 
-  protected async onEvent(_communicator: Communicator, _event: EventName, _value: EventValue): Promise<any>
+  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
   {
+    if (event === EventName.ImageCreated)
+    {
+      const imageId: string = value["id"];
+      return await this.onImageCreated(communicator, imageId);
+    }
+    else if (event === EventName.ImageUpdated)
+    {
+      const imageId: string = value["id"];
+      return await this.onImageUpdated(communicator, imageId);
+    }
+    else if (event === EventName.ImageDeleted)
+    {
+      const imageId: string = value["id"];
+      return await this.onImageDeleted(communicator, imageId);
+    }
+    else if (event === EventName.ImageTagsUpdated)
+    {
+      const imageId: string = value["id"];
+      return await this.onImageTagsUpdated(communicator, imageId);
+    }
+    else if (event === EventName.ImageFeaturesUpdated)
+    {
+      const imageId: string = value["id"];
+      return await this.onImageFeaturesUpdated(communicator, imageId);
+    }
+    else if (event === EventName.ImageComputeTags)
+    {
+      const imageId: string = value["id"];
+      return await this.onComputeImageTags(communicator, imageId);
+    }
+    else if (event === EventName.ImageComputeFeatures)
+    {
+      const imageId: string = value["id"];
+      return await this.onComputeImageFeatures(communicator, imageId);
+    }
+    else if (event === EventName.ImageComputeEmbeddings)
+    {
+      const imageId: string = value["id"];
+      return await this.onComputeImageEmbeddings(communicator, imageId);
+    }
+    else if (event === EventName.ImageRunCommand)
+    {
+      const commandId: string = value["commandId"];
+      const imageIds: string[] = value["imageIds"];
+      const parameters: CommandParameters = value["parameters"] ?? {};
+      return await this.onImagesCommand(communicator, commandId, imageIds, parameters);
+    }
+    else if (event === EventName.ProcessRunCommand)
+    {
+      const commandId: string = value["commandId"];
+      const parameters: CommandParameters = value["parameters"] ?? {};
+      return await this.onProcessCommand(communicator, commandId, parameters);
+    }
+    else if (event === EventName.TextComputeEmbeddings)
+    {
+      const text: string = value["text"];
+      return await this.onComputeTextEmbeddings(communicator, text);
+    }
+  }
+
+  protected async onImageCreated(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onImageUpdated(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onImageDeleted(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onImageTagsUpdated(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onImageFeaturesUpdated(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onComputeImageTags(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onComputeImageFeatures(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onComputeImageEmbeddings(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onImagesCommand(_communicator: Communicator, _commandId: string, _imageIds: string[], _parameters: CommandParameters): Promise<void>
+  {
+  }
+
+  protected async onProcessCommand(_communicator: Communicator, _commandId: string, _parameters: CommandParameters): Promise<void>
+  {
+  }
+
+  protected async onComputeTextEmbeddings(_communicator: Communicator, _text: string): Promise<number []>
+  {
+    return [];
   }
 
   // noinspection JSUnusedGlobalSymbols

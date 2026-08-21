@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, is_dataclass, dataclass
 from enum import StrEnum
 from logging import getLogger, basicConfig
-from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never
+from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never, List
 
 import aiohttp
 import socketio
@@ -33,16 +33,20 @@ LogLevel = Literal["debug", "info", "warn", "error"]
 
 EventValue = Dict[str, Any]
 
-class NotificationReturnedErrorCause(StrEnum):
+
+class InstructionReturnedErrorCause(StrEnum):
     CANCEL = "cancel"
     ERROR = "error"
 
 
-class NotificationReturnedError(Exception):
+class InstructionReturnedError(Exception):
 
-    def __init__(self, message: str, reason: NotificationReturnedErrorCause) -> None:
+    def __init__(self, message: str, reason: InstructionReturnedErrorCause) -> None:
         super().__init__(message)
-        self.reason: NotificationReturnedErrorCause = reason
+        self.reason: InstructionReturnedErrorCause = reason
+
+
+CommandParameters = Dict[str, Any]
 
 
 class EventName(StrEnum):
@@ -137,13 +141,13 @@ class _MessageSender:
             if "cancel" in the_value:
                 # noinspection PyUnresolvedReferences
                 future.set_exception(
-                    NotificationReturnedError(the_value["cancel"],
-                                              NotificationReturnedErrorCause.CANCEL))
+                    InstructionReturnedError(the_value["cancel"],
+                                             InstructionReturnedErrorCause.CANCEL))
             elif "error" in the_value:
                 # noinspection PyUnresolvedReferences
                 future.set_exception(
-                    NotificationReturnedError(the_value["error"],
-                                              NotificationReturnedErrorCause.ERROR))
+                    InstructionReturnedError(the_value["error"],
+                                             InstructionReturnedErrorCause.ERROR))
             else:
                 future.set_result(the_value.get("value", None))
 
@@ -174,9 +178,10 @@ class _MessageSender:
     async def send_message(self, event: str, body: Dict[str, Any],
                            callback: Optional[Callable[[Dict[str, Any]], T]] = None) -> None:
         context_id = self.context_id
-        self.logger.debug(f"Sending the message {_scrub_bytes(body)} through the '{event}' event for {self.to_string()}" + (
-            f" attached to the context with id '{context_id}'" if context_id is not None else "") + (
-                              " and waiting for a callback" if callback is not None else ""))
+        self.logger.debug(
+            f"Sending the message {_scrub_bytes(body)} through the '{event}' event for {self.to_string()}" + (
+                f" attached to the context with id '{context_id}'" if context_id is not None else "") + (
+                " and waiting for a callback" if callback is not None else ""))
         value: Dict[str, Any] = {"apiKey": self.parameters.api_key, "extensionId": self.parameters.extension_id,
                                  **body}
         if context_id is not None:
@@ -185,7 +190,7 @@ class _MessageSender:
         if self.sio is not None:
             await self.sio.emit(event=event, data=value, namespace=None, callback=callback)
         else:
-            await self.socket.emit(event, value)
+            self.socket.emit(event, data=value)
 
 
 class Communicator:
@@ -368,13 +373,85 @@ class PicteusExtension:
     async def on_terminate(self) -> None:
         pass
 
-    # noinspection PyMethodMayBeStatic
+    # noinspection PyMethodMayBeStatic,unused-parameter
     async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
         return None
 
     # noinspection PyMethodMayBeStatic
     async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
+        if event == EventName.IMAGE_CREATED:
+            image_id: str = value["id"]
+            return await self.on_image_created(communicator, image_id)
+        elif event == EventName.IMAGE_UPDATED:
+            image_id: str = value["id"]
+            return await self.on_image_updated(communicator, image_id)
+        elif event == EventName.IMAGE_DELETED:
+            image_id: str = value["id"]
+            return await self.on_image_deleted(communicator, image_id)
+        elif event == EventName.IMAGE_TAGS_UPDATED:
+            image_id: str = value["id"]
+            return await self.on_image_tags_updated(communicator, image_id)
+        elif event == EventName.IMAGE_FEATURES_UPDATED:
+            image_id: str = value["id"]
+            return await self.on_image_features_updated(communicator, image_id)
+        elif event == EventName.IMAGE_COMPUTE_TAGS:
+            image_id: str = value["id"]
+            return await self.on_compute_image_tags(communicator, image_id)
+        elif event == EventName.IMAGE_COMPUTE_FEATURES:
+            image_id: str = value["id"]
+            return await self.on_compute_image_features(communicator, image_id)
+        elif event == EventName.IMAGE_COMPUTE_EMBEDDINGS:
+            image_id: str = value["id"]
+            return await self.on_compute_image_embeddings(communicator, image_id)
+        elif event == EventName.IMAGE_RUN_COMMAND:
+            command_id: str = value["commandId"]
+            image_ids: List[str] = value["imageIds"]
+            parameters: CommandParameters = value.get("parameters", {})
+            return await self.on_images_command(communicator, command_id, image_ids, parameters)
+        elif event == EventName.PROCESS_RUN_COMMAND:
+            command_id: str = value["commandId"]
+            parameters: CommandParameters = value.get("parameters", {})
+            return await self.on_process_command(communicator, command_id, parameters)
+        elif event == EventName.TEXT_COMPUTE_EMBEDDINGS:
+            text: str = value["text"]
+            return await self.on_compute_text_embeddings(communicator, text)
         return None
+
+    async def on_image_created(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_image_updated(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_image_deleted(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_image_tags_updated(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_image_features_updated(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_compute_image_tags(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_compute_image_features(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_compute_image_embeddings(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_images_command(self, communicator: Communicator, command_id: str, image_ids: List[str],
+                                parameters: CommandParameters) -> None:
+        pass
+
+    async def on_process_command(self, communicator: Communicator, command_id: str,
+                                 parameters: CommandParameters) -> None:
+        pass
+
+    # noinspection PyMethodMayBeStatic,unused-parameter
+    async def on_compute_text_embeddings(self, communicator: Communicator, text: str) -> list[float]:
+        return []
 
     async def run_in_executor(self, function: Callable) -> Any | None:
         # noinspection PyTypeChecker

@@ -2,9 +2,9 @@ import asyncio
 import base64
 import json
 import os
-from typing import Dict, Any, List, Optional, Literal
+from typing import Dict, Any, List, Optional
 
-from picteus_extension_sdk import PicteusExtension, EventName, NotificationReturnedError, Communicator, \
+from picteus_extension_sdk import PicteusExtension, InstructionReturnedError, Communicator, \
     IntentDialogType, UiIntent, \
     IntentUi, DialogIntent, IntentDialog, IntentDialogButtons, IntentImage, \
     ImagesIntent, IntentImages, ShowIntent, IntentShow, IntentShowType, \
@@ -14,7 +14,7 @@ from picteus_extension_sdk import PicteusExtension, EventName, NotificationRetur
     IntentDialogIconSizeContent, IntentUISidebarIntegration, IntentUIModalIntegration, \
     IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
     IntentNotification, ActionIntent, IntentAction, ProcessCommandIntent, \
-    IntentProcessCommand, ToastIntent, IntentToast, Versions, EventValue
+    IntentProcessCommand, ToastIntent, IntentToast, Versions, CommandParameters
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -45,63 +45,120 @@ class PythonExtension(PicteusExtension):
         communicator.send_log(
             f"The extension with id '{self.extension_id}' was notified that the settings have been set", "debug")
 
-    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
-        if event == EventName.IMAGE_CREATED or event == EventName.IMAGE_UPDATED or event == EventName.IMAGE_TAGS_UPDATED or event == EventName.IMAGE_FEATURES_UPDATED or event == EventName.IMAGE_DELETED or event == EventName.IMAGE_COMPUTE_TAGS or event == EventName.IMAGE_COMPUTE_FEATURES:
-            await self._handle_image_event(communicator, event, value)
-        elif event == EventName.PROCESS_RUN_COMMAND:
-            command_id: str = value["commandId"]
-            parameters: Dict[str, Any] = value["parameters"]
-            communicator.send_log(
-                f"Received a process command with id '{command_id}' with parameters '{json.dumps(parameters)}'",
-                "debug")
-            if command_id == "askForSomething":
-                await self._handle_ask_for_something(communicator, parameters)
-            elif command_id == "dialog":
-                await self._handle_dialog(communicator, parameters)
-            elif command_id == "ui":
-                await self._handle_ui(communicator, parameters)
-            elif command_id == "show":
-                await self._handle_show(communicator, parameters)
-            elif command_id == "readFile":
-                await self._handle_read_file(communicator)
-            elif command_id == "writeFile":
-                await self._handle_write_file(communicator)
-            elif command_id == "toast":
-                await self._handle_toast(communicator, parameters)
-            elif command_id == "notification":
-                await self._handle_notification(communicator, parameters)
-            elif command_id == "action":
-                await self._handle_action(communicator, parameters)
-            elif command_id == "application":
-                await self._handle_application(communicator)
-        elif event == EventName.IMAGE_RUN_COMMAND:
-            command_id: str = value["commandId"]
-            image_ids: List[str] = value["imageIds"]
-            parameters: Dict[str, Any] = value["parameters"]
-            await self._handle_run_command(communicator, command_id, image_ids, parameters)
+    async def on_image_created(self, communicator: Communicator, image_id: str) -> None:
+        self._on_image_touched(communicator, image_id)
+        await self._compute_image_tags(communicator, image_id)
+        await self._compute_image_features(communicator, image_id)
+
+    async def on_image_updated(self, communicator: Communicator, image_id: str) -> None:
+        self._on_image_touched(communicator, image_id)
+        await self._compute_image_tags(communicator, image_id)
+        await self._compute_image_features(communicator, image_id)
+
+    async def on_image_deleted(self, communicator: Communicator, image_id: str) -> None:
+        self._on_image_touched(communicator, image_id)
+
+    async def on_image_tags_updated(self, communicator: Communicator, image_id: str) -> None:
+        await self._on_tags_or_features_updated(communicator, image_id)
+
+    async def on_image_features_updated(self, communicator: Communicator, image_id: str) -> None:
+        await self._on_tags_or_features_updated(communicator, image_id)
+
+    async def on_compute_image_tags(self, communicator: Communicator, image_id: str) -> None:
+        await self._compute_image_tags(communicator, image_id)
+
+    async def on_compute_image_features(self, communicator: Communicator, image_id: str) -> None:
+        await self._compute_image_features(communicator, image_id)
+
+    async def on_images_command(self, communicator: Communicator, command_id: str, image_ids: List[str],
+                                parameters: CommandParameters) -> None:
+        communicator.send_log(
+            f"Received an image command with id '{command_id}' for the image with ids '{json.dumps(image_ids)}'",
+            "debug")
+        new_images: List[IntentImage] = []
+        for image_id in image_ids:
+            image: Image = self.get_image_api().image_get(id=image_id)
+            if command_id == "logDimensions":
+                communicator.send_log(
+                    f"The image with id '{image.id}', URL '{image.url}' has dimensions {image.dimensions.width}x{image.dimensions.height}",
+                    "info")
+            elif command_id == "convert":
+                image_format: ImageFormat = parameters["format"]
+                strip_metadata: bool = parameters["stripMetadata"]
+                width: int | None = parameters["width"]
+                height: int | None = parameters["height"]
+                resize_render: ImageResizeRender | None = parameters["resizeRender"]
+                if (width is not None or height is not None) and strip_metadata is False:
+                    await communicator.launch_intent(DialogIntent(dialog=IntentDialog(
+                        type=IntentDialogType.ERROR,
+                        title="Image Conversion",
+                        description="When a dimension is specified, the metadata must be stripped.",
+                        buttons=IntentDialogButtons(yes="OK"))))
+                    return None
+
+                communicator.send_log(f"Converting the image with id '{image.id}' and URL '{image.url}'", "debug")
+                image_bytes: bytearray = self.get_image_api().image_download(id=image_id, format=image_format,
+                                                                             width=width, height=height,
+                                                                             resize_render=resize_render,
+                                                                             strip_metadata=strip_metadata)
+                new_image: Image = self.get_repository_api().repository_store_image(id=image.repository_id,
+                                                                                    body=image_bytes,
+                                                                                    parent_id=image.id)
+                new_images.append(IntentImage(imageId=new_image.id))
+
+        if command_id == "convert":
+            await communicator.launch_intent(ImagesIntent(images=
+                                                          IntentImages(images=new_images,
+                                                                       dialogContent=IntentDialogIconContent(
+                                                                           title="Converted images",
+                                                                           description="These are the converted images"))))
         return None
 
-    async def _handle_image_event(self, communicator: Communicator, event: Literal[
-        EventName.IMAGE_CREATED, EventName.IMAGE_UPDATED, EventName.IMAGE_TAGS_UPDATED, EventName.IMAGE_FEATURES_UPDATED, EventName.IMAGE_DELETED, EventName.IMAGE_COMPUTE_TAGS, EventName.IMAGE_COMPUTE_FEATURES],
-                                  value: dict[str, Any]) -> None:
-        image_id: str = value["id"]
-        is_created_or_updated: bool = event == EventName.IMAGE_CREATED or event == EventName.IMAGE_UPDATED
-        if is_created_or_updated or event == EventName.IMAGE_DELETED:
-            communicator.send_log(f"The image with id '{image_id}' was touched", "info")
-        if event == EventName.IMAGE_TAGS_UPDATED or event == EventName.IMAGE_FEATURES_UPDATED:
-            communicator.send_log(f"The tags or features of the image with id '{image_id}' were updated", "info")
-        if is_created_or_updated or event == EventName.IMAGE_COMPUTE_TAGS:
-            communicator.send_log(f"Setting the tags for the image with id '{image_id}'", "debug")
-            self.get_image_api().image_set_tags(id=image_id, extension_id=self.extension_id,
-                                                request_body=[self.extension_id])
-        if is_created_or_updated or event == EventName.IMAGE_COMPUTE_FEATURES:
-            communicator.send_log(f"Setting the features for the image with id '{image_id}'", "debug")
-            self.get_image_api().image_set_features(id=image_id, extension_id=self.extension_id,
-                                                    image_feature=[ImageFeature(type=ImageFeatureType.OTHER,
-                                                                                format=ImageFeatureFormat.STRING,
-                                                                                name="example",
-                                                                                value=ImageFeatureValue(
-                                                                                    "This is a string"))])
+    async def on_process_command(self, communicator: Communicator, command_id: str,
+                                 parameters: CommandParameters) -> None:
+        communicator.send_log(
+            f"Received a process command with id '{command_id}' with parameters '{json.dumps(parameters)}'",
+            "debug")
+        if command_id == "askForSomething":
+            await self._handle_ask_for_something(communicator, parameters)
+        elif command_id == "dialog":
+            await self._handle_dialog(communicator, parameters)
+        elif command_id == "ui":
+            await self._handle_ui(communicator, parameters)
+        elif command_id == "show":
+            await self._handle_show(communicator, parameters)
+        elif command_id == "readFile":
+            await self._handle_read_file(communicator)
+        elif command_id == "writeFile":
+            await self._handle_write_file(communicator)
+        elif command_id == "toast":
+            await self._handle_toast(communicator, parameters)
+        elif command_id == "notification":
+            await self._handle_notification(communicator, parameters)
+        elif command_id == "action":
+            await self._handle_action(communicator, parameters)
+        elif command_id == "application":
+            await self._handle_application(communicator)
+
+    def _on_image_touched(self, communicator: Communicator, image_id: str) -> None:
+        communicator.send_log(f"The image with id '{image_id}' was touched", "info")
+
+    async def _on_tags_or_features_updated(self, communicator: Communicator, image_id: str) -> None:
+        communicator.send_log(f"The tags or features of the image with id '{image_id}' were updated", "info")
+
+    async def _compute_image_tags(self, communicator: Communicator, image_id: str) -> None:
+        communicator.send_log(f"Setting the tags for the image with id '{image_id}'", "debug")
+        self.get_image_api().image_set_tags(id=image_id, extension_id=self.extension_id,
+                                            request_body=[self.extension_id])
+
+    async def _compute_image_features(self, communicator: Communicator, image_id: str) -> None:
+        communicator.send_log(f"Setting the features for the image with id '{image_id}'", "debug")
+        self.get_image_api().image_set_features(id=image_id, extension_id=self.extension_id,
+                                                image_feature=[ImageFeature(type=ImageFeatureType.OTHER,
+                                                                            format=ImageFeatureFormat.STRING,
+                                                                            name="example",
+                                                                            value=ImageFeatureValue(
+                                                                                "This is a string"))])
 
     async def _handle_ask_for_something(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         intent_parameters: Dict[str, Any] = \
@@ -149,7 +206,7 @@ class PythonExtension(PicteusExtension):
             communicator.send_log(
                 f"""You picked the '{user_parameters["favoriteColor"]}' color and {"declared that you like chocolate" if user_parameters["likeChocolate"] == True else "did not mention that you liked chocolate"}""",
                 "info")
-        except NotificationReturnedError as exception:
+        except InstructionReturnedError as exception:
             communicator.send_log(
                 f"Received the intent error '{str(exception)}' with reason '{exception.reason}'",
                 "error")
@@ -321,50 +378,6 @@ class PythonExtension(PicteusExtension):
                 frame=IntentFrame(content=IntentFrameUrlContent(url=result + "/index.html"),
                                   height=70),
                 buttons=IntentDialogButtons(yes="Close"))))
-
-    async def _handle_run_command(self, communicator: Communicator, command_id: str, image_ids: list[str],
-                                  parameters: dict[str, Any]) -> None:
-        communicator.send_log(
-            f"Received an image command with id '{command_id}' for the image with ids '{json.dumps(image_ids)}'",
-            "debug")
-        new_images: List[IntentImage] = []
-        for image_id in image_ids:
-            image: Image = self.get_image_api().image_get(id=image_id)
-            if command_id == "logDimensions":
-                communicator.send_log(
-                    f"The image with id '{image.id}', URL '{image.url}' has dimensions {image.dimensions.width}x{image.dimensions.height}",
-                    "info")
-            elif command_id == "convert":
-                image_format: ImageFormat = parameters["format"]
-                strip_metadata: bool = parameters["stripMetadata"]
-                width: int | None = parameters["width"]
-                height: int | None = parameters["height"]
-                resize_render: ImageResizeRender | None = parameters["resizeRender"]
-                if (width is not None or height is not None) and strip_metadata is False:
-                    await communicator.launch_intent(DialogIntent(dialog=IntentDialog(
-                        type=IntentDialogType.ERROR,
-                        title="Image Conversion",
-                        description="When a dimension is specified, the metadata must be stripped.",
-                        buttons=IntentDialogButtons(yes="OK"))))
-                    return None
-
-                communicator.send_log(f"Converting the image with id '{image.id}' and URL '{image.url}'", "debug")
-                image_bytes: bytearray = self.get_image_api().image_download(id=image_id, format=image_format,
-                                                                             width=width, height=height,
-                                                                             resize_render=resize_render,
-                                                                             strip_metadata=strip_metadata)
-                new_image: Image = self.get_repository_api().repository_store_image(id=image.repository_id,
-                                                                                    body=image_bytes,
-                                                                                    parent_id=image.id)
-                new_images.append(IntentImage(imageId=new_image.id))
-
-        if command_id == "convert":
-            await communicator.launch_intent(ImagesIntent(images=
-                                                          IntentImages(images=new_images,
-                                                                       dialogContent=IntentDialogIconContent(
-                                                                           title="Converted images",
-                                                                           description="These are the converted images"))))
-        return None
 
 
 asyncio.run(PythonExtension().run())

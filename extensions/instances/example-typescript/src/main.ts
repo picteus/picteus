@@ -2,9 +2,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import {
+  CommandParameters,
   Communicator,
-  EventName,
-  type EventValue,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
@@ -58,102 +57,187 @@ class TypeScriptExtension extends PicteusExtension
     communicator.sendLog(`The extension with id '${this.extensionId}' was notified that the settings have been set`, "debug");
   }
 
-  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onImageCreated(communicator: Communicator, imageId: string): Promise<void>
   {
-    if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageTagsUpdated || event === EventName.ImageFeaturesUpdated || event === EventName.ImageDeleted || event === EventName.ImageComputeTags || event === EventName.ImageComputeFeatures)
+    this.onImageTouched(communicator, imageId);
+    await this.computeImageTags(imageId);
+    await this.computeImageFeatures(imageId);
+  }
+
+  protected async onImageUpdated(communicator: Communicator, imageId: string): Promise<void>
+  {
+    this.onImageTouched(communicator, imageId);
+    await this.computeImageTags(imageId);
+    await this.computeImageFeatures(imageId);
+  }
+
+  protected async onImageDeleted(communicator: Communicator, imageId: string): Promise<void>
+  {
+    this.onImageTouched(communicator, imageId);
+  }
+
+  protected async onImageTagsUpdated(communicator: Communicator, imageId: string): Promise<void>
+  {
+    this.onTagsOrFeaturesUpdated(communicator, imageId);
+  }
+
+  protected async onImageFeaturesUpdated(communicator: Communicator, imageId: string): Promise<void>
+  {
+    this.onTagsOrFeaturesUpdated(communicator, imageId);
+  }
+
+  protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeImageTags(imageId);
+  }
+
+  protected async onComputeImageFeatures(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeImageFeatures(imageId);
+  }
+
+  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: CommandParameters): Promise<void>
+  {
+    communicator.sendLog(`Received an image command with id '${commandId}' for the image with ids '${imageIds}'`, "debug");
+    const newImages: IntentImage[] = [];
+    for (const imageId of imageIds)
     {
-      await this.handleImageEvent(communicator, event, value);
+      const image = await this.getImageApi().imageGet({ id: imageId });
+      if (commandId === "logDimensions")
+      {
+        communicator.sendLog(`The image with id '${image.id}', URL '${image.url}' has dimensions ${image.dimensions.width}x${image.dimensions.height}`, "info");
+      }
+      else if (commandId === "convert")
+      {
+        const rawFormat: string = parameters["format"];
+        const format: ImageFormat = rawFormat.toUpperCase() as ImageFormat;
+        const stripMetadata: boolean = parameters["stripMetadata"];
+        const width: number | undefined = parameters["width"];
+        const height: number | undefined = parameters["height"];
+        const resizeRender: ImageResizeRender | undefined = parameters["resizeRender"];
+        if ((width !== undefined || height !== undefined) && stripMetadata === false)
+        {
+          await communicator.launchIntent<boolean>({
+            dialog:
+              {
+                type: IntentDialogType.Error,
+                title: "Image Conversion",
+                description: "When a dimension is specified, the metadata must be stripped.",
+                buttons: { yes: "OK" }
+              }
+          });
+          return;
+        }
+        communicator.sendLog(`Converting the image with id '${image.id}' and URL '${image.url}'`, "debug");
+        const blob: Blob = await this.getImageApi().imageDownload({
+          id: imageId,
+          format,
+          width,
+          height,
+          resizeRender,
+          stripMetadata
+        });
+        const newImage = await this.getRepositoryApi().repositoryStoreImage({
+          id: image.repositoryId,
+          parentId: image.id,
+          body: blob
+        });
+        newImages.push({ imageId: newImage.id });
+      }
     }
-    else if (event === EventName.ProcessRunCommand)
+    if (commandId === "convert")
     {
-      const commandId: string = value["commandId"];
-      const parameters: Record<string, any> = value["parameters"];
-      communicator.sendLog(`Received a process command with id '${commandId}' with parameters '${JSON.stringify(parameters)}'`, "debug");
-      if (commandId === "askForSomething")
-      {
-        await this.handleAskForSomething(communicator, parameters);
-      }
-      else if (commandId === "dialog")
-      {
-        await this.handleDialog(communicator, parameters);
-      }
-      else if (commandId === "ui")
-      {
-        await this.handleUi(communicator, parameters);
-      }
-      else if (commandId === "show")
-      {
-        await this.handleShow(communicator, parameters);
-      }
-      else if (commandId === "readFile")
-      {
-        await this.handleReadFile(communicator);
-      }
-      else if (commandId === "writeFile")
-      {
-        await this.handleWriteFile(communicator);
-      }
-      else if (commandId === "toast")
-      {
-        await this.handleToast(communicator, parameters);
-      }
-      else if (commandId === "notification")
-      {
-        await this.handleNotification(communicator, parameters);
-      }
-      else if (commandId === "action")
-      {
-        await this.handleAction(communicator, parameters);
-      }
-      else if (commandId === "application")
-      {
-        await this.handleApplication(communicator);
-      }
-    }
-    else if (event === EventName.ImageRunCommand)
-    {
-      const commandId: string = value["commandId"];
-      const imageIds: string[] = value["imageIds"];
-      const parameters: Record<string, any> = value["parameters"];
-      await this.handleRunCommand(communicator, commandId, imageIds, parameters);
+      await communicator.launchIntent({
+        images: {
+          images: newImages,
+          dialogContent:
+            {
+              title: "Converted images",
+              description: "These are the converted images"
+            }
+        }
+      });
     }
   }
 
-  private async handleImageEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<void>
+  protected async onProcessCommand(communicator: Communicator, commandId: string, parameters: CommandParameters): Promise<void>
   {
-    const imageId: string = value["id"];
-    const isCreatedOrUpdated = event === EventName.ImageCreated || event === EventName.ImageUpdated;
-    if (isCreatedOrUpdated === true || event === EventName.ImageDeleted)
+    communicator.sendLog(`Received a process command with id '${commandId}' with parameters '${JSON.stringify(parameters)}'`, "debug");
+    if (commandId === "askForSomething")
     {
-      communicator.sendLog(`The image with id '${imageId}' was touched`, "info");
+      await this.handleAskForSomething(communicator, parameters);
     }
-    if (event === EventName.ImageTagsUpdated || event === EventName.ImageFeaturesUpdated)
+    else if (commandId === "dialog")
     {
-      communicator.sendLog(`The tags or features of the image with id '${imageId}' were updated`, "info");
+      await this.handleDialog(communicator, parameters);
     }
-    if (isCreatedOrUpdated === true || event === EventName.ImageComputeTags)
+    else if (commandId === "ui")
     {
-      this.logger.debug(`Setting the tags for the image with id '${imageId}'`);
-      await this.getImageApi().imageSetTags({
-        extensionId: this.extensionId,
-        id: imageId,
-        requestBody: [ this.extensionId ]
-      });
+      await this.handleUi(communicator, parameters);
     }
-    if (isCreatedOrUpdated === true || event === EventName.ImageComputeFeatures)
+    else if (commandId === "show")
     {
-      this.logger.debug(`Setting the features for the image with id '${imageId}'`);
-      await this.getImageApi().imageSetFeatures({
-        extensionId: this.extensionId,
-        id: imageId,
-        imageFeature: [ {
-          type: ImageFeatureType.Other,
-          format: ImageFeatureFormat.String,
-          name: "example",
-          value: "This is a string"
-        } ]
-      });
+      await this.handleShow(communicator, parameters);
     }
+    else if (commandId === "readFile")
+    {
+      await this.handleReadFile(communicator);
+    }
+    else if (commandId === "writeFile")
+    {
+      await this.handleWriteFile(communicator);
+    }
+    else if (commandId === "toast")
+    {
+      await this.handleToast(communicator, parameters);
+    }
+    else if (commandId === "notification")
+    {
+      await this.handleNotification(communicator, parameters);
+    }
+    else if (commandId === "action")
+    {
+      await this.handleAction(communicator, parameters);
+    }
+    else if (commandId === "application")
+    {
+      await this.handleApplication(communicator);
+    }
+  }
+
+  private onImageTouched(communicator: Communicator, imageId: string): void
+  {
+    communicator.sendLog(`The image with id '${imageId}' was touched`, "info");
+  }
+
+  private onTagsOrFeaturesUpdated(communicator: Communicator, imageId: string): void
+  {
+    communicator.sendLog(`The tags or features of the image with id '${imageId}' were updated`, "info");
+  }
+
+  private async computeImageTags(imageId: string): Promise<void>
+  {
+    this.logger.debug(`Setting the tags for the image with id '${imageId}'`);
+    await this.getImageApi().imageSetTags({
+      extensionId: this.extensionId,
+      id: imageId,
+      requestBody: [ this.extensionId ]
+    });
+  }
+
+  private async computeImageFeatures(imageId: string): Promise<void>
+  {
+    this.logger.debug(`Setting the features for the image with id '${imageId}'`);
+    await this.getImageApi().imageSetFeatures({
+      extensionId: this.extensionId,
+      id: imageId,
+      imageFeature: [ {
+        type: ImageFeatureType.Other,
+        format: ImageFeatureFormat.String,
+        name: "example",
+        value: "This is a string"
+      } ]
+    });
   }
 
   private async handleAskForSomething(communicator: Communicator, parameters: Record<string, any>): Promise<void>
@@ -463,70 +547,6 @@ class TypeScriptExtension extends PicteusExtension
           buttons: { yes: "Close" }
         }
     });
-  }
-
-  private async handleRunCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: Record<string, any>): Promise<void>
-  {
-    communicator.sendLog(`Received an image command with id '${commandId}' for the image with ids '${imageIds}'`, "debug");
-    const newImages: IntentImage[] = [];
-    for (const imageId of imageIds)
-    {
-      const image = await this.getImageApi().imageGet({ id: imageId });
-      if (commandId === "logDimensions")
-      {
-        communicator.sendLog(`The image with id '${image.id}', URL '${image.url}' has dimensions ${image.dimensions.width}x${image.dimensions.height}`, "info");
-      }
-      else if (commandId === "convert")
-      {
-        const rawFormat: string = parameters["format"];
-        const format: ImageFormat = rawFormat.toUpperCase() as ImageFormat;
-        const stripMetadata: boolean = parameters["stripMetadata"];
-        const width: number | undefined = parameters["width"];
-        const height: number | undefined = parameters["height"];
-        const resizeRender: ImageResizeRender | undefined = parameters["resizeRender"];
-        if ((width !== undefined || height !== undefined) && stripMetadata === false)
-        {
-          await communicator.launchIntent<boolean>({
-            dialog:
-              {
-                type: IntentDialogType.Error,
-                title: "Image Conversion",
-                description: "When a dimension is specified, the metadata must be stripped.",
-                buttons: { yes: "OK" }
-              }
-          });
-          return;
-        }
-        communicator.sendLog(`Converting the image with id '${image.id}' and URL '${image.url}'`, "debug");
-        const blob: Blob = await this.getImageApi().imageDownload({
-          id: imageId,
-          format,
-          width,
-          height,
-          resizeRender,
-          stripMetadata
-        });
-        const newImage = await this.getRepositoryApi().repositoryStoreImage({
-          id: image.repositoryId,
-          parentId: image.id,
-          body: blob
-        });
-        newImages.push({ imageId: newImage.id });
-      }
-    }
-    if (commandId === "convert")
-    {
-      await communicator.launchIntent({
-        images: {
-          images: newImages,
-          dialogContent:
-            {
-              title: "Converted images",
-              description: "These are the converted images"
-            }
-        }
-      });
-    }
   }
 
 }
