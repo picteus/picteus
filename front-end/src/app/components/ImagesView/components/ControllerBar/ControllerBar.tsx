@@ -1,5 +1,5 @@
 import React, { ReactNode, useCallback, useMemo, useRef, useState } from "react";
-import { ActionIcon, Flex, Tooltip } from "@mantine/core";
+import { ActionIcon, Box, Flex, Tooltip } from "@mantine/core";
 import { IconLayoutDashboard, IconListDetails, IconPhoto, IconPin } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Collection, SearchFilterFromJSON } from "@picteus/ws-client";
@@ -38,10 +38,10 @@ export default function ControllerBar({
   onPin
 }: ControllerBarType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const withTable = useMemo<boolean>(() => Math.random() > 1, []);
-  const [currentCollection, setCurrentCollection] = useState<Collection | undefined>();
-  const [initialCollectionId] = useState<number | undefined>("collectionId" in initialFilterOrCollectionId ? initialFilterOrCollectionId.collectionId : undefined);
+  const [ currentCollection, setCurrentCollection ] = useState<Collection | undefined>();
+  const [ initialCollectionId ] = useState<number | undefined>("collectionId" in initialFilterOrCollectionId ? initialFilterOrCollectionId.collectionId : undefined);
   const collectionsBarRef = useRef<CollectionsBarRef>(null);
   const filtersBarRef = useRef<FiltersBarRef>(null);
 
@@ -50,7 +50,7 @@ export default function ControllerBar({
     setCurrentCollection(collection);
     filtersBarRef.current?.setFilter(collection ? collection.filter : FiltersService.defaultFilter);
     onFilterOrCollectionId(collection ? { collectionId: collection.id } : { filter: FiltersService.defaultFilter });
-  }, [onFilterOrCollectionId]);
+  }, [ onFilterOrCollectionId ]);
 
   const handleOnFilterOrCollectionId = useCallback((filterOrCollectionId: FilterOrCollectionId) =>
   {
@@ -69,7 +69,7 @@ export default function ControllerBar({
     {
       onFilterOrCollectionId(filterOrCollectionId);
     }
-  }, [currentCollection, onFilterOrCollectionId]);
+  }, [ currentCollection, onFilterOrCollectionId ]);
 
   const handleOnClearAll = useCallback(() =>
   {
@@ -84,54 +84,68 @@ export default function ControllerBar({
     }
   }
 
-  return (
-    <Flex align="end" justify="space-between" className={style.content}>
+  function renderLeft()
+  {
+    return <Flex flex={1} miw={0} align="end">
       {children}
-      {withFilter && <FiltersBar
-        ref={filtersBarRef}
-        initialFilterOrCollectionId={initialFilterOrCollectionId}
-        onFilterOrCollectionId={handleOnFilterOrCollectionId}
-        onClearAll={handleOnClearAll}
-      >
-        <CollectionsBar
-          ref={collectionsBarRef}
-          searchFilter={"filter" in initialFilterOrCollectionId ? initialFilterOrCollectionId.filter : currentCollection?.filter}
-          initialCollectionId={initialCollectionId}
-          onCollection={handleOnCollection}
-        />
-      </FiltersBar>}
-      <Flex gap="xs">
-        <ActionIcon.Group>
-          <Tooltip label={t("imagesScreen.masonryView")}>
-            <ActionIcon size="lg" variant={viewMode === "masonry" ? "filled" : "default"}
-                        onClick={() => onViewMode("masonry")}>
-              <IconLayoutDashboard stroke={1.2}/>
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t("imagesScreen.galleryView")}>
-            <ActionIcon size="lg" variant={viewMode === "gallery" ? "filled" : "default"}
-                        onClick={() => onViewMode("gallery")}>
-              <IconPhoto stroke={1.2}/>
-            </ActionIcon>
-          </Tooltip>
-          {withTable && <Tooltip label={t("imagesScreen.detailView")}>
-            <ActionIcon size="lg" variant={viewMode === "table" ? "filled" : "default"}
-                        onClick={() => onViewMode("table")}>
-              <IconListDetails stroke={1.2}/>
-            </ActionIcon>
-          </Tooltip>
-          }
-        </ActionIcon.Group>
-        {withRefreshButton && <RefreshButton
-          alert={displayRefreshAlert}
-          onRefresh={handleOnRefresh}
-        />}
-        {onPin && <Tooltip label={t("button.pin")}>
-          <ActionIcon size="lg" variant={"default"} onClick={onPin}>
-            <IconPin stroke={1.2}/>
+      {withFilter && <Box flex={1} miw={0}>
+        <FiltersBar
+          ref={filtersBarRef}
+          initialFilterOrCollectionId={initialFilterOrCollectionId}
+          onFilterOrCollectionId={handleOnFilterOrCollectionId}
+          onClearAll={handleOnClearAll}
+        >
+          <CollectionsBar
+            ref={collectionsBarRef}
+            searchFilter={"filter" in initialFilterOrCollectionId ? initialFilterOrCollectionId.filter : currentCollection?.filter}
+            initialCollectionId={initialCollectionId}
+            onCollection={handleOnCollection}
+          />
+        </FiltersBar>
+      </Box>}
+    </Flex>;
+  }
+
+  function renderRight()
+  {
+    return <Flex ml="sm" gap="xs">
+      <ActionIcon.Group>
+        <Tooltip label={t("imagesScreen.masonryView")}>
+          <ActionIcon size="lg" variant={viewMode === "masonry" ? "filled" : "default"}
+                      onClick={() => onViewMode("masonry")}>
+            <IconLayoutDashboard stroke={1.2}/>
           </ActionIcon>
-        </Tooltip>}
-      </Flex>
+        </Tooltip>
+        <Tooltip label={t("imagesScreen.galleryView")}>
+          <ActionIcon size="lg" variant={viewMode === "gallery" ? "filled" : "default"}
+                      onClick={() => onViewMode("gallery")}>
+            <IconPhoto stroke={1.2}/>
+          </ActionIcon>
+        </Tooltip>
+        {withTable && <Tooltip label={t("imagesScreen.detailView")}>
+          <ActionIcon size="lg" variant={viewMode === "table" ? "filled" : "default"}
+                      onClick={() => onViewMode("table")}>
+            <IconListDetails stroke={1.2}/>
+          </ActionIcon>
+        </Tooltip>
+        }
+      </ActionIcon.Group>
+      {withRefreshButton && <RefreshButton
+        alert={displayRefreshAlert}
+        onRefresh={handleOnRefresh}
+      />}
+      {onPin && <Tooltip label={t("button.pin")}>
+        <ActionIcon size="lg" variant={"default"} onClick={onPin}>
+          <IconPin stroke={1.2}/>
+        </ActionIcon>
+      </Tooltip>}
+    </Flex>;
+  }
+
+  return (
+    <Flex className={style.content} align="end">
+      {renderLeft()}
+      {renderRight()}
     </Flex>
   );
 }

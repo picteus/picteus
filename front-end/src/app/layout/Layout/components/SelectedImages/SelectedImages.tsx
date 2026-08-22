@@ -240,7 +240,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
             </Flex>
           )}
         </Flex>
-        {selectedImages.length > 0 && (
+        {isAddingToCollection === false && selectedImages.length > 0 && (
           <Text
             onClick={clearSelectedImages}
             style={{ cursor: "pointer" }}

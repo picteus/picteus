@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useMemo, useState } from "react";
+import React, { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActionIcon,
   Box,
@@ -29,7 +29,7 @@ import { ExtensionImageTag, Repository } from "@picteus/ws-client";
 
 import { LocalFiltersType } from "types";
 import { ToastService } from "utils";
-import { useDebouncedCallback } from "app/hooks";
+import { useContainerDimensions, useDebouncedCallback } from "app/hooks";
 import { FiltersService, RepositoriesService, WithValueAndLabel } from "app/services";
 
 import { Common, ExtensionIcon, ImageTag } from "app/components";
@@ -54,6 +54,8 @@ export function SearchFilters({
 }: SearchFiltersType)
 {
   const [ t ] = useTranslation();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { width } = useContainerDimensions(containerRef);
   const [ searchText, setSearchText ] = useState<string>();
   const repositories = useMemo<Repository[]>(() => (RepositoriesService.list()), []);
   const [ tags, setTags ] = useState<ExtensionImageTag[]>([]);
@@ -172,126 +174,126 @@ export function SearchFilters({
     );
   };
 
-  const width = 600;
-  return (<HoverCard
-    width={width}
-    position="bottom-end"
-    withArrow
-    shadow="xl"
-    closeDelay={Common.HoverCloseDelayInMilliseconds}
-  >
-    <HoverCard.Target>
-      <Box w={width}>
-        <Input
-          component="div"
-          multiline
-          pointer
-          radius="md"
-          rightSectionPointerEvents="all"
-          rightSectionWidth={64}
-          classNames={{ input: style.container }}
-          rightSection={
-            <Flex gap={4} wrap="nowrap" align="center">
-              {searchText || filters ? (
-                <ActionIcon size="sm" variant="transparent" c="dimmed"
-                            onClick={onClearAll}>
-                  <IconX stroke={1.5} size={Common.IconSmallSize}/>
-                </ActionIcon>
-              ) : null}
-              <Tooltip label={t("filters.title")}>
-                <ActionIcon size="md" variant="light">
-                  <IconFilter stroke={1.5} size={Common.IconSmallSize}/>
-                </ActionIcon>
-              </Tooltip>
+  return (<div ref={containerRef}>
+    <HoverCard
+      width={width}
+      position="bottom-end"
+      withArrow
+      shadow="xl"
+      closeDelay={Common.HoverCloseDelayInMilliseconds}
+    >
+      <HoverCard.Target>
+        <Box w="100%" miw={0}>
+          <Input
+            component="div"
+            pointer
+            radius="md"
+            rightSectionPointerEvents="all"
+            rightSectionWidth={64}
+            classNames={{ input: style.container }}
+            rightSection={
+              <Flex gap={4} wrap="nowrap" align="center">
+                {searchText || filters ? (
+                  <ActionIcon size="sm" variant="transparent" c="dimmed"
+                              onClick={onClearAll}>
+                    <IconX stroke={1.5} size={Common.IconSmallSize}/>
+                  </ActionIcon>
+                ) : null}
+                <Tooltip label={t("filters.title")}>
+                  <ActionIcon size="md" variant="light">
+                    <IconFilter stroke={1.5} size={Common.IconSmallSize}/>
+                  </ActionIcon>
+                </Tooltip>
+              </Flex>
+            }
+          >
+            <Flex wrap="wrap" gap={6} align="center" className={style.wrapper}>
+              <IconSearch stroke={1.5} size={Common.IconSmallSize} color="gray"/>
+              {renderActiveFiltersPills()}
+              <input
+                placeholder={renderActiveFiltersPills()?.length ? "" : t("field.search")}
+                value={searchText || ""}
+                onChange={(event) => setSearchText(event.target.value)}
+                className={style.input}
+              />
             </Flex>
-          }
-        >
-          <Flex wrap="wrap" gap={6} align="center" className={style.wrapper}>
-            <IconSearch stroke={1.5} size={Common.IconSmallSize} color="gray"/>
-            {renderActiveFiltersPills()}
-            <input
-              placeholder={renderActiveFiltersPills()?.length ? "" : t("field.search")}
-              value={searchText || ""}
-              onChange={(event) => setSearchText(event.target.value)}
-              className={style.input}
-            />
-          </Flex>
-        </Input>
-      </Box>
-    </HoverCard.Target>
-    <HoverCard.Dropdown p={0}>
-      <Tabs defaultValue="general">
-        <Group justify="space-between" align="center" pr="sm">
-          <Tabs.List flex={1}>
-            <Tabs.Tab
-              value="general"
-              leftSection={<IconAdjustmentsHorizontal size={Common.IconSmallSize}
-                                                      color="var(--mantine-color-blue-filled)"/>}
-            >
-              {t("field.essentials")}
-            </Tabs.Tab>
-            <Tabs.Tab
-              value="tags"
-              leftSection={<IconTags size={Common.IconSmallSize} color="var(--mantine-color-orange-filled)"/>}
-            >
-              {t("field.tags")}
-            </Tabs.Tab>
-            <Tabs.Tab
-              value="features"
-              leftSection={<IconBulb size={Common.IconSmallSize} color="var(--mantine-color-violet-filled)"/>}
-            >
-              {t("field.features")}
-            </Tabs.Tab>
-            <Tabs.Tab
-              value="properties"
-              leftSection={<IconListDetails size={Common.IconSmallSize}
-                                            color="var(--mantine-color-green-filled)"/>}
-            >
-              {t("field.properties")}
-            </Tabs.Tab>
-          </Tabs.List>
-        </Group>
-        <ScrollArea h={500}>
-          <Tabs.Panel value="general" p="md">
-            {filters && (
-              <GeneralFilters
-                repositories={repositories}
-                filters={filters}
-                onChangeFilter={onChangeFilterWrapper}
+          </Input>
+        </Box>
+      </HoverCard.Target>
+      <HoverCard.Dropdown p={0}>
+        <Tabs defaultValue="general">
+          <Group justify="space-between" align="center" pr="sm">
+            <Tabs.List flex={1}>
+              <Tabs.Tab
+                value="general"
+                leftSection={<IconAdjustmentsHorizontal size={Common.IconSmallSize}
+                                                        color="var(--mantine-color-blue-filled)"/>}
+              >
+                {t("field.essentials")}
+              </Tabs.Tab>
+              <Tabs.Tab
+                value="tags"
+                leftSection={<IconTags size={Common.IconSmallSize} color="var(--mantine-color-orange-filled)"/>}
+              >
+                {t("field.tags")}
+              </Tabs.Tab>
+              <Tabs.Tab
+                value="features"
+                leftSection={<IconBulb size={Common.IconSmallSize} color="var(--mantine-color-violet-filled)"/>}
+              >
+                {t("field.features")}
+              </Tabs.Tab>
+              <Tabs.Tab
+                value="properties"
+                leftSection={<IconListDetails size={Common.IconSmallSize}
+                                              color="var(--mantine-color-green-filled)"/>}
+              >
+                {t("field.properties")}
+              </Tabs.Tab>
+            </Tabs.List>
+          </Group>
+          <ScrollArea h={500}>
+            <Tabs.Panel value="general" p="md">
+              {filters && (
+                <GeneralFilters
+                  repositories={repositories}
+                  filters={filters}
+                  onChangeFilter={onChangeFilterWrapper}
+                />
+              )}
+            </Tabs.Panel>
+            <Tabs.Panel value="tags" p="md">
+              <Stack gap="xs">
+                <FilterSelect
+                  selectedValues={filters?.tags || []}
+                  options={tagOptions}
+                  renderOption={renderTagOption}
+                  renderPill={({ option, onRemove }) =>
+                  {
+                    const extensionTag = tags.find(anExtensionTag => anExtensionTag.value === option.value);
+                    return (<Pill withRemoveButton onRemove={onRemove}>
+                      <ImageTag tag={extensionTag} kind="plain"/>
+                    </Pill>);
+                  }}
+                  onChange={(values: string[]) => onChangeFilterWrapper("tags", values)}
+                />
+              </Stack>
+            </Tabs.Panel>
+            <Tabs.Panel value="features" p="md">
+              <FeaturesQueryBuilder
+                searchFeatures={filters?.features}
+                onChange={(features) => onChangeFilterWrapper("features", features)}
               />
-            )}
-          </Tabs.Panel>
-          <Tabs.Panel value="tags" p="md">
-            <Stack gap="xs">
-              <FilterSelect
-                selectedValues={filters?.tags || []}
-                options={tagOptions}
-                renderOption={renderTagOption}
-                renderPill={({ option, onRemove }) =>
-                {
-                  const extensionTag = tags.find(anExtensionTag => anExtensionTag.value === option.value);
-                  return (<Pill withRemoveButton onRemove={onRemove}>
-                    <ImageTag tag={extensionTag} kind="plain"/>
-                  </Pill>);
-                }}
-                onChange={(values: string[]) => onChangeFilterWrapper("tags", values)}
+            </Tabs.Panel>
+            <Tabs.Panel value="properties" p="md">
+              <PropertiesFilters
+                properties={filters?.properties}
+                onChange={(props) => onChangeFilterWrapper("properties", props)}
               />
-            </Stack>
-          </Tabs.Panel>
-          <Tabs.Panel value="features" p="md">
-            <FeaturesQueryBuilder
-              searchFeatures={filters?.features}
-              onChange={(features) => onChangeFilterWrapper("features", features)}
-            />
-          </Tabs.Panel>
-          <Tabs.Panel value="properties" p="md">
-            <PropertiesFilters
-              properties={filters?.properties}
-              onChange={(props) => onChangeFilterWrapper("properties", props)}
-            />
-          </Tabs.Panel>
-        </ScrollArea>
-      </Tabs>
-    </HoverCard.Dropdown>
-  </HoverCard>);
+            </Tabs.Panel>
+          </ScrollArea>
+        </Tabs>
+      </HoverCard.Dropdown>
+    </HoverCard>
+  </div>);
 }

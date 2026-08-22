@@ -23,7 +23,7 @@ import { ToastService } from "utils";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { useAsyncInitialize, useExtensionCommandRunner, useExtensionCommandsWithEntities } from "app/hooks";
 import { CollectionService, EventService } from "app/services";
-import { CommandIcon, Common, MenuItemEntry } from "app/components";
+import { CollectionIcon, CommandIcon, Common, MenuItemEntry } from "app/components";
 import AddOrUpdateCollection
   from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
@@ -160,11 +160,12 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
     return name.length > 32 ? name.substring(0, 32) + "..." : name;
   }
 
+  const width = 240;
   return (<Button.Group>
-      <Menu shadow="md" width={340} position="bottom" trigger="click-hover" opened={menuOpened}
+      <Menu shadow="md" width={width} position="bottom" trigger="click-hover" opened={menuOpened}
             onChange={setMenuOpened}>
         <Menu.Target>
-          <Button variant="default" leftSection={<IconLibraryPhoto size={14}/>}
+          <Button variant="default" w={width} leftSection={<IconLibraryPhoto size={14}/>}
                   rightSection={<IconChevronDown size={14}/>}>
             {selectedCollection ? truncateName(selectedCollection.name) : t("field.collections")}
           </Button>
@@ -172,7 +173,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
         <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
           {loading && <Box p="sm"><Center><Loader size="sm"/></Center></Box>}
           {!loading && collections.map((collection) => (
-            <Menu.Item key={collection.id} onClick={() => handleOnSelectedCollection(collection)}>
+            <Menu.Item key={collection.id} leftSection={<CollectionIcon collection={collection}/>} onClick={() => handleOnSelectedCollection(collection)}>
               <Text size="sm">{truncateName(collection.name)}</Text>
             </Menu.Item>
           ))}

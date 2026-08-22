@@ -14,10 +14,10 @@ type ContentTitleType = {
 
 export default function ContentTitle({ text, icon }: ContentTitleType)
 {
-  const edge = 24;
   return (<Flex className={style.content}>
     {(icon !== undefined && ("url" in icon || "content" in icon)) &&
-      <Image src={computeResourceTypeUrl(icon)} fallbackSrc={Common.FallbackImageUrl} h={edge} w={edge}
+      <Image src={computeResourceTypeUrl(icon)} fallbackSrc={Common.FallbackImageUrl} h={Common.IconLargeSize}
+             w={Common.IconLargeSize}
              className={style.icon}/>}
     {(icon !== undefined && "icon" in icon) && icon.icon}
     <Title order={3}>{text}</Title>

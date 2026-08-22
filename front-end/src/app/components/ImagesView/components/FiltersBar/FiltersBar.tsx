@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
-import { Button, Flex, Menu, Text, Tooltip } from "@mantine/core";
+import { Box, Button, Flex, Menu, Text, Tooltip } from "@mantine/core";
 import {
   IconArrowsHorizontal,
   IconArrowsVertical,
@@ -100,14 +100,15 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
     onChangeFilterWrapper("sortOrder", filters?.sortOrder === "1" ? "-1" : "1");
   };
 
+  const sortWidth = 160;
   return (
-    <Flex gap={10} align="flex-end">
+    <Flex gap="xs" align="end">
       {children}
       <Button.Group>
-        <Menu shadow="md" width={160} position="bottom" trigger="click-hover" opened={sortingMenuOpened}
+        <Menu shadow="md" width={sortWidth} position="bottom" trigger="click-hover" opened={sortingMenuOpened}
               onChange={setSortingMenuOpened}>
           <Menu.Target>
-            <Button variant="default" w={160}
+            <Button variant="default" w={sortWidth}
                     leftSection={filters?.sortBy ? SORT_ICONS[filters.sortBy] : null}
                     rightSection={<IconChevronDown size={14}/>}>
               {FiltersService.sortByOptions.find(option => option.value === filters?.sortBy)?.label}
@@ -129,12 +130,14 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
           </Button>
         </Tooltip>
       </Button.Group>
-      {filters?.images === undefined && <SearchFilters
-        filters={filters}
-        setFilters={setFilters}
-        onChangeFilterWrapper={onChangeFilterWrapper}
-        onClearAll={handleOnClearAll}
-      />}
+      {filters?.images === undefined && <Box flex={1} miw={0}>
+        <SearchFilters
+          filters={filters}
+          setFilters={setFilters}
+          onChangeFilterWrapper={onChangeFilterWrapper}
+          onClearAll={handleOnClearAll}
+        />
+      </Box>}
     </Flex>
   );
 });

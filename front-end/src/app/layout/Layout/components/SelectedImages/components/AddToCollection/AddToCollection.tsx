@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Button, Flex, Select } from "@mantine/core";
+import { Box, Button, Flex } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { Collection, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
+
 import { ToastService } from "utils";
 import { CollectionService } from "app/services";
+import { CollectionSelect } from "app/components";
 
 
 type AddToCollectionType = {
@@ -69,22 +71,17 @@ export default function AddToCollection({ imageIds, onSuccess, onClose }: AddToC
     }
   }
 
-  const data = collections.map((collection) => ({ value: collection.id.toString(), label: collection.name }));
-
   return (
     <Flex align="flex-end" gap={5}>
-      <Select
-        allowDeselect={false}
-        style={{ flex: 1 }}
-        label={t("filters.collection")}
-        placeholder={t("widgets.collectionPlaceHolder")}
-        data={data}
-        value={selectedId}
-        onChange={value => setSelectedId(value)}
-        searchable
-        required
-        comboboxProps={{ withinPortal: false, position: "top" }}
-      />
+      <Box flex={1}>
+        <CollectionSelect
+          collections={collections}
+          label={t("filters.collection")}
+          disabled={false}
+          comboboxProps={{ withinPortal: false, position: "top" }}
+          onChange={value => setSelectedId(value)}
+        />
+      </Box>
       <Button variant="default" onClick={onClose} disabled={loading}>
         {t("button.cancel")}
       </Button>

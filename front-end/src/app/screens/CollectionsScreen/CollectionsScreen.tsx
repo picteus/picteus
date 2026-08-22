@@ -9,6 +9,7 @@ import { ChannelEnum } from "types";
 import { useActionModalContext, useEventSocket } from "app/context";
 import { CollectionService } from "app/services";
 import {
+  CollectionIcon,
   Common,
   Container,
   Drawer,
@@ -23,13 +24,13 @@ import { AddOrUpdateCollection, CollectionActions, CollectionDetail, CollectionT
 
 export default function CollectionsScreen()
 {
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [ collections, setCollections ] = useState<Collection[]>([]);
+  const [ loading, setLoading ] = useState<boolean>(false);
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [selectedCollection, setSelectedCollection] = useState<Collection>();
-  const [t] = useTranslation();
-  const [, addModal] = useActionModalContext();
+  const [ selectedCollection, setSelectedCollection ] = useState<Collection>();
+  const [ t ] = useTranslation();
+  const [ , addModal ] = useActionModalContext();
 
   useEffect(() =>
   {
@@ -50,7 +51,7 @@ export default function CollectionsScreen()
         setSelectedCollection(undefined);
       }
     }
-  }, [collections, selectedCollection]);
+  }, [ collections, selectedCollection ]);
 
   useEffect(() =>
   {
@@ -58,7 +59,7 @@ export default function CollectionsScreen()
     {
       void fetchAllCollections();
     }
-  }, [event]);
+  }, [ event ]);
 
   const showAddButton = false;
 
@@ -96,14 +97,13 @@ export default function CollectionsScreen()
       style={{ cursor: "pointer" }}
     >
       <Table.Td>
+        <CollectionIcon collection={collection}/>
+      </Table.Td>
+      <Table.Td>
         <Text size="md">{collection.name}</Text>
       </Table.Td>
       <Table.Td>
-        {collection.comment ? (
-          <Text size="md">{collection.comment}</Text>
-        ) : (
-          <NoValue/>
-        )}
+        {collection.comment ? <Text size="md">{collection.comment}</Text> : <NoValue/>}
       </Table.Td>
       <Table.Td>
         <Text size="md"><FormatedDate timestamp={collection.creationDate}/></Text>
@@ -123,7 +123,7 @@ export default function CollectionsScreen()
 
   function renderTable()
   {
-    return <StandardTable head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", ""]}
+    return <StandardTable head={[ "", "field.name", "field.comment", "field.createdOn", "field.modifiedOn", "" ]}
                           loading={loading}
                           emptyResults={<EmptyResults
                             icon={IconListSearch}
