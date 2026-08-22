@@ -1232,7 +1232,7 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
           await listener(event, value, marker);
         });
         const value = { key: "value" };
-        const event = eventEntity + NotifierService.delimiter + action + NotifierService.delimiter + state;
+        const event = eventEntity + NotifierService.delimiter + action + NotifierService.stateDelimiter + state;
         const expectedCallTimes = 2;
         {
           notifier.emit(eventEntity, action, state, value, marker);
@@ -1282,7 +1282,7 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
       const result = notifierService.emit<string>(eventEntity, action, state, value, marker, callbackListener);
       expect(result).toEqual(true);
       expect(onListener).toHaveBeenCalledTimes(1);
-      expect(onListener).toHaveBeenCalledWith(eventEntity + NotifierService.delimiter + action + NotifierService.delimiter + state, value, marker);
+      expect(onListener).toHaveBeenCalledWith(eventEntity + NotifierService.delimiter + action + NotifierService.stateDelimiter + state, value, marker);
       await waitForExpect(async () =>
       {
         expect(callbackListener).toHaveBeenCalledTimes(1);
@@ -1370,12 +1370,12 @@ describe("Miscellaneous via application", () =>
     }
     {
       const notification = notifications[index++];
-      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + "started");
+      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.stateDelimiter + "started");
       expect(notification.value).toEqual({ id: repository.id });
     }
     {
       const notification = notifications[index++];
-      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + "stopped");
+      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.stateDelimiter + "stopped");
       expect(notification.value).toEqual({ id: repository.id });
     }
 

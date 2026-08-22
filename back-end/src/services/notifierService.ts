@@ -66,8 +66,8 @@ export enum ImageEventAction
 {
   Created = "created",
   Updated = "updated",
-  TagsUpdated = "tagsUpdated",
-  FeaturesUpdated = "featuresUpdated",
+  TagsUpdated = "tags.updated",
+  FeaturesUpdated = "features.updated",
   Deleted = "deleted",
   Renamed = "renamed",
   ComputeFeatures = "computeFeatures",
@@ -120,6 +120,8 @@ export class NotifierService
 
   static readonly delimiter = ".";
 
+  static readonly stateDelimiter = "/";
+
   static readonly eventWildcardSuffix = ".**";
 
   private static count = 0;
@@ -134,16 +136,17 @@ export class NotifierService
 
   static buildEvent(eventEntity: EventEntity, action: EventAction, state?: string): string
   {
-    return `${eventEntity}${NotifierService.delimiter}${action}${state === undefined ? "" : (`${NotifierService.delimiter}${state}`)}`;
+    return `${eventEntity}${NotifierService.delimiter}${action}${state === undefined ? "" : (`${NotifierService.stateDelimiter}${state}`)}`;
   }
 
   static parseEvent(event: string): NotifierEvent
   {
-    const tokens = event.split(NotifierService.delimiter);
+    const primaryTokens = event.split(NotifierService.stateDelimiter);
+    const secondaryTokens = primaryTokens[0].split(NotifierService.delimiter);
     return {
-      eventEntity: tokens[0] as EventEntity,
-      action: tokens[1] as EventAction,
-      state: tokens.length >= 2 ? tokens[2] : undefined
+      eventEntity: secondaryTokens[0] as EventEntity,
+      action: secondaryTokens.slice(1).join(NotifierService.delimiter) as EventAction,
+      state: primaryTokens.length >= 1 ? primaryTokens[1] : undefined
     };
   }
 

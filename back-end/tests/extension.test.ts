@@ -292,7 +292,7 @@ describe("Extensions", () =>
     checkExtensionProcessStarted(): void
     {
       expect(this.startedListener).toHaveBeenCalledTimes(1);
-      expect(this.startedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.delimiter + ExtensionEventProcess.Started, { id: this.extensionId });
+      expect(this.startedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ExtensionEventProcess.Started, { id: this.extensionId });
     }
 
     async checkExtensionRunning(checkStartedFile: boolean = true, checkImageTouchedFile: boolean = true, environment: {
@@ -1099,9 +1099,9 @@ describe("Extensions", () =>
       });
       const maximumAttemptsCount = 3;
       expect(builder.startedListener).toHaveBeenCalledTimes(maximumAttemptsCount);
-      expect(builder.startedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.delimiter + ExtensionEventProcess.Started, { id: manifest.id });
+      expect(builder.startedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ExtensionEventProcess.Started, { id: manifest.id });
       expect(stoppedListener).toHaveBeenCalledTimes(maximumAttemptsCount);
-      expect(stoppedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.delimiter + ExtensionEventProcess.Stopped, { id: manifest.id });
+      expect(stoppedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ExtensionEventProcess.Stopped, { id: manifest.id });
     });
   });
 
@@ -2147,7 +2147,7 @@ describe("Extensions", () =>
     await builder.checkExtensionRunning(false, false);
   }, base.xxLargeTimeoutInMilliseconds);
 
-  test.each([ ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python ])("sdk", async (environment: ManifestRuntimeEnvironment) =>
+  test.each([ ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python ])("sdk for %p environment", async (environment: ManifestRuntimeEnvironment) =>
   {
     base.setSdkDirectoryPath();
     const extensionId = "id";

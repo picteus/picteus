@@ -1020,8 +1020,8 @@ describe("Repository", () =>
       expect(events.length).toBe(3);
     });
     expect(events[0]).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Created);
-    expect(events[1]).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + started);
-    expect(events[2]).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + stopped);
+    expect(events[1]).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.stateDelimiter + started);
+    expect(events[2]).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.stateDelimiter + stopped);
     for (const value of values)
     {
       expect(value).toEqual({ id: repositoryId });
