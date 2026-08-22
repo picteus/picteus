@@ -124,7 +124,13 @@ function localFiltersToSearchFilter(localFilters: LocalFiltersType): SearchFilte
       ...computeProperties(),
       ...computeSearchTags()
     },
-    ...(localFilters.repositories?.length ? {
+    ...(localFilters.images ? {
+      origin: {
+        kind: SearchOriginNature.Images,
+        ids: localFilters.images
+      }
+    } : {}),
+    ...(localFilters.repositories ? {
       origin: {
         kind: SearchOriginNature.Repositories,
         ids: localFilters.repositories
@@ -188,9 +194,16 @@ function searchFilterToLocalFilters(searchFilter: SearchFilter): LocalFiltersTyp
     }
   }
 
-  if (origin && origin.kind === SearchOriginNature.Repositories && origin.ids)
+  if (origin)
   {
-    localFilters.repositories = origin.ids;
+    if (origin.kind === SearchOriginNature.Images && origin.ids)
+    {
+      localFilters.images = origin.ids;
+    }
+    else if (origin.kind === SearchOriginNature.Repositories && origin.ids)
+    {
+      localFilters.repositories = origin.ids;
+    }
   }
 
   if (sorting)

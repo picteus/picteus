@@ -459,9 +459,11 @@ export default {
   selectedImages: {
     selectLabel: "Select bulk action for images",
     selectPlaceholder: "Choose an action",
-    buttonLabelWithCount_one: "image selected",
-    buttonLabelWithCount_other: "images selected",
-    buttonUnselectAll: "Unselect all"
+    buttonLabelWithCount_one: "1 image selected",
+    buttonLabelWithCount_other: "{{count}} images selected",
+    buttonUnselectAll: "Unselect all",
+    createCollection: "Create collection",
+    addToCollection: "Add to collection"
   },
   extensionIntent: {
     backToPicteus: "",

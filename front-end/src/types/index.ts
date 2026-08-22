@@ -231,8 +231,8 @@ export enum ChannelEnum
   IMAGE_PREFIX = "image",
   IMAGE_CREATED = "image.created",
   IMAGE_UPDATED = "image.updated",
-  IMAGE_TAGS_UPDATED = "image.tagsUpdated",
-  IMAGE_FEATURES_UPDATED = "image.featuresUpdated",
+  IMAGE_TAGS_UPDATED = "image.tags.updated",
+  IMAGE_FEATURES_UPDATED = "image.features.updated",
   IMAGE_DELETED = "image.deleted",
 }
 
@@ -279,6 +279,7 @@ export type LocalFiltersType = {
   features?: SearchFeatures;
   properties?: SearchProperties;
   tags?: string[];
+  images?: string[];
   repositories?: string[];
   sortBy?: SearchSortingProperty;
   sortOrder?: string;

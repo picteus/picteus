@@ -5,7 +5,7 @@ import i18n from "i18next";
 import { toast as ReactToast } from "react-toastify";
 
 
-function withTitleAndSubtitle(type: "info" | "error", title: string, subtitle: string): void
+function withTitleAndSubtitle(type: "info" | "error", title: string, subtitle?: string): void
 {
   const isInfo = type === "info";
   ReactToast(
@@ -20,12 +20,12 @@ function withTitleAndSubtitle(type: "info" | "error", title: string, subtitle: s
   );
 }
 
-function success(subtitle: string): void
+function success(subtitle?: string): void
 {
   return withTitleAndSubtitle("info", i18n.t("message.toastSuccessTitle"), subtitle);
 }
 
-function failure(subtitle: string): void
+function failure(subtitle?: string): void
 {
   return withTitleAndSubtitle("error", i18n.t("message.toastErrorTitle"), subtitle);
 }

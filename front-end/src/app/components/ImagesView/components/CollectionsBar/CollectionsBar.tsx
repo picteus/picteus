@@ -10,7 +10,13 @@ import {
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Collection as PicteusCollection, CommandEntity, SearchFilter, SearchFilterFromJSON } from "@picteus/ws-client";
+import {
+  Collection as PicteusCollection,
+  CommandEntity,
+  SearchFilter,
+  SearchFilterFromJSON,
+  SearchOriginNature
+} from "@picteus/ws-client";
 
 import { ChannelEnum } from "types";
 import { ToastService } from "utils";
@@ -59,7 +65,11 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
 
   useEffect(() =>
   {
-    if (event?.channel === ChannelEnum.COLLECTION_DELETED)
+    if (event?.channel === ChannelEnum.COLLECTION_CREATED || event?.channel === ChannelEnum.COLLECTION_UPDATED)
+    {
+      void loadCollections(true);
+    }
+    else if (event?.channel === ChannelEnum.COLLECTION_DELETED)
     {
       void loadCollections(true);
       if (EventService.computeEventEntityId<number>(event) === selectedCollection?.id)
@@ -82,7 +92,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
 
   useEffect(() =>
   {
-    setSaveDisabled(selectedCollection === undefined || searchFilter === undefined || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter)));
+    setSaveDisabled(selectedCollection === undefined || searchFilter === undefined || searchFilter.origin?.kind === SearchOriginNature.Images || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter)));
   }, [ searchFilter, selectedCollection ]);
 
   useImperativeHandle(ref, () => ({
@@ -191,13 +201,14 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
           })}
         </Menu.Dropdown>
       </Menu>
-      } {selectedCollection && (
-      <Tooltip label={t("button.save", { name: selectedCollection.name })}>
-        <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
-          <IconDeviceFloppy size={16}/>
-        </Button>
-      </Tooltip>
-    )}
+      }
+      {selectedCollection && (
+        <Tooltip label={t("button.save", { name: selectedCollection.name })}>
+          <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
+            <IconDeviceFloppy size={16}/>
+          </Button>
+        </Tooltip>
+      )}
       <Tooltip label={t("button.add")}>
         <Button variant="default" px="xs" disabled={!searchFilter} onClick={handleOnSaveCurrent}>
           <IconPlus size={16}/>

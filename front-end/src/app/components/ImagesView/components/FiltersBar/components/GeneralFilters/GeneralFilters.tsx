@@ -6,7 +6,7 @@ import { Repository } from "@picteus/ws-client";
 
 import { LocalFiltersType } from "types";
 import { FiltersService } from "app/services";
-import { FilterSelect } from "../../..";
+import { FilterSelect } from "..";
 
 
 type GeneralFiltersType = {
@@ -17,7 +17,7 @@ type GeneralFiltersType = {
 
 export default function GeneralFilters({ repositories, filters, onChangeFilter }: GeneralFiltersType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
 
   return (
     <Stack gap="md">

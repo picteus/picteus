@@ -1,5 +1,6 @@
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import {
+  ActionIcon,
   Box,
   Button,
   ComboboxItem,
@@ -11,17 +12,18 @@ import {
   Text
 } from "@mantine/core";
 import { useElementSize } from "@mantine/hooks";
-import { IconPhotoOff } from "@tabler/icons-react";
+import { IconLibrary, IconLibraryPlus, IconPhotoOff } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { CommandEntity, Manifest, SearchOriginNature } from "@picteus/ws-client";
+import { CommandEntity, Manifest, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
 
 import { ImageItemMode, UiCommandType } from "types";
 import { ToastService } from "utils";
-import { useImagesSelectedContext } from "app/context";
+import { useActionModalContext, useImagesSelectedContext } from "app/context";
 import { useConfirmAction, useExtensionCommandRunner, useExtensionCommandsWithEntities } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
 import {
+  Common,
   computeIcon,
   EmptyResults,
   ExtensionIcon,
@@ -29,6 +31,8 @@ import {
   ImageMenuSelectCommandEntry,
   ImageMenuSelectEntry
 } from "app/components";
+import { AddOrUpdateCollection } from "app/screens/CollectionsScreen/components";
+import { AddToCollection } from "./components";
 
 import style from "./SelectedImages.module.scss";
 
@@ -49,6 +53,8 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
   const extensionsImageCommands = useExtensionCommandsWithEntities([ CommandEntity.Images ]);
   const commandRunner = useExtensionCommandRunner();
   const [ selectedAction, setSelectedAction ] = useState<string>();
+  const [ isAddingToCollection, setAddingToCollection ] = useState<boolean>(false);
+  const [ , addModal, removeModal ] = useActionModalContext();
 
   useEffect(() =>
   {
@@ -172,6 +178,121 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
     });
   }
 
+  function handleCreateCollection()
+  {
+    const imageIds = selectedImages.map((image) => image.id);
+    const modalId = addModal({
+      title: t("addOrUpdateCollectionModal.addTitle"),
+      icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
+      size: "s",
+      component: (
+        <AddOrUpdateCollection
+          searchFilter={{
+            origin: {
+              kind: SearchOriginNature.Images,
+              ids: imageIds
+            },
+            sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false }
+          }}
+          onSuccess={() =>
+          {
+            clearSelectedImages();
+          }}
+          onClose={() => removeModal(modalId)}
+        />
+      )
+    });
+  }
+
+  function handleAddToCollection()
+  {
+    setAddingToCollection((previousState) => !previousState);
+  }
+
+  function renderSelectionInfo()
+  {
+    return (
+      <Flex align="center" justify="space-between">
+        <Flex align="center" gap="sm">
+          <Text size="sm" fw={700}>
+            {selectedImages?.length > 0 ? t("selectedImages.buttonLabelWithCount" + (selectedImages.length === 1 ? "_one" : "_other"), { count: selectedImages?.length }) : " "}
+          </Text>
+          {selectedImages.length > 0 && (
+            <Flex gap={5}>
+              <ActionIcon
+                onClick={handleCreateCollection}
+                title={t("selectedImages.createCollection")}
+                variant="subtle"
+                size="sm"
+                color="gray"
+              >
+                <IconLibrary size={Common.IconSmallSize}/>
+              </ActionIcon>
+              <ActionIcon
+                onClick={handleAddToCollection}
+                title={t("selectedImages.addToCollection")}
+                variant="subtle"
+                size="sm"
+                color="gray"
+              >
+                <IconLibraryPlus size={Common.IconSmallSize}/>
+              </ActionIcon>
+            </Flex>
+          )}
+        </Flex>
+        {selectedImages.length > 0 && (
+          <Text
+            onClick={clearSelectedImages}
+            style={{ cursor: "pointer" }}
+            size="xs"
+            c="dimmed"
+            td="underline"
+          >
+            {t("selectedImages.buttonUnselectAll")}
+          </Text>
+        )}
+      </Flex>
+    );
+  }
+
+  function renderBulkActions()
+  {
+    return <Flex align="flex-end" gap={5}>
+      <Select
+        allowDeselect={false}
+        style={{ flex: 1 }}
+        onChange={(value) => setSelectedAction(value)}
+        value={selectedAction}
+        leftSection={computeLeftSection()}
+        placeholder={t("selectedImages.selectPlaceholder")}
+        label={t("selectedImages.selectLabel")}
+        data={computeSelectData()}
+        renderOption={computeSelectRenderOption}
+        maxDropdownHeight={containerHeight - 50}
+        comboboxProps={{ withinPortal: false, position: "top" }}
+      />
+      <Button
+        disabled={!selectedAction || selectedImages.length === 0}
+        onClick={handleOnApplyAction}
+      >
+        {t("button.apply")}
+      </Button>
+    </Flex>;
+  }
+
+  function renderAddToCollection()
+  {
+    return <AddToCollection
+      imageIds={selectedImages.map((image) => image.id)}
+      onSuccess={() =>
+      {
+        clearSelectedImages();
+        setAddingToCollection(false);
+      }}
+      onClose={() => setAddingToCollection(false)}
+    />;
+  }
+
   return (<Stack ref={containerRef} align="stretch" justify="space-between" gap={10} className={style.container}>
       <Box ref={imagesContainerRef} flex={1} className={style.images}>
         {selectedImages.length === 0 ? (
@@ -195,42 +316,8 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
       </Box>
       <Stack gap={5}>
         <Divider/>
-        <Flex align="center" justify="space-between">
-          <Text size="sm" fw={700}>
-            {selectedImages?.length > 0 ? t("selectedImages.buttonLabelWithCount", { count: selectedImages?.length }) : " "}
-          </Text>
-          {selectedImages.length > 0 &&
-            <Text
-              onClick={clearSelectedImages}
-              style={{ cursor: "pointer" }}
-              size="xs"
-              c="dimmed"
-              td="underline"
-            >
-              {t("selectedImages.buttonUnselectAll")}
-            </Text>}
-        </Flex>
-        <Flex align="flex-end" gap={5}>
-          <Select
-            allowDeselect={false}
-            style={{ flex: 1 }}
-            onChange={(value) => setSelectedAction(value)}
-            value={selectedAction}
-            leftSection={computeLeftSection()}
-            placeholder={t("selectedImages.selectPlaceholder")}
-            label={t("selectedImages.selectLabel")}
-            data={computeSelectData()}
-            renderOption={computeSelectRenderOption}
-            maxDropdownHeight={containerHeight - 50}
-            comboboxProps={{ withinPortal: false, position: "top" }}
-          />
-          <Button
-            disabled={!selectedAction || selectedImages.length === 0}
-            onClick={handleOnApplyAction}
-          >
-            {t("button.apply")}
-          </Button>
-        </Flex>
+        {renderSelectionInfo()}
+        {isAddingToCollection ? renderAddToCollection() : renderBulkActions()}
       </Stack>
     </Stack>
   );
