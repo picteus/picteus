@@ -5,8 +5,8 @@ import {
   IconDeviceFloppy,
   IconLibrary,
   IconLibraryPhoto,
-  IconPlus,
-  IconWand
+  IconPlayerPlayFilled,
+  IconPlus
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -165,25 +165,26 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
       <Menu shadow="md" width={width} position="bottom" trigger="click-hover" opened={menuOpened}
             onChange={setMenuOpened}>
         <Menu.Target>
-          <Button variant="default" w={width} leftSection={<IconLibraryPhoto size={14}/>}
-                  rightSection={<IconChevronDown size={14}/>}>
+          <Button variant="default" w={width} leftSection={<IconLibraryPhoto size={Common.IconSmallSize}/>}
+                  rightSection={<IconChevronDown size={Common.IconSmallSize}/>}>
             {selectedCollection ? truncateName(selectedCollection.name) : t("field.collections")}
           </Button>
         </Menu.Target>
         <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
           {loading && <Box p="sm"><Center><Loader size="sm"/></Center></Box>}
           {!loading && collections.map((collection) => (
-            <Menu.Item key={collection.id} leftSection={<CollectionIcon collection={collection}/>} onClick={() => handleOnSelectedCollection(collection)}>
+            <Menu.Item key={collection.id} leftSection={<CollectionIcon collection={collection}/>}
+                       onClick={() => handleOnSelectedCollection(collection)}>
               <Text size="sm">{truncateName(collection.name)}</Text>
             </Menu.Item>
           ))}
         </Menu.Dropdown>
       </Menu>
-      {Math.random() > 1 && <Menu shadow="md" width={340} position="bottom" trigger="click-hover" withinPortal={true}>
+      {<Menu shadow="md" width={160} position="bottom" trigger="click-hover" withinPortal={true}>
         <Menu.Target>
           <Button variant="default" px="xs"
                   disabled={!searchFilter || !extensionsImageCommands || extensionsImageCommands.length === 0}>
-            <IconWand size={16}/>
+            <IconPlayerPlayFilled size={Common.IconSmallSize}/>
           </Button>
         </Menu.Target>
         <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
@@ -206,13 +207,13 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
       {selectedCollection && (
         <Tooltip label={t("button.save", { name: selectedCollection.name })}>
           <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
-            <IconDeviceFloppy size={16}/>
+            <IconDeviceFloppy size={Common.IconSmallSize}/>
           </Button>
         </Tooltip>
       )}
       <Tooltip label={t("button.add")}>
         <Button variant="default" px="xs" disabled={!searchFilter} onClick={handleOnSaveCurrent}>
-          <IconPlus size={16}/>
+          <IconPlus size={Common.IconSmallSize}/>
         </Button>
       </Tooltip>
     </Button.Group>

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionIcon, Kbd, Menu } from "@mantine/core";
-import { IconBox } from "@tabler/icons-react";
+import { IconPlayerPlayFilled } from "@tabler/icons-react";
 
 import { CommandEntity, ManifestCapabilityId, SearchOriginNature } from "@picteus/ws-client";
 
@@ -116,7 +116,7 @@ export default function GeneralCommands()
     >
       <Menu.Target>
         <ActionIcon size="md">
-          <IconBox stroke={Common.IconStrokeSize}/>
+          <IconPlayerPlayFilled stroke={Common.IconStrokeSize}/>
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown>{menu}</Menu.Dropdown>

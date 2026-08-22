@@ -1,13 +1,13 @@
 import React from "react";
 import { Button, CloseButton, Group, Menu, Stack, Text, Tooltip } from "@mantine/core";
-import { IconChevronDown, IconSquare, IconSquareCheck } from "@tabler/icons-react";
+import { IconChevronDown, IconPlayerPlayFilled, IconSquare, IconSquareCheck } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Image } from "@picteus/ws-client";
 
 import { ViewMode } from "types";
 import { useImagesSelectedContext } from "app/context";
-import { CopyText, ExternalLink, ImageItemMenu, TopPanel } from "app/components";
+import { Common, CopyText, ExternalLink, ImageItemMenu, TopPanel } from "app/components";
 import { ImageDimensions, ImageRatio, ImageWeight } from "../index.ts";
 
 import style from "./ImageTop.module.scss";
@@ -21,7 +21,7 @@ type ImageTopType = {
 
 export default function ImageTop({ image, viewMode, onClose }: ImageTopType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
   const isSelected = isSelectedImage(image);
 
@@ -58,6 +58,7 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType)
           <Menu.Target>
             <Button
               variant="default"
+              leftSection={<IconPlayerPlayFilled stroke={Common.IconStrokeSize}/>}
               rightSection={<IconChevronDown stroke={1.2} size={16}/>}
             >
               {t("menu.imageCommands")}
