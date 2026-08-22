@@ -4,13 +4,14 @@ import logging
 import os
 import ssl
 import threading
-from typing import Any, Optional, Callable, List
+from typing import Optional, Callable, List
 
 import clip
 import torch
 from PIL import Image
 from PIL.ImageFile import ImageFile
-from picteus_extension_sdk import PicteusExtension, EventName, Communicator, SettingsValue, EventValue, Versions
+from picteus_extension_sdk import PicteusExtension, Communicator, SettingsValue, Versions, \
+    CommandParameters
 from picteus_ws_client import ImageFormat, ImageEmbedding, ImageResizeRender, SearchParameters, SearchFilter
 
 os.environ["HF_HOME"] = PicteusExtension.get_cache_directory_path()
@@ -37,34 +38,31 @@ class Embeddings(PicteusExtension):
     async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
         self._setup(value)
 
-    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
-        if event == EventName.PROCESS_RUN_COMMAND:
-            command_id = value.get("commandId")
-            if command_id == "compute":
-                parameters = value.get("parameters", {})
-                collection_id = parameters.get("collectionId")
-                clip_enabled = parameters.get("clipEnabled", True)
-                dino_enabled = parameters.get("dinoEnabled", True)
-                if collection_id:
-                    return await self._handle_compute_command(communicator, collection_id, clip_enabled, dino_enabled)
-                return None
-        elif event == EventName.IMAGE_CREATED or event == EventName.IMAGE_UPDATED or event == EventName.IMAGE_COMPUTE_EMBEDDINGS:
-            image_id: str = value["id"]
-            return await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
-        elif event == EventName.TEXT_COMPUTE_EMBEDDINGS:
-            text: str = value["text"]
-            return await self._compute_text_embeddings(communicator, text)
+    async def on_image_created(self, communicator: Communicator, image_id: str) -> None:
+        return await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
 
-        return None
+    async def on_image_updated(self, communicator: Communicator, image_id: str) -> None:
+        return await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
 
-    async def _handle_compute_command(self, communicator: Communicator, collection_id: str, clip_enabled: bool,
-                                      dino_enabled: bool) -> None:
-        search_result = self.get_image_api().image_search_ids(SearchParameters(collection_id=collection_id))
-        items = search_result.items
-        communicator.send_log(
-            f"Found {len(items)} images in the collection with id '{collection_id}': now, computing their embeddings…",
-            "info")
-        await self._compute_images_embeddings(communicator, items, clip_enabled, dino_enabled)
+    async def on_compute_image_embeddings(self, communicator: Communicator, image_id: str) -> None:
+        return await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
+
+    async def on_process_command(self, communicator: Communicator, command_id: str,
+                                 parameters: CommandParameters) -> None:
+        if command_id == "compute":
+            collection_id: int = parameters["collectionId"]
+            clip_enabled: bool = parameters["clipEnabled"]
+            dino_enabled: bool = parameters["dinoEnabled"]
+            search_result = self.get_image_api().image_search_ids(
+                search_parameters=SearchParameters(collection_id=collection_id))
+            items = search_result.items
+            communicator.send_log(
+                f"Found {len(items)} images in the collection with id '{collection_id}': now, computing their embeddings…",
+                "info")
+            await self._compute_images_embeddings(communicator, items, clip_enabled, dino_enabled)
+
+    async def on_compute_text_embeddings(self, communicator: Communicator, text: str) -> list[float]:
+        return await self.run_in_executor(lambda: self._compute_clip_text_embedding(communicator, text))
 
     async def _compute_images_embeddings(self, communicator: Communicator, ids: List[str], clip_enabled: bool,
                                          dino_enabled: bool):

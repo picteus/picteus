@@ -52,7 +52,7 @@
               "collectionId": {
                 "type": "integer",
                 "title": "Collection",
-                "description": "What is the collection the images the computation should be run for?",
+                "description": "What is the collection of images the computation should be run for?",
                 "ui": {
                   "widget": "collection"
                 }
