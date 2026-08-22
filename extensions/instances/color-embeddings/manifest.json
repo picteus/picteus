@@ -52,16 +52,16 @@
       },
       "commands": [
         {
-          "id": "computeEmbeddings",
+          "id": "compute",
           "on": {
             "entity": "Images"
           },
           "specifications": [
             {
               "locale": "en",
-              "label": "Compute embeddings",
-              "name": "Compute color embeddings",
-              "description": "Manually computes or refreshes the color embeddings for the selected images."
+              "label": "Compute",
+              "name": "Compute color embedding and features",
+              "description": "Manually computes or refreshes the color embedding and the features for the selected images."
             }
           ]
         }
