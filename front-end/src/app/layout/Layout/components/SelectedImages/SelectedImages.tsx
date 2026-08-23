@@ -39,6 +39,8 @@ import style from "./SelectedImages.module.scss";
 
 const commandSeparator = "$$";
 
+const commandEntities = [ CommandEntity.Images ];
+
 type SelectedImagesType = {
   onProcessing: (value: boolean) => void;
 };
@@ -50,7 +52,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
   const imagesContainerRef = useRef<HTMLDivElement>(null);
   const { ref: containerRef, height: containerHeight } = useElementSize();
   const { selectedImages, clearSelectedImages } = useImagesSelectedContext();
-  const extensionsImageCommands = useExtensionCommandsWithEntities([ CommandEntity.Images ]);
+  const extensionsImageCommands = useExtensionCommandsWithEntities(commandEntities);
   const commandRunner = useExtensionCommandRunner();
   const [ selectedAction, setSelectedAction ] = useState<string>();
   const [ isAddingToCollection, setAddingToCollection ] = useState<boolean>(false);

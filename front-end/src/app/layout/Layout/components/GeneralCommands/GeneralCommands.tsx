@@ -15,12 +15,14 @@ import {
 import { CommandIcon, Common, MenuItemEntry, TextToImages } from "app/components";
 
 
+const commandEntities = [ CommandEntity.Process ];
+
 export default function GeneralCommands()
 {
   const [ t ] = useTranslation();
   const [ , addModal ] = useActionModalContext();
   const commandRunner = useExtensionCommandRunner();
-  const extensionsProcessCommands = useExtensionCommandsWithEntities([ CommandEntity.Process ]);
+  const extensionsProcessCommands = useExtensionCommandsWithEntities(commandEntities);
   const extensionsWithTextEmbeddingsCapability = useExtensionCommandsWithCapability(ManifestCapabilityId.TextEmbeddings);
 
   useEffect(() =>

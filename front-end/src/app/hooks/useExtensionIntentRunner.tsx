@@ -29,6 +29,8 @@ import { ExtensionSettingsModal } from "app/screens/ExtensionsScreen/components"
 import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
 
 
+const commandEntities = [ CommandEntity.Process ];
+
 export interface IntentListener
 {
   onSuccess: (result?: any) => void;
@@ -45,7 +47,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
   const commandRunner = useExtensionCommandRunner();
   const openWindow = useOpenWindow();
   const confirmAction = useConfirmAction();
-  const processCommands = useExtensionCommandsWithEntities([ CommandEntity.Process ]);
+  const processCommands = useExtensionCommandsWithEntities(commandEntities);
 
   return (extensionId: string, intent: ShowIntent | UiIntent | ProcessCommandIntent, listener: IntentListener): void =>
   {

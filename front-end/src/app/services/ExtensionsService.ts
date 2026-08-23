@@ -148,21 +148,17 @@ function getExtensionsCommands(
   //getConfiguration() returns commands only for extensions with status "Enabled"
   const extensionsConfigurations = getConfiguration();
   const extensions = list();
-  return extensionsConfigurations?.commands
-    ?.filter((entity) => entityTypes.indexOf(entity.command.on?.entity) !== -1)
+  return extensionsConfigurations?.commands.filter((entity) => entityTypes.indexOf(entity.command.on.entity) !== -1)
     .map((entity) =>
     {
-      const language = i18n.language;
-      const extension = extensions?.find(
-        (extension) => extension.manifest.id === entity.extensionId
-      );
+      const extension = extensions.find((extension) => extension.manifest.id === entity.extensionId);
       return {
         extension,
         command: {
           id: entity.command.id,
           withTags: entity.command.on?.withTags,
           label: entity.command.specifications.find(
-            (specification) => specification.locale === language
+            (specification) => specification.locale === i18n.language
           ).label,
           form: { parameters: entity.command.parameters },
           iconUri: entity.command.ui?.iconUri

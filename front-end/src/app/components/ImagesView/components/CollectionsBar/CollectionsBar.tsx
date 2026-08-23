@@ -33,6 +33,8 @@ export interface CollectionsBarRef
   clearCollection: () => void;
 }
 
+const commandEntities = [ CommandEntity.Images ];
+
 type CollectionsBarType = {
   searchFilter?: SearchFilter;
   initialCollectionId?: number;
@@ -51,7 +53,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const commandRunner = useExtensionCommandRunner();
-  const extensionsImageCommands = useExtensionCommandsWithEntities([ CommandEntity.Images ]);
+  const extensionsImageCommands = useExtensionCommandsWithEntities(commandEntities);
   const [ collections, setCollections ] = useState<PicteusCollection[]>([]);
   const [ menuOpened, setMenuOpened ] = useState<boolean>(false);
   const [ selectedCollection, setSelectedCollection ] = useState<PicteusCollection | undefined>();

@@ -141,8 +141,17 @@ export default function ExtensionsScreen()
   async function fetchAllExtensions()
   {
     setLoading(true);
-    setExtensions((await ExtensionsService.fetchAll()).extensions);
-    setLoading(false);
+    try
+    {
+      await ExtensionsService.fetchAll().then(({ extensions }) =>
+      {
+        setExtensions(extensions);
+      }).catch(ToastService.apiCallError);
+    }
+    finally
+    {
+      setLoading(false);
+    }
   }
 
   const rows = useMemo(() =>

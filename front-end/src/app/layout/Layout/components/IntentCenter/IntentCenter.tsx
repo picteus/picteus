@@ -1,6 +1,7 @@
 import React, { useEffect, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { randomId } from "@mantine/hooks";
+import i18n from "i18next";
 
 import {
   ActionIntent,
@@ -196,7 +197,8 @@ export default function IntentCenter()
       async function handleToast(toastIntent: ToastIntent): Promise<void>
       {
         const toast = toastIntent.toast;
-        ToastService.withTitleAndSubtitle(toast.type, toast.title, toast.subtitle);
+        const title = toast.title ?? (toast.type === "error" ? i18n.t("message.toastFailureTitle") : (toast.type === "cancel" ? i18n.t("message.toastCancelTitle") : i18n.t("message.toastSuccessTitle")));
+        ToastService.withTitleAndSubtitle(toast.type, title, toast.subtitle);
         respondWithValue();
       }
 
