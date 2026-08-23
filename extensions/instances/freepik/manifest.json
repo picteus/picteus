@@ -166,7 +166,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Magnify image",
+              "label": "Magnify",
+              "name": "Magnify image",
               "description": "Upscales the provided images via Magnific and store it into the same repository."
             }
           ]
@@ -234,7 +235,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Expands image",
+              "label": "Expand",
+              "name": "Expand image",
               "description": "Expands the provided images via Magnific and store it into the same repository."
             }
           ]

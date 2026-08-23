@@ -31,7 +31,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Read the C2PA metadata",
+              "label": "Read metadata",
+              "name": "Read the C2PA metadata",
               "description": "Given images, it scans them against the C2PA database and subsequently update their metadata by attaching the JSON content retrieved and their attached thumbnails."
             }
           ]

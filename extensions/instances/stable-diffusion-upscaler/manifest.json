@@ -32,14 +32,15 @@
       },
       "commands": [
         {
-          "id": "upscaleImage",
+          "id": "upscale",
           "on": {
             "entity": "Images"
           },
           "specifications": [
             {
               "locale": "en",
-              "label": "Upscale an image",
+              "label": "Upscale",
+              "name": "Upscale an image",
               "description": "Upscales the provided images via the Stable Diffusion ML model and stores them into the same repository."
             }
           ]

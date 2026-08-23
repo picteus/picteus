@@ -6,7 +6,7 @@ from typing import Any, List, Optional
 from PIL import Image
 from PIL.ImageFile import ImageFile
 from picteus_extension_sdk import PicteusExtension, Communicator, SettingsValue, IntentImage, \
-    ImagesIntent, IntentImages, Helper, IntentDialogIconContent, EventName, EventValue
+    ImagesIntent, IntentImages, Helper, IntentDialogIconContent, CommandParameters
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
     InstructionsPrompt, PromptKind, GenerationRecipePrompt, ImageFeatureValue
@@ -22,15 +22,14 @@ class BriaExtension(PicteusExtension):
         self._pipe: Optional[Any] = None
 
     async def on_ready(self, communicator: Optional[Communicator]) -> None:
-        await super().on_ready(communicator)
         await self._setup(self.get_settings())
 
     async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
-        await self._setup(self.get_settings())
+        await self._setup(value)
 
-    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
-        if event == EventName.IMAGE_RUN_COMMAND:
-            image_ids: List[str] = value["imageIds"]
+    async def on_images_command(self, communicator: Communicator, command_id: str, image_ids: List[str],
+                                parameters: CommandParameters) -> None:
+        if command_id == "removeBackground":
             new_images: List[IntentImage] = []
             for image_id in image_ids:
                 new_image = await self._handle_image(communicator, image_id)
@@ -43,13 +42,11 @@ class BriaExtension(PicteusExtension):
                                                                                title="Background-less images",
                                                                                description="These are the images without background"))))
 
-        return None
-
     async def _handle_image(self, communicator: Communicator, image_id: str) -> PicteusImage | None:
-        image: PicteusImage = self.get_image_api().image_get(image_id)
+        image: PicteusImage = self.get_image_api().image_get(id=image_id)
         communicator.send_log(f"Removing the background of the image with URL '{image.url}'", "info")
 
-        repository: Repository = self.get_repository_api().repository_get(image.repository_id)
+        repository: Repository = self.get_repository_api().repository_get(id=image.repository_id)
         name_without_extension = os.path.splitext(os.path.basename(image.name))[0]
         relative_directory_path: str = os.path.split(image.url[len(repository.url) + 1:])[0]
 
@@ -60,13 +57,13 @@ class BriaExtension(PicteusExtension):
         new_image.save(scaled_image_bytes_array, format="PNG")
         new_image_bytes = scaled_image_bytes_array.getvalue()
         recipe: GenerationRecipe = GenerationRecipe(schemaVersion=Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-                                                    software="picteus",
+                                                    software=PicteusExtension.SOFTWARE,
                                                     modelTags=[self._model], inputAssets=[image.id],
                                                     aspectRatio=image.dimensions.width / image.dimensions.height,
                                                     prompt=GenerationRecipePrompt(
                                                         InstructionsPrompt(kind=PromptKind.INSTRUCTIONS, value={})))
-        stored_image: PicteusImage = self.get_repository_api().repository_store_image(repository.id,
-                                                                                      new_image_bytes,
+        stored_image: PicteusImage = self.get_repository_api().repository_store_image(id=repository.id,
+                                                                                      body=new_image_bytes,
                                                                                       name_without_extension=name_without_extension + "_backgroundless",
                                                                                       relative_directory_path=relative_directory_path,
                                                                                       application_metadata=ApplicationMetadata(
@@ -76,10 +73,9 @@ class BriaExtension(PicteusExtension):
                                                                                               value=ApplicationMetadataItemValue(
                                                                                                   recipe))]).to_json(),
                                                                                       parent_id=image.id)
-        self.get_image_api().image_set_features(stored_image.id, self.extension_id,
-                                                [ImageFeature(type=ImageFeatureType.RECIPE,
-                                                              format=ImageFeatureFormat.JSON,
-                                                              value=ImageFeatureValue(recipe.to_json()))])
+        self.get_image_api().image_set_features(id=stored_image.id, extension_id=self.extension_id, image_feature=[
+            ImageFeature(type=ImageFeatureType.RECIPE, format=ImageFeatureFormat.JSON,
+                         value=ImageFeatureValue(recipe.to_json()))])
         return stored_image
 
     def _remove_image_background(self, pil_image: ImageFile) -> ImageFile:
@@ -90,7 +86,7 @@ class BriaExtension(PicteusExtension):
     def _ensure_pipeline(self) -> None:
         from transformers import pipeline
         if self._pipe is None:
-            self._pipe = pipeline("image-segmentation", model=self._model, trust_remote_code=True,
+            self._pipe = pipeline(task="image-segmentation", model=self._model, trust_remote_code=True,
                                   cache_dir=PicteusExtension.get_cache_directory_path())
 
     async def _setup(self, value: SettingsValue) -> None:

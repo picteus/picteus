@@ -1,15 +1,14 @@
 import {
   ApplicationMetadata,
+  type CommandParameters,
   Communicator,
-  EventName,
-  type EventValue,
   GenerationRecipe,
   Helper,
   type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
-  ImageMetadata,
   IntentDialogType,
+  IntentToastType,
   PicteusExtension,
   PromptKind,
   Repository,
@@ -171,18 +170,7 @@ class FreepikExtension extends PicteusExtension
   protected async onReady(communicator?: Communicator): Promise<void>
   {
     await this.setup(await this.getSettings());
-    const ensureRepository = async (): Promise<void> =>
-    {
-      const name = PicteusExtension.getManifest().name;
-      this.repository = await this.getRepositoryApi().repositoryEnsure({
-        technicalId: this.extensionId,
-        name,
-        comment: `The ${name} repository`,
-        watch: true
-      });
-      communicator.sendLog(`The repository '${name}' is available`, "info");
-    };
-    await ensureRepository();
+    await this.ensureRepository(communicator);
   }
 
   protected async onSettings(_communicator: Communicator, value: SettingsValue): Promise<void>
@@ -190,32 +178,36 @@ class FreepikExtension extends PicteusExtension
     await this.setup(value);
   }
 
-  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onImageCreated(_communicator: Communicator, imageId: string): Promise<void>
   {
-    if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeTags)
+    await this.computeTags(imageId);
+  }
+
+  protected async onImageUpdated(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeTags(imageId);
+  }
+
+  protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeTags(imageId);
+  }
+
+  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: CommandParameters): Promise<void>
+  {
+    if (commandId === "magnifyImage")
     {
-      const imageId: string = value["id"];
-      const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-      await this.computeTags(imageId, metadata);
+      await this.processImages(communicator, parameters, imageIds, new UpscaleInvoker(this.freepikApiKey));
     }
-    else if (event === EventName.ImageRunCommand)
+    else if (commandId === "expandImage")
     {
-      const commandId: string = value["commandId"];
-      const imageIds: string[] = value["imageIds"];
-      const parameters: Record<string, any> = value["parameters"];
-      if (commandId === "magnifyImage")
-      {
-        await this.processImages(communicator, parameters, imageIds, new UpscaleInvoker(this.freepikApiKey));
-      }
-      else if (commandId === "expandImage")
-      {
-        await this.processImages(communicator, parameters, imageIds, new ExpandInvoker(this.freepikApiKey));
-      }
+      await this.processImages(communicator, parameters, imageIds, new ExpandInvoker(this.freepikApiKey));
     }
   }
 
-  private async computeTags(imageId: string, metadata: ImageMetadata): Promise<void>
+  private async computeTags(imageId: string): Promise<void>
   {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
     let hasMatchingMakeMetadata: boolean = false;
     if (metadata.all !== undefined)
     {
@@ -232,7 +224,12 @@ class FreepikExtension extends PicteusExtension
   {
     if ((await this.checkFreepikApiKey(communicator)) === false)
     {
-      return;
+      return communicator.launchIntent({
+        toast: {
+          type: IntentToastType.Cancel,
+          subtitle: "The Freepik API key is not defined"
+        }
+      });
     }
     const processImageUrls = async (imageId: string, taskId: string, generationParameters: FreepikGenerationParameters, urls: string[] | null): Promise<void> =>
     {
@@ -252,17 +249,16 @@ class FreepikExtension extends PicteusExtension
       }
       else
       {
-        const downloadImageUrl = async (url: string): Promise<Blob> =>
+        const downloadImage = async (url: string): Promise<Blob> =>
         {
           // We fetch the generated image
           const response = await fetch(url);
           const arrayBuffer = await response.arrayBuffer();
           return new Blob([ arrayBuffer ], {});
-
         };
         const handleImageUrl = async (index: number | undefined, url: string): Promise<void> =>
         {
-          const blob = await downloadImageUrl(url);
+          const blob = await downloadImage(url);
           const recipe: GenerationRecipe =
             {
               schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
@@ -336,11 +332,7 @@ class FreepikExtension extends PicteusExtension
     for (const imageId of imageIds)
     {
       // We retrieve the original image
-      const blob = await this.getImageApi().imageDownload({
-        id: imageId,
-        stripMetadata: true
-      });
-
+      const blob = await this.getImageApi().imageDownload({ id: imageId, stripMetadata: true });
       const buffer = Buffer.from(await blob.arrayBuffer());
       const generationParameters: FreepikGenerationParameters = invoker.computeGenerationParameters(parameters);
       const extractGeneratedUrls = (response: GetStyleTransferTaskStatus200Response): string[] =>
@@ -398,6 +390,17 @@ class FreepikExtension extends PicteusExtension
     this.freepikApiKey = value["apiKey"]!;
   }
 
+  private async ensureRepository(communicator: Communicator): Promise<void>
+  {
+    const name = PicteusExtension.getManifest().name;
+    this.repository = await this.getRepositoryApi().repositoryEnsure({
+      technicalId: this.extensionId,
+      name,
+      comment: `The ${name} repository`,
+      watch: true
+    });
+    communicator.sendLog(`The repository '${name}' is available`, "info");
+  };
 }
 
 new FreepikExtension().run().catch((error) =>

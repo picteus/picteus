@@ -366,6 +366,7 @@
                 "description": "The toast type.",
                 "enum": [
                   "info",
+                  "cancel",
                   "error"
                 ],
                 "default": "info"

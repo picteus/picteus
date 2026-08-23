@@ -1,12 +1,13 @@
 import { type ChatResponse, Ollama } from "ollama";
 
 import {
+  CommandError,
+  type CommandParameters,
   Communicator,
-  EventName,
-  type EventValue,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
+  ImageResizeRender,
   IntentDialogType,
   PicteusExtension,
   type SettingsValue,
@@ -41,8 +42,7 @@ class OllamaExtension extends PicteusExtension
   {
     if (versions.current === "0.5.0")
     {
-      const extensionSettings = await this.getExtensionApi().extensionResetSettings({ id: this.extensionId });
-      await this.setup(communicator, extensionSettings);
+      await this.getExtensionApi().extensionResetSettings({ id: this.extensionId });
     }
   }
 
@@ -56,72 +56,54 @@ class OllamaExtension extends PicteusExtension
     await this.setup(communicator, value);
   }
 
-  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onImageCreated(communicator: Communicator, imageId: string): Promise<void>
   {
-    if ((event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeFeatures) || event === EventName.ImageComputeTags)
-    {
-      const imageId = value["id"];
-      let imageUint8Array: Uint8Array | undefined;
-      const getUint8Array = async (): Promise<Uint8Array> =>
-      {
-        if (imageUint8Array === undefined)
-        {
-          imageUint8Array = await this.downloadImage(imageId);
-        }
-        return imageUint8Array;
-      };
+    await this.computeTagsAndFeatures(communicator, imageId);
+  }
 
-      if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeFeatures)
-      {
-        if (this.captionEnabled)
-        {
-          await this.computeCaption(communicator, imageId, await getUint8Array());
-        }
-      }
-      if (this.tagsEnabled)
-      {
-        await this.computeTags(communicator, imageId, await getUint8Array());
-      }
-    }
-    else if (event === EventName.ImageRunCommand)
+  protected async onImageUpdated(communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeTagsAndFeatures(communicator, imageId);
+  }
+
+  protected async onComputeImageTags(communicator: Communicator, imageId: string): Promise<void>
+  {
+    if (this.tagsEnabled)
     {
-      const imageIds: string[] = value["imageIds"];
+      await this.computeTags(communicator, imageId, await this.downloadImage(imageId));
+    }
+  }
+
+  protected async onComputeImageFeatures(communicator: Communicator, imageId: string): Promise<void>
+  {
+    if (this.captionEnabled)
+    {
+      await this.computeFeatures(communicator, imageId, await this.downloadImage(imageId));
+    }
+  }
+
+  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: CommandParameters): Promise<void>
+  {
+    if (commandId === "askQuestion")
+    {
       const imageId = imageIds[0];
-      const parameters: Record<string, any> = value["parameters"];
       await this.askQuestion(communicator, imageId, parameters["model"], parameters["question"]);
     }
   }
 
-  private async computeCaption(communicator: Communicator, imageId: string, imageUint8Array: Uint8Array): Promise<void>
+  private async computeTagsAndFeatures(communicator: Communicator, imageId: string): Promise<void>
   {
-    if (await this.ensureOllamaServer(communicator, false) === false)
+    if (this.captionEnabled === true || this.tagsEnabled === true)
     {
-      return;
-    }
-    if (this.captionModels !== undefined)
-    {
-      const modelAndCaptions = [];
-      for (const model of this.captionModels)
+      const imageUint8Array = await this.downloadImage(imageId);
+      if (this.tagsEnabled)
       {
-        if (await this.ensureOllamaModels(communicator, [ model ], false) === true)
-        {
-          for (const question of this.captionQuestions || [])
-          {
-            const caption: string = await this.requestOllama(communicator, model, imageUint8Array, question);
-            modelAndCaptions.push({ model, caption });
-          }
-        }
+        await this.computeTags(communicator, imageId, imageUint8Array);
       }
-      await this.getImageApi().imageSetFeatures({
-        id: imageId,
-        extensionId: this.parameters.extensionId,
-        imageFeature: modelAndCaptions.map(modelAndCaption => ({
-          type: ImageFeatureType.Caption,
-          format: ImageFeatureFormat.String,
-          name: modelAndCaption.model,
-          value: modelAndCaption.caption
-        }))
-      });
+      if (this.captionEnabled)
+      {
+        await this.computeFeatures(communicator, imageId, imageUint8Array);
+      }
     }
   }
 
@@ -161,17 +143,58 @@ class OllamaExtension extends PicteusExtension
     }
   }
 
+  private async computeFeatures(communicator: Communicator, imageId: string, imageUint8Array: Uint8Array): Promise<void>
+  {
+    if (await this.ensureOllamaServer(communicator, false) === false)
+    {
+      return;
+    }
+    if (this.captionModels !== undefined)
+    {
+      const modelAndCaptions = [];
+      for (const model of this.captionModels)
+      {
+        if (await this.ensureOllamaModels(communicator, [ model ], false) === true)
+        {
+          for (const question of this.captionQuestions || [])
+          {
+            const caption: string = await this.requestOllama(communicator, model, imageUint8Array, question);
+            modelAndCaptions.push({ model, caption });
+          }
+        }
+      }
+      await this.getImageApi().imageSetFeatures({
+        id: imageId,
+        extensionId: this.parameters.extensionId,
+        imageFeature: modelAndCaptions.map(modelAndCaption => ({
+          type: ImageFeatureType.Caption,
+          format: ImageFeatureFormat.String,
+          name: modelAndCaption.model,
+          value: modelAndCaption.caption
+        }))
+      });
+    }
+  }
+
   private async askQuestion(communicator: Communicator, imageId: string, model: string, question: string): Promise<void>
   {
     if (await this.ensureOllamaServer(communicator, false) === false)
     {
-      throw new Error("The Ollama server is not available");
+      throw new CommandError("The Ollama server is not available");
     }
     if (await this.ensureOllamaModels(communicator, [ model ], false) === false)
     {
-      throw new Error(`The Ollama model '${model}' is not available`);
+      throw new CommandError(`The Ollama model '${model}' is not available`);
     }
-    const answer = await this.requestOllama(communicator, model, imageId, question);
+    let answer: string;
+    try
+    {
+      answer = await this.requestOllama(communicator, model, imageId, question);
+    }
+    catch (error)
+    {
+      throw CommandError.fromError(error);
+    }
     await communicator.launchIntent<void>({
       dialog: {
         type: IntentDialogType.Info,
@@ -206,8 +229,7 @@ class OllamaExtension extends PicteusExtension
     }
     catch (error)
     {
-      communicator.sendLog(`The request to the Ollama server failed. Reason: '${error.message}'`, "error");
-      throw error;
+      throw new Error(`The request to the Ollama server failed. Reason: '${error.message}'`);
     }
     const result = response.message.content;
     communicator.sendLog(`Ollama responded in ${Date.now() - milliseconds} ms with the following answer: '${result}'`, "debug");
@@ -296,7 +318,7 @@ class OllamaExtension extends PicteusExtension
       format: ImageFormat.Png,
       width: 1_024,
       height: 1_024,
-      resizeRender: "inbox",
+      resizeRender: ImageResizeRender.Outbox,
       stripMetadata: true
     });
     return new Uint8Array(await blob.arrayBuffer());

@@ -38,6 +38,9 @@ class Embeddings(PicteusExtension):
     async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
         self._setup(value)
 
+    async def on_ready(self, communicator: Optional[Communicator]) -> None:
+        self._setup(self.get_settings())
+
     async def on_image_created(self, communicator: Communicator, image_id: str) -> None:
         return await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
 
@@ -161,7 +164,7 @@ class Embeddings(PicteusExtension):
                 self.dino_processor = AutoImageProcessor.from_pretrained(model_name, cache_dir=cache_dir)
                 self.dino_model = AutoModel.from_pretrained(model_name, cache_dir=cache_dir).to(self.device)
 
-    async def _reset_embeddings(self, communicator: Communicator):
+    async def _reset_embeddings(self, communicator: Communicator) -> None:
         self.logger.info("Deleting all existing embeddings")
         extension_settings = self.get_extension_api().extension_reset_settings(id=self.extension_id)
         self._setup(extension_settings.value)
@@ -172,7 +175,7 @@ class Embeddings(PicteusExtension):
                                                       image_embedding=[])
         await self._compute_images_embeddings(communicator, ids, self.clip_enabled, self.dino_enabled)
 
-    def _setup(self, value: SettingsValue):
+    def _setup(self, value: SettingsValue) -> None:
         self.clip_enabled = value.get("clipEnabled", False)
         self.dino_enabled = value.get("dinoEnabled", False)
 

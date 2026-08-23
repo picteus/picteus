@@ -6,14 +6,11 @@ import AdmZip from "adm-zip";
 
 import {
   Communicator,
-  EventName,
-  type EventValue,
   type GenerationRecipe,
   Helper,
   ImageFeatureFormat,
   ImageFeatureType,
   type ImageMetadata,
-  NotificationEvent,
   PicteusExtension,
   PromptKind,
   type Repository,
@@ -307,24 +304,31 @@ class MidjourneyExtension extends PicteusExtension
     await this.setup(value);
   }
 
-  protected async onEvent(_communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onImageCreated(_communicator: Communicator, imageId: string): Promise<void>
   {
-    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags || event === NotificationEvent.ImageComputeFeatures)
-    {
-      const imageId: string = value["id"];
-      const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-      if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags)
-      {
-        await this.computeTags(imageId, metadata);
-      }
-      if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeFeatures)
-      {
-        await this.computeFeatures(imageId, metadata);
-      }
-    }
-    else if (event === NotificationEvent.ProcessRunCommand)
-    {
-    }
+    await this.computeTagsAndFeatures(imageId);
+  }
+
+  protected async onImageUpdated(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeTagsAndFeatures(imageId);
+  }
+
+  protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeTags(imageId, await this.getImageApi().imageGetMetadata({ id: imageId }));
+  }
+
+  protected async onComputeImageFeatures(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeFeatures(imageId, await this.getImageApi().imageGetMetadata({ id: imageId }));
+  }
+
+  protected async computeTagsAndFeatures(imageId: string): Promise<void>
+  {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
+    await this.computeFeatures(imageId, metadata);
   }
 
   private async computeTags(imageId: string, metadata: ImageMetadata): Promise<void>

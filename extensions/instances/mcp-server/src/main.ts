@@ -12,7 +12,6 @@ class McpServerExtension extends PicteusExtension
 
   protected async onReady(communicator?: Communicator): Promise<void>
   {
-    await super.onReady(communicator);
     await this.setup(communicator!, await this.getSettings());
   }
 

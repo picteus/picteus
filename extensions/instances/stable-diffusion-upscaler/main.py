@@ -1,15 +1,16 @@
 import asyncio
 import io
 import os
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import torch
 from PIL import Image
 from PIL.ImageFile import ImageFile
 from diffusers import StableDiffusionUpscalePipeline
 from diffusers.utils import load_image
-from picteus_extension_sdk import PicteusExtension, EventName, EventValue, Communicator, SettingsValue, IntentImage, \
-    ImagesIntent, IntentImages, Helper, IntentDialogIconContent
+from picteus_extension_sdk import PicteusExtension, Communicator, SettingsValue, IntentImage, \
+    ImagesIntent, IntentImages, Helper, IntentDialogIconContent, CommandParameters, ToastIntent, IntentToast, \
+    CommandError
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
     GenerationRecipePrompt, InstructionsPrompt, PromptKind, ImageFeatureValue
@@ -27,15 +28,14 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
         self._pipeline: Optional[Pipeline] = None
 
     async def on_ready(self, communicator: Optional[Communicator]) -> None:
-        await super().on_ready(communicator)
         await self._setup(self.get_settings())
 
     async def on_settings(self, communicator: Communicator, value: SettingsValue) -> None:
-        await self._setup(self.get_settings())
+        await self._setup(value)
 
-    async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
-        if event == EventName.IMAGE_RUN_COMMAND:
-            image_ids: List[str] = value["imageIds"]
+    async def on_images_command(self, communicator: Communicator, command_id: str, image_ids: List[str],
+                                parameters: CommandParameters) -> None:
+        if command_id == "upscale":
             new_images: List[IntentImage] = []
             for image_id in image_ids:
                 new_image = await self._handle_image(communicator, image_id)
@@ -48,19 +48,18 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
                                                                                title="Upscaled images",
                                                                                description="These are the upscaled images"))))
 
-        return None
-
     async def _handle_image(self, communicator: Communicator, image_id: str) -> PicteusImage | None:
         communicator.send_log(f"Retrieving the image with id '{image_id}'", "debug")
-        image: PicteusImage = self.get_image_api().image_get(image_id)
+        image: PicteusImage = self.get_image_api().image_get(id=image_id)
         communicator.send_log(f"Upscaling the image with URL '{image.url}'", "info")
-        if image.dimensions.width * image.dimensions.height > self._maximum_pixels:
+        surface_pixels = image.dimensions.width * image.dimensions.height
+        if surface_pixels > self._maximum_pixels:
             communicator.send_log(
-                f"Cannot upscale an image with more than {self._maximum_pixels} pixels. Please go to the extension settings to update that limit.",
+                f"Cannot upscale an image with more than {self._maximum_pixels} pixels. Please go to the extension settings to change that limit.",
                 "error")
             return None
 
-        repository: Repository = self.get_repository_api().repository_get(image.repository_id)
+        repository: Repository = self.get_repository_api().repository_get(id=image.repository_id)
         name_without_extension = os.path.splitext(os.path.basename(image.name))[0]
         relative_directory_path: str = os.path.split(image.url[len(repository.url) + 1:])[0]
 

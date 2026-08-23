@@ -86,7 +86,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Fetch images from a Civitai user or post",
+              "label": "Fetch",
+              "name": "Fetch images",
               "description": "Asks the user the identifier of the Civitai user or of a post, a number of images, and then fetches the corresponding count of latest images and stores them with their metadata and sources in the extension's repository."
             }
           ]

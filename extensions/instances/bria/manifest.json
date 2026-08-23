@@ -40,7 +40,8 @@
             {
               "locale": "en",
               "label": "Remove background",
-              "description": "Removes the background from an image."
+              "name": "Remove image background",
+              "description": "Removes the background from images via the Bria model."
             }
           ]
         }

@@ -111,22 +111,49 @@ class ColorEmbeddingsExtension extends PicteusExtension
 
   private async storeFeatures(imageId: string, colors: RGBColor[]): Promise<void>
   {
-    const dominantColorFeatures: ImageFeature[] = colors.slice(0, this.colorCount).map((color, index) => ({
-      type: ImageFeatureType.Annotation,
-      format: ImageFeatureFormat.String,
-      name: `${DOMINANT_COLOR_FEATURE_NAME_PREFIX}${index + 1}`,
-      value: rgbToHex(color)
+    const dominantColorFeatures: ImageFeature[] = colors.slice(0, this.colorCount).map((color, index) =>
+    {
+      const feature: ImageFeature =
+        {
+          type: ImageFeatureType.Annotation,
+          format: ImageFeatureFormat.String,
+          name: `${DOMINANT_COLOR_FEATURE_NAME_PREFIX}${index + 1}`,
+          value: rgbToHex(color)
+        };
+      return feature;
+    });
+
+    const htmlFeature: ImageFeature =
+      {
+        type: ImageFeatureType.Annotation,
+        format: ImageFeatureFormat.Html,
+        name: `${DOMINANT_COLOR_FEATURE_NAME_PREFIX}html`,
+        value: this.computeHtmlFeature(colors)
+      };
+
+    const existingFeatures: ImageFeature[] = await this.getImageApi().imageGetFeatures(
+      {
+        id: imageId,
+        extensionId: this.extensionId
+      }
+    );
+
+    const overwrittenFeatureTypeAndNames = [ ...dominantColorFeatures, htmlFeature ].map(feature => ({
+      type: feature.type,
+      name: feature.name
     }));
-    const existingFeatures: ImageFeature[] = await this.getImageApi().imageGetFeatures({
-      id: imageId,
-      extensionId: this.extensionId
+    const legacyFeatures = existingFeatures.filter((feature) =>
+    {
+      return overwrittenFeatureTypeAndNames.filter(typeAndName => feature.type === typeAndName.type && feature.name === typeAndName.name).length === 0;
     });
-    const otherFeatures = existingFeatures.filter((feature) => feature.name?.startsWith(DOMINANT_COLOR_FEATURE_NAME_PREFIX) !== true);
-    await this.getImageApi().imageSetFeatures({
-      id: imageId,
-      extensionId: this.extensionId,
-      imageFeature: [ ...otherFeatures, ...dominantColorFeatures ]
-    });
+
+    await this.getImageApi().imageSetFeatures(
+      {
+        id: imageId,
+        extensionId: this.extensionId,
+        imageFeature: [ ...legacyFeatures, ...dominantColorFeatures, htmlFeature ]
+      }
+    );
   }
 
   private async extractColors(imageId: string): Promise<RGBColor[]>
@@ -141,6 +168,17 @@ class ColorEmbeddingsExtension extends PicteusExtension
     });
     const imageBuffer = Buffer.from(await imageBlob.arrayBuffer());
     return await createColorExtractor(this.colorLibrary).extractColors(imageBuffer, this.colorCount);
+  }
+
+  private computeHtmlFeature(colors: RGBColor[]): string
+  {
+    const htmlBoxes = colors.slice(0, this.colorCount).map((color) =>
+    {
+      const hexString = rgbToHex(color);
+      return `<div style="height: 80px; background-color: ${hexString}; border-radius: 8px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"><span style="background-color: rgba(255, 255, 255, 0.85); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: monospace; color: #1f2937; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${hexString}</span></div>`;
+    }).join("");
+
+    return `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%;">${htmlBoxes}</div>`;
   }
 
   private async setup(value: SettingsValue): Promise<void>

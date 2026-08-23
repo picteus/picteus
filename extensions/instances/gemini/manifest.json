@@ -105,8 +105,9 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Generate an image from text",
-              "description": "Asks the user a textual prompt and an aspect ratio and then sends a request to Google Gemini to generate an image with that prompt, saves the image in the extension repository with all its metadata, and eventually shows the generated image."
+              "label": "Generate from text",
+              "name": "Generate an image from text",
+              "description": "Asks the user a textual prompt and an aspect ratio and then sends a request to Google Gemini (Nano Banana) to generate an image with that prompt, saves the image in the extension repository with all its metadata, and eventually shows the generated image."
             }
           ]
         },
@@ -173,8 +174,9 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Generate via Nano Banana",
-              "description": "Takes reference images and a prompt, generates an image via Google Gemini, saves the image in the extension repository with all its metadata, and eventually shows the generated image."
+              "label": "Generate multimodal",
+              "name": "Generate an image from text and images",
+              "description": "Takes reference images and a prompt, generates an image via Google Gemini (Nano Banana), saves the image in the extension repository with all its metadata, and eventually shows the generated image."
             }
           ]
         }

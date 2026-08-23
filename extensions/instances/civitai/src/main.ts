@@ -3,16 +3,14 @@ import { CivitaiRESTAPIClient, type ImageMeta } from "@stable-canvas/civitai-res
 import {
   ApiCallError,
   type ApplicationMetadata,
+  type CommandParameters,
   Communicator,
-  EventName,
-  type EventValue,
   type GenerationRecipe,
   Helper,
   type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
   type IntentImage,
-  NotificationEvent,
   PicteusExtension,
   PromptKind,
   type Repository
@@ -40,25 +38,20 @@ class CivitaiExtension extends PicteusExtension
     await ensureRepository();
   }
 
-  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onProcessCommand(communicator: Communicator, commandId: string, parameters: CommandParameters): Promise<void>
   {
-    if (event === NotificationEvent.ProcessRunCommand)
+    if (commandId === "fetchImages")
     {
-      const commandId: string = value["commandId"];
-      if (commandId === "fetchImages")
-      {
-        const parameters: Record<string, any> = value["parameters"];
-        const source = parameters["source"];
-        const userName: string | undefined = source["userName"];
-        const postId: string | undefined = source["postId"];
-        const count: number | undefined = parameters["count"];
-        const isFromPost: boolean = postId !== undefined;
-        await this.fetchImages(communicator, isFromPost, isFromPost ? postId : userName, count);
-      }
+      const source = parameters["source"];
+      const userName: string | undefined = source["userName"];
+      const postId: string | undefined = source["postId"];
+      const count: number = parameters["count"];
+      const isFromPost: boolean = postId !== undefined;
+      await this.fetchImages(communicator, isFromPost, isFromPost ? postId : userName, count);
     }
   }
 
-  private async fetchImages(communicator: Communicator, isFromPost: boolean, userNameOrPostId: string, count: number = 10): Promise<void>
+  private async fetchImages(communicator: Communicator, isFromPost: boolean, userNameOrPostId: string, count: number): Promise<void>
   {
     const client = new CivitaiRESTAPIClient();
     communicator.sendLog(`Fetching ${count} image(s) from Civitai ${isFromPost === true ? `related to the post with id '${userNameOrPostId}'` : `for the user '${userNameOrPostId}'`}`, "info");

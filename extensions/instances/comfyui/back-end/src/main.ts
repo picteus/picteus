@@ -2,9 +2,9 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 
 import {
+  CommandError,
+  type CommandParameters,
   Communicator,
-  EventName,
-  type EventValue,
   type GenerationRecipe,
   Helper,
   type ImageFeature,
@@ -13,7 +13,6 @@ import {
   type ImageMetadata,
   IntentDialogType,
   IntentShowType,
-  NotificationEvent,
   PicteusExtension,
   PromptKind,
   type SettingsValue
@@ -71,90 +70,42 @@ class ComfyUiExtension extends PicteusExtension
     await this.setup(communicator, value);
   }
 
-  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onImageCreated(_communicator: Communicator, imageId: string): Promise<void>
   {
-    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags || event === NotificationEvent.ImageComputeFeatures)
-    {
-      const imageId: string = value["id"];
-      const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-      if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags)
-      {
-        await this.computeTags(imageId, metadata);
-      }
-      if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeFeatures)
-      {
-        await this.computeFeatures(imageId, metadata);
-      }
-    }
-    else if (event === NotificationEvent.ImageRunCommand)
-    {
-      const commandId: string = value["commandId"];
-      const imageIds: string[] = value["imageIds"];
-      const imageId = imageIds[0];
-      if (commandId === "editComfyUiWorkflow")
-      {
-        await this.openInComfyUi(communicator, imageId);
-      }
-      else if (commandId === "analyzeComfyUiWorkflow")
-      {
-        await this.computeDescription(communicator, imageId);
-      }
-    }
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
+    await this.computeFeatures(imageId, metadata);
   }
 
-  private async setup(communicator: Communicator, value: SettingsValue): Promise<void>
+  protected async onImageUpdated(_communicator: Communicator, imageId: string): Promise<void>
   {
-    this.url = value["url"];
-    const directoryPath = value["directoryPath"];
-    if (directoryPath !== undefined)
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
+    await this.computeFeatures(imageId, metadata);
+  }
+
+  protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
+  }
+
+  protected async onComputeImageFeatures(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeFeatures(imageId, metadata);
+  }
+
+  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], _parameters: CommandParameters): Promise<void>
+  {
+    const imageId = imageIds[0];
+    if (commandId === "editComfyUiWorkflow")
     {
-      // We guess the default ComfyUI directory paths
-      this.outputDirectoryPath = path.join(directoryPath, "output");
-      this.inputDirectoryPath = path.join(directoryPath, "input");
-      this.temporaryDirectoryPath = path.join(directoryPath, "temp");
-      const comfyUiExtensionDirectoryName = "ComfyUI-Picteus";
-      const customNodesDirectoryPath = path.join(directoryPath, "custom_nodes", comfyUiExtensionDirectoryName);
-      if (fs.existsSync(customNodesDirectoryPath) === false)
-      {
-        communicator.sendLog("Installing the ComfyUI extension", "info");
-        fs.symlinkSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), comfyUiExtensionDirectoryName), customNodesDirectoryPath, "dir");
-        await communicator.launchIntent<boolean>({
-          dialog: {
-            type: IntentDialogType.Info,
-            title: "ComfyUI extension Installed",
-            description: "The extension is installed, you should now restart ComfyUi, so that it is taken into account.",
-            buttons: { yes: "OK" }
-          }
-        });
-      }
-      if (this.url !== undefined)
-      {
-        const extensionWebServiceUrl = `${this.url}/${ComfyUiExtension.webServiceFragment}/get_directory_paths`;
-        let response: Response;
-        try
-        {
-          response = await fetch(extensionWebServiceUrl, { method: "GET" });
-        }
-        catch (error)
-        {
-          // It is very likely that the ComfyUI server is not running
-          communicator.sendLog(`Failed to communicate with the ComfyUI server'. Reason: '${error.message}'`, "error");
-          return;
-        }
-        const result = await response.text();
-        if (response.ok === true)
-        {
-          const jsonObject = JSON.parse(result);
-          this.outputDirectoryPath = jsonObject["outputDirectoryPath"];
-          this.inputDirectoryPath = jsonObject["inputDirectoryPath"];
-          this.temporaryDirectoryPath = jsonObject["temporaryDirectoryPath"];
-        }
-        else
-        {
-          communicator.sendLog(`Failed to retrieve the ComfyUI output directory path via the extension web service at '${extensionWebServiceUrl}'. Reason: '${result}'`, "error");
-        }
-      }
-      this.extensionCurrentlyInstalled = true;
+      await this.openInComfyUi(communicator, imageId);
+    }
+    else if (commandId === "analyzeComfyUiWorkflow")
+    {
+      await this.computeDescription(communicator, imageId);
     }
   }
 
@@ -374,8 +325,7 @@ class ComfyUiExtension extends PicteusExtension
   {
     if (!(this.extensionCurrentlyInstalled === true && this.url !== undefined))
     {
-      communicator.sendLog("Cannot open the ComfyUI workflow, because the application is not connected to the ComfyUI server", "error");
-      return;
+      throw new CommandError("Cannot open the ComfyUI workflow, because the application is not connected to the ComfyUI server");
     }
     const image = await this.getImageApi().imageGet({ id: imageId });
     const metadata = image.metadata;
@@ -394,8 +344,7 @@ class ComfyUiExtension extends PicteusExtension
     }
     catch (error)
     {
-      communicator.sendLog(`Failed to send the prompt to the extension web service at '${extensionWebServiceUrl}'. Reason: '${error.message}'`, "error");
-      return;
+      throw new CommandError(`Failed to send the prompt to the extension web service at '${extensionWebServiceUrl}'. Reason: '${error.message}'`);
     }
     await communicator.launchIntent({ show: { type: IntentShowType.Sidebar, id: `${this.extensionId}-main` } });
   }
@@ -415,6 +364,62 @@ class ComfyUiExtension extends PicteusExtension
       }
     }
     return undefined;
+  }
+
+  private async setup(communicator: Communicator, value: SettingsValue): Promise<void>
+  {
+    this.url = value["url"];
+    const directoryPath = value["directoryPath"];
+    if (directoryPath !== undefined)
+    {
+      // We guess the default ComfyUI directory paths
+      this.outputDirectoryPath = path.join(directoryPath, "output");
+      this.inputDirectoryPath = path.join(directoryPath, "input");
+      this.temporaryDirectoryPath = path.join(directoryPath, "temp");
+      const comfyUiExtensionDirectoryName = "ComfyUI-Picteus";
+      const customNodesDirectoryPath = path.join(directoryPath, "custom_nodes", comfyUiExtensionDirectoryName);
+      if (fs.existsSync(customNodesDirectoryPath) === false)
+      {
+        communicator.sendLog("Installing the ComfyUI extension", "info");
+        fs.symlinkSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), comfyUiExtensionDirectoryName), customNodesDirectoryPath, "dir");
+        await communicator.launchIntent<boolean>({
+          dialog: {
+            type: IntentDialogType.Info,
+            title: "ComfyUI extension Installed",
+            description: "The extension is installed, you should now restart ComfyUi, so that it is taken into account.",
+            buttons: { yes: "OK" }
+          }
+        });
+      }
+      if (this.url !== undefined)
+      {
+        const extensionWebServiceUrl = `${this.url}/${ComfyUiExtension.webServiceFragment}/get_directory_paths`;
+        let response: Response;
+        try
+        {
+          response = await fetch(extensionWebServiceUrl, { method: "GET" });
+        }
+        catch (error)
+        {
+          // It is very likely that the ComfyUI server is not running
+          communicator.sendLog(`Failed to communicate with the ComfyUI server'. Reason: '${error.message}'`, "error");
+          return;
+        }
+        const result = await response.text();
+        if (response.ok === true)
+        {
+          const jsonObject = JSON.parse(result);
+          this.outputDirectoryPath = jsonObject["outputDirectoryPath"];
+          this.inputDirectoryPath = jsonObject["inputDirectoryPath"];
+          this.temporaryDirectoryPath = jsonObject["temporaryDirectoryPath"];
+        }
+        else
+        {
+          communicator.sendLog(`Failed to retrieve the ComfyUI output directory path via the extension web service at '${extensionWebServiceUrl}'. Reason: '${result}'`, "error");
+        }
+      }
+      this.extensionCurrentlyInstalled = true;
+    }
   }
 
 }

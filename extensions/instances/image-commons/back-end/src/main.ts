@@ -4,9 +4,8 @@ import * as path from "node:path";
 import {
   type ApplicationMetadata,
   type ApplicationMetadataItem,
+  type CommandParameters,
   Communicator,
-  EventName,
-  type EventValue,
   GenerationRecipeFromJSON,
   type ImageFeature,
   ImageFeatureFormat,
@@ -17,7 +16,6 @@ import {
   InstructionReturnedErrorCause,
   IntentDialogType,
   type IntentImage,
-  NotificationEvent,
   PicteusExtension
 } from "@picteus/extension-sdk";
 
@@ -25,34 +23,27 @@ import {
 class ImageCommonsExtension extends PicteusExtension
 {
 
-  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: CommandParameters): Promise<void>
   {
-    if (event === NotificationEvent.ImageRunCommand)
+    if (commandId === "convert")
     {
-      const commandId: string = value["commandId"];
-      const imageIds: string[] = value["imageIds"];
-      const parameters: Record<string, any> = value["parameters"];
-      if (commandId === "convert")
-      {
-        await this.convertImages(communicator, imageIds, parameters);
-      }
-      else if (commandId === "rateAndComment")
-      {
-        await this.rateAndCommentImages(imageIds, communicator);
-      }
-      else if (commandId === "tag")
-      {
-        await this.tagImages(imageIds, communicator);
-      }
+      await this.convertImages(communicator, imageIds, parameters);
     }
-    else if (event === NotificationEvent.ProcessRunCommand)
+    else if (commandId === "rateAndComment")
     {
-      const commandId: string = value["commandId"];
-      const parameters: Record<string, any> = value["parameters"];
-      if (commandId === "analytics")
-      {
-        await this.analyzeImages(parameters["collectionId"], parameters["tags"], communicator);
-      }
+      await this.rateAndCommentImages(imageIds, communicator);
+    }
+    else if (commandId === "tag")
+    {
+      await this.tagImages(imageIds, communicator);
+    }
+  }
+
+  protected async onProcessCommand(communicator: Communicator, commandId: string, parameters: CommandParameters): Promise<void>
+  {
+    if (commandId === "analytics")
+    {
+      await this.analyzeImages(parameters["collectionId"], parameters["tags"], communicator);
     }
   }
 

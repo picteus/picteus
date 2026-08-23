@@ -40,7 +40,6 @@ export class Classifiers
     {
       this.queue.end(hash);
     }
-
   }
 
   async computeSegments(filePath: string): Promise<string>

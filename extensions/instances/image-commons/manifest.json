@@ -109,6 +109,7 @@
             {
               "locale": "en",
               "label": "Convert",
+              "name": "Convert images",
               "description": "Given a format, converts the provided images into the desired format and stores them in the same repository."
             }
           ]
@@ -121,7 +122,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Rate and comment",
+              "label": "Rate & comment",
+              "name": "Rate and comment images",
               "description": "Enables to rate and comment the selected images and stores them into the image features."
             }
           ]
@@ -135,6 +137,7 @@
             {
               "locale": "en",
               "label": "Tag",
+              "name": "Tag images",
               "description": "Enables to set the tags the selected images and stores them into the image tags."
             }
           ]
@@ -177,6 +180,7 @@
             {
               "locale": "en",
               "label": "Analytics",
+              "name": "Compute analytics",
               "description": "Asks to select an images collection and some tags, computes and exposes an analytics breakdown of images by tags."
             }
           ]

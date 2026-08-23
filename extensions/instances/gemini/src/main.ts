@@ -2,20 +2,18 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 
 import AdmZip from "adm-zip";
-import { GoogleGenAI } from "@google/genai";
+import { ApiError, GenerateContentResponse, GoogleGenAI } from "@google/genai";
 
 import {
   type ApplicationMetadata,
+  type CommandParameters,
   Communicator,
-  EventName,
-  type EventValue,
-  ExtensionApi,
   type GenerationRecipe,
   Helper,
   ImageFeatureFormat,
   ImageFeatureType,
-  type ImageMetadata,
-  NotificationEvent,
+  IntentShowType,
+  IntentToastType,
   PicteusExtension,
   PromptKind,
   type Repository,
@@ -32,47 +30,57 @@ class GeminiExtension extends PicteusExtension
 
   protected async onReady(communicator?: Communicator): Promise<void>
   {
-    await this.setup(await this.getSettings());
+    this.setup(await this.getSettings());
     await this.ensureRepository(communicator);
-    await this.installChromeExtension();
+    try
+    {
+      await this.installChromeExtension();
+    }
+    catch (error)
+    {
+      communicator?.sendLog(`Could not install the Chrome extension. Reason: '${error.message}'`, "error");
+    }
   }
 
   protected async onSettings(_communicator: Communicator, value: SettingsValue): Promise<void>
   {
-    await this.setup(value);
+    this.setup(value);
   }
 
-  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onImageCreated(_communicator: Communicator, imageId: string): Promise<void>
   {
-    if (event === NotificationEvent.ImageCreated || event === NotificationEvent.ImageUpdated || event === NotificationEvent.ImageComputeTags)
+    await this.computeTags(imageId);
+  }
+
+  protected async onImageUpdated(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeTags(imageId);
+  }
+
+  protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    await this.computeTags(imageId);
+  }
+
+  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: CommandParameters): Promise<void>
+  {
+    if (commandId === "modify")
     {
-      const imageId: string = value["id"];
-      const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-      await this.computeTags(imageId, metadata);
-    }
-    else if (event === NotificationEvent.ImageRunCommand)
-    {
-      const commandId: string = value["commandId"];
-      const imageIds: string[] = value["imageIds"];
-      const parameters: Record<string, any> = value["parameters"];
-      if (commandId === "modify")
-      {
-        await this.generateImage(communicator, parameters, imageIds);
-      }
-    }
-    else if (event === NotificationEvent.ProcessRunCommand)
-    {
-      const commandId: string = value["commandId"];
-      const parameters: Record<string, any> = value["parameters"];
-      if (commandId === "generate")
-      {
-        await this.generateImage(communicator, parameters);
-      }
+      await this.generateImage(communicator, parameters, imageIds);
     }
   }
 
-  private async computeTags(imageId: string, metadata: ImageMetadata): Promise<void>
+  protected async onProcessCommand(communicator: Communicator, commandId: string, parameters: CommandParameters): Promise<void>
   {
+    if (commandId === "generate")
+    {
+      await this.generateImage(communicator, parameters);
+    }
+  }
+
+  private async computeTags(imageId: string): Promise<void>
+  {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
     let hasMatchingSoftwareMetadata: boolean = false;
     if (metadata.all !== undefined)
     {
@@ -90,7 +98,12 @@ class GeminiExtension extends PicteusExtension
   {
     if ((await this.checkGeminiApiKey(communicator)) === false)
     {
-      return;
+      return await communicator.launchIntent({
+        toast: {
+          type: IntentToastType.Cancel,
+          subtitle: "The Gemini API key is not defined"
+        }
+      });
     }
     const ai = new GoogleGenAI({ apiKey: this.geminiApiKey });
     const model: string = parameters["model"];
@@ -114,11 +127,44 @@ class GeminiExtension extends PicteusExtension
         contents.push({ inlineData: { mimeType: "image/png", data: buffer.toString("base64") } });
       }
     }
-    const response = await ai.models.generateContent({
-      model,
-      contents,
-      config: { candidateCount: 1, imageConfig: { aspectRatio } }
-    });
+    let response: GenerateContentResponse;
+    try
+    {
+      response = await ai.models.generateContent({
+        model,
+        contents,
+        config: { candidateCount: 1, imageConfig: { aspectRatio } }
+      });
+    }
+    catch (error)
+    {
+      const apiError = error as ApiError;
+      let subtitle = apiError.message;
+      if (apiError.status === 400)
+      {
+        try
+        {
+          const jsonError = JSON.parse(error.message).error;
+          subtitle = jsonError.message;
+          if (jsonError?.details.filter((detail: {
+            reason?: string
+          }) => detail.reason === "API_KEY_INVALID").length > 0)
+          {
+            subtitle = "The Gemini API key is invalid: cannot generate an image!";
+          }
+        }
+        catch (innerError)
+        {
+          // We take the default message
+        }
+      }
+      return await communicator.launchIntent({
+        toast: {
+          type: IntentToastType.Error,
+          subtitle
+        }
+      });
+    }
     const candidate = response.candidates[0];
     communicator.sendLog(`Gemini responded in ${Date.now() - milliseconds} ms with ${candidate.content.parts.length} part(s)`, "debug");
     for (const part of candidate.content.parts)
@@ -197,7 +243,7 @@ class GeminiExtension extends PicteusExtension
     }
   }
 
-  private async installChromeExtension()
+  private async installChromeExtension(): Promise<void>
   {
     const distributionDirectoryPath = path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "dist");
     const fileNames = fs.readdirSync(distributionDirectoryPath);
@@ -241,57 +287,33 @@ class GeminiExtension extends PicteusExtension
     }
   }
 
-  private async setup(value: SettingsValue): Promise<void>
-  {
-    this.geminiApiKey = value["apiKey"];
-  }
-
   private async checkGeminiApiKey(communicator: Communicator): Promise<boolean>
   {
     if (this.geminiApiKey === undefined)
     {
-      // await communicator.launchIntent({
-      //   show: {
-      //     type: NotificationsShowType.ExtensionSettings,
-      //     id: this.extensionId
-      //   }
-      // });
-      let intentResult: Record<string, any>;
+      let value: SettingsValue;
       try
       {
-        intentResult = await communicator.launchIntent<Record<string, any>>({
-          form: {
-            parameters: {
-              "type": "object",
-              "properties": {
-                "apiKey": {
-                  "type": "string",
-                  "title": "API Key",
-                  "description": "The Google Gemini API key used when interacting with Gemini."
-                }
-              },
-              "required": [
-                "apiKey"
-              ]
-            }
+        value = await communicator.launchIntent({
+          show: {
+            type: IntentShowType.ExtensionSettings,
+            id: this.extensionId
           }
         });
       }
       catch (error)
       {
-        // The user cancelled
+        // The user has cancelled
         return false;
       }
-      if (intentResult.apiKey !== undefined)
-      {
-        this.geminiApiKey = intentResult.apiKey;
-        await new ExtensionApi(this.configuration).extensionSetSettings({
-          id: this.extensionId,
-          extensionSettings: { value: intentResult }
-        });
-      }
+      this.setup(value);
     }
     return true;
+  }
+
+  private setup(value: SettingsValue): void
+  {
+    this.geminiApiKey = value["apiKey"];
   }
 
   private async ensureRepository(communicator?: Communicator): Promise<void>

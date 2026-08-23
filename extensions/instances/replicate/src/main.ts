@@ -2,9 +2,8 @@ import Replicate, { type Model, type Prediction } from "replicate";
 
 import {
   type ApplicationMetadata,
+  type CommandParameters,
   Communicator,
-  EventName,
-  type EventValue,
   type GenerationRecipe,
   Helper,
   type Image,
@@ -12,7 +11,6 @@ import {
   ImageFeatureFormat,
   ImageFeatureType,
   IntentDialogType,
-  NotificationEvent,
   PicteusExtension,
   PromptKind,
   type Repository,
@@ -39,54 +37,36 @@ class ReplicateExtension extends PicteusExtension
 
   protected async onReady(communicator?: Communicator): Promise<void>
   {
-    await this.setup(await this.getSettings());
-    const ensureRepository = async (): Promise<void> =>
-    {
-      const name = PicteusExtension.getManifest().name;
-      this.repository = await this.getRepositoryApi().repositoryEnsure({
-        technicalId: this.extensionId,
-        name,
-        comment: `The ${name} repository`,
-        watch: true
-      });
-      communicator.sendLog(`The repository '${name}' is available`, "info");
-    };
-    await ensureRepository();
+    this.setup(await this.getSettings());
+    await this.ensureRepository(communicator);
   }
 
   protected async onSettings(_communicator: Communicator, value: SettingsValue): Promise<void>
   {
-    await this.setup(value);
+    this.setup(value);
   }
 
-  protected async onEvent(communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: CommandParameters): Promise<void>
   {
-    if (event === NotificationEvent.ImageRunCommand)
+    if (commandId === "modify")
     {
-      const commandId: string = value["commandId"];
-      const imageIds: string[] = value["imageIds"];
-      const parameters: Record<string, any> = value["parameters"];
-      if (commandId === "modify")
-      {
-        await this.generateImage(communicator, parameters, imageIds[0]);
-      }
+      await this.generateImage(communicator, parameters, imageIds[0]);
     }
-    else if (event === NotificationEvent.ProcessRunCommand)
+  }
+
+  protected async onProcessCommand(communicator: Communicator, commandId: string, parameters: CommandParameters): Promise<void>
+  {
+    if (commandId === "synchronize")
     {
-      const commandId: string = value["commandId"];
-      const parameters: Record<string, any> = value["parameters"];
-      if (commandId === "synchronize")
-      {
-        await this.synchronize(communicator, parameters);
-      }
-      else if (commandId === "run")
-      {
-        await this.runModel(communicator, parameters);
-      }
-      else if (commandId === "generate")
-      {
-        await this.generateImage(communicator, parameters);
-      }
+      await this.synchronize(communicator, parameters);
+    }
+    else if (commandId === "run")
+    {
+      await this.runModel(communicator, parameters);
+    }
+    else if (commandId === "generate")
+    {
+      await this.generateImage(communicator, parameters);
     }
   }
 
@@ -489,14 +469,26 @@ class ReplicateExtension extends PicteusExtension
     return { url: string, extension };
   }
 
-  private async setup(value: SettingsValue): Promise<void>
+  private computeReplicate()
+  {
+    return new Replicate({ auth: this.apiToken, useFileOutput: true });
+  }
+
+  private setup(value: SettingsValue): void
   {
     this.apiToken = value["apiToken"]!;
   }
 
-  private computeReplicate()
+  private async ensureRepository(communicator: Communicator): Promise<void>
   {
-    return new Replicate({ auth: this.apiToken, useFileOutput: true });
+    const name = PicteusExtension.getManifest().name;
+    this.repository = await this.getRepositoryApi().repositoryEnsure({
+      technicalId: this.extensionId,
+      name,
+      comment: `The ${name} repository`,
+      watch: true
+    });
+    communicator.sendLog(`The repository '${name}' is available`, "info");
   }
 
 }

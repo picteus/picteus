@@ -1,15 +1,12 @@
 import {
   Communicator,
-  EventName,
-  type EventValue,
   type GenerationRecipe,
   Helper,
   ImageFeatureFormat,
   ImageFeatureType,
   type ImageMetadata,
   PicteusExtension,
-  PromptKind,
-  type SettingsValue
+  PromptKind
 } from "@picteus/extension-sdk";
 
 
@@ -162,35 +159,30 @@ export class Automatic1111UserComment
 class Automatic1111Extension extends PicteusExtension
 {
 
-  protected async onReady(communicator?: Communicator): Promise<void>
+  protected async onImageCreated(_communicator: Communicator, imageId: string): Promise<void>
   {
-    await this.setup(communicator!, await this.getSettings());
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
+    await this.computeFeatures(imageId, metadata);
   }
 
-  protected async onSettings(communicator: Communicator, value: SettingsValue): Promise<void>
+  protected async onImageUpdated(_communicator: Communicator, imageId: string): Promise<void>
   {
-    await this.setup(communicator, value);
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
+    await this.computeFeatures(imageId, metadata);
   }
 
-  protected async onEvent(_communicator: Communicator, event: EventName, value: EventValue): Promise<any>
+  protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
   {
-    if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeTags || event === EventName.ImageComputeFeatures)
-    {
-      const imageId: string = value["id"];
-      const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-      if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeTags)
-      {
-        await this.computeTags(imageId, metadata);
-      }
-      if (event === EventName.ImageCreated || event === EventName.ImageUpdated || event === EventName.ImageComputeFeatures)
-      {
-        await this.computeFeatures(imageId, metadata);
-      }
-    }
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
   }
 
-  private async setup(_communicator: Communicator, _value: SettingsValue): Promise<void>
+  protected async onComputeImageFeatures(_communicator: Communicator, imageId: string): Promise<void>
   {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeFeatures(imageId, metadata);
   }
 
   private async computeTags(imageId: string, metadata: ImageMetadata): Promise<void>

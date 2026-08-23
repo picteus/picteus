@@ -57,7 +57,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Edit ComfyUI workflow",
+              "label": "Edit",
+              "name": "Edit ComfyUI workflow",
               "description": "Loads in the ComfyUI instance the workflow that has been used to generate the image."
             }
           ]
@@ -73,7 +74,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Analyze ComfyUI workflow",
+              "label": "Analyze",
+              "name": "Analyze ComfyUI workflow",
               "description": "Analyzes the ComfyUI workflow of the image and shows the result to the user."
             }
           ]
