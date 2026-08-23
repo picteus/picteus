@@ -42,14 +42,14 @@ import style from "./SearchFilters.module.scss";
 type SearchFiltersType = {
   filters?: LocalFiltersType;
   setFilters: React.Dispatch<React.SetStateAction<LocalFiltersType | undefined>>;
-  onChangeFilterWrapper: (key: string, value?: any) => void;
+  onFilterChange: (key: string, value?: any) => void;
   onClearAll: () => void;
 };
 
 export function SearchFilters({
   filters,
   setFilters,
-  onChangeFilterWrapper,
+  onFilterChange,
   onClearAll
 }: SearchFiltersType)
 {
@@ -67,7 +67,18 @@ export function SearchFilters({
     {
       const tags = await FiltersService.computeTagsOptions();
       setTags(tags);
-      setTagOptions(tags.map(tag => ({ value: tag.value, label: tag.value })));
+
+      const uniqueValues = new Set<string>();
+      const options: WithValueAndLabel[] = [];
+      for (const tag of tags)
+      {
+        if (uniqueValues.has(tag.value) === false)
+        {
+          uniqueValues.add(tag.value);
+          options.push({ value: tag.value, label: tag.value });
+        }
+      }
+      setTagOptions(options);
     }
 
     load().catch(ToastService.apiCallError);
@@ -102,11 +113,10 @@ export function SearchFilters({
       return null;
     }
     const pills: ReactNode[] = [];
-
     if (filters.searchIn?.length > 0)
     {
       pills.push(
-        <Pill key="searchIn" withRemoveButton onRemove={() => onChangeFilterWrapper("searchIn")}>
+        <Pill key="searchIn" withRemoveButton onRemove={() => onFilterChange("searchIn")}>
           {`In: ${filters.searchIn.map(field => FiltersService.searchInOptions.find(option => option.value === field)?.label).join(", ")}`}
         </Pill>
       );
@@ -114,7 +124,7 @@ export function SearchFilters({
     if (filters.repositories?.length > 0)
     {
       pills.push(
-        <Pill key="repositories" withRemoveButton onRemove={() => onChangeFilterWrapper("repositories")}>
+        <Pill key="repositories" withRemoveButton onRemove={() => onFilterChange("repositories")}>
           {`${t("field.repositories")}: ${repositories.filter((repository) => filters.repositories?.includes(repository.id)).map((repository) => repository.name).join(", ")}`}
         </Pill>
       );
@@ -122,7 +132,7 @@ export function SearchFilters({
     if (filters.formats?.length > 0)
     {
       pills.push(
-        <Pill key="formats" withRemoveButton onRemove={() => onChangeFilterWrapper("formats")}>
+        <Pill key="formats" withRemoveButton onRemove={() => onFilterChange("formats")}>
           {`${t("field.formats")}: ${[ ...filters.formats ].join(", ")}`}
         </Pill>
       );
@@ -130,14 +140,15 @@ export function SearchFilters({
     if (filters.tags?.length > 0)
     {
       pills.push(
-        <Pill key="tags" withRemoveButton onRemove={() => onChangeFilterWrapper("tags")}>
+        <Pill key="tags" withRemoveButton onRemove={() => onFilterChange("tags")}>
           <Group gap={4} wrap="nowrap">
             <span>{t("field.tags")}:</span>
-            {filters.tags?.map(tag =>
+            {filters.tags?.flatMap(tag =>
             {
-              const extensionTag = tags.find(anExtensionTag => anExtensionTag.value === tag);
-              return (extensionTag && <ImageTag key={tag} tag={extensionTag} kind="plain"/>
-              );
+              const extensionTags = tags.filter(anExtensionTag => anExtensionTag.value === tag);
+              return extensionTags.map(extensionTag => (
+                <ImageTag key={`${tag}-${extensionTag.id}`} tag={extensionTag} kind="plain"/>
+              ));
             })}
           </Group>
         </Pill>
@@ -146,7 +157,7 @@ export function SearchFilters({
     if (filters.properties && Object.keys(filters.properties).length > 0)
     {
       pills.push(
-        <Pill key="properties" withRemoveButton onRemove={() => onChangeFilterWrapper("properties")}>
+        <Pill key="properties" withRemoveButton onRemove={() => onFilterChange("properties")}>
           {t("field.properties")} ({Object.keys(filters.properties).length})
         </Pill>
       );
@@ -154,7 +165,7 @@ export function SearchFilters({
     if (filters.features && filters.features.conditions && filters.features.conditions.length > 0)
     {
       pills.push(
-        <Pill key="features" withRemoveButton onRemove={() => onChangeFilterWrapper("features")}>
+        <Pill key="features" withRemoveButton onRemove={() => onFilterChange("features")}>
           {t("field.features")} ({filters.features.conditions.length})
         </Pill>
       );
@@ -165,10 +176,12 @@ export function SearchFilters({
 
   const renderTagOption = ({ option }: ComboboxLikeRenderOptionInput<ComboboxItem>) =>
   {
-    const extensionTag = tags.find(tag => tag.value === option.value);
+    const extensionTags = tags.filter(tag => tag.value === option.value);
     return (
       <Group gap="sm">
-        {extensionTag && <ExtensionIcon idOrExtension={extensionTag.id} size="sm"/>}
+        <Group gap={4}>
+          {extensionTags.map(extensionTag => <ExtensionIcon key={extensionTag.id} idOrExtension={extensionTag.id} size="sm"/>)}
+        </Group>
         <span>{option.label}</span>
       </Group>
     );
@@ -258,7 +271,7 @@ export function SearchFilters({
                 <GeneralFilters
                   repositories={repositories}
                   filters={filters}
-                  onChangeFilter={onChangeFilterWrapper}
+                  onChangeFilter={onFilterChange}
                 />
               )}
             </Tabs.Panel>
@@ -270,25 +283,29 @@ export function SearchFilters({
                   renderOption={renderTagOption}
                   renderPill={({ option, onRemove }) =>
                   {
-                    const extensionTag = tags.find(anExtensionTag => anExtensionTag.value === option.value);
+                    const extensionTags = tags.filter(anExtensionTag => anExtensionTag.value === option.value);
                     return (<Pill withRemoveButton onRemove={onRemove}>
-                      <ImageTag tag={extensionTag} kind="plain"/>
+                      <Group gap={4}>
+                        {extensionTags.map(extensionTag => (
+                          <ImageTag key={`${option.value}-${extensionTag.id}`} tag={extensionTag} kind="plain"/>
+                        ))}
+                      </Group>
                     </Pill>);
                   }}
-                  onChange={(values: string[]) => onChangeFilterWrapper("tags", values)}
+                  onChange={(values: string[]) => onFilterChange("tags", values)}
                 />
               </Stack>
             </Tabs.Panel>
             <Tabs.Panel value="features" p="md">
               <FeaturesQueryBuilder
                 searchFeatures={filters?.features}
-                onChange={(features) => onChangeFilterWrapper("features", features)}
+                onChange={(features) => onFilterChange("features", features)}
               />
             </Tabs.Panel>
             <Tabs.Panel value="properties" p="md">
               <PropertiesFilters
                 properties={filters?.properties}
-                onChange={(props) => onChangeFilterWrapper("properties", props)}
+                onChange={(props) => onFilterChange("properties", props)}
               />
             </Tabs.Panel>
           </ScrollArea>

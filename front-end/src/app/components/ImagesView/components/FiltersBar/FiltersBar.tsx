@@ -63,7 +63,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
     }
   }));
 
-  const onChangeFilterWrapper = useCallback((key: string, value?: string[] | SearchProperties | SearchFeatures | SearchSortingProperty | ("-1" | "1")) =>
+  const onFilterChangeWrapper = useCallback((key: string, value?: string[] | SearchProperties | SearchFeatures | SearchSortingProperty | ("-1" | "1")) =>
   {
     setFilters((previousLocalFilters: LocalFiltersType | undefined) =>
     {
@@ -97,7 +97,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
 
   const toggleSortOrder = () =>
   {
-    onChangeFilterWrapper("sortOrder", filters?.sortOrder === "1" ? "-1" : "1");
+    onFilterChangeWrapper("sortOrder", filters?.sortOrder === "1" ? "-1" : "1");
   };
 
   const sortWidth = 160;
@@ -118,7 +118,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
             {FiltersService.sortByOptions.map((option) => (
               <Menu.Item key={option.value}
                          leftSection={filters?.sortBy ? SORT_ICONS[option.value] : null}
-                         onClick={() => onChangeFilterWrapper("sortBy", option.value)}>
+                         onClick={() => onFilterChangeWrapper("sortBy", option.value)}>
                 <Text size="sm">{option.label}</Text>
               </Menu.Item>
             ))}
@@ -134,7 +134,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
         <SearchFilters
           filters={filters}
           setFilters={setFilters}
-          onChangeFilterWrapper={onChangeFilterWrapper}
+          onFilterChange={onFilterChangeWrapper}
           onClearAll={handleOnClearAll}
         />
       </Box>}
