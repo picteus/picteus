@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React from "react";
 import { CloseButton, Flex, Image as MantineImage, Notification as MantineNotification, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 
@@ -9,169 +9,146 @@ import { NotificationType } from "types";
 import { timeAgoFromMilliseconds, ToastService } from "utils";
 import { useExtensionIntentRunner } from "app/hooks";
 import { useActionModalContext } from "app/context";
-import { ImageService, NotificationService } from "app/services";
+import { ImageService } from "app/services";
 import { Common, ImageDetail } from "app/components";
 
-import style from "./Notification.module.scss";
 import variables from "../../../assets/style/variablesExport.module.scss";
+import style from "./Notification.module.scss";
 
 
-type NotificationWrapperType = {
+type NotificationIconType = {
   notification: NotificationType;
-  icon: ReactNode;
-  onClick: () => void;
-  onClose: () => void;
+  size: number;
 };
 
-function MantineNotificationWrapper({ notification, icon, onClick, onClose }: NotificationWrapperType)
+function NotificationIcon({ notification, size }: NotificationIconType)
 {
-  return (<MantineNotification
-      onClose={onClose}
-      styles={{ icon: { backgroundColor: "transparent" } }}
-      icon={icon}
-      title={notification.title}
-    >
-      <div className={style.description} onClick={onClick}>
-        {notification.subtitle}
-      </div>
-    </MantineNotification>
-  );
+  if (notification.illustrationUri === undefined)
+  {
+    return <IconInfoCircle stroke={Common.IconStrokeSize} size={size}/>;
+  }
+  return <MantineImage
+    alt={"Illustration"}
+    w={size}
+    h={size}
+    fit="contain"
+    radius={variables.imageRadius}
+    src={notification.illustrationUri}
+    fallbackSrc={Common.FallbackImageUrl}
+  />;
 }
 
-function EnhancedNotificationWrapper({ notification, icon, onClick, onClose }: NotificationWrapperType)
-{
-  return (
-    <Flex align="flex-start" gap={8} onClick={onClick} className={style.wrapper}>
-      {icon}
-      <Flex direction="column" gap={4} flex={1}>
-        <Flex justify="space-between" align="center">
-          <Text fw={500} size="sm">{notification.title}</Text>
-          <CloseButton onClick={(event) =>
-          {
-            event.stopPropagation();
-            onClose();
-          }}/>
-        </Flex>
-        <Text c="gray" size="sm" className={style.description}>
-          {notification.subtitle}
-        </Text>
-        <Text c="dimmed" size="xs">
-          {timeAgoFromMilliseconds(notification.milliseconds)}
-        </Text>
-      </Flex>
-    </Flex>
-  );
-}
-
-type TheNotificationType = {
-  notification: NotificationType;
-  isToast?: boolean;
-  onOpen?: () => void;
-  onClose?: () => void;
-};
-
-export default function Notification({ notification, isToast = false, onOpen, onClose }: TheNotificationType)
+function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notification: NotificationType) => (() => Promise<void>)
 {
   const intentRunner = useExtensionIntentRunner();
   const [ , addModal, removeModal ] = useActionModalContext();
 
-  function handleOnClose(): void
+  return (notification: NotificationType) =>
   {
-    if (!isToast)
+    return async () =>
     {
-      void NotificationService.deleteNotification(notification.id);
-      if (onClose)
+      try
+      {
+        if (notification.type === "image")
+        {
+          const imageId = notification.data.id;
+          let image: Image;
+          try
+          {
+            image = await ImageService.get({ id: imageId });
+          }
+          catch (error)
+          {
+            return ToastService.apiCallError(error);
+          }
+          const id = addModal({
+            component: (
+              <ImageDetail
+                image={image}
+                images={[ image ]}
+                viewMode="masonry"
+                onClose={() =>
+                {
+                  removeModal(id);
+                }}
+              />),
+            withCloseButton: false,
+            fullScreen: true
+          });
+        }
+        else if (notification.type === "action")
+        {
+          const intent: ShowIntent | UiIntent | ProcessCommandIntent = notification.data.intent;
+          intentRunner(notification.data.extensionId, intent, {
+            onSuccess: (_result?: any) =>
+            {
+            },
+            onCancel: () =>
+            {
+            },
+            onFailure: ToastService.failure
+          });
+        }
+        onOpen();
+      }
+      finally
       {
         onClose();
       }
-    }
-  }
+    };
+  };
+}
 
-  async function handleOnClick(): Promise<void>
-  {
-    try
-    {
-      if (notification.type === "image")
-      {
-        const imageId = notification.data.id;
-        let image: Image;
-        try
-        {
-          image = await ImageService.get({ id: imageId });
-        }
-        catch (error)
-        {
-          return ToastService.apiCallError(error);
-        }
-        const id = addModal({
-          component: (
-            <ImageDetail
-              image={image}
-              images={[ image ]}
-              viewMode="masonry"
-              onClose={() =>
-              {
-                removeModal(id);
-              }}
-            />),
-          withCloseButton: false,
-          fullScreen: true
-        });
-      }
-      else if (notification.type === "action")
-      {
-        const intent: ShowIntent | UiIntent | ProcessCommandIntent = notification.data.intent;
-        intentRunner(notification.data.extensionId, intent, {
-          onSuccess: (_result?: any) =>
-          {
-          },
-          onCancel: () =>
-          {
-          },
-          onFailure: ToastService.failure
-        });
-      }
-      if (onOpen !== undefined)
-      {
-        onOpen();
-      }
-    }
-    finally
-    {
-      handleOnClose();
-    }
-  }
+type TheNotificationType = {
+  useMantine: boolean;
+  notification: NotificationType;
+  onOpen: () => void;
+  onClose: () => void;
+};
 
-  function computeIcon(size: number): React.ReactNode
+export default function Notification({ useMantine, notification, onOpen, onClose }: TheNotificationType)
+{
+  const handleOnClick = useNotificationOnClick(onClose, onOpen)(notification);
+
+  if (useMantine)
   {
-    if (notification.illustrationUri === undefined)
-    {
-      return <IconInfoCircle stroke={Common.IconStrokeSize} size={size}/>;
-    }
-    return (<div onClick={handleOnClick}>
-        {/*<ImageThumbnail imageOrUrl={notification.entityUrl} width={size} height={size}/>*/}
-        <MantineImage
-          alt={"Illustration"}
-          w={size}
-          h={size}
-          fit="contain"
-          radius={variables.imageRadius}
-          src={notification.illustrationUri}
-          fallbackSrc={Common.FallbackImageUrl}
-        />
-      </div>
+    return (
+      <MantineNotification
+        styles={{ icon: { backgroundColor: "transparent" } }}
+        icon={<div onClick={handleOnClick}><NotificationIcon notification={notification} size={Common.ToastIconEdge}/>
+        </div>}
+        title={notification.title}
+        withBorder
+      >
+        <div className={style.description} onClick={handleOnClick}>
+          {notification.subtitle}
+        </div>
+      </MantineNotification>
     );
-  }
-
-  if (isToast)
-  {
-    return <MantineNotificationWrapper notification={notification} icon={computeIcon(32)} onClick={handleOnClick}
-                                       onClose={handleOnClose}/>;
   }
   else
   {
-    return <EnhancedNotificationWrapper notification={notification}
-                                        icon={computeIcon(Common.NotificationIllustrationEdge)} onClick={handleOnClick}
-                                        onClose={handleOnClose}/>;
+    return (
+      <Flex align="flex-start" gap={8} onClick={handleOnClick} className={style.wrapper}>
+        <div onClick={handleOnClick}><NotificationIcon notification={notification}
+                                                       size={Common.NotificationIllustrationEdge}/></div>
+        <Flex direction="column" gap={4} flex={1}>
+          <Flex justify="space-between" align="center">
+            <Text fw={500} size="sm">{notification.title}</Text>
+            <CloseButton onClick={(event) =>
+            {
+              event.stopPropagation();
+              onClose();
+            }}/>
+          </Flex>
+          <Text c="gray" size="sm" className={style.description}>
+            {notification.subtitle}
+          </Text>
+          <Text c="dimmed" size="xs">
+            {timeAgoFromMilliseconds(notification.milliseconds)}
+          </Text>
+        </Flex>
+      </Flex>
+    );
   }
 }

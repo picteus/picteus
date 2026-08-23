@@ -1,24 +1,32 @@
-import React, { ReactNode } from "react";
+import React from "react";
 import { Notification } from "@mantine/core";
+import { randomId } from "@mantine/hooks";
+import { toast, ToastContent, ToastOptions } from "react-toastify";
 import { IconCancel, IconCheck, IconX } from "@tabler/icons-react";
 import i18n from "i18next";
-import { toast as ReactToast } from "react-toastify";
+
+import { Common } from "app/components";
 
 
 function withTitleAndSubtitle(type: "info" | "cancel" | "error", title: string, subtitle?: string): void
 {
   const isInfo = type === "info";
   const isCancel = type === "cancel";
-  ReactToast(
+  const id = randomId();
+  const options = { position: "bottom-center" as const, toastId: id };
+  triggerToast(({ closeToast }) => (
     <Notification
-      icon={isInfo ? <IconCheck/> : (isCancel ? <IconCancel/> : <IconX/>)}
+      icon={isInfo ? <IconCheck size={Common.ToastIconEdge}/> : (isCancel ? <IconCancel size={Common.ToastIconEdge}/> :
+        <IconX size={Common.ToastIconEdge}/>)}
       color={isInfo ? "teal" : (isCancel ? "orange" : "red")}
       title={title}
-      mt="md"
+      onClose={closeToast}
+      onClick={closeToast}
+      withBorder
     >
       {subtitle}
     </Notification>
-  );
+  ), options, id);
 }
 
 function success(subtitle?: string): void
@@ -51,19 +59,27 @@ function apiCallI18nError(error: { response: Response }, mnemonic: string): void
   error.response.json().then((jsonError) => failure(i18n.t(mnemonic, { error: jsonError.message })));
 }
 
-function toast(component: ReactNode): void
+function triggerToast(content: ToastContent, options: ToastOptions, id: string): () => void
 {
-  const id = "event";
-  const existingToast = ReactToast.isActive(id);
-  const options = { position: "top-center" as const, toastId: id };
+  const existingToast = toast.isActive(id);
+  const fullOptions =
+    {
+      ...options,
+      style: { backgroundColor: "transparent", boxShadow: "none", padding: 0 },
+      closeButton: false
+    };
   if (existingToast)
   {
-    ReactToast.update(id, { render: component, ...options });
+    toast.update(id, { render: content, ...fullOptions });
   }
   else
   {
-    ReactToast(component, options);
+    toast(content, fullOptions);
   }
+  return () =>
+  {
+    toast.dismiss(id);
+  };
 }
 
 export default {
@@ -73,5 +89,5 @@ export default {
   failureAndMessage,
   apiCallError,
   apiCallI18nError,
-  toast
+  triggerToast
 };

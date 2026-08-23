@@ -139,7 +139,6 @@ export default function AppRouter({}: AppRouterType)
     <HashRouter>
       <Providers>
         <ToastContainer
-          position="bottom-center"
           autoClose={3000}
           newestOnTop
           hideProgressBar

@@ -1,8 +1,8 @@
 import React, { useEffect, useSyncExternalStore } from "react";
 
 import { ToastService } from "utils";
-import { Notification } from "app/components";
 import { NotificationService } from "app/services";
+import { Notification } from "app/components";
 
 
 export default function NotificationCenter()
@@ -13,7 +13,20 @@ export default function NotificationCenter()
   {
     if (notification)
     {
-      ToastService.toast(<Notification notification={notification} isToast={true}/>);
+      const id = "notification";
+      const options = { position: "top-center" as const, toastId: id };
+      const noOperation = () =>
+      {
+      };
+      const content = <Notification useMantine={true}
+                                    notification={notification}
+                                    onOpen={() =>
+                                    {
+                                      void NotificationService.deleteNotification(notification.id);
+                                      dismiss();
+                                    }}
+                                    onClose={noOperation}/>;
+      const dismiss = ToastService.triggerToast(content, options, id);
     }
   }, [ notification ]);
 

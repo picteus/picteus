@@ -27,9 +27,14 @@ export default function Notifications()
   const renderedNotifications = useMemo(() => notifications.map((notification, index) => (
     <div key={notification.id}>
       <Notification
+        useMantine={false}
         notification={notification}
         onOpen={() => setHoverCardKey(randomId())}
-        onClose={() => setSeed(randomId())}
+        onClose={() =>
+        {
+          void NotificationService.deleteNotification(notification.id);
+          setSeed(randomId());
+        }}
       />
       {index < (notifications.length - 1) && (<Divider mt={8} mb={8}/>)}
     </div>
