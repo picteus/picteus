@@ -842,7 +842,7 @@ export class NotificationsGateway
       if (await checkSchema(z.object({
         toast: z.object({
           type: z.enum(IntentToastType),
-          title: z.string(),
+          title: z.string().optional(),
           subtitle: z.string()
         })
       }), specificIntent) === false)

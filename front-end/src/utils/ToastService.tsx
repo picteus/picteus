@@ -1,17 +1,18 @@
 import React, { ReactNode } from "react";
 import { Notification } from "@mantine/core";
-import { IconCheck, IconX } from "@tabler/icons-react";
+import { IconCancel, IconCheck, IconX } from "@tabler/icons-react";
 import i18n from "i18next";
 import { toast as ReactToast } from "react-toastify";
 
 
-function withTitleAndSubtitle(type: "info" | "error", title: string, subtitle?: string): void
+function withTitleAndSubtitle(type: "info" | "cancel" | "error", title: string, subtitle?: string): void
 {
   const isInfo = type === "info";
+  const isCancel = type === "cancel";
   ReactToast(
     <Notification
-      icon={isInfo ? <IconCheck/> : <IconX/>}
-      color={isInfo ? "teal" : "red"}
+      icon={isInfo ? <IconCheck/> : (isCancel ? <IconCancel/> : <IconX/>)}
+      color={isInfo ? "teal" : (isCancel ? "orange" : "red")}
       title={title}
       mt="md"
     >
@@ -25,9 +26,14 @@ function success(subtitle?: string): void
   return withTitleAndSubtitle("info", i18n.t("message.toastSuccessTitle"), subtitle);
 }
 
+function cancel(subtitle?: string): void
+{
+  return withTitleAndSubtitle("cancel", i18n.t("message.toastCancelTitle"), subtitle);
+}
+
 function failure(subtitle?: string): void
 {
-  return withTitleAndSubtitle("error", i18n.t("message.toastErrorTitle"), subtitle);
+  return withTitleAndSubtitle("error", i18n.t("message.toastFailureTitle"), subtitle);
 }
 
 function failureAndMessage(error: Error, message?: string): void

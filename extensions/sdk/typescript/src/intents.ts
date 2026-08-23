@@ -184,13 +184,14 @@ export interface ShowIntent extends BasisIntent
 export enum IntentToastType
 {
   Info = "info",
+  Cancel = "cancel",
   Error = "error"
 }
 
 export interface IntentToast
 {
   readonly type: IntentToastType;
-  readonly title: string;
+  readonly title?: string;
   readonly subtitle: string;
 }
 

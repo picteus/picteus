@@ -209,13 +209,14 @@ class ShowIntent(BasisIntent):
 
 class IntentToastType(StrEnum):
     INFO = "info"
+    CANCEL = "cancel"
     ERROR = "error"
 
 
 @dataclass(kw_only=True)
 class IntentToast(SuperDataClass):
     type: IntentToastType
-    title: str
+    title: Optional[str] = field(default=None)
     subtitle: str
 
 

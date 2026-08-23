@@ -7,6 +7,7 @@ import {
   isImagesIntent,
   isNotificationIntent,
   isShowIntent,
+  isToastIntent,
   isUiIntent
 } from "@picteus/shared-core";
 
@@ -145,6 +146,10 @@ function computeLog(event: SocketEventType): LogType
     else if (isShowIntent(intent))
     {
       intentType = "a show";
+    }
+    else if (isToastIntent(intent))
+    {
+      intentType = "a toast";
     }
     else if (isNotificationIntent(intent))
     {

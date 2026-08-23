@@ -29,8 +29,9 @@ export default {
     idCopied: "The image ID has been successfully copied to your clipboard.",
     fileProcessing:
       "File processing is in progress and may take some time. Please do not close the window.",
-    toastErrorTitle: "Operation failed",
-    toastSuccessTitle: "Operation successful"
+    toastSuccessTitle: "Operation successful",
+    toastCancelTitle: "Operation cancelled",
+    toastFailureTitle: "Operation failed",
   },
   field: {
     noValue: "—",

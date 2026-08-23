@@ -13,6 +13,7 @@ import {
   ExtensionApi,
   ImageApi,
   ImageAttachmentApi,
+  IntentToastType,
   Manifest,
   ManifestFromJSON,
   MiscellaneousApi,
@@ -29,17 +30,29 @@ export type InstructionReturnedErrorCause = (typeof InstructionReturnedErrorCaus
 export class InstructionReturnedError extends Error
 {
 
-  public readonly reason: InstructionReturnedErrorCause;
-
-  constructor(message: string, reason: InstructionReturnedErrorCause)
+  constructor(message: string, public readonly reason: InstructionReturnedErrorCause)
   {
     super(message);
-    this.reason = reason;
   }
 
 }
 
 export type CommandParameters = Record<string, any>;
+
+export class CommandError extends Error
+{
+
+  static fromError(error: CommandParameters): CommandError
+  {
+    return new CommandError(error.message);
+  }
+
+  constructor(message: string)
+  {
+    super(message);
+  }
+
+}
 
 export const EventName =
   {
@@ -632,6 +645,7 @@ export class PicteusExtension
         const requiresResult = channel !== extensionSettingsChannel;
         let result: any;
         let success = false;
+        let eventName: EventName | undefined;
         try
         {
           if (channel === extensionSettingsChannel)
@@ -666,7 +680,8 @@ export class PicteusExtension
           }
           else
           {
-            result = await this.onEvent(communicator, channel as EventName, value);
+            eventName = channel as EventName;
+            result = await this.onEvent(communicator, eventName, value);
           }
           success = true;
         }
@@ -674,7 +689,14 @@ export class PicteusExtension
         {
           // We want the process to continue even if an exception occurs
           this.logger.error(`An error occurred during the handling of the event on channel '${channel}'`, error);
-          communicator.sendLog(`The handling of the event failed for the ${this.toString()}. Reason: '${error.message}'`, "error");
+          if ((eventName === EventName.ImageRunCommand || eventName === EventName.ProcessRunCommand) && error instanceof CommandError)
+          {
+            void communicator.launchIntent({ toast: { type: IntentToastType.Error, subtitle: error.message } });
+          }
+          else
+          {
+            communicator.sendLog(`The handling of the event failed for the ${this.toString()}. Reason: '${error.message}'`, "error");
+          }
         }
         finally
         {

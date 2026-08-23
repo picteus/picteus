@@ -13,13 +13,12 @@ from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never, List
 
 import aiohttp
 import socketio
-# noinspection PyPackageRequirements
 import urllib3
 from socketio import SimpleClient
 
 import picteus_ws_client
-from picteus_extension_sdk import get_version
-from picteus_extension_sdk.intents import Intent
+from picteus_extension_sdk import get_version, ToastIntent, IntentToastType
+from picteus_extension_sdk.intents import Intent, IntentToast
 from picteus_ws_client import Manifest
 
 basicConfig(
@@ -47,6 +46,12 @@ class InstructionReturnedError(Exception):
 
 
 CommandParameters = Dict[str, Any]
+
+
+class CommandError(Exception):
+
+    def __init__(self, error: str | Exception) -> None:
+        super().__init__(str(error) if isinstance(error, Exception) else error)
 
 
 class EventName(StrEnum):
@@ -98,14 +103,12 @@ def _scrub_bytes(an_object: Any) -> Any:
 
 class _MessageSender:
 
-    def __init__(self, logger: logging.Logger, parameters: _ExtensionParameters,
-                 sio: Optional[socketio.AsyncClient], socket: Optional[SimpleClient],
+    def __init__(self, logger: logging.Logger, parameters: _ExtensionParameters, sio: socketio.AsyncClient,
                  to_string: Callable[[], str], context_id: Optional[str]) -> None:
         super().__init__()
         self.logger: logging.Logger = logger
         self.parameters: _ExtensionParameters = parameters
-        self.sio: Optional[socketio.AsyncClient] = sio
-        self.socket: Optional[SimpleClient] = socket
+        self.sio: socketio.AsyncClient = sio
         self.to_string: Callable[[], str] = to_string
         self.context_id: Optional[str] = context_id
         self._maximum_payload_size_in_bytes: Optional[int] = None
@@ -127,29 +130,29 @@ class _MessageSender:
             log_level = logging.WARN
         elif level == "error":
             log_level = logging.ERROR
-        # noinspection PyUnboundLocalVariable
+        else:
+            raise RuntimeError(f"Unhandled log level '{level}'")
         self.logger.log(log_level, message)
         await self.send_message(instructions_event, {"log": {"message": message, "level": level}})
 
     async def send_notification(self, value: Dict[str, Any]) -> None:
         await self.send_message(instructions_event, {"notification": value})
 
-    async def launch_intent(self, intent: Intent, future: asyncio.Future) -> None:
+    async def launch_intent(self, intent: Intent, future: Optional[asyncio.Future]) -> None:
         def callback(the_value: Dict[str, Any]) -> T:
             self.logger.debug(
                 f"Received a result related to the intent '{_scrub_bytes(intent)}' for {self.to_string()}")
-            if "cancel" in the_value:
-                # noinspection PyUnresolvedReferences
-                future.set_exception(
-                    InstructionReturnedError(the_value["cancel"],
-                                             InstructionReturnedErrorCause.CANCEL))
-            elif "error" in the_value:
-                # noinspection PyUnresolvedReferences
-                future.set_exception(
-                    InstructionReturnedError(the_value["error"],
-                                             InstructionReturnedErrorCause.ERROR))
-            else:
-                future.set_result(the_value.get("value", None))
+            if future is not None:
+                if "cancel" in the_value:
+                    future.set_exception(
+                        InstructionReturnedError(the_value["cancel"],
+                                                 InstructionReturnedErrorCause.CANCEL))
+                elif "error" in the_value:
+                    future.set_exception(
+                        InstructionReturnedError(the_value["error"],
+                                                 InstructionReturnedErrorCause.ERROR))
+                else:
+                    future.set_result(the_value.get("value", None))
 
         # Removes recursively the "None" values, taken from https://stackoverflow.com/questions/20558699/python-how-to-recursively-remove-none-values-from-a-nested-data-structure-list
         def remove_none(an_object: T) -> T:
@@ -186,11 +189,7 @@ class _MessageSender:
                                  **body}
         if context_id is not None:
             value["contextId"] = context_id
-        # noinspection PySimplifyBooleanCheck
-        if self.sio is not None:
-            await self.sio.emit(event=event, data=value, namespace=None, callback=callback)
-        else:
-            self.socket.emit(event, data=value)
+        await self.sio.emit(event=event, data=value, namespace=None, callback=callback)
 
 
 class Communicator:
@@ -238,7 +237,10 @@ class PicteusExtension:
     def get_manifest() -> Manifest:
         with open(os.path.join(PicteusExtension.get_extension_home_directory_path(), "manifest.json"), "r") as file:
             string = file.read()
-            return Manifest.from_json(string)
+            manifest = Manifest.from_json(string)
+            if manifest is None:
+                raise RuntimeError("Could not load the manifest properly")
+            return manifest
 
     @staticmethod
     def get_sdk_version() -> str:
@@ -259,15 +261,13 @@ class PicteusExtension:
         self.logger.info(
             f"Instantiating the {self.to_string()} through the process with id '{os.getpid()}' relying on the SDK version '{PicteusExtension.get_sdk_version()}'")
         self.executor: Optional[ThreadPoolExecutor] = None
-        self.queue: Optional[asyncio.Queue] = None
         self.parameters: _ExtensionParameters = _ExtensionParameters(self._get_parameters())
-        # noinspection PySimplifyBooleanCheck
-        if self.parameters.web_services_base_url.startswith("https://localhost") == True:
+        if self.parameters.web_services_base_url.startswith("https://localhost"):
             # This prevents the warning "InsecureRequestWarning: Unverified HTTPS request is being made.", because we are invoking a local HTTPS endpoint with a self-signed certificate
             urllib3.disable_warnings()
         self.extension_id: str = self.parameters.extension_id
         self.web_services_base_url: str = self.parameters.web_services_base_url
-        self.api_key: str | None = self.parameters.api_key
+        self.api_key: Optional[str] = self.parameters.api_key
         self.api_client: picteus_ws_client.ApiClient = self._get_api_web_services_client()
         self.sio: Optional[socketio.AsyncClient] = None
         self.session: Optional[aiohttp.ClientSession] = None
@@ -280,11 +280,11 @@ class PicteusExtension:
 
         self.executor = ThreadPoolExecutor(max_workers=os.cpu_count())
         # We resort to a FIFO queue, so that messages are handled in creation order, and which is asynchronous so that the event loop is not blocked
-        self.queue = asyncio.Queue()
+        queue: asyncio.Queue = asyncio.Queue()
 
         def exception_handler(_loop, context):
             message = context["message"]
-            # This is inpired from articles https://superfastpython.com/asyncio-task-exception-was-never-retrieved/ and https://superfastpython.com/asyncio-event-loop-exception-handler
+            # This is inspired from articles https://superfastpython.com/asyncio-task-exception-was-never-retrieved/ and https://superfastpython.com/asyncio-event-loop-exception-handler
             if message != "Task exception was never retrieved":
                 self.logger.error(f"An unexpected exception with message {message} occurred")
 
@@ -302,9 +302,9 @@ class PicteusExtension:
             finally:
                 try:
                     await self._disconnect_socket()
-                except Exception as exception:
+                except Exception as inner_exception:
                     self.logger.error(
-                        f"An error occurred while exiting the {self.to_string()}. Reason: '{str(exception)}'")
+                        f"An error occurred while exiting the {self.to_string()}. Reason: '{str(inner_exception)}'")
                 finally:
                     self.logger.info(f"Exiting from the {self.to_string()}")
                     sys.exit()
@@ -317,7 +317,7 @@ class PicteusExtension:
             while True:
                 try:
                     # We wait in an asynchronous way, i.e. without active polling, in order not to consume CPU cycles
-                    data = await self.queue.get()
+                    data = await queue.get()
                     data_type: str = data["type"]
                     try:
                         sender: _MessageSender = data["sender"]
@@ -326,24 +326,23 @@ class PicteusExtension:
                         elif data_type == "notification":
                             await sender.send_notification(data["notification"])
                         elif data_type == "intent":
-                            await sender.launch_intent(data["intent"], data["future"])
+                            await sender.launch_intent(data["intent"], data.get("future", None))
                         elif data_type == "acknowledgment":
                             await sender.send_acknowledgment(data["acknowledgment"])
                         else:
                             self.logger.error(f"Unknown queue message with type '{data_type}'")
-                    except Exception as exception:
+                    except Exception as inner_exception:
                         self.logger.error(
-                            f"An error occurred while pumping the queue message of type {data_type}. Reason: '{str(exception)}")
+                            f"An error occurred while pumping the queue message of type {data_type}. Reason: '{str(inner_exception)}")
                 except Exception as exception:
                     self.logger.error(f"An error occurred while pumping the queue message. Reason: '{str(exception)}")
 
         asyncio.get_running_loop().create_task(pump_log_and_notifications_messages())
 
         async def inner_initialize() -> None:
-            # noinspection PySimplifyBooleanCheck
-            if (await self.initialize()) == True:
+            if await self.initialize():
                 try:
-                    await self._connect_socket()
+                    await self._connect_socket(queue)
                 except Exception as inner_exception:
                     self.exit(2, inner_exception, "the connection failed")
             else:
@@ -351,8 +350,8 @@ class PicteusExtension:
 
         try:
             await inner_initialize()
-        except Exception as exception:
-            self.exit(1, exception, "the initialization failed")
+        except Exception as initialize_exception:
+            self.exit(1, initialize_exception, "the initialization failed")
         finally:
             self.logger.info(f"The {self.to_string()} is now over")
 
@@ -454,7 +453,6 @@ class PicteusExtension:
         return []
 
     async def run_in_executor(self, function: Callable) -> Any | None:
-        # noinspection PyTypeChecker
         return await asyncio.get_event_loop().run_in_executor(self.executor, function)
 
     def get_repository_api(self) -> picteus_ws_client.RepositoryApi:
@@ -479,7 +477,6 @@ class PicteusExtension:
         return picteus_ws_client.ImageAttachmentApi(self.api_client)
 
     def get_settings(self) -> SettingsValue:
-        # noinspection PyUnresolvedReferences
         return picteus_ws_client.ExtensionApi(self.api_client).extension_get_settings(id=self.extension_id).value
 
     # noinspection PyMethodMayBeStatic
@@ -488,16 +485,17 @@ class PicteusExtension:
             parameters = json.load(file)
             return parameters
 
-    async def _connect_socket(self) -> None:
+    async def _connect_socket(self, queue) -> None:
         self.logger.info(f"Connecting the {self.to_string()} to the server")
         # The Socket.io Python documentation is available at https://python-socketio.readthedocs.io/en/latest/client.html
         use_ssl: bool = self.web_services_base_url.startswith("https")
         tcp_connector = aiohttp.TCPConnector(ssl=use_ssl, verify_ssl=False if use_ssl else True)
         self.session = aiohttp.ClientSession(connector=tcp_connector)
-        self.sio = socketio.AsyncClient(logger=self.logger, http_session=self.session)
-        global_sender = _MessageSender(self.logger, self.parameters, self.sio, None, self.to_string, None)
+        sio: socketio.AsyncClient = socketio.AsyncClient(logger=self.logger, http_session=self.session)
+        self.sio = sio
+        global_sender = _MessageSender(self.logger, self.parameters, sio, self.to_string, None)
 
-        @self.sio.event
+        @sio.event
         async def connect() -> None:
             self.logger.info(f"The {self.to_string()} socket is connected")
 
@@ -514,15 +512,15 @@ class PicteusExtension:
                                                  "environment": "python"
                                              }, handle_response)
 
-        @self.sio.event
+        @sio.event
         def connect_error(_data) -> None:
             self.logger.warning(f"The {self.to_string()} socket connection failed")
 
-        @self.sio.event
+        @sio.event
         def disconnect() -> None:
             self.logger.info(f"The {self.to_string()} socket is disconnected")
 
-        @self.sio.on("events")
+        @sio.on("events")
         async def on_message(event: Dict[str, Any]) -> Any | None:
             command: Dict[str, Any] = event
             channel: str = command["channel"]
@@ -534,13 +532,14 @@ class PicteusExtension:
             timestamp_string = timestamp.strftime("%H:%M:%S.%f")[:-3]
             self.logger.info(
                 f"The {self.to_string()} received at {timestamp_string} the command {command} on channel '{channel}' attached to the context with id '{context_id}'")
-            sender = _MessageSender(self.logger, self.parameters, self.sio, None, self.to_string, context_id)
+            sender = _MessageSender(self.logger, self.parameters, sio, self.to_string, context_id)
             sender.maximum_payload_size_in_bytes = global_sender.maximum_payload_size_in_bytes
-            communicator = Communicator(self.logger, sender, self.queue)
+            communicator = Communicator(self.logger, sender, queue)
 
             async def handle_event() -> Any | None:
                 requires_result: bool = channel != extension_settings_channel
                 success: bool = False
+                event_name: EventName | None = None
                 try:
                     if channel == extension_settings_channel:
                         result: None = await self.on_settings(communicator, value["value"])
@@ -548,8 +547,7 @@ class PicteusExtension:
                         previous: Optional[str] = value.get("previous", None)
                         current: str = value["current"]
                         upgrade: bool = value["upgrade"]
-                        # noinspection simplify-boolean-check
-                        if upgrade == True:
+                        if upgrade:
                             await self.on_upgrade(communicator, Versions(current, previous))
                             result: bool = True
                         else:
@@ -562,7 +560,9 @@ class PicteusExtension:
                             self.exit(3, inner_exception,
                                       "an error occurred during the execution of the 'onReady()' method: stopping the process")
                     else:
-                        result: Any | None = await self.on_event(communicator, EventName(channel), value)
+                        regular_event_name = EventName(channel)
+                        event_name = regular_event_name
+                        result: Any | None = await self.on_event(communicator, regular_event_name, value)
                     success = True
                     if requires_result is True and result is not None:
                         return result
@@ -570,32 +570,33 @@ class PicteusExtension:
                     # We want the process to continue even if an exception occurs
                     self.logger.exception(f"An error occurred during the handling of the event on channel '{channel}'")
                     # We use the synchronous variant because we want the events to be handled in creation order
-                    communicator.send_log(
-                        f"The handling of the event failed. Reason: '{str(inner_exception)}'",
-                        "error")
+                    is_run_command = event_name == EventName.IMAGE_RUN_COMMAND or event_name == EventName.PROCESS_RUN_COMMAND
+                    if is_run_command and isinstance(inner_exception, CommandError):
+                        queue.put_nowait({"sender": sender, "type": "intent", "intent": ToastIntent(
+                            toast=IntentToast(type=IntentToastType.ERROR, subtitle=str(inner_exception)))})
+                    else:
+                        communicator.send_log(f"The handling of the event failed. Reason: '{str(inner_exception)}'",
+                                              "error")
                 finally:
                     # We use the synchronous variant because we want the events to be handled in creation order
                     communicator.send_acknowledgment(success)
 
             return await handle_event()
 
-        await self.sio.connect(self.web_services_base_url, transports=["websocket"])
+        await sio.connect(self.web_services_base_url, transports=["websocket"])
 
-        # noinspection PyBroadException
         try:
             # We wait forever
-            await self.sio.wait()
+            await sio.wait()
         except Exception as exception:
             # This is expected and this happens when the process is terminated
-            # noinspection PySimplifyBooleanCheck
-            if self.terminating == True:
+            if self.terminating:
                 pass
             else:
                 self.logger.error(
                     f"An error occurred while listening to the server events. Reason: '{str(exception)}'")
         finally:
-            # noinspection PySimplifyBooleanCheck
-            if self.terminating == False:
+            if not self.terminating:
                 try:
                     await self.on_terminate()
                 finally:
@@ -607,17 +608,17 @@ class PicteusExtension:
         if self.sio is not None:
             await self.sio.disconnect()
             self.sio = None
-            await self.session.close()
-            self.session = None
+            if self.session is not None:
+                await self.session.close()
+                self.session = None
 
     def exit(self, code: int, exception: Exception, message: str) -> Never:
         self.logger.error(f"For the {self.to_string()}, {message}. Reason: '{str(exception)}'")
         sys.exit(code)
 
     def _get_api_web_services_client(self) -> picteus_ws_client.ApiClient:
-        configuration = picteus_ws_client.Configuration(host=self.web_services_base_url)
-        configuration.verify_ssl = False
         # If there is no API key, we do not set it
-        if self.api_key is not None:
-            configuration.api_key["api-key"] = self.api_key
+        configuration = picteus_ws_client.Configuration(host=self.web_services_base_url,
+                                                        api_key={"api-key": self.api_key} if self.api_key else None)
+        configuration.verify_ssl = False
         return picteus_ws_client.ApiClient(configuration)
