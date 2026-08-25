@@ -1,16 +1,17 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { io, ManagerOptions, Socket, SocketOptions } from "socket.io-client";
 
 import { API_KEY, BASE_PATH, generateRandomId } from "utils";
 import { EventInformationType, EventOnResultType, SocketEventType } from "types";
 import { EventService, NotificationService } from "app/services";
+import createHmrStableContext from "./createHmrStableContext.ts";
 
 
 type EventSocketContextType = {
   event: EventInformationType,
   eventStore: SocketClient
 };
-const EventSocketContext = createContext<EventSocketContextType>(undefined);
+const EventSocketContext = createHmrStableContext<EventSocketContextType>(import.meta.hot, "eventSocketContext", undefined);
 
 export function useEventSocket()
 {

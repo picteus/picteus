@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { randomId } from "@mantine/hooks";
 
 import { TabsType } from "types";
 import { StorageService } from "app/services";
+import createHmrStableContext from "./createHmrStableContext.ts";
 
 
 type ImagesTabsContextType = {
@@ -17,9 +18,7 @@ type ImagesTabsContextType = {
   mainTabValue: string,
 };
 
-const ImagesTabsContext = createContext<ImagesTabsContextType | undefined>(
-  undefined
-);
+const ImagesTabsContext = createHmrStableContext<ImagesTabsContextType | undefined>(import.meta.hot, "imagesTabsContext", undefined);
 
 export function useImagesTabsContext()
 {

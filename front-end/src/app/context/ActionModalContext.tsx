@@ -1,7 +1,8 @@
-import React, { createContext, useCallback, useContext, useRef, useState } from "react";
+import React, { useCallback, useContext, useRef, useState } from "react";
 import { randomId } from "@mantine/hooks";
 
 import { ActionModalValue } from "types";
+import createHmrStableContext from "./createHmrStableContext.ts";
 
 
 type ListenerType = (value: ActionModalValue, isAdded: boolean) => void;
@@ -12,7 +13,7 @@ type ActionModalContextType = [
   (id: string) => void,
   subscribe: (listener: ListenerType) => (() => void)
 ];
-const ActionModalContext = createContext<ActionModalContextType>(undefined);
+const ActionModalContext = createHmrStableContext<ActionModalContextType>(import.meta.hot, "actionModalContext", undefined);
 
 export function useActionModalContext()
 {

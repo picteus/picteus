@@ -1,18 +1,19 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 
 import { ImageSummary } from "@picteus/ws-client";
 
 import { ImageOrSummary } from "types";
 import { ToastService } from "utils";
 import { ImageService, StorageService } from "app/services";
+import createHmrStableContext from "./createHmrStableContext.ts";
 
 
-const ImagesSelectedContext = createContext<{
+const ImagesSelectedContext = createHmrStableContext<{
   selectedImages: ImageOrSummary[],
   toggleSelectedImage: (image: ImageSummary) => void,
   isSelectedImage: (image: ImageSummary) => boolean,
   clearSelectedImages: () => void
-} | undefined>(undefined);
+} | undefined>(import.meta.hot, "imagesSelectedContext", undefined);
 
 export function useImagesSelectedContext()
 {

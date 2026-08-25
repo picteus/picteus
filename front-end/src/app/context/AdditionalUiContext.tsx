@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useRef, useState } from "react";
+import React, { useCallback, useContext, useRef, useState } from "react";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
@@ -6,6 +6,7 @@ import { AdditionalUi } from "types";
 import { ToastService } from "utils";
 import { ExtensionsService } from "app/services";
 import useOpenWindow from "../hooks/useOpenWindow.tsx";
+import createHmrStableContext from "./createHmrStableContext.ts";
 
 
 type AdditionalUiContextValue = {
@@ -18,9 +19,7 @@ type AdditionalUiContextType = [
   (additionalUi: AdditionalUi) => void,
 ];
 
-const AdditionalUiContext = createContext<AdditionalUiContextType | undefined>(
-  undefined
-);
+const AdditionalUiContext = createHmrStableContext<AdditionalUiContextType | undefined>(import.meta.hot, "additionalUiContext", undefined);
 
 export function useAdditionalUiContext()
 {

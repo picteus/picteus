@@ -1,10 +1,11 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { io, ManagerOptions, Socket, SocketOptions } from "socket.io-client";
 
 import { CommandContextType, CommandParameters, CommandSocketEventType, JsonType } from "types";
+import createHmrStableContext from "./createHmrStableContext.ts";
 
 
-const CommandSocketContext = createContext(undefined);
+const CommandSocketContext = createHmrStableContext(import.meta.hot, "commandSocketContext", undefined);
 
 export function useCommandSocket(): CommandContextType
 {
