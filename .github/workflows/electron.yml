@@ -69,15 +69,15 @@ jobs:
         run: npm install
       - id: prerequisites
         name: Installs the prerequisites
-        run: npm run prerequisites
+        run: npm run prerequisites:electron:ci
       - id: build
         name: Builds the components
         env:
           GIT_TERMINAL_PROMPT: 0
-        run: npm run build
+        run: npm run build:electron:ci
       - id: distribute
         name: Packages and signs the Electron application
-        run: npm run distribute
+        run: distribute:electron:ci
       - id: auth
         uses: google-github-actions/auth@v3
         with:
@@ -90,4 +90,4 @@ jobs:
       - id: deploy
         if: ${{ inputs.deploy == true }}
         name: Deploys the Electron application
-        run: npm run deploy
+        run: deploy:electron:ci
