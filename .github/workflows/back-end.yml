@@ -63,4 +63,4 @@ jobs:
         run: npm run build:back-end:ci
       - id: tests
         name: Runs the tests
-        run: npm test:back-end:ci
+        run: npm run test:back-end:ci
