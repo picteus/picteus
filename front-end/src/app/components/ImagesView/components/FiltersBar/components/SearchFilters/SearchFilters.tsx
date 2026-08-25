@@ -196,6 +196,7 @@ export function SearchFilters({
         <Box w="100%" miw={0}>
           <Input
             component="div"
+            multiline
             pointer
             radius="md"
             rightSectionPointerEvents="all"
