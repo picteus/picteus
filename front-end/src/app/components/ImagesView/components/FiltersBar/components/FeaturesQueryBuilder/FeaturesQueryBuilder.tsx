@@ -309,7 +309,7 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
 
   useEffect(() =>
   {
-    FiltersService.computeFeaturesNamesOptions().then(setFeatureNames).catch(ToastService.apiCallError);
+    return FiltersService.subscribeToFeaturesNamesOptions(setFeatureNames, ToastService.apiCallError);
   }, []);
 
   const handleOperatorChange = (value: string) =>

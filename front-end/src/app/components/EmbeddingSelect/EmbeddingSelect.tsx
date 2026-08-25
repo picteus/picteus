@@ -32,17 +32,8 @@ export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
 
   useEffect(() =>
   {
-    async function initialize()
+    return RepositoriesService.subscribeToEmbeddingsNames((theEmbeddingNames) =>
     {
-      let theEmbeddingNames: ExtensionIdImageEmbeddingName [];
-      try
-      {
-        theEmbeddingNames = await RepositoriesService.getEmbeddingsNames();
-      }
-      catch (error)
-      {
-        return ToastService.apiCallError(error, "An error occurred while fetching embeddings names");
-      }
       setEmbeddingsNames(theEmbeddingNames);
       let selected = StorageService.getClosestImagesEmbeddingName();
       if (!selected || !theEmbeddingNames.find(embeddingName => mergeExtensionIdEmbeddingName(embeddingName) === selected))
@@ -59,9 +50,7 @@ export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
       }
       setSelectedEmbedding(selected);
       onSelected(selected === undefined ? undefined : splitExtensionIdAndEmbeddingName(selected));
-    }
-
-    void initialize();
+    }, ToastService.apiCallError);
   }, []);
 
   const {

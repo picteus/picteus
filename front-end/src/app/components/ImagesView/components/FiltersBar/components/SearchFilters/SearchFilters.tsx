@@ -63,11 +63,9 @@ export function SearchFilters({
 
   useEffect(() =>
   {
-    async function load()
+    return FiltersService.subscribeToTagsOptions((tags) =>
     {
-      const tags = await FiltersService.computeTagsOptions();
       setTags(tags);
-
       const uniqueValues = new Set<string>();
       const options: WithValueAndLabel[] = [];
       for (const tag of tags)
@@ -79,9 +77,7 @@ export function SearchFilters({
         }
       }
       setTagOptions(options);
-    }
-
-    load().catch(ToastService.apiCallError);
+    }, ToastService.apiCallError);
   }, []);
 
   useEffect(() =>
@@ -180,7 +176,8 @@ export function SearchFilters({
     return (
       <Group gap="sm">
         <Group gap={4}>
-          {extensionTags.map(extensionTag => <ExtensionIcon key={extensionTag.id} idOrExtension={extensionTag.id} size="sm"/>)}
+          {extensionTags.map(extensionTag => <ExtensionIcon key={extensionTag.id} idOrExtension={extensionTag.id}
+                                                            size="sm"/>)}
         </Group>
         <span>{option.label}</span>
       </Group>

@@ -50,12 +50,17 @@ function failureAndMessage(error: Error, message?: string): void
   failure(message !== undefined ? `${message}. Reason: '${error.message}'` : error.message);
 }
 
-function apiCallError(error: { response: Response }, message?: string): void
+export interface ApiCallError
+{
+  response: Response;
+}
+
+function apiCallError(error: ApiCallError, message?: string): void
 {
   error.response.json().then((jsonError) => failure(message !== undefined ? `${message}. Reason: '${jsonError.message}'` : jsonError.message));
 }
 
-function apiCallI18nError(error: { response: Response }, mnemonic: string): void
+function apiCallI18nError(error: ApiCallError, mnemonic: string): void
 {
   error.response.json().then((jsonError) => failure(i18n.t(mnemonic, { error: jsonError.message })));
 }

@@ -16,6 +16,7 @@ import {
 } from "@picteus/ws-client";
 
 import { LocalFiltersType } from "types";
+import { ApiCallError } from "utils";
 
 
 export type WithValue = { value: string };
@@ -53,14 +54,14 @@ const formatsOptions: WithValueAndLabel[] = Object.keys(ImageFormat).map((key) =
   label: ImageFormat[key]
 }));
 
-const computeFeaturesNamesOptions: () => Promise<ExtensionImageFeatureName[]> = async () =>
+const subscribeToFeaturesNamesOptions = (onData: (names: ExtensionImageFeatureName[]) => void, onError?: (error: ApiCallError) => void): () => void =>
 {
-  return await RepositoriesService.getFeatureNames();
+  return RepositoriesService.subscribeToFeatureNames(onData, onError);
 };
 
-const computeTagsOptions: () => Promise<ExtensionImageTag[]> = async () =>
+const subscribeToTagsOptions = (onData: (tags: ExtensionImageTag[]) => void, onError?: (error: ApiCallError) => void): () => void =>
 {
-  return await RepositoriesService.getTags();
+  return RepositoriesService.subscribeToTags(onData, onError);
 };
 
 const sortOrderOptions: WithValueAndLabel[] = [
@@ -221,8 +222,8 @@ export default {
   sortOrderOptions,
   searchInOptions,
   formatsOptions,
-  computeFeaturesNamesOptions,
-  computeTagsOptions,
+  subscribeToFeaturesNamesOptions,
+  subscribeToTagsOptions,
   localFiltersToSearchFilter,
   searchFilterToLocalFilters
 };

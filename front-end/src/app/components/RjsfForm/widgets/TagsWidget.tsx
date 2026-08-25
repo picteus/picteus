@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Extension, ExtensionImageTag } from "@picteus/ws-client";
 
+import { ToastService } from "utils";
 import { ExtensionsService, RepositoriesService } from "app/services";
 import { ExtensionIcon } from "app/components";
 
@@ -12,20 +13,17 @@ import { ExtensionIcon } from "app/components";
 export default function TagsWidget(props: WidgetProps)
 {
   const { id, value, required, disabled, readonly, onChange, onBlur, onFocus, schema } = props;
-  const [tags, setTags] = useState<ExtensionImageTag[]>([]);
-  const [extensions, setExtensions] = useState<Extension[]>([]);
-  const [t] = useTranslation();
+  const [ tags, setTags ] = useState<ExtensionImageTag[]>([]);
+  const [ extensions, setExtensions ] = useState<Extension[]>([]);
+  const [ t ] = useTranslation();
 
   useEffect(() =>
   {
-    RepositoriesService.getTags().then((remoteTags) =>
-    {
-      setTags(remoteTags);
-    });
     ExtensionsService.fetchAll().then((data) =>
     {
       setExtensions(data.extensions);
-    });
+    }).catch(ToastService.apiCallError);
+    return RepositoriesService.subscribeToTags(setTags, ToastService.apiCallError);
   }, []);
 
   const tagCounts = useMemo(() =>
@@ -36,7 +34,7 @@ export default function TagsWidget(props: WidgetProps)
       counts[tag.value] = (counts[tag.value] || 0) + 1;
     });
     return counts;
-  }, [tags]);
+  }, [ tags ]);
 
   const selectData = useMemo(() =>
   {
@@ -44,7 +42,7 @@ export default function TagsWidget(props: WidgetProps)
       value: JSON.stringify({ id: tag.id, value: tag.value }),
       label: tag.value
     }));
-  }, [tags]);
+  }, [ tags ]);
 
   const renderSelectOption: MultiSelectProps["renderOption"] = ({ option }) =>
   {
@@ -99,7 +97,7 @@ export default function TagsWidget(props: WidgetProps)
       }
       return JSON.stringify(v);
     });
-  }, [value, tags]);
+  }, [ value, tags ]);
 
   return (
     <MultiSelect
