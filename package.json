@@ -64,7 +64,7 @@
     "extensions:build": "npm --prefix extensions run build",
     "front-end:build": "cross-env BUILD_PATH=\"../build/front-end\" npm --prefix front-end run build",
     "electron:build": "npm --prefix electron run build",
-    "prerequisites:back-end:ci": "npm run this:prerequisites && npm run shared-core:build && npm run shared-back-end:prerequisites && npm run back-end:prerequisites && npm run extensions:prerequisites && npm run extensions:sdk:build && npm run back-end:prerequisites:install",
+    "prerequisites:back-end:ci": "npm run this:prerequisites && npm run shared-core:build && npm run shared-back-end:build && npm run back-end:prerequisites && npm run extensions:prerequisites && npm run extensions:sdk:build && npm run back-end:prerequisites:install",
     "build:back-end:ci": "npm --prefix back-end run prisma:generate && npm --prefix back-end run compile",
     "test:back-end:ci": "npm --prefix back-end run test:ci",
     "prerequisites:electron:ci": "npm run prerequisites",
