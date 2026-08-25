@@ -5,3 +5,22 @@
   overflow-x: hidden;
   @extend .scrollbar-custom;
 }
+
+@keyframes ring 
+{
+  0% { transform: rotate(0); }
+  10% { transform: rotate(30deg); }
+  20% { transform: rotate(-30deg); }
+  30% { transform: rotate(20deg); }
+  40% { transform: rotate(-20deg); }
+  50% { transform: rotate(10deg); }
+  60% { transform: rotate(-10deg); }
+  70% { transform: rotate(0); }
+  100% { transform: rotate(0); }
+}
+
+.ringAnimation 
+{
+  animation: ring 1s ease-in-out infinite;
+  transform-origin: top center;
+}

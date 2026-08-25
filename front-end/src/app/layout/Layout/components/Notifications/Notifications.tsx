@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActionIcon, Divider, Flex, HoverCard, Indicator, Stack, Text } from "@mantine/core";
 import { randomId } from "@mantine/hooks";
 import { IconBell, IconBellZ } from "@tabler/icons-react";
@@ -14,36 +14,66 @@ import style from "./Notifications.module.scss";
 export default function Notifications()
 {
   const [ t ] = useTranslation();
-  const notification = useSyncExternalStore(NotificationService.subscribeToNotifications, NotificationService.getNotification);
-  const [ notifications, setNotifications ] = useState<NotificationType[]>([]);
   const [ seed, setSeed ] = useState<string>(randomId());
+  const [ notifications, setNotifications ] = useState<NotificationType[]>([]);
   const [ hoverCardKey, setHoverCardKey ] = useState<string>(randomId());
+  const [ isAnimating, setIsAnimating ] = useState<boolean>(false);
+  const previousNotificationsLengthRef = useRef<number>(0);
 
   useEffect(() =>
   {
-    NotificationService.getNotifications().then(setNotifications);
-  }, [ notification, seed ]);
+    return NotificationService.subscribeToNotificationsChanged(() =>
+    {
+      setSeed(randomId());
+    });
+  }, []);
+
+  useEffect(() =>
+  {
+    NotificationService.getNotifications().then((newNotifications) =>
+    {
+      if (newNotifications.length > previousNotificationsLengthRef.current)
+      {
+        setIsAnimating(true);
+      }
+      previousNotificationsLengthRef.current = newNotifications.length;
+      setNotifications(newNotifications);
+    });
+  }, [ seed ]);
+
+  useEffect(() =>
+  {
+    if (isAnimating)
+    {
+      const timeout = setTimeout(() =>
+      {
+        setIsAnimating(false);
+      }, 2_000);
+      return () =>
+      {
+        clearTimeout(timeout);
+      };
+    }
+  }, [ isAnimating ]);
 
   const renderedNotifications = useMemo(() => notifications.map((notification, index) => (
     <div key={notification.id}>
       <Notification
-        useMantine={false}
+        isCompact={false}
         notification={notification}
         onOpen={() => setHoverCardKey(randomId())}
         onClose={() =>
         {
           void NotificationService.deleteNotification(notification.id);
-          setSeed(randomId());
         }}
       />
-      {index < (notifications.length - 1) && (<Divider mt={8} mb={8}/>)}
+      {index < (notifications.length - 1) && (<Divider mt={4} mb={8}/>)}
     </div>
   )), [ notifications ]);
 
-  async function handleOnClearAll()
+  function handleOnClearAll()
   {
-    await NotificationService.deleteAllNotifications();
-    setSeed(randomId());
+    void NotificationService.deleteAllNotifications();
   }
 
   return (<HoverCard
@@ -58,8 +88,8 @@ export default function Notifications()
     width={350}
   >
     <HoverCard.Target>
-      <Indicator inline color="orange" label={notifications.length} size={16}>
-        <ActionIcon variant="outline" size="md">
+      <Indicator inline color="orange" label={notifications.length} size={16} processing={isAnimating}>
+        <ActionIcon variant="outline" size="md" className={isAnimating ? style.ringAnimation : undefined}>
           <IconBell stroke={Common.IconStrokeSize}/>
         </ActionIcon>
       </Indicator>

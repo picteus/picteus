@@ -7,18 +7,18 @@ import { Notification } from "app/components";
 
 export default function NotificationCenter()
 {
-  const notification = useSyncExternalStore(NotificationService.subscribeToNotifications, NotificationService.getNotification);
+  const notification = useSyncExternalStore(NotificationService.subscribeToLatestNotifications, NotificationService.getNotification);
 
   useEffect(() =>
   {
     if (notification)
     {
       const id = "notification";
-      const options = { position: "top-center" as const, toastId: id };
+      const options = { position: "top-center" as const, toastId: id, closeOnClick: notification.type !== "action" };
       const noOperation = () =>
       {
       };
-      const content = <Notification useMantine={true}
+      const content = <Notification isCompact={true}
                                     notification={notification}
                                     onOpen={() =>
                                     {

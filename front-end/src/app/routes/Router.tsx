@@ -142,7 +142,6 @@ export default function AppRouter({}: AppRouterType)
           autoClose={3000}
           newestOnTop
           hideProgressBar
-          closeOnClick
           rtl={false}
           draggable
           pauseOnHover

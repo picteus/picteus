@@ -144,6 +144,8 @@ export default {
     update: "Update",
     save: "Save",
     send: "Send",
+    run: "Run",
+    view: "View",
     install: "Install",
     create: "Create",
     uninstall: "Uninstall",

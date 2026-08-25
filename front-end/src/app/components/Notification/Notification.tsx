@@ -1,5 +1,5 @@
 import React from "react";
-import { CloseButton, Flex, Image as MantineImage, Notification as MantineNotification, Text } from "@mantine/core";
+import { Button, Image as MantineImage, Notification as MantineNotification, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 
 import { ProcessCommandIntent, ShowIntent, UiIntent } from "@picteus/shared-core";
@@ -14,31 +14,10 @@ import { Common, ImageDetail } from "app/components";
 
 import variables from "../../../assets/style/variablesExport.module.scss";
 import style from "./Notification.module.scss";
+import { useTranslation } from "react-i18next";
 
 
-type NotificationIconType = {
-  notification: NotificationType;
-  size: number;
-};
-
-function NotificationIcon({ notification, size }: NotificationIconType)
-{
-  if (notification.illustrationUri === undefined)
-  {
-    return <IconInfoCircle stroke={Common.IconStrokeSize} size={size}/>;
-  }
-  return <MantineImage
-    alt={"Illustration"}
-    w={size}
-    h={size}
-    fit="contain"
-    radius={variables.imageRadius}
-    src={notification.illustrationUri}
-    fallbackSrc={Common.FallbackImageUrl}
-  />;
-}
-
-function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notification: NotificationType) => (() => Promise<void>)
+function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notification: NotificationType) => () => Promise<void>
 {
   const intentRunner = useExtensionIntentRunner();
   const [ , addModal, removeModal ] = useActionModalContext();
@@ -99,56 +78,87 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
   };
 }
 
+type NotificationIconType = {
+  notification: NotificationType;
+  size: number;
+};
+
+function NotificationIcon({ notification, size }: NotificationIconType)
+{
+  if (notification.illustrationUri === undefined)
+  {
+    return <IconInfoCircle stroke={Common.IconStrokeSize} size={size}/>;
+  }
+  return <MantineImage
+    alt={"Illustration"}
+    w={size}
+    h={size}
+    fit="contain"
+    radius={variables.imageRadius}
+    src={notification.illustrationUri}
+    fallbackSrc={Common.FallbackImageUrl}
+  />;
+}
+
+type NotificationBodyType = {
+  isCompact: boolean;
+  notification: NotificationType;
+  onClick: () => void;
+};
+
+function NotificationBody({ isCompact, notification, onClick }: NotificationBodyType)
+{
+  const [ t ] = useTranslation();
+
+  return (
+    <>
+      <div className={style.subtitle}>
+        {notification.subtitle}
+      </div>
+      {isCompact === false && <>
+        {notification.body !== undefined && (
+          <Text size="sm" mt="xs" className={style.body}>
+            {notification.body}
+          </Text>
+        )}
+        {(notification.type === "action" || notification.type === "repository" || notification.type === "image") && (
+          <Button variant="light" size="xs" mt="xs" onClick={onClick}>
+            {notification.type === "action" ? (notification.actionLabel ?? t("button.run")) : t("button.view")}
+          </Button>
+        )}
+        <Text c="dimmed" size="xs" mt="xs">
+          {timeAgoFromMilliseconds(notification.milliseconds)}
+        </Text>
+      </>}
+    </>
+  );
+}
+
 type TheNotificationType = {
-  useMantine: boolean;
+  isCompact: boolean;
   notification: NotificationType;
   onOpen: () => void;
   onClose: () => void;
 };
 
-export default function Notification({ useMantine, notification, onOpen, onClose }: TheNotificationType)
+export default function Notification({ isCompact, notification, onOpen, onClose }: TheNotificationType)
 {
   const handleOnClick = useNotificationOnClick(onClose, onOpen)(notification);
 
-  if (useMantine)
-  {
-    return (
-      <MantineNotification
-        styles={{ icon: { backgroundColor: "transparent" } }}
-        icon={<div onClick={handleOnClick}><NotificationIcon notification={notification} size={Common.ToastIconEdge}/>
-        </div>}
-        title={notification.title}
-        withBorder
-      >
-        <div className={style.description} onClick={handleOnClick}>
-          {notification.subtitle}
-        </div>
-      </MantineNotification>
-    );
-  }
-  else
-  {
-    return (
-      <Flex align="flex-start" gap={8} onClick={handleOnClick} className={style.wrapper}>
-        <div onClick={handleOnClick}><NotificationIcon notification={notification}
-                                                       size={Common.NotificationIllustrationEdge}/></div>
-        <Flex direction="column" gap={4} flex={1}>
-          <Flex justify="space-between" align="center">
-            <Text fw={500} size="sm">{notification.title}</Text>
-            <CloseButton onClick={(event) =>
-            {
-              event.stopPropagation();
-              onClose();
-            }}/>
-          </Flex>
-          <Text c="gray" size="sm" className={style.description}>
-            {notification.subtitle}
-          </Text>
-          <Text c="dimmed" size="xs">
-            {timeAgoFromMilliseconds(notification.milliseconds)}
-          </Text>
-        </Flex>
-      </Flex>
-    );
-  }
+  return (
+    <MantineNotification
+      classNames={{
+        root: isCompact === true ? style.rootCompact : style.root,
+        icon: isCompact === true ? style.iconCompact : style.icon
+      }}
+      icon={<NotificationIcon notification={notification}
+                              size={isCompact === true ? Common.ToastIconEdge : Common.NotificationIllustrationEdge}/>}
+      title={notification.title}
+      withBorder={isCompact}
+      onClose={onClose}
+    >
+      <NotificationBody isCompact={isCompact} notification={notification} onClick={handleOnClick}/>
+    </MantineNotification>
+  );
+
 }

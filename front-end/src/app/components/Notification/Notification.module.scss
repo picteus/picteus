@@ -1,9 +1,33 @@
-.wrapper
+.root
 {
-  cursor: pointer;
+  background-color: transparent;
+  box-shadow: none;
 }
 
-.description
+.rootClickable
+{
+  cursor: pointer;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.rootCompact
+{
+}
+
+.icon
+{
+  background-color: transparent;
+  width: auto;
+  height: auto;
+}
+
+.iconCompact
+{
+  background-color: transparent;
+}
+
+.subtitle, .body
 {
   word-break: break-word;
 }

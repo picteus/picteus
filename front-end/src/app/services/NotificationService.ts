@@ -5,7 +5,22 @@ import { getObjectStore, StoreKind } from "./IndexDbService.ts";
 const notificationsKind: StoreKind = "notifications";
 
 let latestNotification: NotificationType | undefined = undefined;
-const notificationListeners: Set<() => void> = new Set();
+const latestNotificationListeners: Set<() => void> = new Set();
+const notificationsChangedListeners: Set<() => void> = new Set();
+
+function notifyListeners(): void
+{
+  function internalNotifyListeners(listeners: Set<() => void>): void
+  {
+    for (const listener of listeners)
+    {
+      listener();
+    }
+  }
+
+  internalNotifyListeners(latestNotificationListeners);
+  internalNotifyListeners(notificationsChangedListeners);
+}
 
 async function upgrade(_previousVersion: string, currentVersion: string): Promise<void>
 {
@@ -13,6 +28,18 @@ async function upgrade(_previousVersion: string, currentVersion: string): Promis
   {
     await deleteAllNotifications();
   }
+}
+
+function subscribeToLatestNotifications(callback: () => void): () => void
+{
+  latestNotificationListeners.add(callback);
+  return () => latestNotificationListeners.delete(callback);
+}
+
+function subscribeToNotificationsChanged(callback: () => void): () => void
+{
+  notificationsChangedListeners.add(callback);
+  return () => notificationsChangedListeners.delete(callback);
 }
 
 async function getNotifications(): Promise<NotificationType []>
@@ -35,16 +62,7 @@ async function storeNotification(notification: NotificationType): Promise<void>
   const store = await getObjectStore(notificationsKind, "readwrite");
   store.add(notification);
   latestNotification = notification;
-  for (const listener of notificationListeners)
-  {
-    listener();
-  }
-}
-
-function subscribeToNotifications(callback: () => void): () => boolean
-{
-  notificationListeners.add(callback);
-  return () => notificationListeners.delete(callback);
+  notifyListeners();
 }
 
 function getNotification(): NotificationType | undefined
@@ -60,6 +78,7 @@ async function deleteNotification(id: string): Promise<void>
     const deleteRequest = store.delete(id);
     deleteRequest.onsuccess = () =>
     {
+      notifyListeners();
       resolve();
     };
     deleteRequest.onerror = () => reject(deleteRequest.error);
@@ -74,6 +93,7 @@ async function deleteAllNotifications(): Promise<void>
     const clearRequest = store.clear();
     clearRequest.onsuccess = () =>
     {
+      notifyListeners();
       resolve();
     };
     clearRequest.onerror = () => reject(clearRequest.error);
@@ -82,10 +102,11 @@ async function deleteAllNotifications(): Promise<void>
 
 export default {
   upgrade,
+  subscribeToLatestNotifications,
+  subscribeToNotificationsChanged,
   deleteNotification,
   deleteAllNotifications,
   getNotifications,
   storeNotification,
-  subscribeToNotifications,
   getNotification
 };

@@ -13,7 +13,7 @@ function withTitleAndSubtitle(type: "info" | "cancel" | "error", title: string, 
   const isInfo = type === "info";
   const isCancel = type === "cancel";
   const id = randomId();
-  const options = { position: "bottom-center" as const, toastId: id };
+  const options = { position: "bottom-center" as const, toastId: id, closeOnClick: true };
   triggerToast(({ closeToast }) => (
     <Notification
       icon={isInfo ? <IconCheck size={Common.ToastIconEdge}/> : (isCancel ? <IconCancel size={Common.ToastIconEdge}/> :
@@ -34,6 +34,7 @@ function success(subtitle?: string): void
   return withTitleAndSubtitle("info", i18n.t("message.toastSuccessTitle"), subtitle);
 }
 
+// noinspection JSUnusedLocalSymbols
 function cancel(subtitle?: string): void
 {
   return withTitleAndSubtitle("cancel", i18n.t("message.toastCancelTitle"), subtitle);

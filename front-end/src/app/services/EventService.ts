@@ -184,6 +184,32 @@ async function generateImageCreatedOrUpdatedNotification(event: SocketEventType)
   const suffix = event.channel === ChannelEnum.IMAGE_CREATED ? "imageCreated" : "imageUpdated";
   const title = i18n.t(`notifications.${suffix}`);
   const subtitle = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
+  const imageUrl = ImageService.getImageSrc(image.url, Common.NotificationIllustrationEdge, Common.NotificationIllustrationEdge);
+  let illustrationUri = imageUrl;
+  try
+  {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    illustrationUri = await new Promise<string>(
+      (resolve) =>
+      {
+        const reader = new FileReader();
+        reader.onloadend = () =>
+        {
+          resolve(reader.result as string);
+        };
+        reader.onerror = () =>
+        {
+          resolve(illustrationUri);
+        };
+        reader.readAsDataURL(blob);
+      }
+    );
+  }
+  catch (error)
+  {
+    console.warn(`Failed to convert the image with URL '${imageUrl}' into a data URI`, error);
+  }
   return {
     id: event.id,
     milliseconds: event.milliseconds,
@@ -191,7 +217,7 @@ async function generateImageCreatedOrUpdatedNotification(event: SocketEventType)
     title,
     subtitle,
     data: { id: imageId },
-    illustrationUri: ImageService.getImageSrc(image.url, Common.NotificationIllustrationEdge, Common.NotificationIllustrationEdge)
+    illustrationUri
   };
 }
 
