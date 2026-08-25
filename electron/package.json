@@ -144,5 +144,8 @@
     "@picteus/shared-core": "file:../shared/core",
     "@picteus/shared-back-end": "file:../shared/back-end",
     "@picteus/shared-front-end": "file:../shared/front-end"
+  },
+  "overrides": {
+    "tar-stream": "3.1.9"
   }
 }
