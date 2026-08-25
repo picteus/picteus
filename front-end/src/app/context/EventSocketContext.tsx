@@ -63,7 +63,7 @@ class SocketClient
           milliseconds,
           value
         };
-        console.debug(`Received an ${isActivity === true ? "activity" : ""} event on channel '${channel}' with context id '${contextId}' emitted at ${milliseconds} ms with value ${JSON.stringify(value, undefined, 2)}`);
+        console.debug(`Received an ${isActivity === true ? "activity " : ""}event on channel '${channel}' with context id '${contextId}' emitted at ${milliseconds} ms with value ${JSON.stringify(value, undefined, 2)}`);
         const event: EventInformationType = { ...socketEvent, onResult };
         void EventService.storeSocketEvent(socketEvent);
         this.socketEvent = event;

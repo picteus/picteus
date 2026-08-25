@@ -529,6 +529,7 @@
         "type": "string",
         "title": "Parameter",
         "description": "A parameter which enables to tune the extension.",
+        "default": "value",
         "ui": {
           "widget": "textarea"
         }

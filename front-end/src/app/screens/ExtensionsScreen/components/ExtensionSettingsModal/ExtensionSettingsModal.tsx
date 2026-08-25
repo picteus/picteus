@@ -31,6 +31,8 @@ export default function ExtensionSettingsModal({
   const [ t ] = useTranslation();
   const [ loading, setLoading ] = useState<boolean>(false);
   const [ extensionSettings, setExtensionSettings ] = useState<ExtensionSettings>();
+  const [ saveFailed, setSaveFailed ] = useState<boolean>(false);
+  const [ isValid, setIsValid ] = useState<boolean>(true);
 
   async function load()
   {
@@ -56,6 +58,7 @@ export default function ExtensionSettingsModal({
   async function handleOnSaveSettings()
   {
     setLoading(true);
+    setSaveFailed(false);
     try
     {
       await ExtensionsService.setSettings({
@@ -63,14 +66,38 @@ export default function ExtensionSettingsModal({
         extensionSettings
       });
       ToastService.success(t("extensionSettingsModal.successSaving"));
+      onSuccess(extensionSettings);
     }
     catch (error)
     {
       ToastService.apiCallError(error, t("extensionSettingsModal.errorSaving"));
+      setSaveFailed(true);
     }
     finally
     {
-      onSuccess(extensionSettings);
+      setLoading(false);
+    }
+  }
+
+  async function handleOnResetSettings()
+  {
+    setLoading(true);
+    try
+    {
+      const settings = await ExtensionsService.resetSettings({
+        id: extension.manifest.id
+      });
+      setExtensionSettings(settings);
+      setSaveFailed(false);
+      ToastService.success(t("extensionSettingsModal.successResetting"));
+      onSuccess(settings);
+    }
+    catch (error)
+    {
+      ToastService.apiCallError(error, t("extensionSettingsModal.errorResetting"));
+    }
+    finally
+    {
       setLoading(false);
     }
   }
@@ -92,7 +119,7 @@ export default function ExtensionSettingsModal({
         <Trans
           i18nKey="extensionSettingsModal.warning"
           components={{ strong: <b/> }}
-          values={{ name: extension.manifest.id }}
+          values={{ name: extension.manifest.name }}
         />
       </Alert>
       <RjsfForm
@@ -100,12 +127,23 @@ export default function ExtensionSettingsModal({
         schema={schema}
         uiSchema={uiSchema}
         onChange={(value) => setExtensionSettings({ value })}
+        onValidationChange={setIsValid}
       />
-      <Flex justify="flex-end" mt="md">
+      <Flex justify="flex-end" mt="md" gap="sm">
+        {saveFailed && (
+          <Button
+            onClick={() => void handleOnResetSettings()}
+            loading={loading}
+            disabled={loading}
+            color="red"
+          >
+            {t("extensionSettingsModal.reset")}
+          </Button>
+        )}
         <Button
-          onClick={handleOnSaveSettings}
+          onClick={() => void handleOnSaveSettings()}
           loading={loading}
-          disabled={loading}
+          disabled={loading || !isValid}
           type="submit"
         >
           {t("button.save")}

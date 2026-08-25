@@ -1,17 +1,19 @@
-import { useEffect, useRef, useState } from "react";
-import { withTheme } from "@rjsf/core";
-import { Theme as MantineTheme } from "@aokiapp/rjsf-mantine-theme";
-import validator from "@rjsf/validator-ajv8";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
+import { withTheme } from "@rjsf/core";
+// TODO: upgrade to rjsf v6.8.0 and use the "@rjsf/mantine" module instead of "@aokiapp/rjsf-mantine-theme"
+// import { Theme as MantineTheme } from "@rjsf/mantine";
+import { Theme as MantineTheme } from "@aokiapp/rjsf-mantine-theme";
+import { customizeValidator } from "@rjsf/validator-ajv8";
 import { RegistryWidgetsType, RJSFSchema, UiSchema } from "@rjsf/utils";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/dropzone/styles.css";
 
+import { JsonType } from "types";
 import RepositoryWidget from "./widgets/RepositoryWidget";
 import CollectionWidget from "./widgets/CollectionWidget";
 import TagsWidget from "./widgets/TagsWidget";
-import { JsonType } from "../../../types";
 
 
 type RsfjFormType = {
@@ -19,6 +21,7 @@ type RsfjFormType = {
   schema: RJSFSchema;
   uiSchema?: UiSchema;
   onChange: (formData: object) => void;
+  onValidationChange?: (isValid: boolean) => void;
 };
 
 type UIProperty = { property: string, ui: JsonType };
@@ -70,15 +73,64 @@ function ErrorFallback({ error })
 
 const Form = withTheme(MantineTheme);
 
+const customValidator = customizeValidator(
+  {
+    ajvOptionsOverrides:
+      {
+        // We use the "all" value to strip all properties not in schema, or true to respect the schema's `additionalProperties` setting
+        removeAdditional: "all",
+        useDefaults: true
+      }
+  }
+);
+
 export default function RjsfForm({
   initialFormData,
   schema,
   uiSchema,
-  onChange
+  onChange,
+  onValidationChange
 }: RsfjFormType)
 {
-  const [formData, setFormData] = useState(initialFormData);
   const formRef = useRef(null);
+
+  function ensureSchemaBooleanDefaultValues(schema: RJSFSchema): RJSFSchema
+  {
+    if (schema.type === "object" && schema.properties)
+    {
+      for (const key in schema.properties)
+      {
+        const property: JsonType = schema.properties[key] as JsonType;
+        if (property.type === "boolean" && property.default === undefined)
+        {
+          property.default = false;
+        }
+        if (property.type === "object")
+        {
+          ensureSchemaBooleanDefaultValues(property);
+        }
+      }
+    }
+    return schema;
+  }
+
+  const withBooleanDefaultValueSchema = useMemo<RJSFSchema>(() =>
+  {
+    return ensureSchemaBooleanDefaultValues(schema);
+  }, [ schema ]);
+
+  const cleanedInitialFormData = useMemo<object | undefined>(() =>
+  {
+    if (initialFormData === undefined)
+    {
+      return undefined;
+    }
+    const dataCopy = JSON.parse(JSON.stringify(initialFormData));
+    customValidator.rawValidation(withBooleanDefaultValueSchema, dataCopy);
+    return dataCopy;
+  }, [ initialFormData, withBooleanDefaultValueSchema ]);
+
+  const [ formData, setFormData ] = useState(cleanedInitialFormData);
 
   useEffect(() =>
   {
@@ -86,7 +138,12 @@ export default function RjsfForm({
     {
       onChange(formData);
     }
-  }, [formData]);
+    if (onValidationChange)
+    {
+      const validationResult = customValidator.rawValidation(withBooleanDefaultValueSchema, formData ?? {});
+      onValidationChange(!validationResult.errors || validationResult.errors.length === 0);
+    }
+  }, [ formData ]);
 
   useEffect(() =>
   {
@@ -100,42 +157,25 @@ export default function RjsfForm({
         firstInput.focus();
       }, 100);
     }
-  }, [formRef]);
+  }, [ formRef ]);
 
-  function ensureSchemaDefaultValues(schema: RJSFSchema): RJSFSchema
-  {
-    if (schema.type === "object" && schema.properties)
+  const widgets: RegistryWidgetsType =
     {
-      for (const key in schema.properties)
-      {
-        const property: JsonType = schema.properties[key] as JsonType;
-        if (property.type === "boolean" && property.default === undefined)
-        {
-          property.default = false;
-        }
-        if (property.type === "object")
-        {
-          ensureSchemaDefaultValues(property);
-        }
-      }
-    }
-    return schema;
-  }
-
-  const widgets: RegistryWidgetsType = {
-    repository: RepositoryWidget,
-    collection: CollectionWidget,
-    tags: TagsWidget
-  };
+      repository: RepositoryWidget,
+      collection: CollectionWidget,
+      tags: TagsWidget
+    };
 
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <Form
         ref={formRef}
-        schema={ensureSchemaDefaultValues(schema)}
+        schema={withBooleanDefaultValueSchema}
         formData={formData}
-        validator={validator}
         uiSchema={uiSchema}
+        validator={customValidator}
+        omitExtraData={true}
+        liveOmit={true}
         onChange={(event) => setFormData(event.formData)}
         widgets={widgets}
       >

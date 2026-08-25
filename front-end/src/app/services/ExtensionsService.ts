@@ -12,6 +12,7 @@ import {
   ExtensionApiExtensionGetSettingsRequest,
   ExtensionApiExtensionInstallRequest,
   ExtensionApiExtensionPauseOrResumeRequest,
+  ExtensionApiExtensionResetSettingsRequest,
   ExtensionApiExtensionRunImageCommandRequest,
   ExtensionApiExtensionRunProcessCommandRequest,
   ExtensionApiExtensionSetSettingsRequest,
@@ -112,6 +113,13 @@ async function setSettings(
 )
 {
   return extensionApi.extensionSetSettings(parameters);
+}
+
+async function resetSettings(
+  parameters: ExtensionApiExtensionResetSettingsRequest
+): Promise<ExtensionSettings>
+{
+  return extensionApi.extensionResetSettings(parameters);
 }
 
 function getConfiguration(): ExtensionsConfiguration
@@ -260,6 +268,7 @@ export default {
   startOrStop,
   getSettings,
   setSettings,
+  resetSettings,
   getExtensionsWithCapability,
   getConfiguration,
   getAdditionalUis,

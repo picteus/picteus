@@ -297,13 +297,16 @@ export default {
   extensionSettingsModal: {
     title: "Extension settings",
     warning:
-      "You are about to update the settings of the extension with ID : <strong>{{name}}</strong>. Please ensure you understand the implications before proceeding.",
+      "This enables to define the settings of the <strong>{{name}}</strong> extension.",
     error:
       "There is no settings schema set for the  extension with ID : <strong>{{name}}</strong>.",
     jsonInvalid: "The text you entered is not in a valid JSON format.",
     errorLoading: "An error occurred while loading the extension settings",
     errorSaving: "An error occurred while saving the extension settings",
-    successSaving: "The extension settings have been successfully saved"
+    successSaving: "The extension settings have been successfully saved",
+    reset: "Reset",
+    errorResetting: "An error occurred while resetting the extension settings",
+    successResetting: "The extension settings have been successfully reset"
   },
   repositoryScreen: {
     title: "Repositories",
