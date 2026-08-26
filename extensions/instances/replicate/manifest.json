@@ -1,10 +1,13 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "replicate",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "name": "Replicate",
   "description": "Wraps the Replicate image generation features.",
-  "categories": ["capture", "generation"],
+  "categories": [
+    "capture",
+    "generation"
+  ],
   "runtimes": [
     {
       "environment": "node"

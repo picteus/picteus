@@ -1,6 +1,6 @@
 {
   "name": "@picteus/features-transformers",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "productName": "Picteus features-transformers extension",
   "description": "A Picteus extension which compute image features via transformers.",
   "keywords": [

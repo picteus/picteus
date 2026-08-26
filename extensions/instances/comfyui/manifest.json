@@ -1,10 +1,14 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "comfyui",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "name": "ComfyUI",
   "description": "Interacts with ComfyUI.",
-  "categories": ["capture", "enrichment", "generation"],
+  "categories": [
+    "capture",
+    "enrichment",
+    "generation"
+  ],
   "runtimes": [
     {
       "environment": "node"

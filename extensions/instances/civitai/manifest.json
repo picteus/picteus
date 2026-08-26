@@ -1,10 +1,12 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "civitai",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "name": "Civitai",
   "description": "Interacts with Civitai images.",
-  "categories": ["capture"],
+  "categories": [
+    "capture"
+  ],
   "runtimes": [
     {
       "environment": "node"

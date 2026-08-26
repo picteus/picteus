@@ -1,10 +1,13 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "example-python",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "name": "Python Example",
   "description": "An example of a Python extension.",
-  "categories": ["enrichment", "utility"],
+  "categories": [
+    "enrichment",
+    "utility"
+  ],
   "runtimes": [
     {
       "environment": "python"

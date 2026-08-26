@@ -1,10 +1,12 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "automatic1111",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "name": "Automatic1111",
   "description": "Interacts with Automatic1111.",
-  "categories": ["capture"],
+  "categories": [
+    "capture"
+  ],
   "runtimes": [
     {
       "environment": "node"

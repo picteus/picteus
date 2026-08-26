@@ -1,7 +1,7 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "color-embeddings",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Color Embeddings",
   "description": "Compute embedding of the image dominant colors.",
   "categories": [
