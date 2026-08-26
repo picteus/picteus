@@ -918,6 +918,16 @@ export class ApplicationWrapper
                 }
               }
             ));
+            subMenu.insert(index++, new MenuItem({
+                type: "normal",
+                id: "releaseNotes",
+                label: "Release Notes",
+                click: async (): Promise<void> =>
+                {
+                  await shell.openExternal("https://github.com/picteus/picteus/releases");
+                }
+              }
+            ));
             if (environment !== "production")
             {
               subMenu.insert(index++, new MenuItem({ type: "separator" }));

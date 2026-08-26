@@ -72,9 +72,9 @@ async function showInstallQuestion(window: BrowserWindow, releaseName: string, r
   const returnValue: Electron.MessageBoxReturnValue = await dialog.showMessageBox(window, {
     type: "question",
     title: app.getName(),
-    message: `A new version '${releaseName}' of the application has been downloaded: do you want to relaunch the application and install it now (patience, it will take about 30 seconds to restart)? Or do you prefer that it gets installed at next launch?`,
+    message: `A new version '${releaseName}' of the application has been downloaded.\n\nDo you want to relaunch the application and install it now (patience, it will take about 30 seconds to restart)?\n\nOr do you prefer that it gets installed at next launch?`,
     detail: releaseNotes !== undefined ? ("Here are the release notes of this version:" + "\n\n" + releaseNotes) : undefined,
-    buttons: ["Later", "Relaunch"]
+    buttons: [ "Install later", "Install now & relaunch" ]
   });
   return returnValue.response === 1;
 }
@@ -178,7 +178,7 @@ class CustomProvider extends Provider<UpdateInfo>
       releaseDate: feed.pub_date,
       releaseNotes: feed.notes,
       version: feed.version,
-      files: [{ url: feed.url, sha512 }],
+      files: [ { url: feed.url, sha512 } ],
       stagingPercentage: 100,
       path: feed.url,
       sha512

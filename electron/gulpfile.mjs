@@ -113,7 +113,7 @@ export const generateUpdateFeed = async () =>
       version: packageJson.version,
       name: `v${packageJson.version}`,
       pub_date: yamlFeed.releaseDate,
-      notes: "The first online release.",
+      notes: undefined,
       url: gcsBucketCoordinates !== undefined ? computeGcsBucketBaseUrl(gcsBucketCoordinates, packageJson, true, withVersion) : computeGitHubPagesBaseUrl(gitHubProjectUrl, packageJson, withVersion),
       sha512: yamlFeed.sha512
     };
