@@ -77,7 +77,7 @@ jobs:
         run: npm run build:electron:ci
       - id: distribute
         name: Packages and signs the Electron application
-        run: distribute:electron:ci
+        run: npm run distribute:electron:ci
       - id: auth
         uses: google-github-actions/auth@v3
         with:
@@ -90,4 +90,4 @@ jobs:
       - id: deploy
         if: ${{ inputs.deploy == true }}
         name: Deploys the Electron application
-        run: deploy:electron:ci
+        run: npm run deploy:electron:ci
