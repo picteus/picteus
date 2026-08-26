@@ -74,11 +74,13 @@ export default function RepositoryActions({
           size="md"
           variant="default"
           onClick={() =>
-            confirmAction(() => handleOnDeleteRepository(repository.id), {
-              title: t("repositoryScreen.confirmDeleteTitle"),
-              message: t("repositoryScreen.confirmDeleteMessage", {
-                name: repository.name
-              })
+            confirmAction({
+              onConfirm: () => handleOnDeleteRepository(repository.id), options: {
+                title: t("repositoryScreen.confirmDeleteTitle"),
+                message: t("repositoryScreen.confirmDeleteMessage", {
+                  name: repository.name
+                })
+              }
             })
           }
         >

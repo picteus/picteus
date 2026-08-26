@@ -34,7 +34,6 @@ function success(subtitle?: string): void
   return withTitleAndSubtitle("info", i18n.t("message.toastSuccessTitle"), subtitle);
 }
 
-// noinspection JSUnusedLocalSymbols
 function cancel(subtitle?: string): void
 {
   return withTitleAndSubtitle("cancel", i18n.t("message.toastCancelTitle"), subtitle);
@@ -91,6 +90,7 @@ function triggerToast(content: ToastContent, options: ToastOptions, id: string):
 export default {
   withTitleAndSubtitle,
   success,
+  cancel,
   failure,
   failureAndMessage,
   apiCallError,

@@ -77,9 +77,11 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
 
   function handleOnClickDelete()
   {
-    confirmAction(() => ImageService.destroy(image.id).catch(ToastService.apiCallError), {
-      title: t("commands.confirmImageDeleteTitle"),
-      message: t("commands.confirmImageDeleteMessage")
+    confirmAction({
+      onConfirm: () => ImageService.destroy(image.id).catch(ToastService.apiCallError), options: {
+        title: t("commands.confirmImageDeleteTitle"),
+        message: t("commands.confirmImageDeleteMessage")
+      }
     });
   }
 

@@ -13,6 +13,7 @@ import {
   isFormIntent,
   isImagesIntent,
   isNotificationIntent,
+  isOpenBrowserIntent,
   isShowIntent,
   isToastIntent,
   isUiIntent,
@@ -239,12 +240,11 @@ export default function IntentCenter()
         respondWithValue();
       }
 
-      // Determine which modal to show
       if (isFormIntent(intent))
       {
         handleForm(intent);
       }
-      else if (isUiIntent(intent) === true || isShowIntent(intent) === true)
+      else if (isUiIntent(intent) === true || isOpenBrowserIntent(intent) === true || isShowIntent(intent) === true)
       {
         void intentRunner(extensionId, intent, {
           onSuccess: respondWithValue,

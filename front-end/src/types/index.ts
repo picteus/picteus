@@ -168,6 +168,9 @@ export type UiCommandType = {
     frameContent: FrameContent;
     dialogContent?: DialogIconContent;
   };
+  openBrowser?: {
+    url: string
+  }
   dialog?: DialogType;
   show?: ShowType;
   images?: ImagesType;

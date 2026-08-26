@@ -9,7 +9,7 @@ export { default as useExtensionCommandRunner } from "./useExtensionCommandRunne
 export { default as useExtensionIntentRunner } from "./useExtensionIntentRunner.tsx";
 export { default as useKey } from "./useKey.tsx";
 export { default as useEscapeKey } from "./useEscapeKey.tsx";
-export { default as useConfirmAction } from "./useConfirmAction.tsx";
+export { default as useConfirmAction, type ConfirmOptions } from "./useConfirmAction.tsx";
 export { default as useImageNavigation } from "./useImageNavigation.tsx";
 export { default as useInterceptedState } from "./useInterceptedState.tsx";
 export { default as useAsyncInitialize } from "./useAsyncInitialize.tsx";

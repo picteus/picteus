@@ -1,24 +1,28 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import {
+  IntentOpenBrowser,
   IntentProcessCommand,
   IntentShow,
   IntentUi,
+  isOpenBrowserIntent,
   isProcessCommandIntent,
   isShowIntent,
   isUiIntent,
+  OpenBrowserIntent,
   ProcessCommandIntent,
   ShowIntent,
   UiIntent
 } from "@picteus/shared-core";
 import { CommandEntity, ExtensionSettings, UserInterfaceAnchor } from "@picteus/ws-client";
 
-import { computeExtensionSidebarRoute, computeExtensionSidebarUuid } from "utils";
-import { useActionModalContext, useAdditionalUiContext } from "app/context";
+import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, ToastService } from "utils";
+import { useActionModalContext, useAdditionalUiContext, useCommandSocket } from "app/context";
 import { ExtensionsService, ImageService, RepositoriesService, StorageService } from "app/services";
 import {
+  ConfirmOptions,
   useConfirmAction,
   useExtensionCommandRunner,
   useExtensionCommandsWithEntities,
@@ -38,19 +42,54 @@ export interface IntentListener
   onFailure: (message: string) => void;
 }
 
-export default function useExtensionIntentRunner(): (extensionId: string, intent: ShowIntent | UiIntent | ProcessCommandIntent, listener: IntentListener) => void
+export default function useExtensionIntentRunner(): (extensionId: string, intent: ShowIntent | UiIntent | OpenBrowserIntent | ProcessCommandIntent, listener: IntentListener) => void
 {
   const [ t ] = useTranslation();
   const navigate = useNavigate();
   const [ , addModal, removeModal ] = useActionModalContext();
   const [ additionalUiContextValue, , addTransient ] = useAdditionalUiContext();
   const commandRunner = useExtensionCommandRunner();
+  const { sendCommandOnConnected } = useCommandSocket();
   const openWindow = useOpenWindow();
   const confirmAction = useConfirmAction();
   const processCommands = useExtensionCommandsWithEntities(commandEntities);
+  const triggerToast = useCallback(() =>
+  {
+    ToastService.withTitleAndSubtitle("info", t("extensionIntent.onAction"));
+  }, []);
+  const confirmActionWrapper = useCallback((onConfirm: () => void, options: ConfirmOptions, listener: IntentListener, extensionId: string, actuallyAsk: boolean = false): void =>
+  {
+    const shouldConfirm = actuallyAsk === true && StorageService.getExtensionIntentShowShouldConfirm();
+
+    function onConfirmWrapper()
+    {
+      triggerToast();
+      onConfirm();
+    }
+
+    if (shouldConfirm)
+    {
+      confirmAction({
+        onConfirm: onConfirmWrapper,
+        onCancel: () =>
+        {
+          ToastService.cancel();
+          listener.onCancel();
+        },
+        options: { ...options, question: t("extensionIntent.question") },
+        extensionId
+      });
+    }
+    else
+    {
+      onConfirmWrapper();
+    }
+  }, [ confirmAction ]);
 
   return (extensionId: string, intent: ShowIntent | UiIntent | ProcessCommandIntent, listener: IntentListener): void =>
   {
+    const title = t("extensionIntent.title");
+
     async function handleUi(ui: IntentUi): Promise<void>
     {
       const frameContent = ui.frameContent;
@@ -78,6 +117,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
       if (ui.integration.anchor === UserInterfaceAnchor.Window)
       {
         openWindowFromUi(ui.id);
+        triggerToast();
       }
       else if (ui.integration.anchor === UserInterfaceAnchor.Sidebar)
       {
@@ -100,6 +140,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
         {
           openWindowFromUi(uuid);
         }
+        triggerToast();
       }
       else
       {
@@ -109,155 +150,153 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
           icon: ui.dialogContent?.icon,
           title: ui.dialogContent?.title
         });
+        triggerToast();
         listener.onSuccess();
       }
     }
 
+    async function handleOpenBrowser(openBrowser: IntentOpenBrowser): Promise<void>
+    {
+      const url = openBrowser.url;
+      confirmActionWrapper(
+        () => sendCommandOnConnected("openBrowser", { url }).catch((error: Error) =>
+        {
+          ToastService.failureAndMessage(error);
+          listener.onFailure(error.message);
+        }),
+        {
+          title,
+          message: t("extensionIntent.openBrowserMessage", { url })
+        }, listener, extensionId, true
+      );
+    }
+
     async function handleShow(show: IntentShow): Promise<void>
     {
-      const shouldConfirm = StorageService.getExtensionIntentShowShouldConfirm();
-
       if (show.type === "extensionSettings")
       {
-        const action = () =>
-        {
-          const extension = ExtensionsService.list().find(extension => extension.manifest.id === show.id);
-          if (extension === undefined)
+        return confirmActionWrapper(() =>
           {
-            return listener.onFailure(`The extension with id '${show.id}' is not installed`);
-          }
-
-          addModal({
-            title: t("extensionSettingsModal.title"),
-            size: "m",
-            component: (
-              <ExtensionSettingsModal
-                extension={extension}
-                onSuccess={(settings: ExtensionSettings) =>
-                {
-                  listener.onSuccess(settings);
-                }}
-              />
-            ),
-            onBeforeClose: (viaOnSuccess: boolean) =>
+            const extension = ExtensionsService.list().find(extension => extension.manifest.id === show.id);
+            if (extension === undefined)
             {
-              if (viaOnSuccess === false)
-              {
-                listener.onCancel();
-              }
+              return listener.onFailure(`The extension with id '${show.id}' is not installed`);
             }
-          });
-        };
-        if (shouldConfirm)
-        {
-          return confirmAction(action, {
-            title: t("extensionIntent.settingsRedirectTitle"),
-            message: t("extensionIntent.settingsRedirectDescription")
-          });
-        }
-        return action();
+            addModal({
+              title: t("extensionSettingsModal.title"),
+              size: "m",
+              component: (
+                <ExtensionSettingsModal
+                  extension={extension}
+                  onSuccess={(settings: ExtensionSettings) =>
+                  {
+                    listener.onSuccess(settings);
+                  }}
+                />
+              ),
+              onBeforeClose: (viaOnSuccess: boolean) =>
+              {
+                if (viaOnSuccess === false)
+                {
+                  listener.onCancel();
+                }
+              }
+            });
+          },
+          {
+            title,
+            message: t("extensionIntent.settingsMessage")
+          }, listener, extensionId);
       }
       else if (show.type === "repository")
       {
-        const action = () =>
-        {
-          const repository = RepositoriesService.list().find(aRepository => aRepository.id === show.id);
-          if (repository === undefined)
+        return confirmActionWrapper(() =>
           {
-            return listener.onFailure(`The repository with id '${show.id}' does not exist`);
-          }
-
-          addModal({
-            title: <RepositoryTop repository={repository} onDeleted={() =>
+            const repository = RepositoriesService.list().find(aRepository => aRepository.id === show.id);
+            if (repository === undefined)
             {
-            }}/>,
-            size: "m",
-            component: <RepositoryDetail repository={repository}/>,
-            onBeforeClose: (viaOnSuccess: boolean) =>
-            {
-              if (viaOnSuccess === false)
-              {
-                listener.onCancel();
-              }
+              return listener.onFailure(`The repository with id '${show.id}' does not exist`);
             }
-          });
-        };
-        if (shouldConfirm)
-        {
-          return confirmAction(action, {
-            title: t("extensionIntent.settingsRedirectTitle"),
-            message: t("extensionIntent.settingsRedirectDescription")
-          });
-        }
-        return action();
+
+            addModal({
+              title: <RepositoryTop repository={repository} onDeleted={() =>
+              {
+              }}/>,
+              size: "m",
+              component: <RepositoryDetail repository={repository}/>,
+              onBeforeClose: (viaOnSuccess: boolean) =>
+              {
+                if (viaOnSuccess === false)
+                {
+                  listener.onCancel();
+                }
+              }
+            });
+          },
+          {
+            title,
+            message: t("extensionIntent.repositoryMessage")
+          }, listener, extensionId);
       }
       else if (show.type === "image")
       {
-        const action = async () =>
-        {
-          const image = await ImageService.get({ id: show.id });
-          const id = addModal({
-            component: (
-              <ImageDetail
-                image={image}
-                images={[ image ]}
-                viewMode="masonry"
-                onClose={() =>
-                {
-                  removeModal(id);
-                }}
-              />),
-            withCloseButton: false,
-            fullScreen: true
-          });
-          listener.onSuccess();
-        };
-        if (shouldConfirm)
-        {
-          return confirmAction(action, {
-            title: t("extensionIntent.showImageTitle"),
-            message: t("extensionIntent.showImageDescription")
-          });
-        }
-        return action();
+        return confirmActionWrapper(async () =>
+          {
+            const image = await ImageService.get({ id: show.id });
+            const id = addModal({
+              component: (
+                <ImageDetail
+                  image={image}
+                  images={[ image ]}
+                  viewMode="masonry"
+                  onClose={() =>
+                  {
+                    removeModal(id);
+                  }}
+                />),
+              withCloseButton: false,
+              fullScreen: true
+            });
+            listener.onSuccess();
+          },
+          {
+            title,
+            message: t("extensionIntent.showImageMessage")
+          }, listener, extensionId);
       }
       else if (show.type === "sidebar")
       {
-        const action = async () =>
-        {
-          const additionalUi = additionalUiContextValue.sidebar.find((element) => element.uuid === show.id);
-          if (additionalUi === undefined)
+        return confirmActionWrapper(async () =>
           {
-            listener.onFailure(`There is no sidebar element with uuid '${show.id}'`);
-          }
-          else if (additionalUi.integration.anchor === "window")
-          {
-            listener.onFailure(`Cannot handle the sidebar 'window' integration with uuid '${additionalUi.uuid}'`);
-          }
-          else
-          {
-            if (additionalUi.integration.isExternal === false)
+            const additionalUi = additionalUiContextValue.sidebar.find((element) => element.uuid === show.id);
+            if (additionalUi === undefined)
             {
-              navigate(computeExtensionSidebarRoute(show.id));
-              listener.onSuccess();
+              listener.onFailure(`There is no sidebar element with uuid '${show.id}'`);
+            }
+            else if (additionalUi.integration.anchor === "window")
+            {
+              listener.onFailure(`Cannot handle the sidebar 'window' integration with uuid '${additionalUi.uuid}'`);
             }
             else
             {
-              openWindow(show.id, additionalUi.content, false).then(() =>
+              if (additionalUi.integration.isExternal === false)
               {
+                navigate(computeExtensionSidebarRoute(show.id));
                 listener.onSuccess();
-              }).catch(error => listener.onFailure(error.message));
+              }
+              else
+              {
+                openWindow(show.id, additionalUi.content, false).then(() =>
+                {
+                  listener.onSuccess();
+                }).catch(error => listener.onFailure(error.message));
+              }
             }
-          }
-        };
-        if (shouldConfirm)
-        {
-          return confirmAction(action, {
-            title: t("extensionIntent.showSidebarTitle"),
-            message: t("extensionIntent.showSidebarDescription")
-          });
-        }
-        return action();
+          },
+          {
+            title,
+            message: t("extensionIntent.showSidebarMessage")
+          }, listener, extensionId);
       }
       else
       {
@@ -272,6 +311,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
       {
         return listener.onFailure(`Could not find the command with id '${command.commandId}' on extension with id '${extensionId}'`);
       }
+      triggerToast();
       await commandRunner(command.extensionId, processCommand.command, undefined, undefined, (wasAborted: boolean) =>
       {
         if (wasAborted === true)
@@ -288,6 +328,10 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
     if (isUiIntent(intent) === true)
     {
       void handleUi(intent.ui);
+    }
+    else if (isOpenBrowserIntent(intent) === true)
+    {
+      void handleOpenBrowser(intent.openBrowser);
     }
     else if (isShowIntent(intent) === true)
     {

@@ -135,15 +135,14 @@ export default function ExtensionActions({
           size="md"
           variant="default"
           onClick={() =>
-            confirmAction(
-              () => handleOnUninstallExtension(extension.manifest.id),
-              {
+            confirmAction({
+              onConfirm: () => handleOnUninstallExtension(extension.manifest.id), options: {
                 title: t("extensionsScreen.confirmDeleteTitle"),
                 message: t("extensionsScreen.confirmDeleteMessage", {
                   name: extension.manifest.name
                 })
               }
-            )
+            })
           }
         >
           <IconTrash color="red" {...iconSizeAndStroke} />

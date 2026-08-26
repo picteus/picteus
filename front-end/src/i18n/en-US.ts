@@ -31,7 +31,7 @@ export default {
       "File processing is in progress and may take some time. Please do not close the window.",
     toastSuccessTitle: "Operation successful",
     toastCancelTitle: "Operation cancelled",
-    toastFailureTitle: "Operation failed",
+    toastFailureTitle: "Operation failed"
   },
   field: {
     noValue: "—",
@@ -472,20 +472,18 @@ export default {
     addToCollection: "Add to collection"
   },
   extensionIntent: {
-    backToPicteus: "",
     modalTitle: "{{extension}}",
     onResultSuccess: "Information has been successfully sent to the extension",
     onResultError:
       "An error occurred while sending information to the extension",
-    settingsRedirectTitle: "Picteus wants to redirect you",
-    settingsRedirectDescription:
-      "Picteus wants to redirect you to the extension settings. Do you want to proceed?",
-    showImageTitle: "Picteus wants to display an image",
-    showImageDescription:
-      "Picteus wants to display an image. Do you want to proceed?",
-    showSidebarTitle: "Picteus wants to set a sidebar",
-    showSidebarDescription:
-      "Picteus wants to display an sidebar. Do you want to proceed?"
+    title: "Confirmation",
+    question: "Do you want to proceed?",
+    onAction: "Action executed",
+    settingsMessage: "You are about to be redirecting you to the extension settings.",
+    repositoryMessage: "You are about to be redirecting you to a repository detail screen.",
+    showImageMessage: "An image is about to be displayed.",
+    showSidebarMessage: "A new sidebar is about to be opened.",
+    openBrowserMessage: "Your browser is about to be opened with the '{{url}}' URL."
   },
   errors: {
     imageTitle: "Loading error",

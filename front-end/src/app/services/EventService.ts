@@ -6,6 +6,7 @@ import {
   isFormIntent,
   isImagesIntent,
   isNotificationIntent,
+  isOpenBrowserIntent,
   isShowIntent,
   isToastIntent,
   isUiIntent
@@ -134,6 +135,10 @@ function computeLog(event: SocketEventType): LogType
     else if (isUiIntent(intent))
     {
       intentType = "a ui";
+    }
+    else if (isOpenBrowserIntent(intent))
+    {
+      intentType = "a open browser";
     }
     else if (isDialogIntent(intent))
     {

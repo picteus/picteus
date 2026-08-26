@@ -58,11 +58,13 @@ export default function CollectionActions({
           size="md"
           variant="default"
           onClick={() =>
-            confirmAction(() => handleOnDeleteCollection(collection.id), {
-              title: t("collectionsScreen.confirmDeleteTitle"),
-              message: t("collectionsScreen.confirmDeleteMessage", {
-                name: collection.name
-              })
+            confirmAction({
+              onConfirm: () => handleOnDeleteCollection(collection.id), options: {
+                title: t("collectionsScreen.confirmDeleteTitle"),
+                message: t("collectionsScreen.confirmDeleteMessage", {
+                  name: collection.name
+                })
+              }
             })
           }
         >

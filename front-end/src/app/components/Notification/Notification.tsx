@@ -2,7 +2,7 @@ import React from "react";
 import { Button, Image as MantineImage, Notification as MantineNotification, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 
-import { ProcessCommandIntent, ShowIntent, UiIntent } from "@picteus/shared-core";
+import { OpenBrowserIntent, ProcessCommandIntent, ShowIntent, UiIntent } from "@picteus/shared-core";
 import { Image } from "@picteus/ws-client";
 
 import { NotificationType } from "types";
@@ -57,7 +57,7 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
         }
         else if (notification.type === "action")
         {
-          const intent: ShowIntent | UiIntent | ProcessCommandIntent = notification.data.intent;
+          const intent: ShowIntent | UiIntent | OpenBrowserIntent | ProcessCommandIntent = notification.data.intent;
           intentRunner(notification.data.extensionId, intent, {
             onSuccess: (_result?: any) =>
             {

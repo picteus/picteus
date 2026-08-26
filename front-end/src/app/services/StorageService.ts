@@ -122,7 +122,7 @@ export default {
   },
   getExtensionIntentShowShouldConfirm: () =>
   {
-    return get(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION) === "true";
+    return get(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION) !== "false";
   },
   setExtensionIntentShowShouldConfirm: (value: boolean) =>
   {

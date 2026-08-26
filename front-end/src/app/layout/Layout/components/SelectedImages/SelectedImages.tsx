@@ -160,13 +160,16 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
     }
     else if (selectedAction === deleteAction)
     {
-      confirmAction(() =>
-      {
-        imageIds.forEach(imageId => ImageService.destroy(imageId).catch(ToastService.apiCallError));
-        clearSelectedImages();
-      }, {
-        title: t(`commands.confirmImage${imageIds.length > 1 ? "s" : ""}DeleteTitle`),
-        message: t(`commands.confirmImage${imageIds.length > 1 ? "s" : ""}DeleteMessage`)
+      confirmAction({
+        onConfirm: () =>
+        {
+          imageIds.forEach(imageId => ImageService.destroy(imageId).catch(ToastService.apiCallError));
+          clearSelectedImages();
+        },
+        options: {
+          title: t(`commands.confirmImage${imageIds.length > 1 ? "s" : ""}DeleteTitle`),
+          message: t(`commands.confirmImage${imageIds.length > 1 ? "s" : ""}DeleteMessage`)
+        }
       });
       return;
     }
