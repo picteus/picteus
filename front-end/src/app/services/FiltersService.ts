@@ -5,6 +5,7 @@ import {
   ExtensionImageFeatureName,
   ExtensionImageTag,
   ImageFormat,
+  SearchCriteria,
   SearchFeatures,
   SearchFilter,
   SearchFilterFromJSON,
@@ -117,14 +118,37 @@ function localFiltersToSearchFilter(localFilters: LocalFiltersType): SearchFilte
     return localFilters.tags?.length ? { tags: { values: localFilters.tags } } : {};
   }
 
+  function computeCriteria(): SearchCriteria | undefined
+  {
+    const keyword = computeSearchKeyword();
+    const formats = localFilters.formats?.length > 0 ? localFilters.formats : undefined;
+    const features = computeFeatures();
+    const properties = computeProperties();
+    const tags = computeSearchTags();
+
+    const hasCriteria =
+      "keyword" in keyword ||
+      formats !== undefined ||
+      "features" in features ||
+      "properties" in properties ||
+      "tags" in tags;
+
+    if (!hasCriteria)
+    {
+      return undefined;
+    }
+
+    return {
+      ...keyword,
+      ...(formats ? { formats } : {}),
+      ...features,
+      ...properties,
+      ...tags
+    };
+  }
+
   const rawSearchFilter = {
-    criteria: {
-      ...computeSearchKeyword(),
-      formats: localFilters.formats?.length > 0 ? localFilters.formats : undefined,
-      ...computeFeatures(),
-      ...computeProperties(),
-      ...computeSearchTags()
-    },
+    criteria: computeCriteria(),
     ...(localFilters.images ? {
       origin: {
         kind: SearchOriginNature.Images,

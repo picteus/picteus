@@ -41,12 +41,15 @@ export default function ControllerBar({
   const [ t ] = useTranslation();
   const withTable = useMemo<boolean>(() => Math.random() > 1, []);
   const [ currentCollection, setCurrentCollection ] = useState<Collection | undefined>();
+  const currentCollectionRef = useRef<Collection | undefined>(currentCollection);
+  currentCollectionRef.current = currentCollection;
   const [ initialCollectionId ] = useState<number | undefined>("collectionId" in initialFilterOrCollectionId ? initialFilterOrCollectionId.collectionId : undefined);
   const collectionsBarRef = useRef<CollectionsBarRef>(null);
   const filtersBarRef = useRef<FiltersBarRef>(null);
 
   const handleOnCollection = useCallback((collection: Collection | undefined) =>
   {
+    currentCollectionRef.current = collection;
     setCurrentCollection(collection);
     filtersBarRef.current?.setFilter(collection ? collection.filter : FiltersService.defaultFilter);
     onFilterOrCollectionId(collection ? { collectionId: collection.id } : { filter: FiltersService.defaultFilter });
@@ -56,9 +59,10 @@ export default function ControllerBar({
   {
     if ("filter" in filterOrCollectionId)
     {
-      if (currentCollection !== undefined && JSON.stringify(SearchFilterFromJSON(filterOrCollectionId.filter)) === JSON.stringify(SearchFilterFromJSON(currentCollection.filter)))
+      const collection = currentCollectionRef.current;
+      if (collection !== undefined && JSON.stringify(SearchFilterFromJSON(filterOrCollectionId.filter)) === JSON.stringify(SearchFilterFromJSON(collection.filter)))
       {
-        onFilterOrCollectionId({ collectionId: currentCollection.id });
+        onFilterOrCollectionId({ collectionId: collection.id });
       }
       else
       {
@@ -69,7 +73,7 @@ export default function ControllerBar({
     {
       onFilterOrCollectionId(filterOrCollectionId);
     }
-  }, [ currentCollection, onFilterOrCollectionId ]);
+  }, [ onFilterOrCollectionId ]);
 
   const handleOnClearAll = useCallback(() =>
   {
