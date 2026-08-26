@@ -220,6 +220,16 @@ const perTypeIconMap = {
 
 const iconProperties = { size: Common.IconSmallSize, stroke: 1, radius: "sm" };
 
+function computeFeatureIcon(extensionId?: string, type?: ImageFeatureType): React.ReactNode
+{
+  if (extensionId)
+  {
+    return <ExtensionIcon idOrExtension={extensionId} size="sm"/>;
+  }
+  const iconComponent = (type && perTypeIconMap[type]) || IconDots;
+  return React.createElement(iconComponent, iconProperties);
+}
+
 type FeatureNameType = {
   id?: string,
   type: ImageFeatureType,
@@ -243,7 +253,6 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
 {
   const [ t ] = useTranslation();
   const [ featureNames, setFeatureNames ] = useState<ExtensionImageFeatureName[]>([]);
-  const [ perFeatureNamesDataValueFeaturesNamesOptionMap, setPerFeatureNamesDataValueFeaturesNamesOptionMap ] = useState<Map<string, FeatureNameType>>(new Map());
   const featureNamesData = useMemo<FeatureNamesDataType []>(() =>
   {
     const defaultFeatureNameDatas: FeatureNamesDataType[] = featureNames.filter(imageFeatureName => allowedFeatureNameFormats.indexOf(imageFeatureName.format) !== -1).map((imageFeatureName, index) => ({
@@ -298,13 +307,13 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
     return featureNameDatas;
   }, [ featureNames ]);
 
-  useEffect(() =>
+  const perFeatureNamesDataValueFeaturesNamesOptionMap = useMemo(() =>
   {
-    setPerFeatureNamesDataValueFeaturesNamesOptionMap(featureNamesData.reduce<Map<string, FeatureNameType>>((map, imageFeatureName) =>
+    return featureNamesData.reduce<Map<string, FeatureNameType>>((map, imageFeatureName) =>
     {
       map.set(imageFeatureName.value, imageFeatureName.reference);
       return map;
-    }, new Map<string, FeatureNameType>()));
+    }, new Map<string, FeatureNameType>());
   }, [ featureNamesData ]);
 
   useEffect(() =>
@@ -323,7 +332,11 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
 
   const handleAddCondition = () =>
   {
-    const imageFeatureName = featureNames[0];
+    const imageFeatureName = featureNamesData[0]?.reference;
+    if (!imageFeatureName)
+    {
+      return;
+    }
     const newCondition: SearchFeatureCondition = {
       extensionId: imageFeatureName.id,
       format: imageFeatureName.format,
@@ -385,9 +398,8 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
     return (
       <Group gap={8}>
         {item.checked && <CheckIcon className={Combobox.classes.optionsDropdownCheckIcon}/>}
-        {featureName.id ? <ExtensionIcon idOrExtension={featureName.id}
-                                         size="sm"/> : React.createElement(perTypeIconMap[featureName.type], iconProperties)}
-        <Text size="sm">{computeFeatureNameLabel(featureName)}</Text>
+        {featureName && computeFeatureIcon(featureName.id, featureName.type)}
+        <Text size="sm">{featureName ? computeFeatureNameLabel(featureName) : (item.option.label || item.option.value)}</Text>
       </Group>
     );
   };
@@ -416,6 +428,10 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
           const handleOnChangeFeatureName = (value: string): void =>
           {
             const featureName = perFeatureNamesDataValueFeaturesNamesOptionMap.get(value);
+            if (!featureName)
+            {
+              return;
+            }
             handleUpdateCondition(index, {
               extensionId: featureName.id,
               type: featureName.type,
@@ -445,9 +461,7 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
                 maxDropdownHeight={300}
                 data={featureNamesData}
                 value={computeSearchFeatureConditionValue(condition)}
-                leftSection={condition.extensionId ?
-                  <ExtensionIcon idOrExtension={condition.extensionId}
-                                 size="sm"/> : React.createElement(perTypeIconMap[condition.type], iconProperties)}
+                leftSection={computeFeatureIcon(condition.extensionId, condition.type)}
                 renderOption={renderFeatureNameSelectOption}
                 comboboxProps={{ width: 250, position: "bottom-start" }}
                 onChange={handleOnChangeFeatureName}

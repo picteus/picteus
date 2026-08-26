@@ -279,16 +279,27 @@ export function SearchFilters({
                   selectedValues={filters?.tags || []}
                   options={tagOptions}
                   renderOption={renderTagOption}
-                  renderPill={({ option, onRemove }) =>
+                  renderPill={({ option, value, onRemove }) =>
                   {
-                    const extensionTags = tags.filter(anExtensionTag => anExtensionTag.value === option.value);
-                    return (<Pill withRemoveButton onRemove={onRemove}>
-                      <Group gap={4}>
-                        {extensionTags.map(extensionTag => (
-                          <ImageTag key={`${option.value}-${extensionTag.id}`} tag={extensionTag} kind="plain"/>
-                        ))}
-                      </Group>
-                    </Pill>);
+                    const tagValue = option?.value != null ? String(option.value) : (value != null ? String(value) : undefined);
+                    if (!tagValue)
+                    {
+                      return null;
+                    }
+                    const extensionTags = tags.filter(anExtensionTag => anExtensionTag.value === tagValue);
+                    return (
+                      <Pill withRemoveButton onRemove={onRemove}>
+                        <Group gap={4}>
+                          {extensionTags.length > 0 ? (
+                            extensionTags.map(extensionTag => (
+                              <ImageTag key={`${tagValue}-${extensionTag.id}`} tag={extensionTag} kind="plain"/>
+                            ))
+                          ) : (
+                            <span>{tagValue}</span>
+                          )}
+                        </Group>
+                      </Pill>
+                    );
                   }}
                   onChange={(values: string[]) => onFilterChange("tags", values)}
                 />
