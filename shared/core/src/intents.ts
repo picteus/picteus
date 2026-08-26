@@ -114,6 +114,16 @@ export interface UiIntent extends WithContextIntent
   readonly ui: IntentUi;
 }
 
+export interface IntentOpenBrowser
+{
+  readonly url: string;
+}
+
+export interface OpenBrowserIntent extends BasisIntent
+{
+  readonly openBrowser: IntentOpenBrowser;
+}
+
 export enum IntentDialogType
 {
   Error = "error",
@@ -228,7 +238,7 @@ export interface ProcessCommandIntent extends WithContextIntent
 
 export interface IntentAction
 {
-  readonly intent: ShowIntent | UiIntent | ProcessCommandIntent;
+  readonly intent: ShowIntent | UiIntent | OpenBrowserIntent | ProcessCommandIntent;
   readonly dialogContent: IntentDialogIconSizeContent;
   readonly label?: string;
 }
@@ -241,6 +251,7 @@ export interface ActionIntent extends WithContextIntent
 export type FrontIntent =
   FormIntent
   | UiIntent
+  | OpenBrowserIntent
   | DialogIntent
   | ImagesIntent
   | ShowIntent
@@ -256,6 +267,11 @@ export function isFormIntent(intent: any): intent is FormIntent
 export function isUiIntent(intent: any): intent is UiIntent
 {
   return (intent as UiIntent).ui !== undefined;
+}
+
+export function isOpenBrowserIntent(intent: any): intent is OpenBrowserIntent
+{
+  return (intent as OpenBrowserIntent).openBrowser !== undefined;
 }
 
 export function isDialogIntent(intent: any): intent is DialogIntent

@@ -13,6 +13,7 @@ import {
   type IntentImage,
   IntentShowType,
   IntentUiAnchor,
+  OpenBrowserIntent,
   PicteusExtension,
   type ProcessCommandIntent,
   type SettingsValue,
@@ -174,6 +175,10 @@ class TypeScriptExtension extends PicteusExtension
     else if (commandId === "ui")
     {
       await this.handleUi(communicator, parameters);
+    }
+    else if (commandId === "openBrowser")
+    {
+      await this.handleOpenBrowser(communicator, parameters);
     }
     else if (commandId === "show")
     {
@@ -367,6 +372,12 @@ class TypeScriptExtension extends PicteusExtension
     });
   }
 
+  private async handleOpenBrowser(communicator: Communicator, parameters: Record<string, any>): Promise<void>
+  {
+    const url: string = parameters["url"];
+    await communicator.launchIntent({ openBrowser: { url } });
+  }
+
   private async handleShow(communicator: Communicator, parameters: Record<string, any>): Promise<void>
   {
     const rawType = parameters["type"];
@@ -467,9 +478,13 @@ class TypeScriptExtension extends PicteusExtension
   private async handleAction(communicator: Communicator, parameters: Record<string, any>): Promise<void>
   {
     let description: string;
-    let intent: ShowIntent | UiIntent | ProcessCommandIntent;
+    let intent: ShowIntent | UiIntent | OpenBrowserIntent | ProcessCommandIntent;
     switch (parameters["intent"])
     {
+      case "show":
+        intent = { show: { type: IntentShowType.ExtensionSettings, id: this.extensionId } };
+        description = "This is an action which opens the settings of the extension";
+        break;
       case "ui":
         intent = {
           ui: {
@@ -480,9 +495,9 @@ class TypeScriptExtension extends PicteusExtension
         };
         description = "This is an action which opens a modal";
         break;
-      case "show":
-        intent = { show: { type: IntentShowType.ExtensionSettings, id: this.extensionId } };
-        description = "This is an action which opens the settings of the extension";
+      case "openBrowser":
+        intent = { openBrowser: { url: "https://www.picteus.com" } };
+        description = "This is an action which opens the browser";
         break;
       case "command":
         intent = {

@@ -142,6 +142,16 @@ class UiIntent(WithContextIntent):
     ui: IntentUi
 
 
+@dataclass
+class IntentOpenBrowser(SuperDataClass):
+    url: str
+
+
+@dataclass(kw_only=True)
+class OpenBrowserIntent(BasisIntent):
+    openBrowser: IntentOpenBrowser
+
+
 class IntentDialogType(StrEnum):
     ERROR = "error"
     INFO = "info"
@@ -253,7 +263,7 @@ class ProcessCommandIntent(WithContextIntent):
 
 @dataclass
 class IntentAction(SuperDataClass):
-    intent: Union[ShowIntent, UiIntent, ProcessCommandIntent]
+    intent: Union[ShowIntent, UiIntent, OpenBrowserIntent, ProcessCommandIntent]
     dialogContent: IntentDialogIconSizeContent
     label: Optional[str] = field(default=None)
 
@@ -264,7 +274,7 @@ class ActionIntent(WithContextIntent):
 
 
 FrontIntent = Union[
-    FormIntent, UiIntent, DialogIntent, ImagesIntent, ShowIntent, ToastIntent, NotificationIntent, ActionIntent]
+    FormIntent, UiIntent, OpenBrowserIntent, DialogIntent, ImagesIntent, ShowIntent, ToastIntent, NotificationIntent, ActionIntent]
 
 
 @dataclass(kw_only=True)

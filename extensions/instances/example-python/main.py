@@ -14,7 +14,7 @@ from picteus_extension_sdk import PicteusExtension, InstructionReturnedError, Co
     IntentDialogIconSizeContent, IntentUISidebarIntegration, IntentUIModalIntegration, \
     IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
     IntentNotification, ActionIntent, IntentAction, ProcessCommandIntent, \
-    IntentProcessCommand, ToastIntent, IntentToast, Versions, CommandParameters
+    IntentProcessCommand, ToastIntent, IntentToast, Versions, CommandParameters, OpenBrowserIntent, IntentOpenBrowser
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -125,6 +125,8 @@ class PythonExtension(PicteusExtension):
             await self._handle_dialog(communicator, parameters)
         elif command_id == "ui":
             await self._handle_ui(communicator, parameters)
+        elif command_id == "openBrowser":
+            await self._handle_open_browser(communicator, parameters)
         elif command_id == "show":
             await self._handle_show(communicator, parameters)
         elif command_id == "readFile":
@@ -260,6 +262,9 @@ class PythonExtension(PicteusExtension):
                                          content=bytearray(icon_content))
                                  ))))
 
+    async def _handle_open_browser(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
+        await communicator.launch_intent(OpenBrowserIntent(openBrowser=IntentOpenBrowser(url=parameters["url"])))
+
     async def _handle_show(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         raw_type = parameters["type"]
         show_type: IntentShowType
@@ -335,8 +340,11 @@ class PythonExtension(PicteusExtension):
             description: str = "This is an action which opens a modal"
         elif intent == "show":
             intent: ShowIntent = ShowIntent(
-                show=IntentShow(type=IntentShowType.EXTENSION_SETTINGS, id=self.extension_id), )
+                show=IntentShow(type=IntentShowType.EXTENSION_SETTINGS, id=self.extension_id))
             description: str = "This is an action which opens the settings of the extension"
+        elif intent == "openBrowser":
+            intent: OpenBrowserIntent = OpenBrowserIntent(openBrowser=IntentOpenBrowser(url="https://www.picteus.com"))
+            description: str = "This is an action which opens the browser"
         elif intent == "command":
             intent: ProcessCommandIntent = ProcessCommandIntent(
                 processCommand=IntentProcessCommand(extensionId=self.extension_id, commandId="askForSomething"))

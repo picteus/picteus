@@ -282,6 +282,38 @@
           }
         },
         {
+          "id": "openBrowser",
+          "on": {
+            "entity": "Process"
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "title": "URL",
+                "description": "What is the URL to open in the browser?",
+                "default": "https://github.com/picteus/picteus"
+              }
+            },
+            "required": [
+              "url"
+            ]
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Browser",
+              "name": "Open URL in browser",
+              "description": "Opens the browser at specific URL, after having asked which one."
+            }
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/browser.svg"
+          }
+        },
+        {
           "id": "show",
           "on": {
             "entity": "Process"
@@ -467,8 +499,9 @@
                 "title": "Intent",
                 "description": "The intent to trigger when the user clicks on the notification.",
                 "enum": [
-                  "ui",
                   "show",
+                  "ui",
+                  "openBrowser",
                   "command"
                 ],
                 "default": "ui"

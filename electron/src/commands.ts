@@ -8,6 +8,7 @@ import zlib from "node:zlib";
 import { Readable } from "node:stream";
 
 import * as electron from "electron";
+import { shell } from "electron";
 import { DisconnectReason, Server as SocketServer, ServerOptions, Socket } from "socket.io";
 import AdmZip from "adm-zip";
 import tar from "tar-fs";
@@ -244,9 +245,6 @@ export class CommandsManager
     logger.info(`Received the '${command}' command with id '${id}'`);
     switch (command)
     {
-      default:
-        logger.warn(`The command '${command}' is not supported`);
-        break;
       case "pickDirectory":
         const nodePath = await this.pickFileOrDirectory(parameters.title, "directory", "open", parameters.filter, parameters.defaultPath);
         this.sendCommandSuccess(socket, id, nodePath);
@@ -314,6 +312,18 @@ export class CommandsManager
         }
         logger.info(`Opening the window with id '${id}' and with URL '${actualUrl}'`);
         await ApplicationWrapper.instance().openWindow(parametersId, actualUrl, isTransient ?? true, automaticallyReopen ?? false);
+        this.sendCommandSuccess(socket, id, undefined);
+        break;
+      }
+      case "openBrowser":
+      {
+        const { url }: { url?: string } = parameters;
+        if (url === undefined)
+        {
+          return this.sendCommandError(socket, id, "Missing 'url' parameter");
+        }
+        logger.info(`Opening the browser with URL '${url}'`);
+        await shell.openExternal(url);
         this.sendCommandSuccess(socket, id, undefined);
       }
         break;
@@ -386,6 +396,10 @@ export class CommandsManager
         }
       }
         break;
+      default:
+        const message = `The command '${command}' is not supported`;
+        logger.error(message);
+        return this.sendCommandError(socket, id, message);
     }
   }
 

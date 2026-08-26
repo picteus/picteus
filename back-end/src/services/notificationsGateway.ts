@@ -32,10 +32,12 @@ import {
   isFormIntent,
   isImagesIntent,
   isNotificationIntent,
+  isOpenBrowserIntent,
   isShowIntent,
   isToastIntent,
   isUiIntent,
   NotificationIntent,
+  OpenBrowserIntent,
   ShowIntent,
   ToastIntent,
   UiIntent
@@ -142,6 +144,10 @@ const zodUi = z.object({
 const zodShow = z.object({
   type: z.enum(IntentShowType),
   id: z.string()
+});
+
+const zodOpenBrowser = z.object({
+  url: z.url()
 });
 
 @WebSocketGateway<GatewayMetadata>({
@@ -789,6 +795,16 @@ export class NotificationsGateway
       }
       onAcknowledged = onAcknowledgedFromMasterSocketFactory();
     }
+    else if (isOpenBrowserIntent(intent) === true)
+    {
+      intentName = "openBrowser";
+      const specificIntent: OpenBrowserIntent = intent;
+      if (await checkSchema(zodOpenBrowser, specificIntent.openBrowser) === false)
+      {
+        return resolveWithInvalidIntentSchema("OpenBrowserIntent");
+      }
+      onAcknowledged = onAcknowledgedFromMasterSocketFactory();
+    }
     else if (isDialogIntent(intent) === true)
     {
       intentName = "dialog";
@@ -896,6 +912,7 @@ export class NotificationsGateway
           intent: z.xor([
             z.object({ ui: zodUi }),
             z.object({ show: zodShow }),
+            z.object({ openBrowser: zodOpenBrowser }),
             z.object({
               processCommand: z.object({
                 extensionId: z.string(),
