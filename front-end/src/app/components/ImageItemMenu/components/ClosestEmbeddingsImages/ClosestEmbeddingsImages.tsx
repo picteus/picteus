@@ -33,7 +33,6 @@ export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbe
   const [ loading, setLoading ] = useState<boolean>(false);
   const [ images, setImages ] = useState<ImageWithCaption[]>([]);
   const [ embeddingName, setEmbeddingName ] = useState<ExtensionIdImageEmbeddingName | undefined>();
-  const [ hasInitiallySearched, setHasInitiallySearched ] = useState<boolean>(false);
   const focusTrapRef = useFocusTrap();
 
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
@@ -50,9 +49,8 @@ export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbe
 
   useEffect(() =>
   {
-    if (embeddingName && hasInitiallySearched === false)
+    if (embeddingName)
     {
-      setHasInitiallySearched(true);
       void search({
         count: form.getValues().count,
         extensionId: embeddingName.extensionId,
@@ -60,10 +58,14 @@ export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbe
         id: image.id
       });
     }
-  }, [ embeddingName, hasInitiallySearched, image.id ]);
+  }, [ embeddingName?.extensionId, embeddingName?.name, image.id ]);
 
   async function handleSubmit(values: ClosestEmbeddingsImagesFormPayload)
   {
+    if (!embeddingName)
+    {
+      return;
+    }
     StorageService.setClosestImagesResultsCount(values.count);
     const { extensionId, name } = embeddingName;
     const parameters: ImageApiImageClosestImagesRequest = {
