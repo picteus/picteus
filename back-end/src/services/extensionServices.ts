@@ -356,6 +356,33 @@ export interface ExtensionSettingsVersions
   upgraded: boolean;
 }
 
+export class StateChangeOptions
+{
+
+  readonly state: ExtensionStatus | undefined;
+
+  static withState(isPause: boolean | undefined): StateChangeOptions
+  {
+    return new StateChangeOptions(isPause, isPause === true ? undefined : true);
+  }
+
+  static withSynchronisation(isPause: boolean, withSynchronisation: boolean): StateChangeOptions
+  {
+    return new StateChangeOptions(isPause, withSynchronisation);
+  }
+
+  private constructor(isPause: boolean | undefined, readonly withSynchronisation: boolean | undefined)
+  {
+    this.state = isPause ? ExtensionStatus.Paused : ExtensionStatus.Enabled;
+  }
+
+  get isPause(): boolean
+  {
+    return this.state === "paused";
+  }
+
+}
+
 export function stripAndExtractParametersUiProperties(parameters: Record<string, any>): UIProperty[]
 {
   const uis: UIProperty [] = [];
@@ -629,10 +656,10 @@ export class ExtensionService
     });
   }
 
-  async install(idWhenUpdating: string | undefined, archive: Buffer, shouldHandleProcesses: boolean): Promise<Extension>
+  async installOrUpdate(idWhenUpdating: string | undefined, archive: Buffer, options: StateChangeOptions, shouldHandleProcesses: boolean): Promise<Extension>
   {
     this.checkExtensionArchiveBinaryWeight(archive);
-    const manifest = await this.installUpdateOrUnpack(idWhenUpdating, new ExtensionArchiveReader(archive), true, shouldHandleProcesses, true);
+    const manifest = await this.installUpdateOrUnpack(idWhenUpdating, new ExtensionArchiveReader(archive), true, options, shouldHandleProcesses, true);
     return plainToInstanceViaJSON(Extension, {
       manifest,
       status: this.extensionsRegistry.getStatus(manifest.id)
@@ -647,8 +674,12 @@ export class ExtensionService
     {
       this.checkExtensionExists(id);
     }
-    await this.extensionsManager.stopProcesses([ id ]);
-    await this.uninstallChromeExtensions(id);
+    const manifest = this.extensionsRegistry.get(id);
+    // The directory of the extension may have been deleted
+    if (manifest !== undefined)
+    {
+      await this.startOrStopProcesses(manifest, true);
+    }
     const isUnpackedExtension = this.perUnpackedExtensionIdPathsMap.has(id);
     if (isUnpackedExtension === true)
     {
@@ -680,30 +711,16 @@ export class ExtensionService
     this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Uninstalled, undefined, { id });
   }
 
-  async pauseOrResume(id: string, isPause: boolean): Promise<void>
+  async changeState(id: string, options: StateChangeOptions): Promise<void>
   {
-    // TODO: forbid this while a repository is synchronizing
-    logger.info(`${isPause === true ? "Pauses" : "Resumes"} the extension with id '${id}'`);
+    logger.info(`Changes the extension with id '${id}' into state ${options.isPause === true ? "paused" : "running"}`);
     const extensionAndManual = await this.get(id);
-    if (this.extensionsRegistry.isPaused(id) === isPause)
+    if (this.extensionsRegistry.isPaused(id) === options.isPause)
     {
-      parametersChecker.throwBadParameter("isPause", isPause === true ? "true" : "false", `the extension with id '${id}' is already ${isPause === true ? "paused" : "resumed"}`);
+      parametersChecker.throwBadParameter("isPause", options.isPause === true ? "true" : "false", `the extension with id '${id}' is already ${options.isPause === true ? "paused" : "resumed"}`);
     }
-    this.extensionsRegistry.pauseOrResume(id, isPause);
-    await this.uninstallChromeExtensions(id);
-    await this.notifyTaskExecutor(extensionAndManual.manifest, isPause === false);
-    if (isPause === true)
-    {
-      await this.extensionsManager.stopProcesses([ id ]);
-      AuthenticationGuard.unregisterExtensionApiKeys(id);
-    }
-    else
-    {
-      await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(id) ]);
-      // We synchronize the images via this extension, once it is resumed
-      await this.synchronize(id);
-    }
-    this.notifierService.emit(EventEntity.Extension, isPause === true ? ExtensionEventAction.Paused : ExtensionEventAction.Resumed, undefined, { id });
+    this.extensionsRegistry.pauseOrResume(id, options.isPause);
+    await this.startOrStopProcesses(extensionAndManual.manifest, options.isPause, options.withSynchronisation);
   }
 
   async registerUnpackedExtension(sourceDirectoryPath: string, installDependencies: boolean, shouldHandleProcesses: boolean): Promise<void>
@@ -712,6 +729,11 @@ export class ExtensionService
     if (fs.existsSync(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)) === true)
     {
       const manifest = this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName));
+      // We do nothing for the extensions in state "paused"
+      if (this.extensionsRegistry.isPaused(manifest.id) === true)
+      {
+        return;
+      }
       logger.info(`Registering the unpacked extension with id '${manifest.id}' in directory '${sourceDirectoryPath}'`);
       const targetDirectoryPath = this.extensionsRegistry.computeExtensionDirectoryPath(manifest.id);
       if (fs.existsSync(targetDirectoryPath) === false)
@@ -723,7 +745,7 @@ export class ExtensionService
       {
         try
         {
-          await this.installUpdateOrUnpack(undefined, manifest, installDependencies, shouldHandleProcesses, false);
+          await this.installUpdateOrUnpack(undefined, manifest, installDependencies, StateChangeOptions.withSynchronisation(false, false), shouldHandleProcesses, false);
           this.perUnpackedExtensionIdPathsMap.set(manifest.id, {
             source: sourceDirectoryPath,
             target: targetDirectoryPath
@@ -752,7 +774,7 @@ export class ExtensionService
         {
           // TODO: do not stop or start the process if the extension is already being restarted because of a previous change and do not anything if the ExtensionRunner is not ready
           logger.info(`The manifest file '${filePath}' of the unpacked extension with id '${manifest.id}' has changed: reloading the extension`);
-          await this.installUpdateOrUnpack(manifest.id, this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)), true, true, false);
+          await this.installUpdateOrUnpack(manifest.id, this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)), true, StateChangeOptions.withState(false), true, false);
         }
       }, (error: Error) =>
       {
@@ -1312,7 +1334,7 @@ export class ExtensionService
         logger.debug(`${shouldExtensionBeUpdated === true ? "Updating" : "Installing"} the built-in extension with id '${manifest.id}' with version '${manifest.version}'`);
         try
         {
-          await this.install(shouldExtensionBeUpdated === true ? manifest.id : undefined, archive, false);
+          await this.installOrUpdate(shouldExtensionBeUpdated === true ? manifest.id : undefined, archive, StateChangeOptions.withState(false), false);
         }
         catch (error)
         {
@@ -1340,11 +1362,11 @@ export class ExtensionService
     parametersChecker.throwBadParameter("id", id, "there is no extension with that identifier");
   }
 
-  private async installUpdateOrUnpack(idWhenUpdating: string | undefined, readerOrManifest: ExtensionArchiveReader | Manifest, installDependencies: boolean, shouldHandleProcesses: boolean, isProduction: boolean): Promise<Manifest>
+  private async installUpdateOrUnpack(idWhenUpdating: string | undefined, readerOrManifest: ExtensionArchiveReader | Manifest, installDependencies: boolean, options: StateChangeOptions, shouldHandleProcesses: boolean, isProduction: boolean): Promise<Manifest>
   {
     // TODO: forbid this while a repository is synchronizing
     const useReader = readerOrManifest instanceof ExtensionArchiveReader;
-    logger.info(useReader === false ? `Installing the unpacked extension with id '${readerOrManifest.id}'` : ((idWhenUpdating === undefined ? "Installing an extension" : `Updating the extension with id '${idWhenUpdating}'`)));
+    logger.info(useReader === false ? `Installing the unpacked extension with id '${readerOrManifest.id}'` : ((idWhenUpdating === undefined ? "Installing an extension" : `Updating the extension with id '${idWhenUpdating}'`)) + (installDependencies === false ? "" : ", while installing its dependencies"));
     let manifest: Manifest;
     if (useReader == true)
     {
@@ -1380,7 +1402,7 @@ export class ExtensionService
     {
       if (shouldHandleProcesses === true)
       {
-        await this.extensionsManager.stopProcesses([ manifest.id ]);
+        await this.startOrStopProcesses(extendedManifest, true);
       }
       AuthenticationGuard.unregisterExtensionApiKeys(manifest.id);
     }
@@ -1468,8 +1490,8 @@ export class ExtensionService
       throw error;
     }
 
-    const isPaused = this.extensionsRegistry.isPaused(manifest.id);
-    if (isPaused === false)
+    const isCurrentlyPaused = this.extensionsRegistry.isPaused(manifest.id);
+    if (isCurrentlyPaused === false)
     {
       const extensionSettings = await this.getPersistedSettings(manifest.id);
       if (extensionSettings !== null)
@@ -1514,14 +1536,28 @@ export class ExtensionService
         id: manifest.id
       });
     }
-    // We do not start the extension if it was initially paused
-    if (shouldHandleProcesses === true && isPaused === false)
+
+    if (options.isPause === true)
     {
-      await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(manifest.id) ]);
-      if (idWhenUpdating === undefined)
+      if (isCurrentlyPaused === false)
       {
-        // We automatically synchronize the images via this extension, once it is installed
-        await this.synchronize(manifest.id);
+        this.extensionsRegistry.pauseOrResume(manifest.id, true);
+      }
+    }
+    else
+    {
+      if (shouldHandleProcesses === true && (options.isPause === false || isCurrentlyPaused === false))
+      {
+        if (isCurrentlyPaused === true)
+        {
+          this.extensionsRegistry.pauseOrResume(manifest.id, false);
+        }
+        await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(manifest.id) ]);
+        if (idWhenUpdating === undefined && options.withSynchronisation === true)
+        {
+          // We automatically synchronize the images via this extension, once it is installed
+          await this.synchronize(manifest.id);
+        }
       }
     }
     return manifest;
@@ -1735,6 +1771,30 @@ export class ExtensionService
       }
       return filePath;
     }
+  }
+
+  private async startOrStopProcesses(manifest: Manifest, shouldStop: boolean, withSynchronisation?: boolean): Promise<void>
+  {
+    // TODO: forbid this while a repository is synchronizing?
+    const id = manifest.id;
+    logger.info(`${shouldStop === true ? "Stops" : "Starts"} the processes of extension with id '${id}'`);
+    await this.uninstallChromeExtensions(id);
+    await this.notifyTaskExecutor(manifest, shouldStop === false);
+    if (shouldStop === true)
+    {
+      await this.extensionsManager.stopProcesses([ id ]);
+      AuthenticationGuard.unregisterExtensionApiKeys(id);
+    }
+    else
+    {
+      await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(id) ]);
+      if (withSynchronisation === true)
+      {
+        // We synchronize the images via this extension, once it is resumed
+        await this.synchronize(id);
+      }
+    }
+    this.notifierService.emit(EventEntity.Extension, shouldStop === true ? ExtensionEventAction.Paused : ExtensionEventAction.Resumed, undefined, { id });
   }
 
   private async prepareRuntimeEnvironment(extendedManifest: ExtendedManifest, installDependencies: boolean, isProduction: boolean): Promise<void>

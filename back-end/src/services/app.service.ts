@@ -11,7 +11,7 @@ import {
   ExtensionRegistry,
   ImageEvent
 } from "./extensionRegistry";
-import { CapabilityResult, ExtensionService, ExtensionsUiServer } from "./extensionServices";
+import { CapabilityResult, ExtensionService, ExtensionsUiServer, StateChangeOptions } from "./extensionServices";
 import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import { ImageService, SearchFileStats, SearchService } from "./imageServices";
 import { ImageAttachmentService } from "./imageAttachmentService";
@@ -20,6 +20,7 @@ import { AdministrationService } from "./administrationService";
 import { SettingsService } from "./settingsService";
 import { ApiSecretService } from "./apiSecretService";
 import { NotifierService } from "./notifierService";
+
 
 export {
   AdministrationService,
@@ -47,6 +48,7 @@ export {
   SearchFileStats,
   SearchService,
   SettingsService,
+  StateChangeOptions,
   TextEmbedding,
   TextEmbeddings,
   VectorDatabaseAccessor,

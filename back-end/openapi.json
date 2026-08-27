@@ -414,9 +414,19 @@
     },
     "/extension/install": {
       "post": {
-        "description": "Analyzes the extension and installs it.",
+        "description": "Analyzes the extension, installs it, and potentially marks it as paused.",
         "operationId": "extension_install",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "isPause",
+            "required": true,
+            "in": "query",
+            "description": "Whether the extension should be marked as paused",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "description": "The extension archive",
@@ -464,7 +474,7 @@
     },
     "/extension/{id}/update": {
       "put": {
-        "description": "Analyzes the extension and updates it.",
+        "description": "Analyzes the extension, updates it and potentially marks it as paused.",
         "operationId": "extension_update",
         "parameters": [
           {
@@ -479,6 +489,15 @@
               "minLength": 1,
               "maxLength": 32,
               "example": "extension-id"
+            }
+          },
+          {
+            "name": "isPause",
+            "required": false,
+            "in": "query",
+            "description": "Whether the extension should be marked as paused",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],

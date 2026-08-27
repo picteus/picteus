@@ -733,7 +733,7 @@ export class Base extends Core
     {
       zip.addFile(ExtensionBasisBuilder.startedJsFileName, Buffer.from(new ExtensionBasisBuilder().computeStartedFileContent(), "utf8"));
     }
-    return await this.getExtensionController().install(zip.toBuffer());
+    return await this.getExtensionController().install(false, zip.toBuffer());
   }
 
   computeExtensionJavaScriptCode(startedFileName: string, willNotRespondToTermination: boolean, environmentVariable?: string): string

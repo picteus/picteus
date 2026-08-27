@@ -354,6 +354,11 @@ describe("Extensions", () =>
       expect(fs.existsSync(this.startedFilePath)).toEqual(false);
     }
 
+    checkExtensionState(status: ExtensionStatus): void
+    {
+      expect(fs.existsSync(path.join(this.extensionDirectoryPath, ".paused"))).toEqual(status === ExtensionStatus.Paused);
+    }
+
   }
 
   test("Install via filesystem", async () =>
@@ -385,20 +390,20 @@ describe("Extensions", () =>
     {
       await expect(async () =>
       {
-        await base.getExtensionController().install(Buffer.from(""));
+        await base.getExtensionController().install(false, Buffer.from(""));
       }).rejects.toThrow(new ServiceError("The body MIME type cannot be determined", BAD_REQUEST, base.badParameterCode));
     }
     {
       await expect(async () =>
       {
-        await base.getExtensionController().install(Buffer.from(Array(8 * 1024 * 1024 + 1).fill(0)));
+        await base.getExtensionController().install(false, Buffer.from(Array(8 * 1024 * 1024 + 1).fill(0)));
       }).rejects.toThrow(new ServiceError("The provided extension archive exceeds the maximum allowed binary weight of 8388608 bytes", BAD_REQUEST, base.badParameterCode));
     }
     {
       const zip = new AdmZip();
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The body zip content does not contain the manifest 'manifest.json' file", BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -406,7 +411,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from("malformed JSON", "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The archive contains a manifest 'manifest.json' file which is not a valid JSON content", BAD_REQUEST, base.badParameterCode));
     }
     const manifest: Record<string, any> = {};
@@ -415,7 +420,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
 
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'runtimes' is invalid, because runtimes should not be null or undefined", BAD_REQUEST, base.badParameterCode));
     }
@@ -426,7 +431,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'instructions' is invalid, because instructions should not be null or undefined", BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -438,7 +443,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'settings' is invalid, because settings should not be null or undefined", BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -447,7 +452,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'id' is invalid, because id should not be null or undefined", BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -456,7 +461,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'version' is invalid, because version should not be null or undefined", BAD_REQUEST, base.badParameterCode));
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify({
         ...manifest,
@@ -464,7 +469,7 @@ describe("Extensions", () =>
       }), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'version' is invalid, because version must match ^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$ regular expression", BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -473,7 +478,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'name' is invalid, because name should not be null or undefined", BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -482,7 +487,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'description' is invalid, because description should not be null or undefined", BAD_REQUEST, base.badParameterCode));
     }
   });
@@ -514,7 +519,7 @@ describe("Extensions", () =>
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     zip.addFile(ExtensionBuilder.startedJsFileName, Buffer.from(builder.computeStartedFileContent(), "utf8"));
-    await base.getExtensionController().install(zip.toBuffer());
+    await base.getExtensionController().install(false, zip.toBuffer());
     await waitForExpect(async () =>
     {
       const filePath = path.join(builder.extensionDirectoryPath, "connection.json");
@@ -592,7 +597,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`The capability of the extension with id '${manifest.id}', with id '${capabilityId}' requires the '${ManifestEvent.ProcessStarted}' event`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -615,7 +620,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`The manifest 'manifest.json' file does not respect the expected schema: the property 'instructions' is invalid, because at the level of 'instructions.0.throttlingPolicies.0', durationInMilliseconds must be a positive number`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -638,7 +643,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`A throttling policy of the extension with id '${manifest.id}' refers to the 'image.created' event which is not declared through the 'events' property`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -654,7 +659,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`The capability of the extension with id '${manifest.id}', with id '${capabilityId}' is missing the ['${ManifestEvent.TextComputeEmbeddings}'] events`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -676,7 +681,7 @@ describe("Extensions", () =>
         zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
         await expect(async () =>
         {
-          await base.getExtensionController().install(zip.toBuffer());
+          await base.getExtensionController().install(false, zip.toBuffer());
         }).rejects.toThrow(new ServiceError(`The command of the extension with id '${manifest.id}', with '${commandId}' on entity 'Process' is missing the ['${ManifestEvent.ProcessStarted}', '${ManifestEvent.ProcessRunCommand}'] events`, BAD_REQUEST, base.badParameterCode));
       }
       const additionEvents = [ ManifestEvent.ProcessStarted, ManifestEvent.ProcessRunCommand ];
@@ -693,7 +698,7 @@ describe("Extensions", () =>
         zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
         await expect(async () =>
         {
-          await base.getExtensionController().install(zip.toBuffer());
+          await base.getExtensionController().install(false, zip.toBuffer());
         }).rejects.toThrow(new ServiceError(`The command of the extension with id '${manifest.id}', with '${commandId}' on entity 'Process' is missing the ['${additionEvent === ManifestEvent.ProcessStarted ? ManifestEvent.ProcessRunCommand : ManifestEvent.ProcessStarted}'] events`, BAD_REQUEST, base.badParameterCode));
       }
     }
@@ -709,7 +714,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`The settings of the extension with id '${manifest.id}' do not respect the JSON schema. Reason: 'the 'enum' property '/type' must be equal to one of the allowed values'`, BAD_REQUEST, base.badParameterCode));
     }
     const uiId = "main";
@@ -735,7 +740,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`The '${url}' value of the 'url' property of the UI element with id '${uiId}' of the extension with id '${manifest.id}' has no corresponding file`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -766,7 +771,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await expect(async () =>
       {
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError(`The UI element of the extension with id '${manifest.id}' contain duplicated identifiers`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -821,7 +826,7 @@ describe("Extensions", () =>
         }
         await expect(async () =>
         {
-          await base.getExtensionController().install(zip.toBuffer());
+          await base.getExtensionController().install(false, zip.toBuffer());
         }).rejects.toThrow(new ServiceError(aCase.errorMessage, BAD_REQUEST, base.badParameterCode));
       }
     }
@@ -889,7 +894,7 @@ describe("Extensions", () =>
     {
       zip.addFile(elementBasePath + aCase.path, Buffer.from(aCase.content, "utf8"));
     }
-    await testApiInstall(builder, manifest, zip.toBuffer(), async () =>
+    await testApiInstall(builder, manifest, zip.toBuffer(), undefined, async () =>
     {
       const urlPrefix = `${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${manifest.id}`;
       for (const aCase of cases)
@@ -938,7 +943,7 @@ describe("Extensions", () =>
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       const instructions = "This is the README content!";
       zip.addFile(ExtensionRegistry.manualFileName, Buffer.from(instructions, "utf8"));
-      const extension = await base.getExtensionController().install(zip.toBuffer());
+      const extension = await base.getExtensionController().install(false, zip.toBuffer());
 
       const returnedExtension = await base.getExtensionController().get(extension.manifest.id);
       expect(returnedExtension.manifest).toEqual(extension.manifest);
@@ -957,7 +962,7 @@ describe("Extensions", () =>
     zip.addFile(path.basename(javaScriptFilePath), fs.readFileSync(javaScriptFilePath));
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     zip.addFile("icon.png", Buffer.from("R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==", "base64"));
-    const extension = await base.getExtensionController().install(zip.toBuffer());
+    const extension = await base.getExtensionController().install(false, zip.toBuffer());
     await checkIcon(extension);
   });
 
@@ -983,13 +988,135 @@ describe("Extensions", () =>
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     const commandIconBuffer = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"/>`, "utf8");
     zip.addFile(iconUri, commandIconBuffer);
-    const extension = await base.getExtensionController().install(zip.toBuffer());
+    const extension = await base.getExtensionController().install(false, zip.toBuffer());
 
     const response = await fetch(`${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${extension.manifest.id}${iconUri}`);
     const blob = await response.blob();
     expect(blob.type).toEqual("image/svg+xml");
     const buffer = Buffer.from((await blob.arrayBuffer()));
     expect(buffer).toEqual(commandIconBuffer);
+  });
+
+  test.each([ ExtensionStatus.Paused, ExtensionStatus.Enabled ])("install with '%s' state", async (state: ExtensionStatus) =>
+  {
+    const listener = base.computeEventListener();
+    base.getNotifierService().once(EventEntity.Extension, ExtensionEventAction.Installed, undefined, listener);
+    const builder = new ExtensionBuilder(false, "../started.txt");
+    const manifest = builder.computeSimpleManifest();
+    const zip = new AdmZip();
+    zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
+    // We install with a "paused" state
+    await testApiInstall(builder, manifest, zip.toBuffer(), state, async () =>
+    {
+    });
+  });
+
+  test("update", async () =>
+  {
+    const listener = base.computeEventListener();
+    base.getNotifierService().once(EventEntity.Extension, ExtensionEventAction.Updated, undefined, listener);
+    const extensionId = "id";
+    const firstBuilder = new ExtensionBuilder(false, "../started-1.txt", extensionId);
+    const firstJavaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
+    const manifest = firstBuilder.computeSimpleManifest(firstJavaScriptFilePath);
+    {
+      const zip = new AdmZip();
+      zip.addFile(path.basename(firstJavaScriptFilePath), fs.readFileSync(firstJavaScriptFilePath));
+      zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
+
+      {
+        // We assess with invalid parameters
+        {
+          // We assess with a too-large archive
+          await expect(async () =>
+          {
+            await base.getExtensionController().update(firstBuilder.extensionId, false, Buffer.from(Array(8 * 1024 * 1024 + 1).fill(0)));
+          }).rejects.toThrow(new ServiceError("The provided extension archive exceeds the maximum allowed binary weight of 8388608 bytes", BAD_REQUEST, base.badParameterCode));
+        }
+        {
+          // We attempt to update a non-installed extension
+          await expect(async () =>
+          {
+            await base.getExtensionController().update(firstBuilder.extensionId, false, zip.toBuffer());
+          }).rejects.toThrow(new ServiceError(`There is no extension with id '${manifest.id}'`, BAD_REQUEST, base.badParameterCode));
+        }
+      }
+
+      // We install the extension
+      await base.getExtensionController().install(false, zip.toBuffer());
+
+      await firstBuilder.createRepository();
+      await waitForExpect(async () =>
+      {
+        await firstBuilder.checkExtensionRunning();
+      });
+    }
+
+    const secondBuilder = new ExtensionBuilder(false, "../started-2.txt", extensionId);
+    let secondArchive: Buffer;
+    {
+      const secondJavaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
+      const secondManifest = secondBuilder.computeSimpleManifest(secondJavaScriptFilePath);
+      const zip = new AdmZip();
+      zip.addFile(path.basename(secondJavaScriptFilePath), fs.readFileSync(secondJavaScriptFilePath));
+      zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(secondManifest), "utf8"));
+      secondArchive = zip.toBuffer();
+      await base.getExtensionController().update(secondBuilder.extensionId, false, secondArchive);
+      await waitForExpect(() =>
+      {
+        expect(listener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Updated, { id: manifest.id });
+      });
+      secondBuilder.checkExtensionState(ExtensionStatus.Enabled);
+
+      {
+        // We attempt to update the extension with a faulty extension identifier
+        const faultyExtensionId = `${secondBuilder.extensionId}.faulty`;
+        await expect(async () =>
+        {
+          await base.getExtensionController().update(faultyExtensionId, false, secondArchive);
+        }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${faultyExtensionId}' is invalid because the identifier '${secondBuilder.extensionId}' of the manifest 'manifest.json' does not match`, BAD_REQUEST, base.badParameterCode));
+      }
+
+      // We make sure that the previous version of the extension process is now over
+      await firstBuilder.checkExtensionOver();
+      await waitForExpect(async () =>
+      {
+        await secondBuilder.checkExtensionRunning();
+      });
+    }
+
+    async function checkRunning()
+    {
+      await waitForExpect(async () =>
+      {
+        await secondBuilder.checkExtensionRunning();
+        secondBuilder.checkExtensionState(ExtensionStatus.Enabled);
+      });
+    }
+
+    {
+      // We pause the extension, and make sure that it is still paused when updating it in "paused" state
+      await base.getExtensionController().pauseOrResume(extensionId, true);
+      await base.getExtensionController().update(secondBuilder.extensionId, true, secondArchive);
+      await secondBuilder.checkExtensionOver();
+      secondBuilder.checkExtensionState(ExtensionStatus.Paused);
+
+      // We update the extension in "running" state, and make sure that it is running
+      await base.getExtensionController().update(secondBuilder.extensionId, false, secondArchive);
+      await checkRunning();
+      // We update without interfering with the state and check that it is stable
+      await base.getExtensionController().update(secondBuilder.extensionId, undefined, secondArchive);
+      await checkRunning();
+
+      // We pause the extension, and make sure that it is running when updating it in "running" state
+      await base.getExtensionController().pauseOrResume(extensionId, true);
+      await secondBuilder.checkExtensionOver();
+      await base.getExtensionController().update(secondBuilder.extensionId, false, secondArchive);
+      await checkRunning();
+      // We update without interfering with the state and check that it is stable
+      await base.getExtensionController().update(secondBuilder.extensionId, undefined, secondArchive);
+      await checkRunning();
+    }
   });
 
   test("uninstall", async () =>
@@ -1006,7 +1133,7 @@ describe("Extensions", () =>
     const zip = new AdmZip();
     zip.addFile(path.basename(javaScriptFilePath), fs.readFileSync(javaScriptFilePath));
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
-    const extension = await base.getExtensionController().install(zip.toBuffer());
+    const extension = await base.getExtensionController().install(false, zip.toBuffer());
     await base.getExtensionController().setSettings(Base.allPolicyContext, manifest.id, new ExtensionSettings({ [key]: "value" }));
 
     const { images } = await builder.createRepositoryAndGetImages();
@@ -1070,7 +1197,7 @@ describe("Extensions", () =>
     const manifest = builder.computeSimpleManifest(undefined, false, true, "/dummyFilePath");
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
-    await testApiInstall(builder, manifest, zip.toBuffer(), async () =>
+    await testApiInstall(builder, manifest, zip.toBuffer(), undefined, async () =>
     {
       expect(builder.errorListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Error, {
         id: manifest.id,
@@ -1087,7 +1214,7 @@ describe("Extensions", () =>
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     const stoppedListener = base.computeEventListener();
     base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Process, ExtensionEventProcess.Stopped, stoppedListener);
-    await testApiInstall(builder, manifest, zip.toBuffer(), async () =>
+    await testApiInstall(builder, manifest, zip.toBuffer(), undefined, async () =>
     {
       await waitForExpect(async () =>
       {
@@ -1105,85 +1232,6 @@ describe("Extensions", () =>
     });
   });
 
-  test("update", async () =>
-  {
-    const listener = base.computeEventListener();
-    base.getNotifierService().once(EventEntity.Extension, ExtensionEventAction.Updated, undefined, listener);
-    const extensionId = "id";
-    const firstBuilder = new ExtensionBuilder(false, "../started-1.txt", extensionId);
-    const firstJavaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
-    const manifest = firstBuilder.computeSimpleManifest(firstJavaScriptFilePath);
-    {
-      const zip = new AdmZip();
-      zip.addFile(path.basename(firstJavaScriptFilePath), fs.readFileSync(firstJavaScriptFilePath));
-      zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
-
-      {
-        // We assess with invalid parameters
-        {
-          // We assess with a too-large archive
-          await expect(async () =>
-          {
-            await base.getExtensionController().update(firstBuilder.extensionId, Buffer.from(Array(8 * 1024 * 1024 + 1).fill(0)));
-          }).rejects.toThrow(new ServiceError("The provided extension archive exceeds the maximum allowed binary weight of 8388608 bytes", BAD_REQUEST, base.badParameterCode));
-        }
-        {
-          // We attempt to update a non-installed extension
-          await expect(async () =>
-          {
-            await base.getExtensionController().update(firstBuilder.extensionId, zip.toBuffer());
-          }).rejects.toThrow(new ServiceError(`There is no extension with id '${manifest.id}'`, BAD_REQUEST, base.badParameterCode));
-        }
-      }
-
-      await base.getExtensionController().install(zip.toBuffer());
-
-      await firstBuilder.createRepository();
-      await waitForExpect(async () =>
-      {
-        await firstBuilder.checkExtensionRunning();
-      });
-    }
-
-    const secondBuilder = new ExtensionBuilder(false, "../started-2.txt", extensionId);
-    let secondArchive: Buffer;
-    {
-      const secondJavaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
-      const secondManifest = secondBuilder.computeSimpleManifest(secondJavaScriptFilePath);
-      const zip = new AdmZip();
-      zip.addFile(path.basename(secondJavaScriptFilePath), fs.readFileSync(secondJavaScriptFilePath));
-      zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(secondManifest), "utf8"));
-      secondArchive = zip.toBuffer();
-      await base.getExtensionController().update(secondBuilder.extensionId, secondArchive);
-      await waitForExpect(() =>
-      {
-        expect(listener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Updated, { id: manifest.id });
-      });
-
-      {
-        // We attempt to update the extension with a faulty extension identifier
-        const faultyExtensionId = `${secondBuilder.extensionId}.faulty`;
-        await expect(async () =>
-        {
-          await base.getExtensionController().update(faultyExtensionId, secondArchive);
-        }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${faultyExtensionId}' is invalid because the identifier '${secondBuilder.extensionId}' of the manifest 'manifest.json' does not match`, BAD_REQUEST, base.badParameterCode));
-      }
-
-      // We make sure that the previous version of the extension process is now over
-      await firstBuilder.checkExtensionOver();
-      await waitForExpect(async () =>
-      {
-        await secondBuilder.checkExtensionRunning();
-      });
-    }
-    {
-      // We pause the extension and make sure that when updating it, it is still paused
-      await base.getExtensionController().pauseOrResume(extensionId, true);
-      await base.getExtensionController().update(secondBuilder.extensionId, secondArchive);
-      await secondBuilder.checkExtensionOver();
-    }
-  });
-
   test("synchronize", async () =>
   {
     const builder = new ExtensionBuilder();
@@ -1197,7 +1245,7 @@ describe("Extensions", () =>
     const featuresEventFilePath = path.join(builder.extensionDirectoryPath, "image.computeFeatures");
     {
       // We install the extension and make sure that the event related to the features' computation is processed
-      await base.getExtensionController().install(zip.toBuffer());
+      await base.getExtensionController().install(false, zip.toBuffer());
       await waitForExpect(() =>
       {
         expect(fs.existsSync(tagsEventFilePath)).toEqual(true);
@@ -1254,7 +1302,7 @@ describe("Extensions", () =>
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     zip.addFile(ExtensionBuilder.startedJsFileName, Buffer.from(builder.computeStartedFileContent(), "utf8"));
-    await base.getExtensionController().install(zip.toBuffer());
+    await base.getExtensionController().install(false, zip.toBuffer());
 
     {
       const {
@@ -1519,7 +1567,7 @@ describe("Extensions", () =>
         const zip = new AdmZip();
         zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
         zip.addFile(ExtensionBuilder.startedJsFileName, Buffer.from(builder.computeStartedFileContent(), "utf8"));
-        await base.getExtensionController().install(zip.toBuffer());
+        await base.getExtensionController().install(false, zip.toBuffer());
         try
         {
           await waitForExpect(async () =>
@@ -1588,7 +1636,7 @@ describe("Extensions", () =>
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     zip.addFile(ExtensionBuilder.startedJsFileName, Buffer.from(builder.computeStartedFileContent(), "utf8"));
-    await base.getExtensionController().install(zip.toBuffer());
+    await base.getExtensionController().install(false, zip.toBuffer());
     await waitForExpect(async () =>
     {
       expect((await base.getExtensionController().activities()).find((activity) =>
@@ -1661,7 +1709,7 @@ describe("Extensions", () =>
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     zip.addFile(ExtensionBuilder.startedJsFileName, Buffer.from(builder.computeStartedFileContent(), "utf8"));
-    await base.getExtensionController().install(zip.toBuffer());
+    await base.getExtensionController().install(false, zip.toBuffer());
     await waitForExpect(async () =>
     {
       expect((await base.getExtensionController().activities()).find((activity) =>
@@ -1722,13 +1770,13 @@ describe("Extensions", () =>
       const manifest = new ExtensionBuilder(false, undefined, "id2", extension1Name).computeSimpleManifest();
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
-      await base.getExtensionController().install(zip.toBuffer());
+      await base.getExtensionController().install(false, zip.toBuffer());
     }
     {
       const manifest = new ExtensionBuilder(false, undefined, "id1", extension2Name).computeSimpleManifest();
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
-      await base.getExtensionController().install(zip.toBuffer());
+      await base.getExtensionController().install(false, zip.toBuffer());
     }
     const extensions = await base.getExtensionController().list();
     expect(extensions[0].manifest.name).toEqual(extension2Name);
@@ -1757,7 +1805,7 @@ describe("Extensions", () =>
     {
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest2), "utf8"));
-      await base.getExtensionController().install(zip.toBuffer());
+      await base.getExtensionController().install(false, zip.toBuffer());
     }
     const command1Id = "command1";
     const manifest1 = new ExtensionBuilder(false, undefined, "id1", "A").computeWithInstructionsManifest([
@@ -1777,7 +1825,7 @@ describe("Extensions", () =>
     {
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest1), "utf8"));
-      await base.getExtensionController().install(zip.toBuffer());
+      await base.getExtensionController().install(false, zip.toBuffer());
     }
     const configuration = await base.getExtensionController().getConfiguration();
     expect(configuration.capabilities).toBeDefined();
@@ -1802,7 +1850,7 @@ describe("Extensions", () =>
     const manifest = builder.computeSimpleManifest();
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
-    await testApiInstall(builder, manifest, zip.toBuffer(), async () =>
+    await testApiInstall(builder, manifest, zip.toBuffer(), undefined, async () =>
     {
       await builder.createRepository();
       await waitForExpect(async () =>
@@ -1913,7 +1961,7 @@ describe("Extensions", () =>
     });
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
-    await testApiInstall(builder, manifest, zip.toBuffer(), async () =>
+    await testApiInstall(builder, manifest, zip.toBuffer(), undefined, async () =>
     {
       const listener = base.computeEventListener();
       base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Settings, undefined, listener);
@@ -2105,7 +2153,7 @@ describe("Extensions", () =>
         break;
     }
     const builder = new ExtensionBuilder(false, undefined, options.id, options.name, options.version);
-    const extension = await base.getExtensionController().install(zipBuffer);
+    const extension = await base.getExtensionController().install(false, zipBuffer);
     expect(extension.manifest.id).toEqual(options.id);
     await builder.waitUntilExtensionInstalled();
     builder.checkExtensionProcessStarted();
@@ -2139,7 +2187,7 @@ describe("Extensions", () =>
 
     const builder = new ExtensionBuilder(false, undefined, options.id, options.name, options.version);
     const builtBuffer = await buffer(builtStreamableFile.getStream());
-    const extension = await base.getExtensionController().install(builtBuffer);
+    const extension = await base.getExtensionController().install(false, builtBuffer);
     expect(extension.manifest.id).toEqual(options.id);
     await builder.waitUntilExtensionInstalled();
     builder.checkExtensionProcessStarted();
@@ -2203,7 +2251,7 @@ describe("Extensions", () =>
     };
 
     {
-      const extension = await base.getExtensionController().install(builtArchive);
+      const extension = await base.getExtensionController().install(false, builtArchive);
       const manifest = extension.manifest;
       const builder = new ExtensionBuilder(false, undefined, extensionId, manifest.name, manifest.version);
       await builder.checkExtensionRunning(false, false);
@@ -2221,17 +2269,17 @@ describe("Extensions", () =>
       await base.getExtensionController().runImageCommand(Base.allPolicyContext, extensionId, "commandId", {
         search: { filter: { origin: { kind: SearchOriginKind.Images, ids: [ image.id ] } } }
       });
-      await base.getExtensionService().pauseOrResume(extensionId, true);
+      await base.getExtensionController().pauseOrResume(extensionId, true);
       if (process.platform !== "win32")
       {
         // Because there is no mechanism on Windows for stopping gracefully the process
         await waitForEvent("onTerminate");
       }
+      await base.getExtensionController().pauseOrResume(extensionId, false);
     }
 
     const upgrade = async (previousExtensionVersion: string, upgradedExtensionVersion: string, failOnUpgrade: boolean): Promise<void> =>
     {
-      await base.getExtensionService().pauseOrResume(extensionId, false);
       fs.rmSync(blotterFilePath);
       const upgradeWorkingDirectoryPath = path.join(base.getWorkingDirectoryPath(), upgradedExtensionVersion);
       fs.mkdirSync(upgradeWorkingDirectoryPath, { recursive: true });
@@ -2265,7 +2313,7 @@ describe("Extensions", () =>
       fs.writeFileSync(manifestFilePath, JSON.stringify(manifestJson));
       const zip = new AdmZip();
       zip.addLocalFolder(upgradedExtensionDirectoryPath);
-      const upgradedExtension = await base.getExtensionController().update(extensionId, zip.toBuffer());
+      const upgradedExtension = await base.getExtensionController().update(extensionId, false, zip.toBuffer());
       expect(upgradedExtension.manifest.version).toEqual(upgradedExtensionVersion);
 
       async function checkOnUpgrade(): Promise<void>
@@ -2284,19 +2332,20 @@ describe("Extensions", () =>
         {
           expect(extensionSettingsVersions).not.toEqual(expectedExtensionSettingsVersions);
         }
-        await base.getExtensionService().pauseOrResume(extensionId, true);
+        await base.getExtensionController().pauseOrResume(extensionId, true);
       }
 
       await checkOnUpgrade();
       if (failOnUpgrade === true)
       {
-        await base.getExtensionService().pauseOrResume(extensionId, false);
+        await base.getExtensionController().pauseOrResume(extensionId, false);
         await checkOnUpgrade();
       }
     };
     // We now upgrade the package
     await waitForEvent("onReady");
     await upgrade(extensionVersion, "1.1.0", false);
+    await base.getExtensionController().pauseOrResume(extensionId, false);
     await upgrade("1.1.0", "1.2.0", true);
   }, base.xxLargeTimeoutInMilliseconds);
 
@@ -2335,7 +2384,7 @@ describe("Extensions", () =>
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       zip.addFile(ExtensionBuilder.startedJsFileName, Buffer.from(builder.computeStartedFileContent(), "utf8"));
-      await base.getExtensionController().install(zip.toBuffer());
+      await base.getExtensionController().install(false, zip.toBuffer());
 
       const repository = await builder.createRepository();
       await base.getRepositoryController().watch(repository.id, true);
@@ -2404,14 +2453,22 @@ describe("Extensions", () =>
     }
   });
 
-  async function testApiInstall(builder: ExtensionBuilder, manifest: Manifest, archive: Buffer, callback?: () => Promise<void>, checkStarted: boolean = true): Promise<void>
+  async function testApiInstall(builder: ExtensionBuilder, manifest: Manifest, archive: Buffer, status: ExtensionStatus = ExtensionStatus.Enabled, callback?: () => Promise<void>, checkStarted: boolean = true): Promise<void>
   {
-    const extension = await base.getExtensionController().install(archive);
+    const extension = await base.getExtensionController().install(status === ExtensionStatus.Paused, archive);
     expect(extension.manifest.id).toEqual(manifest.id);
     await builder.waitUntilExtensionInstalled();
     if (checkStarted === true)
     {
-      builder.checkExtensionProcessStarted();
+      if (status === ExtensionStatus.Enabled)
+      {
+        builder.checkExtensionProcessStarted();
+      }
+      else
+      {
+        builder.checkExtensionState(ExtensionStatus.Paused);
+        builder.checkStartedFileNotFound();
+      }
     }
     await checkIcon(extension);
 
