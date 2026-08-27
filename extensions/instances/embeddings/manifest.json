@@ -13,12 +13,12 @@
   "instructions": [
     {
       "events": [
-        "process.runCommand",
         "process.started",
         "image.created",
         "image.updated",
         "image.computeEmbeddings",
-        "text.computeEmbeddings"
+        "text.computeEmbeddings",
+        "image.runCommand"
       ],
       "throttlingPolicies": [
         {
@@ -44,32 +44,25 @@
         {
           "id": "compute",
           "on": {
-            "entity": "Process"
+            "entity": "Images"
           },
           "parameters": {
             "type": "object",
             "properties": {
-              "collectionId": {
-                "type": "integer",
-                "title": "Collection",
-                "description": "What is the collection of images the computation should be run for?",
-                "ui": {
-                  "widget": "collection"
-                }
-              },
               "clipEnabled": {
                 "type": "boolean",
                 "title": "CLIP",
-                "description": "Whether the CLIP model should be used to compute the embedding of an image."
+                "description": "Whether the CLIP model should be used to compute the embedding of an image.",
+                "default": true
               },
               "dinoEnabled": {
                 "type": "boolean",
                 "title": "DINO",
-                "description": "Whether the DINO v2 model should be used to compute the embedding of an image."
+                "description": "Whether the DINO v2 model should be used to compute the embedding of an image.",
+                "default": true
               }
             },
             "required": [
-              "collectionId",
               "clipEnabled",
               "dinoEnabled"
             ]
@@ -78,7 +71,8 @@
             {
               "locale": "en",
               "label": "Compute",
-              "description": "Compute embeddings for images in a collection."
+              "name": "Compute embedding",
+              "description": "Compute embeddings for images."
             }
           ]
         }

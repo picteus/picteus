@@ -50,6 +50,13 @@ class Embeddings(PicteusExtension):
     async def on_compute_image_embeddings(self, communicator: Communicator, image_id: str) -> None:
         return await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
 
+    async def on_images_command(self, communicator: Communicator, command_id: str, image_ids: List[str],
+                                parameters: CommandParameters) -> None:
+        if command_id == "compute":
+            clip_enabled: bool = parameters["clipEnabled"]
+            dino_enabled: bool = parameters["dinoEnabled"]
+            await self._compute_images_embeddings(communicator, image_ids, clip_enabled, dino_enabled)
+
     async def on_process_command(self, communicator: Communicator, command_id: str,
                                  parameters: CommandParameters) -> None:
         if command_id == "compute":
