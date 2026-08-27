@@ -76,6 +76,7 @@ import {
   ExtensionImageTag,
   ExtensionsConfiguration,
   ExtensionSettings,
+  ExtensionState,
   FieldLengths,
   GenerationRecipe,
   Image,
@@ -583,14 +584,15 @@ export class ExtensionController
   @ApiOperation(
     {
       summary: "Installs an extension",
-      description: "Analyzes the extension, installs it, and potentially marks it as paused."
+      description: "Analyzes the extension and installs it."
     }
   )
   @ApiConsumes(types.zip, applicationGzipMimeType, applicationXGzipMimeType)
   @ApiQuery({
-    name: "isPause",
-    description: "Whether the extension should be in a paused state",
-    type: Boolean,
+    name: "state",
+    description: "Whether the extension should be started if the installation is successful",
+    enum: ExtensionState,
+    enumName: "ExtensionState",
     required: true
   })
   @ApiBody({
@@ -606,23 +608,24 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
-  async install(@Query("isPause") isPause: boolean, @Body() archive: Buffer): Promise<Extension>
+  async install(@Query("state") state: ExtensionState, @Body() archive: Buffer): Promise<Extension>
   {
-    return await this.extensionService.installOrUpdate(undefined, archive, StateChangeOptions.withState(isPause), true);
+    return await this.extensionService.installOrUpdate(undefined, archive, StateChangeOptions.withState(state), true);
   }
 
   @Put(":id/update")
   @ApiOperation(
     {
       summary: "Updates an extension",
-      description: "Analyzes the extension, updates it and potentially marks it as paused."
+      description: "Analyzes the extension and updates it."
     }
   )
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
   @ApiQuery({
-    name: "isPause",
-    description: "Whether the extension should be in a paused state, in running state or in the same state",
-    type: Boolean,
+    name: "state",
+    description: "The new state of the extension if it was successfully updated",
+    enum: ExtensionState,
+    enumName: "ExtensionState",
     required: false
   })
   @ApiConsumes(types.zip, applicationGzipMimeType, applicationXGzipMimeType)
@@ -639,9 +642,9 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
-  async update(@Param("id") id: ExtensionIdType, @Query("isPause") isPause: boolean | undefined, @Body() archive: Buffer): Promise<Extension>
+  async update(@Param("id") id: ExtensionIdType, @Query("state") state: ExtensionState | undefined, @Body() archive: Buffer): Promise<Extension>
   {
-    return await this.extensionService.installOrUpdate(id, archive, StateChangeOptions.withState(isPause), true);
+    return await this.extensionService.installOrUpdate(id, archive, StateChangeOptions.withState(state), true);
   }
 
   @Delete(":id/uninstall")
@@ -662,18 +665,19 @@ export class ExtensionController
     return await this.extensionService.uninstall(id, true);
   }
 
-  @Put(":id/pauseOrResume")
+  @Put(":id/changeState")
   @ApiOperation(
     {
-      summary: "Pauses or resumes an extension",
-      description: "Either stops and marks it as paused the extension or starts it."
+      summary: "Changes the state of an extension",
+      description: "Depending on the state, the extension will be stopped or started."
     }
   )
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
   @ApiQuery({
-    name: "isPause",
-    description: "Whether the extension should be in a paused state",
-    type: Boolean,
+    name: "state",
+    description: "The new state to apply",
+    enum: ExtensionState,
+    enumName: "ExtensionState",
     required: true
   })
   @ApiProduces(types.txt)
@@ -681,9 +685,9 @@ export class ExtensionController
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionManage ]))
-  async pauseOrResume(@Param("id") id: ExtensionIdType, @Query("isPause") isPause: boolean): Promise<void>
+  async changeState(@Param("id") id: ExtensionIdType, @Query("state") state: ExtensionState): Promise<void>
   {
-    return await this.extensionService.changeState(id, StateChangeOptions.withState(isPause));
+    return await this.extensionService.changeState(id, state);
   }
 
   @Get(":id/getSettings")
@@ -1067,7 +1071,7 @@ export class RepositoryController
   @ApiOperation(
     {
       summary: "Starts or stop the repositories",
-      description: "Starts all the repositories, resume synchronization if necessary and starts watching them, or stops them."
+      description: "Starts all the repositories, resumes synchronization if necessary and starts watching them, or stops them."
     }
   )
   @ApiQuery({

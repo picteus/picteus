@@ -14,7 +14,7 @@ import { logger } from "../logger";
 import { paths } from "../paths";
 import {
   ExtensionManual,
-  ExtensionStatus,
+  ExtensionState,
   Manifest,
   ManifestCapability,
   ManifestEvent,
@@ -210,9 +210,9 @@ export class ExtensionRegistry
     return new ExtensionManual(instructions);
   }
 
-  getStatus(id: string): ExtensionStatus
+  getState(id: string): ExtensionState
   {
-    return this.isPaused(id) === true ? ExtensionStatus.Paused : ExtensionStatus.Enabled;
+    return this.isPaused(id) === true ? ExtensionState.Paused : ExtensionState.Enabled;
   }
 
   isPaused(id: string): boolean
@@ -236,10 +236,10 @@ export class ExtensionRegistry
     return undefined;
   }
 
-  pauseOrResume(id: string, isPause: boolean): void
+  changeState(id: string, state: ExtensionState): void
   {
     const filePath = this.computePauseFilePath(id);
-    if (isPause === true)
+    if (state === ExtensionState.Paused)
     {
       fs.writeFileSync(filePath, "");
     }

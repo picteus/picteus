@@ -1091,9 +1091,9 @@ export class ExtensionGenerationOptions extends ExtensionBasis
 }
 
 /**
- * All possible extension statuses.
+ * All possible extension states.
  */
-export enum ExtensionStatus
+export enum ExtensionState
 {
   Enabled = "enabled",
   Paused = "paused"
@@ -1166,10 +1166,10 @@ export class Extension
 
   static readonly CHROME_EXTENSION_MAXIMUM_BINARY_WEIGHT_IN_BYTES = 64 * 1_024 * 1_024;
 
-  constructor(manifest: Manifest, status: ExtensionStatus)
+  constructor(manifest: Manifest, state: ExtensionState)
   {
     this.manifest = manifest;
-    this.status = status;
+    this.state = state;
   }
 
   @ApiProperty(
@@ -1187,18 +1187,18 @@ export class Extension
 
   @ApiProperty(
     {
-      description: "The status of the extension",
-      enum: ExtensionStatus,
-      enumName: "ExtensionStatus",
+      description: "The state of the extension",
+      enum: ExtensionState,
+      enumName: "ExtensionState",
       required: true,
-      example: ExtensionStatus.Enabled
+      example: ExtensionState.Enabled
     }
   )
-  @IsEnum(ExtensionStatus)
+  @IsEnum(ExtensionState)
   @IsDefined()
   @NotEquals(null)
   @Expose()
-  readonly status: ExtensionStatus;
+  readonly state: ExtensionState;
 
 }
 
@@ -1241,9 +1241,9 @@ export class ExtensionManual
 export class ExtensionAndManual extends Extension
 {
 
-  constructor(manifest: Manifest, status: ExtensionStatus, manual?: ExtensionManual)
+  constructor(manifest: Manifest, state: ExtensionState, manual?: ExtensionManual)
   {
-    super(manifest, status);
+    super(manifest, state);
     this.manual = manual;
   }
 

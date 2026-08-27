@@ -35,6 +35,7 @@ import { computeMainModule, fineTuneApplication } from "../src/app.module";
 import {
   Extension,
   ExtensionCategory,
+  ExtensionState,
   fileWithProtocol,
   GenerationRecipe,
   Image,
@@ -733,7 +734,7 @@ export class Base extends Core
     {
       zip.addFile(ExtensionBasisBuilder.startedJsFileName, Buffer.from(new ExtensionBasisBuilder().computeStartedFileContent(), "utf8"));
     }
-    return await this.getExtensionController().install(false, zip.toBuffer());
+    return await this.getExtensionController().install(ExtensionState.Enabled, zip.toBuffer());
   }
 
   computeExtensionJavaScriptCode(startedFileName: string, willNotRespondToTermination: boolean, environmentVariable?: string): string

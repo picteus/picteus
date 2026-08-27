@@ -53,7 +53,7 @@ import {
   ExtensionGenerationOptions,
   ExtensionsConfiguration,
   ExtensionSettings,
-  ExtensionStatus,
+  ExtensionState,
   ImageFormats,
   Manifest,
   ManifestCapability,
@@ -359,26 +359,21 @@ export interface ExtensionSettingsVersions
 export class StateChangeOptions
 {
 
-  readonly state: ExtensionStatus | undefined;
+  readonly state: ExtensionState | undefined;
 
-  static withState(isPause: boolean | undefined): StateChangeOptions
+  static withState(state: ExtensionState | undefined): StateChangeOptions
   {
-    return new StateChangeOptions(isPause, isPause === true ? undefined : true);
+    return new StateChangeOptions(state === undefined ? undefined : state == ExtensionState.Paused, state == ExtensionState.Paused ? undefined : true);
   }
 
-  static withSynchronisation(isPause: boolean, withSynchronisation: boolean): StateChangeOptions
+  static withSynchronisation(state: ExtensionState, withSynchronisation: boolean): StateChangeOptions
   {
-    return new StateChangeOptions(isPause, withSynchronisation);
+    return new StateChangeOptions(state === ExtensionState.Paused, withSynchronisation);
   }
 
   private constructor(isPause: boolean | undefined, readonly withSynchronisation: boolean | undefined)
   {
-    this.state = isPause ? ExtensionStatus.Paused : ExtensionStatus.Enabled;
-  }
-
-  get isPause(): boolean
-  {
-    return this.state === "paused";
+    this.state = isPause ? ExtensionState.Paused : ExtensionState.Enabled;
   }
 
 }
@@ -624,7 +619,7 @@ export class ExtensionService
       const { directoryPath, ...manifest } = extendedManifest;
       return plainToInstanceViaJSON(Extension, {
         manifest,
-        status: this.extensionsRegistry.getStatus(extendedManifest.id)
+        status: this.extensionsRegistry.getState(extendedManifest.id)
       });
     }));
   }
@@ -651,7 +646,7 @@ export class ExtensionService
     const { directoryPath, ...manifest } = extendedManifest;
     return plainToInstanceViaJSON(ExtensionAndManual, {
       manifest,
-      status: this.extensionsRegistry.getStatus(extendedManifest.id),
+      state: this.extensionsRegistry.getState(extendedManifest.id),
       manual
     });
   }
@@ -662,7 +657,7 @@ export class ExtensionService
     const manifest = await this.installUpdateOrUnpack(idWhenUpdating, new ExtensionArchiveReader(archive), true, options, shouldHandleProcesses, true);
     return plainToInstanceViaJSON(Extension, {
       manifest,
-      status: this.extensionsRegistry.getStatus(manifest.id)
+      status: this.extensionsRegistry.getState(manifest.id)
     });
   }
 
@@ -711,16 +706,16 @@ export class ExtensionService
     this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Uninstalled, undefined, { id });
   }
 
-  async changeState(id: string, options: StateChangeOptions): Promise<void>
+  async changeState(id: string, state: ExtensionState): Promise<void>
   {
-    logger.info(`Changes the extension with id '${id}' into state ${options.isPause === true ? "paused" : "running"}`);
+    logger.info(`Changes the extension with id '${id}' into state '${state}'`);
     const extensionAndManual = await this.get(id);
-    if (this.extensionsRegistry.isPaused(id) === options.isPause)
+    if (this.extensionsRegistry.getState(id) === state)
     {
-      parametersChecker.throwBadParameter("isPause", options.isPause === true ? "true" : "false", `the extension with id '${id}' is already ${options.isPause === true ? "paused" : "resumed"}`);
+      parametersChecker.throwBadParameter("state", state, `the extension with id '${id}' is already ${state === ExtensionState.Paused ? "paused" : "enabled"}`);
     }
-    this.extensionsRegistry.pauseOrResume(id, options.isPause);
-    await this.startOrStopProcesses(extensionAndManual.manifest, options.isPause, options.withSynchronisation);
+    this.extensionsRegistry.changeState(id, state);
+    await this.startOrStopProcesses(extensionAndManual.manifest, state === ExtensionState.Paused, true);
   }
 
   async registerUnpackedExtension(sourceDirectoryPath: string, installDependencies: boolean, shouldHandleProcesses: boolean): Promise<void>
@@ -745,7 +740,7 @@ export class ExtensionService
       {
         try
         {
-          await this.installUpdateOrUnpack(undefined, manifest, installDependencies, StateChangeOptions.withSynchronisation(false, false), shouldHandleProcesses, false);
+          await this.installUpdateOrUnpack(undefined, manifest, installDependencies, StateChangeOptions.withSynchronisation(ExtensionState.Enabled, false), shouldHandleProcesses, false);
           this.perUnpackedExtensionIdPathsMap.set(manifest.id, {
             source: sourceDirectoryPath,
             target: targetDirectoryPath
@@ -774,7 +769,7 @@ export class ExtensionService
         {
           // TODO: do not stop or start the process if the extension is already being restarted because of a previous change and do not anything if the ExtensionRunner is not ready
           logger.info(`The manifest file '${filePath}' of the unpacked extension with id '${manifest.id}' has changed: reloading the extension`);
-          await this.installUpdateOrUnpack(manifest.id, this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)), true, StateChangeOptions.withState(false), true, false);
+          await this.installUpdateOrUnpack(manifest.id, this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)), true, StateChangeOptions.withState(ExtensionState.Enabled), true, false);
         }
       }, (error: Error) =>
       {
@@ -959,7 +954,7 @@ export class ExtensionService
   {
     logger.info(`Running on the extension with id '${id}' the command with id '${commandId}' attached to the entity '${entity}'`);
     this.checkExtensionExists(id);
-    if (this.extensionsRegistry.getStatus(id) === ExtensionStatus.Paused)
+    if (this.extensionsRegistry.getState(id) === ExtensionState.Paused)
     {
       parametersChecker.throwBadParameterError(`Cannot run the command with id '${commandId}' on the extension with id '${id}' because the latter is paused`);
     }
@@ -1334,7 +1329,7 @@ export class ExtensionService
         logger.debug(`${shouldExtensionBeUpdated === true ? "Updating" : "Installing"} the built-in extension with id '${manifest.id}' with version '${manifest.version}'`);
         try
         {
-          await this.installOrUpdate(shouldExtensionBeUpdated === true ? manifest.id : undefined, archive, StateChangeOptions.withState(false), false);
+          await this.installOrUpdate(shouldExtensionBeUpdated === true ? manifest.id : undefined, archive, StateChangeOptions.withState(ExtensionState.Enabled), false);
         }
         catch (error)
         {
@@ -1537,20 +1532,20 @@ export class ExtensionService
       });
     }
 
-    if (options.isPause === true)
+    if (options.state === ExtensionState.Paused)
     {
       if (isCurrentlyPaused === false)
       {
-        this.extensionsRegistry.pauseOrResume(manifest.id, true);
+        this.extensionsRegistry.changeState(manifest.id, ExtensionState.Paused);
       }
     }
     else
     {
-      if (shouldHandleProcesses === true && (options.isPause === false || isCurrentlyPaused === false))
+      if (shouldHandleProcesses === true && (options.state === ExtensionState.Enabled || isCurrentlyPaused === false))
       {
         if (isCurrentlyPaused === true)
         {
-          this.extensionsRegistry.pauseOrResume(manifest.id, false);
+          this.extensionsRegistry.changeState(manifest.id, ExtensionState.Enabled);
         }
         await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(manifest.id) ]);
         if (idWhenUpdating === undefined && options.withSynchronisation === true)
