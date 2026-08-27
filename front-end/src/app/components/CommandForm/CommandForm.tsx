@@ -18,15 +18,13 @@ type CommandFormType = {
   extensionId: string;
   searchFilter?: SearchFilter;
   onSend: (extensionId: string, commandId: string, parameters?: object) => void;
-  onCancel: () => void;
 };
 
 export default function CommandForm({
   command,
   extensionId,
   searchFilter,
-  onSend,
-  onCancel
+  onSend
 }: CommandFormType)
 {
   const [ commandParameters, setCommandParameters ] = useState<object>();
@@ -49,9 +47,6 @@ export default function CommandForm({
         <ImagesCollection imageIds={searchFilter.origin.ids}/>}
       <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setCommandParameters}/>
       <Flex mt={"md"} align="flex-end" justify="flex-end" gap={5}>
-        {<Button variant="subtle" onClick={onCancel}>
-          {t("button.cancel")}
-        </Button>}
         <Button
           onClick={() => onSend(extensionId, command.id, commandParameters)}
         >

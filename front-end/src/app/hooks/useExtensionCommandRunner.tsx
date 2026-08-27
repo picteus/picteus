@@ -80,11 +80,6 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
           onSend={(extensionId, commandId, commandParameters) =>
             handleOnSendCommand(extensionId, commandId, commandParameters, searchFilter, onRunning, modalId)
           }
-          onCancel={() =>
-          {
-            removeModal(modalId);
-            handleOnCompleted(true);
-          }}
         />
       ),
       onBeforeClose: (viaOnSuccess: boolean) =>

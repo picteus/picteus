@@ -123,14 +123,7 @@ export default function IntentCenter()
                   ids: formIntent.context?.imageIds
                 }
               }}
-              onSend={(_extensionId, _commandId, parameters) =>
-                handleOnSend(parameters, modalId)
-              }
-              onCancel={() =>
-              {
-                respondWithCancel();
-                removeModal(modalId);
-              }}
+              onSend={(_extensionId, _commandId, parameters) => handleOnSend(parameters, modalId)}
             />
           ),
           title: form.dialogContent?.title || t("extensionIntent.modalTitle", { extension: extensionName }),
