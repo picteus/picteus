@@ -14,7 +14,7 @@ import {
   Container,
   Drawer,
   EmptyResults,
-  EntityStatus,
+  EntityState,
   ExtensionIcon,
   RefreshButton,
   StandardTable
@@ -178,7 +178,7 @@ export default function ExtensionsScreen()
         </Table.Td>
         <Table.Td>
           <Flex align="center" gap="xs">
-            <EntityStatus type="extension" status={extension.status} size="md"/>
+            <EntityState type="extension" state={extension.state} size="md"/>
             {extensionActivities[extension.manifest.id] &&
               <ExtensionActivity activityKind={extensionActivities[extension.manifest.id]}/>}
           </Flex>

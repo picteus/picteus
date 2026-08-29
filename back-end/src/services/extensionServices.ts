@@ -59,6 +59,7 @@ import {
   ManifestCapability,
   ManifestCapabilityId,
   ManifestEvent,
+  ManifestRuntime,
   ManifestRuntimeEnvironment,
   SearchParameters,
   UserInterfaceAnchor
@@ -356,6 +357,34 @@ export interface ExtensionSettingsVersions
   upgraded: boolean;
 }
 
+class InstallInstructions
+{
+
+  constructor(readonly reader: ExtensionArchiveReader)
+  {
+  }
+
+}
+
+class UpdateInstructions extends InstallInstructions
+{
+
+  constructor(reader: ExtensionArchiveReader, readonly id: string)
+  {
+    super(reader);
+  }
+
+}
+
+class UnpackedInstructions
+{
+
+  constructor(readonly manifest: Manifest)
+  {
+  }
+
+}
+
 export class StateChangeOptions
 {
 
@@ -434,10 +463,14 @@ export class ExtensionService
 
   private unpackedExtensionDirectoryWatcherTerminator?: WatcherTerminator;
 
+  private readonly detectedUnpackedExtensionIds: Set<string> = new Set<string>();
+
   private readonly perUnpackedExtensionIdPathsMap: Map<string, {
     source: string,
     target: string
   }> = new Map<string, { source: string, target: string }>();
+
+  private readonly ignoredPackedExtensionDirectoryPaths: Set<string> = new Set<string>();
 
   private readonly perExtensionIdWatcherTerminatorMap: Map<string, WatcherTerminator> = new Map<string, WatcherTerminator>();
 
@@ -478,10 +511,7 @@ export class ExtensionService
 
     // We start all the extensions
     const manifests = await this.extensionsRegistry.list(false);
-    const extensionIds = manifests.map((manifest) =>
-    {
-      return manifest.id;
-    });
+    const extensionIds = manifests.map((manifest) => manifest.id);
     this.extensionsManager = new ExtensionsManager();
     await this.extensionsManager.start(paths.webServicesBaseUrl, AuthenticationGuard.registerExtensionsApiKeys(extensionIds), async (message: ExtensionMessage) =>
     {
@@ -651,10 +681,80 @@ export class ExtensionService
     });
   }
 
-  async installOrUpdate(idWhenUpdating: string | undefined, archive: Buffer, options: StateChangeOptions, shouldHandleProcesses: boolean): Promise<Extension>
+  async installOrUpdate(idWhenUpdating: string | undefined, archive: Buffer, options: StateChangeOptions, asUnpacked: boolean, shouldHandleProcesses: boolean): Promise<Extension>
   {
-    this.checkExtensionArchiveBinaryWeight(archive);
-    const manifest = await this.installUpdateOrUnpack(idWhenUpdating, new ExtensionArchiveReader(archive), true, options, shouldHandleProcesses, true);
+    let reader: ExtensionArchiveReader;
+    try
+    {
+      reader = new ExtensionArchiveReader(archive, true);
+    }
+    catch (error)
+    {
+      parametersChecker.throwBadParameterError((error as Error).message);
+    }
+
+    let manifest: Manifest;
+    if (asUnpacked === true)
+    {
+      if (paths.unpackedExtensionsDirectoryPath === undefined)
+      {
+        throw parametersChecker.throwBadParameterError("The unpacked extensions are disabled");
+      }
+      manifest = await reader.extractManifest();
+      const extensionDirectoryPath = path.join(paths.unpackedExtensionsDirectoryPath, manifest.id);
+      if (fs.existsSync(extensionDirectoryPath) === true)
+      {
+        parametersChecker.throwBadParameterError(`An unpacked extension with the same id '${manifest.id}' already exists`);
+      }
+      const inflationDirectoryPath = getTemporaryDirectoryPath();
+      await reader.extractFunction!(inflationDirectoryPath);
+      // We mark the unpacked extension as ignored, so that it is not automatically registered
+      this.ignoredPackedExtensionDirectoryPaths.add(extensionDirectoryPath);
+      try
+      {
+        if (options.state === ExtensionState.Paused)
+        {
+          this.extensionsRegistry.writeExtensionState(inflationDirectoryPath, ExtensionState.Paused);
+        }
+        fs.renameSync(inflationDirectoryPath, extensionDirectoryPath);
+        await this.prepareRuntimes(manifest.id, extensionDirectoryPath, manifest.runtimes, true, false);
+        for (const runtime of [ ...new Map(manifest.runtimes.map(runtime => [ runtime.environment, runtime ])).values() ])
+        {
+          await this.compileRuntime(runtime, extensionDirectoryPath);
+        }
+      }
+      finally
+      {
+        this.ignoredPackedExtensionDirectoryPaths.delete(extensionDirectoryPath);
+      }
+      let status: "paused" | "exists" | "noManifest" | "success";
+      try
+      {
+        status = await this.registerUnpackedExtension(extensionDirectoryPath, false, shouldHandleProcesses);
+      }
+      catch (error)
+      {
+        // We delete the extension's directory on purpose
+        if (fs.existsSync(extensionDirectoryPath) === true)
+        {
+          fs.rmSync(extensionDirectoryPath, { recursive: true });
+        }
+        logger.error(`The registration of the unpacked extension failed`, error);
+        parametersChecker.throwBadParameterError((error as Error).message);
+      }
+      if (status === "exists")
+      {
+        parametersChecker.throwBadParameterError(`An extension with the same id '${manifest.id}' already exists`);
+      }
+      else if (status === "noManifest")
+      {
+        parametersChecker.throwBadParameterError(`The extension contains no '${ExtensionRegistry.manifestFileName}' manifest file`);
+      }
+    }
+    else
+    {
+      manifest = await this.register(idWhenUpdating === undefined ? new InstallInstructions(reader) : new UpdateInstructions(reader, idWhenUpdating), true, options, shouldHandleProcesses, true);
+    }
     return plainToInstanceViaJSON(Extension, {
       manifest,
       status: this.extensionsRegistry.getState(manifest.id)
@@ -706,6 +806,33 @@ export class ExtensionService
     this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Uninstalled, undefined, { id });
   }
 
+  async compile(id: string, checkExistence: boolean): Promise<void>
+  {
+    logger.info(`Compiling the extension with id '${id}'`);
+    if (checkExistence === true)
+    {
+      this.checkExtensionExists(id);
+    }
+    const manifest = this.extensionsRegistry.get(id)!;
+    if (this.detectedUnpackedExtensionIds.has(manifest.id) === false)
+    {
+      parametersChecker.throwBadParameter("id", id, "that extension is non unpacked");
+    }
+
+    const extensionDirectoryPath = this.extensionsRegistry.computeExtensionDirectoryPath(manifest.id);
+    for (const runtime of [ ...new Map(manifest.runtimes.map(runtime => [ runtime.environment, runtime ])).values() ])
+    {
+      try
+      {
+        await this.compileRuntime(runtime, extensionDirectoryPath);
+      }
+      catch (error)
+      {
+        parametersChecker.throwBadParameterError(`The compilation for the '${runtime.environment}' environment failed`);
+      }
+    }
+  }
+
   async changeState(id: string, state: ExtensionState): Promise<void>
   {
     logger.info(`Changes the extension with id '${id}' into state '${state}'`);
@@ -716,67 +843,6 @@ export class ExtensionService
     }
     this.extensionsRegistry.changeState(id, state);
     await this.startOrStopProcesses(extensionAndManual.manifest, state === ExtensionState.Paused, true);
-  }
-
-  async registerUnpackedExtension(sourceDirectoryPath: string, installDependencies: boolean, shouldHandleProcesses: boolean): Promise<void>
-  {
-    logger.info(`Analyzing the unpacked extension under directory '${sourceDirectoryPath}'`);
-    if (fs.existsSync(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)) === true)
-    {
-      const manifest = this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName));
-      // We do nothing for the extensions in state "paused"
-      if (this.extensionsRegistry.isPaused(manifest.id) === true)
-      {
-        return;
-      }
-      logger.info(`Registering the unpacked extension with id '${manifest.id}' in directory '${sourceDirectoryPath}'`);
-      const targetDirectoryPath = this.extensionsRegistry.computeExtensionDirectoryPath(manifest.id);
-      if (fs.existsSync(targetDirectoryPath) === false)
-      {
-        fs.symlinkSync(sourceDirectoryPath, targetDirectoryPath, symlinkType);
-        logger.debug(`Created a symbolic link from the unpacked extension directory '${sourceDirectoryPath}' to the installed extensions directory '${targetDirectoryPath}'`);
-      }
-      if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true && fs.realpathSync(targetDirectoryPath) === fs.realpathSync(sourceDirectoryPath))
-      {
-        try
-        {
-          await this.installUpdateOrUnpack(undefined, manifest, installDependencies, StateChangeOptions.withSynchronisation(ExtensionState.Enabled, false), shouldHandleProcesses, false);
-          this.perUnpackedExtensionIdPathsMap.set(manifest.id, {
-            source: sourceDirectoryPath,
-            target: targetDirectoryPath
-          });
-        }
-        catch (error)
-        {
-          logger.error(`The installation of update of the unpacked extension with id '${manifest.id}' failed`, error);
-          this.perUnpackedExtensionIdPathsMap.delete(manifest.id);
-          if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true)
-          {
-            fs.rmSync(targetDirectoryPath);
-          }
-          return;
-        }
-      }
-      else
-      {
-        logger.warn(`The extension with id '${manifest.id}' is already installed: cannot override it with the unpacked extension`);
-      }
-
-      const filePath = path.join(targetDirectoryPath, ExtensionRegistry.manifestFileName);
-      const watcherTerminator = await watchPath(filePath, undefined, async (event: WatcherEvent, _relativePath: string) =>
-      {
-        if (event === WatcherEvent.Changed)
-        {
-          // TODO: do not stop or start the process if the extension is already being restarted because of a previous change and do not anything if the ExtensionRunner is not ready
-          logger.info(`The manifest file '${filePath}' of the unpacked extension with id '${manifest.id}' has changed: reloading the extension`);
-          await this.installUpdateOrUnpack(manifest.id, this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)), true, StateChangeOptions.withState(ExtensionState.Enabled), true, false);
-        }
-      }, (error: Error) =>
-      {
-        console.error(`An unexpected error occurred when watching the manifest file '${filePath}' of the unpacked extension with id '${manifest.id}'`, error);
-      });
-      this.perExtensionIdWatcherTerminatorMap.set(manifest.id, watcherTerminator);
-    }
   }
 
   async getPersistedSettings(id: string): Promise<Prisma.ExtensionSettingsGetPayload<true> | null>
@@ -1115,7 +1181,7 @@ export class ExtensionService
 
   async generate(options: ExtensionGenerationOptions, withPublicSdk: boolean): Promise<StreamableFile>
   {
-    logger.info(`Generating an extension with id '${options.id}', name '${options.name}' and for the '${options.environment}' runtime environment${options.sdkVersion === undefined ? "" : (` with the SDK v${options.sdkVersion}`)}`);
+    logger.info(`Generating an extension with id '${options.id}', name '${options.name}' and for the '${options.environment}' runtime environment${options.sdkVersion === undefined ? "" : (` with the ${withPublicSdk ? "public" : "internal"} SDK v${options.sdkVersion}`)}`);
     const temporaryDirectoryPath = getTemporaryDirectoryPath();
     const extensionDirectoryPath = await new ExtensionGenerator().run(temporaryDirectoryPath, options, withPublicSdk);
     const zip = new AdmZip();
@@ -1129,8 +1195,15 @@ export class ExtensionService
 
   async build(archive: Buffer): Promise<StreamableFile>
   {
-    this.checkExtensionArchiveBinaryWeight(archive);
-    const archiveReader = new ExtensionArchiveReader(archive);
+    let archiveReader: ExtensionArchiveReader;
+    try
+    {
+      archiveReader = new ExtensionArchiveReader(archive, true);
+    }
+    catch (error)
+    {
+      parametersChecker.throwBadParameterError((error as Error).message);
+    }
     const manifest = await archiveReader.extractManifest();
     logger.info(`Building an extension with id '${manifest.id}' and name '${manifest.name}'`);
     let buffer: Buffer;
@@ -1138,24 +1211,14 @@ export class ExtensionService
     {
       const buildDirectoryPath = getTemporaryDirectoryPath();
       await archiveReader.extractFunction!(buildDirectoryPath);
-      const packageJsonFilePath = path.join(buildDirectoryPath, packageJsonFileName);
-      if (fs.existsSync(packageJsonFilePath) === true)
+      const packageJsonFilePath = this.checkNodePackageJson(buildDirectoryPath, true);
+      if (packageJsonFilePath === undefined)
       {
-        {
-          let packageJson: Record<string, any>;
-          try
-          {
-            packageJson = JSON.parse(fs.readFileSync(packageJsonFilePath, { encoding: "utf-8" }));
-          }
-          catch (error)
-          {
-            parametersChecker.throwBadParameterError(`The archive is invalid because it contains the '${packageJsonFileName}' file, which is not a valid JSON content`);
-          }
-          if (packageJson?.scripts?.build === undefined)
-          {
-            parametersChecker.throwBadParameterError(`The archive is invalid because it contains the '${packageJsonFileName}' file, which does not contain a npm 'build' script`);
-          }
-        }
+        logger.warn(`The archive contains a '${ManifestRuntimeEnvironment.Node}' runtime but does not contain a '${packageJsonFileName}' file`);
+        buffer = archive;
+      }
+      else
+      {
         const sdkInfo = await ExtensionRegistry.getSdkInfo(ManifestRuntimeEnvironment.Node);
         await installPackages(packageJsonFilePath, false, sdkInfo.version, sdkInfo.filePath);
         {
@@ -1179,18 +1242,13 @@ export class ExtensionService
         const tarballFilePaths = new fdir().withFullPaths().withMaxDepth(0).crawl(buildDirectoryPath).sync().filter(filePath => filePath.endsWith(".tgz"));
         if (tarballFilePaths.length !== 1)
         {
-          parametersChecker.throwInternalError(`Could not determine the built tarball`);
+          parametersChecker.throwInternalError(`Could not find the built tarball`);
         }
         const tarballFilePath = tarballFilePaths[0];
         return new StreamableFile(fs.createReadStream(tarballFilePath), {
           type: applicationXGzipMimeType,
           disposition: computeAttachmentDisposition(path.basename(tarballFilePath))
         });
-      }
-      else
-      {
-        logger.warn(`The archive contains a '${ManifestRuntimeEnvironment.Node}' runtime but does not contain a '${packageJsonFileName}' file`);
-        buffer = archive;
       }
     }
     else
@@ -1231,7 +1289,7 @@ export class ExtensionService
       }
       catch (error)
       {
-        logger.error(`Could not register the unpacked extension located in '${directoryPath}'`, error);
+        logger.error(`The registration of the unpacked extension with in directory '${directoryPath}' failed`, error);
       }
     }
 
@@ -1249,7 +1307,21 @@ export class ExtensionService
         logger.info(`The directory '${nodePath}' in the unpacked extensions was ${event === WatcherEvent.Added ? "added" : "deleted"}`);
         if (event === WatcherEvent.Added)
         {
-          await this.registerUnpackedExtension(nodePath, true, true);
+          if (this.ignoredPackedExtensionDirectoryPaths.has(nodePath) === true)
+          {
+            logger.debug(`The directory '${nodePath}' is ignored, hence the unpacked extension will not be registered`);
+          }
+          else
+          {
+            try
+            {
+              await this.registerUnpackedExtension(nodePath, false, true);
+            }
+            catch (error)
+            {
+              logger.error(`The registration of the unpacked extension with in directory '${nodePath}' failed`, error);
+            }
+          }
         }
         else
         {
@@ -1273,11 +1345,87 @@ export class ExtensionService
     {
       await this.unregisterUnpackedExtension(id);
     }
+    this.ignoredPackedExtensionDirectoryPaths.clear();
+    this.detectedUnpackedExtensionIds.clear();
     if (this.unpackedExtensionDirectoryWatcherTerminator !== undefined)
     {
       await this.unpackedExtensionDirectoryWatcherTerminator();
       this.unpackedExtensionDirectoryWatcherTerminator = undefined;
     }
+  }
+
+  private async registerUnpackedExtension(sourceDirectoryPath: string, installDependencies: boolean, shouldHandleProcesses: boolean): Promise<"paused" | "exists" | "noManifest" | "success">
+  {
+    logger.info(`Analyzing the unpacked extension under directory '${sourceDirectoryPath}'`);
+    if (fs.existsSync(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)) === true)
+    {
+      const manifest = this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName));
+      this.detectedUnpackedExtensionIds.add(manifest.id);
+      logger.info(`Registering the unpacked extension with id '${manifest.id}' in directory '${sourceDirectoryPath}'`);
+      const targetDirectoryPath = this.extensionsRegistry.computeExtensionDirectoryPath(manifest.id);
+      if (fs.existsSync(targetDirectoryPath) === false)
+      {
+        fs.symlinkSync(sourceDirectoryPath, targetDirectoryPath, symlinkType);
+        logger.debug(`Created a symbolic link from the unpacked extension directory '${sourceDirectoryPath}' to the installed extensions directory '${targetDirectoryPath}'`);
+      }
+      if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true && fs.realpathSync(targetDirectoryPath) === fs.realpathSync(sourceDirectoryPath))
+      {
+        // We do nothing for the extensions in "paused" state
+        if (this.extensionsRegistry.getExtensionWriteState(sourceDirectoryPath) === ExtensionState.Paused)
+        {
+          return "paused";
+        }
+        try
+        {
+          await this.register(new UnpackedInstructions(manifest), installDependencies, StateChangeOptions.withSynchronisation(ExtensionState.Enabled, false), shouldHandleProcesses, false);
+          this.perUnpackedExtensionIdPathsMap.set(manifest.id, {
+            source: sourceDirectoryPath,
+            target: targetDirectoryPath
+          });
+        }
+        catch (error)
+        {
+          logger.error(`The registration of the unpacked extension with id '${manifest.id}' failed`, error);
+          this.perUnpackedExtensionIdPathsMap.delete(manifest.id);
+          if (fs.existsSync(targetDirectoryPath) === true && fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true)
+          {
+            fs.unlinkSync(targetDirectoryPath);
+          }
+          throw error;
+        }
+      }
+      else
+      {
+        logger.warn(`The extension with id '${manifest.id}' is already installed: cannot override it with the unpacked extension`);
+        return "exists";
+      }
+
+      const filePath = path.join(targetDirectoryPath, ExtensionRegistry.manifestFileName);
+      const watcherTerminator = await watchPath(filePath, undefined, async (event: WatcherEvent, _relativePath: string) =>
+      {
+        if (event === WatcherEvent.Changed)
+        {
+          // TODO: do not stop or start the process if the extension is already being restarted because of a previous change and do not anything if the ExtensionRunner is not ready
+          logger.info(`The manifest file '${filePath}' of the unpacked extension with id '${manifest.id}' has changed: hot reloading it`);
+          try
+          {
+            await this.compile(manifest.id, false);
+            await this.startOrStopProcesses(manifest, true);
+            await this.startOrStopProcesses(manifest, false, false);
+          }
+          catch (error)
+          {
+            logger.error(`An error occurred during the hot reload of the extension with id '${manifest.id}'`, error);
+          }
+        }
+      }, (error: Error) =>
+      {
+        console.error(`An unexpected error occurred when watching the manifest file '${filePath}' of the unpacked extension with id '${manifest.id}'`, error);
+      });
+      this.perExtensionIdWatcherTerminatorMap.set(manifest.id, watcherTerminator);
+      return "success";
+    }
+    return "noManifest";
   }
 
   private async unregisterUnpackedExtension(id: string): Promise<void>
@@ -1288,7 +1436,7 @@ export class ExtensionService
       throw new Error(`Cannot unregister an unregistered unpacked extension with id '${id}'`);
     }
 
-    const { target: targetDirectoryPath } = paths;
+    const { target: targetDirectoryPath, source: sourceDirectoryPath } = paths;
     logger.info(`Unregistering the unpacked extension in directory '${targetDirectoryPath}'`);
     const terminator = this.perExtensionIdWatcherTerminatorMap.get(id);
     if (terminator !== undefined)
@@ -1301,6 +1449,7 @@ export class ExtensionService
       // We add an extra protection, which consists in only removing symbolic links
       fs.unlinkSync(targetDirectoryPath);
     }
+    this.ignoredPackedExtensionDirectoryPaths.delete(sourceDirectoryPath);
     this.perUnpackedExtensionIdPathsMap.delete(id);
   }
 
@@ -1329,7 +1478,9 @@ export class ExtensionService
         logger.debug(`${shouldExtensionBeUpdated === true ? "Updating" : "Installing"} the built-in extension with id '${manifest.id}' with version '${manifest.version}'`);
         try
         {
-          await this.installOrUpdate(shouldExtensionBeUpdated === true ? manifest.id : undefined, archive, StateChangeOptions.withState(ExtensionState.Enabled), false);
+          // TODO: check whether it can be mutualise with the one created above
+          const duplicatedReader = new ExtensionArchiveReader(archive);
+          await this.register(shouldExtensionBeUpdated === true ? new UpdateInstructions(duplicatedReader, manifest.id) : new InstallInstructions(duplicatedReader), true, StateChangeOptions.withState(ExtensionState.Enabled), false, true);
         }
         catch (error)
         {
@@ -1357,12 +1508,15 @@ export class ExtensionService
     parametersChecker.throwBadParameter("id", id, "there is no extension with that identifier");
   }
 
-  private async installUpdateOrUnpack(idWhenUpdating: string | undefined, readerOrManifest: ExtensionArchiveReader | Manifest, installDependencies: boolean, options: StateChangeOptions, shouldHandleProcesses: boolean, isProduction: boolean): Promise<Manifest>
+  private async register(instructions: InstallInstructions | UpdateInstructions | UnpackedInstructions, installDependencies: boolean, options: StateChangeOptions, shouldHandleProcesses: boolean, isProduction: boolean): Promise<Manifest>
   {
     // TODO: forbid this while a repository is synchronizing
-    const useReader = readerOrManifest instanceof ExtensionArchiveReader;
-    logger.info(useReader === false ? `Installing the unpacked extension with id '${readerOrManifest.id}'` : ((idWhenUpdating === undefined ? "Installing an extension" : `Updating the extension with id '${idWhenUpdating}'`)) + (installDependencies === false ? "" : ", while installing its dependencies"));
+    const idWhenUpdating: string | undefined = instructions instanceof UpdateInstructions ? instructions.id : undefined;
+    const readerOrManifest: ExtensionArchiveReader | Manifest = instructions instanceof InstallInstructions ? instructions.reader : instructions.manifest;
+    const isUnpacked = instructions instanceof UnpackedInstructions;
+    logger.info(isUnpacked === true ? `Registering the unpacked extension with id '${instructions.manifest.id}'` : ((idWhenUpdating === undefined ? "Installing an extension" : `Updating the extension with id '${idWhenUpdating}'`)) + (installDependencies === false ? "" : ", while installing its dependencies"));
     let manifest: Manifest;
+    const useReader = readerOrManifest instanceof ExtensionArchiveReader;
     if (useReader == true)
     {
       const manifestObject = await readerOrManifest.extractManifest();
@@ -1385,7 +1539,7 @@ export class ExtensionService
     }
     else
     {
-      manifest = readerOrManifest!;
+      manifest = await parametersChecker.checkObject<Manifest>(Manifest, readerOrManifest, `The manifest '${ExtensionRegistry.manifestFileName}' file does not respect the expected schema`);
     }
 
     await this.checkManifest(manifest, undefined);
@@ -1401,7 +1555,7 @@ export class ExtensionService
       }
       AuthenticationGuard.unregisterExtensionApiKeys(manifest.id);
     }
-    if (useReader === true && (idWhenUpdating === undefined || this.perUnpackedExtensionIdPathsMap.has(manifest.id) === true))
+    if (isUnpacked === false && (idWhenUpdating === undefined || this.perUnpackedExtensionIdPathsMap.has(manifest.id) === true))
     {
       const terminator = this.perExtensionIdWatcherTerminatorMap.get(manifest.id);
       if (terminator !== undefined)
@@ -1473,7 +1627,7 @@ export class ExtensionService
 
     try
     {
-      await this.prepareRuntimeEnvironment(extendedManifest, installDependencies, isProduction);
+      await this.prepareRuntimes(extendedManifest.id, extendedManifest.directoryPath, extendedManifest.runtimes, installDependencies, isProduction);
     }
     catch (error)
     {
@@ -1547,12 +1701,8 @@ export class ExtensionService
         {
           this.extensionsRegistry.changeState(manifest.id, ExtensionState.Enabled);
         }
-        await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(manifest.id) ]);
-        if (idWhenUpdating === undefined && options.withSynchronisation === true)
-        {
-          // We automatically synchronize the images via this extension, once it is installed
-          await this.synchronize(manifest.id);
-        }
+        // We automatically synchronize the images via this extension, once it is installed
+        await this.startOrStopProcesses(manifest, false, idWhenUpdating === undefined && options.withSynchronisation === true);
       }
     }
     return manifest;
@@ -1742,14 +1892,6 @@ export class ExtensionService
     }
   }
 
-  private checkExtensionArchiveBinaryWeight(archive: Buffer<ArrayBufferLike>): void
-  {
-    if (archive.length > Extension.ARCHIVE_MAXIMUM_BINARY_WEIGHT_IN_BYTES)
-    {
-      parametersChecker.throwBadParameterError(`The provided extension archive exceeds the maximum allowed binary weight of ${Extension.ARCHIVE_MAXIMUM_BINARY_WEIGHT_IN_BYTES} bytes`);
-    }
-  }
-
   private checkUri(extendedManifest: ExtendedManifest, elementName: string, uri: string, shouldStartWithSlash: boolean): string | undefined
   {
     const startsWithSlash = uri.startsWith("/") === true;
@@ -1765,6 +1907,36 @@ export class ExtensionService
         parametersChecker.throwBadParameterError(`The '${uri}' value of the ${elementName} of the extension with id '${extendedManifest.id}' has no corresponding file`);
       }
       return filePath;
+    }
+  }
+
+  private checkNodePackageJson(directoryPath: string, checkForRunScript: boolean): string | undefined
+  {
+    const packageJsonFilePath = path.join(directoryPath, packageJsonFileName);
+    if (fs.existsSync(packageJsonFilePath) === false)
+    {
+      logger.warn(`The archive contains a '${ManifestRuntimeEnvironment.Node}' runtime but does not contain a '${packageJsonFileName}' file`);
+      return undefined;
+    }
+    else
+    {
+      if (checkForRunScript === true)
+      {
+        let packageJson: Record<string, any>;
+        try
+        {
+          packageJson = JSON.parse(fs.readFileSync(packageJsonFilePath, { encoding: "utf-8" }));
+        }
+        catch (error)
+        {
+          parametersChecker.throwBadParameterError(`The archive is invalid because it contains the '${packageJsonFileName}' file, which is not a valid JSON content`);
+        }
+        if (packageJson?.scripts?.build === undefined)
+        {
+          parametersChecker.throwBadParameterError(`The archive is invalid because it contains the '${packageJsonFileName}' file, which does not contain a npm 'build' script`);
+        }
+      }
+      return packageJsonFilePath;
     }
   }
 
@@ -1789,71 +1961,82 @@ export class ExtensionService
         await this.synchronize(id);
       }
     }
-    this.notifierService.emit(EventEntity.Extension, shouldStop === true ? ExtensionEventAction.Paused : ExtensionEventAction.Resumed, undefined, { id });
+    this.notifierService.emit(EventEntity.Extension, shouldStop === true ? ExtensionEventAction.Stopped : ExtensionEventAction.Started, undefined, { id });
   }
 
-  private async prepareRuntimeEnvironment(extendedManifest: ExtendedManifest, installDependencies: boolean, isProduction: boolean): Promise<void>
+  private async prepareRuntimes(id: string, directoryPath: string, runtimes: ManifestRuntime[], installDependencies: boolean, isProduction: boolean): Promise<void>
   {
-    logger.debug(`Preparing the runtime environment for the extension with id '${extendedManifest.id}'`);
+    logger.debug(`Preparing the runtime environment for the extension with id '${id}' in directory '${directoryPath}'`);
     try
     {
-      const directoryPath = extendedManifest.directoryPath;
-      const installedEnvironments = new Set<ManifestRuntimeEnvironment>();
-      for (const runtime of extendedManifest.runtimes)
+      for (const runtime of [ ...new Map(runtimes.map(runtime => [ runtime.environment, runtime ])).values() ])
       {
-        if (installedEnvironments.has(runtime.environment) === false)
+        if (runtime.environment === ManifestRuntimeEnvironment.Node)
         {
-          if (runtime.environment === ManifestRuntimeEnvironment.Node)
+          // This requires a Node.js runtime environment to create: we install the dependency packages
+          const packageJsonFilePath = this.checkNodePackageJson(directoryPath, false);
+          if (packageJsonFilePath === undefined)
           {
-            // This requires a Node.js runtime environment to create: we install the dependency packages
-            const packageJsonFilePath = path.join(directoryPath, packageJsonFileName);
-            if (fs.existsSync(packageJsonFilePath) === true)
-            {
-              // We only install npm if necessary
-              await ensureNpm(paths.npmDirectoryPath, npmVersion);
-              if (installDependencies === true)
-              {
-                const sdkInfo = await ExtensionRegistry.getSdkInfo(ManifestRuntimeEnvironment.Node);
-                await installPackages(packageJsonFilePath, isProduction, sdkInfo.version, sdkInfo.filePath);
-              }
-            }
-            else
-            {
-              logger.warn(`There is no '${packageJsonFileName}' file in the extension with id '${extendedManifest.id}', which relies on Node.js`);
-            }
-          }
-          else if (runtime.environment === ManifestRuntimeEnvironment.Python)
-          {
-            // There is a Python virtual environment to create: we prepare the necessary Python virtual environments and install their requirements
-            await ensureVirtualEnvironment(pythonVersion, directoryPath);
-            if (installDependencies === true)
-            {
-              const requirementsFileName = "requirements.txt";
-              const requirementsFilePath = path.join(directoryPath, requirementsFileName);
-              if (fs.existsSync(requirementsFilePath) === true)
-              {
-                const sdkInfo = await ExtensionRegistry.getSdkInfo(ManifestRuntimeEnvironment.Python);
-                await installViaVirtualEnvironmentRequirements(requirementsFilePath, sdkInfo.version);
-              }
-              else
-              {
-                logger.warn(`There is no '${requirementsFileName}' file in the extension with id '${extendedManifest.id}', which relies on Python`);
-              }
-            }
+            logger.warn(`There is no '${packageJsonFileName}' file in the extension with id '${id}', which relies on the '${ManifestRuntimeEnvironment.Node} runtime: no runtime will be prepared'`);
           }
           else
           {
-            parametersChecker.throwBadParameterError(`The runtime environment '${runtime.environment}' is not supported`);
+            // We only install npm if necessary
+            await ensureNpm(paths.npmDirectoryPath, npmVersion);
+            if (installDependencies === true)
+            {
+              const sdkInfo = await ExtensionRegistry.getSdkInfo(ManifestRuntimeEnvironment.Node);
+              await installPackages(packageJsonFilePath, isProduction, sdkInfo.version, sdkInfo.filePath);
+            }
           }
-          installedEnvironments.add(runtime.environment);
+        }
+        else if (runtime.environment === ManifestRuntimeEnvironment.Python)
+        {
+          // There is a Python virtual environment to create: we prepare the necessary Python virtual environments and install their requirements
+          await ensureVirtualEnvironment(pythonVersion, directoryPath);
+          if (installDependencies === true)
+          {
+            const requirementsFileName = "requirements.txt";
+            const requirementsFilePath = path.join(directoryPath, requirementsFileName);
+            if (fs.existsSync(requirementsFilePath) === true)
+            {
+              const sdkInfo = await ExtensionRegistry.getSdkInfo(ManifestRuntimeEnvironment.Python);
+              await installViaVirtualEnvironmentRequirements(requirementsFilePath, sdkInfo.version);
+            }
+            else
+            {
+              logger.warn(`There is no '${requirementsFileName}' file in the extension with id '${id}', which relies on Python`);
+            }
+          }
+        }
+        else
+        {
+          parametersChecker.throwBadParameterError(`The runtime environment '${runtime.environment}' is not supported`);
         }
       }
     }
     catch (error)
     {
-      const message = `Could not install properly the runtime environment for the extension with id '${extendedManifest.id}'`;
+      const message = `Could not install properly the runtime environment for the extension with id '${id}'`;
       logger.error(message, error);
       parametersChecker.throwInternalError(`${message}. Reason: '${(error as Error).message}'`);
+    }
+  }
+
+  private async compileRuntime(runtime: ManifestRuntime, directoryPath: string): Promise<void>
+  {
+    if (runtime.environment === ManifestRuntimeEnvironment.Node)
+    {
+      const packageJsonFilePath = this.checkNodePackageJson(directoryPath, true);
+      if (packageJsonFilePath === undefined)
+      {
+        logger.warn(`The extension declares a '${ManifestRuntimeEnvironment.Node}' runtime but does not contain a '${packageJsonFileName}' file: nothing to compile`);
+      }
+      else
+      {
+        const childProcess = await runNpm([ "run", "build" ], directoryPath);
+        await waitFor(childProcess);
+      }
     }
   }
 

@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Extension, ExtensionStatus } from "@picteus/ws-client";
+import { Extension, ExtensionState } from "@picteus/ws-client";
 
 import { ToastService } from "utils";
 import { useConfirmAction } from "app/hooks";
@@ -57,13 +57,13 @@ export default function ExtensionActions({
     }
   }
 
-  async function handleOnToggleExtensionStatus(extension: Extension)
+  async function handleOnToggleExtensionState(extension: Extension)
   {
     try
     {
       await ExtensionsService.startOrStop({
         id: extension.manifest.id,
-        isPause: extension.status === ExtensionStatus.Enabled
+        state: extension.state === ExtensionState.Enabled ? ExtensionState.Paused : ExtensionState.Enabled
       });
       onUninstalled();
     }
@@ -102,7 +102,7 @@ export default function ExtensionActions({
           size="md"
           variant="default"
           onClick={() => handleOnSynchronize(extension)}
-          disabled={extension.status === ExtensionStatus.Paused}
+          disabled={extension.state === ExtensionState.Paused}
         >
           <IconReload {...iconSizeAndStroke} />
         </ActionIcon>
@@ -112,18 +112,18 @@ export default function ExtensionActions({
           size="md"
           variant="default"
           onClick={() => onSettings(extension)}
-          disabled={extension.status === ExtensionStatus.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
+          disabled={extension.state === ExtensionState.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
         >
           <IconAdjustmentsHorizontal {...iconSizeAndStroke} />
         </ActionIcon>
       </Tooltip>
-      <Tooltip label={t(extension.status === ExtensionStatus.Paused ? "button.resume" : "button.pause")}>
+      <Tooltip label={t(extension.state === ExtensionState.Paused ? "button.resume" : "button.pause")}>
         <ActionIcon
           size="md"
           variant="default"
-          onClick={() => handleOnToggleExtensionStatus(extension)}
+          onClick={() => handleOnToggleExtensionState(extension)}
         >
-          {extension.status === ExtensionStatus.Paused ? (
+          {extension.state === ExtensionState.Paused ? (
             <IconPlayerPlay {...iconSizeAndStroke} />
           ) : (
             <IconPlayerPause {...iconSizeAndStroke} />

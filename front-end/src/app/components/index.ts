@@ -30,7 +30,7 @@ export { default as ExtensionIcon } from "./ExtensionIcon/ExtensionIcon.tsx";
 export { default as CommandIcon } from "./CommandIcon/CommandIcon.tsx";
 export { default as ImageThumbnail } from "./ImageThumbnail/ImageThumbnail.tsx";
 export { default as ImageTag } from "./ImageTag/ImageTag.tsx";
-export { default as EntityStatus } from "./EntityStatus/EntityStatus.tsx";
+export { default as EntityState } from "./EntityState/EntityState.tsx";
 export { default as Iframe } from "./Iframe/Iframe.tsx";
 export { default as TextToImages } from "./TextToImages/TextToImages.tsx";
 export { default as FormatedDate } from "./FormatedDate/FormatedDate.tsx";

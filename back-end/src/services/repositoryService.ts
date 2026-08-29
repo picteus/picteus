@@ -23,7 +23,7 @@ import {
   RepositoryActivityKind,
   RepositoryList,
   RepositoryLocationType,
-  RepositoryStatus,
+  RepositoryState,
   SearchOriginKind,
   toFileExtension
 } from "../dtos/app.dtos";
@@ -76,13 +76,13 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     logger.debug("Destroyed a RepositoryService");
   }
 
-  getImageRepositoryStatus(nodePath: string): undefined | RepositoryStatus
+  getImageRepositoryState(nodePath: string): undefined | RepositoryState
   {
     for (const [ path, repository ] of this.perPathFileRepositories.entries())
     {
       if (nodePath.startsWith(path) === true)
       {
-        return repository.status;
+        return repository.state;
       }
     }
     return undefined;
@@ -175,7 +175,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       }
     }
 
-    const repositoryObject = { technicalId, name, type, url: effectiveUrl, comment, status: RepositoryStatus.INDEXING };
+    const repositoryObject = { technicalId, name, type, url: effectiveUrl, comment, state: RepositoryState.INDEXING };
     const persistedRepository = await this.entitiesProvider.repositories.create({ data: repositoryObject });
 
     const repository = plainToInstanceViaJSON(Repository, persistedRepository);
@@ -259,24 +259,24 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
           where: { id },
           data:
             {
-              status: repository.status === RepositoryStatus.INDEXING ? RepositoryStatus.UNAVAILABLE_INDEXING : RepositoryStatus.UNAVAILABLE
+              state: repository.state === RepositoryState.INDEXING ? RepositoryState.UNAVAILABLE_INDEXING : RepositoryState.UNAVAILABLE
             }
         });
         return;
       }
     }
-    if (repository.status === RepositoryStatus.UNAVAILABLE || repository.status === RepositoryStatus.UNAVAILABLE_INDEXING)
+    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
     {
       await this.entitiesProvider.repositories.update({
         where: { id },
         data:
           {
-            status: repository.status === RepositoryStatus.UNAVAILABLE_INDEXING ? RepositoryStatus.INDEXING : RepositoryStatus.READY
+            state: repository.state === RepositoryState.UNAVAILABLE_INDEXING ? RepositoryState.INDEXING : RepositoryState.READY
           }
       });
       repository = await this.get(id);
     }
-    if (repository.status !== RepositoryStatus.READY)
+    if (repository.state !== RepositoryState.READY)
     {
       // We do nothing if the repository is synchronizing, and it is asked to stop
       if (isStart === true)
@@ -333,11 +333,11 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is not based on the file system`);
     }
-    if (repository.status === RepositoryStatus.UNAVAILABLE || repository.status === RepositoryStatus.UNAVAILABLE_INDEXING)
+    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
     {
       parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is not available`);
     }
-    else if (repository.status === RepositoryStatus.INDEXING)
+    else if (repository.state === RepositoryState.INDEXING)
     {
       parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is synchronizing`);
     }
@@ -358,7 +358,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   {
     const id = repository.id;
     logger.info(`Deleting the repository with id '${id}'`);
-    if (repository.status === RepositoryStatus.INDEXING && RepositoryService.synchronizingRepositoryIds.has(id) === true)
+    if (repository.state === RepositoryState.INDEXING && RepositoryService.synchronizingRepositoryIds.has(id) === true)
     {
       parametersChecker.throwBadParameterError("Cannot delete a repository which is synchronizing");
     }
@@ -414,7 +414,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     const repositories = await this.entitiesProvider.repositories.findMany();
     return repositories.map((repository) =>
     {
-      return new RepositoryActivity(repository.id, repository.status === RepositoryStatus.INDEXING ? RepositoryActivityKind.Synchronizing : (RepositoryWatcher.get(repository.id) !== undefined ? RepositoryActivityKind.Watching : RepositoryActivityKind.None));
+      return new RepositoryActivity(repository.id, repository.state === RepositoryState.INDEXING ? RepositoryActivityKind.Synchronizing : (RepositoryWatcher.get(repository.id) !== undefined ? RepositoryActivityKind.Watching : RepositoryActivityKind.None));
     });
   }
 
@@ -463,7 +463,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     parametersChecker.checkString("relativeDirectoryPath", relativeDirectoryPath, StringLengths.Length256, StringNature.FileSystemRelativeDirectoryPath, true, true);
 
     const repository = await this.getRepository(id);
-    if (repository.status === RepositoryStatus.UNAVAILABLE || repository.status === RepositoryStatus.UNAVAILABLE_INDEXING)
+    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
     {
       parametersChecker.throwBadParameterError(`The repository with id '${id}' is not available`);
     }
@@ -547,7 +547,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     const fileName = `${actualNameWithoutExtension}.${fileExtension}`;
     const repository = await this.getRepository(id);
-    if (repository.status === RepositoryStatus.UNAVAILABLE || repository.status === RepositoryStatus.UNAVAILABLE_INDEXING)
+    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
     {
       parametersChecker.throwBadParameterError(`The repository with id '${id}' is not available`);
     }
@@ -649,11 +649,11 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     logger.info(`Synchronizing the repository with id '${repositoryOrId instanceof Repository ? repositoryOrId.id : repositoryOrId}'`);
     const repository = repositoryOrId instanceof Repository ? repositoryOrId : await this.get(repositoryOrId);
     const repositoryId = repository.id;
-    if (repository.status === RepositoryStatus.UNAVAILABLE || repository.status === RepositoryStatus.UNAVAILABLE_INDEXING)
+    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
     {
       parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is not available`);
     }
-    const wasAlreadyIndexing = repository.status === RepositoryStatus.INDEXING;
+    const wasAlreadyIndexing = repository.state === RepositoryState.INDEXING;
     if (wasAlreadyIndexing === true && RepositoryService.synchronizingRepositoryIds.has(repositoryId) === true)
     {
       parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is already synchronizing`);
@@ -669,7 +669,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       {
         await this.entitiesProvider.repositories.update({
           where: { id: repositoryId },
-          data: { status: RepositoryStatus.INDEXING }
+          data: { state: RepositoryState.INDEXING }
         });
       }
       RepositoryService.synchronizingRepositoryIds.add(repositoryId);
@@ -754,12 +754,12 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
           // We let the caller update the repository status at the right moment
           const updateStatus = async (): Promise<Repository> =>
           {
-            logger.debug(`Setting the repository with id '${repositoryId}' to the '${RepositoryStatus.READY}' status`);
+            logger.debug(`Setting the repository with id '${repositoryId}' to the '${RepositoryState.READY}' status`);
             await service.entitiesProvider.repositories.update({
               where: { id: repositoryId },
               data:
                 {
-                  status: RepositoryStatus.READY
+                  state: RepositoryState.READY
                 }
             });
             return await service.get(repository.id);

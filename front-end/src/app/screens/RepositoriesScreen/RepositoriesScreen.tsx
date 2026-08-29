@@ -13,7 +13,7 @@ import {
   Container,
   Drawer,
   EmptyResults,
-  EntityStatus,
+  EntityState,
   FormatedDate,
   NoValue,
   RefreshButton,
@@ -106,7 +106,7 @@ export default function RepositoriesScreen()
         <Text size="md"><FormatedDate timestamp={repository.modificationDate}/></Text>
       </Table.Td>
       <Table.Td>
-        <EntityStatus type="repository" status={repository.status} size="md"/>
+        <EntityState type="repository" state={repository.state} size="md"/>
       </Table.Td>
       <Table.Td>
         <RepositoryActions

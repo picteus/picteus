@@ -30,7 +30,7 @@ export function fixUtimesSync(filePath: string, date: Date): void
   {
     // On Windows, the "fs.utimesSync()" does not impact the "stats.birthtime" attribute
     const absoluteFilePath = path.resolve(filePath);
-    const escapedPath = absoluteFilePath.replace(/"/g, '`"');
+    const escapedPath = absoluteFilePath.replace(/"/g, "`\"");
     // We convert the date object to a format PowerShell understands, e.g., "MM/dd/yyyy HH:mm:ss"
     const dateString = date.toLocaleString("en-US", { hour12: false });
     const psCommand = `(Get-Item "${escapedPath}").CreationTime = Get-Date "${dateString}"`;
@@ -263,6 +263,59 @@ export function ensureDirectory(directoryPath: string, symbolicLinkTargetDirecto
   }
 }
 
+export async function copyDirectoryRecursively(sourceDirectoryPath: string, destinationDirectoryPath: string, preserveSymlinks: boolean): Promise<void>
+{
+  // We create the destination directory
+  fs.mkdirSync(destinationDirectoryPath, { recursive: true });
+
+  // We read the directory contents
+  const entries = fs.readdirSync(sourceDirectoryPath, { withFileTypes: true });
+
+  // We process each entry
+  await Promise.all(entries.map(async (entry) =>
+    {
+      const sourcePath = path.join(sourceDirectoryPath, entry.name);
+      const destinationPath = path.join(destinationDirectoryPath, entry.name);
+      if (entry.isSymbolicLink() === true)
+      {
+        // We handle a symbolic link
+        if (preserveSymlinks === true)
+        {
+          const linkTargetPath = fs.readlinkSync(sourcePath);
+          fs.symlinkSync(linkTargetPath, destinationPath);
+        }
+        else
+        {
+          // We copy the target content instead of the link
+          const targetStats = fs.statSync(sourcePath);
+          if (targetStats.isDirectory() === true)
+          {
+            await copyDirectoryRecursively(sourcePath, destinationPath, preserveSymlinks);
+          }
+          else
+          {
+            fs.copyFileSync(sourcePath, destinationPath);
+          }
+        }
+      }
+      else if (entry.isDirectory() === true)
+      {
+        // We recursively copy the subdirectories
+        await copyDirectoryRecursively(sourcePath, destinationPath, preserveSymlinks);
+      }
+      else if (entry.isFile() === true)
+      {
+        // We copy the file
+        fs.copyFileSync(sourcePath, destinationPath);
+      }
+    })
+  );
+
+  // Preserve directory permissions
+  const sourceStats = fs.statSync(sourceDirectoryPath);
+  fs.chmodSync(destinationDirectoryPath, sourceStats.mode);
+}
+
 export async function move(sourcePath: string, destinationPath: string, options: {
   overwrite?: boolean,
   preserveSymlinks?: boolean
@@ -331,61 +384,8 @@ export async function move(sourcePath: string, destinationPath: string, options:
     }
   }
 
-  async function copyDirectoryRecursive(sourceDirectoryPath: string, destinationDirectoryPath: string, preserveSymlinks: boolean): Promise<void>
-  {
-    // We create the destination directory
-    fs.mkdirSync(destinationDirectoryPath, { recursive: true });
-
-    // We read the directory contents
-    const entries = fs.readdirSync(sourceDirectoryPath, { withFileTypes: true });
-
-    // We process each entry
-    await Promise.all(entries.map(async (entry) =>
-      {
-        const sourcePath = path.join(sourceDirectoryPath, entry.name);
-        const destinationPath = path.join(destinationDirectoryPath, entry.name);
-        if (entry.isSymbolicLink() === true)
-        {
-          // We handle a symbolic link
-          if (preserveSymlinks === true)
-          {
-            const linkTargetPath = fs.readlinkSync(sourcePath);
-            fs.symlinkSync(linkTargetPath, destinationPath);
-          }
-          else
-          {
-            // We copy the target content instead of the link
-            const targetStats = fs.statSync(sourcePath);
-            if (targetStats.isDirectory() === true)
-            {
-              await copyDirectoryRecursive(sourcePath, destinationPath, preserveSymlinks);
-            }
-            else
-            {
-              fs.copyFileSync(sourcePath, destinationPath);
-            }
-          }
-        }
-        else if (entry.isDirectory() === true)
-        {
-          // We recursively copy the subdirectories
-          await copyDirectoryRecursive(sourcePath, destinationPath, preserveSymlinks);
-        }
-        else if (entry.isFile() === true)
-        {
-          // We copy the file
-          fs.copyFileSync(sourcePath, destinationPath);
-        }
-      })
-    );
-
-    // Preserve directory permissions
-    const sourceStats = fs.statSync(sourceDirectoryPath);
-    fs.chmodSync(destinationDirectoryPath, sourceStats.mode);
-  }
-
   // We copy and then delete the source directory recursively
   logger.debug(`Copying the directory '${sourcePath}' into '${destinationPath}'`);
-  await copyDirectoryRecursive(sourcePath, destinationPath, preserveSymlinks);
+  await copyDirectoryRecursively(sourcePath, destinationPath, preserveSymlinks);
   fs.rmSync(sourcePath, { recursive: true, force: true });
 }

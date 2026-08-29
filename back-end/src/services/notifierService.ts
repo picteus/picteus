@@ -34,8 +34,8 @@ export enum ExtensionEventAction
   Installed = "installed",
   Updated = "updated",
   Uninstalled = "uninstalled",
-  Paused = "paused",
-  Resumed = "resumed",
+  Started = "started",
+  Stopped = "stopped",
   Process = "process",
   Versions = "versions",
   Ready = "ready",
@@ -230,7 +230,7 @@ export class NotifierService
     logger.debug(`The notifier with id '${this.id}' subscribes to all events with the prefix '${NotifierService.broadcastEvenPrefix}'`);
     const wrappedListener: EventAndListener = async (event: string | string[], value: object) =>
     {
-      const events: string[] = Array.isArray(event) === false ? [event as string] : (event as string[]);
+      const events: string[] = Array.isArray(event) === false ? [ event as string ] : (event as string[]);
       for (const anEvent of events)
       {
         if (anEvent.startsWith(NotifierService.broadcastEvenPrefix) === true)

@@ -11,7 +11,12 @@ import {
   ExtensionRegistry,
   ImageEvent
 } from "./extensionRegistry";
-import { CapabilityResult, ExtensionService, ExtensionsUiServer, StateChangeOptions } from "./extensionServices";
+import {
+  CapabilityResult,
+  ExtensionService,
+  ExtensionsUiServer,
+  StateChangeOptions as ExtensionStateChangeOptions
+} from "./extensionServices";
 import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import { ImageService, SearchFileStats, SearchService } from "./imageServices";
 import { ImageAttachmentService } from "./imageAttachmentService";
@@ -33,6 +38,7 @@ export {
   ExtensionMessage,
   ExtensionRegistry,
   ExtensionService,
+  ExtensionStateChangeOptions,
   ExtensionTaskExecutor,
   ExtensionsUiServer,
   GenerativeAIService,
@@ -48,7 +54,6 @@ export {
   SearchFileStats,
   SearchService,
   SettingsService,
-  StateChangeOptions,
   TextEmbedding,
   TextEmbeddings,
   VectorDatabaseAccessor,

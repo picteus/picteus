@@ -38,7 +38,7 @@ import compression from "compression";
 
 import { logger } from "./logger";
 import { AuthenticationGuard } from "./app.guards";
-import { RepositoryStatus } from "./dtos/repository.dtos";
+import { RepositoryState } from "./dtos/repository.dtos";
 import {
   AdministrationController,
   ApiSecretController,
@@ -77,6 +77,7 @@ import {
 } from "./services/app.service";
 import { ControllerError, ServiceError } from "./app.exceptions";
 import { Resizer } from "./resizer";
+
 
 const { INTERNAL_SERVER_ERROR } = HttpCodes;
 
@@ -356,8 +357,8 @@ export function computeMainModule(withThrotlling: boolean): Type<NestModule>
         await this.limiter?.consume("", 1);
         await this.resizer.handle(request, response, (nodePath: string) =>
         {
-          const status: RepositoryStatus | undefined = this.repositoryService.getImageRepositoryStatus(nodePath);
-          return status === undefined ? "it does not belong to any repository" : ((status === RepositoryStatus.READY || status === RepositoryStatus.INDEXING) ? undefined : "it belongs to a not-available repository");
+          const state: RepositoryState | undefined = this.repositoryService.getImageRepositoryState(nodePath);
+          return state === undefined ? "it does not belong to any repository" : ((state === RepositoryState.READY || state === RepositoryState.INDEXING) ? undefined : "it belongs to a not-available repository");
         });
       }
       catch (error)

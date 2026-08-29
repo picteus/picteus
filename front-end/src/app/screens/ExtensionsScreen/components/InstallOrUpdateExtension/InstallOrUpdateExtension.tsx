@@ -6,7 +6,7 @@ import { Dropzone } from "@mantine/dropzone";
 import "@mantine/dropzone/styles.css";
 import { IconAlertTriangle, IconFileZip, IconTrash, IconUpload, IconX } from "@tabler/icons-react";
 
-import { Extension } from "@picteus/ws-client";
+import { Extension, ExtensionState } from "@picteus/ws-client";
 
 import { fileToBlob, mimeTypes, ToastService, Validators } from "utils";
 import { ExtensionsService } from "app/services";
@@ -115,7 +115,7 @@ export default function InstallOrUpdateExtension({
       const _extension = extension ? await ExtensionsService.update({
         id: extension.manifest.id,
         body: blob
-      }) : await ExtensionsService.add({ body: blob });
+      }) : await ExtensionsService.install({ state: ExtensionState.Enabled, asUnpacked: false, body: blob });
 
       onSuccess(_extension);
     }

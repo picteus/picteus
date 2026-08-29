@@ -82,7 +82,7 @@ export async function installPackages(packageJsonFilePath: string, isProduction:
     {
       if (requiredSdkVersion === sdkArchiveVersion)
       {
-        const childProcess = await runNpm([ "install", "--no-package-lock", "--force", sdkArchiveFilePath ], packageJsonDirectoryPath);
+        const childProcess = await runNpm([ "install", "--no-package-lock", "--force", "--no-save", sdkArchiveFilePath ], packageJsonDirectoryPath);
         await waitFor(childProcess);
         installedInternalSdk = true;
       }

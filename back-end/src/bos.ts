@@ -58,9 +58,10 @@ export function fromExtensionEventActionToManifestEvent(action: ExtensionEventAc
     case ExtensionEventAction.Installed:
     case ExtensionEventAction.Updated:
     case ExtensionEventAction.Uninstalled:
-    case ExtensionEventAction.Paused:
-    case ExtensionEventAction.Resumed:
+    case ExtensionEventAction.Started:
+    case ExtensionEventAction.Stopped:
     case ExtensionEventAction.Process:
+      return null;
     case ExtensionEventAction.Versions:
       return ManifestEvent.ExtensionVersions;
     case ExtensionEventAction.Ready:

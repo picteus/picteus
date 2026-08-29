@@ -425,6 +425,15 @@
             "schema": {
               "$ref": "#/components/schemas/ExtensionState"
             }
+          },
+          {
+            "name": "asUnpacked",
+            "required": true,
+            "in": "query",
+            "description": "Whether the extension should be installed in the unpacked directory",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "requestBody": {
@@ -572,6 +581,37 @@
           }
         },
         "summary": "Uninstalls an extension",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
+    "/extension/{id}/compile": {
+      "put": {
+        "description": "Compiles an unpacked extension.",
+        "operationId": "extension_compile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          }
+        },
+        "summary": "Compiles an extension",
         "tags": [
           "extension"
         ]
@@ -953,7 +993,6 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "The extension specifications",
           "content": {
             "application/json": {
               "schema": {
@@ -5598,7 +5637,7 @@
           "file"
         ]
       },
-      "RepositoryStatus": {
+      "RepositoryState": {
         "type": "string",
         "enum": [
           "UNAVAILABLE",
@@ -5606,7 +5645,7 @@
           "INDEXING",
           "UNAVAILABLE_INDEXING"
         ],
-        "description": "The status of the repository"
+        "description": "The state of the repository"
       },
       "Repository": {
         "type": "object",
@@ -5673,12 +5712,12 @@
             "maxLength": 1024,
             "example": "A very interesting series of photos."
           },
-          "status": {
-            "description": "The status of the repository",
+          "state": {
+            "description": "The state of the repository",
             "example": "READY",
             "allOf": [
               {
-                "$ref": "#/components/schemas/RepositoryStatus"
+                "$ref": "#/components/schemas/RepositoryState"
               }
             ]
           }
@@ -5691,7 +5730,7 @@
           "type",
           "url",
           "name",
-          "status"
+          "state"
         ]
       },
       "RepositoryActivityKind": {

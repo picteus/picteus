@@ -75,9 +75,9 @@ export class RepositoryLocation
 }
 
 /**
- * All the repository statuses.
+ * All the repository states.
  */
-export enum RepositoryStatus
+export enum RepositoryState
 {
   UNAVAILABLE = "UNAVAILABLE",
   READY = "READY",
@@ -92,7 +92,7 @@ export enum RepositoryStatus
 export class Repository extends Dates
 {
 
-  constructor(creationDate: number, modificationDate: number, id: string, type: RepositoryLocationType, url: string, technicalId: string | undefined, name: string, comment: string | undefined, status: RepositoryStatus)
+  constructor(creationDate: number, modificationDate: number, id: string, type: RepositoryLocationType, url: string, technicalId: string | undefined, name: string, comment: string | undefined, state: RepositoryState)
   {
     super(creationDate, modificationDate);
     this.id = id;
@@ -101,7 +101,7 @@ export class Repository extends Dates
     this.technicalId = technicalId;
     this.name = name;
     this.comment = comment;
-    this.status = status;
+    this.state = state;
   }
 
   @ApiProperty(
@@ -209,16 +209,16 @@ export class Repository extends Dates
 
   @ApiProperty(
     {
-      description: "The status of the repository",
-      enum: RepositoryStatus,
-      enumName: "RepositoryStatus",
+      description: "The state of the repository",
+      enum: RepositoryState,
+      enumName: "RepositoryState",
       required: true,
-      example: RepositoryStatus.READY
+      example: RepositoryState.READY
     }
   )
-  @IsEnum(RepositoryStatus)
+  @IsEnum(RepositoryState)
   @Expose()
-  readonly status: RepositoryStatus;
+  readonly state: RepositoryState;
 
   getLocation()
   {

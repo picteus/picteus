@@ -6,6 +6,7 @@ import { IconAlertTriangle, IconX } from "@tabler/icons-react";
 import {
   ExtensionCategory,
   ExtensionGenerationOptions,
+  ExtensionState,
   ManifestRuntimeEnvironment,
   MiscellaneousApi
 } from "@picteus/ws-client";
@@ -13,37 +14,18 @@ import {
 import { computeFilePath, ToastService } from "utils";
 import { useFolderPicker, useOpenExplorer } from "app/hooks";
 import { ExtensionsService } from "app/services";
-import { ChannelEnum, FolderTypes } from "types";
-import { useCommandSocket, useEventSocket } from "app/context";
+import { FolderTypes } from "types";
 
 
 type CreateExtensionModalProps = {
   onSuccess: () => void;
 };
 
-function blobToBase64(blob: Blob): Promise<string>
-{
-  return new Promise((resolve, reject) =>
-  {
-    const reader = new FileReader();
-    reader.onloadend = () =>
-    {
-      const base64data = reader.result as string;
-      const base64String = base64data.split(",")[1];
-      resolve(base64String);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
 export default function CreateExtensionModal({ onSuccess }: CreateExtensionModalProps)
 {
   const [ t ] = useTranslation();
   const openFolderPicker = useFolderPicker();
-  const { sendCommand } = useCommandSocket();
   const openExplorer = useOpenExplorer();
-  const { eventStore } = useEventSocket();
   const [ loading, setLoading ] = useState(false);
   const [ submitError, setSubmitError ] = useState<string | undefined>();
   const [ unpackedExtensionsDirectoryPath, setUnpackedExtensionsDirectoryPath ] = useState<string | undefined>();
@@ -73,10 +55,10 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
     mode: "uncontrolled",
     initialValues: {
       id: "",
-      version: "",
+      version: "0.1.0",
       name: "",
       description: "",
-      categories: [],
+      categories: [ ExtensionCategory.Other ],
       author: "",
       environment: ManifestRuntimeEnvironment.Python
     },
@@ -133,27 +115,12 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
       }
 
       const blob = await ExtensionsService.generate({ withPublicSdk: true, extensionGenerationOptions: values });
-      const builtBlob = await ExtensionsService.build({ body: blob });
-
-      const base64String = await blobToBase64(builtBlob);
-      const extensionDirectoryPath = computeFilePath(directoryPath, extensionId);
-      await sendCommand(
-        values.environment === ManifestRuntimeEnvironment.Node ? "inflateTarball" : "inflateZip",
-        { directoryPath: extensionDirectoryPath, content: base64String }
-      );
-
-      await new Promise<void>((resolve) =>
-      {
-        const unsubscribe = eventStore.subscribeToSocketEvents((event) =>
-        {
-          if (event.channel === ChannelEnum.EXTENSION_INSTALLED && (event.value)?.id === extensionId)
-          {
-            unsubscribe();
-            resolve();
-          }
-        });
+      const extension = await ExtensionsService.install({
+        state: ExtensionState.Enabled,
+        asUnpacked: true,
+        body: blob
       });
-
+      const extensionDirectoryPath = computeFilePath(directoryPath, extension.manifest.id);
       ToastService.success(t("createExtensionModal.success"));
       await openExplorer(extensionDirectoryPath);
       onSuccess();

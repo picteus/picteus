@@ -7,11 +7,11 @@ import {
   ExtensionAndManual,
   ExtensionApi,
   ExtensionApiExtensionBuildRequest,
+  ExtensionApiExtensionChangeStateRequest,
   ExtensionApiExtensionGenerateRequest,
   ExtensionApiExtensionGetRequest,
   ExtensionApiExtensionGetSettingsRequest,
   ExtensionApiExtensionInstallRequest,
-  ExtensionApiExtensionPauseOrResumeRequest,
   ExtensionApiExtensionResetSettingsRequest,
   ExtensionApiExtensionRunImageCommandRequest,
   ExtensionApiExtensionRunProcessCommandRequest,
@@ -21,7 +21,7 @@ import {
   ExtensionApiExtensionUpdateRequest,
   ExtensionsConfiguration,
   ExtensionSettings,
-  ExtensionStatus,
+  ExtensionState,
   ManifestCapabilityId,
   UserInterfaceAnchor
 } from "@picteus/ws-client";
@@ -42,7 +42,7 @@ function requiresCommandReload(event?: EventInformationType): boolean
     return false;
   }
   const channel = event?.channel;
-  return channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_PAUSED || channel === ChannelEnum.EXTENSION_RESUMED;
+  return channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_STOPPED || channel === ChannelEnum.EXTENSION_STARTED;
 }
 
 async function fetchAll(): Promise<{
@@ -70,10 +70,10 @@ async function get(
 function isPaused(extensionId: string): boolean | undefined
 {
   const extension = list().find(extension => extension.manifest.id === extensionId);
-  return extension === undefined ? undefined : extension.status === ExtensionStatus.Paused;
+  return extension === undefined ? undefined : extension.state === ExtensionState.Paused;
 }
 
-async function add(
+async function install(
   parameters: ExtensionApiExtensionInstallRequest
 ): Promise<Extension>
 {
@@ -81,10 +81,10 @@ async function add(
 }
 
 async function startOrStop(
-  parameters: ExtensionApiExtensionPauseOrResumeRequest
+  parameters: ExtensionApiExtensionChangeStateRequest
 ): Promise<void>
 {
-  return extensionApi.extensionPauseOrResume(parameters);
+  return extensionApi.extensionChangeState(parameters);
 }
 
 async function update(
@@ -218,7 +218,7 @@ function getAdditionalUis(): AdditionalUi[]
         ?.filter(
           (element) =>
             (element.integration.anchor === UserInterfaceAnchor.Sidebar || element.integration.anchor === UserInterfaceAnchor.Window) &&
-            extension.status === ExtensionStatus.Enabled
+            extension.state === ExtensionState.Enabled
         )
         .map((element) =>
         {
@@ -257,7 +257,7 @@ export default {
   list,
   get,
   isPaused,
-  add,
+  install,
   getIconURL,
   getCommandIconURL,
   update,

@@ -116,12 +116,12 @@ import {
   ApiSecretService,
   CollectionService,
   ExtensionService,
+  ExtensionStateChangeOptions,
   ImageAttachmentService,
   ImageService,
   MiscellaneousService,
   RepositoryService,
-  SettingsService,
-  StateChangeOptions
+  SettingsService
 } from "../services/app.service";
 import { ArrayValidationPipe, DeepObjectPipeTransform, exceptionFactory, validationPipeFactory } from "./app.pipes";
 import {
@@ -595,6 +595,12 @@ export class ExtensionController
     enumName: "ExtensionState",
     required: true
   })
+  @ApiQuery({
+    name: "asUnpacked",
+    description: "Whether the extension should be installed in the unpacked directory",
+    type: Boolean,
+    required: true
+  })
   @ApiBody({
     description: "The extension archive",
     schema: binarySchemaWithMaxLength(Extension.ARCHIVE_MAXIMUM_BINARY_WEIGHT_IN_BYTES),
@@ -608,9 +614,9 @@ export class ExtensionController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
-  async install(@Query("state") state: ExtensionState, @Body() archive: Buffer): Promise<Extension>
+  async install(@Query("state") state: ExtensionState, @Query("asUnpacked") asUnpacked: boolean, @Body() archive: Buffer): Promise<Extension>
   {
-    return await this.extensionService.installOrUpdate(undefined, archive, StateChangeOptions.withState(state), true);
+    return await this.extensionService.installOrUpdate(undefined, archive, ExtensionStateChangeOptions.withState(state), asUnpacked, true);
   }
 
   @Put(":id/update")
@@ -644,7 +650,7 @@ export class ExtensionController
   @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
   async update(@Param("id") id: ExtensionIdType, @Query("state") state: ExtensionState | undefined, @Body() archive: Buffer): Promise<Extension>
   {
-    return await this.extensionService.installOrUpdate(id, archive, StateChangeOptions.withState(state), true);
+    return await this.extensionService.installOrUpdate(id, archive, ExtensionStateChangeOptions.withState(state), false, true);
   }
 
   @Delete(":id/uninstall")
@@ -663,6 +669,22 @@ export class ExtensionController
   async uninstall(@Param("id") id: ExtensionIdType): Promise<void>
   {
     return await this.extensionService.uninstall(id, true);
+  }
+
+  @Put(":id/compile")
+  @ApiOperation({
+    summary: "Compiles an extension",
+    description: "Compiles an unpacked extension."
+  })
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiProduces(types.txt)
+  @Header(headers.response.CONTENT_TYPE, types.txt)
+  @HttpCode(NO_CONTENT)
+  @ApiResponse(noContentApiResponseOptions)
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
+  async compile(@Param("id") id: ExtensionIdType): Promise<void>
+  {
+    return await this.extensionService.compile(id, true);
   }
 
   @Put(":id/changeState")
@@ -882,7 +904,6 @@ export class ExtensionController
     description: "Should the extension be dependent on the public extension SDK or the internal private one",
     required: true
   })
-  @ApiBody({ description: "The extension specifications", type: ExtensionGenerationOptions, required: true })
   @ApiProduces(types.zip)
   @Header(headers.response.CONTENT_TYPE, types.zip)
   @ApiResponse({

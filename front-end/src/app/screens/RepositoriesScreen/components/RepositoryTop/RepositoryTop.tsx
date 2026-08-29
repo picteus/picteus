@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Repository } from "@picteus/ws-client";
 
 import { removeFilePrefixFromUrl } from "utils";
-import { Common, ContentTitle, CopyText, EntityStatus, FieldValue, NoValue } from "app/components";
+import { Common, ContentTitle, CopyText, EntityState, FieldValue, NoValue } from "app/components";
 import { RepositoryActions } from "../index.ts";
 
 
@@ -33,7 +33,7 @@ export default function RepositoryTop({ repository, onEdit, onDeleted }: Reposit
         <FieldValue name={t("field.comment")}
                     value={repository.comment ? <Text>{repository.comment}</Text> : <NoValue/>}/>
         <FieldValue name={t("field.status")}
-                    value={<EntityStatus type="repository" status={repository.status} size="sm"/>}/>
+                    value={<EntityState type="repository" state={repository.state} size="sm"/>}/>
         <Flex gap="sm" mt="lg">
           <RepositoryActions
             repository={repository}

@@ -13,6 +13,7 @@ import { Injectable } from "@nestjs/common";
 import { logger } from "../logger";
 import { paths } from "../paths";
 import {
+  Extension,
   ExtensionManual,
   ExtensionState,
   Manifest,
@@ -21,7 +22,13 @@ import {
   ManifestExtensionCommand,
   ManifestRuntimeEnvironment
 } from "../dtos/app.dtos";
-import { CompressedType, computeCompressedType, getTemporaryDirectoryPath } from "./utils/downloader";
+import {
+  CompressedType,
+  computeCompressedType,
+  getTemporaryDirectoryPath,
+  inflateGzippedTarball,
+  inflateZip
+} from "./utils/downloader";
 import { parametersChecker } from "./utils/parametersChecker";
 import { ImageEventAction } from "./notifierService";
 
@@ -53,6 +60,8 @@ export class ExtensionRegistry
   public static nodeVariableName = "node";
 
   public static venvPythonVariableName = "venvPython";
+
+  private static readonly pausedFileName = ".paused";
 
   static async getSdkInfo(environment: ManifestRuntimeEnvironment): Promise<SdkInfo>
   {
@@ -106,6 +115,28 @@ export class ExtensionRegistry
   {
     return { ...manifest, directoryPath };
   }
+
+  public static async inflateExtensionArchive(isGzippedTarball: boolean, archiveFilePath: string, targetDirectoryPath: string, directoryName: string): Promise<string>
+  {
+    let newDirectoryPath: string;
+    let toRenameDirectoryPath: string;
+    const logFragment = "extension archive";
+    if (isGzippedTarball === true)
+    {
+      await inflateGzippedTarball(archiveFilePath, targetDirectoryPath, logFragment);
+      newDirectoryPath = path.join(targetDirectoryPath, directoryName);
+      toRenameDirectoryPath = path.join(targetDirectoryPath, "package");
+    }
+    else
+    {
+      await inflateZip(archiveFilePath, targetDirectoryPath, logFragment);
+      newDirectoryPath = path.join(path.join(targetDirectoryPath, ".."), directoryName);
+      toRenameDirectoryPath = targetDirectoryPath;
+    }
+    fs.renameSync(toRenameDirectoryPath, newDirectoryPath);
+    return newDirectoryPath;
+  }
+
 
   constructor()
   {
@@ -215,9 +246,14 @@ export class ExtensionRegistry
     return this.isPaused(id) === true ? ExtensionState.Paused : ExtensionState.Enabled;
   }
 
+  getExtensionWriteState(directoryPath: string): ExtensionState
+  {
+    return fs.existsSync(path.join(directoryPath, ExtensionRegistry.pausedFileName)) ? ExtensionState.Paused : ExtensionState.Enabled;
+  }
+
   isPaused(id: string): boolean
   {
-    return fs.existsSync(this.computePauseFilePath(id));
+    return fs.existsSync(this.computePausedFilePath(id));
   }
 
   getCommand(manifest: Manifest, commandId: string): ManifestExtensionCommand | undefined
@@ -236,9 +272,9 @@ export class ExtensionRegistry
     return undefined;
   }
 
-  changeState(id: string, state: ExtensionState): void
+  writeExtensionState(directoryPath: string, state: ExtensionState): void
   {
-    const filePath = this.computePauseFilePath(id);
+    const filePath = path.join(directoryPath, ExtensionRegistry.pausedFileName);
     if (state === ExtensionState.Paused)
     {
       fs.writeFileSync(filePath, "");
@@ -249,19 +285,24 @@ export class ExtensionRegistry
     }
   }
 
+  changeState(id: string, state: ExtensionState): void
+  {
+    return this.writeExtensionState(this.computeExtensionDirectoryPath(id), state);
+  }
+
   computeExtensionDirectoryPath(id: string): string
   {
     return path.join(paths.installedExtensionsDirectoryPath, id);
   }
 
+  private computePausedFilePath(id: string): string
+  {
+    return path.join(this.computeExtensionDirectoryPath(id), ExtensionRegistry.pausedFileName);
+  }
+
   private computeManifestFilePath(id: string): string
   {
     return path.join(this.computeExtensionDirectoryPath(id), ExtensionRegistry.manifestFileName);
-  }
-
-  private computePauseFilePath(id: string): string
-  {
-    return path.join(this.computeExtensionDirectoryPath(id), ".paused");
   }
 
 }
@@ -277,9 +318,16 @@ export class ExtensionArchiveReader
 
   extractFunction?: (directoryPath: string) => Promise<void>;
 
-  constructor(archive: Buffer)
+  constructor(archive: Buffer, doCheckBinaryWeight: boolean = false)
   {
     this.archive = archive;
+    if (doCheckBinaryWeight)
+    {
+      if (archive.length > Extension.ARCHIVE_MAXIMUM_BINARY_WEIGHT_IN_BYTES)
+      {
+        throw new Error(`The provided extension archive exceeds the maximum allowed binary weight of ${Extension.ARCHIVE_MAXIMUM_BINARY_WEIGHT_IN_BYTES} bytes`);
+      }
+    }
     const type = computeCompressedType(this.archive);
     if (type === null)
     {

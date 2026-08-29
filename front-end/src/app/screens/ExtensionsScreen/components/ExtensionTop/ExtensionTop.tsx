@@ -6,7 +6,7 @@ import { IconBox } from "@tabler/icons-react";
 import { Extension, ExtensionActivityKind } from "@picteus/ws-client";
 
 import { ExtensionsService } from "app/services";
-import { Common, ContentTitle, CopyText, EntityStatus, FieldValue, NoValue } from "app/components";
+import { Common, ContentTitle, CopyText, EntityState, FieldValue, NoValue } from "app/components";
 import { ExtensionActions, ExtensionActivity } from "../index.ts";
 
 
@@ -43,7 +43,7 @@ export default function ExtensionTop({
                       <NoValue/>}/>
         <FieldValue name={t("field.status")}
                     value={<Flex align="center" gap="xs">
-                      <EntityStatus type="extension" status={extension.status} size="sm"/>
+                      <EntityState type="extension" state={extension.state} size="sm"/>
                       {activityKind && <ExtensionActivity activityKind={activityKind}/>}
                     </Flex>}/>
         <Flex gap="sm" mt="lg">

@@ -25,7 +25,7 @@ import {
   ImageSummary,
   RepositoryActivityKind,
   RepositoryLocationType,
-  RepositoryStatus,
+  RepositoryState,
   SearchCriteria,
   SearchFilter,
   SearchOriginKind,
@@ -832,7 +832,7 @@ describe("Repository", () =>
       where: { id: repository.id },
       data:
         {
-          status: RepositoryStatus.INDEXING
+          state: RepositoryState.INDEXING
         }
     });
     // We resume them
@@ -855,7 +855,7 @@ describe("Repository", () =>
       {
         fs.renameSync(directoryPath, newDirectoryPath);
       });
-      expect((await base.getRepositoryController().get(repository.id)).status).toEqual(RepositoryStatus.UNAVAILABLE);
+      expect((await base.getRepositoryController().get(repository.id)).state).toEqual(RepositoryState.UNAVAILABLE);
       const activities = await base.getRepositoryController().activities();
       expect(activities.length).toEqual(1);
       expect(activities[0].id).toEqual(id);
@@ -879,7 +879,7 @@ describe("Repository", () =>
       {
         fs.renameSync(newDirectoryPath, directoryPath);
       });
-      expect((await base.getRepositoryController().get(repository.id)).status).toEqual(RepositoryStatus.READY);
+      expect((await base.getRepositoryController().get(repository.id)).state).toEqual(RepositoryState.READY);
     }
   });
 

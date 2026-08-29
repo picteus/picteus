@@ -51,7 +51,7 @@ import {
   Repository,
   RepositoryActivityKind,
   RepositoryLocationType,
-  RepositoryStatus,
+  RepositoryState,
   SearchImageSummaryResult,
   SearchParameters,
   TextualPrompt
@@ -247,7 +247,7 @@ export class Core
   async beforeEach(): Promise<void>
   {
     logger.info(`\n---\nRunning the '${expect.getState().currentTestName}' test\n---`);
-    this.workingDirectoryPath = path.join(Core.temporaryDirectoryPath, `test-${randomUUID()}`);
+    this.workingDirectoryPath = path.join(Core.temporaryDirectoryPath, "back-end-tests", `${randomUUID().substring(0, 13)}`);
     fs.mkdirSync(this.workingDirectoryPath, { recursive: true });
     logger.debug(`Using the working directory with path '${this.workingDirectoryPath}'`);
   }
@@ -411,7 +411,7 @@ export class Base extends Core
     this.createApplication = createApplication;
   }
 
-  async beforeEach(): Promise<void>
+  async beforeEach(justBeforeInitialize: (() => Promise<void>) | undefined = undefined): Promise<void>
   {
     await super.beforeEach();
     try
@@ -441,6 +441,10 @@ export class Base extends Core
     paths.modelsCacheDirectoryPath = path.join(workingDirectoryPath, "models");
     paths.repositoryMappingPaths = new Map<string, string>();
     fs.mkdirSync(paths.modelsCacheDirectoryPath, { recursive: true });
+    if (justBeforeInitialize !== undefined)
+    {
+      await justBeforeInitialize();
+    }
     await this.initialize();
   }
 
@@ -734,7 +738,7 @@ export class Base extends Core
     {
       zip.addFile(ExtensionBasisBuilder.startedJsFileName, Buffer.from(new ExtensionBasisBuilder().computeStartedFileContent(), "utf8"));
     }
-    return await this.getExtensionController().install(ExtensionState.Enabled, zip.toBuffer());
+    return await this.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
   }
 
   computeExtensionJavaScriptCode(startedFileName: string, willNotRespondToTermination: boolean, environmentVariable?: string): string
@@ -756,8 +760,8 @@ export class Base extends Core
         }
       });
       const repository = await this.getRepositoryController().get(repositoryId);
-      logger.debug(`The repository with id '${repositoryId}' has the '${repository.status}' status`);
-      if (repository.status === RepositoryStatus.READY)
+      logger.debug(`The repository with id '${repositoryId}' has the '${repository.state}' state`);
+      if (repository.state === RepositoryState.READY)
       {
         resolve(undefined);
         offListener.off();

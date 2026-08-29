@@ -40,7 +40,7 @@ model Repository {
   url              String   @unique
   name             String   @unique
   comment          String?
-  status           String
+  state            String
   creationDate     DateTime @default(now())
   modificationDate DateTime @updatedAt
   Image            Image[]

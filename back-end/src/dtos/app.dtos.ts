@@ -54,6 +54,7 @@ import {
   ManifestExecution,
   ManifestExtensionCommand,
   ManifestInstructions,
+  ManifestRuntime,
   ManifestRuntimeEnvironment,
   ManifestUserInterface,
   RunCommandParameters,
@@ -87,7 +88,7 @@ import {
   RepositoryList,
   RepositoryLocation,
   RepositoryLocationType,
-  RepositoryStatus
+  RepositoryState
 } from "./repository.dtos";
 import { Collection } from "./collection.dtos";
 import {
@@ -236,6 +237,7 @@ export {
   ManifestExtensionCommand,
   ManifestExecution,
   ManifestInstructions,
+  ManifestRuntime,
   ManifestRuntimeEnvironment,
   ManifestUserInterface,
   NumericRange,
@@ -248,7 +250,7 @@ export {
   RepositoryList,
   RepositoryLocation,
   RepositoryLocationType,
-  RepositoryStatus,
+  RepositoryState,
   RunCommandParameters,
   SearchCriteria,
   SearchFeatureCondition,
