@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import {
-  CommandParameters,
+  type CommandParameters,
   Communicator,
   ImageFeatureFormat,
   ImageFeatureType,
@@ -13,7 +13,7 @@ import {
   type IntentImage,
   IntentShowType,
   IntentUiAnchor,
-  OpenBrowserIntent,
+  type OpenBrowserIntent,
   PicteusExtension,
   type ProcessCommandIntent,
   type SettingsValue,
