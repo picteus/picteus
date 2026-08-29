@@ -1950,7 +1950,9 @@ describe("Extensions", () =>
     }
     const extensions = await base.getExtensionController().list();
     expect(extensions[0].manifest.name).toEqual(extension2Name);
+    expect(extensions[0].state).toEqual(ExtensionState.Enabled);
     expect(extensions[1].manifest.name).toEqual(extension1Name);
+    expect(extensions[1].state).toEqual(ExtensionState.Enabled);
     expect((await base.getExtensionController().get(extensions[0].manifest.id)).manifest).toEqual(extensions[0].manifest);
     expect((await base.getExtensionController().get(extensions[1].manifest.id)).manifest).toEqual(extensions[1].manifest);
   });
@@ -2687,6 +2689,7 @@ describe("Extensions", () =>
   {
     const extension = await base.getExtensionController().install(state, false, archive);
     expect(extension.manifest.id).toEqual(manifest.id);
+    expect(extension.state).toEqual(state);
     await builder.waitUntilExtensionInstalled();
     await builder.checkExtensionState(state);
     if (checkStarted === true)

@@ -649,7 +649,7 @@ export class ExtensionService
       const { directoryPath, ...manifest } = extendedManifest;
       return plainToInstanceViaJSON(Extension, {
         manifest,
-        status: this.extensionsRegistry.getState(extendedManifest.id)
+        state: this.extensionsRegistry.getState(extendedManifest.id)
       });
     }));
   }
@@ -757,7 +757,7 @@ export class ExtensionService
     }
     return plainToInstanceViaJSON(Extension, {
       manifest,
-      status: this.extensionsRegistry.getState(manifest.id)
+      state: this.extensionsRegistry.getState(manifest.id)
     });
   }
 
