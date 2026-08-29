@@ -382,27 +382,21 @@ export class PicteusExtension
     {
       this.exit(1, error, "the initialization failed");
     }
-    try
+
+    if (result === true)
     {
-      if (result === true)
+      try
       {
-        try
-        {
-          this.connectSocket();
-        }
-        catch (error)
-        {
-          this.exit(2, error, "the connection failed");
-        }
+        this.connectSocket();
       }
-      else
+      catch (error)
       {
-        await this.onReady();
+        this.exit(2, error, "the connection failed");
       }
     }
-    finally
+    else
     {
-      this.logger.info(`The ${this.toString()} is over`);
+      await this.onReady();
     }
   }
 

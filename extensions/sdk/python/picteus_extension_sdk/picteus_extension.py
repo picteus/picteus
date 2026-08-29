@@ -353,7 +353,7 @@ class PicteusExtension:
         except Exception as initialize_exception:
             self.exit(1, initialize_exception, "the initialization failed")
         finally:
-            self.logger.info(f"The {self.to_string()} is now over")
+            self.logger.info(f"The {self.to_string()} exits from the 'run'")
 
     def to_string(self) -> str:
         return "extension" + ("" if hasattr(self, 'extension_id') == False else (
