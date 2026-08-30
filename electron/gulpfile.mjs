@@ -161,7 +161,7 @@ export const deployArtefact = async () =>
   const version = packageJson.version;
   const fileName = `${packageJson.productName}-v${version}-${process.platform}-${process.arch}.${process.platform === "win32" ? "exe" : "zip"}`;
   const filePath = path.join(distributionDirectoryPath, fileName);
-  const command = `gh release upload v${version} ${filePath}`;
+  const command = `gh release upload v${version} ${filePath} --clobber`;
   console.info(`Running the command '${command}'`);
   return gulpRun(command, {}).exec(undefined, undefined);
 };
