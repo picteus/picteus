@@ -92,4 +92,6 @@ jobs:
       - id: deploy
         if: ${{ inputs.deploy == true }}
         name: Deploys the Electron application
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run deploy:electron:ci
