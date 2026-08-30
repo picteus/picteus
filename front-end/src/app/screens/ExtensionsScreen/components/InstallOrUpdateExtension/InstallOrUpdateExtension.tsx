@@ -102,27 +102,32 @@ export default function InstallOrUpdateExtension({
     try
     {
       let blob: Blob;
-      if (values.source === "url")
+      try
       {
-        const response = await fetch(values.url);
-        blob = await response.blob();
+        if (values.source === "url")
+        {
+          const response = await fetch(values.url);
+          blob = await response.blob();
+        }
+        else
+        {
+          blob = await fileToBlob(values.file);
+        }
       }
-      else
+      catch (error)
       {
-        blob = await fileToBlob(values.file);
+        const errorAsError = error as Error;
+        return ToastService.failureAndMessage(errorAsError, t(`${messagePrefix}.errorAdd`, { error: errorAsError.message }));
       }
 
-      const _extension = extension ? await ExtensionsService.update({
+      (extension ? ExtensionsService.update({
         id: extension.manifest.id,
         body: blob
-      }) : await ExtensionsService.install({ state: ExtensionState.Enabled, asUnpacked: false, body: blob });
-
-      onSuccess(_extension);
-    }
-    catch (error)
-    {
-      const errorAsError = error as Error;
-      ToastService.failureAndMessage(errorAsError, t(`${messagePrefix}.errorAdd`, { error: errorAsError.message }));
+      }) : ExtensionsService.install({
+        state: ExtensionState.Enabled,
+        asUnpacked: false,
+        body: blob
+      })).then(onSuccess).catch(error => ToastService.apiCallI18nError(error, `${messagePrefix}.errorAdd`));
     }
     finally
     {

@@ -4,6 +4,7 @@ import { Alert, Button, Flex, MultiSelect, Select, Textarea, TextInput } from "@
 import { useForm } from "@mantine/form";
 import { IconAlertTriangle, IconX } from "@tabler/icons-react";
 import {
+  Extension,
   ExtensionCategory,
   ExtensionGenerationOptions,
   ExtensionState,
@@ -18,7 +19,7 @@ import { FolderTypes } from "types";
 
 
 type CreateExtensionModalProps = {
-  onSuccess: () => void;
+  onSuccess: (extension: Extension) => void;
 };
 
 export default function CreateExtensionModal({ onSuccess }: CreateExtensionModalProps)
@@ -60,7 +61,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
       description: "",
       categories: [ ExtensionCategory.Other ],
       author: "",
-      environment: ManifestRuntimeEnvironment.Python
+      environment: ManifestRuntimeEnvironment.Node
     },
     validate: {
       id: (value) =>
@@ -106,8 +107,8 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
       {
         return;
       }
-      setLoading(true);
 
+      setLoading(true);
       const extensionId = values.id;
       if (ExtensionsService.list().some((extension) => extension.manifest.id === extensionId) === true)
       {
@@ -123,12 +124,11 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
       const extensionDirectoryPath = computeFilePath(directoryPath, extension.manifest.id);
       ToastService.success(t("createExtensionModal.success"));
       await openExplorer(extensionDirectoryPath);
-      onSuccess();
+      onSuccess(extension);
     }
     catch (error)
     {
-      const errorAsError = error as Error;
-      setSubmitError(errorAsError.message);
+      setSubmitError((error as Error).message);
     }
     finally
     {
