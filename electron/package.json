@@ -109,7 +109,7 @@
     "distribute": "run-script-os",
     "artefact:deploy": "cross-var gulp deployArtefact --distributionDirectoryPath $npm_package_config_distribution_directoryPath",
     "updateFeed:generate": "cross-var gulp generateUpdateFeed --inputFilePath \"$npm_package_config_distribution_directoryPath/update.yml\" --directoryPath \"$npm_package_config_temporary_directoryPath/electron-builder\" --githubprojecturl $npm_package_config_github_project_url",
-    "updateFeed:deploy": "cross-var shx mkdir -p ../docs/static/feed && shx cp \"$npm_package_config_temporary_directoryPath/electron-builder/feed*.json\" ../docs/static/feed && npm --prefix ../docs run build && npm --prefix ../docs run deploy",
+    "updateFeed:deploy": "cross-var shx mkdir -p ../docs/static/feed && shx cp \"$npm_package_config_temporary_directoryPath/electron-builder/feed*.json\" ../docs/static/feed && npm --prefix ../docs install && npm --prefix ../docs run build && npm --prefix ../docs run deploy",
     "deploy": "npm-run-all artefact:deploy updateFeed:generate updateFeed:deploy"
   },
   "main": "./build/electron/src/main.js",
