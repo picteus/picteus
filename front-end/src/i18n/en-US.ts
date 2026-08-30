@@ -44,7 +44,7 @@ export default {
     comment: "Comment",
     name: "Name",
     sourceUrl: "Source",
-    status: "Status",
+    state: "State",
     date: "Date",
     createdOn: "Created on",
     modifiedOn: "Modified on",
@@ -346,8 +346,8 @@ export default {
       installed: "The extension '{{id}}' has been installed",
       updated: "The extension '{{id}}' has been updated",
       uninstalled: "The extension '{{id}}' has been uninstalled",
-      paused: "The extension '{{id}}' has been paused",
-      resumed: "The extension '{{id}}' has been resumed",
+      started: "The extension '{{id}}' has been started",
+      stopped: "The extension '{{id}}' has been paused",
       process: {
         started: "The process of the extension '{{id}}' has started",
         stopped: "The process of the extension '{{id}}' has stopped"

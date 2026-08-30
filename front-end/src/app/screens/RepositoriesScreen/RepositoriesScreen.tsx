@@ -121,7 +121,7 @@ export default function RepositoriesScreen()
   function renderTable()
   {
     return <StandardTable
-      head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", "field.status", ""]}
+      head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", "field.state", ""]}
       loading={loading}
       emptyResults={<EmptyResults
         icon={IconFolderSearch}

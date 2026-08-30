@@ -42,7 +42,7 @@ export default function ExtensionsScreen()
   const [ viewMode, setViewMode ] = useState<"table" | "card">("table");
   const [ extensionActivities, setExtensionActivities ] = useState<Record<string, ExtensionActivityKind>>({});
 
-  const fetchActivities = () =>
+  function fetchActivities(): void
   {
     ExtensionsService.activities().then(activities =>
     {
@@ -53,16 +53,33 @@ export default function ExtensionsScreen()
       }, {});
       setExtensionActivities(activitiesMap);
     }).catch(ToastService.apiCallError);
-  };
+  }
+
+  async function fetchExtensionsAndActivities(): Promise<void>
+  {
+    setLoading(true);
+    try
+    {
+      await ExtensionsService.fetchAll().then(({ extensions }) =>
+      {
+        setExtensions(extensions);
+      }).catch(ToastService.apiCallError);
+      fetchActivities();
+    }
+    finally
+    {
+      setLoading(false);
+    }
+  }
 
   useEffect(() =>
   {
-    fetchActivities();
+    void fetchExtensionsAndActivities();
   }, []);
 
   useEffect(() =>
   {
-    if (event?.channel === ChannelEnum.EXTENSION_PROCESS)
+    if (event?.channel.startsWith(ChannelEnum.EXTENSION_PROCESS_PREFIX) === true)
     {
       fetchActivities();
     }
@@ -72,7 +89,7 @@ export default function ExtensionsScreen()
   {
     if (ExtensionsService.requiresCommandReload(event) === true)
     {
-      void fetchAllExtensions();
+      void fetchExtensionsAndActivities();
     }
   }, [ event ]);
 
@@ -93,7 +110,7 @@ export default function ExtensionsScreen()
       component: (
         <ExtensionSettingsModal
           extension={extension}
-          onSuccess={fetchAllExtensions}
+          onSuccess={fetchExtensionsAndActivities}
         />
       )
     });
@@ -113,7 +130,7 @@ export default function ExtensionsScreen()
           onSuccess={(extension: Extension) =>
           {
             openExtensionSettingsModal(extension);
-            void fetchAllExtensions();
+            void fetchExtensionsAndActivities();
           }}
         />
       )
@@ -130,28 +147,10 @@ export default function ExtensionsScreen()
       size: "m",
       component: (
         <CreateExtensionModal
-          onSuccess={() =>
-          {
-          }}
+          onSuccess={setSelectedExtension}
         />
       )
     });
-  }
-
-  async function fetchAllExtensions()
-  {
-    setLoading(true);
-    try
-    {
-      await ExtensionsService.fetchAll().then(({ extensions }) =>
-      {
-        setExtensions(extensions);
-      }).catch(ToastService.apiCallError);
-    }
-    finally
-    {
-      setLoading(false);
-    }
   }
 
   const rows = useMemo(() =>
@@ -180,7 +179,7 @@ export default function ExtensionsScreen()
           <Flex align="center" gap="xs">
             <EntityState type="extension" state={extension.state} size="md"/>
             {extensionActivities[extension.manifest.id] &&
-              <ExtensionActivity activityKind={extensionActivities[extension.manifest.id]}/>}
+              <ExtensionActivity kind={extensionActivities[extension.manifest.id]}/>}
           </Flex>
         </Table.Td>
         <Table.Td>
@@ -188,7 +187,7 @@ export default function ExtensionsScreen()
             extension={extension}
             onUpdate={openInstallOrUpdateExtensionModal}
             onSettings={openExtensionSettingsModal}
-            onUninstalled={fetchAllExtensions}
+            onUninstalled={fetchExtensionsAndActivities}
           />
         </Table.Td>
       </Table.Tr>
@@ -197,7 +196,7 @@ export default function ExtensionsScreen()
   function renderTable()
   {
     return <StandardTable
-      head={[ "", "field.id", "field.version", "field.name", "field.description", "field.status", "" ]}
+      head={[ "", "field.id", "field.version", "field.name", "field.description", "field.state", "" ]}
       loading={loading}
       emptyResults={<EmptyResults
         icon={IconPuzzle}
@@ -232,7 +231,7 @@ export default function ExtensionsScreen()
               activityKind={extensionActivities[extension.manifest.id]}
               openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
               openExtensionSettingsModal={openExtensionSettingsModal}
-              onUninstalled={fetchAllExtensions}
+              onUninstalled={fetchExtensionsAndActivities}
             />
           </Card>
         ))}
@@ -276,7 +275,7 @@ export default function ExtensionsScreen()
             >
               {t("button.create")}
             </Button>
-            <RefreshButton onRefresh={() => fetchAllExtensions()}/>
+            <RefreshButton onRefresh={() => fetchExtensionsAndActivities()}/>
           </Flex>
         </Flex>
         {viewMode === "table" ? renderTable() : renderCard()}
@@ -289,7 +288,7 @@ export default function ExtensionsScreen()
                         activityKind={extensionActivities[selectedExtension.manifest.id]}
                         openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
                         openExtensionSettingsModal={openExtensionSettingsModal}
-                        onUninstalled={fetchAllExtensions}/>}
+                        onUninstalled={fetchExtensionsAndActivities}/>}
         size="xl"
       >
         {selectedExtension && <ExtensionDetail extension={selectedExtension}/>}

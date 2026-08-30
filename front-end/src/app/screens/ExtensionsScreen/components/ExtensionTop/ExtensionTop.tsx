@@ -41,10 +41,10 @@ export default function ExtensionTop({
         <FieldValue name={t("field.description")}
                     value={extension.manifest.description ? <Text>{extension.manifest.description}</Text> :
                       <NoValue/>}/>
-        <FieldValue name={t("field.status")}
+        <FieldValue name={t("field.state")}
                     value={<Flex align="center" gap="xs">
                       <EntityState type="extension" state={extension.state} size="sm"/>
-                      {activityKind && <ExtensionActivity activityKind={activityKind}/>}
+                      {activityKind && <ExtensionActivity kind={activityKind}/>}
                     </Flex>}/>
         <Flex gap="sm" mt="lg">
           <ExtensionActions

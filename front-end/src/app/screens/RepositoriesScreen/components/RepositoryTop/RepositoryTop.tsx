@@ -32,7 +32,7 @@ export default function RepositoryTop({ repository, onEdit, onDeleted }: Reposit
                     </CopyText>}/>
         <FieldValue name={t("field.comment")}
                     value={repository.comment ? <Text>{repository.comment}</Text> : <NoValue/>}/>
-        <FieldValue name={t("field.status")}
+        <FieldValue name={t("field.state")}
                     value={<EntityState type="repository" state={repository.state} size="sm"/>}/>
         <Flex gap="sm" mt="lg">
           <RepositoryActions

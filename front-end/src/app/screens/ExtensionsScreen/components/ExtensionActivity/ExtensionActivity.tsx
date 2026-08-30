@@ -5,14 +5,18 @@ import { ExtensionActivityKind } from "@picteus/ws-client";
 
 
 type ExtensionActivityType = {
-  activityKind: ExtensionActivityKind;
+  kind?: ExtensionActivityKind;
 };
 
 export default function ExtensionActivity({
-  activityKind
+  kind
 }: ExtensionActivityType)
 {
+  if (kind === undefined)
+  {
+    return null;
+  }
   return (<Badge
-    color={activityKind === ExtensionActivityKind.Connected ? "green" : activityKind === ExtensionActivityKind.Connecting ? "orange" : "red"}
+    color={kind === ExtensionActivityKind.Connected ? "green" : kind === ExtensionActivityKind.Connecting ? "orange" : "red"}
     variant="dot"/>);
 }
