@@ -56,9 +56,9 @@
   },
   "devDependencies": {
     "typescript": "5.9.2",
-    "@docusaurus/module-type-aliases": "3.9.2",
-    "@docusaurus/tsconfig": "3.9.2",
-    "@docusaurus/types": "3.9.2"
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/tsconfig": "3.10.2",
+    "@docusaurus/types": "3.10.2"
   },
   "dependencies": {
     "@docusaurus/core": "3.9.2",

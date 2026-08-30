@@ -76,6 +76,18 @@ const config: Config =
                   label: "Setup"
                 },
                 {
+                  type: "docSidebar",
+                  sidebarId: "developerSidebar",
+                  position: "left",
+                  label: "Developer"
+                },
+                {
+                  type: "docSidebar",
+                  sidebarId: "extensionsSidebar",
+                  position: "left",
+                  label: "Extensions"
+                },
+                {
                   href: "https://github.com/picteus/picteus",
                   label: "GitHub",
                   position: "right"
