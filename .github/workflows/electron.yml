@@ -94,6 +94,10 @@ jobs:
         name: Deploys the Electron application
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_USER: github-actions[bot]
+          GIT_PASS: ${{ secrets.GITHUB_TOKEN }}
+          GIT_USER_NAME: github-actions[bot]
+          GIT_USER_EMAIL: github-actions[bot]@users.noreply.github.com
           GIT_TERMINAL_PROMPT: 0
         run: npm run deploy:electron:ci
