@@ -134,9 +134,9 @@ export class NotifierService
 
   private readonly id: string;
 
-  static buildEvent(eventEntity: EventEntity, action: EventAction, state?: string): string
+  static buildEvent(eventEntity: EventEntity, action: EventAction, state?: string, isForExternal?: boolean): string
   {
-    return `${eventEntity}${NotifierService.delimiter}${action}${state === undefined ? "" : (`${NotifierService.stateDelimiter}${state}`)}`;
+    return `${eventEntity}${NotifierService.delimiter}${action}${state === undefined ? "" : (`${isForExternal === true ? NotifierService.delimiter : NotifierService.stateDelimiter}${state}`)}`;
   }
 
   static parseEvent(event: string): NotifierEvent

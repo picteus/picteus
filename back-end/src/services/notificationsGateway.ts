@@ -236,8 +236,11 @@ export class NotificationsGateway
     logger.debug("Destroyed a NotificationsGateway");
   }
 
-  private async onNotifierEvent(event: string, value: object, marker?: string, onResult?: (value: object) => void): Promise<void>
+  private async onNotifierEvent(rawEvent: string, value: object, marker?: string, onResult?: (value: object) => void): Promise<void>
   {
+    // We need to reparse the event, because it was serialized for internal use
+    const parsedEvent = NotifierService.parseEvent(rawEvent);
+    const event = NotifierService.buildEvent(parsedEvent.eventEntity, parsedEvent.action, parsedEvent.state, true);
     logger.debug(`The '${event}' event occurred${marker === undefined ? "" : (` with the marker '${marker}'`)}${onResult === undefined ? "" : " with a callback"}`);
     const sockets = this.sockets;
     if (sockets !== undefined)

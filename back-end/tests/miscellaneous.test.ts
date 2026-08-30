@@ -1370,12 +1370,12 @@ describe("Miscellaneous via application", () =>
     }
     {
       const notification = notifications[index++];
-      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.stateDelimiter + "started");
+      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + "started");
       expect(notification.value).toEqual({ id: repository.id });
     }
     {
       const notification = notifications[index++];
-      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.stateDelimiter + "stopped");
+      expect(notification.channel).toBe(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Synchronize + NotifierService.delimiter + "stopped");
       expect(notification.value).toEqual({ id: repository.id });
     }
 
