@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<svg width="76" height="76" viewBox="0 0 76 76" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M40 0H60C68.8366 0 76 7.16344 76 16V36H60C48.9543 36 40 27.0457 40 16V0Z" fill="black"/>
+  <path d="M36 0H16C7.16345 0 3.14722e-06 7.16344 3.14722e-06 16V36H16C27.0457 36 36 27.0457 36 16V0Z" fill="black"/>
+  <path d="M36 76H16C7.16345 76 2.52097e-06 68.8366 1.74846e-06 60L0 40L16 40C27.0457 40 36 48.9543 36 60L36 76Z" fill="black"/>
+  <path d="M40 76H60C68.8366 76 76 68.8365 76 60V40L60 40C48.9543 40 40 48.9543 40 60L40 76Z" fill="black"/>
+</svg>
