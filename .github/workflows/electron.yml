@@ -89,6 +89,14 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3.0.1
         with:
           version: '>= 363.0.0'
+      - id: configure-git
+        name: Configures git for the forthcoming next step deployment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/picteus/picteus.git"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - id: deploy
         if: ${{ inputs.deploy == true }}
         name: Deploys the Electron application
