@@ -124,7 +124,7 @@ export const generateUpdateFeed = async () =>
 };
 
 // noinspection JSUnusedGlobalSymbols
-export const deployUpdateFeed = async () =>
+export const deployUpdateFeedAndArtifactOnGcs = async () =>
 {
   const cliArguments = process.argv;
   const outputDirectoryPath = path.resolve(cliArguments[cliArguments.indexOf("--directoryPath") + 1]);
