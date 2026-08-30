@@ -5,6 +5,8 @@ import Layout from "@theme/Layout";
 import HomepageFeatures from "@site/src/components/HomepageFeatures";
 import Heading from "@theme/Heading";
 
+import LogoWhite from "@site/static/img/logo-white.svg";
+
 import styles from "./index.module.css";
 
 
@@ -14,6 +16,7 @@ function HomepageHeader()
   return (
     <header className={clsx("hero hero--primary", styles.heroBanner)}>
       <div className="container">
+        <LogoWhite className={styles.heroLogo} role="img" aria-label="Picteus Logo" />
         <Heading as="h1" className="hero__title">
           {siteConfig.title}
         </Heading>

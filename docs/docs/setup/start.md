@@ -74,7 +74,7 @@ The application yields logs: when starting it from its desktop icon, logs are no
 Log messages are also persisted into log files on the local filesystem, namly in the following directory path:
 - **Windows**: `C:\Users\<user>\AppData\Roaming\Picteus\logs`,
 - **macOS**: `/Users/<user>/Library/Logs/Picteus`,
-- **Linux**: `/home/<user>/.config/Picteus/logs.
+- **Linux**: `/home/<user>/.config/Picteus/logs`.
 
 where `<user>` is the user's login.
 

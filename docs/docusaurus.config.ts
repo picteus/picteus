@@ -19,7 +19,7 @@ const config: Config =
     i18n:
       {
         defaultLocale: "en",
-        locales: ["en"]
+        locales: [ "en" ]
       },
     presets:
       [
@@ -35,7 +35,7 @@ const config: Config =
                 showReadingTime: true,
                 feedOptions:
                   {
-                    type: ["rss", "atom"],
+                    type: [ "rss", "atom" ],
                     xslt: true
                   },
                 onInlineTags: "warn",
@@ -65,7 +65,7 @@ const config: Config =
             logo:
               {
                 alt: "Picteus Logo",
-                src: "img/logo.svg"
+                src: "img/logo-black.svg"
               },
             items:
               [
@@ -104,7 +104,7 @@ const config: Config =
           {
             theme: prismThemes.github,
             darkTheme: prismThemes.dracula,
-            additionalLanguages: ["batch", "powershell", "bash"]
+            additionalLanguages: [ "batch", "powershell", "bash" ]
           }
       } satisfies Preset.ThemeConfig
   };
