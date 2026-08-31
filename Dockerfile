@@ -14,6 +14,10 @@ ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ARG buildDirectoryName=build
 ARG backendDirectoryName=back-end
 ARG frontendDirectoryName=front-end
+ENV buildDirectoryName=${buildDirectoryName}
+ENV backendDirectoryName=${backendDirectoryName}
+ENV frontendDirectoryName=${frontendDirectoryName}
+
 WORKDIR /app
 COPY gulpfile.mjs ./
 COPY shared ./shared
@@ -31,7 +35,7 @@ RUN npm install --no-save --install-link \
     # Installs the back-end runtime "node_modules" \
     && ./node_modules/.bin/gulp --gulpfile gulpfile.mjs installNodeModulesForDockerfile \
     && cp ../gulpfile.mjs gulpfile.mjs && ./node_modules/.bin/gulp --gulpfile gulpfile.mjs fixCaporalModule --directoryPath ../${buildDirectoryName}/${backendDirectoryName}/node_modules/@caporal/core \
-    # Cleans up the unneeded files" \
+    # Cleans up the unneeded files \
     && cd .. && rm -rf gulpfile.mjs shared ${backendDirectoryName} /root/.npm /root/.cache /tmp/*
 
 # Copies the prepared files
@@ -43,14 +47,14 @@ COPY electron/${buildDirectoryName}/${frontendDirectoryName} ./${frontendDirecto
 ENV apiServerPort=3001
 ENV webServerPort=2999
 ENV vectorDatabasePort=3002
-ENV useSsl=true
+ENV useSsl=false
 ENV requiresApiKeys=false
 # The "filesMountPath" environment variable must be set and point to the host's directory path which contains the accessible files
 
 # Exposes the port numbers
-EXPOSE $apiServerPort
-EXPOSE $webServerPort
-EXPOSE $vectorDatabasePort
+EXPOSE ${apiServerPort}
+EXPOSE ${webServerPort}
+EXPOSE ${vectorDatabasePort}
 
 # Sets the environment variables
 ENV NODE_ENV=production
@@ -60,4 +64,4 @@ ENV FILES_DIRECTORY_PATH=/app/files
 
 # Starts the server
 WORKDIR /app
-CMD ["sh", "-c", "if [ -z \"$filesMountPath\" ]; then echo \"Error: The 'filesMountPath' environment variable must be set.\" 1>&2; exit 1; fi ; NODE_OPTIONS=\"--max-http-header-size=131072\" REPOSITORY_MAPPING_PATHS=\"$FILES_DIRECTORY_PATH=$filesMountPath\" REFERENCE_DATABASE_FILE_PATH=\"/app/${buildDirectoryName}/${backendDirectoryName}/database.db\" REGULAR_DATABASE_FILE_PATH=\"$EXTERNAL_DIRECTORY_PATH/database.db\" VECTOR_DATABASE_DIRECTORY_PATH=\"$EXTERNAL_DIRECTORY_PATH/chroma\" REPOSITORIES_DIRECTORY_PATH=\"$EXTERNAL_DIRECTORY_PATH/repositories\" SDK_DIRECTORY_PATH=\"./${buildDirectoryName}/sdk\" INSTALLED_EXTENSIONS_DIRECTORY_PATH=\"$INTERNAL_DIRECTORY_PATH/extensions\" MODELS_CACHE_DIRECTORY_PATH=\"$INTERNAL_DIRECTORY_PATH/models\" RUNTIMES_DIRECTORY_PATH=\"$INTERNAL_DIRECTORY_PATH/runtimes\" node ./${buildDirectoryName}/${backendDirectoryName}/src/main.js run --useSsl $useSsl --apiServerPort $apiServerPort --requiresApiKeys $requiresApiKeys --webServerPort $webServerPort --webDirectoryPath /app/${buildDirectoryName}/${frontendDirectoryName} --vectorDatabasePort $vectorDatabasePort"]
+CMD ["sh", "-c", "if [ -z \"${filesMountPath}\" ]; then echo \"Error: The 'filesMountPath' environment variable must be set.\" 1>&2; exit 1; fi ; NODE_OPTIONS=\"--max-http-header-size=131072\" REPOSITORY_MAPPING_PATHS=\"${FILES_DIRECTORY_PATH}=${filesMountPath}\" REFERENCE_DATABASE_FILE_PATH=\"/app/${buildDirectoryName}/${backendDirectoryName}/database.db\" REGULAR_DATABASE_FILE_PATH=\"${EXTERNAL_DIRECTORY_PATH}/database.db\" VECTOR_DATABASE_DIRECTORY_PATH=\"${EXTERNAL_DIRECTORY_PATH}/chroma\" REPOSITORIES_DIRECTORY_PATH=\"${EXTERNAL_DIRECTORY_PATH}/repositories\" SDK_DIRECTORY_PATH=\"./${buildDirectoryName}/sdk\" INSTALLED_EXTENSIONS_DIRECTORY_PATH=\"${INTERNAL_DIRECTORY_PATH}/extensions\" MODELS_CACHE_DIRECTORY_PATH=\"${INTERNAL_DIRECTORY_PATH}/models\" RUNTIMES_DIRECTORY_PATH=\"${INTERNAL_DIRECTORY_PATH}/runtimes\" node ./${buildDirectoryName}/${backendDirectoryName}/src/main.js run --useSsl ${useSsl} --apiServerPort ${apiServerPort} --requiresApiKeys ${requiresApiKeys} --webServerPort ${webServerPort} --webDirectoryPath /app/${buildDirectoryName}/${frontendDirectoryName} --vectorDatabasePort ${vectorDatabasePort}"]
