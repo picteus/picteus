@@ -92,7 +92,7 @@ function computeGcsBucketBaseUrl(gcsBucketCoordinates, packageJson, isHttp, with
 
 function computeGitHubPagesBaseUrl(gitHubProjectUrl, packageJson, withVersion)
 {
-  return `${gitHubProjectUrl}/releases/download/V${packageJson.version}/${computeInstallPackageFileName(packageJson, withVersion)}`;
+  return `${gitHubProjectUrl}/releases/download/v${packageJson.version}/${computeInstallPackageFileName(packageJson, withVersion)}`;
 }
 
 // noinspection JSUnusedGlobalSymbols
