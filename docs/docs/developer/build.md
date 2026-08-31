@@ -137,26 +137,7 @@ To publish a new version of the container image, run the `npm run docker:publish
 
 #### Run
 
-When running the container image through Docker, you should beforehand declare a volume so that the application data are persisted beyond the container execution, use the `docker volume create picteus` command to create a Docker volume named `picteus`.
-
-Then use the following command to run the container:
-```
-docker run -p 3001:3001 -p 2999:2999 -p 3002:3002 -v picteus:/app/internal -v <externalPath>:/app/external -v <filesPath>:/app/files -e filesMountPath=<filesPath> --name picteus koppasoft/picteus:latest
-```
-where:
-- `<filesPath>` is the host path to the directory where you want the application to scan files ;
-- `<externalPath>` is the host path to the directory where you want the application to store database files.
-
-This will build an image and create a container with the name `picteus`, using the previously created `picteus` volume:
-- its API back-end Swagger UI URL is http://localhost:3001/swaggerui# (adapt the port number according to your configuration, see below);
-- its front-end application URL is http://localhost:2999/?webServicesBaseUrl=http://localhost:3001#/ (adapt the port numbers according to your configuration, see below) ; notice the `webServicesBaseUrl` URI query parameter, which indicates the URL of the API web services, which is http://localhost:3001.
-
-You may fine-tune the container with the following additional environment variables:
-- `apiServerPort`: the port number of the API back-end, which defaults to `3001` ; if you change it, think of changing the port mapping accordingly ;
-- `webServerPort`: the port number of the web server exposing the UI, which defaults to `2999` ; if you change it, think of changing the port mapping accordingly ;
-- `vectorDatabasePort`: the port number of the vector database server, which defaults to `3002` ; if you change it, think of changing the port mapping accordingly ;
-- `useSsl`: a boolean indicating whether the API server should use SSL / TLS, which defaults to `true` ;
-- `requiresApiKeys`: a boolean indicating whether the API server only works with API keys, which defaults to `false`.
+Refer to [container.md](../manual/container.md) for running the container.
 
 ## Packaging and distributing
 
