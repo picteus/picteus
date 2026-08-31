@@ -124,7 +124,7 @@ export const generateUpdateFeed = async () =>
 };
 
 // noinspection JSUnusedGlobalSymbols
-export const deployUpdateFeedAndArtifactOnGcs = async () =>
+export const deployUpdateFeedOnGcs = async () =>
 {
   const cliArguments = process.argv;
   const outputDirectoryPath = path.resolve(cliArguments[cliArguments.indexOf("--directoryPath") + 1]);
@@ -134,15 +134,6 @@ export const deployUpdateFeedAndArtifactOnGcs = async () =>
   const promises = [];
   {
     const command = `gcloud storage cp --canned-acl publicRead ${process.platform === "win32" ? filePath : `"${filePath}"`} ${gcsBucketCoordinates}`;
-    console.info(`Running the command '${command}'`);
-    promises.push(gulpRun(
-      command,
-      {}
-    ).exec(undefined, undefined));
-  }
-  {
-    const packageJson = getPackageJson();
-    const command = `gcloud storage cp --canned-acl publicRead ${computeGcsBucketBaseUrl(gcsBucketCoordinates, packageJson, false, true)} ${computeGcsBucketBaseUrl(gcsBucketCoordinates, packageJson, false, false)}`;
     console.info(`Running the command '${command}'`);
     promises.push(gulpRun(
       command,

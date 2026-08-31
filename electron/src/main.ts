@@ -803,7 +803,7 @@ export class ApplicationWrapper
       // We check whether there is a newer version of the application
       try
       {
-        const updateBaseUrl = "https://picteus.github.io/picteus/feed";
+        const updateBaseUrl = "https://storage.googleapis.com/understitiel/picteus";
         const updateFeedUrl = `${updateBaseUrl}/feed-${process.platform}.json`;
         await autoUpdateApplication(window, updateFeedUrl, () =>
         {
