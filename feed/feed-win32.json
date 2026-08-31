@@ -1,7 +1,8 @@
 {
   "version": "0.11.0",
   "name": "v0.11.0",
+  "notes": "",
   "pub_date": "2026-08-31T11:52:06.850Z",
-  "url": "https://github.com/picteus/picteus/releases/download/V0.11.0/Picteus-v0.11.0-win32-x64.exe",
+  "url": "https://github.com/picteus/picteus/releases/download/v0.11.0/Picteus-v0.11.0-win32-x64.exe",
   "sha512": "0gsAb7a6GWcnnE0r2+CDNORGX4LiDCIm5kuJTUgF7KZMpNA+LDiIolOpDRFU9ky8hS0NmCrAhkIcmF3re9O0bA=="
 }
