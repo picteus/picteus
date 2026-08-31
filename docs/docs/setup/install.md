@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Installation
 
 Let's see how to download and install the application.

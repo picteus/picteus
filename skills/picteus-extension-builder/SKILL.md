@@ -17,6 +17,7 @@ To understand the full scope of what is possible, you can refer to the following
 - **TypeScript Example**: [https://github.com/picteus/picteus/tree/main/extensions/instances/example-typescript](https://github.com/picteus/picteus/tree/main/extensions/instances/example-typescript)
 - **Manifest JSON Schema**: [https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json](https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json)
 - **OpenAPI JSON Specifications**: [https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/back-end/openapi.json](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/back-end/openapi.json)
+- **Unpacked Extensions & Hot-Module Reload**: [https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/docs/extensions/unpacked.md](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/docs/extensions/unpacked.md)
 
 ## 2. The Manifest Contract (`manifest.json`)
 The `manifest.json` defines the extension metadata, required runtimes, capabilities, settings, UI, and how it handles events.
@@ -51,19 +52,14 @@ The extension is built by extending the base class `PicteusExtension` provided b
 Extensions communicate with the Picteus server using the `Communicator` and specific APIs.
 
 ### The Communicator (Intents)
-Intents enable the extension to send instructions to the back-end server. The complete definitions of the intent types are accessible at:
+Intents enable the extension to send instructions to the back-end server, which are translated into user interactions in the front-end application. The complete definitions of the intent types are accessible at:
 - **TypeScript / Node.js**: [intents.ts](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/extensions/sdk/typescript/src/intents.ts)
 - **Python**: [intents.py](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/extensions/sdk/python/picteus_extension_sdk/intents.py)
 
 Use `communicator.launchIntent()` (TS) or `communicator.launch_intent()` (Python) to trigger interactions:
-- **Forms**: Gather user input by defining a JSON schema form.
-- **Dialogs**: Ask questions (Yes/No), display errors, info, or warnings using `IntentDialogType`.
-- **UI**: Open a specific UI frame (Sidebar, Modal, Window) defined in your manifest.
-- **Show**: Navigate the Picteus UI to a specific image, settings page, or repository.
-- **ServeBundle**: Host a packaged HTML/JS application (like an iframe).
-- **Images**: Display a grid of newly generated or converted images to the user.
+The description and examples are available at https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/docs/extensions/reference/intents.md.
 
-*Logging*: Always use `communicator.sendLog()` / `communicator.send_log()` instead of standard console prints for server-side traceability.
+*Logging*: Always use `communicator.sendLog()` / `communicator.send_log()` instead of standard console prints for server-side traceability that should be brought to the attention of the user. Otherwise, resort to the `this.logger.debug()`, `this.logger.info()`, `this.logger.warn()`, `this.logger.error()` / `self.logger.info()`, `self.logger.info()`, `this.self.warn()`, `self.logger.error()` API.
 
 ### Base Class Methods and APIs
 The `PicteusExtension` base class provides access to the backend APIs and extension state:
@@ -72,6 +68,7 @@ The `PicteusExtension` base class provides access to the backend APIs and extens
 **Backend APIs**:
 - **Image API** (`this.getImageApi()` / `self.get_image_api()`): Search images, download blobs, convert formats, update tags, or update features.
 - **Repository API** (`this.getRepositoryApi()` / `self.get_repository_api()`): Store new images or list available repositories.
+- **Collection API** (`this.getCollectionApi()` / `self.get_collection_api()`): Query, create, inspect, and organize user collections of images.
 - **Extension API** (`this.getExtensionApi()` / `self.get_extension_api()`): Manage extension-related resources.
 - **API Secret API** (`this.getApiSecretApi()` / `self.get_api_secret_api()`): Access securely stored secrets.
 - **Miscellaneous API** (`this.getMiscellaneousApi()` / `self.get_miscellaneous_api()`): Handle miscellaneous server requests.
@@ -90,12 +87,13 @@ The `PicteusExtension` base class provides access to the backend APIs and extens
 - **`requirements.txt`**: You can modify this file to add/update Python package dependencies.
 - **`manifest.json`**: You can and should modify this when changing the extension contract.
 
-### Hot-Reload Mechanism
-**Extension auto-reload trigger**: As soon as the `manifest.json` file is touched (created, modified, or saved), the Picteus back-end automatically detects the change and reloads the extension. This means:
-- No manual restart is required.
-- Changes to `manifest.json` take immediate effect after the file is saved.
-- Changes to source code require a rebuild (for TypeScript) or a restart (depending on deployment).
-- Always update `manifest.json` when changing the extension's events, commands, or settings to ensure the back-end recognizes the changes.
+### Hot-Module Reload (HMR) Mechanism
+The "Hot-Module Reload" feature enables rapid iteration during development. Detailed documentation is available at https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/docs/extensions/unpacked.md.
+
+**Extension auto-reload trigger**: Whenever some code of the extension has been modified, its manifest modified, or any resource modified, the `manifest.json` file should be touched (created, modified, or saved). Provided the extension has been installed as "unpacked", this will cause the back-end application to automatically recompile the extension (running its `build` script for TypeScript/Node.js) and restart it:
+- No manual restart of the Picteus application is required.
+- Touching or saving `manifest.json` causes the back-end to recompile and restart the unpacked extension immediately.
+- Changes to UI commands, settings schemas, and event subscriptions take immediate effect in the user interface.
 
 ## 6. AI Directives for Code Generation
 Important: Extension generation must strictly follow the OpenAPI specifications at https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/back-end/openapi.json. Generated DTOs, request/response bodies, parameter schemas, and any validation must respect the DTO property constraints (types, required fields, formats) and pattern (regex) defined in the OpenAPI file.

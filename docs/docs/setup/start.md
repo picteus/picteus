@@ -1,7 +1,3 @@
----
-sidebar_position: 2
----
-
 # Start
 
 Once the application is installed, you can launch it:
@@ -71,12 +67,14 @@ The application yields logs: when starting it from its desktop icon, logs are no
 
 ### Log files location
 
-Log messages are also persisted into log files on the local filesystem, namly in the following directory path:
+Log messages are also persisted into log files on the local filesystem, namely in the following directory path:
 - **Windows**: `C:\Users\<user>\AppData\Roaming\Picteus\logs`,
 - **macOS**: `/Users/<user>/Library/Logs/Picteus`,
 - **Linux**: `/home/<user>/.config/Picteus/logs`.
 
 where `<user>` is the user's login.
+
+The Electron application offers the "Logs Folder" entry in the main "Picteus" menu, which opens the file explorer located in that directory.
 
 The log files are split by component:
 - the Electron application logs are written to the `picteus-electron.log` file ;

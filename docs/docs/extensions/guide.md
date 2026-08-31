@@ -9,11 +9,11 @@ In order to start developing an extension, you need to decide the programming la
 - **TypeScript / Node.js**: requires a compilation step to compile TypeScript into JavaScript — via the `npm run build` command. When developing unpacked extensions, code changes require recompilation before they are reloaded by the runtime ;
 - **Python**: as an interpreted language, Python requires no compilation phase. Source code files are executed directly by the runtime upon the next reload, which makes the [Hot-Reloading Module (HMR)](./unpacked.md#hot-reloading-module-hmr-mechanism) cycle significantly faster and more seamless during development.
 
-For more details on the hosted runtime environments and versions, see the [Language & runtime](./reference.md#language--runtime) section in the reference documentation.
+For more details on the hosted runtime environments and versions, see the [Language & runtime](./reference/overview.md#language--runtime) section in the reference documentation.
 
 ## Initial scaffolding
 
- The next step is to have the scaffolding of all the necessary resources of an extension.
+ The next step is to have the scaffolding of all the necessary resources of an extension, containing the 2 main resources described in [overview.md](reference/overview.md#extension-anatomy-what-you-need-to-build-an-extension).
 
 ### Via generation
 
@@ -37,7 +37,7 @@ Once you have retrieved their source code, you may copy their directory and past
 If you prefer to learn in depth and understand in details the composition of an extension, you may create all the necessary resources "manually".
 
 If you decide to go this way, you should:
-- take as reference the JSON Schema associated to the manifest, see [The extension manifest — `manifest.json`](./reference.md#the-extension-manifest--manifestjson) for more information ;
+- take as reference the JSON Schema associated to the manifest, see [The extension manifest — `manifest.json`](./reference/overview.md#the-extension-manifest--manifestjson) for more information ;
 - inspect the source code of the SDKs, located in the `extensions/sdk` of the hereby git repository, and have a look at the `PicteusExtension` class public methods, in order to have a grasp of the API (documentation to come).
 
 ### Via an AI coding agent

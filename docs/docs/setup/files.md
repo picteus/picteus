@@ -1,7 +1,3 @@
----
-sidebar_position: 3
----
-
 # Files
 
 The application takes great care not to pollute the computer it is installed. To that extent, it isolates and places all the files it downloads, installs and handles within a single folder.
