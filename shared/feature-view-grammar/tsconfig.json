@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "rootDir": "./src/emitter",
+    "outDir": "./dist/emitter"
+  },
+  "include": [
+    "src/emitter/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

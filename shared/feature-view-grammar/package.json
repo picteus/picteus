@@ -1,0 +1,50 @@
+{
+  "name": "@picteus/feature-view-grammar",
+  "version": "0.1.0",
+  "description": "TypeSpec meta-model and visual grammar for describing the graphical representation of image features in Picteus.",
+  "keywords": [
+    "picture",
+    "image",
+    "lens",
+    "voyager",
+    "explorer",
+    "search",
+    "Odysseus"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "GNU Affero General Public License",
+  "private": true,
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "homepage": "https://github.com/picteus/picteus",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "type": "module",
+  "main": "dist/emitter/index.js",
+  "scripts": {
+    "build:emitter": "tsc -p tsconfig.json",
+    "run:emitter": "tsp compile src",
+    "build": "npm run build:emitter && npm run run:emitter",
+    "check": "tsp compile --no-emit src",
+    "build:test": "tsc -p test/tsconfig.json",
+    "test:ts": "npm run build:test && node --test dist/test/test/specimen-builder.test.js",
+    "test:py": "python3 test/test_specimen_builder.py",
+    "test": "npm run build && npm run test:ts && npm run test:py"
+  },
+  "devDependencies": {
+    "@typespec/compiler": "1.15.0",
+    "@typespec/json-schema": "1.15.0",
+    "@types/node": "22.17.1",
+    "typescript": "5.9.2"
+  }
+}
