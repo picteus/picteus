@@ -20,6 +20,7 @@ model Slot {
   Multi-slot horizontal row with declared column width proportions.
   Examples: "1/3 + 2/3", "equal thirds", "1/4 + 3/4".
   """)
+@uiLayout("row-slots")
 @dslAlias("multiSlot")
 model MultiSlotRowElement extends UiElement {
   @doc("Discriminator type")
@@ -36,18 +37,22 @@ model MultiSlotRowElement extends UiElement {
   Standard label and value row.
   Displays a muted label on the left and value representation on the right with a vertical dividing line.
   """)
+@uiLayout("row")
 @dslAlias("labelValue")
 model LabelValueRowElement extends UiElement {
   @doc("Discriminator type")
   type: "label-value";
 
   @doc("Key or descriptive label displayed muted on the left")
+  @uiLabel
   label: string;
 
   @doc("Rendered value element on the right")
+  @uiValue
   value: UiElement;
 
   @doc("Whether to render a bottom border/hairline divider")
+  @uiDivider("horizontal")
   withDivider?: boolean = false;
 }
 
@@ -85,6 +90,7 @@ model TableRow {
   Structured tabular data representation.
   Supports header/borderless modes, 2-column key-value tables, and 3-column data tables.
   """)
+@uiLayout("table")
 model TableElement extends UiElement {
   @doc("Discriminator type")
   type: "table";
@@ -115,6 +121,7 @@ model RepeatingGroupEntry {
 }
 
 @doc("Repeating group container where entries share uniform structure and retain per-entry labels.")
+@uiLayout("repeating-group")
 model RepeatingGroupElement extends UiElement {
   @doc("Discriminator type")
   type: "repeating-group";
@@ -127,6 +134,7 @@ model RepeatingGroupElement extends UiElement {
 }
 
 @doc("Collapsible disclosure container (accordion) with summary badge.")
+@uiLayout("accordion")
 model CollapsibleGroupElement extends UiElement {
   @doc("Discriminator type")
   type: "collapsible-group";
@@ -157,6 +165,7 @@ enum DividerStyle {
 }
 
 @doc("Visual hairline separator separating sections or element groups.")
+@uiWidget("divider")
 model DividerElement extends UiElement {
   @doc("Discriminator type")
   type: "divider";

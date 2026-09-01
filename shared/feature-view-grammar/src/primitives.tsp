@@ -16,6 +16,7 @@ enum StringShortRepresentation {
   Short string primitive element.
   Supports plain text or compact chip pill presentation.
   """)
+@uiWidget("string-short")
 model StringShortElement extends UiElement {
   @doc("Discriminator type")
   type: "string-short";
@@ -27,10 +28,12 @@ model StringShortElement extends UiElement {
   representation?: StringShortRepresentation = StringShortRepresentation.plain;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Multiline text block primitive element for descriptions, comments, or prose.")
+@uiWidget("string-long")
 model StringLongElement extends UiElement {
   @doc("Discriminator type")
   type: "string-long";
@@ -39,10 +42,12 @@ model StringLongElement extends UiElement {
   value: string;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Monospace code block or formatted code snippet representation.")
+@uiWidget("string-code")
 model StringCodeElement extends UiElement {
   @doc("Discriminator type")
   type: "string-code";
@@ -54,10 +59,12 @@ model StringCodeElement extends UiElement {
   language?: string;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Hyperlink representation for external or internal URL navigation.")
+@uiWidget("string-url")
 model StringUrlElement extends UiElement {
   @doc("Discriminator type")
   type: "string-url";
@@ -69,10 +76,12 @@ model StringUrlElement extends UiElement {
   label?: string;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Monospace semantic identifier representation.")
+@uiWidget("identifier")
 model IdentifierElement extends UiElement {
   @doc("Discriminator type")
   type: "identifier";
@@ -81,10 +90,12 @@ model IdentifierElement extends UiElement {
   value: string;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Aspect ratio representation (e.g. \"16:9\", \"4:3\", \"1:1\").")
+@uiWidget("ratio")
 model RatioElement extends UiElement {
   @doc("Discriminator type")
   type: "ratio";
@@ -93,10 +104,12 @@ model RatioElement extends UiElement {
   value: string;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Single color swatch representation with hex value and copy affordance.")
+@uiWidget("color-swatch")
 @dslAlias("colorSwatch")
 model ColourElement extends UiElement {
   @doc("Discriminator type")
@@ -106,10 +119,12 @@ model ColourElement extends UiElement {
   value: string;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Plain unbounded numeric value primitive element.")
+@uiWidget("number-unbounded")
 model NumberUnboundedElement extends UiElement {
   @doc("Discriminator type")
   type: "number-unbounded";
@@ -121,10 +136,12 @@ model NumberUnboundedElement extends UiElement {
   unit?: string;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Bounded numeric rating represented as visual stars.")
+@uiWidget("number-stars")
 @dslAlias("numberStars")
 model NumberBoundedStarsElement extends UiElement {
   @doc("Discriminator type")
@@ -134,13 +151,16 @@ model NumberBoundedStarsElement extends UiElement {
   value: float64;
 
   @doc("Maximum rating scale (defaults to 5)")
+  @uiMeterBound("maximum")
   maximum?: float64 = 5;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Bounded numeric meter representation (read-only progress / score bar).")
+@uiWidget("meter")
 @dslAlias("numberMeter")
 model NumberBoundedMeterElement extends UiElement {
   @doc("Discriminator type")
@@ -150,22 +170,28 @@ model NumberBoundedMeterElement extends UiElement {
   value: float64;
 
   @doc("Minimum scale bound (defaults to 0)")
+  @uiMeterBound("minimum")
   minimum?: float64 = 0;
 
   @doc("Maximum scale bound (e.g. 100)")
+  @uiMeterBound("maximum")
   maximum?: float64 = 100;
 
   @doc("Optional custom text label override (e.g. \"68 / 100\")")
+  @uiMeterBound("label")
   label?: string;
 
   @doc("Optional unit suffix (e.g. \"%\")")
+  @uiMeterBound("unit")
   unit?: string;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Plain boolean value representation (textual \"true\" / \"false\").")
+@uiWidget("boolean-plain")
 model BooleanPlainElement extends UiElement {
   @doc("Discriminator type")
   type: "boolean-plain";
@@ -174,6 +200,7 @@ model BooleanPlainElement extends UiElement {
   value: boolean;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
@@ -193,6 +220,7 @@ enum BadgeVariant {
 }
 
 @doc("Visual badge pill representation of a boolean state.")
+@uiWidget("boolean-badge")
 model BooleanBadgeElement extends UiElement {
   @doc("Discriminator type")
   type: "boolean-badge";
@@ -210,6 +238,7 @@ model BooleanBadgeElement extends UiElement {
   variant?: BadgeVariant = BadgeVariant.neutral;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
@@ -229,6 +258,7 @@ enum TimestampFormat {
 }
 
 @doc("Formatted date and time representation.")
+@uiWidget("timestamp")
 model TimestampElement extends UiElement {
   @doc("Discriminator type")
   type: "timestamp";
@@ -240,10 +270,12 @@ model TimestampElement extends UiElement {
   format?: TimestampFormat = TimestampFormat.full;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
 @doc("Thumbnail image reference with placeholder fallback handling.")
+@uiWidget("image-ref")
 @dslAlias("imageRef")
 model ImageReferenceElement extends UiElement {
   @doc("Discriminator type")
@@ -263,6 +295,7 @@ model ImageReferenceElement extends UiElement {
 }
 
 @doc("Dominant color set palette rendered in descending dominance order.")
+@uiWidget("color-set")
 @dslAlias("dominantColors")
 model DominantColourSetElement extends UiElement {
   @doc("Discriminator type")

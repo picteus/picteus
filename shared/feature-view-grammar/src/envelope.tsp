@@ -16,6 +16,7 @@ namespace Picteus.FeatureViewGrammar;
   """)
 @jsonSchema
 @dslRoot
+@uiLayout("card")
 model FeatureBlock {
   @doc("Schema specification version")
   schemaVersion: "1.0" = "1.0";

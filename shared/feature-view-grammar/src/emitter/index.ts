@@ -3,21 +3,36 @@ import { createTypeSpecLibrary, EmitContext, emitFile, resolvePath } from "@type
 import { extractTypeSpecGrammarModel } from "./typespecModel.js";
 import { generateTypeScriptCode } from "./typescriptGenerator.js";
 import { generatePythonCode } from "./pythonGenerator.js";
+import { generateReactCode } from "./reactGenerator.js";
 
 
 export {
   $dslRoot,
   $dslAlias,
   $dslIgnore,
+  $uiLayout,
+  $uiWidget,
+  $uiLabel,
+  $uiValue,
+  $uiDivider,
+  $uiMeterBound,
+  $uiModifiers,
   isDslRoot,
   getModelAliases,
-  isDslIgnored
+  isDslIgnored,
+  getUiLayout,
+  getUiWidget,
+  isUiLabel,
+  isUiValue,
+  getUiDivider,
+  getUiMeterBound,
+  isUiModifiers
 } from "./decorators.js";
 
 export interface FeatureViewGrammarEmitterOptions
 {
   "emitter-output-dir"?: string;
-  targets?: ("typescript" | "python")[];
+  targets?: ("typescript" | "python" | "react")[];
 }
 
 export const $lib = createTypeSpecLibrary(
@@ -31,7 +46,7 @@ export const $lib = createTypeSpecLibrary(
           "emitter-output-dir": { type: "string", nullable: true },
           targets: {
             type: "array",
-            items: { type: "string", enum: [ "typescript", "python" ] },
+            items: { type: "string", enum: [ "typescript", "python", "react" ] },
             nullable: true
           }
         },
@@ -45,7 +60,7 @@ export async function $onEmit(context: EmitContext<FeatureViewGrammarEmitterOpti
 {
   const program = context.program;
   const spec = extractTypeSpecGrammarModel(program);
-  const targets = context.options.targets ?? [ "typescript", "python" ];
+  const targets = context.options.targets ?? [ "typescript", "python", "react" ];
   const outputDir = context.emitterOutputDir;
 
   if (targets.includes("typescript"))
@@ -60,5 +75,12 @@ export async function $onEmit(context: EmitContext<FeatureViewGrammarEmitterOpti
     const pyCode = generatePythonCode(spec);
     const pyPath = resolvePath(outputDir, "python", "feature_view_grammar.py");
     await emitFile(program, { path: pyPath, content: pyCode });
+  }
+
+  if (targets.includes("react"))
+  {
+    const reactCode = generateReactCode(spec);
+    const reactPath = resolvePath(outputDir, "react", "FeatureViewGrammar.tsx");
+    await emitFile(program, { path: reactPath, content: reactCode });
   }
 }

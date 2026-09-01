@@ -13,4 +13,4 @@ options:
     targets:
       - "typescript"
       - "python"
-
+      - "react"

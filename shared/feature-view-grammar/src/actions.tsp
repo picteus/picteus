@@ -18,6 +18,7 @@ enum ButtonVariant {
 }
 
 @doc("Interactive button action triggering an extension command.")
+@uiWidget("button-action")
 model ButtonActionElement extends ActionElement {
   @doc("Discriminator type")
   type: "button";
@@ -42,6 +43,7 @@ model ButtonActionElement extends ActionElement {
 }
 
 @doc("External link action distinct from inline URL text values.")
+@uiWidget("link-action")
 model ExternalLinkActionElement extends ActionElement {
   @doc("Discriminator type")
   type: "external-link";

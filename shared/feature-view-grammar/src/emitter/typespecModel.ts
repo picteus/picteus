@@ -1,6 +1,17 @@
 import { getDiscriminator, getDoc, Model, ModelProperty, Program, Scalar, Type } from "@typespec/compiler";
 
-import { getModelAliases, isDslIgnored, isDslRoot } from "./decorators.js";
+import {
+  getModelAliases,
+  getUiDivider,
+  getUiLayout,
+  getUiMeterBound,
+  getUiWidget,
+  isDslIgnored,
+  isDslRoot,
+  isUiLabel,
+  isUiModifiers,
+  isUiValue
+} from "./decorators.js";
 
 
 export interface GrammarEnumMember
@@ -45,6 +56,11 @@ export interface GrammarProperty
   optional: boolean;
   type: GrammarType;
   defaultValue?: string | number | boolean;
+  isUiLabel?: boolean;
+  isUiValue?: boolean;
+  uiDivider?: { orientation?: string };
+  uiMeterBound?: string;
+  isUiModifiers?: boolean;
 }
 
 export interface GrammarModel
@@ -58,6 +74,8 @@ export interface GrammarModel
   isDslIgnored: boolean;
   aliases: string[];
   properties: GrammarProperty[];
+  uiLayout?: string;
+  uiWidget?: string;
 }
 
 export interface PolymorphicRoot
@@ -266,7 +284,12 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
           doc: getDoc(program, prop),
           optional: prop.optional,
           type: propType,
-          defaultValue
+          defaultValue,
+          isUiLabel: isUiLabel(program, prop),
+          isUiValue: isUiValue(program, prop),
+          uiDivider: getUiDivider(program, prop),
+          uiMeterBound: getUiMeterBound(program, prop),
+          isUiModifiers: isUiModifiers(program, prop)
         }
       );
     }
@@ -286,7 +309,9 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
         isDslRoot: modelIsDslRoot,
         isDslIgnored: modelIsDslIgnored,
         aliases,
-        properties
+        properties,
+        uiLayout: getUiLayout(program, modelType),
+        uiWidget: getUiWidget(program, modelType)
       }
     );
   }

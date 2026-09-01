@@ -3,6 +3,7 @@ import "./base.tsp";
 namespace Picteus.FeatureViewGrammar;
 
 @doc("Full Markdown fallback block rendered with core typographic hierarchy, spacing, and styling.")
+@uiWidget("markdown")
 @dslAlias("markdown")
 model MarkdownBlockElement extends UiElement {
   @doc("Discriminator type")
@@ -13,6 +14,7 @@ model MarkdownBlockElement extends UiElement {
 }
 
 @doc("Sandboxed HTML rendering escape hatch.")
+@uiWidget("html")
 @dslAlias("html")
 model HtmlBlockElement extends UiElement {
   @doc("Discriminator type")
