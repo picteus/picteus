@@ -34,7 +34,8 @@
   "scripts": {
     "build:emitter": "tsc -p tsconfig.json",
     "run:emitter": "tsp compile src",
-    "build": "npm run build:emitter && npm run run:emitter",
+    "deploy:emitter": "shx mkdir -p ../core/src/generated && shx cp dist/typescript/featureViewGrammar.ts ../core/src/generated",
+    "build": "npm run build:emitter && npm run run:emitter && npm run deploy:emitter",
     "check": "tsp compile --no-emit src",
     "build:test": "tsc -p test/tsconfig.json",
     "test:ts": "npm run build:test && node --test dist/test/test/specimen-builder.test.js",
@@ -42,9 +43,10 @@
     "test": "npm run build && npm run test:ts && npm run test:py"
   },
   "devDependencies": {
+    "shx": "0.4.0",
+    "@types/node": "22.17.1",
     "@typespec/compiler": "1.15.0",
     "@typespec/json-schema": "1.15.0",
-    "@types/node": "22.17.1",
     "typescript": "5.9.2"
   }
 }

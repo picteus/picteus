@@ -37,7 +37,7 @@
   "files": ["./dist"],
   "scripts": {
     "reset": "npm run clean && shx rm -rf node_modules",
-    "clean": "shx rm -rf ./dist",
+    "clean": "shx rm -rf ./src/generated ./dist",
     "compile": "tsc && tsc-alias --resolve-full-paths",
     "build": "npm run compile"
   },
