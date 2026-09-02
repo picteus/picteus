@@ -10,12 +10,14 @@ import {
   ButtonActionElementClass,
   ButtonVariant,
   collapsibleGroup,
+  createFeature,
   createFeatureBlock,
   divider,
   DividerStyle,
   dominantColors,
   Emphasis,
   externalLinkAction,
+  Feature,
   FeatureBlock,
   html,
   isActionElement,
@@ -250,6 +252,25 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
 
     const json = JSON.stringify(shortClass.toJSON());
     assert.equal(json, "{\"type\":\"string-short\",\"value\":\"Class Value\",\"representation\":\"chip\"}");
+  });
+
+  it("should construct Feature container using Feature fluent builder and functional helper", () =>
+  {
+    const feat = Feature.builder()
+      .addLabelValue("Key", stringShort("Value"))
+      .addAction(buttonAction("export", "Export"))
+      .build();
+
+    assert.equal(feat.schemaVersion, "1.0");
+    assert.equal(feat.elements.length, 1);
+    assert.equal(feat.elements[0].type, "label-value");
+    assert.equal(feat.actions?.length, 1);
+
+    const featHelper = createFeature({
+      elements: [ labelValue("Direct", stringShort("Text")) ]
+    });
+    assert.equal(featHelper.schemaVersion, "1.0");
+    assert.equal(featHelper.elements.length, 1);
   });
 
 });

@@ -523,7 +523,9 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     {
       continue;
     }
-    const extendsClause = model.baseModelName ? ` extends ${model.baseModelName}Base` : "";
+    const extendsClause = model.baseModelName
+      ? (polymorphicRootNames.has(model.baseModelName) ? ` extends ${model.baseModelName}Base` : ` extends ${model.baseModelName}`)
+      : "";
     lines.push(formatTsDoc({ summary: model.doc }));
     lines.push(`export interface ${model.name}${extendsClause}`);
     lines.push("{");
@@ -567,7 +569,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   lines.push("");
   for (const model of spec.models)
   {
-    if (polymorphicRootNames.has(model.name) || model.name === "FeatureBlock" || model.isDslIgnored)
+    if (polymorphicRootNames.has(model.name) || model.isDslRoot || model.name === "FeatureBlock" || model.isDslIgnored)
     {
       continue;
     }
@@ -575,11 +577,12 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push(...classLines);
   }
 
-  // 6. Generate Model-Driven Fluent Builder for @dslRoot (or fallback rootModel)
-  const root = spec.rootModel;
-  if (root)
+  // 6. Generate Model-Driven Fluent Builders for all @dslRoot models
+  const rootModels = spec.rootModels.length > 0 ? spec.rootModels : (spec.rootModel ? [ spec.rootModel ] : []);
+  for (const root of rootModels)
   {
     const builderClassName = `${root.name}Builder`;
+    const hasSchemaVersion = root.properties.some((p) => p.name === "schemaVersion");
     const rootNonTypeProps = root.properties.filter((p) => p.name !== "type" && p.name !== "schemaVersion");
     const rootReqProps = rootNonTypeProps.filter((p) => !p.optional && p.type.kind !== "array" && p.defaultValue === undefined);
     const rootOptProps = rootNonTypeProps.filter((p) => (p.optional || p.defaultValue !== undefined) && p.type.kind !== "array");
@@ -587,7 +590,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
 
     lines.push(
       formatTsDoc({
-        summary: `Fluent builder for constructing strongly-typed \`${root.name}\` card instances.`,
+        summary: `Fluent builder for constructing strongly-typed \`${root.name}\` instances.`,
         remarks: root.doc
       })
     );
@@ -607,14 +610,17 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       const elemType = resolveTsType(p.type.elementType ?? { kind: "unknown", name: "unknown" });
       lines.push(`  private readonly _${p.name}: ${elemType}[] = [];`);
     }
-    lines.push("");
+    if (rootReqProps.length > 0 || rootOptProps.length > 0 || rootArrayProps.length > 0)
+    {
+      lines.push("");
+    }
 
     const ctorArgs = rootReqProps.map((p) => `${p.name}: ${resolveTsType(p.type)}`).join(", ");
     const ctorDocParams: TsDocParam[] = rootReqProps.map((p) => ({ name: p.name, description: p.doc }));
 
     lines.push(
       formatTsDoc({
-        summary: `Initializes a new \`${builderClassName}\` with mandatory card properties.`,
+        summary: `Initializes a new \`${builderClassName}\`.`,
         params: ctorDocParams,
         indent: "  "
       })
@@ -633,7 +639,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     {
       lines.push(
         formatTsDoc({
-          summary: `Sets the \`${p.name}\` property on this card.`,
+          summary: `Sets the \`${p.name}\` property on this builder.`,
           params: [ { name: p.name, description: p.doc } ],
           returns: "This builder instance for method chaining.",
           indent: "  "
@@ -659,7 +665,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       {
         lines.push(
           formatTsDoc({
-            summary: "Appends a visual element to the card.",
+            summary: "Appends a visual element.",
             params: [ { name: "element", description: "The visual UI element component to add." } ],
             returns: "This builder instance for method chaining.",
             indent: "  "
@@ -675,7 +681,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
 
       lines.push(
         formatTsDoc({
-          summary: `Appends multiple ${p.name} items to the card.`,
+          summary: `Appends multiple ${p.name} items.`,
           params: [ { name: "items", description: `The \`${elemType}\` items to add.` } ],
           returns: "This builder instance for method chaining.",
           indent: "  "
@@ -692,7 +698,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       {
         lines.push(
           formatTsDoc({
-            summary: `Appends a single ${singularName} to the card.`,
+            summary: `Appends a single ${singularName}.`,
             params: [ { name: "item", description: `The \`${elemType}\` item to add.` } ],
             returns: "This builder instance for method chaining.",
             indent: "  "
@@ -745,7 +751,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         const methodName = `add${capitalize(fnName)}`;
         lines.push(
           formatTsDoc({
-            summary: `Appends a \`${uiModel.name}\` component to this feature card.`,
+            summary: `Appends a \`${uiModel.name}\` component.`,
             remarks: uiModel.doc,
             params: methodDocParams,
             returns: "This builder instance for method chaining.",
@@ -762,7 +768,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
 
     lines.push(
       formatTsDoc({
-        summary: `Finalizes and returns the complete strongly-typed \`${root.name}\` card object.`,
+        summary: `Finalizes and returns the complete strongly-typed \`${root.name}\` object.`,
         returns: `The constructed \`${root.name}\` object.`,
         indent: "  "
       })
@@ -770,7 +776,10 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push(`  build(): ${root.name}`);
     lines.push("  {");
     lines.push("    return {");
-    lines.push("      schemaVersion: \"1.0\",");
+    if (hasSchemaVersion)
+    {
+      lines.push("      schemaVersion: \"1.0\",");
+    }
     for (const p of rootReqProps)
     {
       lines.push(`      ${p.name}: this._${p.name},`);
@@ -815,7 +824,8 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     );
     lines.push(`  builder(${ctorArgs}): ${builderClassName}`);
     lines.push("  {");
-    lines.push(`    return new ${builderClassName}(${rootReqProps.map((p) => p.name).join(", ")});`);
+    const builderCallArgs = rootReqProps.map((p) => p.name).join(", ");
+    lines.push(`    return new ${builderClassName}(${builderCallArgs});`);
     lines.push("  },");
     lines.push("");
 
@@ -823,7 +833,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push(
       formatTsDoc({
         summary: `Creates a \`${root.name}\` directly from a properties object.`,
-        params: [ { name: "params", description: "Card configuration properties." } ],
+        params: [ { name: "params", description: "Configuration properties." } ],
         returns: `A completed \`${root.name}\` object.`,
         indent: "  "
       })
@@ -831,7 +841,10 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push(`  create(params: { ${createParams} }): ${root.name}`);
     lines.push("  {");
     lines.push("    return {");
-    lines.push("      schemaVersion: \"1.0\",");
+    if (hasSchemaVersion)
+    {
+      lines.push("      schemaVersion: \"1.0\",");
+    }
     for (const p of rootNonTypeProps)
     {
       if (p.type.kind === "array" && p.optional)
@@ -866,15 +879,21 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         remarks: root.doc,
         params: [
           ...ctorDocParams,
-          { name: "options", description: "Optional card configuration (description, attribution, elements, actions)." }
+          ...(rootOptCreateFields.length > 0 ? [ { name: "options", description: "Optional configuration (description, elements, actions)." } ] : [])
         ],
-        returns: `A strongly-typed \`${root.name}\` card.`
+        returns: `A strongly-typed \`${root.name}\` instance.`
       })
     );
-    lines.push(`export function ${createFnName}(${ctorArgs}, options?: { ${rootOptCreateFields} }): ${root.name}`);
+    const optionsParam = rootOptCreateFields.length > 0
+      ? (rootReqProps.length > 0 ? `, options?: { ${rootOptCreateFields} }` : `options?: { ${rootOptCreateFields} }`)
+      : "";
+    lines.push(`export function ${createFnName}(${ctorArgs}${optionsParam}): ${root.name}`);
     lines.push("{");
     lines.push("  return {");
-    lines.push("    schemaVersion: \"1.0\",");
+    if (hasSchemaVersion)
+    {
+      lines.push("    schemaVersion: \"1.0\",");
+    }
     for (const p of rootReqProps)
     {
       lines.push(`    ${p.name},`);
@@ -907,7 +926,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
 
   for (const model of spec.models)
   {
-    if (polymorphicRootNames.has(model.name) || model === spec.rootModel || model.isDslIgnored)
+    if (polymorphicRootNames.has(model.name) || model.isDslRoot || spec.rootModels.includes(model) || model.isDslIgnored)
     {
       continue;
     }

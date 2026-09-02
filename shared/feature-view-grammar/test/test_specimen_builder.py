@@ -7,6 +7,9 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dist", "python"))
 
 from feature_view_grammar import (
+    Feature,
+    FeatureBuilder,
+    FeatureBlock,
     FeatureBlockBuilder,
     UiElementBase,
     ActionElementBase,
@@ -21,6 +24,7 @@ from feature_view_grammar import (
     ButtonVariant,
     TableColumnAlign,
     DividerStyle,
+    create_feature,
     create_feature_block,
     label_value,
     string_short,
@@ -206,6 +210,22 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertTrue(isinstance(btn, ActionElementProtocol))
         self.assertEqual(btn.type, "button")
         self.assertEqual(btn.command_id, "cmd")
+
+    def test_feature_builder(self):
+        feat = (
+            FeatureBuilder()
+            .add_label_value("Key", string_short("Value"))
+            .add_action(button_action(command_id="cmd", label="Action"))
+            .build()
+        )
+        self.assertTrue(isinstance(feat, Feature))
+        self.assertEqual(feat.schema_version, "1.0")
+        self.assertEqual(len(feat.elements), 1)
+        self.assertEqual(len(feat.actions), 1)
+
+        feat_helper = create_feature(elements=[label_value(label="Direct", value=string_short("Text"))])
+        self.assertEqual(feat_helper.schema_version, "1.0")
+        self.assertEqual(len(feat_helper.elements), 1)
 
 
 if __name__ == "__main__":

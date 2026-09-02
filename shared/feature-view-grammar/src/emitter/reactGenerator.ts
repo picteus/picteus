@@ -3,6 +3,15 @@
 import { GrammarModel, GrammarProperty, GrammarSpec } from "./typespecModel.js";
 
 
+const PROPS_TYPE_SUFFIX = "Type";
+const VIEW_SUFFIX = "View";
+const COPYABLE_WRAPPER_NAME = "CopyableWrapper";
+const UI_ELEMENT_ROOT_NAME = "UiElement";
+const ACTION_ELEMENT_ROOT_NAME = "ActionElement";
+const UI_ELEMENT_VIEW_NAME = `${UI_ELEMENT_ROOT_NAME}${VIEW_SUFFIX}`;
+const ACTION_ELEMENT_VIEW_NAME = `${ACTION_ELEMENT_ROOT_NAME}${VIEW_SUFFIX}`;
+const SHARED_CORE_PACKAGE = "@picteus/shared-core";
+
 const MANTINE_IMPORTS: readonly string[] = [
   "Accordion",
   "ActionIcon",
@@ -41,10 +50,11 @@ function computeTypeScriptImports(spec: GrammarSpec): string[]
     importNames.add(polymorphicRoot.name);
   }
 
-  // We include root model (e.g., FeatureBlock)
-  if (spec.rootModel)
+  // We include root models (e.g., Feature, FeatureBlock)
+  const rootModels = spec.rootModels.length > 0 ? spec.rootModels : (spec.rootModel ? [ spec.rootModel ] : []);
+  for (const rootModel of rootModels)
   {
-    importNames.add(spec.rootModel.name);
+    importNames.add(rootModel.name);
   }
 
   // We include all grammar enums (e.g., ButtonVariant, DividerStyle, Emphasis, etc.)
@@ -84,7 +94,7 @@ function wrapWithCopyableModifier(nodeExpression: string, valueExpression: strin
     ``,
     `  if (element.modifiers?.copyable)`,
     `  {`,
-    `    return <CopyableWrapper value={${valueExpression}}>{node}</CopyableWrapper>;`,
+    `    return <${COPYABLE_WRAPPER_NAME} value={${valueExpression}}>{node}</${COPYABLE_WRAPPER_NAME}>;`,
     `  }`,
     `  return node;`
   ].join("\n");
@@ -129,14 +139,16 @@ function generateComponentDefinition(
 
 function generateCopyableWrapper(): string
 {
+  const propsTypeName = `${COPYABLE_WRAPPER_NAME}${PROPS_TYPE_SUFFIX}`;
+
   return [
-    `type CopyableWrapperPropsType =`,
+    `type ${propsTypeName} =`,
     `{`,
     `  readonly value: string;`,
     `  readonly children: ReactNode;`,
     `};`,
     ``,
-    `function CopyableWrapper({ value, children }: CopyableWrapperPropsType): ReactNode`,
+    `function ${COPYABLE_WRAPPER_NAME}({ value, children }: ${propsTypeName}): ReactNode`,
     `{`,
     `  return (`,
     `    <Flex align="center" gap={4} component="span" style={{ display: "inline-flex", verticalAlign: "middle" }}>`,
@@ -167,9 +179,12 @@ function generateCopyableWrapper(): string
 
 function generateUiElementComponent(model: GrammarModel): string
 {
+  const componentName = `${model.name}${VIEW_SUFFIX}`;
+  const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
+
   return generateComponentDefinition(
-    `${model.name}View`,
-    `${model.name}ViewPropsType`,
+    componentName,
+    propsTypeName,
     "element",
     model.name,
     generateModelRenderBody(model)
@@ -226,9 +241,12 @@ function generateActionElementComponent(model: GrammarModel): string
     ].join("\n");
   }
 
+  const componentName = `${model.name}${VIEW_SUFFIX}`;
+  const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
+
   return generateComponentDefinition(
-    `${model.name}View`,
-    `${model.name}ViewPropsType`,
+    componentName,
+    propsTypeName,
     "action",
     model.name,
     body
@@ -571,7 +589,7 @@ function generateTableLayoutBody(): string
     `          <Table.Tr key={rowIndex}>`,
     `            {row.cells.map((cell, cellIndex) => (`,
     `              <Table.Td key={cellIndex}>`,
-    `                {typeof cell === "string" ? cell : <UiElementView element={cell} onAction={onAction}/>}`,
+    `                {typeof cell === "string" ? cell : <${UI_ELEMENT_VIEW_NAME} element={cell} onAction={onAction}/>}`,
     `              </Table.Td>`,
     `            ))}`,
     `          </Table.Tr>`,
@@ -592,9 +610,9 @@ function generateRepeatingGroupLayoutBody(): string
     `        {element.entries.map((entry, entryIndex) => (`,
     `          <Box key={entryIndex} p="xs" style={{ border: "1px solid var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-sm)" }}>`,
     `            <Text fw={500} size="sm" c="dimmed">{entry.label}</Text>`,
-    `            {entry.value && (typeof entry.value === "string" ? <Text size="sm">{entry.value}</Text> : <UiElementView element={entry.value} onAction={onAction}/>)}`,
+    `            {entry.value && (typeof entry.value === "string" ? <Text size="sm">{entry.value}</Text> : <${UI_ELEMENT_VIEW_NAME} element={entry.value} onAction={onAction}/>)}`,
     `            {entry.elements && entry.elements.map((childElement, childIndex) => (`,
-    `              <UiElementView key={childIndex} element={childElement} onAction={onAction}/>`,
+    `              <${UI_ELEMENT_VIEW_NAME} key={childIndex} element={childElement} onAction={onAction}/>`,
     `            ))}`,
     `          </Box>`,
     `        ))}`,
@@ -619,7 +637,7 @@ function generateAccordionLayoutBody(): string
     `        <Accordion.Panel>`,
     `          <Flex direction="column" gap="xs">`,
     `            {element.elements.map((childElement, childIndex) => (`,
-    `              <UiElementView key={childIndex} element={childElement} onAction={onAction}/>`,
+    `              <${UI_ELEMENT_VIEW_NAME} key={childIndex} element={childElement} onAction={onAction}/>`,
     `            ))}`,
     `          </Flex>`,
     `        </Accordion.Panel>`,
@@ -659,13 +677,14 @@ function generateFallbackWidgetBody(_model: GrammarModel): string
 }
 
 function generatePolymorphicDispatcher(
-  componentName: string,
-  propsTypeName: string,
+  rootName: typeof UI_ELEMENT_ROOT_NAME | typeof ACTION_ELEMENT_ROOT_NAME,
   propName: "element" | "action",
-  propType: "UiElement" | "ActionElement",
   models: GrammarModel[]
 ): string
 {
+  const componentName = `${rootName}${VIEW_SUFFIX}`;
+  const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
+
   const switchLines: string[] = [
     `  switch (${propName}.type)`,
     `  {`
@@ -673,8 +692,9 @@ function generatePolymorphicDispatcher(
 
   for (const model of models)
   {
+    const modelViewName = `${model.name}${VIEW_SUFFIX}`;
     switchLines.push(`    case "${model.discriminatorValue}":`);
-    switchLines.push(`      return <${model.name}View ${propName}={${propName}} onAction={onAction} className={className} style={style}/>;`);
+    switchLines.push(`      return <${modelViewName} ${propName}={${propName}} onAction={onAction} className={className} style={style}/>;`);
   }
 
   switchLines.push(`    default:`);
@@ -685,47 +705,108 @@ function generatePolymorphicDispatcher(
     componentName,
     propsTypeName,
     propName,
-    propType,
+    rootName,
     switchLines.join("\n")
   );
 }
 
-function generateFeatureBlockComponent(rootModel: GrammarModel): string
+function toLowerCamelCase(value: string): string
 {
-  const body = [
-    `  return (`,
-    `    <Card shadow="xs" padding="sm" radius="md" withBorder className={className} style={style}>`,
-    `      <Card.Section inheritPadding py="xs">`,
-    `        <Text fw={600} size="sm">{block.title}</Text>`,
-    `        {block.description && <Text size="xs" c="dimmed">{block.description}</Text>}`,
-    `      </Card.Section>`,
-    ``,
-    `      <Flex direction="column" gap="xs" my="xs">`,
-    `        {block.elements.map((element, elementIndex) => (`,
-    `          <UiElementView key={elementIndex} element={element} onAction={onAction}/>`,
-    `        ))}`,
-    `      </Flex>`,
-    ``,
-    `      {block.actions && block.actions.length > 0 && (`,
-    `        <Card.Section inheritPadding py="xs">`,
-    `          <Flex gap="xs" justify="flex-end">`,
-    `            {block.actions.map((action, actionIndex) => (`,
-    `              <ActionElementView key={actionIndex} action={action} onAction={onAction}/>`,
-    `            ))}`,
-    `          </Flex>`,
-    `        </Card.Section>`,
-    `      )}`,
-    `    </Card>`,
-    `  );`
-  ].join("\n");
+  if (value.length === 0)
+  {
+    return "";
+  }
 
-  return generateComponentDefinition(
-    `${rootModel.name}View`,
-    `${rootModel.name}ViewPropsType`,
-    "block",
-    rootModel.name,
-    body
-  );
+  return value.charAt(0).toLowerCase() + value.slice(1);
+}
+
+function generateRootContainerComponent(rootModel: GrammarModel): string
+{
+  const layout = rootModel.uiLayout ?? "card";
+  const componentName = `${rootModel.name}${VIEW_SUFFIX}`;
+  const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
+
+  switch (layout)
+  {
+    case "repeating-group":
+    {
+      const propName = toLowerCamelCase(rootModel.name);
+      const body = [
+        `  return (`,
+        `    <Box className={className} style={{ width: "100%", ...style }}>`,
+        `      <Flex direction="column" gap="xs">`,
+        `        {${propName}.elements.map((element, elementIndex) => (`,
+        `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
+        `        ))}`,
+        `      </Flex>`,
+        ``,
+        `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
+        `        <Flex gap="xs" justify="flex-end" mt="xs">`,
+        `          {${propName}.actions.map((action, actionIndex) => (`,
+        `            <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
+        `          ))}`,
+        `        </Flex>`,
+        `      )}`,
+        `    </Box>`,
+        `  );`
+      ].join("\n");
+
+      return generateComponentDefinition(
+        componentName,
+        propsTypeName,
+        propName,
+        rootModel.name,
+        body
+      );
+    }
+
+    case "card":
+    default:
+    {
+      const propName = layout === "card" ? "block" : toLowerCamelCase(rootModel.name);
+      const hasTitle = rootModel.properties.some((property) => property.name === "title");
+      const hasDescription = rootModel.properties.some((property) => property.name === "description");
+
+      const headerSection = hasTitle ? [
+        `      <Card.Section inheritPadding py="xs">`,
+        `        <Text fw={600} size="sm">{${propName}.title}</Text>`,
+        hasDescription ? `        {${propName}.description && <Text size="xs" c="dimmed">{${propName}.description}</Text>}` : ``,
+        `      </Card.Section>`,
+        ``
+      ].filter(Boolean) : [];
+
+      const body = [
+        `  return (`,
+        `    <Card shadow="xs" padding="sm" radius="md" withBorder className={className} style={style}>`,
+        ...headerSection,
+        `      <Flex direction="column" gap="xs" my="xs">`,
+        `        {${propName}.elements.map((element, elementIndex) => (`,
+        `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
+        `        ))}`,
+        `      </Flex>`,
+        ``,
+        `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
+        `        <Card.Section inheritPadding py="xs">`,
+        `          <Flex gap="xs" justify="flex-end">`,
+        `            {${propName}.actions.map((action, actionIndex) => (`,
+        `              <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
+        `            ))}`,
+        `          </Flex>`,
+        `        </Card.Section>`,
+        `      )}`,
+        `    </Card>`,
+        `  );`
+      ].join("\n");
+
+      return generateComponentDefinition(
+        componentName,
+        propsTypeName,
+        propName,
+        rootModel.name,
+        body
+      );
+    }
+  }
 }
 
 export function generateReactCode(spec: GrammarSpec): string
@@ -750,10 +831,8 @@ export function generateReactCode(spec: GrammarSpec): string
   // We generate universal ActionElement dispatcher
   componentBlocks.push(
     generatePolymorphicDispatcher(
-      "ActionElementView",
-      "ActionElementViewPropsType",
+      ACTION_ELEMENT_ROOT_NAME,
       "action",
-      "ActionElement",
       spec.actionElements
     )
   );
@@ -761,18 +840,17 @@ export function generateReactCode(spec: GrammarSpec): string
   // We generate universal UiElement dispatcher
   componentBlocks.push(
     generatePolymorphicDispatcher(
-      "UiElementView",
-      "UiElementViewPropsType",
+      UI_ELEMENT_ROOT_NAME,
       "element",
-      "UiElement",
       spec.uiElements
     )
   );
 
-  // We generate root FeatureBlockView component
-  if (spec.rootModel)
+  // We generate root components (e.g. FeatureView, FeatureBlockView)
+  const rootModels = spec.rootModels.length > 0 ? spec.rootModels : (spec.rootModel ? [ spec.rootModel ] : []);
+  for (const rootModel of rootModels)
   {
-    componentBlocks.push(generateFeatureBlockComponent(spec.rootModel));
+    componentBlocks.push(generateRootContainerComponent(rootModel));
   }
 
   // We assemble file header with exact imports
@@ -789,7 +867,7 @@ export function generateReactCode(spec: GrammarSpec): string
     ``,
     `import {`,
     typeImports.map((typeName) => `  ${typeName}`).join(",\n"),
-    `} from "@picteus/shared-core";`
+    `} from "${SHARED_CORE_PACKAGE}";`
   ];
 
   return [

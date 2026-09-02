@@ -100,6 +100,7 @@ export interface GrammarSpec
   uiElements: GrammarModel[];
   actionElements: GrammarModel[];
   rootModel?: GrammarModel;
+  rootModels: GrammarModel[];
 }
 
 function resolveGrammarType(program: Program, type: Type): GrammarType
@@ -340,9 +341,10 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
     }
   }
 
-  const rootModel = models.find((m) => m.isDslRoot) ?? models.find((m) => m.name === "FeatureBlock");
-  const uiRoot = polymorphicRoots.find((r) => r.name === "UiElement") ?? polymorphicRoots[0];
-  const actionRoot = polymorphicRoots.find((r) => r.name === "ActionElement") ?? polymorphicRoots[1];
+  const rootModels = models.filter((model) => model.isDslRoot);
+  const rootModel = rootModels.find((model) => model.name === "FeatureBlock") ?? rootModels[0] ?? models.find((model) => model.name === "FeatureBlock");
+  const uiRoot = polymorphicRoots.find((root) => root.name === "UiElement") ?? polymorphicRoots[0];
+  const actionRoot = polymorphicRoots.find((root) => root.name === "ActionElement") ?? polymorphicRoots[1];
 
   const uiElements = uiRoot ? uiRoot.derivedModels : [];
   const actionElements = actionRoot ? actionRoot.derivedModels : [];
@@ -354,6 +356,7 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
     polymorphicRoots,
     uiElements,
     actionElements,
-    rootModel
+    rootModel,
+    rootModels
   };
 }
