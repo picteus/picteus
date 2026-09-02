@@ -1,6 +1,7 @@
 import { getDiscriminator, getDoc, Model, ModelProperty, Program, Scalar, Type } from "@typespec/compiler";
 
 import {
+  DslAliasName,
   getModelAliases,
   getUiDivider,
   getUiLayout,
@@ -10,7 +11,11 @@ import {
   isDslRoot,
   isUiLabel,
   isUiModifiers,
-  isUiValue
+  isUiValue,
+  UiDividerOptions,
+  UiLayoutKind,
+  UiMeterBoundKind,
+  UiWidgetKind
 } from "./decorators.js";
 
 
@@ -58,8 +63,8 @@ export interface GrammarProperty
   defaultValue?: string | number | boolean;
   isUiLabel?: boolean;
   isUiValue?: boolean;
-  uiDivider?: { orientation?: string };
-  uiMeterBound?: string;
+  uiDivider?: UiDividerOptions;
+  uiMeterBound?: UiMeterBoundKind;
   isUiModifiers?: boolean;
 }
 
@@ -72,10 +77,10 @@ export interface GrammarModel
   discriminatorValue?: string;
   isDslRoot: boolean;
   isDslIgnored: boolean;
-  aliases: string[];
+  aliases: DslAliasName[];
   properties: GrammarProperty[];
-  uiLayout?: string;
-  uiWidget?: string;
+  uiLayout?: UiLayoutKind;
+  uiWidget?: UiWidgetKind;
 }
 
 export interface PolymorphicRoot

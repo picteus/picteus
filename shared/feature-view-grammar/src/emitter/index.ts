@@ -26,7 +26,13 @@ export {
   isUiValue,
   getUiDivider,
   getUiMeterBound,
-  isUiModifiers
+  isUiModifiers,
+  DslAliasName,
+  UiLayoutKind,
+  UiWidgetKind,
+  UiDividerOrientation,
+  UiDividerOptions,
+  UiMeterBoundKind
 } from "./decorators.js";
 
 export interface FeatureViewGrammarEmitterOptions
