@@ -22,10 +22,13 @@ import {
   html,
   isActionElement,
   isButtonActionElement,
+  isJsonElement,
   isLabelValueRowElement,
   isStringShortElement,
   isTableElement,
   isUiElement,
+  isXmlElement,
+  json,
   labelValue,
   markdown,
   multiSlot,
@@ -42,7 +45,8 @@ import {
   TableColumnAlign,
   tableRow,
   timestamp,
-  TimestampFormat
+  TimestampFormat,
+  xml
 } from "../dist/typescript/featureViewGrammar.js";
 
 
@@ -186,15 +190,27 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
     assert.equal(rep.entries[0].label, "Layer 1");
   });
 
-  it("should support escape hatches (Markdown and HTML)", () =>
+  it("should support escape hatches and structured data (Markdown, HTML, XML, and JSON) with BaseModifiers", () =>
   {
-    const md = markdown("### Heading\n- Item 1\n- Item 2");
+    const md = markdown("### Heading\n- Item 1\n- Item 2", { modifiers: { copyable: true } });
     assert.equal(md.type, "markdown");
     assert.equal(md.content, "### Heading\n- Item 1\n- Item 2");
+    assert.equal(md.modifiers?.copyable, true);
 
-    const ht = html("<div class='custom-widget'>Content</div>");
+    const ht = html("<div class='custom-widget'>Content</div>", { modifiers: { copyable: false } });
     assert.equal(ht.type, "html");
     assert.equal(ht.content, "<div class='custom-widget'>Content</div>");
+    assert.equal(ht.modifiers?.copyable, false);
+
+    const xmlElem = xml("<root><item id='1'>Value</item></root>", { modifiers: { copyable: true } });
+    assert.equal(xmlElem.type, "xml");
+    assert.equal(xmlElem.value, "<root><item id='1'>Value</item></root>");
+    assert.equal(xmlElem.modifiers?.copyable, true);
+
+    const jsonElem = json("{\"key\": \"value\", \"count\": 42}", { modifiers: { copyable: true } });
+    assert.equal(jsonElem.type, "json");
+    assert.equal(jsonElem.value, "{\"key\": \"value\", \"count\": 42}");
+    assert.equal(jsonElem.modifiers?.copyable, true);
   });
 
   it("should validate all type guards correctly", () =>
@@ -203,6 +219,14 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
     assert.ok(isUiElement(short));
     assert.ok(isStringShortElement(short));
     assert.equal(isTableElement(short), false);
+
+    const xmlElem = xml("<data/>");
+    assert.ok(isXmlElement(xmlElem));
+    assert.equal(isJsonElement(xmlElem), false);
+
+    const jsonElem = json("{}");
+    assert.ok(isJsonElement(jsonElem));
+    assert.equal(isXmlElement(jsonElem), false);
 
     const btn = buttonAction("cmd", "Click Me");
     assert.ok(isActionElement(btn));

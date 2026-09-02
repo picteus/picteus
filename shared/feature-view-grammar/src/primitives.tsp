@@ -9,7 +9,7 @@ enum StringShortRepresentation {
   plain: "plain",
 
   @doc("Visual chip / tag pill representation")
-  chip: "chip",
+  chip: "chip"
 }
 
 @doc("""
@@ -46,8 +46,21 @@ model StringLongElement extends UiElement {
   modifiers?: PrimitiveModifiers;
 }
 
+@doc("Supported syntax highlighting languages for formatted code blocks.")
+enum CodeLanguage {
+  @doc("XML markup syntax")
+  xml: "xml",
+
+  @doc("JSON format syntax")
+  json: "json",
+
+  @doc("YAML format syntax")
+  yaml: "yaml"
+}
+
 @doc("Monospace code block or formatted code snippet representation.")
 @uiWidget("string-code")
+@customRenderer
 model StringCodeElement extends UiElement {
   @doc("Discriminator type")
   type: "string-code";
@@ -56,11 +69,43 @@ model StringCodeElement extends UiElement {
   value: string;
 
   @doc("Optional syntax highlighting language identifier")
-  language?: string;
+  language?: CodeLanguage;
 
-  @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
+  @doc("Optional visual modifiers (copyable)")
   @uiModifiers
-  modifiers?: PrimitiveModifiers;
+  modifiers?: BaseModifiers;
+}
+
+@doc("XML markup code block element.")
+@uiWidget("xml")
+@dslAlias("xml")
+@customRenderer
+model XmlElement extends UiElement {
+  @doc("Discriminator type")
+  type: "xml";
+
+  @doc("XML content value")
+  value: string;
+
+  @doc("Optional visual modifiers (copyable)")
+  @uiModifiers
+  modifiers?: BaseModifiers;
+}
+
+@doc("JSON data or structure representation element.")
+@uiWidget("json")
+@dslAlias("json")
+@customRenderer
+model JsonElement extends UiElement {
+  @doc("Discriminator type")
+  type: "json";
+
+  @doc("JSON content value")
+  value: string;
+
+  @doc("Optional visual modifiers (copyable)")
+  @uiModifiers
+  modifiers?: BaseModifiers;
 }
 
 @doc("Hyperlink representation for external or internal URL navigation.")
@@ -216,7 +261,7 @@ enum BadgeVariant {
   warning: "warning",
 
   @doc("Danger red tone")
-  danger: "danger",
+  danger: "danger"
 }
 
 @doc("Visual badge pill representation of a boolean state.")
@@ -254,7 +299,7 @@ enum TimestampFormat {
   time: "time",
 
   @doc("Relative time expression (e.g. \"5 minutes ago\")")
-  relative: "relative",
+  relative: "relative"
 }
 
 @doc("Formatted date and time representation.")

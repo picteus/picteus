@@ -33,7 +33,8 @@ const PROTECTED_PYTHON_NAMES: ReadonlySet<string> = new Set([
   "ord",
   "pow",
   "str",
-  "zip"
+  "zip",
+  "json"
 ]);
 
 function convertToSnakeCase(value: string): string
@@ -198,7 +199,7 @@ function generatePythonModelFactory(model: GrammarModel): string[]
     }
   }
 
-  const allNames = [ primary, ...aliases ];
+  const allNames = Array.from(new Set([ primary, ...aliases ]));
   const noqa = computeFunctionNoqa(rawParameterNames);
   const isShadowing = hasProtectedParameter(rawParameterNames);
 
@@ -233,7 +234,7 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("");
   lines.push("from __future__ import annotations");
   lines.push("");
-  lines.push("import json");
+  lines.push("import json as _json");
   lines.push("from dataclasses import dataclass, field");
   lines.push("from enum import Enum");
   lines.push("from typing import Any, Dict, List, Literal, Optional, Protocol, Union, runtime_checkable");
@@ -265,7 +266,7 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("        return result");
   lines.push("");
   lines.push("    def to_json(self, indent: Optional[int] = None) -> str:");
-  lines.push("        return json.dumps(self.to_dict(), indent=indent)");
+  lines.push("        return _json.dumps(self.to_dict(), indent=indent)");
   lines.push("");
 
   // 1. We generate Enums from AST
@@ -359,13 +360,20 @@ export function generatePythonCode(spec: GrammarSpec): string
 
   // 4. We generate Supporting Models (non-polymorphic derived, non-root) from AST
   const supportingModels = spec.models.filter(
-    (model) => !polymorphicRootNames.has(model.name) && !model.baseModelName && model !== spec.rootModel && !model.isDslIgnored
+    (model) =>
+      !polymorphicRootNames.has(model.name) &&
+      (!model.baseModelName || !polymorphicRootNames.has(model.baseModelName)) &&
+      model !== spec.rootModel &&
+      !model.isDslIgnored
   );
 
   for (const model of supportingModels)
   {
+    const baseClassName = (model.baseModelName && !polymorphicRootNames.has(model.baseModelName))
+      ? model.baseModelName
+      : "GrammarBase";
     lines.push("@dataclass");
-    lines.push(`class ${model.name}(GrammarBase):`);
+    lines.push(`class ${model.name}(${baseClassName}):`);
     if (model.doc)
     {
       lines.push(formatPythonDoc(model.doc, "    "));
@@ -708,7 +716,7 @@ export function generatePythonCode(spec: GrammarSpec): string
         continue;
       }
       const { primary, aliases } = computePythonFactoryNames(uiModel);
-      const allNames = [ primary, ...aliases ];
+      const allNames = Array.from(new Set([ primary, ...aliases ]));
 
       const nonTypeProperties = uiModel.properties.filter((property) => property.name !== "type");
       const requiredProperties = nonTypeProperties.filter((property) => !property.optional && property.defaultValue === undefined);

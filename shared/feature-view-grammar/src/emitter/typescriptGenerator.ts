@@ -3,12 +3,15 @@ import { GrammarModel, GrammarSpec, GrammarType } from "./typespecModel.js";
 
 export interface TsDocParam
 {
+
   name: string;
   description?: string;
+
 }
 
 export interface TsDocOptions
 {
+
   summary?: string;
   remarks?: string;
   params?: TsDocParam[];
@@ -16,6 +19,7 @@ export interface TsDocOptions
   defaultValue?: string;
   example?: string;
   indent?: string;
+
 }
 
 function formatTsDoc(options: TsDocOptions): string
@@ -26,7 +30,14 @@ function formatTsDoc(options: TsDocOptions): string
   if (options.summary)
   {
     const summaryLines = options.summary.trim().split("\n");
-    rawLines.push(...summaryLines.map((l) => l.trim()));
+    rawLines.push(
+      ...summaryLines.map(
+        (line) =>
+        {
+          return line.trim();
+        }
+      )
+    );
   }
 
   if (options.remarks)
@@ -37,7 +48,14 @@ function formatTsDoc(options: TsDocOptions): string
     }
     rawLines.push("@remarks");
     const remarkLines = options.remarks.trim().split("\n");
-    rawLines.push(...remarkLines.map((l) => l.trim()));
+    rawLines.push(
+      ...remarkLines.map(
+        (line) =>
+        {
+          return line.trim();
+        }
+      )
+    );
   }
 
   if (options.defaultValue !== undefined)
@@ -55,10 +73,10 @@ function formatTsDoc(options: TsDocOptions): string
     {
       rawLines.push("");
     }
-    for (const p of options.params)
+    for (const parameter of options.params)
     {
-      const desc = p.description ? ` - ${p.description.trim()}` : "";
-      rawLines.push(`@param ${p.name}${desc}`);
+      const description = parameter.description ? ` - ${parameter.description.trim()}` : "";
+      rawLines.push(`@param ${parameter.name}${description}`);
     }
   }
 
@@ -90,7 +108,12 @@ function formatTsDoc(options: TsDocOptions): string
     return `${indent}/** ${rawLines[0]} */`;
   }
 
-  const formattedLines = rawLines.map((l) => (l === "" ? `${indent} *` : `${indent} * ${l}`));
+  const formattedLines = rawLines.map(
+    (line) =>
+    {
+      return line === "" ? `${indent} *` : `${indent} * ${line}`;
+    }
+  );
   return `${indent}/**\n${formattedLines.join("\n")}\n${indent} */`;
 }
 
@@ -124,9 +147,9 @@ function resolveTsType(type: GrammarType): string
   }
 }
 
-function capitalize(string: string): string
+function capitalizeText(text: string): string
 {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function getFactoryNames(model: GrammarModel): { primary: string; aliases: string[] }
@@ -145,52 +168,78 @@ function generateModelFactory(model: GrammarModel): string[]
   const lines: string[] = [];
   const { primary, aliases } = getFactoryNames(model);
 
-  const nonTypeProperties = model.properties.filter((property) => property.name !== "type");
-  const requiredProperties = nonTypeProperties.filter((property) => !property.optional && property.defaultValue === undefined);
-  const optionalProperties = nonTypeProperties.filter((property) => property.optional || property.defaultValue !== undefined);
+  const nonTypeProperties = model.properties.filter(
+    (property) =>
+    {
+      return property.name !== "type";
+    }
+  );
+  const requiredProperties = nonTypeProperties.filter(
+    (property) =>
+    {
+      return !property.optional && property.defaultValue === undefined;
+    }
+  );
+  const optionalProperties = nonTypeProperties.filter(
+    (property) =>
+    {
+      return property.optional || property.defaultValue !== undefined;
+    }
+  );
 
   const parameters: string[] = [];
-  const docParams: TsDocParam[] = [];
+  const docParameters: TsDocParam[] = [];
 
   for (const property of requiredProperties)
   {
     parameters.push(`${property.name}: ${resolveTsType(property.type)}`);
-    docParams.push({ name: property.name, description: property.doc });
+    docParameters.push({ name: property.name, description: property.doc });
   }
 
   if (optionalProperties.length > 0)
   {
     const optionalFields = optionalProperties
-      .map((property) => `${property.name}?: ${resolveTsType(property.type)}`)
+      .map(
+        (property) =>
+        {
+          return `${property.name}?: ${resolveTsType(property.type)}`;
+        }
+      )
       .join("; ");
     parameters.push(`options?: { ${optionalFields} }`);
 
     const optionalDescriptions = optionalProperties
-      .map((p) =>
-      {
-        const def = p.defaultValue !== undefined ? ` (defaults to \`${p.defaultValue}\`)` : "";
-        return `${p.name}${def}`;
-      })
+      .map(
+        (property) =>
+        {
+          const defaultValueSuffix = property.defaultValue !== undefined ? ` (defaults to \`${property.defaultValue}\`)` : "";
+          return `${property.name}${defaultValueSuffix}`;
+        }
+      )
       .join(", ");
-    docParams.push({
-      name: "options",
-      description: `Optional settings (${optionalDescriptions}).`
-    });
+    docParameters.push(
+      {
+        name: "options",
+        description: `Optional settings (${optionalDescriptions}).`
+      }
+    );
   }
 
-  const allNames = [ primary, ...aliases ];
+  const allNames = Array.from(new Set([ primary, ...aliases ]));
 
-  for (const fnName of allNames)
+  for (const functionName of allNames)
   {
     lines.push(
-      formatTsDoc({
-        summary: `Creates a \`${model.name}\` component instance.`,
-        remarks: model.doc,
-        params: docParams,
-        returns: `A strongly-typed \`${model.name}\` object.`
-      })
+      formatTsDoc(
+        {
+          summary: `Creates a \`${model.name}\` component instance.`,
+          remarks: model.doc,
+          params: docParameters,
+          returns: `A strongly-typed \`${model.name}\` object.`
+        }
+      )
     );
-    lines.push(`export function ${fnName}(${parameters.join(", ")}): ${model.name}`);
+    lines.push(`export function ${functionName}(${parameters.join(", ")}): ${model.name}`);
     lines.push("{");
     lines.push("  return {");
 
@@ -199,56 +248,56 @@ function generateModelFactory(model: GrammarModel): string[]
       lines.push(`    type: "${model.discriminatorValue}",`);
     }
 
-    for (const prop of requiredProperties)
+    for (const property of requiredProperties)
     {
-      if (prop.type.kind === "array")
+      if (property.type.kind === "array")
       {
-        lines.push(`    ${prop.name}: [ ...${prop.name} ],`);
+        lines.push(`    ${property.name}: [ ...${property.name} ],`);
       }
       else
       {
-        lines.push(`    ${prop.name},`);
+        lines.push(`    ${property.name},`);
       }
     }
 
-    for (const prop of optionalProperties)
+    for (const property of optionalProperties)
     {
-      if (prop.defaultValue !== undefined)
+      if (property.defaultValue !== undefined)
       {
-        let defaultVal: string;
-        if (prop.type.kind === "enum")
+        let defaultValueString: string;
+        if (property.type.kind === "enum")
         {
-          defaultVal = `${prop.type.name}.${prop.defaultValue}`;
+          defaultValueString = `${property.type.name}.${property.defaultValue}`;
         }
-        else if (prop.type.kind === "string" || typeof prop.defaultValue === "string")
+        else if (property.type.kind === "string" || typeof property.defaultValue === "string")
         {
-          defaultVal = `"${prop.defaultValue}"`;
+          defaultValueString = `"${property.defaultValue}"`;
         }
-        else if (typeof prop.defaultValue === "boolean")
+        else if (typeof property.defaultValue === "boolean")
         {
-          defaultVal = prop.defaultValue ? "true" : "false";
+          defaultValueString = property.defaultValue ? "true" : "false";
         }
         else
         {
-          defaultVal = String(prop.defaultValue);
+          defaultValueString = String(property.defaultValue);
         }
-        lines.push(`    ${prop.name}: options?.${prop.name} ?? ${defaultVal},`);
+        lines.push(`    ${property.name}: options?.${property.name} ?? ${defaultValueString},`);
       }
       else
       {
-        if (prop.type.kind === "array")
+        if (property.type.kind === "array")
         {
-          lines.push(`    ${prop.name}: options?.${prop.name} ? [ ...options.${prop.name} ] : undefined,`);
+          lines.push(`    ${property.name}: options?.${property.name} ? [ ...options.${property.name} ] : undefined,`);
         }
         else
         {
-          lines.push(`    ${prop.name}: options?.${prop.name},`);
+          lines.push(`    ${property.name}: options?.${property.name},`);
         }
       }
     }
 
-    const lastIdx = lines.length - 1;
-    lines[lastIdx] = lines[lastIdx].replace(/,$/, "");
+    const lastIndex = lines.length - 1;
+    lines[lastIndex] = lines[lastIndex].replace(/,$/, "");
 
     lines.push("  };");
     lines.push("}");
@@ -258,21 +307,40 @@ function generateModelFactory(model: GrammarModel): string[]
   return lines;
 }
 
-function generateModelClass(model: GrammarModel): string[]
+function generateModelClass(model: GrammarModel, polymorphicRootNames: ReadonlySet<string>): string[]
 {
   const lines: string[] = [];
   const className = `${model.name}Class`;
-  const baseClass = model.baseModelName ? `Base${model.baseModelName}<${model.name}>` : `GrammarNode<${model.name}>`;
+  const baseClass = (model.baseModelName && polymorphicRootNames.has(model.baseModelName))
+    ? `Base${model.baseModelName}<${model.name}>`
+    : `GrammarNode<${model.name}>`;
 
-  const nonTypeProps = model.properties.filter((p) => p.name !== "type");
-  const requiredProps = nonTypeProps.filter((p) => !p.optional && p.defaultValue === undefined);
-  const optionalProps = nonTypeProps.filter((p) => p.optional || p.defaultValue !== undefined);
+  const nonTypeProperties = model.properties.filter(
+    (property) =>
+    {
+      return property.name !== "type";
+    }
+  );
+  const requiredProperties = nonTypeProperties.filter(
+    (property) =>
+    {
+      return !property.optional && property.defaultValue === undefined;
+    }
+  );
+  const optionalProperties = nonTypeProperties.filter(
+    (property) =>
+    {
+      return property.optional || property.defaultValue !== undefined;
+    }
+  );
 
   lines.push(
-    formatTsDoc({
-      summary: `Class implementation of the \`${model.name}\` interface.`,
-      remarks: model.doc
-    })
+    formatTsDoc(
+      {
+        summary: `Class implementation of the \`${model.name}\` interface.`,
+        remarks: model.doc
+      }
+    )
   );
   lines.push(`export class ${className} extends ${baseClass} implements ${model.name}`);
   lines.push("{");
@@ -280,101 +348,112 @@ function generateModelClass(model: GrammarModel): string[]
   if (model.discriminatorValue)
   {
     lines.push(
-      formatTsDoc({
-        summary: "The discriminator type tag.",
-        defaultValue: `"${model.discriminatorValue}"`,
-        indent: "  "
-      })
+      formatTsDoc(
+        {
+          summary: "The discriminator type tag.",
+          defaultValue: `"${model.discriminatorValue}"`,
+          indent: "  "
+        }
+      )
     );
     lines.push(`  readonly type = "${model.discriminatorValue}" as const;`);
   }
 
-  for (const prop of requiredProps)
+  for (const property of requiredProperties)
   {
-    lines.push(formatTsDoc({ summary: prop.doc, indent: "  " }));
-    lines.push(`  readonly ${prop.name}: ${resolveTsType(prop.type)};`);
+    lines.push(formatTsDoc({ summary: property.doc, indent: "  " }));
+    lines.push(`  readonly ${property.name}: ${resolveTsType(property.type)};`);
   }
 
-  for (const prop of optionalProps)
+  for (const property of optionalProperties)
   {
-    const defVal = prop.defaultValue !== undefined
-      ? (prop.type.kind === "enum" ? `${prop.type.name}.${prop.defaultValue}` : JSON.stringify(prop.defaultValue))
+    const defaultValueString = property.defaultValue !== undefined
+      ? (property.type.kind === "enum" ? `${property.type.name}.${property.defaultValue}` : JSON.stringify(property.defaultValue))
       : undefined;
-    lines.push(formatTsDoc({ summary: prop.doc, defaultValue: defVal, indent: "  " }));
-    lines.push(`  readonly ${prop.name}?: ${resolveTsType(prop.type)};`);
+    lines.push(formatTsDoc({ summary: property.doc, defaultValue: defaultValueString, indent: "  " }));
+    lines.push(`  readonly ${property.name}?: ${resolveTsType(property.type)};`);
   }
   lines.push("");
 
-  const ctorParams: string[] = [];
-  const ctorDocParams: TsDocParam[] = [];
+  const constructorParameters: string[] = [];
+  const constructorDocParameters: TsDocParam[] = [];
 
-  for (const prop of requiredProps)
+  for (const property of requiredProperties)
   {
-    ctorParams.push(`${prop.name}: ${resolveTsType(prop.type)}`);
-    ctorDocParams.push({ name: prop.name, description: prop.doc });
+    constructorParameters.push(`${property.name}: ${resolveTsType(property.type)}`);
+    constructorDocParameters.push({ name: property.name, description: property.doc });
   }
-  if (optionalProps.length > 0)
+  if (optionalProperties.length > 0)
   {
-    const optFields = optionalProps.map((p) => `${p.name}?: ${resolveTsType(p.type)}`).join("; ");
-    ctorParams.push(`options?: { ${optFields} }`);
-    ctorDocParams.push({ name: "options", description: "Optional property overrides." });
+    const optionalFields = optionalProperties
+      .map(
+        (property) =>
+        {
+          return `${property.name}?: ${resolveTsType(property.type)}`;
+        }
+      )
+      .join("; ");
+    constructorParameters.push(`options?: { ${optionalFields} }`);
+    constructorDocParameters.push({ name: "options", description: "Optional property overrides." });
   }
 
   lines.push(
-    formatTsDoc({
-      summary: `Initializes a new \`${className}\` instance.`,
-      params: ctorDocParams,
-      indent: "  "
-    })
+    formatTsDoc(
+      {
+        summary: `Initializes a new \`${className}\` instance.`,
+        params: constructorDocParameters,
+        indent: "  "
+      }
+    )
   );
-  lines.push(`  constructor(${ctorParams.join(", ")})`);
+  lines.push(`  constructor(${constructorParameters.join(", ")})`);
   lines.push("  {");
   lines.push("    super();");
 
-  for (const prop of requiredProps)
+  for (const property of requiredProperties)
   {
-    if (prop.type.kind === "array")
+    if (property.type.kind === "array")
     {
-      lines.push(`    this.${prop.name} = [ ...${prop.name} ];`);
+      lines.push(`    this.${property.name} = [ ...${property.name} ];`);
     }
     else
     {
-      lines.push(`    this.${prop.name} = ${prop.name};`);
+      lines.push(`    this.${property.name} = ${property.name};`);
     }
   }
 
-  for (const prop of optionalProps)
+  for (const property of optionalProperties)
   {
-    if (prop.defaultValue !== undefined)
+    if (property.defaultValue !== undefined)
     {
-      let defaultVal: string;
-      if (prop.type.kind === "enum")
+      let defaultValueString: string;
+      if (property.type.kind === "enum")
       {
-        defaultVal = `${prop.type.name}.${prop.defaultValue}`;
+        defaultValueString = `${property.type.name}.${property.defaultValue}`;
       }
-      else if (prop.type.kind === "string" || typeof prop.defaultValue === "string")
+      else if (property.type.kind === "string" || typeof property.defaultValue === "string")
       {
-        defaultVal = `"${prop.defaultValue}"`;
+        defaultValueString = `"${property.defaultValue}"`;
       }
-      else if (typeof prop.defaultValue === "boolean")
+      else if (typeof property.defaultValue === "boolean")
       {
-        defaultVal = prop.defaultValue ? "true" : "false";
+        defaultValueString = property.defaultValue ? "true" : "false";
       }
       else
       {
-        defaultVal = String(prop.defaultValue);
+        defaultValueString = String(property.defaultValue);
       }
-      lines.push(`    this.${prop.name} = options?.${prop.name} ?? ${defaultVal};`);
+      lines.push(`    this.${property.name} = options?.${property.name} ?? ${defaultValueString};`);
     }
     else
     {
-      if (prop.type.kind === "array")
+      if (property.type.kind === "array")
       {
-        lines.push(`    this.${prop.name} = options?.${prop.name} ? [ ...options.${prop.name} ] : undefined;`);
+        lines.push(`    this.${property.name} = options?.${property.name} ? [ ...options.${property.name} ] : undefined;`);
       }
       else
       {
-        lines.push(`    this.${prop.name} = options?.${prop.name};`);
+        lines.push(`    this.${property.name} = options?.${property.name};`);
       }
     }
   }
@@ -388,27 +467,38 @@ function generateModelClass(model: GrammarModel): string[]
 export function generateTypeScriptCode(spec: GrammarSpec): string
 {
   const lines: string[] = [];
-  const polymorphicRootNames = new Set(spec.polymorphicRoots.map((r) => r.name));
+  const polymorphicRootNames = new Set(
+    spec.polymorphicRoots.map(
+      (root) =>
+      {
+        return root.name;
+      }
+    )
+  );
 
   lines.push("// ---------------------------------------------------------------------------");
   lines.push("// Auto-generated by @picteus/feature-view-grammar emitter. Do not edit directly.");
   lines.push("// ---------------------------------------------------------------------------");
   lines.push("");
 
-  // Generic Base Serialization Class
+  // We define the generic base serialization class
   lines.push(
-    formatTsDoc({
-      summary: "Generic base class providing recursive JSON serialization for all model instances."
-    })
+    formatTsDoc(
+      {
+        summary: "Generic base class providing recursive JSON serialization for all model instances."
+      }
+    )
   );
   lines.push("export abstract class GrammarNode<T = unknown>");
   lines.push("{");
   lines.push(
-    formatTsDoc({
-      summary: "Serializes this model instance into a strongly-typed, JSON-compatible plain object.",
-      returns: "The plain object representation conforming to interface `T`.",
-      indent: "  "
-    })
+    formatTsDoc(
+      {
+        summary: "Serializes this model instance into a strongly-typed, JSON-compatible plain object.",
+        returns: "The plain object representation conforming to interface `T`.",
+        indent: "  "
+      }
+    )
   );
   lines.push("  toJSON(): T");
   lines.push("  {");
@@ -419,10 +509,13 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   lines.push("      {");
   lines.push("        if (Array.isArray(value))");
   lines.push("        {");
-  lines.push("          result[key] = value.map((item) =>");
-  lines.push("            item && typeof item === \"object\" && typeof (item as { toJSON?: () => unknown }).toJSON === \"function\"");
-  lines.push("              ? (item as { toJSON: () => unknown }).toJSON()");
-  lines.push("              : item");
+  lines.push("          result[key] = value.map(");
+  lines.push("            (item) =>");
+  lines.push("            {");
+  lines.push("              return item && typeof item === \"object\" && typeof (item as { toJSON?: () => unknown }).toJSON === \"function\"");
+  lines.push("                ? (item as { toJSON: () => unknown }).toJSON()");
+  lines.push("                : item;");
+  lines.push("            }");
   lines.push("          );");
   lines.push("        }");
   lines.push("        else if (value && typeof value === \"object\" && typeof (value as { toJSON?: () => unknown }).toJSON === \"function\")");
@@ -440,53 +533,62 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   lines.push("}");
   lines.push("");
 
-  // 1. Generate Enums from AST
-  for (const en of spec.enums)
+  // 1. We generate Enums from AST
+  for (const grammarEnum of spec.enums)
   {
-    lines.push(formatTsDoc({ summary: en.doc }));
-    lines.push(`export enum ${en.name}`);
+    lines.push(formatTsDoc({ summary: grammarEnum.doc }));
+    lines.push(`export enum ${grammarEnum.name}`);
     lines.push("{");
-    for (const member of en.members)
+    for (const member of grammarEnum.members)
     {
       lines.push(formatTsDoc({ summary: member.doc, indent: "  " }));
       lines.push(`  ${member.name} = "${member.value}",`);
     }
-    if (en.members.length > 0)
+    if (grammarEnum.members.length > 0)
     {
-      const lastIdx = lines.length - 1;
-      lines[lastIdx] = lines[lastIdx].replace(/,$/, "");
+      const lastIndex = lines.length - 1;
+      lines[lastIndex] = lines[lastIndex].replace(/,$/, "");
     }
     lines.push("}");
     lines.push("");
   }
 
-  // 2. Generate Base Interfaces and Abstract Base Classes for Polymorphic Roots
+  // 2. We generate Base Interfaces and Abstract Base Classes for Polymorphic Roots
   for (const root of spec.polymorphicRoots)
   {
-    const rootModel = spec.models.find((m) => m.name === root.name);
+    const rootModel = spec.models.find(
+      (model) =>
+      {
+        return model.name === root.name;
+      }
+    );
     lines.push(
-      formatTsDoc({
-        summary: root.doc ?? `Base structural contract for all \`${root.name}\` visual element models.`
-      })
+      formatTsDoc(
+        {
+          summary: root.doc ?? `Base structural contract for all \`${root.name}\` visual element models.`
+        }
+      )
     );
     lines.push(`export interface ${root.name}Base`);
     lines.push("{");
     lines.push(
-      formatTsDoc({
-        summary: "The polymorphic discriminator type tag.",
-        indent: "  "
-      })
+      formatTsDoc(
+        {
+          summary: "The polymorphic discriminator type tag.",
+          indent: "  "
+        }
+      )
     );
     lines.push(`  readonly ${root.discriminatorProperty}: string;`);
     if (rootModel)
     {
-      for (const prop of rootModel.properties)
+      for (const property of rootModel.properties)
       {
-        if (prop.name !== root.discriminatorProperty)
+        if (property.name !== root.discriminatorProperty)
         {
-          lines.push(formatTsDoc({ summary: prop.doc, indent: "  " }));
-          const optional = prop.optional ? "?" : "";
-          lines.push(`  readonly ${prop.name}${optional}: ${resolveTsType(prop.type)};`);
+          lines.push(formatTsDoc({ summary: property.doc, indent: "  " }));
+          const optional = property.optional ? "?" : "";
+          lines.push(`  readonly ${property.name}${optional}: ${resolveTsType(property.type)};`);
         }
       }
     }
@@ -494,21 +596,23 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push("");
 
     lines.push(
-      formatTsDoc({
-        summary: `Abstract base class for all \`${root.name}\` models.`
-      })
+      formatTsDoc(
+        {
+          summary: `Abstract base class for all \`${root.name}\` models.`
+        }
+      )
     );
     lines.push(`export abstract class Base${root.name}<T = ${root.name}> extends GrammarNode<T> implements ${root.name}Base`);
     lines.push("{");
     lines.push(`  abstract readonly ${root.discriminatorProperty}: string;`);
     if (rootModel)
     {
-      for (const prop of rootModel.properties)
+      for (const property of rootModel.properties)
       {
-        if (prop.name !== root.discriminatorProperty)
+        if (property.name !== root.discriminatorProperty)
         {
-          const optional = prop.optional ? "?" : "";
-          lines.push(`  abstract readonly ${prop.name}${optional}: ${resolveTsType(prop.type)};`);
+          const optional = property.optional ? "?" : "";
+          lines.push(`  abstract readonly ${property.name}${optional}: ${resolveTsType(property.type)};`);
         }
       }
     }
@@ -516,7 +620,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push("");
   }
 
-  // 3. Generate Interfaces for all concrete models with materialized inheritance
+  // 3. We generate Interfaces for all concrete models with materialized inheritance
   for (const model of spec.models)
   {
     if (polymorphicRootNames.has(model.name) || model.isDslIgnored)
@@ -529,42 +633,51 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push(formatTsDoc({ summary: model.doc }));
     lines.push(`export interface ${model.name}${extendsClause}`);
     lines.push("{");
-    for (const prop of model.properties)
+    for (const property of model.properties)
     {
-      let defaultValStr: string | undefined;
-      if (prop.name === "type" && model.discriminatorValue)
+      let defaultValueString: string | undefined;
+      if (property.name === "type" && model.discriminatorValue)
       {
-        defaultValStr = `"${model.discriminatorValue}"`;
+        defaultValueString = `"${model.discriminatorValue}"`;
       }
-      else if (prop.defaultValue !== undefined)
+      else if (property.defaultValue !== undefined)
       {
-        defaultValStr = prop.type.kind === "enum"
-          ? `${prop.type.name}.${prop.defaultValue}`
-          : (typeof prop.defaultValue === "string" ? `"${prop.defaultValue}"` : String(prop.defaultValue));
+        defaultValueString = property.type.kind === "enum"
+          ? `${property.type.name}.${property.defaultValue}`
+          : (typeof property.defaultValue === "string" ? `"${property.defaultValue}"` : String(property.defaultValue));
       }
-      lines.push(formatTsDoc({ summary: prop.doc, defaultValue: defaultValStr, indent: "  " }));
-      const optional = prop.optional ? "?" : "";
-      const tsType = resolveTsType(prop.type);
-      lines.push(`  readonly ${prop.name}${optional}: ${tsType};`);
+      lines.push(formatTsDoc({ summary: property.doc, defaultValue: defaultValueString, indent: "  " }));
+      const optional = property.optional ? "?" : "";
+      const tsType = resolveTsType(property.type);
+      lines.push(`  readonly ${property.name}${optional}: ${tsType};`);
     }
     lines.push("}");
     lines.push("");
   }
 
-  // 4. Generate Discriminated Union Types dynamically from AST polymorphic roots
+  // 4. We generate Discriminated Union Types dynamically from AST polymorphic roots
   for (const root of spec.polymorphicRoots)
   {
-    const unionTypes = root.derivedModels.map((m) => m.name).join(" | ");
+    const unionTypes = root.derivedModels
+      .map(
+        (derivedModel) =>
+        {
+          return derivedModel.name;
+        }
+      )
+      .join(" | ");
     lines.push(
-      formatTsDoc({
-        summary: root.doc ?? `Polymorphic discriminated union of all concrete \`${root.name}\` models.`
-      })
+      formatTsDoc(
+        {
+          summary: root.doc ?? `Polymorphic discriminated union of all concrete \`${root.name}\` models.`
+        }
+      )
     );
     lines.push(`export type ${root.name} = ${unionTypes};`);
     lines.push("");
   }
 
-  // 5. Generate Classes implementing the Interfaces
+  // 5. We generate Classes implementing the Interfaces
   lines.push("// --- Concrete Model Classes Implementing Interfaces ---");
   lines.push("");
   for (const model of spec.models)
@@ -573,147 +686,196 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     {
       continue;
     }
-    const classLines = generateModelClass(model);
+    const classLines = generateModelClass(model, polymorphicRootNames);
     lines.push(...classLines);
   }
 
-  // 6. Generate Model-Driven Fluent Builders for all @dslRoot models
+  // 6. We generate Model-Driven Fluent Builders for all @dslRoot models
   const rootModels = spec.rootModels.length > 0 ? spec.rootModels : (spec.rootModel ? [ spec.rootModel ] : []);
   for (const root of rootModels)
   {
     const builderClassName = `${root.name}Builder`;
-    const hasSchemaVersion = root.properties.some((p) => p.name === "schemaVersion");
-    const rootNonTypeProps = root.properties.filter((p) => p.name !== "type" && p.name !== "schemaVersion");
-    const rootReqProps = rootNonTypeProps.filter((p) => !p.optional && p.type.kind !== "array" && p.defaultValue === undefined);
-    const rootOptProps = rootNonTypeProps.filter((p) => (p.optional || p.defaultValue !== undefined) && p.type.kind !== "array");
-    const rootArrayProps = rootNonTypeProps.filter((p) => p.type.kind === "array");
+    const hasSchemaVersion = root.properties.some(
+      (property) =>
+      {
+        return property.name === "schemaVersion";
+      }
+    );
+    const rootNonTypeProperties = root.properties.filter(
+      (property) =>
+      {
+        return property.name !== "type" && property.name !== "schemaVersion";
+      }
+    );
+    const rootRequiredProperties = rootNonTypeProperties.filter(
+      (property) =>
+      {
+        return !property.optional && property.type.kind !== "array" && property.defaultValue === undefined;
+      }
+    );
+    const rootOptionalProperties = rootNonTypeProperties.filter(
+      (property) =>
+      {
+        return (property.optional || property.defaultValue !== undefined) && property.type.kind !== "array";
+      }
+    );
+    const rootArrayProperties = rootNonTypeProperties.filter(
+      (property) =>
+      {
+        return property.type.kind === "array";
+      }
+    );
 
     lines.push(
-      formatTsDoc({
-        summary: `Fluent builder for constructing strongly-typed \`${root.name}\` instances.`,
-        remarks: root.doc
-      })
+      formatTsDoc(
+        {
+          summary: `Fluent builder for constructing strongly-typed \`${root.name}\` instances.`,
+          remarks: root.doc
+        }
+      )
     );
     lines.push(`export class ${builderClassName}`);
     lines.push("{");
 
-    for (const p of rootReqProps)
+    for (const property of rootRequiredProperties)
     {
-      lines.push(`  private readonly _${p.name}: ${resolveTsType(p.type)};`);
+      lines.push(`  private readonly _${property.name}: ${resolveTsType(property.type)};`);
     }
-    for (const p of rootOptProps)
+    for (const property of rootOptionalProperties)
     {
-      lines.push(`  private _${p.name}?: ${resolveTsType(p.type)};`);
+      lines.push(`  private _${property.name}?: ${resolveTsType(property.type)};`);
     }
-    for (const p of rootArrayProps)
+    for (const property of rootArrayProperties)
     {
-      const elemType = resolveTsType(p.type.elementType ?? { kind: "unknown", name: "unknown" });
-      lines.push(`  private readonly _${p.name}: ${elemType}[] = [];`);
+      const elementType = resolveTsType(property.type.elementType ?? { kind: "unknown", name: "unknown" });
+      lines.push(`  private readonly _${property.name}: ${elementType}[] = [];`);
     }
-    if (rootReqProps.length > 0 || rootOptProps.length > 0 || rootArrayProps.length > 0)
+    if (rootRequiredProperties.length > 0 || rootOptionalProperties.length > 0 || rootArrayProperties.length > 0)
     {
       lines.push("");
     }
 
-    const ctorArgs = rootReqProps.map((p) => `${p.name}: ${resolveTsType(p.type)}`).join(", ");
-    const ctorDocParams: TsDocParam[] = rootReqProps.map((p) => ({ name: p.name, description: p.doc }));
+    const constructorArguments = rootRequiredProperties
+      .map(
+        (property) =>
+        {
+          return `${property.name}: ${resolveTsType(property.type)}`;
+        }
+      )
+      .join(", ");
+    const constructorDocParameters: TsDocParam[] = rootRequiredProperties.map(
+      (property) =>
+      {
+        return { name: property.name, description: property.doc };
+      }
+    );
 
     lines.push(
-      formatTsDoc({
-        summary: `Initializes a new \`${builderClassName}\`.`,
-        params: ctorDocParams,
-        indent: "  "
-      })
+      formatTsDoc(
+        {
+          summary: `Initializes a new \`${builderClassName}\`.`,
+          params: constructorDocParameters,
+          indent: "  "
+        }
+      )
     );
-    lines.push(`  constructor(${ctorArgs})`);
+    lines.push(`  constructor(${constructorArguments})`);
     lines.push("  {");
-    for (const p of rootReqProps)
+    for (const property of rootRequiredProperties)
     {
-      lines.push(`    this._${p.name} = ${p.name};`);
+      lines.push(`    this._${property.name} = ${property.name};`);
     }
     lines.push("  }");
     lines.push("");
 
-    // Setters for scalar optional properties
-    for (const p of rootOptProps)
+    // We generate setters for scalar optional properties
+    for (const property of rootOptionalProperties)
     {
       lines.push(
-        formatTsDoc({
-          summary: `Sets the \`${p.name}\` property on this builder.`,
-          params: [ { name: p.name, description: p.doc } ],
-          returns: "This builder instance for method chaining.",
-          indent: "  "
-        })
+        formatTsDoc(
+          {
+            summary: `Sets the \`${property.name}\` property on this builder.`,
+            params: [ { name: property.name, description: property.doc } ],
+            returns: "This builder instance for method chaining.",
+            indent: "  "
+          }
+        )
       );
-      lines.push(`  ${p.name}(${p.name}: ${resolveTsType(p.type)}): this`);
+      lines.push(`  ${property.name}(${property.name}: ${resolveTsType(property.type)}): this`);
       lines.push("  {");
-      lines.push(`    this._${p.name} = ${p.name};`);
+      lines.push(`    this._${property.name} = ${property.name};`);
       lines.push("    return this;");
       lines.push("  }");
       lines.push("");
     }
 
-    // Generic collection adders for array properties
-    for (const p of rootArrayProps)
+    // We generate collection adders for array properties
+    for (const property of rootArrayProperties)
     {
-      const elemType = resolveTsType(p.type.elementType ?? { kind: "unknown", name: "unknown" });
-      const singularName = p.name.endsWith("s") ? p.name.slice(0, -1) : p.name;
-      const addMethodName = `add${capitalize(singularName)}`;
-      const addAllMethodName = `add${capitalize(p.name)}`;
+      const elementType = resolveTsType(property.type.elementType ?? { kind: "unknown", name: "unknown" });
+      const singularName = property.name.endsWith("s") ? property.name.slice(0, -1) : property.name;
+      const addMethodName = `add${capitalizeText(singularName)}`;
+      const addAllMethodName = `add${capitalizeText(property.name)}`;
 
-      if (p.name === "elements")
+      if (property.name === "elements")
       {
         lines.push(
-          formatTsDoc({
-            summary: "Appends a visual element.",
-            params: [ { name: "element", description: "The visual UI element component to add." } ],
-            returns: "This builder instance for method chaining.",
-            indent: "  "
-          })
+          formatTsDoc(
+            {
+              summary: "Appends a visual element.",
+              params: [ { name: "element", description: "The visual UI element component to add." } ],
+              returns: "This builder instance for method chaining.",
+              indent: "  "
+            }
+          )
         );
-        lines.push(`  add(element: ${elemType}): this`);
+        lines.push(`  add(element: ${elementType}): this`);
         lines.push("  {");
-        lines.push(`    this._${p.name}.push(element);`);
+        lines.push(`    this._${property.name}.push(element);`);
         lines.push("    return this;");
         lines.push("  }");
         lines.push("");
       }
 
       lines.push(
-        formatTsDoc({
-          summary: `Appends multiple ${p.name} items.`,
-          params: [ { name: "items", description: `The \`${elemType}\` items to add.` } ],
-          returns: "This builder instance for method chaining.",
-          indent: "  "
-        })
+        formatTsDoc(
+          {
+            summary: `Appends multiple ${property.name} items.`,
+            params: [ { name: "items", description: `The \`${elementType}\` items to add.` } ],
+            returns: "This builder instance for method chaining.",
+            indent: "  "
+          }
+        )
       );
-      lines.push(`  ${addAllMethodName}(...items: ${elemType}[]): this`);
+      lines.push(`  ${addAllMethodName}(...items: ${elementType}[]): this`);
       lines.push("  {");
-      lines.push(`    this._${p.name}.push(...items);`);
+      lines.push(`    this._${property.name}.push(...items);`);
       lines.push("    return this;");
       lines.push("  }");
       lines.push("");
 
-      if (p.name !== "elements")
+      if (property.name !== "elements")
       {
         lines.push(
-          formatTsDoc({
-            summary: `Appends a single ${singularName}.`,
-            params: [ { name: "item", description: `The \`${elemType}\` item to add.` } ],
-            returns: "This builder instance for method chaining.",
-            indent: "  "
-          })
+          formatTsDoc(
+            {
+              summary: `Appends a single ${singularName}.`,
+              params: [ { name: "item", description: `The \`${elementType}\` item to add.` } ],
+              returns: "This builder instance for method chaining.",
+              indent: "  "
+            }
+          )
         );
-        lines.push(`  ${addMethodName}(item: ${elemType}): this`);
+        lines.push(`  ${addMethodName}(item: ${elementType}): this`);
         lines.push("  {");
-        lines.push(`    this._${p.name}.push(item);`);
+        lines.push(`    this._${property.name}.push(item);`);
         lines.push("    return this;");
         lines.push("  }");
         lines.push("");
       }
     }
 
-    // Dynamically generated shortcut methods for every model in spec.uiElements
+    // We generate shortcut methods for every model in spec.uiElements
     for (const uiModel of spec.uiElements)
     {
       if (uiModel.isDslIgnored)
@@ -721,57 +883,83 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         continue;
       }
       const { primary, aliases } = getFactoryNames(uiModel);
-      const allNames = [ primary, ...aliases ];
+      const allNames = Array.from(new Set([ primary, ...aliases ]));
 
-      const nonType = uiModel.properties.filter((p) => p.name !== "type");
-      const req = nonType.filter((p) => !p.optional && p.defaultValue === undefined);
-      const opt = nonType.filter((p) => p.optional || p.defaultValue !== undefined);
+      const nonTypeProperties = uiModel.properties.filter(
+        (property) =>
+        {
+          return property.name !== "type";
+        }
+      );
+      const requiredProperties = nonTypeProperties.filter(
+        (property) =>
+        {
+          return !property.optional && property.defaultValue === undefined;
+        }
+      );
+      const optionalProperties = nonTypeProperties.filter(
+        (property) =>
+        {
+          return property.optional || property.defaultValue !== undefined;
+        }
+      );
 
-      const params: string[] = [];
-      const callArgs: string[] = [];
-      const methodDocParams: TsDocParam[] = [];
+      const parameters: string[] = [];
+      const callArguments: string[] = [];
+      const methodDocParameters: TsDocParam[] = [];
 
-      for (const p of req)
+      for (const property of requiredProperties)
       {
-        params.push(`${p.name}: ${resolveTsType(p.type)}`);
-        callArgs.push(p.name);
-        methodDocParams.push({ name: p.name, description: p.doc });
+        parameters.push(`${property.name}: ${resolveTsType(property.type)}`);
+        callArguments.push(property.name);
+        methodDocParameters.push({ name: property.name, description: property.doc });
       }
 
-      if (opt.length > 0)
+      if (optionalProperties.length > 0)
       {
-        const optFields = opt.map((p) => `${p.name}?: ${resolveTsType(p.type)}`).join("; ");
-        params.push(`options?: { ${optFields} }`);
-        callArgs.push("options");
-        methodDocParams.push({ name: "options", description: "Optional component settings." });
+        const optionalFields = optionalProperties
+          .map(
+            (property) =>
+            {
+              return `${property.name}?: ${resolveTsType(property.type)}`;
+            }
+          )
+          .join("; ");
+        parameters.push(`options?: { ${optionalFields} }`);
+        callArguments.push("options");
+        methodDocParameters.push({ name: "options", description: "Optional component settings." });
       }
 
-      for (const fnName of allNames)
+      for (const functionName of allNames)
       {
-        const methodName = `add${capitalize(fnName)}`;
+        const methodName = `add${capitalizeText(functionName)}`;
         lines.push(
-          formatTsDoc({
-            summary: `Appends a \`${uiModel.name}\` component.`,
-            remarks: uiModel.doc,
-            params: methodDocParams,
-            returns: "This builder instance for method chaining.",
-            indent: "  "
-          })
+          formatTsDoc(
+            {
+              summary: `Appends a \`${uiModel.name}\` component.`,
+              remarks: uiModel.doc,
+              params: methodDocParameters,
+              returns: "This builder instance for method chaining.",
+              indent: "  "
+            }
+          )
         );
-        lines.push(`  ${methodName}(${params.join(", ")}): this`);
+        lines.push(`  ${methodName}(${parameters.join(", ")}): this`);
         lines.push("  {");
-        lines.push(`    return this.add(${fnName}(${callArgs.join(", ")}));`);
+        lines.push(`    return this.add(${functionName}(${callArguments.join(", ")}));`);
         lines.push("  }");
         lines.push("");
       }
     }
 
     lines.push(
-      formatTsDoc({
-        summary: `Finalizes and returns the complete strongly-typed \`${root.name}\` object.`,
-        returns: `The constructed \`${root.name}\` object.`,
-        indent: "  "
-      })
+      formatTsDoc(
+        {
+          summary: `Finalizes and returns the complete strongly-typed \`${root.name}\` object.`,
+          returns: `The constructed \`${root.name}\` object.`,
+          indent: "  "
+        }
+      )
     );
     lines.push(`  build(): ${root.name}`);
     lines.push("  {");
@@ -780,147 +968,179 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     {
       lines.push("      schemaVersion: \"1.0\",");
     }
-    for (const p of rootReqProps)
+    for (const property of rootRequiredProperties)
     {
-      lines.push(`      ${p.name}: this._${p.name},`);
+      lines.push(`      ${property.name}: this._${property.name},`);
     }
-    for (const p of rootOptProps)
+    for (const property of rootOptionalProperties)
     {
-      lines.push(`      ${p.name}: this._${p.name},`);
+      lines.push(`      ${property.name}: this._${property.name},`);
     }
-    for (const p of rootArrayProps)
+    for (const property of rootArrayProperties)
     {
-      if (p.optional)
+      if (property.optional)
       {
-        lines.push(`      ${p.name}: this._${p.name}.length > 0 ? [ ...this._${p.name} ] : undefined,`);
+        lines.push(`      ${property.name}: this._${property.name}.length > 0 ? [ ...this._${property.name} ] : undefined,`);
       }
       else
       {
-        lines.push(`      ${p.name}: [ ...this._${p.name} ],`);
+        lines.push(`      ${property.name}: [ ...this._${property.name} ],`);
       }
     }
-    const lastBuildIdx = lines.length - 1;
-    lines[lastBuildIdx] = lines[lastBuildIdx].replace(/,$/, "");
+    const lastBuildIndex = lines.length - 1;
+    lines[lastBuildIndex] = lines[lastBuildIndex].replace(/,$/, "");
     lines.push("    };");
     lines.push("  }");
     lines.push("}");
     lines.push("");
 
-    // 7. Generate Static Root Model Helper
+    // 7. We generate Static Root Model Helpers
     lines.push(
-      formatTsDoc({
-        summary: `Static helper factory object for \`${root.name}\`.`
-      })
+      formatTsDoc(
+        {
+          summary: `Static helper factory object for \`${root.name}\`.`
+        }
+      )
     );
     lines.push(`export const ${root.name} =`);
     lines.push("{");
     lines.push(
-      formatTsDoc({
-        summary: `Creates a new fluent builder for constructing a \`${root.name}\`.`,
-        params: ctorDocParams,
-        returns: `A new \`${builderClassName}\` instance.`,
-        indent: "  "
-      })
+      formatTsDoc(
+        {
+          summary: `Creates a new fluent builder for constructing a \`${root.name}\`.`,
+          params: constructorDocParameters,
+          returns: `A new \`${builderClassName}\` instance.`,
+          indent: "  "
+        }
+      )
     );
-    lines.push(`  builder(${ctorArgs}): ${builderClassName}`);
+    lines.push(`  builder(${constructorArguments}): ${builderClassName}`);
     lines.push("  {");
-    const builderCallArgs = rootReqProps.map((p) => p.name).join(", ");
-    lines.push(`    return new ${builderClassName}(${builderCallArgs});`);
+    const builderCallArguments = rootRequiredProperties
+      .map(
+        (property) =>
+        {
+          return property.name;
+        }
+      )
+      .join(", ");
+    lines.push(`    return new ${builderClassName}(${builderCallArguments});`);
     lines.push("  },");
     lines.push("");
 
-    const createParams = rootNonTypeProps.map((p) => `${p.name}${p.optional ? "?" : ""}: ${resolveTsType(p.type)}`).join("; ");
+    const createParameters = rootNonTypeProperties
+      .map(
+        (property) =>
+        {
+          return `${property.name}${property.optional ? "?" : ""}: ${resolveTsType(property.type)}`;
+        }
+      )
+      .join("; ");
     lines.push(
-      formatTsDoc({
-        summary: `Creates a \`${root.name}\` directly from a properties object.`,
-        params: [ { name: "params", description: "Configuration properties." } ],
-        returns: `A completed \`${root.name}\` object.`,
-        indent: "  "
-      })
+      formatTsDoc(
+        {
+          summary: `Creates a \`${root.name}\` directly from a properties object.`,
+          params: [ { name: "params", description: "Configuration properties." } ],
+          returns: `A completed \`${root.name}\` object.`,
+          indent: "  "
+        }
+      )
     );
-    lines.push(`  create(params: { ${createParams} }): ${root.name}`);
+    lines.push(`  create(params: { ${createParameters} }): ${root.name}`);
     lines.push("  {");
     lines.push("    return {");
     if (hasSchemaVersion)
     {
       lines.push("      schemaVersion: \"1.0\",");
     }
-    for (const p of rootNonTypeProps)
+    for (const property of rootNonTypeProperties)
     {
-      if (p.type.kind === "array" && p.optional)
+      if (property.type.kind === "array" && property.optional)
       {
-        lines.push(`      ${p.name}: params.${p.name} ? [ ...params.${p.name} ] : undefined,`);
+        lines.push(`      ${property.name}: params.${property.name} ? [ ...params.${property.name} ] : undefined,`);
       }
-      else if (p.type.kind === "array")
+      else if (property.type.kind === "array")
       {
-        lines.push(`      ${p.name}: [ ...params.${p.name} ],`);
+        lines.push(`      ${property.name}: [ ...params.${property.name} ],`);
       }
       else
       {
-        lines.push(`      ${p.name}: params.${p.name},`);
+        lines.push(`      ${property.name}: params.${property.name},`);
       }
     }
-    const lastCreateIdx = lines.length - 1;
-    lines[lastCreateIdx] = lines[lastCreateIdx].replace(/,$/, "");
+    const lastCreateIndex = lines.length - 1;
+    lines[lastCreateIndex] = lines[lastCreateIndex].replace(/,$/, "");
     lines.push("    };");
     lines.push("  }");
     lines.push("};");
     lines.push("");
 
-    // 8. Generate create<RootModel> Functional Factory
-    const createFnName = `create${root.name}`;
-    const rootOptCreateFields = rootNonTypeProps
-      .filter((p) => !rootReqProps.includes(p))
-      .map((p) => `${p.name}?: ${resolveTsType(p.type)}`)
+    // 8. We generate create<RootModel> Functional Factories
+    const createFunctionName = `create${root.name}`;
+    const rootOptionalCreateFields = rootNonTypeProperties
+      .filter(
+        (property) =>
+        {
+          return !rootRequiredProperties.includes(property);
+        }
+      )
+      .map(
+        (property) =>
+        {
+          return `${property.name}?: ${resolveTsType(property.type)}`;
+        }
+      )
       .join("; ");
     lines.push(
-      formatTsDoc({
-        summary: `Functional helper to create a \`${root.name}\` instance directly.`,
-        remarks: root.doc,
-        params: [
-          ...ctorDocParams,
-          ...(rootOptCreateFields.length > 0 ? [ { name: "options", description: "Optional configuration (description, elements, actions)." } ] : [])
-        ],
-        returns: `A strongly-typed \`${root.name}\` instance.`
-      })
+      formatTsDoc(
+        {
+          summary: `Functional helper to create a \`${root.name}\` instance directly.`,
+          remarks: root.doc,
+          params: [
+            ...constructorDocParameters,
+            ...(rootOptionalCreateFields.length > 0 ? [ { name: "options", description: "Optional configuration (description, elements, actions)." } ] : [])
+          ],
+          returns: `A strongly-typed \`${root.name}\` instance.`
+        }
+      )
     );
-    const optionsParam = rootOptCreateFields.length > 0
-      ? (rootReqProps.length > 0 ? `, options?: { ${rootOptCreateFields} }` : `options?: { ${rootOptCreateFields} }`)
+    const optionsParameter = rootOptionalCreateFields.length > 0
+      ? (rootRequiredProperties.length > 0 ? `, options?: { ${rootOptionalCreateFields} }` : `options?: { ${rootOptionalCreateFields} }`)
       : "";
-    lines.push(`export function ${createFnName}(${ctorArgs}${optionsParam}): ${root.name}`);
+    lines.push(`export function ${createFunctionName}(${constructorArguments}${optionsParameter}): ${root.name}`);
     lines.push("{");
     lines.push("  return {");
     if (hasSchemaVersion)
     {
       lines.push("    schemaVersion: \"1.0\",");
     }
-    for (const p of rootReqProps)
+    for (const property of rootRequiredProperties)
     {
-      lines.push(`    ${p.name},`);
+      lines.push(`    ${property.name},`);
     }
-    for (const p of rootNonTypeProps.filter((p) => !rootReqProps.includes(p)))
+    for (const property of rootNonTypeProperties.filter((property) => !rootRequiredProperties.includes(property)))
     {
-      if (p.type.kind === "array" && !p.optional)
+      if (property.type.kind === "array" && !property.optional)
       {
-        lines.push(`    ${p.name}: options?.${p.name} ? [ ...options.${p.name} ] : [],`);
+        lines.push(`    ${property.name}: options?.${property.name} ? [ ...options.${property.name} ] : [],`);
       }
-      else if (p.type.kind === "array" && p.optional)
+      else if (property.type.kind === "array" && property.optional)
       {
-        lines.push(`    ${p.name}: options?.${p.name} ? [ ...options.${p.name} ] : undefined,`);
+        lines.push(`    ${property.name}: options?.${property.name} ? [ ...options.${property.name} ] : undefined,`);
       }
       else
       {
-        lines.push(`    ${p.name}: options?.${p.name},`);
+        lines.push(`    ${property.name}: options?.${property.name},`);
       }
     }
-    const lastFnIdx = lines.length - 1;
-    lines[lastFnIdx] = lines[lastFnIdx].replace(/,$/, "");
+    const lastFunctionIndex = lines.length - 1;
+    lines[lastFunctionIndex] = lines[lastFunctionIndex].replace(/,$/, "");
     lines.push("  };");
     lines.push("}");
     lines.push("");
   }
 
-  // 9. Generate Functional DSL Factories for all models from AST
+  // 9. We generate Functional DSL Factories for all models from AST
   lines.push("// --- Functional DSL Factory Helpers ---");
   lines.push("");
 
@@ -934,18 +1154,20 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push(...factoryLines);
   }
 
-  // 10. Generate Type Guards dynamically from AST polymorphic roots
+  // 10. We generate Type Guards dynamically from AST polymorphic roots
   lines.push("// --- Type Guards ---");
   lines.push("");
 
   for (const root of spec.polymorphicRoots)
   {
     lines.push(
-      formatTsDoc({
-        summary: `Type guard predicate verifying whether an unknown value conforms to \`${root.name}\`.`,
-        params: [ { name: "value", description: "The value to inspect." } ],
-        returns: `\`true\` if the value is a valid \`${root.name}\`, otherwise \`false\`.`
-      })
+      formatTsDoc(
+        {
+          summary: `Type guard predicate verifying whether an unknown value conforms to \`${root.name}\`.`,
+          params: [ { name: "value", description: "The value to inspect." } ],
+          returns: `\`true\` if the value is a valid \`${root.name}\`, otherwise \`false\`.`
+        }
+      )
     );
     lines.push(`export function is${root.name}(value: unknown): value is ${root.name}`);
     lines.push("{");
@@ -953,21 +1175,23 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push("}");
     lines.push("");
 
-    for (const derived of root.derivedModels)
+    for (const derivedModel of root.derivedModels)
     {
-      if (derived.discriminatorValue && !derived.isDslIgnored)
+      if (derivedModel.discriminatorValue && !derivedModel.isDslIgnored)
       {
-        const guardName = `is${derived.name}`;
+        const guardName = `is${derivedModel.name}`;
         lines.push(
-          formatTsDoc({
-            summary: `Type guard predicate narrowing a \`${root.name}\` to \`${derived.name}\`.`,
-            params: [ { name: "element", description: `The \`${root.name}\` instance to inspect.` } ],
-            returns: `\`true\` if the element is a \`${derived.name}\` (type = "${derived.discriminatorValue}"), otherwise \`false\`.`
-          })
+          formatTsDoc(
+            {
+              summary: `Type guard predicate narrowing a \`${root.name}\` to \`${derivedModel.name}\`.`,
+              params: [ { name: "element", description: `The \`${root.name}\` instance to inspect.` } ],
+              returns: `\`true\` if the element is a \`${derivedModel.name}\` (type = "${derivedModel.discriminatorValue}"), otherwise \`false\`.`
+            }
+          )
         );
-        lines.push(`export function ${guardName}(element: ${root.name}): element is ${derived.name}`);
+        lines.push(`export function ${guardName}(element: ${root.name}): element is ${derivedModel.name}`);
         lines.push("{");
-        lines.push(`  return element.${root.discriminatorProperty} === "${derived.discriminatorValue}";`);
+        lines.push(`  return element.${root.discriminatorProperty} === "${derivedModel.discriminatorValue}";`);
         lines.push("}");
         lines.push("");
       }

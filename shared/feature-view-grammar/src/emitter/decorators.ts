@@ -12,7 +12,9 @@ export type DslAliasName =
   | "imageRef"
   | "dominantColors"
   | "markdown"
-  | "html";
+  | "html"
+  | "xml"
+  | "json";
 
 export type UiLayoutKind =
   | "card"
@@ -41,6 +43,8 @@ export type UiWidgetKind =
   | "divider"
   | "markdown"
   | "html"
+  | "xml"
+  | "json"
   | "button-action"
   | "link-action";
 
@@ -64,6 +68,7 @@ const uiValues = new WeakSet<ModelProperty>();
 const uiDividers = new WeakMap<ModelProperty, UiDividerOptions>();
 const uiMeterBounds = new WeakMap<ModelProperty, UiMeterBoundKind>();
 const uiModifiersProps = new WeakSet<ModelProperty>();
+const customRendererModels = new WeakSet<Model>();
 
 export function $dslRoot(context: DecoratorContext, target: Model): void
 {
@@ -115,6 +120,11 @@ export function $uiMeterBound(context: DecoratorContext, target: ModelProperty, 
 export function $uiModifiers(context: DecoratorContext, target: ModelProperty): void
 {
   uiModifiersProps.add(target);
+}
+
+export function $customRenderer(context: DecoratorContext, target: Model): void
+{
+  customRendererModels.add(target);
 }
 
 export function isDslRoot(program: Program, target: Model): boolean
@@ -170,4 +180,9 @@ export function getUiMeterBound(program: Program, target: ModelProperty): UiMete
 export function isUiModifiers(program: Program, target: ModelProperty): boolean
 {
   return uiModifiersProps.has(target);
+}
+
+export function isCustomRenderer(program: Program, target: Model): boolean
+{
+  return customRendererModels.has(target);
 }

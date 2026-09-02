@@ -20,6 +20,8 @@ extern dec dslAlias(
     | "dominantColors"
     | "markdown"
     | "html"
+    | "xml"
+    | "json"
   )
 );
 
@@ -61,6 +63,8 @@ extern dec uiWidget(
     | "divider"
     | "markdown"
     | "html"
+    | "xml"
+    | "json"
     | "button-action"
     | "link-action"
   )
@@ -86,4 +90,7 @@ extern dec uiMeterBound(
 
 /** Marks a property as carrying common primitive modifiers (copyable, truncate, emphasis, monospace). */
 extern dec uiModifiers(target: ModelProperty);
+
+/** Marks an element model as having delegated rendering in host applications. */
+extern dec customRenderer(target: Model);
 

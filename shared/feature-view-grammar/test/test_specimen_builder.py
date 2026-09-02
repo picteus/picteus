@@ -16,6 +16,7 @@ from feature_view_grammar import (
     UiElementProtocol,
     ActionElementProtocol,
     StringShortElementProtocol,
+    BaseModifiers,
     PrimitiveModifiers,
     Emphasis,
     StringShortRepresentation,
@@ -46,6 +47,8 @@ from feature_view_grammar import (
     divider,
     button_action,
     external_link_action,
+    json as grammar_json,
+    xml as grammar_xml,
 )
 
 
@@ -176,11 +179,17 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(len(rep_dict["entries"]), 2)
 
     def test_escape_hatches(self):
-        md = markdown("### Heading\n- Item 1")
-        self.assertEqual(md.to_dict(), {"type": "markdown", "content": "### Heading\n- Item 1"})
+        md = markdown("### Heading\n- Item 1", modifiers=BaseModifiers(copyable=True))
+        self.assertEqual(md.to_dict(), {"type": "markdown", "content": "### Heading\n- Item 1", "modifiers": {"copyable": True}})
 
-        ht = html("<div class='widget'>Custom</div>")
-        self.assertEqual(ht.to_dict(), {"type": "html", "content": "<div class='widget'>Custom</div>"})
+        ht = html("<div class='widget'>Custom</div>", modifiers=BaseModifiers(copyable=False))
+        self.assertEqual(ht.to_dict(), {"type": "html", "content": "<div class='widget'>Custom</div>", "modifiers": {"copyable": False}})
+
+        xml_elem = grammar_xml("<root><val>123</val></root>", modifiers=BaseModifiers(copyable=True))
+        self.assertEqual(xml_elem.to_dict(), {"type": "xml", "value": "<root><val>123</val></root>", "modifiers": {"copyable": True}})
+
+        json_elem = grammar_json("{\"success\": true}", modifiers=BaseModifiers(copyable=True))
+        self.assertEqual(json_elem.to_dict(), {"type": "json", "value": "{\"success\": true}", "modifiers": {"copyable": True}})
 
     def test_json_serialization(self):
         block = (

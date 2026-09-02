@@ -7,6 +7,7 @@ import {
   getUiLayout,
   getUiMeterBound,
   getUiWidget,
+  isCustomRenderer,
   isDslIgnored,
   isDslRoot,
   isUiLabel,
@@ -81,6 +82,7 @@ export interface GrammarModel
   properties: GrammarProperty[];
   uiLayout?: UiLayoutKind;
   uiWidget?: UiWidgetKind;
+  isCustomRenderer?: boolean;
 }
 
 export interface PolymorphicRoot
@@ -317,7 +319,8 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
         aliases,
         properties,
         uiLayout: getUiLayout(program, modelType),
-        uiWidget: getUiWidget(program, modelType)
+        uiWidget: getUiWidget(program, modelType),
+        isCustomRenderer: isCustomRenderer(program, modelType)
       }
     );
   }

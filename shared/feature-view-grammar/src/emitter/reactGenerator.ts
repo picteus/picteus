@@ -3,7 +3,7 @@
 import { GrammarModel, GrammarProperty, GrammarSpec } from "./typespecModel.js";
 
 
-const PROPS_TYPE_SUFFIX = "Type";
+const PROPS_TYPE_SUFFIX = "PropsType";
 const VIEW_SUFFIX = "View";
 const COPYABLE_WRAPPER_NAME = "CopyableWrapper";
 const UI_ELEMENT_ROOT_NAME = "UiElement";
@@ -177,17 +177,140 @@ function generateCopyableWrapper(): string
   ].join("\n");
 }
 
+function computeCustomRendererSlotName(model: GrammarModel): string
+{
+  if (model.discriminatorValue)
+  {
+    return toLowerCamelCase(model.discriminatorValue.replace(/-([a-z0-9])/g, (_, letter: string) => letter.toUpperCase()));
+  }
+
+  let baseName = model.name;
+  if (baseName.endsWith("Element"))
+  {
+    baseName = baseName.slice(0, -"Element".length);
+  }
+  return toLowerCamelCase(baseName);
+}
+
+function generateElementRendererContext(): string
+{
+  return [
+    `export type ElementRendererContext =`,
+    `{`,
+    `  readonly onAction?: (action: ActionElement) => void;`,
+    `  readonly className?: string;`,
+    `  readonly style?: React.CSSProperties;`,
+    `};`
+  ].join("\n");
+}
+
+function generateUiElementViewRenderers(spec: GrammarSpec): string
+{
+  const customModels = spec.uiElements.filter((model) => model.isCustomRenderer);
+  const rendererFields: string[] = [];
+
+  for (const model of customModels)
+  {
+    const slotName = computeCustomRendererSlotName(model);
+    rendererFields.push(`  readonly ${slotName}?: (element: ${model.name}, context: ElementRendererContext) => ReactNode;`);
+  }
+
+  if (rendererFields.length === 0)
+  {
+    return [
+      `export type UiElementViewRenderers = Record<string, never>;`
+    ].join("\n");
+  }
+
+  return [
+    `export type UiElementViewRenderers =`,
+    `{`,
+    rendererFields.join("\n"),
+    `};`
+  ].join("\n");
+}
+
+function generateUiElementViewContextAndProvider(): string
+{
+  return [
+    `export type UiElementViewContextType =`,
+    `{`,
+    `  readonly renderers?: UiElementViewRenderers;`,
+    `};`,
+    ``,
+    `const UiElementViewContext = React.createContext<UiElementViewContextType>(`,
+    `  {`,
+    `    renderers: undefined`,
+    `  }`,
+    `);`,
+    ``,
+    `export function useUiElementViewContext(): UiElementViewContextType`,
+    `{`,
+    `  return React.useContext(UiElementViewContext);`,
+    `}`,
+    ``,
+    `export type UiElementViewProviderPropsType =`,
+    `{`,
+    `  readonly renderers?: UiElementViewRenderers;`,
+    `  readonly children: ReactNode;`,
+    `};`,
+    ``,
+    `export function UiElementViewProvider({ renderers, children }: UiElementViewProviderPropsType): ReactNode`,
+    `{`,
+    `  return (`,
+    `    <UiElementViewContext.Provider value={{ renderers }}>`,
+    `      {children}`,
+    `    </UiElementViewContext.Provider>`,
+    `  );`,
+    `}`
+  ].join("\n");
+}
+
 function generateUiElementComponent(model: GrammarModel): string
 {
   const componentName = `${model.name}${VIEW_SUFFIX}`;
   const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
+  let renderBody = generateModelRenderBody(model);
+
+  if (model.isCustomRenderer)
+  {
+    const slotName = computeCustomRendererSlotName(model);
+    const delegationLines: string[] = [
+      `  const { renderers } = useUiElementViewContext();`,
+      ``,
+      `  if (renderers?.${slotName})`,
+      `  {`,
+      `    return renderers.${slotName}(element, { onAction, className, style });`,
+      `  }`
+    ];
+
+    if (model.name === "StringCodeElement")
+    {
+      delegationLines.push(
+        `  if (element.language === CodeLanguage.xml && renderers?.xml)`,
+        `  {`,
+        `    return renderers.xml({ type: "xml", value: element.value, modifiers: element.modifiers }, { onAction, className, style });`,
+        `  }`,
+        `  if (element.language === CodeLanguage.json && renderers?.json)`,
+        `  {`,
+        `    return renderers.json({ type: "json", value: element.value, modifiers: element.modifiers }, { onAction, className, style });`,
+        `  }`
+      );
+    }
+
+    renderBody = [
+      ...delegationLines,
+      ``,
+      renderBody
+    ].join("\n");
+  }
 
   return generateComponentDefinition(
     componentName,
     propsTypeName,
     "element",
     model.name,
-    generateModelRenderBody(model)
+    renderBody
   );
 }
 
@@ -289,6 +412,8 @@ function generateModelRenderBody(model: GrammarModel): string
     case "string-long":
       return generateStringLongWidgetBody();
     case "string-code":
+    case "xml":
+    case "json":
       return generateStringCodeWidgetBody();
     case "string-url":
       return generateStringUrlWidgetBody();
@@ -338,7 +463,7 @@ function generateRowLayoutBody(model: GrammarModel): string
     `        <Text size="sm" fw={500} c="dimmed" style={{ flexShrink: 0, userSelect: "none" }}>`,
     `          {${labelExpression}}`,
     `        </Text>`,
-    `        <Divider orientation="vertical" h={16}/>`,
+    `        <Divider orientation="vertical"/>`,
     `        <Box style={{ flex: 1, minWidth: 0 }}>`,
     `          <UiElementView element={${valueExpression}} onAction={onAction}/>`,
     `        </Box>`,
@@ -657,16 +782,18 @@ function generateDividerWidgetBody(): string
 
 function generateMarkdownWidgetBody(): string
 {
-  return [
-    `  return <Text size="sm" style={{ whiteSpace: "pre-wrap", ...style }} className={className}>{element.content}</Text>;`
-  ].join("\n");
+  return wrapWithCopyableModifier(
+    `<Text size="sm" style={{ whiteSpace: "pre-wrap", ...style }} className={className}>{element.content}</Text>`,
+    "element.content"
+  );
 }
 
 function generateHtmlWidgetBody(): string
 {
-  return [
-    `  return <Box dangerouslySetInnerHTML={{ __html: element.content }} className={className} style={style}/>;`
-  ].join("\n");
+  return wrapWithCopyableModifier(
+    `<Box dangerouslySetInnerHTML={{ __html: element.content }} className={className} style={style}/>`,
+    "element.content"
+  );
 }
 
 function generateFallbackWidgetBody(_model: GrammarModel): string
@@ -725,93 +852,128 @@ function generateRootContainerComponent(rootModel: GrammarModel): string
   const layout = rootModel.uiLayout ?? "card";
   const componentName = `${rootModel.name}${VIEW_SUFFIX}`;
   const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
+  const propName = layout === "card" ? "block" : toLowerCamelCase(rootModel.name);
 
-  switch (layout)
+  const propsTypeBlock = [
+    `export type ${propsTypeName} =`,
+    `{`,
+    `  readonly ${propName}: ${rootModel.name};`,
+    `  readonly renderers?: UiElementViewRenderers;`,
+    `  readonly onAction?: (action: ActionElement) => void;`,
+    `  readonly className?: string;`,
+    `  readonly style?: React.CSSProperties;`,
+    `};`
+  ].join("\n");
+
+  let bodyContent: string;
+
+  if (layout === "repeating-group")
   {
-    case "repeating-group":
-    {
-      const propName = toLowerCamelCase(rootModel.name);
-      const body = [
-        `  return (`,
-        `    <Box className={className} style={{ width: "100%", ...style }}>`,
-        `      <Flex direction="column" gap="xs">`,
-        `        {${propName}.elements.map((element, elementIndex) => (`,
-        `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
-        `        ))}`,
-        `      </Flex>`,
-        ``,
-        `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
-        `        <Flex gap="xs" justify="flex-end" mt="xs">`,
-        `          {${propName}.actions.map((action, actionIndex) => (`,
-        `            <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
-        `          ))}`,
-        `        </Flex>`,
-        `      )}`,
-        `    </Box>`,
-        `  );`
-      ].join("\n");
-
-      return generateComponentDefinition(
-        componentName,
-        propsTypeName,
-        propName,
-        rootModel.name,
-        body
-      );
-    }
-
-    case "card":
-    default:
-    {
-      const propName = layout === "card" ? "block" : toLowerCamelCase(rootModel.name);
-      const hasTitle = rootModel.properties.some((property) => property.name === "title");
-      const hasDescription = rootModel.properties.some((property) => property.name === "description");
-
-      const headerSection = hasTitle ? [
-        `      <Card.Section inheritPadding py="xs">`,
-        `        <Text fw={600} size="sm">{${propName}.title}</Text>`,
-        hasDescription ? `        {${propName}.description && <Text size="xs" c="dimmed">{${propName}.description}</Text>}` : ``,
-        `      </Card.Section>`,
-        ``
-      ].filter(Boolean) : [];
-
-      const body = [
-        `  return (`,
-        `    <Card shadow="xs" padding="sm" radius="md" withBorder className={className} style={style}>`,
-        ...headerSection,
-        `      <Flex direction="column" gap="xs" my="xs">`,
-        `        {${propName}.elements.map((element, elementIndex) => (`,
-        `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
-        `        ))}`,
-        `      </Flex>`,
-        ``,
-        `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
-        `        <Card.Section inheritPadding py="xs">`,
-        `          <Flex gap="xs" justify="flex-end">`,
-        `            {${propName}.actions.map((action, actionIndex) => (`,
-        `              <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
-        `            ))}`,
-        `          </Flex>`,
-        `        </Card.Section>`,
-        `      )}`,
-        `    </Card>`,
-        `  );`
-      ].join("\n");
-
-      return generateComponentDefinition(
-        componentName,
-        propsTypeName,
-        propName,
-        rootModel.name,
-        body
-      );
-    }
+    bodyContent = [
+      `  const context = useUiElementViewContext();`,
+      `  const effectiveRenderers = renderers ?? context.renderers;`,
+      ``,
+      `  const content = (`,
+      `    <Box className={className} style={{ width: "100%", ...style }}>`,
+      `      <Flex direction="column" gap="xs">`,
+      `        {${propName}.elements.map((element, elementIndex) => (`,
+      `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
+      `        ))}`,
+      `      </Flex>`,
+      ``,
+      `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
+      `        <Flex gap="xs" justify="flex-end" mt="xs">`,
+      `          {${propName}.actions.map((action, actionIndex) => (`,
+      `            <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
+      `          ))}`,
+      `        </Flex>`,
+      `      )}`,
+      `    </Box>`,
+      `  );`,
+      ``,
+      `  if (renderers)`,
+      `  {`,
+      `    return (`,
+      `      <UiElementViewProvider renderers={effectiveRenderers}>`,
+      `        {content}`,
+      `      </UiElementViewProvider>`,
+      `    );`,
+      `  }`,
+      ``,
+      `  return content;`
+    ].join("\n");
   }
+  else
+  {
+    const hasTitle = rootModel.properties.some((property) => property.name === "title");
+    const hasDescription = rootModel.properties.some((property) => property.name === "description");
+
+    const headerSection = hasTitle ? [
+      `      <Card.Section inheritPadding py="xs">`,
+      `        <Text fw={600} size="sm">{${propName}.title}</Text>`,
+      hasDescription ? `        {${propName}.description && <Text size="xs" c="dimmed">{${propName}.description}</Text>}` : ``,
+      `      </Card.Section>`,
+      ``
+    ].filter(Boolean) : [];
+
+    bodyContent = [
+      `  const context = useUiElementViewContext();`,
+      `  const effectiveRenderers = renderers ?? context.renderers;`,
+      ``,
+      `  const content = (`,
+      `    <Card shadow="xs" padding="sm" radius="md" withBorder className={className} style={style}>`,
+      ...headerSection,
+      `      <Flex direction="column" gap="xs" my="xs">`,
+      `        {${propName}.elements.map((element, elementIndex) => (`,
+      `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
+      `        ))}`,
+      `      </Flex>`,
+      ``,
+      `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
+      `        <Card.Section inheritPadding py="xs">`,
+      `          <Flex gap="xs" justify="flex-end">`,
+      `            {${propName}.actions.map((action, actionIndex) => (`,
+      `              <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
+      `            ))}`,
+      `          </Flex>`,
+      `        </Card.Section>`,
+      `      )}`,
+      `    </Card>`,
+      `  );`,
+      ``,
+      `  if (renderers)`,
+      `  {`,
+      `    return (`,
+      `      <UiElementViewProvider renderers={effectiveRenderers}>`,
+      `        {content}`,
+      `      </UiElementViewProvider>`,
+      `    );`,
+      `  }`,
+      ``,
+      `  return content;`
+    ].join("\n");
+  }
+
+  const componentFunctionBlock = [
+    `export function ${componentName}({ ${propName}, renderers, onAction, className, style }: ${propsTypeName}): ReactNode`,
+    `{`,
+    bodyContent,
+    `}`
+  ].join("\n");
+
+  return `${propsTypeBlock}\n\n${componentFunctionBlock}`;
 }
 
 export function generateReactCode(spec: GrammarSpec): string
 {
   const componentBlocks: string[] = [];
+
+  // We generate ElementRendererContext and UiElementViewRenderers
+  componentBlocks.push(generateElementRendererContext());
+  componentBlocks.push(generateUiElementViewRenderers(spec));
+
+  // We generate UiElementViewContext, useUiElementViewContext, and UiElementViewProvider
+  componentBlocks.push(generateUiElementViewContextAndProvider());
 
   // We generate generic CopyableWrapper
   componentBlocks.push(generateCopyableWrapper());
