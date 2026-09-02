@@ -8,3 +8,4 @@ def get_version() -> str:
 
 from picteus_extension_sdk.intents import *
 from picteus_extension_sdk.picteus_extension import *
+from picteus_extension_sdk.generated.feature_view_grammar import *

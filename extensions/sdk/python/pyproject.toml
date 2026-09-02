@@ -33,4 +33,4 @@ Homepage = "https://github.com/picteus/picteus"
 Repository = "https://github.com/picteus/picteus"
 
 [tool.setuptools]
-packages = ["picteus_extension_sdk", "picteus_ws_client", "picteus_ws_client.api", "picteus_ws_client.models"]
+packages = ["picteus_extension_sdk", "picteus_extension_sdk.generated", "picteus_ws_client", "picteus_ws_client.api", "picteus_ws_client.models"]
