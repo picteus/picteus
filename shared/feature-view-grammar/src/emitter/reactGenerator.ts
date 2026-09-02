@@ -31,17 +31,42 @@ const TABLER_ICON_IMPORTS: readonly string[] = [
   "IconExternalLink"
 ];
 
-const BASE_TYPE_IMPORTS: readonly string[] = [
-  "ActionElement",
-  "ButtonVariant",
-  "DividerStyle",
-  "Emphasis",
-  "FeatureBlock",
-  "StringShortRepresentation",
-  "TableColumnAlign",
-  "TimestampFormat",
-  "UiElement"
-];
+function computeTypeScriptImports(spec: GrammarSpec): string[]
+{
+  const importNames = new Set<string>();
+
+  // We include polymorphic base types (e.g., UiElement, ActionElement)
+  for (const polymorphicRoot of spec.polymorphicRoots)
+  {
+    importNames.add(polymorphicRoot.name);
+  }
+
+  // We include root model (e.g., FeatureBlock)
+  if (spec.rootModel)
+  {
+    importNames.add(spec.rootModel.name);
+  }
+
+  // We include all grammar enums (e.g., ButtonVariant, DividerStyle, Emphasis, etc.)
+  for (const grammarEnum of spec.enums)
+  {
+    importNames.add(grammarEnum.name);
+  }
+
+  // We include all concrete UI element models
+  for (const elementModel of spec.uiElements)
+  {
+    importNames.add(elementModel.name);
+  }
+
+  // We include all concrete Action element models
+  for (const actionModel of spec.actionElements)
+  {
+    importNames.add(actionModel.name);
+  }
+
+  return Array.from(importNames);
+}
 
 function findModelProperty(
   model: GrammarModel,
@@ -751,11 +776,7 @@ export function generateReactCode(spec: GrammarSpec): string
   }
 
   // We assemble file header with exact imports
-  const typeImports = [
-    ...BASE_TYPE_IMPORTS,
-    ...spec.uiElements.map((elementModel) => elementModel.name),
-    ...spec.actionElements.map((actionModel) => actionModel.name)
-  ];
+  const typeImports = computeTypeScriptImports(spec);
 
   const headerLines: string[] = [
     `import React, { ReactNode } from "react";`,
@@ -768,7 +789,7 @@ export function generateReactCode(spec: GrammarSpec): string
     ``,
     `import {`,
     typeImports.map((typeName) => `  ${typeName}`).join(",\n"),
-    `} from "../typescript/featureViewGrammar.js";`
+    `} from "@picteus/shared-core";`
   ];
 
   return [
