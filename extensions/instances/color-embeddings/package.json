@@ -44,7 +44,7 @@
     "tsx": "4.23.8"
   },
   "dependencies": {
-    "@picteus/internal-extension-sdk": "0.15.0",
+    "@picteus/internal-extension-sdk": "0.16.0",
     "colorthief": "3.5.0",
     "sharp": "0.35.3"
   }
