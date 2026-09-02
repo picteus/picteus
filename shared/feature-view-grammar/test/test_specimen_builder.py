@@ -18,7 +18,8 @@ from feature_view_grammar import (
     StringShortElementProtocol,
     BaseModifiers,
     PrimitiveModifiers,
-    Emphasis,
+    TextWeight,
+    TextIntensity,
     StringShortRepresentation,
     BadgeVariant,
     TimestampFormat,
@@ -61,7 +62,7 @@ class TestSpecimenBuilder(unittest.TestCase):
             .add_label_value("Dominant Palette", dominant_colors(["#2D3748", "#4A5568", "#CBD5E0"]))
             .add_label_value(
                 "Primary Hue",
-                string_short("Slate", representation=StringShortRepresentation.chip, modifiers=PrimitiveModifiers(emphasis=Emphasis.strong))
+                string_short("Slate", representation=StringShortRepresentation.chip, modifiers=PrimitiveModifiers(weight=TextWeight.heavy))
             )
             .add_label_value("Confidence", number_meter(92, minimum=0, maximum=100, unit="%"))
             .add_divider(style=DividerStyle.hairline)
@@ -134,19 +135,24 @@ class TestSpecimenBuilder(unittest.TestCase):
     def test_table_and_multislot(self):
         tbl = table(
             rows=[
-                table_row(["Resolution", string_short("3840 x 2160")]),
-                table_row(["Color Space", string_short("sRGB")]),
+                table_row([string_short("Resolution"), string_short("3840 x 2160")]),
+                table_row([string_short("Color Space"), string_short("sRGB")]),
             ],
             columns=[
                 table_column(header="Property", align=TableColumnAlign.left),
                 table_column(header="Value", align=TableColumnAlign.right),
             ],
             has_header=True,
-            max_columns=2,
+            is_striped=True,
+            with_column_separators=True,
+            with_row_separators=True,
         )
 
         tbl_dict = tbl.to_dict()
         self.assertEqual(tbl_dict["type"], "table")
+        self.assertEqual(tbl_dict["isStriped"], True)
+        self.assertEqual(tbl_dict["withColumnSeparators"], True)
+        self.assertEqual(tbl_dict["withRowSeparators"], True)
         self.assertEqual(len(tbl_dict["rows"]), 2)
         self.assertEqual(len(tbl_dict["columns"]), 2)
         self.assertEqual(tbl_dict["columns"][1]["align"], "right")

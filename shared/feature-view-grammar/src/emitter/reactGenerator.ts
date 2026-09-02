@@ -103,8 +103,8 @@ function wrapWithCopyableModifier(nodeExpression: string, valueExpression: strin
 function generateTypographyModifiers(): string
 {
   return [
-    `  const isStrong = element.modifiers?.emphasis === Emphasis.strong;`,
-    `  const isMuted = element.modifiers?.emphasis === Emphasis.muted;`,
+    `  const fontWeight = element.modifiers?.weight === TextWeight.heavy ? 700 : (element.modifiers?.weight === TextWeight.thin ? 300 : 400);`,
+    `  const textColor = element.modifiers?.intensity === TextIntensity.low ? "dimmed" : (element.modifiers?.intensity === TextIntensity.high ? "bright" : undefined);`,
     `  const isMono = Boolean(element.modifiers?.monospace);`
   ].join("\n");
 }
@@ -539,7 +539,7 @@ function generateStringShortWidgetBody(): string
     `    isChip ? (`,
     `      <Badge size="sm" variant="light" className={className} style={style}>{element.value}</Badge>`,
     `    ) : (`,
-    `      <Text size="sm" fw={isStrong ? 700 : 400} c={isMuted ? "dimmed" : undefined} ff={isMono ? "monospace" : undefined} className={className} style={style}>`,
+    `      <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} className={className} style={style}>`,
     `        {element.value}`,
     `      </Text>`,
     `    )`,
@@ -559,7 +559,7 @@ function generateStringLongWidgetBody(): string
   const typographyLines = generateTypographyModifiers();
   const nodeExpression = [
     `(`,
-    `    <Text size="sm" fw={isStrong ? 700 : 400} c={isMuted ? "dimmed" : undefined} ff={isMono ? "monospace" : undefined} style={{ whiteSpace: "pre-wrap", ...style }} className={className}>`,
+    `    <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} style={{ whiteSpace: "pre-wrap", ...style }} className={className}>`,
     `      {element.value}`,
     `    </Text>`,
     `  )`
@@ -697,7 +697,7 @@ function generateTableLayoutBody(): string
 {
   return [
     `  return (`,
-    `    <Table striped highlightOnHover className={className} style={style}>`,
+    `    <Table striped={element.isStriped} highlightOnHover withColumnBorders={element.withColumnSeparators} withRowBorders={element.withRowSeparators} className={className} style={style}>`,
     `      {element.hasHeader !== false && element.columns && (`,
     `        <Table.Thead>`,
     `          <Table.Tr>`,
@@ -714,7 +714,7 @@ function generateTableLayoutBody(): string
     `          <Table.Tr key={rowIndex}>`,
     `            {row.cells.map((cell, cellIndex) => (`,
     `              <Table.Td key={cellIndex}>`,
-    `                {typeof cell === "string" ? cell : <${UI_ELEMENT_VIEW_NAME} element={cell} onAction={onAction}/>}`,
+    `                <${UI_ELEMENT_VIEW_NAME} element={cell} onAction={onAction}/>`,
     `              </Table.Td>`,
     `            ))}`,
     `          </Table.Tr>`,
@@ -735,7 +735,7 @@ function generateRepeatingGroupLayoutBody(): string
     `        {element.entries.map((entry, entryIndex) => (`,
     `          <Box key={entryIndex} p="xs" style={{ border: "1px solid var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-sm)" }}>`,
     `            <Text fw={500} size="sm" c="dimmed">{entry.label}</Text>`,
-    `            {entry.value && (typeof entry.value === "string" ? <Text size="sm">{entry.value}</Text> : <${UI_ELEMENT_VIEW_NAME} element={entry.value} onAction={onAction}/>)}`,
+    `            {entry.value && <${UI_ELEMENT_VIEW_NAME} element={entry.value} onAction={onAction}/>}`,
     `            {entry.elements && entry.elements.map((childElement, childIndex) => (`,
     `              <${UI_ELEMENT_VIEW_NAME} key={childIndex} element={childElement} onAction={onAction}/>`,
     `            ))}`,

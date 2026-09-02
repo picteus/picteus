@@ -15,7 +15,6 @@ import {
   divider,
   DividerStyle,
   dominantColors,
-  Emphasis,
   externalLinkAction,
   Feature,
   FeatureBlock,
@@ -44,6 +43,7 @@ import {
   tableColumn,
   TableColumnAlign,
   tableRow,
+  TextWeight,
   timestamp,
   TimestampFormat,
   xml
@@ -60,7 +60,7 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
       .addLabelValue("Dominant Palette", dominantColors([ "#2D3748", "#4A5568", "#CBD5E0" ]))
       .addLabelValue("Primary Hue", stringShort("Slate", {
         representation: StringShortRepresentation.chip,
-        modifiers: { emphasis: Emphasis.strong }
+        modifiers: { weight: TextWeight.heavy }
       }))
       .addLabelValue("Confidence", numberMeter(92, { minimum: 0, maximum: 100, unit: "%" }))
       .addDivider({ style: DividerStyle.hairline })
@@ -142,8 +142,8 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
   {
     const tbl = table(
       [
-        tableRow([ "Resolution", stringShort("3840 x 2160") ]),
-        tableRow([ "Color Space", stringShort("sRGB") ])
+        tableRow([ stringShort("Resolution"), stringShort("3840 x 2160") ]),
+        tableRow([ stringShort("Color Space"), stringShort("sRGB") ])
       ],
       {
         columns: [
@@ -151,12 +151,17 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
           tableColumn({ header: "Value", align: TableColumnAlign.right })
         ],
         hasHeader: true,
-        maxColumns: 2
+        isStriped: true,
+        withColumnSeparators: true,
+        withRowSeparators: true
       }
     );
 
     assert.ok(isTableElement(tbl));
     assert.equal(tbl.type, "table");
+    assert.equal(tbl.isStriped, true);
+    assert.equal(tbl.withColumnSeparators, true);
+    assert.equal(tbl.withRowSeparators, true);
     assert.equal(tbl.rows.length, 2);
     assert.ok(tbl.columns && tbl.columns.length === 2);
     assert.equal(tbl.columns[1].align, TableColumnAlign.right);

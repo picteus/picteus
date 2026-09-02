@@ -83,7 +83,7 @@ model TableColumn {
 @doc("Single table row containing an array of cell values.")
 model TableRow {
   @doc("Array of cell values corresponding to table columns")
-  cells: (string | UiElement)[];
+  cells: UiElement[];
 }
 
 @doc("""
@@ -98,14 +98,22 @@ model TableElement extends UiElement {
   @doc("Whether to render a column header row")
   hasHeader?: boolean = true;
 
+  @doc("Whether to render alternating row background colors")
+  isStriped?: boolean = false;
+
+  @doc("Whether to render vertical column separators")
+  @uiDivider("vertical")
+  withColumnSeparators?: boolean = false;
+
+  @doc("Whether to render horizontal row separators")
+  @uiDivider("horizontal")
+  withRowSeparators?: boolean = false;
+
   @doc("Optional explicit column definitions")
   columns?: TableColumn[];
 
   @doc("Tabular data rows")
   rows: TableRow[];
-
-  @doc("Maximum recommended visible columns at 360px panel width")
-  maxColumns?: int32 = 3;
 }
 
 @doc("Single entry within a repeating group.")
@@ -114,7 +122,7 @@ model RepeatingGroupEntry {
   label: string;
 
   @doc("Primary entry value or nested elements")
-  value?: string | UiElement;
+  value?: UiElement;
 
   @doc("Nested elements for structured entries")
   elements?: UiElement[];
