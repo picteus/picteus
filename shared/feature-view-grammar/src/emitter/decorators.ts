@@ -52,7 +52,9 @@ export type UiDividerOrientation = "horizontal" | "vertical";
 
 export interface UiDividerOptions
 {
-  orientation?: UiDividerOrientation;
+
+  readonly orientation?: UiDividerOrientation;
+
 }
 
 export type UiMeterBoundKind = "minimum" | "maximum" | "label" | "unit";

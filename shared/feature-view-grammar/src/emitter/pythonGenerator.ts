@@ -265,8 +265,64 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("                result[camel_key] = _clean(field_val)");
   lines.push("        return result");
   lines.push("");
-  lines.push("    def to_json(self, indent: Optional[int] = None) -> str:");
-  lines.push("        return _json.dumps(self.to_dict(), indent=indent)");
+  lines.push("    def to_json(self) -> str:");
+  lines.push("        return _json.dumps(self.to_dict(), separators=(',', ':'))");
+  lines.push("");
+  lines.push("    def to_string(self) -> str:");
+  lines.push("        return self.to_json()");
+  lines.push("");
+  lines.push("    def __str__(self) -> str:");
+  lines.push("        return self.to_json()");
+  lines.push("");
+  lines.push("    @classmethod");
+  lines.push("    def _from_dict(cls: Any, data: Dict[str, Any]) -> Any:");
+  lines.push("        if not isinstance(data, dict):");
+  lines.push("            return data");
+  lines.push("        kwargs: Dict[str, Any] = {}");
+  lines.push("        for field_name in getattr(cls, \"__dataclass_fields__\", {}):");
+  lines.push("            parts = field_name.split(\"_\")");
+  lines.push("            camel_name = parts[0] + \"\".join(p.capitalize() for p in parts[1:]) if len(parts) > 1 else field_name");
+  lines.push("            if camel_name in data:");
+  lines.push("                raw_val = data[camel_name]");
+  lines.push("            elif field_name in data:");
+  lines.push("                raw_val = data[field_name]");
+  lines.push("            else:");
+  lines.push("                continue");
+  lines.push("");
+  lines.push("            if raw_val is None:");
+  lines.push("                kwargs[field_name] = None");
+  lines.push("            elif isinstance(raw_val, list):");
+  lines.push("                kwargs[field_name] = [_deserialize_element(item) if isinstance(item, dict) else item for item in raw_val]");
+  lines.push("            elif isinstance(raw_val, dict) and \"type\" in raw_val:");
+  lines.push("                kwargs[field_name] = _deserialize_element(raw_val)");
+  lines.push("            else:");
+  lines.push("                kwargs[field_name] = raw_val");
+  lines.push("        return cls(**kwargs)");
+  lines.push("");
+  lines.push("    @classmethod");
+  lines.push("    def parse(cls: Any, json_input: Union[str, Dict[str, Any]]) -> Any:");
+  lines.push("        data = _json.loads(json_input) if isinstance(json_input, str) else json_input");
+  lines.push("        return cls._from_dict(data)");
+  lines.push("");
+  lines.push("    @classmethod");
+  lines.push("    def from_dict(cls: Any, data: Dict[str, Any]) -> Any:");
+  lines.push("        return cls.parse(data)");
+  lines.push("");
+  lines.push("    @classmethod");
+  lines.push("    def from_json(cls: Any, json_str: str) -> Any:");
+  lines.push("        return cls.parse(json_str)");
+  lines.push("");
+  lines.push("");
+  lines.push("_ELEMENT_MAP: Dict[str, Any] = {}");
+  lines.push("");
+  lines.push("");
+  lines.push("def _deserialize_element(data: Any) -> Any:");
+  lines.push("    if not isinstance(data, dict):");
+  lines.push("        return data");
+  lines.push("    elem_type = data.get(\"type\")");
+  lines.push("    if elem_type and elem_type in _ELEMENT_MAP:");
+  lines.push("        return _ELEMENT_MAP[elem_type]._from_dict(data)");
+  lines.push("    return data");
   lines.push("");
 
   // 1. We generate Enums from AST
@@ -363,7 +419,8 @@ export function generatePythonCode(spec: GrammarSpec): string
     (model) =>
       !polymorphicRootNames.has(model.name) &&
       (!model.baseModelName || !polymorphicRootNames.has(model.baseModelName)) &&
-      model !== spec.rootModel &&
+      !model.isDslRoot &&
+      !spec.rootModels.includes(model) &&
       !model.isDslIgnored
   );
 
@@ -810,6 +867,18 @@ export function generatePythonCode(spec: GrammarSpec): string
     lines[lastBuildLineIndex] = lines[lastBuildLineIndex].replace(/,$/, "");
     lines.push("        )");
     lines.push("");
+    lines.push("    def to_dict(self) -> Dict[str, Any]:");
+    lines.push("        return self.build().to_dict()");
+    lines.push("");
+    lines.push("    def to_json(self) -> str:");
+    lines.push("        return self.build().to_json()");
+    lines.push("");
+    lines.push("    def to_string(self) -> str:");
+    lines.push("        return self.build().to_string()");
+    lines.push("");
+    lines.push("    def __str__(self) -> str:");
+    lines.push("        return self.build().to_string()");
+    lines.push("");
 
     // 8. We generate Functional Root Factory
     const createFunctionName = `create_${convertToSnakeCase(root.name)}`;
@@ -874,6 +943,11 @@ export function generatePythonCode(spec: GrammarSpec): string
     lines[lastRootCreateLineIndex] = lines[lastRootCreateLineIndex].replace(/,$/, "");
     lines.push("    )");
     lines.push("");
+
+    const parseFunctionName = `parse_${convertToSnakeCase(root.name)}`;
+    lines.push(`def ${parseFunctionName}(json_input: Union[str, Dict[str, Any]]) -> ${root.name}:`);
+    lines.push(`    return ${root.name}.parse(json_input)`);
+    lines.push("");
   }
 
   // 9. We generate Functional DSL Factory Helpers for all models from AST
@@ -889,6 +963,18 @@ export function generatePythonCode(spec: GrammarSpec): string
     const factoryLines = generatePythonModelFactory(model);
     lines.push(...factoryLines);
   }
+
+  // 10. We populate element deserialization mapping
+  lines.push("# --- Element Deserializer Mapping ---");
+  lines.push("");
+  for (const model of spec.models)
+  {
+    if (model.discriminatorValue)
+    {
+      lines.push(`_ELEMENT_MAP["${model.discriminatorValue}"] = ${model.name}`);
+    }
+  }
+  lines.push("");
 
   return lines.join("\n");
 }

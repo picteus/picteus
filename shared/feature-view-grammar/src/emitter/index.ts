@@ -39,8 +39,10 @@ export {
 
 export interface FeatureViewGrammarEmitterOptions
 {
-  "emitter-output-dir"?: string;
-  targets?: ("typescript" | "python" | "react")[];
+
+  readonly "emitter-output-dir"?: string;
+  readonly targets?: ("typescript" | "python" | "react")[];
+
 }
 
 export const $lib = createTypeSpecLibrary(
@@ -73,16 +75,16 @@ export async function $onEmit(context: EmitContext<FeatureViewGrammarEmitterOpti
 
   if (targets.includes("typescript"))
   {
-    const tsCode = generateTypeScriptCode(spec);
-    const tsPath = resolvePath(outputDir, "typescript", "featureViewGrammar.ts");
-    await emitFile(program, { path: tsPath, content: tsCode });
+    const typeScriptCode = generateTypeScriptCode(spec);
+    const typeScriptPath = resolvePath(outputDir, "typescript", "featureViewGrammar.ts");
+    await emitFile(program, { path: typeScriptPath, content: typeScriptCode });
   }
 
   if (targets.includes("python"))
   {
-    const pyCode = generatePythonCode(spec);
-    const pyPath = resolvePath(outputDir, "python", "feature_view_grammar.py");
-    await emitFile(program, { path: pyPath, content: pyCode });
+    const pythonCode = generatePythonCode(spec);
+    const pythonPath = resolvePath(outputDir, "python", "feature_view_grammar.py");
+    await emitFile(program, { path: pythonPath, content: pythonCode });
   }
 
   if (targets.includes("react"))

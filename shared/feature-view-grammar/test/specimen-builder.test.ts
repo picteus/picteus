@@ -18,9 +18,14 @@ import {
   externalLinkAction,
   Feature,
   FeatureBlock,
+  FeatureBlockClass,
+  FeatureClass,
+  GrammarNode,
   html,
   isActionElement,
   isButtonActionElement,
+  isFeature,
+  isFeatureBlock,
   isJsonElement,
   isLabelValueRowElement,
   isStringShortElement,
@@ -33,6 +38,8 @@ import {
   multiSlot,
   numberMeter,
   numberUnbounded,
+  parseFeature,
+  parseFeatureBlock,
   repeatingGroup,
   repeatingGroupEntry,
   slot,
@@ -140,7 +147,7 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
 
   it("should build structured Table and MultiSlot layouts", () =>
   {
-    const tbl = table(
+    const tableElement = table(
       [
         tableRow([ stringShort("Resolution"), stringShort("3840 x 2160") ]),
         tableRow([ stringShort("Color Space"), stringShort("sRGB") ])
@@ -157,16 +164,16 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
       }
     );
 
-    assert.ok(isTableElement(tbl));
-    assert.equal(tbl.type, "table");
-    assert.equal(tbl.isStriped, true);
-    assert.equal(tbl.withColumnSeparators, true);
-    assert.equal(tbl.withRowSeparators, true);
-    assert.equal(tbl.rows.length, 2);
-    assert.ok(tbl.columns && tbl.columns.length === 2);
-    assert.equal(tbl.columns[1].align, TableColumnAlign.right);
+    assert.ok(isTableElement(tableElement));
+    assert.equal(tableElement.type, "table");
+    assert.equal(tableElement.isStriped, true);
+    assert.equal(tableElement.withColumnSeparators, true);
+    assert.equal(tableElement.withRowSeparators, true);
+    assert.equal(tableElement.rows.length, 2);
+    assert.ok(tableElement.columns && tableElement.columns.length === 2);
+    assert.equal(tableElement.columns[1].align, TableColumnAlign.right);
 
-    const multi = multiSlot(
+    const multiSlotElement = multiSlot(
       [
         slot(stringShort("Slot 1"), { width: "1/3" }),
         slot(stringShort("Slot 2"), { width: "2/3" })
@@ -174,14 +181,14 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
       { proportions: "1/3 + 2/3" }
     );
 
-    assert.equal(multi.type, "multi-slot");
-    assert.equal(multi.slots.length, 2);
-    assert.equal(multi.proportions, "1/3 + 2/3");
+    assert.equal(multiSlotElement.type, "multi-slot");
+    assert.equal(multiSlotElement.slots.length, 2);
+    assert.equal(multiSlotElement.proportions, "1/3 + 2/3");
   });
 
   it("should build repeating group elements", () =>
   {
-    const rep = repeatingGroup(
+    const repeatingGroupElement = repeatingGroup(
       [
         repeatingGroupEntry("Layer 1", { value: stringShort("Background") }),
         repeatingGroupEntry("Layer 2", { value: stringShort("Text Overlay") })
@@ -189,53 +196,53 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
       { title: "Composition Layers" }
     );
 
-    assert.equal(rep.type, "repeating-group");
-    assert.equal(rep.title, "Composition Layers");
-    assert.equal(rep.entries.length, 2);
-    assert.equal(rep.entries[0].label, "Layer 1");
+    assert.equal(repeatingGroupElement.type, "repeating-group");
+    assert.equal(repeatingGroupElement.title, "Composition Layers");
+    assert.equal(repeatingGroupElement.entries.length, 2);
+    assert.equal(repeatingGroupElement.entries[0].label, "Layer 1");
   });
 
   it("should support escape hatches and structured data (Markdown, HTML, XML, and JSON) with BaseModifiers", () =>
   {
-    const md = markdown("### Heading\n- Item 1\n- Item 2", { modifiers: { copyable: true } });
-    assert.equal(md.type, "markdown");
-    assert.equal(md.content, "### Heading\n- Item 1\n- Item 2");
-    assert.equal(md.modifiers?.copyable, true);
+    const markdownElement = markdown("### Heading\n- Item 1\n- Item 2", { modifiers: { copyable: true } });
+    assert.equal(markdownElement.type, "markdown");
+    assert.equal(markdownElement.content, "### Heading\n- Item 1\n- Item 2");
+    assert.equal(markdownElement.modifiers?.copyable, true);
 
-    const ht = html("<div class='custom-widget'>Content</div>", { modifiers: { copyable: false } });
-    assert.equal(ht.type, "html");
-    assert.equal(ht.content, "<div class='custom-widget'>Content</div>");
-    assert.equal(ht.modifiers?.copyable, false);
+    const htmlElement = html("<div class='custom-widget'>Content</div>", { modifiers: { copyable: false } });
+    assert.equal(htmlElement.type, "html");
+    assert.equal(htmlElement.content, "<div class='custom-widget'>Content</div>");
+    assert.equal(htmlElement.modifiers?.copyable, false);
 
-    const xmlElem = xml("<root><item id='1'>Value</item></root>", { modifiers: { copyable: true } });
-    assert.equal(xmlElem.type, "xml");
-    assert.equal(xmlElem.value, "<root><item id='1'>Value</item></root>");
-    assert.equal(xmlElem.modifiers?.copyable, true);
+    const xmlElement = xml("<root><item id='1'>Value</item></root>", { modifiers: { copyable: true } });
+    assert.equal(xmlElement.type, "xml");
+    assert.equal(xmlElement.value, "<root><item id='1'>Value</item></root>");
+    assert.equal(xmlElement.modifiers?.copyable, true);
 
-    const jsonElem = json("{\"key\": \"value\", \"count\": 42}", { modifiers: { copyable: true } });
-    assert.equal(jsonElem.type, "json");
-    assert.equal(jsonElem.value, "{\"key\": \"value\", \"count\": 42}");
-    assert.equal(jsonElem.modifiers?.copyable, true);
+    const jsonElement = json("{\"key\": \"value\", \"count\": 42}", { modifiers: { copyable: true } });
+    assert.equal(jsonElement.type, "json");
+    assert.equal(jsonElement.value, "{\"key\": \"value\", \"count\": 42}");
+    assert.equal(jsonElement.modifiers?.copyable, true);
   });
 
   it("should validate all type guards correctly", () =>
   {
-    const short = stringShort("Test");
-    assert.ok(isUiElement(short));
-    assert.ok(isStringShortElement(short));
-    assert.equal(isTableElement(short), false);
+    const shortElement = stringShort("Test");
+    assert.ok(isUiElement(shortElement));
+    assert.ok(isStringShortElement(shortElement));
+    assert.equal(isTableElement(shortElement), false);
 
-    const xmlElem = xml("<data/>");
-    assert.ok(isXmlElement(xmlElem));
-    assert.equal(isJsonElement(xmlElem), false);
+    const xmlElement = xml("<data/>");
+    assert.ok(isXmlElement(xmlElement));
+    assert.equal(isJsonElement(xmlElement), false);
 
-    const jsonElem = json("{}");
-    assert.ok(isJsonElement(jsonElem));
-    assert.equal(isXmlElement(jsonElem), false);
+    const jsonElement = json("{}");
+    assert.ok(isJsonElement(jsonElement));
+    assert.equal(isXmlElement(jsonElement), false);
 
-    const btn = buttonAction("cmd", "Click Me");
-    assert.ok(isActionElement(btn));
-    assert.ok(isButtonActionElement(btn));
+    const buttonElement = buttonAction("cmd", "Click Me");
+    assert.ok(isActionElement(buttonElement));
+    assert.ok(isButtonActionElement(buttonElement));
 
     assert.equal(isUiElement(null), false);
     assert.equal(isUiElement("not an object"), false);
@@ -270,36 +277,120 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
     assert.ok(isUiElement(shortClass));
     assert.ok(isStringShortElement(shortClass));
 
-    const btnClass = new ButtonActionElementClass("export", "Export", { variant: ButtonVariant.primary });
-    assert.ok(btnClass instanceof BaseActionElement);
-    assert.ok(btnClass instanceof ButtonActionElementClass);
-    assert.equal(btnClass.type, "button");
-    assert.equal(btnClass.commandId, "export");
-    assert.equal(btnClass.label, "Export");
-    assert.ok(isActionElement(btnClass));
-    assert.ok(isButtonActionElement(btnClass));
+    const buttonClass = new ButtonActionElementClass("export", "Export", { variant: ButtonVariant.primary });
+    assert.ok(buttonClass instanceof BaseActionElement);
+    assert.ok(buttonClass instanceof ButtonActionElementClass);
+    assert.equal(buttonClass.type, "button");
+    assert.equal(buttonClass.commandId, "export");
+    assert.equal(buttonClass.label, "Export");
+    assert.ok(isActionElement(buttonClass));
+    assert.ok(isButtonActionElement(buttonClass));
 
     const json = JSON.stringify(shortClass.toJSON());
     assert.equal(json, "{\"type\":\"string-short\",\"value\":\"Class Value\",\"representation\":\"chip\"}");
+
+    const featureClass = new FeatureClass([ shortClass ], { actions: [ buttonClass ] });
+    assert.ok(featureClass instanceof GrammarNode);
+    assert.ok(featureClass instanceof FeatureClass);
+    assert.equal(featureClass.schemaVersion, "1.0");
+    assert.equal(featureClass.elements.length, 1);
+    assert.equal(featureClass.actions?.length, 1);
+
+    const blockClass = new FeatureBlockClass("Block Title", [ shortClass ], { description: "Block Subtitle" });
+    assert.ok(blockClass instanceof GrammarNode);
+    assert.ok(blockClass instanceof FeatureBlockClass);
+    assert.equal(blockClass.title, "Block Title");
+    assert.equal(blockClass.description, "Block Subtitle");
+    assert.equal(blockClass.schemaVersion, "1.0");
+    assert.equal(blockClass.elements.length, 1);
+
+    // Verify parameterless instantiation compatibility at runtime (e.g. class-transformer plainToInstance)
+    const emptyFeatureClass = new (FeatureClass as new () => FeatureClass)();
+    assert.ok(emptyFeatureClass instanceof FeatureClass);
+    assert.equal(emptyFeatureClass.schemaVersion, "1.0");
+    assert.deepEqual(emptyFeatureClass.elements, []);
+    assert.equal(emptyFeatureClass.actions, undefined);
+
+    const emptyBlockClass = new (FeatureBlockClass as new () => FeatureBlockClass)();
+    assert.ok(emptyBlockClass instanceof FeatureBlockClass);
+    assert.equal(emptyBlockClass.schemaVersion, "1.0");
+    assert.deepEqual(emptyBlockClass.elements, []);
+    assert.equal(emptyBlockClass.title, undefined);
+
+    const emptyShortClass = new (StringShortElementClass as new () => StringShortElementClass)();
+    assert.ok(emptyShortClass instanceof StringShortElementClass);
+    assert.equal(emptyShortClass.type, "string-short");
+    assert.equal(emptyShortClass.representation, StringShortRepresentation.plain);
   });
 
   it("should construct Feature container using Feature fluent builder and functional helper", () =>
   {
-    const feat = Feature.builder()
+    const feature = Feature.builder()
       .addLabelValue("Key", stringShort("Value"))
       .addAction(buttonAction("export", "Export"))
       .build();
 
-    assert.equal(feat.schemaVersion, "1.0");
-    assert.equal(feat.elements.length, 1);
-    assert.equal(feat.elements[0].type, "label-value");
-    assert.equal(feat.actions?.length, 1);
+    assert.ok(feature instanceof FeatureClass);
+    assert.ok(feature instanceof GrammarNode);
+    assert.equal(feature.schemaVersion, "1.0");
+    assert.equal(feature.elements.length, 1);
+    assert.equal(feature.elements[0].type, "label-value");
+    assert.equal(feature.actions?.length, 1);
 
-    const featHelper = createFeature({
+    const featureHelper = createFeature({
       elements: [ labelValue("Direct", stringShort("Text")) ]
     });
-    assert.equal(featHelper.schemaVersion, "1.0");
-    assert.equal(featHelper.elements.length, 1);
+    assert.ok(featureHelper instanceof FeatureClass);
+    assert.ok(featureHelper instanceof GrammarNode);
+    assert.equal(featureHelper.schemaVersion, "1.0");
+    assert.equal(featureHelper.elements.length, 1);
+
+    // Verify toString() produces compact unindented JSON string representation
+    const jsonString = feature.toString();
+    assert.equal(jsonString, JSON.stringify(feature.toJSON()));
+    assert.ok(!jsonString.includes("\n"));
+
+    const builderJsonString = Feature.builder().addLabelValue("Key", stringShort("Value")).toString();
+    assert.equal(builderJsonString, Feature.builder().addLabelValue("Key", stringShort("Value")).build().toString());
+    const parsedBuilder = JSON.parse(builderJsonString);
+    assert.equal(parsedBuilder.schemaVersion, "1.0");
+    assert.equal(parsedBuilder.elements.length, 1);
+    assert.equal(parsedBuilder.elements[0].label, "Key");
+
+    // Test Feature.parse() and parseFeature()
+    const parsedFeature = Feature.parse(builderJsonString);
+    assert.ok(parsedFeature instanceof FeatureClass);
+    assert.ok(parsedFeature instanceof GrammarNode);
+    assert.equal(parsedFeature.schemaVersion, "1.0");
+    assert.equal(parsedFeature.elements.length, 1);
+    assert.ok(isFeature(parsedFeature));
+
+    const parsedFeatureObject = parseFeature(parsedBuilder);
+    assert.ok(parsedFeatureObject instanceof FeatureClass);
+    assert.equal(parsedFeatureObject.elements[0].type, "label-value");
+
+    // Test FeatureBlock.parse() and parseFeatureBlock()
+    const block = FeatureBlock.builder("Test Title").addLabelValue("A", stringShort("B")).build();
+    const blockJson = block.toString();
+    const parsedBlock = FeatureBlock.parse(blockJson);
+    assert.ok(parsedBlock instanceof FeatureBlockClass);
+    assert.ok(parsedBlock instanceof GrammarNode);
+    assert.equal(parsedBlock.title, "Test Title");
+    assert.equal(parsedBlock.elements.length, 1);
+    assert.ok(isFeatureBlock(parsedBlock));
+
+    const parsedBlockObject = parseFeatureBlock(JSON.parse(blockJson));
+    assert.ok(parsedBlockObject instanceof FeatureBlockClass);
+    assert.equal(parsedBlockObject.title, "Test Title");
+
+    // Test invalid schema throws Error
+    assert.throws(
+      () =>
+      {
+        Feature.parse("{\"invalid\":\"data\"}");
+      },
+      /Invalid JSON/
+    );
   });
 
 });

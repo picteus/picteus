@@ -371,7 +371,8 @@ function generateModelClass(model: GrammarModel, polymorphicRootNames: ReadonlyS
       ? (property.type.kind === "enum" ? `${property.type.name}.${property.defaultValue}` : JSON.stringify(property.defaultValue))
       : undefined;
     lines.push(formatTsDoc({ summary: property.doc, defaultValue: defaultValueString, indent: "  " }));
-    lines.push(`  readonly ${property.name}?: ${resolveTsType(property.type)};`);
+    const optional = property.optional ? "?" : "";
+    lines.push(`  readonly ${property.name}${optional}: ${resolveTsType(property.type)};`);
   }
   lines.push("");
 
@@ -414,7 +415,7 @@ function generateModelClass(model: GrammarModel, polymorphicRootNames: ReadonlyS
   {
     if (property.type.kind === "array")
     {
-      lines.push(`    this.${property.name} = [ ...${property.name} ];`);
+      lines.push(`    this.${property.name} = ${property.name} ? [ ...${property.name} ] : [];`);
     }
     else
     {
@@ -529,6 +530,16 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   lines.push("      }");
   lines.push("    }");
   lines.push("    return result as T;");
+  lines.push("  }");
+  lines.push("");
+  lines.push("  /**");
+  lines.push("   * Returns the compact JSON string representation of this model instance with no indentation.");
+  lines.push("   *");
+  lines.push("   * @returns Compact JSON string without indentation.");
+  lines.push("   */");
+  lines.push("  toString(): string");
+  lines.push("  {");
+  lines.push("    return JSON.stringify(this.toJSON());");
   lines.push("  }");
   lines.push("}");
   lines.push("");
@@ -682,7 +693,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   lines.push("");
   for (const model of spec.models)
   {
-    if (polymorphicRootNames.has(model.name) || model.isDslRoot || model.name === "FeatureBlock" || model.isDslIgnored)
+    if (polymorphicRootNames.has(model.name) || model.isDslIgnored)
     {
       continue;
     }
@@ -695,12 +706,6 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   for (const root of rootModels)
   {
     const builderClassName = `${root.name}Builder`;
-    const hasSchemaVersion = root.properties.some(
-      (property) =>
-      {
-        return property.name === "schemaVersion";
-      }
-    );
     const rootNonTypeProperties = root.properties.filter(
       (property) =>
       {
@@ -952,44 +957,71 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       }
     }
 
+    const className = `${root.name}Class`;
     lines.push(
       formatTsDoc(
         {
-          summary: `Finalizes and returns the complete strongly-typed \`${root.name}\` object.`,
-          returns: `The constructed \`${root.name}\` object.`,
+          summary: `Finalizes and returns the complete strongly-typed \`${className}\` instance.`,
+          returns: `The constructed \`${className}\` instance.`,
           indent: "  "
         }
       )
     );
-    lines.push(`  build(): ${root.name}`);
+    lines.push(`  build(): ${className}`);
     lines.push("  {");
-    lines.push("    return {");
-    if (hasSchemaVersion)
-    {
-      lines.push("      schemaVersion: \"1.0\",");
-    }
+    const buildArgs: string[] = [];
     for (const property of rootRequiredProperties)
     {
-      lines.push(`      ${property.name}: this._${property.name},`);
+      buildArgs.push(`this._${property.name}`);
     }
+    for (const property of rootArrayProperties.filter((property) => !property.optional))
+    {
+      buildArgs.push(`this._${property.name}`);
+    }
+    const buildOptEntries: string[] = [];
     for (const property of rootOptionalProperties)
     {
-      lines.push(`      ${property.name}: this._${property.name},`);
+      buildOptEntries.push(`${property.name}: this._${property.name}`);
     }
-    for (const property of rootArrayProperties)
+    for (const property of rootArrayProperties.filter((property) => property.optional))
     {
-      if (property.optional)
-      {
-        lines.push(`      ${property.name}: this._${property.name}.length > 0 ? [ ...this._${property.name} ] : undefined,`);
-      }
-      else
-      {
-        lines.push(`      ${property.name}: [ ...this._${property.name} ],`);
-      }
+      buildOptEntries.push(`${property.name}: this._${property.name}.length > 0 ? this._${property.name} : undefined`);
     }
-    const lastBuildIndex = lines.length - 1;
-    lines[lastBuildIndex] = lines[lastBuildIndex].replace(/,$/, "");
-    lines.push("    };");
+    if (buildOptEntries.length > 0)
+    {
+      buildArgs.push(`{\n        ${buildOptEntries.join(",\n        ")}\n      }`);
+    }
+    lines.push(`    return new ${className}(`);
+    lines.push(`      ${buildArgs.join(",\n      ")}`);
+    lines.push("    );");
+    lines.push("  }");
+    lines.push("");
+    lines.push(
+      formatTsDoc(
+        {
+          summary: `Serializes this builder into a strongly-typed, JSON-compatible plain object conforming to interface \`${root.name}\`.`,
+          returns: `The plain object representation conforming to interface \`${root.name}\`.`,
+          indent: "  "
+        }
+      )
+    );
+    lines.push(`  toJSON(): ${root.name}`);
+    lines.push("  {");
+    lines.push("    return this.build().toJSON();");
+    lines.push("  }");
+    lines.push("");
+    lines.push(
+      formatTsDoc(
+        {
+          summary: `Returns the compact JSON string representation of the built \`${className}\` instance with no indentation.`,
+          returns: "Compact JSON string without indentation.",
+          indent: "  "
+        }
+      )
+    );
+    lines.push("  toString(): string");
+    lines.push("  {");
+    lines.push("    return this.build().toString();");
     lines.push("  }");
     lines.push("}");
     lines.push("");
@@ -1039,43 +1071,66 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push(
       formatTsDoc(
         {
-          summary: `Creates a \`${root.name}\` directly from a properties object.`,
+          summary: `Creates a \`${className}\` directly from a properties object.`,
           params: [ { name: "params", description: "Configuration properties." } ],
-          returns: `A completed \`${root.name}\` object.`,
+          returns: `A completed \`${className}\` instance.`,
           indent: "  "
         }
       )
     );
-    lines.push(`  create(params: { ${createParameters} }): ${root.name}`);
+    lines.push(`  create(params: { ${createParameters} }): ${className}`);
     lines.push("  {");
-    lines.push("    return {");
-    if (hasSchemaVersion)
+    const createArgs: string[] = [];
+    for (const property of rootRequiredProperties)
     {
-      lines.push("      schemaVersion: \"1.0\",");
+      createArgs.push(`params.${property.name}`);
     }
-    for (const property of rootNonTypeProperties)
+    for (const property of rootArrayProperties.filter((property) => !property.optional))
     {
-      if (property.type.kind === "array" && property.optional)
-      {
-        lines.push(`      ${property.name}: params.${property.name} ? [ ...params.${property.name} ] : undefined,`);
-      }
-      else if (property.type.kind === "array")
-      {
-        lines.push(`      ${property.name}: [ ...params.${property.name} ],`);
-      }
-      else
-      {
-        lines.push(`      ${property.name}: params.${property.name},`);
-      }
+      createArgs.push(`params.${property.name}`);
     }
-    const lastCreateIndex = lines.length - 1;
-    lines[lastCreateIndex] = lines[lastCreateIndex].replace(/,$/, "");
-    lines.push("    };");
+    const createOptEntries: string[] = [];
+    for (const property of rootOptionalProperties)
+    {
+      createOptEntries.push(`${property.name}: params.${property.name}`);
+    }
+    for (const property of rootArrayProperties.filter((property) => property.optional))
+    {
+      createOptEntries.push(`${property.name}: params.${property.name}`);
+    }
+    if (createOptEntries.length > 0)
+    {
+      createArgs.push(`{\n        ${createOptEntries.join(",\n        ")}\n      }`);
+    }
+    lines.push(`    return new ${className}(`);
+    lines.push(`      ${createArgs.join(",\n      ")}`);
+    lines.push("    );");
+    lines.push("  },");
+    lines.push("");
+    lines.push(
+      formatTsDoc(
+        {
+          summary: `Parses a JSON string or raw object into a validated \`${className}\` instance.`,
+          params: [ { name: "json", description: "JSON string or parsed JavaScript object to validate and hydrate." } ],
+          returns: `A strongly-typed \`${className}\` instance.`,
+          remarks: `Throws an \`Error\` if the input does not conform to the \`${root.name}\` schema.`,
+          indent: "  "
+        }
+      )
+    );
+    lines.push(`  parse(json: string | unknown): ${className}`);
+    lines.push("  {");
+    lines.push("    const data: unknown = typeof json === \"string\" ? JSON.parse(json) : json;");
+    lines.push(`    if (!is${root.name}(data))`);
+    lines.push("    {");
+    lines.push(`      throw new Error("Invalid JSON: value does not match the \`${root.name}\` schema.");`);
+    lines.push("    }");
+    lines.push(`    return ${root.name}.create(data);`);
     lines.push("  }");
     lines.push("};");
     lines.push("");
 
-    // 8. We generate create<RootModel> Functional Factories
+    // 8. We generate create<RootModel> and parse<RootModel> Functional Factories
     const createFunctionName = `create${root.name}`;
     const rootOptionalCreateFields = rootNonTypeProperties
       .filter(
@@ -1094,48 +1149,66 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     lines.push(
       formatTsDoc(
         {
-          summary: `Functional helper to create a \`${root.name}\` instance directly.`,
+          summary: `Functional helper to create a \`${className}\` instance directly.`,
           remarks: root.doc,
           params: [
             ...constructorDocParameters,
-            ...(rootOptionalCreateFields.length > 0 ? [ { name: "options", description: "Optional configuration (description, elements, actions)." } ] : [])
+            ...(rootOptionalCreateFields.length > 0 ? [ {
+              name: "options",
+              description: "Optional configuration (description, elements, actions)."
+            } ] : [])
           ],
-          returns: `A strongly-typed \`${root.name}\` instance.`
+          returns: `A strongly-typed \`${className}\` instance.`
         }
       )
     );
     const optionsParameter = rootOptionalCreateFields.length > 0
       ? (rootRequiredProperties.length > 0 ? `, options?: { ${rootOptionalCreateFields} }` : `options?: { ${rootOptionalCreateFields} }`)
       : "";
-    lines.push(`export function ${createFunctionName}(${constructorArguments}${optionsParameter}): ${root.name}`);
+    lines.push(`export function ${createFunctionName}(${constructorArguments}${optionsParameter}): ${className}`);
     lines.push("{");
-    lines.push("  return {");
-    if (hasSchemaVersion)
-    {
-      lines.push("    schemaVersion: \"1.0\",");
-    }
+    const helperArgs: string[] = [];
     for (const property of rootRequiredProperties)
     {
-      lines.push(`    ${property.name},`);
+      helperArgs.push(property.name);
     }
-    for (const property of rootNonTypeProperties.filter((property) => !rootRequiredProperties.includes(property)))
+    for (const property of rootArrayProperties.filter((property) => !property.optional))
     {
-      if (property.type.kind === "array" && !property.optional)
-      {
-        lines.push(`    ${property.name}: options?.${property.name} ? [ ...options.${property.name} ] : [],`);
-      }
-      else if (property.type.kind === "array" && property.optional)
-      {
-        lines.push(`    ${property.name}: options?.${property.name} ? [ ...options.${property.name} ] : undefined,`);
-      }
-      else
-      {
-        lines.push(`    ${property.name}: options?.${property.name},`);
-      }
+      helperArgs.push(`options?.${property.name} ?? []`);
     }
-    const lastFunctionIndex = lines.length - 1;
-    lines[lastFunctionIndex] = lines[lastFunctionIndex].replace(/,$/, "");
-    lines.push("  };");
+    const helperOptEntries: string[] = [];
+    for (const property of rootOptionalProperties)
+    {
+      helperOptEntries.push(`${property.name}: options?.${property.name}`);
+    }
+    for (const property of rootArrayProperties.filter((property) => property.optional))
+    {
+      helperOptEntries.push(`${property.name}: options?.${property.name}`);
+    }
+    if (helperOptEntries.length > 0)
+    {
+      helperArgs.push(`{\n      ${helperOptEntries.join(",\n      ")}\n    }`);
+    }
+    lines.push(`  return new ${className}(`);
+    lines.push(`    ${helperArgs.join(",\n    ")}`);
+    lines.push("  );");
+    lines.push("}");
+    lines.push("");
+
+    const parseFunctionName = `parse${root.name}`;
+    lines.push(
+      formatTsDoc(
+        {
+          summary: `Parses a JSON string or raw object into a validated \`${className}\` instance.`,
+          remarks: root.doc,
+          params: [ { name: "json", description: "JSON string or parsed JavaScript object to validate and hydrate." } ],
+          returns: `A strongly-typed \`${className}\` instance.`
+        }
+      )
+    );
+    lines.push(`export function ${parseFunctionName}(json: string | unknown): ${className}`);
+    lines.push("{");
+    lines.push(`  return ${root.name}.parse(json);`);
     lines.push("}");
     lines.push("");
   }
@@ -1196,6 +1269,49 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         lines.push("");
       }
     }
+  }
+
+  for (const root of rootModels)
+  {
+    lines.push(
+      formatTsDoc(
+        {
+          summary: `Type guard predicate verifying whether an unknown value conforms to \`${root.name}\`.`,
+          params: [ { name: "value", description: "The value to inspect." } ],
+          returns: `\`true\` if the value is a valid \`${root.name}\`, otherwise \`false\`.`
+        }
+      )
+    );
+    lines.push(`export function is${root.name}(value: unknown): value is ${root.name}`);
+    lines.push("{");
+    const conditions: string[] = [
+      `typeof value === "object"`,
+      `value !== null`
+    ];
+    if (root.properties.some((property) => property.name === "schemaVersion"))
+    {
+      conditions.push(`"schemaVersion" in value`);
+      conditions.push(`(value as { schemaVersion: unknown }).schemaVersion === "1.0"`);
+    }
+    for (const property of root.properties.filter((property) => !property.optional && property.defaultValue === undefined))
+    {
+      if (property.name === "type")
+      {
+        continue;
+      }
+      conditions.push(`"${property.name}" in value`);
+      if (property.type.kind === "array")
+      {
+        conditions.push(`Array.isArray((value as { ${property.name}: unknown }).${property.name})`);
+      }
+      else if (property.type.kind === "string")
+      {
+        conditions.push(`typeof (value as { ${property.name}: unknown }).${property.name} === "string"`);
+      }
+    }
+    lines.push(`  return ${conditions.join(" && ")};`);
+    lines.push("}");
+    lines.push("");
   }
 
   return lines.join("\n");

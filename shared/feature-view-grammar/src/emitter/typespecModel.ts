@@ -22,16 +22,20 @@ import {
 
 export interface GrammarEnumMember
 {
-  name: string;
-  value: string;
-  doc?: string;
+
+  readonly name: string;
+  readonly value: string;
+  readonly doc?: string;
+
 }
 
 export interface GrammarEnum
 {
-  name: string;
-  doc?: string;
-  members: GrammarEnumMember[];
+
+  readonly name: string;
+  readonly doc?: string;
+  readonly members: GrammarEnumMember[];
+
 }
 
 export type GrammarTypeKind =
@@ -48,61 +52,71 @@ export type GrammarTypeKind =
 
 export interface GrammarType
 {
-  kind: GrammarTypeKind;
-  name: string;
-  literalValue?: string | number | boolean;
-  elementType?: GrammarType;
-  unionTypes?: GrammarType[];
+
+  readonly kind: GrammarTypeKind;
+  readonly name: string;
+  readonly literalValue?: string | number | boolean;
+  readonly elementType?: GrammarType;
+  readonly unionTypes?: GrammarType[];
+
 }
 
 export interface GrammarProperty
 {
-  name: string;
-  doc?: string;
-  optional: boolean;
-  type: GrammarType;
-  defaultValue?: string | number | boolean;
-  isUiLabel?: boolean;
-  isUiValue?: boolean;
-  uiDivider?: UiDividerOptions;
-  uiMeterBound?: UiMeterBoundKind;
-  isUiModifiers?: boolean;
+
+  readonly name: string;
+  readonly doc?: string;
+  readonly optional: boolean;
+  readonly type: GrammarType;
+  readonly defaultValue?: string | number | boolean;
+  readonly isUiLabel?: boolean;
+  readonly isUiValue?: boolean;
+  readonly uiDivider?: UiDividerOptions;
+  readonly uiMeterBound?: UiMeterBoundKind;
+  readonly isUiModifiers?: boolean;
+
 }
 
 export interface GrammarModel
 {
-  name: string;
-  doc?: string;
-  baseModelName?: string;
-  isDiscriminated: boolean;
-  discriminatorValue?: string;
-  isDslRoot: boolean;
-  isDslIgnored: boolean;
-  aliases: DslAliasName[];
-  properties: GrammarProperty[];
-  uiLayout?: UiLayoutKind;
-  uiWidget?: UiWidgetKind;
-  isCustomRenderer?: boolean;
+
+  readonly name: string;
+  readonly doc?: string;
+  readonly baseModelName?: string;
+  readonly isDiscriminated: boolean;
+  readonly discriminatorValue?: string;
+  readonly isDslRoot: boolean;
+  readonly isDslIgnored: boolean;
+  readonly aliases: DslAliasName[];
+  readonly properties: GrammarProperty[];
+  readonly uiLayout?: UiLayoutKind;
+  readonly uiWidget?: UiWidgetKind;
+  readonly isCustomRenderer?: boolean;
+
 }
 
 export interface PolymorphicRoot
 {
-  name: string;
-  doc?: string;
-  discriminatorProperty: string;
-  derivedModels: GrammarModel[];
+
+  readonly name: string;
+  readonly doc?: string;
+  readonly discriminatorProperty: string;
+  readonly derivedModels: GrammarModel[];
+
 }
 
 export interface GrammarSpec
 {
-  namespaceDoc?: string;
-  enums: GrammarEnum[];
-  models: GrammarModel[];
-  polymorphicRoots: PolymorphicRoot[];
-  uiElements: GrammarModel[];
-  actionElements: GrammarModel[];
-  rootModel?: GrammarModel;
-  rootModels: GrammarModel[];
+
+  readonly namespaceDoc?: string;
+  readonly enums: GrammarEnum[];
+  readonly models: GrammarModel[];
+  readonly polymorphicRoots: PolymorphicRoot[];
+  readonly uiElements: GrammarModel[];
+  readonly actionElements: GrammarModel[];
+  readonly rootModel?: GrammarModel;
+  readonly rootModels: GrammarModel[];
+
 }
 
 function resolveGrammarType(program: Program, type: Type): GrammarType
@@ -160,7 +174,7 @@ function resolveGrammarType(program: Program, type: Type): GrammarType
       }
       return {
         kind: "union",
-        name: unionTypes.map((u) => u.name).join(" | "),
+        name: unionTypes.map((unionType) => unionType.name).join(" | "),
         unionTypes
       };
     }
@@ -171,41 +185,41 @@ function resolveGrammarType(program: Program, type: Type): GrammarType
 
 function getAllModelProperties(model: Model): Map<string, ModelProperty>
 {
-  const props = new Map<string, ModelProperty>();
-  for (const [ name, prop ] of model.properties)
+  const properties = new Map<string, ModelProperty>();
+  for (const [ name, property ] of model.properties)
   {
-    props.set(name, prop);
+    properties.set(name, property);
   }
   if (model.baseModel)
   {
-    const baseProps = getAllModelProperties(model.baseModel);
-    for (const [ name, prop ] of baseProps)
+    const baseProperties = getAllModelProperties(model.baseModel);
+    for (const [ name, property ] of baseProperties)
     {
-      if (!props.has(name))
+      if (!properties.has(name))
       {
-        props.set(name, prop);
+        properties.set(name, property);
       }
     }
   }
-  return props;
+  return properties;
 }
 
 export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
 {
-  const globalNs = program.getGlobalNamespaceType();
-  const picteusNs = globalNs.namespaces.get("Picteus");
-  const grammarNs = picteusNs?.namespaces.get("FeatureViewGrammar");
+  const globalNamespace = program.getGlobalNamespaceType();
+  const picteusNamespace = globalNamespace.namespaces.get("Picteus");
+  const grammarNamespace = picteusNamespace?.namespaces.get("FeatureViewGrammar");
 
-  if (!grammarNs)
+  if (!grammarNamespace)
   {
     throw new Error("Could not locate namespace 'Picteus.FeatureViewGrammar' in TypeSpec program.");
   }
 
-  const namespaceDoc = getDoc(program, grammarNs);
+  const namespaceDoc = getDoc(program, grammarNamespace);
   const enums: GrammarEnum[] = [];
   const models: GrammarModel[] = [];
 
-  for (const [ enumName, enumType ] of grammarNs.enums)
+  for (const [ enumName, enumType ] of grammarNamespace.enums)
   {
     const members: GrammarEnumMember[] = [];
     for (const [ memberName, member ] of enumType.members)
@@ -227,7 +241,7 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
     );
   }
 
-  for (const [ modelName, modelType ] of grammarNs.models)
+  for (const [ modelName, modelType ] of grammarNamespace.models)
   {
     if (modelName === "RecordUnknown" || modelName === "Array")
     {
@@ -236,68 +250,68 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
 
     const properties: GrammarProperty[] = [];
     let discriminatorValue: string | undefined = undefined;
-    const allProps = getAllModelProperties(modelType);
+    const allProperties = getAllModelProperties(modelType);
 
-    for (const [ propName, prop ] of allProps)
+    for (const [ propertyName, property ] of allProperties)
     {
-      const propType = resolveGrammarType(program, prop.type);
+      const propertyType = resolveGrammarType(program, property.type);
       let defaultValue: string | number | boolean | undefined = undefined;
 
-      if (prop.defaultValue)
+      if (property.defaultValue)
       {
-        if (typeof prop.defaultValue === "object" && prop.defaultValue !== null)
+        if (typeof property.defaultValue === "object" && property.defaultValue !== null)
         {
-          if ("valueKind" in prop.defaultValue && prop.defaultValue.valueKind === "EnumValue")
+          if ("valueKind" in property.defaultValue && property.defaultValue.valueKind === "EnumValue")
           {
-            const enumVal = prop.defaultValue.value as { name?: string; value?: string };
-            defaultValue = enumVal.name ?? enumVal.value;
+            const enumValue = property.defaultValue.value as { name?: string; value?: string };
+            defaultValue = enumValue.name ?? enumValue.value;
           }
-          else if ("value" in prop.defaultValue)
+          else if ("value" in property.defaultValue)
           {
-            if (typeof prop.defaultValue.value === "object" && prop.defaultValue.value !== null)
+            if (typeof property.defaultValue.value === "object" && property.defaultValue.value !== null)
             {
-              if ("name" in prop.defaultValue.value)
+              if ("name" in property.defaultValue.value)
               {
-                defaultValue = (prop.defaultValue.value as { name: string }).name;
+                defaultValue = (property.defaultValue.value as { name: string }).name;
               }
-              else if ("value" in prop.defaultValue.value)
+              else if ("value" in property.defaultValue.value)
               {
-                defaultValue = (prop.defaultValue.value as { value: string | number | boolean }).value;
+                defaultValue = (property.defaultValue.value as { value: string | number | boolean }).value;
               }
             }
             else
             {
-              defaultValue = prop.defaultValue.value as string | number | boolean;
+              defaultValue = property.defaultValue.value as string | number | boolean;
             }
           }
-          else if ("name" in prop.defaultValue)
+          else if ("name" in property.defaultValue)
           {
-            defaultValue = (prop.defaultValue as { name: string }).name;
+            defaultValue = (property.defaultValue as { name: string }).name;
           }
         }
         else
         {
-          defaultValue = prop.defaultValue as string | number | boolean;
+          defaultValue = property.defaultValue as string | number | boolean;
         }
       }
 
-      if (propName === "type" && propType.kind === "literal")
+      if (propertyName === "type" && propertyType.kind === "literal")
       {
-        discriminatorValue = String(propType.literalValue);
+        discriminatorValue = String(propertyType.literalValue);
       }
 
       properties.push(
         {
-          name: propName,
-          doc: getDoc(program, prop),
-          optional: prop.optional,
-          type: propType,
+          name: propertyName,
+          doc: getDoc(program, property),
+          optional: property.optional,
+          type: propertyType,
           defaultValue,
-          isUiLabel: isUiLabel(program, prop),
-          isUiValue: isUiValue(program, prop),
-          uiDivider: getUiDivider(program, prop),
-          uiMeterBound: getUiMeterBound(program, prop),
-          isUiModifiers: isUiModifiers(program, prop)
+          isUiLabel: isUiLabel(program, property),
+          isUiValue: isUiValue(program, property),
+          uiDivider: getUiDivider(program, property),
+          uiMeterBound: getUiMeterBound(program, property),
+          isUiModifiers: isUiModifiers(program, property)
         }
       );
     }
@@ -325,19 +339,19 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
     );
   }
 
-  // Discover polymorphic roots dynamically via @discriminator
+  // We discover polymorphic roots dynamically via @discriminator
   const polymorphicRoots: PolymorphicRoot[] = [];
-  for (const [ modelName, modelType ] of grammarNs.models)
+  for (const [ modelName, modelType ] of grammarNamespace.models)
   {
-    const disc = getDiscriminator(program, modelType);
-    if (disc && modelType.baseModel === undefined)
+    const discriminator = getDiscriminator(program, modelType);
+    if (discriminator && modelType.baseModel === undefined)
     {
-      const derived = models.filter((m) => m.baseModelName === modelName);
+      const derived = models.filter((model) => model.baseModelName === modelName);
       polymorphicRoots.push(
         {
           name: modelName,
           doc: getDoc(program, modelType),
-          discriminatorProperty: disc.propertyName,
+          discriminatorProperty: discriminator.propertyName,
           derivedModels: derived
         }
       );
@@ -346,11 +360,11 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
 
   const rootModels = models.filter((model) => model.isDslRoot);
   const rootModel = rootModels.find((model) => model.name === "FeatureBlock") ?? rootModels[0] ?? models.find((model) => model.name === "FeatureBlock");
-  const uiRoot = polymorphicRoots.find((root) => root.name === "UiElement") ?? polymorphicRoots[0];
-  const actionRoot = polymorphicRoots.find((root) => root.name === "ActionElement") ?? polymorphicRoots[1];
+  const uiElementRoot = polymorphicRoots.find((root) => root.name === "UiElement") ?? polymorphicRoots[0];
+  const actionElementRoot = polymorphicRoots.find((root) => root.name === "ActionElement") ?? polymorphicRoots[1];
 
-  const uiElements = uiRoot ? uiRoot.derivedModels : [];
-  const actionElements = actionRoot ? actionRoot.derivedModels : [];
+  const uiElements = uiElementRoot ? uiElementRoot.derivedModels : [];
+  const actionElements = actionElementRoot ? actionElementRoot.derivedModels : [];
 
   return {
     namespaceDoc,
