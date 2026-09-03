@@ -839,7 +839,14 @@ export class ApplicationWrapper
           role: "help",
           submenu: [
             {
-              label: "Learn More",
+              label: "Documentation",
+              click: async () =>
+              {
+                await shell.openExternal("https://picteus.github.io/picteus");
+              }
+            },
+            {
+              label: "GitHub Project",
               click: async () =>
               {
                 await shell.openExternal(JSON.parse(fs.readFileSync(path.join(referenceDirectoryPath, "..", "package.json"), "utf8"))["homepage"]);
