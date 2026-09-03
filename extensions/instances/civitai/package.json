@@ -34,7 +34,6 @@
     "icon.png"
   ],
   "scripts": {
-    "prerequisites": "npm --no-save link ../../sdk/typescript",
     "build": "tsc"
   },
   "devDependencies": {
