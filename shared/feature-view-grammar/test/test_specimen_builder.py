@@ -281,6 +281,33 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertTrue(isinstance(parsed_block_dict, FeatureBlock))
         self.assertEqual(parsed_block_dict.title, "Test Python Block")
 
+    def test_deep_validation(self):
+        invalid_table_payload = {
+            "schemaVersion": "1.0",
+            "elements": [
+                {
+                    "type": "table",
+                    "rows": [
+                        {
+                            "cells": [
+                                {"type": "string-short", "value": "Valid cell"},
+                                {"type": "string-short"},
+                            ]
+                        }
+                    ],
+                }
+            ],
+        }
+
+        # Feature.parse() with default deep validation raises ValueError
+        with self.assertRaises(ValueError):
+            Feature.parse(invalid_table_payload, with_deep_validation=True)
+
+        # Feature.parse() with with_deep_validation=False succeeds
+        parsed = Feature.parse(invalid_table_payload, with_deep_validation=False)
+        self.assertTrue(isinstance(parsed, Feature))
+        self.assertEqual(len(parsed.elements), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

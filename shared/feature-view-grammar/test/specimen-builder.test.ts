@@ -393,4 +393,43 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
     );
   });
 
+  it("should perform deep recursive validation and catch invalid nested properties", () =>
+  {
+    const invalidTablePayload = {
+      schemaVersion: "1.0",
+      elements: [
+        {
+          type: "table",
+          rows: [
+            {
+              cells: [
+                { type: "string-short", value: "Valid cell" },
+                { type: "string-short" }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    // Shallow validation succeeds because top-level structure has schemaVersion and elements array
+    assert.equal(isFeature(invalidTablePayload, false), true);
+
+    // Deep validation detects the invalid nested cell and fails
+    assert.equal(isFeature(invalidTablePayload, true), false);
+
+    // Feature.parse() with default deep validation rejects the invalid payload
+    assert.throws(
+      () =>
+      {
+        Feature.parse(invalidTablePayload);
+      },
+      /Invalid JSON: value does not match the `Feature` schema/
+    );
+
+    // Feature.parse() with withDeepValidation = false accepts it
+    const parsedShallow = Feature.parse(invalidTablePayload, false);
+    assert.ok(parsedShallow instanceof FeatureClass);
+  });
+
 });

@@ -235,15 +235,15 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("from __future__ import annotations");
   lines.push("");
   lines.push("import json as _json");
-  lines.push("from dataclasses import dataclass, field");
+  lines.push("from dataclasses import MISSING, dataclass, field");
   lines.push("from enum import Enum");
-  lines.push("from typing import Any, Dict, List, Literal, Optional, Protocol, Union, runtime_checkable");
+  lines.push("from typing import Any, Dict, List, Literal, Optional, Protocol, Tuple, Union, runtime_checkable");
   lines.push("");
 
   // We define base serialization dataclass
   lines.push("@dataclass");
   lines.push("class GrammarBase:");
-  lines.push("    \"\"\"Base dataclass providing recursive dictionary and JSON serialization.\"\"\"");
+  lines.push("    \"\"\"Base dataclass providing recursive dictionary, validation, and JSON serialization.\"\"\"");
   lines.push("");
   lines.push("    def to_dict(self) -> Dict[str, Any]:");
   lines.push("        def _clean(val: Any) -> Any:");
@@ -274,12 +274,32 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("    def __str__(self) -> str:");
   lines.push("        return self.to_json()");
   lines.push("");
+  lines.push("    def validate(self, with_deep_validation: bool = True) -> bool:");
+  lines.push("        \"\"\"Validates all required fields and recursively validates nested elements.\"\"\"");
+  lines.push("        cls_name = self.__class__.__name__");
+  lines.push("        if cls_name in _REQUIRED_FIELDS:");
+  lines.push("            for req_field in _REQUIRED_FIELDS[cls_name]:");
+  lines.push("                if getattr(self, req_field, None) is None:");
+  lines.push("                    raise ValueError(f\"Missing required field '{req_field}' on {cls_name}\")");
+  lines.push("");
+  lines.push("        if with_deep_validation:");
+  lines.push("            for field_name in getattr(self, \"__dataclass_fields__\", {}):");
+  lines.push("                field_val = getattr(self, field_name, None)");
+  lines.push("                if field_val is not None:");
+  lines.push("                    if isinstance(field_val, GrammarBase):");
+  lines.push("                        field_val.validate(with_deep_validation=True)");
+  lines.push("                    elif isinstance(field_val, list):");
+  lines.push("                        for item in field_val:");
+  lines.push("                            if isinstance(item, GrammarBase):");
+  lines.push("                                item.validate(with_deep_validation=True)");
+  lines.push("        return True");
+  lines.push("");
   lines.push("    @classmethod");
   lines.push("    def _from_dict(cls: Any, data: Dict[str, Any]) -> Any:");
   lines.push("        if not isinstance(data, dict):");
   lines.push("            return data");
   lines.push("        kwargs: Dict[str, Any] = {}");
-  lines.push("        for field_name in getattr(cls, \"__dataclass_fields__\", {}):");
+  lines.push("        for field_name, field_def in getattr(cls, \"__dataclass_fields__\", {}).items():");
   lines.push("            parts = field_name.split(\"_\")");
   lines.push("            camel_name = parts[0] + \"\".join(p.capitalize() for p in parts[1:]) if len(parts) > 1 else field_name");
   lines.push("            if camel_name in data:");
@@ -287,10 +307,20 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("            elif field_name in data:");
   lines.push("                raw_val = data[field_name]");
   lines.push("            else:");
+  lines.push("                if field_def.default is MISSING and getattr(field_def, \"default_factory\", None) is MISSING:");
+  lines.push("                    kwargs[field_name] = None");
   lines.push("                continue");
   lines.push("");
   lines.push("            if raw_val is None:");
   lines.push("                kwargs[field_name] = None");
+  lines.push("            elif (cls.__name__, field_name) in _NESTED_MODEL_MAP:");
+  lines.push("                nested_cls, is_list = _NESTED_MODEL_MAP[(cls.__name__, field_name)]");
+  lines.push("                if is_list and isinstance(raw_val, list):");
+  lines.push("                    kwargs[field_name] = [nested_cls._from_dict(item) if isinstance(item, dict) else item for item in raw_val]");
+  lines.push("                elif isinstance(raw_val, dict):");
+  lines.push("                    kwargs[field_name] = nested_cls._from_dict(raw_val)");
+  lines.push("                else:");
+  lines.push("                    kwargs[field_name] = raw_val");
   lines.push("            elif isinstance(raw_val, list):");
   lines.push("                kwargs[field_name] = [_deserialize_element(item) if isinstance(item, dict) else item for item in raw_val]");
   lines.push("            elif isinstance(raw_val, dict) and \"type\" in raw_val:");
@@ -300,20 +330,25 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("        return cls(**kwargs)");
   lines.push("");
   lines.push("    @classmethod");
-  lines.push("    def parse(cls: Any, json_input: Union[str, Dict[str, Any]]) -> Any:");
+  lines.push("    def parse(cls: Any, json_input: Union[str, Dict[str, Any]], with_deep_validation: bool = True) -> Any:");
   lines.push("        data = _json.loads(json_input) if isinstance(json_input, str) else json_input");
-  lines.push("        return cls._from_dict(data)");
+  lines.push("        instance = cls._from_dict(data)");
+  lines.push("        if with_deep_validation:");
+  lines.push("            instance.validate(with_deep_validation=True)");
+  lines.push("        return instance");
   lines.push("");
   lines.push("    @classmethod");
-  lines.push("    def from_dict(cls: Any, data: Dict[str, Any]) -> Any:");
-  lines.push("        return cls.parse(data)");
+  lines.push("    def from_dict(cls: Any, data: Dict[str, Any], with_deep_validation: bool = True) -> Any:");
+  lines.push("        return cls.parse(data, with_deep_validation=with_deep_validation)");
   lines.push("");
   lines.push("    @classmethod");
-  lines.push("    def from_json(cls: Any, json_str: str) -> Any:");
-  lines.push("        return cls.parse(json_str)");
+  lines.push("    def from_json(cls: Any, json_str: str, with_deep_validation: bool = True) -> Any:");
+  lines.push("        return cls.parse(json_str, with_deep_validation=with_deep_validation)");
   lines.push("");
   lines.push("");
   lines.push("_ELEMENT_MAP: Dict[str, Any] = {}");
+  lines.push("_REQUIRED_FIELDS: Dict[str, List[str]] = {}");
+  lines.push("_NESTED_MODEL_MAP: Dict[Tuple[str, str], Tuple[Any, bool]] = {}");
   lines.push("");
   lines.push("");
   lines.push("def _deserialize_element(data: Any) -> Any:");
@@ -945,8 +980,8 @@ export function generatePythonCode(spec: GrammarSpec): string
     lines.push("");
 
     const parseFunctionName = `parse_${convertToSnakeCase(root.name)}`;
-    lines.push(`def ${parseFunctionName}(json_input: Union[str, Dict[str, Any]]) -> ${root.name}:`);
-    lines.push(`    return ${root.name}.parse(json_input)`);
+    lines.push(`def ${parseFunctionName}(json_input: Union[str, Dict[str, Any]], with_deep_validation: bool = True) -> ${root.name}:`);
+    lines.push(`    return ${root.name}.parse(json_input, with_deep_validation=with_deep_validation)`);
     lines.push("");
   }
 
@@ -964,14 +999,45 @@ export function generatePythonCode(spec: GrammarSpec): string
     lines.push(...factoryLines);
   }
 
-  // 10. We populate element deserialization mapping
-  lines.push("# --- Element Deserializer Mapping ---");
+  // 10. We populate element deserialization mapping, required fields, and nested model mapping
+  lines.push("# --- Deserializer Mappings & Validation Rules ---");
   lines.push("");
   for (const model of spec.models)
   {
     if (model.discriminatorValue)
     {
       lines.push(`_ELEMENT_MAP["${model.discriminatorValue}"] = ${model.name}`);
+    }
+    const requiredProperties = model.properties.filter(
+      (property) =>
+      {
+        return !property.optional && property.defaultValue === undefined && property.name !== "type" && property.name !== "schemaVersion";
+      }
+    );
+    if (requiredProperties.length > 0)
+    {
+      const propNames = requiredProperties.map((property) => `"${convertToSnakeCase(property.name)}"`).join(", ");
+      lines.push(`_REQUIRED_FIELDS["${model.name}"] = [${propNames}]`);
+    }
+
+    for (const property of model.properties)
+    {
+      if (property.type.kind === "model")
+      {
+        const targetModel = spec.models.find((target) => target.name === property.type.name);
+        if (targetModel && !targetModel.isDslIgnored && !targetModel.discriminatorValue && !polymorphicRootNames.has(targetModel.name))
+        {
+          lines.push(`_NESTED_MODEL_MAP[("${model.name}", "${convertToSnakeCase(property.name)}")] = (${targetModel.name}, False)`);
+        }
+      }
+      else if (property.type.kind === "array" && property.type.elementType?.kind === "model")
+      {
+        const targetModel = spec.models.find((target) => target.name === property.type.elementType?.name);
+        if (targetModel && !targetModel.isDslIgnored && !targetModel.discriminatorValue && !polymorphicRootNames.has(targetModel.name))
+        {
+          lines.push(`_NESTED_MODEL_MAP[("${model.name}", "${convertToSnakeCase(property.name)}")] = (${targetModel.name}, True)`);
+        }
+      }
     }
   }
   lines.push("");
