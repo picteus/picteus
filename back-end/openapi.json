@@ -4018,7 +4018,7 @@
   "info": {
     "title": "Picteus",
     "description": "The Picteus API",
-    "version": "0.20.0",
+    "version": "0.21.0",
     "contact": {
       "name": "Édouard Mercier",
       "url": "https://www.linkedin.com/in/edouardmercier",
@@ -5154,7 +5154,8 @@
           "xml",
           "markdown",
           "html",
-          "binary"
+          "binary",
+          "ui"
         ],
         "description": "All the possible formats for an image feature.",
         "default": "string"

@@ -1,12 +1,10 @@
 import path from "node:path";
 import fs from "node:fs";
-
-import { validate, ValidationError } from "class-validator";
-import { plainToInstance } from "class-transformer";
 import { ClassConstructor } from "class-transformer/types/interfaces";
 import { z } from "zod";
 import HttpCodes from "http-codes";
 
+import { toInstanceAndValidate } from "./classValidatorWrapper";
 import { ServiceError } from "../../app.exceptions";
 import {
   alphaNumericPlusAdditionalAuthorizedCharactersPattern,
@@ -61,30 +59,12 @@ export class ParametersChecker
 
   async checkObject<T extends object>(theClass: ClassConstructor<T>, object: Object, errorMessage: string): Promise<T>
   {
-    const classObject: T = plainToInstance<T, Record<string, any>>(theClass, object, {});
-    const errors = await validate(classObject, { stopAtFirstError: true, skipMissingProperties: true });
-    if (errors.length !== 0)
+    const result = await toInstanceAndValidate<T>(theClass, object, false, true);
+    if ("error" in result)
     {
-      const error: ValidationError = errors[0];
-
-      function crawlError(error: ValidationError, property: string): string
-      {
-        const childProperty = (property.length === 0 ? "" : (property + ".")) + error.property;
-        if (error.children === undefined || error.children.length === 0)
-        {
-          if (error.constraints === undefined || Object.keys(error.constraints).length === 0)
-          {
-            return `'${childProperty}' is invalid`;
-          }
-          const explanation = Object.values(error.constraints)[0];
-          return `${property === "" ? "" : `at the level of '${property}', `}${explanation}`;
-        }
-        return crawlError(error.children[0], childProperty);
-      }
-
-      this.throwBadParameterError(`${errorMessage}: the property '${error.property}' is invalid` + `, because ${crawlError(error, "")}`);
+      this.throwBadParameterError(`${errorMessage}: the property '${result.error.property}' is invalid` + `, because ${result.error.cause}`);
     }
-    return classObject;
+    return result.success;
   }
 
   checkString(name: string, value: string | undefined, maximumLength: StringLengths, nature: StringNature = StringNature.Free, isOptional: boolean = false, mayBeEmpty: boolean = false): void

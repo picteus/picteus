@@ -1154,8 +1154,9 @@ describe("Image with module", () =>
         await expect(async () =>
         {
           await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.JSON, undefined, value) ]);
-        }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it should be a well-formed JSON content`, BAD_REQUEST, base.badParameterCode));
+        }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it should be a well-formed JSON content`, BAD_REQUEST, base.badParameterCode));
       }
+
       // We assess with malformed XML contents
       for (const type of [ ImageFeatureType.METADATA, ImageFeatureType.OTHER ])
       {
@@ -1165,6 +1166,19 @@ describe("Image with module", () =>
           await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.XML, undefined, value) ]);
         }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it should be a well-formed XML content`, BAD_REQUEST, base.badParameterCode));
       }
+
+      // We assess with malformed UI contents
+      for (const aCase of [
+        { value: "malformedJson", because: "it should be a well-formed JSON content" },
+        { value: `{"malformedUiKey": "value"}`, because: "it does not comply with the UI schema" }
+      ])
+      {
+        await expect(async () =>
+        {
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.UI, undefined, aCase.value) ]);
+        }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because ${aCase.because}`, BAD_REQUEST, base.badParameterCode));
+      }
+
       {
         // We assess with a "recipe" type and a value which does not respect the schema
         const type = ImageFeatureType.RECIPE;
@@ -1174,7 +1188,7 @@ describe("Image with module", () =>
           await expect(async () =>
           {
             await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, format, undefined, value) ]);
-          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
+          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
         }
         const prompt = new TextualPrompt("prompt");
         for (const modelTag of [ "", "a model", "model:version1:version2", "model!", "model?" ])
@@ -1183,7 +1197,7 @@ describe("Image with module", () =>
           await expect(async () =>
           {
             await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, format, undefined, value) ]);
-          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
+          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
         }
         {
           for (const recipe of [ new GenerationRecipe([], prompt, "a".repeat(FieldLengths.technical + 1)), new GenerationRecipe([], prompt, undefined, "malformed URL"), new GenerationRecipe([], prompt, undefined, undefined, "malformed software"), new GenerationRecipe([], prompt, undefined, undefined, undefined, [ "" ]), new GenerationRecipe([], prompt, undefined, undefined, undefined, undefined, -1) ])
@@ -1192,7 +1206,7 @@ describe("Image with module", () =>
             await expect(async () =>
             {
               await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, format, undefined, value) ]);
-            }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
+            }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
           }
         }
       }
@@ -1206,7 +1220,7 @@ describe("Image with module", () =>
           await expect(async () =>
           {
             await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.MARKDOWN, undefined, value) ]);
-          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it should be a well-formed Markdown content`, BAD_REQUEST, base.badParameterCode));
+          }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it should be a well-formed Markdown content`, BAD_REQUEST, base.badParameterCode));
         }
       }
     }
@@ -1225,6 +1239,7 @@ describe("Image with module", () =>
         expect(persistedFeatures[0].type).toEqual("other");
         expect(persistedFeatures[0].format).toEqual("string");
       }
+
       {
         // We assess with a valid content
         const stringImageFeature = imageFeature;
@@ -1234,7 +1249,8 @@ describe("Image with module", () =>
         const markdownImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.MARKDOWN, undefined, `# Title\n##Subtitle\nHere is some **markdown** _content!`);
         const jsonImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.JSON, undefined, `{"key":"value"}`);
         const xmlImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.XML, "xml", `<element attribute="value"></element>`);
-        const imageFeatures = [ stringImageFeature, integerImageFeature, floatImageFeature, booleanImageFeature, markdownImageFeature, jsonImageFeature, xmlImageFeature ];
+        const uiImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.UI, "ui", `{"schemaVersion":"1.0","elements":[{"value":"This is a string","type":"string-short","representation":"plain"}]}`);
+        const imageFeatures = [ stringImageFeature, integerImageFeature, floatImageFeature, booleanImageFeature, markdownImageFeature, jsonImageFeature, xmlImageFeature, uiImageFeature ];
         const listener = base.computeEventListener();
         base.getNotifierService().once(EventEntity.Image, ImageEventAction.FeaturesUpdated, undefined, listener);
         await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, imageFeatures);
@@ -1255,6 +1271,7 @@ describe("Image with module", () =>
           expect(allImageFeatures[index]).toEqual({ id: extensionId, ...imageFeatures[index] });
         }
       }
+
       {
         // We assess with a valid recipe
         const model = "mod-_.el";
@@ -1276,6 +1293,7 @@ describe("Image with module", () =>
           }
         }
       }
+
       const secondExtension = await base.prepareExtension("second");
       const secondExtensionId = secondExtension.manifest.id;
       {
@@ -1294,6 +1312,7 @@ describe("Image with module", () =>
           }
         }
       }
+
       {
         // We uninstall the second extension and make sure that its features have been deleted
         await base.getExtensionController().uninstall(secondExtensionId);
@@ -1306,6 +1325,7 @@ describe("Image with module", () =>
           await base.getImageController().getFeatures(imageId, secondExtensionId);
         }).rejects.toThrow(new ServiceError(`The parameter 'extensionId' with value '${secondExtensionId}' is invalid because that extension is not installed`, BAD_REQUEST, base.badParameterCode));
       }
+
       {
         // We delete the image and check that the features are deleted
         const filePath = image.url.substring(fileWithProtocol.length);

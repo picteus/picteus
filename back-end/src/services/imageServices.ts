@@ -1,12 +1,13 @@
 import path from "node:path";
 import fs from "node:fs";
 import stream from "node:stream";
-import { validate } from "class-validator";
 import { ClassConstructor } from "class-transformer";
 import { ModuleRef } from "@nestjs/core";
 import { forwardRef, Inject, Injectable, StreamableFile } from "@nestjs/common";
 import { fdir } from "fdir";
 import { SyntaxValidator } from "fast-xml-validator";
+
+import { Feature } from "@picteus/shared-core";
 
 import {
   Image as PersistedImage,
@@ -78,6 +79,7 @@ import {
   toMimeType
 } from "../dtos/app.dtos";
 import { Json, toImageFormat } from "../bos";
+import { toInstanceAndValidate } from "./utils/classValidatorWrapper";
 import { EntitiesProvider, ImageIdAndDistance, VectorDatabaseAccessor } from "./databaseProviders";
 import { EventEntity, ImageEventAction, NotifierService } from "./notifierService";
 import { ExtendedManifest, ExtensionRegistry } from "./extensionRegistry";
@@ -471,7 +473,7 @@ export class ImageService
       }
     }
 
-    const checkIsString = (index: number, feature: ImageFeature): string =>
+    const checkValueIsString = (index: number, feature: ImageFeature): string =>
     {
       if (typeof feature.value !== "string")
       {
@@ -479,6 +481,21 @@ export class ImageService
       }
       return feature.value as string;
     };
+
+    const checkValueIsJson = (index: number, feature: ImageFeature): Json =>
+    {
+      const string = checkValueIsString(index, feature);
+      try
+      {
+        // We make sure that the string is a valid JSON content
+        return JSON.parse(string);
+      }
+      catch (error)
+      {
+        parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be a well-formed JSON content");
+      }
+    };
+
     const toKeepAttachmentIds: number[] = [];
     for (let index = 0; index < features.length; index++)
     {
@@ -502,37 +519,38 @@ export class ImageService
 
       // Then, we check that the feature value is compatible with the declared format
       const value = feature.value;
+      const parameterName = `[${index}].value`;
       if (format === ImageFeatureFormat.INTEGER)
       {
         if (typeof value !== "number" || Number.isInteger(value) === false)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be an integer");
+          parametersChecker.throwBadParameter(parameterName, undefined, "it should be an integer");
         }
       }
       else if (format === ImageFeatureFormat.FLOAT)
       {
         if (typeof value !== "number")
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be a float");
+          parametersChecker.throwBadParameter(parameterName, undefined, "it should be a float");
         }
       }
       else if (format === ImageFeatureFormat.BOOLEAN)
       {
         if (typeof value !== "boolean")
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be a boolean");
+          parametersChecker.throwBadParameter(parameterName, undefined, "it should be a boolean");
         }
       }
       else if (format === ImageFeatureFormat.STRING)
       {
         if (typeof value !== "string")
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be a string");
+          parametersChecker.throwBadParameter(parameterName, undefined, "it should be a string");
         }
       }
       else if (format === ImageFeatureFormat.MARKDOWN)
       {
-        checkIsString(index, feature);
+        checkValueIsString(index, feature);
         // TODO: find a way to validate the Markdown content
         // try
         // {
@@ -545,44 +563,32 @@ export class ImageService
       }
       else if (format === ImageFeatureFormat.JSON)
       {
-        const string = checkIsString(index, feature);
-        let json: Json;
-        try
-        {
-          // We make sure that the string is a valid JSON content
-          json = JSON.parse(string);
-        }
-        catch (error)
-        {
-          parametersChecker.throwBadParameter(`[${index}].value`, string, "it should be a well-formed JSON content");
-        }
+        const json: Json = checkValueIsJson(index, feature);
         if (type === ImageFeatureType.RECIPE)
         {
           // In the case of a recipe, we check that the value respects the expected schema
-          const string = checkIsString(index, feature);
-          const generationRecipe = plainToInstanceViaJSON(GenerationRecipe, json);
-          const validationErrors = await validate(generationRecipe, { forbidUnknownValues: true });
-          if (validationErrors.length > 0)
+          const result = await toInstanceAndValidate(GenerationRecipe, json, true, true);
+          if ("error" in result)
           {
-            parametersChecker.throwBadParameter(`[${index}].value`, string, "it does not comply with the recipe schema");
+            parametersChecker.throwBadParameter(parameterName, undefined, "it does not comply with the recipe schema");
           }
         }
       }
       else if (format === ImageFeatureFormat.XML)
       {
-        const string = checkIsString(index, feature);
+        const string = checkValueIsString(index, feature);
         try
         {
           SyntaxValidator.validate(string);
         }
         catch (_error)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, string, "it should be a well-formed XML content");
+          parametersChecker.throwBadParameter(parameterName, string, "it should be a well-formed XML content");
         }
       }
       else if (format === ImageFeatureFormat.BINARY)
       {
-        const string = checkIsString(index, feature);
+        const string = checkValueIsString(index, feature);
         let entity: { id: number, imageId: string, extensionId: string };
         try
         {
@@ -590,17 +596,29 @@ export class ImageService
         }
         catch (error)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, string, (error as Error).message);
+          parametersChecker.throwBadParameter(parameterName, string, (error as Error).message);
         }
         if (entity.imageId !== id)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, string, `the attachment with that URI is not bound to the image with id '${id}'`);
+          parametersChecker.throwBadParameter(parameterName, string, `the attachment with that URI is not bound to the image with id '${id}'`);
         }
         else if (entity.extensionId !== extensionId)
         {
-          parametersChecker.throwBadParameter(`[${index}].value`, string, `the attachment with that URI is not bound to the extension with id '${extensionId}'`);
+          parametersChecker.throwBadParameter(parameterName, string, `the attachment with that URI is not bound to the extension with id '${extensionId}'`);
         }
         toKeepAttachmentIds.push(entity.id);
+      }
+      else if (format === ImageFeatureFormat.UI)
+      {
+        const json: Json = checkValueIsJson(index, feature);
+        try
+        {
+          Feature.parse(json, true);
+        }
+        catch (error)
+        {
+          parametersChecker.throwBadParameter(parameterName, undefined, "it does not comply with the UI schema");
+        }
       }
     }
 
@@ -1422,15 +1440,13 @@ export class SearchService
 
   public async computeApplicationMetadata(applicationMetadataJson: Json, validateMetadata: boolean): Promise<ApplicationMetadata>
   {
-    const applicationMetadata: ApplicationMetadata = plainToInstanceViaJSON(ApplicationMetadata, applicationMetadataJson);
-    if (validateMetadata === true)
+    const result = await toInstanceAndValidate<ApplicationMetadata>(ApplicationMetadata, applicationMetadataJson, true, validateMetadata);
+    if ("error" in result)
     {
-      const validationErrors = await validate(applicationMetadata, { forbidUnknownValues: true });
-      if (validationErrors.length > 0)
-      {
-        throw validationErrors[0];
-      }
+      throw result.error.error;
     }
+    const applicationMetadata: ApplicationMetadata = result.success;
+
     // We set back property the "ApplicationMetadataItemFreeValue" items, which have been damaged by the "plainToInstanceViaJSON()" call
     for (let index = 0; index < applicationMetadata.items.length; index++)
     {

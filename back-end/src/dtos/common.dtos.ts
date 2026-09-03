@@ -381,7 +381,8 @@ export enum ImageFeatureFormat
   XML = "xml",
   MARKDOWN = "markdown",
   HTML = "html",
-  BINARY = "binary"
+  BINARY = "binary",
+  UI = "ui"
 }
 
 /**
