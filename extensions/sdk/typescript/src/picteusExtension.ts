@@ -10,6 +10,7 @@ import {
   ApiSecretApi,
   CollectionApi,
   Configuration,
+  ErrorContext,
   ExtensionApi,
   ImageApi,
   ImageAttachmentApi,
@@ -94,7 +95,7 @@ export class ApiCallError extends Error
 
   constructor(public readonly details: ApiCallErrorDetails)
   {
-    super();
+    super(details.message);
   }
 
 }
@@ -752,7 +753,17 @@ export class PicteusExtension
           message = await response.text();
         }
         return Promise.reject(new ApiCallError({ status: response.status, code, message }));
-      }
+      },
+      middleware:
+        [
+          {
+            onError: async (context: ErrorContext): Promise<never> =>
+            {
+              // We rethrow the original error directly, e.g. an "ApiCallError"
+              throw context.error;
+            }
+          }
+        ]
     });
   }
 
