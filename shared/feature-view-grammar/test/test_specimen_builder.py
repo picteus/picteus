@@ -7,14 +7,15 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dist", "python"))
 
 from feature_view_grammar import (
-    Feature,
-    FeatureBuilder,
-    FeatureBlock,
-    FeatureBlockBuilder,
+    Envelop,
+    UiContainer,
+    UiContainerBuilder,
+    UiCard,
+    UiCardBuilder,
     UiElementBase,
-    ActionElementBase,
+    UiActionBase,
     UiElementProtocol,
-    ActionElementProtocol,
+    UiActionProtocol,
     StringShortElementProtocol,
     BaseModifiers,
     PrimitiveModifiers,
@@ -26,10 +27,10 @@ from feature_view_grammar import (
     ButtonVariant,
     TableColumnAlign,
     DividerStyle,
-    create_feature,
-    create_feature_block,
-    parse_feature,
-    parse_feature_block,
+    create_ui_container,
+    create_ui_card,
+    parse_ui_container,
+    parse_ui_card,
     label_value,
     string_short,
     number_unbounded,
@@ -58,8 +59,8 @@ from feature_view_grammar import (
 class TestSpecimenBuilder(unittest.TestCase):
 
     def test_fluent_builder_dominant_colors(self):
-        block = (
-            FeatureBlockBuilder(title="Dominant Colors")
+        card = (
+            UiCardBuilder(title="Dominant Colors")
             .description("Palette computed from image pixels")
             .add_label_value("Dominant Palette", dominant_colors(["#2D3748", "#4A5568", "#CBD5E0"]))
             .add_label_value(
@@ -72,13 +73,13 @@ class TestSpecimenBuilder(unittest.TestCase):
             .build()
         )
 
-        self.assertEqual(block.schema_version, "1.0")
-        self.assertEqual(block.title, "Dominant Colors")
-        self.assertEqual(block.description, "Palette computed from image pixels")
-        self.assertEqual(len(block.elements), 4)
+        self.assertEqual(card.schema_version, "1.0")
+        self.assertEqual(card.title, "Dominant Colors")
+        self.assertEqual(card.description, "Palette computed from image pixels")
+        self.assertEqual(len(card.elements), 4)
 
         # Test dictionary serialization
-        payload = block.to_dict()
+        payload = card.to_dict()
         self.assertEqual(payload["schemaVersion"], "1.0")
         self.assertEqual(payload["title"], "Dominant Colors")
         self.assertEqual(len(payload["elements"]), 4)
@@ -97,7 +98,7 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(action["parameters"], {"format": "ase"})
 
     def test_functional_dsl_metadata(self):
-        block = create_feature_block(
+        card = create_ui_card(
             title="Image Metadata",
             description="EXIF and camera properties",
             elements=[
@@ -124,7 +125,7 @@ class TestSpecimenBuilder(unittest.TestCase):
             ],
         )
 
-        payload = block.to_dict()
+        payload = card.to_dict()
         self.assertEqual(len(payload["elements"]), 7)
         self.assertEqual(payload["elements"][0]["type"], "label-value")
         self.assertEqual(payload["elements"][5]["type"], "collapsible-group")
@@ -200,13 +201,13 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(json_element.to_dict(), {"type": "json", "value": "{\"success\": true}", "modifiers": {"copyable": True}})
 
     def test_json_serialization(self):
-        block = (
-            FeatureBlockBuilder(title="JSON Test")
+        card = (
+            UiCardBuilder(title="JSON Test")
             .add_label_value("Key", string_short("Value"))
             .build()
         )
 
-        raw_json = block.to_json()
+        raw_json = card.to_json()
         self.assertNotIn("\n", raw_json)
         parsed = json.loads(raw_json)
 
@@ -216,6 +217,30 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(parsed["elements"][0]["value"]["value"], "Value")
 
     def test_protocols_and_inheritance(self):
+        envelop = Envelop()
+        self.assertEqual(envelop.schema_version, "1.0")
+        self.assertTrue(isinstance(envelop, Envelop))
+
+        container = UiContainer(elements=[string_short("Item")])
+        self.assertTrue(isinstance(container, UiContainer))
+        self.assertTrue(isinstance(container, Envelop))
+        self.assertEqual(container.schema_version, "1.0")
+        self.assertEqual(len(container.elements), 1)
+
+        card = UiCard(title="Test Inheritance", elements=[string_short("Item 2")])
+        self.assertTrue(isinstance(card, UiCard))
+        self.assertTrue(isinstance(card, UiContainer))
+        self.assertTrue(isinstance(card, Envelop))
+        self.assertEqual(card.title, "Test Inheritance")
+        self.assertEqual(card.schema_version, "1.0")
+        self.assertEqual(len(card.elements), 1)
+
+        primitive_modifiers = PrimitiveModifiers(weight=TextWeight.heavy, copyable=True)
+        self.assertTrue(isinstance(primitive_modifiers, PrimitiveModifiers))
+        self.assertTrue(isinstance(primitive_modifiers, BaseModifiers))
+        self.assertEqual(primitive_modifiers.weight, TextWeight.heavy)
+        self.assertEqual(primitive_modifiers.copyable, True)
+
         element = string_short("Hello", representation=StringShortRepresentation.chip)
         self.assertTrue(isinstance(element, UiElementBase))
         self.assertTrue(isinstance(element, UiElementProtocol))
@@ -224,62 +249,64 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(element.value, "Hello")
 
         button_element = button_action(command_id="cmd", label="Action", variant=ButtonVariant.primary)
-        self.assertTrue(isinstance(button_element, ActionElementBase))
-        self.assertTrue(isinstance(button_element, ActionElementProtocol))
+        self.assertTrue(isinstance(button_element, UiActionBase))
+        self.assertTrue(isinstance(button_element, UiActionProtocol))
         self.assertEqual(button_element.type, "button")
         self.assertEqual(button_element.command_id, "cmd")
 
-    def test_feature_builder(self):
-        feature = (
-            FeatureBuilder()
+    def test_ui_container_builder(self):
+        container = (
+            UiContainerBuilder()
             .add_label_value("Key", string_short("Value"))
-            .add_action(button_action(command_id="cmd", label="Action"))
             .build()
         )
-        self.assertTrue(isinstance(feature, Feature))
-        self.assertEqual(feature.schema_version, "1.0")
-        self.assertEqual(len(feature.elements), 1)
-        self.assertEqual(len(feature.actions), 1)
+        self.assertTrue(isinstance(container, UiContainer))
+        self.assertEqual(container.schema_version, "1.0")
+        self.assertEqual(len(container.elements), 1)
 
-        feature_helper = create_feature(elements=[label_value(label="Direct", value=string_short("Text"))])
-        self.assertEqual(feature_helper.schema_version, "1.0")
-        self.assertEqual(len(feature_helper.elements), 1)
+        container_helper = create_ui_container(elements=[label_value(label="Direct", value=string_short("Text"))])
+        self.assertEqual(container_helper.schema_version, "1.0")
+        self.assertEqual(len(container_helper.elements), 1)
 
         # Verify to_string(), __str__(), and to_json() produce compact JSON
-        json_str = feature.to_string()
-        self.assertEqual(json_str, str(feature))
+        json_str = container.to_string()
+        self.assertEqual(json_str, str(container))
         self.assertNotIn("\n", json_str)
-        self.assertEqual(json_str, feature.to_json())
+        self.assertEqual(json_str, container.to_json())
 
-        builder_json_str = str(FeatureBuilder().add_label_value("Key", string_short("Value")))
-        self.assertEqual(builder_json_str, FeatureBuilder().add_label_value("Key", string_short("Value")).build().to_string())
+        builder_json_str = str(UiContainerBuilder().add_label_value("Key", string_short("Value")))
+        self.assertEqual(builder_json_str, UiContainerBuilder().add_label_value("Key", string_short("Value")).build().to_string())
         parsed_builder = json.loads(builder_json_str)
         self.assertEqual(parsed_builder["schemaVersion"], "1.0")
         self.assertEqual(len(parsed_builder["elements"]), 1)
         self.assertEqual(parsed_builder["elements"][0]["label"], "Key")
 
-        # Test Feature.parse() and parse_feature()
-        parsed_feature = Feature.parse(builder_json_str)
-        self.assertTrue(isinstance(parsed_feature, Feature))
-        self.assertEqual(parsed_feature.schema_version, "1.0")
-        self.assertEqual(len(parsed_feature.elements), 1)
-        self.assertEqual(parsed_feature.elements[0].type, "label-value")
+        # Test UiContainer.parse() and parse_ui_container()
+        parsed_container = UiContainer.parse(builder_json_str)
+        self.assertTrue(isinstance(parsed_container, UiContainer))
+        self.assertEqual(parsed_container.schema_version, "1.0")
+        self.assertEqual(len(parsed_container.elements), 1)
+        self.assertEqual(parsed_container.elements[0].type, "label-value")
 
-        parsed_feature_dict = parse_feature(parsed_builder)
-        self.assertTrue(isinstance(parsed_feature_dict, Feature))
-        self.assertEqual(parsed_feature_dict.elements[0].label, "Key")
+        parsed_container_dict = parse_ui_container(parsed_builder)
+        self.assertTrue(isinstance(parsed_container_dict, UiContainer))
+        self.assertEqual(parsed_container_dict.elements[0].label, "Key")
 
-        # Test FeatureBlock.parse() and parse_feature_block()
-        block = FeatureBlockBuilder("Test Python Block").add_label_value("A", string_short("B")).build()
-        block_json = block.to_string()
-        parsed_block = FeatureBlock.parse(block_json)
-        self.assertTrue(isinstance(parsed_block, FeatureBlock))
-        self.assertEqual(parsed_block.title, "Test Python Block")
-        self.assertEqual(len(parsed_block.elements), 1)
+        # Test UiCard.parse() and parse_ui_card()
+        card = UiCardBuilder("Test Python Card").add_label_value("A", string_short("B")).build()
+        card_json = card.to_string()
+        parsed_card = UiCard.parse(card_json)
+        self.assertTrue(isinstance(parsed_card, UiCard))
+        self.assertEqual(parsed_card.title, "Test Python Card")
+        self.assertEqual(len(parsed_card.elements), 1)
 
-        parsed_block_dict = parse_feature_block(json.loads(block_json))
-        self.assertTrue(isinstance(parsed_block_dict, FeatureBlock))
-        self.assertEqual(parsed_block_dict.title, "Test Python Block")
+        parsed_card_dict = parse_ui_card(json.loads(card_json))
+        self.assertTrue(isinstance(parsed_card_dict, UiCard))
+        self.assertEqual(parsed_card_dict.title, "Test Python Card")
+
+        # Test invalid schema throws ValueError
+        with self.assertRaises(ValueError):
+            UiCard.parse("{\"invalid\":\"data\"}")
 
     def test_deep_validation(self):
         invalid_table_payload = {
@@ -299,13 +326,13 @@ class TestSpecimenBuilder(unittest.TestCase):
             ],
         }
 
-        # Feature.parse() with default deep validation raises ValueError
+        # UiContainer.parse() with default deep validation raises ValueError
         with self.assertRaises(ValueError):
-            Feature.parse(invalid_table_payload, with_deep_validation=True)
+            UiContainer.parse(invalid_table_payload, with_deep_validation=True)
 
-        # Feature.parse() with with_deep_validation=False succeeds
-        parsed = Feature.parse(invalid_table_payload, with_deep_validation=False)
-        self.assertTrue(isinstance(parsed, Feature))
+        # UiContainer.parse() with with_deep_validation=False succeeds
+        parsed = UiContainer.parse(invalid_table_payload, with_deep_validation=False)
+        self.assertTrue(isinstance(parsed, UiContainer))
         self.assertEqual(len(parsed.elements), 1)
 
 

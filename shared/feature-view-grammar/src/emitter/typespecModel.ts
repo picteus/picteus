@@ -1,4 +1,4 @@
-import { getDiscriminator, getDoc, Model, ModelProperty, Program, Scalar, Type } from "@typespec/compiler";
+import { getDiscriminator, getDoc, Model, ModelProperty, Namespace, Program, Scalar, Type } from "@typespec/compiler";
 
 import {
   DslAliasName,
@@ -114,7 +114,6 @@ export interface GrammarSpec
   readonly polymorphicRoots: PolymorphicRoot[];
   readonly uiElements: GrammarModel[];
   readonly actionElements: GrammarModel[];
-  readonly rootModel?: GrammarModel;
   readonly rootModels: GrammarModel[];
 
 }
@@ -204,164 +203,207 @@ function getAllModelProperties(model: Model): Map<string, ModelProperty>
   return properties;
 }
 
-export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
+function collectNamespaces(namespace: Namespace): Namespace[]
+{
+  const result: Namespace[] = [];
+  if (namespace.name !== "")
+  {
+    result.push(namespace);
+  }
+  for (const childNamespace of namespace.namespaces.values())
+  {
+    result.push(...collectNamespaces(childNamespace));
+  }
+  return result;
+}
+
+function isBuiltinNamespace(namespace: Namespace): boolean
+{
+  let current: Namespace | undefined = namespace;
+  while (current)
+  {
+    if (current.name === "TypeSpec")
+    {
+      return true;
+    }
+    current = current.namespace;
+  }
+  return false;
+}
+
+function findGrammarNamespaces(program: Program): Namespace[]
 {
   const globalNamespace = program.getGlobalNamespaceType();
-  const picteusNamespace = globalNamespace.namespaces.get("Picteus");
-  const grammarNamespace = picteusNamespace?.namespaces.get("FeatureViewGrammar");
+  const allNamespaces = collectNamespaces(globalNamespace);
+  return allNamespaces.filter(
+    (namespace) =>
+    {
+      return !isBuiltinNamespace(namespace) && (namespace.models.size > 0 || namespace.enums.size > 0);
+    }
+  );
+}
 
-  if (!grammarNamespace)
+export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
+{
+  const grammarNamespaces = findGrammarNamespaces(program);
+
+  if (grammarNamespaces.length === 0)
   {
-    throw new Error("Could not locate namespace 'Picteus.FeatureViewGrammar' in TypeSpec program.");
+    throw new Error("Could not locate any user grammar namespace with models or enums in TypeSpec program.");
   }
 
-  const namespaceDoc = getDoc(program, grammarNamespace);
+  const namespaceDoc = grammarNamespaces.map((namespace) => getDoc(program, namespace)).find(Boolean);
   const enums: GrammarEnum[] = [];
   const models: GrammarModel[] = [];
 
-  for (const [ enumName, enumType ] of grammarNamespace.enums)
+  for (const grammarNamespace of grammarNamespaces)
   {
-    const members: GrammarEnumMember[] = [];
-    for (const [ memberName, member ] of enumType.members)
+    for (const [ enumName, enumType ] of grammarNamespace.enums)
     {
-      members.push(
-        {
-          name: memberName,
-          value: typeof member.value === "string" ? member.value : memberName,
-          doc: getDoc(program, member)
-        }
-      );
-    }
-    enums.push(
+      const members: GrammarEnumMember[] = [];
+      for (const [ memberName, member ] of enumType.members)
       {
-        name: enumName,
-        doc: getDoc(program, enumType),
-        members
-      }
-    );
-  }
-
-  for (const [ modelName, modelType ] of grammarNamespace.models)
-  {
-    if (modelName === "RecordUnknown" || modelName === "Array")
-    {
-      continue;
-    }
-
-    const properties: GrammarProperty[] = [];
-    let discriminatorValue: string | undefined = undefined;
-    const allProperties = getAllModelProperties(modelType);
-
-    for (const [ propertyName, property ] of allProperties)
-    {
-      const propertyType = resolveGrammarType(program, property.type);
-      let defaultValue: string | number | boolean | undefined = undefined;
-
-      if (property.defaultValue)
-      {
-        if (typeof property.defaultValue === "object" && property.defaultValue !== null)
-        {
-          if ("valueKind" in property.defaultValue && property.defaultValue.valueKind === "EnumValue")
+        members.push(
           {
-            const enumValue = property.defaultValue.value as { name?: string; value?: string };
-            defaultValue = enumValue.name ?? enumValue.value;
+            name: memberName,
+            value: typeof member.value === "string" ? member.value : memberName,
+            doc: getDoc(program, member)
           }
-          else if ("value" in property.defaultValue)
-          {
-            if (typeof property.defaultValue.value === "object" && property.defaultValue.value !== null)
-            {
-              if ("name" in property.defaultValue.value)
-              {
-                defaultValue = (property.defaultValue.value as { name: string }).name;
-              }
-              else if ("value" in property.defaultValue.value)
-              {
-                defaultValue = (property.defaultValue.value as { value: string | number | boolean }).value;
-              }
-            }
-            else
-            {
-              defaultValue = property.defaultValue.value as string | number | boolean;
-            }
-          }
-          else if ("name" in property.defaultValue)
-          {
-            defaultValue = (property.defaultValue as { name: string }).name;
-          }
-        }
-        else
-        {
-          defaultValue = property.defaultValue as string | number | boolean;
-        }
+        );
       }
-
-      if (propertyName === "type" && propertyType.kind === "literal")
-      {
-        discriminatorValue = String(propertyType.literalValue);
-      }
-
-      properties.push(
+      enums.push(
         {
-          name: propertyName,
-          doc: getDoc(program, property),
-          optional: property.optional,
-          type: propertyType,
-          defaultValue,
-          isUiLabel: isUiLabel(program, property),
-          isUiValue: isUiValue(program, property),
-          uiDivider: getUiDivider(program, property),
-          uiMeterBound: getUiMeterBound(program, property),
-          isUiModifiers: isUiModifiers(program, property)
+          name: enumName,
+          doc: getDoc(program, enumType),
+          members
         }
       );
     }
 
-    const isDiscriminated = Boolean(getDiscriminator(program, modelType));
-    const modelIsDslRoot = isDslRoot(program, modelType);
-    const modelIsDslIgnored = isDslIgnored(program, modelType);
-    const aliases = getModelAliases(program, modelType);
-
-    models.push(
+    for (const [ modelName, modelType ] of grammarNamespace.models)
+    {
+      if (modelName === "RecordUnknown" || modelName === "Array")
       {
-        name: modelName,
-        doc: getDoc(program, modelType),
-        baseModelName: modelType.baseModel?.name,
-        isDiscriminated,
-        discriminatorValue,
-        isDslRoot: modelIsDslRoot,
-        isDslIgnored: modelIsDslIgnored,
-        aliases,
-        properties,
-        uiLayout: getUiLayout(program, modelType),
-        uiWidget: getUiWidget(program, modelType),
-        isCustomRenderer: isCustomRenderer(program, modelType)
+        continue;
       }
-    );
+
+      const properties: GrammarProperty[] = [];
+      let discriminatorValue: string | undefined = undefined;
+      const allProperties = getAllModelProperties(modelType);
+
+      for (const [ propertyName, property ] of allProperties)
+      {
+        const propertyType = resolveGrammarType(program, property.type);
+        let defaultValue: string | number | boolean | undefined = undefined;
+
+        if (property.defaultValue)
+        {
+          if (typeof property.defaultValue === "object" && property.defaultValue !== null)
+          {
+            if ("valueKind" in property.defaultValue && property.defaultValue.valueKind === "EnumValue")
+            {
+              const enumValue = property.defaultValue.value as { name?: string; value?: string };
+              defaultValue = enumValue.name ?? enumValue.value;
+            }
+            else if ("value" in property.defaultValue)
+            {
+              if (typeof property.defaultValue.value === "object" && property.defaultValue.value !== null)
+              {
+                if ("name" in property.defaultValue.value)
+                {
+                  defaultValue = (property.defaultValue.value as { name: string }).name;
+                }
+                else if ("value" in property.defaultValue.value)
+                {
+                  defaultValue = (property.defaultValue.value as { value: string | number | boolean }).value;
+                }
+              }
+              else
+              {
+                defaultValue = property.defaultValue.value as string | number | boolean;
+              }
+            }
+            else if ("name" in property.defaultValue)
+            {
+              defaultValue = (property.defaultValue as { name: string }).name;
+            }
+          }
+          else
+          {
+            defaultValue = property.defaultValue as string | number | boolean;
+          }
+        }
+
+        if (propertyName === "type" && propertyType.kind === "literal")
+        {
+          discriminatorValue = String(propertyType.literalValue);
+        }
+
+        properties.push(
+          {
+            name: propertyName,
+            doc: getDoc(program, property),
+            optional: property.optional,
+            type: propertyType,
+            defaultValue,
+            isUiLabel: isUiLabel(program, property),
+            isUiValue: isUiValue(program, property),
+            uiDivider: getUiDivider(program, property),
+            uiMeterBound: getUiMeterBound(program, property),
+            isUiModifiers: isUiModifiers(program, property)
+          }
+        );
+      }
+
+      const isDiscriminated = Boolean(getDiscriminator(program, modelType));
+      const modelIsDslRoot = isDslRoot(program, modelType);
+      const modelIsDslIgnored = isDslIgnored(program, modelType);
+      const aliases = getModelAliases(program, modelType);
+
+      models.push(
+        {
+          name: modelName,
+          doc: getDoc(program, modelType),
+          baseModelName: modelType.baseModel?.name,
+          isDiscriminated,
+          discriminatorValue,
+          isDslRoot: modelIsDslRoot,
+          isDslIgnored: modelIsDslIgnored,
+          aliases,
+          properties,
+          uiLayout: getUiLayout(program, modelType),
+          uiWidget: getUiWidget(program, modelType),
+          isCustomRenderer: isCustomRenderer(program, modelType)
+        }
+      );
+    }
   }
 
   // We discover polymorphic roots dynamically via @discriminator
   const polymorphicRoots: PolymorphicRoot[] = [];
-  for (const [ modelName, modelType ] of grammarNamespace.models)
+  for (const grammarNamespace of grammarNamespaces)
   {
-    const discriminator = getDiscriminator(program, modelType);
-    if (discriminator && modelType.baseModel === undefined)
+    for (const [ modelName, modelType ] of grammarNamespace.models)
     {
-      const derived = models.filter((model) => model.baseModelName === modelName);
-      polymorphicRoots.push(
-        {
-          name: modelName,
-          doc: getDoc(program, modelType),
-          discriminatorProperty: discriminator.propertyName,
-          derivedModels: derived
-        }
-      );
+      const discriminator = getDiscriminator(program, modelType);
+      if (discriminator && modelType.baseModel === undefined)
+      {
+        const derived = models.filter((model) => model.baseModelName === modelName);
+        polymorphicRoots.push(
+          {
+            name: modelName,
+            doc: getDoc(program, modelType),
+            discriminatorProperty: discriminator.propertyName,
+            derivedModels: derived
+          }
+        );
+      }
     }
   }
 
   const rootModels = models.filter((model) => model.isDslRoot);
-  const rootModel = rootModels.find((model) => model.name === "FeatureBlock") ?? rootModels[0] ?? models.find((model) => model.name === "FeatureBlock");
-  const uiElementRoot = polymorphicRoots.find((root) => root.name === "UiElement") ?? polymorphicRoots[0];
-  const actionElementRoot = polymorphicRoots.find((root) => root.name === "ActionElement") ?? polymorphicRoots[1];
+  const uiElementRoot = polymorphicRoots.find((root) => root.name === "UiElement") ?? polymorphicRoots.find((root) => !root.name.toLowerCase().includes("action")) ?? polymorphicRoots[0];
+  const actionElementRoot = polymorphicRoots.find((root) => root.name === "UiAction") ?? polymorphicRoots.find((root) => root.name.toLowerCase().includes("action")) ?? polymorphicRoots[1];
 
   const uiElements = uiElementRoot ? uiElementRoot.derivedModels : [];
   const actionElements = actionElementRoot ? actionElementRoot.derivedModels : [];
@@ -373,7 +415,6 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
     polymorphicRoots,
     uiElements,
     actionElements,
-    rootModel,
     rootModels
   };
 }

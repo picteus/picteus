@@ -7,7 +7,7 @@ const PROPS_TYPE_SUFFIX = "PropsType";
 const VIEW_SUFFIX = "View";
 const COPYABLE_WRAPPER_NAME = "CopyableWrapper";
 const UI_ELEMENT_ROOT_NAME = "UiElement";
-const ACTION_ELEMENT_ROOT_NAME = "ActionElement";
+const ACTION_ELEMENT_ROOT_NAME = "UiAction";
 const UI_ELEMENT_VIEW_NAME = `${UI_ELEMENT_ROOT_NAME}${VIEW_SUFFIX}`;
 const ACTION_ELEMENT_VIEW_NAME = `${ACTION_ELEMENT_ROOT_NAME}${VIEW_SUFFIX}`;
 const SHARED_CORE_PACKAGE = "@picteus/shared-core";
@@ -19,7 +19,7 @@ const MANTINE_IMPORTS: readonly string[] = [
   "Badge",
   "Box",
   "Button",
-  "Card",
+  "Card as MantineCard",
   "Code",
   "ColorSwatch",
   "CopyButton",
@@ -50,9 +50,8 @@ function computeTypeScriptImports(spec: GrammarSpec): string[]
     importNames.add(polymorphicRoot.name);
   }
 
-  // We include root models (e.g., Feature, FeatureBlock)
-  const rootModels = spec.rootModels.length > 0 ? spec.rootModels : (spec.rootModel ? [ spec.rootModel ] : []);
-  for (const rootModel of rootModels)
+  // We include root models (e.g., UiContainer, UiCard)
+  for (const rootModel of spec.rootModels)
   {
     importNames.add(rootModel.name);
   }
@@ -121,7 +120,7 @@ function generateComponentDefinition(
     `export type ${propsTypeName} =`,
     `{`,
     `  readonly ${primaryPropName}: ${primaryPropType};`,
-    `  readonly onAction?: (action: ActionElement) => void;`,
+    `  readonly onAction?: (action: ${ACTION_ELEMENT_ROOT_NAME}) => void;`,
     `  readonly className?: string;`,
     `  readonly style?: React.CSSProperties;`,
     `};`
@@ -197,7 +196,7 @@ function generateElementRendererContext(): string
   return [
     `export type ElementRendererContext =`,
     `{`,
-    `  readonly onAction?: (action: ActionElement) => void;`,
+    `  readonly onAction?: (action: ${ACTION_ELEMENT_ROOT_NAME}) => void;`,
     `  readonly className?: string;`,
     `  readonly style?: React.CSSProperties;`,
     `};`
@@ -852,14 +851,15 @@ function generateRootContainerComponent(rootModel: GrammarModel): string
   const layout = rootModel.uiLayout ?? "card";
   const componentName = `${rootModel.name}${VIEW_SUFFIX}`;
   const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
-  const propName = layout === "card" ? "block" : toLowerCamelCase(rootModel.name);
+  const propName = toLowerCamelCase(rootModel.name);
+  const hasActions = rootModel.properties.some((property) => property.name === "actions");
 
   const propsTypeBlock = [
     `export type ${propsTypeName} =`,
     `{`,
     `  readonly ${propName}: ${rootModel.name};`,
     `  readonly renderers?: UiElementViewRenderers;`,
-    `  readonly onAction?: (action: ActionElement) => void;`,
+    `  readonly onAction?: (action: ${ACTION_ELEMENT_ROOT_NAME}) => void;`,
     `  readonly className?: string;`,
     `  readonly style?: React.CSSProperties;`,
     `};`
@@ -869,6 +869,17 @@ function generateRootContainerComponent(rootModel: GrammarModel): string
 
   if (layout === "repeating-group")
   {
+    const actionsSection = hasActions ? [
+      ``,
+      `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
+      `        <Flex gap="xs" justify="flex-end" mt="xs">`,
+      `          {${propName}.actions.map((action, actionIndex) => (`,
+      `            <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
+      `          ))}`,
+      `        </Flex>`,
+      `      )}`
+    ] : [];
+
     bodyContent = [
       `  const context = useUiElementViewContext();`,
       `  const effectiveRenderers = renderers ?? context.renderers;`,
@@ -880,14 +891,7 @@ function generateRootContainerComponent(rootModel: GrammarModel): string
       `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
       `        ))}`,
       `      </Flex>`,
-      ``,
-      `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
-      `        <Flex gap="xs" justify="flex-end" mt="xs">`,
-      `          {${propName}.actions.map((action, actionIndex) => (`,
-      `            <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
-      `          ))}`,
-      `        </Flex>`,
-      `      )}`,
+      ...actionsSection,
       `    </Box>`,
       `  );`,
       ``,
@@ -909,36 +913,40 @@ function generateRootContainerComponent(rootModel: GrammarModel): string
     const hasDescription = rootModel.properties.some((property) => property.name === "description");
 
     const headerSection = hasTitle ? [
-      `      <Card.Section inheritPadding py="xs">`,
+      `      <MantineCard.Section inheritPadding py="xs">`,
       `        <Text fw={600} size="sm">{${propName}.title}</Text>`,
       hasDescription ? `        {${propName}.description && <Text size="xs" c="dimmed">{${propName}.description}</Text>}` : ``,
-      `      </Card.Section>`,
+      `      </MantineCard.Section>`,
       ``
     ].filter(Boolean) : [];
+
+    const actionsSection = hasActions ? [
+      ``,
+      `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
+      `        <MantineCard.Section inheritPadding py="xs">`,
+      `          <Flex gap="xs" justify="flex-end">`,
+      `            {${propName}.actions.map((action, actionIndex) => (`,
+      `              <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
+      `            ))}`,
+      `          </Flex>`,
+      `        </MantineCard.Section>`,
+      `      )}`
+    ] : [];
 
     bodyContent = [
       `  const context = useUiElementViewContext();`,
       `  const effectiveRenderers = renderers ?? context.renderers;`,
       ``,
       `  const content = (`,
-      `    <Card shadow="xs" padding="sm" radius="md" withBorder className={className} style={style}>`,
+      `    <MantineCard shadow="xs" padding="sm" radius="md" withBorder className={className} style={style}>`,
       ...headerSection,
       `      <Flex direction="column" gap="xs" my="xs">`,
       `        {${propName}.elements.map((element, elementIndex) => (`,
       `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
       `        ))}`,
       `      </Flex>`,
-      ``,
-      `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
-      `        <Card.Section inheritPadding py="xs">`,
-      `          <Flex gap="xs" justify="flex-end">`,
-      `            {${propName}.actions.map((action, actionIndex) => (`,
-      `              <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
-      `            ))}`,
-      `          </Flex>`,
-      `        </Card.Section>`,
-      `      )}`,
-      `    </Card>`,
+      ...actionsSection,
+      `    </MantineCard>`,
       `  );`,
       ``,
       `  if (renderers)`,
@@ -1008,9 +1016,8 @@ export function generateReactCode(spec: GrammarSpec): string
     )
   );
 
-  // We generate root components (e.g. FeatureView, FeatureBlockView)
-  const rootModels = spec.rootModels.length > 0 ? spec.rootModels : (spec.rootModel ? [ spec.rootModel ] : []);
-  for (const rootModel of rootModels)
+  // We generate root components (e.g. UiContainerView, UiCardView)
+  for (const rootModel of spec.rootModels)
   {
     componentBlocks.push(generateRootContainerComponent(rootModel));
   }

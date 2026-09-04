@@ -221,6 +221,43 @@ function generatePythonModelFactory(model: GrammarModel): string[]
   return lines;
 }
 
+function computeBaseModelProperties(model: GrammarModel, spec: GrammarSpec): Map<string, GrammarProperty>
+{
+  const baseProperties = new Map<string, GrammarProperty>();
+  if (!model.baseModelName)
+  {
+    return baseProperties;
+  }
+
+  const baseModel = spec.models.find((candidate) => candidate.name === model.baseModelName);
+  if (baseModel)
+  {
+    for (const property of baseModel.properties)
+    {
+      baseProperties.set(property.name, property);
+    }
+  }
+
+  return baseProperties;
+}
+
+function resolvePythonRequiredDefault(property: GrammarProperty): string
+{
+  switch (property.type.kind)
+  {
+    case "string":
+      return '""';
+    case "number":
+      return "0.0";
+    case "boolean":
+      return "False";
+    case "array":
+      return "field(default_factory=list)";
+    default:
+      return "None";
+  }
+}
+
 export function generatePythonCode(spec: GrammarSpec): string
 {
   const lines: string[] = [];
@@ -279,7 +316,8 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("        cls_name = self.__class__.__name__");
   lines.push("        if cls_name in _REQUIRED_FIELDS:");
   lines.push("            for req_field in _REQUIRED_FIELDS[cls_name]:");
-  lines.push("                if getattr(self, req_field, None) is None:");
+  lines.push("                field_val = getattr(self, req_field, None)");
+  lines.push("                if field_val is None or field_val == \"\":");
   lines.push("                    raise ValueError(f\"Missing required field '{req_field}' on {cls_name}\")");
   lines.push("");
   lines.push("        if with_deep_validation:");
@@ -307,7 +345,7 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("            elif field_name in data:");
   lines.push("                raw_val = data[field_name]");
   lines.push("            else:");
-  lines.push("                if field_def.default is MISSING and getattr(field_def, \"default_factory\", None) is MISSING:");
+  lines.push("                if field_name in _REQUIRED_FIELDS.get(cls.__name__, []) or (field_def.default is MISSING and getattr(field_def, \"default_factory\", None) is MISSING):");
   lines.push("                    kwargs[field_name] = None");
   lines.push("                continue");
   lines.push("");
@@ -417,12 +455,13 @@ export function generatePythonCode(spec: GrammarSpec): string
       {
         continue;
       }
+      const baseProperties = computeBaseModelProperties(derived, spec);
       lines.push("@runtime_checkable");
       lines.push(`class ${derived.name}Protocol(${root.name}Protocol, Protocol):`);
       lines.push(formatPythonDoc(derived.doc ?? `Protocol contract for ${derived.name}.`, "    "));
       for (const property of derived.properties)
       {
-        if (property.name !== root.discriminatorProperty)
+        if (property.name !== root.discriminatorProperty && !baseProperties.has(property.name))
         {
           const pythonName = convertToSnakeCase(property.name);
           const baseType = resolvePythonType(property.type);
@@ -464,6 +503,9 @@ export function generatePythonCode(spec: GrammarSpec): string
     const baseClassName = (model.baseModelName && !polymorphicRootNames.has(model.baseModelName))
       ? model.baseModelName
       : "GrammarBase";
+    const baseProperties = computeBaseModelProperties(model, spec);
+    const isDerivedModel = model.baseModelName !== undefined && !polymorphicRootNames.has(model.baseModelName);
+
     lines.push("@dataclass");
     lines.push(`class ${model.name}(${baseClassName}):`);
     if (model.doc)
@@ -471,8 +513,9 @@ export function generatePythonCode(spec: GrammarSpec): string
       lines.push(formatPythonDoc(model.doc, "    "));
     }
 
-    const requiredProperties = model.properties.filter((property) => !property.optional && property.defaultValue === undefined);
-    const optionalProperties = model.properties.filter((property) => property.optional || property.defaultValue !== undefined);
+    const declaredProperties = model.properties.filter((property) => !baseProperties.has(property.name));
+    const requiredProperties = declaredProperties.filter((property) => !property.optional && property.defaultValue === undefined);
+    const optionalProperties = declaredProperties.filter((property) => property.optional || property.defaultValue !== undefined);
 
     if (requiredProperties.length === 0 && optionalProperties.length === 0)
     {
@@ -487,7 +530,15 @@ export function generatePythonCode(spec: GrammarSpec): string
       {
         lines.push(...computeNoinspectionLines("    "));
       }
-      lines.push(`    ${pythonName}: ${pythonType}${computeFieldNoqa(pythonName)}`);
+      if (isDerivedModel)
+      {
+        const defaultValue = resolvePythonRequiredDefault(property);
+        lines.push(`    ${pythonName}: ${pythonType} = ${defaultValue}${computeFieldNoqa(pythonName)}`);
+      }
+      else
+      {
+        lines.push(`    ${pythonName}: ${pythonType}${computeFieldNoqa(pythonName)}`);
+      }
     }
 
     for (const property of optionalProperties)
@@ -611,23 +662,33 @@ export function generatePythonCode(spec: GrammarSpec): string
   }
 
   // 6. We generate Root Models and Builders
-  const rootModels = spec.rootModels.length > 0 ? spec.rootModels : (spec.rootModel ? [ spec.rootModel ] : []);
-  for (const root of rootModels)
+  for (const root of spec.rootModels)
   {
+    const baseClassName = root.baseModelName ?? "GrammarBase";
+    const baseProperties = computeBaseModelProperties(root, spec);
+    const isDerivedModel = root.baseModelName !== undefined;
+
     lines.push("@dataclass");
-    lines.push(`class ${root.name}(GrammarBase):`);
+    lines.push(`class ${root.name}(${baseClassName}):`);
     if (root.doc)
     {
       lines.push(formatPythonDoc(root.doc, "    "));
     }
 
     const hasSchemaVersion = root.properties.some((property) => property.name === "schemaVersion");
-    const rootNonTypeProperties = root.properties.filter((property) => property.name !== "type" && property.name !== "schemaVersion");
-    const rootRequiredProperties = rootNonTypeProperties.filter((property) => !property.optional && property.type.kind !== "array" && property.defaultValue === undefined);
-    const rootOptionalProperties = rootNonTypeProperties.filter((property) => (property.optional || property.defaultValue !== undefined) && property.type.kind !== "array");
-    const rootArrayProperties = rootNonTypeProperties.filter((property) => property.type.kind === "array");
+    const allNonTypeProperties = root.properties.filter((property) => property.name !== "type" && property.name !== "schemaVersion");
+    const allRequiredProperties = allNonTypeProperties.filter((property) => !property.optional && property.type.kind !== "array" && property.defaultValue === undefined);
+    const allOptionalProperties = allNonTypeProperties.filter((property) => (property.optional || property.defaultValue !== undefined) && property.type.kind !== "array");
+    const allArrayProperties = allNonTypeProperties.filter((property) => property.type.kind === "array");
 
-    for (const property of rootRequiredProperties)
+    const declaredProperties = root.properties.filter((property) => !baseProperties.has(property.name));
+    const declaredHasSchemaVersion = declaredProperties.some((property) => property.name === "schemaVersion");
+    const declaredNonTypeProperties = declaredProperties.filter((property) => property.name !== "type" && property.name !== "schemaVersion");
+    const declaredRequiredProperties = declaredNonTypeProperties.filter((property) => !property.optional && property.type.kind !== "array" && property.defaultValue === undefined);
+    const declaredOptionalProperties = declaredNonTypeProperties.filter((property) => (property.optional || property.defaultValue !== undefined) && property.type.kind !== "array");
+    const declaredArrayProperties = declaredNonTypeProperties.filter((property) => property.type.kind === "array");
+
+    for (const property of declaredRequiredProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       const baseType = resolvePythonType(property.type);
@@ -635,15 +696,23 @@ export function generatePythonCode(spec: GrammarSpec): string
       {
         lines.push(...computeNoinspectionLines("    "));
       }
-      lines.push(`    ${pythonName}: ${baseType}${computeFieldNoqa(pythonName)}`);
+      if (isDerivedModel)
+      {
+        const defaultValue = resolvePythonRequiredDefault(property);
+        lines.push(`    ${pythonName}: ${baseType} = ${defaultValue}${computeFieldNoqa(pythonName)}`);
+      }
+      else
+      {
+        lines.push(`    ${pythonName}: ${baseType}${computeFieldNoqa(pythonName)}`);
+      }
     }
 
-    if (hasSchemaVersion)
+    if (declaredHasSchemaVersion)
     {
       lines.push(`    schema_version: str = "1.0"${computeFieldNoqa("schema_version")}`);
     }
 
-    for (const property of rootOptionalProperties)
+    for (const property of declaredOptionalProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       const baseType = resolvePythonType(property.type);
@@ -661,7 +730,7 @@ export function generatePythonCode(spec: GrammarSpec): string
       }
     }
 
-    for (const property of rootArrayProperties)
+    for (const property of declaredArrayProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       const baseType = resolvePythonType(property.type);
@@ -678,6 +747,12 @@ export function generatePythonCode(spec: GrammarSpec): string
         lines.push(`    ${pythonName}: Optional[${baseType}] = None${computeFieldNoqa(pythonName)}`);
       }
     }
+
+    if (declaredProperties.length === 0)
+    {
+      lines.push("    pass");
+    }
+
     lines.push("");
 
     // 7. We generate Root Builder
@@ -688,7 +763,7 @@ export function generatePythonCode(spec: GrammarSpec): string
 
     const constructorParameters: string[] = [];
     const constructorParameterNames: string[] = [];
-    for (const property of rootRequiredProperties)
+    for (const property of allRequiredProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       constructorParameters.push(`${pythonName}: ${resolvePythonType(property.type)}`);
@@ -702,12 +777,12 @@ export function generatePythonCode(spec: GrammarSpec): string
     }
     const constructorParameterString = constructorParameters.length > 0 ? `, ${constructorParameters.join(", ")}` : "";
     lines.push(`    def __init__(self${constructorParameterString}):${constructorNoqa}`);
-    for (const property of rootRequiredProperties)
+    for (const property of allRequiredProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       lines.push(`        self._${pythonName} = ${pythonName}`);
     }
-    for (const property of rootOptionalProperties)
+    for (const property of allOptionalProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       if (property.defaultValue !== undefined)
@@ -720,19 +795,19 @@ export function generatePythonCode(spec: GrammarSpec): string
         lines.push(`        self._${pythonName}: Optional[${resolvePythonType(property.type)}] = None`);
       }
     }
-    for (const property of rootArrayProperties)
+    for (const property of allArrayProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       lines.push(`        self._${pythonName}: List[Any] = []`);
     }
-    if (rootRequiredProperties.length === 0 && rootOptionalProperties.length === 0 && rootArrayProperties.length === 0)
+    if (allRequiredProperties.length === 0 && allOptionalProperties.length === 0 && allArrayProperties.length === 0)
     {
       lines.push("        pass");
     }
     lines.push("");
 
     // We generate setters for scalar optional properties
-    for (const property of rootOptionalProperties)
+    for (const property of allOptionalProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       const pythonType = resolvePythonType(property.type);
@@ -771,7 +846,7 @@ export function generatePythonCode(spec: GrammarSpec): string
     }
 
     // We generate generic collection adders
-    for (const property of rootArrayProperties)
+    for (const property of allArrayProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       const elementType = resolvePythonType(property.type.elementType ?? { kind: "unknown", name: "Any" });
@@ -876,17 +951,17 @@ export function generatePythonCode(spec: GrammarSpec): string
     {
       lines.push(`            schema_version="1.0",`);
     }
-    for (const property of rootRequiredProperties)
+    for (const property of allRequiredProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       lines.push(`            ${pythonName}=self._${pythonName},`);
     }
-    for (const property of rootOptionalProperties)
+    for (const property of allOptionalProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       lines.push(`            ${pythonName}=self._${pythonName},`);
     }
-    for (const property of rootArrayProperties)
+    for (const property of allArrayProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       if (property.optional)
@@ -920,13 +995,13 @@ export function generatePythonCode(spec: GrammarSpec): string
     const rootCreateArguments: string[] = [];
     const rootCreateParameterNames: string[] = [];
 
-    for (const property of rootRequiredProperties)
+    for (const property of allRequiredProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       rootCreateArguments.push(`${pythonName}: ${resolvePythonType(property.type)}`);
       rootCreateParameterNames.push(pythonName);
     }
-    for (const property of rootNonTypeProperties.filter((property) => !rootRequiredProperties.includes(property)))
+    for (const property of allNonTypeProperties.filter((property) => !allRequiredProperties.includes(property)))
     {
       const pythonName = convertToSnakeCase(property.name);
       const baseType = resolvePythonType(property.type);
@@ -953,12 +1028,12 @@ export function generatePythonCode(spec: GrammarSpec): string
     {
       lines.push(`        schema_version="1.0",`);
     }
-    for (const property of rootRequiredProperties)
+    for (const property of allRequiredProperties)
     {
       const pythonName = convertToSnakeCase(property.name);
       lines.push(`        ${pythonName}=${pythonName},`);
     }
-    for (const property of rootNonTypeProperties.filter((property) => !rootRequiredProperties.includes(property)))
+    for (const property of allNonTypeProperties.filter((property) => !allRequiredProperties.includes(property)))
     {
       const pythonName = convertToSnakeCase(property.name);
       if (property.type.kind === "array" && !property.optional)

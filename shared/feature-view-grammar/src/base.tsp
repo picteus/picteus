@@ -13,7 +13,7 @@ model UiElement {
 
 @doc("Polymorphic base model for interactive actions.")
 @discriminator("type")
-model ActionElement {
+model UiAction {
   @doc("Discriminator property")
   type: string;
 

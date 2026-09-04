@@ -3,33 +3,31 @@ import assert from "node:assert/strict";
 
 import {
   BadgeVariant,
-  BaseActionElement,
+  BaseUiAction,
   BaseUiElement,
   booleanBadge,
   buttonAction,
   ButtonActionElementClass,
   ButtonVariant,
   collapsibleGroup,
-  createFeature,
-  createFeatureBlock,
+  createUiCard,
+  createUiContainer,
   divider,
   DividerStyle,
   dominantColors,
+  EnvelopClass,
   externalLinkAction,
-  Feature,
-  FeatureBlock,
-  FeatureBlockClass,
-  FeatureClass,
   GrammarNode,
   html,
-  isActionElement,
   isButtonActionElement,
-  isFeature,
-  isFeatureBlock,
+  isEnvelop,
   isJsonElement,
   isLabelValueRowElement,
   isStringShortElement,
   isTableElement,
+  isUiAction,
+  isUiCard,
+  isUiContainer,
   isUiElement,
   isXmlElement,
   json,
@@ -38,8 +36,8 @@ import {
   multiSlot,
   numberMeter,
   numberUnbounded,
-  parseFeature,
-  parseFeatureBlock,
+  parseUiCard,
+  parseUiContainer,
   repeatingGroup,
   repeatingGroupEntry,
   slot,
@@ -53,16 +51,20 @@ import {
   TextWeight,
   timestamp,
   TimestampFormat,
+  UiCard,
+  UiCardClass,
+  UiContainer,
+  UiContainerClass,
   xml
 } from "../dist/typescript/featureViewGrammar.js";
 
 
-describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
+describe("TypeScript Card & Visual DSL Builder", () =>
 {
 
   it("should construct Dominant Colors specimen using fluent builder", () =>
   {
-    const block = FeatureBlock.builder("Dominant Colors")
+    const card = UiCard.builder("Dominant Colors")
       .description("Palette computed from image pixels")
       .addLabelValue("Dominant Palette", dominantColors([ "#2D3748", "#4A5568", "#CBD5E0" ]))
       .addLabelValue("Primary Hue", stringShort("Slate", {
@@ -77,12 +79,12 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
       }))
       .build();
 
-    assert.equal(block.schemaVersion, "1.0");
-    assert.equal(block.title, "Dominant Colors");
-    assert.equal(block.description, "Palette computed from image pixels");
-    assert.equal(block.elements.length, 4);
+    assert.equal(card.schemaVersion, "1.0");
+    assert.equal(card.title, "Dominant Colors");
+    assert.equal(card.description, "Palette computed from image pixels");
+    assert.equal(card.elements.length, 4);
 
-    const firstElement = block.elements[0];
+    const firstElement = card.elements[0];
     assert.ok(isUiElement(firstElement));
     if (isLabelValueRowElement(firstElement))
     {
@@ -94,9 +96,9 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
       assert.fail("Expected first element to be LabelValueRowElement");
     }
 
-    assert.ok(block.actions && block.actions.length === 1);
-    const action = block.actions[0];
-    assert.ok(isActionElement(action));
+    assert.ok(card.actions && card.actions.length === 1);
+    const action = card.actions[0];
+    assert.ok(isUiAction(action));
     if (isButtonActionElement(action))
     {
       assert.equal(action.commandId, "exportSwatches");
@@ -110,7 +112,7 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
 
   it("should construct Metadata specimen using functional DSL factories", () =>
   {
-    const block = createFeatureBlock(
+    const card = createUiCard(
       "Image Metadata",
       {
         description: "EXIF and camera properties",
@@ -138,11 +140,11 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
       }
     );
 
-    assert.equal(block.elements.length, 7);
-    assert.equal(block.elements[0].type, "label-value");
-    assert.equal(block.elements[5].type, "collapsible-group");
-    assert.equal(block.elements[6].type, "divider");
-    assert.equal(block.actions?.length, 2);
+    assert.equal(card.elements.length, 7);
+    assert.equal(card.elements[0].type, "label-value");
+    assert.equal(card.elements[5].type, "collapsible-group");
+    assert.equal(card.elements[6].type, "divider");
+    assert.equal(card.actions?.length, 2);
   });
 
   it("should build structured Table and MultiSlot layouts", () =>
@@ -241,22 +243,22 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
     assert.equal(isXmlElement(jsonElement), false);
 
     const buttonElement = buttonAction("cmd", "Click Me");
-    assert.ok(isActionElement(buttonElement));
+    assert.ok(isUiAction(buttonElement));
     assert.ok(isButtonActionElement(buttonElement));
 
     assert.equal(isUiElement(null), false);
     assert.equal(isUiElement("not an object"), false);
-    assert.equal(isActionElement({ notAnAction: true }), false);
+    assert.equal(isUiAction({ notAnAction: true }), false);
   });
 
   it("should serialize cleanly to JSON string matching schema shape", () =>
   {
-    const block = FeatureBlock.builder("JSON Test")
+    const card = UiCard.builder("JSON Test")
       .addLabelValue("Key", stringShort("Value"))
       .build();
 
-    const json = JSON.stringify(block);
-    const parsed = JSON.parse(json);
+    const jsonString = JSON.stringify(card);
+    const parsed = JSON.parse(jsonString);
 
     assert.equal(parsed.schemaVersion, "1.0");
     assert.equal(parsed.title, "JSON Test");
@@ -278,44 +280,52 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
     assert.ok(isStringShortElement(shortClass));
 
     const buttonClass = new ButtonActionElementClass("export", "Export", { variant: ButtonVariant.primary });
-    assert.ok(buttonClass instanceof BaseActionElement);
+    assert.ok(buttonClass instanceof BaseUiAction);
     assert.ok(buttonClass instanceof ButtonActionElementClass);
     assert.equal(buttonClass.type, "button");
     assert.equal(buttonClass.commandId, "export");
     assert.equal(buttonClass.label, "Export");
-    assert.ok(isActionElement(buttonClass));
+    assert.ok(isUiAction(buttonClass));
     assert.ok(isButtonActionElement(buttonClass));
 
-    const json = JSON.stringify(shortClass.toJSON());
-    assert.equal(json, "{\"type\":\"string-short\",\"value\":\"Class Value\",\"representation\":\"chip\"}");
+    const jsonString = JSON.stringify(shortClass.toJSON());
+    assert.equal(jsonString, "{\"type\":\"string-short\",\"value\":\"Class Value\",\"representation\":\"chip\"}");
 
-    const featureClass = new FeatureClass([ shortClass ], { actions: [ buttonClass ] });
-    assert.ok(featureClass instanceof GrammarNode);
-    assert.ok(featureClass instanceof FeatureClass);
-    assert.equal(featureClass.schemaVersion, "1.0");
-    assert.equal(featureClass.elements.length, 1);
-    assert.equal(featureClass.actions?.length, 1);
+    const envelopClass = new EnvelopClass();
+    assert.ok(envelopClass instanceof GrammarNode);
+    assert.ok(envelopClass instanceof EnvelopClass);
+    assert.equal(envelopClass.schemaVersion, "1.0");
+    assert.ok(isEnvelop(envelopClass));
+    assert.ok(isEnvelop({ schemaVersion: "1.0" }));
 
-    const blockClass = new FeatureBlockClass("Block Title", [ shortClass ], { description: "Block Subtitle" });
-    assert.ok(blockClass instanceof GrammarNode);
-    assert.ok(blockClass instanceof FeatureBlockClass);
-    assert.equal(blockClass.title, "Block Title");
-    assert.equal(blockClass.description, "Block Subtitle");
-    assert.equal(blockClass.schemaVersion, "1.0");
-    assert.equal(blockClass.elements.length, 1);
+    const containerClass = new UiContainerClass([ shortClass ]);
+    assert.ok(containerClass instanceof GrammarNode);
+    assert.ok(containerClass instanceof UiContainerClass);
+    assert.equal(containerClass.schemaVersion, "1.0");
+    assert.equal(containerClass.elements.length, 1);
+    assert.ok(isEnvelop(containerClass));
+
+    const cardClass = new UiCardClass("Card Title", [ shortClass ], { description: "Card Subtitle", actions: [ buttonClass ] });
+    assert.ok(cardClass instanceof GrammarNode);
+    assert.ok(cardClass instanceof UiCardClass);
+    assert.equal(cardClass.title, "Card Title");
+    assert.equal(cardClass.description, "Card Subtitle");
+    assert.equal(cardClass.schemaVersion, "1.0");
+    assert.equal(cardClass.elements.length, 1);
+    assert.equal(cardClass.actions?.length, 1);
 
     // Verify parameterless instantiation compatibility at runtime (e.g. class-transformer plainToInstance)
-    const emptyFeatureClass = new (FeatureClass as new () => FeatureClass)();
-    assert.ok(emptyFeatureClass instanceof FeatureClass);
-    assert.equal(emptyFeatureClass.schemaVersion, "1.0");
-    assert.deepEqual(emptyFeatureClass.elements, []);
-    assert.equal(emptyFeatureClass.actions, undefined);
+    const emptyContainerClass = new (UiContainerClass as new () => UiContainerClass)();
+    assert.ok(emptyContainerClass instanceof UiContainerClass);
+    assert.equal(emptyContainerClass.schemaVersion, "1.0");
+    assert.deepEqual(emptyContainerClass.elements, []);
 
-    const emptyBlockClass = new (FeatureBlockClass as new () => FeatureBlockClass)();
-    assert.ok(emptyBlockClass instanceof FeatureBlockClass);
-    assert.equal(emptyBlockClass.schemaVersion, "1.0");
-    assert.deepEqual(emptyBlockClass.elements, []);
-    assert.equal(emptyBlockClass.title, undefined);
+    const emptyCardClass = new (UiCardClass as new () => UiCardClass)();
+    assert.ok(emptyCardClass instanceof UiCardClass);
+    assert.equal(emptyCardClass.schemaVersion, "1.0");
+    assert.deepEqual(emptyCardClass.elements, []);
+    assert.equal(emptyCardClass.title, undefined);
+    assert.equal(emptyCardClass.actions, undefined);
 
     const emptyShortClass = new (StringShortElementClass as new () => StringShortElementClass)();
     assert.ok(emptyShortClass instanceof StringShortElementClass);
@@ -323,71 +333,69 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
     assert.equal(emptyShortClass.representation, StringShortRepresentation.plain);
   });
 
-  it("should construct Feature container using Feature fluent builder and functional helper", () =>
+  it("should construct UiContainer using UiContainer fluent builder and functional helper", () =>
   {
-    const feature = Feature.builder()
+    const container = UiContainer.builder()
       .addLabelValue("Key", stringShort("Value"))
-      .addAction(buttonAction("export", "Export"))
       .build();
 
-    assert.ok(feature instanceof FeatureClass);
-    assert.ok(feature instanceof GrammarNode);
-    assert.equal(feature.schemaVersion, "1.0");
-    assert.equal(feature.elements.length, 1);
-    assert.equal(feature.elements[0].type, "label-value");
-    assert.equal(feature.actions?.length, 1);
+    assert.ok(container instanceof UiContainerClass);
+    assert.ok(container instanceof GrammarNode);
+    assert.equal(container.schemaVersion, "1.0");
+    assert.equal(container.elements.length, 1);
+    assert.equal(container.elements[0].type, "label-value");
 
-    const featureHelper = createFeature({
+    const containerHelper = createUiContainer({
       elements: [ labelValue("Direct", stringShort("Text")) ]
     });
-    assert.ok(featureHelper instanceof FeatureClass);
-    assert.ok(featureHelper instanceof GrammarNode);
-    assert.equal(featureHelper.schemaVersion, "1.0");
-    assert.equal(featureHelper.elements.length, 1);
+    assert.ok(containerHelper instanceof UiContainerClass);
+    assert.ok(containerHelper instanceof GrammarNode);
+    assert.equal(containerHelper.schemaVersion, "1.0");
+    assert.equal(containerHelper.elements.length, 1);
 
     // Verify toString() produces compact unindented JSON string representation
-    const jsonString = feature.toString();
-    assert.equal(jsonString, JSON.stringify(feature.toJSON()));
+    const jsonString = container.toString();
+    assert.equal(jsonString, JSON.stringify(container.toJSON()));
     assert.ok(!jsonString.includes("\n"));
 
-    const builderJsonString = Feature.builder().addLabelValue("Key", stringShort("Value")).toString();
-    assert.equal(builderJsonString, Feature.builder().addLabelValue("Key", stringShort("Value")).build().toString());
+    const builderJsonString = UiContainer.builder().addLabelValue("Key", stringShort("Value")).toString();
+    assert.equal(builderJsonString, UiContainer.builder().addLabelValue("Key", stringShort("Value")).build().toString());
     const parsedBuilder = JSON.parse(builderJsonString);
     assert.equal(parsedBuilder.schemaVersion, "1.0");
     assert.equal(parsedBuilder.elements.length, 1);
     assert.equal(parsedBuilder.elements[0].label, "Key");
 
-    // Test Feature.parse() and parseFeature()
-    const parsedFeature = Feature.parse(builderJsonString);
-    assert.ok(parsedFeature instanceof FeatureClass);
-    assert.ok(parsedFeature instanceof GrammarNode);
-    assert.equal(parsedFeature.schemaVersion, "1.0");
-    assert.equal(parsedFeature.elements.length, 1);
-    assert.ok(isFeature(parsedFeature));
+    // Test UiContainer.parse() and parseUiContainer()
+    const parsedContainer = UiContainer.parse(builderJsonString);
+    assert.ok(parsedContainer instanceof UiContainerClass);
+    assert.ok(parsedContainer instanceof GrammarNode);
+    assert.equal(parsedContainer.schemaVersion, "1.0");
+    assert.equal(parsedContainer.elements.length, 1);
+    assert.ok(isUiContainer(parsedContainer));
 
-    const parsedFeatureObject = parseFeature(parsedBuilder);
-    assert.ok(parsedFeatureObject instanceof FeatureClass);
-    assert.equal(parsedFeatureObject.elements[0].type, "label-value");
+    const parsedContainerObject = parseUiContainer(parsedBuilder);
+    assert.ok(parsedContainerObject instanceof UiContainerClass);
+    assert.equal(parsedContainerObject.elements[0].type, "label-value");
 
-    // Test FeatureBlock.parse() and parseFeatureBlock()
-    const block = FeatureBlock.builder("Test Title").addLabelValue("A", stringShort("B")).build();
-    const blockJson = block.toString();
-    const parsedBlock = FeatureBlock.parse(blockJson);
-    assert.ok(parsedBlock instanceof FeatureBlockClass);
-    assert.ok(parsedBlock instanceof GrammarNode);
-    assert.equal(parsedBlock.title, "Test Title");
-    assert.equal(parsedBlock.elements.length, 1);
-    assert.ok(isFeatureBlock(parsedBlock));
+    // Test UiCard.parse() and parseUiCard()
+    const card = UiCard.builder("Test Title").addLabelValue("A", stringShort("B")).build();
+    const cardJson = card.toString();
+    const parsedCard = UiCard.parse(cardJson);
+    assert.ok(parsedCard instanceof UiCardClass);
+    assert.ok(parsedCard instanceof GrammarNode);
+    assert.equal(parsedCard.title, "Test Title");
+    assert.equal(parsedCard.elements.length, 1);
+    assert.ok(isUiCard(parsedCard));
 
-    const parsedBlockObject = parseFeatureBlock(JSON.parse(blockJson));
-    assert.ok(parsedBlockObject instanceof FeatureBlockClass);
-    assert.equal(parsedBlockObject.title, "Test Title");
+    const parsedCardObject = parseUiCard(JSON.parse(cardJson));
+    assert.ok(parsedCardObject instanceof UiCardClass);
+    assert.equal(parsedCardObject.title, "Test Title");
 
     // Test invalid schema throws Error
     assert.throws(
       () =>
       {
-        Feature.parse("{\"invalid\":\"data\"}");
+        UiContainer.parse("{\"invalid\":\"data\"}");
       },
       /Invalid JSON/
     );
@@ -413,23 +421,23 @@ describe("TypeScript FeatureBlock & Visual DSL Builder", () =>
     };
 
     // Shallow validation succeeds because top-level structure has schemaVersion and elements array
-    assert.equal(isFeature(invalidTablePayload, false), true);
+    assert.equal(isUiContainer(invalidTablePayload, false), true);
 
     // Deep validation detects the invalid nested cell and fails
-    assert.equal(isFeature(invalidTablePayload, true), false);
+    assert.equal(isUiContainer(invalidTablePayload, true), false);
 
-    // Feature.parse() with default deep validation rejects the invalid payload
+    // UiContainer.parse() with default deep validation rejects the invalid payload
     assert.throws(
       () =>
       {
-        Feature.parse(invalidTablePayload);
+        UiContainer.parse(invalidTablePayload);
       },
-      /Invalid JSON: value does not match the `Feature` schema/
+      /Invalid JSON: value does not match the `UiContainer` schema/
     );
 
-    // Feature.parse() with withDeepValidation = false accepts it
-    const parsedShallow = Feature.parse(invalidTablePayload, false);
-    assert.ok(parsedShallow instanceof FeatureClass);
+    // UiContainer.parse() with withDeepValidation = false accepts it
+    const parsedShallow = UiContainer.parse(invalidTablePayload, false);
+    assert.ok(parsedShallow instanceof UiContainerClass);
   });
 
 });

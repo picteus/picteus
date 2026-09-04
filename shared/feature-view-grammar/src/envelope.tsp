@@ -11,33 +11,37 @@ using TypeSpec.JsonSchema;
 namespace Picteus.FeatureViewGrammar;
 
 @doc("""
-  Feature container model representing the visual elements and actions of an image feature.
+  Base envelope container model holding the schema version attribute.
   """)
-@dslRoot
-@uiLayout("repeating-group")
-model Feature {
+model Envelop {
   @doc("Schema specification version")
   schemaVersion: "1.0" = "1.0";
-
-  @doc("Ordered list of visual elements, structures, and content")
-  elements: UiElement[];
-
-  @doc("Optional card action buttons rendered at the base of the feature card")
-  actions?: ActionElement[];
 }
 
 @doc("""
-  Root Feature Block container model.
+  Container model representing an ordered list of visual elements.
+  """)
+@dslRoot
+@uiLayout("repeating-group")
+model UiContainer extends Envelop {
+  @doc("Ordered list of visual elements, structures, and content")
+  elements: UiElement[];
+}
+
+@doc("""
+  Root Card container model.
   Represents a complete feature card rendered inside the 360px panel.
   """)
 @jsonSchema
 @dslRoot
 @uiLayout("card")
-model FeatureBlock extends Feature {
+model UiCard extends UiContainer {
   @doc("Human-readable feature title displayed in the card header")
   title: string;
 
   @doc("Optional neutral subtitle / description for the feature")
   description?: string;
-}
 
+  @doc("Optional card action buttons rendered at the base of the feature card")
+  actions?: UiAction[];
+}

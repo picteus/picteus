@@ -630,6 +630,56 @@ function generateModelClass(model: GrammarModel, polymorphicRootNames: ReadonlyS
   return lines;
 }
 
+function computeBaseModelProperties(model: GrammarModel, spec: GrammarSpec): Map<string, GrammarProperty>
+{
+  const baseProperties = new Map<string, GrammarProperty>();
+  if (!model.baseModelName)
+  {
+    return baseProperties;
+  }
+
+  const baseModel = spec.models.find((candidate) => candidate.name === model.baseModelName);
+  if (baseModel)
+  {
+    for (const property of baseModel.properties)
+    {
+      baseProperties.set(property.name, property);
+    }
+  }
+
+  return baseProperties;
+}
+
+function shouldEmitInterfaceProperty(
+  property: GrammarProperty,
+  model: GrammarModel,
+  baseProperties: ReadonlyMap<string, GrammarProperty>
+): boolean
+{
+  const baseProperty = baseProperties.get(property.name);
+  if (!baseProperty)
+  {
+    return true;
+  }
+
+  // We always emit the discriminator property if it is narrowed with a concrete literal value
+  if (property.name === DISCRIMINATOR_PROPERTY && model.discriminatorValue)
+  {
+    return true;
+  }
+
+  const propertyTsType = resolveTsType(property.type);
+  const baseTsType = resolveTsType(baseProperty.type);
+
+  // If the property is narrowed or changed from the base definition, we re-declare it
+  if (propertyTsType !== baseTsType || property.optional !== baseProperty.optional)
+  {
+    return true;
+  }
+
+  return false;
+}
+
 export function generateTypeScriptCode(spec: GrammarSpec): string
 {
   const lines: string[] = [];
@@ -804,11 +854,18 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     const extendsClause = model.baseModelName
       ? (polymorphicRootNames.has(model.baseModelName) ? ` extends ${model.baseModelName}Base` : ` extends ${model.baseModelName}`)
       : "";
+    const baseProperties = computeBaseModelProperties(model, spec);
+
     lines.push(formatTsDoc({ summary: model.doc }));
     lines.push(`export interface ${model.name}${extendsClause}`);
     lines.push("{");
     for (const property of model.properties)
     {
+      if (!shouldEmitInterfaceProperty(property, model, baseProperties))
+      {
+        continue;
+      }
+
       let defaultValueString: string | undefined;
       if (property.name === DISCRIMINATOR_PROPERTY && model.discriminatorValue)
       {
@@ -863,8 +920,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   }
 
   // 6. We generate Model-Driven Fluent Builders for all @dslRoot models
-  const rootModels = spec.rootModels.length > 0 ? spec.rootModels : (spec.rootModel ? [ spec.rootModel ] : []);
-  for (const root of rootModels)
+  for (const root of spec.rootModels)
   {
     const builderClassName = `${root.name}Builder`;
     const {
@@ -1240,7 +1296,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
             ...constructorDocParameters,
             ...(rootOptionalCreateFields.length > 0 ? [ {
               name: "options",
-              description: "Optional configuration (description, elements, actions)."
+              description: "Optional configuration properties."
             } ] : [])
           ],
           returns: `A strongly-typed \`${className}\` instance.`
@@ -1433,7 +1489,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     }
   }
 
-  for (const root of rootModels)
+  for (const root of spec.rootModels)
   {
     lines.push(
       formatTsDoc(

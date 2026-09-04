@@ -7,7 +7,7 @@ import { forwardRef, Inject, Injectable, StreamableFile } from "@nestjs/common";
 import { fdir } from "fdir";
 import { SyntaxValidator } from "fast-xml-validator";
 
-import { Feature } from "@picteus/shared-core";
+import { UiContainer } from "@picteus/shared-core";
 
 import {
   Image as PersistedImage,
@@ -613,7 +613,7 @@ export class ImageService
         const json: Json = checkValueIsJson(index, feature);
         try
         {
-          Feature.parse(json, true);
+          UiContainer.parse(json, true);
         }
         catch (error)
         {
