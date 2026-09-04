@@ -279,6 +279,19 @@ describe("Repository", () =>
     }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${repository.name}' is invalid because a repository with the same name already exists`, BAD_REQUEST, base.badParameterCode));
   });
 
+  test("Create with same directory prefix", async () =>
+  {
+    const emptyDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
+    const prefix = "prefix";
+    const firstDirectoryName = `${prefix}`;
+    const firstDirectoryPath = base.prepareEmptyDirectory(firstDirectoryName, emptyDirectoryPath);
+    const secondDirectoryName = `${prefix}Long`;
+    const secondSubDirectoryName = "Second";
+    const secondDirectoryPath = base.prepareEmptyDirectory(secondSubDirectoryName, base.prepareEmptyDirectory(secondDirectoryName, emptyDirectoryPath));
+    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + firstDirectoryPath, undefined, firstDirectoryName)).id);
+    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + secondDirectoryPath, undefined, secondSubDirectoryName)).id);
+  });
+
   test("Create with nested URL", async () =>
   {
     const emptyDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
@@ -291,7 +304,7 @@ describe("Repository", () =>
     await expect(async () =>
     {
       await base.getRepositoryController().create(Defaults.locationType, subUrl, undefined, Defaults.repositoryName + randomUUID());
-    }).rejects.toThrow(new ServiceError(`The repository with id '${repository.id}' is in conflict with the URL '${subUrl}'`, BAD_REQUEST, base.badParameterCode));
+    }).rejects.toThrow(new ServiceError(`The parameter 'url' with value '${subUrl}' is invalid because the already existing repository with id '${repository.id}' and URL '${repository.url}' is in conflict with it`, BAD_REQUEST, base.badParameterCode));
     {
       const otherDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName + "-bis", base.getWorkingDirectoryPath());
       const otherRepository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + otherDirectoryPath, undefined, Defaults.repositoryName + randomUUID());

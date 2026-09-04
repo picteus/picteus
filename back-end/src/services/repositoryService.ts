@@ -158,6 +158,13 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       }
     }
     const repositories = await this.entitiesProvider.repositories.findMany();
+
+    function isParentDirectory(directoryPath: string, toAssessDirectoryPath: string): boolean
+    {
+      const relativePath = path.relative(directoryPath, toAssessDirectoryPath);
+      return relativePath.length > 0 && relativePath.startsWith("..") === false && path.isAbsolute(relativePath) === false;
+    }
+
     // This way, we remove any URL trailing slash
     const effectiveUrl = fileWithProtocol + directoryPath;
     for (const repository of repositories)
@@ -166,12 +173,10 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       {
         parametersChecker.throwBadParameter("url", url, "a repository with the same URL already exists");
       }
-      if (repository.url.startsWith(effectiveUrl) === true || effectiveUrl.startsWith(repository.url) === true)
+      const repositoryDirectoryPath = repository.url.substring(fileWithProtocol.length);
+      if (isParentDirectory(repositoryDirectoryPath, directoryPath) === true)
       {
-        if (path.resolve(directoryPath, "..") !== path.resolve(repository.url.substring(fileWithProtocol.length), ".."))
-        {
-          parametersChecker.throwBadParameterError(`The repository with id '${repository.id}' is in conflict with the URL '${url}'`);
-        }
+        parametersChecker.throwBadParameter("url", url, `the already existing repository with id '${repository.id}' and URL '${repository.url}' is in conflict with it`);
       }
     }
 
