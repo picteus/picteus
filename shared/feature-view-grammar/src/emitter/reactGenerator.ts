@@ -1,6 +1,6 @@
-// noinspection JSXUnresolvedComponent,TypeScriptMissingConfigOption,JSUnresolvedReference,BadExpressionStatementJS
+// noinspection TypeScriptMissingConfigOption
 
-import { GrammarModel, GrammarProperty, GrammarSpec } from "./typespecModel.js";
+import { GrammarSpec, ViewKitModel, ViewKitProperty } from "./typespecModel.js";
 
 
 const PROPS_TYPE_SUFFIX = "PropsType";
@@ -56,10 +56,10 @@ function computeTypeScriptImports(spec: GrammarSpec): string[]
     importNames.add(rootModel.name);
   }
 
-  // We include all grammar enums (e.g., ButtonVariant, DividerStyle, Emphasis, etc.)
-  for (const grammarEnum of spec.enums)
+  // We include all ViewKit enums (e.g., ButtonVariant, DividerStyle, Emphasis, etc.)
+  for (const viewKitEnum of spec.enums)
   {
-    importNames.add(grammarEnum.name);
+    importNames.add(viewKitEnum.name);
   }
 
   // We include all concrete UI element models
@@ -78,10 +78,10 @@ function computeTypeScriptImports(spec: GrammarSpec): string[]
 }
 
 function findModelProperty(
-  model: GrammarModel,
-  predicate: (property: GrammarProperty) => boolean,
+  model: ViewKitModel,
+  predicate: (property: ViewKitProperty) => boolean,
   fallbackName: string
-): GrammarProperty | undefined
+): ViewKitProperty | undefined
 {
   return model.properties.find(predicate) ?? model.properties.find((property) => property.name === fallbackName);
 }
@@ -176,7 +176,7 @@ function generateCopyableWrapper(): string
   ].join("\n");
 }
 
-function computeCustomRendererSlotName(model: GrammarModel): string
+function computeCustomRendererSlotName(model: ViewKitModel): string
 {
   if (model.discriminatorValue)
   {
@@ -265,7 +265,7 @@ function generateUiElementViewContextAndProvider(): string
   ].join("\n");
 }
 
-function generateUiElementComponent(model: GrammarModel): string
+function generateUiElementComponent(model: ViewKitModel): string
 {
   const componentName = `${model.name}${VIEW_SUFFIX}`;
   const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
@@ -313,7 +313,7 @@ function generateUiElementComponent(model: GrammarModel): string
   );
 }
 
-function generateActionElementComponent(model: GrammarModel): string
+function generateActionElementComponent(model: ViewKitModel): string
 {
   let body: string;
   if (model.discriminatorValue === "button")
@@ -375,7 +375,7 @@ function generateActionElementComponent(model: GrammarModel): string
   );
 }
 
-function generateModelRenderBody(model: GrammarModel): string
+function generateModelRenderBody(model: ViewKitModel): string
 {
   // We inspect layout strategies
   if (model.uiLayout === "row")
@@ -445,7 +445,7 @@ function generateModelRenderBody(model: GrammarModel): string
   }
 }
 
-function generateRowLayoutBody(model: GrammarModel): string
+function generateRowLayoutBody(model: ViewKitModel): string
 {
   const labelProperty = findModelProperty(model, (property) => property.isUiLabel === true, "label");
   const valueProperty = findModelProperty(model, (property) => property.isUiValue === true, "value");
@@ -488,7 +488,7 @@ function generateRowSlotsLayoutBody(): string
   ].join("\n");
 }
 
-function generateMeterWidgetBody(model: GrammarModel): string
+function generateMeterWidgetBody(model: ViewKitModel): string
 {
   const minimumProperty = findModelProperty(model, (property) => property.uiMeterBound === "minimum", "minimum");
   const maximumProperty = findModelProperty(model, (property) => property.uiMeterBound === "maximum", "maximum");
@@ -518,7 +518,7 @@ function generateMeterWidgetBody(model: GrammarModel): string
   ].join("\n");
 }
 
-function generateStarsWidgetBody(model: GrammarModel): string
+function generateStarsWidgetBody(model: ViewKitModel): string
 {
   const maximumProperty = findModelProperty(model, (property) => property.uiMeterBound === "maximum", "maximum");
   const maximumExpression = maximumProperty ? `element.${maximumProperty.name} ?? 5` : `5`;
@@ -795,7 +795,7 @@ function generateHtmlWidgetBody(): string
   );
 }
 
-function generateFallbackWidgetBody(_model: GrammarModel): string
+function generateFallbackWidgetBody(_model: ViewKitModel): string
 {
   return [
     `  return <Box className={className} style={style}><Code>{JSON.stringify(element)}</Code></Box>;`
@@ -805,7 +805,7 @@ function generateFallbackWidgetBody(_model: GrammarModel): string
 function generatePolymorphicDispatcher(
   rootName: typeof UI_ELEMENT_ROOT_NAME | typeof ACTION_ELEMENT_ROOT_NAME,
   propName: "element" | "action",
-  models: GrammarModel[]
+  models: ViewKitModel[]
 ): string
 {
   const componentName = `${rootName}${VIEW_SUFFIX}`;
@@ -846,7 +846,7 @@ function toLowerCamelCase(value: string): string
   return value.charAt(0).toLowerCase() + value.slice(1);
 }
 
-function generateRootContainerComponent(rootModel: GrammarModel): string
+function generateRootContainerComponent(rootModel: ViewKitModel): string
 {
   const layout = rootModel.uiLayout ?? "card";
   const componentName = `${rootModel.name}${VIEW_SUFFIX}`;

@@ -17,7 +17,6 @@ import {
   dominantColors,
   EnvelopClass,
   externalLinkAction,
-  GrammarNode,
   html,
   isButtonActionElement,
   isEnvelop,
@@ -55,8 +54,9 @@ import {
   UiCardClass,
   UiContainer,
   UiContainerClass,
+  ViewKitNode,
   xml
-} from "../dist/typescript/featureViewGrammar.js";
+} from "../dist/typescript/viewKit.js";
 
 
 describe("TypeScript Card & Visual DSL Builder", () =>
@@ -292,21 +292,21 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.equal(jsonString, "{\"type\":\"string-short\",\"value\":\"Class Value\",\"representation\":\"chip\"}");
 
     const envelopClass = new EnvelopClass();
-    assert.ok(envelopClass instanceof GrammarNode);
+    assert.ok(envelopClass instanceof ViewKitNode);
     assert.ok(envelopClass instanceof EnvelopClass);
     assert.equal(envelopClass.schemaVersion, "1.0");
     assert.ok(isEnvelop(envelopClass));
     assert.ok(isEnvelop({ schemaVersion: "1.0" }));
 
     const containerClass = new UiContainerClass([ shortClass ]);
-    assert.ok(containerClass instanceof GrammarNode);
+    assert.ok(containerClass instanceof ViewKitNode);
     assert.ok(containerClass instanceof UiContainerClass);
     assert.equal(containerClass.schemaVersion, "1.0");
     assert.equal(containerClass.elements.length, 1);
     assert.ok(isEnvelop(containerClass));
 
     const cardClass = new UiCardClass("Card Title", [ shortClass ], { description: "Card Subtitle", actions: [ buttonClass ] });
-    assert.ok(cardClass instanceof GrammarNode);
+    assert.ok(cardClass instanceof ViewKitNode);
     assert.ok(cardClass instanceof UiCardClass);
     assert.equal(cardClass.title, "Card Title");
     assert.equal(cardClass.description, "Card Subtitle");
@@ -340,7 +340,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
       .build();
 
     assert.ok(container instanceof UiContainerClass);
-    assert.ok(container instanceof GrammarNode);
+    assert.ok(container instanceof ViewKitNode);
     assert.equal(container.schemaVersion, "1.0");
     assert.equal(container.elements.length, 1);
     assert.equal(container.elements[0].type, "label-value");
@@ -349,7 +349,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
       elements: [ labelValue("Direct", stringShort("Text")) ]
     });
     assert.ok(containerHelper instanceof UiContainerClass);
-    assert.ok(containerHelper instanceof GrammarNode);
+    assert.ok(containerHelper instanceof ViewKitNode);
     assert.equal(containerHelper.schemaVersion, "1.0");
     assert.equal(containerHelper.elements.length, 1);
 
@@ -368,7 +368,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     // Test UiContainer.parse() and parseUiContainer()
     const parsedContainer = UiContainer.parse(builderJsonString);
     assert.ok(parsedContainer instanceof UiContainerClass);
-    assert.ok(parsedContainer instanceof GrammarNode);
+    assert.ok(parsedContainer instanceof ViewKitNode);
     assert.equal(parsedContainer.schemaVersion, "1.0");
     assert.equal(parsedContainer.elements.length, 1);
     assert.ok(isUiContainer(parsedContainer));
@@ -382,7 +382,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     const cardJson = card.toString();
     const parsedCard = UiCard.parse(cardJson);
     assert.ok(parsedCard instanceof UiCardClass);
-    assert.ok(parsedCard instanceof GrammarNode);
+    assert.ok(parsedCard instanceof ViewKitNode);
     assert.equal(parsedCard.title, "Test Title");
     assert.equal(parsedCard.elements.length, 1);
     assert.ok(isUiCard(parsedCard));

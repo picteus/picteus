@@ -1,6 +1,6 @@
 import "./base.tsp";
 
-namespace Picteus.FeatureViewGrammar;
+namespace Picteus.ViewKit;
 
 @doc("Visual style variants for interactive button actions.")
 enum ButtonVariant {

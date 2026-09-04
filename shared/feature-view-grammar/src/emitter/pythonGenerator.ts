@@ -1,4 +1,4 @@
-import { GrammarModel, GrammarProperty, GrammarSpec, GrammarType } from "./typespecModel.js";
+import { GrammarSpec, ViewKitModel, ViewKitProperty, ViewKitType } from "./typespecModel.js";
 
 
 /**
@@ -80,7 +80,7 @@ function formatPythonDoc(doc?: string, indent: string = "    "): string
   return `${indent}"""\n${formatted}\n${indent}"""\n`;
 }
 
-function resolvePythonType(type: GrammarType): string
+function resolvePythonType(type: ViewKitType): string
 {
   switch (type.kind)
   {
@@ -107,7 +107,7 @@ function resolvePythonType(type: GrammarType): string
   }
 }
 
-function computePythonFactoryNames(model: GrammarModel): { primary: string; aliases: string[] }
+function computePythonFactoryNames(model: ViewKitModel): { primary: string; aliases: string[] }
 {
   let baseName = model.name;
   if (baseName.endsWith("Element"))
@@ -119,7 +119,7 @@ function computePythonFactoryNames(model: GrammarModel): { primary: string; alia
   return { primary, aliases };
 }
 
-function generatePythonModelFactory(model: GrammarModel): string[]
+function generatePythonModelFactory(model: ViewKitModel): string[]
 {
   const lines: string[] = [];
   const { primary, aliases } = computePythonFactoryNames(model);
@@ -221,9 +221,9 @@ function generatePythonModelFactory(model: GrammarModel): string[]
   return lines;
 }
 
-function computeBaseModelProperties(model: GrammarModel, spec: GrammarSpec): Map<string, GrammarProperty>
+function computeBaseModelProperties(model: ViewKitModel, spec: GrammarSpec): Map<string, ViewKitProperty>
 {
-  const baseProperties = new Map<string, GrammarProperty>();
+  const baseProperties = new Map<string, ViewKitProperty>();
   if (!model.baseModelName)
   {
     return baseProperties;
@@ -241,7 +241,7 @@ function computeBaseModelProperties(model: GrammarModel, spec: GrammarSpec): Map
   return baseProperties;
 }
 
-function resolvePythonRequiredDefault(property: GrammarProperty): string
+function resolvePythonRequiredDefault(property: ViewKitProperty): string
 {
   switch (property.type.kind)
   {
@@ -279,14 +279,14 @@ export function generatePythonCode(spec: GrammarSpec): string
 
   // We define base serialization dataclass
   lines.push("@dataclass");
-  lines.push("class GrammarBase:");
+  lines.push("class ViewKitBase:");
   lines.push("    \"\"\"Base dataclass providing recursive dictionary, validation, and JSON serialization.\"\"\"");
   lines.push("");
   lines.push("    def to_dict(self) -> Dict[str, Any]:");
   lines.push("        def _clean(val: Any) -> Any:");
   lines.push("            if isinstance(val, Enum):");
   lines.push("                return val.value");
-  lines.push("            if isinstance(val, GrammarBase):");
+  lines.push("            if isinstance(val, ViewKitBase):");
   lines.push("                return val.to_dict()");
   lines.push("            if isinstance(val, list):");
   lines.push("                return [_clean(item) for item in val if item is not None]");
@@ -324,11 +324,11 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("            for field_name in getattr(self, \"__dataclass_fields__\", {}):");
   lines.push("                field_val = getattr(self, field_name, None)");
   lines.push("                if field_val is not None:");
-  lines.push("                    if isinstance(field_val, GrammarBase):");
+  lines.push("                    if isinstance(field_val, ViewKitBase):");
   lines.push("                        field_val.validate(with_deep_validation=True)");
   lines.push("                    elif isinstance(field_val, list):");
   lines.push("                        for item in field_val:");
-  lines.push("                            if isinstance(item, GrammarBase):");
+  lines.push("                            if isinstance(item, ViewKitBase):");
   lines.push("                                item.validate(with_deep_validation=True)");
   lines.push("        return True");
   lines.push("");
@@ -399,14 +399,14 @@ export function generatePythonCode(spec: GrammarSpec): string
   lines.push("");
 
   // 1. We generate Enums from AST
-  for (const grammarEnum of spec.enums)
+  for (const viewKitEnum of spec.enums)
   {
-    lines.push(`class ${grammarEnum.name}(str, Enum):`);
-    if (grammarEnum.doc)
+    lines.push(`class ${viewKitEnum.name}(str, Enum):`);
+    if (viewKitEnum.doc)
     {
-      lines.push(formatPythonDoc(grammarEnum.doc, "    "));
+      lines.push(formatPythonDoc(viewKitEnum.doc, "    "));
     }
-    for (const member of grammarEnum.members)
+    for (const member of viewKitEnum.members)
     {
       lines.push(`    ${convertToSnakeCase(member.name)} = "${member.value}"`);
     }
@@ -482,7 +482,7 @@ export function generatePythonCode(spec: GrammarSpec): string
   for (const root of spec.polymorphicRoots)
   {
     lines.push("@dataclass");
-    lines.push(`class ${root.name}Base(GrammarBase):`);
+    lines.push(`class ${root.name}Base(ViewKitBase):`);
     lines.push(formatPythonDoc(`Base dataclass for all ${root.name} models.`, "    "));
     lines.push("    pass");
     lines.push("");
@@ -502,7 +502,7 @@ export function generatePythonCode(spec: GrammarSpec): string
   {
     const baseClassName = (model.baseModelName && !polymorphicRootNames.has(model.baseModelName))
       ? model.baseModelName
-      : "GrammarBase";
+      : "ViewKitBase";
     const baseProperties = computeBaseModelProperties(model, spec);
     const isDerivedModel = model.baseModelName !== undefined && !polymorphicRootNames.has(model.baseModelName);
 
@@ -664,7 +664,7 @@ export function generatePythonCode(spec: GrammarSpec): string
   // 6. We generate Root Models and Builders
   for (const root of spec.rootModels)
   {
-    const baseClassName = root.baseModelName ?? "GrammarBase";
+    const baseClassName = root.baseModelName ?? "ViewKitBase";
     const baseProperties = computeBaseModelProperties(root, spec);
     const isDerivedModel = root.baseModelName !== undefined;
 
@@ -1120,7 +1120,7 @@ export function generatePythonCode(spec: GrammarSpec): string
   return lines.join("\n");
 }
 
-function hasPropertyDefault(property: GrammarProperty): boolean
+function hasPropertyDefault(property: ViewKitProperty): boolean
 {
   return property.defaultValue !== undefined;
 }

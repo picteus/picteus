@@ -1,6 +1,6 @@
 import { createTypeSpecLibrary, EmitContext, emitFile, resolvePath } from "@typespec/compiler";
 
-import { extractTypeSpecGrammarModel } from "./typespecModel.js";
+import { extractTypeSpecViewKitModel } from "./typespecModel.js";
 import { generateTypeScriptCode } from "./typescriptGenerator.js";
 import { generatePythonCode } from "./pythonGenerator.js";
 import { generateReactCode } from "./reactGenerator.js";
@@ -37,7 +37,7 @@ export {
   UiMeterBoundKind
 } from "./decorators.js";
 
-export interface FeatureViewGrammarEmitterOptions
+export interface EmitterOptions
 {
 
   readonly "emitter-output-dir"?: string;
@@ -66,31 +66,32 @@ export const $lib = createTypeSpecLibrary(
   }
 );
 
-export async function $onEmit(context: EmitContext<FeatureViewGrammarEmitterOptions>): Promise<void>
+export async function $onEmit(context: EmitContext<EmitterOptions>): Promise<void>
 {
   const program = context.program;
-  const spec = extractTypeSpecGrammarModel(program);
+  const spec = extractTypeSpecViewKitModel(program);
   const targets = context.options.targets ?? [ "typescript", "python", "react" ];
   const outputDir = context.emitterOutputDir;
 
   if (targets.includes("typescript"))
   {
     const typeScriptCode = generateTypeScriptCode(spec);
-    const typeScriptPath = resolvePath(outputDir, "typescript", "featureViewGrammar.ts");
+    const typeScriptPath = resolvePath(outputDir, "typescript", "viewKit.ts");
     await emitFile(program, { path: typeScriptPath, content: typeScriptCode });
   }
 
   if (targets.includes("python"))
   {
     const pythonCode = generatePythonCode(spec);
-    const pythonPath = resolvePath(outputDir, "python", "feature_view_grammar.py");
+    const pythonPath = resolvePath(outputDir, "python", "view_kit.py");
     await emitFile(program, { path: pythonPath, content: pythonCode });
   }
 
   if (targets.includes("react"))
   {
     const reactCode = generateReactCode(spec);
-    const reactPath = resolvePath(outputDir, "react", "FeatureViewGrammar.tsx");
+    const reactPath = resolvePath(outputDir, "react", "ViewKit.tsx");
     await emitFile(program, { path: reactPath, content: reactCode });
   }
 }
+

@@ -2,7 +2,7 @@ import "./base.tsp";
 import "./modifiers.tsp";
 import "./primitives.tsp";
 
-namespace Picteus.FeatureViewGrammar;
+namespace Picteus.ViewKit;
 
 @doc("Single slot within a multi-slot horizontal row layout.")
 model Slot {

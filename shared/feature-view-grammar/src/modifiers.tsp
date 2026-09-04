@@ -1,4 +1,4 @@
-namespace Picteus.FeatureViewGrammar;
+namespace Picteus.ViewKit;
 
 @doc("Typographic stroke weight styling.")
 enum TextWeight {

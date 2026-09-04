@@ -1,7 +1,7 @@
 import "./base.tsp";
 import "./modifiers.tsp";
 
-namespace Picteus.FeatureViewGrammar;
+namespace Picteus.ViewKit;
 
 @doc("Full Markdown fallback block rendered with core typographic hierarchy, spacing, and styling.")
 @uiWidget("markdown")

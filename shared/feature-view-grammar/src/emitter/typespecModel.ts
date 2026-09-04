@@ -20,7 +20,7 @@ import {
 } from "./decorators.js";
 
 
-export interface GrammarEnumMember
+export interface ViewKitEnumMember
 {
 
   readonly name: string;
@@ -29,16 +29,16 @@ export interface GrammarEnumMember
 
 }
 
-export interface GrammarEnum
+export interface ViewKitEnum
 {
 
   readonly name: string;
   readonly doc?: string;
-  readonly members: GrammarEnumMember[];
+  readonly members: ViewKitEnumMember[];
 
 }
 
-export type GrammarTypeKind =
+export type ViewKitTypeKind =
   | "string"
   | "number"
   | "boolean"
@@ -50,24 +50,24 @@ export type GrammarTypeKind =
   | "literal"
   | "unknown";
 
-export interface GrammarType
+export interface ViewKitType
 {
 
-  readonly kind: GrammarTypeKind;
+  readonly kind: ViewKitTypeKind;
   readonly name: string;
   readonly literalValue?: string | number | boolean;
-  readonly elementType?: GrammarType;
-  readonly unionTypes?: GrammarType[];
+  readonly elementType?: ViewKitType;
+  readonly unionTypes?: ViewKitType[];
 
 }
 
-export interface GrammarProperty
+export interface ViewKitProperty
 {
 
   readonly name: string;
   readonly doc?: string;
   readonly optional: boolean;
-  readonly type: GrammarType;
+  readonly type: ViewKitType;
   readonly defaultValue?: string | number | boolean;
   readonly isUiLabel?: boolean;
   readonly isUiValue?: boolean;
@@ -77,7 +77,7 @@ export interface GrammarProperty
 
 }
 
-export interface GrammarModel
+export interface ViewKitModel
 {
 
   readonly name: string;
@@ -88,7 +88,7 @@ export interface GrammarModel
   readonly isDslRoot: boolean;
   readonly isDslIgnored: boolean;
   readonly aliases: DslAliasName[];
-  readonly properties: GrammarProperty[];
+  readonly properties: ViewKitProperty[];
   readonly uiLayout?: UiLayoutKind;
   readonly uiWidget?: UiWidgetKind;
   readonly isCustomRenderer?: boolean;
@@ -101,7 +101,7 @@ export interface PolymorphicRoot
   readonly name: string;
   readonly doc?: string;
   readonly discriminatorProperty: string;
-  readonly derivedModels: GrammarModel[];
+  readonly derivedModels: ViewKitModel[];
 
 }
 
@@ -109,16 +109,16 @@ export interface GrammarSpec
 {
 
   readonly namespaceDoc?: string;
-  readonly enums: GrammarEnum[];
-  readonly models: GrammarModel[];
+  readonly enums: ViewKitEnum[];
+  readonly models: ViewKitModel[];
   readonly polymorphicRoots: PolymorphicRoot[];
-  readonly uiElements: GrammarModel[];
-  readonly actionElements: GrammarModel[];
-  readonly rootModels: GrammarModel[];
+  readonly uiElements: ViewKitModel[];
+  readonly actionElements: ViewKitModel[];
+  readonly rootModels: ViewKitModel[];
 
 }
 
-function resolveGrammarType(program: Program, type: Type): GrammarType
+function resolveViewKitType(program: Program, type: Type): ViewKitType
 {
   switch (type.kind)
   {
@@ -155,7 +155,7 @@ function resolveGrammarType(program: Program, type: Type): GrammarType
         return {
           kind: "array",
           name: "Array",
-          elementType: resolveGrammarType(program, type.indexer.value)
+          elementType: resolveViewKitType(program, type.indexer.value)
         };
       }
       if (type.name === "Record" || type.name === "RecordUnknown")
@@ -166,10 +166,10 @@ function resolveGrammarType(program: Program, type: Type): GrammarType
     }
     case "Union":
     {
-      const unionTypes: GrammarType[] = [];
+      const unionTypes: ViewKitType[] = [];
       for (const variant of type.variants.values())
       {
-        unionTypes.push(resolveGrammarType(program, variant.type));
+        unionTypes.push(resolveViewKitType(program, variant.type));
       }
       return {
         kind: "union",
@@ -231,7 +231,7 @@ function isBuiltinNamespace(namespace: Namespace): boolean
   return false;
 }
 
-function findGrammarNamespaces(program: Program): Namespace[]
+function findViewKitNamespaces(program: Program): Namespace[]
 {
   const globalNamespace = program.getGlobalNamespaceType();
   const allNamespaces = collectNamespaces(globalNamespace);
@@ -243,24 +243,24 @@ function findGrammarNamespaces(program: Program): Namespace[]
   );
 }
 
-export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
+export function extractTypeSpecViewKitModel(program: Program): GrammarSpec
 {
-  const grammarNamespaces = findGrammarNamespaces(program);
+  const viewKitNamespaces = findViewKitNamespaces(program);
 
-  if (grammarNamespaces.length === 0)
+  if (viewKitNamespaces.length === 0)
   {
-    throw new Error("Could not locate any user grammar namespace with models or enums in TypeSpec program.");
+    throw new Error("Could not locate any user ViewKit namespace with models or enums in TypeSpec program.");
   }
 
-  const namespaceDoc = grammarNamespaces.map((namespace) => getDoc(program, namespace)).find(Boolean);
-  const enums: GrammarEnum[] = [];
-  const models: GrammarModel[] = [];
+  const namespaceDoc = viewKitNamespaces.map((namespace) => getDoc(program, namespace)).find(Boolean);
+  const enums: ViewKitEnum[] = [];
+  const models: ViewKitModel[] = [];
 
-  for (const grammarNamespace of grammarNamespaces)
+  for (const viewKitNamespace of viewKitNamespaces)
   {
-    for (const [ enumName, enumType ] of grammarNamespace.enums)
+    for (const [ enumName, enumType ] of viewKitNamespace.enums)
     {
-      const members: GrammarEnumMember[] = [];
+      const members: ViewKitEnumMember[] = [];
       for (const [ memberName, member ] of enumType.members)
       {
         members.push(
@@ -280,20 +280,20 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
       );
     }
 
-    for (const [ modelName, modelType ] of grammarNamespace.models)
+    for (const [ modelName, modelType ] of viewKitNamespace.models)
     {
       if (modelName === "RecordUnknown" || modelName === "Array")
       {
         continue;
       }
 
-      const properties: GrammarProperty[] = [];
+      const properties: ViewKitProperty[] = [];
       let discriminatorValue: string | undefined = undefined;
       const allProperties = getAllModelProperties(modelType);
 
       for (const [ propertyName, property ] of allProperties)
       {
-        const propertyType = resolveGrammarType(program, property.type);
+        const propertyType = resolveViewKitType(program, property.type);
         let defaultValue: string | number | boolean | undefined = undefined;
 
         if (property.defaultValue)
@@ -381,9 +381,9 @@ export function extractTypeSpecGrammarModel(program: Program): GrammarSpec
 
   // We discover polymorphic roots dynamically via @discriminator
   const polymorphicRoots: PolymorphicRoot[] = [];
-  for (const grammarNamespace of grammarNamespaces)
+  for (const viewKitNamespace of viewKitNamespaces)
   {
-    for (const [ modelName, modelType ] of grammarNamespace.models)
+    for (const [ modelName, modelType ] of viewKitNamespace.models)
     {
       const discriminator = getDiscriminator(program, modelType);
       if (discriminator && modelType.baseModel === undefined)

@@ -2,7 +2,7 @@ import "../dist/emitter/decorators.js";
 
 using TypeSpec.Reflection;
 
-namespace Picteus.FeatureViewGrammar;
+namespace Picteus.ViewKit;
 
 /** Marks a model as the root composition container for fluent builder generation. */
 extern dec dslRoot(target: Model);

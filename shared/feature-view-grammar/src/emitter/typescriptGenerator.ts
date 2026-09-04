@@ -1,4 +1,4 @@
-import { GrammarModel, GrammarProperty, GrammarSpec, GrammarType } from "./typespecModel.js";
+import { GrammarSpec, ViewKitModel, ViewKitProperty, ViewKitType } from "./typespecModel.js";
 
 
 const SCHEMA_VERSION_PROPERTY = "schemaVersion";
@@ -45,12 +45,12 @@ export interface TsDocOptions
 interface PropertyPartition
 {
 
-  readonly nonTypeProperties: GrammarProperty[];
-  readonly requiredProperties: GrammarProperty[];
-  readonly optionalProperties: GrammarProperty[];
-  readonly arrayProperties: GrammarProperty[];
-  readonly scalarRequiredProperties: GrammarProperty[];
-  readonly scalarOptionalProperties: GrammarProperty[];
+  readonly nonTypeProperties: ViewKitProperty[];
+  readonly requiredProperties: ViewKitProperty[];
+  readonly optionalProperties: ViewKitProperty[];
+  readonly arrayProperties: ViewKitProperty[];
+  readonly scalarRequiredProperties: ViewKitProperty[];
+  readonly scalarOptionalProperties: ViewKitProperty[];
 
 }
 
@@ -149,7 +149,7 @@ function formatTsDoc(options: TsDocOptions): string
   return `${indent}/**\n${formattedLines.join("\n")}\n${indent} */`;
 }
 
-function resolveTsType(type: GrammarType): string
+function resolveTsType(type: ViewKitType): string
 {
   switch (type.kind)
   {
@@ -184,7 +184,7 @@ function capitalizeText(text: string): string
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function getFactoryNames(model: GrammarModel): { primary: string; aliases: string[] }
+function getFactoryNames(model: ViewKitModel): { primary: string; aliases: string[] }
 {
   let baseName = model.name;
   if (baseName.endsWith(ELEMENT_SUFFIX))
@@ -196,7 +196,7 @@ function getFactoryNames(model: GrammarModel): { primary: string; aliases: strin
 }
 
 function partitionProperties(
-  properties: GrammarProperty[],
+  properties: ViewKitProperty[],
   options?: { excludeSchemaVersion?: boolean }
 ): PropertyPartition
 {
@@ -250,7 +250,7 @@ function partitionProperties(
   };
 }
 
-function formatTsDefaultValue(property: GrammarProperty): string | undefined
+function formatTsDefaultValue(property: ViewKitProperty): string | undefined
 {
   if (property.defaultValue === undefined)
   {
@@ -272,7 +272,7 @@ function formatTsDefaultValue(property: GrammarProperty): string | undefined
 }
 
 function formatOptionsParameter(
-  optionalProperties: GrammarProperty[],
+  optionalProperties: ViewKitProperty[],
   docDescription = "Optional component settings."
 ): { parameter: string; docParam?: TsDocParam }
 {
@@ -309,9 +309,9 @@ function formatOptionsParameter(
 }
 
 function formatClassInvocationArgs(
-  requiredProperties: GrammarProperty[],
-  arrayProperties: GrammarProperty[],
-  optionalProperties: GrammarProperty[],
+  requiredProperties: ViewKitProperty[],
+  arrayProperties: ViewKitProperty[],
+  optionalProperties: ViewKitProperty[],
   mode: "builder" | "params" | "helper"
 ): string[]
 {
@@ -394,7 +394,7 @@ function formatClassInvocationArgs(
 }
 
 function generateModelPropertyChecks(
-  properties: GrammarProperty[],
+  properties: ViewKitProperty[],
   spec: GrammarSpec,
   targetVariable: string = "element"
 ): string[]
@@ -419,7 +419,7 @@ function generateModelPropertyChecks(
   return propertyChecks;
 }
 
-function generateModelFactory(model: GrammarModel): string[]
+function generateModelFactory(model: ViewKitModel): string[]
 {
   const lines: string[] = [];
   const { primary, aliases } = getFactoryNames(model);
@@ -510,13 +510,13 @@ function generateModelFactory(model: GrammarModel): string[]
   return lines;
 }
 
-function generateModelClass(model: GrammarModel, polymorphicRootNames: ReadonlySet<string>): string[]
+function generateModelClass(model: ViewKitModel, polymorphicRootNames: ReadonlySet<string>): string[]
 {
   const lines: string[] = [];
   const className = `${model.name}Class`;
   const baseClass = (model.baseModelName && polymorphicRootNames.has(model.baseModelName))
     ? `Base${model.baseModelName}<${model.name}>`
-    : `GrammarNode<${model.name}>`;
+    : `ViewKitNode<${model.name}>`;
 
   const { requiredProperties, optionalProperties } = partitionProperties(model.properties);
 
@@ -536,13 +536,13 @@ function generateModelClass(model: GrammarModel, polymorphicRootNames: ReadonlyS
     lines.push(
       formatTsDoc(
         {
-          summary: "The discriminator type tag.",
+          summary: `Discriminator identifier for \`${model.name}\`.`,
           defaultValue: `"${model.discriminatorValue}"`,
           indent: "  "
         }
       )
     );
-    lines.push(`  readonly ${DISCRIMINATOR_PROPERTY} = "${model.discriminatorValue}" as const;`);
+    lines.push(`  readonly ${DISCRIMINATOR_PROPERTY} = "${model.discriminatorValue}";`);
   }
 
   for (const property of requiredProperties)
@@ -553,45 +553,52 @@ function generateModelClass(model: GrammarModel, polymorphicRootNames: ReadonlyS
 
   for (const property of optionalProperties)
   {
-    const defaultValueString = formatTsDefaultValue(property);
-    lines.push(formatTsDoc({ summary: property.doc, defaultValue: defaultValueString, indent: "  " }));
-    const optional = property.optional ? "?" : "";
-    lines.push(`  readonly ${property.name}${optional}: ${resolveTsType(property.type)};`);
+    lines.push(
+      formatTsDoc(
+        {
+          summary: property.doc,
+          defaultValue: formatTsDefaultValue(property),
+          indent: "  "
+        }
+      )
+    );
+    const optionalMarker = property.optional ? "?" : "";
+    lines.push(`  readonly ${property.name}${optionalMarker}: ${resolveTsType(property.type)};`);
   }
   lines.push("");
 
-  const constructorParameters: string[] = [];
-  const constructorDocParameters: TsDocParam[] = [];
+  const constructorParams: string[] = [];
+  const constructorDocParams: TsDocParam[] = [];
 
   for (const property of requiredProperties)
   {
-    constructorParameters.push(`${property.name}: ${resolveTsType(property.type)}`);
-    constructorDocParameters.push({ name: property.name, description: property.doc });
+    constructorParams.push(`${property.name}: ${resolveTsType(property.type)}`);
+    constructorDocParams.push({ name: property.name, description: property.doc });
   }
 
   const {
     parameter: optionsParam,
     docParam: optionsDocParam
-  } = formatOptionsParameter(optionalProperties, "Optional property overrides");
+  } = formatOptionsParameter(optionalProperties);
   if (optionsParam)
   {
-    constructorParameters.push(optionsParam);
+    constructorParams.push(optionsParam);
     if (optionsDocParam)
     {
-      constructorDocParameters.push(optionsDocParam);
+      constructorDocParams.push(optionsDocParam);
     }
   }
 
   lines.push(
     formatTsDoc(
       {
-        summary: `Initializes a new \`${className}\` instance.`,
-        params: constructorDocParameters,
+        summary: `Constructs a new \`${className}\` instance.`,
+        params: constructorDocParams,
         indent: "  "
       }
     )
   );
-  lines.push(`  constructor(${constructorParameters.join(", ")})`);
+  lines.push(`  constructor(${constructorParams.join(", ")})`);
   lines.push("  {");
   lines.push("    super();");
 
@@ -630,9 +637,9 @@ function generateModelClass(model: GrammarModel, polymorphicRootNames: ReadonlyS
   return lines;
 }
 
-function computeBaseModelProperties(model: GrammarModel, spec: GrammarSpec): Map<string, GrammarProperty>
+function computeBaseModelProperties(model: ViewKitModel, spec: GrammarSpec): Map<string, ViewKitProperty>
 {
-  const baseProperties = new Map<string, GrammarProperty>();
+  const baseProperties = new Map<string, ViewKitProperty>();
   if (!model.baseModelName)
   {
     return baseProperties;
@@ -651,9 +658,9 @@ function computeBaseModelProperties(model: GrammarModel, spec: GrammarSpec): Map
 }
 
 function shouldEmitInterfaceProperty(
-  property: GrammarProperty,
-  model: GrammarModel,
-  baseProperties: ReadonlyMap<string, GrammarProperty>
+  property: ViewKitProperty,
+  model: ViewKitModel,
+  baseProperties: ReadonlyMap<string, ViewKitProperty>
 ): boolean
 {
   const baseProperty = baseProperties.get(property.name);
@@ -703,7 +710,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       }
     )
   );
-  lines.push("export abstract class GrammarNode<T = unknown>");
+  lines.push("export abstract class ViewKitNode<T = unknown>");
   lines.push("{");
   lines.push(
     formatTsDoc(
@@ -758,20 +765,20 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   lines.push("");
 
   // 1. We generate Enums from AST
-  for (const grammarEnum of spec.enums)
+  for (const viewKitEnum of spec.enums)
   {
-    lines.push(formatTsDoc({ summary: grammarEnum.doc }));
-    lines.push(`export enum ${grammarEnum.name}`);
+    lines.push(formatTsDoc({ summary: viewKitEnum.doc }));
+    lines.push(`export enum ${viewKitEnum.name}`);
     lines.push("{");
-    for (const member of grammarEnum.members)
+    for (const member of viewKitEnum.members)
     {
-      lines.push(formatTsDoc({ summary: member.doc, indent: "  " }));
-      lines.push(`  ${member.name} = "${member.value}",`);
+      const doc = member.doc ? `  // ${member.doc}\n` : "";
+      lines.push(`${doc}  ${member.name} = "${member.value}",`);
     }
-    if (grammarEnum.members.length > 0)
+    if (viewKitEnum.members.length > 0)
     {
-      const lastIndex = lines.length - 1;
-      lines[lastIndex] = lines[lastIndex].replace(/,$/, "");
+      const lastLineIndex = lines.length - 1;
+      lines[lastLineIndex] = lines[lastLineIndex].replace(/,$/, "");
     }
     lines.push("}");
     lines.push("");
@@ -826,7 +833,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         }
       )
     );
-    lines.push(`export abstract class Base${root.name}<T = ${root.name}> extends GrammarNode<T> implements ${root.name}Base`);
+    lines.push(`export abstract class Base${root.name}<T = ${root.name}> extends ViewKitNode<T> implements ${root.name}Base`);
     lines.push("{");
     lines.push(`  abstract readonly ${root.discriminatorProperty}: string;`);
     if (rootModel)
@@ -1546,7 +1553,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   return lines.join("\n");
 }
 
-function generateDeepTypeCheck(access: string, type: GrammarType, spec: GrammarSpec): string
+function generateDeepTypeCheck(access: string, type: ViewKitType, spec: GrammarSpec): string
 {
   switch (type.kind)
   {
@@ -1562,10 +1569,10 @@ function generateDeepTypeCheck(access: string, type: GrammarType, spec: GrammarS
       return `Object.values(${type.name}).includes(${access} as ${type.name})`;
     case "model":
     {
-      const model = spec.models.find((model) => model.name === type.name);
-      if (model && !model.isDslIgnored)
+      const targetModel = spec.models.find((candidate) => candidate.name === type.name);
+      if (targetModel && !targetModel.isDslIgnored)
       {
-        return `is${model.name}(${access}, true)`;
+        return `is${targetModel.name}(${access}, true)`;
       }
       return `(typeof ${access} === "object" && ${access} !== null)`;
     }
@@ -1584,7 +1591,7 @@ function generateDeepTypeCheck(access: string, type: GrammarType, spec: GrammarS
     {
       if (type.unionTypes && type.unionTypes.length > 0)
       {
-        const unionChecks = type.unionTypes.map((unionType) => generateDeepTypeCheck(access, unionType, spec));
+        const unionChecks = type.unionTypes.map((unionType: ViewKitType) => generateDeepTypeCheck(access, unionType, spec));
         return `(${unionChecks.join(" || ")})`;
       }
       return "true";

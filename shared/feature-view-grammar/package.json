@@ -34,7 +34,7 @@
   "scripts": {
     "build:emitter": "tsc -p tsconfig.json",
     "run:emitter": "tsp compile src",
-    "deploy:emitter": "shx mkdir -p ../core/src/generated && shx cp dist/typescript/featureViewGrammar.ts ../core/src/generated && shx mkdir -p ../../extensions/sdk/python/picteus_extension_sdk/generated && mkdir -p ../../extensions/sdk/typescript/src/generated && shx cp dist/typescript/featureViewGrammar.ts ../../extensions/sdk/typescript/src/generated && shx mkdir -p ../../extensions/sdk/python/picteus_extension_sdk/generated && shx cp dist/python/feature_view_grammar.py ../../extensions/sdk/python/picteus_extension_sdk/generated && mkdir -p ../../front-end/src/generated && shx cp dist/react/FeatureViewGrammar.tsx ../../front-end/src/generated",
+    "deploy:emitter": "shx mkdir -p ../core/src/generated && shx cp dist/typescript/viewKit.ts ../core/src/generated && shx mkdir -p ../../extensions/sdk/python/picteus_extension_sdk/generated && mkdir -p ../../extensions/sdk/typescript/src/generated && shx cp dist/typescript/viewKit.ts ../../extensions/sdk/typescript/src/generated && shx mkdir -p ../../extensions/sdk/python/picteus_extension_sdk/generated && shx cp dist/python/view_kit.py ../../extensions/sdk/python/picteus_extension_sdk/generated && mkdir -p ../../front-end/src/generated && shx cp dist/react/ViewKit.tsx ../../front-end/src/generated",
     "build": "npm run build:emitter && npm run run:emitter && npm run deploy:emitter",
     "check": "tsp compile --no-emit src",
     "build:test": "tsc -p test/tsconfig.json",

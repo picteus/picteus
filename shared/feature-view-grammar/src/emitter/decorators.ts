@@ -1,7 +1,7 @@
 import { DecoratorContext, Model, ModelProperty, Program } from "@typespec/compiler";
 
 
-export const namespace = "Picteus.FeatureViewGrammar";
+export const namespace = "Picteus.ViewKit";
 
 export type DslAliasName =
   | "multiSlot"

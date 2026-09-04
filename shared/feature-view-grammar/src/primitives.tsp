@@ -1,7 +1,7 @@
 import "./base.tsp";
 import "./modifiers.tsp";
 
-namespace Picteus.FeatureViewGrammar;
+namespace Picteus.ViewKit;
 
 @doc("Representation style for short string values.")
 enum StringShortRepresentation {

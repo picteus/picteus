@@ -6,7 +6,7 @@ import unittest
 # Add dist/python to sys.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dist", "python"))
 
-from feature_view_grammar import (
+from view_kit import (
     Envelop,
     UiContainer,
     UiContainerBuilder,
@@ -27,6 +27,7 @@ from feature_view_grammar import (
     ButtonVariant,
     TableColumnAlign,
     DividerStyle,
+    ViewKitBase,
     create_ui_container,
     create_ui_card,
     parse_ui_container,
@@ -51,8 +52,8 @@ from feature_view_grammar import (
     divider,
     button_action,
     external_link_action,
-    json as grammar_json,
-    xml as grammar_xml,
+    json as viewkit_json,
+    xml as viewkit_xml,
 )
 
 
@@ -194,10 +195,10 @@ class TestSpecimenBuilder(unittest.TestCase):
         html_element = html("<div class='widget'>Custom</div>", modifiers=BaseModifiers(copyable=False))
         self.assertEqual(html_element.to_dict(), {"type": "html", "content": "<div class='widget'>Custom</div>", "modifiers": {"copyable": False}})
 
-        xml_element = grammar_xml("<root><val>123</val></root>", modifiers=BaseModifiers(copyable=True))
+        xml_element = viewkit_xml("<root><val>123</val></root>", modifiers=BaseModifiers(copyable=True))
         self.assertEqual(xml_element.to_dict(), {"type": "xml", "value": "<root><val>123</val></root>", "modifiers": {"copyable": True}})
 
-        json_element = grammar_json("{\"success\": true}", modifiers=BaseModifiers(copyable=True))
+        json_element = viewkit_json("{\"success\": true}", modifiers=BaseModifiers(copyable=True))
         self.assertEqual(json_element.to_dict(), {"type": "json", "value": "{\"success\": true}", "modifiers": {"copyable": True}})
 
     def test_json_serialization(self):
@@ -220,10 +221,12 @@ class TestSpecimenBuilder(unittest.TestCase):
         envelop = Envelop()
         self.assertEqual(envelop.schema_version, "1.0")
         self.assertTrue(isinstance(envelop, Envelop))
+        self.assertTrue(isinstance(envelop, ViewKitBase))
 
         container = UiContainer(elements=[string_short("Item")])
         self.assertTrue(isinstance(container, UiContainer))
         self.assertTrue(isinstance(container, Envelop))
+        self.assertTrue(isinstance(container, ViewKitBase))
         self.assertEqual(container.schema_version, "1.0")
         self.assertEqual(len(container.elements), 1)
 
@@ -231,6 +234,7 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertTrue(isinstance(card, UiCard))
         self.assertTrue(isinstance(card, UiContainer))
         self.assertTrue(isinstance(card, Envelop))
+        self.assertTrue(isinstance(card, ViewKitBase))
         self.assertEqual(card.title, "Test Inheritance")
         self.assertEqual(card.schema_version, "1.0")
         self.assertEqual(len(card.elements), 1)
@@ -238,11 +242,13 @@ class TestSpecimenBuilder(unittest.TestCase):
         primitive_modifiers = PrimitiveModifiers(weight=TextWeight.heavy, copyable=True)
         self.assertTrue(isinstance(primitive_modifiers, PrimitiveModifiers))
         self.assertTrue(isinstance(primitive_modifiers, BaseModifiers))
+        self.assertTrue(isinstance(primitive_modifiers, ViewKitBase))
         self.assertEqual(primitive_modifiers.weight, TextWeight.heavy)
         self.assertEqual(primitive_modifiers.copyable, True)
 
         element = string_short("Hello", representation=StringShortRepresentation.chip)
         self.assertTrue(isinstance(element, UiElementBase))
+        self.assertTrue(isinstance(element, ViewKitBase))
         self.assertTrue(isinstance(element, UiElementProtocol))
         self.assertTrue(isinstance(element, StringShortElementProtocol))
         self.assertEqual(element.type, "string-short")
@@ -250,6 +256,7 @@ class TestSpecimenBuilder(unittest.TestCase):
 
         button_element = button_action(command_id="cmd", label="Action", variant=ButtonVariant.primary)
         self.assertTrue(isinstance(button_element, UiActionBase))
+        self.assertTrue(isinstance(button_element, ViewKitBase))
         self.assertTrue(isinstance(button_element, UiActionProtocol))
         self.assertEqual(button_element.type, "button")
         self.assertEqual(button_element.command_id, "cmd")

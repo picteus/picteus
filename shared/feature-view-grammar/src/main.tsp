@@ -8,9 +8,9 @@ import "./structures.tsp";
 import "./envelope.tsp";
 
 @doc("""
-  Picteus Feature View Grammar.
+  Picteus ViewKit.
 
-  Declarative meta-model and visual grammar for describing how image features
-  produced by extensions are graphically represented in the UI inspector panel.
+  Declarative UI specification and visual component kit for representing structured
+  entity data, metrics, layouts, and interactive actions.
   """)
-namespace Picteus.FeatureViewGrammar;
+namespace Picteus.ViewKit;

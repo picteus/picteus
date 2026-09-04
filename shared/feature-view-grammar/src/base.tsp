@@ -1,4 +1,4 @@
-namespace Picteus.FeatureViewGrammar;
+namespace Picteus.ViewKit;
 
 @doc("""
   Polymorphic root base model for all visual UI elements in Picteus feature views.

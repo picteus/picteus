@@ -8,7 +8,7 @@ import "./escapeHatches.tsp";
 
 using TypeSpec.JsonSchema;
 
-namespace Picteus.FeatureViewGrammar;
+namespace Picteus.ViewKit;
 
 @doc("""
   Base envelope container model holding the schema version attribute.
