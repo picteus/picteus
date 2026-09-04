@@ -1,14 +1,14 @@
 emit:
   - "@typespec/json-schema"
-  - "@picteus/feature-view-grammar"
+  - "@picteus/specification-factory"
 
 options:
   "@typespec/json-schema":
     emitter-output-dir: "{project-root}/dist/schema"
     file-type: "json"
-    bundleId: "feature-view-grammar.json"
+    bundleId: "specification-factory.json"
     polymorphic-models-strategy: "oneOf"
-  "@picteus/feature-view-grammar":
+  "@picteus/specification-factory":
     emitter-output-dir: "{project-root}/dist"
     targets:
       - "typescript"

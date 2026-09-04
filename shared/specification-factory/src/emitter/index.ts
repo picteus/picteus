@@ -47,7 +47,7 @@ export interface EmitterOptions
 
 export const $lib = createTypeSpecLibrary(
   {
-    name: "@picteus/feature-view-grammar",
+    name: "@picteus/specification-factory",
     diagnostics: {},
     emitter: {
       options: {

@@ -1,7 +1,7 @@
 {
-  "name": "@picteus/feature-view-grammar",
+  "name": "@picteus/specification-factory",
   "version": "0.1.0",
-  "description": "TypeSpec meta-model and visual grammar for describing the graphical representation of image features in Picteus.",
+  "description": "TypeSpec specifications and multi-language code generation factory for Picteus.",
   "keywords": [
     "picture",
     "image",
