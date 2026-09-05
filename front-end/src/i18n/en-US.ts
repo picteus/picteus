@@ -19,7 +19,9 @@ export default {
     generator: "Generator",
     metadata: "Metadata",
     tags: "Tags",
-    features: "Features"
+    recipe: "Recipe",
+    features: "Features",
+    technicalFeatures: "Technical Features"
   },
   titles: {
     warning: "Warning",
@@ -213,8 +215,8 @@ export default {
   addOrUpdateRepositoryModal: {
     successAdd: "The repository has been successfully added",
     successUpdate: "The repository has been successfully updated",
-    errorAdd: "An error occurred while adding the repository: {{error}}",
-    errorUpdate: "An error occurred while updating the repository: {{error}}",
+    errorAdd: "An error occurred while adding the repository",
+    errorUpdate: "An error occurred while updating the repository",
     addTitle: "Add repository",
     updateTitle: "Edit repository",
     namePlaceholder: "AI generated images",
@@ -224,8 +226,8 @@ export default {
   addOrUpdateCollectionModal: {
     successAdd: "The collection has been successfully added",
     successUpdate: "The collection has been successfully updated",
-    errorAdd: "An error occurred while adding the collection: {{error}}",
-    errorUpdate: "An error occurred while updating the collection: {{error}}",
+    errorAdd: "An error occurred while adding the collection",
+    errorUpdate: "An error occurred while updating the collection",
     addTitle: "Add collection",
     updateTitle: "Edit collection",
     namePlaceholder: "My collection",
@@ -233,7 +235,7 @@ export default {
   },
   installExtensionModal: {
     successAdd: "The extension has been successfully installed",
-    errorAdd: "An error occurred while installing the extension : {{error}}",
+    errorAdd: "An error occurred while installing the extension",
     title: "Install extension",
     filePlaceholder: "Select a .ZIP file",
     sourceFile: "File",
@@ -247,7 +249,7 @@ export default {
   },
   updateExtensionModal: {
     successAdd: "The extension has been successfully updated",
-    errorAdd: "An error occurred while adding the extension : {{error}}",
+    errorAdd: "An error occurred while adding the extension",
     title: "Update extension",
     filePlaceholder: "Select a .ZIP file",
     warning:
@@ -255,7 +257,7 @@ export default {
   },
   createExtensionModal: {
     success: "The extension has been successfully generated",
-    error: "An error occurred while generating the extension: {{error}}",
+    error: "An error occurred while generating the extension",
     title: "Create an extension",
     unpackedExtensionsDirectoryPathNotDefinedAlert: "The unpacked extensions directory path is not configured. You will be prompted to select a directory manually upon submission.",
     extensionAlreadyExistsError: "An extension with the identifier '{{id}}' already exists.",
@@ -311,7 +313,7 @@ export default {
   repositoryScreen: {
     title: "Repositories",
     successRemove: "The repository has been successfully removed",
-    errorRemove: "An error occured while removing the repository : {{error}}",
+    errorRemove: "An error occured while removing the repository",
     confirmDeleteTitle: "Delete repository",
     confirmDeleteMessage:
       "Are you sure you want to delete the repository '{{name}}' ?"
@@ -323,7 +325,7 @@ export default {
   collectionsScreen: {
     title: "Collections",
     successDelete: "The collection has been successfully deleted",
-    errorDelete: "An error occurred while deleting the collection: {{error}}",
+    errorDelete: "An error occurred while deleting the collection",
     confirmDeleteTitle: "Delete collection",
     confirmDeleteMessage: "Are you sure you want to delete the collection '{{name}}'?"
   },
@@ -333,7 +335,7 @@ export default {
   extensionsScreen: {
     title: "Extensions",
     successUninstall: "The extension has been successfully uninstalled",
-    errorUninstall: "An error occurred while uninstalling the extension: {{error}}",
+    errorUninstall: "An error occurred while uninstalling the extension",
     confirmDeleteTitle: "Uninstall extension",
     confirmDeleteMessage: "Are you sure you want to uninstall the extension '{{name}}'?",
     errorToggleStatus: "An error occurred while trying to toggle the extension status.",

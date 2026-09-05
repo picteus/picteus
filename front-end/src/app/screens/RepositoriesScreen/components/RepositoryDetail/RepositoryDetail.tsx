@@ -45,7 +45,7 @@ export default function RepositoryDetail({ repository }: RepositoryDetailType)
     }
     catch (error)
     {
-      ToastService.failure(error);
+      ToastService.apiCallError(error);
     }
     finally
     {

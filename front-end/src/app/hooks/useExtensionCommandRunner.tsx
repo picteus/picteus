@@ -1,6 +1,5 @@
 import React from "react";
 import { randomId } from "@mantine/hooks";
-import { useTranslation } from "react-i18next";
 
 import { SearchFilter } from "@picteus/ws-client";
 
@@ -13,7 +12,6 @@ import { CommandForm } from "app/components";
 
 export default function useExtensionCommandRunner(): (extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void) => Promise<void>
 {
-  const [ t ] = useTranslation();
   const [ , addModal, removeModal ] = useActionModalContext();
 
   async function handleOnSendCommand(extensionId: string, commandId: string, parameters?: object, searchFilter?: SearchFilter, onRunning?: () => void, modalId?: string): Promise<void>
@@ -36,14 +34,17 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
       {
         await ExtensionsService.runProcessCommand({ ...commonParameters, body: parameters });
       }
-      if (modalId)
-      {
-        removeModal(modalId);
-      }
     }
     catch (error)
     {
-      ToastService.failure(t("commands.extensionCommandFailed", { command: commandId, extension: extensionId }));
+      ToastService.apiCallI18nError(error, "commands.extensionCommandFailed", {
+        command: commandId,
+        extension: extensionId
+      });
+    }
+    if (modalId)
+    {
+      removeModal(modalId);
     }
   }
 

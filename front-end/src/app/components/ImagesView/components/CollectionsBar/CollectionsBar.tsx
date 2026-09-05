@@ -145,16 +145,23 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
     });
   }
 
-  function handleOnUpdateCurrent()
+  async function handleOnUpdateCurrent()
   {
-    CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment).then((collection: PicteusCollection) =>
+    let collection: PicteusCollection;
+    try
     {
-      ToastService.success(t("addOrUpdateCollectionModal.successUpdate"));
-      loadCollections();
-      setSelectedCollection(collection);
-      setSaveDisabled(true);
-      onCollection(collection);
-    }).catch(error => ToastService.failure((error as Error).message));
+      collection = await CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment);
+    }
+    catch (error)
+    {
+      return ToastService.apiCallError(error);
+    }
+
+    ToastService.success(t("addOrUpdateCollectionModal.successUpdate"));
+    loadCollections();
+    setSelectedCollection(collection);
+    setSaveDisabled(true);
+    onCollection(collection);
   }
 
   function truncateName(name: string)
