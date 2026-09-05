@@ -108,7 +108,7 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
             self._pipeline = self._pipeline.to(device)
 
     async def _setup(self, value: SettingsValue) -> None:
-        self._maximum_pixels = value["maximumPixels"]
+        self._maximum_pixels = value.get("maximumPixels", 25_000)
 
 
 asyncio.run(StableDiffusionUpscalerExtension().run())
