@@ -74,6 +74,8 @@ export class Paths
 
   private _useVectorDatabase: boolean = true;
 
+  private _startVectorDatabase: boolean = true;
+
   private _requiresApiKey?: boolean;
 
   private _repositoryMappingPaths?: Map<string, string>;
@@ -149,7 +151,7 @@ export class Paths
           value: path.resolve(directoryPath, "runtimes")
         }
       ];
-    if (this.useVectorDatabase === true)
+    if (this.startVectorDatabase === true)
     {
       entries.push(
         {
@@ -196,7 +198,7 @@ export class Paths
           isFile: false
         }
       ];
-    if (this.useVectorDatabase === true)
+    if (this.startVectorDatabase === true)
     {
       inputEntries.push({ name: this.vectorDatabaseDirectoryPathEnvironmentVariableName, isFile: false });
     }
@@ -306,6 +308,16 @@ export class Paths
   set useVectorDatabase(value: boolean)
   {
     this._useVectorDatabase = value;
+  }
+
+  get startVectorDatabase(): boolean
+  {
+    return this._startVectorDatabase;
+  }
+
+  set startVectorDatabase(value: boolean)
+  {
+    this._startVectorDatabase = value;
   }
 
   get requiresApiKey(): boolean

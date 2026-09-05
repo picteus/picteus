@@ -128,14 +128,7 @@ export class EntitiesProvider implements OnModuleInit, OnModuleDestroy, Persiste
 class ChromaProvider
 {
 
-  protected readonly enabled;
-
   protected readonly localLoopBack = "127.0.0.1";
-
-  constructor()
-  {
-    this.enabled = paths.useVectorDatabase;
-  }
 
 }
 
@@ -144,9 +137,112 @@ class ChromaProvider
 export class VectorDatabaseProvider extends ChromaProvider implements OnModuleInit, OnModuleDestroy
 {
 
-  private readonly chromaDbVersion = "1.0.20";
+  private static readonly chromaDbVersion = "1.0.20";
+
+  private readonly enabled;
 
   private childProcess?: ChildProcess;
+
+  static async installChroma(chromaDirectoryPath: string): Promise<string>
+  {
+    const chromaBinaryFileName = "chroma" + (process.platform === "win32" ? ".exe" : "");
+    try
+    {
+      logger.info("Ensuring that Chroma is installed as a vector database");
+      await ensureVirtualEnvironment(pythonVersion, chromaDirectoryPath);
+      await ensureViaVirtualEnvironmentPip(chromaDirectoryPath, [ "chromadb==" + this.chromaDbVersion ], chromaBinaryFileName);
+    }
+    catch (error)
+    {
+      logger.error("Could not ensure the Chroma runtime environment", error);
+      throw error;
+    }
+
+    if (fs.existsSync(chromaDirectoryPath) === false)
+    {
+      fs.mkdirSync(chromaDirectoryPath, { recursive: true });
+    }
+    return path.join(computeVirtualEnvironmentBinaryDirectoryPath(chromaDirectoryPath), chromaBinaryFileName);
+  }
+
+  static async startChroma(chromaDirectoryPath: string, chromaBinaryFilePath: string, portNumber: number, host: string, shouldAllowReset: boolean | undefined): Promise<ChildProcess>
+  {
+    logger.info(`Starting the Chroma server on port ${portNumber} and waiting for it to be ready`);
+    // We assemble the environment variables per https://docs.trychroma.com/reference/server-env-vars
+    const env: NodeJS.ProcessEnv = { "ANONYMIZED_TELEMETRY": "False" };
+    if (shouldAllowReset !== undefined)
+    {
+      env.CHROMA_ALLOW_RESET = shouldAllowReset === true ? "TRUE" : "FALSE";
+    }
+    const childProcess: ChildProcess = spawn(chromaBinaryFilePath, [ "run", "--path", ".", "--host", host, "--port", portNumber.toString() ], chromaDirectoryPath, env, false, "pipe");
+    if (childProcess.stdout === null)
+    {
+      throw new Error("The Chroma server stdout is null");
+    }
+
+    await new Promise<void>((resolve, reject) =>
+    {
+      let resolvedOrRejected = false;
+      // We keep on listening to the vector database server forever
+      childProcess.once("exit", (code: number | null, signal: NodeJS.Signals | null) =>
+      {
+        const hasErrorExitCode = code !== null && code !== 0;
+        const hasUnexpectedSignal = signal !== null && signal !== "SIGTERM";
+        const message = `The Chroma server running through the process with id '${childProcess.pid}' exited${(hasErrorExitCode === true) ? ` with code ${code}` : hasUnexpectedSignal === true ? ` with signal '${signal}'` : ""}`;
+        if (resolvedOrRejected === false && (hasErrorExitCode === true || hasUnexpectedSignal === true))
+        {
+          resolvedOrRejected = true;
+          reject(new Error(message));
+        }
+        else
+        {
+          if (hasErrorExitCode === true || hasUnexpectedSignal === true)
+          {
+            logger.error(message);
+          }
+          else
+          {
+            logger.info(message);
+          }
+        }
+      });
+      const stdout = childProcess.stdout!;
+      const stderr = childProcess.stderr!;
+      const listener = (chunk: any) =>
+      {
+        const log = chunk.toString();
+        if (log.indexOf("is not available") !== -1)
+        {
+          if (resolvedOrRejected === false)
+          {
+            resolvedOrRejected = true;
+            reject(new Error(`The Chroma server could not start because the port ${portNumber} is already in use`));
+          }
+        }
+        else if (log.indexOf("Uvicorn running on") !== -1 || log.indexOf("Listening on ") !== -1 || log.indexOf("Connect to Chroma at") !== -1)
+        {
+          logger.info("The Chroma server is up and running");
+          stdout.removeListener("data", listener);
+          stderr.removeListener("data", listener);
+          if (resolvedOrRejected === false)
+          {
+            resolvedOrRejected = true;
+            resolve();
+          }
+        }
+      };
+      stdout.addListener("data", listener);
+      stderr.addListener("data", listener);
+    });
+
+    return childProcess;
+  }
+
+  constructor()
+  {
+    super();
+    this.enabled = paths.startVectorDatabase;
+  }
 
   async onModuleInit(): Promise<void>
   {
@@ -166,71 +262,8 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
     if (this.enabled === true)
     {
       const chromaDirectoryPath = paths.vectorDatabaseDirectoryPath;
-      const chromaBinaryFileName = "chroma" + (process.platform === "win32" ? ".exe" : "");
-      const vectorDatabaseDirectoryPath = await this.installChroma(chromaDirectoryPath, chromaBinaryFileName);
-      const portNumber = paths.vectorDatabasePortNumber;
-      logger.info(`Starting the Chroma server on port ${portNumber} and waiting for it to be ready`);
-      const childProcess: ChildProcess = spawn(path.join(computeVirtualEnvironmentBinaryDirectoryPath(chromaDirectoryPath), chromaBinaryFileName), [ "run", "--path", ".", "--host", this.localLoopBack, "--port", portNumber.toString() ], vectorDatabaseDirectoryPath, { "ANONYMIZED_TELEMETRY": "False" }, false, "pipe");
-      if (childProcess.stdout === null)
-      {
-        throw new Error("The Chroma server stdout is null");
-      }
-      this.childProcess = childProcess;
-
-      await new Promise<void>((resolve, reject) =>
-      {
-        let resolvedOrRejected = false;
-        // We keep on listening to the vector database server forever
-        childProcess.once("exit", (code: number | null, signal: NodeJS.Signals | null) =>
-        {
-          const hasErrorExitCode = code !== null && code !== 0;
-          const hasUnexpectedSignal = signal !== null && signal !== "SIGTERM";
-          const message = `The Chroma server running through the process with id '${childProcess.pid}' exited${(hasErrorExitCode === true) ? ` with code ${code}` : hasUnexpectedSignal === true ? ` with signal '${signal}'` : ""}`;
-          if (resolvedOrRejected === false && (hasErrorExitCode === true || hasUnexpectedSignal === true))
-          {
-            resolvedOrRejected = true;
-            reject(new Error(message));
-          }
-          else
-          {
-            if (hasErrorExitCode === true || hasUnexpectedSignal === true)
-            {
-              logger.error(message);
-            }
-            else
-            {
-              logger.info(message);
-            }
-          }
-        });
-        const stdout = childProcess.stdout!;
-        const stderr = childProcess.stderr!;
-        const listener = (chunk: any) =>
-        {
-          const log = chunk.toString();
-          if (log.indexOf("is not available") !== -1)
-          {
-            if (resolvedOrRejected === false)
-            {
-              resolvedOrRejected = true;
-              reject(new Error(`The Chroma server could not start because the port ${portNumber} is already in use`));
-            }
-          }
-          else if (log.indexOf("Uvicorn running on") !== -1 || log.indexOf("Listening on ") !== -1 || log.indexOf("Connect to Chroma at") !== -1)
-          {
-            logger.info("The Chroma server is up and running");
-            stdout.removeListener("data", listener);
-            stderr.removeListener("data", listener);
-            if (resolvedOrRejected === false)
-            {
-              resolvedOrRejected = true;
-              resolve();
-            }
-          }
-        };
-        stdout.addListener("data", listener);
-        stderr.addListener("data", listener);
-      });
+      const chromaBinaryFilePath = await VectorDatabaseProvider.installChroma(chromaDirectoryPath);
+      this.childProcess = await VectorDatabaseProvider.startChroma(chromaDirectoryPath, chromaBinaryFilePath, paths.vectorDatabasePortNumber, this.localLoopBack, undefined);
     }
   }
 
@@ -242,28 +275,6 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
       await killProcess(this.childProcess);
       this.childProcess = undefined;
     }
-  }
-
-  private async installChroma(chromaDirectoryPath: string, chromaBinaryFileName: string): Promise<string>
-  {
-    try
-    {
-      logger.info("Ensuring that Chroma is installed as a vector database");
-      await ensureVirtualEnvironment(pythonVersion, chromaDirectoryPath);
-      await ensureViaVirtualEnvironmentPip(chromaDirectoryPath, [ "chromadb==" + this.chromaDbVersion ], chromaBinaryFileName);
-    }
-    catch (error)
-    {
-      logger.error("Could not ensure the Chroma runtime environment", error);
-      throw error;
-    }
-
-    const vectorDatabaseDirectoryPath = paths.vectorDatabaseDirectoryPath;
-    if (fs.existsSync(vectorDatabaseDirectoryPath) === false)
-    {
-      fs.mkdirSync(vectorDatabaseDirectoryPath, { recursive: true });
-    }
-    return vectorDatabaseDirectoryPath;
   }
 
 }
@@ -478,9 +489,17 @@ class NopeEmbeddingFunction implements EmbeddingFunction
 export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleInit, OnModuleDestroy
 {
 
+  private readonly useVectorDatabase;
+
   private client: ChromaClient | undefined;
 
   private readonly perExtensionIdEmbeddingNameCollectionsMap: Map<string, Collection> = new Map();
+
+  constructor()
+  {
+    super();
+    this.useVectorDatabase = paths.useVectorDatabase;
+  }
 
   async onModuleInit(): Promise<void>
   {
@@ -498,7 +517,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
   async getExtensionIds(): Promise<string[]>
   {
     logger.debug("Getting all the extension identifiers registered to the vector database");
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       const collection: Collection[] = await (await this.getClient()).listCollections({});
       return collection.map((collectionType) =>
@@ -515,7 +534,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
   async getExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>
   {
     logger.debug("Getting all the extension identifiers and embeddings names registered to the vector database");
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       const collections: Collection[] = await (await this.getClient()).listCollections({});
       // TODO: remove this filter once the migration is over
@@ -535,7 +554,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
   async getImageIds(extensionId: string): Promise<string[]>
   {
     logger.debug(`Getting the image ids computed by the extension with id '${extensionId}'`);
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       const collections = await this.getExtensionCollections(extensionId);
       const imageIds = new Set<string>();
@@ -558,7 +577,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
   async getEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>
   {
     logger.debug(`Getting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       const collections = await this.getExtensionCollections(extensionId);
       const result: EmbeddingNameAndValues[] = [];
@@ -582,7 +601,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
   async setEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>
   {
     logger.debug(`Setting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       // We first delete the image from all perExtensionIdEmbeddingNameCollectionsMap of this extension
       const collections = await this.getExtensionCollections(extensionId);
@@ -631,7 +650,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
   {
     const { id: extensionId, name } = extensionIdAndEmbeddingName;
     logger.debug(`Querying the closest ${count} embedding(s) relative to some given embeddings, computed by the extension with id '${extensionId}' and name '${name}'`);
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       const collection = await this.getCollection(extensionIdAndEmbeddingName);
       if (collection === undefined)
@@ -660,7 +679,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
   {
     const imageIdsLogFragment = `${imageIds.join(", ")}`;
     logger.debug(`Deleting the embeddings for the image with id '${imageIdsLogFragment}'${extensionId !== undefined ? ` for the extension with id '${extensionId}'` : ""}`);
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       const extensionIds = extensionId !== undefined ? [ extensionId ] : await this.getExtensionIds();
       for (const extId of extensionIds)
@@ -700,7 +719,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
   async deleteExtensionEmbeddings(extensionId: string): Promise<void>
   {
     logger.debug(`Deleting the collection for the extension with id '${extensionId}'`);
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       const collections = await this.getExtensionCollections(extensionId);
       const client = await this.getClient();
@@ -718,7 +737,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
 
   private async initialize(): Promise<void>
   {
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       logger.info("Initializing a Chroma client");
       const { ChromaClient } = await import("chromadb");
@@ -743,7 +762,7 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
 
   private async getExtensionCollections(extensionId: string): Promise<Collection[]>
   {
-    if (this.enabled === true)
+    if (this.useVectorDatabase === true)
     {
       const collections = await (await this.getClient()).listCollections({});
       return collections.filter(collection => collection.metadata?.id === extensionId);

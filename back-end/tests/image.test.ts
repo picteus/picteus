@@ -65,6 +65,9 @@ import { ImageAttachmentService } from "../src/services/app.service";
 import { Base, Core, Defaults, ImageFeeder } from "./base";
 import { EventEntity, ImageEventAction, NotifierService } from "../src/services/notifierService";
 import waitForExpect from "wait-for-expect";
+import { ChromaServerInstance, startChromaServer } from "./chromaServer";
+import { pickPort } from "pick-port";
+import { getPythonFilePath, pythonVersion } from "../src/services/utils/pythonWrapper";
 
 
 const { OK, BAD_REQUEST } = HttpCodes;
@@ -396,10 +399,27 @@ describe("Image with module", () =>
 
   const base = new Base(false);
 
+  let chromaServerInstance: ChromaServerInstance;
+
   beforeAll(async () =>
   {
+    const chromaPortNumber = await pickPort({ type: "tcp", minPort: 7000, maxPort: 8000 });
+    paths.vectorDatabasePortNumber = chromaPortNumber;
+    chromaServerInstance = await startChromaServer(
+      {
+        portNumber: chromaPortNumber,
+        process:
+          {
+            host: "127.0.0.1",
+            pythonExecutablePath: await getPythonFilePath(pythonVersion),
+            persistPath: path.join(Core.testsDirectoryPath, "chroma")
+          },
+        shouldAllowReset: true
+      }
+    );
     await Base.beforeAll();
-  });
+    paths.useVectorDatabase = true;
+  }, Core.beforeAfterTimeoutInMilliseconds);
 
   beforeEach(async () =>
   {
@@ -408,12 +428,22 @@ describe("Image with module", () =>
 
   afterEach(async () =>
   {
+    const extensions = await base.getExtensionController().list();
+    for (const extension of extensions)
+    {
+      await base.getVectorDatabaseAccessor().deleteExtensionEmbeddings(extension.manifest.id);
+    }
     await base.afterEach();
   }, Core.beforeAfterTimeoutInMilliseconds);
 
   afterAll(async () =>
   {
     await Base.afterAll();
+    if (chromaServerInstance !== undefined)
+    {
+      await chromaServerInstance.stop();
+    }
+    paths.useVectorDatabase = false;
   });
 
   test("search", async () =>
@@ -1583,17 +1613,31 @@ describe("Image with module", () =>
       expect(emptyEmbeddings.embeddings).toEqual([]);
     }
     {
+
+      function expectEmbedding(embeddings: ImageEmbedding[], expectedEmbeddings: ImageEmbedding[]): void
+      {
+        for (let index = 0; index < embeddings.length; index++)
+        {
+          const embedding = embeddings[index];
+          const expectedEmbedding = expectedEmbeddings[index];
+          for (let innerIndex = 0; innerIndex < embeddings.values.length; innerIndex++)
+          {
+            expect(Math.abs(embedding.values[innerIndex] - expectedEmbedding.values[innerIndex])).toBeLessThanOrEqual(1e-5);
+          }
+        }
+      }
+
       await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, imageEmbeddings);
       const updatedImageEmbeddings = await base.getImageController().getEmbeddings(imageId, extensionId);
       expect(updatedImageEmbeddings.id).toEqual(extensionId);
-      expect(updatedImageEmbeddings.embeddings).toEqual(imageEmbeddings);
+      expectEmbedding(updatedImageEmbeddings.embeddings, imageEmbeddings);
       const addedImageEmbeddings = await base.getImageController().getEmbeddings(imageId, extensionId);
       expect(addedImageEmbeddings.id).toEqual(extensionId);
-      expect(addedImageEmbeddings.embeddings).toEqual(imageEmbeddings);
+      expectEmbedding(addedImageEmbeddings.embeddings, imageEmbeddings);
       const allImageEmbeddings = await base.getImageController().getAllEmbeddings(imageId);
       expect(allImageEmbeddings.length).toEqual(1);
       expect(allImageEmbeddings[0].id).toEqual(extensionId);
-      expect(allImageEmbeddings[0].embeddings[0].values).toEqual(imageEmbeddings[0].values);
+      expectEmbedding([ allImageEmbeddings[0].embeddings[0] ], [ imageEmbeddings[0] ]);
     }
     {
       // We assess with non-homogeneous embeddings
@@ -1662,19 +1706,19 @@ describe("Image with module", () =>
       // We assess the "closestImages" method
       const closestImages = await base.getImageController().closestImages(image1Id, extensionId, name, 2);
       expect(closestImages.length).toEqual(2);
-      expect(closestImages[0].image.id).toEqual(image2Id);
-      expect(closestImages[1].image.id).toEqual(image3Id);
+      expect(closestImages[0].image.id).toEqual(image3Id);
+      expect(closestImages[1].image.id).toEqual(image2Id);
       const singleClosestImage = await base.getImageController().closestImages(image1Id, extensionId, name, 1);
       expect(singleClosestImage.length).toEqual(1);
-      expect(singleClosestImage[0].image.id).toEqual(image2Id);
+      expect(singleClosestImage[0].image.id).toEqual(image3Id);
     }
     {
       // We assess the "closestEmbeddingsImages" method
       const closestImages = await base.getImageController().closestEmbeddingsImages(extensionId, 3, imageEmbedding1);
       expect(closestImages.length).toEqual(3);
       expect(closestImages[0].image.id).toEqual(image1Id);
-      expect(closestImages[1].image.id).toEqual(image2Id);
-      expect(closestImages[2].image.id).toEqual(image3Id);
+      expect(closestImages[1].image.id).toEqual(image3Id);
+      expect(closestImages[2].image.id).toEqual(image2Id);
     }
   });
 

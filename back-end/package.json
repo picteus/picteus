@@ -126,6 +126,8 @@
     "ts-jest": "29.4.11",
     "@types/jest": "30.0.0",
     "fast-cartesian": "9.0.1",
+    "testcontainers": "12.1.0",
+    "@testcontainers/chromadb": "12.1.0",
     "pick-port": "2.2.0",
     "socket.io-client": "4.8.3",
     "moment": "2.30.1",

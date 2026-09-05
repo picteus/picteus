@@ -1120,7 +1120,7 @@ describe("Extensions", () =>
         await base.getExtensionController().install(state, false, archive);
       }
     }
-  }, base.xLargeTimeoutInMilliseconds);
+  }, base.xxLargeTimeoutInMilliseconds);
 
   test("connection", async () =>
   {

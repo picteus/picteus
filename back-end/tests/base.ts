@@ -212,9 +212,11 @@ export class Core
 
   static readonly temporaryDirectoryPath: string = path.resolve(path.join(Core.rootDirectoryPath, "tmp"));
 
+  static readonly testsDirectoryPath: string = path.resolve(path.join(Core.temporaryDirectoryPath, "back-end-tests"));
+
   private static readonly timeoutPlatformFactor: number = (process.platform === "win32" ? 1.5 : 1);
 
-  static readonly beforeAfterTimeoutInMilliseconds: number = Math.round((10 * 1_000) * Core.timeoutPlatformFactor);
+  static readonly beforeAfterTimeoutInMilliseconds: number = Math.round((30 * 1_000) * Core.timeoutPlatformFactor);
 
   static readonly defaultTimeoutInMilliseconds: number = Math.round((13 * 1_000) * Core.timeoutPlatformFactor);
 
@@ -247,7 +249,7 @@ export class Core
   async beforeEach(): Promise<void>
   {
     logger.info(`\n---\nRunning the '${expect.getState().currentTestName}' test\n---`);
-    this.workingDirectoryPath = path.join(Core.temporaryDirectoryPath, "back-end-tests", `${randomUUID().substring(0, 13)}`);
+    this.workingDirectoryPath = path.join(Core.testsDirectoryPath, `${randomUUID().substring(0, 13)}`);
     fs.mkdirSync(this.workingDirectoryPath, { recursive: true });
     logger.debug(`Using the working directory with path '${this.workingDirectoryPath}'`);
   }
@@ -399,6 +401,9 @@ export class Base extends Core
 
   static async beforeAll(): Promise<void>
   {
+    paths.runMigrations = false;
+    paths.startVectorDatabase = false;
+    paths.useVectorDatabase = false;
   }
 
   static async afterAll(): Promise<void>
@@ -434,8 +439,6 @@ export class Base extends Core
     const databaseFilePath = path.join(workingDirectoryPath, path.basename(this.originalDatabaseDirectoryPath));
     fs.cpSync(this.originalDatabaseDirectoryPath, databaseFilePath);
     paths.regularDatabaseFilePath = databaseFilePath;
-    paths.runMigrations = false;
-    paths.useVectorDatabase = false;
     paths.installedExtensionsDirectoryPath = path.join(workingDirectoryPath, "extensions");
     paths.builtInExtensionsDirectoryPath = path.join(workingDirectoryPath, "built-in-extensions");
     paths.modelsCacheDirectoryPath = path.join(workingDirectoryPath, "models");
