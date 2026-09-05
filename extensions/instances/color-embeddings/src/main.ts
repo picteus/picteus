@@ -183,9 +183,9 @@ class ColorEmbeddingsExtension extends PicteusExtension
 
   private async setup(value: SettingsValue): Promise<void>
   {
-    this.colorLibrary = value["colorLibrary"] as ColorLibrary;
-    this.colorCount = value["colorCount"];
-    this.usePCA = value["usePCA"];
+    this.colorLibrary = value["colorLibrary"] as ColorLibrary ?? "color-thief";
+    this.colorCount = value["colorCount"] ?? 8;
+    this.usePCA = value["usePCA"] !== undefined ? value["usePCA"] : false;
   }
 
 }
