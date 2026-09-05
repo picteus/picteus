@@ -769,10 +769,14 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
     let collection = this.perExtensionIdEmbeddingNameCollectionsMap.get(collectionName);
     if (collection === undefined)
     {
-      collection = await (await this.getClient()).getCollection({ name: collectionName });
-      if (collection !== undefined)
+      try
       {
+        collection = await (await this.getClient()).getCollection({ name: collectionName });
         this.perExtensionIdEmbeddingNameCollectionsMap.set(collectionName, collection);
+      }
+      catch (error)
+      {
+        // This means that the collection does not exist
       }
     }
     return collection;
