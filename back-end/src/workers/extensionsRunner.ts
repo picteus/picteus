@@ -13,7 +13,7 @@ import { stringify } from "../utils";
 import { ManifestEvent, ManifestRuntimeEnvironment } from "../dtos/app.dtos";
 import { fromImageEventActionToManifestEvent } from "../bos";
 import { ensureDirectory } from "../services/utils/downloader";
-import { fork, spawn, stopProcessGracefully } from "../services/utils/processWrapper";
+import { forkWithWatchdog, spawn, stopProcessGracefully } from "../services/utils/processWrapper";
 import { computeVirtualEnvironmentPythonFilePath, spawnPythonWithWatchdog } from "../services/utils/pythonWrapper";
 import { EntitiesProvider, VectorDatabaseAccessor } from "../services/databaseProviders";
 import { ExtensionsApiKeys } from "../app.guards";
@@ -301,7 +301,7 @@ class ExtensionsRunner
       {
         if (execution.executable === ExtensionRegistry.computeVariablePlaceholder(ExtensionRegistry.nodeVariableName))
         {
-          process = fork(resolvedParameters[0], resolvedParameters.slice(1), manifest.directoryPath, null);
+          process = forkWithWatchdog(resolvedParameters[0], resolvedParameters.slice(1), manifest.directoryPath, null);
         }
         else if (execution.executable === ExtensionRegistry.computeVariablePlaceholder(ExtensionRegistry.venvPythonVariableName))
         {

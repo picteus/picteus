@@ -1,3 +1,4 @@
+import path from "node:path";
 import fs from "node:fs";
 // Taken form https://github.com/sindresorhus/file-metadata/blob/main/index.js
 import os from "node:os";
@@ -19,6 +20,7 @@ import Timers from "node:timers";
 import { text } from "node:stream/consumers";
 
 import { logger } from "../../logger";
+import { getTemporaryDirectoryPath } from "./downloader";
 
 
 const defaultStdio: StdioOptions = [ "inherit", "inherit", "inherit" ];
@@ -322,24 +324,135 @@ export async function spawnAndWait(executable: string, parameters: string[], cwd
   await waitFor(childProcess);
 }
 
+const getNodeWatchdogPreloadScript: () => string = (function (): () => string
+{
+  let nodeWatchdogPreloadFilePath: string | undefined;
+  return function (): string
+  {
+    if (nodeWatchdogPreloadFilePath === undefined)
+    {
+      nodeWatchdogPreloadFilePath = path.join(getTemporaryDirectoryPath(), "nodeWatchdogPreload.cjs");
+      const nodeWatchdogBootstrapCode = `
+// @ts-nocheck
+// Zero-Code-Change Preload Watchdog for Node.js child processes
+// This script is preloaded via Node's -r CLI flag.
+
+(() =>
+{
+  const initialParentProcessId = process.ppid;
+
+  // We monitor standard input closure when spawned with piped stdio
+  if (process.stdin && process.stdin.isTTY !== true)
+  {
+    process.stdin.resume();
+    process.stdin.unref();
+    process.stdin.on("end", () =>
+      {
+        process.exit(0);
+      }
+    );
+    process.stdin.on("close", () =>
+      {
+        process.exit(0);
+      }
+    );
+    process.stdin.on("error", () =>
+      {
+        process.exit(0);
+      }
+    );
+  }
+
+  // We listen for IPC channel disconnection
+  process.on("disconnect", () =>
+    {
+      process.exit(0);
+    }
+  );
+  // In Node.js's internal child_process implementation (lib/internal/child_process.js), a newListener hook monitors events attached to process: adding a listener for "disconnect" or "message" causes Node to call control.refCounted(), which increments the reference count on the underlying libuv pipe handle (handle.ref()). We unreference the channel so that the process can exit naturally once all tasks complete
+  if (process.channel)
+  {
+    process.channel.unref();
+  }
+
+  // We poll the parent process identifier as a fallback mechanism
+  const watchdogInterval = setInterval(
+    () =>
+    {
+      if (process.platform !== "win32")
+      {
+        if (process.ppid !== initialParentProcessId)
+        {
+          process.exit(0);
+        }
+      }
+      else
+      {
+        try
+        {
+          process.kill(initialParentProcessId, 0);
+        }
+        catch (error)
+        {
+          if (error && error.code === "ESRCH")
+          {
+            process.exit(0);
+          }
+        }
+      }
+    }, 250
+  );
+
+  watchdogInterval.unref();
+})();
+`.trim();
+      fs.writeFileSync(nodeWatchdogPreloadFilePath, nodeWatchdogBootstrapCode, { encoding: "utf8" });
+    }
+    return nodeWatchdogPreloadFilePath;
+  };
+})();
+
+export function spawnNodeWithWatchdog(executable: string, parameters: string[], cwd?: string | undefined, env?: NodeJS.ProcessEnv | undefined, shell?: boolean | string | undefined): ChildProcess
+{
+  return spawn(executable, [ "--require", getNodeWatchdogPreloadScript(), ...parameters ], cwd, env, shell, "pipe", {
+    loggedIndications: "via a termination watch dog",
+    loggedCommand: computeCommand(executable, parameters)
+  });
+}
+
 // The way to fork the Node.js part of the application is explained at https://www.matthewslipper.com/2019/09/22/everything-you-wanted-electron-child-process.html
-export function fork(modulePath: string, parameters: string[], cwd?: string, stdio?: StdioOptions | null): ChildProcess
+export function fork(modulePath: string, parameters: string[], cwd?: string, stdio?: StdioOptions | null, execArgv?: string[], options?: {
+  loggedIndications: string,
+  loggedCommand: string
+}): ChildProcess
 {
   const command = computeCommand(modulePath, parameters);
-  const options: ForkOptions =
+  const forkOptions: ForkOptions =
     {
       cwd,
       detached: false,
       // We log the process output to the hereby parent process, unless stated differently
       stdio: stdio === null ? undefined : (stdio ?? defaultStdio)
     };
-  const childProcess: ChildProcess = processFork(modulePath, parameters, options);
+  if (execArgv !== undefined)
+  {
+    forkOptions.execArgv = execArgv;
+  }
+  const childProcess: ChildProcess = processFork(modulePath, parameters, forkOptions);
   if (childProcess.pid === undefined)
   {
     throw new Error(`Could not fork the process in working directory '${cwd}' through the command '${command}'`);
   }
-  logger.debug(`Forked the process with id '${childProcess.pid}' in working directory '${cwd}' through the command '${command}' and with spawn file '${childProcess.spawnfile}'`);
+  logger.debug(`Forked the process with id '${childProcess.pid}' in working directory '${cwd}'${options?.loggedIndications === undefined ? "" : (` ${options.loggedIndications}`)} through the command '${options?.loggedCommand ?? command}' and with spawn file '${childProcess.spawnfile}'`);
   return childProcess;
+}
+
+export function forkWithWatchdog(modulePath: string, parameters: string[], cwd?: string, stdio?: StdioOptions | null, execArgv?: string[]): ChildProcess
+{
+  return fork(modulePath, parameters, cwd, stdio === null ? null : (stdio ?? "pipe"), [ "-r", getNodeWatchdogPreloadScript(), ...(execArgv ?? []) ], {
+    loggedIndications: "via a termination watch dog",
+    loggedCommand: computeCommand(modulePath, parameters)
+  });
 }
 
 export async function waitForWithOutputs(childProcess: ChildProcess): Promise<ProcessResult>

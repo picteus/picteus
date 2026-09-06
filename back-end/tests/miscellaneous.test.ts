@@ -36,12 +36,14 @@ import {
 import { AuthenticationGuard } from "../src/app.guards";
 import {
   execute,
+  forkWithWatchdog,
   getChildProcessIds,
   isProcessAlive,
   killProcess,
   killProcessViaId,
   ProcessResult,
   spawn,
+  spawnNodeWithWatchdog,
   stopProcessGracefully,
   waitFor,
   wasSpawnViaShellWithFaultyProcessId,
@@ -256,6 +258,196 @@ describe("Miscellaneous bare", () =>
     }
   });
 
+  test("spawnNodeWithWatchdog", async () =>
+  {
+    const directoryPath = core.getWorkingDirectoryPath();
+
+    {
+      // We assess with a direct execution verification: we verify running a Node.js script with arguments and capturing output
+      const testScriptFileName = "test_script.js";
+      const testScriptFilePath = path.join(directoryPath, testScriptFileName);
+      const outputFileName = "output.txt";
+      const outputFilePath = path.join(directoryPath, outputFileName);
+      fs.writeFileSync(testScriptFilePath, `const fs = require("node:fs");\nfs.writeFileSync("${outputFileName}", process.argv.slice(2).join(" "), { encoding: "utf8" });\n`, { encoding: "utf8" });
+      const testArguments = [ "alpha", "beta", "gamma" ];
+      const directChildProcess = spawnNodeWithWatchdog(process.execPath, [ testScriptFilePath, ...testArguments ], directoryPath, undefined);
+      await waitFor(directChildProcess);
+
+      expect(directChildProcess.exitCode).toBe(0);
+      expect(fs.existsSync(outputFilePath)).toBe(true);
+      expect(fs.readFileSync(outputFilePath, { encoding: "utf8" })).toBe(testArguments.join(" "));
+    }
+
+    {
+      // We assess the watchdog effectiveness upon abrupt parent termination: to that extent, we create a long-running Node.js child that writes a heartbeat file
+      const heartbeatFileName = "heartbeat.txt";
+      const heartbeatFilePath = path.join(directoryPath, heartbeatFileName);
+      const longRunningScriptFileName = "long_running.js";
+      const longRunningScriptFilePath = path.join(directoryPath, longRunningScriptFileName);
+      fs.writeFileSync(longRunningScriptFilePath, `const fs = require("node:fs");\nsetInterval(() => {\n  fs.writeFileSync("${heartbeatFileName}", String(Date.now()), { encoding: "utf8" });\n}, 50);\n`, { encoding: "utf8" });
+
+      // We create an intermediate Node.js parent process which launches the child using spawnNodeWithWatchdog
+      const childPidFileName = "child_pid.txt";
+      const childPidFilePath = path.join(directoryPath, childPidFileName);
+      const processWrapperSourcePath = path.join(paths.serverDirectoryPath, "src", "services", "utils", "processWrapper.ts");
+      const intermediateParentJavaScript = `
+const fs = require("node:fs");
+const { pathToFileURL } = require("node:url");
+
+const targetModulePath = "${processWrapperSourcePath}";
+const childScriptPath = "${longRunningScriptFilePath}";
+const childPidPath = "${childPidFilePath}";
+const workingDirectory = "${directoryPath}";
+
+(async () =>
+{
+  try
+  {
+    const { spawnNodeWithWatchdog } = await import(pathToFileURL(targetModulePath).href);
+    const childProcess = spawnNodeWithWatchdog(process.execPath, [ childScriptPath ], workingDirectory);
+    fs.writeFileSync(childPidPath, String(childProcess.pid), { encoding: "utf8" });
+  }
+  catch (error)
+  {
+    console.error(error);
+    process.exit(2);
+  }
+})();
+
+setTimeout(() => {}, 1_000_000);
+      `.trim();
+
+      const nodeArguments = [ "--loader", "ts-node/esm", "--experimental-specifier-resolution=node", "--eval" ];
+      const nodeEnvironment = { TS_NODE_TRANSPILE_ONLY: "true" };
+      const parentProcess = spawn(process.execPath, [ ...nodeArguments, intermediateParentJavaScript ], paths.serverDirectoryPath, nodeEnvironment, false, "pipe");
+
+      // We wait until the child Node.js process has started and written its PID and heartbeat
+      await core.waitUntil(async () =>
+      {
+        return fs.existsSync(childPidFilePath) === true && fs.existsSync(heartbeatFilePath) === true;
+      });
+
+      const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
+      const childProcessId = Number.parseInt(childPidString, 10);
+      expect(Number.isNaN(childProcessId)).toBe(false);
+
+      // We verify the child is running
+      expect(isProcessAlive(childProcessId)).toBe(true);
+
+      // We abruptly terminate the intermediate parent with SIGKILL
+      const parentProcessId = parentProcess.pid!;
+      killProcessViaId(parentProcessId, "SIGKILL");
+
+      // We verify the parent process is dead
+      await core.waitUntil(async () =>
+      {
+        return isProcessAlive(parentProcessId) === false;
+      });
+
+      // The watchdog in the child must detect parent termination and exit automatically
+      await core.waitUntil(async () =>
+      {
+        return isProcessAlive(childProcessId) === false;
+      });
+    }
+
+  });
+
+  test("forkWithWatchdog", async () =>
+  {
+    const directoryPath = core.getWorkingDirectoryPath();
+
+    {
+      // We assess with a direct execution verification: we verify running a Node.js script with arguments via forkWithWatchdog and capturing output
+      const testScriptFileName = "test_fork_script.js";
+      const testScriptFilePath = path.join(directoryPath, testScriptFileName);
+      const outputFileName = "output_fork.txt";
+      const outputFilePath = path.join(directoryPath, outputFileName);
+      fs.writeFileSync(testScriptFilePath, `const fs = require("node:fs");\nfs.writeFileSync("${outputFileName}", process.argv.slice(2).join(" "), { encoding: "utf8" });\n`, { encoding: "utf8" });
+      const testArguments = [ "delta", "epsilon", "zeta" ];
+      const directChildProcess = forkWithWatchdog(testScriptFilePath, [ ...testArguments ], directoryPath);
+      await waitFor(directChildProcess);
+
+      expect(directChildProcess.exitCode).toBe(0);
+      expect(fs.existsSync(outputFilePath)).toBe(true);
+      expect(fs.readFileSync(outputFilePath, { encoding: "utf8" })).toBe(testArguments.join(" "));
+    }
+
+    {
+      // We assess the watchdog effectiveness upon abrupt parent termination: to that extent, we create a long-running Node.js child that writes a heartbeat file
+      const heartbeatFileName = "heartbeat_fork.txt";
+      const heartbeatFilePath = path.join(directoryPath, heartbeatFileName);
+      const longRunningScriptFileName = "long_running_fork.js";
+      const longRunningScriptFilePath = path.join(directoryPath, longRunningScriptFileName);
+      fs.writeFileSync(longRunningScriptFilePath, `const fs = require("node:fs");\nsetInterval(() => {\n  fs.writeFileSync("${heartbeatFileName}", String(Date.now()), { encoding: "utf8" });\n}, 50);\n`, { encoding: "utf8" });
+
+      // We create an intermediate Node.js parent process which launches the child using forkWithWatchdog
+      const childPidFileName = "child_fork_pid.txt";
+      const childPidFilePath = path.join(directoryPath, childPidFileName);
+      const processWrapperSourcePath = path.join(paths.serverDirectoryPath, "src", "services", "utils", "processWrapper.ts");
+      const intermediateParentJavaScript = `
+const fs = require("node:fs");
+const { pathToFileURL } = require("node:url");
+
+const targetModulePath = "${processWrapperSourcePath}";
+const childScriptPath = "${longRunningScriptFilePath}";
+const childPidPath = "${childPidFilePath}";
+const workingDirectory = "${directoryPath}";
+
+(async () =>
+{
+  try
+  {
+    const { forkWithWatchdog } = await import(pathToFileURL(targetModulePath).href);
+    const childProcess = forkWithWatchdog(childScriptPath, [], workingDirectory);
+    fs.writeFileSync(childPidPath, String(childProcess.pid), { encoding: "utf8" });
+  }
+  catch (error)
+  {
+    console.error(error);
+    process.exit(2);
+  }
+})();
+
+setTimeout(() => {}, 1_000_000);
+      `.trim();
+
+      const nodeArguments = [ "--loader", "ts-node/esm", "--experimental-specifier-resolution=node", "--eval" ];
+      const nodeEnvironment = { TS_NODE_TRANSPILE_ONLY: "true" };
+      const parentProcess = spawn(process.execPath, [ ...nodeArguments, intermediateParentJavaScript ], paths.serverDirectoryPath, nodeEnvironment, false, "pipe");
+
+      // We wait until the child Node.js process has started and written its PID and heartbeat
+      await core.waitUntil(async () =>
+      {
+        return fs.existsSync(childPidFilePath) === true && fs.existsSync(heartbeatFilePath) === true;
+      });
+
+      const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
+      const childProcessId = Number.parseInt(childPidString, 10);
+      expect(Number.isNaN(childProcessId)).toBe(false);
+
+      // We verify the child is running
+      expect(isProcessAlive(childProcessId)).toBe(true);
+
+      // We abruptly terminate the intermediate parent with SIGKILL
+      const parentProcessId = parentProcess.pid!;
+      killProcessViaId(parentProcessId, "SIGKILL");
+
+      // We verify the parent process is dead
+      await core.waitUntil(async () =>
+      {
+        return isProcessAlive(parentProcessId) === false;
+      });
+
+      // The watchdog in the child must detect parent termination and exit automatically
+      await core.waitUntil(async () =>
+      {
+        return isProcessAlive(childProcessId) === false;
+      });
+    }
+
+  });
+
   test("Python executable", async () =>
   {
     const filePath = await getPythonFilePath(pythonVersion);
@@ -426,62 +618,34 @@ setTimeout(() => {}, 1_000_000);
 
       const parentProcess = spawn(process.execPath, [ ...nodeArguments, intermediateParentJavaScript ], paths.serverDirectoryPath, nodeEnvironment, false, "pipe");
 
-      try
+      // We wait until the child Python process has started and written its PID and heartbeat
+      await core.waitUntil(async () =>
       {
-        // We wait until the child Python process has started and written its PID and heartbeat
-        await core.waitUntil(async () =>
-        {
-          return fs.existsSync(childPidFilePath) === true && fs.existsSync(heartbeatFilePath) === true;
-        });
+        return fs.existsSync(childPidFilePath) === true && fs.existsSync(heartbeatFilePath) === true;
+      });
 
-        const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
-        const childProcessId = Number.parseInt(childPidString);
-        expect(Number.isNaN(childProcessId)).toBe(false);
+      const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
+      const childProcessId = Number.parseInt(childPidString);
+      expect(Number.isNaN(childProcessId)).toBe(false);
 
-        // We verify the child is running
-        expect(isProcessAlive(childProcessId)).toBe(true);
+      // We verify the child is running
+      expect(isProcessAlive(childProcessId)).toBe(true);
 
-        // We abruptly terminate the intermediate parent with SIGKILL
-        const parentProcessId = parentProcess.pid!;
-        killProcessViaId(parentProcessId, "SIGKILL");
+      // We abruptly terminate the intermediate parent with SIGKILL
+      const parentProcessId = parentProcess.pid!;
+      killProcessViaId(parentProcessId, "SIGKILL");
 
-        // We verify the parent process is dead
-        await core.waitUntil(async () =>
-        {
-          return isProcessAlive(parentProcessId) === false;
-        });
-
-        // The watchdog in the Python child must detect parent termination and exit automatically
-        await core.waitUntil(async () =>
-        {
-          return isProcessAlive(childProcessId) === false;
-        });
-
-        expect(isProcessAlive(childProcessId)).toBe(false);
-      }
-      finally
+      // We verify the parent process is dead
+      await core.waitUntil(async () =>
       {
-        if (fs.existsSync(childPidFilePath) === true)
-        {
-          try
-          {
-            const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
-            const childProcessId = Number.parseInt(childPidString, 10);
-            if (Number.isNaN(childProcessId) === false && isProcessAlive(childProcessId) === true)
-            {
-              killProcessViaId(childProcessId, "SIGKILL");
-            }
-          }
-          catch (error)
-          {
-            // We ignore cleanup errors
-          }
-        }
-        if (parentProcess.pid !== undefined && isProcessAlive(parentProcess.pid) === true)
-        {
-          killProcessViaId(parentProcess.pid, "SIGKILL");
-        }
-      }
+        return isProcessAlive(parentProcessId) === false;
+      });
+
+      // The watchdog in the Python child must detect parent termination and exit automatically
+      await core.waitUntil(async () =>
+      {
+        return isProcessAlive(childProcessId) === false;
+      });
     }
 
   }, core.xxLargeTimeoutInMilliseconds);
