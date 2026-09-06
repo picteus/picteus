@@ -1,2 +1,2 @@
 export * from "./intents";
-export * from "./generated/featureViewGrammar";
+export * from "./generated/viewKit";
