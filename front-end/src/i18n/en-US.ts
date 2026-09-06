@@ -4,7 +4,9 @@ export default {
     button: "Try again"
   },
   bootstrap: {
-    loading: "Loading application…"
+    applicationName: "Picteus",
+    loading: "Loading application…",
+    firstStartNotice: "The first time the application starts, it may take between 2 and 5 minutes to initialize."
   },
   menu: {
     images: "Images",
