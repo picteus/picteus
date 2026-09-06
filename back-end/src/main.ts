@@ -508,19 +508,23 @@ async function run(): Promise<void>
         }
         return process.exit(1);
       }
-      let alreadyReceived = false;
-      process.on("SIGINT", async (signal: NodeJS.Signals) =>
       {
-        logger.info(`The server process received the '${signal}' signal`);
-        if (alreadyReceived === false)
+        let alreadyReceived = false;
+        const listener = async (signal: NodeJS.Signals) =>
         {
-          // In case the server takes time to end, the signal may be launched multiple times
-          alreadyReceived = true;
-          await server.stop();
-          webServer?.stop();
-          process.exit(0);
-        }
-      });
+          logger.info(`The server process received the '${signal}' signal`);
+          if (alreadyReceived === false)
+          {
+            // In case the process takes time to end, the signal may be launched multiple times
+            alreadyReceived = true;
+            await server.stop();
+            webServer?.stop();
+            process.exit(0);
+          }
+        };
+        process.on("SIGINT", listener);
+        process.on("SIGTERM", listener);
+      }
       {
         // We send the master API key
         const apiKey = AuthenticationGuard.generateApiKey();
