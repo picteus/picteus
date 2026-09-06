@@ -477,6 +477,34 @@ async function run(): Promise<void>
         }
       }
 
+      {
+        let alreadyReceived = false;
+        const terminator = async (): Promise<void> =>
+        {
+          if (alreadyReceived === false)
+          {
+            // In case the process takes time to end, the signal may be launched multiple times
+            alreadyReceived = true;
+            await server.stop();
+            webServer?.stop();
+            process.exit(0);
+          }
+        };
+        const listener = async (signal: NodeJS.Signals) =>
+        {
+          logger.info(`The server process received the '${signal}' signal`);
+          await terminator();
+        };
+        process.on("SIGINT", listener);
+        process.on("SIGTERM", listener);
+        process.on("disconnect", async () =>
+        {
+          // It is very likely the parent process was killed
+          logger.error("The parent process of the server process was disconnected");
+          await terminator();
+        });
+      }
+
       let webServer: WebServer;
       {
         const webDirectoryPath = actionParameters.options[webDirectoryPathOption] as string;
@@ -508,23 +536,7 @@ async function run(): Promise<void>
         }
         return process.exit(1);
       }
-      {
-        let alreadyReceived = false;
-        const listener = async (signal: NodeJS.Signals) =>
-        {
-          logger.info(`The server process received the '${signal}' signal`);
-          if (alreadyReceived === false)
-          {
-            // In case the process takes time to end, the signal may be launched multiple times
-            alreadyReceived = true;
-            await server.stop();
-            webServer?.stop();
-            process.exit(0);
-          }
-        };
-        process.on("SIGINT", listener);
-        process.on("SIGTERM", listener);
-      }
+
       {
         // We send the master API key
         const apiKey = AuthenticationGuard.generateApiKey();
