@@ -178,7 +178,7 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
     }
     const pythonExecutable = chromaBinaryFilePath === undefined ? computeVirtualEnvironmentPythonFilePath(chromaDirectoryPath) : chromaBinaryFilePath;
     const preliminaryArguments = chromaBinaryFilePath === undefined ? [ "-c", "from chromadb.cli.cli import app; app()" ] : [];
-    const childProcess: ChildProcess = spawnPythonWithWatchdog(pythonExecutable, [ ...preliminaryArguments, "run", "--path", ".", "--host", host, "--port", portNumber.toString() ], chromaDirectoryPath, env, false, "pipe");
+    const childProcess: ChildProcess = spawnPythonWithWatchdog(pythonExecutable, [ ...preliminaryArguments, "run", "--path", ".", "--host", host, "--port", portNumber.toString() ], chromaDirectoryPath, env, true);
     if (childProcess.stdout === null)
     {
       throw new Error("The Chroma server stdout is null");

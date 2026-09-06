@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { ChildProcess, StdioOptions } from "node:child_process";
+import { ChildProcess } from "node:child_process";
 import os from "node:os";
 
 import semver from "semver";
@@ -537,37 +537,28 @@ export async function ensureViaVirtualEnvironmentPip(parentDirectoryPath: string
   }
 }
 
-export function spawnPythonWithWatchdog(pythonExecutable: string, parameters: string[], cwd?: string | undefined, env?: NodeJS.ProcessEnv | undefined, shell?: boolean | string | undefined, stdio?: StdioOptions | null): ChildProcess
+export function spawnPythonWithWatchdog(pythonExecutable: string, parameters: string[], cwd?: string | undefined, env?: NodeJS.ProcessEnv | undefined, resortToExternalSupervisor?: boolean): ChildProcess
 {
-  function computeWatchdogStdio(stdio?: StdioOptions | null): StdioOptions
-  {
-    if (stdio === undefined || stdio === null)
-    {
-      return [ "pipe", "inherit", "inherit" ];
-    }
-    if (typeof stdio === "string")
-    {
-      return stdio === "pipe" ? "pipe" : [ "pipe", stdio, stdio ];
-    }
-    if (Array.isArray(stdio))
-    {
-      return [ "pipe", stdio[1] ?? "inherit", stdio[2] ?? "inherit" ];
-    }
-    return [ "pipe", "inherit", "inherit" ];
-  }
+  const commonWatchdogBootstrapCode = `
+import os, signal, sys, threading, time
 
-  const pythonWatchdogBootstrapCode = `
-import os, sys, threading, time
-
-def _setup_watchdog():
+def _setup_watchdog(child_process=None):
     if sys.platform.startswith("linux"):
         try:
-            import ctypes, signal
+            import ctypes
             libc = ctypes.CDLL("libc.so.6")
             PR_SET_PDEATHSIG = 1
             libc.prctl(PR_SET_PDEATHSIG, signal.SIGTERM)
         except Exception:
             pass
+
+    def _terminate(process):
+        if process is not None:
+            try:
+                process.kill()
+            except Exception:
+                pass
+        os._exit(0)
 
     if sys.platform == "win32":
         try:
@@ -579,7 +570,7 @@ def _setup_watchdog():
                 def _win_wait():
                     ctypes.windll.kernel32.WaitForSingleObject(handle, INFINITE)
                     ctypes.windll.kernel32.CloseHandle(handle)
-                    os._exit(0)
+                    _terminate(child_process)
                 threading.Thread(target=_win_wait, daemon=True).start()
         except Exception:
             pass
@@ -589,19 +580,24 @@ def _setup_watchdog():
             if sys.stdin is not None and not sys.stdin.closed:
                 char = sys.stdin.read(1)
                 if char == "":
-                    os._exit(0)
+                    _terminate(child_process)
         except Exception:
-            os._exit(0)
+            _terminate(child_process)
     threading.Thread(target=_stdin_monitor, daemon=True).start()
 
     if sys.platform != "win32":
         initial_ppid = os.getppid()
         def _ppid_poll():
             while True:
-                time.sleep(0.2)
+                time.sleep(0.1)
                 if os.getppid() != initial_ppid:
-                    os._exit(0)
+                    _terminate(child_process)
         threading.Thread(target=_ppid_poll, daemon=True).start()
+`.trim();
+
+  // This version is in-process, hence causing minimal overhead
+  const inProcessPythonWatchdogBootstrapCode = `
+${commonWatchdogBootstrapCode}
 
 _setup_watchdog()
 
@@ -651,9 +647,60 @@ else:
     runpy.run_path(target, run_name="__main__")
 `.trim();
 
+  // This version has been introduced to work around GIL deadlock issues and resorts to an intermediate process
+  const supervisedPythonWatchdogBootstrapCode = `
+import subprocess
+${commonWatchdogBootstrapCode}
 
-  const effectiveStdio = computeWatchdogStdio(stdio);
-  return spawn(pythonExecutable, [ "-c", pythonWatchdogBootstrapCode, ...parameters ], cwd, env, shell, effectiveStdio, {
+target = sys.argv[1]
+if target == "-c":
+    child_command = [sys.executable, "-c", sys.argv[2]] + sys.argv[3:]
+elif target == "-m":
+    child_command = [sys.executable, "-m", sys.argv[2]] + sys.argv[3:]
+elif ":" in target:
+    runner_code = (
+        "import sys, importlib, inspect, asyncio; "
+        "mod_name, func_name = sys.argv[1].split(':', 1); "
+        "mod = importlib.import_module(mod_name); "
+        "entity = getattr(mod, func_name); "
+        "sys.argv = sys.argv[1:]; "
+        "inst = entity() if inspect.isclass(entity) else entity; "
+        "fn = getattr(inst, 'run', getattr(inst, 'main', inst if callable(inst) else None)); "
+        "asyncio.run(fn()) if inspect.iscoroutinefunction(fn) else fn()"
+    )
+    child_command = [sys.executable, "-c", runner_code] + sys.argv[1:]
+else:
+    child_command = [sys.executable, target] + sys.argv[2:]
+
+child = subprocess.Popen(child_command)
+_setup_watchdog(child)
+
+def _forward_signal(sig, frame):
+    try:
+        child.terminate()
+        child.wait(timeout=2)
+    except Exception:
+        try:
+            child.kill()
+        except Exception:
+            pass
+    sys.exit(0)
+
+try:
+    signal.signal(signal.SIGTERM, _forward_signal)
+    signal.signal(signal.SIGINT, _forward_signal)
+except Exception:
+    pass
+
+try:
+    exit_code = child.wait()
+except KeyboardInterrupt:
+    _forward_signal(signal.SIGINT, None)
+
+sys.exit(exit_code)
+`.trim();
+
+  return spawn(pythonExecutable, [ "-c", resortToExternalSupervisor === true ? supervisedPythonWatchdogBootstrapCode : inProcessPythonWatchdogBootstrapCode, ...parameters ], cwd, env, false, "pipe", {
     loggedIndications: "via a termination watch dog",
     loggedCommand: `${pythonExecutable}${parameters.length === 0 ? "" : (` ${parameters.join(" ")}`)}`
   });

@@ -21,7 +21,7 @@ import { ExtendedManifest, ExtensionMessage, ExtensionRegistry, ImageEvent } fro
 
 
 @Module({
-  providers: [EntitiesProvider, VectorDatabaseAccessor, ExtensionRegistry]
+  providers: [ EntitiesProvider, VectorDatabaseAccessor, ExtensionRegistry ]
 })
 class ExtensionsRunnerModule implements OnModuleInit, OnModuleDestroy
 {
@@ -113,7 +113,7 @@ class ExtensionsRunner
 
   async start(webServicesBaseUrl: string, extensionsApiKeys: ExtensionsApiKeys): Promise<void>
   {
-    this.checkState([RunnerState.Stopped], "start");
+    this.checkState([ RunnerState.Stopped ], "start");
     this.state = RunnerState.Starting;
     logger.info("Starting the ExtensionsRunner");
     if (webServicesBaseUrl === undefined || extensionsApiKeys === undefined)
@@ -128,7 +128,7 @@ class ExtensionsRunner
 
   async stop(): Promise<void>
   {
-    this.checkState([RunnerState.Starting, RunnerState.Started], "stop");
+    this.checkState([ RunnerState.Starting, RunnerState.Started ], "stop");
     this.state = RunnerState.Stopping;
     logger.info("Stopping the ExtensionsRunner");
     logger.debug("Killing the remaining processes");
@@ -145,7 +145,7 @@ class ExtensionsRunner
 
   startProcesses(extensionsApiKeys: ExtensionsApiKeys): void
   {
-    this.checkState([RunnerState.Starting, RunnerState.Started], "start some processes");
+    this.checkState([ RunnerState.Starting, RunnerState.Started ], "start some processes");
     for (const extensionsApiKey of extensionsApiKeys)
     {
       logger.info(`Starting the extension with id '${extensionsApiKey.id}' and API key '${extensionsApiKey.key}'`);
@@ -164,7 +164,7 @@ class ExtensionsRunner
 
   async stopProcesses(extensionIds: string[]): Promise<void>
   {
-    this.checkState([RunnerState.Starting, RunnerState.Started, RunnerState.Stopping], "stop some processes");
+    this.checkState([ RunnerState.Starting, RunnerState.Started, RunnerState.Stopping ], "stop some processes");
     for (const extensionId of extensionIds)
     {
       await this.stopExtensionProcesses(extensionId);
@@ -288,7 +288,7 @@ class ExtensionsRunner
     });
     if (instructions !== undefined)
     {
-      this.checkState([RunnerState.Starting, RunnerState.Started], "run a process");
+      this.checkState([ RunnerState.Starting, RunnerState.Started ], "run a process");
       logger.debug(`Starting for the extension with id '${manifest.id}' the process related to the '${event}' event`);
       const map: Record<string, string | undefined> = this.computeCommandProperties(manifest, imageId);
       const execution = instructions.execution;

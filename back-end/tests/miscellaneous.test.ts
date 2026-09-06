@@ -270,8 +270,6 @@ describe("Miscellaneous bare", () =>
   {
     const pythonFilePath = await getPythonFilePath(pythonVersion);
     const directoryPath = core.getWorkingDirectoryPath();
-    const nodeArguments = [ "--loader", "ts-node/esm", "--experimental-specifier-resolution=node", "--eval" ];
-    const nodeEnvironment = { TS_NODE_TRANSPILE_ONLY: "true" };
 
     {
       // We assess with a direct execution verification: we verify running a Python script with arguments and capturing stdout
@@ -282,7 +280,7 @@ describe("Miscellaneous bare", () =>
       fs.writeFileSync(testScriptFilePath, `import sys\nwith open("${outputFileName}", "w", encoding="utf-8") as file:\n    file.write(" ".join(sys.argv[1:]))\n`, { encoding: "utf8" }
       );
       const testArguments = [ "alpha", "beta", "gamma" ];
-      const directChildProcess = spawnPythonWithWatchdog(pythonFilePath, [ testScriptFilePath, ...testArguments ], directoryPath, undefined, false, "pipe");
+      const directChildProcess = spawnPythonWithWatchdog(pythonFilePath, [ testScriptFilePath, ...testArguments ], directoryPath, undefined);
       await waitFor(directChildProcess);
 
       expect(directChildProcess.exitCode).toBe(0);
@@ -290,13 +288,16 @@ describe("Miscellaneous bare", () =>
       expect(fs.readFileSync(outputFilePath, { encoding: "utf8" })).toBe(testArguments.join(" "));
     }
 
-    if (Math.random() >= 1)
+    const nodeArguments = [ "--loader", "ts-node/esm", "--experimental-specifier-resolution=node", "--eval" ];
+    const nodeEnvironment = { TS_NODE_TRANSPILE_ONLY: "true" };
+
     {
       // We assess the watch dog with Chroma
       const persistPath = core.prepareEmptyDirectory("chroma", directoryPath);
       await VectorDatabaseProvider.installChroma(persistPath);
 
       const childPidFilePath = path.join(directoryPath, "chroma_pid.txt");
+      const childStdoutAndErrFilePath = path.join(directoryPath, "chroma_stdout_stderr.txt");
       const databaseProvidersSourcePath = path.join(paths.serverDirectoryPath, "src", "services", "databaseProviders.ts");
       const portNumber = await pickPort({ type: "tcp", minPort: 7000, maxPort: 8000 });
       const intermediateParentJavaScript = `
@@ -305,6 +306,7 @@ const { pathToFileURL } = require("node:url");
 
 const persistPath = "${persistPath}";
 const childPidPath = "${childPidFilePath}";
+const childStdoutAndErrFilePath = "${childStdoutAndErrFilePath}";
 const portNumber = ${portNumber};
 const targetModulePath = "${databaseProvidersSourcePath}";
 
@@ -313,7 +315,20 @@ const targetModulePath = "${databaseProvidersSourcePath}";
   try
   {
     const { VectorDatabaseProvider } = await import(pathToFileURL(targetModulePath).href);
-    const childProcess = await VectorDatabaseProvider.startChroma(persistPath, portNumber, "127.0.0.1", false);
+    const childProcess = await VectorDatabaseProvider.startChroma(persistPath, portNumber, "localhost", false);
+    let output = "";
+    childProcess.stdout.on("data", (chunk) =>
+    {
+      output += chunk.toString();
+      console.log(chunk.toString());
+      fs.writeFileSync(childStdoutAndErrFilePath, output, { encoding: "utf8" });
+    });
+    childProcess.stderr.on("data", (chunk) =>
+    {
+      output += chunk.toString();
+      console.error(chunk.toString());
+      fs.writeFileSync(childStdoutAndErrFilePath, output, { encoding: "utf8" });
+    });
     fs.writeFileSync(childPidPath, String(childProcess.pid), { encoding: "utf8" });
   }
   catch (error)
@@ -329,6 +344,14 @@ setTimeout(() => {}, 1_000_000);
       const parentProcess = spawn(process.execPath, [ ...nodeArguments, intermediateParentJavaScript ], paths.serverDirectoryPath, nodeEnvironment, false, "pipe");
       const parentProcessId = parentProcess.pid!;
       expect(isProcessAlive(parentProcessId)).toBe(true);
+      parentProcess.stdout!.on("data", (data: any) =>
+      {
+        logger.info(data.toString());
+      });
+      parentProcess.stderr!.on("data", (data: any) =>
+      {
+        logger.error(data.toString());
+      });
 
       // We wait until the Chroma PID is known
       await core.waitUntil(async () =>
@@ -412,7 +435,7 @@ setTimeout(() => {}, 1_000_000);
         });
 
         const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
-        const childProcessId = Number.parseInt(childPidString, 10);
+        const childProcessId = Number.parseInt(childPidString);
         expect(Number.isNaN(childProcessId)).toBe(false);
 
         // We verify the child is running

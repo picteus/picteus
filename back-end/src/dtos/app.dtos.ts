@@ -250,7 +250,7 @@ export {
   type RepositoryList,
   RepositoryLocation,
   RepositoryLocationType,
-  type RepositoryState,
+  RepositoryState,
   RunCommandParameters,
   SearchCriteria,
   SearchFeatureCondition,
