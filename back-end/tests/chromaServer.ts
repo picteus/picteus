@@ -154,8 +154,8 @@ async function startChromaServerViaProcess(
     fs.mkdirSync(persistPath, { recursive: true });
   }
 
-  const chromaBinaryFilePath = await VectorDatabaseProvider.installChroma(persistPath);
-  const childProcess: ChildProcess = await VectorDatabaseProvider.startChroma(persistPath, chromaBinaryFilePath, portNumber, host, shouldAllowReset);
+  await VectorDatabaseProvider.installChroma(persistPath);
+  const childProcess: ChildProcess = await VectorDatabaseProvider.startChroma(persistPath, portNumber, host, shouldAllowReset);
 
   // We ensure the HTTP heartbeat responds before declaring the server ready
   await waitForChromaServerReadiness(host, portNumber, readinessTimeoutMilliseconds);

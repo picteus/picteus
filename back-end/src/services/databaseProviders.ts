@@ -9,14 +9,16 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { Prisma, PrismaClient } from ".prisma/client";
 import { paths } from "../paths";
 import { logger } from "../logger";
-import { killProcess, spawn } from "./utils/processWrapper";
+import { killProcess } from "./utils/processWrapper";
 import { ApplicationSettings } from "../dtos/app.dtos";
 import { Persistence, PersistenceProvider } from "../persistence";
 import {
   computeVirtualEnvironmentBinaryDirectoryPath,
+  computeVirtualEnvironmentPythonFilePath,
   ensureViaVirtualEnvironmentPip,
   ensureVirtualEnvironment,
-  pythonVersion
+  pythonVersion,
+  spawnPythonWithWatchdog
 } from "./utils/pythonWrapper";
 import { parametersChecker } from "./utils/parametersChecker";
 
@@ -165,7 +167,7 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
     return path.join(computeVirtualEnvironmentBinaryDirectoryPath(chromaDirectoryPath), chromaBinaryFileName);
   }
 
-  static async startChroma(chromaDirectoryPath: string, chromaBinaryFilePath: string, portNumber: number, host: string, shouldAllowReset: boolean | undefined): Promise<ChildProcess>
+  static async startChroma(chromaDirectoryPath: string, portNumber: number, host: string, shouldAllowReset: boolean | undefined, chromaBinaryFilePath?: string): Promise<ChildProcess>
   {
     logger.info(`Starting the Chroma server on port ${portNumber} and waiting for it to be ready`);
     // We assemble the environment variables per https://docs.trychroma.com/reference/server-env-vars
@@ -174,7 +176,9 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
     {
       env.CHROMA_ALLOW_RESET = shouldAllowReset === true ? "TRUE" : "FALSE";
     }
-    const childProcess: ChildProcess = spawn(chromaBinaryFilePath, [ "run", "--path", ".", "--host", host, "--port", portNumber.toString() ], chromaDirectoryPath, env, false, "pipe");
+    const pythonExecutable = chromaBinaryFilePath === undefined ? computeVirtualEnvironmentPythonFilePath(chromaDirectoryPath) : chromaBinaryFilePath;
+    const preliminaryArguments = chromaBinaryFilePath === undefined ? [ "-c", "from chromadb.cli.cli import app; app()" ] : [];
+    const childProcess: ChildProcess = spawnPythonWithWatchdog(pythonExecutable, [ ...preliminaryArguments, "run", "--path", ".", "--host", host, "--port", portNumber.toString() ], chromaDirectoryPath, env, false, "pipe");
     if (childProcess.stdout === null)
     {
       throw new Error("The Chroma server stdout is null");
@@ -262,8 +266,8 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
     if (this.enabled === true)
     {
       const chromaDirectoryPath = paths.vectorDatabaseDirectoryPath;
-      const chromaBinaryFilePath = await VectorDatabaseProvider.installChroma(chromaDirectoryPath);
-      this.childProcess = await VectorDatabaseProvider.startChroma(chromaDirectoryPath, chromaBinaryFilePath, paths.vectorDatabasePortNumber, this.localLoopBack, undefined);
+      await VectorDatabaseProvider.installChroma(chromaDirectoryPath);
+      this.childProcess = await VectorDatabaseProvider.startChroma(chromaDirectoryPath, paths.vectorDatabasePortNumber, this.localLoopBack, undefined);
     }
   }
 

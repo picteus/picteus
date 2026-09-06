@@ -3,7 +3,6 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 
 import { logger } from "../logger";
 import { ManifestCapability, ManifestCapabilityId } from "../dtos/app.dtos";
-import { EntitiesProvider } from "./databaseProviders";
 import { CapabilityResult, ExtensionService } from "./extensionServices";
 import { parametersChecker } from "./utils/parametersChecker";
 
@@ -46,7 +45,7 @@ export class GenerativeAIService
   implements OnModuleInit, OnModuleDestroy
 {
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly moduleRef: ModuleRef)
+  constructor(private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating a GenerativeAIService");
   }

@@ -22,10 +22,10 @@ import { jsonTransform } from "./transformers.dtos";
 import {
   extensionIdPattern,
   extensionIdSchema,
-  ExtensionIdType,
+  type ExtensionIdType,
   FieldLengths,
-  ImageTag,
-  Json,
+  type ImageTag,
+  type Json,
   namePattern,
   semverPattern,
   shortTechnicalIdPattern,

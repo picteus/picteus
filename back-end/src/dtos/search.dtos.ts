@@ -21,11 +21,11 @@ import { deepObjectTransform, forceArray, forceBoolean, transformStringifyJson }
 import {
   extensionIdPattern,
   extensionIdSchema,
-  ExtensionIdType,
+  type ExtensionIdType,
   FieldLengths,
   ImageFeatureFormat,
   ImageFeatureType,
-  ImageFeatureValue,
+  type ImageFeatureValue,
   ImageFormat,
   imageIdSchema,
   repositoryIdSchema,

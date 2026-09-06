@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { ChildProcess, StdioOptions } from "node:child_process";
 import os from "node:os";
 
 import semver from "semver";
@@ -17,11 +18,11 @@ const runtimePythonDirectoryName = "python";
 
 const runtimePythonVersionsDirectoryName = "versions";
 
-const fromRuntimesPyenvPaths = [runtimePythonDirectoryName, "pyenv"];
+const fromRuntimesPyenvPaths = [ runtimePythonDirectoryName, "pyenv" ];
 
-const fromRuntimesHomebrewPaths = ["brew"];
+const fromRuntimesHomebrewPaths = [ "brew" ];
 
-const fromHomebrewRootToBinaryPaths = ["bin", "brew"];
+const fromHomebrewRootToBinaryPaths = [ "bin", "brew" ];
 
 const isWindows = os.platform() === "win32";
 
@@ -43,7 +44,7 @@ export const publicPythonSdkIdentifier = "picteus-extension-sdk";
 
 export const internalPythonSdkIdentifier = "picteus-internal-extension-sdk";
 
-export const acceptedPython3MinorVersions = [8, 9, 10, 11, 12, 13, 14];
+export const acceptedPython3MinorVersions = [ 8, 9, 10, 11, 12, 13, 14 ];
 
 export const pythonVersion = "3.11.14";
 
@@ -113,11 +114,11 @@ async function ensureHomebrew(): Promise<void>
     // We install the formulas for the xz module and other dependencies, but not the "zlib" and "tcl-tk" formulas recommended at https://github.com/pyenv/pyenv/wiki
     // TODO: find a work-around to have "openssl" installed, because it currently fails, because of spaces in the Homebrew root path
     // const formulas: string[] = [xzModuleName, "readline", "openssl"];
-    const formulas: string[] = [xzModuleName, "readline"];
+    const formulas: string[] = [ xzModuleName, "readline" ];
     for (const formula of formulas)
     {
       logger.debug(`Installing the Homebrew formula '${formula}'`);
-      const childProcess = spawn(brewFilePath, ["install", formula], brewDirectoryPath, undefined, true);
+      const childProcess = spawn(brewFilePath, [ "install", formula ], brewDirectoryPath, undefined, true);
       await waitFor(childProcess);
     }
   }
@@ -199,7 +200,7 @@ async function ensurePythonViaPyenv(pythonVersion: string): Promise<string>
     fs.symlinkSync(pyenvDirectoryPath, workingDirectoryPath, "dir");
     fs.symlinkSync(pythonVersionsParentDirectoryPath, versionsDirectoryPath, "dir");
 
-    const xzDirectoryPath = (await execute(brewFilePath, ["--prefix", xzModuleName])).stdout.trim();
+    const xzDirectoryPath = (await execute(brewFilePath, [ "--prefix", xzModuleName ])).stdout.trim();
     // We also need to create a symbolic link for the xz module C headers and dynamic library, because a space if their path causes the Python installation to fail
     const xzTemporaryDirectoryPath = path.join(temporaryDirectoryPath, xzModuleName);
     fs.symlinkSync(xzDirectoryPath, xzTemporaryDirectoryPath, "dir");
@@ -208,7 +209,7 @@ async function ensurePythonViaPyenv(pythonVersion: string): Promise<string>
 
     logger.info(`Installing Python v${pythonVersion} via pyenv`);
     const pyenvFilePath = path.join(workingDirectoryPath, "bin", "pyenv");
-    const childProcess = spawn(pyenvFilePath, ["install", pythonVersion], workingDirectoryPath, {
+    const childProcess = spawn(pyenvFilePath, [ "install", pythonVersion ], workingDirectoryPath, {
       PYENV_ROOT: versionsDirectoryPath,
       // Taken from https://github.com/pyenv/pyenv/wiki#how-to-build-cpython-with-framework-support-on-os-x
       // PYTHON_CONFIGURE_OPTS: "--enable-framework"
@@ -243,7 +244,7 @@ async function ensurePythonViaMiniconda(pythonVersion: string): Promise<string>
   {
     return await getPythonFilePath(pythonVersion);
   }
-  const fromRootPaths = isWindows === true ? [minicondaPythonExecutable] : [pythonBinaryDirectoryName, minicondaPythonExecutable];
+  const fromRootPaths = isWindows === true ? [ minicondaPythonExecutable ] : [ pythonBinaryDirectoryName, minicondaPythonExecutable ];
   if (fs.existsSync(minicondaPaths.pythonVersionDirectoryPath) === false)
   {
     const result = semver.parse(pythonVersion);
@@ -311,7 +312,7 @@ async function ensurePythonViaMiniconda(pythonVersion: string): Promise<string>
     {
       fs.mkdirSync(parentDirectoryPath, { recursive: true });
     }
-    const childProcess = spawn(archiveFilePath, isWindows === true ? ["/S", `/D=${temporaryInstallationDirectoryPath}`] : ["-b", "-m", "-p", `"${temporaryInstallationDirectoryPath}"`], temporaryDirectoryPath, undefined, true);
+    const childProcess = spawn(archiveFilePath, isWindows === true ? [ "/S", `/D=${temporaryInstallationDirectoryPath}` ] : [ "-b", "-m", "-p", `"${temporaryInstallationDirectoryPath}"` ], temporaryDirectoryPath, undefined, true);
     await waitFor(childProcess);
 
     if (isWindows === false)
@@ -355,7 +356,7 @@ async function computeInstalledPythonFilePath(): Promise<string>
   }
   else
   {
-    const processResult = await execute(pythonExecutable, ["-c", `"import sys\nprint(sys.executable)"`]);
+    const processResult = await execute(pythonExecutable, [ "-c", `"import sys\nprint(sys.executable)"` ]);
     filPath = processResult.stdout.trim();
   }
   logger.debug(`The installed Python file path is '${filPath}'`);
@@ -410,7 +411,7 @@ export async function checkPythonVersion3(pythonExecutablePath: string, accepted
 
 export async function computePythonVersion(pythonExecutablePath: string): Promise<string>
 {
-  const result = (await execute(pythonExecutablePath, ["--version"])).stdout.trim();
+  const result = (await execute(pythonExecutablePath, [ "--version" ])).stdout.trim();
   const groups = /^Python (.*)$/.exec(result);
   if (groups === null || groups.length != 2)
   {
@@ -461,7 +462,7 @@ export async function ensureVirtualEnvironment(pythonVersion: string, parentDire
   {
     // We check that the virtual environment is totally set up because a previous creation of the virtual environment may have been interrupted
     // The script names are taken from https://docs.python.org/3/library/venv.html#how-venvs-work
-    const activateFilePaths = (os.platform() === "win32" ? ["activate.bat", "Activate.ps1"] : ["activate", "activate.fish", "activate.csh", "Activate.ps1"]).map((fileName: string) =>
+    const activateFilePaths = (os.platform() === "win32" ? [ "activate.bat", "Activate.ps1" ] : [ "activate", "activate.fish", "activate.csh", "Activate.ps1" ]).map((fileName: string) =>
     {
       const binaryDirectoryPath = computeVirtualEnvironmentBinaryDirectoryPath(parentDirectoryPath);
       return path.join(binaryDirectoryPath, fileName);
@@ -482,7 +483,7 @@ export async function ensureVirtualEnvironment(pythonVersion: string, parentDire
     logger.info(`Creating a new Python virtual environment in directory '${parentDirectoryPath}'`);
     const pythonFilePath = await ensurePython(pythonVersion);
     const directoryName = path.basename(virtualEnvironmentDirectoryPath);
-    await spawnAndWait(pythonFilePath, ["-m", "venv", directoryName], parentDirectoryPath);
+    await spawnAndWait(pythonFilePath, [ "-m", "venv", directoryName ], parentDirectoryPath);
     return true;
   }
   else
@@ -511,20 +512,20 @@ export async function installViaVirtualEnvironmentRequirements(requirementsFileP
     }
   }
   const pythonInternalSdkDirectoryPath = resortToInternalSdk === false ? undefined : path.join(paths.sdkDirectoryPath, "python");
-  const additionalParameters = pythonInternalSdkDirectoryPath === undefined ? [] : ["--find-links", pythonInternalSdkDirectoryPath];
+  const additionalParameters = pythonInternalSdkDirectoryPath === undefined ? [] : [ "--find-links", pythonInternalSdkDirectoryPath ];
   const pipFilePath = computeVirtualEnvironmentPipFilePath(parentDirectoryPath);
-  await spawnAndWait(pipFilePath, ["install", "-r", requirementsFilePath, ...additionalParameters], parentDirectoryPath);
+  await spawnAndWait(pipFilePath, [ "install", "-r", requirementsFilePath, ...additionalParameters ], parentDirectoryPath);
   if (pythonInternalSdkDirectoryPath !== undefined)
   {
     // We want to make sure that no cached version of the SDK is used
-    await spawnAndWait(pipFilePath, ["install", "--no-cache-dir", "--force", "--find-links", pythonInternalSdkDirectoryPath, internalPythonSdkIdentifier], parentDirectoryPath, undefined, false);
+    await spawnAndWait(pipFilePath, [ "install", "--no-cache-dir", "--force", "--find-links", pythonInternalSdkDirectoryPath, internalPythonSdkIdentifier ], parentDirectoryPath, undefined, false);
   }
 }
 
 export async function installViaVirtualEnvironmentPip(parentDirectoryPath: string, packages: string []): Promise<void>
 {
   logger.info(`Installing the Python package(s) '${packages.join("', '")}'`);
-  await execute(computeVirtualEnvironmentPipFilePath(parentDirectoryPath), ["install", ...packages], parentDirectoryPath);
+  await execute(computeVirtualEnvironmentPipFilePath(parentDirectoryPath), [ "install", ...packages ], parentDirectoryPath);
 }
 
 export async function ensureViaVirtualEnvironmentPip(parentDirectoryPath: string, packages: string [], binaryFileName: string): Promise<void>
@@ -534,4 +535,126 @@ export async function ensureViaVirtualEnvironmentPip(parentDirectoryPath: string
   {
     await installViaVirtualEnvironmentPip(parentDirectoryPath, packages);
   }
+}
+
+export function spawnPythonWithWatchdog(pythonExecutable: string, parameters: string[], cwd?: string | undefined, env?: NodeJS.ProcessEnv | undefined, shell?: boolean | string | undefined, stdio?: StdioOptions | null): ChildProcess
+{
+  function computeWatchdogStdio(stdio?: StdioOptions | null): StdioOptions
+  {
+    if (stdio === undefined || stdio === null)
+    {
+      return [ "pipe", "inherit", "inherit" ];
+    }
+    if (typeof stdio === "string")
+    {
+      return stdio === "pipe" ? "pipe" : [ "pipe", stdio, stdio ];
+    }
+    if (Array.isArray(stdio))
+    {
+      return [ "pipe", stdio[1] ?? "inherit", stdio[2] ?? "inherit" ];
+    }
+    return [ "pipe", "inherit", "inherit" ];
+  }
+
+  const pythonWatchdogBootstrapCode = `
+import os, sys, threading, time
+
+def _setup_watchdog():
+    if sys.platform.startswith("linux"):
+        try:
+            import ctypes, signal
+            libc = ctypes.CDLL("libc.so.6")
+            PR_SET_PDEATHSIG = 1
+            libc.prctl(PR_SET_PDEATHSIG, signal.SIGTERM)
+        except Exception:
+            pass
+
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            SYNCHRONIZE = 0x00100000
+            INFINITE = 0xFFFFFFFF
+            handle = ctypes.windll.kernel32.OpenProcess(SYNCHRONIZE, False, os.getppid())
+            if handle:
+                def _win_wait():
+                    ctypes.windll.kernel32.WaitForSingleObject(handle, INFINITE)
+                    ctypes.windll.kernel32.CloseHandle(handle)
+                    os._exit(0)
+                threading.Thread(target=_win_wait, daemon=True).start()
+        except Exception:
+            pass
+
+    def _stdin_monitor():
+        try:
+            if sys.stdin is not None and not sys.stdin.closed:
+                char = sys.stdin.read(1)
+                if char == "":
+                    os._exit(0)
+        except Exception:
+            os._exit(0)
+    threading.Thread(target=_stdin_monitor, daemon=True).start()
+
+    if sys.platform != "win32":
+        initial_ppid = os.getppid()
+        def _ppid_poll():
+            while True:
+                time.sleep(0.2)
+                if os.getppid() != initial_ppid:
+                    os._exit(0)
+        threading.Thread(target=_ppid_poll, daemon=True).start()
+
+_setup_watchdog()
+
+import runpy
+target = sys.argv[1]
+if target == "-c":
+    code = sys.argv[2]
+    sys.argv = ["-c"] + sys.argv[3:]
+    exec(code)
+elif target == "-m":
+    module_name = sys.argv[2]
+    sys.argv = sys.argv[2:]
+    runpy.run_module(module_name, run_name="__main__", alter_sys=True)
+elif ":" in target:
+    import importlib, inspect, asyncio
+    module_path, class_or_callable = target.split(":", 1)
+    mod = importlib.import_module(module_path)
+    entity = getattr(mod, class_or_callable)
+    sys.argv = [target] + sys.argv[2:]
+    if inspect.isclass(entity):
+        try:
+            inst = entity()
+        except TypeError:
+            inst = entity(sys.argv[1:])
+        if hasattr(inst, "run") and callable(inst.run):
+            if inspect.iscoroutinefunction(inst.run):
+                asyncio.run(inst.run())
+            else:
+                inst.run()
+        elif hasattr(inst, "main") and callable(inst.main):
+            if inspect.iscoroutinefunction(inst.main):
+                asyncio.run(inst.main())
+            else:
+                inst.main()
+        elif callable(inst):
+            if inspect.iscoroutinefunction(inst):
+                asyncio.run(inst())
+            else:
+                inst()
+    elif callable(entity):
+        if inspect.iscoroutinefunction(entity):
+            asyncio.run(entity())
+        else:
+            entity()
+else:
+    sys.argv = sys.argv[1:]
+    runpy.run_path(target, run_name="__main__")
+`.trim();
+
+
+  const effectiveStdio = computeWatchdogStdio(stdio);
+  return spawn(pythonExecutable, [ "-c", pythonWatchdogBootstrapCode, ...parameters ], cwd, env, shell, effectiveStdio, {
+    loggedIndications: "via a termination watch dog",
+    loggedCommand: `${pythonExecutable}${parameters.length === 0 ? "" : (` ${parameters.join(" ")}`)}`
+  });
 }

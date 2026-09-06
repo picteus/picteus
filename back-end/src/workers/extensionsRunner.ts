@@ -14,7 +14,7 @@ import { ManifestEvent, ManifestRuntimeEnvironment } from "../dtos/app.dtos";
 import { fromImageEventActionToManifestEvent } from "../bos";
 import { ensureDirectory } from "../services/utils/downloader";
 import { fork, spawn, stopProcessGracefully } from "../services/utils/processWrapper";
-import { computeVirtualEnvironmentPythonFilePath } from "../services/utils/pythonWrapper";
+import { computeVirtualEnvironmentPythonFilePath, spawnPythonWithWatchdog } from "../services/utils/pythonWrapper";
 import { EntitiesProvider, VectorDatabaseAccessor } from "../services/databaseProviders";
 import { ExtensionsApiKeys } from "../app.guards";
 import { ExtendedManifest, ExtensionMessage, ExtensionRegistry, ImageEvent } from "../services/extensionRegistry";
@@ -302,6 +302,10 @@ class ExtensionsRunner
         if (execution.executable === ExtensionRegistry.computeVariablePlaceholder(ExtensionRegistry.nodeVariableName))
         {
           process = fork(resolvedParameters[0], resolvedParameters.slice(1), manifest.directoryPath, null);
+        }
+        else if (execution.executable === ExtensionRegistry.computeVariablePlaceholder(ExtensionRegistry.venvPythonVariableName))
+        {
+          process = spawnPythonWithWatchdog(this.resolveCommandToken(map, execution.executable), resolvedParameters, manifest.directoryPath, undefined, false);
         }
         else if (execution.executable === ExtensionRegistry.computeVariablePlaceholder(ExtensionRegistry.shellVariableName))
         {

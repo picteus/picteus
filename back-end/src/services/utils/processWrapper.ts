@@ -21,7 +21,7 @@ import { text } from "node:stream/consumers";
 import { logger } from "../../logger";
 
 
-const defaultStdio: StdioOptions = ["inherit", "inherit", "inherit"];
+const defaultStdio: StdioOptions = [ "inherit", "inherit", "inherit" ];
 
 export type ProcessResult = { stdout: string, stderr: string | undefined };
 
@@ -108,7 +108,7 @@ export async function getChildProcessIds(childProcessOrId: ChildProcess | number
     if (os.platform() === "win32")
     {
       // On Windows, we resort to PowerShell command using CIM / WMI
-      command = ["powershell", "-NoProfile -NonInteractive -Command", `"Get-CimInstance Win32_Process -Filter "ParentProcessId=${parentProcessId}" -ErrorAction SilentlyContinue -OperationTimeoutSec ${timeoutInSeconds} | Select-Object -ExpandProperty ProcessId"`, "3>&1 4>&1 5>&1 6>&1"].join(" ");
+      command = [ "powershell", "-NoProfile -NonInteractive -Command", `"Get-CimInstance Win32_Process -Filter "ParentProcessId=${parentProcessId}" -ErrorAction SilentlyContinue -OperationTimeoutSec ${timeoutInSeconds} | Select-Object -ExpandProperty ProcessId"`, "3>&1 4>&1 5>&1 6>&1" ].join(" ");
     }
     else if (os.platform() === "darwin")
     {
@@ -145,7 +145,7 @@ export async function getChildProcessIds(childProcessOrId: ChildProcess | number
         }
       }, milliseconds);
     });
-    const processResult = await Promise.race([processResultPromise, timeoutPromise]);
+    const processResult = await Promise.race([ processResultPromise, timeoutPromise ]);
     gotProcessResult = processResult;
     const processIds = processResult === undefined ? [] : processResult.stdout.split(/\r?\n/).map(line => line.trim()).filter(line => /^\d+$/.test(line)).map(Number);
     const index = processIds.indexOf(parentProcessId);
@@ -178,7 +178,7 @@ export async function getChildProcessIds(childProcessOrId: ChildProcess | number
     }
 
     await walk(parentProcessId);
-    return [...descendantProcessIds];
+    return [ ...descendantProcessIds ];
   }
 
   const processIds = await getProcessTree(processId);
@@ -263,10 +263,13 @@ export async function which(command: string): Promise<string>
   return filePath.trim();
 }
 
-export function spawn(executable: string, parameters: string[], cwd?: string | undefined, env?: NodeJS.ProcessEnv | undefined, shell?: boolean | string | undefined, stdio?: StdioOptions | null): ChildProcess
+export function spawn(executable: string, parameters: string[], cwd?: string | undefined, env?: NodeJS.ProcessEnv | undefined, shell?: boolean | string | undefined, stdio?: StdioOptions | null, options?: {
+  loggedIndications: string,
+  loggedCommand: string,
+}): ChildProcess
 {
   const command = computeCommand(executable, parameters);
-  const options: SpawnOptions =
+  const spawnOptions: SpawnOptions =
     {
       detached: false,
       // We log the process output to the hereby parent process, unless stated differently
@@ -276,21 +279,21 @@ export function spawn(executable: string, parameters: string[], cwd?: string | u
     };
   if (cwd !== undefined)
   {
-    options.cwd = cwd;
+    spawnOptions.cwd = cwd;
   }
   if (env !== undefined)
   {
-    options.env = env;
+    spawnOptions.env = env;
   }
   if (shell !== undefined)
   {
     // Caution: on Linux and Windows, it looks like this option, when set to true, causes the spawn of an intermediate shell process, which spawns the expected one on its turn, but the accessible runtime process "id" (identifier) is incorrect, because it is equal to the shell and not the child process
     // TODO: on Windows, use the "exit" event when the shell option is used, in order to send a signal to the child, via the "SIGINT" signal
-    options.shell = shell;
+    spawnOptions.shell = shell;
   }
   // When using a shell, the command should be passed as a single string, as discussed at https://github.com/nodejs/help/issues/5063
-  const childProcess: ChildProcess = options.shell === true ? processSpawn(command, options) : processSpawn(executable, parameters, options);
-  const mainLogFragment = `${options.shell === true ? "via a shell" : "with no shell"} the process${childProcess.pid === undefined ? "" : ` with id '${childProcess.pid}'`}${options.cwd === undefined ? "" : ` in working directory '${options.cwd}'`}${options.env === undefined ? "" : (" with environment variables " + JSON.stringify(options.env))} through the command '${command}'`;
+  const childProcess: ChildProcess = spawnOptions.shell === true ? processSpawn(command, spawnOptions) : processSpawn(executable, parameters, spawnOptions);
+  const mainLogFragment = `${spawnOptions.shell === true ? "via a shell" : "with no shell"} the process${childProcess.pid === undefined ? "" : ` with id '${childProcess.pid}'`}${spawnOptions.cwd === undefined ? "" : ` in working directory '${spawnOptions.cwd}'`}${spawnOptions.env === undefined ? "" : (" with environment variables " + JSON.stringify(spawnOptions.env))}${options?.loggedIndications === undefined ? "" : (` ${options.loggedIndications}`)} through the command '${options?.loggedCommand ?? command}'`;
   if (childProcess.pid === undefined)
   {
     // This is a work-around, because if we do not set this error listener, the process exits
