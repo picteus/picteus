@@ -72,7 +72,7 @@
     "package": "npm --prefix electron run package",
     "distribute": "npm --prefix electron run distribute",
     "deploy": "npm --prefix electron run deploy",
-    "prerequisites:back-end:ci": "npm run this:prerequisites && npm run shared-core:build && npm run shared-back-end:build && npm run back-end:prerequisites && npm run extensions:prerequisites && npm run extensions:sdk:build && npm run back-end:prerequisites:install",
+    "prerequisites:back-end:ci": "npm-run-all this:prerequisites specification-factory:build shared-core:build shared-back-end:build back-end:prerequisites extensions:prerequisites extensions:sdk:build back-end:prerequisites:install",
     "build:back-end:ci": "npm --prefix back-end run prisma:generate && npm --prefix back-end run compile",
     "test:back-end:ci": "npm --prefix back-end run test:ci",
     "prerequisites:electron:ci": "npm run prerequisites",
