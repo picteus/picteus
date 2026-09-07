@@ -10,20 +10,13 @@ export default {
   },
   menu: {
     images: "Images",
+    imageCommands: "Image commands",
     repositories: "Repositories",
     collections: "Collections",
     extensions: "Extensions",
     activity: "Activity",
     test: "Test",
-    settings: "Settings",
-    information: "Information",
-    imageCommands: "Image commands",
-    generator: "Generator",
-    metadata: "Metadata",
-    tags: "Tags",
-    recipe: "Recipe",
-    features: "Features",
-    technicalFeatures: "Technical Features"
+    settings: "Settings"
   },
   titles: {
     warning: "Warning",
@@ -311,6 +304,15 @@ export default {
     reset: "Reset",
     errorResetting: "An error occurred while resetting the extension settings",
     successResetting: "The extension settings have been successfully reset"
+  },
+  imageDetail: {
+    information: "Information",
+    generator: "Generator",
+    metadata: "Metadata",
+    tags: "Tags",
+    recipe: "Recipe",
+    features: "Features",
+    newFeatures: "Features"
   },
   repositoryScreen: {
     title: "Repositories",
