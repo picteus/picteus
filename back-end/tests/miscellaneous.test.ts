@@ -150,7 +150,7 @@ describe("Miscellaneous bare", () =>
       expect(parentProcess.exitCode).toBeNull();
       await core.waitUntil(async () =>
       {
-        return fs.existsSync(pidFilePath);
+        return fs.existsSync(pidFilePath) && fs.readFileSync(pidFilePath, { encoding: "utf8" }).trim().length > 0;
       });
       const childProcessIds = await getChildProcessIds(parentProcess);
       expect(childProcessIds.length).toEqual(((isPlatformWindowsOrLinux === true) && shell === true) ? 2 : 1);
@@ -161,10 +161,18 @@ describe("Miscellaneous bare", () =>
     finally
     {
       const signal = "SIGKILL";
-      const childProcessIds = await getChildProcessIds(parentProcess);
-      for (const childProcessId of childProcessIds)
+      let childProcessIds: number[] = [];
+      try
       {
-        killProcessViaId(childProcessId, signal);
+        childProcessIds = await getChildProcessIds(parentProcess);
+        for (const childProcessId of childProcessIds)
+        {
+          killProcessViaId(childProcessId, signal);
+        }
+      }
+      catch (error)
+      {
+        logger.warn(`Could not kill child processes during cleanup: ${(error as Error).message}`);
       }
       await killProcess(parentProcess, signal);
       const allProcessIds = [ ...childProcessIds ];

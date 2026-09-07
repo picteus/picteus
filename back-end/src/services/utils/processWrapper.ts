@@ -106,11 +106,11 @@ export async function getChildProcessIds(childProcessOrId: ChildProcess | number
   async function requestChildProcessIds(parentProcessId: number): Promise<number[]>
   {
     let command: string;
-    const timeoutInSeconds = 2;
+    const timeoutInSeconds = 10;
     if (os.platform() === "win32")
     {
       // On Windows, we resort to PowerShell command using CIM / WMI
-      command = [ "powershell", "-NoProfile -NonInteractive -Command", `"Get-CimInstance Win32_Process -Filter "ParentProcessId=${parentProcessId}" -ErrorAction SilentlyContinue -OperationTimeoutSec ${timeoutInSeconds} | Select-Object -ExpandProperty ProcessId"`, "3>&1 4>&1 5>&1 6>&1" ].join(" ");
+      command = [ "powershell", "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command", `"Get-CimInstance Win32_Process -Filter 'ParentProcessId=${parentProcessId}' -ErrorAction SilentlyContinue -OperationTimeoutSec ${timeoutInSeconds} | Select-Object -ExpandProperty ProcessId"`, "3>&1 4>&1 5>&1 6>&1" ].join(" ");
     }
     else if (os.platform() === "darwin")
     {
@@ -131,34 +131,34 @@ export async function getChildProcessIds(childProcessOrId: ChildProcess | number
       }
       throw error;
     });
-    let gotProcessResult: ProcessResult | undefined;
-    const timeoutPromise = new Promise<ProcessResult>((resolve, reject) =>
+    let timer: NodeJS.Timeout | undefined;
+    const timeoutPromise = new Promise<ProcessResult>((_, reject) =>
     {
       const milliseconds = timeoutInSeconds * 1_000;
-      Timers.setTimeout(() =>
+      timer = Timers.setTimeout(() =>
       {
-        if (gotProcessResult === undefined)
-        {
-          reject(new Error(`The '${command}' command did not received a response within ${milliseconds} ms`));
-        }
-        else
-        {
-          resolve(gotProcessResult);
-        }
+        reject(new Error(`The '${command}' command did not receive a response within ${milliseconds} ms`));
       }, milliseconds);
     });
-    const processResult = await Promise.race([ processResultPromise, timeoutPromise ]);
-    gotProcessResult = processResult;
+    let processResult: ProcessResult | undefined;
+    try
+    {
+      processResult = await Promise.race([ processResultPromise, timeoutPromise ]);
+    }
+    finally
+    {
+      if (timer !== undefined)
+      {
+        Timers.clearTimeout(timer);
+      }
+    }
     const processIds = processResult === undefined ? [] : processResult.stdout.split(/\r?\n/).map(line => line.trim()).filter(line => /^\d+$/.test(line)).map(Number);
     const index = processIds.indexOf(parentProcessId);
     if (index !== -1)
     {
       processIds.splice(index, 1);
     }
-    logger.debug(`The process with id '${processId}' child process ids are [${processIds.map(id =>
-    {
-      return `'${id}'`;
-    }).join(", ")}]`);
+    logger.debug(`The process with id '${parentProcessId}' child process ids are [${processIds.map(id => `'${id}'`).join(", ")}]`);
     return processIds;
   }
 
