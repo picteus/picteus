@@ -170,12 +170,13 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
   }
 
   const width = 240;
+  const hasCollections = collections.length > 0;
   return (<Button.Group>
       <Menu shadow="md" width={width} position="bottom" trigger="click-hover" opened={menuOpened}
-            onChange={setMenuOpened}>
+            onChange={setMenuOpened} disabled={!hasCollections}>
         <Menu.Target>
           <Button variant="default" w={width} leftSection={<IconLibraryPhoto size={Common.IconSmallSize}/>}
-                  rightSection={<IconChevronDown size={Common.IconSmallSize}/>}>
+                  rightSection={<IconChevronDown size={Common.IconSmallSize}/>} disabled={!hasCollections}>
             {selectedCollection ? truncateName(selectedCollection.name) : t("field.collections")}
           </Button>
         </Menu.Target>
