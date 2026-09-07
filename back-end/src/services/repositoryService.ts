@@ -184,6 +184,10 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     const persistedRepository = await this.entitiesProvider.repositories.create({ data: repositoryObject });
 
     const repository = plainToInstanceViaJSON(Repository, persistedRepository);
+    if (type === RepositoryLocationType.File)
+    {
+      this.perPathFileRepositories.set(repository.getLocation().toFilePath(), repository);
+    }
     this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Created, undefined, { id: repository.id });
     await this.internalSynchronize(repository, undefined, doNotWatch === true ? undefined : async (repository: Repository, updateStatus: () => Promise<Repository>): Promise<void> =>
     {
