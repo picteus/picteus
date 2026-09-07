@@ -176,6 +176,7 @@
     "exif-be-gone": "1.5.1",
     "fast-xml-parser": "5.10.1",
     "fast-xml-validator": "1.4.1",
+    "yaml": "2.9.0",
     "piscina": "5.2.0",
     "cross-spawn": "7.0.6",
     "ajv": "8.20.0",

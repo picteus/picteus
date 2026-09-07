@@ -5151,6 +5151,7 @@
           "float",
           "boolean",
           "json",
+          "yaml",
           "xml",
           "markdown",
           "html",

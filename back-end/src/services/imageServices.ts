@@ -6,6 +6,7 @@ import { ModuleRef } from "@nestjs/core";
 import { forwardRef, Inject, Injectable, StreamableFile } from "@nestjs/common";
 import { fdir } from "fdir";
 import { SyntaxValidator } from "fast-xml-validator";
+import YAML from "yaml";
 
 import { UiContainer } from "@picteus/shared-core";
 
@@ -572,6 +573,18 @@ export class ImageService
           {
             parametersChecker.throwBadParameter(parameterName, undefined, "it does not comply with the recipe schema");
           }
+        }
+      }
+      else if (format === ImageFeatureFormat.YAML)
+      {
+        const string = checkValueIsString(index, feature);
+        try
+        {
+          YAML.parse(string, { uniqueKeys: true, logLevel: "warn", strict: true, prettyErrors: false });
+        }
+        catch (error)
+        {
+          parametersChecker.throwBadParameter(`[${index}].value`, undefined, "it should be a well-formed YAML content");
         }
       }
       else if (format === ImageFeatureFormat.XML)

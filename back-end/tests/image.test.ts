@@ -1177,7 +1177,7 @@ describe("Image with module", () =>
         }).rejects.toThrow(new ServiceError(`The parameter '[0].format' with value '${featureFormat}' is invalid because it should be one of ['json'] when the feature type is 'recipe'`, BAD_REQUEST, base.badParameterCode));
       }
 
-      // We assess with malformed JSON contents
+      // We assess with malformed JSON content
       for (const type of [ ImageFeatureType.METADATA, ImageFeatureType.RECIPE, ImageFeatureType.OTHER ])
       {
         const value = "malformedJSON";
@@ -1187,7 +1187,17 @@ describe("Image with module", () =>
         }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it should be a well-formed JSON content`, BAD_REQUEST, base.badParameterCode));
       }
 
-      // We assess with malformed XML contents
+      // We assess with malformed YAML content
+      for (const type of [ ImageFeatureType.METADATA, ImageFeatureType.OTHER ])
+      {
+        const value = `malformed:\n\tproperty: YAML`;
+        await expect(async () =>
+        {
+          await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, ImageFeatureFormat.YAML, undefined, value) ]);
+        }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it should be a well-formed YAML content`, BAD_REQUEST, base.badParameterCode));
+      }
+
+      // We assess with malformed XML content
       for (const type of [ ImageFeatureType.METADATA, ImageFeatureType.OTHER ])
       {
         const value = "malformedXML";
@@ -1197,7 +1207,7 @@ describe("Image with module", () =>
         }).rejects.toThrow(new ServiceError(`The parameter '[0].value' with value '${value}' is invalid because it should be a well-formed XML content`, BAD_REQUEST, base.badParameterCode));
       }
 
-      // We assess with malformed UI contents
+      // We assess with malformed UI content
       for (const aCase of [
         { value: "malformedJson", because: "it should be a well-formed JSON content" },
         { value: `{"malformedUiKey": "value"}`, because: "it does not comply with the UI schema" }
@@ -1278,9 +1288,10 @@ describe("Image with module", () =>
         const booleanImageFeature = new ImageFeature(ImageFeatureType.ANNOTATION, ImageFeatureFormat.BOOLEAN, "boolean", true);
         const markdownImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.MARKDOWN, undefined, `# Title\n##Subtitle\nHere is some **markdown** _content!`);
         const jsonImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.JSON, undefined, `{"key":"value"}`);
+        const yamlImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.YAML, undefined, `YAML:\n  - A human-readable data serialization language\n  - https://en.wikipedia.org/wiki/YAML`);
         const xmlImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.XML, "xml", `<element attribute="value"></element>`);
         const uiImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.UI, "ui", `{"schemaVersion":"1.0","elements":[{"value":"This is a string","type":"string-short","representation":"plain"}]}`);
-        const imageFeatures = [ stringImageFeature, integerImageFeature, floatImageFeature, booleanImageFeature, markdownImageFeature, jsonImageFeature, xmlImageFeature, uiImageFeature ];
+        const imageFeatures = [ stringImageFeature, integerImageFeature, floatImageFeature, booleanImageFeature, markdownImageFeature, jsonImageFeature, yamlImageFeature, xmlImageFeature, uiImageFeature ];
         const listener = base.computeEventListener();
         base.getNotifierService().once(EventEntity.Image, ImageEventAction.FeaturesUpdated, undefined, listener);
         await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, imageFeatures);

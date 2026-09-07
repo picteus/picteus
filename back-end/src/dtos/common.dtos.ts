@@ -378,6 +378,7 @@ export enum ImageFeatureFormat
   FLOAT = "float",
   BOOLEAN = "boolean",
   JSON = "json",
+  YAML = "yaml",
   XML = "xml",
   MARKDOWN = "markdown",
   HTML = "html",
