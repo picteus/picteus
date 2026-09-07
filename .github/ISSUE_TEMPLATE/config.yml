@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Picteus documentation
+    url: https://picteus.github.io/picteus
+    about: Read the official documentation, guides, and setup instructions.
+  - name: GitHub discussions
+    url: https://github.com/picteus/picteus/discussions
+    about: Ask questions, share ideas, or discuss features with the community.

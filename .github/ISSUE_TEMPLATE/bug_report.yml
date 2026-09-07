@@ -1,0 +1,125 @@
+name: Bug report
+description: File a bug report to help identify and address issues in Picteus.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before submitting an issue, please verify that the bug has not already been reported by searching existing issues.
+
+        Providing application logs is often essential to diagnosing and resolving issues. Instructions on how to access and retrieve those logs — from the application menu or the local filesystem — are available in the [Picteus logs documentation](https://picteus.github.io/picteus/docs/setup/start#logs).
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe what happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Explain the sequence of steps required to reproduce the bug.
+      placeholder: |
+        1. Go to "..."
+        2. Click on "..."
+        3. Observe the error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what was expected to occur.
+      placeholder: Describe what should have happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: A clear and concise description of what actually occurred.
+      placeholder: Describe what actually happened...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      description: Which component or subsystem is affected?
+      options:
+        - Front-end / UI
+        - Back-end / NestJS server
+        - Desktop application / Electron
+        - Extension system
+        - Image processing or generation
+        - Other or unknown
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Picteus version
+      description: Version of Picteus being run — release tag, build number, or Git commit hash.
+      placeholder: e.g. 0.1.0, latest release, or commit 1234567
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system & architecture
+      description: Operating system and processor architecture on which Picteus is running.
+      options:
+        - macOS — Apple silicon (M1/M2/M3/M4)
+        - macOS — Intel x64
+        - Windows 11 x64
+        - Windows 10 x64
+        - Linux x64
+        - Other — specify in additional context
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or console output
+      description: Providing application logs is strongly recommended to diagnose issues. Paste relevant log output or console traces here. Consult the [logs documentation](https://picteus.github.io/picteus/docs/setup/start#logs) to locate the log files on your system.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or media
+      description: Drag and drop screenshots, screen recordings, or sample images to illustrate the problem.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other technical context, system specifications, or active extensions.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: validations
+    attributes:
+      label: Confirmation
+      description: "Before submitting, please verify the following:"
+      options:
+        - label: I have searched existing issues to ensure this bug has not already been reported.
+          required: true
+        - label: I am running a supported version and platform of Picteus.
+          required: false
