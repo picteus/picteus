@@ -294,10 +294,10 @@ describe("Miscellaneous bare", () =>
 const fs = require("node:fs");
 const { pathToFileURL } = require("node:url");
 
-const targetModulePath = "${processWrapperSourcePath}";
-const childScriptPath = "${longRunningScriptFilePath}";
-const childPidPath = "${childPidFilePath}";
-const workingDirectory = "${directoryPath}";
+const targetModulePath = ${JSON.stringify(processWrapperSourcePath)};
+const childScriptPath = ${JSON.stringify(longRunningScriptFilePath)};
+const childPidPath = ${JSON.stringify(childPidFilePath)};
+const workingDirectory = ${JSON.stringify(directoryPath)};
 
 (async () =>
 {
@@ -389,10 +389,10 @@ setTimeout(() => {}, 1_000_000);
 const fs = require("node:fs");
 const { pathToFileURL } = require("node:url");
 
-const targetModulePath = "${processWrapperSourcePath}";
-const childScriptPath = "${longRunningScriptFilePath}";
-const childPidPath = "${childPidFilePath}";
-const workingDirectory = "${directoryPath}";
+const targetModulePath = ${JSON.stringify(processWrapperSourcePath)};
+const childScriptPath = ${JSON.stringify(longRunningScriptFilePath)};
+const childPidPath = ${JSON.stringify(childPidFilePath)};
+const workingDirectory = ${JSON.stringify(directoryPath)};
 
 (async () =>
 {
@@ -496,11 +496,11 @@ setTimeout(() => {}, 1_000_000);
 const fs = require("node:fs");
 const { pathToFileURL } = require("node:url");
 
-const persistPath = "${persistPath}";
-const childPidPath = "${childPidFilePath}";
-const childStdoutAndErrFilePath = "${childStdoutAndErrFilePath}";
+const persistPath = ${JSON.stringify(persistPath)};
+const childPidPath = ${JSON.stringify(childPidFilePath)};
+const childStdoutAndErrFilePath = ${JSON.stringify(childStdoutAndErrFilePath)};
 const portNumber = ${portNumber};
-const targetModulePath = "${databaseProvidersSourcePath}";
+const targetModulePath = ${JSON.stringify(databaseProvidersSourcePath)};
 
 (async () =>
 {
@@ -585,11 +585,11 @@ setTimeout(() => {}, 1_000_000);
 const fs = require("node:fs");
 const { pathToFileURL } = require("node:url");
 
-const pythonExecutable = "${pythonFilePath}";
-const scriptPath = "${longRunningScriptFilePath}";
-const childPidPath = "${childPidFilePath}";
-const workingDirectory = "${directoryPath}";
-const targetModulePath = "${pythonWrapperSourcePath}";
+const pythonExecutable = ${JSON.stringify(pythonFilePath)};
+const scriptPath = ${JSON.stringify(longRunningScriptFilePath)};
+const childPidPath = ${JSON.stringify(childPidFilePath)};
+const workingDirectory = ${JSON.stringify(directoryPath)};
+const targetModulePath = ${JSON.stringify(pythonWrapperSourcePath)};
 
 (async () =>
 {
