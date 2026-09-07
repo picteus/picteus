@@ -30,17 +30,15 @@ export function fixUtimesSync(filePath: string, date: Date): void
   {
     // On Windows, the "fs.utimesSync()" does not impact the "stats.birthtime" attribute
     const absoluteFilePath = path.resolve(filePath);
-    const escapedPath = absoluteFilePath.replace(/"/g, "`\"");
-    // We convert the date object to a format PowerShell understands, e.g., "MM/dd/yyyy HH:mm:ss"
-    const dateString = date.toLocaleString("en-US", { hour12: false });
-    const psCommand = `(Get-Item "${escapedPath}").CreationTime = Get-Date "${dateString}"`;
+    const escapedPath = absoluteFilePath.replace(/'/g, "''");
+    const psCommand = `(Get-Item -LiteralPath '${escapedPath}').CreationTimeUtc = [DateTimeOffset]::FromUnixTimeMilliseconds(${date.getTime()}).UtcDateTime`;
     try
     {
-      execSync(`powershell -Command "${psCommand}"`);
+      execSync(`powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "${psCommand}"`);
     }
     catch (error)
     {
-      console.error(`An error occurred while updating the birth time of the file '${absoluteFilePath}'. Reason: '${(error as Error).message}'`, error);
+      logger.error(`An error occurred while updating the birth time of the file '${absoluteFilePath}'. Reason: '${(error as Error).message}'`, error);
     }
   }
 }
