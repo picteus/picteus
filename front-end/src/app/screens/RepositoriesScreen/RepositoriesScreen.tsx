@@ -24,13 +24,13 @@ import { AddOrUpdateRepository, RepositoryActions, RepositoryDetail, RepositoryT
 
 export default function RepositoriesScreen()
 {
-  const [t] = useTranslation();
-  const [repositories, setRepositories] = useState<Repository[]>(RepositoriesService.list());
-  const [loading, setLoading] = useState<boolean>(false);
+  const [ t ] = useTranslation();
+  const [ repositories, setRepositories ] = useState<Repository[]>(RepositoriesService.list());
+  const [ loading, setLoading ] = useState<boolean>(false);
   const { eventStore } = useEventSocket();
   const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [selectedRepository, setSelectedRepository] = useState<Repository>();
-  const [, addModal] = useActionModalContext();
+  const [ selectedRepository, setSelectedRepository ] = useState<Repository>();
+  const [ , addModal ] = useActionModalContext();
 
   async function fetchAllRepositories()
   {
@@ -45,7 +45,7 @@ export default function RepositoriesScreen()
     }
   }
 
-  function nothing()
+  function nothing(): void
   {
   }
 
@@ -73,7 +73,12 @@ export default function RepositoriesScreen()
         setSelectedRepository(undefined);
       }
     }
-  }, [repositories, selectedRepository]);
+  }, [ repositories, selectedRepository ]);
+
+  useEffect(() =>
+  {
+    void fetchAllRepositories();
+  }, []);
 
   useEffect(() =>
   {
@@ -81,7 +86,7 @@ export default function RepositoriesScreen()
     {
       void fetchAllRepositories();
     }
-  }, [event]);
+  }, [ event ]);
 
   const rows = repositories.map((repository: Repository) => (
     <Table.Tr
@@ -121,7 +126,7 @@ export default function RepositoriesScreen()
   function renderTable()
   {
     return <StandardTable
-      head={["field.name", "field.comment", "field.createdOn", "field.modifiedOn", "field.state", ""]}
+      head={[ "field.name", "field.comment", "field.createdOn", "field.modifiedOn", "field.state", "" ]}
       loading={loading}
       emptyResults={<EmptyResults
         icon={IconFolderSearch}

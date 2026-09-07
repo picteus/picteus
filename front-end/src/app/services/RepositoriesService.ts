@@ -201,7 +201,7 @@ function subscribeTo<type = SubscriptionType>(subscribers: SubscriberType<type>[
 
 function getRepositoryInformation(repositoryId: string): Repository
 {
-  return repositories.find((repository) =>
+  return list().find((repository) =>
   {
     if (repository.id === repositoryId)
     {
