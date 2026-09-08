@@ -16,6 +16,9 @@ import {
 import { type Components, default as ReactMarkdown } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { useOpenBrowser } from "app/hooks";
+import { ToastService } from "../../../utils";
+
 
 export type MarkdownPropsType = {
   content: string;
@@ -115,12 +118,18 @@ const MARKDOWN_COMPONENTS: Components =
     },
     a: ({ href, children }): ReactElement =>
     {
-      const isExternal = href?.startsWith("http://") === true || href?.startsWith("https://") === true;
+      const openBrowser = useOpenBrowser();
       return (
         <Anchor
           href={href}
-          target={isExternal ? "_blank" : undefined}
-          rel={isExternal ? "noopener noreferrer" : undefined}
+          onClick={(event) =>
+          {
+            if (href !== undefined)
+            {
+              event.preventDefault();
+              openBrowser(href).catch((ToastService.failureAndMessage));
+            }
+          }}
         >
           {children}
         </Anchor>

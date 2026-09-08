@@ -10,7 +10,7 @@ export default function useFolderPicker(): (type: FolderTypes) => Promise<string
   const [ t ] = useTranslation();
   const { sendCommand } = useCommandSocket();
 
-  return async (type: FolderTypes) =>
+  return async (type: FolderTypes): Promise<string> =>
   {
     const defaultPath = StorageService.getLastFolderLocation(type);
     const directoryPath = await sendCommand("pickDirectory", {

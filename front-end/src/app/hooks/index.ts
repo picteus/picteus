@@ -1,4 +1,5 @@
 export { default as useFolderPicker } from "./useFolderPicker.tsx";
+export { default as useOpenBrowser } from "./useOpenBrowser.tsx";
 export { default as useOpenExplorer } from "./useOpenExplorer.tsx";
 export { default as useOpenWindow } from "./useOpenWindow.tsx";
 export { default as useDebouncedCallback } from "./useDebouncedCallback.tsx";

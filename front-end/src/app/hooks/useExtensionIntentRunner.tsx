@@ -19,13 +19,14 @@ import {
 import { CommandEntity, ExtensionSettings, UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, ToastService } from "utils";
-import { useActionModalContext, useAdditionalUiContext, useCommandSocket } from "app/context";
+import { useActionModalContext, useAdditionalUiContext } from "app/context";
 import { ExtensionsService, ImageService, RepositoriesService, StorageService } from "app/services";
 import {
   ConfirmOptions,
   useConfirmAction,
   useExtensionCommandRunner,
   useExtensionCommandsWithEntities,
+  useOpenBrowser,
   useOpenWindow
 } from "app/hooks";
 import { Iframe, ImageDetail } from "app/components";
@@ -49,7 +50,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
   const [ , addModal, removeModal ] = useActionModalContext();
   const [ additionalUiContextValue, , addTransient ] = useAdditionalUiContext();
   const commandRunner = useExtensionCommandRunner();
-  const { sendCommandOnConnected } = useCommandSocket();
+  const openBrowser = useOpenBrowser();
   const openWindow = useOpenWindow();
   const confirmAction = useConfirmAction();
   const processCommands = useExtensionCommandsWithEntities(commandEntities);
@@ -155,11 +156,11 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
       }
     }
 
-    async function handleOpenBrowser(openBrowser: IntentOpenBrowser): Promise<void>
+    async function handleOpenBrowser(intentOpenBrowser: IntentOpenBrowser): Promise<void>
     {
-      const url = openBrowser.url;
+      const url = intentOpenBrowser.url;
       confirmActionWrapper(
-        () => sendCommandOnConnected("openBrowser", { url }).catch((error: Error) =>
+        () => openBrowser(url).catch((error: Error) =>
         {
           ToastService.failureAndMessage(error);
           listener.onFailure(error.message);
