@@ -561,18 +561,84 @@
   "settings": {
     "type": "object",
     "properties": {
-      "parameter": {
+      "simpleString": {
         "type": "string",
-        "title": "Parameter",
-        "description": "A parameter which enables to tune the extension.",
-        "default": "value",
+        "title": "Simple string",
+        "description": "A string parameter with a default value and represented with a text area.",
+        "default": "This is a text inside a textarea.",
         "ui": {
           "widget": "textarea"
         }
+      },
+      "simpleInteger": {
+        "type": "integer",
+        "title": "Simple integer",
+        "description": "An integer parameter with a default value and bounds.",
+        "minimum": 1,
+        "maximum": 100,
+        "default": 50,
+        "ui": {
+          "widget": "updown"
+        }
+      },
+      "simpleFloat": {
+        "type": "number",
+        "title": "Simple float",
+        "description": "A floating number parameter with a default value and bounds.",
+        "minimum": 1,
+        "maximum": 100,
+        "default": 3.14,
+        "ui": {
+          "widget": "range"
+        }
+      },
+      "simpleBoolean": {
+        "type": "boolean",
+        "title": "Simple boolean",
+        "description": "A boolean parameter with a default value.",
+        "default": true
+      },
+      "enumerated": {
+        "type": "string",
+        "title": "Enumerated",
+        "description": "A string parameter with limited values.",
+        "enum": [
+          "value A",
+          "value B",
+          "value C",
+          "value D",
+          "value E"
+        ],
+        "default": "value C",
+        "ui": {
+          "widget": "radio",
+          "inline": true
+        }
+      },
+      "complexObject": {
+        "type": "object",
+        "title": "Complex object",
+        "description": "An object which has properties.",
+        "properties": {
+          "property1": {
+            "type": "boolean",
+            "title": "Property 1",
+            "description": "A first nested property.",
+            "default": false
+          },
+          "property2": {
+            "type": "string",
+            "title": "Property 2",
+            "description": "A second nested property.",
+            "default": "My value"
+          }
+        },
+        "required": []
       }
     },
     "required": [
-      "parameter"
+      "simpleString",
+      "enumerated"
     ]
   }
 }

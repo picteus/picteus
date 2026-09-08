@@ -91,7 +91,8 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Ask question",
+              "label": "Ask",
+              "name": "Ask with Ollama",
               "description": "Proposes to ask question to a Vision Language model."
             }
           ]
@@ -112,6 +113,7 @@
       "caption": {
         "type": "object",
         "title": "Caption",
+        "description": "The parameters for the auto-caption",
         "properties": {
           "enabled": {
             "type": "boolean",
@@ -169,6 +171,7 @@
       "tags": {
         "type": "object",
         "title": "Tags",
+        "description": "The parameters for the auto-tagging",
         "properties": {
           "enabled": {
             "type": "boolean",

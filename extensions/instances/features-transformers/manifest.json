@@ -45,8 +45,6 @@
     }
   ],
   "settings": {
-    "type": "object",
-    "properties": {},
-    "required": []
+    "type": "object"
   }
 }

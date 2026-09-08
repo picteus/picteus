@@ -76,7 +76,7 @@
         "enum": [
           "color-thief"
         ],
-        "title": "Color Extraction Library",
+        "title": "Extraction Library",
         "description": "Which library to use to extract the dominant colors of an image.",
         "default": "color-thief"
       },
@@ -84,15 +84,9 @@
         "type": "integer",
         "minimum": 2,
         "maximum": 20,
-        "title": "Number of Dominant Colors",
+        "title": "Dominant Colors",
         "description": "How many dominant colors to extract from each image.",
         "default": 8
-      },
-      "usePCA": {
-        "type": "boolean",
-        "title": "Enable PCA Dimensionality Reduction",
-        "description": "Reduces the embedding dimensionality using PCA for faster similarity search. Not yet available: the full vector is used until this is implemented.",
-        "default": false
       }
     },
     "required": [

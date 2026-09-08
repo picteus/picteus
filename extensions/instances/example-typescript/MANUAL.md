@@ -3,6 +3,12 @@ This is an example Picteus extension built with the TypeScript / Node.js SDK.
 
 It exposes some commands which are there to showcase how the Picteus application may be extended, both graphically and through automated processing.
 
+# Prerequisites
+There is no prerequisite for that extension.
+
+# Settings
+This is placeholder which is displayed in the extension detail page and in the extension settings dialog box.
+
 # logDimensions
 This showcases a command which takes 1 or multiple images, and which computes and logs their dimensions, which are visible in the bottom status bar of the application.
 

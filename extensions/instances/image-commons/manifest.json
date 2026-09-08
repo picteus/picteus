@@ -3,7 +3,7 @@
   "id": "image-commons",
   "version": "1.3.0",
   "name": "Image Commons",
-  "description": "Proposes common operations on images",
+  "description": "Proposes common operations on images.",
   "categories": [
     "utility"
   ],

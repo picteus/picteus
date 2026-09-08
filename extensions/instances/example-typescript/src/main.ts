@@ -23,7 +23,7 @@ import {
   type Versions
 } from "@picteus/extension-sdk";
 
-
+// TODO: add settings
 class TypeScriptExtension extends PicteusExtension
 {
 

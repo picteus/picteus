@@ -93,7 +93,7 @@ export default () =>
             <path d="M3 3v5h5" />
           </svg>
         </button>
-        {message && <span>{message}</span>}
+        {message && <span>{`${message} Have you read the extension details prerequisites instructions?`}</span>}
       </div>}
       {url && <iframe
         src={url}
