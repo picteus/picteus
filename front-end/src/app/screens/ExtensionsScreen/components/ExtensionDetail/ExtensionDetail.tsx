@@ -59,13 +59,15 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
   };
 
   const hasInstructions = extensionAndManual?.manual?.instructions !== undefined;
-  const summaryManual = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Summary");
-  const settingsManual = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Settings");
+  const manualSummary = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Summary");
+  const manualPrerequisites = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Prerequisites");
+  const manualSettings = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Settings");
 
   return (
     <Stack gap="md" m="sm" pos="relative">
-      {summaryManual && (<FieldValue name={t("field.manual")} value={<Markdown content={summaryManual}/>}/>)}
-      {settingsManual && (<FieldValue name={t("field.settings")} value={<Markdown content={settingsManual}/>}/>)}
+      {manualSummary && (<FieldValue name={t("field.manual")} value={<Markdown content={manualSummary}/>}/>)}
+      {manualPrerequisites && (<FieldValue name={t("field.prerequisites")} value={<Markdown content={manualPrerequisites}/>}/>)}
+      {manualSettings && (<FieldValue name={t("field.settings")} value={<Markdown content={manualSettings}/>}/>)}
       <FieldValue name={t("field.runtimes")} value={
         manifestRuntimes?.length > 0 ? (
           <Group gap="xs">

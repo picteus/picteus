@@ -29,23 +29,26 @@ export default function CommandForm({
   onSend
 }: CommandFormType): ReactElement
 {
-  const [ commandParameters, setCommandParameters ] = useState<object>();
-  const [ commandSpecification, setCommandSpecification ] = useState<ManifestExtensionCommandSpecification | undefined>();
-  const [ commandInstructions, setCommandInstructions ] = useState<string | undefined>();
+  const [ parameters, setParameters ] = useState<object>();
+  const [ specification, setSpecification ] = useState<ManifestExtensionCommandSpecification | undefined>();
+  const [ instructions, setInstructions ] = useState<string | undefined>();
   const { t, i18n } = useTranslation();
 
-  useKey("Enter", () => onSend(extensionId, command.id, commandParameters));
+  useKey("Enter", () => onSend(extensionId, command.id, parameters));
 
   useEffect(() =>
   {
-    void ExtensionsService.get({ id: extensionId }).then((extensionAndManual) =>
+    if (command.id)
     {
-      setCommandInstructions(extensionAndManual.manual?.instructions === undefined ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, command.id));
-      const manifestCommands = extensionAndManual.manifest.instructions.flatMap((instructions) => instructions.commands || []);
-      const manifestCommand = manifestCommands.find((manifestCommand) => manifestCommand.id === command.id);
-      const locale = i18n.language.split("-")[0];
-      setCommandSpecification(manifestCommand.specifications.find((specification) => specification.locale === locale) || manifestCommand.specifications.find((specification) => specification.locale === "en") || manifestCommand.specifications[0]);
-    }).catch(ToastService.apiCallError);
+      ExtensionsService.get({ id: extensionId }).then((extensionAndManual) =>
+      {
+        setInstructions(extensionAndManual.manual?.instructions === undefined ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, command.id));
+        const manifestCommands = extensionAndManual.manifest.instructions.flatMap((instructions) => instructions.commands || []);
+        const manifestCommand = manifestCommands.find((manifestCommand) => manifestCommand.id === command.id);
+        const locale = i18n.language.split("-")[0];
+        setSpecification(manifestCommand.specifications.find((specification) => specification.locale === locale) || manifestCommand.specifications.find((specification) => specification.locale === "en") || manifestCommand.specifications[0]);
+      }).catch(ToastService.apiCallError);
+    }
   }, [ extensionId ]);
 
   const form = command.form;
@@ -62,34 +65,35 @@ export default function CommandForm({
         {form.dialogContent.details && (
           <div className={style.details}><Markdown content={form.dialogContent.details}/></div>)}
       </Flex>)}
-        <Alert variant="default" color="transparent" my="sm" p="sm">
-          <Stack gap="sm">
-            {commandSpecification?.name && <Text fw={600} size="sm">{commandSpecification.name}</Text>}
-            {commandSpecification?.description && <Text size="sm" c="dimmed">{commandSpecification.description}</Text>}
-            {commandInstructions && (
-              <Accordion variant="contained" radius="sm">
-                <Accordion.Item value="manual">
-                  <Accordion.Control>
-                    <Text size="xs" fw={500}>
-                      {t("field.manual")}
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Markdown content={commandInstructions}/>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
-            )}
-          </Stack>
-        </Alert>
+      {command.id && <Alert variant="default" color="transparent" my="sm" p="sm">
+        <Stack gap="sm">
+          {specification?.name && <Text fw={600} size="sm">{specification.name}</Text>}
+          {specification?.description && <Text size="sm" c="dimmed">{specification.description}</Text>}
+          {instructions && (
+            <Accordion variant="contained" radius="sm">
+              <Accordion.Item value="manual">
+                <Accordion.Control>
+                  <Text size="xs" fw={500}>
+                    {t("field.manual")}
+                  </Text>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <Markdown content={instructions}/>
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion>
+          )}
+        </Stack>
+      </Alert>
+      }
       {searchFilter?.origin?.kind === SearchOriginNature.Images &&
         <ImagesCollection imageIds={searchFilter.origin.ids}/>}
-        {commandParameters && <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setCommandParameters}/>}
-        <Flex mt="md" align="flex-end" justify="flex-end" gap="sm">
-          <Button onClick={() => onSend(extensionId, command.id, commandParameters)}>
-            {t("button.send")}
-          </Button>
-        </Flex>
+      {form.parameters && <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setParameters}/>}
+      <Flex mt="md" align="flex-end" justify="flex-end" gap="sm">
+        <Button onClick={() => onSend(extensionId, command.id, parameters)}>
+          {t("button.send")}
+        </Button>
+      </Flex>
     </>
   );
 }

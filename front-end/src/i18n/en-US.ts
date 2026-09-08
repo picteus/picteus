@@ -95,6 +95,7 @@ export default {
     prompt: "Prompt",
     instructions: "Instructions",
     manual: "Manual",
+    prerequisites: "Prerequisites",
     settings: "Settings",
     author: "Author",
     image: "Image",

@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Alert, Button, Flex } from "@mantine/core";
+import { Accordion, Alert, Button, Flex, Stack, Text } from "@mantine/core";
 import { IconCircleX, IconInfoCircle } from "@tabler/icons-react";
 
 import { Extension, ExtensionSettings } from "@picteus/ws-client";
 
 
-import { ToastService } from "utils";
+import { extractMarkdownParagraph, ToastService } from "utils";
 import { ExtensionsService } from "app/services";
-import { extractSchemaAndUiSchema, RjsfForm } from "app/components";
+import { extractSchemaAndUiSchema, Markdown, RjsfForm } from "app/components";
 
 
 const propertiesName = "properties";
@@ -33,6 +33,15 @@ export default function ExtensionSettingsModal({
   const [ extensionSettings, setExtensionSettings ] = useState<ExtensionSettings>();
   const [ saveFailed, setSaveFailed ] = useState<boolean>(false);
   const [ isValid, setIsValid ] = useState<boolean>(true);
+  const [ instructions, setInstructions ] = useState<string | undefined>();
+
+  useEffect(() =>
+  {
+    void ExtensionsService.get({ id: extension.manifest.id }).then((extensionAndManual) =>
+    {
+      setInstructions(extensionAndManual.manual?.instructions === undefined ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Settings"));
+    }).catch(ToastService.apiCallError);
+  }, [ extension ]);
 
   async function load()
   {
@@ -114,7 +123,7 @@ export default function ExtensionSettingsModal({
       return undefined;
     }
     const { schema, uiSchema } = extractSchemaAndUiSchema(extension?.manifest.settings);
-    return <>
+    return <Stack gap="sm">
       <Alert mb="sm" icon={<IconInfoCircle/>}>
         <Trans
           i18nKey="extensionSettingsModal.warning"
@@ -122,6 +131,20 @@ export default function ExtensionSettingsModal({
           values={{ name: extension.manifest.name }}
         />
       </Alert>
+      {instructions &&
+        <Accordion variant="contained" radius="sm">
+          <Accordion.Item value="manual">
+            <Accordion.Control>
+              <Text size="xs" fw={500}>
+                {t("field.manual")}
+              </Text>
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Markdown content={instructions}/>
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
+      }
       <RjsfForm
         initialFormData={extensionSettings?.value}
         schema={schema}
@@ -149,13 +172,12 @@ export default function ExtensionSettingsModal({
           {t("button.save")}
         </Button>
       </Flex>
-    </>;
+    </Stack>;
   }
 
   function renderError()
   {
-    return (
-      hasSettings(extension, extensionSettings) === false && (
+    return (hasSettings(extension, extensionSettings) === false && (
         <>
           <Alert color="red" mb="sm" icon={<IconCircleX/>}>
             <Trans
