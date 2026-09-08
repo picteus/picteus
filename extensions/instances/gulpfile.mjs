@@ -12,7 +12,7 @@ const rootDirectoryPath = path.join(import.meta.dirname, ".");
 
 const extensionSdk = "extension-sdk";
 const nodeSdkScope = "picteus";
-const excludedPackagedExtensionIds = ["example-python", "example-typescript", "c2pa", "flux"];
+const excludedPackagedExtensionIds = ["example-python", "example-typescript", "c2pa", "flux", "freepik"];
 const picteusClientPackageName = `@${nodeSdkScope}/ws-client`;
 const packageJsonFileName = "package.json";
 const manifestFileName = "manifest.json";

@@ -134,7 +134,7 @@ export class ExtensionsUiServer
   {
     logger.debug("Instantiating an ExtensionsUiServer");
     // We need to copy the default icon into a temporary directory, otherwise sharp cannot operate with a file within the ASAR archive
-    const fileName = "extension-default-icon.png";
+    const fileName = "extension-default-icon.svg";
     this.defaultIconFilePath = path.join(getTemporaryDirectoryPath(), fileName);
     fs.copyFileSync(path.join(paths.serverDirectoryPath, "assets", fileName), this.defaultIconFilePath);
   }
@@ -186,23 +186,29 @@ export class ExtensionsUiServer
         if (fs.existsSync(path.join(manifest.directoryPath, iconSvg)) === true)
         {
           uiPath = iconSvg;
+          filePath = path.join(manifest.directoryPath, uiPath);
+        }
+        else if (fs.existsSync(path.join(manifest.directoryPath, iconPng)) === true)
+        {
+          uiPath = iconPng;
+          filePath = path.join(manifest.directoryPath, uiPath);
+          const formatAndBuffer = await resize("extension icon", filePath, "PNG", ExtensionsUiServer.iconEdgeInPixels, ExtensionsUiServer.iconEdgeInPixels, "inbox", undefined, undefined, true, false);
+          response.status(HttpStatus.OK).type(types.png).send(formatAndBuffer.buffer);
+          return;
         }
         else
         {
-          uiPath = iconPng;
+          // We use the default SVG logo
+          uiPath = iconSvg;
+          filePath = this.defaultIconFilePath;
         }
       }
-      filePath = path.join(manifest.directoryPath, uiPath);
-
-      // We handle the special elements
-      if (uiPath === iconPng)
+      else
       {
-        const actualFilePath = fs.existsSync(filePath) === false ? this.defaultIconFilePath : filePath;
-        const formatAndBuffer = await resize("extension icon", actualFilePath, "PNG", ExtensionsUiServer.iconEdgeInPixels, ExtensionsUiServer.iconEdgeInPixels, "inbox", undefined, undefined, true, false);
-        response.status(HttpStatus.OK).type(types.png).send(formatAndBuffer.buffer);
-        return;
+        filePath = path.join(manifest.directoryPath, uiPath);
       }
-      if (uiPath !== iconSvg && this.checkExtensionState(response, extensionId) === false)
+
+      if ((uiPath !== iconSvg && uiPath.endsWith(".svg") === false) && this.checkExtensionState(response, extensionId) === false)
       {
         return;
       }

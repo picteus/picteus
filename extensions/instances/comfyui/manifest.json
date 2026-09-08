@@ -66,23 +66,6 @@
               "description": "Loads in the ComfyUI instance the workflow that has been used to generate the image."
             }
           ]
-        },
-        {
-          "id": "analyzeComfyUiWorkflow",
-          "on": {
-            "entity": "Image",
-            "withTags": [
-              "comfyui"
-            ]
-          },
-          "specifications": [
-            {
-              "locale": "en",
-              "label": "Analyze",
-              "name": "Analyze ComfyUI workflow",
-              "description": "Analyzes the ComfyUI workflow of the image and shows the result to the user."
-            }
-          ]
         }
       ]
     }
@@ -94,7 +77,8 @@
         "type": "string",
         "format": "uri",
         "title": "URL",
-        "description": "The URL of the ComfyUI interface."
+        "description": "The URL of the ComfyUI interface.",
+        "default": "http://127.0.0.1:8188"
       },
       "directoryPath": {
         "type": "string",
@@ -103,7 +87,8 @@
       }
     },
     "required": [
-      "url"
+      "url",
+      "directoryPath"
     ]
   },
   "ui": {
