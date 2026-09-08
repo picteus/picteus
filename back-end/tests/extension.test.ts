@@ -128,16 +128,19 @@ describe("Extensions", () =>
       }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${this.extensionId}' is invalid because there is no extension with that identifier`, BAD_REQUEST, base.badParameterCode));
     }
 
-    async checkIcon(): Promise<void>
+    async checkIcon(shouldBePng: boolean = false): Promise<void>
     {
-      const response = await fetch(`${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${this.extensionId}/icon.png`);
+      const response = await fetch(`${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${this.extensionId}/icon`);
       const blob = await response.blob();
-      expect(blob.type).toEqual("image/png");
-      const buffer = Buffer.from((await blob.arrayBuffer()));
-      const metadata = await readMetadata(buffer);
-      expect(metadata.width).toEqual(24);
-      expect(metadata.height).toEqual(24);
-      expect(metadata.format).toEqual("PNG");
+      expect(blob.type).toEqual(`image/${shouldBePng === true ? "png" : "svg+xml"}`);
+      if (blob.type === "image/png")
+      {
+        const buffer = Buffer.from((await blob.arrayBuffer()));
+        const metadata = await readMetadata(buffer);
+        expect(metadata.width).toEqual(24);
+        expect(metadata.height).toEqual(24);
+        expect(metadata.format).toEqual("PNG");
+      }
     }
   }
 
@@ -1188,7 +1191,7 @@ describe("Extensions", () =>
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     zip.addFile("icon.png", Buffer.from("R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==", "base64"));
     await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
-    await builder.checker.checkIcon();
+    await builder.checker.checkIcon(true);
   });
 
   test("command icon", async () =>
