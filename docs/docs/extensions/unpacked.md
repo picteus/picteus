@@ -21,7 +21,9 @@ The Electron application (and the back-end application as well) exposes a comman
 When not explicitly specified on the command line, the default value of `<path>` is `<userHomeDirectory>/picteus`:
 - **Windows**: `C:\Users\<username>\picteus` (where `<userHomeDirectory>` is `C:\Users\<username>`) ;
 - **macOS**: `/Users/<username>/picteus` (where `<userHomeDirectory>` is `/Users/<username>`) ;
-- **Linux**: `/home/<username>/picteus` (where `<userHomeDirectory>` is `/home/<username>`).
+- **Linux**: `/home/<username>/picteus` (where `<userHomeDirectory>` is `/home/<username>`),
+
+where `<user>` represents the current user's login.
 
 ### Startup discovery and installation
 

@@ -1,4 +1,4 @@
-import { default as WrappedMarkdown } from "react-markdown";
+import { default as ReactMarkdown } from "react-markdown";
 
 
 type MarkdownType = {
@@ -9,6 +9,6 @@ export default function Markdown({ content }: MarkdownType)
 {
   return (
     // We need to handle the specific case the linebreak "<br>", because the library does not handle it properly by default
-    <WrappedMarkdown>{content.replace(/<br>/ig, "\n \n")}</WrappedMarkdown>
+    <ReactMarkdown>{content.replace(/<br>/ig, "\n \n")}</ReactMarkdown>
   );
 }

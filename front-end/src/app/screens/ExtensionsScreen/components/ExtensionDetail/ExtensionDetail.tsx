@@ -58,8 +58,14 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
     }
   };
 
+  const hasInstructions = extensionAndManual?.manual?.instructions !== undefined;
+  const summaryManual = hasInstructions === false ? null : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Summary");
+  const settingsManual = hasInstructions === false ? null : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Settings");
+
   return (
-    <Stack gap="md" pos="relative">
+    <Stack gap="md" m="sm" pos="relative">
+      {summaryManual && (<FieldValue name={t("field.manual")} value={<Markdown content={summaryManual}/>}/>)}
+      {settingsManual && (<FieldValue name={t("field.settings")} value={<Markdown content={settingsManual}/>}/>)}
       <FieldValue name={t("field.runtimes")} value={
         manifestRuntimes?.length > 0 ? (
           <Group gap="xs">
@@ -126,11 +132,6 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
           </Table>
         ) : <NoValue/>
       }/>
-      {extensionAndManual?.manual?.instructions && (
-        <FieldValue name={t("field.manual")} value={
-          <Markdown content={extractMarkdownParagraph(extensionAndManual.manual.instructions, "Summary")}/>
-        }/>
-      )}
     </Stack>
   );
 }
