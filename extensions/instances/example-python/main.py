@@ -14,7 +14,8 @@ from picteus_extension_sdk import PicteusExtension, InstructionReturnedError, Co
     IntentDialogIconSizeContent, IntentUISidebarIntegration, IntentUIModalIntegration, \
     IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
     IntentNotification, ActionIntent, IntentAction, ProcessCommandIntent, \
-    IntentProcessCommand, ToastIntent, IntentToast, Versions, CommandParameters, OpenBrowserIntent, IntentOpenBrowser
+    IntentProcessCommand, ToastIntent, IntentToast, Versions, CommandParameters, OpenBrowserIntent, IntentOpenBrowser, \
+    UiContainerBuilder
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -156,11 +157,20 @@ class PythonExtension(PicteusExtension):
     async def _compute_image_features(self, communicator: Communicator, image_id: str) -> None:
         communicator.send_log(f"Setting the features for the image with id '{image_id}'", "debug")
         self.get_image_api().image_set_features(id=image_id, extension_id=self.extension_id,
-                                                image_feature=[ImageFeature(type=ImageFeatureType.OTHER,
-                                                                            format=ImageFeatureFormat.STRING,
-                                                                            name="example",
-                                                                            value=ImageFeatureValue(
-                                                                                "This is a string"))])
+                                                image_feature=[
+                                                    ImageFeature(type=ImageFeatureType.OTHER,
+                                                                 format=ImageFeatureFormat.STRING,
+                                                                 name="example-string",
+                                                                 value=ImageFeatureValue(
+                                                                     "This is a string")),
+                                                    ImageFeature(type=ImageFeatureType.OTHER,
+                                                                 format=ImageFeatureFormat.UI,
+                                                                 name="example-ui",
+                                                                 value=ImageFeatureValue(
+                                                                     UiContainerBuilder().add_string_short(
+                                                                         "This is a string").to_string()))
+
+                                                ])
 
     async def _handle_ask_for_something(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         intent_parameters: Dict[str, Any] = \

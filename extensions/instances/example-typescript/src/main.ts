@@ -18,6 +18,7 @@ import {
   type ProcessCommandIntent,
   type SettingsValue,
   type ShowIntent,
+  UiContainer,
   type UiIntent,
   type Versions
 } from "@picteus/extension-sdk";
@@ -236,12 +237,20 @@ class TypeScriptExtension extends PicteusExtension
     await this.getImageApi().imageSetFeatures({
       extensionId: this.extensionId,
       id: imageId,
-      imageFeature: [ {
-        type: ImageFeatureType.Other,
-        format: ImageFeatureFormat.String,
-        name: "example",
-        value: "This is a string"
-      } ]
+      imageFeature: [
+        {
+          type: ImageFeatureType.Other,
+          format: ImageFeatureFormat.String,
+          name: "example-string",
+          value: "This is a string"
+        },
+        {
+          type: ImageFeatureType.Other,
+          format: ImageFeatureFormat.Ui,
+          name: "example-ui",
+          value: UiContainer.builder().addStringShort("This is a string").toString()
+        }
+      ]
     });
   }
 
