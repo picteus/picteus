@@ -59,8 +59,8 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
   };
 
   const hasInstructions = extensionAndManual?.manual?.instructions !== undefined;
-  const summaryManual = hasInstructions === false ? null : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Summary");
-  const settingsManual = hasInstructions === false ? null : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Settings");
+  const summaryManual = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Summary");
+  const settingsManual = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Settings");
 
   return (
     <Stack gap="md" m="sm" pos="relative">
@@ -103,9 +103,7 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
               {commands.map((command, index) =>
               {
                 const commandSpecification = getCommandSpecification(command);
-                const commandInstructions = extensionAndManual?.manual?.instructions
-                  ? extractMarkdownParagraph(extensionAndManual.manual.instructions, command.id)
-                  : null;
+                const commandInstructions = extensionAndManual?.manual?.instructions ? extractMarkdownParagraph(extensionAndManual.manual.instructions, command.id) : undefined;
 
                 return (
                   <Table.Tr key={index}>

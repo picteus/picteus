@@ -48,7 +48,7 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
     }
   }
 
-  function callCommand(extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void)
+  function callCommand(extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void): Promise<void>
   {
     console.debug(`Triggering command '${command.id}' of extension '${extensionId}'`);
     const form = command.form;
@@ -62,10 +62,6 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
         onCompleted(wasAborted);
       }
     };
-    if (form?.parameters === undefined)
-    {
-      return handleOnSendCommand(extensionId, command.id, undefined, searchFilter, onRunning).then(() => handleOnCompleted(false));
-    }
 
     addModal({
       id: modalId,
@@ -88,6 +84,7 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
         handleOnCompleted(viaOnSuccess === false);
       }
     });
+    return;
   }
 
   return callCommand;

@@ -1,4 +1,4 @@
-export function extractMarkdownParagraph(markdown: string, paragraphTitle: string): string | null
+export function extractMarkdownParagraph(markdown: string, paragraphTitle: string): string | undefined
 {
   const lines = markdown.split("\n");
   let inCodeBlock = false;
@@ -46,5 +46,5 @@ export function extractMarkdownParagraph(markdown: string, paragraphTitle: strin
     }
   }
 
-  return capturing ? resultLines.join("\n").trim() : null;
+  return capturing ? resultLines.join("\n").trim() : undefined;
 }
