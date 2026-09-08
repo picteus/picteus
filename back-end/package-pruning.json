@@ -18,6 +18,7 @@
   "!**/*.md",
   "!**/*.html",
   "!**/{doc,docs}/",
+  "yaml/dist/doc/**",
   "!**/{bower.json,.npmignore}",
   "@nestjs/swagger/**/*",
   "!class-validator/node_modules/**/*",
