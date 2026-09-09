@@ -19,6 +19,8 @@ import {
 import Timers from "node:timers";
 import { text } from "node:stream/consumers";
 
+import { Logger } from "winston";
+
 import { logger } from "../../logger";
 import { getTemporaryDirectoryPath } from "./downloader";
 
@@ -332,7 +334,8 @@ const getNodeWatchdogPreloadScript: () => string = (function (): () => string
     if (nodeWatchdogPreloadFilePath === undefined)
     {
       nodeWatchdogPreloadFilePath = path.join(getTemporaryDirectoryPath(), "nodeWatchdogPreload.cjs");
-      const nodeWatchdogBootstrapCode = `
+      // TODO: to remove once the new implementation is confirmed
+      const previousNodeWatchdogBootstrapCode = `
 // @ts-nocheck
 // Zero-Code-Change Preload Watchdog for Node.js child processes
 // This script is preloaded via Node's -r CLI flag.
@@ -406,6 +409,181 @@ const getNodeWatchdogPreloadScript: () => string = (function (): () => string
   watchdogInterval.unref();
 })();
 `.trim();
+      const nodeWatchdogBootstrapCode = `
+// watchdog.mjs — parent-death watchdog for Node.js child processes.
+//
+// Preload with either:
+//     node --import ./watchdog.mjs main.js      (preferred on Node >= 20.6)
+//     node --require ./watchdog.mjs main.js     (works on Node >= 22 via require(esm))
+//
+// Terminates this process as soon as the process that spawned it disappears,
+// on macOS, Linux and Windows. It deliberately does NOT treat stdin EOF as
+// parent death, and it never keeps an otherwise-finished process alive.
+
+const fs = require("node:fs");
+const process = require("node:process");
+const {isMainThread} = require("node:worker_threads");
+
+
+function main(pollIntervalInMilliseconds, exitCode, usesHardKill, doesWatchStdin, withDebugLogs)
+{
+  // Synchronous, so nothing is lost when process.exit() truncates pending writes.
+  function trace(message)
+  {
+    if (withDebugLogs !== true)
+    {
+      return;
+    }
+    try
+    {
+      fs.writeSync(2, "[watchdog:" + process.pid + "] " + message + "\\n");
+    }
+    catch
+    {
+      // A closed or broken stderr must never take the host process down.
+    }
+  }
+
+  function install()
+  {
+    const initialParentPid = process.ppid;
+    const canProbeParent = Number.isInteger(initialParentPid) && initialParentPid > 1;
+    trace("installing with parent PID '" + initialParentPid + "'");
+    let isTerminating = false;
+
+    const terminate = (reason) =>
+    {
+      if (isTerminating === true)
+      {
+        return;
+      }
+      isTerminating = true;
+      trace("parent gone (" + reason + ") -> exiting with " + exitCode);
+
+      if (usesHardKill === true)
+      {
+        // Bypasses 'exit' listeners and any SIGTERM handler the host installed.
+        try
+        {
+          process.kill(process.pid, "SIGKILL");
+        }
+        catch
+        {
+          // Fall through to the clean exit below.
+        }
+      }
+      process.exit(exitCode);
+    };
+
+    // ---------------------------------------------------------------------------
+    // 1. IPC channel — instant and race-free. Present when the process was created
+    //    by child_process.fork(), or by spawn() with 'ipc' in its stdio array.
+    //    Fires when the parent dies or calls child.disconnect().
+    // ---------------------------------------------------------------------------
+    if (process.channel)
+    {
+      process.on("disconnect", () => terminate("ipc disconnect"));
+
+      // Attaching a 'disconnect' or 'message' listener ref-counts the underlying
+      // pipe handle (lib/internal/child_process.js, control.refCounted()). Undo it
+      // so this watchdog cannot, by itself, prevent a normal exit.
+      try
+      {
+        process.channel.unref();
+      }
+      catch
+      {
+        // Older runtimes may not expose ref/unref on the channel.
+      }
+    }
+
+    // ---------------------------------------------------------------------------
+    // 2. Parent liveness polling — the portable fallback. Covers plain spawn(),
+    //    a parent killed with SIGKILL, and a parent that crashed outright.
+    // ---------------------------------------------------------------------------
+    if (canProbeParent === true)
+    {
+      const parentIsGone = () =>
+      {
+        // POSIX fast path: an orphan is reparented to init/launchd (or to the
+        // nearest subreaper), so a changed ppid proves the original parent died.
+        // Treated as a bonus only: a stale reading is never taken as "alive".
+        if (process.platform !== "win32" && process.ppid !== initialParentPid)
+        {
+          return true;
+        }
+
+        try
+        {
+          process.kill(initialParentPid, 0);
+          return false;
+        }
+        catch (error)
+        {
+          // ESRCH  -> no such process, the parent is gone.
+          // EPERM  -> it exists but we may not signal it, so it is alive.
+          return error?.code === "ESRCH";
+        }
+      };
+
+      if (parentIsGone() === true)
+      {
+        // The parent died between spawn and preload; do not even start the app.
+        terminate("parent already gone at preload");
+      }
+      else
+      {
+        const watchdogInterval = setInterval(
+          () =>
+          {
+            if (parentIsGone() === true)
+            {
+              terminate("parent pid vanished");
+            }
+          },
+          pollIntervalInMilliseconds
+        );
+        watchdogInterval.unref();
+      }
+    }
+    else
+    {
+      trace("no usable parent pid (" + initialParentPid + "), relying on ipc only");
+    }
+
+    // ---------------------------------------------------------------------------
+    // 3. stdin EOF — OPT-IN, because it is not parent death.
+    //    It also fires under stdio:'ignore', under an inherited non-TTY stdin, and
+    //    whenever the parent simply closes the pipe. resume() additionally consumes
+    //    stdin, so never enable this if the host application reads stdin itself.
+    // ---------------------------------------------------------------------------
+    if (doesWatchStdin === true && process.stdin && process.stdin.isTTY !== true)
+    {
+      process.stdin.on("end", () => terminate("stdin end"));
+      process.stdin.on("close", () => terminate("stdin close"));
+      process.stdin.on("error", () => terminate("stdin error"));
+      process.stdin.resume();
+      process.stdin.unref();
+    }
+  }
+
+  // Workers inherit execArgv, so the preload runs there too. process.exit() from a worker would take down the whole process, so only arm this on the main thread.
+  if (isMainThread === true)
+  {
+    try
+    {
+      install();
+    }
+    catch (error)
+    {
+      trace("install failed: " + (error?.message ?? error));
+    }
+  }
+
+}
+
+main(250, 0, false, true, true);
+`.trim();
       fs.writeFileSync(nodeWatchdogPreloadFilePath, nodeWatchdogBootstrapCode, { encoding: "utf8" });
     }
     return nodeWatchdogPreloadFilePath;
@@ -449,11 +627,31 @@ export function fork(modulePath: string, parameters: string[], cwd?: string, std
 
 export function forkWithWatchdog(modulePath: string, parameters: string[], cwd?: string, stdio?: StdioOptions | null, execArgv?: string[]): ChildProcess
 {
-  return fork(modulePath, parameters, cwd, stdio === null ? null : (stdio ?? "pipe"), [ "-r", getNodeWatchdogPreloadScript(), ...(execArgv ?? []) ], {
+  return fork(modulePath, parameters, cwd, stdio === null ? null : (stdio ?? "pipe"), [ "--require", getNodeWatchdogPreloadScript(), ...(execArgv ?? []) ], {
     loggedIndications: "via a termination watch dog",
     loggedCommand: computeCommand(modulePath, parameters)
   });
 }
+
+
+export function logStds(aProcess: ChildProcess, logger?: Logger): void
+{
+  if (aProcess.stdout !== null)
+  {
+    aProcess.stdout.on("data", (data: Buffer) =>
+    {
+      (logger ?? console).info(`Process with id '${aProcess.pid}' logged on stdout '${data.toString().trim()}'`);
+    });
+  }
+  if (aProcess.stderr !== null)
+  {
+    aProcess.stderr.on("data", (data: Buffer) =>
+    {
+      (logger ?? console).warn(`Process with id '${aProcess.pid}' logged on stderr '${data.toString().trim()}'`);
+    });
+  }
+}
+
 
 export async function waitForWithOutputs(childProcess: ChildProcess): Promise<ProcessResult>
 {

@@ -212,7 +212,7 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
       });
       const stdout = childProcess.stdout!;
       const stderr = childProcess.stderr!;
-      const listener = (chunk: any) =>
+      const listener = (chunk: Buffer) =>
       {
         const log = chunk.toString();
         if (log.indexOf("is not available") !== -1)

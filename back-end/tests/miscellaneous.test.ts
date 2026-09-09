@@ -41,6 +41,7 @@ import {
   isProcessAlive,
   killProcess,
   killProcessViaId,
+  logStds,
   ProcessResult,
   spawn,
   spawnNodeWithWatchdog,
@@ -276,9 +277,10 @@ describe("Miscellaneous bare", () =>
       const testScriptFilePath = path.join(directoryPath, testScriptFileName);
       const outputFileName = "output.txt";
       const outputFilePath = path.join(directoryPath, outputFileName);
-      fs.writeFileSync(testScriptFilePath, `const fs = require("node:fs");\nfs.writeFileSync("${outputFileName}", process.argv.slice(2).join(" "), { encoding: "utf8" });\n`, { encoding: "utf8" });
+      fs.writeFileSync(testScriptFilePath, `const fs = require("node:fs");\nconsole.log("Process started");\nfs.writeFileSync("${outputFileName}", process.argv.slice(2).join(" "), { encoding: "utf8" });\nnew Promise((resolve) => { setTimeout(resolve, ${Core.fastestIntervalInMilliseconds * 30}); });\n`, { encoding: "utf8" });
       const testArguments = [ "alpha", "beta", "gamma" ];
       const directChildProcess = spawnNodeWithWatchdog(process.execPath, [ testScriptFilePath, ...testArguments ], directoryPath, undefined);
+      logStds(directChildProcess, logger);
       await waitFor(directChildProcess);
 
       expect(directChildProcess.exitCode).toBe(0);
@@ -311,8 +313,10 @@ const workingDirectory = ${JSON.stringify(directoryPath)};
 {
   try
   {
-    const { spawnNodeWithWatchdog } = await import(pathToFileURL(targetModulePath).href);
+    console.log("Parent process started");
+    const { spawnNodeWithWatchdog, logStds } = await import(pathToFileURL(targetModulePath).href);
     const childProcess = spawnNodeWithWatchdog(process.execPath, [ childScriptPath ], workingDirectory);
+    logStds(childProcess);
     fs.writeFileSync(childPidPath, String(childProcess.pid), { encoding: "utf8" });
   }
   catch (error)
@@ -328,6 +332,7 @@ setTimeout(() => {}, 1_000_000);
       const nodeArguments = [ "--loader", "ts-node/esm", "--experimental-specifier-resolution=node", "--eval" ];
       const nodeEnvironment = { TS_NODE_TRANSPILE_ONLY: "true" };
       const parentProcess = spawn(process.execPath, [ ...nodeArguments, intermediateParentJavaScript ], paths.serverDirectoryPath, nodeEnvironment, false, "pipe");
+      logStds(parentProcess, logger);
 
       // We wait until the child Node.js process has started and written its PID and heartbeat
       await core.waitUntil(async () =>
@@ -336,11 +341,14 @@ setTimeout(() => {}, 1_000_000);
       });
 
       const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
-      const childProcessId = Number.parseInt(childPidString, 10);
+      const childProcessId = Number.parseInt(childPidString);
       expect(Number.isNaN(childProcessId)).toBe(false);
 
       // We verify the child is running
       expect(isProcessAlive(childProcessId)).toBe(true);
+
+      // We wait for some time
+      await core.wait(Core.fastestIntervalInMilliseconds * 30);
 
       // We abruptly terminate the intermediate parent with SIGKILL
       const parentProcessId = parentProcess.pid!;
@@ -371,9 +379,10 @@ setTimeout(() => {}, 1_000_000);
       const testScriptFilePath = path.join(directoryPath, testScriptFileName);
       const outputFileName = "output_fork.txt";
       const outputFilePath = path.join(directoryPath, outputFileName);
-      fs.writeFileSync(testScriptFilePath, `const fs = require("node:fs");\nfs.writeFileSync("${outputFileName}", process.argv.slice(2).join(" "), { encoding: "utf8" });\n`, { encoding: "utf8" });
+      fs.writeFileSync(testScriptFilePath, `const fs = require("node:fs");\nconsole.log("Process started");\nfs.writeFileSync("${outputFileName}", process.argv.slice(2).join(" "), { encoding: "utf8" });\nnew Promise((resolve) => { setTimeout(resolve, ${Core.fastestIntervalInMilliseconds * 30}); });\n`, { encoding: "utf8" });
       const testArguments = [ "delta", "epsilon", "zeta" ];
       const directChildProcess = forkWithWatchdog(testScriptFilePath, [ ...testArguments ], directoryPath);
+      logStds(directChildProcess, logger);
       await waitFor(directChildProcess);
 
       expect(directChildProcess.exitCode).toBe(0);
@@ -406,8 +415,10 @@ const workingDirectory = ${JSON.stringify(directoryPath)};
 {
   try
   {
-    const { forkWithWatchdog } = await import(pathToFileURL(targetModulePath).href);
+    console.log("Parent process started");
+    const { forkWithWatchdog, logStds } = await import(pathToFileURL(targetModulePath).href);
     const childProcess = forkWithWatchdog(childScriptPath, [], workingDirectory);
+    logStds(childProcess);
     fs.writeFileSync(childPidPath, String(childProcess.pid), { encoding: "utf8" });
   }
   catch (error)
@@ -423,6 +434,7 @@ setTimeout(() => {}, 1_000_000);
       const nodeArguments = [ "--loader", "ts-node/esm", "--experimental-specifier-resolution=node", "--eval" ];
       const nodeEnvironment = { TS_NODE_TRANSPILE_ONLY: "true" };
       const parentProcess = spawn(process.execPath, [ ...nodeArguments, intermediateParentJavaScript ], paths.serverDirectoryPath, nodeEnvironment, false, "pipe");
+      logStds(parentProcess, logger);
 
       // We wait until the child Node.js process has started and written its PID and heartbeat
       await core.waitUntil(async () =>
@@ -431,11 +443,14 @@ setTimeout(() => {}, 1_000_000);
       });
 
       const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
-      const childProcessId = Number.parseInt(childPidString, 10);
+      const childProcessId = Number.parseInt(childPidString);
       expect(Number.isNaN(childProcessId)).toBe(false);
 
       // We verify the child is running
       expect(isProcessAlive(childProcessId)).toBe(true);
+
+      // We wait for some time
+      await core.wait(Core.fastestIntervalInMilliseconds * 30);
 
       // We abruptly terminate the intermediate parent with SIGKILL
       const parentProcessId = parentProcess.pid!;
