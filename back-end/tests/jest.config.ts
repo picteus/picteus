@@ -17,6 +17,10 @@ export default {
   ...createDefaultEsmPreset({ tsconfig: testTsConfigJsonFilePath }),
   testEnvironment: "node",
   rootDir: rootDirectoryPath,
+  reporters: [
+    "<rootDir>/tests/utils/inlineReporter.ts",
+    "summary"
+  ],
   // The mappings after the first one are there to solve an issue caused by the Prisma generated client "client.ts" class code, which resorts to '.js' extensions in its import statements, and the work-around is taken from https://github.com/kulshekhar/ts-jest/issues/1057. Unfortunately, we cannot apply the  "(.+)\\.js": "$1" mapping, because this breaks other things
   moduleNameMapper: {
     ...moduleNameMapper,

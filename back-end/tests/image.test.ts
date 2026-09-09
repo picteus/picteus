@@ -65,7 +65,7 @@ import { ImageAttachmentService } from "../src/services/app.service";
 import { Base, Core, Defaults, ImageFeeder } from "./base";
 import { EventEntity, ImageEventAction, NotifierService } from "../src/services/notifierService";
 import waitForExpect from "wait-for-expect";
-import { ChromaServerInstance, startChromaServer } from "./chromaServer";
+import { ChromaServerInstance, startChromaServer } from "./utils/chromaServer";
 import { pickPort } from "pick-port";
 import { getPythonFilePath, pythonVersion } from "../src/services/utils/pythonWrapper";
 
