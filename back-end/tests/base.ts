@@ -95,8 +95,7 @@ function computePaths(): { directoryPath: string; rootDirectoryPath: string }
       const tokens = nodePathEnvironmentVariableValue.split(path.delimiter);
       const nodePath = path.resolve(tokens[tokens.length - 1]);
       logger.warn(`Creating a symbolic link to fix the '${nodePathEnvironmentVariableName}' environment variable from '${nodePath}' to '${backendBuildNodeModulesDirectoryPath}'`);
-      const symlinkType = process.platform === "win32" ? "junction" : "dir";
-      fs.symlinkSync(nodePath, backendBuildNodeModulesDirectoryPath, symlinkType);
+      fs.symlinkSync(nodePath, backendBuildNodeModulesDirectoryPath, process.platform === "win32" ? "junction" : "dir");
     }
   }
   paths.workersDirectoryPath = path.join(backendDirectoryPath, "src", "workers");
