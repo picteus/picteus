@@ -582,7 +582,7 @@ function main(pollIntervalInMilliseconds, exitCode, usesHardKill, doesWatchStdin
 
 }
 
-main(250, 0, false, true, true);
+main(250, 0, false, false, true);
 `.trim();
       fs.writeFileSync(nodeWatchdogPreloadFilePath, nodeWatchdogBootstrapCode, { encoding: "utf8" });
     }

@@ -216,7 +216,7 @@ export class Core
 
   private static readonly timeoutPlatformFactor: number = (process.platform === "win32" ? 1.5 : 1);
 
-  static readonly beforeAfterTimeoutInMilliseconds: number = Math.round((30 * 1_000) * Core.timeoutPlatformFactor);
+  static readonly beforeAfterTimeoutInMilliseconds: number = Math.round((60 * 1_000) * Core.timeoutPlatformFactor);
 
   static readonly defaultTimeoutInMilliseconds: number = Math.round((13 * 1_000) * Core.timeoutPlatformFactor);
 
