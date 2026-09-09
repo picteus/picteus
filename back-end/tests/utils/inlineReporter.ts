@@ -1,9 +1,17 @@
 import type { Reporter, Test, TestCaseResult, TestResult } from "@jest/reporters";
+import type { Circus } from "@jest/types";
 import chalk, { type Chalk } from "chalk";
+
+import { logger } from "../../src/logger.ts";
 
 
 export default class InlineTestReporter implements Reporter
 {
+
+  onTestCaseStart(test: Test, testCaseStartInfo: Circus.TestCaseStartInfo): void
+  {
+    logger.info(`\n---\nRunning the '${testCaseStartInfo.fullName}' test\n---`);
+  }
 
   onTestCaseResult(test: Test, testCaseResult: TestCaseResult): void
   {

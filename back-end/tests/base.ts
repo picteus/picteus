@@ -248,7 +248,7 @@ export class Core
 
   async beforeEach(): Promise<void>
   {
-    logger.info(`\n---\nRunning the '${expect.getState().currentTestName}' test\n---`);
+    logger.debug("Running the 'beforeEach'");
     this.workingDirectoryPath = path.join(Core.testsDirectoryPath, `${randomUUID().substring(0, 13)}`);
     fs.mkdirSync(this.workingDirectoryPath, { recursive: true });
     logger.debug(`Using the working directory with path '${this.workingDirectoryPath}'`);
@@ -256,7 +256,7 @@ export class Core
 
   async afterEach(): Promise<void>
   {
-    logger.debug(`\n---\nCleaning up the '${expect.getState().currentTestName}' test\n---`);
+    logger.debug("Running the 'afterEach'");
     for (const interval of this.intervals)
     {
       Timers.clearInterval(interval);
