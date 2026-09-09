@@ -340,6 +340,7 @@ export async function move(sourcePath: string, destinationPath: string, options:
       {
         // This is expected because "EXDEV" means cross-device
         fs.copyFileSync(sourcePath, destinationPath, overwrite === true ? constants.COPYFILE_FICLONE : constants.COPYFILE_EXCL);
+        fs.unlinkSync(sourcePath);
       }
       else
       {

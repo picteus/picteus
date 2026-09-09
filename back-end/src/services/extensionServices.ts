@@ -722,7 +722,7 @@ export class ExtensionService
         {
           this.extensionsRegistry.writeExtensionState(inflationDirectoryPath, ExtensionState.Paused);
         }
-        fs.renameSync(inflationDirectoryPath, extensionDirectoryPath);
+        await move(inflationDirectoryPath, extensionDirectoryPath);
         await this.prepareRuntimes(manifest.id, extensionDirectoryPath, manifest.runtimes, true, false);
         for (const runtime of [ ...new Map(manifest.runtimes.map(runtime => [ runtime.environment, runtime ])).values() ])
         {
