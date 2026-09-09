@@ -3,9 +3,9 @@ import { ChildProcess } from "node:child_process";
 
 import { ChromaDBContainer, StartedChromaDBContainer } from "@testcontainers/chromadb";
 
-import { logger } from "../src/logger";
-import { killProcess } from "../src/services/utils/processWrapper";
-import { VectorDatabaseProvider } from "../src/services/app.service";
+import { logger } from "../../src/logger";
+import { killProcess } from "../../src/services/utils/processWrapper";
+import { VectorDatabaseProvider } from "../../src/services/app.service";
 
 
 export interface StartChromaTestcontainersOptions

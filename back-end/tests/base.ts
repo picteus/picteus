@@ -594,11 +594,20 @@ export class Base extends Core
     paths.sdkDirectoryPath = path.join(Base.rootDirectoryPath, "build", "sdk");
   }
 
+  hasModule(): boolean
+  {
+    return this.moduleRef !== undefined;
+  }
+
   getModuleProvider<Provider extends object>(type: Type<Provider>, notViaProxy: boolean = false): Provider
   {
     if (this.resortToProxy === false || notViaProxy === true)
     {
-      return this.moduleRef!.get<Provider, Provider>(type);
+      if (this.moduleRef === undefined)
+      {
+        throw new Error(`Cannot retrieve the '${type.name}' provider because the Nest module is not initialized`);
+      }
+      return this.moduleRef.get<Provider, Provider>(type);
     }
     return this.controllerProxy!.createProxy(type);
   }

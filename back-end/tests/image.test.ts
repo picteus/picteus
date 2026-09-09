@@ -428,12 +428,21 @@ describe("Image with module", () =>
 
   afterEach(async () =>
   {
-    const extensions = await base.getExtensionController().list();
-    for (const extension of extensions)
+    try
     {
-      await base.getVectorDatabaseAccessor().deleteExtensionEmbeddings(extension.manifest.id);
+      if (base.hasModule() === true)
+      {
+        const extensions = await base.getExtensionController().list();
+        for (const extension of extensions)
+        {
+          await base.getVectorDatabaseAccessor().deleteExtensionEmbeddings(extension.manifest.id);
+        }
+      }
     }
-    await base.afterEach();
+    finally
+    {
+      await base.afterEach();
+    }
   }, Core.beforeAfterTimeoutInMilliseconds);
 
   afterAll(async () =>

@@ -1,4 +1,4 @@
-import type { Reporter, Test, TestCaseResult } from "@jest/reporters";
+import type { Reporter, Test, TestCaseResult, TestResult } from "@jest/reporters";
 import chalk, { type Chalk } from "chalk";
 
 
@@ -18,28 +18,28 @@ export default class InlineTestReporter implements Reporter
     switch (testCaseResult.status)
     {
       case "passed":
-        statusText = "success";
+        statusText = "SUCCESS";
         chalkColor = chalk.green;
         statusSymbol = "✓";
         break;
       case "failed":
-        statusText = "failure";
+        statusText = "FAILURE";
         chalkColor = chalk.red;
         statusSymbol = "✕";
         break;
       case "skipped":
       case "pending":
-        statusText = "skipped";
+        statusText = "SKIPPED";
         chalkColor = chalk.yellow;
         statusSymbol = "○";
         break;
       case "todo":
-        statusText = "todo";
+        statusText = "TODO";
         chalkColor = chalk.magenta;
         statusSymbol = "✎";
         break;
       default:
-        statusText = "unknown";
+        statusText = "UNKNOWN";
         chalkColor = chalk.dim;
         statusSymbol = "•";
         break;
@@ -52,6 +52,19 @@ export default class InlineTestReporter implements Reporter
       for (const failureMessage of testCaseResult.failureMessages)
       {
         console.log(chalk.red(failureMessage));
+      }
+    }
+  }
+
+  onTestResult(test: Test, testResult: TestResult): void
+  {
+    if (testResult.testExecError !== undefined)
+    {
+      console.error(chalk.red(`\n=> [FAILURE] ✕ Test suite execution error in ${test.path}:`));
+      console.error(chalk.red(testResult.testExecError.message));
+      if (testResult.testExecError.stack !== undefined)
+      {
+        console.error(chalk.red(testResult.testExecError.stack));
       }
     }
   }
