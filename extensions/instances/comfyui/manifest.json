@@ -1,7 +1,7 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "comfyui",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "name": "ComfyUI",
   "description": "Interacts with ComfyUI.",
   "categories": [
@@ -83,7 +83,10 @@
       "directoryPath": {
         "type": "string",
         "title": "Directory path",
-        "description": "The path of the root directory where ComfyUI is installed."
+        "description": "The path of the root directory where ComfyUI is installed.",
+        "ui": {
+          "widget": "directory"
+        }
       }
     },
     "required": [

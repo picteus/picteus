@@ -1,10 +1,13 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "ollama",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "name": "Ollama",
   "description": "Computes the caption features of an image through Vision Languages (VL) through Ollama.",
-  "categories": ["enrichment", "integration"],
+  "categories": [
+    "enrichment",
+    "integration"
+  ],
   "runtimes": [
     {
       "environment": "node"

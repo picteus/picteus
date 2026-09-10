@@ -1,7 +1,7 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
   "id": "bria",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "name": "Bria",
   "description": "Removes background from images.",
   "categories": [
