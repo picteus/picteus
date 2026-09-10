@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { Box, Text } from "@mantine/core";
+import { Stack, Text } from "@mantine/core";
 
 
 type FieldValueType = {
@@ -9,8 +9,8 @@ type FieldValueType = {
 
 export default function FieldValue({ name, value }: FieldValueType)
 {
-  return (<Box>
+  return (<Stack gap="sm">
     <Text size="sm" fw={600} c="dimmed">{name}</Text>
     {value}
-  </Box>);
+  </Stack>);
 }

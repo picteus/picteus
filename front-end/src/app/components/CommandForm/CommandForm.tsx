@@ -1,5 +1,5 @@
 import { type ReactElement, useEffect, useState } from "react";
-import { Accordion, Alert, Button, Flex, Stack, Text } from "@mantine/core";
+import { Alert, Button, Flex, Stack, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { ManifestExtensionCommandSpecification, SearchFilter, SearchOriginNature } from "@picteus/ws-client";
@@ -8,7 +8,7 @@ import { UiCommandType } from "types";
 import { extractMarkdownParagraph, ToastService } from "utils";
 import { useKey } from "app/hooks";
 import { ExtensionsService } from "app/services";
-import { ImagesCollection, Markdown, RjsfForm } from "app/components";
+import { ImagesCollection, Manual, Markdown, RjsfForm } from "app/components";
 
 import { extractSchemaAndUiSchema } from "../RjsfForm/RjsfForm.tsx";
 
@@ -69,20 +69,7 @@ export default function CommandForm({
         <Stack gap="sm">
           {specification?.name && <Text fw={600} size="sm">{specification.name}</Text>}
           {specification?.description && <Text size="sm" c="dimmed">{specification.description}</Text>}
-          {instructions && (
-            <Accordion variant="contained" radius="sm">
-              <Accordion.Item value="manual">
-                <Accordion.Control>
-                  <Text size="xs" fw={500}>
-                    {t("field.manual")}
-                  </Text>
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <Markdown content={instructions}/>
-                </Accordion.Panel>
-              </Accordion.Item>
-            </Accordion>
-          )}
+          {instructions && <Manual content={instructions}/>}
         </Stack>
       </Alert>
       }

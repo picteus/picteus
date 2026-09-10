@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Accordion, Alert, Button, Flex, Stack, Text } from "@mantine/core";
+import { Alert, Button, Flex, Stack } from "@mantine/core";
 import { IconCircleX, IconInfoCircle } from "@tabler/icons-react";
 
 import { Extension, ExtensionSettings } from "@picteus/ws-client";
@@ -8,7 +8,7 @@ import { Extension, ExtensionSettings } from "@picteus/ws-client";
 
 import { extractMarkdownParagraph, ToastService } from "utils";
 import { ExtensionsService } from "app/services";
-import { extractSchemaAndUiSchema, Markdown, RjsfForm } from "app/components";
+import { extractSchemaAndUiSchema, Manual, RjsfForm } from "app/components";
 
 
 const propertiesName = "properties";
@@ -131,20 +131,7 @@ export default function ExtensionSettingsModal({
           values={{ name: extension.manifest.name }}
         />
       </Alert>
-      {instructions &&
-        <Accordion variant="contained" radius="sm">
-          <Accordion.Item value="manual">
-            <Accordion.Control>
-              <Text size="xs" fw={500}>
-                {t("field.manual")}
-              </Text>
-            </Accordion.Control>
-            <Accordion.Panel>
-              <Markdown content={instructions}/>
-            </Accordion.Panel>
-          </Accordion.Item>
-        </Accordion>
-      }
+      {instructions && <Manual content={instructions}/>}
       <RjsfForm
         initialFormData={extensionSettings?.value}
         schema={schema}

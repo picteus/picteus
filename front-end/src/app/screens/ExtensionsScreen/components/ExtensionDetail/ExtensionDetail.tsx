@@ -13,7 +13,7 @@ import { IconLibraryPhoto, IconPhoto, IconServer } from "@tabler/icons-react";
 
 import { extractMarkdownParagraph, ToastService } from "utils";
 import { ExtensionsService } from "app/services";
-import { CommandIcon, FieldValue, Markdown, NoValue } from "app/components";
+import { CommandIcon, FieldValue, Manual, Markdown, NoValue } from "app/components";
 
 
 type ExtensionDetailProps = {
@@ -66,7 +66,8 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
   return (
     <Stack gap="md" m="sm" pos="relative">
       {manualSummary && (<FieldValue name={t("field.manual")} value={<Markdown content={manualSummary}/>}/>)}
-      {manualPrerequisites && (<FieldValue name={t("field.prerequisites")} value={<Markdown content={manualPrerequisites}/>}/>)}
+      {manualPrerequisites && (
+        <FieldValue name={t("field.prerequisites")} value={<Markdown content={manualPrerequisites}/>}/>)}
       {manualSettings && (<FieldValue name={t("field.settings")} value={<Markdown content={manualSettings}/>}/>)}
       <FieldValue name={t("field.runtimes")} value={
         manifestRuntimes?.length > 0 ? (
@@ -122,8 +123,10 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
                       {getEntityIcon(command.on?.entity)}
                     </Table.Td>
                     <Table.Td>
-                      <Text size="sm">{commandSpecification.description}</Text>
-                      {commandInstructions && <Markdown content={commandInstructions}/>}
+                      <Stack gap="sm">
+                        <Text size="sm">{commandSpecification.description}</Text>
+                        {commandInstructions && <Manual content={commandInstructions} isExpanded={true}/>}
+                      </Stack>
                     </Table.Td>
                   </Table.Tr>
                 );
