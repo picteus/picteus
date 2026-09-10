@@ -205,9 +205,8 @@ export default {
   },
   fieldError: {
     wrongFileFormat: "Invalid file format. Please upload a {{extensions}} file",
-    badFileUrl: "The file URL must start with : 'file://' ",
-    badUrl: "The URL is not valid",
-    empty: "This field can not be empty"
+    empty: "This field can not be empty",
+    badUrl: "The URL is not valid"
   },
   addOrUpdateRepositoryModal: {
     successAdd: "The repository has been successfully added",
@@ -217,7 +216,7 @@ export default {
     addTitle: "Add repository",
     updateTitle: "Edit repository",
     namePlaceholder: "AI generated images",
-    urlPlaceholder: "file:///Users/john/ai-images/",
+    urlPlaceholder: "/Users/john/ai-images/",
     commentPlaceholder: "Contains every AI generated images"
   },
   addOrUpdateCollectionModal: {

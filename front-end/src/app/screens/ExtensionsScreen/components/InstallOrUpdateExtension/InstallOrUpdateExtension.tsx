@@ -39,10 +39,7 @@ export default function InstallOrUpdateExtension({
   const dropzoneRef = useRef<() => void>(null);
   const [ loading, setLoading ] = useState<boolean>(false);
 
-  const messagePrefix = useMemo(
-    () => (extension ? "updateExtensionModal" : "installExtensionModal"),
-    [ extension ]
-  );
+  const messagePrefix = useMemo(() => (extension ? "updateExtensionModal" : "installExtensionModal"), [ extension ]);
 
   const form = useForm<FormValueType>({
     mode: "uncontrolled",
@@ -59,17 +56,9 @@ export default function InstallOrUpdateExtension({
         {
           return t("fieldError.empty");
         }
-        if (
-          !Validators.isMimeType(file, [
-            mimeTypes.gzip,
-            mimeTypes.zip,
-            mimeTypes.tarGz
-          ])
-        )
+        if (!Validators.isMimeType(file, [ mimeTypes.gzip, mimeTypes.zip, mimeTypes.tarGz ]))
         {
-          return t("fieldError.wrongFileFormat", {
-            extensions: "ZIP, GZIP, or TAR.GZ"
-          });
+          return t("fieldError.wrongFileFormat", { extensions: "ZIP, GZIP, or TAR.GZ" });
         }
         setFileIsValid(true);
       },

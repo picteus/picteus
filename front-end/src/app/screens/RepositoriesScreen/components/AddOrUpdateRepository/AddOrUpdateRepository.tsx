@@ -39,11 +39,7 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
       comment: repository.comment ?? undefined,
       watch: undefined
     } : initialValues,
-    validate: {
-      name: Validators.isNotEmpty,
-      url: (value) =>
-        value.startsWith("file://") ? null : t("fieldError.badFileUrl")
-    }
+    validate: { name: Validators.isNotEmpty, url: Validators.isNotEmpty }
   });
   const [ loading, setLoading ] = useState<boolean>(false);
 
@@ -62,7 +58,7 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
       }
       else
       {
-        await RepositoriesService.add(values);
+        await RepositoriesService.add({ ...values, url: `file://${values.url}` });
       }
       ToastService.success(t(`addOrUpdateRepositoryModal.${repository ? "successUpdate" : "successAdd"}`));
       onSuccess();
@@ -90,7 +86,7 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
       const lastUrlSegment = directoryPath.split(computePathSeparator(directoryPath)).filter((segment) => segment !== "").pop();
       form.setFieldValue("name", lastUrlSegment);
     }
-    form.setFieldValue("url", "file://" + directoryPath);
+    form.setFieldValue("url", directoryPath);
   }
 
   return (
@@ -117,7 +113,7 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
         }
         mb="lg"
         withAsterisk
-        label={t("field.url")}
+        label={t("field.location")}
         placeholder={t("addOrUpdateRepositoryModal.urlPlaceholder")}
         {...form.getInputProps("url")}
       />
