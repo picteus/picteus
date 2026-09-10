@@ -14,6 +14,8 @@ import { JsonType } from "types";
 import RepositoryWidget from "./widgets/RepositoryWidget";
 import CollectionWidget from "./widgets/CollectionWidget";
 import TagsWidget from "./widgets/TagsWidget";
+import FilePickerWidget from "./widgets/FilePickerWidget";
+import DirectoryPickerWidget from "./widgets/DirectoryPickerWidget";
 
 
 type RsfjFormType = {
@@ -163,7 +165,11 @@ export default function RjsfForm({
     {
       repository: RepositoryWidget,
       collection: CollectionWidget,
-      tags: TagsWidget
+      tags: TagsWidget,
+      file: FilePickerWidget,
+      filePicker: FilePickerWidget,
+      directory: DirectoryPickerWidget,
+      directoryPicker: DirectoryPickerWidget
     };
 
   return (
