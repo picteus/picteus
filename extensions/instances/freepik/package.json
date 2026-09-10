@@ -31,7 +31,8 @@
   "files": [
     "dist",
     "manifest.json",
-    "icon.png"
+    "icon.svg",
+    "MANUAL.md"
   ],
   "scripts": {
     "openapi": "openapi-generator-cli generate --skip-validate-spec --strict-spec false --log-to-stderr -i openapi.yaml -g typescript-fetch -o ./src/generated --global-property apiDocs=false,modelDocs=false --additional-properties=supportsES6=true,prefixParameterInterfaces=true",

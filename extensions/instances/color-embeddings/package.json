@@ -32,7 +32,8 @@
   "files": [
     "dist",
     "manifest.json",
-    "icon.svg"
+    "icon.svg",
+    "MANUAL.md"
   ],
   "scripts": {
     "build": "tsc && tsc-alias --resolve-full-paths"

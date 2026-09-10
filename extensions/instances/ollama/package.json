@@ -34,7 +34,8 @@
   "files": [
     "dist",
     "manifest.json",
-    "icon.png"
+    "icon.svg",
+    "MANUAL.md"
   ],
   "scripts": {
     "build": "tsc"

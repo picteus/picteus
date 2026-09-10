@@ -33,7 +33,8 @@
   "files": [
     "dist",
     "manifest.json",
-    "icon.png"
+    "icon.svg",
+    "MANUAL.md"
   ],
   "scripts": {
     "mcp:generate": "openapi-mcp-generator --input ../../../back-end/openapi.json --output ./generated --server-name \"picteus-mcp-server\" --transport web --force  --generate-lib",

@@ -9,6 +9,7 @@ import { Extension, ExtensionSettings } from "@picteus/ws-client";
 import { extractMarkdownParagraph, ToastService } from "utils";
 import { ExtensionsService } from "app/services";
 import { extractSchemaAndUiSchema, Manual, RjsfForm } from "app/components";
+import { ManualSection } from "../../../../../types";
 
 
 const propertiesName = "properties";
@@ -39,7 +40,7 @@ export default function ExtensionSettingsModal({
   {
     void ExtensionsService.get({ id: extension.manifest.id }).then((extensionAndManual) =>
     {
-      setInstructions(extensionAndManual.manual?.instructions === undefined ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Settings"));
+      setInstructions(extensionAndManual.manual?.instructions === undefined ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, ManualSection.Settings));
     }).catch(ToastService.apiCallError);
   }, [ extension ]);
 

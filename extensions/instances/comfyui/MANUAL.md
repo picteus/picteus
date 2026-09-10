@@ -18,7 +18,6 @@ Inspect the 2 following ComfyUI CLI command options:
 1. `--port <portNumber>`: this specifies the internet back-end HTTP port number listens to, where `<portNumber>` is the value of that port number, implicitly defaulted to `8188` ;
 2. `--enable-cors-header [origin]`: this enables Cross-Origin Resource Sharing (CORS), where `[origin]` is the authorized domain — a `*` value means all origins are allowed.
 
-
 ## Comfy Desktop
 1. In the Comfy Desktop application, once started, open the top bar "Comfy Desktop" button.
 2. Select the "ComfyUI" entry in the "Instances" left panel.
@@ -36,5 +35,7 @@ From here you can start using the Picteus "ComfyUI" extension.
     - `/Users/<username>/ComfyUI-Installs/ComfyUI` on macOS,
     - `/home/<username>/ComfyUI-Installs/ComfyUI` on Linux.
 
-# editComfyUiWorkflow
+# Commands
+
+## editComfyUiWorkflow
 This opens the image workflow both in ComfyUI / Comfy Desktop and in the Picteus sidebar.

@@ -32,7 +32,8 @@
   "files": [
     "dist",
     "manifest.json",
-    "icon.png"
+    "icon.svg",
+    "MANUAL.md"
   ],
   "scripts": {
     "prepare": "cd front-end && npm --no-save install || exit 0",

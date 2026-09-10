@@ -302,3 +302,11 @@ export type ActionModalValue = {
   component: ReactElement;
   onBeforeClose?: (viaOnSuccess: boolean) => void;
 };
+
+export const ManualSection =
+  {
+    Summary: "Summary",
+    Prerequisites: "Prerequisites",
+    Settings: "Settings",
+    Commands: "Commands"
+  } as const;

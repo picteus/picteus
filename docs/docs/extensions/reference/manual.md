@@ -27,10 +27,10 @@ Picteus parses the `MANUAL.md` file and displays its sections contextually acros
    - **`# Summary`**: rendered in the "Manual" field as the primary overview of the extension ;
    - **`# Prerequisites`**: rendered in the "Prerequisites" field, informing users about external dependencies ;
    - **`# Settings`**: rendered in the "Settings" field, summarizing configuration options ;
-   - **`# <commandId>`**: rendered in the commands table for each corresponding command, alongside its icon, identifier, label, and manifest description.
+   - **`## <commandId>`** (under `# Commands`): rendered in the commands table for each corresponding command, alongside its icon, identifier, label, and manifest description.
 
 2. **Command execution dialogs**:
-   - When a user triggers an extension command that presents an execution form or confirmation prompt — such as commands requiring parameters or filters —, any section matching `# <commandId>` in `MANUAL.md` is rendered inside "Manual" section directly above the parameter fields ;
+   - When a user triggers an extension command that presents an execution form or confirmation prompt — such as commands requiring parameters or filters —, the section matching `## <commandId>` under `# Commands` in `MANUAL.md` is rendered inside the "Manual" section directly above the parameter fields ;
    - This gives the user immediate guidance on how to run the command and how to fill in its parameters.
 
 3. **Extension settings modal**:
@@ -41,23 +41,28 @@ Picteus parses the `MANUAL.md` file and displays its sections contextually acros
 
 ## Section and paragraph structure
 
-The `MANUAL.md` file is structured using standard Markdown level 1 headings — `# <Title>` — to delineate each section.
+The `MANUAL.md` file is structured using standard Markdown level 1 headings — `# <Title>` — to delineate each top-level section.
 
 The recognized sections are:
 
 - **`# Summary`**:
   Provides an overall description of the extension, its main features, and its intended use case. This section is displayed in the extension detail page.
 
-- **`# Prerequisites`**:
-  Documents any prerequisites or external requirements necessary to use the extension — such as installing, configuring and launching an external service, software or application obtaining third-party API credentials, or meeting system requirements or specific hardware capabilities. This section is displayed in the extension detail page.
+- **`# Prerequisites`** *(optional)*:
+  Documents any prerequisites or external requirements necessary to use the extension — such as installing, configuring and launching an external service, software or application obtaining third-party API credentials, or meeting system requirements or specific hardware capabilities. This section is optional and is displayed in the extension detail page.
 
-- **`# Settings`**:
-  Documents configuration options declared in the extension manifest's `settings` property. It explains the purpose of each setting, default values, and setup instructions. This section is displayed in the extension detail page and inside the extension settings modal.
+- **`# Settings`** *(optional)*:
+  Documents configuration options declared in the extension manifest's `settings` property. While optional, this section should ideally be defined as soon as `manifest.json` contains a non-empty `settings` property to explain the purpose of each setting, default values, and setup instructions. This section is displayed in the extension detail page and inside the extension settings modal.
 
-- **`# <commandId>`**:
-  Provides detailed contextual documentation for an individual command whose heading matches the exact `id` of a command declared in `manifest.json` — under `instructions[].commands[].id`.
+- **`# Commands`** *(optional)*:
+  Contains documentation for all commands declared in the extension manifest under `instructions[].commands`. Under the `# Commands` section, each command is documented as a direct child level 2 heading:
 
-  This section acts as a complement to the command's `specifications.description` property declared in the extension manifest. While `specifications.description` provides a concise summary suitable for tooltips and compact table listings, the `# <commandId>` section in `MANUAL.md` provides in-depth instructions, usage guidelines, parameter explanations, and examples. It is displayed in both the commands table of the extension detail page and within the command's execution dialog box.
+  - **`## <commandId>`**:
+    Provides detailed contextual documentation for an individual command whose heading matches the exact `id` of a command declared in `manifest.json` — under `instructions[].commands[].id`.
+
+    This section acts as a complement to the command's `specifications.description` property declared in the extension manifest. While `specifications.description` provides a concise summary suitable for tooltips and compact table listings, the `## <commandId>` section in `MANUAL.md` provides in-depth instructions, usage guidelines, parameter explanations, and examples. It is displayed in both the commands table of the extension detail page and within the command's execution dialog box.
+
+    Any further subsections within the command instructions (e.g., options, notes, workflow, examples) must use level 3 headings (`###`).
 
 ---
 
@@ -76,7 +81,9 @@ An [Ollama](https://ollama.com) instance must be installed, up and running on yo
 - `Ollama URL` specifies the HTTP address where the Ollama server is listening to.
 - `Vision Model` specifies the model name used for vision tasks.
 
-# generateCaption
+# Commands
+
+## generateCaption
 Generates a descriptive natural language caption for selected images using the configured vision model.
 
 ### Notes
@@ -111,4 +118,4 @@ In the corresponding `manifest.json`, the command is declared with the matching 
 }
 ```
 
-When the user views the extension details, the `# Summary`, `# Prerequisites`, `# Settings`, and `# generateCaption` sections appear in the respective fields and tables. When the user executes the `generateCaption` command, the `# generateCaption` documentation appears inside the command's dialog box as an expandable manual.
+When the user views the extension details, the `# Summary`, `# Prerequisites`, `# Settings`, and `## generateCaption` (under `# Commands`) sections appear in the respective fields and tables. When the user executes the `generateCaption` command, the `## generateCaption` documentation appears inside the command's dialog box as an expandable manual.

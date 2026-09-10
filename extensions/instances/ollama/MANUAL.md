@@ -18,5 +18,7 @@ You do not need to install the Vision Language models, Picteus will perform that
 - Some parameters indicate whether Ollama should be requested for every indexed image for computing its caption, for "auto-captioning" ; you can decide what Vision Language (VL) to use, and you can tune the question which is sent to it.
 - Some parameters indicate whether Ollama should be requested for every indexed image for computing its tags for "auto-tagging" ; you can decide what Vision Language (VL) to use, and you can tune the allowed tags.
 
-# askQuestion
+# Commands
+
+## askQuestion
 This opens a dialog box which enables to choose a Vision Language model, type a question that will be submitted to Ollama and the answer will be displayed in a dialog box.

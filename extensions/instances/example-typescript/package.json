@@ -31,7 +31,8 @@
   "files": [
     "dist",
     "manifest.json",
-    "icon.png",
+    "icon.svg",
+    "MANUAL.md",
     "swaggerui.png",
     "ui/**/*",
     "application.zip"

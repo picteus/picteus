@@ -4,7 +4,7 @@ import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { ManifestExtensionCommandSpecification, SearchFilter, SearchOriginNature } from "@picteus/ws-client";
 
-import { UiCommandType } from "types";
+import { ManualSection, UiCommandType } from "types";
 import { extractMarkdownParagraph, ToastService } from "utils";
 import { useKey } from "app/hooks";
 import { ExtensionsService } from "app/services";
@@ -42,7 +42,7 @@ export default function CommandForm({
     {
       ExtensionsService.get({ id: extensionId }).then((extensionAndManual) =>
       {
-        setInstructions(extensionAndManual.manual?.instructions === undefined ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, command.id));
+        setInstructions(extensionAndManual.manual?.instructions === undefined ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, [ ManualSection.Commands, command.id ]));
         const manifestCommands = extensionAndManual.manifest.instructions.flatMap((instructions) => instructions.commands || []);
         const manifestCommand = manifestCommands.find((manifestCommand) => manifestCommand.id === command.id);
         const locale = i18n.language.split("-")[0];
@@ -65,22 +65,22 @@ export default function CommandForm({
         {form.dialogContent.details && (
           <div className={style.details}><Markdown content={form.dialogContent.details}/></div>)}
       </Flex>)}
-      {command.id && <Alert variant="default" color="transparent" my="sm" p="sm">
-        <Stack gap="sm">
-          {specification?.name && <Text fw={600} size="sm">{specification.name}</Text>}
-          {specification?.description && <Text size="sm" c="dimmed">{specification.description}</Text>}
-          {instructions && <Manual content={instructions}/>}
-        </Stack>
-      </Alert>
-      }
-      {searchFilter?.origin?.kind === SearchOriginNature.Images &&
-        <ImagesCollection imageIds={searchFilter.origin.ids}/>}
-      {form.parameters && <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setParameters}/>}
-      <Flex mt="md" align="flex-end" justify="flex-end" gap="sm">
-        <Button onClick={() => onSend(extensionId, command.id, parameters)}>
-          {t("button.send")}
-        </Button>
-      </Flex>
+        {command.id && <Alert variant="default" color="transparent" my="sm" p="sm">
+          <Stack gap="sm">
+            {specification?.name && <Text fw={600} size="sm">{specification.name}</Text>}
+            {specification?.description && <Text size="sm" c="dimmed">{specification.description}</Text>}
+            {instructions && <Manual content={instructions}/>}
+          </Stack>
+        </Alert>
+        }
+        {searchFilter?.origin?.kind === SearchOriginNature.Images &&
+          <ImagesCollection imageIds={searchFilter.origin.ids}/>}
+        {form.parameters && <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setParameters}/>}
+        <Flex mt="md" align="flex-end" justify="flex-end" gap="sm">
+          <Button onClick={() => onSend(extensionId, command.id, parameters)}>
+            {t("button.send")}
+          </Button>
+        </Flex>
     </>
   );
 }

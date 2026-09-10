@@ -14,6 +14,7 @@ import { IconLibraryPhoto, IconPhoto, IconServer } from "@tabler/icons-react";
 import { extractMarkdownParagraph, ToastService } from "utils";
 import { ExtensionsService } from "app/services";
 import { CommandIcon, FieldValue, Manual, Markdown, NoValue } from "app/components";
+import { ManualSection } from "../../../../../types";
 
 
 type ExtensionDetailProps = {
@@ -59,9 +60,9 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
   };
 
   const hasInstructions = extensionAndManual?.manual?.instructions !== undefined;
-  const manualSummary = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Summary");
-  const manualPrerequisites = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Prerequisites");
-  const manualSettings = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, "Settings");
+  const manualSummary = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, ManualSection.Summary);
+  const manualPrerequisites = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, ManualSection.Prerequisites);
+  const manualSettings = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, ManualSection.Settings);
 
   return (
     <Stack gap="md" m="sm" pos="relative">
@@ -106,7 +107,7 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
               {commands.map((command, index) =>
               {
                 const commandSpecification = getCommandSpecification(command);
-                const commandInstructions = extensionAndManual?.manual?.instructions ? extractMarkdownParagraph(extensionAndManual.manual.instructions, command.id) : undefined;
+                const commandInstructions = extensionAndManual?.manual?.instructions ? extractMarkdownParagraph(extensionAndManual.manual.instructions, [ ManualSection.Commands, command.id ]) : undefined;
 
                 return (
                   <Table.Tr key={index}>
