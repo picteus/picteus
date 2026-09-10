@@ -220,6 +220,7 @@ export enum ChannelEnum
   REPOSITORY_PREFIX = "repository",
   REPOSITORY_SYNCHRONIZE_PREFIX = "repository.synchronize",
   REPOSITORY_CREATED = "repository.created",
+  REPOSITORY_UPDATED = "repository.updated",
   REPOSITORY_SYNCHRONIZE_STARTED = "repository.synchronize.started",
   REPOSITORY_SYNCHRONIZE_STOPPED = "repository.synchronize.stopped",
   REPOSITORY_WATCH_STARTED = "repository.watch.started",

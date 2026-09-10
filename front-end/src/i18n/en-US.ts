@@ -368,6 +368,7 @@ export default {
     },
     repository: {
       created: "The repository '{{id}}' has been created",
+      updated: "The repository '{{id}}' has been updated",
       synchronize: {
         started:
           "The synchronization for the repository with ID '{{id}}' has been initiated",

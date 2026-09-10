@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   ActionIcon,
   Box,
@@ -27,9 +27,10 @@ import { useTranslation } from "react-i18next";
 
 import { ExtensionImageTag, Repository } from "@picteus/ws-client";
 
-import { LocalFiltersType } from "types";
+import { ChannelEnum, LocalFiltersType } from "types";
 import { ToastService } from "utils";
 import { useContainerDimensions, useDebouncedCallback } from "app/hooks";
+import { useEventSocket } from "app/context";
 import { FiltersService, RepositoriesService, WithValueAndLabel } from "app/services";
 
 import { Common, ExtensionIcon, ImageTag } from "app/components";
@@ -57,9 +58,19 @@ export function SearchFilters({
   const containerRef = useRef<HTMLDivElement>(null);
   const { width } = useContainerDimensions(containerRef);
   const [ searchText, setSearchText ] = useState<string>();
-  const repositories = useMemo<Repository[]>(() => (RepositoriesService.list()), []);
+  const [ repositories, setRepositories ] = useState<Repository[]>(RepositoriesService.list());
+  const { eventStore } = useEventSocket();
+  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const [ tags, setTags ] = useState<ExtensionImageTag[]>([]);
   const [ tagOptions, setTagOptions ] = useState<WithValueAndLabel[]>([]);
+
+  useEffect(() =>
+  {
+    if (event?.channel.startsWith(ChannelEnum.REPOSITORY_PREFIX))
+    {
+      RepositoriesService.fetchAll().then(setRepositories).catch(ToastService.apiCallError);
+    }
+  }, [ event ]);
 
   useEffect(() =>
   {
