@@ -537,9 +537,112 @@ export async function ensureViaVirtualEnvironmentPip(parentDirectoryPath: string
   }
 }
 
+// TODO: factorize the code with the one in spawnPythonWithWatchdog, in case of non-Windows OS
+const getWindowsPythonWatchdogDirectory: () => string = (function (): () => string
+{
+  let windowsPythonWatchdogDirectoryPath: string | undefined;
+  return function (): string
+  {
+    if (windowsPythonWatchdogDirectoryPath === undefined)
+    {
+      windowsPythonWatchdogDirectoryPath = path.join(getTemporaryDirectoryPath(), "picteus-windows-python-watchdog");
+      if (fs.existsSync(windowsPythonWatchdogDirectoryPath) === false)
+      {
+        fs.mkdirSync(windowsPythonWatchdogDirectoryPath, { recursive: true });
+      }
+      const sitecustomizeFilePath = path.join(windowsPythonWatchdogDirectoryPath, "sitecustomize.py");
+      const WINDOWS_PYTHON_WATCHDOG_PARENT_TERMINATION_EXIT_CODE = 0;
+      const pythonWatchdogCode = `
+import ctypes
+import os
+import threading
+
+def _setup_windows_parent_watchdog():
+    if os.name != "nt":
+        return
+
+    SYNCHRONIZE = 0x00100000
+    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    INFINITE = 0xFFFFFFFF
+    EXIT_CODE = ${WINDOWS_PYTHON_WATCHDOG_PARENT_TERMINATION_EXIT_CODE}
+
+    parent_pid = os.getppid()
+    if not parent_pid or parent_pid <= 1:
+        return
+
+    kernel32 = ctypes.windll.kernel32
+    access = SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION
+    handle = kernel32.OpenProcess(access, False, parent_pid)
+    if not handle:
+        # Parent process already vanished before watchdog handle could be opened
+        kernel32.ExitProcess(EXIT_CODE)
+        return
+
+    # Verify parent process creation and exit times to protect against PID recycling
+    cur_proc = kernel32.GetCurrentProcess()
+    parent_creation = ctypes.c_ulonglong()
+    parent_exit = ctypes.c_ulonglong()
+    dummy = ctypes.c_ulonglong()
+    cur_creation = ctypes.c_ulonglong()
+
+    if kernel32.GetProcessTimes(handle, ctypes.byref(parent_creation), ctypes.byref(parent_exit), ctypes.byref(dummy), ctypes.byref(dummy)):
+        if parent_exit.value != 0:
+            # Parent process has already exited
+            kernel32.CloseHandle(handle)
+            kernel32.ExitProcess(EXIT_CODE)
+            return
+        if kernel32.GetProcessTimes(cur_proc, ctypes.byref(cur_creation), ctypes.byref(dummy), ctypes.byref(dummy), ctypes.byref(dummy)):
+            if parent_creation.value > cur_creation.value:
+                # PID was recycled
+                kernel32.CloseHandle(handle)
+                kernel32.ExitProcess(EXIT_CODE)
+                return
+
+    def _wait_parent_exit():
+        try:
+            if kernel32.WaitForSingleObject(handle, 0) == 0:
+                kernel32.CloseHandle(handle)
+                kernel32.ExitProcess(EXIT_CODE)
+                return
+
+            kernel32.WaitForSingleObject(handle, INFINITE)
+            kernel32.CloseHandle(handle)
+            kernel32.ExitProcess(EXIT_CODE)
+        except Exception:
+            kernel32.ExitProcess(EXIT_CODE)
+
+    # Daemon thread ensures normal Python program completion is not blocked
+    watchdog_thread = threading.Thread(target=_wait_parent_exit, daemon=True, name="WindowsParentWatchdog")
+    watchdog_thread.start()
+
+_setup_windows_parent_watchdog()
+`.trim();
+      fs.writeFileSync(sitecustomizeFilePath, pythonWatchdogCode, { encoding: "utf8" });
+    }
+    return windowsPythonWatchdogDirectoryPath;
+  };
+})();
+
 export function spawnPythonWithWatchdog(pythonExecutable: string, parameters: string[], cwd?: string | undefined, env?: NodeJS.ProcessEnv | undefined, resortToExternalSupervisor?: boolean): ChildProcess
 {
-  const commonWatchdogBootstrapCode = `
+  const options =
+    {
+      loggedIndications: `via a${process.platform === "win32" ? "Windows " : ""} termination watch dog`,
+      loggedCommand: `${pythonExecutable}${parameters.length === 0 ? "" : (" " + parameters.join(" "))}`
+    };
+  const shell = false;
+  const stdio = "pipe";
+  if (process.platform === "win32")
+  {
+    const watchdogDirectory = getWindowsPythonWatchdogDirectory();
+    const childEnv: NodeJS.ProcessEnv = env === undefined ? {} : { ...env };
+    const existingPythonPath = childEnv.PYTHONPATH;
+    childEnv.PYTHONPATH = existingPythonPath !== undefined && existingPythonPath.length > 0 ? `${watchdogDirectory}${path.delimiter}${existingPythonPath}` : watchdogDirectory;
+    return spawn(pythonExecutable, parameters, cwd, childEnv, shell, stdio, options);
+  }
+  else
+  {
+    const commonWatchdogBootstrapCode = `
 import os, signal, sys, threading, time
 
 def _setup_watchdog(child_process=None):
@@ -595,8 +698,8 @@ def _setup_watchdog(child_process=None):
         threading.Thread(target=_ppid_poll, daemon=True).start()
 `.trim();
 
-  // This version is in-process, hence causing minimal overhead
-  const inProcessPythonWatchdogBootstrapCode = `
+    // This version is in-process, hence causing minimal overhead
+    const inProcessPythonWatchdogBootstrapCode = `
 ${commonWatchdogBootstrapCode}
 
 _setup_watchdog()
@@ -647,8 +750,8 @@ else:
     runpy.run_path(target, run_name="__main__")
 `.trim();
 
-  // This version has been introduced to work around GIL deadlock issues and resorts to an intermediate process
-  const supervisedPythonWatchdogBootstrapCode = `
+    // This version has been introduced to work around GIL deadlock issues and resorts to an intermediate process
+    const supervisedPythonWatchdogBootstrapCode = `
 import subprocess
 ${commonWatchdogBootstrapCode}
 
@@ -700,8 +803,6 @@ except KeyboardInterrupt:
 sys.exit(exit_code)
 `.trim();
 
-  return spawn(pythonExecutable, [ "-c", resortToExternalSupervisor === true ? supervisedPythonWatchdogBootstrapCode : inProcessPythonWatchdogBootstrapCode, ...parameters ], cwd, env, false, "pipe", {
-    loggedIndications: "via a termination watch dog",
-    loggedCommand: `${pythonExecutable}${parameters.length === 0 ? "" : (` ${parameters.join(" ")}`)}`
-  });
+    return spawn(pythonExecutable, [ "-c", resortToExternalSupervisor === true ? supervisedPythonWatchdogBootstrapCode : inProcessPythonWatchdogBootstrapCode, ...parameters ], cwd, env, shell, stdio, options);
+  }
 }

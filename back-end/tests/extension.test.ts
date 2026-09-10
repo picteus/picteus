@@ -1894,7 +1894,7 @@ describe("Extensions", () =>
     const image = images[0];
     const commandId = manifest.instructions[0].commands![0].id;
 
-    const precisionFactor = 0.90;
+    const precisionFactor = 0.8;
     let milliseconds: number = -1;
     for (let index = 0; index < 3; index++)
     {

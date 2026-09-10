@@ -76,7 +76,6 @@ const { io } = IO;
 
 const { OK, BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR } = HttpCodes;
 
-
 describe("Miscellaneous bare", () =>
 {
 
@@ -507,6 +506,85 @@ setTimeout(() => {}, 1_000_000);
     const nodeEnvironment = { TS_NODE_TRANSPILE_ONLY: "true" };
 
     {
+      // We assess the watchdog effectiveness upon abrupt parent termination: to that extent, we create a long-running Python child that writes its PID to stdout, then updates a heartbeat file
+      const heartbeatFileName = "heartbeat.txt";
+      const heartbeatFilePath = path.join(directoryPath, heartbeatFileName);
+      const longRunningScriptFileName = "long_running.py";
+      const longRunningScriptFilePath = path.join(directoryPath, longRunningScriptFileName);
+      fs.writeFileSync(longRunningScriptFilePath, `import os, sys, time\npid = os.getpid()\nsys.stdout.write(f"{pid}\\n")\nsys.stdout.flush()\nwhile True:\n    with open("${heartbeatFileName}", "w", encoding="utf-8") as file:\n        file.write(str(time.time()))\n    time.sleep(0.05)\n`, { encoding: "utf8" }
+      );
+
+      // We create an intermediate Node.js parent process which launches the Python child using spawnPythonWithWatchdog
+      const childPidFilePath = path.join(directoryPath, "child_pid.txt");
+      const pythonWrapperSourcePath = path.join(paths.serverDirectoryPath, "src", "services", "utils", "pythonWrapper.ts");
+      const intermediateParentJavaScript = `
+const fs = require("node:fs");
+const { pathToFileURL } = require("node:url");
+
+const pythonExecutable = ${JSON.stringify(pythonFilePath)};
+const scriptPath = ${JSON.stringify(longRunningScriptFilePath)};
+const childPidPath = ${JSON.stringify(childPidFilePath)};
+const workingDirectory = ${JSON.stringify(directoryPath)};
+const targetModulePath = ${JSON.stringify(pythonWrapperSourcePath)};
+
+(async () =>
+{
+  try
+  {
+    const { spawnPythonWithWatchdog } = await import(pathToFileURL(targetModulePath).href);
+    const childProcess = spawnPythonWithWatchdog(pythonExecutable, [ scriptPath ], workingDirectory, undefined, false, [ "pipe", "pipe", "inherit" ]);
+    childProcess.stdout.on("data", (chunk) =>
+    {
+      const line = chunk.toString().trim().split("\\n")[0];
+      if (line.length > 0)
+      {
+        fs.writeFileSync(childPidPath, line, { encoding: "utf8" });
+      }
+    });
+  }
+  catch (error)
+  {
+    console.error(error);
+    process.exit(2);
+  }
+})();
+
+setTimeout(() => {}, 1_000_000);
+    `.trim();
+
+      const parentProcess = spawn(process.execPath, [ ...nodeArguments, intermediateParentJavaScript ], paths.serverDirectoryPath, nodeEnvironment, false, "pipe");
+
+      // We wait until the child Python process has started and written its PID and heartbeat
+      await core.waitUntil(async () =>
+      {
+        return fs.existsSync(childPidFilePath) === true && fs.existsSync(heartbeatFilePath) === true;
+      });
+
+      const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
+      const childProcessId = Number.parseInt(childPidString);
+      expect(Number.isNaN(childProcessId)).toBe(false);
+
+      // We verify the child is running
+      expect(isProcessAlive(childProcessId)).toBe(true);
+
+      // We abruptly terminate the intermediate parent with SIGKILL
+      const parentProcessId = parentProcess.pid!;
+      killProcessViaId(parentProcessId, "SIGKILL");
+
+      // We verify the parent process is dead
+      await core.waitUntil(async () =>
+      {
+        return isProcessAlive(parentProcessId) === false;
+      });
+
+      // The watchdog in the Python child must detect parent termination and exit automatically
+      await core.waitUntil(async () =>
+      {
+        return isProcessAlive(childProcessId) === false;
+      });
+    }
+
+    {
       // We assess the watch dog with Chroma
       const persistPath = core.prepareEmptyDirectory("chroma", directoryPath);
       await VectorDatabaseProvider.installChroma(persistPath);
@@ -591,86 +669,6 @@ setTimeout(() => {}, 1_000_000);
         return isProcessAlive(childProcessId) === false;
       });
     }
-
-    {
-      // We assess the watchdog effectiveness upon abrupt parent termination: to that extent, we create a long-running Python child that writes its PID to stdout, then updates a heartbeat file
-      const heartbeatFileName = "heartbeat.txt";
-      const heartbeatFilePath = path.join(directoryPath, heartbeatFileName);
-      const longRunningScriptFileName = "long_running.py";
-      const longRunningScriptFilePath = path.join(directoryPath, longRunningScriptFileName);
-      fs.writeFileSync(longRunningScriptFilePath, `import os, sys, time\npid = os.getpid()\nsys.stdout.write(f"{pid}\\n")\nsys.stdout.flush()\nwhile True:\n    with open("${heartbeatFileName}", "w", encoding="utf-8") as file:\n        file.write(str(time.time()))\n    time.sleep(0.05)\n`, { encoding: "utf8" }
-      );
-
-      // We create an intermediate Node.js parent process which launches the Python child using spawnPythonWithWatchdog
-      const childPidFilePath = path.join(directoryPath, "child_pid.txt");
-      const pythonWrapperSourcePath = path.join(paths.serverDirectoryPath, "src", "services", "utils", "pythonWrapper.ts");
-      const intermediateParentJavaScript = `
-const fs = require("node:fs");
-const { pathToFileURL } = require("node:url");
-
-const pythonExecutable = ${JSON.stringify(pythonFilePath)};
-const scriptPath = ${JSON.stringify(longRunningScriptFilePath)};
-const childPidPath = ${JSON.stringify(childPidFilePath)};
-const workingDirectory = ${JSON.stringify(directoryPath)};
-const targetModulePath = ${JSON.stringify(pythonWrapperSourcePath)};
-
-(async () =>
-{
-  try
-  {
-    const { spawnPythonWithWatchdog } = await import(pathToFileURL(targetModulePath).href);
-    const childProcess = spawnPythonWithWatchdog(pythonExecutable, [ scriptPath ], workingDirectory, undefined, false, [ "pipe", "pipe", "inherit" ]);
-    childProcess.stdout.on("data", (chunk) =>
-    {
-      const line = chunk.toString().trim().split("\\n")[0];
-      if (line.length > 0)
-      {
-        fs.writeFileSync(childPidPath, line, { encoding: "utf8" });
-      }
-    });
-  }
-  catch (error)
-  {
-    console.error(error);
-    process.exit(2);
-  }
-})();
-
-setTimeout(() => {}, 1_000_000);
-    `.trim();
-
-      const parentProcess = spawn(process.execPath, [ ...nodeArguments, intermediateParentJavaScript ], paths.serverDirectoryPath, nodeEnvironment, false, "pipe");
-
-      // We wait until the child Python process has started and written its PID and heartbeat
-      await core.waitUntil(async () =>
-      {
-        return fs.existsSync(childPidFilePath) === true && fs.existsSync(heartbeatFilePath) === true;
-      });
-
-      const childPidString = fs.readFileSync(childPidFilePath, { encoding: "utf8" }).trim();
-      const childProcessId = Number.parseInt(childPidString);
-      expect(Number.isNaN(childProcessId)).toBe(false);
-
-      // We verify the child is running
-      expect(isProcessAlive(childProcessId)).toBe(true);
-
-      // We abruptly terminate the intermediate parent with SIGKILL
-      const parentProcessId = parentProcess.pid!;
-      killProcessViaId(parentProcessId, "SIGKILL");
-
-      // We verify the parent process is dead
-      await core.waitUntil(async () =>
-      {
-        return isProcessAlive(parentProcessId) === false;
-      });
-
-      // The watchdog in the Python child must detect parent termination and exit automatically
-      await core.waitUntil(async () =>
-      {
-        return isProcessAlive(childProcessId) === false;
-      });
-    }
-
   }, core.xxLargeTimeoutInMilliseconds);
 
   test.each(fastCartesian([ [ 0, 400 ], [ true, false ] ]))("spawn Node.js --eval with timeout=%p and shell=%p", async (timeoutInMilliseconds, shell) =>
