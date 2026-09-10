@@ -51,7 +51,7 @@
       },
       "commands": [
         {
-          "id": "editComfyUiWorkflow",
+          "id": "openInComfyUi",
           "on": {
             "entity": "Image",
             "withTags": [

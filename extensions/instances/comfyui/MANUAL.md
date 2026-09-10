@@ -37,5 +37,5 @@ From here you can start using the Picteus "ComfyUI" extension.
 
 # Commands
 
-## editComfyUiWorkflow
+## openInComfyUi
 This opens the image workflow both in ComfyUI / Comfy Desktop and in the Picteus sidebar.

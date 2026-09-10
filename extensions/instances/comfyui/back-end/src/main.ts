@@ -45,177 +45,79 @@ class ComfyUiPromptAndWorkflow
 
 }
 
-class ComfyUiExtension extends PicteusExtension
+class ComfyUIAnalyzer
 {
 
-  private static readonly webServiceFragment = "picteus";
-
-  private url: string;
-
-  private outputDirectoryPath: string;
-
-  private inputDirectoryPath: string;
-
-  private temporaryDirectoryPath: string;
-
-  private extensionCurrentlyInstalled = false;
-
-  protected async onReady(communicator?: Communicator): Promise<void>
+  constructor(private readonly workflow: Json)
   {
-    await this.setup(communicator!, await this.getSettings());
   }
 
-  protected async onSettings(communicator: Communicator, value: SettingsValue): Promise<void>
+  computeTags(): string []
   {
-    await this.setup(communicator, value);
-  }
-
-  protected async onImageCreated(_communicator: Communicator, imageId: string): Promise<void>
-  {
-    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-    await this.computeTags(imageId, metadata);
-    await this.computeFeatures(imageId, metadata);
-  }
-
-  protected async onImageUpdated(_communicator: Communicator, imageId: string): Promise<void>
-  {
-    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-    await this.computeTags(imageId, metadata);
-    await this.computeFeatures(imageId, metadata);
-  }
-
-  protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
-  {
-    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-    await this.computeTags(imageId, metadata);
-  }
-
-  protected async onComputeImageFeatures(_communicator: Communicator, imageId: string): Promise<void>
-  {
-    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-    await this.computeFeatures(imageId, metadata);
-  }
-
-  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], _parameters: CommandParameters): Promise<void>
-  {
-    const imageId = imageIds[0];
-    if (commandId === "editComfyUiWorkflow")
+    const tags: string [] = [];
+    if (this.workflow.nodes && Array.isArray(this.workflow.nodes))
     {
-      await this.openInComfyUi(communicator, imageId);
-    }
-    else if (commandId === "analyzeComfyUiWorkflow")
-    {
-      await this.computeDescription(communicator, imageId);
-    }
-  }
-
-  private async computeTags(imageId: string, metadata: ImageMetadata): Promise<void>
-  {
-    const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
-    const tags = new Set<string>();
-    if (promptAndWorkflow !== undefined)
-    {
-      tags.add(this.extensionId);
-      const workflow = promptAndWorkflow.workflow;
-      if (workflow.nodes && Array.isArray(workflow.nodes))
+      for (const node of this.workflow.nodes)
       {
-        for (const node of workflow.nodes)
+        const nodeType: string | undefined = node["type"];
+        if (nodeType)
         {
-          const nodeType: string | undefined = node["type"];
-          if (nodeType)
+          const category = this.getCategoryForNodeType(nodeType);
+          if (category)
           {
-            const category = this.getCategoryForNodeType(nodeType);
-            if (category)
-            {
-              tags.add(`comfyui:${category}`);
-            }
+            tags.push(category);
           }
         }
       }
     }
-
-    await this.getImageApi().imageSetTags({
-      id: imageId,
-      extensionId: this.extensionId,
-      requestBody: Array.from(tags)
-    });
+    return tags;
   }
 
-  private async computeFeatures(imageId: string, metadata: ImageMetadata): Promise<void>
+  computeFeatures(): ImageFeature[]
   {
-    const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
-    if (promptAndWorkflow !== undefined)
+    const imageFeatures: Array<ImageFeature> = [];
+    if (this.workflow.nodes && Array.isArray(this.workflow.nodes))
     {
-      const imageFeatures: Array<ImageFeature> = [];
-      const recipe: GenerationRecipe =
+      const nodeOperations: Record<string, { count: number, types: string[] }> = {};
+      for (const node of this.workflow.nodes)
+      {
+        const nodeType: string = node["type"];
+        if (nodeType)
         {
-          schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-          modelTags: [],
-          software: "comfyui",
-          prompt: { kind: PromptKind.Instructions, value: promptAndWorkflow }
-        };
+          const category = this.getCategoryForNodeType(nodeType) || "other";
+          if (!nodeOperations[category])
+          {
+            nodeOperations[category] = { count: 0, types: [] };
+          }
+          nodeOperations[category].count++;
+          if (!nodeOperations[category].types.includes(nodeType))
+          {
+            nodeOperations[category].types.push(nodeType);
+          }
+        }
+      }
+
+      // Add JSON feature
       imageFeatures.push({
-        type: ImageFeatureType.Recipe,
+        type: ImageFeatureType.Metadata,
         format: ImageFeatureFormat.Json,
-        value: JSON.stringify(recipe)
+        value: JSON.stringify({ nodeOperations }, null, 2)
       });
 
-      const workflow = promptAndWorkflow.workflow;
-      if (workflow.nodes && Array.isArray(workflow.nodes))
+      // Add Markdown feature
+      let markdownContent = "### ComfyUI Node Operations\n\n| Category | Count | Node Types |\n| :--- | :--- | :--- |\n";
+      for (const [ category, data ] of Object.entries(nodeOperations))
       {
-        const nodeOperations: Record<string, { count: number, types: string[] }> = {};
-        for (const node of workflow.nodes)
-        {
-          const nodeType: string = node["type"];
-          if (nodeType)
-          {
-            const category = this.getCategoryForNodeType(nodeType) || "other";
-            if (!nodeOperations[category])
-            {
-              nodeOperations[category] = { count: 0, types: [] };
-            }
-            nodeOperations[category].count++;
-            if (!nodeOperations[category].types.includes(nodeType))
-            {
-              nodeOperations[category].types.push(nodeType);
-            }
-          }
-        }
-
-        // Add JSON feature
-        imageFeatures.push({
-          type: ImageFeatureType.Metadata,
-          format: ImageFeatureFormat.Json,
-          value: JSON.stringify({ nodeOperations }, null, 2)
-        });
-
-        // Add Markdown feature
-        let markdownContent = "### ComfyUI Node Operations\n\n| Category | Count | Node Types |\n| :--- | :--- | :--- |\n";
-        for (const [ category, data ] of Object.entries(nodeOperations))
-        {
-          markdownContent += `| **${category}** | ${data.count} | ${data.types.join(", ")} |\n`;
-        }
-
-        imageFeatures.push({
-          type: ImageFeatureType.Description,
-          format: ImageFeatureFormat.Markdown,
-          value: markdownContent
-        });
+        markdownContent += `| **${category}** | ${data.count} | ${data.types.join(", ")} |\n`;
       }
 
-      try
-      {
-        await this.getImageApi().imageSetFeatures({
-          id: imageId,
-          extensionId: this.extensionId,
-          imageFeature: imageFeatures
-        });
-      }
-      catch (error)
-      {
-        console.log(error);
-      }
+      imageFeatures.push({
+        type: ImageFeatureType.Description,
+        format: ImageFeatureFormat.Markdown,
+        value: markdownContent
+      });
     }
+    return imageFeatures;
   }
 
   private getCategoryForNodeType(nodeType: string): string
@@ -268,7 +170,132 @@ class ComfyUiExtension extends PicteusExtension
     return "other";
   }
 
-  private async computeDescription(communicator: Communicator, imageId: string): Promise<void>
+
+}
+
+class ComfyUiExtension extends PicteusExtension
+{
+
+  private static readonly webServiceFragment = "picteus";
+
+  private url: string;
+
+  private outputDirectoryPath: string;
+
+  private inputDirectoryPath: string;
+
+  private temporaryDirectoryPath: string;
+
+  private extensionCurrentlyInstalled = false;
+
+  private readonly computeAdditionTags = Math.random() > 1;
+
+  private readonly computeAdditionFeatures = Math.random() > 1;
+
+  protected async onReady(communicator?: Communicator): Promise<void>
+  {
+    await this.setup(communicator!, await this.getSettings());
+  }
+
+  protected async onSettings(communicator: Communicator, value: SettingsValue): Promise<void>
+  {
+    await this.setup(communicator, value);
+  }
+
+  protected async onImageCreated(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
+    await this.computeFeatures(imageId, metadata);
+  }
+
+  protected async onImageUpdated(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
+    await this.computeFeatures(imageId, metadata);
+  }
+
+  protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeTags(imageId, metadata);
+  }
+
+  protected async onComputeImageFeatures(_communicator: Communicator, imageId: string): Promise<void>
+  {
+    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    await this.computeFeatures(imageId, metadata);
+  }
+
+  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], _parameters: CommandParameters): Promise<void>
+  {
+    const imageId = imageIds[0];
+    if (commandId === "openInComfyUi")
+    {
+      await this.openInComfyUi(communicator, imageId);
+    }
+    else if (commandId === "analyzeComfyUiWorkflow")
+    {
+      await this.analyzeComfyUiWorkflow(communicator, imageId);
+    }
+  }
+
+  private async computeTags(imageId: string, metadata: ImageMetadata): Promise<void>
+  {
+    const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
+    const tags = new Set<string>();
+    if (promptAndWorkflow !== undefined)
+    {
+      tags.add(this.extensionId);
+      if (this.computeAdditionTags === true)
+      {
+        new ComfyUIAnalyzer(promptAndWorkflow.workflow).computeTags().map(tag => tags.add(tag));
+      }
+    }
+
+    await this.getImageApi().imageSetTags({
+      id: imageId,
+      extensionId: this.extensionId,
+      requestBody: Array.from(tags)
+    });
+  }
+
+  private async computeFeatures(imageId: string, metadata: ImageMetadata): Promise<void>
+  {
+    const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
+    if (promptAndWorkflow !== undefined)
+    {
+      const imageFeatures: Array<ImageFeature> = [];
+      const recipe: GenerationRecipe =
+        {
+          schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
+          modelTags: [],
+          software: "comfyui",
+          prompt: { kind: PromptKind.Instructions, value: promptAndWorkflow }
+        };
+      imageFeatures.push(
+        {
+          type: ImageFeatureType.Recipe,
+          format: ImageFeatureFormat.Json,
+          value: JSON.stringify(recipe)
+        }
+      );
+
+      if (this.computeAdditionFeatures === true)
+      {
+        imageFeatures.push(...new ComfyUIAnalyzer(promptAndWorkflow.workflow).computeFeatures());
+      }
+
+      await this.getImageApi().imageSetFeatures({
+        id: imageId,
+        extensionId: this.extensionId,
+        imageFeature: imageFeatures
+      });
+    }
+  }
+
+  private async analyzeComfyUiWorkflow(communicator: Communicator, imageId: string): Promise<void>
   {
     const directoryPaths = [ this.outputDirectoryPath, this.inputDirectoryPath, this.temporaryDirectoryPath ].filter(directoryPath => directoryPath !== undefined);
     const imageFeatures: Array<ImageFeature> = [];
