@@ -245,9 +245,17 @@ export class CommandsManager
     logger.info(`Received the '${command}' command with id '${id}'`);
     switch (command)
     {
+      case "pickFile":
+      {
+        const nodePath = await this.pickFileOrDirectory(parameters.title, "file", "open", parameters.filter, parameters.defaultPath);
+        this.sendCommandSuccess(socket, id, nodePath);
+      }
+        break;
       case "pickDirectory":
+      {
         const nodePath = await this.pickFileOrDirectory(parameters.title, "directory", "open", parameters.filter, parameters.defaultPath);
         this.sendCommandSuccess(socket, id, nodePath);
+      }
         break;
       case "openFile":
       case "openExplorer":

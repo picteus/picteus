@@ -162,7 +162,9 @@ export default {
   widgets: {
     collectionPlaceHolder: "Select a collection",
     repositoryPlaceHolder: "Select a repository",
-    tagsPlaceHolder: "Select tags"
+    tagsPlaceHolder: "Select tags",
+    filePlaceHolder: "Select a file",
+    directoryPlaceHolder: "Select a directory"
   },
   emptyImages: {
     title: "No available image",
@@ -451,8 +453,9 @@ export default {
       "Define the number of similar images to retrieve. The system will execute a nearest neighbor search against image embeddings in the library to identify the most relevant matches.",
     countPlaceholder: "The amount of images to retrieve"
   },
-  command: {
-    pickDirectory: "Please, select a directory"
+  useFileOrDirectoryPicker: {
+    file: "Please, select a file",
+    directory: "Please, select a directory"
   },
   commands: {
     coreFeatures: "Core features",

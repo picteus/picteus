@@ -1,22 +1,16 @@
-import { useTranslation } from "react-i18next";
-
-import { useCommandSocket } from "app/context";
-import { StorageService } from "app/services";
 import { FolderTypes } from "types";
+import { useFileOrDirectoryPicker } from "app/hooks";
+import { StorageService } from "app/services";
 
 
 export default function useFolderPicker(): (type: FolderTypes) => Promise<string>
 {
-  const [ t ] = useTranslation();
-  const { sendCommand } = useCommandSocket();
+  const pickFileOrDirectory = useFileOrDirectoryPicker();
 
   return async (type: FolderTypes): Promise<string> =>
   {
     const defaultPath = StorageService.getLastFolderLocation(type);
-    const directoryPath = await sendCommand("pickDirectory", {
-      title: t("command.pickDirectory"),
-      defaultPath
-    });
+    const directoryPath = await pickFileOrDirectory("directory", defaultPath);
     if (directoryPath)
     {
       StorageService.setLastFolderLocation(type, directoryPath);
