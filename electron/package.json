@@ -103,18 +103,17 @@
     "staple:darwin:dotenv": "xcrun stapler staple \"$npm_package_config_distribution_directoryPath/mac-$ARCHITECTURE/$npm_package_config_productName.app\"",
     "prestaple:darwin": "npm run .env",
     "staple:darwin": "dotenv -- npm run staple:darwin:dotenv",
-    "distribute:darwin": "npm-run-all package zip notarize:darwin",
-    "distribute:linux": "npm-run-all package zip",
-    "distribute:windows": "npm-run-all package zip",
+    "distribute:darwin": "npm run package && npm run zip && npm run notarize:darwin",
+    "distribute:linux": "npm run package && npm run zip",
+    "distribute:windows": "npm run package && npm run zip",
     "distribute": "run-script-os",
     "artefact:deploy": "cross-var gulp deployArtefact --distributionDirectoryPath $npm_package_config_distribution_directoryPath",
     "updateFeed:generate": "cross-var gulp generateUpdateFeed --inputFilePath \"$npm_package_config_distribution_directoryPath/update.yml\" --directoryPath \"$npm_package_config_temporary_directoryPath/electron-builder\" --githubprojecturl $npm_package_config_github_project_url",
     "updateFeed:deploy": "cross-var \"gulp deployUpdateFeedOnGcs --directoryPath \"$npm_package_config_temporary_directoryPath/electron-builder\" --bucket $npm_package_config_google_cloud_storage_bucket_folder && shx mkdir -p ../docs/static/feed && shx cp $npm_package_config_temporary_directoryPath/electron-builder/feed*.json ../docs/static/feed && npm --prefix ../docs install && npm --prefix ../docs run build && npm --prefix ../docs run deploy\"",
-    "deploy": "npm-run-all artefact:deploy updateFeed:generate updateFeed:deploy"
+    "deploy": "npm run artefact:deploy && npm run updateFeed:generate && npm run updateFeed:deploy"
   },
   "main": "./build/electron/src/main.js",
   "devDependencies": {
-    "npm-run-all": "4.1.5",
     "shx": "0.4.0",
     "dotenv-cli": "10.0.0",
     "cross-env": "10.0.0",
