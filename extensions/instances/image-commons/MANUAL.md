@@ -12,11 +12,11 @@ It adds the following capabilities:
 ## convert
 Converts one or multiple selected images into a target file format, with optional resizing and metadata removal, and saves the resulting images in the original image repository.
 
-- `Format`: target image format (`jpeg`, `png`, `webp`, `gif`, `avif`, or `heif`). Defaults to `jpeg` ;
-- `Strip metadata?`: whether embedded EXIF and format metadata are stripped from the converted images. Defaults to `true` ;
-- `Width`: optional target width in pixels. If omitted, the original image width is preserved ;
-- `Height`: optional target height in pixels. If omitted, the original image height is preserved ;
-- `Resize Render`: determines how the image is fitted when width or height is specified — either `inbox` (constrains dimensions inside the bounding box while maintaining aspect ratio) or `outbox`. Defaults to `inbox`.
+- `Format`: target image format (`jpeg`, `png`, `webp`, `gif`, `avif`, or `heif`).
+- `Strip metadata?`: whether embedded EXIF and format metadata are stripped from the converted images.
+- `Width`: optional target width in pixels. If omitted, the original image width is preserved.
+- `Height`: optional target height in pixels. If omitted, the original image height is preserved.
+- `Resize Render`: determines how the image is fitted when width or height is specified — either `inbox` (constrains dimensions inside the bounding box while maintaining aspect ratio) or `outbox`.
 
 1. For each selected image, Picteus renders the converted image via the image service according to the selected format, dimensions, and metadata options.
 2. If dimensional resizing (`Width` or `Height`) is requested, `Strip metadata?` must be enabled. If metadata stripping is disabled when specifying dimensions, an error dialog is presented and conversion stops.
@@ -29,7 +29,7 @@ Enables users to assign a star rating and an optional textual comment to each se
 
 1. When invoked on one or more selected images, the command iterates through each image and presents an execution form dialog displaying the current image context.
 2. The form provides the following input fields:
-   - `Rating`: an integer rating from 1 to 5 presented as radio buttons. Defaults to the image's existing rating, or 3 if unrated ;
+   - `Rating`: an integer rating from 1 to 5 presented as radio buttons. Defaults to the image's existing rating, or 3 if unrated.
    - `Comment`: a multi-line text area of up to 1,024 characters for descriptive notes or reviews. Defaults to any existing comment previously saved.
 3. Ratings are saved as an image feature of type `Annotation` with the name `"Rating"`.
 4. Non-empty comments are saved as an image feature of type `Comment` with the name `"Comment"`.
@@ -49,7 +49,7 @@ Opens an embedded interactive tagging interface within a dialog box to inspect, 
 ## analytics
 Computes and visualizes the statistical breakdown and temporal distribution of selected tags across an entire image collection.
 
-- `Collection`: the image collection whose images will be analyzed ;
+- `Collection`: the image collection whose images will be analyzed.
 - `Tags`: the list of tag identifiers to analyze and compare.
 
 1. The command queries the repository API for all images in the specified collection.
