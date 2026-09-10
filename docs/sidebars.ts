@@ -25,7 +25,11 @@ const sidebars: SidebarsConfig =
         },
         items: [
           "extensions/reference/overview",
-          "extensions/reference/intents"
+          "extensions/reference/manifest",
+          "extensions/reference/class",
+          "extensions/reference/api",
+          "extensions/reference/intents",
+          "extensions/reference/manual"
         ]
       },
       "extensions/unpacked"

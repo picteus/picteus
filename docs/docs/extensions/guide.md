@@ -37,7 +37,7 @@ Once you have retrieved their source code, you may copy their directory and past
 If you prefer to learn in depth and understand in details the composition of an extension, you may create all the necessary resources "manually".
 
 If you decide to go this way, you should:
-- take as reference the JSON Schema associated to the manifest, see [The extension manifest — `manifest.json`](./reference/overview.md#the-extension-manifest--manifestjson) for more information ;
+- take as reference the JSON Schema associated to the manifest, see [Manifest](./reference/manifest.md) for more information ;
 - inspect the source code of the SDKs, located in the `extensions/sdk` of the hereby git repository, and have a look at the `PicteusExtension` class public methods, in order to have a grasp of the API (documentation to come).
 
 ### Via an AI coding agent
