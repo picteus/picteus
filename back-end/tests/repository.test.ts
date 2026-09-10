@@ -317,20 +317,34 @@ describe("Repository", () =>
     let repository = await base.prepareEmptyRepository();
     const otherRepository = await base.prepareEmptyRepository(base.prepareEmptyDirectory("other"));
 
-    await expect(async () =>
     {
-      await base.getRepositoryController().update(repository.id, otherRepository.name);
-    }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${otherRepository.name}' is invalid because a repository with the same name already exists`, BAD_REQUEST, base.badParameterCode));
-    const names = [ repository.name + "-updated", undefined ];
-    const comments = [ repository.comment + "-updated", undefined ];
-    for (const name of names)
-    {
-      for (const comment of comments)
+      // We assess with invalid parameters
+      await expect(async () =>
       {
-        const updatedRepository = await base.getRepositoryController().update(repository.id, name, comment);
-        expect(updatedRepository.name).toBe(name === undefined ? repository.name : name);
-        expect(updatedRepository.comment).toBe(comment === undefined ? repository.comment : comment);
-        repository = updatedRepository;
+        await base.getRepositoryController().update(repository.id, otherRepository.name);
+      }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${otherRepository.name}' is invalid because a repository with the same name already exists`, BAD_REQUEST, base.badParameterCode));
+    }
+
+    {
+      // We assess with valid parameters
+      const names = [ `${repository.name}-updated`, undefined ];
+      const comments = [ `${repository.comment}-updated`, undefined ];
+      const notifierService = base.getNotifierService();
+      for (const name of names)
+      {
+        for (const comment of comments)
+        {
+          const listener = base.computeEventListener();
+          notifierService.once(EventEntity.Repository, RepositoryEventAction.Updated, undefined, listener);
+          const updatedRepository = await base.getRepositoryController().update(repository.id, name, comment);
+          expect(updatedRepository.name).toBe(name === undefined ? repository.name : name);
+          expect(updatedRepository.comment).toBe(comment === undefined ? repository.comment : comment);
+          repository = updatedRepository;
+          await waitForExpect(() =>
+          {
+            expect(listener).toHaveBeenCalledTimes(1);
+          });
+        }
       }
     }
   });

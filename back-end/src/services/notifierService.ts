@@ -50,6 +50,7 @@ export enum ExtensionEventAction
 export enum RepositoryEventAction
 {
   Created = "created",
+  Updated = "updated",
   Synchronize = "synchronize",
   Watch = "watch",
   Deleted = "deleted"

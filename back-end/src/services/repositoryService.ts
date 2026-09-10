@@ -216,6 +216,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       where: { id },
       data: { name, comment }
     });
+    this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Updated, undefined, { id: repository.id });
     return plainToInstanceViaJSON(Repository, updatedRepository);
   }
 

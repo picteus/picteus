@@ -627,7 +627,7 @@ export function spawnPythonWithWatchdog(pythonExecutable: string, parameters: st
 {
   const options =
     {
-      loggedIndications: `via a${process.platform === "win32" ? "Windows " : ""} termination watch dog`,
+      loggedIndications: `via a${process.platform === "win32" ? " Windows" : ""} termination watch dog`,
       loggedCommand: `${pythonExecutable}${parameters.length === 0 ? "" : (" " + parameters.join(" "))}`
     };
   const shell = false;
