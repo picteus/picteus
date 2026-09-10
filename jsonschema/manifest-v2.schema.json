@@ -90,8 +90,6 @@
               "enum": [
                 "process.started",
                 "process.runCommand",
-                "extension.versions",
-                "extension.ready",
                 "extension.settings",
                 "image.created",
                 "image.updated",
@@ -150,8 +148,6 @@
                     "enum": [
                       "process.started",
                       "process.runCommand",
-                      "extension.versions",
-                      "extension.ready",
                       "extension.settings",
                       "image.created",
                       "image.updated",

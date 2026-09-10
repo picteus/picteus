@@ -1,8 +1,7 @@
 {
-  "version": "0.11.0",
-  "name": "v0.11.0",
-  "notes": "",
-  "pub_date": "2026-08-31T11:11:34.557Z",
-  "url": "https://github.com/picteus/picteus/releases/download/v0.11.0/Picteus-v0.11.0-darwin-arm64.zip",
-  "sha512": "w4ivx+jMzV6uAOa6nZUDD2VxVXU+Dr1vhh0oLh8+To8DGxA416VEtJhtklpPDNgj7hzEgnJQKy+SXb0yEW9W1g=="
+  "version": "0.12.0",
+  "name": "v0.12.0",
+  "pub_date": "2026-09-10T22:30:05.218Z",
+  "url": "https://github.com/picteus/picteus/releases/download/v0.12.0/Picteus-v0.12.0-darwin-arm64.zip",
+  "sha512": "VHKcypHPsZoRjtUMc8rLXSg7ojsELFecZ9urzz7f9pRnwtl/Z1o6HkDFERN034G8xjYpOwGK0UirGJlY60fj5A=="
 }
