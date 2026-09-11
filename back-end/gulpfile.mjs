@@ -35,7 +35,7 @@ const cleanDirectory = (directoryPath) =>
 {
   return () =>
   {
-    return gulpDel([directoryPath], { force: true });
+    return gulpDel([ directoryPath ], { force: true });
   };
 };
 
@@ -95,7 +95,7 @@ const copyPackageJson = (sourceDirectoryPath, targetDirectoryPath) =>
   const absoluteDirectoryPath = path.resolve(sourceDirectoryPath, "..");
   const fixedPath = process.platform !== "win32" ? absoluteDirectoryPath : absoluteDirectoryPath.replaceAll("\\", "\\\\");
   return gulp
-    .src([packageJsonFileName], { cwd: sourceDirectoryPath })
+    .src([ packageJsonFileName ], { cwd: sourceDirectoryPath })
     .pipe(gulpReplace(/file:..\//g, `file:${fixedPath}/`))
     .pipe(gulp.dest(targetDirectoryPath));
 };
@@ -168,7 +168,7 @@ const pruneNodeModulesForProduction = () =>
       let files = fs.readdirSync(directoryPath);
       if (files.length > 0)
       {
-        files.forEach(function(file)
+        files.forEach(function (file)
         {
           cleanEmptyFoldersRecursively(path.join(directoryPath, file));
         });
@@ -247,7 +247,7 @@ const installElectron = () =>
 
 // Those are the packages that need to be kept in the back-end "node_modules" directory, even if they should be present in the Electron "node_modules" directory
 // We also need to keep the "tslib" and "rxjs" modules, for a reason that cannot be explained so far
-const toBeKeptPackages = ["tslib", "rxjs", "@babel", "color", "@xmldom", "base64-js", "mkdirp", "negotiator"];
+const toBeKeptPackages = [ "tslib", "rxjs", "@babel", "color", "@xmldom", "base64-js", "mkdirp", "negotiator" ];
 const computePruneElectronDuplicates = () =>
 {
   const collect = (directories) =>
@@ -287,19 +287,19 @@ const computePruneElectronDuplicates = () =>
       return electronDirectoryNames.includes(value) === true && toBeKeptPackages.indexOf(value) === -1;
     });
     console.log(`The Node.js duplicated folders to delete are [${alreadyAvailableModuleNames.join(", ")}]`);
-    const alreadyAvailableInElectronDirectoryPaths = alreadyAvailableModuleNames.concat([".bin"])
+    const alreadyAvailableInElectronDirectoryPaths = alreadyAvailableModuleNames.concat([ ".bin" ])
       .map((value) =>
       {
         return path.join(buildBackendDirectoryPath, nodeModulesDirectoryName, value);
       });
     return gulpDel(alreadyAvailableInElectronDirectoryPaths, { force: true });
   };
-  return [backendChain, electronChain, removeDuplicates];
+  return [ backendChain, electronChain, removeDuplicates ];
 };
 
 const cleanPackageJson = () =>
 {
-  return gulpDel([path.join(buildBackendDirectoryPath, packageJsonFileName)], {
+  return gulpDel([ path.join(buildBackendDirectoryPath, packageJsonFileName) ], {
     force: true
   });
 };
@@ -314,7 +314,7 @@ export const installNodeModulesForDockerfile = gulp.series(
   cleanPackageJson
 );
 
-const [existingChain, newChain, removeDuplicates] = computePruneElectronDuplicates();
+const [ existingChain, newChain, removeDuplicates ] = computePruneElectronDuplicates();
 const pruneElectronDuplicates = gulp.series(existingChain, newChain, removeDuplicates);
 // noinspection JSUnusedGlobalSymbols
 export const installNodeModulesForElectron = gulp.series(
@@ -336,7 +336,7 @@ export const copySecrets = gulp.series(
   () =>
   {
     return gulp
-      .src(["**/*"], { cwd: path.join(backendDirectoryPath, "secrets") })
+      .src([ "**/*" ], { cwd: path.join(backendDirectoryPath, "secrets") })
       .pipe(gulp.dest(secretsTargetDirectoryPath));
   }
 );
@@ -345,7 +345,7 @@ export const copySecrets = gulp.series(
 export const copyDatabase = gulp.series(() =>
 {
   return gulp
-    .src(["database.db"], { cwd: backendDirectoryPath })
+    .src([ "database.db" ], { cwd: backendDirectoryPath })
     .pipe(gulp.dest(buildBackendDirectoryPath));
 });
 
@@ -353,7 +353,7 @@ export const copyDatabase = gulp.series(() =>
 export const copyAssets = gulp.series(() =>
 {
   return gulp
-    .src(["assets/**/*", "!**/node_modules/**/*", "!**/node_modules", "!**/package-lock.json"], {
+    .src([ "assets/**/*", "!**/node_modules/**/*", "!**/node_modules", "!**/package-lock.json" ], {
       cwd: backendDirectoryPath,
       dot: true
     })
@@ -508,22 +508,24 @@ const generateOpenApiClient = (languageAndVariant) =>
   const generatorName = languageAndVariant;
   // This is a work-around in Windows, shared at https://github.com/OpenAPITools/openapi-generator/issues/14075#issuecomment-2266095826, otherwise we experience "Illegal character in opaque part at index 2" runtime errors during the code generation
   const inputSpec = process.platform === "win32" ? actualOpenApiFilePath.replaceAll("\\", "/") : actualOpenApiFilePath;
-  generators[generatorName] =
+  generatorCli["generators"] =
     {
-      "generatorName": generatorName,
-      "inputSpec": inputSpec,
-      "output": computeOpenApiTargetDirectoryPath(languageAndVariant),
-      "additionalProperties": additionalProperties,
-      // Those options cause the generator process to fail
-      // "globalProperties":
-      //   {
-      //     "apiTests": true,
-      //     "modelTests": true,
-      //     "modelDocs": true
-      //   },
-      // We define the 2 following properties outside from the 'additionalProperties' property, because of a bug
-      gitUserId,
-      gitRepoId
+      [generatorName]: {
+        "generatorName": generatorName,
+        "inputSpec": inputSpec,
+        "output": computeOpenApiTargetDirectoryPath(languageAndVariant),
+        "additionalProperties": additionalProperties,
+        // Those options cause the generator process to fail
+        // "globalProperties":
+        //   {
+        //     "apiTests": true,
+        //     "modelTests": true,
+        //     "modelDocs": true
+        //   },
+        // We define the 2 following properties outside from the 'additionalProperties' property, because of a bug
+        gitUserId,
+        gitRepoId
+      }
     };
 
   const resortToConfigurationFile = Math.random() <= 1;
@@ -531,7 +533,7 @@ const generateOpenApiClient = (languageAndVariant) =>
   {
     fs.writeFileSync(openApiToolsFilePath, JSON.stringify(openApiToolsJsonObject, undefined, 2));
     const openApiToolsOptionValue = process.platform === "win32" ? openApiToolsFilePath : `'${openApiToolsFilePath}'`;
-    const openApiCommand = `openapi-generator-cli generate --openapitools ${openApiToolsOptionValue} --custom-generator ${generatorName}`;
+    const openApiCommand = `openapi-generator-cli generate --openapitools ${openApiToolsOptionValue} --generator-key ${generatorName}`;
     // We reduce the verbosity of the "openapi-generator-cli" executable via the Java logging level to "warn", as explained at https://github.com/OpenAPITools/openapi-generator/issues/1992
     return runGulpRun(openApiCommand, { cwd: backendDirectoryPath, env: { JAVA_OPTS: "-Dlog.level=warn" } });
   }
@@ -629,7 +631,10 @@ export const updateVersion = async () =>
     const filePath = path.join(backendSourceDirectoryPath, "constants.ts");
     const string = fs.readFileSync(filePath, { encoding: "utf8" });
     const apiVersion = rootConfig["apiVersion"];
-    const tokens = [{ key: "applicationVersion", value: applicationVersion }, { key: "apiVersion", value: apiVersion }];
+    const tokens = [ { key: "applicationVersion", value: applicationVersion }, {
+      key: "apiVersion",
+      value: apiVersion
+    } ];
     const newString = tokens.reduce((string, token) =>
     {
       return string.replace(new RegExp(String.raw`${token.key}: "(\d+\.\d+\.\d+)"`, "g"), `${token.key}: "${token.value}"`);
@@ -697,7 +702,7 @@ const dotPrisma = ".prisma";
 
 const deletePrismaClient = () =>
 {
-  return gulpDel([path.join(buildBackendDirectoryPath, nodeModulesDirectoryName, dotPrisma)], {
+  return gulpDel([ path.join(buildBackendDirectoryPath, nodeModulesDirectoryName, dotPrisma) ], {
     force: true
   });
 };
@@ -706,7 +711,7 @@ const deletePrismaClient = () =>
 export const copyPrismaClient = gulp.series(deletePrismaClient, () =>
 {
   const directoryPath = path.join(backendDirectoryPath, nodeModulesDirectoryName);
-  const intermediatePaths = [nodeModulesDirectoryName, dotPrisma, "client"];
+  const intermediatePaths = [ nodeModulesDirectoryName, dotPrisma, "client" ];
   const otherDirectoryPath = path.join(buildBackendDirectoryPath, ...intermediatePaths);
   fs.mkdirSync(otherDirectoryPath, { recursive: true });
 
@@ -727,7 +732,7 @@ export const copyPrismaClient = gulp.series(deletePrismaClient, () =>
 
   // Then, we copy the other files via Gulp
   return gulp
-    .src([`${dotPrisma}/**`, `!${dotPrisma}/**/${libQueryEnginePrefix}*`], {
+    .src([ `${dotPrisma}/**`, `!${dotPrisma}/**/${libQueryEnginePrefix}*` ], {
       cwd: directoryPath,
       base: dotPrisma,
       allowEmpty: false,
@@ -751,19 +756,19 @@ export const fixPrisma = async () =>
 
 const deletePrismaMigrations = () =>
 {
-  return gulpDel([path.join(buildBackendDirectoryPath, prisma)], { force: true });
+  return gulpDel([ path.join(buildBackendDirectoryPath, prisma) ], { force: true });
 };
 
 const copyPrismaMigrationsFolder = () =>
 {
   const migrations = "migrations";
-  const intermediatePaths = [prisma, migrations];
+  const intermediatePaths = [ prisma, migrations ];
   const migrationsDirectoryPath = path.join(
     buildBackendDirectoryPath,
     ...intermediatePaths
   );
   return gulp
-    .src([`${prisma}/${migrations}/**/*.sql`], {
+    .src([ `${prisma}/${migrations}/**/*.sql` ], {
       cwd: backendDirectoryPath,
       allowEmpty: true,
       buffer: false
@@ -805,7 +810,7 @@ function downloadAndStoreFile(url, filePath, logFragment)
 
 
 const pyenvArchiveFileName = "pyenv-posix.tar.gz";
-const pythonRuntimePaths = ["runtimes", "python"];
+const pythonRuntimePaths = [ "runtimes", "python" ];
 const pythonRuntimeDirectoryPath = path.join(backendDirectoryPath, ...pythonRuntimePaths);
 
 // noinspection JSUnusedGlobalSymbols
@@ -848,6 +853,6 @@ export const buildPyenv = async () =>
 export const copyPyenv = async () =>
 {
   return gulp
-    .src([pyenvArchiveFileName], { cwd: pythonRuntimeDirectoryPath })
+    .src([ pyenvArchiveFileName ], { cwd: pythonRuntimeDirectoryPath })
     .pipe(gulp.dest(path.join(buildBackendDirectoryPath, ...pythonRuntimePaths)));
 };
