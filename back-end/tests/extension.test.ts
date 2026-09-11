@@ -2193,7 +2193,7 @@ describe("Extensions", () =>
 
         // We now cause the compilation to fail
         const isNode = environment === ManifestRuntimeEnvironment.Node;
-        const filePath = path.join(paths.unpackedExtensionsDirectoryPath!, extensionId, "src", isNode ? "main.ts" : "main.py");
+        const filePath = path.join(paths.unpackedExtensionsDirectoryPath!, extensionId, ...(isNode === true ? [ "src", "main.ts" ] : [ "main.py" ]));
         const copiedFilePath = path.join(base.getWorkingDirectoryPath(), "copied");
         fs.copyFileSync(filePath, copiedFilePath);
         try

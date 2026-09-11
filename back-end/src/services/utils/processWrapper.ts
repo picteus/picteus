@@ -334,81 +334,6 @@ const getNodeWatchdogPreloadScript: () => string = (function (): () => string
     if (nodeWatchdogPreloadFilePath === undefined)
     {
       nodeWatchdogPreloadFilePath = path.join(getTemporaryDirectoryPath(), "nodeWatchdogPreload.cjs");
-      // TODO: to remove once the new implementation is confirmed
-      const previousNodeWatchdogBootstrapCode = `
-// @ts-nocheck
-// Zero-Code-Change Preload Watchdog for Node.js child processes
-// This script is preloaded via Node's -r CLI flag.
-
-(() =>
-{
-  const initialParentProcessId = process.ppid;
-
-  // We monitor standard input closure when spawned with piped stdio
-  if (process.stdin && process.stdin.isTTY !== true)
-  {
-    process.stdin.resume();
-    process.stdin.unref();
-    process.stdin.on("end", () =>
-      {
-        process.exit(0);
-      }
-    );
-    process.stdin.on("close", () =>
-      {
-        process.exit(0);
-      }
-    );
-    process.stdin.on("error", () =>
-      {
-        process.exit(0);
-      }
-    );
-  }
-
-  // We listen for IPC channel disconnection
-  process.on("disconnect", () =>
-    {
-      process.exit(0);
-    }
-  );
-  // In Node.js's internal child_process implementation (lib/internal/child_process.js), a newListener hook monitors events attached to process: adding a listener for "disconnect" or "message" causes Node to call control.refCounted(), which increments the reference count on the underlying libuv pipe handle (handle.ref()). We unreference the channel so that the process can exit naturally once all tasks complete
-  if (process.channel)
-  {
-    process.channel.unref();
-  }
-
-  // We poll the parent process identifier as a fallback mechanism
-  const watchdogInterval = setInterval(
-    () =>
-    {
-      if (process.platform !== "win32")
-      {
-        if (process.ppid !== initialParentProcessId)
-        {
-          process.exit(0);
-        }
-      }
-      else
-      {
-        try
-        {
-          process.kill(initialParentProcessId, 0);
-        }
-        catch (error)
-        {
-          if (error && error.code === "ESRCH")
-          {
-            process.exit(0);
-          }
-        }
-      }
-    }, 250
-  );
-
-  watchdogInterval.unref();
-})();
-`.trim();
       const nodeWatchdogBootstrapCode = `
 // watchdog.mjs — parent-death watchdog for Node.js child processes.
 //
@@ -582,7 +507,7 @@ function main(pollIntervalInMilliseconds, exitCode, usesHardKill, doesWatchStdin
 
 }
 
-main(250, 0, false, false, true);
+main(250, 0, false, false, false);
 `.trim();
       fs.writeFileSync(nodeWatchdogPreloadFilePath, nodeWatchdogBootstrapCode, { encoding: "utf8" });
     }
@@ -690,10 +615,31 @@ function computeProcessError(processDesignator: string | undefined, code: number
 
 export async function waitFor(childProcess: ChildProcess): Promise<void>
 {
+  if (childProcess.exitCode !== null || childProcess.signalCode !== null)
+  {
+    const error = computeProcessError(`with id '${childProcess.pid}'`, childProcess.exitCode, childProcess.signalCode);
+    if (error !== undefined)
+    {
+      throw error;
+    }
+    else
+    {
+      logger.debug(`The process with id '${childProcess.pid}' successfully exited`);
+      return;
+    }
+  }
+
   return await new Promise<void>((resolve, reject) =>
   {
-    childProcess.on("exit", async (code: number | null, signal: NodeJS.Signals | null) =>
+    let isSettled = false;
+
+    function handleExit(code: number | null, signal: NodeJS.Signals | null): void
     {
+      if (isSettled === true)
+      {
+        return;
+      }
+      isSettled = true;
       const error = computeProcessError(`with id '${childProcess.pid}'`, code, signal);
       if (error !== undefined)
       {
@@ -704,6 +650,24 @@ export async function waitFor(childProcess: ChildProcess): Promise<void>
         logger.debug(`The process with id '${childProcess.pid}' successfully exited`);
         resolve();
       }
+    }
+
+    childProcess.once("error", (error: Error) =>
+    {
+      if (isSettled === true)
+      {
+        return;
+      }
+      isSettled = true;
+      reject(error);
+    });
+    childProcess.once("exit", (code: number | null, signal: NodeJS.Signals | null) =>
+    {
+      handleExit(code, signal);
+    });
+    childProcess.once("close", (code: number | null, signal: NodeJS.Signals | null) =>
+    {
+      handleExit(code, signal);
     });
   });
 }

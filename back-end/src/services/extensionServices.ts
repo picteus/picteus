@@ -2047,7 +2047,7 @@ export class ExtensionService
     }
     else if (runtime.environment === ManifestRuntimeEnvironment.Python)
     {
-      const childProcess = spawn(computeVirtualEnvironmentPythonFilePath(directoryPath), [ "-m", "compileall", "-q", "-f", "-x", "[/\\\\]\\.venv", "." ], directoryPath);
+      const childProcess = spawn(computeVirtualEnvironmentPythonFilePath(directoryPath), [ "-m", "compileall", "-q", "-f", "-x", "\\.venv", "." ], directoryPath, undefined, false, [ "ignore", "inherit", "inherit" ]);
       await waitFor(childProcess);
     }
   }
