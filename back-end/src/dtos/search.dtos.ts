@@ -230,7 +230,7 @@ export class SearchFeatureCondition
       anyOf:
         [
           { type: "string", maxLength: FieldLengths.value },
-          { type: "number", format: "int64" },
+          { type: "integer", format: "int64" },
           { type: "number", format: "double" },
           { type: "boolean" }
         ],
@@ -330,7 +330,7 @@ export class SearchPropertyRange
   @ApiProperty(
     {
       description: "The minimal value",
-      type: Number,
+      type: "integer",
       format: "int64",
       minimum: 0,
       required: false,
@@ -347,7 +347,7 @@ export class SearchPropertyRange
   @ApiProperty(
     {
       description: "The maximal value",
-      type: Number,
+      type: "integer",
       format: "int64",
       required: false,
       example: 100

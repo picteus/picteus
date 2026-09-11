@@ -252,10 +252,10 @@ class InternalServer
         }
       });
 
+    const schemaReferenceValue = "#/components/schemas/";
     {
       // Fixes an issue with the NestJS Open API specification files generation
       const schemaReferencePropertyName = "$ref";
-      const wrongSchemaReferenceValue = "#/components/schemas/";
       const fixSchemaReference = (object: Record<string, any>) =>
       {
         for (const property in object)
@@ -264,7 +264,7 @@ class InternalServer
           if (subProperty !== null && typeof subProperty === "object")
           {
             const schemaReference = subProperty[schemaReferencePropertyName];
-            if (schemaReference === wrongSchemaReferenceValue)
+            if (schemaReference === schemaReferenceValue)
             {
               delete subProperty[schemaReferencePropertyName];
             }
@@ -273,6 +273,67 @@ class InternalServer
         }
       };
       fixSchemaReference(document);
+    }
+    {
+      // We ensure discriminator properties on referenced descendant schemas declare "type: string"
+      const fixDiscriminatorPropertyTypes = (openApiDocument: OpenAPIObject): void =>
+      {
+        const schemas = openApiDocument.components?.schemas;
+        if (schemas !== undefined)
+        {
+          for (const schemaName in schemas)
+          {
+            const schemaObject = schemas[schemaName];
+            if (schemaObject !== null && typeof schemaObject === "object" && "properties" in schemaObject && schemaObject.properties !== undefined)
+            {
+              const properties = schemaObject.properties as Record<string, any>;
+              for (const propertyName in properties)
+              {
+                const propertySchema = properties[propertyName];
+                if (propertySchema !== null && typeof propertySchema === "object" && propertySchema.discriminator !== undefined)
+                {
+                  const discriminatorPropertyName = propertySchema.discriminator.propertyName;
+                  const candidateSchemaNames: string[] = [];
+                  if (propertySchema.discriminator.mapping !== undefined)
+                  {
+                    for (const mappingKey in propertySchema.discriminator.mapping)
+                    {
+                      const mappingRef = propertySchema.discriminator.mapping[mappingKey];
+                      const mappedSchemaName = mappingRef.replace(schemaReferenceValue, "");
+                      candidateSchemaNames.push(mappedSchemaName);
+                    }
+                  }
+                  if (Array.isArray(propertySchema.oneOf))
+                  {
+                    for (const oneOfItem of propertySchema.oneOf)
+                    {
+                      if (typeof oneOfItem.$ref === "string")
+                      {
+                        const referencedSchemaName = oneOfItem.$ref.replace(schemaReferenceValue, "");
+                        candidateSchemaNames.push(referencedSchemaName);
+                      }
+                    }
+                  }
+                  for (const candidateSchemaName of candidateSchemaNames)
+                  {
+                    const candidateSchema = schemas[candidateSchemaName];
+                    if (candidateSchema !== null && typeof candidateSchema === "object" && "properties" in candidateSchema && candidateSchema.properties !== undefined)
+                    {
+                      const candidateProperties = candidateSchema.properties as Record<string, any>;
+                      const discriminatorProperty = candidateProperties[discriminatorPropertyName];
+                      if (discriminatorProperty !== null && typeof discriminatorProperty === "object" && discriminatorProperty.type === undefined)
+                      {
+                        discriminatorProperty.type = "string";
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+      fixDiscriminatorPropertyTypes(document);
     }
     {
       // We fix the missing tags

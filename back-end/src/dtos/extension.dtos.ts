@@ -291,6 +291,7 @@ export class ManifestExtensionCommand
     {
       description: "The definition of the parameters the command requires",
       type: Object,
+      additionalProperties: true,
       required: false
     }
   )
@@ -404,7 +405,7 @@ export class ManifestThrottlingPolicy
   @ApiProperty(
     {
       description: "The duration during which a maximal number of events can be handled",
-      type: Number,
+      type: "integer",
       format: "int32",
       minimum: 0,
       exclusiveMinimum: true,
@@ -421,7 +422,7 @@ export class ManifestThrottlingPolicy
   @ApiProperty(
     {
       description: "The maximal number of events that be handled during the duration",
-      type: Number,
+      type: "integer",
       format: "int32",
       minimum: 0,
       exclusiveMinimum: true,
@@ -992,6 +993,7 @@ export class Manifest extends ExtensionBasis
     {
       description: "The extension settings definition",
       type: Object,
+      additionalProperties: true,
       required: true,
       example: {
         type: "object",
@@ -1277,6 +1279,7 @@ export class ExtensionSettings
     {
       description: "The extension settings",
       type: Object,
+      additionalProperties: true,
       required: true
     }
   )
@@ -1433,6 +1436,7 @@ export class RunCommandParameters
     {
       description: "The command parameters",
       type: Object,
+      additionalProperties: true,
       required: false
     }
   )

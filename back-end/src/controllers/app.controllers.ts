@@ -391,7 +391,7 @@ export class ApiSecretController
   @ApiQuery({
     name: "expirationDate",
     description: "The expiration date",
-    type: Number,
+    type: "integer",
     format: "int64",
     minimum: 0,
     required: false,
@@ -818,7 +818,16 @@ export class ExtensionController
   )
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
   @ApiQuery({ name: "commandId", description: "The identifier of the command", type: String, required: true })
-  @ApiBody({ description: "The command parameters", type: Object, required: false })
+  @ApiBody(
+    {
+      description: "The command parameters",
+      schema: {
+        type: "object",
+        additionalProperties: true
+      },
+      required: false
+    }
+  )
   @ApiProduces(types.txt)
   @Header(headers.response.CONTENT_TYPE, types.txt)
   @HttpCode(NO_CONTENT)
@@ -1364,7 +1373,7 @@ export class RepositoryController
     schema: {
       type: "string",
       format: "uri",
-      minimum: 8,
+      minLength: 8,
       maxLength: FieldLengths.url,
       example: "https://i.pinimg.com/736x/ff/6e/fc/ff6efca1dbea44c34bc18614a3cc5320.jpg"
     },
@@ -1373,7 +1382,7 @@ export class RepositoryController
   @ApiQuery({
     name: "inceptionDate",
     description: "The moment when the image was incepted",
-    type: Number,
+    type: "integer",
     format: "int64",
     minimum: 0,
     required: false,
@@ -1603,7 +1612,7 @@ class ImageMediaUrlQuery
     {
       name: "width",
       description: "The image maximum width ; if not defined, the original width is used",
-      type: Number,
+      type: "integer",
       format: "int32",
       required: false
     }
@@ -1614,7 +1623,7 @@ class ImageMediaUrlQuery
   @ApiProperty({
     name: "height",
     description: "The image maximum height ; if not defined, the original height is used",
-    type: Number,
+    type: "integer",
     format: "int32",
     required: false
   })
@@ -1915,14 +1924,14 @@ export class ImageController
   @ApiQuery({
     name: "width",
     description: "The image maximum width ; if not defined, the original width is used",
-    type: Number,
+    type: "integer",
     format: "int32",
     required: false
   })
   @ApiQuery({
     name: "height",
     description: "The image maximum height ; if not defined, the original height is used",
-    type: Number,
+    type: "integer",
     format: "int32",
     required: false
   })
@@ -2342,7 +2351,7 @@ export class ImageController
   @ApiQuery({
     name: "count",
     description: "The number of images to return",
-    type: Number,
+    type: "integer",
     format: "int64",
     required: true,
     example: 3
@@ -2489,7 +2498,7 @@ export class ImageController
   @ApiQuery({
     name: "quality",
     description: "The image quality, in case of a lossy format like JPEG or WEBP",
-    type: Number,
+    type: "integer",
     format: "int32",
     required: false,
     minimum: 1,

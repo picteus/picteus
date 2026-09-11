@@ -175,7 +175,7 @@ export const technicalSchema: SchemaObject =
 export const integerIdSchema: SchemaObject =
   {
     description: "An integer identifier",
-    type: "number",
+    type: "integer",
     format: "int32",
     minimum: 0,
     example: 123
@@ -210,7 +210,7 @@ export class Dates
   @ApiProperty(
     {
       description: "The entity creation date",
-      type: Number,
+      type: "integer",
       format: "int64",
       required: true,
       example: 1725989551416
@@ -224,7 +224,7 @@ export class Dates
   @ApiProperty(
     {
       description: "The entity last modification date",
-      type: Number,
+      type: "integer",
       format: "int64",
       required: true,
       example: 1760890442560
@@ -253,7 +253,7 @@ export class WithIdCreationDateNameComment
     {
       ...integerIdSchema,
       description: "The entity identifier",
-      type: Number,
+      type: "integer",
       required: true
     }
   )
@@ -265,7 +265,7 @@ export class WithIdCreationDateNameComment
   @ApiProperty(
     {
       description: "The entity creation date",
-      type: Number,
+      type: "integer",
       format: "int64",
       required: true,
       example: 1761384334302
@@ -340,7 +340,7 @@ export function generateItemsResultClass<T>(type: NestType<T>): NestType<{ items
     @ApiProperty(
       {
         description: "The total number of items",
-        type: Number,
+        type: "integer",
         format: "int64",
         minimum: 0,
         required: true

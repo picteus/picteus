@@ -20,7 +20,7 @@ export class Collection extends WithIdCreationDateNameComment
   @ApiProperty(
     {
       description: "The entity creation date",
-      type: Number,
+      type: "integer",
       format: "int64",
       required: true,
       example: 1771937596

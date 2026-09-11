@@ -19,23 +19,23 @@ export function DeepObjectApiQuery(query: Type, withDeepObject: boolean = true):
   const constructor = query.prototype;
   const parentMetadata: any[] = Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES_ARRAY, constructor);
   const properties = parentMetadata.map(property => property.substring(1));
-  const decorators: MethodDecorator [] = [];
+  const decorators: MethodDecorator[] = [];
   for (const property of properties)
   {
     const childQueryOptions: ApiQueryOptions = Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES, constructor, property);
     // @ts-ignore
     const { type } = childQueryOptions;
-    if ([Number, Boolean, String, "string"].includes(type) === false)
+    const propertyType = Reflect.getMetadata("design:type", constructor, property);
+    const isPrimitive = [Number, Boolean, String, "string", "number", "integer", "boolean"].includes(type) ||
+      [Number, Boolean, String].includes(propertyType) ||
+      ("enum" in childQueryOptions && childQueryOptions.enum !== undefined);
+    if (withDeepObject === true && isPrimitive === false)
     {
-      if (withDeepObject === true)
-      {
-        // The "explode" and "style" specifications are documented at https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#style-examples
-        childQueryOptions.explode = true;
-        childQueryOptions.style = "deepObject";
-      }
+      // The "explode" and "style" specifications are documented at https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#style-examples
+      childQueryOptions.explode = true;
+      childQueryOptions.style = "deepObject";
       // @ts-ignore
       childQueryOptions.type = "object";
-      const propertyType = Reflect.getMetadata("design:type", constructor, property);
       // @ts-ignore
       childQueryOptions.schema = { $ref: getSchemaPath(propertyType) };
       decorators.push(ApiExtraModels(propertyType));

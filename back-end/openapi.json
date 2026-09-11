@@ -186,7 +186,7 @@
               "minimum": 0,
               "format": "int64",
               "example": 1760890442560,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -244,7 +244,7 @@
             "description": "The API secret identifier",
             "schema": {
               "description": "An integer identifier",
-              "type": "number",
+              "type": "integer",
               "format": "int32",
               "minimum": 0,
               "example": 123
@@ -281,7 +281,7 @@
             "description": "The API secret identifier",
             "schema": {
               "description": "An integer identifier",
-              "type": "number",
+              "type": "integer",
               "format": "int32",
               "minimum": 0,
               "example": 123
@@ -841,7 +841,8 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "type": "object",
+                "additionalProperties": true
               }
             }
           }
@@ -1700,7 +1701,7 @@
               "minimum": 0,
               "format": "int64",
               "example": 17825836341234,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -1711,7 +1712,7 @@
             "schema": {
               "type": "string",
               "format": "uri",
-              "minimum": 8,
+              "minLength": 8,
               "maxLength": 4096,
               "example": "https://i.pinimg.com/736x/ff/6e/fc/ff6efca1dbea44c34bc18614a3cc5320.jpg"
             }
@@ -1925,7 +1926,7 @@
             "description": "The collection identifier",
             "schema": {
               "description": "An integer identifier",
-              "type": "number",
+              "type": "integer",
               "format": "int32",
               "minimum": 0,
               "example": 123
@@ -1962,7 +1963,7 @@
             "description": "The collection identifier",
             "schema": {
               "description": "An integer identifier",
-              "type": "number",
+              "type": "integer",
               "format": "int32",
               "minimum": 0,
               "example": 123
@@ -2034,7 +2035,7 @@
             "description": "The collection identifier",
             "schema": {
               "description": "An integer identifier",
-              "type": "number",
+              "type": "integer",
               "format": "int32",
               "minimum": 0,
               "example": 123
@@ -2278,7 +2279,7 @@
             "description": "The image maximum width ; if not defined, the original width is used",
             "schema": {
               "format": "int32",
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2288,7 +2289,7 @@
             "description": "The image maximum height ; if not defined, the original height is used",
             "schema": {
               "format": "int32",
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2585,7 +2586,7 @@
             "description": "The image maximum width ; if not defined, the original width is used",
             "schema": {
               "format": "int32",
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2595,7 +2596,7 @@
             "description": "The image maximum height ; if not defined, the original height is used",
             "schema": {
               "format": "int32",
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2707,7 +2708,7 @@
             "description": "The image maximum width ; if not defined, the original width is used",
             "schema": {
               "format": "int32",
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2717,7 +2718,7 @@
             "description": "The image maximum height ; if not defined, the original height is used",
             "schema": {
               "format": "int32",
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -3412,7 +3413,7 @@
             "schema": {
               "format": "int64",
               "example": 3,
-              "type": "number"
+              "type": "integer"
             }
           }
         ],
@@ -3465,7 +3466,7 @@
                 "schema": {
                   "items": {
                     "description": "An integer identifier",
-                    "type": "number",
+                    "type": "integer",
                     "format": "int32",
                     "minimum": 0,
                     "example": 123
@@ -3706,7 +3707,7 @@
               "minimum": 1,
               "maximum": 100,
               "format": "int32",
-              "type": "number"
+              "type": "integer"
             }
           }
         ],
@@ -4107,14 +4108,14 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity identifier",
             "format": "int32",
             "minimum": 0,
             "example": 123
           },
           "creationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity creation date",
             "format": "int64",
             "example": 1761384334302
@@ -4143,7 +4144,7 @@
             ]
           },
           "expirationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity expiration date",
             "format": "int64",
             "example": 1761385316688
@@ -4161,14 +4162,14 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity identifier",
             "format": "int32",
             "minimum": 0,
             "example": 123
           },
           "creationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity creation date",
             "format": "int64",
             "example": 1761384334302
@@ -4197,7 +4198,7 @@
             ]
           },
           "expirationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity expiration date",
             "format": "int64",
             "example": 1761385316688
@@ -4392,7 +4393,8 @@
           },
           "parameters": {
             "type": "object",
-            "description": "The definition of the parameters the command requires"
+            "description": "The definition of the parameters the command requires",
+            "additionalProperties": true
           },
           "specifications": {
             "description": "The specifications for the command",
@@ -4539,7 +4541,7 @@
             }
           },
           "durationInMilliseconds": {
-            "type": "number",
+            "type": "integer",
             "description": "The duration during which a maximal number of events can be handled",
             "format": "int32",
             "minimum": 0,
@@ -4547,7 +4549,7 @@
             "example": 1000
           },
           "maximumCount": {
-            "type": "number",
+            "type": "integer",
             "description": "The maximal number of events that be handled during the duration",
             "format": "int32",
             "minimum": 0,
@@ -4653,7 +4655,8 @@
               {
                 "$ref": "#/components/schemas/UserInterfaceAnchor"
               }
-            ]
+            ],
+            "type": "string"
           },
           "isExternal": {
             "type": "boolean",
@@ -4677,7 +4680,8 @@
               {
                 "$ref": "#/components/schemas/UserInterfaceAnchor"
               }
-            ]
+            ],
+            "type": "string"
           }
         },
         "description": "Specifies how a window UI element integrates",
@@ -4809,6 +4813,7 @@
           "settings": {
             "type": "object",
             "description": "The extension settings definition",
+            "additionalProperties": true,
             "example": {
               "type": "object",
               "properties": {
@@ -4972,17 +4977,14 @@
         "properties": {
           "value": {
             "type": "object",
-            "description": "The extension settings"
+            "description": "The extension settings",
+            "additionalProperties": true
           }
         },
         "description": "The settings of an extension",
         "required": [
           "value"
         ]
-      },
-      "Object": {
-        "type": "object",
-        "properties": {}
       },
       "SearchOriginNature": {
         "type": "string",
@@ -5002,7 +5004,8 @@
               {
                 "$ref": "#/components/schemas/SearchOriginNature"
               }
-            ]
+            ],
+            "type": "string"
           },
           "ids": {
             "description": "The repository identifiers",
@@ -5034,7 +5037,8 @@
               {
                 "$ref": "#/components/schemas/SearchOriginNature"
               }
-            ]
+            ],
+            "type": "string"
           },
           "ids": {
             "description": "The image identifiers",
@@ -5225,7 +5229,7 @@
                 "maxLength": 524288
               },
               {
-                "type": "number",
+                "type": "integer",
                 "format": "int64"
               },
               {
@@ -5284,14 +5288,14 @@
         "type": "object",
         "properties": {
           "minimum": {
-            "type": "number",
+            "type": "integer",
             "description": "The minimal value",
             "format": "int64",
             "minimum": 0,
             "example": 0
           },
           "maximum": {
-            "type": "number",
+            "type": "integer",
             "description": "The maximal value",
             "format": "int64",
             "example": 100
@@ -5516,7 +5520,7 @@
             ]
           },
           "collectionId": {
-            "type": "number",
+            "type": "integer",
             "description": "The collection identifier to filter with to narrow down the returned items",
             "format": "int32",
             "minimum": 0,
@@ -5538,7 +5542,8 @@
         "properties": {
           "command": {
             "type": "object",
-            "description": "The command parameters"
+            "description": "The command parameters",
+            "additionalProperties": true
           },
           "search": {
             "description": "The search parameters",
@@ -5653,13 +5658,13 @@
         "type": "object",
         "properties": {
           "creationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity creation date",
             "format": "int64",
             "example": 1725989551416
           },
           "modificationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity last modification date",
             "format": "int64",
             "example": 1760890442560
@@ -5871,13 +5876,13 @@
         "type": "object",
         "properties": {
           "width": {
-            "type": "number",
+            "type": "integer",
             "description": "The image width in pixels",
             "format": "int32",
             "minimum": 1
           },
           "height": {
-            "type": "number",
+            "type": "integer",
             "description": "The image height in pixels",
             "format": "int32",
             "minimum": 1
@@ -5893,13 +5898,13 @@
         "type": "object",
         "properties": {
           "creationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity creation date",
             "format": "int64",
             "example": 1725989551416
           },
           "modificationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity last modification date",
             "format": "int64",
             "example": 1760890442560
@@ -5963,7 +5968,8 @@
               {
                 "$ref": "#/components/schemas/PromptKind"
               }
-            ]
+            ],
+            "type": "string"
           },
           "text": {
             "type": "string",
@@ -5989,11 +5995,13 @@
               {
                 "$ref": "#/components/schemas/PromptKind"
               }
-            ]
+            ],
+            "type": "string"
           },
           "value": {
             "type": "object",
-            "description": "The instructions-based prompt"
+            "description": "The instructions-based prompt",
+            "additionalProperties": true
           }
         },
         "description": "The instructions of an AI-based generated image",
@@ -6006,7 +6014,7 @@
         "type": "object",
         "properties": {
           "schemaVersion": {
-            "type": "number",
+            "type": "integer",
             "description": "The version of the schema the hereby recipe complies to",
             "format": "int32",
             "minimum": 1,
@@ -6063,6 +6071,7 @@
           "aspectRatio": {
             "type": "number",
             "description": "The required image aspect ratio, i.e. the result of its width by its height",
+            "format": "double",
             "minimum": 0,
             "exclusiveMinimum": true,
             "example": 1.7777
@@ -6220,13 +6229,13 @@
         "type": "object",
         "properties": {
           "creationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity creation date",
             "format": "int64",
             "example": 1725989551416
           },
           "modificationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity last modification date",
             "format": "int64",
             "example": 1760890442560
@@ -6303,8 +6312,9 @@
             "example": "https://static1.smartbear.co/swagger/media/assets/images/swagger_logo.svg"
           },
           "sizeInBytes": {
-            "type": "number",
+            "type": "integer",
             "description": "The image size in bytes",
+            "format": "int64",
             "minimum": 0,
             "exclusiveMinimum": true
           },
@@ -6366,11 +6376,6 @@
           "tags"
         ]
       },
-      "ApplicationMetadataItemFreeValue": {
-        "type": "object",
-        "properties": {},
-        "description": "The free form of the application metadata of an image"
-      },
       "ApplicationMetadataItem": {
         "type": "object",
         "properties": {
@@ -6391,7 +6396,8 @@
               },
               {
                 "description": "The image free metadata value",
-                "$ref": "#/components/schemas/ApplicationMetadataItemFreeValue"
+                "type": "object",
+                "additionalProperties": true
               }
             ]
           }
@@ -6422,14 +6428,14 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity identifier",
             "format": "int32",
             "minimum": 0,
             "example": 123
           },
           "creationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity creation date",
             "format": "int64",
             "example": 1761384334302
@@ -6449,7 +6455,7 @@
             "example": "My comment on the entity"
           },
           "modificationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity creation date",
             "format": "int64",
             "example": 1771937596
@@ -6483,7 +6489,7 @@
             }
           },
           "totalCount": {
-            "type": "number",
+            "type": "integer",
             "description": "The total number of items",
             "format": "int64",
             "minimum": 0
@@ -6499,13 +6505,13 @@
         "type": "object",
         "properties": {
           "creationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity creation date",
             "format": "int64",
             "example": 1725989551416
           },
           "modificationDate": {
-            "type": "number",
+            "type": "integer",
             "description": "The entity last modification date",
             "format": "int64",
             "example": 1760890442560
@@ -6582,8 +6588,9 @@
             "example": "https://static1.smartbear.co/swagger/media/assets/images/swagger_logo.svg"
           },
           "sizeInBytes": {
-            "type": "number",
+            "type": "integer",
             "description": "The image size in bytes",
+            "format": "int64",
             "minimum": 0,
             "exclusiveMinimum": true
           },
@@ -6631,7 +6638,7 @@
             }
           },
           "totalCount": {
-            "type": "number",
+            "type": "integer",
             "description": "The total number of items",
             "format": "int64",
             "minimum": 0
@@ -6654,7 +6661,7 @@
             }
           },
           "totalCount": {
-            "type": "number",
+            "type": "integer",
             "description": "The total number of items",
             "format": "int64",
             "minimum": 0
@@ -6702,7 +6709,7 @@
             }
           },
           "totalCount": {
-            "type": "number",
+            "type": "integer",
             "description": "The total number of items",
             "format": "int64",
             "minimum": 0
@@ -6750,7 +6757,7 @@
             }
           },
           "totalCount": {
-            "type": "number",
+            "type": "integer",
             "description": "The total number of items",
             "format": "int64",
             "minimum": 0
@@ -6804,7 +6811,7 @@
             }
           },
           "totalCount": {
-            "type": "number",
+            "type": "integer",
             "description": "The total number of items",
             "format": "int64",
             "minimum": 0

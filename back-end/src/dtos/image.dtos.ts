@@ -69,7 +69,7 @@ export class ImageDimensions
   @ApiProperty(
     {
       description: "The image width in pixels",
-      type: Number,
+      type: "integer",
       format: "int32",
       minimum: 1,
       required: true
@@ -83,7 +83,7 @@ export class ImageDimensions
   @ApiProperty(
     {
       description: "The image height in pixels",
-      type: Number,
+      type: "integer",
       format: "int32",
       minimum: 1,
       required: true
@@ -286,6 +286,7 @@ export class InstructionsPrompt extends BasisPrompt
     {
       description: "The instructions-based prompt",
       type: Object,
+      additionalProperties: true,
       required: true
     }
   )
@@ -321,7 +322,7 @@ export class GenerationRecipe
   @ApiProperty(
     {
       description: "The version of the schema the hereby recipe complies to",
-      type: Number,
+      type: "integer",
       format: "int32",
       minimum: 1,
       maximum: generationRecipeSchemaVersion,
@@ -437,7 +438,8 @@ export class GenerationRecipe
   @ApiProperty(
     {
       description: "The required image aspect ratio, i.e. the result of its width by its height",
-      type: Number,
+      type: "number",
+      format: "double",
       minimum: 0,
       exclusiveMinimum: true,
       required: false,
@@ -502,7 +504,7 @@ export class ApplicationMetadataItemFreeValue extends Map<string, any>
 
 }
 
-@ApiExtraModels(GenerationRecipe, ApplicationMetadataItemFreeValue)
+@ApiExtraModels(GenerationRecipe)
 @ApiSchema({ description: "The application metadata item specific to an extension" })
 export class ApplicationMetadataItem
 {
@@ -541,7 +543,8 @@ export class ApplicationMetadataItem
           },
           {
             description: "The image free metadata value",
-            $ref: getSchemaPath(ApplicationMetadataItemFreeValue)
+            type: "object",
+            additionalProperties: true
           }
         ],
       required: true
@@ -886,7 +889,7 @@ export class ImageEmbedding
   @ApiProperty(
     {
       description: "The image embeddings vector",
-      type: Number,
+      type: "number",
       format: "double",
       isArray: true,
       minItems: 1,
@@ -1129,7 +1132,8 @@ export class ImageSummary extends Dates
   @ApiProperty(
     {
       description: "The image size in bytes",
-      type: Number,
+      type: "integer",
+      format: "int64",
       minimum: 0,
       exclusiveMinimum: true,
       required: true
@@ -1238,7 +1242,7 @@ export class ImageDistance
   @ApiProperty(
     {
       description: "The distance of the image to the embeddings",
-      type: Number,
+      type: "number",
       format: "double",
       minimum: 0,
       required: true
@@ -1437,7 +1441,7 @@ export class SearchParameters
     {
       ...integerIdSchema,
       description: "The collection identifier to filter with to narrow down the returned items",
-      type: Number,
+      type: "integer",
       required: false
     }
   )

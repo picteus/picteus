@@ -40,7 +40,7 @@ export class ApiSecretSummary extends WithIdCreationDateNameComment
   @ApiProperty(
     {
       description: "The entity expiration date",
-      type: Number,
+      type: "integer",
       format: "int64",
       required: false,
       example: 1761385316688
