@@ -2192,23 +2192,21 @@ describe("Extensions", () =>
         await base.getExtensionController().compile(extensionId);
 
         // We now cause the compilation to fail
-        if (environment === ManifestRuntimeEnvironment.Node)
+        const isNode = environment === ManifestRuntimeEnvironment.Node;
+        const filePath = path.join(paths.unpackedExtensionsDirectoryPath!, extensionId, "src", isNode ? "main.ts" : "main.py");
+        const copiedFilePath = path.join(base.getWorkingDirectoryPath(), "copied");
+        fs.copyFileSync(filePath, copiedFilePath);
+        try
         {
-          const filePath = path.join(paths.unpackedExtensionsDirectoryPath!, extensionId, "src", "main.ts");
-          const copiedFilePath = path.join(base.getWorkingDirectoryPath(), "copied");
-          fs.copyFileSync(filePath, copiedFilePath);
-          try
+          fs.writeFileSync(filePath, isNode ? "dummy code" : "invalid ::: syntax");
+          await expect(async () =>
           {
-            fs.writeFileSync(filePath, "dummy code");
-            await expect(async () =>
-            {
-              await base.getExtensionController().compile(extensionId);
-            }).rejects.toThrow(new ServiceError(`The compilation for the '${environment}' environment failed`, BAD_REQUEST, base.badParameterCode));
-          }
-          finally
-          {
-            fs.renameSync(copiedFilePath, filePath);
-          }
+            await base.getExtensionController().compile(extensionId);
+          }).rejects.toThrow(new ServiceError(`The compilation for the '${environment}' environment failed`, BAD_REQUEST, base.badParameterCode));
+        }
+        finally
+        {
+          fs.renameSync(copiedFilePath, filePath);
         }
       }
 

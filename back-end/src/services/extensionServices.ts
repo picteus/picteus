@@ -65,7 +65,7 @@ import {
   UserInterfaceAnchor
 } from "../dtos/app.dtos";
 import { parametersChecker } from "./utils/parametersChecker";
-import { waitFor } from "./utils/processWrapper";
+import { spawn, waitFor } from "./utils/processWrapper";
 import {
   ensureNpm,
   installPackages,
@@ -75,6 +75,7 @@ import {
   runNpm
 } from "./utils/npmWrapper";
 import {
+  computeVirtualEnvironmentPythonFilePath,
   ensureVirtualEnvironment,
   installViaVirtualEnvironmentRequirements,
   pythonVersion
@@ -2043,6 +2044,11 @@ export class ExtensionService
         const childProcess = await runNpm([ "run", "build" ], directoryPath);
         await waitFor(childProcess);
       }
+    }
+    else if (runtime.environment === ManifestRuntimeEnvironment.Python)
+    {
+      const childProcess = spawn(computeVirtualEnvironmentPythonFilePath(directoryPath), [ "-m", "compileall", "-q", "-f", "-x", "[/\\\\]\\.venv", "." ], directoryPath);
+      await waitFor(childProcess);
     }
   }
 
