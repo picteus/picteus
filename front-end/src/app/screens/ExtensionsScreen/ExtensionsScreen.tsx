@@ -3,7 +3,7 @@ import { ActionIcon, Button, Card, Flex, SimpleGrid, Stack, Table, Text, Title }
 import { IconBox, IconLayoutGrid, IconList, IconPlus, IconPuzzle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Extension, ExtensionActivityKind } from "@picteus/ws-client";
+import { Extension, ExtensionActivity as ApiExtensionActivity } from "@picteus/ws-client";
 
 import { useActionModalContext } from "app/context";
 import { useExtensionActivities, useExtensions } from "app/hooks";
@@ -33,19 +33,19 @@ export default function ExtensionsScreen()
 {
   const [ t ] = useTranslation();
   const { data: extensions = [], isLoading, isFetching, refetch: refetchExtensions } = useExtensions();
-  const { data: rawActivities = [], refetch: refetchActivities } = useExtensionActivities();
+  const { data: activities = [], refetch: refetchActivities } = useExtensionActivities();
   const [ , addModal ] = useActionModalContext();
   const [ selectedExtension, setSelectedExtension ] = useState<Extension>();
   const [ viewMode, setViewMode ] = useState<"table" | "card">("table");
 
-  const extensionActivities = useMemo<Record<string, ExtensionActivityKind>>(() =>
+  const perExtensionIdActivities = useMemo<Record<string, ApiExtensionActivity>>(() =>
   {
-    return rawActivities.reduce((accumulator, activity) =>
+    return activities.reduce((accumulator, activity) =>
     {
-      accumulator[activity.id] = activity.kind;
+      accumulator[activity.id] = activity;
       return accumulator;
-    }, {} as Record<string, ExtensionActivityKind>);
-  }, [ rawActivities ]);
+    }, {});
+  }, [ activities ]);
 
   function refetchAll(): void
   {
@@ -130,8 +130,8 @@ export default function ExtensionsScreen()
         <Table.Td>
           <Flex align="center" gap="xs">
             <EntityState type="extension" state={extension.state} size="md"/>
-            {extensionActivities[extension.manifest.id] &&
-              <ExtensionActivity kind={extensionActivities[extension.manifest.id]}/>}
+            {perExtensionIdActivities[extension.manifest.id] &&
+              <ExtensionActivity activity={perExtensionIdActivities[extension.manifest.id]}/>}
           </Flex>
         </Table.Td>
         <Table.Td>
@@ -143,7 +143,7 @@ export default function ExtensionsScreen()
           />
         </Table.Td>
       </Table.Tr>
-    )), [ extensions, extensionActivities ]);
+    )), [ extensions, perExtensionIdActivities ]);
 
   function renderTable()
   {
@@ -187,7 +187,7 @@ export default function ExtensionsScreen()
           <Card key={extension.manifest.id} shadow="sm" padding="lg" radius="md" withBorder>
             <ExtensionTop
               extension={extension}
-              activityKind={extensionActivities[extension.manifest.id]}
+              activity={perExtensionIdActivities[extension.manifest.id]}
               openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
               openExtensionSettingsModal={openExtensionSettingsModal}
               onUninstalled={refetchAll}
@@ -248,7 +248,7 @@ export default function ExtensionsScreen()
           selectedExtension && (
             <ExtensionTop
               extension={selectedExtension}
-              activityKind={extensionActivities[selectedExtension.manifest.id]}
+              activity={perExtensionIdActivities[selectedExtension.manifest.id]}
               openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
               openExtensionSettingsModal={openExtensionSettingsModal}
               onUninstalled={() =>

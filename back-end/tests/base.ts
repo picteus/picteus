@@ -56,12 +56,7 @@ import {
   SearchParameters,
   TextualPrompt
 } from "../src/dtos/app.dtos";
-import {
-  EventEntity,
-  ExtensionEventProcess,
-  NotifierService,
-  RepositoryEventAction
-} from "../src/services/notifierService";
+import { ActionState, EventEntity, NotifierService, RepositoryEventAction } from "../src/services/notifierService";
 import { ExtensionService } from "../src/services/extensionServices";
 import { writeMetadata } from "../src/services/utils/images";
 import { ApiScope } from "../src/app.guards";
@@ -762,7 +757,7 @@ export class Base extends Core
     const notifierService = this.getNotifierService();
     await new Promise(async (resolve) =>
     {
-      const offListener = notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, ExtensionEventProcess.Stopped, async (_event: string, value: object) =>
+      const offListener = notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, ActionState.Stopped, async (_event: string, value: object) =>
       {
         if ("id" in value && value.id === repositoryId)
         {

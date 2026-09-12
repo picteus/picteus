@@ -3,7 +3,7 @@ import { Flex, Image, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { IconBox } from "@tabler/icons-react";
 
-import { Extension, ExtensionActivityKind } from "@picteus/ws-client";
+import { Extension, ExtensionActivity as ApiExtensionActivity } from "@picteus/ws-client";
 
 import { ExtensionsService } from "app/services";
 import { Common, ContentTitle, CopyText, EntityState, FieldValue, NoValue } from "app/components";
@@ -12,7 +12,7 @@ import { ExtensionActions, ExtensionActivity } from "../index.ts";
 
 type ExtensionTopType = {
   extension: Extension;
-  activityKind?: ExtensionActivityKind;
+  activity?: ApiExtensionActivity;
   openAddOrUpdateExtensionModal: (extension: Extension) => void;
   openExtensionSettingsModal: (extension: Extension) => void;
   onUninstalled: () => void;
@@ -20,7 +20,7 @@ type ExtensionTopType = {
 
 export default function ExtensionTop({
   extension,
-  activityKind,
+  activity,
   openAddOrUpdateExtensionModal,
   openExtensionSettingsModal,
   onUninstalled
@@ -44,7 +44,7 @@ export default function ExtensionTop({
         <FieldValue name={t("field.state")}
                     value={<Flex align="center" gap="xs">
                       <EntityState type="extension" state={extension.state} size="sm"/>
-                      {activityKind && <ExtensionActivity kind={activityKind}/>}
+                      {activity && <ExtensionActivity activity={activity}/>}
                     </Flex>}/>
         <Flex gap="sm" mt="lg">
           <ExtensionActions

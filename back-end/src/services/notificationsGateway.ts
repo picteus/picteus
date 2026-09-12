@@ -56,6 +56,7 @@ import {
 } from "../bos";
 import { deepCopy, stringify } from "../utils";
 import {
+  ActionState,
   EventAction,
   EventEntity,
   ExtensionEventAction,
@@ -207,6 +208,7 @@ export class NotificationsGateway
           this.perExtensionIdSocketIds.delete(extensionId);
         }
       }
+      this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Connection, ActionState.Stopped, { id: extensionId });
     }
     this.activeSocketIds.delete(socketId);
     this.perExtensionsSocketSupportedEvents.delete(socketId);
@@ -362,6 +364,7 @@ export class NotificationsGateway
             this.perExtensionsSocketSupportedEvents.set(socketId, events);
             logger.debug(`The extension with id '${extensionId}' is interested in the [${events.join(", ")}] event(s)`);
             this.moduleRef.get(ExtensionService).onConnection(extensionId, true);
+            this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Connection, ActionState.Started, { id: extensionId });
           });
         });
       }

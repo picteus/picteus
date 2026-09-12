@@ -15,13 +15,7 @@ import { ImageDeclarationManager } from "../../threads/managers";
 import { VectorDatabaseAccessor } from "../databaseProviders";
 import { PersistenceProvider } from "../../persistence";
 import { SearchFileStats, SearchService } from "../imageServices";
-import {
-  EventEntity,
-  ExtensionEventProcess,
-  ImageEventAction,
-  NotifierService,
-  RepositoryEventAction
-} from "../notifierService";
+import { ActionState, EventEntity, ImageEventAction, NotifierService, RepositoryEventAction } from "../notifierService";
 import { WatcherEvent, WatcherTerminator, watchPath } from "./pathWatcher";
 import { CollectionService } from "../collectionService";
 
@@ -54,7 +48,7 @@ export class RepositoryWatcher
     RepositoryWatcher.instances[id] = watcher;
     RepositoryWatcher.startedRepositories.push(repository);
     await watcher.start(persistenceProvider, notifierService);
-    notifierService.emit(EventEntity.Repository, RepositoryEventAction.Watch, ExtensionEventProcess.Started, { id });
+    notifierService.emit(EventEntity.Repository, RepositoryEventAction.Watch, ActionState.Started, { id });
   }
 
   static async stop(repository: Repository, notifierService: NotifierService): Promise<void>
@@ -69,7 +63,7 @@ export class RepositoryWatcher
     await watcher.stop();
     delete RepositoryWatcher.instances[id];
     RepositoryWatcher.startedRepositories.splice(RepositoryWatcher.startedRepositories.indexOf(repository), 1);
-    notifierService.emit(EventEntity.Repository, RepositoryEventAction.Watch, ExtensionEventProcess.Stopped, { id });
+    notifierService.emit(EventEntity.Repository, RepositoryEventAction.Watch, ActionState.Stopped, { id });
   }
 
   static async ignore<T>(id: string, relativeFilePath: string, callback: () => Promise<T>): Promise<T>

@@ -24,7 +24,7 @@ import { Base, Core, ExtensionBasisBuilder, ListenerMock } from "./base";
 import {
   applicationXGzipMimeType,
   CommandEntity,
-  ExtensionActivityKind,
+  ExtensionActivityState,
   ExtensionCategory,
   ExtensionGenerationOptions,
   ExtensionSettings,
@@ -53,12 +53,7 @@ import {
 import { ServiceError } from "../src/app.exceptions";
 import { apiKeyHeaderName, AuthenticationGuard } from "../src/app.guards";
 import { ExtensionRegistry, ImageAttachmentService } from "../src/services/app.service";
-import {
-  EventEntity,
-  ExtensionEventAction,
-  ExtensionEventProcess,
-  NotifierService
-} from "../src/services/notifierService";
+import { ActionState, EventEntity, ExtensionEventAction, NotifierService } from "../src/services/notifierService";
 import { readMetadata } from "../src/services/utils/images";
 import { ExtensionGenerator } from "../src/services/extensionGenerator";
 
@@ -189,7 +184,7 @@ describe("Extensions", () =>
 
     readonly installedListener: ListenerMock;
 
-    readonly startedListener: ListenerMock;
+    readonly processStartedListener: ListenerMock;
 
     readonly errorListener: ListenerMock;
 
@@ -210,8 +205,8 @@ describe("Extensions", () =>
       }
       this.installedListener = base.computeEventListener();
       base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Installed, undefined, this.installedListener);
-      this.startedListener = base.computeEventListener();
-      base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Process, ExtensionEventProcess.Started, this.startedListener);
+      this.processStartedListener = base.computeEventListener();
+      base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Process, ActionState.Started, this.processStartedListener);
       this.errorListener = base.computeEventListener();
       base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Error, undefined, this.errorListener);
     }
@@ -344,8 +339,8 @@ describe("Extensions", () =>
 
     checkExtensionProcessStarted(): void
     {
-      expect(this.startedListener).toHaveBeenCalledTimes(1);
-      expect(this.startedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ExtensionEventProcess.Started, { id: this.extensionId });
+      expect(this.processStartedListener).toHaveBeenCalledTimes(1);
+      expect(this.processStartedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ActionState.Started, { id: this.extensionId });
     }
 
     async checkExtensionRunning(checkStartedFile: boolean = true, checkImageTouchedFile: boolean = true, environment: {
@@ -1029,7 +1024,7 @@ describe("Extensions", () =>
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     const stoppedListener = base.computeEventListener();
-    base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Process, ExtensionEventProcess.Stopped, stoppedListener);
+    base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Process, ActionState.Stopped, stoppedListener);
     await testApiInstall(builder, manifest, zip.toBuffer(), undefined, async () =>
     {
       await waitForExpect(async () =>
@@ -1041,10 +1036,10 @@ describe("Extensions", () =>
         message: `The process of the extension with id '${manifest.id}' regarding the 'process.started' event has exited 3 times in a row, it will not be restarted anymore`
       });
       const maximumAttemptsCount = 3;
-      expect(builder.startedListener).toHaveBeenCalledTimes(maximumAttemptsCount);
-      expect(builder.startedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ExtensionEventProcess.Started, { id: manifest.id });
+      expect(builder.processStartedListener).toHaveBeenCalledTimes(maximumAttemptsCount);
+      expect(builder.processStartedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ActionState.Started, { id: manifest.id });
       expect(stoppedListener).toHaveBeenCalledTimes(maximumAttemptsCount);
-      expect(stoppedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ExtensionEventProcess.Stopped, { id: manifest.id });
+      expect(stoppedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ActionState.Stopped, { id: manifest.id });
     });
   });
 
@@ -1748,7 +1743,7 @@ describe("Extensions", () =>
             expect((await base.getExtensionController().activities()).find((activity) =>
             {
               return activity.id === builder.extensionId;
-            })?.kind).toEqual(ExtensionActivityKind.Connected);
+            })?.connection).toEqual(ExtensionActivityState.Started);
           });
           const commandId = aCase.command.id;
 
@@ -1815,7 +1810,7 @@ describe("Extensions", () =>
       expect((await base.getExtensionController().activities()).find((activity) =>
       {
         return activity.id === builder.extensionId;
-      })?.kind).toEqual(ExtensionActivityKind.Connected);
+      })?.connection).toEqual(ExtensionActivityState.Started);
     });
     const { images } = await builder.createRepositoryAndGetImages();
     const image = images[0];
@@ -1888,7 +1883,7 @@ describe("Extensions", () =>
       expect((await base.getExtensionController().activities()).find((activity) =>
       {
         return activity.id === builder.extensionId;
-      })?.kind).toEqual(ExtensionActivityKind.Connected);
+      })?.connection).toEqual(ExtensionActivityState.Started);
     });
     const { repository, images } = await builder.createRepositoryAndGetImages(true);
     const image = images[0];
@@ -2608,7 +2603,7 @@ describe("Extensions", () =>
     const apiKey = AuthenticationGuard.generateApiKey();
     AuthenticationGuard.masterApiKey = apiKey;
     ioClient.emit(connectionChannelName, { apiKey, isOpen: true });
-    const initialEventsCount = 15;
+    const initialEventsCount = 16;
 
     try
     {
@@ -2671,13 +2666,13 @@ describe("Extensions", () =>
       await base.getExtensionController().changeState(manifest.id, ExtensionState.Paused);
       await waitForExpect(() =>
       {
-        expectEvent(initialEventsCount + 3, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Stopped, { id: manifest.id });
+        expectEvent(initialEventsCount + 4, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.State + NotifierService.delimiter + ActionState.Stopped, { id: manifest.id });
       });
 
       await base.getExtensionController().changeState(manifest.id, ExtensionState.Enabled);
       await waitForExpect(() =>
       {
-        expectEvent(initialEventsCount + 9, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Started, { id: manifest.id });
+        expectEvent(initialEventsCount + 4 + 7, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.State + NotifierService.delimiter + ActionState.Started, { id: manifest.id });
       });
     }
     finally

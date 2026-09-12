@@ -1102,13 +1102,12 @@ export enum ExtensionState
 }
 
 /**
- * All possible extension activity kinds.
+ * All possible extension activities states.
  */
-export enum ExtensionActivityKind
+export enum ExtensionActivityState
 {
-  Connecting = "connecting",
-  Connected = "connected",
-  Error = "error"
+  Started = "started",
+  Stopped = "stopped"
 }
 
 /**
@@ -1118,10 +1117,13 @@ export enum ExtensionActivityKind
 export class ExtensionActivity
 {
 
-  constructor(id: string, kind: ExtensionActivityKind)
+  constructor(id: string, state: ExtensionActivityState, process: ExtensionActivityState, connection: ExtensionActivityState, isInError: boolean)
   {
     this.id = id;
-    this.kind = kind;
+    this.state = state;
+    this.process = process;
+    this.connection = connection;
+    this.isInError = isInError;
   }
 
   @ApiProperty(
@@ -1138,17 +1140,53 @@ export class ExtensionActivity
 
   @ApiProperty(
     {
-      description: "The kind of activity of the extension",
-      enum: ExtensionActivityKind,
-      enumName: "ExtensionActivityKind",
+      description: "The state of the extension",
+      enum: ExtensionActivityState,
+      enumName: "ExtensionActivityState",
       required: true,
-      default: ExtensionActivityKind.Connecting,
-      example: ExtensionActivityKind.Connected
+      example: ExtensionActivityState.Started
     }
   )
-  @IsEnum(ExtensionActivityKind)
+  @IsEnum(ExtensionActivityState)
   @Expose()
-  readonly kind: ExtensionActivityKind;
+  readonly state: ExtensionActivityState;
+
+  @ApiProperty(
+    {
+      description: "The state of the extension process",
+      enum: ExtensionActivityState,
+      enumName: "ExtensionActivityState",
+      required: true,
+      example: ExtensionActivityState.Started
+    }
+  )
+  @IsEnum(ExtensionActivityState)
+  @Expose()
+  readonly process: ExtensionActivityState;
+
+  @ApiProperty(
+    {
+      description: "The state of the extension connection",
+      enum: ExtensionActivityState,
+      enumName: "ExtensionActivityState",
+      required: true,
+      example: ExtensionActivityState.Stopped
+    }
+  )
+  @IsEnum(ExtensionActivityState)
+  @Expose()
+  readonly connection: ExtensionActivityState;
+
+  @ApiProperty(
+    {
+      description: "Whether the extension is in error",
+      type: Boolean,
+      required: true
+    }
+  )
+  @IsString()
+  @Expose()
+  readonly isInError: boolean;
 
 }
 

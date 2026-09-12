@@ -1,22 +1,18 @@
 import React from "react";
 import { Badge } from "@mantine/core";
 
-import { ExtensionActivityKind } from "@picteus/ws-client";
+import { ExtensionActivity as ApiExtensionActivity, ExtensionActivityState } from "@picteus/ws-client";
 
 
 type ExtensionActivityType = {
-  kind?: ExtensionActivityKind;
+  activity: ApiExtensionActivity;
 };
 
 export default function ExtensionActivity({
-  kind
+  activity
 }: ExtensionActivityType)
 {
-  if (kind === undefined)
-  {
-    return null;
-  }
   return (<Badge
-    color={kind === ExtensionActivityKind.Connected ? "green" : kind === ExtensionActivityKind.Connecting ? "orange" : "red"}
+    color={activity.connection === ExtensionActivityState.Started ? "green" : activity.connection === ExtensionActivityState.Stopped ? "orange" : "red"}
     variant="dot"/>);
 }

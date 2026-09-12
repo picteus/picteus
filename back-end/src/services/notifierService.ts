@@ -23,7 +23,7 @@ export enum ProcessEventAction
   RunCommand = "runCommand"
 }
 
-export enum ExtensionEventProcess
+export enum ActionState
 {
   Started = "started",
   Stopped = "stopped",
@@ -34,9 +34,9 @@ export enum ExtensionEventAction
   Installed = "installed",
   Updated = "updated",
   Uninstalled = "uninstalled",
-  Started = "started",
-  Stopped = "stopped",
+  State = "state",
   Process = "process",
+  Connection = "connection",
   Versions = "versions",
   Ready = "ready",
   Settings = "settings",

@@ -28,10 +28,10 @@ import { logger } from "../logger";
 import { paths } from "../paths";
 import { deepCopy, plainToInstanceViaJSON, stringify } from "../utils";
 import {
+  ActionState,
   EventAction,
   EventEntity,
   ExtensionEventAction,
-  ExtensionEventProcess,
   ImageEventAction,
   NotifierService,
   ProcessEventAction,
@@ -48,7 +48,7 @@ import {
   Extension,
   ExtensionActivities,
   ExtensionActivity,
-  ExtensionActivityKind,
+  ExtensionActivityState,
   ExtensionAndManual,
   ExtensionGenerationOptions,
   ExtensionsConfiguration,
@@ -462,6 +462,10 @@ export class ExtensionService
   // @ts-ignore
   private extensionsManager: ExtensionsManager;
 
+  private readonly perExtensionIdStates: Map<string, boolean> = new Map<string, boolean>();
+
+  private readonly perExtensionIdProcesses: Map<string, boolean> = new Map<string, boolean>();
+
   private readonly perExtensionIdConnections: Map<string, boolean> = new Map<string, boolean>();
 
   private readonly perExtensionIdRunnables: Map<string, Runnable[]> = new Map<string, Runnable[]>();
@@ -539,7 +543,8 @@ export class ExtensionService
         {
           await this.notifyTaskExecutor(manifest, hasExtensionStarted);
         }
-        this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Process, hasExtensionStarted === true ? ExtensionEventProcess.Started : ExtensionEventProcess.Stopped, {
+        this.perExtensionIdProcesses.set(extensionId, hasExtensionStarted);
+        this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Process, hasExtensionStarted === true ? ActionState.Started : ActionState.Stopped, {
           id: extensionId
         });
       }
@@ -560,6 +565,8 @@ export class ExtensionService
     await this.extensionsManager.destroy();
     AuthenticationGuard.resetExtensionsApiKeys();
     await this.unregisterUnpackedExtensions();
+    this.perExtensionIdStates.clear();
+    this.perExtensionIdProcesses.clear();
     this.perExtensionIdConnections.clear();
     this.perExtensionIdRunnables.clear();
     this.errorExtensionIds.clear();
@@ -668,7 +675,10 @@ export class ExtensionService
     {
       return plainToInstanceViaJSON(ExtensionActivity, {
         id: manifest.id,
-        kind: this.perExtensionIdConnections.get(manifest.id) === true ? ExtensionActivityKind.Connected : (this.errorExtensionIds.has(manifest.id) === true ? ExtensionActivityKind.Error : ExtensionActivityKind.Connecting)
+        state: this.perExtensionIdStates.get(manifest.id) === true ? ExtensionActivityState.Started : ExtensionActivityState.Stopped,
+        process: this.perExtensionIdProcesses.get(manifest.id) === true ? ExtensionActivityState.Started : ExtensionActivityState.Stopped,
+        connection: this.perExtensionIdConnections.get(manifest.id) === true ? ExtensionActivityState.Started : ExtensionActivityState.Stopped,
+        isInError: this.errorExtensionIds.has(manifest.id) === true
       });
     }));
   }
@@ -807,6 +817,8 @@ export class ExtensionService
       // We eventually delete the extension's folder
       this.deleteExtensionFolder(id);
     }
+    this.perExtensionIdStates.delete(id);
+    this.perExtensionIdProcesses.delete(id);
     this.perExtensionIdConnections.delete(id);
     this.perExtensionIdRunnables.delete(id);
     this.errorExtensionIds.delete(id);
@@ -1968,7 +1980,8 @@ export class ExtensionService
         await this.synchronize(id);
       }
     }
-    this.notifierService.emit(EventEntity.Extension, shouldStop === true ? ExtensionEventAction.Stopped : ExtensionEventAction.Started, undefined, { id });
+    this.perExtensionIdStates.set(manifest.id, shouldStop === false);
+    this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.State, shouldStop === true ? ActionState.Stopped : ActionState.Started, { id });
   }
 
   private async prepareRuntimes(id: string, directoryPath: string, runtimes: ManifestRuntime[], installDependencies: boolean, isProduction: boolean): Promise<void>

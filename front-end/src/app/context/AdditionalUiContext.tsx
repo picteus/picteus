@@ -158,8 +158,8 @@ export function AdditionalUiProvider({ children }: { children?: React.ReactNode 
         ChannelEnum.EXTENSION_UPDATED,
         ChannelEnum.EXTENSION_INSTALLED,
         ChannelEnum.EXTENSION_UNINSTALLED,
-        ChannelEnum.EXTENSION_STOPPED,
-        ChannelEnum.EXTENSION_STARTED
+        ChannelEnum.EXTENSION_CONNECTION_STARTED,
+        ChannelEnum.EXTENSION_CONNECTION_STOPPED
       ] as const;
     },
     []

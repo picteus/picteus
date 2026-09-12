@@ -206,12 +206,15 @@ export type TabsType = {
 export enum ChannelEnum
 {
   EXTENSION_PREFIX = "extension",
-  EXTENSION_PROCESS_PREFIX = "extension.process",
   EXTENSION_INSTALLED = "extension.installed",
   EXTENSION_UPDATED = "extension.updated",
-  EXTENSION_STARTED = "extension.started",
-  EXTENSION_STOPPED = "extension.stopped",
   EXTENSION_UNINSTALLED = "extension.uninstalled",
+  EXTENSION_STATE_STARTED = "extension.state.started",
+  EXTENSION_STATE_STOPPED = "extension.state.stopped",
+  EXTENSION_PROCESS_STARTED = "extension.process.started",
+  EXTENSION_PROCESS_STOPPED = "extension.process.stopped",
+  EXTENSION_CONNECTION_STARTED = "extension.connection.started",
+  EXTENSION_CONNECTION_STOPPED = "extension.connection.stopped",
   EXTENSION_INTENT = "extension.intent",
   EXTENSION_ERROR = "extension.error",
   EXTENSION_LOG = "extension.log",

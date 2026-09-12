@@ -357,9 +357,17 @@ export default {
       uninstalled: "The extension '{{id}}' has been uninstalled",
       started: "The extension '{{id}}' has been started",
       stopped: "The extension '{{id}}' has been paused",
+      state: {
+        started: "The extension '{{id}}' has been started",
+        stopped: "The extension '{{id}}' has been stopped"
+      },
       process: {
         started: "The process of the extension '{{id}}' has started",
         stopped: "The process of the extension '{{id}}' has stopped"
+      },
+      connection: {
+        started: "The extension '{{id}}' is now connected",
+        stopped: "The extension '{{id}}' was disconnected"
       },
       error: "An error occurred in the extension",
       info: "The extension sent an informational message",
