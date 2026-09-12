@@ -4,26 +4,68 @@ import process from "node:process";
 
 import gulpRun from "gulp-run";
 import YAML from "yaml";
+import {exec} from "node:child_process";
 
 
 const rootDirectoryPath = path.resolve(import.meta.dirname);
 const packageJsonFileName = "package.json";
 const packageJsonFilePath = path.join(rootDirectoryPath, packageJsonFileName);
 
+const runGulpRun = async (command, execOptions) =>
+{
+  await new Promise((resolve, reject) =>
+  {
+    const useGulpForExec = Math.random() > 1;
+    console.info(`Running the command '${command}' in the directory '${execOptions.cwd}'`);
+    if (useGulpForExec === true)
+    {
+      gulpRun(command, execOptions).exec(undefined, (error) =>
+      {
+        if (error !== null)
+        {
+          reject(error);
+        }
+        else
+        {
+          resolve();
+        }
+      });
+    }
+    else
+    {
+      exec(command, { cwd: execOptions.cwd, env: { ...process.env, ...execOptions.env } }, (error, stdout, stderr) =>
+      {
+        if (stdout != null)
+        {
+          console.info(stdout);
+        }
+        if (stderr != null)
+        {
+          console.error(stderr);
+        }
+        if (error !== null)
+        {
+          reject(error);
+        }
+        else
+        {
+          resolve();
+        }
+      });
+    }
+  });
+};
+
 function getPackageJson()
 {
-  return JSON.parse(fs.readFileSync(packageJsonFilePath, {encoding: "utf8"}));
+  return JSON.parse(fs.readFileSync(packageJsonFilePath, { encoding: "utf8" }));
 }
 
 // noinspection JSUnusedGlobalSymbols
 export const updateVersion = async () =>
 {
-  const version = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", packageJsonFileName), {encoding: "utf8"}))["config"]["applicationVersion"];
-  {
-    const packageJson = getPackageJson();
-    packageJson.version = version;
-    fs.writeFileSync(packageJsonFilePath, JSON.stringify(packageJson, undefined, 2) + "\n");
-  }
+  const applicationVersion = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, "..", packageJsonFileName), { encoding: "utf8" }))["config"]["applicationVersion"];
+  await runGulpRun(`npm version --allow-same-version --no-git-tag-version ${applicationVersion}`, { cwd: rootDirectoryPath, verbosity: 3 });
   return Promise.resolve();
 };
 
@@ -39,17 +81,17 @@ export const preparePackageBuilder = async () =>
   const packageBuilderFileName = "package-builder.json";
   if (fs.existsSync(outputDirectoryPath) === false)
   {
-    fs.mkdirSync(outputDirectoryPath, {recursive: true});
+    fs.mkdirSync(outputDirectoryPath, { recursive: true });
   }
   const packagePruningFilePath = path.join(rootDirectoryPath, "..", "back-end", "package-pruning.json");
-  const electronReplaceValue = JSON.parse(fs.readFileSync(packagePruningFilePath, {encoding: "utf8"})).map(entry =>
+  const electronReplaceValue = JSON.parse(fs.readFileSync(packagePruningFilePath, { encoding: "utf8" })).map(entry =>
   {
     const isExclude = entry.startsWith("!") === true;
     const prefix = isExclude === true ? "!" : "";
     const newEntry = isExclude === true ? entry.substring(1) : entry;
     return `"${prefix}node_modules/${newEntry}"`;
   }).join(",\n");
-  const backendReplaceValue = JSON.parse(fs.readFileSync(packagePruningFilePath, {encoding: "utf8"})).map(entry =>
+  const backendReplaceValue = JSON.parse(fs.readFileSync(packagePruningFilePath, { encoding: "utf8" })).map(entry =>
   {
     const isExclude = entry.startsWith("!") === true;
     const prefix = isExclude === true ? "!" : "";
@@ -58,19 +100,19 @@ export const preparePackageBuilder = async () =>
   }).join(",\n");
   const keysAndValues =
     [
-      {key: "extraElectronFilter", value: electronReplaceValue.substring(1, electronReplaceValue.length - 2)},
-      {key: "extraBackendFilter", value: backendReplaceValue.substring(1, backendReplaceValue.length - 2)},
-      {key: "entitlementFilePath", value: entitlementFilePath},
-      {key: "appleIdentityCompany", value: appleIdentityCompany}
+      { key: "extraElectronFilter", value: electronReplaceValue.substring(1, electronReplaceValue.length - 2) },
+      { key: "extraBackendFilter", value: backendReplaceValue.substring(1, backendReplaceValue.length - 2) },
+      { key: "entitlementFilePath", value: entitlementFilePath },
+      { key: "appleIdentityCompany", value: appleIdentityCompany }
     ];
-  let replacedString = fs.readFileSync(path.join(rootDirectoryPath, packageBuilderFileName), {encoding: "utf8"});
+  let replacedString = fs.readFileSync(path.join(rootDirectoryPath, packageBuilderFileName), { encoding: "utf8" });
   for (const keysAndValue of keysAndValues)
   {
     replacedString = replacedString.replaceAll(`$\{${keysAndValue.key}}`, keysAndValue.value.replaceAll("\\", "\\\\"));
   }
   const filePath = path.join(outputDirectoryPath, packageBuilderFileName);
   console.debug(`Writing the electron-builder overwritten content to the the file '${filePath}'`);
-  fs.writeFileSync(filePath, replacedString, {encoding: "utf8"});
+  fs.writeFileSync(filePath, replacedString, { encoding: "utf8" });
   return Promise.resolve();
 };
 
@@ -106,7 +148,7 @@ export const generateUpdateFeed = async () =>
   const gcsBucketCoordinates = cliArguments.indexOf(bucketOptions) === -1 ? undefined : cliArguments[cliArguments.indexOf(bucketOptions) + 1];
   const gitHubProjectOptions = "--githubprojecturl";
   const gitHubProjectUrl = cliArguments.indexOf(gitHubProjectOptions) === -1 ? undefined : cliArguments[cliArguments.indexOf(gitHubProjectOptions) + 1];
-  const yamlFeed = YAML.parse(fs.readFileSync(inputFilePath, {encoding: "utf8"}));
+  const yamlFeed = YAML.parse(fs.readFileSync(inputFilePath, { encoding: "utf8" }));
   const withVersion = true;
   const feed =
     {
@@ -118,7 +160,7 @@ export const generateUpdateFeed = async () =>
       sha512: yamlFeed.sha512
     };
   const outputFilePath = computeUpdateFeedFilePath(outputDirectoryPath);
-  fs.writeFileSync(outputFilePath, JSON.stringify(feed, undefined, 2), {encoding: "utf8"});
+  fs.writeFileSync(outputFilePath, JSON.stringify(feed, undefined, 2), { encoding: "utf8" });
   console.info(`Generated the application update feed file '${outputFilePath}'`);
   return Promise.resolve();
 };
@@ -135,10 +177,7 @@ export const deployUpdateFeedOnGcs = async () =>
   {
     const command = `gcloud storage cp --canned-acl publicRead ${process.platform === "win32" ? filePath : `"${filePath}"`} ${gcsBucketCoordinates}`;
     console.info(`Running the command '${command}'`);
-    promises.push(gulpRun(
-      command,
-      {}
-    ).exec(undefined, undefined));
+    promises.push(runGulpRun(command, {}));
   }
   return Promise.all(promises);
 };
@@ -154,5 +193,5 @@ export const deployArtefact = async () =>
   const filePath = path.join(distributionDirectoryPath, fileName);
   const command = `gh release upload v${version} ${filePath} --clobber`;
   console.info(`Running the command '${command}'`);
-  return gulpRun(command, {}).exec(undefined, undefined);
+  return runGulpRun(command, {});
 };

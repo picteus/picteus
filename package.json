@@ -1,6 +1,6 @@
 {
   "name": "@picteus/main",
-  "version": "0.11.0",
+  "version": "0.13.0",
   "productName": "Picteus",
   "description": "An advanced pictures explorer application.",
   "keywords": [
@@ -31,10 +31,10 @@
     "url": "https://github.com/picteus/Picteus/issues"
   },
   "config": {
-    "applicationVersion": "0.12.0",
-    "backendVersion": "0.12.0",
-    "frontEndVersion": "0.8.0",
-    "apiVersion": "0.21.0",
+    "applicationVersion": "0.13.0",
+    "backendVersion": "0.13.0",
+    "frontEndVersion": "0.9.0",
+    "apiVersion": "0.22.0",
     "sdkVersion": "0.16.0",
     "dockerImageName": "koppasoft/picteus"
   },
@@ -44,7 +44,8 @@
     "reset": "npm --prefix shared/back-end run reset && npm --prefix back-end run reset && npm --prefix front-end run reset && npm --prefix extensions run reset && npm --prefix electron run reset && npm run this:reset",
     "this:clean": "shx rm -rf generated build dist tmp",
     "clean": "npm --prefix shared/back-end run clean && npm --prefix back-end run clean && npm --prefix front-end run clean && npm --prefix extensions run clean && npm --prefix electron run clean && npm run this:clean",
-    "updateVersion": "npm --prefix back-end run updateVersion && npm --prefix extensions run updateVersion && npm --prefix front-end run updateVersion && npm --prefix electron run updateVersion",
+    "this:updateVersion": "cross-var npm version --allow-same-version --no-git-tag-version $npm_package_config_applicationVersion",
+    "updateVersion": "npm run this:updateVersion && npm --prefix back-end run updateVersion && npm --prefix extensions run updateVersion && npm --prefix front-end run updateVersion && npm --prefix electron run updateVersion",
     "specification-factory:build": "npm --prefix shared/specification-factory install --no-save && npm --prefix shared/specification-factory run build",
     "shared-core:build": "npm --prefix shared/core install --no-save && npm --prefix shared/core run build && shx rm -rf back-end/node_modules/@picteus/shared-core front-end/node_modules/@picteus/shared-core electron/node_modules/@picteus/shared-core",
     "shared-back-end:build": "npm --prefix shared/back-end install --no-save && npm --prefix shared/back-end run build && gulp fixCaporalModule --directoryPath shared/back-end/node_modules/@caporal/core && shx rm -rf back-end/node_modules/@picteus/shared-back-end  electron/node_modules/@picteus/shared-back-end",
@@ -91,6 +92,5 @@
     "symlink-dir": "6.0.5",
     "gulp": "4.0.2"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

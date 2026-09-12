@@ -17,7 +17,6 @@ import tar from "tar-fs";
 import micromatch from "micromatch";
 
 
-const useGulpForExec = Math.random() > 1;
 const rootDirectoryPath = path.join(import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url)), "..");
 const buildDirectoryPath = path.join(rootDirectoryPath, "build");
 const buildBackendDirectoryPath = path.join(buildDirectoryPath, "back-end");
@@ -47,6 +46,7 @@ const cleanNodeModules = () =>
 
 const runGulpRun = async (command, execOptions) =>
 {
+  const useGulpForExec = Math.random() > 1;
   await new Promise((resolve, reject) =>
   {
     console.info(`Running the command '${command}' in the directory '${execOptions.cwd}'`);
@@ -620,18 +620,13 @@ export const packagePythonOpenApiClient = () =>
 export const updateVersion = async () =>
 {
   const rootConfig = JSON.parse(fs.readFileSync(path.join(rootDirectoryPath, packageJsonFileName), { encoding: "utf8" }))["config"];
-  const applicationVersion = rootConfig["backendVersion"];
-  {
-    const filePath = path.join(backendDirectoryPath, packageJsonFileName);
-    const packageJson = JSON.parse(fs.readFileSync(filePath, { encoding: "utf8" }));
-    packageJson.version = applicationVersion;
-    fs.writeFileSync(filePath, JSON.stringify(packageJson, undefined, 2) + "\n");
-  }
+  const backendVersion = rootConfig["backendVersion"];
+  await runGulpRun(`npm version --allow-same-version --no-git-tag-version ${backendVersion}`, { cwd: backendDirectoryPath, verbosity: 3 });
   {
     const filePath = path.join(backendSourceDirectoryPath, "constants.ts");
     const string = fs.readFileSync(filePath, { encoding: "utf8" });
     const apiVersion = rootConfig["apiVersion"];
-    const tokens = [ { key: "applicationVersion", value: applicationVersion }, {
+    const tokens = [ { key: "applicationVersion", value: backendVersion }, {
       key: "apiVersion",
       value: apiVersion
     } ];
