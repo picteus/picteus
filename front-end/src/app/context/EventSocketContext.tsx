@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { io, ManagerOptions, Socket, SocketOptions } from "socket.io-client";
 
 import { API_KEY, BASE_PATH, generateRandomId } from "utils";
-import { EventInformationType, EventOnResultType, SocketEventType } from "types";
+import { ChannelEnum, EventInformationType, EventOnResultType, SocketEventType } from "types";
 import { EventService, NotificationService } from "app/services";
 import createHmrStableContext from "./createHmrStableContext.ts";
 
@@ -18,6 +18,8 @@ export function useEventSocket()
   return useContext(EventSocketContext);
 }
 
+type EventSubcriptionCallbackType = (event: EventInformationType) => void;
+
 class SocketClient
 {
 
@@ -25,7 +27,7 @@ class SocketClient
 
   private socketEvent?: EventInformationType = undefined;
 
-  private readonly socketEventListeners: Set<(event: EventInformationType) => void> = new Set();
+  private readonly socketEventListeners: Set<EventSubcriptionCallbackType> = new Set();
 
   constructor(url: string, apiKey: string)
   {
@@ -87,10 +89,26 @@ class SocketClient
     console.debug("The socket has been disconnected");
   }
 
-  subscribeToSocketEvents = (callback: (event: EventInformationType) => void): () => boolean =>
+  subscribeToSocketEvents = (callback: EventSubcriptionCallbackType): () => boolean =>
   {
     this.socketEventListeners.add(callback);
     return () => this.socketEventListeners.delete(callback);
+  };
+
+  subscribeToEvents = (
+    channels: readonly ChannelEnum[] | ChannelEnum[],
+    callback: EventSubcriptionCallbackType
+  ): () => boolean =>
+  {
+    const channelSet = new Set<string>(channels);
+    const filteredListener = (event: EventInformationType): void =>
+    {
+      if (channelSet.has(event.channel))
+      {
+        callback(event);
+      }
+    };
+    return this.subscribeToSocketEvents(filteredListener);
   };
 
   getSocketEvent = (): EventInformationType =>

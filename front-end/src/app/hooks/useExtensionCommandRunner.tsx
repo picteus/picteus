@@ -32,7 +32,7 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
       }
       else
       {
-        await ExtensionsService.runProcessCommand({ ...commonParameters, body: parameters });
+        await ExtensionsService.runProcessCommand({ ...commonParameters, requestBody: parameters });
       }
     }
     catch (error)

@@ -1,23 +1,42 @@
 import { useCallback, useEffect, useRef } from "react";
 
 
-export default function useDebouncedCallback(callback: (...args: unknown[]) => void, millisecond: number)
+export default function useDebouncedCallback<CallbackType extends (...args: unknown[]) => void>(
+  callback: CallbackType,
+  millisecond: number
+): (...args: Parameters<CallbackType>) => void
 {
-  const timeoutHandler = useRef(null);
+  const callbackRef = useRef<CallbackType>(callback);
+  const timeoutHandlerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () =>
+  useEffect(() =>
   {
-    clearTimeout(timeoutHandler.current);
+    callbackRef.current = callback;
+  }, [ callback ]);
+
+  useEffect(() =>
+  {
+    return () =>
+    {
+      if (timeoutHandlerRef.current !== null)
+      {
+        clearTimeout(timeoutHandlerRef.current);
+      }
+    };
   }, []);
 
-  return useCallback((...args: unknown[]) =>
+  return useCallback(
+    (...args: Parameters<CallbackType>): void =>
     {
-      clearTimeout(timeoutHandler.current);
-      timeoutHandler.current = setTimeout(() =>
+      if (timeoutHandlerRef.current !== null)
       {
-        callback(...args);
+        clearTimeout(timeoutHandlerRef.current);
+      }
+      timeoutHandlerRef.current = setTimeout(() =>
+      {
+        callbackRef.current(...args);
       }, millisecond);
     },
-    [millisecond, callback]
+    [ millisecond ]
   );
 }
