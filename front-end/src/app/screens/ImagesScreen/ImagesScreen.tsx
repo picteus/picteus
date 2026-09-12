@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { ActionModalValue } from "types";
 import { ROUTES } from "utils";
 import { ActionModalProvider, useActionModalContext, useImagesTabsContext } from "app/context";
-import { FiltersService, RepositoriesService, StorageService } from "app/services";
+import { useRepositories } from "app/hooks";
+import { FiltersService, StorageService } from "app/services";
 import { EmptyResults, ImagesView, StackNavigator, useStackNavigator } from "app/components";
 
 import style from "./ImagesScreen.module.scss";
@@ -19,11 +20,12 @@ type ImagesScreenWrappedType = {
 
 function ImagesScreenWrapped({ parentAddModal, parentRemoveModal }: ImagesScreenWrappedType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const { tabs, state, mainTabValue } = useImagesTabsContext();
-  const [, , removeModal, subscribeToModals] = useActionModalContext();
+  const [ , , removeModal, subscribeToModals ] = useActionModalContext();
   const { push, pop, popToRoot, subscribe } = useStackNavigator();
   const navigate = useNavigate();
+  const { data: repositories = [] } = useRepositories();
 
   useEffect(() =>
   {
@@ -50,7 +52,7 @@ function ImagesScreenWrapped({ parentAddModal, parentRemoveModal }: ImagesScreen
         pop();
       }
     });
-  }, [parentAddModal, parentRemoveModal, subscribeToModals, push, pop]);
+  }, [ parentAddModal, parentRemoveModal, subscribeToModals, push, pop ]);
 
   useEffect(() =>
   {
@@ -61,16 +63,16 @@ function ImagesScreenWrapped({ parentAddModal, parentRemoveModal }: ImagesScreen
         removeModal(stackedComponent.id);
       }
     });
-  }, [subscribe, removeModal]);
+  }, [ subscribe, removeModal ]);
 
   useEffect(() =>
   {
     popToRoot();
-  }, [state.activeTab, popToRoot]);
+  }, [ state.activeTab, popToRoot ]);
 
   const computeEmptyResults = useCallback(() =>
   {
-    const repositoriesExists = RepositoriesService.list().length > 0;
+    const repositoriesExists = repositories.length > 0;
     return (
       <EmptyResults
         icon={IconPhotoSearch}
@@ -80,15 +82,15 @@ function ImagesScreenWrapped({ parentAddModal, parentRemoveModal }: ImagesScreen
         buttonAction={repositoriesExists ? undefined : () => navigate(ROUTES.repositories)}
       />
     );
-  }, [navigate]);
+  }, [ navigate, repositories.length ]);
 
-  const activeTab = useMemo(() => tabs.find((tab) => tab.id === state.activeTab), [tabs, state.activeTab]);
+  const activeTab = useMemo(() => tabs.find((tab) => tab.id === state.activeTab), [ tabs, state.activeTab ]);
 
   const mainRendered = useMemo(() => (<ImagesView
     viewData={StorageService.getMainViewTabData(FiltersService.defaultFilter)}
     isDefault={true}
     onEmptyResults={computeEmptyResults}
-  />), [computeEmptyResults]);
+  />), [ computeEmptyResults ]);
 
   const otherRendered = useMemo(() => (state.activeTab !== mainTabValue && <ImagesView
     viewData={{
@@ -102,7 +104,7 @@ function ImagesScreenWrapped({ parentAddModal, parentRemoveModal }: ImagesScreen
       description={t(`emptyImages.${("filter" in activeTab.data.filterOrCollectionId && activeTab.data.filterOrCollectionId.filter.origin) ? "descriptionNoData" : "description"}`)}
       title={t("emptyImages.title")}
     />)}
-  />), [activeTab]);
+  />), [ activeTab ]);
 
   return (
     <div className={style.mainContainer}>
@@ -113,7 +115,7 @@ function ImagesScreenWrapped({ parentAddModal, parentRemoveModal }: ImagesScreen
 
 export default function ImagesScreen()
 {
-  const [, addModal, removeModal] = useActionModalContext();
+  const [ , addModal, removeModal ] = useActionModalContext();
   return (
     <ActionModalProvider>
       <StackNavigator>

@@ -1,13 +1,12 @@
-import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useMemo, useState } from "react";
 import { ActionIcon, Button, Card, Flex, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 import { IconBox, IconLayoutGrid, IconList, IconPlus, IconPuzzle } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
-import { Extension, type ExtensionActivityKind } from "@picteus/ws-client";
+import { Extension, ExtensionActivityKind } from "@picteus/ws-client";
 
-import { ChannelEnum } from "types";
-import { ToastService } from "utils";
-import { useActionModalContext, useEventSocket } from "app/context";
+import { useActionModalContext } from "app/context";
+import { useExtensionActivities, useExtensions } from "app/hooks";
 import { ExtensionsService } from "app/services";
 import {
   Common,
@@ -33,73 +32,26 @@ import {
 export default function ExtensionsScreen()
 {
   const [ t ] = useTranslation();
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [ extensions, setExtensions ] = useState<Extension[]>(ExtensionsService.list());
+  const { data: extensions = [], isLoading, isFetching, refetch: refetchExtensions } = useExtensions();
+  const { data: rawActivities = [], refetch: refetchActivities } = useExtensionActivities();
   const [ , addModal ] = useActionModalContext();
-  const [ loading, setLoading ] = useState<boolean>(false);
   const [ selectedExtension, setSelectedExtension ] = useState<Extension>();
   const [ viewMode, setViewMode ] = useState<"table" | "card">("table");
-  const [ extensionActivities, setExtensionActivities ] = useState<Record<string, ExtensionActivityKind>>({});
 
-  function fetchActivities(): void
+  const extensionActivities = useMemo<Record<string, ExtensionActivityKind>>(() =>
   {
-    ExtensionsService.activities().then(activities =>
+    return rawActivities.reduce((accumulator, activity) =>
     {
-      const activitiesMap = activities.reduce((activities, activity) =>
-      {
-        activities[activity.id] = activity.kind;
-        return activities;
-      }, {});
-      setExtensionActivities(activitiesMap);
-    }).catch(ToastService.apiCallError);
+      accumulator[activity.id] = activity.kind;
+      return accumulator;
+    }, {} as Record<string, ExtensionActivityKind>);
+  }, [ rawActivities ]);
+
+  function refetchAll(): void
+  {
+    void refetchExtensions();
+    void refetchActivities();
   }
-
-  async function fetchExtensionsAndActivities(): Promise<void>
-  {
-    setLoading(true);
-    try
-    {
-      await ExtensionsService.fetchAll().then(({ extensions }) =>
-      {
-        setExtensions(extensions);
-      }).catch(ToastService.apiCallError);
-      fetchActivities();
-    }
-    finally
-    {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() =>
-  {
-    void fetchExtensionsAndActivities();
-  }, []);
-
-  useEffect(() =>
-  {
-    if (event?.channel.startsWith(ChannelEnum.EXTENSION_PROCESS_PREFIX) === true)
-    {
-      fetchActivities();
-    }
-  }, [ event ]);
-
-  useEffect(() =>
-  {
-    if (ExtensionsService.requiresCommandReload(event) === true)
-    {
-      void fetchExtensionsAndActivities();
-    }
-  }, [ event ]);
-
-  useEffect(() =>
-  {
-    if (selectedExtension)
-    {
-      setSelectedExtension(extensions.find((extension) => extension.manifest.id === selectedExtension.manifest.id));
-    }
-  }, [ extensions ]);
 
   function openExtensionSettingsModal(extension: Extension)
   {
@@ -110,7 +62,7 @@ export default function ExtensionsScreen()
       component: (
         <ExtensionSettingsModal
           extension={extension}
-          onSuccess={fetchExtensionsAndActivities}
+          onSuccess={refetchAll}
         />
       )
     });
@@ -127,10 +79,10 @@ export default function ExtensionsScreen()
       component: (
         <InstallOrUpdateExtension
           extension={extension}
-          onSuccess={(extension: Extension) =>
+          onSuccess={(extensionItem: Extension) =>
           {
-            openExtensionSettingsModal(extension);
-            void fetchExtensionsAndActivities();
+            openExtensionSettingsModal(extensionItem);
+            refetchAll();
           }}
         />
       )
@@ -154,7 +106,7 @@ export default function ExtensionsScreen()
   }
 
   const rows = useMemo(() =>
-    extensions.map((extension: Extension) => (
+    (Array.isArray(extensions) ? extensions : []).map((extension: Extension) => (
       <Table.Tr
         key={`extension-${extension.manifest.id}`}
         onClick={() => setSelectedExtension(extension)}
@@ -187,7 +139,7 @@ export default function ExtensionsScreen()
             extension={extension}
             onUpdate={openInstallOrUpdateExtensionModal}
             onSettings={openExtensionSettingsModal}
-            onUninstalled={fetchExtensionsAndActivities}
+            onUninstalled={refetchAll}
           />
         </Table.Td>
       </Table.Tr>
@@ -195,31 +147,38 @@ export default function ExtensionsScreen()
 
   function renderTable()
   {
-    return <StandardTable
-      head={[ "", "field.id", "field.version", "field.name", "field.description", "field.state", "" ]}
-      loading={loading}
-      emptyResults={<EmptyResults
-        icon={IconPuzzle}
-        description={t("emptyExtensions.description")}
-        title={t("emptyExtensions.title")}
-        buttonText={t("emptyExtensions.buttonText")}
-        buttonAction={() => openInstallOrUpdateExtensionModal()}
-      />}>
-      {rows}
-    </StandardTable>;
+    return (
+      <StandardTable
+        head={[ "", "field.id", "field.version", "field.name", "field.description", "field.state", "" ]}
+        loading={isLoading || isFetching}
+        emptyResults={
+          <EmptyResults
+            icon={IconPuzzle}
+            description={t("emptyExtensions.description")}
+            title={t("emptyExtensions.title")}
+            buttonText={t("emptyExtensions.buttonText")}
+            buttonAction={() => openInstallOrUpdateExtensionModal()}
+          />
+        }
+      >
+        {rows}
+      </StandardTable>
+    );
   }
 
   function renderCard()
   {
-    if (!loading && extensions.length === 0)
+    if (!isLoading && extensions.length === 0)
     {
-      return <EmptyResults
-        icon={IconPuzzle}
-        description={t("emptyExtensions.description")}
-        title={t("emptyExtensions.title")}
-        buttonText={t("emptyExtensions.buttonText")}
-        buttonAction={() => openInstallOrUpdateExtensionModal()}
-      />;
+      return (
+        <EmptyResults
+          icon={IconPuzzle}
+          description={t("emptyExtensions.description")}
+          title={t("emptyExtensions.title")}
+          buttonText={t("emptyExtensions.buttonText")}
+          buttonAction={() => openInstallOrUpdateExtensionModal()}
+        />
+      );
     }
 
     return (
@@ -231,7 +190,7 @@ export default function ExtensionsScreen()
               activityKind={extensionActivities[extension.manifest.id]}
               openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
               openExtensionSettingsModal={openExtensionSettingsModal}
-              onUninstalled={fetchExtensionsAndActivities}
+              onUninstalled={refetchAll}
             />
           </Card>
         ))}
@@ -247,35 +206,37 @@ export default function ExtensionsScreen()
         <Flex justify="space-between" align="center">
           <Title>{t("extensionsScreen.title")}</Title>
           <Flex gap="sm" align="center">
-            {showModes && <ActionIcon.Group>
-              <ActionIcon
-                variant={viewMode === "table" ? "filled" : "default"}
-                size="lg"
-                onClick={() => setViewMode("table")}
-              >
-                <IconList size={20}/>
-              </ActionIcon>
-              <ActionIcon
-                variant={viewMode === "card" ? "filled" : "default"}
-                size="lg"
-                onClick={() => setViewMode("card")}
-              >
-                <IconLayoutGrid size={20}/>
-              </ActionIcon>
-            </ActionIcon.Group>
-            } <Button
-            leftSection={<IconPlus size={20}/>}
-            onClick={() => openInstallOrUpdateExtensionModal()}
-          >
-            {t("button.install")}
-          </Button>
+            {showModes && (
+              <ActionIcon.Group>
+                <ActionIcon
+                  variant={viewMode === "table" ? "filled" : "default"}
+                  size="lg"
+                  onClick={() => setViewMode("table")}
+                >
+                  <IconList size={20}/>
+                </ActionIcon>
+                <ActionIcon
+                  variant={viewMode === "card" ? "filled" : "default"}
+                  size="lg"
+                  onClick={() => setViewMode("card")}
+                >
+                  <IconLayoutGrid size={20}/>
+                </ActionIcon>
+              </ActionIcon.Group>
+            )}
+            <Button
+              leftSection={<IconPlus size={20}/>}
+              onClick={() => openInstallOrUpdateExtensionModal()}
+            >
+              {t("button.install")}
+            </Button>
             <Button
               leftSection={<IconPlus size={20}/>}
               onClick={() => openCreateExtensionModal()}
             >
               {t("button.create")}
             </Button>
-            <RefreshButton onRefresh={() => fetchExtensionsAndActivities()}/>
+            <RefreshButton onRefresh={() => refetchAll()}/>
           </Flex>
         </Flex>
         {viewMode === "table" ? renderTable() : renderCard()}
@@ -283,12 +244,21 @@ export default function ExtensionsScreen()
       <Drawer
         opened={selectedExtension !== undefined}
         onClose={() => setSelectedExtension(undefined)}
-        title={selectedExtension &&
-          <ExtensionTop extension={selectedExtension}
-                        activityKind={extensionActivities[selectedExtension.manifest.id]}
-                        openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
-                        openExtensionSettingsModal={openExtensionSettingsModal}
-                        onUninstalled={fetchExtensionsAndActivities}/>}
+        title={
+          selectedExtension && (
+            <ExtensionTop
+              extension={selectedExtension}
+              activityKind={extensionActivities[selectedExtension.manifest.id]}
+              openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
+              openExtensionSettingsModal={openExtensionSettingsModal}
+              onUninstalled={() =>
+              {
+                setSelectedExtension(undefined);
+                refetchAll();
+              }}
+            />
+          )
+        }
         size="xl"
       >
         {selectedExtension && <ExtensionDetail extension={selectedExtension}/>}

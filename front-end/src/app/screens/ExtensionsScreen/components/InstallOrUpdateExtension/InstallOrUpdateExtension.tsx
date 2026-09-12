@@ -9,7 +9,7 @@ import { IconAlertTriangle, IconFileZip, IconTrash, IconUpload, IconX } from "@t
 import { Extension, ExtensionState } from "@picteus/ws-client";
 
 import { fileToBlob, mimeTypes, ToastService, Validators } from "utils";
-import { ExtensionsService } from "app/services";
+import { useInstallExtensionMutation, useUpdateExtensionMutation } from "app/hooks";
 
 
 type FormValueType = {
@@ -38,6 +38,8 @@ export default function InstallOrUpdateExtension({
   const [ fileIsValid, setFileIsValid ] = useState(false);
   const dropzoneRef = useRef<() => void>(null);
   const [ loading, setLoading ] = useState<boolean>(false);
+  const installExtensionMutation = useInstallExtensionMutation();
+  const updateExtensionMutation = useUpdateExtensionMutation();
 
   const messagePrefix = useMemo(() => (extension ? "updateExtensionModal" : "installExtensionModal"), [ extension ]);
 
@@ -109,14 +111,24 @@ export default function InstallOrUpdateExtension({
         return ToastService.failureAndMessage(errorAsError, t(`${messagePrefix}.errorAdd`, { error: errorAsError.message }));
       }
 
-      (extension ? ExtensionsService.update({
-        id: extension.manifest.id,
-        body: blob
-      }) : ExtensionsService.install({
-        state: ExtensionState.Enabled,
-        asUnpacked: false,
-        body: blob
-      })).then(onSuccess).catch(error => ToastService.apiCallI18nError(error, `${messagePrefix}.errorAdd`));
+      try
+      {
+        const installedOrUpdatedExtension = extension
+          ? await updateExtensionMutation.mutateAsync({
+            id: extension.manifest.id,
+            body: blob
+          })
+          : await installExtensionMutation.mutateAsync({
+            state: ExtensionState.Enabled,
+            asUnpacked: false,
+            body: blob
+          });
+        onSuccess(installedOrUpdatedExtension);
+      }
+      catch (error)
+      {
+        ToastService.apiCallI18nError(error, `${messagePrefix}.errorAdd`);
+      }
     }
     finally
     {
@@ -126,7 +138,7 @@ export default function InstallOrUpdateExtension({
 
   function renderDropzone()
   {
-    const getIconStyle = (color) =>
+    const getIconStyle = (color: string): { width: number; height: number; color: string } =>
     {
       return { width: 52, height: 52, color: `var(--mantine-color-${color})` };
     };
@@ -161,7 +173,7 @@ export default function InstallOrUpdateExtension({
         mb="lg"
         openRef={dropzoneRef}
         accept={[ mimeTypes.zip, mimeTypes.gzip, mimeTypes.tarGz ]}
-        onDrop={(file) => form.setFieldValue("file", file[0])}
+        onDrop={(droppedFiles) => form.setFieldValue("file", droppedFiles[0])}
         onReject={() =>
           form.setFieldError(
             "files",

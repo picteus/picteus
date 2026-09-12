@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Box, Button, Flex } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { Collection, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
 
 import { ToastService } from "utils";
-import { CollectionService } from "app/services";
+import { useCollections, useUpdateCollectionMutation } from "app/hooks";
 import { CollectionSelect } from "app/components";
 
 
@@ -18,58 +18,60 @@ type AddToCollectionType = {
 export default function AddToCollection({ imageIds, onSuccess, onClose }: AddToCollectionType)
 {
   const [ t ] = useTranslation();
-  const [ collections, setCollections ] = useState<Collection[]>([]);
+  const { data: allCollections = [] } = useCollections();
+  const updateCollectionMutation = useUpdateCollectionMutation();
   const [ selectedId, setSelectedId ] = useState<string | null>(null);
-  const [ loading, setLoading ] = useState(false);
 
-  useEffect(() =>
+  const collections = useMemo<Collection[]>(() =>
   {
-    void CollectionService.fetchAll().then(allCollections => setCollections(allCollections.filter((collection) => collection.filter?.origin?.kind === SearchOriginNature.Images)));
-  }, []);
+    return allCollections.filter((collection) => collection.filter?.origin?.kind === SearchOriginNature.Images);
+  }, [ allCollections ]);
 
-  async function handleOnSubmit(event: React.FormEvent)
+  async function handleOnSubmit(event: React.FormEvent): Promise<void>
   {
     event.preventDefault();
     if (!selectedId)
     {
       return;
     }
-    setLoading(true);
+
+    const collection = collections.find((collectionItem) => collectionItem.id === parseInt(selectedId));
+    if (!collection)
+    {
+      return;
+    }
+
+    const existingIds = collection.filter?.origin?.kind === SearchOriginNature.Images && collection.filter.origin.ids
+      ? collection.filter.origin.ids
+      : [];
+    const newIds = Array.from(new Set([ ...existingIds, ...imageIds ]));
+    const newSearchFilter = {
+      ...(collection.filter || { sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false } }),
+      origin: {
+        kind: SearchOriginNature.Images,
+        ids: newIds
+      }
+    };
+
     try
     {
-      const collection = collections.find((collection) => collection.id === parseInt(selectedId));
-      if (!collection)
-      {
-        return;
-      }
-      const existingIds = collection.filter?.origin?.kind === SearchOriginNature.Images && collection.filter.origin.ids
-        ? collection.filter.origin.ids
-        : [];
-      const newIds = Array.from(new Set([ ...existingIds, ...imageIds ]));
-      const newSearchFilter = {
-        ...(collection.filter || { sorting: { property: SearchSortingProperty.ModificationDate, isAscending: false } }),
-        origin: {
-          kind: SearchOriginNature.Images,
-          ids: newIds
-        }
-      };
-      try
-      {
-        await CollectionService.update(collection.id, collection.name, newSearchFilter, collection.comment);
-      }
-      catch (error)
-      {
-        return ToastService.failureAndMessage(error);
-      }
+      await updateCollectionMutation.mutateAsync({
+        id: collection.id,
+        name: collection.name,
+        searchFilter: newSearchFilter,
+        comment: collection.comment
+      });
       ToastService.success();
       onSuccess();
       onClose();
     }
-    finally
+    catch (error)
     {
-      setLoading(false);
+      ToastService.failureAndMessage(error);
     }
   }
+
+  const isPending = updateCollectionMutation.isPending;
 
   return (
     <Flex align="flex-end" gap={5}>
@@ -82,10 +84,10 @@ export default function AddToCollection({ imageIds, onSuccess, onClose }: AddToC
           onChange={value => setSelectedId(value)}
         />
       </Box>
-      <Button variant="default" onClick={onClose} disabled={loading}>
+      <Button variant="default" onClick={onClose} disabled={isPending}>
         {t("button.cancel")}
       </Button>
-      <Button onClick={handleOnSubmit} loading={loading} disabled={!selectedId}>
+      <Button onClick={handleOnSubmit} loading={isPending} disabled={!selectedId}>
         {t("button.apply")}
       </Button>
     </Flex>

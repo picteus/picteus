@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Box, Button, Center, Loader, Menu, Text, Tooltip } from "@mantine/core";
 import {
   IconChevronDown,
@@ -20,9 +20,15 @@ import {
 
 import { ChannelEnum } from "types";
 import { ToastService } from "utils";
-import { useActionModalContext, useEventSocket } from "app/context";
-import { useAsyncInitialize, useExtensionCommandRunner, useExtensionCommandsWithEntities } from "app/hooks";
-import { CollectionService, EventService } from "app/services";
+import { useActionModalContext, useSocketEvent } from "app/context";
+import {
+  useCollection,
+  useCollections,
+  useExtensionCommandRunner,
+  useExtensionCommands,
+  useUpdateCollectionMutation
+} from "app/hooks";
+import { EventService } from "app/services";
 import { CollectionIcon, CommandIcon, Common, MenuItemEntry } from "app/components";
 import AddOrUpdateCollection
   from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
@@ -49,52 +55,49 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
 {
   const [ t ] = useTranslation();
   const [ , addModal ] = useActionModalContext();
-  const [ loading, setLoading ] = useState<boolean>(false);
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
+  const { data: collections = [], isLoading: loading } = useCollections();
+  const { data: initialCollection } = useCollection(initialCollectionId);
+  const updateCollectionMutation = useUpdateCollectionMutation();
   const commandRunner = useExtensionCommandRunner();
-  const extensionsImageCommands = useExtensionCommandsWithEntities(commandEntities);
-  const [ collections, setCollections ] = useState<PicteusCollection[]>([]);
+  const extensionsImageCommands = useExtensionCommands(commandEntities);
   const [ menuOpened, setMenuOpened ] = useState<boolean>(false);
   const [ selectedCollection, setSelectedCollection ] = useState<PicteusCollection | undefined>();
   const [ saveDisabled, setSaveDisabled ] = useState<boolean>(true);
   const onCollectionRef = useRef<(collection: PicteusCollection) => void>(onCollection);
+  const previousInitialIdRef = useRef<number | undefined>(undefined);
 
   useEffect(() =>
   {
     onCollectionRef.current = onCollection;
   }, [ onCollection ]);
 
-  useEffect(() =>
+  useSocketEvent(ChannelEnum.COLLECTION_DELETED, (event) =>
   {
-    if (event?.channel === ChannelEnum.COLLECTION_CREATED || event?.channel === ChannelEnum.COLLECTION_UPDATED)
+    if (EventService.computeEventEntityId<number>(event) === selectedCollection?.id)
     {
-      void loadCollections(true);
-    }
-    else if (event?.channel === ChannelEnum.COLLECTION_DELETED)
-    {
-      void loadCollections(true);
-      if (EventService.computeEventEntityId<number>(event) === selectedCollection?.id)
-      {
-        setSelectedCollection(undefined);
-        onCollection(undefined);
-      }
-    }
-  }, [ event ]);
-
-  useAsyncInitialize<number | undefined>(initialCollectionId, async (value: number) =>
-  {
-    if (value !== undefined)
-    {
-      const collection = await CollectionService.get(value);
-      setSelectedCollection(collection);
-      onCollectionRef.current(collection);
+      setSelectedCollection(undefined);
+      onCollection(undefined);
     }
   });
 
   useEffect(() =>
   {
-    setSaveDisabled(selectedCollection === undefined || searchFilter === undefined || searchFilter.origin?.kind === SearchOriginNature.Images || JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter)));
+    if (initialCollection && initialCollection.id !== previousInitialIdRef.current)
+    {
+      previousInitialIdRef.current = initialCollection.id;
+      setSelectedCollection(initialCollection);
+      onCollectionRef.current(initialCollection);
+    }
+  }, [ initialCollection ]);
+
+  useEffect(() =>
+  {
+    setSaveDisabled(
+      selectedCollection === undefined ||
+      searchFilter === undefined ||
+      searchFilter.origin?.kind === SearchOriginNature.Images ||
+      JSON.stringify(SearchFilterFromJSON(selectedCollection.filter)) === JSON.stringify(SearchFilterFromJSON(searchFilter))
+    );
   }, [ searchFilter, selectedCollection ]);
 
   useImperativeHandle(ref, () => ({
@@ -103,20 +106,6 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
       setSelectedCollection(undefined);
     }
   }));
-
-  useEffect(() =>
-  {
-    loadCollections();
-  }, []);
-
-  function loadCollections(force = false)
-  {
-    setLoading(true);
-    (force === false ? CollectionService.list() : CollectionService.fetchAll()).then(updatedCollections => setCollections(updatedCollections)).catch(ToastService.failureAndMessage).finally(() =>
-    {
-      setLoading(false);
-    });
-  }
 
   function handleOnSelectedCollection(collection: PicteusCollection)
   {
@@ -136,7 +125,6 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
           searchFilter={searchFilter!}
           onSuccess={(collection) =>
           {
-            loadCollections();
             setSelectedCollection(collection);
             onCollection(collection);
           }}
@@ -145,20 +133,30 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
     });
   }
 
-  async function handleOnUpdateCurrent()
+  async function handleOnUpdateCurrent(): Promise<void>
   {
+    if (!selectedCollection)
+    {
+      return;
+    }
+
     let collection: PicteusCollection;
     try
     {
-      collection = await CollectionService.update(selectedCollection.id, selectedCollection.name, searchFilter, selectedCollection.comment);
+      collection = await updateCollectionMutation.mutateAsync({
+        id: selectedCollection.id,
+        name: selectedCollection.name,
+        searchFilter,
+        comment: selectedCollection.comment
+      });
     }
     catch (error)
     {
-      return ToastService.apiCallError(error);
+      ToastService.apiCallError(error);
+      return;
     }
 
     ToastService.success(t("addOrUpdateCollectionModal.successUpdate"));
-    loadCollections();
     setSelectedCollection(collection);
     setSaveDisabled(true);
     onCollection(collection);
@@ -171,29 +169,48 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
 
   const width = 240;
   const hasCollections = collections.length > 0;
-  return (<Button.Group>
-      <Menu shadow="md" width={width} position="bottom" trigger="click-hover" opened={menuOpened}
-            onChange={setMenuOpened} disabled={!hasCollections}>
+  return (
+    <Button.Group>
+      <Menu
+        shadow="md"
+        width={width}
+        position="bottom"
+        trigger="click-hover"
+        opened={menuOpened}
+        onChange={setMenuOpened}
+        disabled={!hasCollections}
+      >
         <Menu.Target>
-          <Button variant="default" w={width} leftSection={<IconLibraryPhoto size={Common.IconSmallSize}/>}
-                  rightSection={<IconChevronDown size={Common.IconSmallSize}/>} disabled={!hasCollections}>
+          <Button
+            variant="default"
+            w={width}
+            leftSection={<IconLibraryPhoto size={Common.IconSmallSize}/>}
+            rightSection={<IconChevronDown size={Common.IconSmallSize}/>}
+            disabled={!hasCollections}
+          >
             {selectedCollection ? truncateName(selectedCollection.name) : t("field.collections")}
           </Button>
         </Menu.Target>
         <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
           {loading && <Box p="sm"><Center><Loader size="sm"/></Center></Box>}
           {!loading && collections.map((collection) => (
-            <Menu.Item key={collection.id} leftSection={<CollectionIcon collection={collection}/>}
-                       onClick={() => handleOnSelectedCollection(collection)}>
+            <Menu.Item
+              key={collection.id}
+              leftSection={<CollectionIcon collection={collection}/>}
+              onClick={() => handleOnSelectedCollection(collection)}
+            >
               <Text size="sm">{truncateName(collection.name)}</Text>
             </Menu.Item>
           ))}
         </Menu.Dropdown>
       </Menu>
-      {<Menu shadow="md" width={160} position="bottom" trigger="click-hover" withinPortal={true}>
+      <Menu shadow="md" width={160} position="bottom" trigger="click-hover" withinPortal={true}>
         <Menu.Target>
-          <Button variant="default" px="xs"
-                  disabled={!searchFilter || !extensionsImageCommands || extensionsImageCommands.length === 0}>
+          <Button
+            variant="default"
+            px="xs"
+            disabled={!searchFilter || !extensionsImageCommands || extensionsImageCommands.length === 0}
+          >
             <IconPlayerPlayFilled size={Common.IconSmallSize}/>
           </Button>
         </Menu.Target>
@@ -205,18 +222,27 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
             const command = extensionCommand.command;
             const manifest = extension.manifest;
             return (
-              <MenuItemEntry key={`${manifest.id}-${command.id}`} extensionId={manifest.id}
-                             icon={<CommandIcon extensionId={manifest.id} command={command} size="sm"/>}
-                             label={command.label}
-                             subLabel={manifest.name}
-                             onClick={() => commandRunner(manifest.id, command, searchFilter)}/>);
+              <MenuItemEntry
+                key={`${manifest.id}-${command.id}`}
+                extensionId={manifest.id}
+                icon={<CommandIcon extensionId={manifest.id} command={command} size="sm"/>}
+                label={command.label}
+                subLabel={manifest.name}
+                onClick={() => commandRunner(manifest.id, command, searchFilter)}
+              />
+            );
           })}
         </Menu.Dropdown>
       </Menu>
-      }
       {selectedCollection && (
         <Tooltip label={t("button.save", { name: selectedCollection.name })}>
-          <Button variant="default" px="xs" disabled={saveDisabled} onClick={handleOnUpdateCurrent}>
+          <Button
+            variant="default"
+            px="xs"
+            disabled={saveDisabled || updateCollectionMutation.isPending}
+            loading={updateCollectionMutation.isPending}
+            onClick={handleOnUpdateCurrent}
+          >
             <IconDeviceFloppy size={Common.IconSmallSize}/>
           </Button>
         </Tooltip>

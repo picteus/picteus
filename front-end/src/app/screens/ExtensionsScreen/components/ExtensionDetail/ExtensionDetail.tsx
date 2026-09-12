@@ -1,20 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { ReactNode } from "react";
 import { Badge, Group, Stack, Table, Text, Tooltip } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import {
   CommandEntity,
   Extension,
-  ExtensionAndManual,
   ManifestExtensionCommand,
   ManifestExtensionCommandSpecification
 } from "@picteus/ws-client";
 import { IconLibraryPhoto, IconPhoto, IconServer } from "@tabler/icons-react";
 
-import { extractMarkdownParagraph, ToastService } from "utils";
-import { ExtensionsService } from "app/services";
+import { ManualSection } from "types";
+import { extractMarkdownParagraph } from "utils";
+import { useExtension } from "app/hooks";
 import { CommandIcon, FieldValue, Manual, Markdown, NoValue } from "app/components";
-import { ManualSection } from "../../../../../types";
 
 
 type ExtensionDetailProps = {
@@ -24,12 +23,7 @@ type ExtensionDetailProps = {
 export default function ExtensionDetail({ extension }: ExtensionDetailProps)
 {
   const { t, i18n } = useTranslation();
-  const [ extensionAndManual, setExtensionAndManual ] = useState<ExtensionAndManual>();
-
-  useEffect(() =>
-  {
-    void ExtensionsService.get({ id: extension.manifest.id }).then(setExtensionAndManual).catch(ToastService.apiCallError);
-  }, [ extension.manifest.id ]);
+  const { data: extensionAndManual } = useExtension(extension.manifest.id);
 
   const manifestInstructionsArray = extension.manifest.instructions;
   const manifestRuntimes = extension.manifest.runtimes;
@@ -37,14 +31,20 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
   const capabilities = Array.from(new Set(manifestInstructionsArray?.flatMap(instructions => instructions.capabilities?.map(capability => capability.id) || []) || []));
   const commands = manifestInstructionsArray?.flatMap(instructions => instructions.commands || []) || [];
 
-  const getCommandSpecification = (command: ManifestExtensionCommand): Omit<ManifestExtensionCommandSpecification, "locale"> =>
+  function getCommandSpecification(command: ManifestExtensionCommand): Omit<ManifestExtensionCommandSpecification, "locale">
   {
     const locale = i18n.language.split("-")[0];
-    const specification = command.specifications.find((aSpecification: ManifestExtensionCommandSpecification) => aSpecification.locale == locale) || command.specifications.find((aSpecification: ManifestExtensionCommandSpecification) => aSpecification.locale = "en");
+    const specification =
+      command.specifications.find(
+        (candidateSpecification: ManifestExtensionCommandSpecification) => candidateSpecification.locale === locale
+      ) ||
+      command.specifications.find(
+        (candidateSpecification: ManifestExtensionCommandSpecification) => candidateSpecification.locale === "en"
+      );
     return specification || { label: command.id, description: "" };
-  };
+  }
 
-  const getEntityIcon = (entity: CommandEntity | undefined) =>
+  function getEntityIcon(entity: CommandEntity | undefined): ReactNode
   {
     switch (entity)
     {
@@ -57,7 +57,7 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
       default:
         return null;
     }
-  };
+  }
 
   const hasInstructions = extensionAndManual?.manual?.instructions !== undefined;
   const manualSummary = hasInstructions === false ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, ManualSection.Summary);
@@ -73,7 +73,8 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
       <FieldValue name={t("field.runtimes")} value={
         manifestRuntimes?.length > 0 ? (
           <Group gap="xs">
-            {manifestRuntimes.map(r => <Badge key={r.environment} variant="light">{r.environment}</Badge>)}
+            {manifestRuntimes.map((runtime) => <Badge key={runtime.environment}
+                                                      variant="light">{runtime.environment}</Badge>)}
           </Group>
         ) : <NoValue/>
       }/>

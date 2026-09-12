@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { Collection as PicteusCollection, SearchFilter } from "@picteus/ws-client";
 
 import { ToastService } from "utils";
-import { CollectionService, FiltersService } from "app/services";
+import { useCreateCollectionMutation, useUpdateCollectionMutation } from "app/hooks";
+import { FiltersService } from "app/services";
 
 
 type AddOrUpdateCollectionType = {
@@ -25,6 +26,8 @@ export default function AddOrUpdateCollection({
 {
   const [ t ] = useTranslation();
   const [ loading, setLoading ] = useState<boolean>(false);
+  const createCollectionMutation = useCreateCollectionMutation();
+  const updateCollectionMutation = useUpdateCollectionMutation();
 
   const form = useForm({
     initialValues: {
@@ -36,7 +39,7 @@ export default function AddOrUpdateCollection({
     }
   });
 
-  async function handleOnSubmit(values: typeof form.values)
+  async function handleOnSubmit(values: typeof form.values): Promise<void>
   {
     setLoading(true);
     try
@@ -44,21 +47,21 @@ export default function AddOrUpdateCollection({
       let newCollection: PicteusCollection;
       if (collection)
       {
-        newCollection = await CollectionService.update(
-          collection.id,
-          values.name,
+        newCollection = await updateCollectionMutation.mutateAsync({
+          id: collection.id,
+          name: values.name,
           searchFilter,
-          values.comment
-        );
+          comment: values.comment
+        });
         ToastService.success(t("addOrUpdateCollectionModal.successUpdate"));
       }
       else
       {
-        newCollection = await CollectionService.create(
-          values.name,
+        newCollection = await createCollectionMutation.mutateAsync({
+          name: values.name,
           searchFilter,
-          values.comment
-        );
+          comment: values.comment
+        });
         ToastService.success(t("addOrUpdateCollectionModal.successAdd"));
       }
       onSuccess(newCollection);
@@ -91,10 +94,15 @@ export default function AddOrUpdateCollection({
           mb="sm"
         />
         <Group justify="flex-end" mt="md">
-          <Button variant="subtle" onClick={onClose} disabled={loading}>
+          <Button variant="subtle" onClick={onClose}
+                  disabled={loading || createCollectionMutation.isPending || updateCollectionMutation.isPending}>
             {t("button.cancel")}
           </Button>
-          <Button type="submit" loading={loading}>
+          <Button
+            type="submit"
+            loading={loading || createCollectionMutation.isPending || updateCollectionMutation.isPending}
+            disabled={loading || createCollectionMutation.isPending || updateCollectionMutation.isPending}
+          >
             {t("button.save")}
           </Button>
         </Group>

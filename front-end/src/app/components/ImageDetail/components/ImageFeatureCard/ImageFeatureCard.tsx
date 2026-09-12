@@ -5,7 +5,7 @@ import { ImageFeatureType } from "@picteus/ws-client";
 import { UiAction, UiContainer } from "@picteus/shared-core";
 
 import { ViewMode } from "types";
-import { ExtensionsService } from "app/services";
+import { useExtensions } from "app/hooks";
 import { ExtensionIcon, UiContainerView } from "app/components";
 import ImageDataCard from "../ImageDataCard/ImageDataCard.tsx";
 
@@ -30,6 +30,7 @@ export default function ImageFeatureCard({
   defaultExpanded = true
 }: ImageFeatureCardType): ReactNode
 {
+  const { data: extensions = [] } = useExtensions();
   const featureEntries = useMemo((): [ string, UiContainer[] ][] =>
     {
       if (!perExtensionIdContainers)
@@ -48,7 +49,7 @@ export default function ImageFeatureCard({
 
   const hasSingleExtension = featureEntries.length === 1;
   const singleExtensionId = hasSingleExtension ? featureEntries[0][0] : undefined;
-  const singleExtension = singleExtensionId ? ExtensionsService.list().find((extension) => extension.manifest.id === singleExtensionId) : undefined;
+  const singleExtension = singleExtensionId ? extensions.find((anExtension) => anExtension.manifest.id === singleExtensionId) : undefined;
 
   const headerNode = (
     <>
@@ -76,12 +77,7 @@ export default function ImageFeatureCard({
         {featureEntries.map(
           ([ extensionId, features ], index) =>
           {
-            const extension = ExtensionsService.list().find(
-              (availableExtension) =>
-              {
-                return availableExtension.manifest.id === extensionId;
-              }
-            );
+            const extension = extensions.find((availableExtension) => availableExtension.manifest.id === extensionId);
             const extensionName = extension?.manifest.name ?? extensionId;
 
             return (

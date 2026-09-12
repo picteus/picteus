@@ -1,13 +1,12 @@
-import React, { useEffect, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Flex, Stack, Table, Text, Title } from "@mantine/core";
 import { IconLibrary, IconListSearch, IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Collection } from "@picteus/ws-client";
 
-import { ChannelEnum } from "types";
-import { useActionModalContext, useEventSocket } from "app/context";
-import { CollectionService } from "app/services";
+import { useActionModalContext } from "app/context";
+import { useCollections } from "app/hooks";
 import {
   CollectionIcon,
   Common,
@@ -24,24 +23,16 @@ import { AddOrUpdateCollection, CollectionActions, CollectionDetail, CollectionT
 
 export default function CollectionsScreen()
 {
-  const [ collections, setCollections ] = useState<Collection[]>([]);
-  const [ loading, setLoading ] = useState<boolean>(false);
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
+  const { data: collections = [], isLoading, isFetching, refetch } = useCollections();
   const [ selectedCollection, setSelectedCollection ] = useState<Collection>();
   const [ t ] = useTranslation();
   const [ , addModal ] = useActionModalContext();
 
   useEffect(() =>
   {
-    void fetchAllCollections();
-  }, []);
-
-  useEffect(() =>
-  {
     if (selectedCollection)
     {
-      const updatedCollection = collections.find((collection) => collection.id === selectedCollection.id);
+      const updatedCollection = collections.find((collectionItem) => collectionItem.id === selectedCollection.id);
       if (updatedCollection && updatedCollection !== selectedCollection)
       {
         setSelectedCollection(updatedCollection);
@@ -53,30 +44,9 @@ export default function CollectionsScreen()
     }
   }, [ collections, selectedCollection ]);
 
-  useEffect(() =>
-  {
-    if (event?.channel.startsWith(ChannelEnum.COLLECTION_PREFIX))
-    {
-      void fetchAllCollections();
-    }
-  }, [ event ]);
-
   const showAddButton = false;
 
-  async function fetchAllCollections()
-  {
-    setLoading(true);
-    try
-    {
-      setCollections(await CollectionService.fetchAll());
-    }
-    finally
-    {
-      setLoading(false);
-    }
-  }
-
-  function nothing()
+  function nothing(): void
   {
   }
 
@@ -123,17 +93,23 @@ export default function CollectionsScreen()
 
   function renderTable()
   {
-    return <StandardTable head={[ "", "field.name", "field.comment", "field.createdOn", "field.modifiedOn", "" ]}
-                          loading={loading}
-                          emptyResults={<EmptyResults
-                            icon={IconListSearch}
-                            description={t("emptyCollections.description")}
-                            title={t("emptyCollections.title")}
-                            buttonText={t("emptyCollections.buttonText")}
-                            buttonAction={() => openAddOrUpdateCollectionModal()}
-                          />}>
-      {rows}
-    </StandardTable>;
+    return (
+      <StandardTable
+        head={[ "", "field.name", "field.comment", "field.createdOn", "field.modifiedOn", "" ]}
+        loading={isLoading || isFetching}
+        emptyResults={
+          <EmptyResults
+            icon={IconListSearch}
+            description={t("emptyCollections.description")}
+            title={t("emptyCollections.title")}
+            buttonText={t("emptyCollections.buttonText")}
+            buttonAction={() => openAddOrUpdateCollectionModal()}
+          />
+        }
+      >
+        {rows}
+      </StandardTable>
+    );
   }
 
   return (
@@ -142,14 +118,15 @@ export default function CollectionsScreen()
         <Flex justify="space-between" align="center">
           <Title>{t("collectionsScreen.title")}</Title>
           <Flex gap="sm" align="center">
-            {showAddButton && <Button
-              leftSection={<IconPlus size={20}/>}
-              onClick={() => openAddOrUpdateCollectionModal()}
-            >
-              {t("button.add")}
-            </Button>
-            }
-            <RefreshButton onRefresh={() => fetchAllCollections()}/>
+            {showAddButton && (
+              <Button
+                leftSection={<IconPlus size={20}/>}
+                onClick={() => openAddOrUpdateCollectionModal()}
+              >
+                {t("button.add")}
+              </Button>
+            )}
+            <RefreshButton onRefresh={() => void refetch()}/>
           </Flex>
         </Flex>
         {renderTable()}
@@ -157,9 +134,15 @@ export default function CollectionsScreen()
       <Drawer
         opened={selectedCollection !== undefined}
         onClose={() => setSelectedCollection(undefined)}
-        title={selectedCollection && <CollectionTop collection={selectedCollection}
-                                                    onEdit={openAddOrUpdateCollectionModal}
-                                                    onDeleted={nothing}/>}
+        title={
+          selectedCollection && (
+            <CollectionTop
+              collection={selectedCollection}
+              onEdit={openAddOrUpdateCollectionModal}
+              onDeleted={nothing}
+            />
+          )
+        }
       >
         {selectedCollection && <CollectionDetail collection={selectedCollection}/>}
       </Drawer>

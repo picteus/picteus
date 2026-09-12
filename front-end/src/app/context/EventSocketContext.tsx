@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { ReactNode, useContext, useEffect, useMemo, useRef } from "react";
 import { io, ManagerOptions, Socket, SocketOptions } from "socket.io-client";
 
 import { API_KEY, BASE_PATH, generateRandomId } from "utils";
@@ -8,26 +8,25 @@ import createHmrStableContext from "./createHmrStableContext.ts";
 
 
 type EventSocketContextType = {
-  event: EventInformationType,
   eventStore: SocketClient
 };
 const EventSocketContext = createHmrStableContext<EventSocketContextType>(import.meta.hot, "eventSocketContext", undefined);
 
-export function useEventSocket()
+export function useEventSocket(): EventSocketContextType
 {
   return useContext(EventSocketContext);
 }
 
-type EventSubcriptionCallbackType = (event: EventInformationType) => void;
+type EventSubscriptionCallbackType = (event: EventInformationType) => void;
 
-class SocketClient
+export class SocketClient
 {
 
   private readonly socket: Socket;
 
   private socketEvent?: EventInformationType = undefined;
 
-  private readonly socketEventListeners: Set<EventSubcriptionCallbackType> = new Set();
+  private readonly socketEventListeners: Set<EventSubscriptionCallbackType> = new Set();
 
   constructor(url: string, apiKey: string)
   {
@@ -89,16 +88,16 @@ class SocketClient
     console.debug("The socket has been disconnected");
   }
 
-  subscribeToSocketEvents = (callback: EventSubcriptionCallbackType): () => boolean =>
+  subscribeToSocketEvents = (callback: EventSubscriptionCallbackType): () => void =>
   {
     this.socketEventListeners.add(callback);
-    return () => this.socketEventListeners.delete(callback);
+    return () =>
+    {
+      this.socketEventListeners.delete(callback);
+    };
   };
 
-  subscribeToEvents = (
-    channels: readonly ChannelEnum[] | ChannelEnum[],
-    callback: EventSubcriptionCallbackType
-  ): () => boolean =>
+  subscribeToEvents = (channels: readonly ChannelEnum[], callback: EventSubscriptionCallbackType): () => void =>
   {
     const channelSet = new Set<string>(channels);
     const filteredListener = (event: EventInformationType): void =>
@@ -118,26 +117,66 @@ class SocketClient
 
 }
 
-export function EventSocketProvider({ children })
+export function useSocketEvent(channel: ChannelEnum, callback: (event: EventInformationType) => void): void
 {
-  const socketClient = useMemo<SocketClient>(() => new SocketClient(BASE_PATH, API_KEY), []);
-  const [ event, setEvent ] = useState<EventInformationType>(undefined);
+  const { eventStore } = useEventSocket();
+  const callbackReference = useRef(callback);
+  useEffect(() =>
+  {
+    callbackReference.current = callback;
+  }, [ callback ]);
 
   useEffect(() =>
   {
-    const unsubscribe = socketClient.subscribeToSocketEvents((theEvent: EventInformationType) =>
+    return eventStore.subscribeToEvents([ channel ], (event: EventInformationType) =>
     {
-      setEvent(theEvent);
+      callbackReference.current(event);
     });
+  }, [ eventStore, channel ]);
+}
+
+export function useSocketEvents(channels: readonly ChannelEnum[], callback: (event: EventInformationType) => void): void
+{
+  const { eventStore } = useEventSocket();
+  const callbackReference = useRef(callback);
+  useEffect(() =>
+  {
+    callbackReference.current = callback;
+  }, [ callback ]);
+
+  const serializedChannels = useMemo(() =>
+  {
+    return channels.slice().sort().join(",");
+  }, [ channels ]);
+
+  useEffect(() =>
+  {
+    return eventStore.subscribeToEvents(channels, (event: EventInformationType) =>
+    {
+      callbackReference.current(event);
+    });
+  }, [ eventStore, serializedChannels ]);
+}
+
+export function EventSocketProvider({ children }: { children?: ReactNode })
+{
+  const socketClient = useMemo<SocketClient>(() => new SocketClient(BASE_PATH, API_KEY), []);
+
+  useEffect(() =>
+  {
     return () =>
     {
-      unsubscribe();
       socketClient.disconnect();
     };
-  }, []);
+  }, [ socketClient ]);
+
+  const contextValue = useMemo<EventSocketContextType>(() =>
+  {
+    return { eventStore: socketClient };
+  }, [ socketClient ]);
 
   return (
-    <EventSocketContext.Provider value={{ event, eventStore: socketClient }}>
+    <EventSocketContext.Provider value={contextValue}>
       {children}
     </EventSocketContext.Provider>
   );

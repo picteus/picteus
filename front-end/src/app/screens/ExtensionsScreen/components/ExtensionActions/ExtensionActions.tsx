@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { Extension, ExtensionState } from "@picteus/ws-client";
 
 import { ToastService } from "utils";
-import { useConfirmAction } from "app/hooks";
+import { useChangeExtensionStateMutation, useConfirmAction, useUninstallExtensionMutation } from "app/hooks";
 import { ExtensionsService } from "app/services";
 
 
@@ -37,17 +37,16 @@ export default function ExtensionActions({
 {
   const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
+  const uninstallExtensionMutation = useUninstallExtensionMutation();
+  const changeExtensionStateMutation = useChangeExtensionStateMutation();
 
-  const iconSizeAndStroke = {
-    size: 20,
-    stroke: 1
-  };
+  const iconSizeAndStroke = {    size: 20,    stroke: 1  };
 
-  async function handleOnUninstallExtension(extensionId: string)
+  async function handleOnUninstallExtension(extensionId: string): Promise<void>
   {
     try
     {
-      await ExtensionsService.uninstall({ id: extensionId });
+      await uninstallExtensionMutation.mutateAsync(extensionId);
       ToastService.success(t("extensionsScreen.successUninstall"));
       onUninstalled();
     }
@@ -57,11 +56,11 @@ export default function ExtensionActions({
     }
   }
 
-  async function handleOnToggleExtensionState(extension: Extension)
+  async function handleOnToggleExtensionState(extension: Extension): Promise<void>
   {
     try
     {
-      await ExtensionsService.startOrStop({
+      await changeExtensionStateMutation.mutateAsync({
         id: extension.manifest.id,
         state: extension.state === ExtensionState.Enabled ? ExtensionState.Paused : ExtensionState.Enabled
       });
@@ -73,7 +72,7 @@ export default function ExtensionActions({
     }
   }
 
-  async function handleOnSynchronize(extension: Extension)
+  async function handleOnSynchronize(extension: Extension): Promise<void>
   {
     try
     {
@@ -121,6 +120,7 @@ export default function ExtensionActions({
         <ActionIcon
           size="md"
           variant="default"
+          loading={changeExtensionStateMutation.isPending}
           onClick={() => handleOnToggleExtensionState(extension)}
         >
           {extension.state === ExtensionState.Paused ? (
@@ -134,9 +134,11 @@ export default function ExtensionActions({
         <ActionIcon
           size="md"
           variant="default"
+          loading={uninstallExtensionMutation.isPending}
           onClick={() =>
             confirmAction({
-              onConfirm: () => handleOnUninstallExtension(extension.manifest.id), options: {
+              onConfirm: () => handleOnUninstallExtension(extension.manifest.id),
+              options: {
                 title: t("extensionsScreen.confirmDeleteTitle"),
                 message: t("extensionsScreen.confirmDeleteMessage", {
                   name: extension.manifest.name

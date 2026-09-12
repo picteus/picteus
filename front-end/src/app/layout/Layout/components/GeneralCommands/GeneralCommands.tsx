@@ -7,11 +7,7 @@ import { CommandEntity, ManifestCapabilityId, SearchOriginNature } from "@picteu
 
 import { UiCommandType } from "types";
 import { useActionModalContext } from "app/context";
-import {
-  useExtensionCommandRunner,
-  useExtensionCommandsWithCapability,
-  useExtensionCommandsWithEntities
-} from "app/hooks";
+import { useExtensionCommandRunner, useExtensionCommands, useExtensionsWithCapability } from "app/hooks";
 import { CommandIcon, Common, MenuItemEntry, TextToImages } from "app/components";
 
 
@@ -22,8 +18,8 @@ export default function GeneralCommands()
   const [ t ] = useTranslation();
   const [ , addModal ] = useActionModalContext();
   const commandRunner = useExtensionCommandRunner();
-  const extensionsProcessCommands = useExtensionCommandsWithEntities(commandEntities);
-  const extensionsWithTextEmbeddingsCapability = useExtensionCommandsWithCapability(ManifestCapabilityId.TextEmbeddings);
+  const extensionsProcessCommands = useExtensionCommands(commandEntities);
+  const extensionsWithTextEmbeddingsCapability = useExtensionsWithCapability(ManifestCapabilityId.TextEmbeddings);
 
   useEffect(() =>
   {

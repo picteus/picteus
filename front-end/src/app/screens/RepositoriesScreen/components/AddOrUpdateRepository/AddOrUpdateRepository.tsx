@@ -8,8 +8,7 @@ import { Repository, RepositoryApiRepositoryCreateRequest } from "@picteus/ws-cl
 
 import { FolderTypes } from "types";
 import { computePathSeparator, ToastService, Validators } from "utils";
-import { useFolderPicker } from "app/hooks";
-import { RepositoriesService } from "app/services";
+import { useAddRepositoryMutation, useFolderPicker, useUpdateRepositoryMutation } from "app/hooks";
 
 
 const initialValues: RepositoryApiRepositoryCreateRequest = {
@@ -29,6 +28,8 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
 {
   const [ t ] = useTranslation();
   const openFolderPicker = useFolderPicker();
+  const updateRepositoryMutation = useUpdateRepositoryMutation();
+  const addRepositoryMutation = useAddRepositoryMutation();
 
   const form = useForm({
     mode: "uncontrolled",
@@ -43,14 +44,14 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
   });
   const [ loading, setLoading ] = useState<boolean>(false);
 
-  async function handleSubmit(values: RepositoryApiRepositoryCreateRequest)
+  async function handleSubmit(values: RepositoryApiRepositoryCreateRequest): Promise<void>
   {
     setLoading(true);
     try
     {
       if (repository)
       {
-        await RepositoriesService.update({
+        await updateRepositoryMutation.mutateAsync({
           id: repository.id,
           name: values.name,
           comment: values.comment
@@ -58,7 +59,7 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
       }
       else
       {
-        await RepositoriesService.add({ ...values, url: `file://${values.url}` });
+        await addRepositoryMutation.mutateAsync({ ...values, url: `file://${values.url}` });
       }
       ToastService.success(t(`addOrUpdateRepositoryModal.${repository ? "successUpdate" : "successAdd"}`));
       onSuccess();
@@ -73,7 +74,7 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
     }
   }
 
-  async function handleOnClickBrowseFolder()
+  async function handleOnClickBrowseFolder(): Promise<void>
   {
     const directoryPath = await openFolderPicker(FolderTypes.REPOSITORY);
     if (directoryPath === undefined)
@@ -128,7 +129,11 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
         {...form.getInputProps("comment")}
       />
       <Flex justify="flex-end">
-        <Button loading={loading} disabled={loading} type="submit">
+        <Button
+          loading={loading || updateRepositoryMutation.isPending || addRepositoryMutation.isPending}
+          disabled={loading || updateRepositoryMutation.isPending || addRepositoryMutation.isPending}
+          type="submit"
+        >
           {t(repository ? "button.save" : "button.add")}
         </Button>
       </Flex>

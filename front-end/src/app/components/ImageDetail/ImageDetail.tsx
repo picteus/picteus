@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { getHotkeyHandler, useFocusTrap } from "@mantine/hooks";
 import { Group as ResizableGroup, Layout, Panel, Separator } from "react-resizable-panels";
 
@@ -6,7 +6,7 @@ import { Image } from "@picteus/ws-client";
 
 import { ChannelEnum, ImageOrSummary, ViewMode } from "types";
 import { ToastService } from "utils";
-import { useEventSocket } from "app/context";
+import { useSocketEvents } from "app/context";
 import { useImageNavigation } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
 import { ImageData, ImageTop, ImageVisual } from "./components";
@@ -29,31 +29,33 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
     images,
     viewMode
   });
-  const [panelSizes, setPanelSizes] = useState<number[]>(StorageService.getVisualizerPanelSizes());
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
+  const [ panelSizes, setPanelSizes ] = useState<number[]>(StorageService.getVisualizerPanelSizes());
 
-  useEffect(() =>
+  const imageEventChannels = useMemo(() =>
   {
-    if (event)
+    return [
+      ChannelEnum.IMAGE_UPDATED,
+      ChannelEnum.IMAGE_TAGS_UPDATED,
+      ChannelEnum.IMAGE_FEATURES_UPDATED,
+      ChannelEnum.IMAGE_DELETED
+    ] as const;
+  }, []);
+
+  useSocketEvents(imageEventChannels, (event) =>
+  {
+    const imageId = EventService.computeEventEntityId<string>(event);
+    if (event.channel === ChannelEnum.IMAGE_DELETED)
     {
-      if (event.channel === ChannelEnum.IMAGE_UPDATED || event.channel === ChannelEnum.IMAGE_TAGS_UPDATED || event.channel === ChannelEnum.IMAGE_FEATURES_UPDATED || event.channel === ChannelEnum.IMAGE_DELETED)
+      if (navigation.removeImage(imageId) === 0)
       {
-        const imageId = EventService.computeEventEntityId<string>(event);
-        if (event.channel === ChannelEnum.IMAGE_DELETED)
-        {
-          if (navigation.removeImage(imageId) === 0)
-          {
-            onClose();
-          }
-        }
-        else if (navigation.containsImage(imageId))
-        {
-          ImageService.get({ id: imageId }).then(image => navigation.updateImage(image)).catch(ToastService.apiCallError);
-        }
+        onClose();
       }
     }
-  }, [event, navigation.containsImage, navigation.removeImage, navigation.updateImage]);
+    else if (navigation.containsImage(imageId))
+    {
+      ImageService.get({ id: imageId }).then(anImage => navigation.updateImage(anImage)).catch(ToastService.apiCallError);
+    }
+  });
 
   useEffect(() =>
   {
@@ -61,7 +63,7 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
     {
       ("metadata" in image ? Promise.resolve(image as Image) : ImageService.get({ id: image.id })).then(navigation.setSelectedImage).catch(ToastService.apiCallError);
     }
-  }, [image, navigation.setSelectedImage]);
+  }, [ image, navigation.setSelectedImage ]);
 
   function handleOnLayoutChanged(layout: Layout)
   {
@@ -71,8 +73,8 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
   }
 
   const handleOnKeyDown = getHotkeyHandler([
-    ["ArrowLeft", navigation.onPrevious],
-    ["ArrowRight", navigation.onNext]
+    [ "ArrowLeft", navigation.onPrevious ],
+    [ "ArrowRight", navigation.onNext ]
   ]);
 
   const imageData = navigation.selectedImage as Image;

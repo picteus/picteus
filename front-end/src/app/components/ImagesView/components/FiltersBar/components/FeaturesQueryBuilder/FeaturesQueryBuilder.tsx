@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useEffect, useMemo, useState } from "react";
+import React, { ChangeEvent, useMemo } from "react";
 import {
   ActionIcon,
   Button,
@@ -28,7 +28,6 @@ import {
 import { useTranslation } from "react-i18next";
 
 import {
-  ExtensionImageFeatureName,
   ImageFeatureFormat,
   ImageFeatureNullValue,
   ImageFeatureType,
@@ -39,8 +38,7 @@ import {
   SearchFeatures
 } from "@picteus/ws-client";
 
-import { ToastService } from "utils";
-import { FiltersService } from "app/services";
+import { useFeatureNames } from "app/hooks";
 import { Common, ExtensionIcon } from "app/components";
 
 
@@ -252,10 +250,10 @@ type FeaturesQueryBuilderType = {
 export default function FeaturesQueryBuilder({ searchFeatures, onChange }: FeaturesQueryBuilderType)
 {
   const [ t ] = useTranslation();
-  const [ featureNames, setFeatureNames ] = useState<ExtensionImageFeatureName[]>([]);
+  const { data: featureNames } = useFeatureNames();
   const featureNamesData = useMemo<FeatureNamesDataType []>(() =>
   {
-    const defaultFeatureNameDatas: FeatureNamesDataType[] = featureNames.filter(imageFeatureName => allowedFeatureNameFormats.indexOf(imageFeatureName.format) !== -1).map((imageFeatureName, index) => ({
+    const defaultFeatureNameDatas: FeatureNamesDataType[] = (featureNames ?? []).filter(imageFeatureName => allowedFeatureNameFormats.indexOf(imageFeatureName.format) !== -1).map((imageFeatureName, index) => ({
       value: computeFeatureNameValue(imageFeatureName),
       label: computeFeatureNameLabel(imageFeatureName),
       index,
@@ -316,10 +314,6 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
     }, new Map<string, FeatureNameType>());
   }, [ featureNamesData ]);
 
-  useEffect(() =>
-  {
-    return FiltersService.subscribeToFeaturesNamesOptions(setFeatureNames, ToastService.apiCallError);
-  }, []);
 
   const handleOperatorChange = (value: string) =>
   {
@@ -399,7 +393,8 @@ export default function FeaturesQueryBuilder({ searchFeatures, onChange }: Featu
       <Group gap={8}>
         {item.checked && <CheckIcon className={Combobox.classes.optionsDropdownCheckIcon}/>}
         {featureName && computeFeatureIcon(featureName.id, featureName.type)}
-        <Text size="sm">{featureName ? computeFeatureNameLabel(featureName) : (item.option.label || item.option.value)}</Text>
+        <Text
+          size="sm">{featureName ? computeFeatureNameLabel(featureName) : (item.option.label || item.option.value)}</Text>
       </Group>
     );
   };

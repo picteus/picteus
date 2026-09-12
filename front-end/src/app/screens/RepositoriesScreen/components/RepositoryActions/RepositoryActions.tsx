@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Repository } from "@picteus/ws-client";
 
 import { ToastService } from "utils";
-import { useConfirmAction } from "app/hooks";
+import { useConfirmAction, useDeleteRepositoryMutation } from "app/hooks";
 import { RepositoriesService } from "app/services";
 import { ExternalLink } from "app/components";
 
@@ -28,17 +28,18 @@ export default function RepositoryActions({
 {
   const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
+  const deleteRepositoryMutation = useDeleteRepositoryMutation();
 
-  async function handleOnSynchronizeRepository(id: string)
+  async function handleOnSynchronizeRepository(repositoryId: string): Promise<void>
   {
-    await RepositoriesService.synchronize({ id });
+    await RepositoriesService.synchronize({ id: repositoryId });
   }
 
-  async function handleOnDeleteRepository(id: string)
+  async function handleOnDeleteRepository(repositoryId: string): Promise<void>
   {
     try
     {
-      await RepositoriesService.remove({ id });
+      await deleteRepositoryMutation.mutateAsync(repositoryId);
       ToastService.success(t("repositoryScreen.successRemove"));
       onDeleted();
     }
@@ -73,9 +74,11 @@ export default function RepositoryActions({
         <ActionIcon
           size="md"
           variant="default"
+          loading={deleteRepositoryMutation.isPending}
           onClick={() =>
             confirmAction({
-              onConfirm: () => handleOnDeleteRepository(repository.id), options: {
+              onConfirm: () => handleOnDeleteRepository(repository.id),
+              options: {
                 title: t("repositoryScreen.confirmDeleteTitle"),
                 message: t("repositoryScreen.confirmDeleteMessage", {
                   name: repository.name

@@ -10,15 +10,15 @@ import {
   Image,
   ImageFeatureFormat,
   ImageFeatureType,
-  ImageMetadata as PicteusImageMetadata,
-  Repository
+  ImageMetadata as PicteusImageMetadata
 } from "@picteus/ws-client";
 
 
 import { ViewMode } from "types";
 import { capitalizeText } from "utils";
 import { useActionModalContext } from "app/context";
-import { RepositoriesService, StorageService } from "app/services";
+import { useRepository } from "app/hooks";
+import { StorageService } from "app/services";
 import {
   CodeViewer,
   CopyText,
@@ -68,7 +68,7 @@ type ImageDataType = {
 export default function ImageData({ image, viewMode }: ImageDataType)
 {
   const [ t ] = useTranslation();
-  const [ repository, setRepository ] = useState<Repository>(RepositoriesService.getRepositoryInformation(image.repositoryId));
+  const { data: repository } = useRepository(image.repositoryId);
   const [ , addModal ] = useActionModalContext();
   const sectionIds = {
     information: "information",
@@ -79,11 +79,6 @@ export default function ImageData({ image, viewMode }: ImageDataType)
     metadata: "metadata"
   };
   const [ accordionValue, setAccordionValue ] = useState<string[]>(StorageService.getImageDetailTraits([ sectionIds.information, sectionIds.tags, sectionIds.recipe, sectionIds.features ]));
-
-  useEffect(() =>
-  {
-    setRepository(RepositoriesService.getRepositoryInformation(image.repositoryId));
-  }, [ image ]);
 
   useEffect(() =>
   {
@@ -105,26 +100,37 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         : []),
       {
         label: t("field.repository"),
-        value: <Flex align="center" gap={10}>
-          <Text size="sm">{repository.name}</Text>
-          <Tooltip
-            label={t("button.open")}
-            position="right"
-          >
-            <ActionIcon variant="default" onClick={() =>
-            {
-              addModal({
-                title: <RepositoryTop repository={repository} onDeleted={() =>
-                {
-                }}/>,
-                size: "m",
-                component: <RepositoryDetail repository={repository}/>
-              });
-            }}>
-              <IconEye/>
-            </ActionIcon>
-          </Tooltip>
-        </Flex>
+        value: repository
+          ? (
+            <Flex align="center" gap={10}>
+              <Text size="sm">{repository.name}</Text>
+              <Tooltip
+                label={t("button.open")}
+                position="right"
+              >
+                <ActionIcon
+                  variant="default"
+                  onClick={() =>
+                  {
+                    addModal({
+                      title: <RepositoryTop repository={repository} onDeleted={() =>
+                      {
+                      }}/>,
+                      size: "m",
+                      component: <RepositoryDetail repository={repository}/>
+                    });
+                  }}
+                >
+                  <IconEye/>
+                </ActionIcon>
+              </Tooltip>
+            </Flex>
+          )
+          : (
+            <Text size="sm" c="dimmed">
+              {image.repositoryId}
+            </Text>
+          )
       },
       {
         label: t("field.createdOn"),

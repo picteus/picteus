@@ -3,8 +3,8 @@ import { Text } from "@mantine/core";
 
 import { ExtensionIdImageEmbeddingName } from "@picteus/ws-client";
 
-import { ToastService } from "utils";
-import { ExtensionsService, RepositoriesService, StorageService } from "app/services";
+import { useEmbeddingsNames, useExtensions } from "app/hooks";
+import { StorageService } from "app/services";
 import { ExtensionIcon, MenuItemEntry, StandardMenu } from "app/components";
 
 
@@ -14,7 +14,8 @@ type EmbeddingSelectType = {
 
 export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
 {
-  const [ embeddingsNames, setEmbeddingsNames ] = useState<ExtensionIdImageEmbeddingName[]>([]);
+  const { data: embeddingsNames = [] } = useEmbeddingsNames();
+  const { data: extensions = [] } = useExtensions();
   const [ selectedEmbedding, setSelectedEmbedding ] = useState<string | undefined>();
 
   const extensionIdAndEmbeddingNameSeparator = "|";
@@ -32,26 +33,22 @@ export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
 
   useEffect(() =>
   {
-    return RepositoriesService.subscribeToEmbeddingsNames((theEmbeddingNames) =>
+    let selected = StorageService.getClosestImagesEmbeddingName();
+    if (!selected || !embeddingsNames.find(embeddingName => mergeExtensionIdEmbeddingName(embeddingName) === selected))
     {
-      setEmbeddingsNames(theEmbeddingNames);
-      let selected = StorageService.getClosestImagesEmbeddingName();
-      if (!selected || !theEmbeddingNames.find(embeddingName => mergeExtensionIdEmbeddingName(embeddingName) === selected))
+      if (embeddingsNames.length > 0)
       {
-        if (theEmbeddingNames.length > 0)
-        {
-          const firstEmbeddingName = theEmbeddingNames[0];
-          selected = mergeExtensionIdEmbeddingName(firstEmbeddingName);
-        }
-        else
-        {
-          selected = undefined;
-        }
+        const firstEmbeddingName = embeddingsNames[0];
+        selected = mergeExtensionIdEmbeddingName(firstEmbeddingName);
       }
-      setSelectedEmbedding(selected);
-      onSelected(selected === undefined ? undefined : splitExtensionIdAndEmbeddingName(selected));
-    }, ToastService.apiCallError);
-  }, []);
+      else
+      {
+        selected = undefined;
+      }
+    }
+    setSelectedEmbedding(selected);
+    onSelected(selected === undefined ? undefined : splitExtensionIdAndEmbeddingName(selected));
+  }, [ embeddingsNames ]);
 
   const {
     extensionId,
@@ -59,7 +56,7 @@ export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
   } = selectedEmbedding === undefined ? {} : splitExtensionIdAndEmbeddingName(selectedEmbedding);
   const selectedItem = embeddingsNames.find(embeddingName => embeddingName.extensionId === extensionId && embeddingName.name === name);
 
-  function handleSelectEmbedding(extensionId: string, name: string)
+  function handleSelectEmbedding(extensionId: string, name: string): void
   {
     const selected = mergeExtensionIdEmbeddingName({ extensionId, name });
     setSelectedEmbedding(selected);
@@ -69,12 +66,16 @@ export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
 
   return (
     <StandardMenu
-      targetChildren={<>{selectedItem && <ExtensionIcon idOrExtension={selectedItem.extensionId} size="sm"/>}
-        <Text size="sm">{name}</Text></>}
+      targetChildren={
+        <>
+          {selectedItem && <ExtensionIcon idOrExtension={selectedItem.extensionId} size="sm"/>}
+          <Text size="sm">{name}</Text>
+        </>
+      }
       dropdownChildren={
         embeddingsNames.map((embeddingName) =>
         {
-          const extension = ExtensionsService.list().find(extension => extension.manifest.id === embeddingName.extensionId);
+          const extension = extensions.find(anExtension => anExtension.manifest.id === embeddingName.extensionId);
           return (
             <MenuItemEntry
               key={mergeExtensionIdEmbeddingName(embeddingName)}

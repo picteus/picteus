@@ -18,8 +18,8 @@ import { useActionModalContext } from "app/context";
 import {
   useConfirmAction,
   useExtensionCommandRunner,
-  useExtensionCommandsWithCapability,
-  useExtensionCommandsWithEntities
+  useExtensionCommands,
+  useExtensionsWithCapability
 } from "app/hooks";
 import { ImageService } from "app/services";
 import { CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
@@ -39,8 +39,8 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
   const [ , addModal ] = useActionModalContext();
   const confirmAction = useConfirmAction();
   const [ imageTags, setImageTags ] = useState<ExtensionImageTag[]>([]);
-  const extensionsImageCommands = useExtensionCommandsWithEntities(commandEntities);
-  const extensionsWithImageEmbeddingsCapability = useExtensionCommandsWithCapability(ManifestCapabilityId.ImageEmbeddings);
+  const extensionsImageCommands = useExtensionCommands(commandEntities);
+  const extensionsWithImageEmbeddingsCapability = useExtensionsWithCapability(ManifestCapabilityId.ImageEmbeddings);
   const commandRunner = useExtensionCommandRunner();
 
   async function load()

@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { ReactElement, useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
   Box,
@@ -19,8 +19,8 @@ import { CommandEntity, Manifest, SearchOriginNature, SearchSortingProperty } fr
 
 import { ChannelEnum, ImageItemMode, UiCommandType } from "types";
 import { ToastService } from "utils";
-import { useActionModalContext, useEventSocket, useImagesSelectedContext } from "app/context";
-import { useConfirmAction, useExtensionCommandRunner, useExtensionCommandsWithEntities } from "app/hooks";
+import { useActionModalContext, useImagesSelectedContext, useSocketEvent } from "app/context";
+import { useConfirmAction, useExtensionCommandRunner, useExtensionCommands } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
 import {
   Common,
@@ -51,10 +51,8 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
   const confirmAction = useConfirmAction();
   const imagesContainerRef = useRef<HTMLDivElement>(null);
   const { ref: containerRef, height: containerHeight } = useElementSize();
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
   const { selectedImages, toggleSelectedImage, clearSelectedImages } = useImagesSelectedContext();
-  const extensionsImageCommands = useExtensionCommandsWithEntities(commandEntities);
+  const extensionsImageCommands = useExtensionCommands(commandEntities);
   const commandRunner = useExtensionCommandRunner();
   const [ selectedAction, setSelectedAction ] = useState<string>();
   const [ isAddingToCollection, setAddingToCollection ] = useState<boolean>(false);
@@ -68,18 +66,16 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
       setSelectedAction(latestAction);
     }
   }, []);
-  useEffect(() =>
+
+  useSocketEvent(ChannelEnum.IMAGE_DELETED, (event) =>
   {
-    if (event?.channel === ChannelEnum.IMAGE_DELETED)
+    const imageId = EventService.computeEventEntityId<string>(event);
+    const selectedImage = selectedImages.find(aSelectedImage => aSelectedImage.id === imageId);
+    if (selectedImage)
     {
-      const imageId = EventService.computeEventEntityId<string>(event);
-      const selectedImage = selectedImages.find(aSelectedImage => aSelectedImage.id === imageId);
-      if (selectedImage)
-      {
-        toggleSelectedImage(selectedImage);
-      }
+      toggleSelectedImage(selectedImage);
     }
-  }, [ event ]);
+  });
 
   const synchronizeAction = "synchronize";
   const deleteAction = "delete";

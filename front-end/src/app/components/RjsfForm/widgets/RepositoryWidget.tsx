@@ -1,26 +1,15 @@
-import { useEffect, useState } from "react";
 import { ComboboxItem, ComboboxLikeRenderOptionInput, Select, SelectProps, Stack, Text } from "@mantine/core";
 import { WidgetProps } from "@rjsf/utils";
 import { useTranslation } from "react-i18next";
 
-import { Repository } from "@picteus/ws-client";
-
-import { RepositoriesService } from "app/services";
+import { useRepositories } from "app/hooks";
 
 
 export default function RepositoryWidget(props: WidgetProps)
 {
+  const [ t ] = useTranslation();
   const { id, value, required, disabled, readonly, onChange, onBlur, onFocus, schema } = props;
-  const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [t] = useTranslation();
-
-  useEffect(() =>
-  {
-    RepositoriesService.fetchAll().then((repos) =>
-    {
-      setRepositories(repos);
-    });
-  }, []);
+  const { data: repositories = [] } = useRepositories();
 
   const selectData = repositories.map((repository) => ({
     value: repository.id,

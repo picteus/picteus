@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useState } from "react";
 import { Accordion, ActionIcon, Badge, Flex, Grid, Loader, Popover, ScrollArea, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconArrowBigUpLines } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { ChannelEnum, LogType } from "types";
+import { ChannelEnum, EventInformationType, LogType } from "types";
 import { timeAgoFromMilliseconds } from "utils";
 import { useEventSocket } from "app/context";
 import { EventService } from "app/services";
@@ -45,7 +45,7 @@ type LogDateType = {
 
 function LogDate({ timestampInMilliseconds }: LogDateType)
 {
-  const [date, setDate] = useState<string>(timeAgoFromMilliseconds(timestampInMilliseconds));
+  const [ date, setDate ] = useState<string>(timeAgoFromMilliseconds(timestampInMilliseconds));
   useEffect(() =>
   {
     const run = () =>
@@ -55,7 +55,7 @@ function LogDate({ timestampInMilliseconds }: LogDateType)
     run();
     const interval = setInterval(run, 1_000);
     return () => clearInterval(interval);
-  }, [timestampInMilliseconds]);
+  }, [ timestampInMilliseconds ]);
 
   return (<Text className={style.logDate} size={size} c="dimmed" lineClamp={1}>
     {date}
@@ -119,7 +119,7 @@ function PopActivities({ contexts, containerHeight }: { contexts: Context[], con
 
 function Activities({ contexts, containerHeight }: { contexts: Context[], containerHeight: number })
 {
-  const [opened, { close, open }] = useDisclosure(false);
+  const [ opened, { close, open } ] = useDisclosure(false);
 
   return (<Flex align="center" justify="flex-end" gap={size}>
     {contexts.length > 0 && <>
@@ -157,7 +157,7 @@ type StatusType = {
 
 function Status({ log }: StatusType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
 
   return (<Flex align="center" gap={size}>
     {log && <>
@@ -173,50 +173,51 @@ function Status({ log }: StatusType)
 export default function EventInformation({ containerHeight }: { containerHeight: number })
 {
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [theLastLog, setTheLastLog] = useState<LogType>();
-  const [contextsMap, setContextsMap] = useState<Map<string, Context>>(new Map());
-  const [contextsList, setContextsList] = useState<Context[]>([...contextsMap.values()]);
+  const [ theLastLog, setTheLastLog ] = useState<LogType>();
+  const [ contextsMap ] = useState<Map<string, Context>>(new Map());
+  const [ contextsList, setContextsList ] = useState<Context[]>([]);
 
   useEffect(() =>
   {
-    if (event === undefined)
+    return eventStore.subscribeToSocketEvents((event: EventInformationType) =>
     {
-      return;
-    }
-    const log = EventService.computeLog(event);
-    if (event.isActivity === true)
-    {
-      const contextId = event.contextId;
-      let context = contextsMap.get(contextId);
-      if (context === undefined)
+      if (event === undefined)
       {
-        context = {
-          id: contextId,
-          timestamp: event.milliseconds,
-          extensionId: EventService.computeEventExtensionId(event),
-          logs: []
-        };
-        contextsMap.set(contextId, context);
+        return;
       }
+      const log = EventService.computeLog(event);
+      if (event.isActivity === true)
+      {
+        const contextId = event.contextId;
+        let context = contextsMap.get(contextId);
+        if (context === undefined)
+        {
+          context = {
+            id: contextId,
+            timestamp: event.milliseconds,
+            extensionId: EventService.computeEventExtensionId(event),
+            logs: []
+          };
+          contextsMap.set(contextId, context);
+        }
+        if (event.channel === ChannelEnum.EXTENSION_ACKNOWLEDGMENT)
+        {
+          contextsMap.delete(contextId);
+        }
+        else
+        {
+          context.logs.push(log);
+        }
+        setContextsList([ ...contextsMap.values() ]);
+      }
+
       if (event.channel === ChannelEnum.EXTENSION_ACKNOWLEDGMENT)
       {
-        contextsMap.delete(contextId);
+        return;
       }
-      else
-      {
-        context.logs.push(log);
-      }
-      setContextsMap(contextsMap);
-      setContextsList([...contextsMap.values()]);
-    }
-
-    if (event.channel === ChannelEnum.EXTENSION_ACKNOWLEDGMENT)
-    {
-      return;
-    }
-    setTheLastLog(log);
-  }, [event]);
+      setTheLastLog(log);
+    });
+  }, [ eventStore, contextsMap ]);
 
   return (
     <Grid className={style.container} columns={10} gap="sm" justify="center" align="center" overflow="hidden">

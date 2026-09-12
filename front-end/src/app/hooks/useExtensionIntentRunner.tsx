@@ -20,14 +20,16 @@ import { CommandEntity, ExtensionSettings, UserInterfaceAnchor } from "@picteus/
 
 import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, ToastService } from "utils";
 import { useActionModalContext, useAdditionalUiContext } from "app/context";
-import { ExtensionsService, ImageService, RepositoriesService, StorageService } from "app/services";
+import { ExtensionsService, ImageService, StorageService } from "app/services";
 import {
   ConfirmOptions,
   useConfirmAction,
   useExtensionCommandRunner,
-  useExtensionCommandsWithEntities,
+  useExtensionCommands,
+  useExtensions,
   useOpenBrowser,
-  useOpenWindow
+  useOpenWindow,
+  useRepositories
 } from "app/hooks";
 import { Iframe, ImageDetail } from "app/components";
 import { ExtensionSettingsModal } from "app/screens/ExtensionsScreen/components";
@@ -53,7 +55,9 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
   const openBrowser = useOpenBrowser();
   const openWindow = useOpenWindow();
   const confirmAction = useConfirmAction();
-  const processCommands = useExtensionCommandsWithEntities(commandEntities);
+  const processCommands = useExtensionCommands(commandEntities);
+  const { data: repositories = [] } = useRepositories();
+  const { data: extensions = [] } = useExtensions();
   const triggerToast = useCallback(() =>
   {
     ToastService.withTitleAndSubtitle("info", t("extensionIntent.onAction"));
@@ -178,7 +182,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
       {
         return confirmActionWrapper(() =>
           {
-            const extension = ExtensionsService.list().find(extension => extension.manifest.id === show.id);
+            const extension = extensions.find((extensionItem) => extensionItem.manifest.id === show.id);
             if (extension === undefined)
             {
               return listener.onFailure(`The extension with id '${show.id}' is not installed`);
@@ -213,7 +217,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
       {
         return confirmActionWrapper(() =>
           {
-            const repository = RepositoriesService.list().find(aRepository => aRepository.id === show.id);
+            const repository = repositories.find((repositoryItem) => repositoryItem.id === show.id);
             if (repository === undefined)
             {
               return listener.onFailure(`The repository with id '${show.id}' does not exist`);

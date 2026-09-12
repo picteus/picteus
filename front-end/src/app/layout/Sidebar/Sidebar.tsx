@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import React, { useEffect, useMemo, useSyncExternalStore } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Divider, ScrollArea, Stack } from "@mantine/core";
 import {
@@ -13,11 +13,10 @@ import {
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { computeExtensionSidebarRoute, ROUTES, ToastService } from "utils";
-import { useAdditionalUiContext, useCommandSocket, useEventSocket } from "app/context";
-import { ExtensionsService } from "app/services";
+import { useAdditionalUiContext, useCommandSocket } from "app/context";
 import { Common, ExtensionIcon } from "app/components";
 import { useOpenWindow } from "app/hooks";
-import { ChannelEnum, computeResourceTypeUrl } from "types";
+import { computeResourceTypeUrl } from "types";
 import { ImagesNavbarLink, NavbarLink } from "./components";
 
 import style from "./Sidebar.module.scss";
@@ -26,26 +25,10 @@ import style from "./Sidebar.module.scss";
 export default function Sidebar()
 {
   const navigate = useNavigate();
-  const [ additionalUiContextValue, refreshAdditionalUi ] = useAdditionalUiContext();
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
+  const [ additionalUiContextValue ] = useAdditionalUiContext();
   const openWindow = useOpenWindow();
   const [ t ] = useTranslation();
 
-  useEffect(() =>
-  {
-    if (event === undefined)
-    {
-      return;
-    }
-    if (event.channel === ChannelEnum.EXTENSION_UPDATED || event.channel === ChannelEnum.EXTENSION_INSTALLED || event.channel === ChannelEnum.EXTENSION_UNINSTALLED || event.channel === ChannelEnum.EXTENSION_STOPPED || event.channel === ChannelEnum.EXTENSION_STARTED)
-    {
-      void ExtensionsService.fetchAll().then(() =>
-      {
-        refreshAdditionalUi();
-      });
-    }
-  }, [ event ]);
   const { isAvailable } = useCommandSocket();
 
   const commonIconStyle = useMemo(() => ({ stroke: Common.IconStrokeSize }), []);

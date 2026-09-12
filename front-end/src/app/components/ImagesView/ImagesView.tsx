@@ -1,27 +1,20 @@
-import React, {
-  ReactElement,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore
-} from "react";
+import React, { ReactElement, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Flex } from "@mantine/core";
 
 import { SearchRange } from "@picteus/ws-client";
 
 import {
   ChannelEnum,
+  EventInformationType,
   FilterOrCollectionId,
   ImageExplorerDataType,
+  ImageOrSummary,
   ImageWithCaption,
   ViewMode,
   ViewTabDataType
 } from "types";
 import { ToastService } from "utils";
-import { useEventSocket, useImagesTabsContext } from "app/context";
+import { useImagesTabsContext, useSocketEvents } from "app/context";
 import { useInterceptedState } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
 import { Container, EmptyResults } from "app/components";
@@ -59,8 +52,6 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
   const [ viewMode, setViewMode ] = useInterceptedState<ViewMode>("mode" in viewData ? viewData.mode : viewData.viewMode);
   const [ displayRefreshAlert, setDisplayRefreshAlert ] = useState<boolean>(false);
   const autoReloadImagesViews = useMemo<boolean>(() => StorageService.getAutoReloadImagesViews(), []);
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
 
   useEffect(() =>
   {
@@ -98,9 +89,9 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
     handleOnRefresh();
   }, [ viewData, setFilterOrCollectionId, setViewMode ]);
 
-  const handleOnRefresh = useCallback(() =>
+  const handleOnRefresh = useCallback((): void =>
   {
-    setRefreshTrigger(previousRefreshTrigger => previousRefreshTrigger + 1);
+    setRefreshTrigger((previousRefreshTrigger: number): number => previousRefreshTrigger + 1);
     setDisplayRefreshAlert(false);
   }, []);
 
@@ -133,39 +124,40 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
     });
   }, [ filterOrCollectionId, images ]);
 
-  useEffect(() =>
+  const imageChannels = useMemo(() =>
   {
-    if (event === undefined)
+    return [ ChannelEnum.IMAGE_CREATED, ChannelEnum.IMAGE_UPDATED, ChannelEnum.IMAGE_DELETED ] as const;
+  }, []);
+
+  useSocketEvents(imageChannels, (event: EventInformationType): void =>
+  {
+    if (autoReloadImagesViews)
     {
-      return;
-    }
-    if (event.channel === ChannelEnum.IMAGE_CREATED || event.channel === ChannelEnum.IMAGE_UPDATED || event.channel === ChannelEnum.IMAGE_DELETED)
-    {
-      if (autoReloadImagesViews)
+      if (imagesContentRef.current)
       {
-        if (imagesContentRef.current)
+        const imageId = EventService.computeEventEntityId<string>(event);
+        if (event.channel === ChannelEnum.IMAGE_DELETED)
         {
-          const imageId = EventService.computeEventEntityId<string>(event);
-          if (event.channel === ChannelEnum.IMAGE_DELETED)
+          imagesContentRef.current.onImageDeleted(imageId);
+        }
+        else if (event.channel === ChannelEnum.IMAGE_UPDATED)
+        {
+          ImageService.get({ id: imageId }).then((image: ImageOrSummary): void =>
           {
-            imagesContentRef.current.onImageDeleted(imageId);
-          }
-          else if (event.channel === ChannelEnum.IMAGE_UPDATED)
-          {
-            ImageService.get({ id: imageId }).then(image => imagesContentRef.current.onImageUpdated(image)).catch(ToastService.apiCallError);
-          }
-          else
-          {
-            handleOnRefresh();
-          }
+            imagesContentRef.current?.onImageUpdated(image);
+          }).catch(ToastService.apiCallError);
+        }
+        else
+        {
+          handleOnRefresh();
         }
       }
-      else
-      {
-        setDisplayRefreshAlert(true);
-      }
     }
-  }, [ event, autoReloadImagesViews, handleOnRefresh ]);
+    else
+    {
+      setDisplayRefreshAlert(true);
+    }
+  });
 
   const handleOnFilterOrCollectionId = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId) =>
   {

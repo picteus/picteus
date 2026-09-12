@@ -6,8 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Collection } from "@picteus/ws-client";
 
 import { ToastService } from "utils";
-import { useConfirmAction } from "app/hooks";
-import { CollectionService } from "app/services";
+import { useConfirmAction, useDeleteCollectionMutation } from "app/hooks";
 
 
 interface CollectionActionsType
@@ -27,12 +26,13 @@ export default function CollectionActions({
 {
   const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
+  const deleteCollectionMutation = useDeleteCollectionMutation();
 
-  async function handleOnDeleteCollection(id: number)
+  async function handleOnDeleteCollection(collectionId: number): Promise<void>
   {
     try
     {
-      await CollectionService.delete(id);
+      await deleteCollectionMutation.mutateAsync(collectionId);
       ToastService.success(t("collectionsScreen.successDelete"));
       onDeleted();
     }
@@ -44,22 +44,26 @@ export default function CollectionActions({
 
   return (
     <Flex gap={10} onClick={(event) => event.stopPropagation()}>
-      {onEdit && <Tooltip label={t("button.edit")}>
-        <ActionIcon
-          size="md"
-          variant="default"
-          onClick={() => onEdit(collection)}
-        >
-          <IconEdit size={20} stroke={1}/>
-        </ActionIcon>
-      </Tooltip>}
+      {onEdit && (
+        <Tooltip label={t("button.edit")}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            onClick={() => onEdit(collection)}
+          >
+            <IconEdit size={20} stroke={1}/>
+          </ActionIcon>
+        </Tooltip>
+      )}
       <Tooltip label={t("button.delete")}>
         <ActionIcon
           size="md"
           variant="default"
+          loading={deleteCollectionMutation.isPending}
           onClick={() =>
             confirmAction({
-              onConfirm: () => handleOnDeleteCollection(collection.id), options: {
+              onConfirm: () => handleOnDeleteCollection(collection.id),
+              options: {
                 title: t("collectionsScreen.confirmDeleteTitle"),
                 message: t("collectionsScreen.confirmDeleteMessage", {
                   name: collection.name

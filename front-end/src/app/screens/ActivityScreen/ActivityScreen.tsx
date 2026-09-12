@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge, Flex, Stack, Table, Text, Title } from "@mantine/core";
 import { IconActivity } from "@tabler/icons-react";
@@ -11,14 +11,11 @@ import { Container, EmptyResults, ExtensionIcon, FormatedDate, StandardTable } f
 
 export default function ActivityScreen()
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  type TableRowDisplayType = {
-    log: LogType;
-  };
-  const [rows, setRows] = useState<TableRowDisplayType[]>([]);
-  const [pagination, setPagination] = useState({ currentPage: 1, take: StorageService.getActivityLogsBatchSize() });
+  type TableRowDisplayType = { log: LogType; };
+  const [ rows, setRows ] = useState<TableRowDisplayType[]>([]);
+  const [ pagination, setPagination ] = useState({ currentPage: 1, take: StorageService.getActivityLogsBatchSize() });
   const startIndex = (pagination.currentPage - 1) * pagination.take;
   const endIndex = startIndex + pagination.take;
   const paginatedRows = rows?.slice(startIndex, endIndex);
@@ -28,16 +25,16 @@ export default function ActivityScreen()
     async function load()
     {
       const events: SocketEventType[] = await EventService.getSocketEvents();
-      setRows(events.map((event) => ({ log: EventService.computeLog(event) })));
+      setRows(events.map((eventItem) => ({ log: EventService.computeLog(eventItem) })));
     }
 
     void load();
-  }, [event]);
 
-  useEffect(() =>
-  {
-
-  }, [pagination]);
+    return eventStore.subscribeToSocketEvents(() =>
+    {
+      void load();
+    });
+  }, [ eventStore ]);
 
   function handleOnPaginationChange(newPage: number)
   {
@@ -84,7 +81,7 @@ export default function ActivityScreen()
   {
     return <StandardTable
       // head={["field.date", "field.extension", "field.logLevel", "field.entity", "field.message"]}
-      head={["field.date", "field.extension", "field.logLevel", "field.message"]}
+      head={[ "field.date", "field.extension", "field.logLevel", "field.message" ]}
       withPagination={{
         value: pagination,
         setValue: setPagination,

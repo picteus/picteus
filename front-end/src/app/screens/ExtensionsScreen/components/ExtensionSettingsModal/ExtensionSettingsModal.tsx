@@ -7,6 +7,7 @@ import { Extension, ExtensionSettings } from "@picteus/ws-client";
 
 
 import { extractMarkdownParagraph, ToastService } from "utils";
+import { useExtension, useResetExtensionSettingsMutation, useSetExtensionSettingsMutation } from "app/hooks";
 import { ExtensionsService } from "app/services";
 import { extractSchemaAndUiSchema, Manual, RjsfForm } from "app/components";
 import { ManualSection } from "../../../../../types";
@@ -34,17 +35,16 @@ export default function ExtensionSettingsModal({
   const [ extensionSettings, setExtensionSettings ] = useState<ExtensionSettings>();
   const [ saveFailed, setSaveFailed ] = useState<boolean>(false);
   const [ isValid, setIsValid ] = useState<boolean>(true);
-  const [ instructions, setInstructions ] = useState<string | undefined>();
 
-  useEffect(() =>
-  {
-    void ExtensionsService.get({ id: extension.manifest.id }).then((extensionAndManual) =>
-    {
-      setInstructions(extensionAndManual.manual?.instructions === undefined ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, ManualSection.Settings));
-    }).catch(ToastService.apiCallError);
-  }, [ extension ]);
+  const { data: extensionAndManual } = useExtension(extension.manifest.id);
+  const instructions = extensionAndManual?.manual?.instructions === undefined
+    ? undefined
+    : extractMarkdownParagraph(extensionAndManual.manual.instructions, ManualSection.Settings);
 
-  async function load()
+  const setExtensionSettingsMutation = useSetExtensionSettingsMutation();
+  const resetExtensionSettingsMutation = useResetExtensionSettingsMutation();
+
+  async function load(): Promise<void>
   {
     setLoading(true);
     try
@@ -65,13 +65,13 @@ export default function ExtensionSettingsModal({
     }
   }
 
-  async function handleOnSaveSettings()
+  async function handleOnSaveSettings(): Promise<void>
   {
     setLoading(true);
     setSaveFailed(false);
     try
     {
-      await ExtensionsService.setSettings({
+      await setExtensionSettingsMutation.mutateAsync({
         id: extension.manifest.id,
         extensionSettings
       });
@@ -89,12 +89,12 @@ export default function ExtensionSettingsModal({
     }
   }
 
-  async function handleOnResetSettings()
+  async function handleOnResetSettings(): Promise<void>
   {
     setLoading(true);
     try
     {
-      const settings = await ExtensionsService.resetSettings({
+      const settings = await resetExtensionSettingsMutation.mutateAsync({
         id: extension.manifest.id
       });
       setExtensionSettings(settings);
@@ -144,8 +144,8 @@ export default function ExtensionSettingsModal({
         {saveFailed && (
           <Button
             onClick={() => void handleOnResetSettings()}
-            loading={loading}
-            disabled={loading}
+            loading={loading || resetExtensionSettingsMutation.isPending}
+            disabled={loading || resetExtensionSettingsMutation.isPending}
             color="red"
           >
             {t("extensionSettingsModal.reset")}
@@ -153,8 +153,8 @@ export default function ExtensionSettingsModal({
         )}
         <Button
           onClick={() => void handleOnSaveSettings()}
-          loading={loading}
-          disabled={loading || !isValid}
+          loading={loading || setExtensionSettingsMutation.isPending}
+          disabled={loading || setExtensionSettingsMutation.isPending || !isValid}
           type="submit"
         >
           {t("button.save")}

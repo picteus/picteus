@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import React, { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActionIcon,
   Box,
@@ -25,13 +25,9 @@ import {
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { ExtensionImageTag, Repository } from "@picteus/ws-client";
-
-import { ChannelEnum, LocalFiltersType } from "types";
-import { ToastService } from "utils";
-import { useContainerDimensions, useDebouncedCallback } from "app/hooks";
-import { useEventSocket } from "app/context";
-import { FiltersService, RepositoriesService, WithValueAndLabel } from "app/services";
+import { LocalFiltersType } from "types";
+import { useContainerDimensions, useDebouncedCallback, useRepositories, useTags } from "app/hooks";
+import { FiltersService, WithValueAndLabel } from "app/services";
 
 import { Common, ExtensionIcon, ImageTag } from "app/components";
 import { FeaturesQueryBuilder, GeneralFilters, PropertiesFilters } from "../../components";
@@ -58,38 +54,23 @@ export function SearchFilters({
   const containerRef = useRef<HTMLDivElement>(null);
   const { width } = useContainerDimensions(containerRef);
   const [ searchText, setSearchText ] = useState<string>();
-  const [ repositories, setRepositories ] = useState<Repository[]>(RepositoriesService.list());
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
-  const [ tags, setTags ] = useState<ExtensionImageTag[]>([]);
-  const [ tagOptions, setTagOptions ] = useState<WithValueAndLabel[]>([]);
+  const { data: repositories = [] } = useRepositories();
+  const { data: tags = [] } = useTags();
 
-  useEffect(() =>
+  const tagOptions = useMemo<WithValueAndLabel[]>(() =>
   {
-    if (event?.channel.startsWith(ChannelEnum.REPOSITORY_PREFIX))
+    const uniqueValues = new Set<string>();
+    const options: WithValueAndLabel[] = [];
+    for (const tag of tags)
     {
-      RepositoriesService.fetchAll().then(setRepositories).catch(ToastService.apiCallError);
-    }
-  }, [ event ]);
-
-  useEffect(() =>
-  {
-    return FiltersService.subscribeToTagsOptions((tags) =>
-    {
-      setTags(tags);
-      const uniqueValues = new Set<string>();
-      const options: WithValueAndLabel[] = [];
-      for (const tag of tags)
+      if (uniqueValues.has(tag.value) === false)
       {
-        if (uniqueValues.has(tag.value) === false)
-        {
-          uniqueValues.add(tag.value);
-          options.push({ value: tag.value, label: tag.value });
-        }
+        uniqueValues.add(tag.value);
+        options.push({ value: tag.value, label: tag.value });
       }
-      setTagOptions(options);
-    }, ToastService.apiCallError);
-  }, []);
+    }
+    return options;
+  }, [ tags ]);
 
   useEffect(() =>
   {

@@ -1,7 +1,4 @@
-import i18n from "i18next";
-
 import {
-  CommandEntity,
   Extension,
   ExtensionActivity,
   ExtensionAndManual,
@@ -20,111 +17,62 @@ import {
   ExtensionApiExtensionUninstallRequest,
   ExtensionApiExtensionUpdateRequest,
   ExtensionsConfiguration,
-  ExtensionSettings,
-  ExtensionState,
-  ManifestCapabilityId,
-  UserInterfaceAnchor
+  ExtensionSettings
 } from "@picteus/ws-client";
 
-import { AdditionalUi, ChannelEnum, EventInformationType, UiExtensionCommandType } from "types";
-import { BASE_PATH, computeExtensionSidebarUuid } from "utils";
+import { BASE_PATH } from "utils";
 
 
 const extensionApi = new ExtensionApi();
-
-let extensions: Extension[] = [];
-let extensionsConfiguration: ExtensionsConfiguration;
-
-function requiresCommandReload(event?: EventInformationType): boolean
-{
-  if (event === undefined)
-  {
-    return false;
-  }
-  const channel = event?.channel;
-  return channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_STOPPED || channel === ChannelEnum.EXTENSION_STARTED;
-}
 
 async function fetchAll(): Promise<{
   extensions: Extension[];
   extensionsConfiguration: ExtensionsConfiguration;
 }>
 {
-  extensions = await extensionApi.extensionList();
-  extensionsConfiguration = await extensionApi.extensionGetConfiguration();
+  const extensions = await extensionApi.extensionList();
+  const extensionsConfiguration = await extensionApi.extensionGetConfiguration();
   return { extensions, extensionsConfiguration };
 }
 
-function list(): Extension[]
-{
-  return extensions;
-}
-
-async function get(
-  parameters: ExtensionApiExtensionGetRequest
-): Promise<ExtensionAndManual>
+async function get(parameters: ExtensionApiExtensionGetRequest): Promise<ExtensionAndManual>
 {
   return extensionApi.extensionGet(parameters);
 }
 
-function isPaused(extensionId: string): boolean | undefined
-{
-  const extension = list().find(extension => extension.manifest.id === extensionId);
-  return extension === undefined ? undefined : extension.state === ExtensionState.Paused;
-}
-
-async function install(
-  parameters: ExtensionApiExtensionInstallRequest
-): Promise<Extension>
+async function install(parameters: ExtensionApiExtensionInstallRequest): Promise<Extension>
 {
   return extensionApi.extensionInstall(parameters);
 }
 
-async function startOrStop(
-  parameters: ExtensionApiExtensionChangeStateRequest
-): Promise<void>
+async function startOrStop(parameters: ExtensionApiExtensionChangeStateRequest): Promise<void>
 {
   return extensionApi.extensionChangeState(parameters);
 }
 
-async function update(
-  parameters: ExtensionApiExtensionUpdateRequest
-): Promise<Extension>
+async function update(parameters: ExtensionApiExtensionUpdateRequest): Promise<Extension>
 {
   return extensionApi.extensionUpdate(parameters);
 }
 
-async function uninstall(
-  parameters: ExtensionApiExtensionUninstallRequest
-): Promise<void>
+async function uninstall(parameters: ExtensionApiExtensionUninstallRequest): Promise<void>
 {
   return extensionApi.extensionUninstall(parameters);
 }
 
-async function getSettings(
-  parameters: ExtensionApiExtensionGetSettingsRequest
-): Promise<ExtensionSettings>
+async function getSettings(parameters: ExtensionApiExtensionGetSettingsRequest): Promise<ExtensionSettings>
 {
   return extensionApi.extensionGetSettings(parameters);
 }
 
-async function setSettings(
-  parameters: ExtensionApiExtensionSetSettingsRequest
-)
+async function setSettings(parameters: ExtensionApiExtensionSetSettingsRequest): Promise<void>
 {
   return extensionApi.extensionSetSettings(parameters);
 }
 
-async function resetSettings(
-  parameters: ExtensionApiExtensionResetSettingsRequest
-): Promise<ExtensionSettings>
+async function resetSettings(parameters: ExtensionApiExtensionResetSettingsRequest): Promise<ExtensionSettings>
 {
   return extensionApi.extensionResetSettings(parameters);
-}
-
-function getConfiguration(): ExtensionsConfiguration
-{
-  return extensionsConfiguration;
 }
 
 async function activities(): Promise<ExtensionActivity[]>
@@ -132,132 +80,51 @@ async function activities(): Promise<ExtensionActivity[]>
   return extensionApi.extensionActivities();
 }
 
-function getExtensionsWithCapability(
-  capability: ManifestCapabilityId
-): Extension[]
-{
-  const extensionsConfigurations = getConfiguration();
-  const extensions = list();
-
-  return extensionsConfigurations?.capabilities
-    ?.find((entity) => entity.capability.id === capability)
-    ?.extensionIds.map((extensionId) =>
-    {
-      return extensions.find(
-        (extension) => extension.manifest.id === extensionId
-      );
-    });
-}
-
-function getExtensionsCommands(
-  entityTypes: CommandEntity[]
-): UiExtensionCommandType[]
-{
-  //getConfiguration() returns commands only for extensions with status "Enabled"
-  const extensionsConfigurations = getConfiguration();
-  const extensions = list();
-  return extensionsConfigurations?.commands.filter((entity) => entityTypes.indexOf(entity.command.on.entity) !== -1)
-    .map((entity) =>
-    {
-      const extension = extensions.find((extension) => extension.manifest.id === entity.extensionId);
-      return {
-        extension,
-        command: {
-          id: entity.command.id,
-          withTags: entity.command.on?.withTags,
-          label: entity.command.specifications.find(
-            (specification) => specification.locale === i18n.language
-          ).label,
-          form: { parameters: entity.command.parameters },
-          iconUri: entity.command.ui?.iconUri
-        }
-      };
-    });
-}
-
-async function runImageCommand(
-  parameters: ExtensionApiExtensionRunImageCommandRequest
-): Promise<void>
+async function runImageCommand(parameters: ExtensionApiExtensionRunImageCommandRequest): Promise<void>
 {
   return extensionApi.extensionRunImageCommand(parameters);
 }
 
-async function runProcessCommand(
-  parameters: ExtensionApiExtensionRunProcessCommandRequest
-): Promise<void>
+async function runProcessCommand(parameters: ExtensionApiExtensionRunProcessCommandRequest): Promise<void>
 {
   return extensionApi.extensionRunProcessCommand(parameters);
 }
 
-async function synchronize(
-  requestParameters: ExtensionApiExtensionSynchronizeRequest
-): Promise<void>
+async function synchronize(requestParameters: ExtensionApiExtensionSynchronizeRequest): Promise<void>
 {
   return extensionApi.extensionSynchronize(requestParameters);
 }
 
-async function generate(
-  parameters: ExtensionApiExtensionGenerateRequest
-): Promise<Blob>
+async function generate(parameters: ExtensionApiExtensionGenerateRequest): Promise<Blob>
 {
   return extensionApi.extensionGenerate(parameters);
 }
 
-async function build(
-  parameters: ExtensionApiExtensionBuildRequest
-): Promise<Blob>
+async function build(parameters: ExtensionApiExtensionBuildRequest): Promise<Blob>
 {
   return extensionApi.extensionBuild(parameters);
 }
 
-function getAdditionalUis(): AdditionalUi[]
-{
-  return list().flatMap(
-    (extension) =>
-      extension.manifest.ui?.elements
-        ?.filter(
-          (element) =>
-            (element.integration.anchor === UserInterfaceAnchor.Sidebar || element.integration.anchor === UserInterfaceAnchor.Window) &&
-            extension.state === ExtensionState.Enabled
-        )
-        .map((element) =>
-        {
-          const integration = element.integration;
-          return {
-            uuid: computeExtensionSidebarUuid(extension.manifest.id, element.id),
-            integration,
-            content: { url: (integration.anchor === UserInterfaceAnchor.Window || (integration.anchor === UserInterfaceAnchor.Sidebar && integration.isExternal === true)) ? element.url : buildUiURL(extension.manifest.id, element.url) },
-            icon: { url: getIconURL(extension) },
-            title: extension.manifest.name,
-            extensionId: extension.manifest.id,
-            automaticallyReopen: true
-          };
-        }) || []
-  );
-}
-
-function buildUiURL(extensionId: string, url: string)
+function buildUiURL(extensionId: string, url: string): string
 {
   return `${BASE_PATH}/ui/extension/${extensionId}${url}`;
 }
 
-function getIconURL(extensionIdOrExtension: string | Extension)
+function getIconURL(extensionIdOrExtension: string | Extension): string
 {
   return buildUiURL(typeof extensionIdOrExtension === "string" ? extensionIdOrExtension : (extensionIdOrExtension as Extension).manifest.id, "/icon");
 }
 
-function getCommandIconURL(extensionId: string, uri: string)
+function getCommandIconURL(extensionId: string, uri: string): string
 {
   return buildUiURL(extensionId, uri);
 }
 
 export default {
-  requiresCommandReload,
   fetchAll,
-  list,
   get,
-  isPaused,
   install,
+  buildUiURL,
   getIconURL,
   getCommandIconURL,
   update,
@@ -269,10 +136,6 @@ export default {
   getSettings,
   setSettings,
   resetSettings,
-  getExtensionsWithCapability,
-  getConfiguration,
-  getAdditionalUis,
-  getExtensionsCommands,
   runImageCommand,
   runProcessCommand,
   activities

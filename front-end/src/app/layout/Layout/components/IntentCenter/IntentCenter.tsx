@@ -1,4 +1,4 @@
-import React, { useEffect, useSyncExternalStore } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { randomId } from "@mantine/hooks";
 import i18n from "i18next";
@@ -25,8 +25,8 @@ import { SearchOriginNature } from "@picteus/ws-client";
 
 import { ChannelEnum, ContentIconType, EventOnResultValueType, ExtensionIntentType, ResourceType } from "types";
 import { ToastService } from "utils";
-import { useActionModalContext, useEventSocket, useImagesTabsContext } from "app/context";
-import { useExtensionIntentRunner } from "app/hooks";
+import { useActionModalContext, useImagesTabsContext, useSocketEvent } from "app/context";
+import { useExtensionIntentRunner, useExtensions } from "app/hooks";
 import { ExtensionsService, NotificationService } from "app/services";
 import { CommandForm, DialogForm } from "app/components";
 
@@ -37,19 +37,14 @@ export default function IntentCenter()
   const [ , addModal, removeModal ] = useActionModalContext();
   const intentRunner = useExtensionIntentRunner();
   const { addTab } = useImagesTabsContext();
-  const { eventStore } = useEventSocket();
-  const event = useSyncExternalStore(eventStore.subscribeToSocketEvents, eventStore.getSocketEvent);
+  const { data: extensions = [] } = useExtensions();
 
-  useEffect(() =>
-  {
-    if (event?.channel === ChannelEnum.EXTENSION_INTENT)
+  useSocketEvent(ChannelEnum.EXTENSION_INTENT, (event) =>
     {
       const value = event.value as ExtensionIntentType;
       const intent = value.intent;
       const extensionId = value.id;
-      const extensionName = ExtensionsService.list().find(
-        (extension) => extension.manifest.id === extensionId
-      )?.manifest.name;
+      const extensionName = extensions.find(anExtension => anExtension.manifest.id === extensionId)?.manifest.name;
 
       function computeIcon(resourceType: ResourceType): ResourceType | ContentIconType
       {
@@ -270,7 +265,7 @@ export default function IntentCenter()
         respondWithError(`Cannot handle the unexpected intent '${JSON.stringify(intent)}'`);
       }
     }
-  }, [ event ]);
+  );
 
   return <></>;
 }

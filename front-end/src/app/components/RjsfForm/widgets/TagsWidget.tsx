@@ -1,30 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Group, MultiSelect, MultiSelectProps, Stack, Text } from "@mantine/core";
 import { WidgetProps } from "@rjsf/utils";
 import { useTranslation } from "react-i18next";
 
-import { Extension, ExtensionImageTag } from "@picteus/ws-client";
+import { ExtensionImageTag } from "@picteus/ws-client";
 
-import { ToastService } from "utils";
-import { ExtensionsService, RepositoriesService } from "app/services";
+import { useExtensions, useTags } from "app/hooks";
 import { ExtensionIcon } from "app/components";
 
 
 export default function TagsWidget(props: WidgetProps)
 {
-  const { id, value, required, disabled, readonly, onChange, onBlur, onFocus, schema } = props;
-  const [ tags, setTags ] = useState<ExtensionImageTag[]>([]);
-  const [ extensions, setExtensions ] = useState<Extension[]>([]);
   const [ t ] = useTranslation();
-
-  useEffect(() =>
-  {
-    ExtensionsService.fetchAll().then((data) =>
-    {
-      setExtensions(data.extensions);
-    }).catch(ToastService.apiCallError);
-    return RepositoriesService.subscribeToTags(setTags, ToastService.apiCallError);
-  }, []);
+  const { id, value, required, disabled, readonly, onChange, onBlur, onFocus, schema } = props;
+  const { data: tags = [] } = useTags();
+  const { data: extensions = [] } = useExtensions();
 
   const tagCounts = useMemo(() =>
   {
@@ -72,7 +62,7 @@ export default function TagsWidget(props: WidgetProps)
 
       return <Text size="sm">{tag.value}</Text>;
     }
-    catch (e)
+    catch
     {
       return <Text size="sm">{option.label}</Text>;
     }
@@ -84,18 +74,18 @@ export default function TagsWidget(props: WidgetProps)
     {
       return [];
     }
-    return value.map(v =>
+    return value.map(item =>
     {
-      if (typeof v === "string")
+      if (typeof item === "string")
       {
-        const matchingTag = tags.find(t => t.value === v);
+        const matchingTag = tags.find(tagItem => tagItem.value === item);
         if (matchingTag)
         {
           return JSON.stringify({ id: matchingTag.id, value: matchingTag.value });
         }
-        return JSON.stringify({ id: "unknown", value: v });
+        return JSON.stringify({ id: "unknown", value: item });
       }
-      return JSON.stringify(v);
+      return JSON.stringify(item);
     });
   }, [ value, tags ]);
 
@@ -107,21 +97,21 @@ export default function TagsWidget(props: WidgetProps)
       required={required}
       disabled={disabled || readonly}
       value={currentValue}
-      onChange={(vals) =>
+      onChange={(values) =>
       {
-        const parsedVals = vals.map(v =>
+        const parsedValues = values.map(val =>
         {
           try
           {
-            return JSON.parse(v).value;
+            return JSON.parse(val).value;
           }
           catch
           {
-            return v;
+            return val;
           }
         });
-        const uniqueVals = Array.from(new Set(parsedVals));
-        onChange(uniqueVals.length > 0 ? uniqueVals : undefined);
+        const uniqueValues = Array.from(new Set(parsedValues));
+        onChange(uniqueValues.length > 0 ? uniqueValues : undefined);
       }}
       onBlur={id && onBlur ? () => onBlur(id, value) : undefined}
       onFocus={id && onFocus ? () => onFocus(id, value) : undefined}

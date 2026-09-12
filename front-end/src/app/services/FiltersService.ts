@@ -1,9 +1,6 @@
 import i18n from "i18n/i18n.ts";
 
-import { RepositoriesService } from "app/services";
 import {
-  ExtensionImageFeatureName,
-  ExtensionImageTag,
   ImageFormat,
   SearchCriteria,
   SearchFeatures,
@@ -17,7 +14,6 @@ import {
 } from "@picteus/ws-client";
 
 import { LocalFiltersType } from "types";
-import { ApiCallError } from "utils";
 
 
 export type WithValue = { value: string };
@@ -55,15 +51,6 @@ const formatsOptions: WithValueAndLabel[] = Object.keys(ImageFormat).map((key) =
   label: ImageFormat[key]
 }));
 
-const subscribeToFeaturesNamesOptions = (onData: (names: ExtensionImageFeatureName[]) => void, onError?: (error: ApiCallError) => void): () => void =>
-{
-  return RepositoriesService.subscribeToFeatureNames(onData, onError);
-};
-
-const subscribeToTagsOptions = (onData: (tags: ExtensionImageTag[]) => void, onError?: (error: ApiCallError) => void): () => void =>
-{
-  return RepositoriesService.subscribeToTags(onData, onError);
-};
 
 const sortOrderOptions: WithValueAndLabel[] = [
   { value: "1", label: i18n.t("sort.asc") },
@@ -246,8 +233,6 @@ export default {
   sortOrderOptions,
   searchInOptions,
   formatsOptions,
-  subscribeToFeaturesNamesOptions,
-  subscribeToTagsOptions,
   localFiltersToSearchFilter,
   searchFilterToLocalFilters
 };

@@ -13,7 +13,7 @@ import {
 } from "@picteus/ws-client";
 
 import { computeFilePath, ToastService } from "utils";
-import { useFolderPicker, useOpenExplorer } from "app/hooks";
+import { useExtensions, useFolderPicker, useInstallExtensionMutation, useOpenExplorer } from "app/hooks";
 import { ExtensionsService } from "app/services";
 import { FolderTypes } from "types";
 
@@ -27,6 +27,8 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
   const [ t ] = useTranslation();
   const openFolderPicker = useFolderPicker();
   const openExplorer = useOpenExplorer();
+  const { data: extensions = [] } = useExtensions();
+  const installExtensionMutation = useInstallExtensionMutation();
   const [ loading, setLoading ] = useState(false);
   const [ submitError, setSubmitError ] = useState<string | undefined>();
   const [ unpackedExtensionsDirectoryPath, setUnpackedExtensionsDirectoryPath ] = useState<string | undefined>();
@@ -110,13 +112,13 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
 
       setLoading(true);
       const extensionId = values.id;
-      if (ExtensionsService.list().some((extension) => extension.manifest.id === extensionId) === true)
+      if (extensions.some((extensionItem) => extensionItem.manifest.id === extensionId) === true)
       {
         throw new Error(t("createExtensionModal.extensionAlreadyExistsError", { id: extensionId }));
       }
 
       const blob = await ExtensionsService.generate({ withPublicSdk: true, extensionGenerationOptions: values });
-      const extension = await ExtensionsService.install({
+      const extension = await installExtensionMutation.mutateAsync({
         state: ExtensionState.Enabled,
         asUnpacked: true,
         body: blob
