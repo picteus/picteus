@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { ChildProcess } from "node:child_process";
+import { ChildProcess, StdioOptions } from "node:child_process";
 import os from "node:os";
 
 import semver from "semver";
@@ -623,7 +623,7 @@ _setup_windows_parent_watchdog()
   };
 })();
 
-export function spawnPythonWithWatchdog(pythonExecutable: string, parameters: string[], cwd?: string | undefined, env?: NodeJS.ProcessEnv | undefined, resortToExternalSupervisor?: boolean): ChildProcess
+export function spawnPythonWithWatchdog(pythonExecutable: string, parameters: string[], cwd?: string | undefined, env?: NodeJS.ProcessEnv | undefined, resortToExternalSupervisor?: boolean, stdio?: StdioOptions | null): ChildProcess
 {
   const options =
     {
@@ -631,14 +631,16 @@ export function spawnPythonWithWatchdog(pythonExecutable: string, parameters: st
       loggedCommand: `${pythonExecutable}${parameters.length === 0 ? "" : (" " + parameters.join(" "))}`
     };
   const shell = false;
-  const stdio = "pipe";
+  // We keep stdin as a pipe for parent exit detection while stdout and stderr are inherited by default to prevent pipe buffer deadlocks
+  const defaultPythonStdio: StdioOptions = [ "pipe", "inherit", "inherit" ];
+  const effectiveStdio = stdio ?? defaultPythonStdio;
   if (process.platform === "win32")
   {
     const watchdogDirectory = getWindowsPythonWatchdogDirectory();
     const childEnv: NodeJS.ProcessEnv = env === undefined ? {} : { ...env };
     const existingPythonPath = childEnv.PYTHONPATH;
     childEnv.PYTHONPATH = existingPythonPath !== undefined && existingPythonPath.length > 0 ? `${watchdogDirectory}${path.delimiter}${existingPythonPath}` : watchdogDirectory;
-    return spawn(pythonExecutable, parameters, cwd, childEnv, shell, stdio, options);
+    return spawn(pythonExecutable, parameters, cwd, childEnv, shell, effectiveStdio, options);
   }
   else
   {
@@ -803,6 +805,6 @@ except KeyboardInterrupt:
 sys.exit(exit_code)
 `.trim();
 
-    return spawn(pythonExecutable, [ "-c", resortToExternalSupervisor === true ? supervisedPythonWatchdogBootstrapCode : inProcessPythonWatchdogBootstrapCode, ...parameters ], cwd, env, shell, stdio, options);
+    return spawn(pythonExecutable, [ "-c", resortToExternalSupervisor === true ? supervisedPythonWatchdogBootstrapCode : inProcessPythonWatchdogBootstrapCode, ...parameters ], cwd, env, shell, effectiveStdio, options);
   }
 }

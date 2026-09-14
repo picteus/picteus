@@ -178,7 +178,7 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
     }
     const pythonExecutable = chromaBinaryFilePath === undefined ? computeVirtualEnvironmentPythonFilePath(chromaDirectoryPath) : chromaBinaryFilePath;
     const preliminaryArguments = chromaBinaryFilePath === undefined ? [ "-c", "from chromadb.cli.cli import app; app()" ] : [];
-    const childProcess: ChildProcess = spawnPythonWithWatchdog(pythonExecutable, [ ...preliminaryArguments, "run", "--path", ".", "--host", host, "--port", portNumber.toString() ], chromaDirectoryPath, env, true);
+    const childProcess: ChildProcess = spawnPythonWithWatchdog(pythonExecutable, [ ...preliminaryArguments, "run", "--path", ".", "--host", host, "--port", portNumber.toString() ], chromaDirectoryPath, env, true, [ "pipe", "pipe", "pipe" ]);
     if (childProcess.stdout === null)
     {
       throw new Error("The Chroma server stdout is null");
@@ -217,6 +217,8 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
         const log = chunk.toString();
         if (log.indexOf("is not available") !== -1)
         {
+          stdout.removeListener("data", listener);
+          stderr.removeListener("data", listener);
           if (resolvedOrRejected === false)
           {
             resolvedOrRejected = true;
@@ -228,6 +230,9 @@ export class VectorDatabaseProvider extends ChromaProvider implements OnModuleIn
           logger.info("The Chroma server is up and running");
           stdout.removeListener("data", listener);
           stderr.removeListener("data", listener);
+          // We resume the streams to continuously drain the pipes and avoid 64 KB buffer deadlocks
+          stdout.resume();
+          stderr.resume();
           if (resolvedOrRejected === false)
           {
             resolvedOrRejected = true;
