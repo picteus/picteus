@@ -199,19 +199,33 @@ class Communicator:
         self.logger: logging.Logger = logger
         self._sender: _MessageSender = sender
         self._queue: asyncio.Queue = queue
+        self._loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+
+    def _push_to_queue(self, item: Dict[str, Any]) -> None:
+        if self._loop.is_running():
+            try:
+                is_same_loop: bool = asyncio.get_running_loop() is self._loop
+            except RuntimeError:
+                is_same_loop = False
+
+            if is_same_loop:
+                self._queue.put_nowait(item)
+            else:
+                self._loop.call_soon_threadsafe(self._queue.put_nowait, item)
+        else:
+            self._queue.put_nowait(item)
 
     def send_log(self, log: str, level: LogLevel) -> None:
-        self._queue.put_nowait({"sender": self._sender, "type": "log", "log": log, "level": level})
+        self._push_to_queue({"sender": self._sender, "type": "log", "log": log, "level": level})
 
     def send_notification(self, value: Dict[str, Any]) -> None:
-        self._queue.put_nowait({"sender": self._sender, "type": "notification", "notification": value})
+        self._push_to_queue({"sender": self._sender, "type": "notification", "notification": value})
 
     def send_acknowledgment(self, success: bool) -> None:
-        self._queue.put_nowait({"sender": self._sender, "type": "acknowledgment", "acknowledgment": success})
+        self._push_to_queue({"sender": self._sender, "type": "acknowledgment", "acknowledgment": success})
 
     async def launch_intent(self, intent: Intent) -> T:
-        loop = asyncio.get_event_loop()
-        future: asyncio.Future = loop.create_future()
+        future: asyncio.Future = self._loop.create_future()
         await self._queue.put({"sender": self._sender, "type": "intent", "intent": intent, "future": future})
         # We wait for the future to be set by the callback
         value = await future
@@ -352,8 +366,6 @@ class PicteusExtension:
             await inner_initialize()
         except Exception as initialize_exception:
             self.exit(1, initialize_exception, "the initialization failed")
-        finally:
-            self.logger.info(f"The {self.to_string()} exits from the 'run'")
 
     def to_string(self) -> str:
         return "extension" + ("" if hasattr(self, 'extension_id') == False else (
