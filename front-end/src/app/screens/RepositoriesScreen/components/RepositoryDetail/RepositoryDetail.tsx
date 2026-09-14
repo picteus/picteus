@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Badge, Flex, LoadingOverlay, NumberFormatter, Stack, Text } from "@mantine/core";
+import { Badge, Flex, NumberFormatter, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { ImageSummary, Repository, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
 
 import { ToastService } from "utils";
 import { ImageService } from "app/services";
-import { FieldValue, FormatedDate, ImagesStack } from "app/components";
+import { FieldValue, FormatedDate, ImagesStack, LoadingView } from "app/components";
 
 
 type RepositoryDetailType = {
@@ -64,18 +64,19 @@ export default function RepositoryDetail({ repository }: RepositoryDetailType)
   }
 
   return (
-    <Stack gap="md" pos="relative">
-      <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }}/>
-      <Flex gap="md">
-        <FieldValue name={t("field.createdOn")}
-                    value={<Text size="sm"><FormatedDate timestamp={repository.creationDate}/></Text>}/>
-        <FieldValue name={t("field.modifiedOn")}
-                    value={<Text size="sm"><FormatedDate timestamp={repository.modificationDate}/></Text>}/>
-      </Flex>
-      <FieldValue name={t("repositoryDetail.imageCount")}
-                  value={<Badge size="lg" variant="light" mt={4}><NumberFormatter value={totalCount}
-                                                                                  thousandSeparator/></Badge>}/>
-      <FieldValue name={t("repositoryDetail.latestImages")} value={renderImageStack()}/>
-    </Stack>
+    <LoadingView visible={loading}>
+      <Stack gap="md">
+        <Flex gap="md">
+          <FieldValue name={t("field.createdOn")}
+                      value={<Text size="sm"><FormatedDate timestamp={repository.creationDate}/></Text>}/>
+          <FieldValue name={t("field.modifiedOn")}
+                      value={<Text size="sm"><FormatedDate timestamp={repository.modificationDate}/></Text>}/>
+        </Flex>
+        <FieldValue name={t("repositoryDetail.imageCount")}
+                    value={<Badge size="lg" variant="light" mt={4}><NumberFormatter value={totalCount}
+                                                                                    thousandSeparator/></Badge>}/>
+        <FieldValue name={t("repositoryDetail.latestImages")} value={renderImageStack()}/>
+      </Stack>
+    </LoadingView>
   );
 }

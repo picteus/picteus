@@ -1,6 +1,7 @@
 export { default as Common } from "./Common/Common.ts";
 export { default as Container } from "./Container/Container.tsx";
 export { default as Loader } from "./Loader/Loader.tsx";
+export { default as LoadingView } from "./LoadingView/LoadingView.tsx";
 export { default as Spinner } from "./Spinner/Spinner.tsx";
 export { default as OverlayIndicator } from "./OverlayIndicator/OverlayIndicator.tsx";
 export { default as RjsfForm, extractSchemaAndUiSchema } from "./RjsfForm/RjsfForm.tsx";

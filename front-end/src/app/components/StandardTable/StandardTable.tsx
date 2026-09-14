@@ -1,9 +1,9 @@
 import React, { ReactElement } from "react";
-import { Divider, LoadingOverlay, Pagination, Select, Table, Text } from "@mantine/core";
+import { Divider, Pagination, Select, Table, Text } from "@mantine/core";
 
 import { useTranslation } from "react-i18next";
 
-import { EmptyResults } from "app/components";
+import { EmptyResults, LoadingView } from "app/components";
 import style from "./StandardTable.module.scss";
 import variables from "assets/style/variablesExport.module.scss";
 
@@ -27,7 +27,7 @@ type StandardTableType = {
 
 export default function StandardTable({ head, loading, withPagination, emptyResults, children }: StandardTableType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
 
   function renderHeaders()
   {
@@ -84,10 +84,6 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
     </div>;
   }
 
-  if (loading === true)
-  {
-    return <LoadingOverlay visible zIndex={2} overlayProps={{ blur: 3 }}/>;
-  }
   if (children.length === 0 && emptyResults !== undefined)
   {
     return emptyResults;
@@ -110,9 +106,9 @@ export default function StandardTable({ head, loading, withPagination, emptyResu
     );
   }
 
-  return (<>
+  return (<LoadingView visible={loading}>
     {renderTable()}
     {withPagination && (<><Divider mb={"md"}/> {renderPagination()}  </>)}
-  </>);
+  </LoadingView>);
 
 }

@@ -27,10 +27,11 @@ type ImagesViewType = {
   viewData: ViewTabDataType | { viewMode: ViewMode, images: ImageWithCaption[] };
   isDefault: boolean;
   controlBarChildren?: ReactNode;
+  loader?: ReactNode;
   onEmptyResults: () => ReactElement<typeof EmptyResults>;
 };
 
-export default function ImagesView({ viewData, isDefault, controlBarChildren, onEmptyResults }: ImagesViewType)
+export default function ImagesView({ viewData, isDefault, controlBarChildren, loader, onEmptyResults }: ImagesViewType)
 {
   const imagesContentRef = useRef<ImagesContentRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -217,7 +218,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
     <div ref={contentRef} className={style.content}>
       <div ref={scrollRootRef} className={style.scrolling}>
         <Container>
-          <ImagesContent
+          {loader ? loader : <ImagesContent
             ref={imagesContentRef}
             viewMode={viewMode}
             containerRef={containerRef}
@@ -227,6 +228,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, on
             onFetchData={onFetchData}
             refreshTrigger={refreshTrigger}
           />
+          }
         </Container>
       </div>
     </div>

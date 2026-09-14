@@ -15,7 +15,14 @@ import {
 import { ImageWithCaption, ViewMode } from "types";
 import { ToastService, Validators } from "utils";
 import { ImageService, StorageService } from "app/services";
-import { CaptionDistance, EmbeddingSelect, EmptyResults, ImagesView, ImageThumbnail } from "app/components";
+import {
+  CaptionDistance,
+  EmbeddingSelect,
+  EmptyResults,
+  ImagesView,
+  ImageThumbnail,
+  LoadingView
+} from "app/components";
 
 
 type ClosestEmbeddingsImagesFormPayload = {
@@ -31,6 +38,7 @@ export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbe
 {
   const [ t ] = useTranslation();
   const [ loading, setLoading ] = useState<boolean>(false);
+  const [ emptyResult, setEmptyResult ] = useState<boolean>(false);
   const [ images, setImages ] = useState<ImageWithCaption[]>([]);
   const [ embeddingName, setEmbeddingName ] = useState<ExtensionIdImageEmbeddingName | undefined>();
   const focusTrapRef = useFocusTrap();
@@ -80,6 +88,7 @@ export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbe
   async function search(parameters: ImageApiImageClosestImagesRequest)
   {
     setLoading(true);
+    setEmptyResult(false);
 
     try
     {
@@ -90,16 +99,16 @@ export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbe
       }
       catch (error)
       {
-        return ToastService.apiCallError(error, "An error occurred while trying to find closes images");
+        return ToastService.apiCallError(error, "An error occurred while trying to find closest images");
       }
-      setImages(
-        imageDistances
-          .sort((distance1, distance2) => distance1.distance - distance2.distance)
-          .map((imageDistance) => ({
-            ...imageDistance.image,
-            caption: <CaptionDistance distance={imageDistance.distance}/>
-          }))
-      );
+      const computedImages = imageDistances
+        .sort((distance1, distance2) => distance1.distance - distance2.distance)
+        .map((imageDistance) => ({
+          ...imageDistance.image,
+          caption: <CaptionDistance distance={imageDistance.distance}/>
+        }));
+      setEmptyResult(computedImages.length === 0);
+      setImages(computedImages);
     }
     finally
     {
@@ -136,16 +145,36 @@ export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbe
     </Group>);
   }
 
+  function renderEmptyResult()
+  {
+    if (embeddingName === undefined)
+    {
+      return (<EmptyResults
+        icon={IconPhotoSearch}
+        title={t("emptyImages.titleNoEmbedding")}
+        description={t("emptyImages.descriptionNoEmbedding")}
+      />);
+    }
+    if (emptyResult)
+    {
+      return (<EmptyResults
+        icon={IconPhotoSearch}
+        title={t("emptyImages.title")}
+        description={t("emptyImages.description")}
+      />);
+    }
+  }
+
   function renderContent()
   {
     return (<ImagesView
       viewData={{ viewMode, images }}
       isDefault={false}
-      onEmptyResults={() => (<EmptyResults
-        icon={IconPhotoSearch}
-        title={t(`emptyImages.${embeddingName === undefined ? "titleNoEmbedding" : "title"}`)}
-        description={t(`emptyImages.${embeddingName === undefined ? "descriptionNoEmbedding" : "description"}`)}
-      />)}
+      loader={loading && <LoadingView visible={true}/>}
+      onEmptyResults={() =>
+      {
+        return renderEmptyResult();
+      }}
       controlBarChildren={renderForm()}
     />);
   }
