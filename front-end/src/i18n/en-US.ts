@@ -430,7 +430,11 @@ export default {
     emptyActivity: {
       title: "No activity available",
       description: "There are currently no activities to display"
-    }
+    },
+    confirmDeleteTitle: "Clear activity events",
+    confirmDeleteMessage: "Are you sure you want to clear all activity events?",
+    successDelete: "All activity events have been cleared",
+    errorDelete: "An error occurred while clearing activity events"
   },
   settingsScreen: {
     title: "Settings",

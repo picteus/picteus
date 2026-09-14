@@ -49,6 +49,20 @@ async function storeSocketEvent(event: SocketEventType): Promise<void>
   store.add(event);
 }
 
+async function deleteAllSocketEvents(): Promise<void>
+{
+  const store = await getObjectStore(socketEventsKind, "readwrite");
+  return new Promise<void>((resolve, reject) =>
+  {
+    const clearRequest = store.clear();
+    clearRequest.onsuccess = () =>
+    {
+      resolve();
+    };
+    clearRequest.onerror = () => reject(clearRequest.error);
+  });
+}
+
 function computeLogLevelColor(logLevel: string): string
 {
   if (logLevel === "info")
@@ -260,6 +274,7 @@ export default {
   upgrade,
   getSocketEvents,
   storeSocketEvent,
+  deleteAllSocketEvents,
   generateNotification,
   computeEventEntityId,
   computeEventExtensionId,
