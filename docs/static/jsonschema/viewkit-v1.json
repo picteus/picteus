@@ -1,0 +1,1237 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "viewkit.json",
+    "$defs": {
+        "UiContainer": {
+            "type": "object",
+            "properties": {
+                "elements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/UiElement"
+                    },
+                    "description": "Ordered list of visual elements, structures, and content"
+                }
+            },
+            "required": [
+                "elements"
+            ],
+            "allOf": [
+                {
+                    "$ref": "#/$defs/Envelop"
+                }
+            ],
+            "description": "Container model representing an ordered list of visual elements."
+        },
+        "UiCard": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "Human-readable feature title displayed in the card header"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Optional neutral subtitle / description for the feature"
+                },
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/UiAction"
+                    },
+                    "description": "Optional card action buttons rendered at the base of the feature card"
+                }
+            },
+            "required": [
+                "title"
+            ],
+            "allOf": [
+                {
+                    "$ref": "#/$defs/UiContainer"
+                }
+            ],
+            "description": "Root Card container model.\nRepresents a complete feature card rendered inside the 360px panel."
+        },
+        "UiElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "Discriminator property identifying the concrete visual component"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/StringShortElement"
+                },
+                {
+                    "$ref": "#/$defs/StringLongElement"
+                },
+                {
+                    "$ref": "#/$defs/StringCodeElement"
+                },
+                {
+                    "$ref": "#/$defs/XmlElement"
+                },
+                {
+                    "$ref": "#/$defs/JsonElement"
+                },
+                {
+                    "$ref": "#/$defs/StringUrlElement"
+                },
+                {
+                    "$ref": "#/$defs/IdentifierElement"
+                },
+                {
+                    "$ref": "#/$defs/RatioElement"
+                },
+                {
+                    "$ref": "#/$defs/ColourElement"
+                },
+                {
+                    "$ref": "#/$defs/NumberUnboundedElement"
+                },
+                {
+                    "$ref": "#/$defs/NumberBoundedStarsElement"
+                },
+                {
+                    "$ref": "#/$defs/NumberBoundedMeterElement"
+                },
+                {
+                    "$ref": "#/$defs/BooleanPlainElement"
+                },
+                {
+                    "$ref": "#/$defs/BooleanBadgeElement"
+                },
+                {
+                    "$ref": "#/$defs/TimestampElement"
+                },
+                {
+                    "$ref": "#/$defs/ImageReferenceElement"
+                },
+                {
+                    "$ref": "#/$defs/DominantColourSetElement"
+                },
+                {
+                    "$ref": "#/$defs/MarkdownBlockElement"
+                },
+                {
+                    "$ref": "#/$defs/HtmlBlockElement"
+                },
+                {
+                    "$ref": "#/$defs/MultiSlotRowElement"
+                },
+                {
+                    "$ref": "#/$defs/LabelValueRowElement"
+                },
+                {
+                    "$ref": "#/$defs/TableElement"
+                },
+                {
+                    "$ref": "#/$defs/RepeatingGroupElement"
+                },
+                {
+                    "$ref": "#/$defs/CollapsibleGroupElement"
+                },
+                {
+                    "$ref": "#/$defs/DividerElement"
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "not": {
+                                "enum": [
+                                    "string-short",
+                                    "string-long",
+                                    "string-code",
+                                    "xml",
+                                    "json",
+                                    "string-url",
+                                    "identifier",
+                                    "ratio",
+                                    "color-swatch",
+                                    "number-unbounded",
+                                    "number-stars",
+                                    "number-meter",
+                                    "boolean-plain",
+                                    "boolean-badge",
+                                    "timestamp",
+                                    "image-ref",
+                                    "color-set",
+                                    "markdown",
+                                    "html",
+                                    "multi-slot",
+                                    "label-value",
+                                    "table",
+                                    "repeating-group",
+                                    "collapsible-group",
+                                    "divider"
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                }
+            ],
+            "description": "Polymorphic root base model for all visual UI elements in Picteus feature views.\nUses the @discriminator(\"type\") decorator so all child models inheriting from UiElement\nare automatically recognized by schema emitters and SDK code generators."
+        },
+        "Envelop": {
+            "type": "object",
+            "properties": {
+                "schemaVersion": {
+                    "type": "string",
+                    "const": "1.0",
+                    "default": "1.0",
+                    "description": "Schema specification version"
+                }
+            },
+            "required": [
+                "schemaVersion"
+            ],
+            "description": "Base envelope container model holding the schema version attribute."
+        },
+        "StringShortElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "string-short",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Text value"
+                },
+                "representation": {
+                    "$ref": "#/$defs/StringShortRepresentation",
+                    "default": "plain",
+                    "description": "Display representation mode"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Short string primitive element.\nSupports plain text or compact chip pill presentation."
+        },
+        "StringLongElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "string-long",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Text value"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Multiline text block primitive element for descriptions, comments, or prose."
+        },
+        "StringCodeElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "string-code",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Text value"
+                },
+                "language": {
+                    "$ref": "#/$defs/CodeLanguage",
+                    "description": "Optional syntax highlighting language identifier"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/BaseModifiers",
+                    "description": "Optional visual modifiers (copyable)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Monospace code block or formatted code snippet representation."
+        },
+        "XmlElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "xml",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "XML content value"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/BaseModifiers",
+                    "description": "Optional visual modifiers (copyable)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "XML markup code block element."
+        },
+        "JsonElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "json",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "JSON content value"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/BaseModifiers",
+                    "description": "Optional visual modifiers (copyable)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "JSON data or structure representation element."
+        },
+        "StringUrlElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "string-url",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Target URL or navigation destination"
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Optional custom anchor text label"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Hyperlink representation for external or internal URL navigation."
+        },
+        "IdentifierElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "identifier",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Identifier string value"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Monospace semantic identifier representation."
+        },
+        "RatioElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "ratio",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Aspect ratio textual expression"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Aspect ratio representation (e.g. \"16:9\", \"4:3\", \"1:1\")."
+        },
+        "ColourElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "color-swatch",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Hexadecimal color code"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Single color swatch representation with hex value and copy affordance."
+        },
+        "NumberUnboundedElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "number-unbounded",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "number",
+                    "description": "Numeric value"
+                },
+                "unit": {
+                    "type": "string",
+                    "description": "Optional unit suffix (e.g. \"px\", \"ms\", \"MB\")"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Plain unbounded numeric value primitive element."
+        },
+        "NumberBoundedStarsElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "number-stars",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "number",
+                    "description": "Numeric rating score"
+                },
+                "maximum": {
+                    "type": "number",
+                    "default": 5,
+                    "description": "Maximum rating scale (defaults to 5)"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Bounded numeric rating represented as visual stars."
+        },
+        "NumberBoundedMeterElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "number-meter",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "number",
+                    "description": "Numeric value"
+                },
+                "minimum": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Minimum scale bound (defaults to 0)"
+                },
+                "maximum": {
+                    "type": "number",
+                    "default": 100,
+                    "description": "Maximum scale bound (e.g. 100)"
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Optional custom text label override (e.g. \"68 / 100\")"
+                },
+                "unit": {
+                    "type": "string",
+                    "description": "Optional unit suffix (e.g. \"%\")"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Bounded numeric meter representation (read-only progress / score bar)."
+        },
+        "BooleanPlainElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "boolean-plain",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "boolean",
+                    "description": "Boolean state value"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Plain boolean value representation (textual \"true\" / \"false\")."
+        },
+        "BooleanBadgeElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "boolean-badge",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "boolean",
+                    "description": "Boolean state value"
+                },
+                "trueLabel": {
+                    "type": "string",
+                    "default": "true",
+                    "description": "Custom display label when true (defaults to \"true\")"
+                },
+                "falseLabel": {
+                    "type": "string",
+                    "default": "false",
+                    "description": "Custom display label when false (defaults to \"false\")"
+                },
+                "variant": {
+                    "$ref": "#/$defs/BadgeVariant",
+                    "default": "neutral",
+                    "description": "Badge color tone"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Visual badge pill representation of a boolean state."
+        },
+        "TimestampElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "timestamp",
+                    "description": "Discriminator type"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "ISO 8601 date string or epoch timestamp in milliseconds"
+                },
+                "format": {
+                    "$ref": "#/$defs/TimestampFormat",
+                    "default": "full",
+                    "description": "Presentation date/time format"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/PrimitiveModifiers",
+                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                }
+            },
+            "required": [
+                "type",
+                "value"
+            ],
+            "description": "Formatted date and time representation."
+        },
+        "ImageReferenceElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "image-ref",
+                    "description": "Discriminator type"
+                },
+                "src": {
+                    "type": "string",
+                    "description": "Image source URI (HTTPS URL, base64 data URI, or asset path)"
+                },
+                "alt": {
+                    "type": "string",
+                    "description": "Accessible alternative description"
+                },
+                "aspectRatio": {
+                    "type": "string",
+                    "default": "1:1",
+                    "description": "Aspect ratio of the thumbnail container"
+                },
+                "placeholder": {
+                    "type": "string",
+                    "description": "Fallback placeholder image URI"
+                }
+            },
+            "required": [
+                "type",
+                "src"
+            ],
+            "description": "Thumbnail image reference with placeholder fallback handling."
+        },
+        "DominantColourSetElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "color-set",
+                    "description": "Discriminator type"
+                },
+                "colors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of hexadecimal color strings in descending priority"
+                }
+            },
+            "required": [
+                "type",
+                "colors"
+            ],
+            "description": "Dominant color set palette rendered in descending dominance order."
+        },
+        "MarkdownBlockElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "markdown",
+                    "description": "Discriminator type"
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Raw Markdown markup content"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/BaseModifiers",
+                    "description": "Optional visual modifiers (copyable)"
+                }
+            },
+            "required": [
+                "type",
+                "content"
+            ],
+            "description": "Full Markdown fallback block rendered with core typographic hierarchy, spacing, and styling."
+        },
+        "HtmlBlockElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "html",
+                    "description": "Discriminator type"
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Raw HTML markup content"
+                },
+                "modifiers": {
+                    "$ref": "#/$defs/BaseModifiers",
+                    "description": "Optional visual modifiers (copyable)"
+                }
+            },
+            "required": [
+                "type",
+                "content"
+            ],
+            "description": "Sandboxed HTML rendering escape hatch."
+        },
+        "MultiSlotRowElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "multi-slot",
+                    "description": "Discriminator type"
+                },
+                "proportions": {
+                    "type": "string",
+                    "description": "Proportions descriptor (e.g. \"1/3 + 2/3\", \"equal\", \"1/4 + 3/4\")"
+                },
+                "slots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/Slot"
+                    },
+                    "description": "List of slots comprising the row"
+                }
+            },
+            "required": [
+                "type",
+                "slots"
+            ],
+            "description": "Multi-slot horizontal row with declared column width proportions.\nExamples: \"1/3 + 2/3\", \"equal thirds\", \"1/4 + 3/4\"."
+        },
+        "LabelValueRowElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "label-value",
+                    "description": "Discriminator type"
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Key or descriptive label displayed muted on the left"
+                },
+                "value": {
+                    "description": "Rendered value element on the right",
+                    "$ref": "#/$defs/UiElement"
+                },
+                "withDivider": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to render a bottom border/hairline divider"
+                }
+            },
+            "required": [
+                "type",
+                "label",
+                "value"
+            ],
+            "description": "Standard label and value row.\nDisplays a muted label on the left and value representation on the right with a vertical dividing line."
+        },
+        "TableElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "table",
+                    "description": "Discriminator type"
+                },
+                "hasHeader": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to render a column header row"
+                },
+                "isStriped": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to render alternating row background colors"
+                },
+                "withColumnSeparators": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to render vertical column separators"
+                },
+                "withRowSeparators": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to render horizontal row separators"
+                },
+                "columns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/TableColumn"
+                    },
+                    "description": "Optional explicit column definitions"
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/TableRow"
+                    },
+                    "description": "Tabular data rows"
+                }
+            },
+            "required": [
+                "type",
+                "rows"
+            ],
+            "description": "Structured tabular data representation.\nSupports header/borderless modes, 2-column key-value tables, and 3-column data tables."
+        },
+        "RepeatingGroupElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "repeating-group",
+                    "description": "Discriminator type"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Optional section header for the group"
+                },
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/RepeatingGroupEntry"
+                    },
+                    "description": "List of repeated entry records"
+                }
+            },
+            "required": [
+                "type",
+                "entries"
+            ],
+            "description": "Repeating group container where entries share uniform structure and retain per-entry labels."
+        },
+        "CollapsibleGroupElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "collapsible-group",
+                    "description": "Discriminator type"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Group title (e.g. \"Show specimen details\")"
+                },
+                "summary": {
+                    "type": "string",
+                    "description": "Secondary summary indicator (e.g. \"2 neutral values\")"
+                },
+                "defaultExpanded": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether the disclosure is open/expanded by default"
+                },
+                "elements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/UiElement"
+                    },
+                    "description": "Nested content elements revealed when expanded"
+                }
+            },
+            "required": [
+                "type",
+                "title",
+                "elements"
+            ],
+            "description": "Collapsible disclosure container (accordion) with summary badge."
+        },
+        "DividerElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "divider",
+                    "description": "Discriminator type"
+                },
+                "style": {
+                    "$ref": "#/$defs/DividerStyle",
+                    "default": "hairline",
+                    "description": "Line styling"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "description": "Visual hairline separator separating sections or element groups."
+        },
+        "StringShortRepresentation": {
+            "type": "string",
+            "enum": [
+                "plain",
+                "chip"
+            ],
+            "description": "Representation style for short string values."
+        },
+        "PrimitiveModifiers": {
+            "type": "object",
+            "properties": {
+                "truncate": {
+                    "$ref": "#/$defs/TruncateOptions",
+                    "description": "Configures character truncation threshold with show-more affordance"
+                },
+                "weight": {
+                    "$ref": "#/$defs/TextWeight",
+                    "default": "normal",
+                    "description": "Typographic text weight"
+                },
+                "intensity": {
+                    "$ref": "#/$defs/TextIntensity",
+                    "default": "medium",
+                    "description": "Visual text color intensity"
+                },
+                "monospace": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to use monospace font rendering (for hashes, IDs, codes)"
+                }
+            },
+            "allOf": [
+                {
+                    "$ref": "#/$defs/BaseModifiers"
+                }
+            ],
+            "description": "Common modifier traits that can be attached to primitive elements."
+        },
+        "CodeLanguage": {
+            "type": "string",
+            "enum": [
+                "xml",
+                "json",
+                "yaml"
+            ],
+            "description": "Supported syntax highlighting languages for formatted code blocks."
+        },
+        "BaseModifiers": {
+            "type": "object",
+            "properties": {
+                "copyable": {
+                    "type": "boolean",
+                    "description": "Adds an interactive copy button/action next to the rendered value"
+                }
+            },
+            "description": "Base modifier traits for elements that support copy affordance."
+        },
+        "BadgeVariant": {
+            "type": "string",
+            "enum": [
+                "neutral",
+                "success",
+                "warning",
+                "danger"
+            ],
+            "description": "Visual color tone variants for badge pill representations."
+        },
+        "TimestampFormat": {
+            "type": "string",
+            "enum": [
+                "full",
+                "date",
+                "time",
+                "relative"
+            ],
+            "description": "Presentation format styles for timestamp elements."
+        },
+        "Slot": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "description": "Optional slot label (e.g. \"Slot A\")"
+                },
+                "width": {
+                    "type": "string",
+                    "description": "Relative or fractional width proportion (e.g. \"1/3\", \"2/3\", \"100px\", \"auto\")"
+                },
+                "content": {
+                    "description": "Rendered content inside the slot",
+                    "$ref": "#/$defs/UiElement"
+                }
+            },
+            "required": [
+                "content"
+            ],
+            "description": "Single slot within a multi-slot horizontal row layout."
+        },
+        "TableColumn": {
+            "type": "object",
+            "properties": {
+                "header": {
+                    "type": "string",
+                    "description": "Display header text"
+                },
+                "align": {
+                    "$ref": "#/$defs/TableColumnAlign",
+                    "default": "left",
+                    "description": "Text horizontal alignment"
+                },
+                "width": {
+                    "type": "string",
+                    "description": "Optional width constraint"
+                }
+            },
+            "description": "Column definition for structured tables."
+        },
+        "TableRow": {
+            "type": "object",
+            "properties": {
+                "cells": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/UiElement"
+                    },
+                    "description": "Array of cell values corresponding to table columns"
+                }
+            },
+            "required": [
+                "cells"
+            ],
+            "description": "Single table row containing an array of cell values."
+        },
+        "RepeatingGroupEntry": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "description": "Entry label"
+                },
+                "value": {
+                    "description": "Primary entry value or nested elements",
+                    "$ref": "#/$defs/UiElement"
+                },
+                "elements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/UiElement"
+                    },
+                    "description": "Nested elements for structured entries"
+                }
+            },
+            "required": [
+                "label"
+            ],
+            "description": "Single entry within a repeating group."
+        },
+        "DividerStyle": {
+            "type": "string",
+            "enum": [
+                "hairline",
+                "solid",
+                "dashed"
+            ],
+            "description": "Visual styling variants for hairline dividers."
+        },
+        "TruncateOptions": {
+            "type": "object",
+            "properties": {
+                "characterLimit": {
+                    "type": "integer",
+                    "minimum": -2147483648,
+                    "maximum": 2147483647,
+                    "description": "Maximum number of characters to display before truncating"
+                },
+                "showMore": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to render a \"Show more\" / \"Show less\" toggle affordance"
+                }
+            },
+            "required": [
+                "characterLimit"
+            ],
+            "description": "Truncation configuration for long textual content with optional expand affordance."
+        },
+        "TextWeight": {
+            "type": "string",
+            "enum": [
+                "thin",
+                "normal",
+                "heavy"
+            ],
+            "description": "Typographic stroke weight styling."
+        },
+        "TextIntensity": {
+            "type": "string",
+            "enum": [
+                "low",
+                "medium",
+                "high"
+            ],
+            "description": "Visual text color intensity and contrast."
+        },
+        "TableColumnAlign": {
+            "type": "string",
+            "enum": [
+                "left",
+                "center",
+                "right"
+            ],
+            "description": "Text horizontal alignment options for table columns."
+        },
+        "UiAction": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "Discriminator property"
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Display label for the action"
+                }
+            },
+            "required": [
+                "type",
+                "label"
+            ],
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/ButtonActionElement"
+                },
+                {
+                    "$ref": "#/$defs/ExternalLinkActionElement"
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "not": {
+                                "enum": [
+                                    "button",
+                                    "external-link"
+                                ]
+                            }
+                        },
+                        "label": {
+                            "type": "string",
+                            "description": "Display label for the action"
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "label"
+                    ]
+                }
+            ],
+            "description": "Polymorphic base model for interactive actions."
+        },
+        "ButtonActionElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "button",
+                    "description": "Discriminator type"
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Display label for the action"
+                },
+                "extensionId": {
+                    "type": "string",
+                    "description": "Extension identifier owning the target command"
+                },
+                "commandId": {
+                    "type": "string",
+                    "description": "Command identifier to invoke"
+                },
+                "target": {
+                    "type": "string",
+                    "description": "Target entity or context identifier"
+                },
+                "parameters": {
+                    "$ref": "#/$defs/RecordUnknown",
+                    "description": "Optional arbitrary parameters payload forwarded to the command handler"
+                },
+                "disabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether the button is disabled / unavailable"
+                },
+                "variant": {
+                    "$ref": "#/$defs/ButtonVariant",
+                    "default": "secondary",
+                    "description": "Button visual style variant"
+                }
+            },
+            "required": [
+                "type",
+                "label",
+                "commandId"
+            ],
+            "description": "Interactive button action triggering an extension command."
+        },
+        "ExternalLinkActionElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "external-link",
+                    "description": "Discriminator type"
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Display label for the action"
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Target URL destination"
+                }
+            },
+            "required": [
+                "type",
+                "label",
+                "url"
+            ],
+            "description": "External link action distinct from inline URL text values."
+        },
+        "RecordUnknown": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {}
+        },
+        "ButtonVariant": {
+            "type": "string",
+            "enum": [
+                "primary",
+                "secondary",
+                "subtle",
+                "danger"
+            ],
+            "description": "Visual style variants for interactive button actions."
+        }
+    }
+}

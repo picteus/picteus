@@ -21,6 +21,7 @@ model Envelop {
 @doc("""
   Container model representing an ordered list of visual elements.
   """)
+@jsonSchema
 @dslRoot
 @uiLayout("repeating-group")
 model UiContainer extends Envelop {

@@ -53,7 +53,7 @@ shared/specification-factory/
 ├── README.md                    # Specifications documentation
 ├── dist/
 │   ├── schema/
-│   │   └── specification-factory.json # Compiled JSON Schema
+│   │   └── viewkit.json             # Compiled JSON Schema
 └── src/
     ├── main.tsp                 # Picteus.FeatureViewGrammar entrypoint & namespace aggregator
     ├── base.tsp                 # Polymorphic base models: @discriminator("type") model UiElement

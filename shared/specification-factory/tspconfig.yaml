@@ -6,7 +6,7 @@ options:
   "@typespec/json-schema":
     emitter-output-dir: "{project-root}/dist/schema"
     file-type: "json"
-    bundleId: "specification-factory.json"
+    bundleId: "viewkit.json"
     polymorphic-models-strategy: "oneOf"
   "@picteus/specification-factory":
     emitter-output-dir: "{project-root}/dist"
