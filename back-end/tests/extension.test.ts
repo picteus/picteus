@@ -105,6 +105,11 @@ describe("Extensions", () =>
   class ExtensionChecker
   {
 
+    static checkCacheControl(response: Response): void
+    {
+      expect(response.headers.get("Cache-Control")).toEqual("private, max-age=10");
+    }
+
     constructor(readonly extensionId: string)
     {
     }
@@ -126,6 +131,7 @@ describe("Extensions", () =>
     async checkIcon(shouldBePng: boolean = false): Promise<void>
     {
       const response = await fetch(`${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${this.extensionId}/icon`);
+      ExtensionChecker.checkCacheControl(response);
       const blob = await response.blob();
       expect(blob.type).toEqual(`image/${shouldBePng === true ? "png" : "svg+xml"}`);
       if (blob.type === "image/png")
@@ -137,6 +143,7 @@ describe("Extensions", () =>
         expect(metadata.format).toEqual("PNG");
       }
     }
+
   }
 
   class ExtensionBuilder extends ExtensionBasisBuilder
@@ -987,6 +994,7 @@ describe("Extensions", () =>
       {
         {
           const response = await fetch(urlPrefix);
+          ExtensionChecker.checkCacheControl(response);
           expect(response.status).toEqual(401);
           expect(await response.text()).toEqual("Invalid 'Referer' HTTP header");
         }
@@ -1214,6 +1222,7 @@ describe("Extensions", () =>
     const extension = await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
 
     const response = await fetch(`${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${extension.manifest.id}${iconUri}`);
+    ExtensionChecker.checkCacheControl(response);
     const blob = await response.blob();
     expect(blob.type).toEqual("image/svg+xml");
     const buffer = Buffer.from((await blob.arrayBuffer()));

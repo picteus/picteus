@@ -8,7 +8,7 @@ import { Prisma } from ".prisma/client";
 import { fdir } from "fdir";
 import AdmZip from "adm-zip";
 import semver from "semver";
-import { types } from "http-constants";
+import { headers, types } from "http-constants";
 import {
   forwardRef,
   HttpStatus,
@@ -142,6 +142,9 @@ export class ExtensionsUiServer
 
   async handle(request: Request, response: Response): Promise<void>
   {
+    // By default, the cache is set to 10 seconds
+    response.set(headers.request.CACHE_CONTROL, "private, max-age=10");
+    
     const pathSeparator = "/";
     const pathTokens = request.path.split(pathSeparator);
     if (pathTokens.length < 2)
