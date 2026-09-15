@@ -72,6 +72,20 @@ See the dedicated [API](./api.md) reference documentation for the full list of a
 
 ---
 
+## Image features
+
+Features attached to an image describe information extracted from or computed
+about that image.
+
+- **Vectorial features** store this information in formats suited to machine processing, indexing, comparison, and search.
+
+- **UI features** provide the complementary presentation model used to display that information in the Picteus front-end. They describe the visual elements,
+grouping, and layout rather than replacing the underlying feature values. See the [ViewKit](./viewkit.md) reference for the visual grammar used to define these UI features.
+
+For comprehensive documentation about image features, including their role and storage formats, see the [Features](../../manual/features.md) documentation.
+
+---
+
 ## The "intents" system
 
 ### Understanding "intents"
