@@ -5165,6 +5165,7 @@
           "metadata",
           "recipe",
           "identity",
+          "physics",
           "other"
         ],
         "description": "All the possible types for an image feature.",

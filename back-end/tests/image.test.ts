@@ -1183,7 +1183,7 @@ describe("Image with module", () =>
         await expect(async () =>
         {
           await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.RECIPE, featureFormat, undefined, "dummyAttachment") ]);
-        }).rejects.toThrow(new ServiceError(`The parameter '[0].format' with value '${featureFormat}' is invalid because it should be one of ['json'] when the feature type is 'recipe'`, BAD_REQUEST, base.badParameterCode));
+        }).rejects.toThrow(new ServiceError(`The parameter '[0].format' with value '${featureFormat}' is invalid because it should be one of ['json', 'ui'] when the feature type is 'recipe'`, BAD_REQUEST, base.badParameterCode));
       }
 
       // We assess with malformed JSON content

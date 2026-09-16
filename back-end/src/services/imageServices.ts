@@ -152,7 +152,7 @@ export class ImageService
 
   private static readonly DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS = [ ImageFeatureFormat.STRING, ImageFeatureFormat.MARKDOWN, ImageFeatureFormat.HTML ];
 
-  private static readonly RECIPE_FEATURES_ALLOWED_FORMATS = [ ImageFeatureFormat.JSON ];
+  private static readonly RECIPE_FEATURES_ALLOWED_FORMATS = [ ImageFeatureFormat.JSON, ImageFeatureFormat.UI ];
 
   public static readonly emptyImageTag = "";
 

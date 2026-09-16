@@ -398,6 +398,7 @@ export enum ImageFeatureType
   METADATA = "metadata",
   RECIPE = "recipe",
   IDENTITY = "identity",
+  PHYSICS = "physics",
   OTHER = "other"
 }
 
