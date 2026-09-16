@@ -145,8 +145,8 @@ model RatioElement extends UiElement {
   @doc("Discriminator type")
   type: "ratio";
 
-  @doc("Aspect ratio textual expression")
-  value: string;
+  @doc("Aspect ratio numerical expression")
+  value: decimal;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
   @uiModifiers
@@ -308,8 +308,8 @@ model TimestampElement extends UiElement {
   @doc("Discriminator type")
   type: "timestamp";
 
-  @doc("ISO 8601 date string or epoch timestamp in milliseconds")
-  value: string;
+  @doc("The timestamp in milliseconds")
+  value: int64;
 
   @doc("Presentation date/time format")
   format?: TimestampFormat = TimestampFormat.full;

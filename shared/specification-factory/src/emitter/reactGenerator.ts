@@ -176,6 +176,131 @@ function generateCopyableWrapper(): string
   ].join("\n");
 }
 
+function generateRatioFormatterHelper(): string
+{
+  return [
+    `export function formatRatio(value: number, maxDenominator: number = 100): string`,
+    `{`,
+    `  if (typeof value !== "number" || Number.isFinite(value) === false || value <= 0)`,
+    `  {`,
+    `    return String(value ?? "");`,
+    `  }`,
+    ``,
+    `  const tolerance = 1e-3;`,
+    `  let previousNumerator = 0;`,
+    `  let previousDenominator = 1;`,
+    `  let currentNumerator = 1;`,
+    `  let currentDenominator = 0;`,
+    `  let remainder = value;`,
+    ``,
+    `  while (true)`,
+    `  {`,
+    `    const integerPart = Math.floor(remainder);`,
+    `    const nextNumerator = integerPart * currentNumerator + previousNumerator;`,
+    `    const nextDenominator = integerPart * currentDenominator + previousDenominator;`,
+    ``,
+    `    if (nextDenominator > maxDenominator)`,
+    `    {`,
+    `      break;`,
+    `    }`,
+    ``,
+    `    previousNumerator = currentNumerator;`,
+    `    previousDenominator = currentDenominator;`,
+    `    currentNumerator = nextNumerator;`,
+    `    currentDenominator = nextDenominator;`,
+    ``,
+    `    const fractionalPart = remainder - integerPart;`,
+    `    if (fractionalPart < tolerance || Math.abs(value - currentNumerator / currentDenominator) < tolerance)`,
+    `    {`,
+    `      break;`,
+    `    }`,
+    ``,
+    `    remainder = 1 / fractionalPart;`,
+    `  }`,
+    ``,
+    `  if (currentDenominator === 0)`,
+    `  {`,
+    `    return \`\${value}:1\`;`,
+    `  }`,
+    ``,
+    `  return \`\${currentNumerator}:\${currentDenominator}\`;`,
+    `}`
+  ].join("\n");
+}
+
+function generateTimestampFormatterHelper(): string
+{
+  return [
+    `export function formatTimestamp(value: number, format?: TimestampFormat): string`,
+    `{`,
+    `  const numericValue = typeof value === "number" ? value : Number(value);`,
+    `  const timestampInMilliseconds = Number.isNaN(numericValue) === false ? numericValue : Date.parse(String(value));`,
+    `  const date = new Date(timestampInMilliseconds);`,
+    ``,
+    `  if (Number.isNaN(date.getTime()) === true)`,
+    `  {`,
+    `    return String(value ?? "");`,
+    `  }`,
+    ``,
+    `  const offsetTotalMinutes = -date.getTimezoneOffset();`,
+    `  const sign = offsetTotalMinutes >= 0 ? "+" : "-";`,
+    `  const absoluteMinutes = Math.abs(offsetTotalMinutes);`,
+    `  const offsetHours = String(Math.floor(absoluteMinutes / 60)).padStart(2, "0");`,
+    `  const offsetRemainingMinutes = String(absoluteMinutes % 60).padStart(2, "0");`,
+    `  const offsetString = \`\${sign}\${offsetHours}:\${offsetRemainingMinutes}\`;`,
+    ``,
+    `  const year = date.getFullYear();`,
+    `  const month = String(date.getMonth() + 1).padStart(2, "0");`,
+    `  const day = String(date.getDate()).padStart(2, "0");`,
+    `  const hours = String(date.getHours()).padStart(2, "0");`,
+    `  const minutes = String(date.getMinutes()).padStart(2, "0");`,
+    `  const seconds = String(date.getSeconds()).padStart(2, "0");`,
+    ``,
+    `  const datePart = \`\${year}-\${month}-\${day}\`;`,
+    `  const timePart = \`\${hours}:\${minutes}:\${seconds}\`;`,
+    ``,
+    `  switch (format)`,
+    `  {`,
+    `    case TimestampFormat.date:`,
+    `      return \`\${datePart} \${offsetString}\`;`,
+    `    case TimestampFormat.time:`,
+    `      return \`\${timePart} \${offsetString}\`;`,
+    `    case TimestampFormat.relative:`,
+    `    {`,
+    `      const elapsedMilliseconds = Date.now() - date.getTime();`,
+    `      const isFuture = elapsedMilliseconds < 0;`,
+    `      const absoluteElapsedMilliseconds = Math.abs(elapsedMilliseconds);`,
+    `      const elapsedSeconds = Math.floor(absoluteElapsedMilliseconds / 1000);`,
+    `      const elapsedMinutes = Math.floor(elapsedSeconds / 60);`,
+    `      const elapsedHours = Math.floor(elapsedMinutes / 60);`,
+    `      const elapsedDays = Math.floor(elapsedHours / 24);`,
+    ``,
+    `      if (elapsedSeconds < 60)`,
+    `      {`,
+    `        return isFuture === true ? "in a few seconds" : "just now";`,
+    `      }`,
+    `      if (elapsedMinutes < 60)`,
+    `      {`,
+    `        return isFuture === true ? \`in \${elapsedMinutes}m\` : \`\${elapsedMinutes}m ago\`;`,
+    `      }`,
+    `      if (elapsedHours < 24)`,
+    `      {`,
+    `        return isFuture === true ? \`in \${elapsedHours}h\` : \`\${elapsedHours}h ago\`;`,
+    `      }`,
+    `      if (elapsedDays < 30)`,
+    `      {`,
+    `        return isFuture === true ? \`in \${elapsedDays}d\` : \`\${elapsedDays}d ago\`;`,
+    `      }`,
+    `      return \`\${datePart} \${timePart} \${offsetString}\`;`,
+    `    }`,
+    `    case TimestampFormat.full:`,
+    `    default:`,
+    `      return \`\${datePart} \${timePart} \${offsetString}\`;`,
+    `  }`,
+    `}`
+  ].join("\n");
+}
+
 function computeCustomRendererSlotName(model: ViewKitModel): string
 {
   if (model.discriminatorValue)
@@ -608,8 +733,10 @@ function generateIdentifierWidgetBody(): string
 
 function generateRatioWidgetBody(): string
 {
+  const nodeExpression = `<Badge variant="outline" size="sm" className={className} style={style}>{formattedRatio}</Badge>`;
   return [
-    `  return <Badge variant="outline" size="sm" className={className} style={style}>{element.value}</Badge>;`
+    `  const formattedRatio = formatRatio(element.value);`,
+    wrapWithCopyableModifier(nodeExpression, "formattedRatio")
   ].join("\n");
 }
 
@@ -673,7 +800,11 @@ function generateBooleanBadgeWidgetBody(): string
 
 function generateTimestampWidgetBody(): string
 {
-  return wrapWithCopyableModifier(`<Text size="sm" className={className} style={style}>{element.value}</Text>`);
+  const nodeExpression = `<Text size="sm" className={className} style={style}>{formattedTimestamp}</Text>`;
+  return [
+    `  const formattedTimestamp = formatTimestamp(element.value, element.format);`,
+    wrapWithCopyableModifier(nodeExpression, "formattedTimestamp")
+  ].join("\n");
 }
 
 function generateImageReferenceWidgetBody(): string
@@ -985,6 +1116,10 @@ export function generateReactCode(spec: GrammarSpec): string
 
   // We generate generic CopyableWrapper
   componentBlocks.push(generateCopyableWrapper());
+
+  // We generate formatRatio and formatTimestamp helper functions
+  componentBlocks.push(generateRatioFormatterHelper());
+  componentBlocks.push(generateTimestampFormatterHelper());
 
   // We generate component views for all UiElement models
   for (const elementModel of spec.uiElements)

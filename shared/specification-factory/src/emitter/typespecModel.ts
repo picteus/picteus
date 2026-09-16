@@ -130,7 +130,7 @@ function resolveViewKitType(program: Program, type: Type): ViewKitType
       {
         return { kind: "string", name: "string" };
       }
-      if (name === "int32" || name === "int64" || name === "float32" || name === "float64" || name === "numeric")
+      if (name === "int32" || name === "int64" || name === "float32" || name === "float64" || name === "numeric" || name === "decimal" || name === "integer" || name === "float" || name === "safeint" || name === "decimal128")
       {
         return { kind: "number", name: "number" };
       }

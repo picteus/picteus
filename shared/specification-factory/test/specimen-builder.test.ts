@@ -121,7 +121,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
           labelValue("Shutter Speed", stringShort("1/250s")),
           labelValue("Aperture", stringShort("f/2.8")),
           labelValue("ISO Rating", numberUnbounded(400, { unit: "ISO" })),
-          labelValue("Capture Time", timestamp("2026-08-31T14:30:00Z", { format: TimestampFormat.full })),
+          labelValue("Capture Time", timestamp(Date.parse("2026-08-31T14:30:00Z"), { format: TimestampFormat.full })),
           collapsibleGroup(
             "Detailed EXIF",
             [
