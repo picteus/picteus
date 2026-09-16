@@ -153,15 +153,27 @@ model RatioElement extends UiElement {
   modifiers?: PrimitiveModifiers;
 }
 
-@doc("Single color swatch representation with hex value and copy affordance.")
-@uiWidget("color-swatch")
-@dslAlias("colorSwatch")
+@doc("Single color representation with hex value, shape/size styling, text display toggle, and copy affordance.")
+@uiWidget("color")
+@dslAlias("color")
 model ColourElement extends UiElement {
   @doc("Discriminator type")
-  type: "color-swatch";
+  type: "color";
 
   @doc("Hexadecimal color code")
   value: string;
+
+  @doc("Optional descriptive color name label")
+  label?: string;
+
+  @doc("Whether to display the textual color code or label next to the swatch")
+  showText?: boolean = true;
+
+  @doc("Visual shape of the color indicator")
+  shape?: Shape = Shape.circle;
+
+  @doc("Visual size of the color indicator")
+  size?: Size = Size.medium;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
   @uiModifiers

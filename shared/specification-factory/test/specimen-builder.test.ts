@@ -10,7 +10,7 @@ import {
   ButtonActionElementClass,
   ButtonVariant,
   collapsibleGroup,
-  colorSwatch,
+  color,
   createUiCard,
   createUiContainer,
   divider,
@@ -20,6 +20,7 @@ import {
   flowing,
   html,
   isButtonActionElement,
+  isColourElement,
   isEnvelop,
   isFlowingElement,
   isJsonElement,
@@ -42,6 +43,8 @@ import {
   parseUiContainer,
   repeatingGroup,
   repeatingGroupEntry,
+  Shape,
+  Size,
   slot,
   stringShort,
   StringShortElementClass,
@@ -70,9 +73,9 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     const card = UiCard.builder("Dominant Colors")
       .description("Palette computed from image pixels")
       .addLabelValue("Dominant Palette", flowing([
-        colorSwatch("#2D3748"),
-        colorSwatch("#4A5568"),
-        colorSwatch("#CBD5E0")
+        color("#2D3748", { shape: Shape.square, size: Size.small, showText: false }),
+        color("#4A5568", { shape: Shape.square, size: Size.small, showText: false }),
+        color("#CBD5E0", { shape: Shape.square, size: Size.small, showText: false })
       ]))
       .addLabelValue("Primary Hue", stringShort("Slate", {
         representation: StringShortRepresentation.chip,
@@ -249,6 +252,14 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     const jsonElement = json("{}");
     assert.ok(isJsonElement(jsonElement));
     assert.equal(isXmlElement(jsonElement), false);
+
+    const colorElement = color("#FF0000", { shape: Shape.circle, size: Size.medium, showText: true });
+    assert.ok(isUiElement(colorElement));
+    assert.ok(isColourElement(colorElement));
+    assert.equal(colorElement.type, "color");
+    assert.equal(colorElement.shape, Shape.circle);
+    assert.equal(colorElement.size, Size.medium);
+    assert.equal(colorElement.showText, true);
 
     const buttonElement = buttonAction("cmd", "Click Me");
     assert.ok(isUiAction(buttonElement));

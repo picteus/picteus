@@ -549,8 +549,8 @@ function generateModelRenderBody(model: ViewKitModel): string
       return generateIdentifierWidgetBody();
     case "ratio":
       return generateRatioWidgetBody();
-    case "color-swatch":
-      return generateColorSwatchWidgetBody();
+    case "color":
+      return generateColorWidgetBody();
     case "number-unbounded":
       return generateNumberUnboundedWidgetBody();
     case "boolean-plain":
@@ -755,18 +755,35 @@ function generateRatioWidgetBody(): string
   ].join("\n");
 }
 
-function generateColorSwatchWidgetBody(): string
+function generateColorWidgetBody(): string
 {
   const nodeExpression = [
-    `(`,
-    `    <Flex align="center" gap="xs" className={className} style={style}>`,
-    `      <ColorSwatch color={element.value} size={16}/>`,
-    `      <Text size="sm" ff="monospace">{element.value}</Text>`,
-    `    </Flex>`,
-    `  )`
+    `showText ? (`,
+    `      <Flex align="center" gap="xs" className={className} style={style}>`,
+    `        {swatchNode}`,
+    `        <Text size="sm" ff="monospace">{textContent}</Text>`,
+    `      </Flex>`,
+    `    ) : (`,
+    `      <Box className={className} style={{ display: "inline-flex", ...style }}>`,
+    `        {swatchNode}`,
+    `      </Box>`,
+    `    )`
   ].join("\n");
 
-  return wrapWithCopyableModifier(nodeExpression);
+  return [
+    `  const swatchSize =`,
+    `    {`,
+    `      [Size.small]: 16,`,
+    `      [Size.medium]: 22,`,
+    `      [Size.large]: 32`,
+    `    }[element.size ?? Size.medium];`,
+    `  const swatchRadius = element.shape === Shape.square ? "xs" : "xl";`,
+    `  const textContent = element.label ?? element.value;`,
+    `  const showText = element.showText ?? true;`,
+    `  const swatchNode = <ColorSwatch color={element.value} size={swatchSize} radius={swatchRadius}/>;`,
+    ``,
+    wrapWithCopyableModifier(nodeExpression)
+  ].join("\n");
 }
 
 function generateNumberUnboundedWidgetBody(): string

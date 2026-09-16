@@ -27,6 +27,8 @@ from view_kit import (
     ButtonVariant,
     TableColumnAlign,
     DividerStyle,
+    Shape,
+    Size,
     ViewKitBase,
     create_ui_container,
     create_ui_card,
@@ -38,7 +40,8 @@ from view_kit import (
     number_meter,
     boolean_badge,
     timestamp,
-    color_swatch,
+    color,
+    ColourElement,
     markdown,
     html,
     multi_slot,
@@ -65,7 +68,11 @@ class TestSpecimenBuilder(unittest.TestCase):
         card = (
             UiCardBuilder(title="Dominant Colors")
             .description("Palette computed from image pixels")
-            .add_label_value("Dominant Palette", flowing([color_swatch("#2D3748"), color_swatch("#4A5568"), color_swatch("#CBD5E0")]))
+            .add_label_value("Dominant Palette", flowing([
+                color("#2D3748", shape=Shape.square, size=Size.small, show_text=False),
+                color("#4A5568", shape=Shape.square, size=Size.small, show_text=False),
+                color("#CBD5E0", shape=Shape.square, size=Size.small, show_text=False)
+            ]))
             .add_label_value(
                 "Primary Hue",
                 string_short("Slate", representation=StringShortRepresentation.chip, modifiers=PrimitiveModifiers(weight=TextWeight.heavy))
@@ -92,7 +99,10 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(first_element["label"], "Dominant Palette")
         self.assertEqual(first_element["value"]["type"], "flowing")
         self.assertEqual(len(first_element["value"]["elements"]), 3)
-        self.assertEqual(first_element["value"]["elements"][0]["type"], "color-swatch")
+        self.assertEqual(first_element["value"]["elements"][0]["type"], "color")
+        self.assertEqual(first_element["value"]["elements"][0]["shape"], "square")
+        self.assertEqual(first_element["value"]["elements"][0]["size"], "small")
+        self.assertEqual(first_element["value"]["elements"][0]["showText"], False)
 
         self.assertEqual(len(payload["actions"]), 1)
         action = payload["actions"][0]

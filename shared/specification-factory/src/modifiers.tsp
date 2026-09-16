@@ -24,6 +24,27 @@ enum TextIntensity {
   high: "high",
 }
 
+@doc("Geometric shape representation for visual containers and indicators.")
+enum Shape {
+  @doc("Circular container shape")
+  circle: "circle",
+
+  @doc("Square container shape")
+  square: "square",
+}
+
+@doc("Relative sizing scale for visual elements and indicators.")
+enum Size {
+  @doc("Compact small size")
+  small: "small",
+
+  @doc("Standard medium size")
+  medium: "medium",
+
+  @doc("Prominent large size")
+  large: "large",
+}
+
 @doc("Truncation configuration for long textual content with optional expand affordance.")
 model TruncateOptions {
   @doc("Maximum number of characters to display before truncating")
