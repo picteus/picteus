@@ -6,7 +6,8 @@ const sidebars: SidebarsConfig =
     setupSidebar: [
       "setup/install",
       "setup/start",
-      "setup/files"
+      "setup/files",
+      "setup/traces"
     ],
     manualSidebar: [
       "manual/webservicesapi",
@@ -32,6 +33,7 @@ const sidebars: SidebarsConfig =
           "extensions/reference/manifest",
           "extensions/reference/class",
           "extensions/reference/api",
+          "extensions/reference/viewkit",
           "extensions/reference/intents",
           "extensions/reference/manual"
         ]
