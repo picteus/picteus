@@ -1,5 +1,5 @@
 {
-  "name": "@picteus/front-end",
+  "name": "@picteus/shared-front-end",
   "version": "0.1.0",
   "productName": "Picteus",
   "description": "The Picteus front-end common code.",
