@@ -136,6 +136,43 @@ function generateComponentDefinition(
   return `${propsTypeBlock}\n\n${componentFunctionBlock}`;
 }
 
+function generateStyleConstants(): string
+{
+  return [
+    `const CONSTRAINED_STYLE: React.CSSProperties =`,
+    `{`,
+    `  minWidth: 0,`,
+    `  maxWidth: "100%"`,
+    `};`,
+    ``,
+    `const FULL_WIDTH_CONSTRAINED_STYLE: React.CSSProperties =`,
+    `{`,
+    `  width: "100%",`,
+    `  minWidth: 0,`,
+    `  maxWidth: "100%"`,
+    `};`,
+    ``,
+    `const ACCORDION_CONTAINED_STYLE: React.CSSProperties =`,
+    `{`,
+    `  minWidth: 0,`,
+    `  maxWidth: "100%",`,
+    `  overflow: "hidden"`,
+    `};`,
+    ``,
+    `const TEXT_WRAP_STYLE: React.CSSProperties =`,
+    `{`,
+    `  overflowWrap: "anywhere",`,
+    `  wordBreak: "break-word"`,
+    `};`,
+    ``,
+    `const BREAK_ALL_STYLE: React.CSSProperties =`,
+    `{`,
+    `  overflowWrap: "anywhere",`,
+    `  wordBreak: "break-all"`,
+    `};`
+  ].join("\n");
+}
+
 function generateCopyableWrapper(): string
 {
   const propsTypeName = `${COPYABLE_WRAPPER_NAME}${PROPS_TYPE_SUFFIX}`;
@@ -150,8 +187,10 @@ function generateCopyableWrapper(): string
     `function ${COPYABLE_WRAPPER_NAME}({ value, children }: ${propsTypeName}): ReactNode`,
     `{`,
     `  return (`,
-    `    <Flex align="center" gap={4} component="span" style={{ display: "inline-flex", verticalAlign: "middle" }}>`,
-    `      {children}`,
+    `    <Flex align="center" gap={4} component="span" style={{ display: "inline-flex", verticalAlign: "middle", ...CONSTRAINED_STYLE }}>`,
+    `      <Box component="span" style={{ ...CONSTRAINED_STYLE, ...TEXT_WRAP_STYLE }}>`,
+    `        {children}`,
+    `      </Box>`,
     `      <CopyButton value={value} timeout={1500}>`,
     `        {({ copied, copy }) => (`,
     `          <Tooltip label={copied ? "Copied" : "Copy"} withArrow position="right">`,
@@ -159,6 +198,7 @@ function generateCopyableWrapper(): string
     `              color={copied ? "teal" : "gray"}`,
     `              variant="subtle"`,
     `              size="xs"`,
+    `              style={{ flexShrink: 0 }}`,
     `              onClick={(event) =>`,
     `              {`,
     `                event.stopPropagation();`,
@@ -590,7 +630,7 @@ function generateRowLayoutBody(model: ViewKitModel): string
     `          {${labelExpression}}`,
     `        </Text>`,
     `        <Divider orientation="vertical"/>`,
-    `        <Box style={{ flex: 1, minWidth: 0 }}>`,
+    `        <Box style={{ flex: 1, ...CONSTRAINED_STYLE }}>`,
     `          <UiElementView element={${valueExpression}} onAction={onAction}/>`,
     `        </Box>`,
     `      </Flex>`,
@@ -606,7 +646,7 @@ function generateRowSlotsLayoutBody(): string
     `  return (`,
     `    <Flex align="center" gap="xs" className={className} style={{ width: "100%", ...style }}>`,
     `      {element.slots.map((slot, slotIndex) => (`,
-    `        <Box key={slotIndex} style={{ flex: slot.width ?? 1, minWidth: 0 }}>`,
+    `        <Box key={slotIndex} style={{ flex: slot.width ?? 1, ...CONSTRAINED_STYLE }}>`,
     `          <UiElementView element={slot.content} onAction={onAction}/>`,
     `        </Box>`,
     `      ))}`,
@@ -678,7 +718,7 @@ function generateStringShortWidgetBody(): string
     `    isChip ? (`,
     `      <Badge size="sm" variant="light" className={className} style={style}>{element.value}</Badge>`,
     `    ) : (`,
-    `      <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} className={className} style={style}>`,
+    `      <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} className={className} style={{ ...TEXT_WRAP_STYLE, ...style }}>`,
     `        {element.value}`,
     `      </Text>`,
     `    )`,
@@ -698,7 +738,7 @@ function generateStringLongWidgetBody(): string
   const typographyLines = generateTypographyModifiers();
   const nodeExpression = [
     `(`,
-    `    <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} style={{ whiteSpace: "pre-wrap", ...style }} className={className}>`,
+    `    <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} style={{ whiteSpace: "pre-wrap", ...TEXT_WRAP_STYLE, ...style }} className={className}>`,
     `      {element.value}`,
     `    </Text>`,
     `  )`
@@ -715,7 +755,7 @@ function generateStringCodeWidgetBody(): string
 {
   const nodeExpression = [
     `(`,
-    `    <Code block className={className} style={{ width: "100%", ...style }}>`,
+    `    <Code block className={className} style={{ ...FULL_WIDTH_CONSTRAINED_STYLE, overflowWrap: "anywhere", ...style }}>`,
     `      {element.value}`,
     `    </Code>`,
     `  )`
@@ -728,9 +768,9 @@ function generateStringUrlWidgetBody(): string
 {
   const nodeExpression = [
     `(`,
-    `    <Anchor href={element.value} target="_blank" rel="noopener noreferrer" size="sm" className={className} style={{ display: "inline-flex", alignItems: "center", gap: 4, ...style }}>`,
-    `      <span>{label}</span>`,
-    `      <IconExternalLink size={12}/>`,
+    `    <Anchor href={element.value} target="_blank" rel="noopener noreferrer" size="sm" className={className} style={{ display: "inline-flex", alignItems: "center", gap: 4, ...CONSTRAINED_STYLE, ...style }}>`,
+    `      <span style={{ ...BREAK_ALL_STYLE, minWidth: 0 }}>{label}</span>`,
+    `      <IconExternalLink size={12} style={{ flexShrink: 0 }}/>`,
     `    </Anchor>`,
     `  )`
   ].join("\n");
@@ -743,7 +783,7 @@ function generateStringUrlWidgetBody(): string
 
 function generateIdentifierWidgetBody(): string
 {
-  return wrapWithCopyableModifier(`<Code className={className} style={style}>{element.value}</Code>`);
+  return wrapWithCopyableModifier(`<Code className={className} style={{ ...CONSTRAINED_STYLE, ...BREAK_ALL_STYLE, ...style }}>{element.value}</Code>`);
 }
 
 function generateRatioWidgetBody(): string
@@ -803,8 +843,9 @@ function generateBooleanPlainWidgetBody(): string
 
 function generateBooleanBadgeWidgetBody(): string
 {
+  const label = "element.value ? (element.trueLabel ?? \"true\") : (element.falseLabel ?? \"false\")";
   return [
-    `  const label = element.value ? (element.trueLabel ?? "true") : (element.falseLabel ?? "false");`,
+    `  const label = ${label};`,
     `  const variantColor =`,
     `    {`,
     `      neutral: "gray",`,
@@ -845,13 +886,22 @@ function generateImageReferenceWidgetBody(): string
 function generateTableLayoutBody(): string
 {
   return [
+    `  const hasExplicitColumns = Boolean(element.columns && element.columns.length > 0);`,
+    `  const columnCount = element.columns?.length ?? element.rows?.[0]?.cells?.length ?? 0;`,
+    `  const columnsList = element.columns ?? Array.from({ length: columnCount }, () => ({ width: undefined, align: undefined, header: undefined }));`,
+    ``,
     `  return (`,
-    `    <Table striped={element.isStriped} highlightOnHover withColumnBorders={element.withColumnSeparators} withRowBorders={element.withRowSeparators} className={className} style={style}>`,
+    `    <Table striped={element.isStriped} highlightOnHover withColumnBorders={element.withColumnSeparators} withRowBorders={element.withRowSeparators} className={className} style={{ ...FULL_WIDTH_CONSTRAINED_STYLE, ...style }}>`,
+    `      <colgroup>`,
+    `        {columnsList.map((column, columnIndex) => (`,
+    `          <col key={columnIndex} style={{ width: column.width ?? (columnIndex === 0 && !hasExplicitColumns ? "1%" : undefined) }}/>`,
+    `        ))}`,
+    `      </colgroup>`,
     `      {element.hasHeader !== false && element.columns && (`,
     `        <Table.Thead>`,
     `          <Table.Tr>`,
     `            {element.columns.map((column, columnIndex) => (`,
-    `              <Table.Th key={columnIndex} style={{ textAlign: column.align ?? "left", width: column.width }}>`,
+    `              <Table.Th key={columnIndex} style={{ textAlign: column.align ?? "left", width: column.width, minWidth: 0, ...TEXT_WRAP_STYLE, whiteSpace: column.width === undefined && columnIndex === 0 ? "nowrap" : undefined }}>`,
     `                {column.header ?? ""}`,
     `              </Table.Th>`,
     `            ))}`,
@@ -862,7 +912,7 @@ function generateTableLayoutBody(): string
     `        {element.rows.map((row, rowIndex) => (`,
     `          <Table.Tr key={rowIndex}>`,
     `            {row.cells.map((cell, cellIndex) => (`,
-    `              <Table.Td key={cellIndex}>`,
+    `              <Table.Td key={cellIndex} style={{ minWidth: 0, ...TEXT_WRAP_STYLE, whiteSpace: (!hasExplicitColumns || columnsList[cellIndex]?.width === undefined) && cellIndex === 0 ? "nowrap" : undefined }}>`,
     `                <${UI_ELEMENT_VIEW_NAME} element={cell} onAction={onAction}/>`,
     `              </Table.Td>`,
     `            ))}`,
@@ -878,11 +928,11 @@ function generateRepeatingGroupLayoutBody(): string
 {
   return [
     `  return (`,
-    `    <Box className={className} style={{ width: "100%", ...style }}>`,
+    `    <Box className={className} style={{ ...FULL_WIDTH_CONSTRAINED_STYLE, ...style }}>`,
     `      {element.title && <Text fw={600} size="sm" mb="xs">{element.title}</Text>}`,
-    `      <Flex direction="column" gap="xs">`,
+    `      <Flex direction="column" gap="xs" style={FULL_WIDTH_CONSTRAINED_STYLE}>`,
     `        {element.entries.map((entry, entryIndex) => (`,
-    `          <Box key={entryIndex} p="xs" style={{ border: "1px solid var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-sm)" }}>`,
+    `          <Box key={entryIndex} p="xs" style={{ border: "1px solid var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-sm)", ...CONSTRAINED_STYLE, ...TEXT_WRAP_STYLE }}>`,
     `            <Text fw={500} size="sm" c="dimmed">{entry.label}</Text>`,
     `            {entry.value && <${UI_ELEMENT_VIEW_NAME} element={entry.value} onAction={onAction}/>}`,
     `            {entry.elements && entry.elements.map((childElement, childIndex) => (`,
@@ -900,16 +950,26 @@ function generateAccordionLayoutBody(): string
 {
   return [
     `  return (`,
-    `    <Accordion defaultValue={element.defaultExpanded ? "group" : undefined} variant="separated" className={className} style={style}>`,
+    `    <Accordion`,
+    `      defaultValue={element.defaultExpanded ? "group" : undefined}`,
+    `      variant="separated"`,
+    `      className={className}`,
+    `      style={{ ...FULL_WIDTH_CONSTRAINED_STYLE, ...style }}`,
+    `      styles={{`,
+    `        item: ACCORDION_CONTAINED_STYLE,`,
+    `        content: ACCORDION_CONTAINED_STYLE,`,
+    `        panel: ACCORDION_CONTAINED_STYLE`,
+    `      }}`,
+    `    >`,
     `      <Accordion.Item value="group">`,
     `        <Accordion.Control>`,
-    `          <Flex align="center" justify="space-between" pr="sm">`,
+    `          <Flex align="center" justify="space-between" pr="sm" style={{ width: "100%", minWidth: 0 }}>`,
     `            <Text size="sm" fw={500}>{element.title}</Text>`,
-    `            {element.summary && <Badge size="xs" variant="light" color="gray">{element.summary}</Badge>}`,
+    `            {element.summary && <Badge size="xs" variant="light" color="gray" style={{ flexShrink: 0 }}>{element.summary}</Badge>}`,
     `          </Flex>`,
     `        </Accordion.Control>`,
     `        <Accordion.Panel>`,
-    `          <Flex direction="column" gap="xs">`,
+    `          <Flex direction="column" gap="xs" style={FULL_WIDTH_CONSTRAINED_STYLE}>`,
     `            {element.elements.map((childElement, childIndex) => (`,
     `              <${UI_ELEMENT_VIEW_NAME} key={childIndex} element={childElement} onAction={onAction}/>`,
     `            ))}`,
@@ -1125,6 +1185,9 @@ function generateRootContainerComponent(rootModel: ViewKitModel): string
 export function generateReactCode(spec: GrammarSpec): string
 {
   const componentBlocks: string[] = [];
+
+  // We generate common style constants
+  componentBlocks.push(generateStyleConstants());
 
   // We generate ElementRendererContext and UiElementViewRenderers
   componentBlocks.push(generateElementRendererContext());
