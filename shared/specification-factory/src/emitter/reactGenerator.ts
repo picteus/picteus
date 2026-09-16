@@ -511,6 +511,10 @@ function generateModelRenderBody(model: ViewKitModel): string
   {
     return generateRowSlotsLayoutBody();
   }
+  if (model.uiLayout === "flowing")
+  {
+    return generateFlowingLayoutBody();
+  }
   if (model.uiLayout === "table")
   {
     return generateTableLayoutBody();
@@ -547,8 +551,6 @@ function generateModelRenderBody(model: ViewKitModel): string
       return generateRatioWidgetBody();
     case "color-swatch":
       return generateColorSwatchWidgetBody();
-    case "color-set":
-      return generateColorSetWidgetBody();
     case "number-unbounded":
       return generateNumberUnboundedWidgetBody();
     case "boolean-plain":
@@ -607,6 +609,19 @@ function generateRowSlotsLayoutBody(): string
     `        <Box key={slotIndex} style={{ flex: slot.width ?? 1, minWidth: 0 }}>`,
     `          <UiElementView element={slot.content} onAction={onAction}/>`,
     `        </Box>`,
+    `      ))}`,
+    `    </Flex>`,
+    `  );`
+  ].join("\n");
+}
+
+function generateFlowingLayoutBody(): string
+{
+  return [
+    `  return (`,
+    `    <Flex wrap="wrap" align="center" gap="xs" className={className} style={{ width: "100%", ...style }}>`,
+    `      {element.elements.map((childElement, childIndex) => (`,
+    `        <UiElementView key={childIndex} element={childElement} onAction={onAction}/>`,
     `      ))}`,
     `    </Flex>`,
     `  );`
@@ -752,19 +767,6 @@ function generateColorSwatchWidgetBody(): string
   ].join("\n");
 
   return wrapWithCopyableModifier(nodeExpression);
-}
-
-function generateColorSetWidgetBody(): string
-{
-  return [
-    `  return (`,
-    `    <Flex align="center" gap={4} className={className} style={style}>`,
-    `      {element.colors.map((color, colorIndex) => (`,
-    `        <ColorSwatch key={colorIndex} color={color} size={18}/>`,
-    `      ))}`,
-    `    </Flex>`,
-    `  );`
-  ].join("\n");
 }
 
 function generateNumberUnboundedWidgetBody(): string

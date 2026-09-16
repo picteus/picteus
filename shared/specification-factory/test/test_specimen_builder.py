@@ -38,11 +38,13 @@ from view_kit import (
     number_meter,
     boolean_badge,
     timestamp,
-    dominant_colors,
+    color_swatch,
     markdown,
     html,
     multi_slot,
     slot,
+    flowing,
+    FlowingElement,
     table,
     table_column,
     table_row,
@@ -63,7 +65,7 @@ class TestSpecimenBuilder(unittest.TestCase):
         card = (
             UiCardBuilder(title="Dominant Colors")
             .description("Palette computed from image pixels")
-            .add_label_value("Dominant Palette", dominant_colors(["#2D3748", "#4A5568", "#CBD5E0"]))
+            .add_label_value("Dominant Palette", flowing([color_swatch("#2D3748"), color_swatch("#4A5568"), color_swatch("#CBD5E0")]))
             .add_label_value(
                 "Primary Hue",
                 string_short("Slate", representation=StringShortRepresentation.chip, modifiers=PrimitiveModifiers(weight=TextWeight.heavy))
@@ -88,8 +90,9 @@ class TestSpecimenBuilder(unittest.TestCase):
         first_element = payload["elements"][0]
         self.assertEqual(first_element["type"], "label-value")
         self.assertEqual(first_element["label"], "Dominant Palette")
-        self.assertEqual(first_element["value"]["type"], "color-set")
-        self.assertEqual(first_element["value"]["colors"], ["#2D3748", "#4A5568", "#CBD5E0"])
+        self.assertEqual(first_element["value"]["type"], "flowing")
+        self.assertEqual(len(first_element["value"]["elements"]), 3)
+        self.assertEqual(first_element["value"]["elements"][0]["type"], "color-swatch")
 
         self.assertEqual(len(payload["actions"]), 1)
         action = payload["actions"][0]
@@ -341,6 +344,27 @@ class TestSpecimenBuilder(unittest.TestCase):
         parsed = UiContainer.parse(invalid_table_payload, with_deep_validation=False)
         self.assertTrue(isinstance(parsed, UiContainer))
         self.assertEqual(len(parsed.elements), 1)
+
+    def test_flowing_element(self):
+        card = (
+            UiCardBuilder("Flowing Tags")
+            .add_flowing([
+                string_short("Tag 1"),
+                string_short("Tag 2"),
+                string_short("Tag 3")
+            ])
+            .build()
+        )
+        self.assertEqual(len(card.elements), 1)
+        flowing_elem = card.elements[0]
+        self.assertTrue(isinstance(flowing_elem, FlowingElement))
+        self.assertEqual(flowing_elem.type, "flowing")
+        self.assertEqual(len(flowing_elem.elements), 3)
+
+        standalone = flowing([string_short("A"), string_short("B")])
+        self.assertTrue(isinstance(standalone, FlowingElement))
+        self.assertEqual(standalone.type, "flowing")
+        self.assertEqual(len(standalone.elements), 2)
 
 
 if __name__ == "__main__":

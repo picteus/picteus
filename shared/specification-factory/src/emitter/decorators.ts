@@ -6,11 +6,11 @@ export const namespace = "Picteus.ViewKit";
 export type DslAliasName =
   | "multiSlot"
   | "labelValue"
+  | "flowing"
   | "colorSwatch"
   | "numberStars"
   | "numberMeter"
   | "imageRef"
-  | "dominantColors"
   | "markdown"
   | "html"
   | "xml"
@@ -20,6 +20,7 @@ export type UiLayoutKind =
   | "card"
   | "row"
   | "row-slots"
+  | "flowing"
   | "table"
   | "repeating-group"
   | "accordion";
@@ -32,7 +33,6 @@ export type UiWidgetKind =
   | "identifier"
   | "ratio"
   | "color-swatch"
-  | "color-set"
   | "number-unbounded"
   | "number-stars"
   | "meter"

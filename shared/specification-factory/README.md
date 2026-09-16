@@ -60,7 +60,7 @@ shared/specification-factory/
     ├── envelope.tsp             # @jsonSchema model FeatureBlock (root schema entry point)
     ├── primitives.tsp           # Factorized primitive base models & concrete elements
     ├── modifiers.tsp            # Visual modifiers (copyable, truncate, emphasis, monospace)
-    ├── structures.tsp           # Higher-order layouts (LabelValueRow, MultiSlotRow, Table, Groups)
+    ├── structures.tsp           # Higher-order layouts (LabelValue, MultiSlot, Table, Groups)
     ├── actions.tsp              # Interactive triggers (Button command invocation, ExternalLink)
     ├── escapeHatches.tsp        # Markdown and HTML fallback blocks
     └── examples.tsp             # Specimen compositions matching the Figma sheet

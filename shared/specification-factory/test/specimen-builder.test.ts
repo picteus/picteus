@@ -10,18 +10,21 @@ import {
   ButtonActionElementClass,
   ButtonVariant,
   collapsibleGroup,
+  colorSwatch,
   createUiCard,
   createUiContainer,
   divider,
   DividerStyle,
-  dominantColors,
   EnvelopClass,
   externalLinkAction,
+  flowing,
   html,
   isButtonActionElement,
   isEnvelop,
+  isFlowingElement,
   isJsonElement,
-  isLabelValueRowElement,
+  isLabelValueElement,
+  isMultiSlotElement,
   isStringShortElement,
   isTableElement,
   isUiAction,
@@ -66,7 +69,11 @@ describe("TypeScript Card & Visual DSL Builder", () =>
   {
     const card = UiCard.builder("Dominant Colors")
       .description("Palette computed from image pixels")
-      .addLabelValue("Dominant Palette", dominantColors([ "#2D3748", "#4A5568", "#CBD5E0" ]))
+      .addLabelValue("Dominant Palette", flowing([
+        colorSwatch("#2D3748"),
+        colorSwatch("#4A5568"),
+        colorSwatch("#CBD5E0")
+      ]))
       .addLabelValue("Primary Hue", stringShort("Slate", {
         representation: StringShortRepresentation.chip,
         modifiers: { weight: TextWeight.heavy }
@@ -86,14 +93,14 @@ describe("TypeScript Card & Visual DSL Builder", () =>
 
     const firstElement = card.elements[0];
     assert.ok(isUiElement(firstElement));
-    if (isLabelValueRowElement(firstElement))
+    if (isLabelValueElement(firstElement))
     {
       assert.equal(firstElement.label, "Dominant Palette");
-      assert.equal(firstElement.value.type, "color-set");
+      assert.equal(firstElement.value.type, "flowing");
     }
     else
     {
-      assert.fail("Expected first element to be LabelValueRowElement");
+      assert.fail("Expected first element to be LabelValueElement");
     }
 
     assert.ok(card.actions && card.actions.length === 1);
@@ -183,6 +190,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
       { proportions: "1/3 + 2/3" }
     );
 
+    assert.ok(isMultiSlotElement(multiSlotElement));
     assert.equal(multiSlotElement.type, "multi-slot");
     assert.equal(multiSlotElement.slots.length, 2);
     assert.equal(multiSlotElement.proportions, "1/3 + 2/3");
@@ -438,6 +446,36 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     // UiContainer.parse() with withDeepValidation = false accepts it
     const parsedShallow = UiContainer.parse(invalidTablePayload, false);
     assert.ok(parsedShallow instanceof UiContainerClass);
+  });
+
+  it("should construct flowing layout element and validate via type guard", () =>
+  {
+    const card = UiCard.builder("Flowing Tags")
+      .addFlowing([
+        stringShort("Tag 1"),
+        stringShort("Tag 2"),
+        stringShort("Tag 3")
+      ])
+      .build();
+
+    assert.equal(card.elements.length, 1);
+    const flowingContainer = card.elements[0];
+    assert.ok(isUiElement(flowingContainer));
+    assert.ok(isFlowingElement(flowingContainer));
+
+    if (isFlowingElement(flowingContainer))
+    {
+      assert.equal(flowingContainer.type, "flowing");
+      assert.equal(flowingContainer.elements.length, 3);
+      assert.equal(flowingContainer.elements[0].type, "string-short");
+    }
+
+    const standaloneFlow = flowing([
+      stringShort("Alpha"),
+      stringShort("Beta")
+    ]);
+    assert.equal(standaloneFlow.type, "flowing");
+    assert.ok(isFlowingElement(standaloneFlow));
   });
 
 });

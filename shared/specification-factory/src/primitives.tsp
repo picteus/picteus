@@ -338,14 +338,3 @@ model ImageReferenceElement extends UiElement {
   @doc("Fallback placeholder image URI")
   placeholder?: string;
 }
-
-@doc("Dominant color set palette rendered in descending dominance order.")
-@uiWidget("color-set")
-@dslAlias("dominantColors")
-model DominantColourSetElement extends UiElement {
-  @doc("Discriminator type")
-  type: "color-set";
-
-  @doc("List of hexadecimal color strings in descending priority")
-  colors: string[];
-}

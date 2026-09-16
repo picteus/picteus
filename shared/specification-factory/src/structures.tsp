@@ -22,7 +22,7 @@ model Slot {
   """)
 @uiLayout("row-slots")
 @dslAlias("multiSlot")
-model MultiSlotRowElement extends UiElement {
+model MultiSlotElement extends UiElement {
   @doc("Discriminator type")
   type: "multi-slot";
 
@@ -34,12 +34,26 @@ model MultiSlotRowElement extends UiElement {
 }
 
 @doc("""
+  Flowing inline layout container with automatic line wrapping.
+  Renders child elements horizontally in sequence, automatically wrapping to the next line when space runs out.
+  """)
+@uiLayout("flowing")
+@dslAlias("flowing")
+model FlowingElement extends UiElement {
+  @doc("Discriminator type")
+  type: "flowing";
+
+  @doc("List of child elements rendered sequentially with line wrapping")
+  elements: UiElement[];
+}
+
+@doc("""
   Standard label and value row.
   Displays a muted label on the left and value representation on the right with a vertical dividing line.
   """)
 @uiLayout("row")
 @dslAlias("labelValue")
-model LabelValueRowElement extends UiElement {
+model LabelValueElement extends UiElement {
   @doc("Discriminator type")
   type: "label-value";
 
