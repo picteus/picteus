@@ -302,9 +302,9 @@ function generateTimestampFormatterHelper(): string
     `  switch (format)`,
     `  {`,
     `    case TimestampFormat.date:`,
-    `      return \`\${datePart} \${offsetString}\`;`,
+    `      return \`\${datePart}\`;`,
     `    case TimestampFormat.time:`,
-    `      return \`\${timePart} \${offsetString}\`;`,
+    `      return \`\${timePart}\`;`,
     `    case TimestampFormat.relative:`,
     `    {`,
     `      const elapsedMilliseconds = Date.now() - date.getTime();`,
@@ -333,9 +333,9 @@ function generateTimestampFormatterHelper(): string
     `      }`,
     `      return \`\${datePart} \${timePart} \${offsetString}\`;`,
     `    }`,
-    `    case TimestampFormat.full:`,
+    `    case TimestampFormat.datetime:`,
     `    default:`,
-    `      return \`\${datePart} \${timePart} \${offsetString}\`;`,
+    `      return \`\${datePart} \${timePart}\`;`,
     `  }`,
     `}`
   ].join("\n");

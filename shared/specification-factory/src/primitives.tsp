@@ -302,7 +302,7 @@ model BooleanBadgeElement extends UiElement {
 @doc("Presentation format styles for timestamp elements.")
 enum TimestampFormat {
   @doc("Complete date and time display")
-  full: "full",
+  datetime: "datetime",
 
   @doc("Date-only display")
   date: "date",
@@ -324,7 +324,7 @@ model TimestampElement extends UiElement {
   value: int64;
 
   @doc("Presentation date/time format")
-  format?: TimestampFormat = TimestampFormat.full;
+  format?: TimestampFormat = TimestampFormat.datetime;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
   @uiModifiers

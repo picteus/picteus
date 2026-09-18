@@ -120,7 +120,7 @@ class TestSpecimenBuilder(unittest.TestCase):
                 label_value("Shutter Speed", string_short("1/250s")),
                 label_value("Aperture", string_short("f/2.8")),
                 label_value("ISO Rating", number_unbounded(400, unit="ISO")),
-                label_value("Capture Time", timestamp(1788186600000, format=TimestampFormat.full)),
+                label_value("Capture Time", timestamp(1788186600000, format=TimestampFormat.datetime)),
                 collapsible_group(
                     title="Detailed EXIF",
                     elements=[
