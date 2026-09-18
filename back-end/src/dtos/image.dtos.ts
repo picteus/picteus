@@ -42,6 +42,7 @@ import {
   type ImageTag,
   integerIdSchema,
   type Json,
+  namePattern,
   repositoryIdSchema,
   technicalRelaxedPattern,
   technicalRelaxedSchema,
@@ -301,15 +302,16 @@ export class InstructionsPrompt extends BasisPrompt
 
 const modelAndSoftwareTagPattern = `^(([${alphaNumericPlusPattern}]{1,})/)?([${alphaNumericPlusPattern}]{1,})(:([${alphaNumericPlusPattern}]{1,}))?$`;
 
-export const generationRecipeSchemaVersion = 1;
+export const generationRecipeSchemaVersion = 2;
 
 @ApiExtraModels(TextualPrompt, InstructionsPrompt)
 @ApiSchema({ description: "The image generation recipe" })
 export class GenerationRecipe
 {
 
-  constructor(modelTags: string[], prompt: TextualPrompt | InstructionsPrompt, id?: string | undefined, url?: string | undefined, software?: string | undefined, inputAssets?: string[] | undefined, aspectRatio?: number | undefined)
+  constructor(schemaVersion: number, modelTags: string[], prompt: TextualPrompt | InstructionsPrompt, id?: string | undefined, url?: string | undefined, software?: string | undefined, inputAssets?: string[] | undefined, aspectRatio?: number | undefined)
   {
+    this.schemaVersion = schemaVersion;
     this.modelTags = modelTags;
     this.id = id;
     this.url = url;
@@ -335,7 +337,7 @@ export class GenerationRecipe
   @Min(1)
   @Max(generationRecipeSchemaVersion)
   @Expose()
-  readonly schemaVersion: number = 1;
+  readonly schemaVersion: number;
 
   @ApiProperty(
     {
@@ -373,6 +375,41 @@ export class GenerationRecipe
   @IsOptional()
   @Expose()
   readonly url?: string;
+
+
+  @ApiProperty(
+    {
+      description: "The recipe inception date",
+      type: "integer",
+      format: "int64",
+      required: false,
+      example: 1789714128124
+    }
+  )
+  @IsInt()
+  @Type(() => Number)
+  @IsOptional()
+  @Expose()
+  readonly inceptionDate?: number;
+
+  @ApiProperty(
+    {
+      description: "The author of the recipte",
+      type: String,
+      pattern: namePattern,
+      minLength: 1,
+      maxLength: FieldLengths.name,
+      required: false,
+      example: "John Doe"
+    }
+  )
+  @IsString()
+  @Matches(namePattern)
+  @MinLength(1)
+  @MaxLength(FieldLengths.name)
+  @IsOptional()
+  @Expose()
+  readonly author?: string;
 
   @ApiProperty(
     {

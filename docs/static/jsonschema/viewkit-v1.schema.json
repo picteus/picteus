@@ -607,7 +607,7 @@
                 },
                 "format": {
                     "$ref": "#/$defs/TimestampFormat",
-                    "default": "full",
+                    "default": "datetime",
                     "description": "Presentation date/time format"
                 },
                 "modifiers": {
@@ -993,7 +993,7 @@
         "TimestampFormat": {
             "type": "string",
             "enum": [
-                "full",
+                "datetime",
                 "date",
                 "time",
                 "relative"

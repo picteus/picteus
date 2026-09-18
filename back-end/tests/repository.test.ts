@@ -1162,7 +1162,7 @@ describe("Repository", () =>
     const withUserCommentBuffer = readFileSync(withUserCommentFilePath);
     const withDescriptionBuffer = readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, "image-description.png"));
     const buffers = [ noUserCommentBuffer, withUserCommentBuffer, withDescriptionBuffer ];
-    const metadataArray = [ undefined, new ApplicationMetadata([ new ApplicationMetadataItem(extension.manifest.id, new GenerationRecipe([], new TextualPrompt("prompt"))) ]), new ApplicationMetadata([ new ApplicationMetadataItem(extension.manifest.id, { key: "value" }) ]) ];
+    const metadataArray = [ undefined, new ApplicationMetadata([ new ApplicationMetadataItem(extension.manifest.id, new GenerationRecipe(2, [], new TextualPrompt("prompt"))) ]), new ApplicationMetadata([ new ApplicationMetadataItem(extension.manifest.id, { key: "value" }) ]) ];
 
     {
       // We assess with metadata referring to an unexisting extension
@@ -1276,7 +1276,7 @@ describe("Repository", () =>
     const extension1 = await base.prepareExtension("id1");
     const extension2 = await base.prepareExtension("id2");
     const repository = await base.prepareEmptyRepository();
-    const item1 = new ApplicationMetadataItem(extension1.manifest.id, new GenerationRecipe([ "model1" ], new TextualPrompt("prompt1")));
+    const item1 = new ApplicationMetadataItem(extension1.manifest.id, new GenerationRecipe(2, [ "model1" ], new TextualPrompt("prompt1")));
     const item2 = new ApplicationMetadataItem(extension2.manifest.id, { key: "value" });
 
     const imageBuffer = readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName));

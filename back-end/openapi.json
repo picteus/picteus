@@ -6042,7 +6042,7 @@
             "description": "The version of the schema the hereby recipe complies to",
             "format": "int32",
             "minimum": 1,
-            "maximum": 1,
+            "maximum": 2,
             "example": 1
           },
           "id": {
@@ -6060,6 +6060,20 @@
             "minLength": 1,
             "maxLength": 4096,
             "example": "https://api.replicate.com/v1/predictions/820hh5e0w5rmc0ctgw38b1t4pr"
+          },
+          "inceptionDate": {
+            "type": "integer",
+            "description": "The recipe inception date",
+            "format": "int64",
+            "example": 1789714128124
+          },
+          "author": {
+            "type": "string",
+            "description": "The author of the recipte",
+            "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
+            "minLength": 1,
+            "maxLength": 128,
+            "example": "John Doe"
           },
           "modelTags": {
             "description": "The tags of the model generators",

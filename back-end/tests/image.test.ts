@@ -1242,14 +1242,14 @@ describe("Image with module", () =>
         const prompt = new TextualPrompt("prompt");
         for (const modelTag of [ "", "a model", "model:version1:version2", "model!", "model?" ])
         {
-          const value = JSON.stringify(new GenerationRecipe([ modelTag ], prompt));
+          const value = JSON.stringify(new GenerationRecipe(1, [ modelTag ], prompt));
           await expect(async () =>
           {
             await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(type, format, undefined, value) ]);
           }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
         }
         {
-          for (const recipe of [ new GenerationRecipe([], prompt, "a".repeat(FieldLengths.technical + 1)), new GenerationRecipe([], prompt, undefined, "malformed URL"), new GenerationRecipe([], prompt, undefined, undefined, "malformed software"), new GenerationRecipe([], prompt, undefined, undefined, undefined, [ "" ]), new GenerationRecipe([], prompt, undefined, undefined, undefined, undefined, -1) ])
+          for (const recipe of [ new GenerationRecipe(1, [], prompt, "a".repeat(FieldLengths.technical + 1)), new GenerationRecipe(1, [], prompt, undefined, "malformed URL"), new GenerationRecipe(2, [], prompt, undefined, undefined, "malformed software"), new GenerationRecipe(1, [], prompt, undefined, undefined, undefined, [ "" ]), new GenerationRecipe(1, [], prompt, undefined, undefined, undefined, undefined, -1) ])
           {
             const value = JSON.stringify(recipe);
             await expect(async () =>
@@ -1929,7 +1929,7 @@ describe("Image with module", () =>
     const extension2 = await base.prepareExtension("id2");
     const repository = await base.prepareEmptyRepository();
     const value1 = { key: "value" };
-    const value2 = new GenerationRecipe([ "model" ], new TextualPrompt("prompt"));
+    const value2 = new GenerationRecipe(2, [ "model" ], new TextualPrompt("prompt"));
     const image = await base.getRepositoryController().storeImage(repository.id, undefined, undefined, JSON.stringify(new ApplicationMetadata([ new ApplicationMetadataItem(extension1.manifest.id, value1), new ApplicationMetadataItem(extension2.manifest.id, value2) ])), undefined, undefined, undefined, fs.readFileSync(base.imageFeeder.getImageFilePath(base.imageFeeder.pngImageFileName)));
 
     // We copy an image with application metadata

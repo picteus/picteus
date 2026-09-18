@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$id": "https://picteus.github.io/picteus/jsonschema/recipe-v2.schema.json",
+  "title": "GenerationRecipe",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "description": "The version of the schema the hereby recipe complies to",
+      "format": "int32",
+      "minimum": 1,
+      "maximum": 2
+    },
+    "id": {
+      "type": "string",
+      "description": "The identifier of the recipe instance",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "url": {
+      "type": "string",
+      "description": "The URL of the recipe instance",
+      "format": "uri",
+      "pattern": "^(https?://|/?)[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]+$",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "inceptionDate": {
+      "type": "integer",
+      "description": "The recipe inception date",
+      "format": "int64",
+      "minimum": -9223372036854776000,
+      "maximum": 9223372036854776000
+    },
+    "author": {
+      "type": "string",
+      "description": "The author of the recipte",
+      "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "modelTags": {
+      "description": "The tags of the model generators",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 4096,
+        "minLength": 1,
+        "pattern": "^(([a-z0-9A-Z-_.]{1,})/)?([a-z0-9A-Z-_.]{1,})(:([a-z0-9A-Z-_.]{1,}))?$"
+      }
+    },
+    "software": {
+      "type": "string",
+      "description": "The software that ran the generation",
+      "pattern": "^(([a-z0-9A-Z-_.]{1,})/)?([a-z0-9A-Z-_.]{1,})(:([a-z0-9A-Z-_.]{1,}))?$",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "inputAssets": {
+      "description": "The identifiers or URLs of the input assets",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 4096,
+        "minLength": 1
+      }
+    },
+    "aspectRatio": {
+      "type": "number",
+      "description": "The required image aspect ratio, i.e. the result of its width by its height",
+      "format": "double",
+      "minimum": 0,
+      "exclusiveMinimum": true,
+      "maximum": 1.7976931348623157e+308
+    },
+    "prompt": {
+      "description": "The prompt which enabled to generate the image",
+      "oneOf": [
+        {
+          "description": "In case of a prompt-based generated image",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "description": "The kind of prompt",
+              "allOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "textual",
+                    "instructions"
+                  ],
+                  "description": "The kind of prompt"
+                }
+              ],
+              "type": "string"
+            },
+            "text": {
+              "type": "string",
+              "description": "The textual prompt",
+              "minLength": 1,
+              "maxLength": 131072
+            }
+          },
+          "required": [
+            "kind",
+            "text"
+          ]
+        },
+        {
+          "description": "In case of a instructions-based generated image",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "description": "The kind of prompt",
+              "allOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "textual",
+                    "instructions"
+                  ],
+                  "description": "The kind of prompt"
+                }
+              ],
+              "type": "string"
+            },
+            "value": {
+              "type": "object",
+              "description": "The instructions-based prompt",
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        }
+      ]
+    }
+  },
+  "description": "The image generation recipe",
+  "required": [
+    "schemaVersion",
+    "modelTags",
+    "prompt"
+  ]
+}
