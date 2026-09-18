@@ -226,7 +226,7 @@ function generateRatioFormatterHelper(): string
     `    return String(value ?? "");`,
     `  }`,
     ``,
-    `  const tolerance = 1e-3;`,
+    `  const tolerance = 1e-4;`,
     `  let previousNumerator = 0;`,
     `  let previousDenominator = 1;`,
     `  let currentNumerator = 1;`,
@@ -476,6 +476,53 @@ function generateUiElementComponent(model: ViewKitModel): string
     model.name,
     renderBody
   );
+}
+
+function generateFreeFormElementComponent(): string
+{
+  const freeFormTypeAndHelper = [
+    `export type FreeFormElement =`,
+    `{`,
+    `  readonly type: "free-form";`,
+    `  readonly element: ReactNode;`,
+    `  readonly className?: string;`,
+    `  readonly style?: React.CSSProperties;`,
+    `};`,
+    ``,
+    `export function freeForm(`,
+    `  element: ReactNode,`,
+    `  options?: { className?: string; style?: React.CSSProperties }`,
+    `): FreeFormElement & UiElement`,
+    `{`,
+    `  return {`,
+    `    type: "free-form",`,
+    `    element,`,
+    `    className: options?.className,`,
+    `    style: options?.style`,
+    `  } as unknown as FreeFormElement & UiElement;`,
+    `}`
+  ].join("\n");
+
+  const componentDefinition = generateComponentDefinition(
+    "FreeFormElementView",
+    "FreeFormElementViewPropsType",
+    "element",
+    "ReactNode",
+    [
+      `  if (className || style)`,
+      `  {`,
+      `    return (`,
+      `      <Box className={className} style={style}>`,
+      `        {element}`,
+      `      </Box>`,
+      `    );`,
+      `  }`,
+      ``,
+      `  return element;`
+    ].join("\n")
+  );
+
+  return `${freeFormTypeAndHelper}\n\n${componentDefinition}`;
 }
 
 function generateActionElementComponent(model: ViewKitModel): string
@@ -886,7 +933,6 @@ function generateImageReferenceWidgetBody(): string
 function generateTableLayoutBody(): string
 {
   return [
-    `  const hasExplicitColumns = Boolean(element.columns && element.columns.length > 0);`,
     `  const columnCount = element.columns?.length ?? element.rows?.[0]?.cells?.length ?? 0;`,
     `  const columnsList = element.columns ?? Array.from({ length: columnCount }, () => ({ width: undefined, align: undefined, header: undefined }));`,
     ``,
@@ -894,14 +940,14 @@ function generateTableLayoutBody(): string
     `    <Table striped={element.isStriped} highlightOnHover withColumnBorders={element.withColumnSeparators} withRowBorders={element.withRowSeparators} className={className} style={{ ...FULL_WIDTH_CONSTRAINED_STYLE, ...style }}>`,
     `      <colgroup>`,
     `        {columnsList.map((column, columnIndex) => (`,
-    `          <col key={columnIndex} style={{ width: column.width ?? (columnIndex === 0 && !hasExplicitColumns ? "1%" : undefined) }}/>`,
+    `          <col key={columnIndex} style={{ width: column.width ?? (columnIndex === 0 && columnCount > 1 ? "1%" : undefined) }}/>`,
     `        ))}`,
     `      </colgroup>`,
     `      {element.hasHeader !== false && element.columns && (`,
     `        <Table.Thead>`,
     `          <Table.Tr>`,
     `            {element.columns.map((column, columnIndex) => (`,
-    `              <Table.Th key={columnIndex} style={{ textAlign: column.align ?? "left", width: column.width, minWidth: 0, ...TEXT_WRAP_STYLE, whiteSpace: column.width === undefined && columnIndex === 0 ? "nowrap" : undefined }}>`,
+    `              <Table.Th key={columnIndex} style={{ textAlign: column.align ?? "left", width: column.width ?? (columnIndex === 0 && columnCount > 1 ? "1%" : undefined), minWidth: 0, ...TEXT_WRAP_STYLE, whiteSpace: column.width === undefined && columnIndex === 0 ? "nowrap" : undefined }}>`,
     `                {column.header ?? ""}`,
     `              </Table.Th>`,
     `            ))}`,
@@ -912,7 +958,7 @@ function generateTableLayoutBody(): string
     `        {element.rows.map((row, rowIndex) => (`,
     `          <Table.Tr key={rowIndex}>`,
     `            {row.cells.map((cell, cellIndex) => (`,
-    `              <Table.Td key={cellIndex} style={{ minWidth: 0, ...TEXT_WRAP_STYLE, whiteSpace: (!hasExplicitColumns || columnsList[cellIndex]?.width === undefined) && cellIndex === 0 ? "nowrap" : undefined }}>`,
+    `              <Table.Td key={cellIndex} style={{ textAlign: columnsList[cellIndex]?.align ?? "left", width: columnsList[cellIndex]?.width ?? (cellIndex === 0 && columnCount > 1 ? "1%" : undefined), minWidth: 0, ...TEXT_WRAP_STYLE, whiteSpace: columnsList[cellIndex]?.width === undefined && cellIndex === 0 ? "nowrap" : undefined }}>`,
     `                <${UI_ELEMENT_VIEW_NAME} element={cell} onAction={onAction}/>`,
     `              </Table.Td>`,
     `            ))}`,
@@ -1021,16 +1067,26 @@ function generatePolymorphicDispatcher(
   const componentName = `${rootName}${VIEW_SUFFIX}`;
   const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
 
+  const switchExpression = rootName === UI_ELEMENT_ROOT_NAME
+    ? `(${propName} as { type: string }).type`
+    : `${propName}.type`;
+
   const switchLines: string[] = [
-    `  switch (${propName}.type)`,
+    `  switch (${switchExpression})`,
     `  {`
   ];
+
+  if (rootName === UI_ELEMENT_ROOT_NAME)
+  {
+    switchLines.push(`    case "free-form":`);
+    switchLines.push(`      return <FreeFormElementView element={(${propName} as any).element} onAction={onAction} className={className ?? (${propName} as any).className} style={style ?? (${propName} as any).style}/>;`);
+  }
 
   for (const model of models)
   {
     const modelViewName = `${model.name}${VIEW_SUFFIX}`;
     switchLines.push(`    case "${model.discriminatorValue}":`);
-    switchLines.push(`      return <${modelViewName} ${propName}={${propName}} onAction={onAction} className={className} style={style}/>;`);
+    switchLines.push(`      return <${modelViewName} ${propName}={${propName} as ${model.name}} onAction={onAction} className={className} style={style}/>;`);
   }
 
   switchLines.push(`    default:`);
@@ -1208,6 +1264,9 @@ export function generateReactCode(spec: GrammarSpec): string
   {
     componentBlocks.push(generateUiElementComponent(elementModel));
   }
+
+  // We generate FreeFormElementView component and freeForm DSL helper
+  componentBlocks.push(generateFreeFormElementComponent());
 
   // We generate component views for all ActionElement models
   for (const actionModel of spec.actionElements)

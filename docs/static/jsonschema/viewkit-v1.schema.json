@@ -113,19 +113,19 @@
                     "$ref": "#/$defs/ImageReferenceElement"
                 },
                 {
-                    "$ref": "#/$defs/DominantColourSetElement"
-                },
-                {
                     "$ref": "#/$defs/MarkdownBlockElement"
                 },
                 {
                     "$ref": "#/$defs/HtmlBlockElement"
                 },
                 {
-                    "$ref": "#/$defs/MultiSlotRowElement"
+                    "$ref": "#/$defs/MultiSlotElement"
                 },
                 {
-                    "$ref": "#/$defs/LabelValueRowElement"
+                    "$ref": "#/$defs/FlowingElement"
+                },
+                {
+                    "$ref": "#/$defs/LabelValueElement"
                 },
                 {
                     "$ref": "#/$defs/TableElement"
@@ -154,7 +154,7 @@
                                     "string-url",
                                     "identifier",
                                     "ratio",
-                                    "color-swatch",
+                                    "color",
                                     "number-unbounded",
                                     "number-stars",
                                     "number-meter",
@@ -162,10 +162,10 @@
                                     "boolean-badge",
                                     "timestamp",
                                     "image-ref",
-                                    "color-set",
                                     "markdown",
                                     "html",
                                     "multi-slot",
+                                    "flowing",
                                     "label-value",
                                     "table",
                                     "repeating-group",
@@ -381,7 +381,7 @@
                 },
                 "value": {
                     "type": "string",
-                    "description": "Aspect ratio textual expression"
+                    "description": "Aspect ratio numerical expression"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
@@ -399,12 +399,31 @@
             "properties": {
                 "type": {
                     "type": "string",
-                    "const": "color-swatch",
+                    "const": "color",
                     "description": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
                     "description": "Hexadecimal color code"
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Optional descriptive color name label"
+                },
+                "showText": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to display the textual color code or label next to the swatch"
+                },
+                "shape": {
+                    "$ref": "#/$defs/Shape",
+                    "default": "circle",
+                    "description": "Visual shape of the color indicator"
+                },
+                "size": {
+                    "$ref": "#/$defs/Size",
+                    "default": "medium",
+                    "description": "Visual size of the color indicator"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
@@ -415,7 +434,7 @@
                 "type",
                 "value"
             ],
-            "description": "Single color swatch representation with hex value and copy affordance."
+            "description": "Single color representation with hex value, shape/size styling, text display toggle, and copy affordance."
         },
         "NumberUnboundedElement": {
             "type": "object",
@@ -584,7 +603,7 @@
                 },
                 "value": {
                     "type": "string",
-                    "description": "ISO 8601 date string or epoch timestamp in milliseconds"
+                    "description": "The timestamp in milliseconds"
                 },
                 "format": {
                     "$ref": "#/$defs/TimestampFormat",
@@ -634,28 +653,6 @@
             ],
             "description": "Thumbnail image reference with placeholder fallback handling."
         },
-        "DominantColourSetElement": {
-            "type": "object",
-            "properties": {
-                "type": {
-                    "type": "string",
-                    "const": "color-set",
-                    "description": "Discriminator type"
-                },
-                "colors": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "description": "List of hexadecimal color strings in descending priority"
-                }
-            },
-            "required": [
-                "type",
-                "colors"
-            ],
-            "description": "Dominant color set palette rendered in descending dominance order."
-        },
         "MarkdownBlockElement": {
             "type": "object",
             "properties": {
@@ -702,7 +699,7 @@
             ],
             "description": "Sandboxed HTML rendering escape hatch."
         },
-        "MultiSlotRowElement": {
+        "MultiSlotElement": {
             "type": "object",
             "properties": {
                 "type": {
@@ -728,7 +725,29 @@
             ],
             "description": "Multi-slot horizontal row with declared column width proportions.\nExamples: \"1/3 + 2/3\", \"equal thirds\", \"1/4 + 3/4\"."
         },
-        "LabelValueRowElement": {
+        "FlowingElement": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "flowing",
+                    "description": "Discriminator type"
+                },
+                "elements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/UiElement"
+                    },
+                    "description": "List of child elements rendered sequentially with line wrapping"
+                }
+            },
+            "required": [
+                "type",
+                "elements"
+            ],
+            "description": "Flowing inline layout container with automatic line wrapping.\nRenders child elements horizontally in sequence, automatically wrapping to the next line when space runs out."
+        },
+        "LabelValueElement": {
             "type": "object",
             "properties": {
                 "type": {
@@ -943,6 +962,23 @@
                 }
             },
             "description": "Base modifier traits for elements that support copy affordance."
+        },
+        "Shape": {
+            "type": "string",
+            "enum": [
+                "circle",
+                "square"
+            ],
+            "description": "Geometric shape representation for visual containers and indicators."
+        },
+        "Size": {
+            "type": "string",
+            "enum": [
+                "small",
+                "medium",
+                "large"
+            ],
+            "description": "Relative sizing scale for visual elements and indicators."
         },
         "BadgeVariant": {
             "type": "string",
