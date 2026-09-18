@@ -2,44 +2,56 @@ import React, { ReactNode, useMemo } from "react";
 import { Badge, Box, Divider, Flex, Stack, Text, Tooltip } from "@mantine/core";
 
 import { ImageFeatureType } from "@picteus/ws-client";
-import { UiAction, UiContainer } from "@picteus/shared-core";
-
-import { ViewMode } from "types";
+import { UiContainer } from "@picteus/shared-core";
 import { useExtensions } from "app/hooks";
 import { ExtensionIcon, UiContainerView } from "app/components";
 import ImageDataCard from "../ImageDataCard/ImageDataCard.tsx";
 
 
+export type ImageFeatureContainerType =
+  {
+    readonly extensionId: string;
+    readonly type: ImageFeatureType;
+    readonly name?: string;
+    readonly uiContainer: UiContainer;
+  };
+
 export type ImageFeatureCardType =
   {
     readonly title: string;
-    readonly type: ImageFeatureType;
-    readonly perExtensionIdContainers: Map<string, UiContainer[]>;
-    readonly viewMode: ViewMode;
-    readonly onAction?: (action: UiAction) => void;
+    readonly featureContainers: ImageFeatureContainerType[];
     readonly defaultExpanded?: boolean;
   };
 
-// noinspection JSUnusedLocalSymbols
 export default function ImageFeatureCard({
   title,
-  type,
-  perExtensionIdContainers,
-  viewMode,
-  onAction,
+  featureContainers,
   defaultExpanded = true
 }: ImageFeatureCardType): ReactNode
 {
   const { data: extensions = [] } = useExtensions();
-  const featureEntries = useMemo((): [ string, UiContainer[] ][] =>
+  const featureEntries = useMemo((): [ string, ImageFeatureContainerType[] ][] =>
     {
-      if (!perExtensionIdContainers)
+      if (!featureContainers || featureContainers.length === 0)
       {
         return [];
       }
-      return Array.from(perExtensionIdContainers.entries()).filter(([ , features ]) => features.length > 0);
+
+      const featuresByExtensionId = new Map<string, ImageFeatureContainerType[]>();
+      for (const feature of featureContainers)
+      {
+        let extensionFeatures = featuresByExtensionId.get(feature.extensionId);
+        if (extensionFeatures === undefined)
+        {
+          extensionFeatures = [];
+          featuresByExtensionId.set(feature.extensionId, extensionFeatures);
+        }
+        extensionFeatures.push(feature);
+      }
+
+      return Array.from(featuresByExtensionId.entries());
     },
-    [ perExtensionIdContainers ]
+    [ featureContainers ]
   );
 
   if (featureEntries.length === 0)
@@ -74,8 +86,7 @@ export default function ImageFeatureCard({
   return (
     <ImageDataCard header={headerNode} defaultExpanded={defaultExpanded}>
       <Stack gap="md">
-        {featureEntries.map(
-          ([ extensionId, features ], index) =>
+        {featureEntries.map(([ extensionId, extensionFeatures ], index) =>
           {
             const extension = extensions.find((availableExtension) => availableExtension.manifest.id === extensionId);
             const extensionName = extension?.manifest.name ?? extensionId;
@@ -86,7 +97,11 @@ export default function ImageFeatureCard({
                   <>
                     {index > 0 && <Divider mb="sm"/>}
                     <Flex align="center" gap="xs" mb="xs">
-                      <ExtensionIcon idOrExtension={extensionId} size="sm"/>
+                      <Tooltip label={extensionName} position="top" withArrow>
+                        <Box style={{ display: "inline-flex" }}>
+                          <ExtensionIcon idOrExtension={extensionId} size="sm"/>
+                        </Box>
+                      </Tooltip>
                       <Text size="xs" fw={500} c="dimmed">
                         {extensionName}
                       </Text>
@@ -94,15 +109,20 @@ export default function ImageFeatureCard({
                   </>
                 )}
                 <Flex direction="column" gap="xs">
-                  {features.map(
+                  {extensionFeatures.map(
                     (feature, featureIndex) =>
                     {
                       return (
-                        <UiContainerView
-                          key={featureIndex}
-                          uiContainer={feature}
-                          onAction={onAction}
-                        />
+                        <Box key={featureIndex}>
+                          {feature.name && (
+                            <Text size="xs" fw={600} c="dimmed" mb={4}>
+                              {feature.name}
+                            </Text>
+                          )}
+                          <UiContainerView
+                            uiContainer={feature.uiContainer}
+                          />
+                        </Box>
                       );
                     }
                   )}

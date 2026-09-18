@@ -25,7 +25,7 @@ export function SocketCacheSync(): null
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.repositories.all });
       }
-      else if (channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_UNINSTALLED)
+      else if (channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_STATE_STARTED || channel === ChannelEnum.EXTENSION_STATE_STOPPED)
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.configuration });

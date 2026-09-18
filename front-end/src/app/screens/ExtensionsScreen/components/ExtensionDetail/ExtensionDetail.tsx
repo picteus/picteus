@@ -66,10 +66,10 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
 
   return (
     <Stack gap="md" m="sm" pos="relative">
-      {manualSummary && (<FieldValue name={t("field.manual")} value={<Markdown content={manualSummary}/>}/>)}
+      {manualSummary && (<FieldValue name={t("field.manual")} value={<Markdown content={manualSummary} titleOrderOffset={4}/>}/>)}
       {manualPrerequisites && (
-        <FieldValue name={t("field.prerequisites")} value={<Markdown content={manualPrerequisites}/>}/>)}
-      {manualSettings && (<FieldValue name={t("field.settings")} value={<Markdown content={manualSettings}/>}/>)}
+        <FieldValue name={t("field.prerequisites")} value={<Markdown content={manualPrerequisites} titleOrderOffset={4}/>}/>)}
+      {manualSettings && (<FieldValue name={t("field.settings")} value={<Markdown content={manualSettings} titleOrderOffset={4}/>}/>)}
       <FieldValue name={t("field.runtimes")} value={
         manifestRuntimes?.length > 0 ? (
           <Group gap="xs">

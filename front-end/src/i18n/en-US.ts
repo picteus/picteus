@@ -315,7 +315,20 @@ export default {
     tags: "Tags",
     recipe: "Recipe",
     features: "Features",
-    newFeatures: "Features"
+    vectorialFeatures: "Technical",
+    newFeatures: "Features",
+    type:
+      {
+        "caption": "Caption",
+        "description": "Description",
+        "comment": "Comment",
+        "annotation": "Annotation",
+        "metadata": "Metadata",
+        "recipe": "Recipe",
+        "identity": "Identity",
+        "physics": "Physics",
+        "other": "Other"
+      }
   },
   repositoryScreen: {
     title: "Repositories",

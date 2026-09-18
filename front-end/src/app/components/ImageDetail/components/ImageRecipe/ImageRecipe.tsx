@@ -16,7 +16,7 @@ type ImageRecipeType = {
 
 export default function ImageRecipe({ recipe, viewMode }: ImageRecipeType)
 {
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const prompt: GenerationRecipePrompt = recipe.prompt;
 
   return (
@@ -67,11 +67,12 @@ export default function ImageRecipe({ recipe, viewMode }: ImageRecipeType)
           ))}
         </Group>
       )}
-      {prompt && typeof prompt === "object" && <Stack gap={4}>
-        <Text fw={700} size="sm">{t(`field.${"text" in prompt ? "prompt" : "instructions"}`)}:</Text>
-        {"text" in prompt ? (<Text size="sm">{prompt.text}</Text>) : ("value" in prompt ?
-          <CodeViewer code={JSON.stringify(prompt.value, undefined, 2)} language="json"/> : <></>)}
-      </Stack>}
+      {prompt && ("text" in prompt && typeof prompt.text === "string" ? prompt.text.length > 0 : ("value" in prompt && typeof prompt.value === "object" && Object.keys(prompt.value).length > 0)) &&
+        <Stack gap={4}>
+          <Text fw={700} size="sm">{t(`field.${"text" in prompt ? "prompt" : "instructions"}`)}:</Text>
+          {"text" in prompt ? (<Text size="sm">{prompt.text}</Text>) :
+            <CodeViewer code={JSON.stringify(prompt.value, undefined, 2)} language="json"/>}
+        </Stack>}
     </Stack>
   );
 }

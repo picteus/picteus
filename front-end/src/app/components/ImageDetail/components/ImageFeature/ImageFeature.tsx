@@ -34,7 +34,7 @@ export default function ImageFeature({ feature, viewMode }: ImageFeatureType)
         }
         return <CodeViewer code={feature.value as string} language="json"/>;
       case "markdown":
-        return <CopyText value={value as string}><Markdown content={value as string}/></CopyText>;
+        return <CopyText value={value as string}><Markdown content={value as string} titleOrderOffset={4}/></CopyText>;
       case "xml":
         return <CodeViewer code={feature.value as string} language="xml"/>;
       case "html":
@@ -48,5 +48,5 @@ export default function ImageFeature({ feature, viewMode }: ImageFeatureType)
       case "boolean":
         return value.toString();
     }
-  }, [feature]);
+  }, [ feature ]);
 }

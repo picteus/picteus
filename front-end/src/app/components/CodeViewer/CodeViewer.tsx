@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useMantineColorScheme } from "@mantine/core";
+import { type ReactElement, useEffect, useMemo, useRef } from "react";
+import { type MantineSize, useMantineColorScheme } from "@mantine/core";
 // Import the default Highlight.js style
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
@@ -12,12 +12,13 @@ import { ToastService } from "utils";
 hljs.registerLanguage("json", json);
 hljs.registerLanguage("xml", xml);
 
-type CodeViewerType = {
-  code: string;
-  language?: "json" | "xml" | "html";
+export type CodeViewerType = {
+  readonly code: string;
+  readonly language?: "json" | "xml" | "html";
+  readonly size?: MantineSize;
 };
 
-export default function CodeViewer({ code, language }: CodeViewerType)
+export default function CodeViewer({ code, language, size }: CodeViewerType): ReactElement
 {
   const codeRef = useRef<HTMLElement>(null);
 
@@ -68,11 +69,35 @@ export default function CodeViewer({ code, language }: CodeViewerType)
       ToastService.failureAndMessage(error, "An error occurred while trying to beautify the code");
       return "Source code is broken";
     }
-  }, [ code ]);
+  }, [ code, language ]);
+
+  function computeFontSize(size?: MantineSize): string | undefined
+  {
+    if (!size)
+    {
+      return undefined;
+    }
+    const standardSizes = [ "xs", "sm", "md", "lg", "xl" ];
+    if (standardSizes.includes(size))
+    {
+      return `var(--mantine-font-size-${size})`;
+    }
+    return String(size);
+  }
+
+  const fontSize = computeFontSize(size);
 
   return (
-    <pre style={{ maxHeight: 400 }}>
-      <code style={{ fontFamily: "var(--mantine-font-family)" }} ref={codeRef}>{formattedCode}</code>
+    <pre style={{ maxHeight: 400, fontSize: fontSize }}>
+      <code
+        style={{
+          fontFamily: "var(--mantine-font-family)",
+          fontSize: fontSize
+        }}
+        ref={codeRef}
+      >
+        {formattedCode}
+      </code>
     </pre>
   );
 }

@@ -1,4 +1,4 @@
-import { type ReactElement } from "react";
+import { type ReactElement, type ReactNode, useMemo } from "react";
 import {
   Anchor,
   Blockquote,
@@ -7,10 +7,12 @@ import {
   Divider,
   Image,
   List,
+  type MantineSize,
   Mark,
   Table,
   Text,
   Title,
+  type TitleOrder,
   Typography
 } from "@mantine/core";
 import { type Components, default as ReactMarkdown } from "react-markdown";
@@ -21,65 +23,60 @@ import { ToastService } from "../../../utils";
 
 
 export type MarkdownPropsType = {
-  content: string;
+  readonly content: string;
+  readonly size?: MantineSize;
+  readonly titleOrderOffset?: number;
 };
 
 const REMARK_PLUGINS = [ remarkGfm ];
 
-const MARKDOWN_COMPONENTS: Components =
+function computeTitleOrder(rawLevel: number, titleOrderOffset: number): TitleOrder
+{
+  const targetLevel = Math.min(6, Math.max(1, rawLevel + titleOrderOffset));
+  return targetLevel as TitleOrder;
+}
+
+function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Components
+{
+  function renderHeading(level: TitleOrder, children: ReactNode): ReactElement
   {
+    const order = computeTitleOrder(level, titleOrderOffset);
+    return (
+      <Title order={order}>
+        {children}
+      </Title>
+    );
+  }
+
+  return {
     h1: ({ children }): ReactElement =>
     {
-      return (
-        <Title order={1}>
-          {children}
-        </Title>
-      );
+      return renderHeading(1, children);
     },
     h2: ({ children }): ReactElement =>
     {
-      return (
-        <Title order={2}>
-          {children}
-        </Title>
-      );
+      return renderHeading(2, children);
     },
     h3: ({ children }): ReactElement =>
     {
-      return (
-        <Title order={3}>
-          {children}
-        </Title>
-      );
+      return renderHeading(3, children);
     },
     h4: ({ children }): ReactElement =>
     {
-      return (
-        <Title order={4}>
-          {children}
-        </Title>
-      );
+      return renderHeading(4, children);
     },
     h5: ({ children }): ReactElement =>
     {
-      return (
-        <Title order={5}>
-          {children}
-        </Title>
-      );
+      return renderHeading(5, children);
     },
     h6: ({ children }): ReactElement =>
     {
-      return (
-        <Title order={6}>
-          {children}
-        </Title>
-      );
+      return renderHeading(6, children);
     },
     p: ({ children }): ReactElement =>
     {
       return (
-        <Text component="p">
+        <Text component="p" size={size}>
           {children}
         </Text>
       );
@@ -87,7 +84,7 @@ const MARKDOWN_COMPONENTS: Components =
     strong: ({ children }): ReactElement =>
     {
       return (
-        <Text span fw={700}>
+        <Text span fw={700} size={size}>
           {children}
         </Text>
       );
@@ -95,7 +92,7 @@ const MARKDOWN_COMPONENTS: Components =
     em: ({ children }): ReactElement =>
     {
       return (
-        <Text span fs="italic">
+        <Text span fs="italic" size={size}>
           {children}
         </Text>
       );
@@ -103,7 +100,7 @@ const MARKDOWN_COMPONENTS: Components =
     del: ({ children }): ReactElement =>
     {
       return (
-        <Text span td="line-through">
+        <Text span td="line-through" size={size}>
           {children}
         </Text>
       );
@@ -122,12 +119,13 @@ const MARKDOWN_COMPONENTS: Components =
       return (
         <Anchor
           href={href}
+          size={size}
           onClick={(event) =>
           {
             if (href !== undefined)
             {
               event.preventDefault();
-              openBrowser(href).catch((ToastService.failureAndMessage));
+              openBrowser(href).catch(ToastService.failureAndMessage);
             }
           }}
         >
@@ -183,7 +181,7 @@ const MARKDOWN_COMPONENTS: Components =
     ul: ({ children }): ReactElement =>
     {
       return (
-        <List withPadding>
+        <List withPadding size={size}>
           {children}
         </List>
       );
@@ -191,7 +189,7 @@ const MARKDOWN_COMPONENTS: Components =
     ol: ({ children }): ReactElement =>
     {
       return (
-        <List type="ordered" withPadding>
+        <List type="ordered" withPadding size={size}>
           {children}
         </List>
       );
@@ -211,6 +209,7 @@ const MARKDOWN_COMPONENTS: Components =
       {
         return (
           <Checkbox
+            size={size}
             checked={Boolean(checked)}
             readOnly
           />
@@ -229,7 +228,7 @@ const MARKDOWN_COMPONENTS: Components =
     {
       return (
         <Table.ScrollContainer minWidth={300} my="sm">
-          <Table withTableBorder withColumnBorders striped highlightOnHover>
+          <Table withTableBorder withColumnBorders striped highlightOnHover fz={size}>
             {children}
           </Table>
         </Table.ScrollContainer>
@@ -289,17 +288,30 @@ const MARKDOWN_COMPONENTS: Components =
       );
     }
   };
+}
 
-export default function Markdown({ content }: MarkdownPropsType): ReactElement
+export default function Markdown({
+  content,
+  size = "sm",
+  titleOrderOffset = 0
+}: MarkdownPropsType): ReactElement
 {
   // We need to handle the specific case of the linebreak "<br>", because the library does not handle it properly by default
   const sanitizedContent = content.replace(/<br\s*\/?>/gi, "\n \n");
+
+  const components = useMemo<Components>(
+    () =>
+    {
+      return createMarkdownComponents(size, titleOrderOffset);
+    },
+    [ size, titleOrderOffset ]
+  );
 
   return (
     <Typography>
       <ReactMarkdown
         remarkPlugins={REMARK_PLUGINS}
-        components={MARKDOWN_COMPONENTS}
+        components={components}
       >
         {sanitizedContent}
       </ReactMarkdown>
