@@ -11,6 +11,16 @@ const ACTION_ELEMENT_ROOT_NAME = "UiAction";
 const UI_ELEMENT_VIEW_NAME = `${UI_ELEMENT_ROOT_NAME}${VIEW_SUFFIX}`;
 const ACTION_ELEMENT_VIEW_NAME = `${ACTION_ELEMENT_ROOT_NAME}${VIEW_SUFFIX}`;
 const SHARED_CORE_PACKAGE = "@picteus/shared-core";
+const RENDERERS_PROP_NAME = "renderers";
+const ON_ANCHOR_CLICK_PROP_NAME = "onAnchorClick";
+const ON_ACTION_PROP_NAME = "onAction";
+const UI_ELEMENT_VIEW_RENDERERS_TYPE_NAME = "UiElementViewRenderers";
+const UI_ELEMENT_VIEW_CONTEXT_TYPE_NAME = "UiElementViewContextType";
+const UI_ELEMENT_VIEW_CONTEXT_NAME = "UiElementViewContext";
+const USE_UI_ELEMENT_VIEW_CONTEXT_NAME = "useUiElementViewContext";
+const UI_ELEMENT_VIEW_PROVIDER_PROPS_TYPE_NAME = "UiElementViewProviderPropsType";
+const UI_ELEMENT_VIEW_PROVIDER_NAME = "UiElementViewProvider";
+const ELEMENT_RENDERER_CONTEXT_TYPE_NAME = "ElementRendererContext";
 
 const MANTINE_IMPORTS: readonly string[] = [
   "Accordion",
@@ -359,9 +369,10 @@ function computeCustomRendererSlotName(model: ViewKitModel): string
 function generateElementRendererContext(): string
 {
   return [
-    `export type ElementRendererContext =`,
+    `export type ${ELEMENT_RENDERER_CONTEXT_TYPE_NAME} =`,
     `{`,
-    `  readonly onAction?: (action: ${ACTION_ELEMENT_ROOT_NAME}) => void;`,
+    `  readonly ${ON_ACTION_PROP_NAME}?: (action: ${ACTION_ELEMENT_ROOT_NAME}) => void;`,
+    `  readonly ${ON_ANCHOR_CLICK_PROP_NAME}?: (event: React.MouseEvent<HTMLAnchorElement>, url: string) => void;`,
     `  readonly className?: string;`,
     `  readonly style?: React.CSSProperties;`,
     `};`
@@ -376,18 +387,18 @@ function generateUiElementViewRenderers(spec: GrammarSpec): string
   for (const model of customModels)
   {
     const slotName = computeCustomRendererSlotName(model);
-    rendererFields.push(`  readonly ${slotName}?: (element: ${model.name}, context: ElementRendererContext) => ReactNode;`);
+    rendererFields.push(`  readonly ${slotName}?: (element: ${model.name}, context: ${ELEMENT_RENDERER_CONTEXT_TYPE_NAME}) => ReactNode;`);
   }
 
   if (rendererFields.length === 0)
   {
     return [
-      `export type UiElementViewRenderers = Record<string, never>;`
+      `export type ${UI_ELEMENT_VIEW_RENDERERS_TYPE_NAME} = Record<string, never>;`
     ].join("\n");
   }
 
   return [
-    `export type UiElementViewRenderers =`,
+    `export type ${UI_ELEMENT_VIEW_RENDERERS_TYPE_NAME} =`,
     `{`,
     rendererFields.join("\n"),
     `};`
@@ -397,34 +408,37 @@ function generateUiElementViewRenderers(spec: GrammarSpec): string
 function generateUiElementViewContextAndProvider(): string
 {
   return [
-    `export type UiElementViewContextType =`,
+    `export type ${UI_ELEMENT_VIEW_CONTEXT_TYPE_NAME} =`,
     `{`,
-    `  readonly renderers?: UiElementViewRenderers;`,
+    `  readonly ${RENDERERS_PROP_NAME}?: ${UI_ELEMENT_VIEW_RENDERERS_TYPE_NAME};`,
+    `  readonly ${ON_ANCHOR_CLICK_PROP_NAME}?: (event: React.MouseEvent<HTMLAnchorElement>, url: string) => void;`,
     `};`,
     ``,
-    `const UiElementViewContext = React.createContext<UiElementViewContextType>(`,
+    `const ${UI_ELEMENT_VIEW_CONTEXT_NAME} = React.createContext<${UI_ELEMENT_VIEW_CONTEXT_TYPE_NAME}>(`,
     `  {`,
-    `    renderers: undefined`,
+    `    ${RENDERERS_PROP_NAME}: undefined,`,
+    `    ${ON_ANCHOR_CLICK_PROP_NAME}: undefined`,
     `  }`,
     `);`,
     ``,
-    `export function useUiElementViewContext(): UiElementViewContextType`,
+    `export function ${USE_UI_ELEMENT_VIEW_CONTEXT_NAME}(): ${UI_ELEMENT_VIEW_CONTEXT_TYPE_NAME}`,
     `{`,
-    `  return React.useContext(UiElementViewContext);`,
+    `  return React.useContext(${UI_ELEMENT_VIEW_CONTEXT_NAME});`,
     `}`,
     ``,
-    `export type UiElementViewProviderPropsType =`,
+    `export type ${UI_ELEMENT_VIEW_PROVIDER_PROPS_TYPE_NAME} =`,
     `{`,
-    `  readonly renderers?: UiElementViewRenderers;`,
+    `  readonly ${RENDERERS_PROP_NAME}?: ${UI_ELEMENT_VIEW_RENDERERS_TYPE_NAME};`,
+    `  readonly ${ON_ANCHOR_CLICK_PROP_NAME}?: (event: React.MouseEvent<HTMLAnchorElement>, url: string) => void;`,
     `  readonly children: ReactNode;`,
     `};`,
     ``,
-    `export function UiElementViewProvider({ renderers, children }: UiElementViewProviderPropsType): ReactNode`,
+    `export function ${UI_ELEMENT_VIEW_PROVIDER_NAME}({ ${RENDERERS_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME}, children }: ${UI_ELEMENT_VIEW_PROVIDER_PROPS_TYPE_NAME}): ReactNode`,
     `{`,
     `  return (`,
-    `    <UiElementViewContext.Provider value={{ renderers }}>`,
+    `    <${UI_ELEMENT_VIEW_CONTEXT_NAME}.Provider value={{ ${RENDERERS_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME} }}>`,
     `      {children}`,
-    `    </UiElementViewContext.Provider>`,
+    `    </${UI_ELEMENT_VIEW_CONTEXT_NAME}.Provider>`,
     `  );`,
     `}`
   ].join("\n");
@@ -440,24 +454,24 @@ function generateUiElementComponent(model: ViewKitModel): string
   {
     const slotName = computeCustomRendererSlotName(model);
     const delegationLines: string[] = [
-      `  const { renderers } = useUiElementViewContext();`,
+      `  const { ${RENDERERS_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME} } = ${USE_UI_ELEMENT_VIEW_CONTEXT_NAME}();`,
       ``,
-      `  if (renderers?.${slotName})`,
+      `  if (${RENDERERS_PROP_NAME}?.${slotName})`,
       `  {`,
-      `    return renderers.${slotName}(element, { onAction, className, style });`,
+      `    return ${RENDERERS_PROP_NAME}.${slotName}(element, { ${ON_ACTION_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME}, className, style });`,
       `  }`
     ];
 
     if (model.name === "StringCodeElement")
     {
       delegationLines.push(
-        `  if (element.language === CodeLanguage.xml && renderers?.xml)`,
+        `  if (element.language === CodeLanguage.xml && ${RENDERERS_PROP_NAME}?.xml)`,
         `  {`,
-        `    return renderers.xml({ type: "xml", value: element.value, modifiers: element.modifiers }, { onAction, className, style });`,
+        `    return ${RENDERERS_PROP_NAME}.xml({ type: "xml", value: element.value, modifiers: element.modifiers }, { ${ON_ACTION_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME}, className, style });`,
         `  }`,
-        `  if (element.language === CodeLanguage.json && renderers?.json)`,
+        `  if (element.language === CodeLanguage.json && ${RENDERERS_PROP_NAME}?.json)`,
         `  {`,
-        `    return renderers.json({ type: "json", value: element.value, modifiers: element.modifiers }, { onAction, className, style });`,
+        `    return ${RENDERERS_PROP_NAME}.json({ type: "json", value: element.value, modifiers: element.modifiers }, { ${ON_ACTION_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME}, className, style });`,
         `  }`
       );
     }
@@ -545,7 +559,7 @@ function generateActionElementComponent(model: ViewKitModel): string
       `      variant={variantMap[action.variant ?? ButtonVariant.secondary]}`,
       `      color={action.variant === ButtonVariant.danger ? "red" : undefined}`,
       `      disabled={action.disabled}`,
-      `      onClick={() => onAction?.(action)}`,
+      `      onClick={() => ${ON_ACTION_PROP_NAME}?.(action)}`,
       `      className={className}`,
       `      style={style}`,
       `    >`,
@@ -557,6 +571,8 @@ function generateActionElementComponent(model: ViewKitModel): string
   else
   {
     body = [
+      `  const { ${ON_ANCHOR_CLICK_PROP_NAME} } = ${USE_UI_ELEMENT_VIEW_CONTEXT_NAME}();`,
+      ``,
       `  return (`,
       `    <Button`,
       `      component="a"`,
@@ -566,6 +582,11 @@ function generateActionElementComponent(model: ViewKitModel): string
       `      size="xs"`,
       `      variant="subtle"`,
       `      rightSection={<IconExternalLink size={12}/>}`,
+      `      onClick={(event: React.MouseEvent<HTMLAnchorElement>) =>`,
+      `      {`,
+      `        ${ON_ACTION_PROP_NAME}?.(action);`,
+      `        ${ON_ANCHOR_CLICK_PROP_NAME}?.(event, action.url);`,
+      `      }}`,
       `      className={className}`,
       `      style={style}`,
       `    >`,
@@ -815,7 +836,15 @@ function generateStringUrlWidgetBody(): string
 {
   const nodeExpression = [
     `(`,
-    `    <Anchor href={element.value} target="_blank" rel="noopener noreferrer" size="sm" className={className} style={{ display: "inline-flex", alignItems: "center", gap: 4, ...CONSTRAINED_STYLE, ...style }}>`,
+    `    <Anchor`,
+    `      href={element.value}`,
+    `      target="_blank"`,
+    `      rel="noopener noreferrer"`,
+    `      size="sm"`,
+    `      className={className}`,
+    `      style={{ display: "inline-flex", alignItems: "center", gap: 4, ...CONSTRAINED_STYLE, ...style }}`,
+    `      onClick={${ON_ANCHOR_CLICK_PROP_NAME} ? (event) => ${ON_ANCHOR_CLICK_PROP_NAME}(event, element.value) : undefined}`,
+    `    >`,
     `      <span style={{ ...BREAK_ALL_STYLE, minWidth: 0 }}>{label}</span>`,
     `      <IconExternalLink size={12} style={{ flexShrink: 0 }}/>`,
     `    </Anchor>`,
@@ -823,6 +852,7 @@ function generateStringUrlWidgetBody(): string
   ].join("\n");
 
   return [
+    `  const { ${ON_ANCHOR_CLICK_PROP_NAME} } = ${USE_UI_ELEMENT_VIEW_CONTEXT_NAME}();`,
     `  const label = element.label ?? element.value;`,
     wrapWithCopyableModifier(nodeExpression)
   ].join("\n");
@@ -1124,8 +1154,9 @@ function generateRootContainerComponent(rootModel: ViewKitModel): string
     `export type ${propsTypeName} =`,
     `{`,
     `  readonly ${propName}: ${rootModel.name};`,
-    `  readonly renderers?: UiElementViewRenderers;`,
-    `  readonly onAction?: (action: ${ACTION_ELEMENT_ROOT_NAME}) => void;`,
+    `  readonly ${RENDERERS_PROP_NAME}?: ${UI_ELEMENT_VIEW_RENDERERS_TYPE_NAME};`,
+    `  readonly ${ON_ANCHOR_CLICK_PROP_NAME}?: (event: React.MouseEvent<HTMLAnchorElement>, url: string) => void;`,
+    `  readonly ${ON_ACTION_PROP_NAME}?: (action: ${ACTION_ELEMENT_ROOT_NAME}) => void;`,
     `  readonly className?: string;`,
     `  readonly style?: React.CSSProperties;`,
     `};`
@@ -1140,33 +1171,34 @@ function generateRootContainerComponent(rootModel: ViewKitModel): string
       `      {${propName}.actions && ${propName}.actions.length > 0 && (`,
       `        <Flex gap="xs" justify="flex-end" mt="xs">`,
       `          {${propName}.actions.map((action, actionIndex) => (`,
-      `            <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
+      `            <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} ${ON_ACTION_PROP_NAME}={${ON_ACTION_PROP_NAME}}/>`,
       `          ))}`,
       `        </Flex>`,
       `      )}`
     ] : [];
 
     bodyContent = [
-      `  const context = useUiElementViewContext();`,
-      `  const effectiveRenderers = renderers ?? context.renderers;`,
+      `  const context = ${USE_UI_ELEMENT_VIEW_CONTEXT_NAME}();`,
+      `  const effectiveRenderers = ${RENDERERS_PROP_NAME} ?? context.${RENDERERS_PROP_NAME};`,
+      `  const effectiveOnAnchorClick = ${ON_ANCHOR_CLICK_PROP_NAME} ?? context.${ON_ANCHOR_CLICK_PROP_NAME};`,
       ``,
       `  const content = (`,
       `    <Box className={className} style={{ width: "100%", ...style }}>`,
       `      <Flex direction="column" gap="xs">`,
       `        {${propName}.elements.map((element, elementIndex) => (`,
-      `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
+      `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} ${ON_ACTION_PROP_NAME}={${ON_ACTION_PROP_NAME}}/>`,
       `        ))}`,
       `      </Flex>`,
       ...actionsSection,
       `    </Box>`,
       `  );`,
       ``,
-      `  if (renderers)`,
+      `  if (${RENDERERS_PROP_NAME} || ${ON_ANCHOR_CLICK_PROP_NAME})`,
       `  {`,
       `    return (`,
-      `      <UiElementViewProvider renderers={effectiveRenderers}>`,
+      `      <${UI_ELEMENT_VIEW_PROVIDER_NAME} ${RENDERERS_PROP_NAME}={effectiveRenderers} ${ON_ANCHOR_CLICK_PROP_NAME}={effectiveOnAnchorClick}>`,
       `        {content}`,
-      `      </UiElementViewProvider>`,
+      `      </${UI_ELEMENT_VIEW_PROVIDER_NAME}>`,
       `    );`,
       `  }`,
       ``,
@@ -1192,7 +1224,7 @@ function generateRootContainerComponent(rootModel: ViewKitModel): string
       `        <MantineCard.Section inheritPadding py="xs">`,
       `          <Flex gap="xs" justify="flex-end">`,
       `            {${propName}.actions.map((action, actionIndex) => (`,
-      `              <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} onAction={onAction}/>`,
+      `              <${ACTION_ELEMENT_VIEW_NAME} key={actionIndex} action={action} ${ON_ACTION_PROP_NAME}={${ON_ACTION_PROP_NAME}}/>`,
       `            ))}`,
       `          </Flex>`,
       `        </MantineCard.Section>`,
@@ -1200,27 +1232,28 @@ function generateRootContainerComponent(rootModel: ViewKitModel): string
     ] : [];
 
     bodyContent = [
-      `  const context = useUiElementViewContext();`,
-      `  const effectiveRenderers = renderers ?? context.renderers;`,
+      `  const context = ${USE_UI_ELEMENT_VIEW_CONTEXT_NAME}();`,
+      `  const effectiveRenderers = ${RENDERERS_PROP_NAME} ?? context.${RENDERERS_PROP_NAME};`,
+      `  const effectiveOnAnchorClick = ${ON_ANCHOR_CLICK_PROP_NAME} ?? context.${ON_ANCHOR_CLICK_PROP_NAME};`,
       ``,
       `  const content = (`,
       `    <MantineCard shadow="xs" padding="sm" radius="md" withBorder className={className} style={style}>`,
       ...headerSection,
       `      <Flex direction="column" gap="xs" my="xs">`,
       `        {${propName}.elements.map((element, elementIndex) => (`,
-      `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} onAction={onAction}/>`,
+      `          <${UI_ELEMENT_VIEW_NAME} key={elementIndex} element={element} ${ON_ACTION_PROP_NAME}={${ON_ACTION_PROP_NAME}}/>`,
       `        ))}`,
       `      </Flex>`,
       ...actionsSection,
       `    </MantineCard>`,
       `  );`,
       ``,
-      `  if (renderers)`,
+      `  if (${RENDERERS_PROP_NAME} || ${ON_ANCHOR_CLICK_PROP_NAME})`,
       `  {`,
       `    return (`,
-      `      <UiElementViewProvider renderers={effectiveRenderers}>`,
+      `      <${UI_ELEMENT_VIEW_PROVIDER_NAME} ${RENDERERS_PROP_NAME}={effectiveRenderers} ${ON_ANCHOR_CLICK_PROP_NAME}={effectiveOnAnchorClick}>`,
       `        {content}`,
-      `      </UiElementViewProvider>`,
+      `      </${UI_ELEMENT_VIEW_PROVIDER_NAME}>`,
       `    );`,
       `  }`,
       ``,
@@ -1229,7 +1262,7 @@ function generateRootContainerComponent(rootModel: ViewKitModel): string
   }
 
   const componentFunctionBlock = [
-    `export function ${componentName}({ ${propName}, renderers, onAction, className, style }: ${propsTypeName}): ReactNode`,
+    `export function ${componentName}({ ${propName}, ${RENDERERS_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME}, ${ON_ACTION_PROP_NAME}, className, style }: ${propsTypeName}): ReactNode`,
     `{`,
     bodyContent,
     `}`
