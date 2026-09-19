@@ -318,6 +318,7 @@ export default {
     features: "Features",
     vectorialFeatures: "Raw",
     newFeatures: "Features",
+    schemaComplianceError: "The underlying information cannot be displayed because of a schema compliance issue",
     type:
       {
         "caption": "Caption",

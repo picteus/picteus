@@ -241,6 +241,31 @@ export default function ImageData({ image, viewMode }: ImageDataType)
     return sortedFeatureTypes.indexOf(type1) - sortedFeatureTypes.indexOf(type2);
   }
 
+  function createSchemaComplianceUiContainer(): UiContainer
+  {
+    return createUiContainer({
+      elements: [
+        stringShort(t("imageDetail.schemaComplianceError"), {
+          modifiers: {
+            intensity: TextIntensity.low
+          }
+        })
+      ]
+    });
+  }
+
+  function parseFeatureUiContainer(feature: ExtensionImageFeature): UiContainer
+  {
+    try
+    {
+      return UiContainer.parse(feature.value);
+    }
+    catch (error)
+    {
+      return createSchemaComplianceUiContainer();
+    }
+  }
+
   function inferNonUiElement(imageFeature: ExtensionImageFeature): UiElement
   {
     const value = imageFeature.value;
@@ -377,7 +402,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
     return rows;
   }
 
-  const nonRecipeAndNonUiFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.type !== ImageFeatureType.Recipe && imageFeature.format !== ImageFeatureFormat.Ui && imageFeature.format !== ImageFeatureFormat.Html && imageFeature.format !== ImageFeatureFormat.Markdown && !(imageFeature.format === ImageFeatureFormat.String && (imageFeature.type === ImageFeatureType.Caption || imageFeature.type === ImageFeatureType.Description || imageFeature.type === ImageFeatureType.Comment))).sort((feature1: ExtensionImageFeature, feature2: ExtensionImageFeature) => featureTypeComparison(feature1.type, feature2.type)), [ image ]
+  const nonRecipeAndNonUiFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.type !== ImageFeatureType.Recipe && imageFeature.format !== ImageFeatureFormat.Ui && imageFeature.format !== ImageFeatureFormat.Html && imageFeature.format !== ImageFeatureFormat.Markdown && !(imageFeature.format === ImageFeatureFormat.String && (imageFeature.type === ImageFeatureType.Caption || imageFeature.type === ImageFeatureType.Description || imageFeature.type === ImageFeatureType.Comment || imageFeature.type === ImageFeatureType.Physics))).sort((feature1: ExtensionImageFeature, feature2: ExtensionImageFeature) => featureTypeComparison(feature1.type, feature2.type)), [ image ]
   );
 
   const uiFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.format === ImageFeatureFormat.Ui && imageFeature.type !== ImageFeatureType.Recipe), [ image ]
@@ -486,7 +511,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       const hasUiFeatures = recipeFeatures.find(feature => feature.format === ImageFeatureFormat.Ui) !== undefined;
       const cards = recipeFeatures.filter(feature => hasUiFeatures === false || feature.format === ImageFeatureFormat.Ui).map((feature, index) =>
         {
-          const container = feature.format === ImageFeatureFormat.Ui ? augmentUiContainer(feature, UiContainer.parse(feature.value)) : convertRecipeToContainer(extractRecipe(feature));
+          const container = feature.format === ImageFeatureFormat.Ui ? augmentUiContainer(feature, parseFeatureUiContainer(feature)) : convertRecipeToContainer(extractRecipe(feature));
           const featureContainer: ImageFeatureContainerType =
             {
               extensionId: feature.id,
@@ -542,7 +567,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
               extensionId: feature.id,
               type: feature.type,
               name: feature.name,
-              uiContainer: feature.format === ImageFeatureFormat.Ui ? UiContainer.parse(feature.value) : UiContainer.builder().add(inferNonUiElement(feature)).build()
+              uiContainer: feature.format === ImageFeatureFormat.Ui ? parseFeatureUiContainer(feature) : UiContainer.builder().add(inferNonUiElement(feature)).build()
             };
           }
         );
