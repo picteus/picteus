@@ -1,5 +1,5 @@
 import React, { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
-import { Accordion, ActionIcon, Badge, Box, Divider, Flex, Group, Stack, Table, Text, Tooltip } from "@mantine/core";
+import { Accordion, ActionIcon, Badge, Box, Flex, Group, Stack, Table, Text, Tooltip } from "@mantine/core";
 import { IconEye } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -48,7 +48,7 @@ import {
 
 import { ViewMode } from "types";
 import { capitalizeText } from "utils";
-import { useRepository } from "app/hooks";
+import { useOpenBrowser, useRepository } from "app/hooks";
 import { useActionModalContext } from "app/context";
 import { StorageService } from "app/services";
 import {
@@ -83,6 +83,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
 {
   const [ t ] = useTranslation();
   const [ , addModal ] = useActionModalContext();
+  const openBrowser = useOpenBrowser();
   const { data: repository } = useRepository(image.repositoryId);
   const sectionIds =
     {
@@ -101,7 +102,6 @@ export default function ImageData({ image, viewMode }: ImageDataType)
   {
     StorageService.setImageDetailTraits(accordionValue);
   }, [ accordionValue ]);
-
 
   const informationCard = useMemo<ReactElement>(() =>
     {
@@ -195,12 +195,10 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         ]
       });
 
-      const headerNode = (<Text fw={600} size="sm">
+      return (<ImageDataCard header={(<Text fw={600} size="sm">
           {t("imageDetail.information")}
         </Text>
-      );
-
-      return (<ImageDataCard header={headerNode}>
+      )}>
         <UiContainerView uiContainer={uiContainer}/>
       </ImageDataCard>);
     },
@@ -214,8 +212,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         return null;
       }
 
-      const headerNode = (
-        <>
+      return (<ImageDataCard header={(<>
           <Text fw={600} size="sm">
             {t("imageDetail.tags")}
           </Text>
@@ -223,21 +220,13 @@ export default function ImageData({ image, viewMode }: ImageDataType)
             {image.tags.length}
           </Badge>
         </>
-      );
-
-      return (
-        <ImageDataCard header={headerNode}>
-          <Group gap="xs">
-            {image.tags.map((imageTag, index) =>
-              {
-                return (
-                  <ImageTag key={`tag-${index}`} tag={imageTag} kind="badge"/>
-                );
-              }
-            )}
-          </Group>
-        </ImageDataCard>
-      );
+      )}>
+        <Group gap="xs">
+          {image.tags.map((imageTag, index) =>
+            (<ImageTag key={`tag-${index}`} tag={imageTag} kind="badge"/>)
+          )}
+        </Group>
+      </ImageDataCard>);
     },
     [ image.tags ]
   );
@@ -347,6 +336,18 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       }) ]));
     }
 
+    if (generationRecipe.author)
+    {
+      rows.push(tableRow([ stringShort(t("field.author"), options), stringShort(generationRecipe.author, {
+        modifiers: { copyable: true }
+      }) ]));
+    }
+
+    if (generationRecipe.inceptionDate)
+    {
+      rows.push(tableRow([ stringShort(t("field.inceptionDate"), options), timestamp(generationRecipe.inceptionDate) ]));
+    }
+
     if (generationRecipe.aspectRatio)
     {
       rows.push(tableRow([ stringShort(t("field.aspectRatio"), options), ratio(generationRecipe.aspectRatio) ]));
@@ -391,18 +392,16 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         <Table layout="fixed">
           <Table.Tbody>
             {[ ...nonRecipeAndNonUiFeatures ].map((imageFeature, index) =>
-              {
-                return (<TableComponent
-                  key={`feature-${index}`}
-                  label={
-                    <Flex gap={10}>
-                      <ExtensionIcon idOrExtension={imageFeature.id} size="sm"/>
-                      {`${capitalizeText(imageFeature.type)} ${imageFeature.name === undefined ? "" : `(${imageFeature.name})`}`}
-                    </Flex>
-                  }
-                  value={<ImageFeature feature={imageFeature} viewMode={viewMode}/>}
-                />);
-              }
+              (<TableComponent
+                key={`feature-${index}`}
+                label={
+                  <Flex gap={10}>
+                    <ExtensionIcon idOrExtension={imageFeature.id} size="sm"/>
+                    {`${capitalizeText(imageFeature.type)} ${imageFeature.name === undefined ? "" : `(${imageFeature.name})`}`}
+                  </Flex>
+                }
+                value={<ImageFeature feature={imageFeature} viewMode={viewMode}/>}
+              />)
             )}
           </Table.Tbody>
         </Table>
@@ -549,7 +548,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         );
 
         return (<ImageFeatureCard
-          key={type}
+          key={`type-${type}`}
           title={t(`imageDetail.type.${type}`)}
           featureContainers={featureContainers}
         />);
@@ -634,10 +633,6 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         );
       }
 
-      if (Math.random() < 1)
-      {
-        return null;
-      }
       return (<Flex direction="column" gap="md">{renderImageFeatureCards(nonRecipeAndNonUiFeatures)}</Flex>);
     },
     [ nonRecipeAndNonUiFeatures ]
@@ -645,24 +640,103 @@ export default function ImageData({ image, viewMode }: ImageDataType)
 
   const metadataCard = useMemo<ReactElement | null>(() =>
     {
-      const metadata: PicteusImageMetadata | undefined = image.metadata;
+      const metadata: PicteusImageMetadata = image.metadata;
 
       function inferMetadataUiContainer(value: string): UiContainer
       {
         const copyableOptions = { modifiers: { copyable: true } };
+        const labelOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
+
+        function convertValueToUiElement(propertyValue: unknown): UiElement
+        {
+          if (propertyValue === null || propertyValue === undefined)
+          {
+            return stringShort("-", copyableOptions);
+          }
+
+          if (typeof propertyValue === "boolean")
+          {
+            return booleanPlain(propertyValue);
+          }
+
+          if (typeof propertyValue === "number")
+          {
+            return numberUnbounded(propertyValue, copyableOptions);
+          }
+
+          if (typeof propertyValue === "string")
+          {
+            const trimmedValue = propertyValue.trim();
+            if (trimmedValue.startsWith("<") && trimmedValue.endsWith(">"))
+            {
+              return xml(propertyValue, copyableOptions);
+            }
+
+            if ((trimmedValue.startsWith("{") && trimmedValue.endsWith("}")) || (trimmedValue.startsWith("[") && trimmedValue.endsWith("]")))
+            {
+              try
+              {
+                const parsedNested = JSON.parse(trimmedValue);
+                return json(JSON.stringify(parsedNested, undefined, 2), copyableOptions);
+              }
+              catch (error)
+              {
+                // We treat unparseable strings as standard text
+              }
+            }
+
+            if (trimmedValue.startsWith("http://") || trimmedValue.startsWith("https://"))
+            {
+              return stringUrl(trimmedValue, copyableOptions);
+            }
+
+            return stringLong(propertyValue, copyableOptions);
+          }
+
+          if (typeof propertyValue === "object")
+          {
+            return json(JSON.stringify(propertyValue, undefined, 2), copyableOptions);
+          }
+
+          return stringShort(String(propertyValue), copyableOptions);
+        }
+
         let element: UiElement;
 
         try
         {
           const parsed = JSON.parse(value);
-          if (typeof parsed === "object" && parsed !== null)
+          if (typeof parsed === "object" && parsed !== null && Array.isArray(parsed) === false)
           {
-            const formattedJson = JSON.stringify(parsed, undefined, 2);
-            element = json(formattedJson, copyableOptions);
+            const entries = Object.entries(parsed as Record<string, unknown>);
+            if (entries.length > 0)
+            {
+              const rows: TableRow[] = entries.map(([ propertyKey, propertyValue ]) =>
+                tableRow([
+                  stringShort(propertyKey, labelOptions),
+                  convertValueToUiElement(propertyValue)
+                ])
+              );
+
+              element = table(rows, {
+                columns: [
+                  tableColumn({ align: TableColumnAlign.left }),
+                  tableColumn({ align: TableColumnAlign.left })
+                ]
+              });
+            }
+            else
+            {
+              element = json("{}", copyableOptions);
+            }
+          }
+          else if (Array.isArray(parsed))
+          {
+            element = json(JSON.stringify(parsed, undefined, 2), copyableOptions);
           }
           else
           {
-            element = json(value, copyableOptions);
+            element = convertValueToUiElement(parsed);
           }
         }
         catch (error)
@@ -683,16 +757,14 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         });
       }
 
-      type KeyType = "all" | "exif" | "icc" | "iptc" | "xmp" | "tiffTagPhotoshop" | "others";
-      const keys: KeyType[] = [ "all", "exif", "icc", "iptc", "xmp", "tiffTagPhotoshop", "others" ];
-
       // We exclude the empty metadata entities
-      const validEntries = keys
-        .map((key) => ({ key, value: metadata[key] }))
-        .filter((entry) => entry.value !== undefined && entry.value !== "{}" && entry.value.trim().length > 0)
-        .map((entry) => ({
-          key: entry.key,
-          uiContainer: inferMetadataUiContainer(entry.value)
+      const validEntries = (Object.entries(metadata) as [ keyof PicteusImageMetadata, string | undefined ][])
+        .filter((entry): entry is [ keyof PicteusImageMetadata, string ] =>
+          entry[1] !== undefined && entry[1] !== "{}" && entry[1].trim().length > 0
+        )
+        .map(([ metadataKey, metadataValue ]) => ({
+          key: metadataKey,
+          uiContainer: inferMetadataUiContainer(metadataValue)
         }));
 
       if (validEntries.length === 0)
@@ -700,30 +772,20 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         return null;
       }
 
-      const headerNode = (
-        <>
-          <Text fw={600} size="sm">
-            {t("imageDetail.metadata")}
-          </Text>
-          {validEntries.length > 1 && (
-            <Badge size="xs" variant="light" color="gray">
-              {validEntries.length}
-            </Badge>
-          )}
-        </>
-      );
-
-      return (<ImageDataCard header={headerNode}>
+      return (<ImageDataCard header={<>
+        <Text fw={600} size="sm">
+          {t("imageDetail.metadata")}
+        </Text>
+        {validEntries.length > 1 && (
+          <Badge size="xs" variant="light" color="gray">
+            {validEntries.length}
+          </Badge>
+        )}
+      </>}>
         <Stack gap="md">
           {validEntries.map((entry, index) =>
-            (<Box key={entry.key}>
-                {index > 0 && <Divider mb="sm"/>}
-                <Text size="xs" fw={600} c="dimmed" mb={4}>
-                  {entry.key.toUpperCase()}
-                </Text>
-                <UiContainerView uiContainer={entry.uiContainer}/>
-              </Box>
-            ))}
+            (<UiContainerView key={`meta-${index}`} uiContainer={entry.uiContainer}/>)
+          )}
         </Stack>
       </ImageDataCard>);
     },
@@ -765,7 +827,12 @@ export default function ImageData({ image, viewMode }: ImageDataType)
     return enabled === true ? <CopyText value={value}>{node}</CopyText> : node;
   }
 
-  return useMemo<ReactElement>(() => (<UiElementViewProvider renderers={{
+  return useMemo<ReactElement>(() => (
+    <UiElementViewProvider onAnchorClick={(event: React.MouseEvent<HTMLAnchorElement>, url: string) =>
+    {
+      event.preventDefault();
+      void openBrowser(url);
+    }} renderers={{
       markdown: (element, _context) => (
         wrapWithCopy(<Markdown size="sm" titleOrderOffset={3}
                                content={element.content}/>, element.content, element.modifiers?.copyable)
@@ -785,7 +852,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         onChange={setAccordionValue}
       >
         <Stack gap="md" ml="sm" mr="sm">
-          {sections.map((section) => section.node)}
+          {sections.map((section) => (<Box key={section.id}>{section.node}</Box>))}
         </Stack>
       </Accordion>
     </UiElementViewProvider>

@@ -12,13 +12,16 @@ import { ToastService } from "utils";
 hljs.registerLanguage("json", json);
 hljs.registerLanguage("xml", xml);
 
+const LINE_HEIGHT_EM = 1.5;
+
 export type CodeViewerType = {
   readonly code: string;
   readonly language?: "json" | "xml" | "html";
   readonly size?: MantineSize;
+  readonly maxLines?: number;
 };
 
-export default function CodeViewer({ code, language, size }: CodeViewerType): ReactElement
+export default function CodeViewer({ code, language, size, maxLines = 10 }: CodeViewerType): ReactElement
 {
   const codeRef = useRef<HTMLElement>(null);
 
@@ -88,11 +91,27 @@ export default function CodeViewer({ code, language, size }: CodeViewerType): Re
   const fontSize = computeFontSize(size);
 
   return (
-    <pre style={{ maxHeight: 400, fontSize: fontSize }}>
+    <pre
+      style={{
+        maxHeight: maxLines !== undefined && maxLines > 0 ? `${maxLines * LINE_HEIGHT_EM}em` : undefined,
+        overflowY: maxLines !== undefined && maxLines > 0 ? "auto" : undefined,
+        lineHeight: LINE_HEIGHT_EM,
+        fontSize: fontSize,
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-all",
+        overflowWrap: "anywhere",
+        minWidth: 0,
+        maxWidth: "100%"
+      }}
+    >
       <code
         style={{
           fontFamily: "var(--mantine-font-family)",
-          fontSize: fontSize
+          fontSize: fontSize,
+          lineHeight: LINE_HEIGHT_EM,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-all",
+          overflowWrap: "anywhere"
         }}
         ref={codeRef}
       >

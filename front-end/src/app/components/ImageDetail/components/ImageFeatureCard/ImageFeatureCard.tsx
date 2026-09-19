@@ -91,44 +91,42 @@ export default function ImageFeatureCard({
             const extension = extensions.find((availableExtension) => availableExtension.manifest.id === extensionId);
             const extensionName = extension?.manifest.name ?? extensionId;
 
-            return (
-              <Box key={extensionId}>
-                {!hasSingleExtension && (
-                  <>
-                    {index > 0 && <Divider mb="sm"/>}
-                    <Flex align="center" gap="xs" mb="xs">
-                      <Tooltip label={extensionName} position="top" withArrow>
-                        <Box style={{ display: "inline-flex" }}>
-                          <ExtensionIcon idOrExtension={extensionId} size="sm"/>
-                        </Box>
-                      </Tooltip>
-                      <Text size="xs" fw={500} c="dimmed">
-                        {extensionName}
-                      </Text>
-                    </Flex>
-                  </>
+            return (<Box key={`${extensionId}-${index}`}>
+              {!hasSingleExtension && (
+                <>
+                  {index > 0 && <Divider mb="sm"/>}
+                  <Flex align="center" gap="xs" mb="xs">
+                    <Tooltip label={extensionName} position="top" withArrow>
+                      <Box style={{ display: "inline-flex" }}>
+                        <ExtensionIcon idOrExtension={extensionId} size="sm"/>
+                      </Box>
+                    </Tooltip>
+                    <Text size="xs" fw={500} c="dimmed">
+                      {extensionName}
+                    </Text>
+                  </Flex>
+                </>
+              )}
+              <Flex direction="column" gap="xs">
+                {extensionFeatures.map(
+                  (feature, featureIndex) =>
+                  {
+                    return (
+                      <Box key={featureIndex}>
+                        {feature.name && (
+                          <Text size="xs" fw={600} c="dimmed" mb={4}>
+                            {feature.name}
+                          </Text>
+                        )}
+                        <UiContainerView
+                          uiContainer={feature.uiContainer}
+                        />
+                      </Box>
+                    );
+                  }
                 )}
-                <Flex direction="column" gap="xs">
-                  {extensionFeatures.map(
-                    (feature, featureIndex) =>
-                    {
-                      return (
-                        <Box key={featureIndex}>
-                          {feature.name && (
-                            <Text size="xs" fw={600} c="dimmed" mb={4}>
-                              {feature.name}
-                            </Text>
-                          )}
-                          <UiContainerView
-                            uiContainer={feature.uiContainer}
-                          />
-                        </Box>
-                      );
-                    }
-                  )}
-                </Flex>
-              </Box>
-            );
+              </Flex>
+            </Box>);
           }
         )}
       </Stack>

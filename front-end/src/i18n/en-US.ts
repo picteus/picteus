@@ -47,6 +47,7 @@ export default {
     modifiedOn: "Modified on",
     importedOn: "Imported on",
     updatedOn: "Updated on",
+    inceptionDate: "Inception date",
     dimensions: "Dimensions",
     repository: "Repository",
     repositories: "Repositories",
@@ -315,7 +316,7 @@ export default {
     tags: "Tags",
     recipe: "Recipe",
     features: "Features",
-    vectorialFeatures: "Technical",
+    vectorialFeatures: "Raw",
     newFeatures: "Features",
     type:
       {
