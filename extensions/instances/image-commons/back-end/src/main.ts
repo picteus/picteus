@@ -6,6 +6,7 @@ import {
   type ApplicationMetadataItem,
   type CommandParameters,
   Communicator,
+  createUiContainer,
   GenerationRecipeFromJSON,
   type ImageFeature,
   ImageFeatureFormat,
@@ -16,6 +17,7 @@ import {
   InstructionReturnedErrorCause,
   IntentDialogType,
   type IntentImage,
+  numberStars,
   PicteusExtension
 } from "@picteus/extension-sdk";
 
@@ -117,8 +119,8 @@ class ImageCommonsExtension extends PicteusExtension
       });
       const ratingName = "Rating";
       const commentName = "Comment";
-      const previousRating = existingFeatures.find(feature => feature.name === ratingName && feature.format === ImageFeatureFormat.Integer && feature.type === ImageFeatureType.Annotation);
-      const previousComment = existingFeatures.find(feature => feature.name === commentName && feature.format === ImageFeatureFormat.String && feature.type === ImageFeatureType.Comment);
+      const previousRating = existingFeatures.find((feature) => feature.name === ratingName && feature.format === ImageFeatureFormat.Integer && feature.type === ImageFeatureType.Annotation);
+      const previousComment = existingFeatures.find((feature) => feature.name === commentName && feature.format === ImageFeatureFormat.String && feature.type === ImageFeatureType.Comment);
       let result: Record<string, any>;
       try
       {
@@ -169,7 +171,7 @@ class ImageCommonsExtension extends PicteusExtension
           throw error;
         }
       }
-      const features: ImageFeature[] = existingFeatures.filter(feature => feature.name !== ratingName && feature.name !== commentName);
+      const features: ImageFeature[] = existingFeatures.filter((feature) => feature.name !== ratingName && feature.name !== commentName);
       const rating: number = result.rating;
       const comment: string | undefined = result.comment;
       features.push(
@@ -178,7 +180,16 @@ class ImageCommonsExtension extends PicteusExtension
           name: ratingName,
           value: rating,
           format: ImageFeatureFormat.Integer
-        });
+        }
+      );
+      features.push(
+        {
+          type: ImageFeatureType.Annotation,
+          name: ratingName,
+          value: createUiContainer({ elements: [ numberStars(rating) ] }).toString(),
+          format: ImageFeatureFormat.Ui
+        }
+      );
       if (comment !== undefined && comment.length > 0)
       {
         features.push(
@@ -187,7 +198,8 @@ class ImageCommonsExtension extends PicteusExtension
             name: commentName,
             value: comment,
             format: ImageFeatureFormat.String
-          });
+          }
+        );
       }
       await this.getImageApi().imageSetFeatures({
         id: imageId,

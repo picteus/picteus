@@ -31,8 +31,8 @@ Enables users to assign a star rating and an optional textual comment to each se
 2. The form provides the following input fields:
    - `Rating`: an integer rating from 1 to 5 presented as radio buttons. Defaults to the image's existing rating, or 3 if unrated.
    - `Comment`: a multi-line text area of up to 1,024 characters for descriptive notes or reviews. Defaults to any existing comment previously saved.
-3. Ratings are saved as an image feature of type `Annotation` with the name `"Rating"`.
-4. Non-empty comments are saved as an image feature of type `Comment` with the name `"Comment"`.
+3. Ratings are saved as image features of type `Annotation` with the name `"Rating"`, both as an integer and as a visual star UI feature ;
+4. Non-empty comments are saved as an image feature of type `Comment` with the name `"Comment"` ;
 5. Cancelling the form for an image terminates processing without modifying remaining unsubmitted images.
 
 ## tag
