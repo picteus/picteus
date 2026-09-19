@@ -43,8 +43,6 @@ export enum ManifestEvent
 {
   ProcessStarted = "process.started",
   ProcessRunCommand = "process.runCommand",
-  ExtensionVersions = "extension.versions",
-  ExtensionReady = "extension.ready",
   ExtensionSettings = "extension.settings",
   ImageCreated = "image.created",
   ImageUpdated = "image.updated",

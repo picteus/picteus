@@ -76,7 +76,7 @@ instructions_event: str = "instructions"
 
 
 class Helper:
-    GENERATION_RECIPE_SCHEMA_VERSION: int = 1
+    GENERATION_RECIPE_SCHEMA_VERSION: int = 2
 
 
 class _ExtensionParameters:

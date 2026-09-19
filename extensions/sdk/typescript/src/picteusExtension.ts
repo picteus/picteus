@@ -79,7 +79,7 @@ const extensionSettingsChannel = "extension.settings";
 export class Helper
 {
 
-  static readonly GENERATION_RECIPE_SCHEMA_VERSION = 1;
+  static readonly GENERATION_RECIPE_SCHEMA_VERSION = 2;
 
 }
 

@@ -446,15 +446,7 @@ export class NotificationsGateway
       }
     }
     {
-      // We add the "extension.versions", ""extension.ready" and "extension.settings" events because they are implicitly always supported
-      if (withVersions === true && extensionManifestEvents.indexOf(ManifestEvent.ExtensionVersions) === -1)
-      {
-        extensionManifestEvents.push(ManifestEvent.ExtensionVersions);
-      }
-      if (withReady === true && extensionManifestEvents.indexOf(ManifestEvent.ExtensionReady) === -1)
-      {
-        extensionManifestEvents.push(ManifestEvent.ExtensionReady);
-      }
+      // We add the "extension.settings" event because it is implicitly always supported
       if ((withVersions === false && withReady === false) && extensionManifestEvents.indexOf(ManifestEvent.ExtensionSettings) === -1)
       {
         extensionManifestEvents.push(ManifestEvent.ExtensionSettings);
@@ -492,10 +484,10 @@ export class NotificationsGateway
     {
       return fromProcessEventActionToManifestEvent(action);
     });
-    const extensionEvents = computeEvents<ExtensionEventAction>(Object.values(ExtensionEventAction), EventEntity.Extension, (action: ExtensionEventAction) =>
+    const extensionEvents = [ ...computeEvents<ExtensionEventAction>(Object.values(ExtensionEventAction), EventEntity.Extension, (action: ExtensionEventAction) =>
     {
       return fromExtensionEventActionToManifestEvent(action);
-    });
+    }), "extension.versions", "extension.ready" ];
     const imageEvents = computeEvents<ImageEventAction>(Object.values(ImageEventAction), EventEntity.Image, (action: ImageEventAction) =>
     {
       return fromImageEventActionToManifestEvent(action);

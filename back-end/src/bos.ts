@@ -61,19 +61,16 @@ export function fromExtensionEventActionToManifestEvent(action: ExtensionEventAc
     case ExtensionEventAction.State:
     case ExtensionEventAction.Process:
     case ExtensionEventAction.Connection:
-      return null;
     case ExtensionEventAction.Versions:
-      return ManifestEvent.ExtensionVersions;
     case ExtensionEventAction.Ready:
-      return ManifestEvent.ExtensionReady;
-    case ExtensionEventAction.Settings:
-      return ManifestEvent.ExtensionSettings;
     case ExtensionEventAction.Error:
     case ExtensionEventAction.Log:
     case ExtensionEventAction.Notification:
     case ExtensionEventAction.Intent:
     case ExtensionEventAction.Acknowledgment:
       return null;
+    case ExtensionEventAction.Settings:
+      return ManifestEvent.ExtensionSettings;
   }
 }
 
