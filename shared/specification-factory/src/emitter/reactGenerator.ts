@@ -229,14 +229,14 @@ function generateCopyableWrapper(): string
 function generateRatioFormatterHelper(): string
 {
   return [
-    `export function formatRatio(value: number, maxDenominator: number = 100): string`,
+    `export function formatRatio(value: number, maxDenominator: number = 1000): string`,
     `{`,
     `  if (typeof value !== "number" || Number.isFinite(value) === false || value <= 0)`,
     `  {`,
     `    return String(value ?? "");`,
     `  }`,
     ``,
-    `  const tolerance = 1e-4;`,
+    `  const tolerance = 1e-5;`,
     `  let previousNumerator = 0;`,
     `  let previousDenominator = 1;`,
     `  let currentNumerator = 1;`,

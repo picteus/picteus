@@ -324,7 +324,10 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.equal(containerClass.elements.length, 1);
     assert.ok(isEnvelop(containerClass));
 
-    const cardClass = new UiCardClass("Card Title", [ shortClass ], { description: "Card Subtitle", actions: [ buttonClass ] });
+    const cardClass = new UiCardClass("Card Title", [ shortClass ], {
+      description: "Card Subtitle",
+      actions: [ buttonClass ]
+    });
     assert.ok(cardClass instanceof ViewKitNode);
     assert.ok(cardClass instanceof UiCardClass);
     assert.equal(cardClass.title, "Card Title");
@@ -487,6 +490,633 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     ]);
     assert.equal(standaloneFlow.type, "flowing");
     assert.ok(isFlowingElement(standaloneFlow));
+  });
+
+  it("should be parseable", () =>
+  {
+    const json = {
+      "elements": [ {
+        "type": "table",
+        "rows": [ {
+          "cells": [ {
+            "type": "string-short",
+            "value": "Prompt",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "string-long",
+            "value": "red substance raising to mid air forming three texts : \"LoRa\", \"ControlNet\", \"Negative Prompting\".\n\nHighly detailed with natural textures and intricate patterns, showcasing realistic lighting and deep shadows to give the scene a sense of depth. The focus should be clearly defined, making every object appear sharply focused with pin-sharp details.",
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        }, {
+          "cells": [ {
+            "type": "string-short",
+            "value": "Negative Prompt",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "string-long",
+            "value": "Horror,2d ,anime ,drawing",
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        }, {
+          "cells": [ {
+            "type": "string-short",
+            "value": "Model",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "string-short",
+            "value": "flux1-dev.sft",
+            "representation": "plain",
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        }, {
+          "cells": [ {
+            "type": "string-short",
+            "value": "Sampler",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "string-short",
+            "value": "euler (dpmpp_2m)",
+            "representation": "plain",
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        }, {
+          "cells": [ {
+            "type": "string-short",
+            "value": "Steps",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "number-unbounded",
+            "value": 1.234,
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        }, {
+          "cells": [ {
+            "type": "string-short",
+            "value": "CFG Scale",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "number-unbounded",
+            "value": 20,
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        }, {
+          "cells": [ {
+            "type": "string-short",
+            "value": "Seed",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "identifier",
+            "value": "euler",
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        }, {
+          "cells": [ {
+            "type": "string-short",
+            "value": "Dimensions",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "string-short",
+            "value": "NaN × NaN",
+            "representation": "plain",
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        }, {
+          "cells": [ {
+            "type": "string-short",
+            "value": "VAE",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "string-short",
+            "value": "ae.sft",
+            "representation": "plain",
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        }, {
+          "cells": [ {
+            "type": "string-short",
+            "value": "CLIP",
+            "representation": "plain",
+            "modifiers": {
+              "weight": "heavy",
+              "intensity": "low"
+            }
+          }, {
+            "type": "string-short",
+            "value": "t5xxl_fp16.safetensors, clip_l.safetensors",
+            "representation": "plain",
+            "modifiers": {
+              "copyable": true
+            }
+          } ]
+        } ],
+        "hasHeader": true,
+        "isStriped": false,
+        "withColumnSeparators": false,
+        "withRowSeparators": true
+      }, {
+        "type": "collapsible-group",
+        "title": "LoRAs",
+        "elements": [ {
+          "type": "table",
+          "rows": [ {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Flux\\flux_realism_lora.safetensors",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "copyable": true
+              }
+            }, {
+              "type": "string-short",
+              "value": "Model: 0.9500000000000001",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          } ],
+          "hasHeader": true,
+          "isStriped": false,
+          "withColumnSeparators": false,
+          "withRowSeparators": true
+        } ],
+        "summary": "1 LoRA",
+        "defaultExpanded": false
+      }, {
+        "type": "collapsible-group",
+        "title": "ControlNet & Adapters",
+        "elements": [ {
+          "type": "table",
+          "rows": [ {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Flux\\controlnet.safetensors",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "copyable": true
+              }
+            }, {
+              "type": "string-short",
+              "value": "Active",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          } ],
+          "hasHeader": true,
+          "isStriped": false,
+          "withColumnSeparators": false,
+          "withRowSeparators": true
+        } ],
+        "summary": "1 adapter",
+        "defaultExpanded": false
+      }, {
+        "type": "collapsible-group",
+        "title": "Upscaling & Refinement",
+        "elements": [ {
+          "type": "table",
+          "rows": [ {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Upscale Model",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "string-short",
+              "value": "4xFFHQDAT.pth",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          } ],
+          "hasHeader": true,
+          "isStriped": false,
+          "withColumnSeparators": false,
+          "withRowSeparators": true
+        } ],
+        "summary": "1 property",
+        "defaultExpanded": false
+      }, {
+        "type": "collapsible-group",
+        "title": "Input Images",
+        "elements": [ {
+          "type": "table",
+          "rows": [ {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Image 1",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "string-short",
+              "value": "example.png",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Image 2",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "string-short",
+              "value": "clipspace/clipspace-mask-9414958.699999988.png [input]",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Image 3",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "string-short",
+              "value": "pasted/image (81).png",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Image 4",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "string-short",
+              "value": "pasted/image (82).png",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          } ],
+          "hasHeader": true,
+          "isStriped": false,
+          "withColumnSeparators": false,
+          "withRowSeparators": true
+        } ],
+        "summary": "4 images",
+        "defaultExpanded": false
+      }, {
+        "type": "collapsible-group",
+        "title": "Workflow Topology",
+        "elements": [ {
+          "type": "table",
+          "rows": [ {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Total Nodes",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 99
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Active Nodes",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 64
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Bypassed Nodes",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 35
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Workflow Groups",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "string-short",
+              "value": "Model Loading : Unet | CLIP | | LoRA | ControlNet, Official implementation with a little tweak, Negative Prompting version from ComfyUI blog post (My interpretation), img to img or size picking, ControlNet Preprocessing, VisionLLM for detail caption | LLaVa 13B w/ Ollama | Florence2, Outputs, Simple inpaint, Upscale(Hi-resFix) with Tiled Diffusion",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "Custom Packs",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy",
+                "intensity": "low"
+              }
+            }, {
+              "type": "string-short",
+              "value": "rgthree-comfy, ComfyUI-Impact-Pack",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          } ],
+          "hasHeader": true,
+          "isStriped": false,
+          "withColumnSeparators": false,
+          "withRowSeparators": true
+        }, {
+          "type": "table",
+          "rows": [ {
+            "cells": [ {
+              "type": "string-short",
+              "value": "other",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 53
+            }, {
+              "type": "string-short",
+              "value": "VAELoader, VAEEncode, Anything Everywhere?, VAEDecode, Seed (rgthree), PlaySound|pysssss, FluxGuidance, PixelKSampleHookCombine, CfgScheduleHookProvider, StepsScheduleHookProvider, DenoiseScheduleHookProvider, ImpactSwitch, ShowText|pysssss, Anything Everywhere3, RandomNoise //Inspire, BasicScheduler, BasicGuider, String Literal, CannyEdgePreprocessor, Anything Everywhere, DynamicThresholdingFull, Get resolution [Crystools], OllamaVision, Florence2Run, PixelResolutionCalculator",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "image",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 16
+            }, {
+              "type": "string-short",
+              "value": "EmptyImage, PreviewImage, Image Comparer (rgthree), LoadImage, ImageResize+, ImageCrop+, ImageScaleToTotalPixels",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "conditioning",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 11
+            }, {
+              "type": "string-short",
+              "value": "DualCLIPLoader, CLIPTextEncode, InpaintModelConditioning",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "model",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 5
+            }, {
+              "type": "string-short",
+              "value": "Florence2ModelLoader, UNETLoader, ModelSamplingFlux, TiledDiffusion",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "sampling",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 4
+            }, {
+              "type": "string-short",
+              "value": "SamplerCustomAdvanced, KSamplerSelect, KSamplerAdvanced, KSamplerAdvanced //Inspire",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "controlnet",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 3
+            }, {
+              "type": "string-short",
+              "value": "ControlNetApplyAdvanced, ControlNetLoader, ControlNetApply",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "upscaling",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 3
+            }, {
+              "type": "string-short",
+              "value": "IterativeImageUpscale, PixelKSampleUpscalerProvider, UpscaleModelLoader",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "latent",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 3
+            }, {
+              "type": "string-short",
+              "value": "EmptyLatentImage, LatentSizeToPixelSize, SDXLEmptyLatentSizePicker+",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          }, {
+            "cells": [ {
+              "type": "string-short",
+              "value": "lora",
+              "representation": "plain",
+              "modifiers": {
+                "weight": "heavy"
+              }
+            }, {
+              "type": "number-unbounded",
+              "value": 1
+            }, {
+              "type": "string-short",
+              "value": "LoraLoaderModelOnly",
+              "representation": "plain",
+              "modifiers": {
+                "copyable": true
+              }
+            } ]
+          } ],
+          "hasHeader": true,
+          "isStriped": false,
+          "withColumnSeparators": false,
+          "withRowSeparators": true,
+          "columns": [ {
+            "header": "Category",
+            "width": "25%"
+          }, {
+            "header": "Count",
+            "width": "15%"
+          }, {
+            "header": "Node Types",
+            "width": "60%"
+          } ]
+        } ],
+        "summary": "99 nodes (64 active)",
+        "defaultExpanded": false
+      } ],
+      "schemaVersion": "1.0"
+    };
+    const uiContainer = UiContainer.parse(json, true);
+    assert.equal(uiContainer.elements.length, 6);
   });
 
 });
