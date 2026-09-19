@@ -38,7 +38,8 @@
     "chrome-extension:prerequisites": "git submodule add --force https://github.com/picteus/picteus-chrome-extensions.git picteus-chrome-extensions",
     "chrome-extension:build": "npm --prefix picteus-chrome-extensions install && cross-var npm --prefix picteus-chrome-extensions run midjourney:package -- $npm_config_local_prefix/dist",
     "self:build": "tsc",
-    "build": "npm run chrome-extension:prerequisites && npm run chrome-extension:build && npm run self:build"
+    "build": "npm run chrome-extension:prerequisites && npm run chrome-extension:build && npm run self:build",
+    "test": "node --experimental-vm-modules --disable-warning=ExperimentalWarning node_modules/jest/bin/jest.js dist"
   },
   "devDependencies": {
     "cross-var": "1.1.0",

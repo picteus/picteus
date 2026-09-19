@@ -5,16 +5,32 @@ import { XMLParser } from "fast-xml-parser";
 import AdmZip from "adm-zip";
 
 import {
+  BadgeVariant,
+  booleanBadge,
+  collapsibleGroup,
   Communicator,
+  createUiContainer,
   type GenerationRecipe,
   Helper,
+  identifier,
   ImageFeatureFormat,
   ImageFeatureType,
   type ImageMetadata,
+  numberUnbounded,
   PicteusExtension,
   PromptKind,
   type Repository,
-  type SettingsValue
+  type SettingsValue,
+  stringLong,
+  stringShort,
+  stringUrl,
+  table,
+  tableRow,
+  type TableRow,
+  TextIntensity,
+  TextWeight,
+  type UiContainerClass,
+  type UiElement
 } from "@picteus/extension-sdk";
 
 
@@ -28,8 +44,52 @@ const MidjourneyConstants =
     XMP: "XML:com.adobe.xmp"
   } as const;
 
+
 export class MidjourneyInstructions
 {
+
+  static parseAspectRatio(value: string): number
+  {
+    // We parse the aspect ratio from a string representation (e.g., "2:3", "16:9", or "1") into a floating-point number.
+    const trimmedValue = value.trim();
+    let separator: string | undefined;
+    if (trimmedValue.includes(":") === true)
+    {
+      separator = ":";
+    }
+    else if (trimmedValue.includes("/") === true)
+    {
+      separator = "/";
+    }
+    else if (trimmedValue.toLowerCase().includes("x") === true)
+    {
+      separator = trimmedValue.includes("x") === true ? "x" : "X";
+    }
+
+    if (separator !== undefined)
+    {
+      const parts = trimmedValue.split(separator);
+      if (parts.length === 2)
+      {
+        const width = parseFloat(parts[0].trim());
+        const height = parseFloat(parts[1].trim());
+        if (Number.isNaN(width) === false && Number.isNaN(height) === false && width > 0 && height > 0)
+        {
+          return width / height;
+        }
+      }
+    }
+    else
+    {
+      const numericValue = parseFloat(trimmedValue);
+      if (Number.isNaN(numericValue) === false && numericValue > 0)
+      {
+        return numericValue;
+      }
+    }
+    return Number.NaN;
+  }
+
 
   static parseMetadata(metadata: Record<string, any>): MidjourneyInstructions | undefined
   {
@@ -44,8 +104,8 @@ export class MidjourneyInstructions
       const parser = new XMLParser({ ignoreAttributes: false });
       const document = parser.parse(xmp);
       const xmpDescription = document["x:xmpmeta"]?.["rdf:RDF"]?.["rdf:Description"];
-      guid = xmpDescription?.["@_iptcExt:DigImageGUID"] || guid;
-      source = xmpDescription?.["@_iptcExt:DigitalSourceType"] || source;
+      guid = guid ?? xmpDescription?.["@_iptcExt:DigImageGUID"];
+      source = source ?? xmpDescription?.["@_iptcExt:DigitalSourceType"];
     }
     if (creationTime !== undefined && description !== undefined && guid !== undefined && source !== undefined)
     {
@@ -56,7 +116,7 @@ export class MidjourneyInstructions
 
   static parse(creationTime: string, author: string, description: string, guid: string, source: string): MidjourneyInstructions
   {
-    console.debug(`Parsing the Midjourney description '${description}'`);
+    // console.debug(`Parsing the Midjourney description '${description}'`);
     const instructions = description.substring(0, description.indexOf(" Job ID:"));
     const space = " ";
     const tokens = instructions.split(space);
@@ -70,13 +130,14 @@ export class MidjourneyInstructions
     let stylize: number | undefined;
     let styleWeight: number | undefined;
     let chaos: number | undefined;
-    let aspectRatio: string | undefined;
+    let aspectRatio: number | undefined;
     let tile: boolean | undefined;
     let raw: boolean | undefined;
     let seed: number | undefined;
     const promptTokens: string[] = [];
     const midJourney = "Midjourney";
     const optionPrefix = "--";
+
     for (let index = 0; index < tokens.length; index++)
     {
       const instruction = tokens[index];
@@ -140,11 +201,17 @@ export class MidjourneyInstructions
               break;
             case "aspect":
             case "ar":
-              aspectRatio = value;
+            {
+              const parsedAspectRatio = MidjourneyInstructions.parseAspectRatio(value);
+              if (Number.isNaN(parsedAspectRatio) === false)
+              {
+                aspectRatio = parsedAspectRatio;
+              }
               break;
+            }
             case "seed":
             case "sref":
-              seed = Number.isInteger(value) === false ? -1 : parseInt(value);
+              seed = Number.isNaN(parseInt(value)) === true ? -1 : parseInt(value);
               break;
           }
         }
@@ -155,7 +222,21 @@ export class MidjourneyInstructions
       }
     }
     const prompt = promptTokens.join(space);
-    return new MidjourneyInstructions(Date.parse(creationTime), guid, author, source, instructions, prompt, modelVersion, dref, profile, quality, repeat, weird, imageWeight, stylize, styleWeight, chaos, tile, aspectRatio, raw, seed);
+    let url: string;
+    if (guid !== undefined)
+    {
+      const tokens = guid.split("_");
+      const urlPrefix = `https://www.midjourney.com/jobs/`;
+      if (tokens.length >= 2)
+      {
+        url = `${urlPrefix}${tokens[0]}?index=${tokens[1]}`;
+      }
+      else
+      {
+        url = `${urlPrefix}${tokens[0]}`;
+      }
+    }
+    return new MidjourneyInstructions(Date.parse(creationTime), guid, author, source, instructions, prompt, url, modelVersion, dref, profile, quality, repeat, weird, imageWeight, stylize, styleWeight, chaos, tile, aspectRatio, raw, seed);
   }
 
   readonly creationDate: number;
@@ -169,6 +250,8 @@ export class MidjourneyInstructions
   readonly command: string;
 
   readonly prompt: string;
+
+  readonly url?: string;
 
   readonly modelVersion?: string;
 
@@ -190,7 +273,7 @@ export class MidjourneyInstructions
 
   readonly chaos?: number;
 
-  readonly aspectRatio?: string;
+  readonly aspectRatio?: number;
 
   readonly tile?: boolean;
 
@@ -198,7 +281,7 @@ export class MidjourneyInstructions
 
   readonly seed?: number;
 
-  constructor(creationDate: number, guid: string, author: string, source: string, command: string, prompt: string, modelVersion?: string, dref?: string, profile?: string, quality?: number, repeat?: number, weird?: number, imageWeight?: number, stylize?: number, styleWeight?: number, chaos?: number, tile?: boolean, aspectRatio?: string, raw?: boolean, seed?: number)
+  constructor(creationDate: number, guid: string, author: string, source: string, command: string, prompt: string, url?: string, modelVersion?: string, dref?: string, profile?: string, quality?: number, repeat?: number, weird?: number, imageWeight?: number, stylize?: number, styleWeight?: number, chaos?: number, tile?: boolean, aspectRatio?: number, raw?: boolean, seed?: number)
   {
     this.creationDate = creationDate;
     this.guid = guid;
@@ -206,6 +289,7 @@ export class MidjourneyInstructions
     this.source = source;
     this.command = command;
     this.prompt = prompt;
+    this.url = url;
     this.modelVersion = modelVersion;
     this.dref = dref;
     this.profile = profile;
@@ -222,67 +306,131 @@ export class MidjourneyInstructions
     this.seed = seed;
   }
 
-  attributes(): Map<string, any>
+  toUiContainer(): UiContainerClass
   {
-    const map = new Map<string, any>();
-    map.set("Creation Date", this.creationDate);
-    map.set("GUID", this.guid);
-    map.set("Author", this.author);
-    map.set("Command", this.command);
-    map.set("Prompt", this.prompt);
-    if (this.modelVersion !== undefined)
+    const primaryRows: TableRow[] = [];
+    const secondaryRows: TableRow[] = [];
+    const firstColumnOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
+    const copiableOptions = { modifiers: { copyable: true } };
+
+    if (this.prompt !== undefined && this.prompt.length > 0)
     {
-      map.set("Model Version", this.modelVersion);
+      primaryRows.push(tableRow([ stringShort("Prompt", firstColumnOptions), stringLong(this.prompt, copiableOptions) ]));
     }
-    if (this.profile !== undefined)
+
+    // The command is shifted to the second section
+    if (this.command !== undefined && this.command.length > 0)
     {
-      map.set("Profile", this.profile);
+      secondaryRows.push(tableRow([ stringShort("Command", firstColumnOptions), stringLong(this.command, copiableOptions) ]));
     }
-    if (this.quality !== undefined)
-    {
-      map.set("Quality", this.quality);
-    }
-    if (this.repeat !== undefined)
-    {
-      map.set("Repeat", this.repeat);
-    }
-    if (this.weird !== undefined)
-    {
-      map.set("Weird", this.weird);
-    }
-    if (this.imageWeight !== undefined)
-    {
-      map.set("Image Weight", this.imageWeight);
-    }
+
     if (this.stylize !== undefined)
     {
-      map.set("Stylize", this.stylize);
+      secondaryRows.push(tableRow([ stringShort("Stylize", firstColumnOptions), numberUnbounded(this.stylize, copiableOptions) ]));
     }
-    if (this.styleWeight !== undefined)
-    {
-      map.set("Style Weight", this.styleWeight);
-    }
+
     if (this.chaos !== undefined)
     {
-      map.set("Chaos", this.chaos);
+      secondaryRows.push(tableRow([ stringShort("Chaos", firstColumnOptions), numberUnbounded(this.chaos, copiableOptions) ]));
     }
-    if (this.aspectRatio !== undefined)
+
+    if (this.weird !== undefined)
     {
-      map.set("Aspect Ratio", this.aspectRatio);
+      secondaryRows.push(tableRow([ stringShort("Weird", firstColumnOptions), numberUnbounded(this.weird, copiableOptions) ]));
     }
-    if (this.tile !== undefined)
+
+    if (this.quality !== undefined)
     {
-      map.set("Tile", this.tile);
+      secondaryRows.push(tableRow([ stringShort("Quality", firstColumnOptions), numberUnbounded(this.quality, copiableOptions) ]));
     }
+
     if (this.raw !== undefined)
     {
-      map.set("Raw", this.raw);
+      secondaryRows.push(tableRow([ stringShort("Raw", firstColumnOptions), booleanBadge(this.raw, {
+        trueLabel: "Raw",
+        falseLabel: "Standard",
+        variant: BadgeVariant.success
+      }) ]));
     }
-    if (this.seed !== undefined)
+
+    if (this.tile !== undefined)
     {
-      map.set("Seed", this.seed);
+      secondaryRows.push(tableRow([ stringShort("Tile", firstColumnOptions), booleanBadge(this.tile, {
+        trueLabel: "Tiled",
+        falseLabel: "No",
+        variant: BadgeVariant.success
+      }) ]));
     }
-    return map;
+
+    if (this.seed !== undefined && this.seed !== -1)
+    {
+      secondaryRows.push(tableRow([ stringShort("Seed", firstColumnOptions), identifier(String(this.seed), copiableOptions) ]));
+    }
+
+    if (this.profile !== undefined)
+    {
+      secondaryRows.push(tableRow([ stringShort("Profile", firstColumnOptions), stringShort(this.profile, copiableOptions) ]));
+    }
+
+    if (this.imageWeight !== undefined)
+    {
+      secondaryRows.push(tableRow([ stringShort("Image Weight", firstColumnOptions), numberUnbounded(this.imageWeight, copiableOptions) ]));
+    }
+
+    if (this.styleWeight !== undefined)
+    {
+      secondaryRows.push(tableRow([ stringShort("Style Weight", firstColumnOptions), numberUnbounded(this.styleWeight, copiableOptions) ]));
+    }
+
+    if (this.dref !== undefined)
+    {
+      secondaryRows.push(tableRow([ stringShort("Dref", firstColumnOptions), stringShort(this.dref, copiableOptions) ]));
+    }
+
+    if (this.repeat !== undefined)
+    {
+      secondaryRows.push(tableRow([ stringShort("Repeat", firstColumnOptions), numberUnbounded(this.repeat, copiableOptions) ]));
+    }
+
+    if (this.source !== undefined)
+    {
+      const isUrl = this.source.startsWith("http://") === true || this.source.startsWith("https://") === true;
+      secondaryRows.push(tableRow([ stringShort("Digital Source", firstColumnOptions), isUrl === true ? stringUrl(this.source) : stringShort(this.source) ]));
+    }
+
+    if (this.guid !== undefined && Math.random() > 1)
+    {
+      secondaryRows.push(tableRow([ stringShort("Job ID", firstColumnOptions), identifier(this.guid, copiableOptions) ]));
+    }
+
+    const elements: UiElement[] = [];
+    if (primaryRows.length > 0)
+    {
+      elements.push(table(
+        primaryRows,
+        {
+          withRowSeparators: true
+        }
+      ));
+    }
+    if (secondaryRows.length > 0)
+    {
+      elements.push(collapsibleGroup("Details",
+        [
+          table(secondaryRows,
+            {
+              withRowSeparators: true
+            }
+          )
+        ],
+        {
+          summary: `${secondaryRows.length} properties`,
+          defaultExpanded: false
+        }
+      ));
+    }
+
+    return createUiContainer({ elements });
   }
 
 }
@@ -352,11 +500,16 @@ class MidjourneyExtension extends PicteusExtension
       const recipe: GenerationRecipe =
         {
           schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
+          id: instructions.guid,
+          url: instructions.url,
           modelTags: instructions.modelVersion === undefined ? [] : [ `midjourney/${instructions.modelVersion}` ],
           software: "midjourney",
+          author: instructions.author,
+          inceptionDate: instructions.creationDate,
+          aspectRatio: instructions.aspectRatio,
           prompt: { kind: PromptKind.Instructions, value: instructions }
         };
-      await this.getImageApi().imageSetFeatures({
+      await this.getImageApi().imageEnsureFeatures({
         id: imageId,
         extensionId: this.extensionId,
         imageFeature: [
@@ -366,17 +519,9 @@ class MidjourneyExtension extends PicteusExtension
             value: JSON.stringify(recipe)
           },
           {
-            type: ImageFeatureType.Description,
-            format: ImageFeatureFormat.String,
-            value: instructions.prompt
-          },
-          {
-            type: ImageFeatureType.Other,
-            format: ImageFeatureFormat.Markdown,
-            value: Array.from(instructions.attributes().entries()).map(([ key, value ]) =>
-            {
-              return `**${key}:** ${value}`;
-            }).join("<br>")
+            type: ImageFeatureType.Recipe,
+            format: ImageFeatureFormat.Ui,
+            value: instructions.toUiContainer().toString()
           }
         ]
       });
@@ -454,8 +599,11 @@ class MidjourneyExtension extends PicteusExtension
 
 }
 
-new MidjourneyExtension().run().catch((error) =>
+if (process.env["NODE_ENV"] !== "test")
 {
-  console.error(error);
-  throw error;
-});
+  new MidjourneyExtension().run().catch((error) =>
+  {
+    console.error(error);
+    throw error;
+  });
+}
