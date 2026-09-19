@@ -197,8 +197,8 @@ function generateCopyableWrapper(): string
     `function ${COPYABLE_WRAPPER_NAME}({ value, children }: ${propsTypeName}): ReactNode`,
     `{`,
     `  return (`,
-    `    <Flex align="center" gap={4} component="span" style={{ display: "inline-flex", verticalAlign: "middle", ...CONSTRAINED_STYLE }}>`,
-    `      <Box component="span" style={{ ...CONSTRAINED_STYLE, ...TEXT_WRAP_STYLE }}>`,
+    `    <Flex align="center" gap={4} wrap="nowrap" component="span" style={{ display: "inline-flex", verticalAlign: "middle", ...CONSTRAINED_STYLE }}>`,
+    `      <Box component="span" style={{ ...CONSTRAINED_STYLE, ...TEXT_WRAP_STYLE, flex: "0 1 auto" }}>`,
     `        {children}`,
     `      </Box>`,
     `      <CopyButton value={value} timeout={1500}>`,
@@ -823,7 +823,7 @@ function generateStringCodeWidgetBody(): string
 {
   const nodeExpression = [
     `(`,
-    `    <Code block className={className} style={{ ...FULL_WIDTH_CONSTRAINED_STYLE, overflowWrap: "anywhere", ...style }}>`,
+    `    <Code block className={className} style={{ ...FULL_WIDTH_CONSTRAINED_STYLE, whiteSpace: "pre-wrap", ...BREAK_ALL_STYLE, ...style }}>`,
     `      {element.value}`,
     `    </Code>`,
     `  )`
@@ -842,11 +842,11 @@ function generateStringUrlWidgetBody(): string
     `      rel="noopener noreferrer"`,
     `      size="sm"`,
     `      className={className}`,
-    `      style={{ display: "inline-flex", alignItems: "center", gap: 4, ...CONSTRAINED_STYLE, ...style }}`,
+    `      style={{ ...CONSTRAINED_STYLE, ...BREAK_ALL_STYLE, ...style }}`,
     `      onClick={${ON_ANCHOR_CLICK_PROP_NAME} ? (event) => ${ON_ANCHOR_CLICK_PROP_NAME}(event, element.value) : undefined}`,
     `    >`,
     `      <span style={{ ...BREAK_ALL_STYLE, minWidth: 0 }}>{label}</span>`,
-    `      <IconExternalLink size={12} style={{ flexShrink: 0 }}/>`,
+    `      <IconExternalLink size={12} style={{ display: "inline-block", verticalAlign: "-1px", marginLeft: 4, flexShrink: 0 }}/>`,
     `    </Anchor>`,
     `  )`
   ].join("\n");
