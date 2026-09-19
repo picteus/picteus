@@ -1364,6 +1364,35 @@ describe("Image with module", () =>
       }
 
       {
+        // We ensure some features
+        const existingFeatures = await base.getImageController().getFeatures(image.id, extensionId);
+        const featureName = "color";
+        const newFeature = new ImageFeature(ImageFeatureType.PHYSICS, ImageFeatureFormat.STRING, featureName, "#123456");
+        await base.getImageController().ensureFeatures(Base.allPolicyContext, image.id, extensionId, [ newFeature ]);
+        expect(await base.getImageController().getFeatures(image.id, extensionId)).toEqual([ ...existingFeatures, newFeature ]);
+        // We change the value of an existing feature
+        const updatedFeature = new ImageFeature(ImageFeatureType.PHYSICS, ImageFeatureFormat.STRING, featureName, "#654321");
+        await base.getImageController().ensureFeatures(Base.allPolicyContext, image.id, extensionId, [ updatedFeature ]);
+        expect(await base.getImageController().getFeatures(image.id, extensionId)).toEqual([ ...existingFeatures, updatedFeature ]);
+        // We ensure a feature with a different type
+        const otherTypeFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.STRING, featureName, "#ABCDEF");
+        await base.getImageController().ensureFeatures(Base.allPolicyContext, image.id, extensionId, [ otherTypeFeature ]);
+        expect(await base.getImageController().getFeatures(image.id, extensionId)).toEqual([ ...existingFeatures, updatedFeature, otherTypeFeature ]);
+        // We ensure a feature with a different format
+        const otherFormatFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.BOOLEAN, featureName, true);
+        await base.getImageController().ensureFeatures(Base.allPolicyContext, image.id, extensionId, [ otherFormatFeature ]);
+        expect(await base.getImageController().getFeatures(image.id, extensionId)).toEqual([ ...existingFeatures, updatedFeature, otherTypeFeature, otherFormatFeature ]);
+        // We ensure a feature with a different name
+        const otherNameFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.BOOLEAN, "other", true);
+        await base.getImageController().ensureFeatures(Base.allPolicyContext, image.id, extensionId, [ otherNameFeature ]);
+        expect(await base.getImageController().getFeatures(image.id, extensionId)).toEqual([ ...existingFeatures, updatedFeature, otherTypeFeature, otherFormatFeature, otherNameFeature ]);
+        // We ensure a feature with no name
+        const noNameFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.BOOLEAN, undefined, true);
+        await base.getImageController().ensureFeatures(Base.allPolicyContext, image.id, extensionId, [ noNameFeature ]);
+        expect(await base.getImageController().getFeatures(image.id, extensionId)).toEqual([ ...existingFeatures, updatedFeature, otherTypeFeature, otherFormatFeature, otherNameFeature, noNameFeature ]);
+      }
+
+      {
         // We uninstall the second extension and make sure that its features have been deleted
         await base.getExtensionController().uninstall(secondExtensionId);
         const features = await base.getImageController().getAllFeatures(imageId);

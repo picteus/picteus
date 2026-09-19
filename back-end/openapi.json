@@ -2944,6 +2944,67 @@
         ]
       }
     },
+    "/image/{id}/ensureFeatures": {
+      "put": {
+        "description": "Ensures that the provided features are set on an image for a given extension, potentially overwriting existing ones with the same type, format and name.",
+        "operationId": "image_ensureFeatures",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The image identifier",
+            "schema": {
+              "description": "An image identifier",
+              "type": "string",
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+              "minLength": 36,
+              "maxLength": 36,
+              "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+            }
+          },
+          {
+            "name": "extensionId",
+            "required": true,
+            "in": "query",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The image features",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ImageFeature"
+                },
+                "minItems": 1,
+                "maxItems": 32
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No content"
+          }
+        },
+        "summary": "Ensures that features are set on an image",
+        "tags": [
+          "image"
+        ]
+      }
+    },
     "/image/{id}/getTags": {
       "get": {
         "description": "Returns the tags of an image given an extension.",
@@ -3164,7 +3225,7 @@
             "description": "No content"
           }
         },
-        "summary": "Ensures that the tags are set on an image",
+        "summary": "Ensures that tags are set on an image",
         "tags": [
           "image"
         ]

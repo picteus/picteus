@@ -455,14 +455,18 @@ export class ImageService
     return entities.map(this.extensionFeatureToDto.bind(this));
   }
 
-  async setFeatures(id: string, extensionId: string, features: ImageFeature[]): Promise<void>
+  async setFeatures(id: string, extensionId: string, features: ImageFeature[], isEnsure: boolean): Promise<void>
   {
-    logger.info(`Setting the features for the image with id '${id}', the extension with id '${extensionId}'`);
+    logger.info(`${isEnsure === true ? "Ensuring" : "Setting"} the features for the image with id '${id}', the extension with id '${extensionId}'`);
     await this.getPersistedImage(id, false, false, false);
     this.checkExtension(extensionId);
     if (features.length > ExtensionImageTag.PER_EXTENSION_FEATURES_MAXIMUM)
     {
       parametersChecker.throwBadParameter("features", undefined, `it exceeds the maximum amount of items, which is ${ExtensionImageTag.PER_EXTENSION_FEATURES_MAXIMUM}`);
+    }
+    if (isEnsure === true && features.length === 0)
+    {
+      parametersChecker.throwBadParameter("features", undefined, `it must contain at least one feature when the 'isEnsure' parameter is set to 'true'`);
     }
     for (let index = 0; index < features.length; index++)
     {
@@ -635,12 +639,12 @@ export class ImageService
       }
     }
 
+    // We remember the existing features, before the modification
+    const existingFeatures = await this.entitiesProvider.imageFeature.findMany({ where: { imageId: id, extensionId } });
+
     // We need to delete all attachments related to the extension
     const deleteAttachments = this.moduleRef.get(ImageAttachmentService).delete(id, extensionId, toKeepAttachmentIds);
 
-    const deleteFeatures = this.entitiesProvider.imageFeature.deleteMany({
-      where: { imageId: id, extensionId }
-    });
     const actualFeatures = features.length === 0 ? [
       {
         type: ImageFeatureType.OTHER,
@@ -663,6 +667,23 @@ export class ImageService
         };
       })
     });
+
+    let deleteFeatures: Prisma.PrismaPromise<Prisma.BatchPayload> | undefined;
+    if (isEnsure === true)
+    {
+      deleteFeatures = this.entitiesProvider.imageFeature.deleteMany({
+        where: {
+          imageId: id,
+          extensionId,
+          id: { in: existingFeatures.filter(feature => features.find(newFeature => feature.type == newFeature.type && feature.format == newFeature.format && feature.name == newFeature.name) !== undefined).map(feature => feature.id) }
+        }
+      });
+    }
+    else
+    {
+      deleteFeatures = this.entitiesProvider.imageFeature.deleteMany({ where: { imageId: id, extensionId } });
+    }
+
     await this.entitiesProvider.prisma.$transaction([ deleteAttachments, deleteFeatures, createFeatures ]);
     this.notifierService.emit(EventEntity.Image, ImageEventAction.FeaturesUpdated, undefined, { id });
   }
@@ -714,6 +735,8 @@ export class ImageService
     {
       parametersChecker.checkString(`tags[${index}]`, tags[index], FieldLengths.technical, StringNature.Tag);
     }
+
+    // We remember the existing tags, before the modification
     const existingEntities = await this.entitiesProvider.imageTag.findMany({
       where: { imageId: id, extensionId }
     });

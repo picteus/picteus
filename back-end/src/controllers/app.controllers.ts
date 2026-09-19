@@ -2092,8 +2092,48 @@ export class ImageController
     {
       throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
     }
-    return await this.imageService.setFeatures(id, extensionId, features);
+    return await this.imageService.setFeatures(id, extensionId, features, false);
   }
+
+  @Put(":id/ensureFeatures")
+  @ApiOperation(
+    {
+      summary: "Ensures that features are set on an image",
+      description: "Ensures that the provided features are set on an image for a given extension, potentially overwriting existing ones with the same type, format and name."
+    }
+  )
+  @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
+  @ApiQuery({
+    name: "extensionId",
+    description: "The extension identifier",
+    schema: extensionIdSchema,
+    required: true
+  })
+  @ApiBody({
+    description: "The image features",
+    schema:
+      {
+        type: "array",
+        items: { $ref: getSchemaPath(ImageFeature) },
+        minItems: 1,
+        maxItems: ExtensionImageTag.PER_EXTENSION_FEATURES_MAXIMUM
+      },
+    required: true
+  })
+  @HttpCode(NO_CONTENT)
+  @ApiResponse(noContentApiResponseOptions)
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageFeatureWrite ]))
+  async ensureFeatures(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body(new ParseArrayPipe({
+    items: ImageFeature, exceptionFactory
+  })) features: ImageFeature[]): Promise<void>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.imageService.setFeatures(id, extensionId, features, true);
+  }
+
 
   @Get(":id/getTags")
   @ApiOperation(
@@ -2185,7 +2225,7 @@ export class ImageController
   @Put(":id/ensureTags")
   @ApiOperation(
     {
-      summary: "Ensures that the tags are set on an image",
+      summary: "Ensures that tags are set on an image",
       description: "Ensures that some tags are set on an image for a given extension."
     }
   )
