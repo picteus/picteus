@@ -87,6 +87,24 @@
         "ui": {
           "widget": "directory"
         }
+      },
+      "extractLoRAsAndAdapters": {
+        "type": "boolean",
+        "title": "Extract LoRAs and adapters",
+        "description": "Extract LoRA models, ControlNets, and IP-Adapters into the UI card.",
+        "default": true
+      },
+      "extractUpscalingAndRefinement": {
+        "type": "boolean",
+        "title": "Extract upscaling and refinement",
+        "description": "Extract upscale models, refiners, and detailers into the UI card.",
+        "default": true
+      },
+      "extractWorkflowTopology": {
+        "type": "boolean",
+        "title": "Extract workflow topology",
+        "description": "Extract node category breakdown, workflow groups, and node statistics into the UI card.",
+        "default": true
       }
     },
     "required": [

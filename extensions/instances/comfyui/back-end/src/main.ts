@@ -18,6 +18,8 @@ import {
   type SettingsValue
 } from "@picteus/extension-sdk";
 
+import { ComfyUIAnalyzer, type ComfyUIAnalyzerSettings } from "./analyzers";
+
 
 enum ComfyUIConstants
 {
@@ -45,134 +47,6 @@ class ComfyUiPromptAndWorkflow
 
 }
 
-class ComfyUIAnalyzer
-{
-
-  constructor(private readonly workflow: Json)
-  {
-  }
-
-  computeTags(): string []
-  {
-    const tags: string [] = [];
-    if (this.workflow.nodes && Array.isArray(this.workflow.nodes))
-    {
-      for (const node of this.workflow.nodes)
-      {
-        const nodeType: string | undefined = node["type"];
-        if (nodeType)
-        {
-          const category = this.getCategoryForNodeType(nodeType);
-          if (category)
-          {
-            tags.push(category);
-          }
-        }
-      }
-    }
-    return tags;
-  }
-
-  computeFeatures(): ImageFeature[]
-  {
-    const imageFeatures: Array<ImageFeature> = [];
-    if (this.workflow.nodes && Array.isArray(this.workflow.nodes))
-    {
-      const nodeOperations: Record<string, { count: number, types: string[] }> = {};
-      for (const node of this.workflow.nodes)
-      {
-        const nodeType: string = node["type"];
-        if (nodeType)
-        {
-          const category = this.getCategoryForNodeType(nodeType) || "other";
-          if (!nodeOperations[category])
-          {
-            nodeOperations[category] = { count: 0, types: [] };
-          }
-          nodeOperations[category].count++;
-          if (!nodeOperations[category].types.includes(nodeType))
-          {
-            nodeOperations[category].types.push(nodeType);
-          }
-        }
-      }
-
-      // Add JSON feature
-      imageFeatures.push({
-        type: ImageFeatureType.Metadata,
-        format: ImageFeatureFormat.Json,
-        value: JSON.stringify({ nodeOperations }, null, 2)
-      });
-
-      // Add Markdown feature
-      let markdownContent = "### ComfyUI Node Operations\n\n| Category | Count | Node Types |\n| :--- | :--- | :--- |\n";
-      for (const [ category, data ] of Object.entries(nodeOperations))
-      {
-        markdownContent += `| **${category}** | ${data.count} | ${data.types.join(", ")} |\n`;
-      }
-
-      imageFeatures.push({
-        type: ImageFeatureType.Description,
-        format: ImageFeatureFormat.Markdown,
-        value: markdownContent
-      });
-    }
-    return imageFeatures;
-  }
-
-  private getCategoryForNodeType(nodeType: string): string
-  {
-    const lowerType = nodeType.toLowerCase();
-    if (lowerType.includes("lora"))
-    {
-      return "lora";
-    }
-    if (lowerType.includes("controlnet"))
-    {
-      return "controlnet";
-    }
-    if (lowerType.includes("checkpoint") || lowerType.includes("model"))
-    {
-      return "model";
-    }
-    if (lowerType.includes("sampler"))
-    {
-      return "sampling";
-    }
-    if (lowerType.includes("clip") || lowerType.includes("conditioning"))
-    {
-      return "conditioning";
-    }
-    if (lowerType.includes("latent"))
-    {
-      return "latent";
-    }
-    if (lowerType.includes("image"))
-    {
-      return "image";
-    }
-    if (lowerType.includes("mask"))
-    {
-      return "mask";
-    }
-    if (lowerType.includes("face") || lowerType.includes("roop") || lowerType.includes("reactor"))
-    {
-      return "face";
-    }
-    if (lowerType.includes("upscale"))
-    {
-      return "upscaling";
-    }
-    if (lowerType.includes("math") || lowerType.includes("primitive"))
-    {
-      return "utils";
-    }
-    return "other";
-  }
-
-
-}
-
 class ComfyUiExtension extends PicteusExtension
 {
 
@@ -188,9 +62,7 @@ class ComfyUiExtension extends PicteusExtension
 
   private extensionCurrentlyInstalled = false;
 
-  private readonly computeAdditionTags = Math.random() > 1;
-
-  private readonly computeAdditionFeatures = Math.random() > 1;
+  private analyzerSettings: ComfyUIAnalyzerSettings = {};
 
   protected async onReady(communicator?: Communicator): Promise<void>
   {
@@ -248,9 +120,10 @@ class ComfyUiExtension extends PicteusExtension
     if (promptAndWorkflow !== undefined)
     {
       tags.add(this.extensionId);
-      if (this.computeAdditionTags === true)
+      const analyzer = new ComfyUIAnalyzer(promptAndWorkflow.workflow, promptAndWorkflow.prompt, this.analyzerSettings);
+      for (const tag of analyzer.computeTags())
       {
-        new ComfyUIAnalyzer(promptAndWorkflow.workflow).computeTags().map(tag => tags.add(tag));
+        tags.add(tag);
       }
     }
 
@@ -266,15 +139,19 @@ class ComfyUiExtension extends PicteusExtension
     const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
     if (promptAndWorkflow !== undefined)
     {
-      const imageFeatures: Array<ImageFeature> = [];
+      const id = promptAndWorkflow.workflow["id"];
+      const analyzer = new ComfyUIAnalyzer(promptAndWorkflow.workflow, promptAndWorkflow.prompt, this.analyzerSettings);
+      const features: Array<ImageFeature> = [];
       const recipe: GenerationRecipe =
         {
           schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
           modelTags: [],
+          id,
           software: "comfyui",
+          aspectRatio: analyzer.getAspectRatio(),
           prompt: { kind: PromptKind.Instructions, value: promptAndWorkflow }
         };
-      imageFeatures.push(
+      features.push(
         {
           type: ImageFeatureType.Recipe,
           format: ImageFeatureFormat.Json,
@@ -282,68 +159,78 @@ class ComfyUiExtension extends PicteusExtension
         }
       );
 
-      if (this.computeAdditionFeatures === true)
+      const extractedFeatures = analyzer.computeFeatures();
+      for (const feature of extractedFeatures)
       {
-        imageFeatures.push(...new ComfyUIAnalyzer(promptAndWorkflow.workflow).computeFeatures());
+        console.log("==========================");
+        console.log(JSON.stringify(feature, null, 2));
+        features.push(feature);
+      }
+      if (id !== undefined)
+      {
+        features.push({
+            type: ImageFeatureType.Identity,
+            format: ImageFeatureFormat.String,
+            name: "id",
+            value: id
+          }
+        );
       }
 
       await this.getImageApi().imageSetFeatures({
         id: imageId,
         extensionId: this.extensionId,
-        imageFeature: imageFeatures
+        imageFeature: features
       });
     }
   }
 
   private async analyzeComfyUiWorkflow(communicator: Communicator, imageId: string): Promise<void>
   {
-    const directoryPaths = [ this.outputDirectoryPath, this.inputDirectoryPath, this.temporaryDirectoryPath ].filter(directoryPath => directoryPath !== undefined);
-    const imageFeatures: Array<ImageFeature> = [];
+    const directoryPaths = [ this.outputDirectoryPath, this.inputDirectoryPath, this.temporaryDirectoryPath ].filter((directoryPath) => directoryPath !== undefined);
+    const features: Array<ImageFeature> = [];
     if (directoryPaths.length > 0)
     {
       const filePaths: string[] = [];
       const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
-      const promptAndWorkflow: ComfyUiPromptAndWorkflow = this.computePromptAndWorkflow(metadata);
-      const workflow = promptAndWorkflow.workflow;
-      for (const node of workflow.nodes)
+      const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
+      if (promptAndWorkflow)
       {
-        if (node["type"] === "LoadImage")
+        const workflow = promptAndWorkflow.workflow;
+        if (Array.isArray(workflow.nodes))
         {
-          const fileName: string = node["widgets_values"][0];
-          for (const directoryPath of directoryPaths)
+          for (const node of workflow.nodes)
           {
-            const filePath = path.join(directoryPath, fileName);
-            if (fs.existsSync(filePath) === true)
+            if (node["type"] === "LoadImage" && Array.isArray(node["widgets_values"]))
             {
-              filePaths.push(filePath);
-              break;
+              const fileName: string = node["widgets_values"][0];
+              for (const directoryPath of directoryPaths)
+              {
+                const filePath = path.join(directoryPath, fileName);
+                if (fs.existsSync(filePath) === true)
+                {
+                  filePaths.push(filePath);
+                  break;
+                }
+              }
             }
           }
         }
       }
-      const value: string = filePaths.length === 0 ? "No image has been detected as an input image" : `The image was built on the following images: [${filePaths.map(filePath =>
-        `'${filePath}'`).join(", ")}]`;
-      imageFeatures.push({
+      const value: string = filePaths.length === 0 ? "No image has been detected as an input image" : `The image was built on the following images: [${filePaths.map((filePath) => `'${filePath}'`).join(", ")}]`;
+      features.push({
         type: ImageFeatureType.Description,
         format: ImageFeatureFormat.String,
-        value: value
+        value
       });
       await communicator.launchIntent<void>({
         dialog: {
           type: IntentDialogType.Info,
           title: "ComfyUI Analysis",
-          description: `After having inspected the image metadata, here is the output of the analysis regarding the images that were detected as input images.`,
+          description: "After having inspected the image metadata, here is the output of the analysis regarding the images that were detected as input images.",
           details: `${value}.`,
           buttons: { yes: "OK" }
         }
-      });
-    }
-    if (Math.random() > 1)
-    {
-      await this.getImageApi().imageSetFeatures({
-        id: imageId,
-        extensionId: this.parameters.extensionId,
-        imageFeature: imageFeatures
       });
     }
   }
@@ -356,7 +243,11 @@ class ComfyUiExtension extends PicteusExtension
     }
     const image = await this.getImageApi().imageGet({ id: imageId });
     const metadata = image.metadata;
-    const promptAndWorkflow: ComfyUiPromptAndWorkflow = this.computePromptAndWorkflow(metadata);
+    const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
+    if (!promptAndWorkflow)
+    {
+      throw new CommandError("Cannot open the ComfyUI workflow, because prompt and workflow metadata could not be found on the image");
+    }
     const workflow = promptAndWorkflow.workflow;
     const extensionWebServiceUrl = `${this.url}/${ComfyUiExtension.webServiceFragment}/load_workflow`;
     try
@@ -383,11 +274,16 @@ class ComfyUiExtension extends PicteusExtension
       const allMetadata = JSON.parse(metadata.all);
       try
       {
-        return new ComfyUiPromptAndWorkflow(JSON.parse(allMetadata[ComfyUIConstants.prompt]), JSON.parse(allMetadata[ComfyUIConstants.workflow]));
+        const promptJson = allMetadata[ComfyUIConstants.prompt] ? JSON.parse(allMetadata[ComfyUIConstants.prompt]) : undefined;
+        const workflowJson = allMetadata[ComfyUIConstants.workflow] ? JSON.parse(allMetadata[ComfyUIConstants.workflow]) : undefined;
+        if (promptJson || workflowJson)
+        {
+          return new ComfyUiPromptAndWorkflow(promptJson, workflowJson);
+        }
       }
       catch (error)
       {
-        // It means that the 2 ComfyUI expected metadata properties are not provided or not well-formed
+        // It means that the ComfyUI metadata properties are not well-formed
       }
     }
     return undefined;
@@ -396,6 +292,12 @@ class ComfyUiExtension extends PicteusExtension
   private async setup(communicator: Communicator, value: SettingsValue): Promise<void>
   {
     this.url = value["url"];
+    this.analyzerSettings = {
+      extractLoRAsAndAdapters: value["extractLoRAsAndAdapters"] !== undefined ? Boolean(value["extractLoRAsAndAdapters"]) : true,
+      extractUpscalingAndRefinement: value["extractUpscalingAndRefinement"] !== undefined ? Boolean(value["extractUpscalingAndRefinement"]) : true,
+      extractWorkflowTopology: value["extractWorkflowTopology"] !== undefined ? Boolean(value["extractWorkflowTopology"]) : true
+    };
+
     const directoryPath = value["directoryPath"];
     if (directoryPath !== undefined)
     {
