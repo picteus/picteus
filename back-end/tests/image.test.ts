@@ -1161,7 +1161,7 @@ describe("Image with module", () =>
           await expect(async () =>
           {
             await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, [ new ImageFeature(ImageFeatureType.CAPTION, featureFormat, undefined, "dummyAttachment") ]);
-          }).rejects.toThrow(new ServiceError(`The parameter '[0].format' with value '${featureFormat}' is invalid because it should be equal to 'string' when the feature type is 'caption'`, BAD_REQUEST, base.badParameterCode));
+          }).rejects.toThrow(new ServiceError(`The parameter '[0].format' with value '${featureFormat}' is invalid because it should be one of ['string', 'markdown', 'html'] when the feature type is 'caption'`, BAD_REQUEST, base.badParameterCode));
         }
       }
 

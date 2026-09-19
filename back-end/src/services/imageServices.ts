@@ -150,7 +150,7 @@ class ImageMediaUrlComputer
 export class ImageService
 {
 
-  private static readonly DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS = [ ImageFeatureFormat.STRING, ImageFeatureFormat.MARKDOWN, ImageFeatureFormat.HTML ];
+  private static readonly CAPTION_DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS = [ ImageFeatureFormat.STRING, ImageFeatureFormat.MARKDOWN, ImageFeatureFormat.HTML ];
 
   private static readonly RECIPE_FEATURES_ALLOWED_FORMATS = [ ImageFeatureFormat.JSON, ImageFeatureFormat.UI ];
 
@@ -509,13 +509,9 @@ export class ImageService
       const format = feature.format;
 
       // We first check that the feature type is compatible with the provided format
-      if (type === ImageFeatureType.CAPTION && format !== ImageFeatureFormat.STRING)
+      if ((type === ImageFeatureType.CAPTION || type === ImageFeatureType.DESCRIPTION || type === ImageFeatureType.COMMENT) && ImageService.CAPTION_DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS.includes(format) == false)
       {
-        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be equal to '${ImageFeatureFormat.STRING}' when the feature type is '${type}'`);
-      }
-      else if ((type === ImageFeatureType.DESCRIPTION || type === ImageFeatureType.COMMENT) && ImageService.DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS.includes(format) == false)
-      {
-        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be one of ${parametersChecker.stringify(ImageService.DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS)} when the feature type is '${type}'`);
+        parametersChecker.throwBadParameter(`[${index}].format`, format, `it should be one of ${parametersChecker.stringify(ImageService.CAPTION_DESCRIPTION_AND_COMMENTS_FEATURES_ALLOWED_FORMATS)} when the feature type is '${type}'`);
       }
       else if (type === ImageFeatureType.RECIPE && ImageService.RECIPE_FEATURES_ALLOWED_FORMATS.includes(format) == false)
       {
