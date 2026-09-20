@@ -1,4 +1,5 @@
-import { expect, test } from "@jest/globals";
+import { test } from "node:test";
+import assert from "node:assert/strict";
 
 import {
   type CollapsibleGroupElement,
@@ -8,6 +9,7 @@ import {
   type TableRow,
   type UiElement
 } from "@picteus/extension-sdk";
+
 import { ComfyUIAnalyzer } from "./analyzers";
 
 
@@ -207,86 +209,86 @@ const sampleWorkflow = {
 };
 
 
-test("ComfyUIAnalyzer extracts full generation recipe into ViewKit UiContainer", async () =>
+test("ComfyUIAnalyzer extracts full generation recipe into ViewKit UiContainer", () =>
 {
   const analyzer = new ComfyUIAnalyzer(sampleWorkflow, samplePrompt, {});
   const uiContainer = analyzer.toUiContainer();
 
-  expect(uiContainer).toBeDefined();
-  expect(uiContainer.schemaVersion).toBe("1.0");
+  assert.ok(uiContainer);
+  assert.equal(uiContainer.schemaVersion, "1.0");
 
   const elements = uiContainer.elements;
-  expect(elements.length).toBeGreaterThanOrEqual(2);
+  assert.ok(elements.length >= 2);
 
   // 1. Primary section: 2-column table
-  expect(elements[0].type).toBe("table");
+  assert.equal(elements[0].type, "table");
   const primaryTable = elements[0] as TableElement;
-  expect(primaryTable.rows.length).toBeGreaterThan(0);
+  assert.ok(primaryTable.rows.length > 0);
 
   const rowLabels = primaryTable.rows.map((row: TableRow) => (row.cells[0] as { value: string }).value);
-  expect(rowLabels).toContain("Prompt");
-  expect(rowLabels).toContain("Negative Prompt");
-  expect(rowLabels).toContain("Model");
-  expect(rowLabels).toContain("Sampler");
-  expect(rowLabels).toContain("Steps");
-  expect(rowLabels).toContain("CFG Scale");
-  expect(rowLabels).toContain("Seed");
-  expect(rowLabels).toContain("Dimensions");
-  expect(rowLabels).toContain("VAE");
+  assert.ok(rowLabels.includes("Prompt"));
+  assert.ok(rowLabels.includes("Negative Prompt"));
+  assert.ok(rowLabels.includes("Model"));
+  assert.ok(rowLabels.includes("Sampler"));
+  assert.ok(rowLabels.includes("Steps"));
+  assert.ok(rowLabels.includes("CFG Scale"));
+  assert.ok(rowLabels.includes("Seed"));
+  assert.ok(rowLabels.includes("Dimensions"));
+  assert.ok(rowLabels.includes("VAE"));
 
   // Verify specific values in primary table
   const promptRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as { value: string }).value === "Prompt");
-  expect((promptRow?.cells[1] as { value: string }).value).toContain("astronaut in a futuristic neon jungle");
+  assert.ok((promptRow?.cells[1] as { value: string }).value.includes("astronaut in a futuristic neon jungle"));
 
   const negativePromptRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
     value: string
   }).value === "Negative Prompt");
-  expect((negativePromptRow?.cells[1] as { value: string }).value).toContain("worst quality");
+  assert.ok((negativePromptRow?.cells[1] as { value: string }).value.includes("worst quality"));
 
   const modelRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as { value: string }).value === "Model");
-  expect((modelRow?.cells[1] as { value: string }).value).toBe("sd_xl_base_1.0.safetensors");
+  assert.equal((modelRow?.cells[1] as { value: string }).value, "sd_xl_base_1.0.safetensors");
 
   const samplerRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as { value: string }).value === "Sampler");
-  expect((samplerRow?.cells[1] as { value: string }).value).toBe("dpmpp_2m (karras)");
+  assert.equal((samplerRow?.cells[1] as { value: string }).value, "dpmpp_2m (karras)");
 
   const stepsRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as { value: string }).value === "Steps");
-  expect((stepsRow?.cells[1] as { value: number }).value).toBe(30);
+  assert.equal((stepsRow?.cells[1] as { value: number }).value, 30);
 
   const cfgRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as { value: string }).value === "CFG Scale");
-  expect((cfgRow?.cells[1] as { value: number }).value).toBe(6.5);
+  assert.equal((cfgRow?.cells[1] as { value: number }).value, 6.5);
 
   const seedRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as { value: string }).value === "Seed");
-  expect((seedRow?.cells[1] as { value: string }).value).toBe("849204128");
+  assert.equal((seedRow?.cells[1] as { value: string }).value, "849204128");
 
   const dimensionsRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
     value: string
   }).value === "Dimensions");
-  expect((dimensionsRow?.cells[1] as { value: string }).value).toContain("1344 × 768");
+  assert.ok((dimensionsRow?.cells[1] as { value: string }).value.includes("1344 × 768"));
 
   // 2. Collapsible groups
   const collapsibleGroups = elements.filter((element: UiElement) => element.type === "collapsible-group") as CollapsibleGroupElement[];
   const groupTitles = collapsibleGroups.map((group) => group.title);
 
-  expect(groupTitles).toContain("LoRAs");
-  expect(groupTitles).toContain("ControlNet & Adapters");
-  expect(groupTitles).toContain("Upscaling & Refinement");
-  expect(groupTitles).toContain("Input Images");
-  expect(groupTitles).toContain("Workflow Topology");
+  assert.ok(groupTitles.includes("LoRAs"));
+  assert.ok(groupTitles.includes("ControlNet & Adapters"));
+  assert.ok(groupTitles.includes("Upscaling & Refinement"));
+  assert.ok(groupTitles.includes("Input Images"));
+  assert.ok(groupTitles.includes("Workflow Topology"));
 
   // Verify LoRAs collapsible group
   const loraGroup = collapsibleGroups.find((group) => group.title === "LoRAs");
-  expect(loraGroup?.summary).toBe("1 LoRA");
-  expect(loraGroup?.elements.length).toBe(1);
+  assert.equal(loraGroup?.summary, "1 LoRA");
+  assert.equal(loraGroup?.elements.length, 1);
   const loraTable = loraGroup?.elements[0] as TableElement;
-  expect((loraTable.rows[0].cells[0] as { value: string }).value).toBe("detail_slider_v1.safetensors");
-  expect((loraTable.rows[0].cells[1] as { value: string }).value).toContain("Model: 0.85");
+  assert.equal((loraTable.rows[0].cells[0] as { value: string }).value, "detail_slider_v1.safetensors");
+  assert.ok((loraTable.rows[0].cells[1] as { value: string }).value.includes("Model: 0.85"));
 
   // Verify ControlNet collapsible group
   const controlNetGroup = collapsibleGroups.find((group) => group.title === "ControlNet & Adapters");
-  expect(controlNetGroup?.summary).toBe("1 adapter");
+  assert.equal(controlNetGroup?.summary, "1 adapter");
   const controlNetTable = controlNetGroup?.elements[0] as TableElement;
-  expect((controlNetTable.rows[0].cells[0] as { value: string }).value).toBe("controlnet_depth_sdxl.safetensors");
-  expect((controlNetTable.rows[0].cells[1] as { value: string }).value).toContain("Strength: 0.75");
+  assert.equal((controlNetTable.rows[0].cells[0] as { value: string }).value, "controlnet_depth_sdxl.safetensors");
+  assert.ok((controlNetTable.rows[0].cells[1] as { value: string }).value.includes("Strength: 0.75"));
 
   // Verify Upscaling collapsible group
   const upscaleGroup = collapsibleGroups.find((group) => group.title === "Upscaling & Refinement");
@@ -294,68 +296,65 @@ test("ComfyUIAnalyzer extracts full generation recipe into ViewKit UiContainer",
   const upscaleModelRow = upscaleTable.rows.find((row: TableRow) => (row.cells[0] as {
     value: string
   }).value === "Upscale Model");
-  expect((upscaleModelRow?.cells[1] as { value: string }).value).toBe("4x-UltraSharp.pth");
+  assert.equal((upscaleModelRow?.cells[1] as { value: string }).value, "4x-UltraSharp.pth");
 
   // Verify Input Images collapsible group
   const inputGroup = collapsibleGroups.find((group) => group.title === "Input Images");
   const inputTable = inputGroup?.elements[0] as TableElement;
-  expect((inputTable.rows[0].cells[1] as { value: string }).value).toBe("input_reference_depth.png");
+  assert.equal((inputTable.rows[0].cells[1] as { value: string }).value, "input_reference_depth.png");
 
   // Verify Workflow Topology collapsible group
   const topologyGroup = collapsibleGroups.find((group) => group.title === "Workflow Topology");
-  expect(topologyGroup?.elements.length).toBe(2);
+  assert.equal(topologyGroup?.elements.length, 2);
   const topologySummaryTable = topologyGroup?.elements[0] as TableElement;
   const totalNodesRow = topologySummaryTable.rows.find((row: TableRow) => (row.cells[0] as {
     value: string
   }).value === "Total Nodes");
-  expect((totalNodesRow?.cells[1] as { value: number }).value).toBe(13);
+  assert.equal((totalNodesRow?.cells[1] as { value: number }).value, 13);
   const activeNodesRow = topologySummaryTable.rows.find((row: TableRow) => (row.cells[0] as {
     value: string
   }).value === "Active Nodes");
-  expect((activeNodesRow?.cells[1] as { value: number }).value).toBe(12);
+  assert.equal((activeNodesRow?.cells[1] as { value: number }).value, 12);
   const bypassedNodesRow = topologySummaryTable.rows.find((row: TableRow) => (row.cells[0] as {
     value: string
   }).value === "Bypassed Nodes");
-  expect((bypassedNodesRow?.cells[1] as { value: number }).value).toBe(1);
+  assert.equal((bypassedNodesRow?.cells[1] as { value: number }).value, 1);
 
   // 3. Serialization check
   const jsonString = uiContainer.toString();
   const parsed = JSON.parse(jsonString);
-  expect(parsed.schemaVersion).toBe("1.0");
-  expect(parsed.elements.length).toBe(elements.length);
+  assert.equal(parsed.schemaVersion, "1.0");
+  assert.equal(parsed.elements.length, elements.length);
 });
 
-
-test("ComfyUIAnalyzer computeFeatures returns ImageFeature with UI format", async () =>
+test("ComfyUIAnalyzer computeFeatures returns ImageFeature with UI format", () =>
 {
   const analyzer = new ComfyUIAnalyzer(sampleWorkflow, samplePrompt, {});
   const features = analyzer.computeFeatures();
 
-  expect(features.length).toBe(1);
-  expect(features[0].type).toBe(ImageFeatureType.Recipe);
-  expect(features[0].format).toBe(ImageFeatureFormat.Ui);
-  expect(features[0].value).toContain("\"schemaVersion\":\"1.0\"");
+  assert.equal(features.length, 1);
+  assert.equal(features[0].type, ImageFeatureType.Recipe);
+  assert.equal(features[0].format, ImageFeatureFormat.Ui);
+  assert.ok(String(features[0].value).includes("\"schemaVersion\":\"1.0\""));
 });
 
-
-test("ComfyUIAnalyzer computeTags extracts relevant category tags", async () =>
+test("ComfyUIAnalyzer computeTags extracts relevant category tags", () =>
 {
   const analyzer = new ComfyUIAnalyzer(sampleWorkflow, samplePrompt, {});
   const tags = analyzer.computeTags();
 
-  expect(tags).toContain("model");
-  expect(tags).toContain("sampling");
-  expect(tags).toContain("conditioning");
-  expect(tags).toContain("lora");
-  expect(tags).toContain("controlnet");
-  expect(tags).toContain("upscaling");
-  expect(tags).toContain("image");
-  expect(tags).not.toContain("other");
-  expect(tags).not.toContain("utils");
+  assert.ok(tags.includes("model"));
+  assert.ok(tags.includes("sampling"));
+  assert.ok(tags.includes("conditioning"));
+  assert.ok(tags.includes("lora"));
+  assert.ok(tags.includes("controlnet"));
+  assert.ok(tags.includes("upscaling"));
+  assert.ok(tags.includes("image"));
+  assert.equal(tags.includes("other"), false);
+  assert.equal(tags.includes("utils"), false);
 });
 
-
-test("ComfyUIAnalyzer respects settings to disable optional sections", async () =>
+test("ComfyUIAnalyzer respects settings to disable optional sections", () =>
 {
   const analyzer = new ComfyUIAnalyzer(sampleWorkflow, samplePrompt, {
     extractLoRAsAndAdapters: false,
@@ -367,43 +366,41 @@ test("ComfyUIAnalyzer respects settings to disable optional sections", async () 
   const collapsibleGroups = uiContainer.elements.filter((element: UiElement) => element.type === "collapsible-group") as CollapsibleGroupElement[];
   const groupTitles = collapsibleGroups.map((group) => group.title);
 
-  expect(groupTitles).not.toContain("LoRAs");
-  expect(groupTitles).not.toContain("ControlNet & Adapters");
-  expect(groupTitles).not.toContain("Upscaling & Refinement");
-  expect(groupTitles).not.toContain("Workflow Topology");
-  expect(groupTitles).toContain("Input Images");
+  assert.equal(groupTitles.includes("LoRAs"), false);
+  assert.equal(groupTitles.includes("ControlNet & Adapters"), false);
+  assert.equal(groupTitles.includes("Upscaling & Refinement"), false);
+  assert.equal(groupTitles.includes("Workflow Topology"), false);
+  assert.ok(groupTitles.includes("Input Images"));
 });
 
-
-test("ComfyUIAnalyzer works with workflow-only input", async () =>
+test("ComfyUIAnalyzer works with workflow-only input", () =>
 {
   const analyzer = new ComfyUIAnalyzer(sampleWorkflow, undefined, {});
   const uiContainer = analyzer.toUiContainer();
 
-  expect(uiContainer).toBeDefined();
-  expect(uiContainer.elements.length).toBeGreaterThan(0);
+  assert.ok(uiContainer);
+  assert.ok(uiContainer.elements.length > 0);
 
   const primaryTable = uiContainer.elements[0] as TableElement;
   const rowLabels = primaryTable.rows.map((row: TableRow) => (row.cells[0] as { value: string }).value);
-  expect(rowLabels).toContain("Model");
-  expect(rowLabels).toContain("Sampler");
-  expect(rowLabels).toContain("Steps");
-  expect(rowLabels).toContain("Prompt");
+  assert.ok(rowLabels.includes("Model"));
+  assert.ok(rowLabels.includes("Sampler"));
+  assert.ok(rowLabels.includes("Steps"));
+  assert.ok(rowLabels.includes("Prompt"));
 });
 
-
-test("ComfyUIAnalyzer works with prompt-only input", async () =>
+test("ComfyUIAnalyzer works with prompt-only input", () =>
 {
   const analyzer = new ComfyUIAnalyzer(undefined, samplePrompt, {});
   const uiContainer = analyzer.toUiContainer();
 
-  expect(uiContainer).toBeDefined();
-  expect(uiContainer.elements.length).toBeGreaterThan(0);
+  assert.ok(uiContainer);
+  assert.ok(uiContainer.elements.length > 0);
 
   const primaryTable = uiContainer.elements[0] as TableElement;
   const rowLabels = primaryTable.rows.map((row: TableRow) => (row.cells[0] as { value: string }).value);
-  expect(rowLabels).toContain("Prompt");
-  expect(rowLabels).toContain("Negative Prompt");
-  expect(rowLabels).toContain("Model");
-  expect(rowLabels).toContain("Sampler");
+  assert.ok(rowLabels.includes("Prompt"));
+  assert.ok(rowLabels.includes("Negative Prompt"));
+  assert.ok(rowLabels.includes("Model"));
+  assert.ok(rowLabels.includes("Sampler"));
 });
