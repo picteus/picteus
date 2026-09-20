@@ -219,12 +219,6 @@ class GeminiExtension extends PicteusExtension
                 type: ImageFeatureType.Recipe,
                 format: ImageFeatureFormat.Json,
                 value: JSON.stringify(recipe)
-              },
-              {
-                type: ImageFeatureType.Description,
-                format: ImageFeatureFormat.String,
-                name: "prompt",
-                value: prompt
               }
             ]
         });
