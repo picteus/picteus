@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { Automatic1111UserComment } from "./instructions";
+import { Automatic1111Instruction, Automatic1111UserComment } from "./instructions";
 
 
 test("Parses positive and negative prompt without instructions", () =>
@@ -51,7 +51,23 @@ test("Parses complex prompt with Civitai resources and metadata", () =>
   assert.equal(userComment.instructions[0].key, "Steps");
   assert.equal(userComment.instructions[0].value, "22");
   assert.equal(userComment.instructions[8].key, "Civitai metadata");
-  assert.equal(userComment.instructions[8].value, "{}");
+  assert.deepEqual(userComment.instructions[8].value, {});
+
+  const civitaiInstruction = userComment.instructions[7];
+  assert.equal(civitaiInstruction.key, "Civitai resources");
+  assert.deepEqual(civitaiInstruction.value[0], {
+    type: "checkpoint",
+    modelVersionId: 128078,
+    modelName: "SD XL",
+    modelVersionName: "v1.0 VAE fix"
+  });
+  assert.deepEqual(civitaiInstruction.value[1], {
+    type: "lora",
+    weight: 0.85,
+    modelVersionId: 210432,
+    modelName: "Double Exposure",
+    modelVersionName: "Double Exposure"
+  });
 });
 
 test("Parses Flux prompt with embedded LoRAs and no negative prompt", () =>
@@ -76,7 +92,41 @@ test("Parses nested JSON structures within instruction values", () =>
   assert.equal(userComment.negative, "negative");
   assert.equal(userComment.instructions.length, 9);
   assert.equal(userComment.instructions[5].key, "Model hash");
-  assert.equal(userComment.instructions[5].value, "{\"key1\": \"value1\", \"key2\": {\"sub\": \"value2\"}}");
+  assert.deepEqual(userComment.instructions[5].value, {
+    key1: "value1",
+    key2: {
+      sub: "value2"
+    }
+  });
   assert.equal(userComment.instructions[7].key, "Hashes");
-  assert.equal(userComment.instructions[7].value, "{\"model\": \"\"}");
+  assert.deepEqual(userComment.instructions[7].value, { model: "" });
 });
+
+test("Automatic1111Instruction only contains key and value properties", () =>
+{
+  const instruction = new Automatic1111Instruction(
+    "Civitai resources",
+    "[{\"type\":\"checkpoint\",\"modelVersionId\":128078,\"modelName\":\"SD XL\",\"modelVersionName\":\"v1.0 VAE fix\"}]"
+  );
+  assert.equal(instruction.key, "Civitai resources");
+  assert.equal(
+    instruction.value,
+    "[{\"type\":\"checkpoint\",\"modelVersionId\":128078,\"modelName\":\"SD XL\",\"modelVersionName\":\"v1.0 VAE fix\"}]"
+  );
+  assert.equal(Object.keys(instruction).sort().join(","), "key,value");
+  // @ts-expect-error civitaiResources should not exist on Automatic1111Instruction
+  assert.equal(instruction.civitaiResources, undefined);
+});
+
+test("Automatic1111UserComment.parseValue parses JSON arrays and objects, and preserves strings", () =>
+{
+  assert.deepEqual(Automatic1111UserComment.parseValue("[{\"type\":\"checkpoint\"}]"), [ { type: "checkpoint" } ]);
+  assert.deepEqual(Automatic1111UserComment.parseValue("{\"key\":\"value\"}"), { key: "value" });
+  assert.deepEqual(Automatic1111UserComment.parseValue("[]"), []);
+  assert.deepEqual(Automatic1111UserComment.parseValue("{}"), {});
+  assert.equal(Automatic1111UserComment.parseValue("22"), "22");
+  assert.equal(Automatic1111UserComment.parseValue("DPM++ 2M Karras"), "DPM++ 2M Karras");
+  assert.equal(Automatic1111UserComment.parseValue("{ not valid json }"), "{ not valid json }");
+  assert.deepEqual(Automatic1111UserComment.parseValue("  {\"a\": 1}  "), { a: 1 });
+});
+

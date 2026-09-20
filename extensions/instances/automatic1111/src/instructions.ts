@@ -12,18 +12,14 @@ import {
 } from "@picteus/internal-extension-sdk";
 
 
-class Automatic1111Instruction
+export class Automatic1111Instruction
 {
 
-  constructor(key: string, value: string)
+  constructor(readonly key: string, readonly value: string | Record<string, any> | Array<Record<string, any>>)
   {
     this.key = key;
     this.value = value;
   }
-
-  readonly key: string;
-
-  readonly value: string;
 
 }
 
@@ -46,7 +42,7 @@ export class Automatic1111UserComment
     {
       if (value !== "Undefined")
       {
-        instructions.push(new Automatic1111Instruction(key, value));
+        instructions.push(new Automatic1111Instruction(key, Automatic1111UserComment.parseValue(value)));
       }
     };
     if (rest !== "")
@@ -139,6 +135,27 @@ export class Automatic1111UserComment
     return { positive, negative, unexpected, rest };
   }
 
+  static parseValue(value: string): string | Record<string, any> | Array<Record<string, any>>
+  {
+    const trimmedValue = value.trim();
+    if ((trimmedValue.startsWith("{") && trimmedValue.endsWith("}")) || (trimmedValue.startsWith("[") && trimmedValue.endsWith("]")))
+    {
+      try
+      {
+        const parsed = JSON.parse(trimmedValue);
+        if (typeof parsed === "object" && parsed !== null)
+        {
+          return parsed;
+        }
+      }
+      catch (error)
+      {
+        // Value is not valid JSON
+      }
+    }
+    return value;
+  }
+
   constructor(readonly positive: string, readonly negative: string | undefined, readonly instructions: Automatic1111Instruction[])
   {
   }
@@ -151,9 +168,37 @@ export class Automatic1111UserComment
     const copyableOptions = { modifiers: { copyable: true } };
     for (const instruction of this.instructions)
     {
-      if (instruction.value.length > 0)
+      let element: UiElement;
+      if (typeof instruction.value === "string")
       {
-        rows.push(tableRow([ stringShort(instruction.key, firstColumnOptions), stringLong(instruction.value, copyableOptions) ]));
+        if (instruction.value.length > 0)
+        {
+          element = stringLong(instruction.value, copyableOptions);
+        }
+      }
+      else
+      {
+        if (Array.isArray(instruction.value) === true)
+        {
+          const values: Array<Record<string, any>> = instruction.value;
+          if (values.length > 0)
+          {
+            const tables = values.map(value => table(Object.entries(value).map(([ key, value ]) => tableRow([ stringShort(key), stringShort(value.toString()) ]))));
+            element = table(tables.map(table => tableRow([ table ])));
+          }
+        }
+        else
+        {
+          const value: Record<string, any> = instruction.value;
+          if (Object.keys(value).length > 0)
+          {
+            element = table(Object.entries(value).map(([ key, value ]) => tableRow([ stringShort(key), stringShort(value.toString()) ])));
+          }
+        }
+      }
+      if (element !== undefined)
+      {
+        rows.push(tableRow([ stringShort(instruction.key, firstColumnOptions), element ]));
       }
     }
     elements.push(table(rows, { withRowSeparators: true }));
