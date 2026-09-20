@@ -184,6 +184,7 @@ class ReplicateExtension extends PicteusExtension
         schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
         modelTags: [ prediction.model ],
         software: PicteusExtension.SOFTWARE,
+        id: prediction.id,
         url: prediction.urls.get,
         prompt: { kind: PromptKind.Instructions, value: input }
       };
@@ -223,17 +224,20 @@ class ReplicateExtension extends PicteusExtension
           type: ImageFeatureType.Recipe,
           format: ImageFeatureFormat.Json,
           value: JSON.stringify(recipe)
+        },
+        {
+          type: ImageFeatureType.Identity,
+          format: ImageFeatureFormat.String,
+          name: "id",
+          value: recipe.id
+        },
+        {
+          type: ImageFeatureType.Identity,
+          format: ImageFeatureFormat.String,
+          name: "url",
+          value: recipe.url
         }
       ];
-    if (input.prompt !== undefined)
-    {
-      features.push({
-        type: ImageFeatureType.Description,
-        format: ImageFeatureFormat.String,
-        name: "prompt",
-        value: input.prompt
-      });
-    }
     await this.getImageApi().imageSetFeatures({
       id: image.id,
       extensionId: this.extensionId,
