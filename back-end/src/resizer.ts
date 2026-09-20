@@ -31,6 +31,7 @@ export class Resizer
     const url: string | undefined = request.query.u === undefined ? undefined : request.query.u as string;
     if (url === undefined)
     {
+      logger.warn("Cannot resize the image because of the missing 'u' parameter");
       response.status(HttpStatus.BAD_REQUEST).send(
         {
           code: 1,
@@ -174,7 +175,7 @@ export class Resizer
         const isInputFile = isInputBuffer === false;
         // TODO: implement this
         const gifsicleFilePath = "";
-        const process = spawn(gifsicleFilePath, ["--resize", `${width === undefined ? "_" : width}x${height === undefined ? "_" : height}`, isInputFile === true ? input as string : "-"]);
+        const process = spawn(gifsicleFilePath, [ "--resize", `${width === undefined ? "_" : width}x${height === undefined ? "_" : height}`, isInputFile === true ? input as string : "-" ]);
         logger.debug("Resizing an animated GIF image");
         // Taken from https://stackoverflow.com/questions/14269233/node-js-how-to-read-a-stream-into-a-buffer
         const buffers: Uint8Array[] = [];
@@ -238,11 +239,9 @@ export class Resizer
 
   private sendAssetError(response: Response, statusCode: number, code: number, url: string | undefined, reason: string): void
   {
-    response.status(statusCode).json(
-      {
-        code: code,
-        message: `Could not process the image${url === undefined ? "" : ` with URL '${url}'`}. Reason: '${reason}'`
-      });
+    const message = `Could not resize the image${url === undefined ? "" : ` with URL '${url}'`}. Reason: '${reason}'`;
+    logger.warn(message);
+    response.status(statusCode).json({ code, message });
   };
 
   private setOkOrUnmodifiedResponse(isOk: boolean, response: Response, lastModified: string | undefined, mimeType?: string): void
