@@ -85,9 +85,14 @@ async function getClosestImages(
   return imageApi.imageClosestImages(requestParameters);
 }
 
-async function synchronize(id: string): Promise<void>
+async function runCapabilities(id: string): Promise<void>
 {
   await imageApi.imageRunCapabilities({ id });
+}
+
+async function searchRunCapabilities(searchParameters: SearchParameters): Promise<void>
+{
+  await imageApi.imageSearchRunCapabilities({ searchParameters });
 }
 
 async function destroy(id: string): Promise<void>
@@ -135,7 +140,8 @@ export default {
   getImageSrc,
   getAllFeatures,
   getClosestImages,
-  synchronize,
+  runCapabilities,
+  searchRunCapabilities,
   destroy,
   getAllTags,
   textToImages,

@@ -28,8 +28,8 @@ import {
   useExtensionCommands,
   useUpdateCollectionMutation
 } from "app/hooks";
-import { EventService } from "app/services";
-import { CollectionIcon, CommandIcon, Common, MenuItemEntry } from "app/components";
+import { EventService, ImageService } from "app/services";
+import { CollectionIcon, CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
 import AddOrUpdateCollection
   from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
@@ -162,6 +162,14 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
     onCollection(collection);
   }
 
+  function handleOnSynchronize(): void
+  {
+    if (searchFilter)
+    {
+      ImageService.searchRunCapabilities({ filter: searchFilter }).catch(ToastService.apiCallError);
+    }
+  }
+
   function truncateName(name: string)
   {
     return name.length > 32 ? name.substring(0, 32) + "..." : name;
@@ -215,6 +223,13 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
           </Button>
         </Menu.Target>
         <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
+          <Menu.Label>{t("commands.coreFeatures")}</Menu.Label>
+          <MenuItemEntry
+            icon={computeIcon("synchronize")}
+            label={t("commands.synchronize")}
+            subLabel={t("commands.allExtensionsDetails")}
+            onClick={handleOnSynchronize}
+          />
           <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
           {extensionsImageCommands?.map((extensionCommand) =>
           {

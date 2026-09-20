@@ -146,13 +146,18 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
   function handleOnApplyAction()
   {
     StorageService.setSelectedImagesAction(selectedAction);
-
     const imageIds = selectedImages.map((image) => image.id);
 
     if (selectedAction === synchronizeAction)
     {
-      imageIds.forEach(imageId => ImageService.synchronize(imageId).catch(ToastService.apiCallError));
-      return;
+      ImageService.searchRunCapabilities({
+        filter: {
+          origin: {
+            kind: SearchOriginNature.Images,
+            ids: imageIds
+          }
+        }
+      }).catch(ToastService.apiCallError);
     }
     else if (selectedAction === deleteAction)
     {
@@ -167,30 +172,30 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
           message: t(`commands.confirmImage${imageIds.length > 1 ? "s" : ""}DeleteMessage`)
         }
       });
-      return;
     }
-
-    const [ commandId, extensionId ] = selectedAction.split(commandSeparator);
-
-    const command = extensionsImageCommands.find(
-      (imageCommand) => imageCommand.command.id === commandId && imageCommand.extension.manifest.id === extensionId
-    );
-    onProcessing(true);
-    void commandRunner(extensionId, command.command, {
-      origin: {
-        kind: SearchOriginNature.Images,
-        ids: imageIds
-      }
-    }, () =>
+    else
     {
-      onProcessing(false);
-    }, (wasAborted: boolean) =>
-    {
-      if (wasAborted === true)
+      const [ commandId, extensionId ] = selectedAction.split(commandSeparator);
+      const command = extensionsImageCommands.find(
+        (imageCommand) => imageCommand.command.id === commandId && imageCommand.extension.manifest.id === extensionId
+      );
+      onProcessing(true);
+      void commandRunner(extensionId, command.command, {
+        origin: {
+          kind: SearchOriginNature.Images,
+          ids: imageIds
+        }
+      }, () =>
       {
         onProcessing(false);
-      }
-    });
+      }, (wasAborted: boolean) =>
+      {
+        if (wasAborted === true)
+        {
+          onProcessing(false);
+        }
+      });
+    }
   }
 
   function handleCreateCollection()
