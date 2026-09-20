@@ -47,7 +47,12 @@ class FeaturesTransformersExtension extends PicteusExtension
       await this.getImageApi().imageSetFeatures({
         id: imageId,
         extensionId: this.extensionId,
-        imageFeature: [ { type: ImageFeatureType.Caption, format: ImageFeatureFormat.String, value: caption } ]
+        imageFeature: [ {
+          type: ImageFeatureType.Caption,
+          format: ImageFeatureFormat.String,
+          name: "vit-gpt2-image-captioning",
+          value: caption
+        } ]
       });
     }
     finally
