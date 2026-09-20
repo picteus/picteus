@@ -10,7 +10,7 @@ The extension identifier declared through the `id` property must be unique with 
 
 > [!CAUTION]
 > **Strict JSON Schema compliance required**
-> : the `manifest.json` file is strictly validated against the Picteus manifest schema, accessible online at https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json, which should be specified through the `$schema` property. If any property fails validation — invalid types, missing required fields, illegal characters, or incorrect regex patterns —, **the server will reject the manifest and the extension will not start.**
+> : the `manifest.json` file is strictly validated against the Picteus manifest schema, accessible online at https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json, which should be specified through the `$schema` property. If any property fails validation — invalid types, missing required fields, illegal characters, or incorrect regex patterns —, **the server will reject the manifest and the extension will not start.**
 
 ---
 
@@ -20,7 +20,7 @@ Here is an overview of the manifest structure:
 
 ```json
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
   "id": "my-extension",
   "version": "1.0.0",
   "name": "My Extension Name",

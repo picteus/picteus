@@ -82,7 +82,7 @@ An extension capable of computing tags declares the `image.tags` capability in i
 
 ```json title="manifest.json"
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
   "id": "my-tagger-extension",
   "name": "Vision AI Tagger",
   "instructions": [
@@ -243,7 +243,7 @@ The Picteus back-end exposes dedicated REST web service endpoints for reading, w
 | Method | Endpoint path | Scope required | Description |
 |:---|:---|:---|:---|
 | `PUT` | `/image/{id}/setTags` | `image:tag:write` | Sets/replaces all tags for an image for a specific extension. |
-| `PUT` | `/image/{id}/ensureTags` | `image:tag:write` | Ensures specified tags are present for an image without removing existing ones. |
+| `PUT` | `/image/{id}/ensureTags` | `image:tag:write` | Ensures specified tags are present for an image without removing existing ones (upsert). |
 | `GET` | `/image/{id}/getTags` | `image:read` | Returns the tags of an image for a specific extension. |
 | `GET` | `/image/{id}/getAllTags` | `image:read` | Returns all tags of an image across all extensions. |
 | `GET` | `/repository/tags` | `repository:read` | Returns all distinct tags across all images in all repositories. |
@@ -277,7 +277,7 @@ curl -X PUT "http://localhost:3001/image/3c8f8b89-a29d-4e2a-9418-0518dc3f6293/se
 
 #### 2. Ensure image tags: `PUT /image/{id}/ensureTags`
 
-Adds one or more tags to an image for an extension without deleting existing tags already present for that extension. If the empty tombstone was previously stored, it is removed.
+Adds one or more tags to an image for an extension without deleting existing tags already present for that extension. It acts as an **upsert** mechanism: specified tags are added if missing and preserved if already present. If the empty tombstone was previously stored, it is removed.
 
 - **URL parameters**:
   - `id` (`string`, required): The UUID of the image.

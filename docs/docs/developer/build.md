@@ -111,9 +111,14 @@ To run the front-end component, run the `npm run start` script.
 
 ### Shared
 
-Its source-code and scripts are located under the `shared` directory. It only contains a `back-end` folder, which contains code common between the "back-end" and "electron" modules.
+Its source-code and scripts are located under the `shared` directory. It comprises four submodules:
+- `shared/core`: core TypeScript utilities and shared data structures ;
+- `shared/back-end`: Node.js code shared between the "back-end" and "electron" modules ;
+- `shared/front-end`: front-end components and utilities shared with the "electron" module ;
+- `shared/specification-factory`: TypeSpec grammar specifications and multi-language code generation factory for ViewKit schemas, React component views, and SDK models.
 
-- Run the `npm run build` script to build it, which will compile the code.
+- To build all shared submodules, run the `npm run shared:build` script from the root directory.
+- To compile ViewKit grammar and run code generation independently, navigate to `shared/specification-factory` and run `npm run build`.
 
 ### Electron
 

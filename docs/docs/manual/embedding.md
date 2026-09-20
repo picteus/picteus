@@ -89,7 +89,7 @@ An extension capable of computing embeddings declares the `image.embeddings` cap
 
 ```json title="manifest.json"
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
   "id": "my-embedding-extension",
   "name": "Embeddings Computer",
   "instructions": [

@@ -7,7 +7,8 @@ const sidebars: SidebarsConfig =
       "setup/install",
       "setup/start",
       "setup/files",
-      "setup/traces"
+      "setup/traces",
+      "setup/troubleshooting"
     ],
     manualSidebar: [
       "manual/webservicesapi",

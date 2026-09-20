@@ -16,6 +16,8 @@ Activities are intended to be legible at a glance:
 
 Extensions can emit activities programmatically via the SDK, allowing them to surface meaningful progress milestones and outcome summaries directly in the user interface without requiring the user to inspect raw logs.
 
+Users can also clear the accumulated activity feed at any time by clicking the button in the top action bar of the "Activities" screen.
+
 ---
 
 ## Logs
@@ -50,6 +52,19 @@ When the application is running as a desktop application — started from its ic
 
 where `<user>` is the user's login.
 
+### Accessing front-end logs via Chromium Developer Tools
+
+When running the Electron desktop application, you can also inspect the front-end application logs independently in real time by opening the Chromium "Developer Tools" window using the standard keyboard shortcut:
+
+- **macOS**: `Cmd` + `Option` + `I` or `Cmd` + `Alt` + `I` ;
+- **Windows**: `Ctrl` + `Shift` + `I` or `F12` ;
+- **Linux**: `Ctrl` + `Shift` + `I` or `F12`.
+
+Because the Electron wrapper embeds a Chromium browser instance, this shortcut opens the built-in Chromium "Developer Tools" panel. Key diagnostic tabs include:
+
+- **"Console" tab**: displays client-side JavaScript log messages, warnings, and unhandled React exceptions. Red error entries highlight broken UI components or failed asynchronous calls ;
+- **"Network" tab**: displays all HTTP REST requests and WebSocket frames exchanged between the front-end and the back-end server, including failed API calls (HTTP status 400 or greater) and payload details.
+
 ### Log files
 
 Log messages are persisted on disk in two files within that directory:
@@ -68,3 +83,5 @@ Log files are rolled based on their size: when a log file reaches 1 MB, it is ar
 Activities and logs together form a complete observability surface for the application. Activities provide immediate, readable feedback on what the application is processing and which extensions are active. Logs provide the low-level detail necessary to understand precisely what occurred, when, and in which component — including error messages, stack traces, and timing data that activities deliberately omit for readability.
 
 When the application behaves unexpectedly — whether an image is not being indexed, an extension is not responding, or a search returns surprising results — consulting the logs is the most reliable first step. The unified log stream, which merges all processes into a single chronological sequence, makes it straightforward to correlate events across the back-end, extensions, and the Electron layer without switching between separate sources.
+
+For the complete structured diagnostic procedure, refer to the [Troubleshooting](troubleshooting.md) guide.
