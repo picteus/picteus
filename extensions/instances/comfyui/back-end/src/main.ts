@@ -21,11 +21,11 @@ import {
 import { ComfyUIAnalyzer, type ComfyUIAnalyzerSettings } from "./analyzers";
 
 
-enum ComfyUIConstants
-{
-  workflow = "workflow",
-  prompt = "prompt"
-}
+const ComfyUIConstants =
+  {
+    workflow: "workflow",
+    prompt: "prompt"
+  } as const;
 
 type Json = Record<string, any>;
 
