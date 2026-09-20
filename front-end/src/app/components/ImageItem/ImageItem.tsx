@@ -1,85 +1,109 @@
-import React, { ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { IconDots } from "@tabler/icons-react";
-import { ActionIcon, Checkbox, Flex, Menu, Text } from "@mantine/core";
+import { ActionIcon, Checkbox, Flex, MantineStyleProp, Menu, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { ImageDimensions, ImageResizeRender } from "@picteus/ws-client";
 
 import { ImageItemMode, ImageOrSummary, ViewMode } from "types";
 import { useImagesSelectedContext } from "app/context";
+import { useImageDateChanged } from "app/hooks";
 import { ImageService } from "app/services";
 import { ImageItemMenu } from "app/components";
 
 import style from "./ImageItem.module.scss";
-import { useImageDateChanged } from "../../hooks";
 
 
-function useImageRefStatus(src: string): { imgRef: RefObject<HTMLImageElement>, isLoaded: boolean, isError: boolean }
+function useImageRefStatus(src: string): {
+  isLoaded: boolean;
+  hasError: boolean;
+  handleLoad: () => void;
+  handleError: () => void;
+}
 {
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const [isError, setIsError] = useState<boolean>(false);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const [ isLoaded, setIsLoaded ] = useState<boolean>(false);
+  const [ hasError, setHasError ] = useState<boolean>(false);
 
   useEffect(() =>
   {
-    const img = imgRef.current;
-    if (img === null || src === undefined)
-    {
-      return;
-    }
     setIsLoaded(false);
-    setIsError(false);
-    if (img.complete === true && img.naturalWidth !== 0)
-    {
-      setIsLoaded(true);
-      return;
-    }
-    const handleLoad = () => setIsLoaded(true);
-    img.addEventListener("load", handleLoad);
-    const handleError = () => setIsError(true);
-    img.addEventListener("error", handleError);
-    return () =>
-    {
-      img.removeEventListener("load", handleLoad);
-      img.removeEventListener("error", handleError);
-    };
-  }, [src]);
-  return { imgRef, isLoaded, isError };
+    setHasError(false);
+  }, [ src ]);
+
+  const handleLoad = useCallback((): void =>
+  {
+    setIsLoaded(true);
+    setHasError(false);
+  }, []);
+
+  const handleError = useCallback((): void =>
+  {
+    setIsLoaded(false);
+    setHasError(true);
+  }, []);
+
+  return {
+    isLoaded,
+    hasError,
+    handleLoad,
+    handleError
+  };
 }
 
-function computeResizeRender(width: number, height: number): ImageResizeRender
+function computeResizeRender(width?: number, height?: number): ImageResizeRender
 {
   return width === undefined || height === undefined ? "inbox" : "outbox";
 }
 
-function computeImageSrc(image: ImageOrSummary, width: number, height: number, resizeRender: ImageResizeRender, hasImageDateChanged: boolean): string
+function computeImageSrc(
+  image: ImageOrSummary,
+  width: number,
+  height: number | undefined,
+  resizeRender: ImageResizeRender,
+  hasImageDateChanged: boolean
+): string
 {
   const url = ImageService.getImageSrc(image.uri, width, height, resizeRender);
   const imageDate = image.fileDates?.modificationDate ?? image.modificationDate;
   return (imageDate && hasImageDateChanged) ? `${url}&t=${imageDate}` : url;
 }
 
-function computeExpectedDimensions(width: number, height: number, image: ImageOrSummary): {
-  resizeRender: ImageResizeRender,
-  expectedDimensions: ImageDimensions
+function computeExpectedDimensions(
+  width: number,
+  height: number | undefined,
+  image: ImageOrSummary
+): {
+  resizeRender: ImageResizeRender;
+  expectedDimensions: ImageDimensions;
 }
 {
   const resizeRender = computeResizeRender(width, height);
+  const imageWidth = image.dimensions.width;
+  const imageHeight = image.dimensions.height;
   let expectedDimensions: ImageDimensions;
+
   if (resizeRender === "inbox")
   {
-    const scalingRatio = Math.min(1, width !== undefined ? (image.dimensions.width / width) : (image.dimensions.height / height));
-    const imageRatio = image.dimensions.width / image.dimensions.height;
+    const scalingRatio = Math.min(1, width !== undefined ? (imageWidth / width) : (imageHeight / (height ?? 1)));
+    const imageRatio = imageWidth / imageHeight;
     expectedDimensions = {
-      width: Math.round(scalingRatio * (width !== undefined ? width : (height * imageRatio))),
+      width: Math.round(scalingRatio * (width !== undefined ? width : ((height ?? 1) * imageRatio))),
       height: Math.round(scalingRatio * (height !== undefined ? height : (width / imageRatio)))
     };
   }
   else
   {
-    expectedDimensions = ImageService.computeImageDimensions(image.dimensions, { width, height }, resizeRender);
+    expectedDimensions = ImageService.computeImageDimensions(
+      { width: imageWidth, height: imageHeight },
+      { width, height: height ?? width },
+      resizeRender
+    );
   }
-  return { resizeRender, expectedDimensions };
+
+  return {
+    resizeRender,
+    expectedDimensions
+  };
 }
 
 type ImageItemType = {
@@ -92,7 +116,7 @@ type ImageItemType = {
   onClick: (image: ImageOrSummary) => void;
 };
 
-export default function ImageItem({
+function ImageItem({
   image,
   width,
   height,
@@ -102,108 +126,111 @@ export default function ImageItem({
   onClick
 }: ImageItemType)
 {
-  const [t] = useTranslation();
-  const [menuOpened, setMenuOpened] = useState<boolean>(false);
+  const [ t ] = useTranslation();
+  const [ menuOpened, setMenuOpened ] = useState<boolean>(false);
   const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
   const hasImageDateChanged = useImageDateChanged(image);
-  const [imageExpectedDimensions, setImageExpectedDimensions] = useState<ImageDimensions>(computeExpectedDimensions(width, height, image).expectedDimensions);
-  const [imageSrc, setImageSrc] = useState<string>(computeImageSrc(image, width, height, computeResizeRender(width, height), hasImageDateChanged));
-  const { imgRef, isLoaded, isError } = useImageRefStatus(imageSrc);
 
-  useEffect(() =>
+  const {
+    resizeRender,
+    expectedDimensions: imageExpectedDimensions
+  } = useMemo(() => computeExpectedDimensions(width, height, image), [ width, height, image ]);
+
+  const imageSrc = useMemo<string>(() => computeImageSrc(image, width, height, resizeRender, hasImageDateChanged), [ image, width, height, resizeRender, hasImageDateChanged ]);
+
+  const { isLoaded, hasError, handleLoad, handleError } = useImageRefStatus(imageSrc);
+
+  const handleOnSelectImage = useCallback((): void =>
   {
-    const {
-      resizeRender,
-      expectedDimensions: newImageExpectedDimensions
-    } = computeExpectedDimensions(width, height, image);
-    setImageExpectedDimensions(newImageExpectedDimensions);
-    setImageSrc(computeImageSrc(image, width, height, resizeRender, hasImageDateChanged));
-  }, [image, width, height, hasImageDateChanged]);
+    toggleSelectedImage(image);
+  }, [ image, toggleSelectedImage ]);
 
-  const handleOnSelectImage = useCallback(() => toggleSelectedImage(image), [image, toggleSelectedImage]);
-
-  const handleOnClick = useCallback((event: React.MouseEvent<HTMLElement>) =>
+  function handleOnClick(event: React.MouseEvent<HTMLElement>): void
   {
     event.stopPropagation();
     const target = event.target as HTMLElement;
     if (mode === ImageItemMode.SELECT)
     {
-      return handleOnSelectImage();
+      handleOnSelectImage();
     }
-    if (target.getAttribute("data-action"))
+    else
     {
-      onClick(image);
+      // We ignore clicks originating from interactive controls like buttons and checkboxes
+      if (target.closest("button, input") !== null)
+      {
+        return;
+      }
+      if (target.closest("[data-action]") !== null)
+      {
+        onClick(image);
+      }
     }
-  }, [mode, handleOnSelectImage, onClick]);
+  }
 
-  const handleOnChangeMenuOpened = useCallback((opened: boolean) =>
+  const isSelected = useMemo<boolean>(() => isSelectedImage(image), [ image, isSelectedImage ]);
+
+  const containerStyle = useMemo<MantineStyleProp>(() =>
   {
-    setMenuOpened(opened);
-  }, []);
+    const calculatedHeight = height !== undefined
+      ? height
+      : Math.round(width * (imageExpectedDimensions.height / Math.max(1, imageExpectedDimensions.width)));
+    return {
+      width: `${width}px`,
+      height: `${calculatedHeight}px`
+    };
+  }, [ width, height, imageExpectedDimensions ]);
 
-  const isSelected = useMemo(() => isSelectedImage(image), [image, isSelectedImage]);
+  const menu = useMemo<ReactElement | null>(() =>
+  {
+    if (mode !== ImageItemMode.VIEW)
+    {
+      return null;
+    }
+    else
+    {
+      return (<Menu
+        withinPortal={false}
+        position="bottom-end"
+        trigger="hover"
+        openDelay={50}
+        closeDelay={600}
+        opened={menuOpened}
+        onChange={setMenuOpened}
+        shadow="md"
+        width={260}
+      >
+        <Menu.Target>
+          <ActionIcon variant="default">
+            <IconDots/>
+          </ActionIcon>
+        </Menu.Target>
+        {menuOpened && <ImageItemMenu image={image} viewMode={viewMode}/>}
+      </Menu>);
+    }
+  }, [ mode, menuOpened, image, viewMode ]);
 
-  const containerStyle = useMemo(() => ({
-    width: `${width}px`,
-    height: `${height !== undefined ? height : Math.round(width * (imageExpectedDimensions.height / imageExpectedDimensions.width))}px`
-  }), [width, height, imageExpectedDimensions]);
-
-  const menu = useMemo(() => (mode === ImageItemMode.VIEW && (
-    <Menu
-      withinPortal={false}
-      position="bottom-end"
-      trigger="hover"
-      openDelay={50}
-      closeDelay={600}
-      opened={menuOpened}
-      onChange={handleOnChangeMenuOpened}
-      shadow="md"
-      width={260}
+  const actions = useMemo<ReactElement>(() =>
+  {
+    return (<Flex
+      data-action={true}
+      p="sm"
+      align="start"
+      justify="space-between"
+      style={menuOpened ? { opacity: 1 } : {}}
+      className={style.overlay}
     >
-      <Menu.Target>
-        <ActionIcon variant="default">
-          <IconDots/>
-        </ActionIcon>
-      </Menu.Target>
-      {menuOpened && <ImageItemMenu image={image} viewMode={viewMode}/>}
-    </Menu>
-  )), [image, menuOpened, handleOnChangeMenuOpened]);
+      {mode !== ImageItemMode.PASSIVE && (
+        <Checkbox
+          checked={isSelected}
+          size={width < 200 ? "sm" : "md"}
+          onChange={handleOnSelectImage}
+        />
+      )}
+      {menu}
+    </Flex>);
+  }, [ menuOpened, mode, isSelected, width, handleOnSelectImage, menu ]);
 
-  const actions = useMemo(() => (<Flex
-    data-action={true}
-    p="sm"
-    align="start"
-    justify="space-between"
-    style={menuOpened ? { opacity: 1 } : {}}
-    className={style.overlay}
-  >
-    {mode !== ImageItemMode.PASSIVE && <Checkbox
-      checked={isSelected}
-      size={width < 200 ? "sm" : "md"}
-      onChange={handleOnSelectImage}
-    />}
-    {menu}
-  </Flex>), [menuOpened, menu, isSelected, handleOnChangeMenuOpened, handleOnSelectImage]);
-
-  const img = useMemo(() => (<img
-    ref={imgRef}
-    className={`${style.image} ${isLoaded === true ? style.loaded : style.unLoaded}`}
-    loading="lazy"
-    src={imageSrc}
-    alt={image.name}
-    width={imageExpectedDimensions.width}
-    height={imageExpectedDimensions.height}
-    style={imageExpectedDimensions}
-  />), [imgRef, isLoaded, imageSrc, imageExpectedDimensions]);
-
-  const overlayElement = useMemo(() => ((overlay && mode !== ImageItemMode.SELECT) &&
-    <div className={style.captionContainer}>{overlay}</div>), [overlay, mode]);
-
-  const placeholder = useMemo(() => (isLoaded === false &&
-    <Flex className={style.placeholder} align="center" justify="center">{isError === true && (
-      <Text c="red">{t("errors.imageCondensed")}</Text>)}</Flex>), [isLoaded, isError]);
-
-  const className = useMemo(() => `${style.imageWrapper} ${isSelected ? style.hover : ""}`, [isSelected]);
+  const className = useMemo<string>(() => `${style.imageWrapper} ${isSelected ? style.hover : ""}`, [ isSelected ]);
 
   return (<Flex
     align="center"
@@ -213,8 +240,26 @@ export default function ImageItem({
     style={containerStyle}
   >
     {actions}
-    {img}
-    {overlayElement}
-    {placeholder}
+    <img
+      className={`${style.image} ${isLoaded === true ? style.loaded : style.notLoaded}`}
+      loading="lazy"
+      src={imageSrc}
+      alt={image.name}
+      width={imageExpectedDimensions.width}
+      height={imageExpectedDimensions.height}
+      style={imageExpectedDimensions}
+      onLoad={handleLoad}
+      onError={handleError}
+    />
+    {overlay && mode !== ImageItemMode.SELECT && (<div className={style.captionContainer}>{overlay}</div>)}
+    {isLoaded === false && (<Flex
+      className={`${style.placeholder}${hasError === true ? (` ${style.error}`) : ""}`}
+      align="center"
+      justify="center"
+    >
+      {hasError === true && (<Text c="red">{t("errors.imageCondensed")}</Text>)}
+    </Flex>)}
   </Flex>);
 }
+
+export default React.memo(ImageItem);

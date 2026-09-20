@@ -63,4 +63,24 @@
   background-color: #f0f0f0;
   background-image: linear-gradient(to right, #f0f0f0 0%, #e0e0e0 20%, #f0f0f0 40%, #f0f0f0 100%);
   background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+
+  &.error
+  {
+    background-image: none;
+    animation: none;
+  }
 }
+
+@keyframes shimmer
+{
+  0%
+  {
+    background-position: -200% 0;
+  }
+  100%
+  {
+    background-position: 200% 0;
+  }
+}
+
