@@ -73,6 +73,10 @@ class BriaExtension(PicteusExtension):
                                                                                               value=ApplicationMetadataItemValue(
                                                                                                   recipe))]).to_json(),
                                                                                       parent_id=image.id)
+
+        self.get_image_api().image_set_tags(id=stored_image.id, extension_id=self.extension_id,
+                                            request_body=[self.extension_id])
+
         self.get_image_api().image_set_features(id=stored_image.id, extension_id=self.extension_id, image_feature=[
             ImageFeature(type=ImageFeatureType.RECIPE, format=ImageFeatureFormat.JSON,
                          value=ImageFeatureValue(recipe.to_json()))])
