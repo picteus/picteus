@@ -8,8 +8,10 @@
     "declaration": false,
     "emitDecoratorMetadata": false,
     "experimentalDecorators": false,
+    "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "sourceMap": false
   },
-  "include": ["./src"]
+  "include": ["./src"],
+  "exclude": ["**/*.test.ts"],
 }

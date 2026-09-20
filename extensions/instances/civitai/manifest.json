@@ -16,7 +16,8 @@
     {
       "events": [
         "process.started",
-        "process.runCommand"
+        "process.runCommand",
+        "image.runCommand"
       ],
       "execution": {
         "executable": "${node}",
@@ -62,7 +63,7 @@
                         "description": "The identifier of the Civitai post",
                         "minLength": 1,
                         "maxLength": 64,
-                        "default": "10502296"
+                        "default": "31043666"
                       }
                     },
                     "required": [
@@ -91,6 +92,20 @@
               "label": "Fetch",
               "name": "Fetch images",
               "description": "Asks the user the identifier of the Civitai user or of a post, a number of images, and then fetches the corresponding count of latest images and stores them with their metadata and sources in the extension's repository."
+            }
+          ]
+        },
+        {
+          "id": "reIndex",
+          "on": {
+            "entity": "Images"
+          },
+          "specifications": [
+            {
+              "locale": "en",
+              "label": "Reindex",
+              "name": "Reindex Citivai images",
+              "description": "Reindexes already indexed images which have been imported from Civitai."
             }
           ]
         }

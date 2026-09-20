@@ -35,11 +35,14 @@
     "MANUAL.md"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && tsc-alias --resolve-full-paths",
+    "test": "node --import tsx --test src/main.test.ts"
   },
   "devDependencies": {
     "typescript": "5.9.2",
-    "@types/node": "22.17.1"
+    "@types/node": "22.17.1",
+    "tsx": "4.23.13",
+    "tsc-alias": "1.9.1"
   },
   "dependencies": {
     "@stable-canvas/civitai-rest-api-client": "1.1.1",

@@ -1,20 +1,19 @@
-import { CivitaiRESTAPIClient, type ImageMeta } from "@stable-canvas/civitai-rest-api-client";
+import type { Image } from "@stable-canvas/civitai-rest-api-client";
 
 import {
   ApiCallError,
   type ApplicationMetadata,
   type CommandParameters,
   Communicator,
-  type GenerationRecipe,
-  Helper,
   type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
   type IntentImage,
   PicteusExtension,
-  PromptKind,
   type Repository
 } from "@picteus/extension-sdk";
+
+import { CitivaiImageData, CivitaiRetriever } from "./retriever";
 
 
 class CivitaiExtension extends PicteusExtension
@@ -38,6 +37,14 @@ class CivitaiExtension extends PicteusExtension
     await ensureRepository();
   }
 
+  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], _parameters: CommandParameters): Promise<void>
+  {
+    if (commandId === "reIndex")
+    {
+      await this.reindex(communicator, imageIds);
+    }
+  }
+
   protected async onProcessCommand(communicator: Communicator, commandId: string, parameters: CommandParameters): Promise<void>
   {
     if (commandId === "fetchImages")
@@ -53,7 +60,6 @@ class CivitaiExtension extends PicteusExtension
 
   private async fetchImages(communicator: Communicator, isFromPost: boolean, userNameOrPostId: string, count: number): Promise<void>
   {
-    const client = new CivitaiRESTAPIClient();
     communicator.sendLog(`Fetching ${count} image(s) from Civitai ${isFromPost === true ? `related to the post with id '${userNameOrPostId}'` : `for the user '${userNameOrPostId}'`}`, "info");
     const options: Record<string, any> = { limit: count, withMeta: true };
     if (isFromPost === true)
@@ -64,66 +70,18 @@ class CivitaiExtension extends PicteusExtension
     {
       options.username = userNameOrPostId;
     }
-    const civitaiImages = await client.default.getImages(options);
+    const citivaiImageDatas: CitivaiImageData[] = await new CivitaiRetriever().run(options);
     const newImages: IntentImage[] = [];
-    for (const item of civitaiImages.items)
+    for (const data of citivaiImageDatas)
     {
-      const id = item.id.toString(10);
-      const response = await fetch(item.url);
+      const id = data.recipe.id;
+      const response = await fetch(data.recipe.url);
       const arrayBuffer = await response.arrayBuffer();
       const blob = new Blob([ arrayBuffer ], {});
       try
       {
-        communicator.sendLog(`Handling the Civitai image with id '${id}' and URL '${item.url}' `, "debug");
-
-        const modelTags: string[] = [];
-        const baseModelProperties = [ "basemodel", "baseModel" ];
-        for (const baseModelProperty of baseModelProperties)
-        {
-          if (baseModelProperty in item)
-          {
-            // @ts-ignore
-            modelTags.push(item[baseModelProperty]);
-          }
-        }
-        const meta: ImageMeta = item.meta;
-        if ("models" in meta)
-        {
-          // @ts-ignore
-          modelTags.push(...meta["models"]);
-        }
-        if ("Model" in meta)
-        {
-          // @ts-ignore
-          modelTags.push(meta["Model"]);
-        }
-        if ("baseModel" in meta)
-        {
-          // @ts-ignore
-          modelTags.push(meta["baseModel"]);
-        }
-        const prompt = meta.prompt;
-        // @ts-ignore
-        const negativePrompt = meta["negativePrompt"];
-        const createdAt = item.createdAt;
-        // @ts-ignore
-        const aspectRatioRawString: string | undefined = meta["aspectratio"];
-        let aspectRatio: number | undefined;
-        if (aspectRatioRawString !== undefined)
-        {
-          const [ width, height ] = aspectRatioRawString.split(":").map(string => parseInt(string));
-          aspectRatio = width / height;
-        }
-        const sanitizedModelTags = modelTags.map(tag => tag.replaceAll(" ", "_"));
-        const recipe: GenerationRecipe =
-          {
-            schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-            modelTags: sanitizedModelTags,
-            id: item.id.toString(),
-            url: item.url,
-            aspectRatio,
-            prompt: { kind: PromptKind.Instructions, value: item }
-          };
+        communicator.sendLog(`Handling the Civitai image with id '${id}' and URL '${data.recipe.url}'`, "debug");
+        const { prompts, recipe } = data;
         const applicationMetadata: ApplicationMetadata =
           {
             items:
@@ -137,7 +95,7 @@ class CivitaiExtension extends PicteusExtension
         const image = await this.getRepositoryApi().repositoryStoreImage({
           id: this.repository!.id,
           nameWithoutExtension: id,
-          sourceUrl: item.url,
+          sourceUrl: data.recipe.url,
           applicationMetadata: JSON.stringify(applicationMetadata),
           body: blob
         });
@@ -146,7 +104,7 @@ class CivitaiExtension extends PicteusExtension
           dialogContent:
             {
               title: `Image with id '${image.id}'`,
-              description: prompt === undefined ? "" : `With prompt '${prompt}`
+              description: prompts.positive === undefined ? "" : `With prompt '${prompts.positive}`
             }
         });
         await this.getImageApi().imageSetTags({
@@ -154,49 +112,10 @@ class CivitaiExtension extends PicteusExtension
           extensionId: this.extensionId,
           requestBody: [ this.extensionId ]
         });
-        const features: ImageFeature[] =
-          [
-            {
-              type: ImageFeatureType.Recipe,
-              format: ImageFeatureFormat.Json,
-              value: JSON.stringify(recipe)
-            },
-            {
-              type: ImageFeatureType.Metadata,
-              format: ImageFeatureFormat.Json,
-              value: JSON.stringify(item)
-            }
-          ];
-        if (prompt !== undefined)
-        {
-          features.push({
-            type: ImageFeatureType.Description,
-            format: ImageFeatureFormat.String,
-            value: prompt
-          });
-          const items = [ { label: "Prompt", value: prompt } ];
-          if (negativePrompt !== undefined)
-          {
-            items.push({ label: "Negative Prompt", value: negativePrompt });
-          }
-          if (createdAt !== undefined)
-          {
-            items.push({ label: "Creation Date", value: createdAt });
-          }
-          if (item.url !== undefined)
-          {
-            items.push({ label: "URL", value: item.url });
-          }
-          features.push({
-            type: ImageFeatureType.Other,
-            format: ImageFeatureFormat.Markdown,
-            value: items.map(item => `**${item.label}:** ${item.value}`).join("<br>")
-          });
-        }
         await this.getImageApi().imageSetFeatures({
           id: image.id,
           extensionId: this.extensionId,
-          imageFeature: features
+          imageFeature: this.computeFeatures(data)
         });
       }
       catch (error)
@@ -218,6 +137,65 @@ class CivitaiExtension extends PicteusExtension
         }
     });
   };
+
+  private async reindex(communicator: Communicator, imageIds: string[]): Promise<void>
+  {
+    const retriever = new CivitaiRetriever();
+    for (const imageId of imageIds)
+    {
+      const features = await this.getImageApi().imageGetFeatures({ extensionId: this.extensionId, id: imageId });
+      const metadata = features.find(feature => feature.type === ImageFeatureType.Metadata);
+      if (metadata)
+      {
+        communicator.sendLog(`Reindexing the Civitai image with id '${imageId}'`, "info");
+        const civitaiImage: Image = JSON.parse(metadata.value as string);
+        const data = retriever.computeData(civitaiImage);
+        await this.getImageApi().imageSetFeatures({
+          id: imageId,
+          extensionId: this.extensionId,
+          imageFeature: this.computeFeatures(data)
+        });
+      }
+    }
+  }
+
+  private computeFeatures(data: CitivaiImageData)
+  {
+    const features: ImageFeature[] =
+      [
+        {
+          type: ImageFeatureType.Identity,
+          format: ImageFeatureFormat.String,
+          name: "id",
+          value: data.recipe.id
+        },
+        {
+          type: ImageFeatureType.Identity,
+          format: ImageFeatureFormat.String,
+          name: "url",
+          value: data.recipe.url
+        },
+        {
+          type: ImageFeatureType.Recipe,
+          format: ImageFeatureFormat.Json,
+          value: JSON.stringify(data.recipe)
+        },
+        {
+          type: ImageFeatureType.Metadata,
+          format: ImageFeatureFormat.Json,
+          value: JSON.stringify(data.image)
+        }
+      ];
+    if (data.uiContainer)
+    {
+      features.push({
+        type: ImageFeatureType.Recipe,
+        format: ImageFeatureFormat.Ui,
+        value: data.uiContainer.toString()
+      });
+    }
+    return features;
+  }
 
 }
 
