@@ -43,7 +43,7 @@ class ComfyUiPromptAndWorkflow
 
   readonly prompt: Json;
 
-  readonly workflow: Json;
+  readonly workflow?: Json;
 
 }
 
@@ -139,7 +139,7 @@ class ComfyUiExtension extends PicteusExtension
     const promptAndWorkflow: ComfyUiPromptAndWorkflow | undefined = this.computePromptAndWorkflow(metadata);
     if (promptAndWorkflow !== undefined)
     {
-      const id = promptAndWorkflow.workflow["id"];
+      const id = promptAndWorkflow.workflow?.["id"];
       const analyzer = new ComfyUIAnalyzer(promptAndWorkflow.workflow, promptAndWorkflow.prompt, this.analyzerSettings);
       const features: Array<ImageFeature> = [];
       const recipe: GenerationRecipe =
@@ -197,7 +197,7 @@ class ComfyUiExtension extends PicteusExtension
       if (promptAndWorkflow)
       {
         const workflow = promptAndWorkflow.workflow;
-        if (Array.isArray(workflow.nodes))
+        if (workflow && Array.isArray(workflow.nodes))
         {
           for (const node of workflow.nodes)
           {
@@ -249,6 +249,10 @@ class ComfyUiExtension extends PicteusExtension
       throw new CommandError("Cannot open the ComfyUI workflow, because prompt and workflow metadata could not be found on the image");
     }
     const workflow = promptAndWorkflow.workflow;
+    if (!workflow)
+    {
+      throw new CommandError("Cannot open the ComfyUI workflow, because the workflow metadata could not be found on the image");
+    }
     const extensionWebServiceUrl = `${this.url}/${ComfyUiExtension.webServiceFragment}/load_workflow`;
     try
     {

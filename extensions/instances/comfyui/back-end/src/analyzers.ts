@@ -13,7 +13,7 @@ import {
   tableRow,
   TextIntensity,
   TextWeight,
-  type UiContainerClass,
+  type UiContainer,
   type UiElement
 } from "@picteus/extension-sdk";
 
@@ -116,7 +116,7 @@ export class ComfyUIAnalyzer
 
   private readonly topology: ComfyUIWorkflowTopology;
 
-  constructor(private readonly workflow: Json, private readonly prompt: Json, private readonly settings: ComfyUIAnalyzerSettings)
+  constructor(private readonly workflow: Json | undefined, private readonly prompt: Json, private readonly settings: ComfyUIAnalyzerSettings)
   {
     this.samplerData = this.extractSamplerData();
     this.loras = this.extractLoras();
@@ -154,7 +154,7 @@ export class ComfyUIAnalyzer
     return imageFeatures;
   }
 
-  toUiContainer(): UiContainerClass
+  toUiContainer(): UiContainer
   {
     const primaryRows: TableRow[] = [];
     const firstColumnOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
