@@ -1802,7 +1802,7 @@ describe("Miscellaneous via application", () =>
       expect(response.status).toEqual(FORBIDDEN);
       expect(await response.json()).toEqual({
         code: 8,
-        message: `Could not process the image with URL '${filePath}'. Reason: 'it does not belong to any repository'`
+        message: `Could not resize the image with URL '${filePath}'. Reason: 'it does not belong to any repository'`
       });
     }
     {
