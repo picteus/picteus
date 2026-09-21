@@ -1,6 +1,6 @@
 {
   "name": "@picteus/replicate",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "productName": "Replicate",
   "description": "Wraps the Replicate image generation features.",
   "keywords": [
@@ -44,6 +44,6 @@
   },
   "dependencies": {
     "replicate": "1.4.0",
-    "@picteus/internal-extension-sdk": "0.16.0"
+    "@picteus/internal-extension-sdk": "0.17.0"
   }
 }

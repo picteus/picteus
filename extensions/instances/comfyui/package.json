@@ -1,6 +1,6 @@
 {
   "name": "@picteus/comfyui",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "productName": "Picteus ComfyUI extension",
   "description": "A Picteus extension to interact with ComfyUI.",
   "keywords": [
@@ -50,6 +50,6 @@
     "tsc-alias": "1.9.1"
   },
   "dependencies": {
-    "@picteus/internal-extension-sdk": "0.16.0"
+    "@picteus/internal-extension-sdk": "0.17.0"
   }
 }

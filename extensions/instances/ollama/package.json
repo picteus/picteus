@@ -1,6 +1,6 @@
 {
   "name": "@picteus/ollama",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "productName": "Picteus Llava extension",
   "description": "A Picteus extension wrapping Llava.",
   "keywords": [
@@ -47,6 +47,6 @@
   "dependencies": {
     "async-await-queue": "2.1.4",
     "ollama": "0.6.3",
-    "@picteus/internal-extension-sdk": "0.16.0"
+    "@picteus/internal-extension-sdk": "0.17.0"
   }
 }
