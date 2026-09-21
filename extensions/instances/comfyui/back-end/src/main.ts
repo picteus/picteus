@@ -276,10 +276,33 @@ class ComfyUiExtension extends PicteusExtension
     if (metadata.all !== undefined)
     {
       const allMetadata = JSON.parse(metadata.all);
+
+      function parseAndFix(string: string): Json
+      {
+        try
+        {
+          return JSON.parse(string);
+        }
+        catch (error)
+        {
+          // It means that the ComfyUI metadata properties are not well-formed, see https://github.com/Comfy-Org/ComfyUI/issues/8548
+          if (typeof error.message === "string")
+          {
+            const message: string = error.message;
+            if (message.indexOf("Unexpected token") !== -1 && message.indexOf("[NaN]") !== -1 && message.indexOf("is not valid JSON") !== -1)
+            {
+              // This a known issue with early versions of ComfyUI
+              string = string.replaceAll("[NaN]", `"[NaN]"`);
+              return JSON.parse(string);
+            }
+          }
+        }
+      }
+
       try
       {
-        const promptJson = allMetadata[ComfyUIConstants.prompt] ? JSON.parse(allMetadata[ComfyUIConstants.prompt]) : undefined;
-        const workflowJson = allMetadata[ComfyUIConstants.workflow] ? JSON.parse(allMetadata[ComfyUIConstants.workflow]) : undefined;
+        const promptJson = allMetadata[ComfyUIConstants.prompt] ? parseAndFix(allMetadata[ComfyUIConstants.prompt]) : undefined;
+        const workflowJson = allMetadata[ComfyUIConstants.workflow] ? parseAndFix(allMetadata[ComfyUIConstants.workflow]) : undefined;
         if (promptJson || workflowJson)
         {
           return new ComfyUiPromptAndWorkflow(promptJson, workflowJson);
@@ -287,7 +310,7 @@ class ComfyUiExtension extends PicteusExtension
       }
       catch (error)
       {
-        // It means that the ComfyUI metadata properties are not well-formed
+        // It means that the ComfyUI metadata properties are not well-formed and cannot be recovered
       }
     }
     return undefined;
