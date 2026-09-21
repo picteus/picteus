@@ -4,8 +4,8 @@ import { withTheme } from "@rjsf/core";
 // TODO: upgrade to rjsf v6.8.0 and use the "@rjsf/mantine" module instead of "@aokiapp/rjsf-mantine-theme"
 // import { Theme as MantineTheme } from "@rjsf/mantine";
 import { Theme as MantineTheme } from "@aokiapp/rjsf-mantine-theme";
-import { customizeValidator } from "@rjsf/validator-ajv8";
-import { RegistryWidgetsType, RJSFSchema, UiSchema } from "@rjsf/utils";
+import validator from "@rjsf/validator-ajv8";
+import { createSchemaUtils, getDefaultFormState, RegistryWidgetsType, RJSFSchema, UiSchema } from "@rjsf/utils";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/dropzone/styles.css";
@@ -73,18 +73,57 @@ function ErrorFallback({ error })
   );
 }
 
+// We use the standard AJV8 validator without in-place mutation options (such as removeAdditional or useDefaults). Those mutative options delete and re-assign properties during schema branch evaluations, which corrupts compound schemas like oneOf and anyOf when users interact with the form.
 const Form = withTheme(MantineTheme);
 
-const customValidator = customizeValidator(
+// Sanitizes the initial form data by populating missing defaults and pruning unattended properties. Stored form data (such as extension settings) may contain obsolete keys from previous versions or miss new properties added in schema revisions. We first populate defaults using RJSF's engine, retrieve the schema matching the active branch, and recursively filter out any keys not declared in the schema's path tree without resorting to destructive AJV in-place mutations.
+function cleanFormDataWithSchema(
+  formData: object | undefined,
+  schema: RJSFSchema
+): object | undefined
+{
+  if (formData === undefined)
   {
-    ajvOptionsOverrides:
-      {
-        // We use the "all" value to strip all properties not in schema, or true to respect the schema's `additionalProperties` setting
-        removeAdditional: "all",
-        useDefaults: true
-      }
+    return undefined;
   }
-);
+  const schemaUtils = createSchemaUtils(validator, schema);
+  const withDefaults = getDefaultFormState(validator, schema, formData, schema);
+  if (withDefaults === undefined || typeof withDefaults !== "object")
+  {
+    return withDefaults;
+  }
+  // We resolve the schema for the active branch and build the corresponding path hierarchy
+  const retrievedSchema = schemaUtils.retrieveSchema(schema, withDefaults);
+  const pathSchema = schemaUtils.toPathSchema(retrievedSchema, "", withDefaults);
+
+  // We recursively walk the path schema to keep only recognized properties
+  function filterByPathSchema(currentData: JsonType, currentPathSchema: JsonType): JsonType
+  {
+    if (currentData === null || currentData === undefined || typeof currentData !== "object")
+    {
+      return currentData;
+    }
+    if (Array.isArray(currentData))
+    {
+      return currentData.map((item: JsonType, itemIndex: number) =>
+      {
+        const childPathSchema = currentPathSchema[itemIndex] ?? currentPathSchema[0];
+        return childPathSchema ? filterByPathSchema(item, childPathSchema) : item;
+      });
+    }
+    const result: Record<string, JsonType> = {};
+    for (const propertyKey in currentData)
+    {
+      if (propertyKey in currentPathSchema && propertyKey !== "$name")
+      {
+        result[propertyKey] = filterByPathSchema(currentData[propertyKey], currentPathSchema[propertyKey]);
+      }
+    }
+    return result;
+  }
+
+  return filterByPathSchema(withDefaults as JsonType, pathSchema as JsonType);
+}
 
 export default function RjsfForm({
   initialFormData,
@@ -96,6 +135,7 @@ export default function RjsfForm({
 {
   const formRef = useRef(null);
 
+  // Ensures boolean schema properties default to false when undefined, preventing uncontrolled input warnings in UI widgets
   function ensureSchemaBooleanDefaultValues(schema: RJSFSchema): RJSFSchema
   {
     if (schema.type === "object" && schema.properties)
@@ -121,15 +161,10 @@ export default function RjsfForm({
     return ensureSchemaBooleanDefaultValues(schema);
   }, [ schema ]);
 
+  // We sanitize the initial data once on mount so that stored settings pass validation immediately
   const cleanedInitialFormData = useMemo<object | undefined>(() =>
   {
-    if (initialFormData === undefined)
-    {
-      return undefined;
-    }
-    const dataCopy = JSON.parse(JSON.stringify(initialFormData));
-    customValidator.rawValidation(withBooleanDefaultValueSchema, dataCopy);
-    return dataCopy;
+    return cleanFormDataWithSchema(initialFormData, withBooleanDefaultValueSchema);
   }, [ initialFormData, withBooleanDefaultValueSchema ]);
 
   const [ formData, setFormData ] = useState(cleanedInitialFormData);
@@ -142,7 +177,7 @@ export default function RjsfForm({
     }
     if (onValidationChange)
     {
-      const validationResult = customValidator.rawValidation(withBooleanDefaultValueSchema, formData ?? {});
+      const validationResult = validator.rawValidation(withBooleanDefaultValueSchema, formData ?? {});
       onValidationChange(!validationResult.errors || validationResult.errors.length === 0);
     }
   }, [ formData ]);
@@ -179,7 +214,7 @@ export default function RjsfForm({
         schema={withBooleanDefaultValueSchema}
         formData={formData}
         uiSchema={uiSchema}
-        validator={customValidator}
+        validator={validator}
         omitExtraData={true}
         liveOmit={true}
         onChange={(event) => setFormData(event.formData)}
