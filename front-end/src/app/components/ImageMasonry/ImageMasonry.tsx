@@ -1,4 +1,4 @@
-import React, { RefObject, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { ReactElement, RefObject, useCallback, useEffect, useMemo, useRef } from "react";
 import { useResizeObserver } from "@mantine/hooks";
 import { FastMasonry as MasonryLayout, MasonrySizing } from "react-fast-masonry";
 
@@ -12,7 +12,7 @@ import style from "./ImageMasonry.module.scss";
 
 type ImageMasonryType = {
   imageSize?: number;
-  images: ImageOrSummary [];
+  images: ImageOrSummary[];
   loadMore: () => void;
   containerRef: RefObject<HTMLElement>;
   scrollRootRef?: RefObject<HTMLElement>;
@@ -28,36 +28,40 @@ export default function ImageMasonry({
   imageItemMode
 }: ImageMasonryType)
 {
-  const [hostRef, hostRefRectangle] = useResizeObserver();
+  const [ hostRef, hostRefRectangle ] = useResizeObserver();
   const { height: containerHeight } = useContainerDimensions(containerRef);
-  const [, addModal, removeModal] = useActionModalContext();
+  const [ , addModal, removeModal ] = useActionModalContext();
 
-  const handleOnClick = useCallback((image: ImageOrSummary) =>
+  const imagesRef = useRef<ImageOrSummary[]>(images);
+  imagesRef.current = images;
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
     const id = addModal({
       component: (
         <ImageDetail
           image={image}
-          images={images}
+          images={imagesRef.current}
           viewMode="masonry"
           onClose={() =>
           {
             removeModal(id);
           }}
-        />),
+        />
+      ),
       isStackable: true,
       withCloseButton: false,
       fullScreen: true
     });
-  }, [images]);
-
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  }, [ addModal, removeModal ]);
 
   useEffect(() =>
   {
     const root = scrollRootRef?.current;
-    if (sentinelRef.current === null || root === undefined)
+    if (sentinelRef.current === null || root === undefined || containerHeight === undefined)
     {
       return;
     }
@@ -74,50 +78,63 @@ export default function ImageMasonry({
         root,
         threshold: 0,
         rootMargin: `0px 0px ${containerHeight * factor}px 0px`
-      });
+      }
+    );
     observerRef.current.observe(sentinelRef.current);
     return () =>
     {
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
-  }, [scrollRootRef, loadMore, images.length]);
+  }, [ scrollRootRef, loadMore, images.length, containerHeight ]);
+
+  const roundedContainerWidth = Math.round(hostRefRectangle.width);
 
   const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo<[MasonrySizing, ...MasonrySizing[]]>(() =>
   {
     const gutter = 10;
     const approximateWidth = imageSize;
-    const containerWidth = Math.round(hostRefRectangle.width);
-    const columns = Math.floor(containerWidth / approximateWidth);
-    const remainingSpace = containerWidth - (columns * approximateWidth) - ((columns - 1) * gutter);
+    const columns = Math.max(1, Math.floor(roundedContainerWidth / approximateWidth));
+    const remainingSpace = roundedContainerWidth - (columns * approximateWidth) - ((columns - 1) * gutter);
     const columnWidth = approximateWidth + Math.floor(remainingSpace / columns);
     return [{ columns, gutter, columnWidth }];
-  }, [hostRefRectangle, imageSize]);
+  }, [ roundedContainerWidth, imageSize ]);
+
+  const renderItem = useCallback(({ columnWidth }: MasonrySizing, index: number): ReactElement =>
+  {
+    const image = images[index];
+    return (
+      <ImageItem
+        key={image.id}
+        image={image}
+        width={columnWidth as number}
+        mode={imageItemMode}
+        overlay={"caption" in image ? (image as ImageWithCaption).caption : undefined}
+        viewMode="masonry"
+        onClick={handleOnClick}
+      />
+    );
+  }, [ images, imageItemMode, handleOnClick ]);
+
+  if (images.length === 0)
+  {
+    return null;
+  }
 
   return (
-    images.length > 0 && (
-      <div ref={hostRef} className={style.host}>
-        {hostRef && hostRefRectangle.width > 0 && <MasonryLayout
+    <div ref={hostRef} className={style.host}>
+      {roundedContainerWidth > 0 && (
+        <MasonryLayout
           sizes={sizes}
           items={images}
-          renderItem={({ columnWidth }, index: number) =>
-            (<ImageItem
-              key={images[index].id}
-              image={images[index]}
-              width={columnWidth as number}
-              mode={imageItemMode}
-              overlay={"caption" in images[index] ? (images[index] as ImageWithCaption).caption : undefined}
-              viewMode="masonry"
-              onClick={handleOnClick}
-            />)}
+          renderItem={renderItem}
           loadMore={loadMore}
           pack={true}
           pageSize={images.length}
           className={style.masonry}
         />
-        }
-        <div ref={sentinelRef} className={style.sentinel}/>
-      </div>
-    )
+      )}
+      <div ref={sentinelRef} className={style.sentinel}/>
+    </div>
   );
 }
