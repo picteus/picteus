@@ -13,10 +13,8 @@ import {
   identifier,
   json,
   markdown,
-  multiSlot,
   numberUnbounded,
   ratio,
-  slot,
   stringCode,
   stringLong,
   stringShort,
@@ -380,7 +378,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
 
     if (generationRecipe.modelTags?.length > 0)
     {
-      rows.push(tableRow([ stringShort(t("field.modelTags"), options), multiSlot(generationRecipe.modelTags.map(modelTag => slot(stringShort(modelTag, { representation: StringShortRepresentation.chip })))) ]));
+      rows.push(tableRow([ stringShort(t("field.modelTags"), options), flowing(generationRecipe.modelTags.map(modelTag => stringShort(modelTag, { representation: StringShortRepresentation.chip }))) ]));
     }
 
     if (generationRecipe.inputAssets?.length > 0)
@@ -402,7 +400,10 @@ export default function ImageData({ image, viewMode }: ImageDataType)
     return rows;
   }
 
-  const nonRecipeAndNonUiFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.type !== ImageFeatureType.Recipe && imageFeature.format !== ImageFeatureFormat.Ui && imageFeature.format !== ImageFeatureFormat.Html && imageFeature.format !== ImageFeatureFormat.Markdown && !(imageFeature.format === ImageFeatureFormat.String && (imageFeature.type === ImageFeatureType.Caption || imageFeature.type === ImageFeatureType.Description || imageFeature.type === ImageFeatureType.Comment || imageFeature.type === ImageFeatureType.Physics))).sort((feature1: ExtensionImageFeature, feature2: ExtensionImageFeature) => featureTypeComparison(feature1.type, feature2.type)), [ image ]
+  const nonRecipeAndNonUiFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.type !== ImageFeatureType.Recipe && imageFeature.format !== ImageFeatureFormat.Ui && imageFeature.format !== ImageFeatureFormat.Html && imageFeature.format !== ImageFeatureFormat.Markdown && !(imageFeature.format === ImageFeatureFormat.String && (imageFeature.type === ImageFeatureType.Caption || imageFeature.type === ImageFeatureType.Description || imageFeature.type === ImageFeatureType.Comment || imageFeature.type === ImageFeatureType.Physics || imageFeature.type === ImageFeatureType.Identity))).sort((feature1: ExtensionImageFeature, feature2: ExtensionImageFeature) => featureTypeComparison(feature1.type, feature2.type)), [ image ]
+  );
+
+  const inferredTechnicalFeatures = useMemo<ExtensionImageFeature[]>(() => nonRecipeAndNonUiFeatures.filter((imageFeature) => imageFeature.format !== ImageFeatureFormat.Json), [ nonRecipeAndNonUiFeatures ]
   );
 
   const uiFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.format === ImageFeatureFormat.Ui && imageFeature.type !== ImageFeatureType.Recipe), [ image ]
@@ -658,9 +659,9 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         );
       }
 
-      return (<Flex direction="column" gap="md">{renderImageFeatureCards(nonRecipeAndNonUiFeatures)}</Flex>);
+      return (<Flex direction="column" gap="md">{renderImageFeatureCards(inferredTechnicalFeatures)}</Flex>);
     },
-    [ nonRecipeAndNonUiFeatures ]
+    [ inferredTechnicalFeatures ]
   );
 
   const metadataCard = useMemo<ReactElement | null>(() =>
