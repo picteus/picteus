@@ -3,21 +3,26 @@ import { useMemo, useRef } from "react";
 import { ImageOrSummary } from "types";
 
 
-export default function useImageDateChanged(image: ImageOrSummary): boolean
+export default function useImageDateChanged(image: ImageOrSummary): { hasChanged: boolean, latestDate: number }
 {
   const initialImageDateRef = useRef<number>(image.fileDates?.modificationDate ?? image.modificationDate);
   const initialIdRef = useRef<string>(image.id);
-  return useMemo<boolean>(() =>
+  return useMemo<{ hasChanged: boolean, latestDate: number }>(() =>
   {
+    const latestDate = image.fileDates?.modificationDate ?? image.modificationDate;
+    let hasChanged: boolean;
     if (image.id === initialIdRef.current)
     {
-      return (image.fileDates?.modificationDate ?? image.modificationDate) !== initialImageDateRef.current;
+      const previousInitialImageDateRef = initialImageDateRef.current;
+      initialImageDateRef.current = latestDate;
+      hasChanged = latestDate !== previousInitialImageDateRef;
     }
     else
     {
       initialIdRef.current = image.id;
-      initialImageDateRef.current = image.fileDates?.modificationDate ?? image.modificationDate;
-      return false;
+      initialImageDateRef.current = latestDate;
+      hasChanged = false;
     }
-  }, [image]);
+    return { hasChanged, latestDate };
+  }, [ image ]);
 }

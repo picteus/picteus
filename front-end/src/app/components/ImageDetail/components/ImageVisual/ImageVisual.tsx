@@ -24,18 +24,18 @@ type ImageVisualType = {
 export default function ImageVisual({ image, withNavigation }: ImageVisualType)
 {
   const resizeRender: ImageResizeRender = "inbox";
-  const [t] = useTranslation();
+  const [ t ] = useTranslation();
   const leftArrowRef = useRef<HTMLButtonElement>(null);
   const rightArrowRef = useRef<HTMLButtonElement>(null);
-  const [imageWrapperRef, imageWrapperRectangle] = useResizeObserver();
+  const [ imageWrapperRef, imageWrapperRectangle ] = useResizeObserver();
   const imageRef = useRef<HTMLImageElement>();
-  const [placeholder, setPlaceholder] = useState<boolean>(true);
-  const [imageWrapperDimensions, setImageWrapperDimensions] = useState<PicteusImageDimensions | undefined>();
-  const [imageExpectedDimensions, setImageExpectedDimensions] = useState<PicteusImageDimensions | undefined>();
-  const [imageSrc, setImageSrc] = useState<string | undefined>();
-  const [scalingRatio, setScalingRatio] = useState<string | undefined>();
-  const [error, setError] = useState<string | undefined>();
-  const hasImageDateChanged = useImageDateChanged(image);
+  const [ placeholder, setPlaceholder ] = useState<boolean>(true);
+  const [ imageWrapperDimensions, setImageWrapperDimensions ] = useState<PicteusImageDimensions | undefined>();
+  const [ imageExpectedDimensions, setImageExpectedDimensions ] = useState<PicteusImageDimensions | undefined>();
+  const [ imageSrc, setImageSrc ] = useState<string | undefined>();
+  const [ scalingRatio, setScalingRatio ] = useState<string | undefined>();
+  const [ error, setError ] = useState<string | undefined>();
+  const { hasChanged: hasImageDateChanged } = useImageDateChanged(image);
 
   useEffect(() =>
   {
@@ -56,7 +56,7 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType)
       const imageDate = image.fileDates?.modificationDate ?? image.modificationDate;
       setImageSrc((imageDate && hasImageDateChanged) ? `${url}&t=${imageDate}` : url);
     }
-  }, [imageWrapperRectangle, hasImageDateChanged, image]);
+  }, [ imageWrapperRectangle, hasImageDateChanged, image ]);
 
   useEffect(() =>
   {
@@ -74,7 +74,7 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualType)
         leftArrowRef.current.focus();
       }
     }
-  }, [withNavigation]);
+  }, [ withNavigation ]);
 
   return (<Flex data-close="close" align="center" justify="space-between" gap="sm" className={style.imageContainer}>
     <ActionIcon

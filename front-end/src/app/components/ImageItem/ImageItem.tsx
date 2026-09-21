@@ -56,30 +56,28 @@ function computeResizeRender(width?: number, height?: number): ImageResizeRender
 }
 
 function computeImageSrc(
-  image: ImageOrSummary,
+  imageUri: string,
   width: number,
   height: number | undefined,
   resizeRender: ImageResizeRender,
-  hasImageDateChanged: boolean
+  imageModificationDate?: number
 ): string
 {
-  const url = ImageService.getImageSrc(image.uri, width, height, resizeRender);
-  const imageDate = image.fileDates?.modificationDate ?? image.modificationDate;
-  return (imageDate && hasImageDateChanged) ? `${url}&t=${imageDate}` : url;
+  const url = ImageService.getImageSrc(imageUri, width, height, resizeRender);
+  return imageModificationDate !== undefined ? `${url}&t=${imageModificationDate}` : url;
 }
 
 function computeExpectedDimensions(
   width: number,
   height: number | undefined,
-  image: ImageOrSummary
+  imageWidth: number,
+  imageHeight: number
 ): {
   resizeRender: ImageResizeRender;
   expectedDimensions: ImageDimensions;
 }
 {
   const resizeRender = computeResizeRender(width, height);
-  const imageWidth = image.dimensions.width;
-  const imageHeight = image.dimensions.height;
   let expectedDimensions: ImageDimensions;
 
   if (resizeRender === "inbox")
@@ -116,7 +114,7 @@ type ImageItemType = {
   onClick: (image: ImageOrSummary) => void;
 };
 
-function ImageItem({
+export default function ImageItem({
   image,
   width,
   height,
@@ -129,14 +127,16 @@ function ImageItem({
   const [ t ] = useTranslation();
   const [ menuOpened, setMenuOpened ] = useState<boolean>(false);
   const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
-  const hasImageDateChanged = useImageDateChanged(image);
+  const { latestDate: latestImageDate } = useImageDateChanged(image);
 
+  const imageWidth = useMemo<number>(() => image.dimensions.width, [ image.dimensions ]);
+  const imageHeight = useMemo<number>(() => image.dimensions.height, [ image.dimensions ]);
   const {
     resizeRender,
     expectedDimensions: imageExpectedDimensions
-  } = useMemo(() => computeExpectedDimensions(width, height, image), [ width, height, image ]);
+  } = useMemo(() => computeExpectedDimensions(width, height, imageWidth, imageHeight), [ width, height, imageWidth, imageHeight ]);
 
-  const imageSrc = useMemo<string>(() => computeImageSrc(image, width, height, resizeRender, hasImageDateChanged), [ image, width, height, resizeRender, hasImageDateChanged ]);
+  const imageSrc = useMemo<string>(() => computeImageSrc(image.uri, width, height, resizeRender, latestImageDate), [ image.uri, width, height, resizeRender, latestImageDate ]);
 
   const { isLoaded, hasError, handleLoad, handleError } = useImageRefStatus(imageSrc);
 
@@ -230,18 +230,30 @@ function ImageItem({
     </Flex>);
   }, [ menuOpened, mode, isSelected, width, handleOnSelectImage, menu ]);
 
-  const className = useMemo<string>(() => `${style.imageWrapper} ${isSelected ? style.hover : ""}`, [ isSelected ]);
+  const containerClassName = useMemo<string>(() => `${style.imageWrapper} ${isSelected ? style.hover : ""}`, [ isSelected ]);
+  const imgClassName = useMemo<string>(() => `${style.image} ${isLoaded === true ? style.loaded : style.notLoaded}`, [ isLoaded ]);
+
+  const overlayElement = useMemo<ReactElement>(() => overlay && mode !== ImageItemMode.SELECT && (
+    <div className={style.captionContainer}>{overlay}</div>), [ overlay, mode ]);
+
+  const loadingOrErrorElement = useMemo<ReactElement>(() => (isLoaded === false && (<Flex
+    className={`${style.placeholder}${hasError === true ? (` ${style.error}`) : ""}`}
+    align="center"
+    justify="center"
+  >
+    {hasError === true && (<Text c="red">{t("errors.imageCondensed")}</Text>)}
+  </Flex>)), [ isLoaded, hasError ]);
 
   return (<Flex
     align="center"
     justify="center"
-    className={className}
+    className={containerClassName}
     onClick={handleOnClick}
     style={containerStyle}
   >
     {actions}
     <img
-      className={`${style.image} ${isLoaded === true ? style.loaded : style.notLoaded}`}
+      className={imgClassName}
       loading="lazy"
       src={imageSrc}
       alt={image.name}
@@ -251,15 +263,7 @@ function ImageItem({
       onLoad={handleLoad}
       onError={handleError}
     />
-    {overlay && mode !== ImageItemMode.SELECT && (<div className={style.captionContainer}>{overlay}</div>)}
-    {isLoaded === false && (<Flex
-      className={`${style.placeholder}${hasError === true ? (` ${style.error}`) : ""}`}
-      align="center"
-      justify="center"
-    >
-      {hasError === true && (<Text c="red">{t("errors.imageCondensed")}</Text>)}
-    </Flex>)}
+    {overlayElement}
+    {loadingOrErrorElement}
   </Flex>);
 }
-
-export default React.memo(ImageItem);
