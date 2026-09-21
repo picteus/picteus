@@ -273,7 +273,7 @@ class OllamaExtension extends PicteusExtension
       }
       catch (error)
       {
-        communicator.sendLog(`The Ollama server is not running properly. Reason: '${error.message}'`, "error");
+        communicator.sendLog(`The Ollama server is not running properly. Reason: '${error.message}'`, "warn");
         this.ollama = undefined;
       }
     }
