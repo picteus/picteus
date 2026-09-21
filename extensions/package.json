@@ -68,7 +68,7 @@
     "sdk:public:build": "dotenv -- npm run sdk:public:build:dotenv",
     "sdk:typescript:publish:dotenv": "cd $TYPESCRIPT_SDK_DIRECTORY_PATH && npm publish --access=public",
     "sdk:typescript:publish": "dotenv -- npm run sdk:typescript:publish:dotenv",
-    "sdk:python:publish:dotenv": "cross-var \"cd $BUILD_SDK_DIRECTORY_PATH/python && pip install twine && twine upload -r pypi './*'\"",
+    "sdk:python:publish:dotenv": "cross-var \"cd $BUILD_SDK_DIRECTORY_PATH/python && pip install --upgrade twine packaging && twine upload -r pypi './*'\"",
     "sdk:python:publish": "dotenv -- npm run sdk:python:publish:dotenv",
     "presdk:publish": "npm run .env",
     "sdk:publish": "npm run sdk:typescript:publish && npm run sdk:python:publish",

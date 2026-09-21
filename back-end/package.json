@@ -90,7 +90,7 @@
     "openApi:generateAndPackage": "npm run openApi:typeScript:generateAndPackage && npm run openApi:python:generateAndPackage",
     "openApi:typeScript:install": "gulp installTypeScriptOpenApiClient",
     "wsClient:typescript:publish": "cd ../generated/openapi/typescript-fetch && npm publish --access=public",
-    "wsClient:python:publish": "cd ../generated/openapi/python && . .venv/bin/activate && pip install twine && twine upload -r pypi --verbose './dist/*'",
+    "wsClient:python:publish": "cd ../generated/openapi/python && pip install --upgrade twine packaging && twine upload -r pypi --verbose './dist/*'",
     "wsClient:publish": "npm run wsClient:typescript:publish && npm run wsClient:python:publish"
   },
   "devDependencies": {
