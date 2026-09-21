@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ReactElement, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IconDots } from "@tabler/icons-react";
 import { ActionIcon, Checkbox, Flex, MantineStyleProp, Menu, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,7 @@ import style from "./ImageItem.module.scss";
 
 
 function useImageRefStatus(src: string): {
+  imageRef: RefObject<HTMLImageElement | null>;
   isLoaded: boolean;
   hasError: boolean;
   handleLoad: () => void;
@@ -23,11 +24,27 @@ function useImageRefStatus(src: string): {
 {
   const [ isLoaded, setIsLoaded ] = useState<boolean>(false);
   const [ hasError, setHasError ] = useState<boolean>(false);
+  const imageRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() =>
   {
-    setIsLoaded(false);
-    setHasError(false);
+    const imageElement = imageRef.current;
+    if (imageElement === null)
+    {
+      return;
+    }
+
+    // We check whether the image bitmap has already been loaded from the browser cache. Indeed, in many browsers, when an image is cached, the browser decodes it immediately and may not fire a native "load" event upon element creation or "src" update (or fires it before React binds the synthetic event listener). The "complete" property indicates whether the browser has finished attempting to load the image. We also verify that "naturalWidth !== 0" because the browser marks broken or failed images as "complete = true" with a zero intrinsic width.
+    if (imageElement.complete === true && imageElement.naturalWidth !== 0)
+    {
+      setIsLoaded(true);
+      setHasError(false);
+    }
+    else
+    {
+      setIsLoaded(false);
+      setHasError(false);
+    }
   }, [ src ]);
 
   const handleLoad = useCallback((): void =>
@@ -43,6 +60,7 @@ function useImageRefStatus(src: string): {
   }, []);
 
   return {
+    imageRef,
     isLoaded,
     hasError,
     handleLoad,
@@ -138,7 +156,7 @@ export default function ImageItem({
 
   const imageSrc = useMemo<string>(() => computeImageSrc(image.uri, width, height, resizeRender, latestImageDate), [ image.uri, width, height, resizeRender, latestImageDate ]);
 
-  const { isLoaded, hasError, handleLoad, handleError } = useImageRefStatus(imageSrc);
+  const { imageRef, isLoaded, hasError, handleLoad, handleError } = useImageRefStatus(imageSrc);
 
   const handleOnSelectImage = useCallback((): void =>
   {
@@ -253,6 +271,7 @@ export default function ImageItem({
   >
     {actions}
     <img
+      ref={imageRef}
       className={imgClassName}
       loading="lazy"
       src={imageSrc}

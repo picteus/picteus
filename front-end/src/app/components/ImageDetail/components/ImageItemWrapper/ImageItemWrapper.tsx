@@ -21,15 +21,15 @@ type ImageItemWrapperType = {
 
 export default function ImageItemWrapper({ imageId, edge, viewMode }: ImageItemWrapperType)
 {
-  const [t] = useTranslation();
-  const [image, setImage] = useState<Image>(undefined);
-  const [error, setError] = useState<boolean>(false);
-  const [, addModal, removeModal] = useActionModalContext();
+  const [ t ] = useTranslation();
+  const [ image, setImage ] = useState<Image | undefined>(undefined);
+  const [ error, setError ] = useState<boolean>(false);
+  const [ , addModal, removeModal ] = useActionModalContext();
 
   useEffect(() =>
   {
-    ImageService.get({ id: imageId }).then((parentImage: Image) => setImage(parentImage)).catch(() => setError(true));
-  }, [imageId]);
+    ImageService.get({ id: imageId }).then(setImage).catch(() => setError(true));
+  }, [ imageId ]);
 
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
@@ -37,7 +37,7 @@ export default function ImageItemWrapper({ imageId, edge, viewMode }: ImageItemW
       component: (
         <ImageDetail
           image={image}
-          images={[image]}
+          images={[ image ]}
           viewMode={viewMode}
           onClose={() =>
           {
@@ -48,7 +48,7 @@ export default function ImageItemWrapper({ imageId, edge, viewMode }: ImageItemW
       withCloseButton: false,
       fullScreen: true
     });
-  }, [viewMode]);
+  }, [ image, viewMode ]);
 
   if (error)
   {
