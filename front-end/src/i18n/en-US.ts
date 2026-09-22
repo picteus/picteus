@@ -316,7 +316,7 @@ export default {
     tags: "Tags",
     recipe: "Recipe",
     features: "Features",
-    vectorialFeatures: "Raw",
+    rawFeatures: "Raw",
     newFeatures: "Features",
     schemaComplianceError: "The underlying information cannot be displayed because of a schema compliance issue",
     type:

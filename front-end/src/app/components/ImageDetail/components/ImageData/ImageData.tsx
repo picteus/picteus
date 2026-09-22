@@ -91,7 +91,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       features: "features",
       uiFeatures: "uiFeatures",
       inferredTechnicalFeature: "inferredTechnicalFeature",
-      vectorialFeatures: "vectorialFeatures",
+      rawFeatures: "rawFeatures",
       metadata: "metadata"
     } as const;
   const [ accordionValue, setAccordionValue ] = useState<string[]>(StorageService.getImageDetailTraits([ sectionIds.information, sectionIds.tags, sectionIds.recipe, sectionIds.features ]));
@@ -414,7 +414,11 @@ export default function ImageData({ image, viewMode }: ImageDataType)
 
   const legacyTechnicalFeaturesCard = useMemo<ReactElement>(() =>
     {
-      return (<ImageDataCard header={<Text fw={600} size="sm">{t("imageDetail.vectorialFeatures")}</Text>}>
+      if (nonRecipeAndNonUiFeatures.length === 0)
+      {
+        return null;
+      }
+      return (<ImageDataCard header={<Text fw={600} size="sm">{t("imageDetail.rawFeatures")}</Text>}>
         <Table layout="fixed">
           <Table.Tbody>
             {[ ...nonRecipeAndNonUiFeatures ].map((imageFeature, index) =>
@@ -436,20 +440,33 @@ export default function ImageData({ image, viewMode }: ImageDataType)
     [ nonRecipeAndNonUiFeatures, viewMode ]
   );
 
-  const recipeFeatureCards = useMemo<ReactElement | null>(() =>
+  const recipeCard = useMemo<ReactElement | null>(() =>
     {
       if (recipeFeatures.length === 0)
       {
         return null;
       }
 
-      function extractRecipe(feature: ExtensionImageFeature): GenerationRecipe
+      function extractRecipe(feature: ExtensionImageFeature): GenerationRecipe | undefined
       {
-        return GenerationRecipeFromJSON(JSON.parse(feature.value as string));
+        try
+        {
+          const parsed = typeof feature.value === "string" ? JSON.parse(feature.value) : feature.value;
+          return GenerationRecipeFromJSON(parsed);
+        }
+        catch (error)
+        {
+          return undefined;
+        }
       }
 
-      function convertRecipeToContainer(generationRecipe: GenerationRecipe): UiContainer
+      function convertRecipeToContainer(generationRecipe: GenerationRecipe | undefined): UiContainer
       {
+        if (generationRecipe === undefined)
+        {
+          return createSchemaComplianceUiContainer();
+        }
+
         const rows = computeRecipeCommonRows(generationRecipe);
         if (generationRecipe.prompt && typeof generationRecipe.prompt === "object")
         {
@@ -493,52 +510,85 @@ export default function ImageData({ image, viewMode }: ImageDataType)
 
       function augmentUiContainer(feature: ExtensionImageFeature, container: UiContainer): UiContainer
       {
-        const vectorialFeature = recipeFeatures.find(aFeature => aFeature.id === feature.id && aFeature.format === ImageFeatureFormat.Json);
+        const vectorialFeature = recipeFeatures.find((candidateFeature) => candidateFeature.id === feature.id && candidateFeature.format === ImageFeatureFormat.Json);
         if (vectorialFeature !== undefined)
         {
           const generationRecipe = extractRecipe(vectorialFeature);
-          const rows = computeRecipeCommonRows(generationRecipe);
-          if (rows.length > 0)
+          if (generationRecipe !== undefined)
           {
-            container.elements.splice(0, 0, table(rows, {
-              hasHeader: false,
-              withRowSeparators: true
-            }), divider());
+            const rows = computeRecipeCommonRows(generationRecipe);
+            if (rows.length > 0)
+            {
+              container.elements.splice(0, 0, table(rows, {
+                hasHeader: false,
+                withRowSeparators: true
+              }), divider());
+            }
           }
         }
         return container;
       }
 
-      const hasUiFeatures = recipeFeatures.find(feature => feature.format === ImageFeatureFormat.Ui) !== undefined;
-      const cards = recipeFeatures.filter(feature => hasUiFeatures === false || feature.format === ImageFeatureFormat.Ui).map((feature, index) =>
+      // We group recipe features by extension identifier
+      const featuresByExtensionMap = new Map<string, ExtensionImageFeature[]>();
+      for (const feature of recipeFeatures)
+      {
+        let extensionFeatures = featuresByExtensionMap.get(feature.id);
+        if (extensionFeatures === undefined)
         {
-          const container = feature.format === ImageFeatureFormat.Ui ? augmentUiContainer(feature, parseFeatureUiContainer(feature)) : convertRecipeToContainer(extractRecipe(feature));
-          const featureContainer: ImageFeatureContainerType =
-            {
-              extensionId: feature.id,
-              type: feature.type,
-              name: feature.name,
-              uiContainer: container
-            };
-
-          return (<ImageFeatureCard
-            key={`recipe-card-${index}`}
-            title={capitalizeText(feature.id)}
-            featureContainers={[ featureContainer ]}
-          />);
+          extensionFeatures = [];
+          featuresByExtensionMap.set(feature.id, extensionFeatures);
         }
-      );
+        extensionFeatures.push(feature);
+      }
 
-      if (cards.length === 0)
+      const featureContainers: ImageFeatureContainerType[] = [];
+      for (const extensionFeatures of featuresByExtensionMap.values())
+      {
+        const uiFeatures = extensionFeatures.filter((feature) => feature.format === ImageFeatureFormat.Ui);
+        if (uiFeatures.length > 0)
+        {
+          for (const feature of uiFeatures)
+          {
+            const container = augmentUiContainer(feature, parseFeatureUiContainer(feature));
+            featureContainers.push(
+              {
+                extensionId: feature.id,
+                type: feature.type,
+                name: feature.name,
+                uiContainer: container
+              }
+            );
+          }
+        }
+        else
+        {
+          for (const feature of extensionFeatures)
+          {
+            const container = feature.format === ImageFeatureFormat.Json ? convertRecipeToContainer(extractRecipe(feature)) : UiContainer.builder().add(inferNonUiElement(feature)).build();
+            featureContainers.push(
+              {
+                extensionId: feature.id,
+                type: feature.type,
+                name: feature.name,
+                uiContainer: container
+              }
+            );
+          }
+        }
+      }
+
+      if (featureContainers.length === 0)
       {
         return null;
       }
 
-      return (<Flex direction="column" gap="md">
-        {cards}
-      </Flex>);
+      return (<ImageFeatureCard
+        title={t("imageDetail.recipe")}
+        featureContainers={featureContainers}
+      />);
     },
-    [ recipeFeatures ]
+    [ recipeFeatures]
   );
 
   const uiFeatureCards = useMemo<ReactElement>(() =>
@@ -819,34 +869,29 @@ export default function ImageData({ image, viewMode }: ImageDataType)
   );
 
   const sections = useMemo(() => ([
-    { id: sectionIds.information, mnemonic: "imageDetail.information", node: informationCard },
+    { id: sectionIds.information, node: informationCard },
     ...(tagsCard !== null ? [ {
       id: sectionIds.tags,
-      mnemonic: "imageDetail.tags",
       node: tagsCard
     } ] : []),
-    ...(recipeFeatureCards !== null ? [ {
+    ...(recipeCard !== null ? [ {
       id: sectionIds.recipe,
-      mnemonic: "imageDetail.recipe",
-      node: recipeFeatureCards
+      node: recipeCard
     } ] : []),
-    { id: sectionIds.uiFeatures, mnemonic: "imageDetail.features", node: uiFeatureCards },
+    { id: sectionIds.uiFeatures, node: uiFeatureCards },
     ...(inferredTechnicalFeatureCards !== null ? [ {
       id: sectionIds.inferredTechnicalFeature,
-      mnemonic: "imageDetail.newFeatures",
       node: inferredTechnicalFeatureCards
     } ] : []),
-    {
-      id: sectionIds.vectorialFeatures,
-      mnemonic: "imageDetail.vectorialFeatures",
+    ...(legacyTechnicalFeaturesCard !== null ? [ {
+      id: sectionIds.rawFeatures,
       node: legacyTechnicalFeaturesCard
-    },
+    } ] : []),
     ...(metadataCard !== null ? [ {
       id: sectionIds.metadata,
-      mnemonic: "imageDetail.metadata",
       node: metadataCard
     } ] : [])
-  ]), [ informationCard, tagsCard, recipeFeatureCards, inferredTechnicalFeatureCards, legacyTechnicalFeaturesCard, metadataCard ]);
+  ]), [ informationCard, tagsCard, recipeCard, inferredTechnicalFeatureCards, legacyTechnicalFeaturesCard, metadataCard ]);
 
   function wrapWithCopy(node: ReactNode, value: string, enabled?: boolean): ReactNode
   {
