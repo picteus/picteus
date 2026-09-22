@@ -1,55 +1,53 @@
-import type { ReactNode } from "react";
-import clsx from "clsx";
-import Heading from "@theme/Heading";
+import type { ComponentProps, ComponentType, ReactNode } from "react";
+import IconLocal from "@site/static/img/icon-local.svg";
+import IconPrivacy from "@site/static/img/icon-privacy.svg";
+import IconExtensible from "@site/static/img/icon-extensible.svg";
+
 import styles from "./styles.module.css";
 
-type FeatureItem = {
-  title: string;
-  Svg: React.ComponentType<React.ComponentProps<"svg">>;
-  description: ReactNode;
-};
 
-const FeatureList: FeatureItem[] = [
+type FeatureItemType =
   {
-    title: "Local",
-    Svg: require("@site/static/img/local.svg").default,
-    description: (
-      <>
-        Picteus was designed from the ground up to offer a local access to all your assets.
-      </>
-    )
-  },
-  {
-    title: "Data privacy",
-    Svg: require("@site/static/img/privacy.svg").default,
-    description: (
-      <>
-        Picteus never shares data with the outer world without your consent.
-      </>
-    )
-  },
-  {
-    title: "Extensible framework",
-    Svg: require("@site/static/img/extensible.svg").default,
-    description: (
-      <>
-        Extend or customize your application via extensions.
-      </>
-    )
-  }
-];
+    title: string;
+    Svg: ComponentType<ComponentProps<"svg">>;
+    description: string;
+  };
 
-function Feature({ title, Svg, description }: FeatureItem)
+type FeaturePropsType = FeatureItemType;
+
+const featureList: FeatureItemType[] =
+  [
+    {
+      title: "Local",
+      Svg: IconLocal,
+      description: "Picteus was designed from the ground up to offer local access to all your assets."
+    },
+    {
+      title: "Data privacy",
+      Svg: IconPrivacy,
+      description: "Picteus never shares data with the outer world without your consent."
+    },
+    {
+      title: "Extensible framework",
+      Svg: IconExtensible,
+      description: "Extend or customize your application via extensions."
+    }
+  ];
+
+function Feature(props: FeaturePropsType): ReactNode
 {
+  const { title, Svg, description } = props;
   return (
-    <div className={clsx("col col--4")}>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
+    <div className={styles.featureColumn}>
+      <div className={styles.iconCircle}>
+        <Svg className={styles.featureIcon} aria-hidden="true" />
       </div>
-      <div className="text--center padding-horiz--md">
-        <Heading as="h3">{title}</Heading>
-        <p>{description}</p>
-      </div>
+      <h2 className={styles.featureTitle}>
+        {title}
+      </h2>
+      <p className={styles.featureDescription}>
+        {description}
+      </p>
     </div>
   );
 }
@@ -57,13 +55,19 @@ function Feature({ title, Svg, description }: FeatureItem)
 export default function HomepageFeatures(): ReactNode
 {
   return (
-    <section className={styles.features}>
-      <div className="container">
-        <div className="row">
-          {FeatureList.map((props, index) => (
-            <Feature key={index} {...props} />
-          ))}
-        </div>
+    <section className={styles.featuresSection}>
+      <div className={styles.featuresContainer}>
+        {featureList.map(
+          (featureItem, itemIndex) =>
+          {
+            return (
+              <div key={featureItem.title} className={styles.featureWrapper}>
+                {itemIndex > 0 && <div className={styles.verticalSeparator} aria-hidden="true" />}
+                <Feature {...featureItem} />
+              </div>
+            );
+          }
+        )}
       </div>
     </section>
   );

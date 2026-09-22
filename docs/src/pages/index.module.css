@@ -1,29 +1,197 @@
-.heroBanner
+.heroSection
 {
-  padding: 4rem 0;
+  padding: 80px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--ifm-background-color);
+  width: 100%;
+}
+
+.heroContainer
+{
+  max-width: 740px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  position: relative;
-  overflow: hidden;
+}
+
+.logoWrapper
+{
+  margin-bottom: 28px;
+  display: flex;
+  justify-content: center;
 }
 
 .heroLogo
 {
-  height: 96px;
-  width: 96px;
-  margin-bottom: 1.5rem;
+  width: 80px;
+  height: 80px;
+  color: var(--picteus-text-primary);
 }
 
-@media screen and (max-width: 996px)
+.eyebrow
 {
-  .heroBanner
-  {
-    padding: 2rem;
-  }
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  line-height: 18.15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--picteus-hero-eyebrow);
+  margin: 0 0 20px;
+  font-weight: 400;
 }
 
-.buttons
+.title
+{
+  font-family: "Clash Display", sans-serif;
+  font-size: 88px;
+  line-height: 88px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--picteus-text-primary);
+  margin: 0 0 28px;
+}
+
+.description
+{
+  font-family: "Archivo", sans-serif;
+  font-size: 19px;
+  line-height: 30.4px;
+  font-weight: 400;
+  color: var(--picteus-text-secondary);
+  max-width: 480px;
+  margin: 0 0 44px;
+}
+
+.ctaWrapper
+{
+  margin-bottom: 40px;
+}
+
+.ctaButton
+{
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 26px;
+  border-radius: 6px;
+  background-color: var(--picteus-accent-lime);
+  border: 2px solid var(--picteus-accent-olive);
+  color: #000000 !important;
+  font-family: "Archivo", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 24.75px;
+  text-decoration: none !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ctaButton:hover
+{
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(218, 246, 71, 0.35);
+  color: #000000 !important;
+}
+
+.ctaArrow
+{
+  width: 16px;
+  height: 16px;
+  color: #000000;
+}
+
+.highlightsRow
 {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.highlightLeft
+{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  padding-right: 24px;
+}
+
+.highlightRight
+{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding-left: 24px;
+}
+
+.highlightDivider
+{
+  width: 1px;
+  height: 48.54px;
+  background-color: var(--picteus-border-color);
+}
+
+.highlightTitle
+{
+  font-family: "Archivo", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 23.1px;
+  color: var(--picteus-text-primary);
+}
+
+.highlightSubtitle
+{
+  font-family: "Archivo", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 21.45px;
+  color: var(--picteus-text-secondary);
+  margin-top: 4px;
+}
+
+@media screen and (max-width: 768px)
+{
+  .heroSection
+  {
+    padding: 48px 16px 64px;
+  }
+
+  .title
+  {
+    font-size: 52px;
+    line-height: 56px;
+  }
+
+  .description
+  {
+    font-size: 16px;
+    line-height: 24px;
+    margin-bottom: 32px;
+  }
+
+  .highlightsRow
+  {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .highlightLeft,
+  .highlightRight
+  {
+    align-items: center;
+    text-align: center;
+    padding: 0;
+  }
+
+  .highlightDivider
+  {
+    width: 48px;
+    height: 1px;
+  }
 }

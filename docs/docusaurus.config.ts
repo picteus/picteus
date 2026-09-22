@@ -1,6 +1,7 @@
 import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
+import packageJson from "../package.json";
 
 
 const config: Config =
@@ -15,7 +16,10 @@ const config: Config =
     favicon: "img/favicon.ico",
     trailingSlash: false,
     onBrokenLinks: "throw",
-    future: { v4: true },
+    future:
+      {
+        v4: true
+      },
     i18n:
       {
         defaultLocale: "en",
@@ -49,23 +53,44 @@ const config: Config =
           } satisfies Preset.Options
         ]
       ],
+    themes:
+      [
+        [
+          require.resolve("@easyops-cn/docusaurus-search-local"),
+          {
+            hashed: true,
+            language: [ "en" ],
+            docsRouteBasePath: "/docs",
+            indexDocs: true,
+            indexBlog: false,
+            indexPages: false,
+            highlightSearchTermsOnTargetPage: true
+          }
+        ]
+      ],
     themeConfig:
       {
         colorMode:
           {
             respectPrefersColorScheme: true
-          }, docs: {
-          sidebar: {
-            hideable: true
-          }
-        },
+          },
+        docs:
+          {
+            sidebar:
+              {
+                hideable: true
+              }
+          },
         navbar:
           {
             title: "Picteus",
             logo:
               {
                 alt: "Picteus Logo",
-                src: "img/logo-black.svg"
+                src: "img/logo-black.svg",
+                srcDark: "img/logo-white.svg",
+                width: 28,
+                height: 28
               },
             items:
               [
@@ -73,38 +98,56 @@ const config: Config =
                   type: "docSidebar",
                   sidebarId: "setupSidebar",
                   position: "left",
-                  label: "Setup"
+                  label: "Setup",
+                  className: "navbar__item--setup"
                 },
                 {
                   type: "docSidebar",
                   sidebarId: "manualSidebar",
                   position: "left",
-                  label: "Manual"
+                  label: "Manual",
+                  className: "navbar__item--manual"
                 },
                 {
                   type: "docSidebar",
                   sidebarId: "developerSidebar",
                   position: "left",
-                  label: "Developer"
+                  label: "Developer",
+                  className: "navbar__item--developer"
                 },
                 {
                   type: "docSidebar",
                   sidebarId: "extensionsSidebar",
                   position: "left",
-                  label: "Extensions"
+                  label: "Extensions",
+                  className: "navbar__item--extensions"
+                },
+                {
+                  type: "html",
+                  position: "right",
+                  value: `<span class="navbar__version-badge">v${packageJson.version}</span>`
                 },
                 {
                   href: "https://github.com/picteus/picteus",
-                  label: "GitHub",
-                  position: "right"
+                  position: "right",
+                  className: "header-github-link",
+                  "aria-label": "Picteus on GitHub"
                 }
               ]
           },
         footer:
           {
-            style: "dark",
+            style: "light",
+            logo:
+              {
+                alt: "Picteus Logo",
+                src: "img/logo-black.svg",
+                srcDark: "img/logo-white.svg",
+                width: 22,
+                height: 22
+              },
             links: [],
-            copyright: `Copyright © 2024-${new Date().getFullYear()} Picteus Team`
+            copyright: `Copyright © 2024–${new Date().getFullYear()} Picteus Team`
           },
         prism:
           {

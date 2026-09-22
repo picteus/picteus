@@ -1,13 +1,110 @@
-.features
+.featuresSection
 {
-  display: flex;
-  align-items: center;
-  padding: 2rem 0;
+  background-color: var(--ifm-background-surface-color);
+  border-top: 1px solid var(--picteus-border-color);
+  border-bottom: 1px solid var(--picteus-border-color);
   width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
-.featureSvg
+.featuresContainer
 {
-  height: 200px;
-  width: 200px;
+  display: flex;
+  max-width: 1200px;
+  width: 100%;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.featureWrapper
+{
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  position: relative;
+}
+
+.verticalSeparator
+{
+  width: 1px;
+  background-color: var(--picteus-border-color);
+  flex-shrink: 0;
+}
+
+.featureColumn
+{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 52px 40px;
+}
+
+.iconCircle
+{
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  border: 1.5px solid var(--picteus-feature-icon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+  transition: border-color 0.15s ease;
+}
+
+.featureIcon
+{
+  width: 22px;
+  height: 22px;
+  color: var(--picteus-feature-icon);
+}
+
+.featureTitle
+{
+  font-family: "Clash Display", sans-serif;
+  font-size: 17px;
+  line-height: 20.4px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--picteus-text-primary);
+  margin: 0 0 14px;
+}
+
+.featureDescription
+{
+  font-family: "Archivo", sans-serif;
+  font-size: 14px;
+  line-height: 23.8px;
+  font-weight: 400;
+  color: var(--picteus-text-secondary);
+  max-width: 260px;
+  margin: 0;
+}
+
+@media screen and (max-width: 992px)
+{
+  .featuresContainer
+  {
+    flex-direction: column;
+  }
+
+  .featureWrapper
+  {
+    flex-direction: column;
+  }
+
+  .verticalSeparator
+  {
+    width: 60%;
+    height: 1px;
+    margin: 0 auto;
+  }
+
+  .featureColumn
+  {
+    padding: 40px 24px;
+  }
 }
