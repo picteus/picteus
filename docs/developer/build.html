@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Build | Picteus</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://picteus.github.io/picteus/docs/developer/build"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Build | Picteus"><meta data-rh="true" name="description" content="This document explains how to build and run the application from the source code, but also how to package and distribute it."><meta data-rh="true" property="og:description" content="This document explains how to build and run the application from the source code, but also how to package and distribute it."><link data-rh="true" rel="icon" href="/picteus/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://picteus.github.io/picteus/docs/developer/build"><link data-rh="true" rel="alternate" href="https://picteus.github.io/picteus/docs/developer/build" hreflang="en"><link data-rh="true" rel="alternate" href="https://picteus.github.io/picteus/docs/developer/build" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Build","item":"https://picteus.github.io/picteus/docs/developer/build"}]}</script><link rel="stylesheet" href="/picteus/assets/css/styles.d3e599f3.css">
-<script src="/picteus/assets/js/runtime~main.c48e6ba1.js" defer="defer"></script>
-<script src="/picteus/assets/js/main.fb59665d.js" defer="defer"></script>
+<script src="/picteus/assets/js/runtime~main.f43b6a58.js" defer="defer"></script>
+<script src="/picteus/assets/js/main.f3bd9dac.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg style="display: none;"><defs>
@@ -114,9 +114,26 @@
 <h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="run-1">Run<a href="#run-1" class="hash-link" aria-label="Direct link to Run" title="Direct link to Run" translate="no">​</a></h4>
 <p>To run the front-end component, run the <code>npm run start</code> script.</p>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="shared">Shared<a href="#shared" class="hash-link" aria-label="Direct link to Shared" title="Direct link to Shared" translate="no">​</a></h3>
-<p>Its source-code and scripts are located under the <code>shared</code> directory. It only contains a <code>back-end</code> folder, which contains code common between the &quot;back-end&quot; and &quot;electron&quot; modules.</p>
+<p>Its source-code and scripts are located under the <code>shared</code> directory. It comprises four submodules:</p>
 <ul>
-<li class="">Run the <code>npm run build</code> script to build it, which will compile the code.</li>
+<li class="">
+<p><code>shared/core</code>: core TypeScript utilities and shared data structures ;</p>
+</li>
+<li class="">
+<p><code>shared/back-end</code>: Node.js code shared between the &quot;back-end&quot; and &quot;electron&quot; modules ;</p>
+</li>
+<li class="">
+<p><code>shared/front-end</code>: front-end components and utilities shared with the &quot;electron&quot; module ;</p>
+</li>
+<li class="">
+<p><code>shared/specification-factory</code>: TypeSpec grammar specifications and multi-language code generation factory for ViewKit schemas, React component views, and SDK models.</p>
+</li>
+<li class="">
+<p>To build all shared submodules, run the <code>npm run shared:build</code> script from the root directory.</p>
+</li>
+<li class="">
+<p>To compile ViewKit grammar and run code generation independently, navigate to <code>shared/specification-factory</code> and run <code>npm run build</code>.</p>
+</li>
 </ul>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="electron">Electron<a href="#electron" class="hash-link" aria-label="Direct link to Electron" title="Direct link to Electron" translate="no">​</a></h3>
 <p>Its source-code and scripts are located under the <code>electron</code> directory.</p>
