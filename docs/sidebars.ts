@@ -11,7 +11,25 @@ const sidebars: SidebarsConfig =
       "setup/troubleshooting"
     ],
     manualSidebar: [
-      "manual/webservicesapi",
+      {
+        type: "category",
+        label: "Web services API",
+        link: {
+          type: "doc",
+          id: "manual/webservicesapi/index"
+        },
+        items: [
+          "manual/webservicesapi/images",
+          "manual/webservicesapi/repositories",
+          "manual/webservicesapi/collections",
+          "manual/webservicesapi/extensions",
+          "manual/webservicesapi/image-attachments",
+          "manual/webservicesapi/api-secrets",
+          "manual/webservicesapi/settings",
+          "manual/webservicesapi/administration",
+          "manual/webservicesapi/miscellaneous"
+        ]
+      },
       "manual/databases",
       "manual/facets",
       "manual/tags",

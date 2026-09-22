@@ -147,6 +147,8 @@ Embedding queries in Picteus use **cosine distance** to measure vector similarit
 
 ## OpenAPI web services API
 
+The endpoint reference for embeddings is maintained in [Images — embeddings](webservicesapi/images.md#embeddings). This section provides the embedding-specific background and examples that explain how those endpoints behave.
+
 The Picteus back-end exposes dedicated REST web service endpoints for reading, writing, and deleting vector embeddings. These endpoints conform to OpenAPI 3.1 specifications.
 
 ### Endpoint reference summary

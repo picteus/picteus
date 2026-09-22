@@ -236,6 +236,8 @@ If any targeted image lacks the required tag, the request is rejected with a `40
 
 ## OpenAPI web services API
 
+The endpoint reference for tags is maintained in [Images — tags](webservicesapi/images.md#tags). This section provides the tag-specific background and examples that explain how those endpoints behave.
+
 The Picteus back-end exposes dedicated REST web service endpoints for reading, writing, and searching tags. These endpoints conform to OpenAPI 3.1 specifications.
 
 ### Endpoint reference summary

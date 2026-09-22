@@ -324,6 +324,8 @@ The following web service payload demonstrates a search request filtering images
 
 ## OpenAPI web services API
 
+The endpoint reference for features is maintained in [Images — features](webservicesapi/images.md#features). This section provides the feature-specific background and examples that explain how those endpoints behave.
+
 The Picteus back-end exposes dedicated REST web service endpoints for reading, writing, and searching structured image features. These endpoints conform to OpenAPI 3.1 specifications.
 
 ### Endpoint reference summary

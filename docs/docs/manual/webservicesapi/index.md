@@ -48,15 +48,15 @@ The API routes are organized into functional resource controllers:
 
 | Resource path | Controller | Functional description |
 |:---|:---|:---|
-| `/image` | `ImageController` | Inspects image metadata, performs multi-criteria searches and pagination, downloads binary images with on-the-fly formatting and resizing, updates tags, manages extracted features, and triggers image commands. |
-| `/repository` | `RepositoryController` | Lists, creates, updates, and deletes image storage repositories, synchronizes filesystem directories, and stores new images linked to parent transformations. |
-| `/collection` | `CollectionController` | Manages user-defined image collections, including creating, querying, updating, and reordering images within collections. |
-| `/imageAttachment` | `ImageAttachmentController` | Uploads, retrieves, lists, and deletes arbitrary binary attachments associated with specific images. |
-| `/extension` | `ExtensionController` | Handles extension management, including installation from archives or unpacked directories, state changes (start/stop), configuration settings retrieval and updates, compilation, and activity inspection. |
-| `/apiSecret` | `ApiSecretController` | Generates, inspects, lists, and revokes scoped API keys and secrets used for programmatic access control. |
-| `/settings` | `SettingsController` | Retrieves and updates global application configuration parameters. |
-| `/administration` | `AdministrationController` | Performs administrative operations, such as executing database schema migrations. |
-| `/miscellaneous` | `MiscellaneousController` | Provides system health checks (`/ping`), connectivity testing, and application runtime configuration inspection. |
+| `/image` | `ImageController` | Image metadata, binary transformations, searches, enrichment facets, and capability execution. See [Images](images.md). |
+| `/repository` | `RepositoryController` | Repository lifecycle, synchronization, image storage, and repository-wide facet discovery. See [Repositories](repositories.md). |
+| `/collection` | `CollectionController` | User-defined collection management. See [Collections](collections.md). |
+| `/imageAttachment` | `ImageAttachmentController` | Binary attachment creation and download. See [Image attachments](image-attachments.md). |
+| `/extension` | `ExtensionController` | Extension installation, lifecycle, configuration, and command execution. See [Extensions](extensions.md). |
+| `/apiSecret` | `ApiSecretController` | Scoped API secret management. See [API secrets](api-secrets.md). |
+| `/settings` | `SettingsController` | Global application settings. See [Settings](settings.md). |
+| `/administration` | `AdministrationController` | Administrative database operations. See [Administration](administration.md). |
+| `/miscellaneous` | `MiscellaneousController` | Health checks and runtime configuration. See [Miscellaneous](miscellaneous.md). |
 
 ---
 

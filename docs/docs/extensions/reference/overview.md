@@ -46,7 +46,7 @@ The Picteus extension SDKs are published as open-source, public packages:
 ### Embedded back-end OpenAPI client
 
 Each SDK embeds the corresponding typed back-end web services client library, see 
-[webservicesapi.md](../../manual/webservicesapi.md) for comprehensive information about the underlying web services.
+[Web services API](../../manual/webservicesapi/index.md) for comprehensive information about the underlying web services.
 
 ---
 
@@ -380,7 +380,7 @@ The application offers a dedicated space in the UI to manage extensions.
 
 #### 2. Via the back-end REST API
 
-The back-end API offers dedicated OpenAPI web service endpoints for installing — `/extension/install` (OpenAPI operation ID: `extension_install`, method: `ExtensionApi.extensionInstall`) — or updating an extension — `/extension/{id}/update` (OpenAPI operation ID: `extension_update`, method: `ExtensionApi.extensionUpdate`).
+The back-end API offers dedicated OpenAPI web service endpoints for installing and updating extensions. See [Extensions](../../manual/webservicesapi/extensions.md#installing-and-updating-extensions) for more information.
 
 #### 3. As an "unpacked" extension
 

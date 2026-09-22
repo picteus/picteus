@@ -135,7 +135,7 @@ For comprehensive details on SQLite configuration, database migrations, and Chro
 
 ## Web services API access
 
-All image enrichment facets are exposed and operable through the Picteus REST web services API — see [Web services API](webservicesapi.md) for a complete documentation on the OpenAPI specification. External applications, extensions, and the front-end interact with these facets using dedicated endpoints.
+All image enrichment facets are exposed and operable through the Picteus REST web services API — see [Web services API](webservicesapi/index.md) for the OpenAPI overview. External applications, extensions, and the front-end interact with these facets using dedicated endpoints.
 
 Each facet has a dedicated set of endpoints for reading, writing, and searching its data. Detailed specifications — including request and response schemas, security scopes, and SDK usage examples — are documented in the individual facet pages:
 
@@ -143,4 +143,4 @@ Each facet has a dedicated set of endpoints for reading, writing, and searching 
 - **Categorical tags**: endpoints for setting, reading, and searching tags, as well as listing all distinct tags across a repository. *Detailed documentation: [Tags](tags.md#openapi-web-services-api).*
 - **Structured features**: endpoints for setting, reading, and searching features and generative recipes, as well as listing declared feature names. *Detailed documentation: [Features](features.md#openapi-web-services-api).*
 - **Vector embeddings**: endpoints for storing, retrieving, and deleting embedding vectors, as well as listing declared embedding names. *Detailed documentation: [Embeddings](embedding.md#openapi-web-services-api).*
-- **Multi-criteria search**: the `POST /image/search` endpoint executes comprehensive multi-criteria queries combining text keywords, tag filters, structured feature conditions, and vector similarity thresholds. *Detailed documentation: [Web services API](webservicesapi.md).*
+- **Multi-criteria search**: the `POST /image/search/images` endpoint executes comprehensive multi-criteria queries combining text keywords, tag filters, structured feature conditions, and vector similarity thresholds. *Detailed documentation: [Images](webservicesapi/images.md).*

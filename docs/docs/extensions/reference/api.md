@@ -2,7 +2,7 @@
 
 Picteus extension SDKs embed the entirety of the back-end REST web services API, completely generated from OpenAPI specifications. Extensions can interact with any back-end resource — images, repositories, collections, tags, features, secrets — without requiring manual HTTP request configuration.
 
-For a comprehensive functional description of the underlying API, its endpoints, and data contracts, refer to the [Web services API](../../manual/webservicesapi.md) documentation.
+For a comprehensive functional description of the underlying API, its endpoints, and data contracts, refer to the [Web services API](../../manual/webservicesapi/index.md) documentation.
 
 ---
 
@@ -22,7 +22,7 @@ Your extension can interact with any capability and resource provided by the bac
 - inspect and manage collections and storage repositories ;
 - access secure third-party credentials managed within the application via the API Secret service.
 
-For the full functional description of all available endpoints and services, see the [Web services API](../../manual/webservicesapi.md) documentation.
+For the full functional description of all available endpoints and services, see the [Web services API](../../manual/webservicesapi/index.md) documentation.
 
 ---
 
