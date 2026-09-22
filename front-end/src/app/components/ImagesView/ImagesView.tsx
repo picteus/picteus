@@ -49,10 +49,16 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
   const hasFilterOrCollectionId = useMemo<boolean>(() => "filterOrCollectionId" in viewData, [ viewData ]);
   const pinnable = useMemo<boolean>(() => "pinnable" in viewData ? viewData.pinnable : false, [ viewData ]);
   const [ images, setImages ] = useState<ImageWithCaption[] | undefined>("images" in viewData ? viewData.images : undefined);
-  const [ refreshTrigger, setRefreshTrigger ] = useState<number>(0);
   const [ viewMode, setViewMode ] = useInterceptedState<ViewMode>("mode" in viewData ? viewData.mode : viewData.viewMode);
   const [ displayRefreshAlert, setDisplayRefreshAlert ] = useState<boolean>(false);
   const autoReloadImagesViews = useMemo<boolean>(() => StorageService.getAutoReloadImagesViews(), []);
+  const isFirstRenderRef = useRef<boolean>(true);
+
+  const handleOnRefresh = useCallback((): void =>
+  {
+    imagesContentRef.current?.refresh();
+    setDisplayRefreshAlert(false);
+  }, []);
 
   useEffect(() =>
   {
@@ -87,14 +93,15 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
       setViewMode(viewData.viewMode);
     }
 
-    handleOnRefresh();
-  }, [ viewData, setFilterOrCollectionId, setViewMode ]);
-
-  const handleOnRefresh = useCallback((): void =>
-  {
-    setRefreshTrigger((previousRefreshTrigger: number): number => previousRefreshTrigger + 1);
-    setDisplayRefreshAlert(false);
-  }, []);
+    if (isFirstRenderRef.current)
+    {
+      isFirstRenderRef.current = false;
+    }
+    else
+    {
+      handleOnRefresh();
+    }
+  }, [ viewData, setFilterOrCollectionId, setViewMode, handleOnRefresh ]);
 
   const onFetchData = useCallback((searchRange: SearchRange): Promise<ImageExplorerDataType> =>
   {
@@ -226,7 +233,6 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
             scrollRootRef={scrollRootRef}
             onEmptyResults={onEmptyResults}
             onFetchData={onFetchData}
-            refreshTrigger={refreshTrigger}
           />
           }
         </Container>

@@ -16,4 +16,5 @@ export { default as useAsyncInitialize } from "./useAsyncInitialize.tsx";
 export { default as useImageDateChanged } from "./useImageDateChanged.tsx";
 export { default as useReadyRef } from "./useReadyRef.tsx";
 export { default as useTraceUpdate } from "./useTraceUpdate.tsx";
+export { default as useThrottledAsyncAction } from "./useThrottledAsyncAction.tsx";
 export * from "./queries";
