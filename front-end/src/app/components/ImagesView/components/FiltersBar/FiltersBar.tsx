@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Box, Button, Flex, Menu, Text, Tooltip } from "@mantine/core";
 import {
   IconArrowsHorizontal,
@@ -55,10 +55,12 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
   const [ t ] = useTranslation();
   const [ filters, setFilters ] = useInterceptedState<LocalFiltersType | undefined>("filter" in initialFilterOrCollectionId ? FiltersService.searchFilterToLocalFilters(initialFilterOrCollectionId.filter) : undefined);
   const [ sortingMenuOpened, setSortingMenuOpened ] = useState<boolean>(false);
+  const isProgrammaticUpdateRef = useRef<boolean>(true);
 
-  useImperativeHandle(ref, () => ({
-    setFilter: (filter: SearchFilter) =>
+  useImperativeHandle(ref, (): FiltersBarRef => ({
+    setFilter: (filter: SearchFilter): void =>
     {
+      isProgrammaticUpdateRef.current = true;
       setFilters(FiltersService.searchFilterToLocalFilters(filter));
     }
   }));
@@ -82,6 +84,12 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
 
   useEffect(() =>
   {
+    if (isProgrammaticUpdateRef.current)
+    {
+      isProgrammaticUpdateRef.current = false;
+      return;
+    }
+
     const updatedSearchFilter = filters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(filters);
     if (updatedSearchFilter !== undefined)
     {

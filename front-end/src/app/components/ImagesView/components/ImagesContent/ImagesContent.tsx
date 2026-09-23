@@ -65,7 +65,7 @@ export const ImagesContent = forwardRef<ImagesContentRef, ImagesContentType>(({
 
   const executeFetch = useCallback((targetPagination: PaginationType, isRefresh: boolean): Promise<void> =>
   {
-    if (isFetchingDataRef.current && !isRefresh)
+    if (isFetchingDataRef.current && !isRefresh && targetPagination.currentPage > 1)
     {
       return Promise.resolve();
     }

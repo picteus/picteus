@@ -167,7 +167,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
     }
   });
 
-  const handleOnFilterOrCollectionId = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId) =>
+  const handleOnFilterOrCollectionId = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId): void =>
   {
     setFilterOrCollectionId(updatedFilterOrCollectionId);
     if (JSON.stringify(updatedFilterOrCollectionId) !== JSON.stringify(filterOrCollectionId))
@@ -180,9 +180,8 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
           filterOrCollectionId: updatedFilterOrCollectionId
         });
       }
-      handleOnRefresh();
     }
-  }, [ filterOrCollectionId, viewMode, pinnable, handleOnRefresh ]);
+  }, [ filterOrCollectionId, viewMode, pinnable ]);
 
   const handleOnViewMode = useCallback((updatedViewMode: ViewMode) =>
   {

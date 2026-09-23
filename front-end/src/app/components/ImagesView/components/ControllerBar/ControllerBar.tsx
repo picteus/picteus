@@ -55,7 +55,7 @@ export default function ControllerBar({
     onFilterOrCollectionId(collection ? { collectionId: collection.id } : { filter: FiltersService.defaultFilter });
   }, [ onFilterOrCollectionId ]);
 
-  const handleOnFilterOrCollectionId = useCallback((filterOrCollectionId: FilterOrCollectionId) =>
+  const handleOnFilterOrCollectionId = useCallback((filterOrCollectionId: FilterOrCollectionId): void =>
   {
     if ("filter" in filterOrCollectionId)
     {
@@ -66,6 +66,8 @@ export default function ControllerBar({
       }
       else
       {
+        currentCollectionRef.current = undefined;
+        setCurrentCollection(undefined);
         onFilterOrCollectionId(filterOrCollectionId);
       }
     }
@@ -75,8 +77,10 @@ export default function ControllerBar({
     }
   }, [ onFilterOrCollectionId ]);
 
-  const handleOnClearAll = useCallback(() =>
+  const handleOnClearAll = useCallback((): void =>
   {
+    currentCollectionRef.current = undefined;
+    setCurrentCollection(undefined);
     collectionsBarRef.current?.clearCollection();
   }, []);
 
