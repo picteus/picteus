@@ -3,191 +3,308 @@ import { SearchFilter } from "@picteus/ws-client";
 import { FolderTypes, TabsType, ViewTabDataType } from "types";
 
 
-const prefix = "picteus_";
-const VERSION_KEY = `${prefix}version`;
-const MAIN_TAB_KEY = `${prefix}mainTab`;
-const TABS_KEY = `${prefix}tabs`;
-const ACTIVITY_LOGS_BATCH_SIZE = `${prefix}activityLogsBatchSize`;
-const VISUALIZER_PANEL_SIZES_KEY = `${prefix}visualizerPanelSizes`;
-const CLOSEST_IMAGES_RESULTS_COUNT = `${prefix}closestImagesResultsCount`;
-const CLOSEST_IMAGES_EMBEDDING_NAME = `${prefix}closestImagesEmbeddingName`;
-const TEXT_TO_IMAGES_RESULTS_COUNT = `${prefix}textToImagesResultsCount`;
-const FOLDER_PICKER_LAST_LOCATION = `${prefix}extensionPickerLastLocation`;
-const AUTO_RELOAD_IMAGES_VIEWS = `${prefix}autoReloadImagesViews`;
-const EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION = `${prefix}extensionIntentShowShouldConfirmRedirection`;
-const IMAGE_DETAIL_TRAITS = `${prefix}imageDetailTraits`;
-const IMAGE_DETAIL_HIDDEN_SECTIONS = `${prefix}imageDetailHiddenSections`;
-const IMAGE_DETAIL_SECTIONS_ORDER = `${prefix}imageDetailSectionsOrder`;
-const SELECTED_IMAGE_IDS = `${prefix}selectedImagesIds`;
-const SELECTED_IMAGES_ACTION = `${prefix}selectedImagesAction`;
+export const prefix = "picteus_";
 
-function get(key: string, defaultValue: string = undefined): string
+export const StorageKeys =
+  {
+    ACTIVITY_LOGS_BATCH_SIZE: "activityLogsBatchSize",
+    AUTO_RELOAD_IMAGES_VIEWS: "autoReloadImagesViews",
+    CLOSEST_IMAGES_EMBEDDING_NAME: "closestImagesEmbeddingName",
+    CLOSEST_IMAGES_RESULTS_COUNT: "closestImagesResultsCount",
+    COLOR_SCHEME: "colorScheme",
+    EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION: "extensionIntentShowShouldConfirmRedirection",
+    FOLDER_PICKER_LAST_LOCATION: "extensionPickerLastLocation",
+    IMAGE_DETAIL_HIDDEN_SECTIONS: "imageDetailHiddenSections",
+    IMAGE_DETAIL_SECTIONS_ORDER: "imageDetailSectionsOrder",
+    IMAGE_DETAIL_TRAITS: "imageDetailTraits",
+    MAIN_TAB: "mainTab",
+    SELECTED_IMAGE_IDS: "selectedImagesIds",
+    SELECTED_IMAGES_ACTION: "selectedImagesAction",
+    TABS: "tabs",
+    TEXT_TO_IMAGES_RESULTS_COUNT: "textToImagesResultsCount",
+    VERSION: "version",
+    VISUALIZER_PANEL_SIZES: "visualizerPanelSizes"
+  } as const;
+
+function get(key: string, defaultValue?: string): string | undefined
 {
-  const value = localStorage.getItem(key);
+  const value = localStorage.getItem(`${prefix}${key}`);
   return value === null ? defaultValue : value;
 }
 
 function set(key: string, value: string): void
 {
-  localStorage.setItem(key, value);
+  localStorage.setItem(`${prefix}${key}`, value);
 }
 
-function getWithNullValue(key: string): string
+function remove(key: string): void
 {
-  return get(key, "null");
+  localStorage.removeItem(`${prefix}${key}`);
 }
 
-function getJsonNullValue<T>(key: string, defaultValue: T = null): T
+function getNumber(key: string, defaultValue: number): number
 {
-  return JSON.parse(getWithNullValue(key)) || defaultValue;
+  const value = get(key);
+  if (value === undefined)
+  {
+    return defaultValue;
+  }
+
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? defaultValue : parsed;
 }
 
-function storeJson<T>(key: string, value: T)
+function setNumber(key: string, value: number): void
+{
+  set(key, value.toString());
+}
+
+function getBoolean(key: string, isDefaultTrue: boolean = true): boolean
+{
+  const value = get(key);
+  if (value === undefined)
+  {
+    return isDefaultTrue;
+  }
+
+  return value !== "false";
+}
+
+function setBoolean(key: string, isEnabled: boolean): void
+{
+  set(key, isEnabled.toString());
+}
+
+function getJson<ValueType>(key: string, defaultValue?: ValueType): ValueType
+{
+  const value = get(key);
+  if (value === undefined || value === null)
+  {
+    return defaultValue;
+  }
+
+  try
+  {
+    const parsed = JSON.parse(value);
+    return parsed === null ? defaultValue : (parsed as ValueType);
+  }
+  catch (error)
+  {
+    return defaultValue;
+  }
+}
+
+function setJson<ValueType>(key: string, value: ValueType): void
 {
   set(key, JSON.stringify(value));
 }
 
+function getVersion(): string | undefined
+{
+  return get(StorageKeys.VERSION);
+}
 
-export default {
-  COLOR_SCHEME: `${prefix}colorScheme`,
-  getVersion: (): string | undefined =>
-  {
-    return getWithNullValue(VERSION_KEY);
-  },
-  setVersion: (value: string): void =>
-  {
-    set(VERSION_KEY, value);
-  },
-  getActivityLogsBatchSize(): number
-  {
-    return parseInt(get(ACTIVITY_LOGS_BATCH_SIZE, "20"));
-  },
-  setActivityLogsBatchSize(value: number): void
-  {
-    set(ACTIVITY_LOGS_BATCH_SIZE, value.toString());
-  },
-  getVisualizerPanelSizes: (): number[] =>
-    getJsonNullValue<number[]>(VISUALIZER_PANEL_SIZES_KEY) || [ 60, 30 ],
-  setVisualizerPanelSizes: (sizes: number[]): void =>
-  {
-    storeJson(VISUALIZER_PANEL_SIZES_KEY, sizes);
-  },
-  getClosestImagesResultsCount: (): number =>
-  {
-    return parseInt(get(CLOSEST_IMAGES_RESULTS_COUNT, "4"));
-  },
-  setClosestImagesResultsCount: (value: number): void =>
-  {
-    set(CLOSEST_IMAGES_RESULTS_COUNT, value.toString());
-  },
-  getClosestImagesEmbeddingName(): string | undefined
-  {
-    return get(CLOSEST_IMAGES_EMBEDDING_NAME);
-  },
-  setClosestImagesEmbeddingName: (value: string): void =>
-  {
-    set(CLOSEST_IMAGES_EMBEDDING_NAME, value);
-  },
-  getTextToImagesResultsCount: (): number =>
-  {
-    return parseInt(get(TEXT_TO_IMAGES_RESULTS_COUNT, "4"));
-  },
-  setTextToImagesResultsCount: (value: number) =>
-  {
-    set(TEXT_TO_IMAGES_RESULTS_COUNT, value.toString());
-  },
-  getLastFolderLocation: (folderType: FolderTypes) =>
-  {
-    const location = getJsonNullValue<object>(FOLDER_PICKER_LAST_LOCATION);
-    if (location)
+function setVersion(value: string): void
+{
+  set(StorageKeys.VERSION, value);
+}
+
+function getActivityLogsBatchSize(): number
+{
+  return getNumber(StorageKeys.ACTIVITY_LOGS_BATCH_SIZE, 20);
+}
+
+function setActivityLogsBatchSize(batchSize: number): void
+{
+  setNumber(StorageKeys.ACTIVITY_LOGS_BATCH_SIZE, batchSize);
+}
+
+function getVisualizerPanelSizes(): number[]
+{
+  return getJson<number[]>(StorageKeys.VISUALIZER_PANEL_SIZES, [ 60, 30 ]) || [ 60, 30 ];
+}
+
+function setVisualizerPanelSizes(panelSizes: number[]): void
+{
+  setJson(StorageKeys.VISUALIZER_PANEL_SIZES, panelSizes);
+}
+
+function getClosestImagesResultsCount(): number
+{
+  return getNumber(StorageKeys.CLOSEST_IMAGES_RESULTS_COUNT, 4);
+}
+
+function setClosestImagesResultsCount(count: number): void
+{
+  setNumber(StorageKeys.CLOSEST_IMAGES_RESULTS_COUNT, count);
+}
+
+function getClosestImagesEmbeddingName(): string | undefined
+{
+  return get(StorageKeys.CLOSEST_IMAGES_EMBEDDING_NAME);
+}
+
+function setClosestImagesEmbeddingName(embeddingName: string): void
+{
+  set(StorageKeys.CLOSEST_IMAGES_EMBEDDING_NAME, embeddingName);
+}
+
+function getTextToImagesResultsCount(): number
+{
+  return getNumber(StorageKeys.TEXT_TO_IMAGES_RESULTS_COUNT, 4);
+}
+
+function setTextToImagesResultsCount(count: number): void
+{
+  setNumber(StorageKeys.TEXT_TO_IMAGES_RESULTS_COUNT, count);
+}
+
+function getLastFolderLocation(folderType: FolderTypes): string
+{
+  const location = getJson<Record<string, string>>(StorageKeys.FOLDER_PICKER_LAST_LOCATION, {});
+  return location?.[folderType] || "/Users";
+}
+
+function setLastFolderLocation(folderType: FolderTypes, lastLocation: string): void
+{
+  const location = getJson<Record<string, string>>(StorageKeys.FOLDER_PICKER_LAST_LOCATION, {});
+  const updatedLocation =
     {
-      return location[folderType];
-    }
-    return "/Users";
-  },
-  setLastFolderLocation: (folderType: FolderTypes, lastLocation: string) =>
-  {
-    const jsonLocation = JSON.parse(get(FOLDER_PICKER_LAST_LOCATION, "{}"));
-    const updatedLocation = {
-      ...jsonLocation,
+      ...location,
       [folderType]: lastLocation
     };
-    storeJson(FOLDER_PICKER_LAST_LOCATION, updatedLocation);
-  },
-  getAutoReloadImagesViews: () =>
-  {
-    return get(AUTO_RELOAD_IMAGES_VIEWS) !== "false";
-  },
-  setAutoReloadImagesViews: (value: boolean) =>
-  {
-    set(AUTO_RELOAD_IMAGES_VIEWS, value.toString());
-  },
-  getExtensionIntentShowShouldConfirm: () =>
-  {
-    return get(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION) !== "false";
-  },
-  setExtensionIntentShowShouldConfirm: (value: boolean) =>
-  {
-    set(EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION, value.toString());
-  },
-  getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType
-  {
-    return getJsonNullValue<ViewTabDataType>(MAIN_TAB_KEY, {
+  setJson(StorageKeys.FOLDER_PICKER_LAST_LOCATION, updatedLocation);
+}
+
+function getAutoReloadImagesViews(): boolean
+{
+  return getBoolean(StorageKeys.AUTO_RELOAD_IMAGES_VIEWS, true);
+}
+
+function setAutoReloadImagesViews(shouldAutoReload: boolean): void
+{
+  setBoolean(StorageKeys.AUTO_RELOAD_IMAGES_VIEWS, shouldAutoReload);
+}
+
+function getExtensionIntentShowShouldConfirm(): boolean
+{
+  return getBoolean(StorageKeys.EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION, true);
+}
+
+function setExtensionIntentShowShouldConfirm(shouldConfirm: boolean): void
+{
+  setBoolean(StorageKeys.EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION, shouldConfirm);
+}
+
+function getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType
+{
+  return getJson<ViewTabDataType>(
+    StorageKeys.MAIN_TAB,
+    {
       mode: "masonry",
       pinnable: true,
       filterOrCollectionId: { filter: defaultFilter }
-    });
-  },
-  setMainViewTabData(value: ViewTabDataType): void
-  {
-    storeJson(MAIN_TAB_KEY, value);
-  },
-  getGalleryTabs(): TabsType[]
-  {
-    return getJsonNullValue<TabsType[]>(TABS_KEY, []);
-  },
-  setGalleryTabs(value: TabsType[]): void
-  {
-    storeJson(TABS_KEY, value);
-  },
-  getImageDetailTraits(defaultValue: string []): string[]
-  {
-    return getJsonNullValue<string[]>(IMAGE_DETAIL_TRAITS, defaultValue);
-  },
-  setImageDetailTraits(value: string[]): void
-  {
-    storeJson(IMAGE_DETAIL_TRAITS, value);
-  },
-  getImageDetailHiddenSections(defaultValue: string[]): string[]
-  {
-    return getJsonNullValue<string[]>(IMAGE_DETAIL_HIDDEN_SECTIONS, defaultValue);
-  },
-  setImageDetailHiddenSections(value: string[]): void
-  {
-    storeJson(IMAGE_DETAIL_HIDDEN_SECTIONS, value);
-  },
-  getImageDetailSectionsOrder(defaultValue: string[]): string[]
-  {
-    return getJsonNullValue<string[]>(IMAGE_DETAIL_SECTIONS_ORDER, defaultValue);
-  },
-  setImageDetailSectionsOrder(value: string[]): void
-  {
-    storeJson(IMAGE_DETAIL_SECTIONS_ORDER, value);
-  },
-  getSelectedImagesIds(): string[]
-  {
-    return getJsonNullValue(SELECTED_IMAGE_IDS, []);
-  },
-  setSelectedImageIds(ids: string[]): void
-  {
-    storeJson(SELECTED_IMAGE_IDS, ids);
-  },
-  getSelectedImagesAction(): string | undefined
-  {
-    return get(SELECTED_IMAGES_ACTION);
-  },
-  setSelectedImagesAction(action: string): void
-  {
-    set(SELECTED_IMAGES_ACTION, action);
-  }
+    }
+  );
+}
+
+function setMainViewTabData(viewTabData: ViewTabDataType): void
+{
+  setJson(StorageKeys.MAIN_TAB, viewTabData);
+}
+
+function getGalleryTabs(): TabsType[]
+{
+  return getJson<TabsType[]>(StorageKeys.TABS, []);
+}
+
+function setGalleryTabs(tabs: TabsType[]): void
+{
+  setJson(StorageKeys.TABS, tabs);
+}
+
+function getImageDetailTraits(defaultValue: string[]): string[]
+{
+  return getJson<string[]>(StorageKeys.IMAGE_DETAIL_TRAITS, defaultValue);
+}
+
+function setImageDetailTraits(traits: string[]): void
+{
+  setJson(StorageKeys.IMAGE_DETAIL_TRAITS, traits);
+}
+
+function getImageDetailHiddenSections(defaultValue: string[]): string[]
+{
+  return getJson<string[]>(StorageKeys.IMAGE_DETAIL_HIDDEN_SECTIONS, defaultValue);
+}
+
+function setImageDetailHiddenSections(hiddenSections: string[]): void
+{
+  setJson(StorageKeys.IMAGE_DETAIL_HIDDEN_SECTIONS, hiddenSections);
+}
+
+function getImageDetailSectionsOrder(defaultValue: string[]): string[]
+{
+  return getJson<string[]>(StorageKeys.IMAGE_DETAIL_SECTIONS_ORDER, defaultValue);
+}
+
+function setImageDetailSectionsOrder(sectionsOrder: string[]): void
+{
+  setJson(StorageKeys.IMAGE_DETAIL_SECTIONS_ORDER, sectionsOrder);
+}
+
+function getSelectedImagesIds(): string[]
+{
+  return getJson<string[]>(StorageKeys.SELECTED_IMAGE_IDS, []);
+}
+
+function setSelectedImageIds(imageIds: string[]): void
+{
+  setJson(StorageKeys.SELECTED_IMAGE_IDS, imageIds);
+}
+
+function getSelectedImagesAction(): string | undefined
+{
+  return get(StorageKeys.SELECTED_IMAGES_ACTION);
+}
+
+function setSelectedImagesAction(action: string): void
+{
+  set(StorageKeys.SELECTED_IMAGES_ACTION, action);
+}
+
+export default {
+  COLOR_SCHEME: `${prefix}${StorageKeys.COLOR_SCHEME}`,
+  getVersion,
+  setVersion,
+  getActivityLogsBatchSize,
+  setActivityLogsBatchSize,
+  getVisualizerPanelSizes,
+  setVisualizerPanelSizes,
+  getClosestImagesResultsCount,
+  setClosestImagesResultsCount,
+  getClosestImagesEmbeddingName,
+  setClosestImagesEmbeddingName,
+  getTextToImagesResultsCount,
+  setTextToImagesResultsCount,
+  getLastFolderLocation,
+  setLastFolderLocation,
+  getAutoReloadImagesViews,
+  setAutoReloadImagesViews,
+  getExtensionIntentShowShouldConfirm,
+  setExtensionIntentShowShouldConfirm,
+  getMainViewTabData,
+  setMainViewTabData,
+  getGalleryTabs,
+  setGalleryTabs,
+  getImageDetailTraits,
+  setImageDetailTraits,
+  getImageDetailHiddenSections,
+  setImageDetailHiddenSections,
+  getImageDetailSectionsOrder,
+  setImageDetailSectionsOrder,
+  getSelectedImagesIds,
+  setSelectedImageIds,
+  getSelectedImagesAction,
+  setSelectedImagesAction
 };
