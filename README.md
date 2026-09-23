@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Picteus beta program**: AI creators are welcome to be part of the first batch of beta users, evaluate early capabilities, provide feedback, orient the product roadmap and benefit from free custom extensions that match your requirements. You are very welcome to apply at [beta.picteus.com](https://beta.picteus.com).
+
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/logo-white.svg">
@@ -15,12 +18,14 @@
 [![Documentation](https://img.shields.io/badge/docs-online-2ea44f?style=flat-square)](https://picteus.github.io/picteus/)
 [![GitHub Release](https://img.shields.io/github/v/release/picteus/picteus?style=flat-square&label=release)](https://github.com/picteus/picteus/releases)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-informational?style=flat-square)](LICENSE)
+[![OpenAPI: 3.1](https://img.shields.io/badge/OpenAPI-3.1-6BA539?style=flat-square&logo=openapiinitiative&logoColor=white)](https://picteus.github.io/picteus/docs/manual/webservicesapi)
 [![Docker Image](https://img.shields.io/badge/docker-koppasoft%2Fpicteus-2496ed?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/koppasoft/picteus)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.17.1-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-%3E%3D5.0-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Python](https://img.shields.io/badge/python-%3E%3D3.11-3776ab?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Chat-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/channels/1549384585920385034)
 
-[Documentation](https://picteus.github.io/picteus/) • [Releases](https://github.com/picteus/picteus/releases) • [Installation](https://picteus.github.io/picteus/docs/setup/install) • [Container](https://picteus.github.io/picteus/docs/manual/container) • [Architecture](https://picteus.github.io/picteus/docs/developer/architecture) • [Build](https://picteus.github.io/picteus/docs/developer/build)
+[Documentation](https://picteus.github.io/picteus/) • [Releases](https://github.com/picteus/picteus/releases) • [Installation](https://picteus.github.io/picteus/docs/setup/install) • [Container](https://picteus.github.io/picteus/docs/manual/container) • [Architecture](https://picteus.github.io/picteus/docs/developer/architecture) • [Build](https://picteus.github.io/picteus/docs/developer/build) • [Discord](https://discord.com/channels/1549384585920385034)
 
 ---
 
@@ -123,11 +128,19 @@ Compiled output is assembled under the `build/` directory — symlinked to `elec
 ```bash
 # Deletes compiled binaries and bundles
 npm run clean
+
 # Restores the repository to a clean git checkout
 npm run reset
 ```
 
 For sub-package workflows, environment variables, and Docker container packaging, read the [build guide](https://picteus.github.io/picteus/docs/developer/build).
+
+## Community and feedback
+
+Contributors and maintainers are available on Discord to answer questions, discuss features, and collect feedback:
+
+- **Discord**: Join the discussion on the [Picteus Discord server](https://discord.com/channels/1549384585920385034) — server ID `1549384585920385034` ;
+- **GitHub Issues**: Report defects or submit technical enhancement proposals on [GitHub Issues](https://github.com/picteus/picteus/issues).
 
 ## Project vision and disclaimer
 
