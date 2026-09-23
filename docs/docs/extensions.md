@@ -1,6 +1,10 @@
 # Extensions documentation
 
-The extensions documentation describes how Picteus extensions are designed, authored, packaged, installed, and integrated with the application. It covers both conceptual guidance and the detailed contracts exposed by the extension SDKs and manifest format.
+Extensions are a central part of Picteus because they allow the application to evolve without requiring changes to its core. An extension can add or adapt application features, contribute image-processing and enrichment workflows, and change how users interact with the application through additional UI and UX integrations. These capabilities are exposed through application contracts rather than through a fixed set of built-in behaviors, so extensions can be developed and operated autonomously from the core application.
+
+Extensions may be authored by software developers who need to integrate specialist tools, automate domain-specific workflows, or provide functionality for a wider user community. They may also be created by individual users with the help of AI-assisted vibe-coding. This lowers the threshold for adapting Picteus to a particular working method: a user can describe a need, produce a focused extension, and refine it as their workflow changes. In this way, each user can maintain a distinct version of the application — a personal flavor shaped around their own requirements, data, tools, and preferred interactions.
+
+The extensions documentation describes how these extensions are designed, authored, packaged, installed, and integrated with the application. It covers both conceptual guidance and the detailed contracts exposed by the extension SDKs and manifest format.
 
 ## Documentation in this section
 

@@ -30,18 +30,18 @@ Picteus is a local-first desktop and server platform designed to catalog, inspec
 
 Full documentation, manuals, and technical specifications are available at [picteus.github.io/picteus](https://picteus.github.io/picteus/):
 
-- **[Installation and setup](https://picteus.github.io/picteus/docs/setup/install)**: Hardware requirements, OS packages, initial startup sequences, and troubleshooting ;
-- **[User manual](https://picteus.github.io/picteus/docs/manual/features)**: Image indexing, faceted search, tag management, vector similarity search, and container deployment ;
-- **[Extensions guide](https://picteus.github.io/picteus/docs/extensions/guide)**: Authoring extensions using Python and TypeScript SDKs, manifest schema specifications, and Model Context Protocol (MCP) integrations ;
-- **[Developer documentation](https://picteus.github.io/picteus/docs/developer/architecture)**: Multi-component architecture, build processes, and continuous integration workflows.
+- **[Installation and setup](https://picteus.github.io/picteus/docs/setup/install)**: hardware requirements, OS packages, initial startup sequences, and troubleshooting ;
+- **[User manual](https://picteus.github.io/picteus/docs/manual/features)**: image indexing, faceted search, tag management, vector similarity search, and container deployment ;
+- **[Extensions guide](https://picteus.github.io/picteus/docs/extensions/guide)**: authoring extensions using Python and TypeScript SDKs, manifest schema specifications, and Model Context Protocol (MCP) integrations ;
+- **[Developer documentation](https://picteus.github.io/picteus/docs/developer/architecture)**: multi-component architecture, build processes, and continuous integration workflows.
 
 ## Download and desktop installation
 
 Pre-packaged desktop binaries are distributed via the [GitHub Releases](https://github.com/picteus/picteus/releases) page under the "Assets" section:
 
 - **Supported operating systems**: Windows x64 and macOS ARM 64 — Apple Silicon — with Linux and Windows ARM 64 on the roadmap ;
-- **Hardware baseline**: At least a 4-core CPU, a dedicated GPU for local inference models, 3 GB of free disk space, and 2 GB of available RAM ;
-- **Installation steps**: Double-click the `.exe` installer on Windows, or unpack the `.app` bundle into `/Applications` on macOS.
+- **Hardware baseline**: at least a 4-core CPU, a dedicated GPU for local inference models, 3 GB of free disk space, and 2 GB of available RAM ;
+- **Installation steps**: double-click the `.exe` installer on Windows, or unpack the `.app` bundle into `/Applications` on macOS.
 
 For complete installation details and configuration flags, consult the [installation guide](https://picteus.github.io/picteus/docs/setup/install).
 
@@ -83,12 +83,12 @@ For developer guides on authoring custom integrations, consult the [extensions g
 
 Picteus is structured across six primary components:
 
-1. **`shared`**: Compound libraries providing shared TypeScript models, back-end foundations, front-end helpers, and the `specification-factory` code emitters ;
+1. **`shared`**: compound libraries providing shared TypeScript models, back-end foundations, front-end helpers, and the `specification-factory` code emitters ;
 2. **`back-end`**: NestJS and Node.js server exposing an OpenAPI v3.1 REST API, orchestrating extension runtimes and managing local persistence ;
-3. **`extensions/sdk`**: Official Python and TypeScript SDKs for developing decoupled plugins ;
-4. **`extensions/instances`**: Built-in extensions providing local machine learning model execution, third-party integrations, and MCP endpoints ;
+3. **`extensions/sdk`**: official Python and TypeScript SDKs for developing decoupled plugins ;
+4. **`extensions/instances`**: built-in extensions providing local machine learning model execution, third-party integrations, and MCP endpoints ;
 5. **`front-end`**: React single-page interface leveraging Mantine UI for interactive exploration and asset management ;
-6. **`electron`**: Host shell embedding the front-end and back-end into a native desktop application.
+6. **`electron`**: host shell embedding the front-end and back-end into a native desktop application.
 
 Persistence relies locally on SQLite for relational metadata and generation parameters, and Chroma DB for high-dimensional vector embeddings.
 
@@ -121,8 +121,10 @@ npm run build
 Compiled output is assembled under the `build/` directory — symlinked to `electron/build/`. To clean build artifacts or reset working directories:
 
 ```bash
-npm run clean   # Deletes compiled binaries and bundles
-npm run reset   # Restores the repository to a clean git checkout
+# Deletes compiled binaries and bundles
+npm run clean
+# Restores the repository to a clean git checkout
+npm run reset
 ```
 
 For sub-package workflows, environment variables, and Docker container packaging, read the [build guide](https://picteus.github.io/picteus/docs/developer/build).
