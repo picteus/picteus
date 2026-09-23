@@ -22,7 +22,7 @@ export default function Drawer({
 }: DrawerType)
 {
   const childrenRef = useRef<HTMLDivElement>(null);
-  useEscapeKey(childrenRef, onClose);
+  useEscapeKey(childrenRef, onClose, opened);
 
   return (<MantineDrawer
       opened={opened}

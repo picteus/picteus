@@ -321,15 +321,37 @@ export default {
     schemaComplianceError: "The underlying information cannot be displayed because of a schema compliance issue",
     type:
       {
-        "caption": "Caption",
-        "description": "Description",
-        "comment": "Comment",
-        "annotation": "Annotation",
-        "metadata": "Metadata",
-        "recipe": "Recipe",
-        "identity": "Identity",
-        "physics": "Physics",
-        "other": "Other"
+        caption: "Caption",
+        description: "Description",
+        comment: "Comment",
+        annotation: "Annotation",
+        metadata: "Metadata",
+        recipe: "Recipe",
+        identity: "Identity",
+        physics: "Physics",
+        other: "Other"
+      },
+    metadataSources:
+      {
+        exif: "EXIF",
+        iptc: "IPTC",
+        xmp: "XMP",
+        icc: "ICC",
+        tiffTagPhotoshop: "Photoshop",
+        others: "Other",
+        all: "All"
+      },
+    settings:
+      {
+        title: "Customize cards",
+        description: "Reorder cards by dragging placeholders or using arrow buttons. Toggle switches to hide or restore sections.",
+        hide: "Hide",
+        show: "Show",
+        restoreAll: "Restore all ({{count}})",
+        reset: "Reset defaults",
+        allVisible: "All cards are visible",
+        moveUp: "Move up",
+        moveDown: "Move down"
       }
   },
   repositoryScreen: {

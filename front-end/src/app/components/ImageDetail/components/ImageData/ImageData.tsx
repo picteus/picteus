@@ -1,24 +1,30 @@
 import React, { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
-import { Accordion, ActionIcon, Badge, Box, Flex, Group, Stack, Table, Text, Tooltip } from "@mantine/core";
-import { IconEye } from "@tabler/icons-react";
+import { Accordion, ActionIcon, Badge, Box, Button, Divider, Flex, Group, Stack, Text, Tooltip } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import {
+  IconAdjustmentsHorizontal,
+  IconCamera,
+  IconColorSwatch,
+  IconEye,
+  IconEyeOff,
+  IconFileCode,
+  IconFileDescription,
+  IconInfoCircle,
+  IconPhoto,
+  IconTag
+} from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import {
   booleanPlain,
-  CodeLanguage,
   createUiContainer,
   divider,
   flowing,
-  html,
   identifier,
   json,
-  markdown,
   numberUnbounded,
-  ratio,
-  stringCode,
   stringLong,
   stringShort,
-  StringShortRepresentation,
   stringUrl,
   table,
   tableColumn,
@@ -51,8 +57,8 @@ import { useActionModalContext } from "app/context";
 import { StorageService } from "app/services";
 import {
   CodeViewer,
+  Common,
   CopyText,
-  ExtensionIcon,
   freeForm,
   ImageTag,
   Markdown,
@@ -60,17 +66,74 @@ import {
   UiElementViewProvider
 } from "app/components";
 
-import {
-  ImageDataCard,
-  ImageFeature,
-  ImageFeatureCard,
-  ImageFeatureContainerType,
-  ImageItemWrapper,
-  TableComponent
-} from "../index.ts";
+import { ImageDataCard, ImageFeatureCard, ImageFeatureContainerType, ImageItemWrapper } from "../index.ts";
 
 import { RepositoryDetail, RepositoryTop } from "../../../../screens/RepositoriesScreen/components";
+import {
+  computeRecipeCommonRows,
+  createSchemaComplianceUiContainer,
+  featureTypeComparison,
+  inferNonUiElement,
+  isDisplayedInFeatureTypeCards,
+  isDisplayedInRecipeCard,
+  parseFeatureUiContainer,
+  SORTED_FEATURE_TYPES
+} from "./ImageDataComputer.ts";
+import ImageFeatureSettings, { ImageDataDrawerSectionItemType } from "./ImageFeatureSettings.tsx";
 
+
+type MetadataSourceConfigurationType =
+  {
+    readonly labelKey: string;
+    readonly icon: ReactNode;
+    readonly color: string;
+  };
+
+const METADATA_SOURCES_CONFIGURATION: Record<keyof PicteusImageMetadata, MetadataSourceConfigurationType> =
+  {
+    all:
+      {
+        labelKey: "imageDetail.metadataSources.all",
+        icon: <IconInfoCircle size={Common.IconSmallSize}/>,
+        color: "gray"
+      },
+    exif:
+      {
+        labelKey: "imageDetail.metadataSources.exif",
+        icon: <IconCamera size={Common.IconSmallSize}/>,
+        color: "blue"
+      },
+    iptc:
+      {
+        labelKey: "imageDetail.metadataSources.iptc",
+        icon: <IconFileDescription size={Common.IconSmallSize}/>,
+        color: "cyan"
+      },
+    xmp:
+      {
+        labelKey: "imageDetail.metadataSources.xmp",
+        icon: <IconFileCode size={Common.IconSmallSize}/>,
+        color: "violet"
+      },
+    icc:
+      {
+        labelKey: "imageDetail.metadataSources.icc",
+        icon: <IconColorSwatch size={Common.IconSmallSize}/>,
+        color: "teal"
+      },
+    tiffTagPhotoshop:
+      {
+        labelKey: "imageDetail.metadataSources.tiffTagPhotoshop",
+        icon: <IconPhoto size={Common.IconSmallSize}/>,
+        color: "indigo"
+      },
+    others:
+      {
+        labelKey: "imageDetail.metadataSources.others",
+        icon: <IconTag size={Common.IconSmallSize}/>,
+        color: "gray"
+      }
+  };
 
 type ImageDataType = {
   image: Image;
@@ -83,23 +146,87 @@ export default function ImageData({ image, viewMode }: ImageDataType)
   const [ , addModal ] = useActionModalContext();
   const openBrowser = useOpenBrowser();
   const { data: repository } = useRepository(image.repositoryId);
-  const sectionIds =
+  const builtInSectionIds =
     {
       information: "information",
       tags: "tags",
       recipe: "recipe",
-      features: "features",
-      uiFeatures: "uiFeatures",
-      inferredTechnicalFeature: "inferredTechnicalFeature",
       rawFeatures: "rawFeatures",
       metadata: "metadata"
     } as const;
-  const [ accordionValue, setAccordionValue ] = useState<string[]>(StorageService.getImageDetailTraits([ sectionIds.information, sectionIds.tags, sectionIds.recipe, sectionIds.features ]));
+  const [ accordionValue, setAccordionValue ] = useState<string[]>(StorageService.getImageDetailTraits([ builtInSectionIds.information, builtInSectionIds.tags, builtInSectionIds.recipe ]));
+
+  const defaultOrder = useMemo<string[]>(() =>
+      [
+        builtInSectionIds.information,
+        builtInSectionIds.tags,
+        builtInSectionIds.recipe,
+        ...SORTED_FEATURE_TYPES.map((type) => `feature:${type}`),
+        builtInSectionIds.rawFeatures,
+        builtInSectionIds.metadata
+      ],
+    [ SORTED_FEATURE_TYPES ]
+  );
+
+  const [ hiddenSectionIds, setHiddenSectionIds ] = useState<string[]>(
+    () => StorageService.getImageDetailHiddenSections([])
+  );
+  const [ sectionsOrder, setSectionsOrder ] = useState<string[]>(
+    () => StorageService.getImageDetailSectionsOrder(defaultOrder)
+  );
+  const [ isDrawerOpened, { open: openDrawer, close: closeDrawer } ] = useDisclosure(false);
 
   useEffect(() =>
   {
     StorageService.setImageDetailTraits(accordionValue);
   }, [ accordionValue ]);
+
+  useEffect(() =>
+  {
+    StorageService.setImageDetailHiddenSections(hiddenSectionIds);
+  }, [ hiddenSectionIds ]);
+
+  useEffect(() =>
+  {
+    StorageService.setImageDetailSectionsOrder(sectionsOrder);
+  }, [ sectionsOrder ]);
+
+  function toggleSection(sectionId: string): void
+  {
+    setAccordionValue(
+      (previous) =>
+        previous.includes(sectionId)
+          ? previous.filter((id) => id !== sectionId)
+          : [ ...previous, sectionId ]
+    );
+  }
+
+  function hideSection(sectionId: string): void
+  {
+    setHiddenSectionIds((previous) =>
+      previous.includes(sectionId) ? previous : [ ...previous, sectionId ]
+    );
+  }
+
+  function toggleSectionVisibility(sectionId: string): void
+  {
+    setHiddenSectionIds((previous) =>
+      previous.includes(sectionId)
+        ? previous.filter((id) => id !== sectionId)
+        : [ ...previous, sectionId ]
+    );
+  }
+
+  function restoreAllSections(): void
+  {
+    setHiddenSectionIds([]);
+  }
+
+  function resetDefaults(): void
+  {
+    setHiddenSectionIds([]);
+    setSectionsOrder(defaultOrder);
+  }
 
   const informationCard = useMemo<ReactElement>(() =>
     {
@@ -193,14 +320,25 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         ]
       });
 
-      return (<ImageDataCard header={(<Text fw={600} size="sm">
-          {t("imageDetail.information")}
-        </Text>
-      )}>
+      return (<ImageDataCard
+        header={(<Text fw={600} size="sm">
+            {t("imageDetail.information")}
+          </Text>
+        )}
+        isOpened={accordionValue.includes(builtInSectionIds.information)}
+        onToggle={() =>
+        {
+          toggleSection(builtInSectionIds.information);
+        }}
+        onHide={() =>
+        {
+          hideSection(builtInSectionIds.information);
+        }}
+      >
         <UiContainerView uiContainer={uiContainer}/>
       </ImageDataCard>);
     },
-    [ image, repository, viewMode ]
+    [ image, repository, viewMode, accordionValue ]
   );
 
   const tagsCard = useMemo<ReactElement | null>(() =>
@@ -210,15 +348,26 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         return null;
       }
 
-      return (<ImageDataCard header={(<>
-          <Text fw={600} size="sm">
-            {t("imageDetail.tags")}
-          </Text>
-          <Badge size="xs" variant="light" color="gray">
-            {image.tags.length}
-          </Badge>
-        </>
-      )}>
+      return (<ImageDataCard
+        header={(<>
+            <Text fw={600} size="sm">
+              {t("imageDetail.tags")}
+            </Text>
+            <Badge size="xs" variant="light" color="gray">
+              {image.tags.length}
+            </Badge>
+          </>
+        )}
+        isOpened={accordionValue.includes(builtInSectionIds.tags)}
+        onToggle={() =>
+        {
+          toggleSection(builtInSectionIds.tags);
+        }}
+        onHide={() =>
+        {
+          hideSection(builtInSectionIds.tags);
+        }}
+      >
         <Group gap="xs">
           {image.tags.map((imageTag, index) =>
             (<ImageTag key={`tag-${index}`} tag={imageTag} kind="badge"/>)
@@ -226,218 +375,15 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         </Group>
       </ImageDataCard>);
     },
-    [ image.tags ]
+    [ image.tags, accordionValue ]
   );
 
   const recipeFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.type === ImageFeatureType.Recipe), [ image ]
   );
 
-  const sortedFeatureTypes: ImageFeatureType[] = useMemo<ImageFeatureType[]>(() => [ ImageFeatureType.Description, ImageFeatureType.Caption, ImageFeatureType.Comment, ImageFeatureType.Physics, ImageFeatureType.Annotation, ImageFeatureType.Identity, ImageFeatureType.Metadata, ImageFeatureType.Other ], []);
-
-  function featureTypeComparison(type1: ImageFeatureType, type2: ImageFeatureType): number
-  {
-    return sortedFeatureTypes.indexOf(type1) - sortedFeatureTypes.indexOf(type2);
-  }
-
-  function createSchemaComplianceUiContainer(): UiContainer
-  {
-    return createUiContainer({
-      elements: [
-        stringShort(t("imageDetail.schemaComplianceError"), {
-          modifiers: {
-            intensity: TextIntensity.low
-          }
-        })
-      ]
-    });
-  }
-
-  function parseFeatureUiContainer(feature: ExtensionImageFeature): UiContainer
-  {
-    try
-    {
-      return UiContainer.parse(feature.value);
-    }
-    catch (error)
-    {
-      return createSchemaComplianceUiContainer();
-    }
-  }
-
-  function inferNonUiElement(imageFeature: ExtensionImageFeature): UiElement
-  {
-    const value = imageFeature.value;
-    const copyableOptions = { modifiers: { copyable: true } };
-    let element: UiElement;
-    switch (imageFeature.format)
-    {
-      case ImageFeatureFormat.Json:
-      {
-        const jsonContent = typeof value === "string" ? value : JSON.stringify(value, undefined, 2);
-        element = json(jsonContent, copyableOptions);
-        break;
-      }
-      case ImageFeatureFormat.Yaml:
-        element = stringCode(String(value), { ...copyableOptions, language: CodeLanguage.yaml });
-        break;
-      case ImageFeatureFormat.Markdown:
-        element = markdown(String(value), copyableOptions);
-        break;
-      case ImageFeatureFormat.Xml:
-        element = xml(String(value), copyableOptions);
-        break;
-      case ImageFeatureFormat.Html:
-        element = html(String(value));
-        break;
-      case ImageFeatureFormat.Binary:
-        element = stringShort("<binary>", { modifiers: { monospace: true } });
-        break;
-      case ImageFeatureFormat.String:
-        element = stringLong(String(value), copyableOptions);
-        break;
-      case ImageFeatureFormat.Integer:
-      {
-        const parsedInteger = typeof value === "number" ? value : parseInt(String(value), 10);
-        element = numberUnbounded(Number.isNaN(parsedInteger) ? 0 : parsedInteger);
-        break;
-      }
-      case ImageFeatureFormat.Float:
-      {
-        const parsedFloat = typeof value === "number" ? value : parseFloat(String(value));
-        element = numberUnbounded(Number.isNaN(parsedFloat) ? 0 : parsedFloat);
-        break;
-      }
-      case ImageFeatureFormat.Boolean:
-      {
-        const parsedBoolean = typeof value === "boolean" ? value : String(value) === "true";
-        element = booleanPlain(parsedBoolean);
-        break;
-      }
-      default:
-        element = stringShort(String(value));
-        break;
-    }
-
-    return element;
-  }
-
-  function computeRecipeCommonRows(generationRecipe: GenerationRecipe): TableRow[]
-  {
-    const rows: TableRow[] = [];
-    const options = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
-    if (generationRecipe.schemaVersion !== undefined && Math.random() > 1)
-    {
-      rows.push(tableRow([
-          stringShort(t("field.schemaVersion"), options),
-          numberUnbounded(generationRecipe.schemaVersion)
-        ])
-      );
-    }
-
-    if (generationRecipe.id)
-    {
-      rows.push(tableRow([
-          stringShort(t("field.id"), options),
-          identifier(generationRecipe.id, { modifiers: { monospace: true, copyable: true } })
-        ])
-      );
-    }
-
-    if (generationRecipe.url)
-    {
-      rows.push(tableRow([
-          stringShort(t("field.url"), options),
-          stringUrl(generationRecipe.url, { modifiers: { copyable: true } })
-        ])
-      );
-    }
-
-    if (generationRecipe.software)
-    {
-      rows.push(tableRow([ stringShort(t("field.software"), options), stringShort(generationRecipe.software, {
-        modifiers: { monospace: true, copyable: true }
-      }) ]));
-    }
-
-    if (generationRecipe.author)
-    {
-      rows.push(tableRow([ stringShort(t("field.author"), options), stringShort(generationRecipe.author, {
-        modifiers: { copyable: true }
-      }) ]));
-    }
-
-    if (generationRecipe.inceptionDate)
-    {
-      rows.push(tableRow([ stringShort(t("field.inceptionDate"), options), timestamp(generationRecipe.inceptionDate) ]));
-    }
-
-    if (generationRecipe.aspectRatio)
-    {
-      rows.push(tableRow([ stringShort(t("field.aspectRatio"), options), ratio(generationRecipe.aspectRatio) ]));
-    }
-
-    if (generationRecipe.modelTags?.length > 0)
-    {
-      rows.push(tableRow([ stringShort(t("field.modelTags"), options), flowing(generationRecipe.modelTags.map(modelTag => stringShort(modelTag, { representation: StringShortRepresentation.chip }))) ]));
-    }
-
-    if (generationRecipe.inputAssets?.length > 0)
-    {
-      rows.push(tableRow([
-          stringShort(t("field.assetIds"), options),
-          flowing(
-            generationRecipe.inputAssets.map(asset => identifier(asset, {
-              modifiers: {
-                monospace: true,
-                copyable: true
-              }
-            }))
-          )
-        ])
-      );
-    }
-
-    return rows;
-  }
-
-  const nonRecipeAndNonUiFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.type !== ImageFeatureType.Recipe && imageFeature.format !== ImageFeatureFormat.Ui && imageFeature.format !== ImageFeatureFormat.Html && imageFeature.format !== ImageFeatureFormat.Markdown && !(imageFeature.format === ImageFeatureFormat.String && (imageFeature.type === ImageFeatureType.Caption || imageFeature.type === ImageFeatureType.Description || imageFeature.type === ImageFeatureType.Comment || imageFeature.type === ImageFeatureType.Physics || imageFeature.type === ImageFeatureType.Identity))).sort((feature1: ExtensionImageFeature, feature2: ExtensionImageFeature) => featureTypeComparison(feature1.type, feature2.type)), [ image ]
-  );
-
-  const inferredTechnicalFeatures = useMemo<ExtensionImageFeature[]>(() => nonRecipeAndNonUiFeatures.filter((imageFeature) => imageFeature.format !== ImageFeatureFormat.Json), [ nonRecipeAndNonUiFeatures ]
-  );
-
-  const uiFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.format === ImageFeatureFormat.Ui && imageFeature.type !== ImageFeatureType.Recipe), [ image ]
-  );
-
-  const uiLikeFeatures = useMemo<ExtensionImageFeature[]>(() => image.features.filter((imageFeature) => imageFeature.format === ImageFeatureFormat.Html || imageFeature.format === ImageFeatureFormat.Markdown || (imageFeature.format === ImageFeatureFormat.String && (imageFeature.type === ImageFeatureType.Caption || imageFeature.type === ImageFeatureType.Description || imageFeature.type === ImageFeatureType.Comment))), [ image ]
-  );
-
-  const legacyTechnicalFeaturesCard = useMemo<ReactElement>(() =>
-    {
-      if (nonRecipeAndNonUiFeatures.length === 0)
-      {
-        return null;
-      }
-      return (<ImageDataCard header={<Text fw={600} size="sm">{t("imageDetail.rawFeatures")}</Text>}>
-        <Table layout="fixed">
-          <Table.Tbody>
-            {[ ...nonRecipeAndNonUiFeatures ].map((imageFeature, index) =>
-              (<TableComponent
-                key={`feature-${index}`}
-                label={
-                  <Flex gap={10}>
-                    <ExtensionIcon idOrExtension={imageFeature.id} size="sm"/>
-                    {`${capitalizeText(imageFeature.type)} ${imageFeature.name === undefined ? "" : `(${imageFeature.name})`}`}
-                  </Flex>
-                }
-                value={<ImageFeature feature={imageFeature} viewMode={viewMode}/>}
-              />)
-            )}
-          </Table.Tbody>
-        </Table>
-      </ImageDataCard>);
-    },
-    [ nonRecipeAndNonUiFeatures, viewMode ]
+  const rawFeatures = useMemo<ExtensionImageFeature[]>(() =>
+      image.features.filter((imageFeature) => !isDisplayedInRecipeCard(imageFeature) && !isDisplayedInFeatureTypeCards(imageFeature)).sort((feature1, feature2) => featureTypeComparison(feature1.type, feature2.type)),
+    [ image.features, SORTED_FEATURE_TYPES ]
   );
 
   const recipeCard = useMemo<ReactElement | null>(() =>
@@ -586,132 +532,136 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       return (<ImageFeatureCard
         title={t("imageDetail.recipe")}
         featureContainers={featureContainers}
+        isOpened={accordionValue.includes(builtInSectionIds.recipe)}
+        onToggle={() =>
+        {
+          toggleSection(builtInSectionIds.recipe);
+        }}
+        onHide={() =>
+        {
+          hideSection(builtInSectionIds.recipe);
+        }}
       />);
     },
-    [ recipeFeatures]
+    [ recipeFeatures, accordionValue ]
   );
 
-  const uiFeatureCards = useMemo<ReactElement>(() =>
+  type FeatureTypeCardEntryType =
     {
-      function computePerTypeFeatures(features: ExtensionImageFeature[]): Map<ImageFeatureType, ExtensionImageFeature[]>
-      {
-        return features.reduce<Map<ImageFeatureType, ExtensionImageFeature[]>>((map, feature) =>
-        {
-          let typeFeatures = map.get(feature.type);
-          if (typeFeatures === undefined)
-          {
-            typeFeatures = [];
-            map.set(feature.type, typeFeatures);
-          }
-          typeFeatures.push(feature);
-          return map;
-        }, new Map<ImageFeatureType, ExtensionImageFeature[]>());
-      }
+      readonly type: ImageFeatureType;
+      readonly card: ReactElement;
+      readonly count: number;
+    };
 
-      const map = computePerTypeFeatures([ ...uiFeatures, ...uiLikeFeatures ]);
-      const cards = [ ...map.keys() ].sort(featureTypeComparison).map((type) =>
-      {
-        const typeFeatures = map.get(type);
-        const featureContainers: ImageFeatureContainerType[] = typeFeatures.map((feature) =>
-          {
-            return {
-              extensionId: feature.id,
-              type: feature.type,
-              name: feature.name,
-              uiContainer: feature.format === ImageFeatureFormat.Ui ? parseFeatureUiContainer(feature) : UiContainer.builder().add(inferNonUiElement(feature)).build()
-            };
-          }
-        );
-
-        return (<ImageFeatureCard
-          key={`type-${type}`}
-          title={t(`imageDetail.type.${type}`)}
-          featureContainers={featureContainers}
-        />);
-      });
-
-      return (<Flex direction="column" gap="md">{cards}</Flex>);
-    },
-    [ uiFeatures, uiLikeFeatures ]
-  );
-
-  const inferredTechnicalFeatureCards = useMemo<ReactElement>(() =>
+  const featureTypeCards = useMemo<FeatureTypeCardEntryType[]>(() =>
     {
-      function renderImageFeatureCards(imageFeatures: ExtensionImageFeature[]): ReactElement[]
+      // We collect all distinct feature types that have UI or eligible non-UI features
+      const distinctTypesSet = new Set<ImageFeatureType>();
+      for (const feature of image.features)
       {
-        // We group newFeatures by their type and extension ID
-        const rawFeaturesByTypeMap = new Map<ImageFeatureType, Map<string, ExtensionImageFeature[]>>();
-        for (const imageFeature of imageFeatures)
+        if (isDisplayedInFeatureTypeCards(feature))
         {
-          let perExtensionMap = rawFeaturesByTypeMap.get(imageFeature.type);
-          if (!perExtensionMap)
-          {
-            perExtensionMap = new Map<string, ExtensionImageFeature[]>();
-            rawFeaturesByTypeMap.set(imageFeature.type, perExtensionMap);
-          }
-          let featureList = perExtensionMap.get(imageFeature.id);
-          if (!featureList)
-          {
-            featureList = [];
-            perExtensionMap.set(imageFeature.id, featureList);
-          }
-          featureList.push(imageFeature);
+          distinctTypesSet.add(feature.type);
         }
+      }
+      const orderedTypes = Array.from(distinctTypesSet).sort(featureTypeComparison);
 
-        // We sort the grouped feature types according to the defined display order
-        const orderedFeatureTypes = Array.from(rawFeaturesByTypeMap.keys()).sort(featureTypeComparison);
-        return orderedFeatureTypes.map((type) =>
+      return orderedTypes.map((type) =>
+        {
+          const featuresForType = image.features.filter((feature) => feature.type === type && isDisplayedInFeatureTypeCards(feature));
+
+          // We determine all distinct extension identifiers providing this feature type
+          const extensionIds = Array.from(new Set(featuresForType.map((feature) => feature.id)));
+
+          const featureContainers: ImageFeatureContainerType[] = [];
+          for (const extensionId of extensionIds)
           {
-            const rawPerExtensionFeatures = rawFeaturesByTypeMap.get(type);
-            const featureContainers: ImageFeatureContainerType[] = [];
-            if (rawPerExtensionFeatures)
-            {
-              for (const [ extensionId, extensionImageFeatures ] of rawPerExtensionFeatures.entries())
-              {
-                const rows: TableRow[] = extensionImageFeatures.map((imageFeature) =>
-                  {
-                    return tableRow([
-                      stringShort(imageFeature.name ?? "", {
-                        modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low }
-                      }),
-                      inferNonUiElement(imageFeature)
-                    ]);
-                  }
-                );
-                featureContainers.push({
-                  extensionId,
-                  type: type,
-                  name: undefined,
-                  uiContainer: createUiContainer({
-                    elements:
-                      [
-                        table(rows,
-                          {
-                            columns: [
-                              tableColumn({ align: TableColumnAlign.left }),
-                              tableColumn({ align: TableColumnAlign.left })
-                            ],
-                            withColumnSeparators: true
-                          }
-                        )
-                      ]
-                  })
-                });
-              }
-            }
+            const extensionUiFeatures = featuresForType.filter((feature) => feature.id === extensionId && isDisplayedInFeatureTypeCards(feature));
 
-            return (<ImageFeatureCard
-              key={type}
-              title={t(`imageDetail.type.${type}`)}
-              featureContainers={featureContainers}
-            />);
+            // First, we add all UI features for this extension
+            for (const uiFeature of extensionUiFeatures)
+            {
+              featureContainers.push(
+                {
+                  extensionId,
+                  type,
+                  name: uiFeature.name,
+                  uiContainer: uiFeature.format === ImageFeatureFormat.Ui
+                    ? parseFeatureUiContainer(uiFeature)
+                    : UiContainer.builder().add(inferNonUiElement(uiFeature)).build()
+                }
+              );
+            }
           }
-        );
+
+          const sectionId = `feature:${type}`;
+
+          return {
+            type,
+            count: featureContainers.length,
+            card: (
+              <ImageFeatureCard
+                key={`feature-type-${type}`}
+                title={t(`imageDetail.type.${type}`)}
+                featureContainers={featureContainers}
+                isOpened={accordionValue.includes(sectionId)}
+                onToggle={() =>
+                {
+                  toggleSection(sectionId);
+                }}
+                onHide={() =>
+                {
+                  hideSection(sectionId);
+                }}
+              />
+            )
+          };
+        }
+      );
+    },
+    [ image.features, SORTED_FEATURE_TYPES, accordionValue ]
+  );
+
+  const rawFeatureCard = useMemo<ReactElement | null>(() =>
+    {
+      if (rawFeatures.length === 0)
+      {
+        return null;
       }
 
-      return (<Flex direction="column" gap="md">{renderImageFeatureCards(inferredTechnicalFeatures)}</Flex>);
+      const rawFeatureContainers: ImageFeatureContainerType[] = rawFeatures.map(
+        (rawFeature) =>
+        {
+          const featureName = rawFeature.name !== undefined
+            ? `${capitalizeText(rawFeature.type)} (${rawFeature.name})`
+            : capitalizeText(rawFeature.type);
+
+          return {
+            extensionId: rawFeature.id,
+            type: rawFeature.type,
+            name: featureName,
+            uiContainer: rawFeature.format === ImageFeatureFormat.Ui
+              ? parseFeatureUiContainer(rawFeature)
+              : UiContainer.builder().add(inferNonUiElement(rawFeature)).build()
+          };
+        }
+      );
+
+      return (<ImageFeatureCard
+        title={t("imageDetail.rawFeatures")}
+        featureContainers={rawFeatureContainers}
+        isOpened={accordionValue.includes(builtInSectionIds.rawFeatures)}
+        onToggle={() =>
+        {
+          toggleSection(builtInSectionIds.rawFeatures);
+        }}
+        onHide={() =>
+        {
+          hideSection(builtInSectionIds.rawFeatures);
+        }}
+      />);
     },
-    [ inferredTechnicalFeatures ]
+    [ rawFeatures, accordionValue ]
   );
 
   const metadataCard = useMemo<ReactElement | null>(() =>
@@ -833,65 +783,206 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         });
       }
 
-      // We exclude the empty metadata entities
-      const validEntries = (Object.entries(metadata) as [ keyof PicteusImageMetadata, string | undefined ][])
-        .filter((entry): entry is [ keyof PicteusImageMetadata, string ] =>
-          entry[1] !== undefined && entry[1] !== "{}" && entry[1].trim().length > 0
-        )
-        .map(([ metadataKey, metadataValue ]) => ({
-          key: metadataKey,
-          uiContainer: inferMetadataUiContainer(metadataValue)
-        }));
+      type MetadataSourceEntryType =
+        {
+          readonly name?: string;
+          readonly uiContainer: UiContainer;
+        };
 
-      if (validEntries.length === 0)
+      type MetadataSourceGroupType =
+        {
+          readonly id: string;
+          readonly label: string;
+          readonly icon: ReactNode;
+          readonly color: string;
+          readonly entries: MetadataSourceEntryType[];
+        };
+
+      const sourceGroups: MetadataSourceGroupType[] = [];
+
+      // We process the built-in image.metadata entries in canonical order
+      if (metadata !== undefined && metadata !== null)
+      {
+        for (const [ metadataKey, sourceConfiguration ] of Object.entries(METADATA_SOURCES_CONFIGURATION))
+        {
+          const rawValue = metadata[metadataKey as keyof PicteusImageMetadata];
+          if (rawValue !== undefined && rawValue !== "{}" && rawValue.trim().length > 0)
+          {
+            sourceGroups.push({
+              id: metadataKey,
+              label: t(sourceConfiguration.labelKey),
+              icon: sourceConfiguration.icon,
+              color: sourceConfiguration.color,
+              entries: [ { uiContainer: inferMetadataUiContainer(rawValue) } ]
+            });
+          }
+        }
+      }
+
+      const totalEntriesCount = sourceGroups.reduce((count, group) => count + group.entries.length, 0);
+      if (totalEntriesCount === 0)
       {
         return null;
       }
 
-      return (<ImageDataCard header={<>
-        <Text fw={600} size="sm">
-          {t("imageDetail.metadata")}
-        </Text>
-        {validEntries.length > 1 && (
-          <Badge size="xs" variant="light" color="gray">
-            {validEntries.length}
-          </Badge>
-        )}
-      </>}>
+      return (<ImageDataCard
+        header={<>
+          <Text fw={600} size="sm">
+            {t("imageDetail.metadata")}
+          </Text>
+          {totalEntriesCount > 1 && (
+            <Badge size="xs" variant="light" color="gray">
+              {totalEntriesCount}
+            </Badge>
+          )}
+        </>}
+        isOpened={accordionValue.includes(builtInSectionIds.metadata)}
+        onToggle={() =>
+        {
+          toggleSection(builtInSectionIds.metadata);
+        }}
+        onHide={() =>
+        {
+          hideSection(builtInSectionIds.metadata);
+        }}
+      >
         <Stack gap="md">
-          {validEntries.map((entry, index) =>
-            (<UiContainerView key={`meta-${index}`} uiContainer={entry.uiContainer}/>)
+          {sourceGroups.map(
+            (sourceGroup, sourceIndex) =>
+            {
+              return (
+                <Box key={sourceGroup.id}>
+                  {sourceIndex > 0 && <Divider mb="sm"/>}
+                  <Flex align="center" gap="xs" mb="xs">
+                    <Badge
+                      size="sm"
+                      variant="light"
+                      color={sourceGroup.color}
+                      leftSection={sourceGroup.icon}
+                      radius="sm"
+                    >
+                      {sourceGroup.label}
+                    </Badge>
+                  </Flex>
+                  <Stack gap="xs">
+                    {sourceGroup.entries.map(
+                      (entry, entryIndex) =>
+                      {
+                        return (
+                          <Box key={`entry-${entryIndex}`}>
+                            {entry.name && (
+                              <Text size="xs" fw={600} c="dimmed" mb="xs">
+                                {entry.name}
+                              </Text>
+                            )}
+                            <UiContainerView uiContainer={entry.uiContainer}/>
+                          </Box>
+                        );
+                      }
+                    )}
+                  </Stack>
+                </Box>
+              );
+            }
           )}
         </Stack>
       </ImageDataCard>);
     },
-    [ image.metadata ]
+    [ image.metadata, accordionValue ]
   );
 
-  const sections = useMemo(() => ([
-    { id: sectionIds.information, node: informationCard },
+  type SectionDefinitionType =
+    {
+      readonly id: string;
+      readonly label: string;
+      readonly node: ReactElement;
+      readonly badge?: string | number;
+    };
+
+  const allAvailableSections = useMemo((): SectionDefinitionType[] => ([
+    {
+      id: builtInSectionIds.information,
+      label: t("imageDetail.information"),
+      node: informationCard
+    },
     ...(tagsCard !== null ? [ {
-      id: sectionIds.tags,
-      node: tagsCard
+      id: builtInSectionIds.tags,
+      label: t("imageDetail.tags"),
+      node: tagsCard,
+      badge: image.tags?.length
     } ] : []),
     ...(recipeCard !== null ? [ {
-      id: sectionIds.recipe,
+      id: builtInSectionIds.recipe,
+      label: t("imageDetail.recipe"),
       node: recipeCard
     } ] : []),
-    { id: sectionIds.uiFeatures, node: uiFeatureCards },
-    ...(inferredTechnicalFeatureCards !== null ? [ {
-      id: sectionIds.inferredTechnicalFeature,
-      node: inferredTechnicalFeatureCards
-    } ] : []),
-    ...(legacyTechnicalFeaturesCard !== null ? [ {
-      id: sectionIds.rawFeatures,
-      node: legacyTechnicalFeaturesCard
+    ...featureTypeCards.map(({ type, card, count }) => ({
+      id: `feature:${type}`,
+      label: t(`imageDetail.type.${type}`),
+      node: card,
+      badge: count
+    })),
+    ...(rawFeatureCard !== null ? [ {
+      id: builtInSectionIds.rawFeatures,
+      label: t("imageDetail.rawFeatures"),
+      node: rawFeatureCard
     } ] : []),
     ...(metadataCard !== null ? [ {
-      id: sectionIds.metadata,
+      id: builtInSectionIds.metadata,
+      label: t("imageDetail.metadata"),
       node: metadataCard
     } ] : [])
-  ]), [ informationCard, tagsCard, recipeCard, inferredTechnicalFeatureCards, legacyTechnicalFeaturesCard, metadataCard ]);
+  ]), [ informationCard, tagsCard, recipeCard, featureTypeCards, rawFeatureCard, metadataCard, image.tags, t ]);
+
+  const effectiveSectionsOrder = useMemo<string[]>(() =>
+    {
+      const missingIds = allAvailableSections.map((section) => section.id).filter((id) => !sectionsOrder.includes(id));
+      if (missingIds.length === 0)
+      {
+        return sectionsOrder;
+      }
+      return [ ...sectionsOrder, ...missingIds ];
+    },
+    [ allAvailableSections, sectionsOrder ]
+  );
+
+  const sortedAvailableSections = useMemo((): SectionDefinitionType[] =>
+    {
+      const orderMap = new Map<string, number>();
+      effectiveSectionsOrder.forEach((id, index) => orderMap.set(id, index));
+      return [ ...allAvailableSections ].sort((firstSection, secondSection) =>
+      {
+        const firstIndex = orderMap.get(firstSection.id) ?? Number.MAX_SAFE_INTEGER;
+        const secondIndex = orderMap.get(secondSection.id) ?? Number.MAX_SAFE_INTEGER;
+        return firstIndex - secondIndex;
+      });
+    },
+    [ allAvailableSections, effectiveSectionsOrder ]
+  );
+
+  const visibleSections = useMemo((): SectionDefinitionType[] => sortedAvailableSections.filter((section) => !hiddenSectionIds.includes(section.id)),
+    [ sortedAvailableSections, hiddenSectionIds ]
+  );
+
+  const drawerSections = useMemo((): ImageDataDrawerSectionItemType[] =>
+    {
+      return sortedAvailableSections.map((section) => ({
+        id: section.id,
+        label: section.label,
+        isVisible: !hiddenSectionIds.includes(section.id),
+        badge: section.badge
+      }));
+    },
+    [ sortedAvailableSections, hiddenSectionIds ]
+  );
+
+  function handleReorder(reorderedSections: ImageDataDrawerSectionItemType[]): void
+  {
+    const reorderedIds = reorderedSections.map((section) => section.id);
+    const remainingIds = effectiveSectionsOrder.filter((id) => !reorderedIds.includes(id));
+    const newOrder = [ ...reorderedIds, ...remainingIds ];
+    setSectionsOrder(newOrder);
+  }
 
   function wrapWithCopy(node: ReactNode, value: string, enabled?: boolean): ReactNode
   {
@@ -917,15 +1008,53 @@ export default function ImageData({ image, viewMode }: ImageDataType)
                                  language="json"/>, element.value, element.modifiers?.copyable)
       )
     }}>
+      <Flex align="center" justify="flex-end" ml="sm" mr="sm" mb="xs">
+        <Group gap="xs" mt="xs">
+          {hiddenSectionIds.length > 0 && (
+            <Button
+              variant="light"
+              color="orange"
+              size="compact-xs"
+              leftSection={<IconEyeOff size={Common.IconSmallSize}/>}
+              onClick={openDrawer}
+            >
+              {t("imageDetail.settings.reset", { count: hiddenSectionIds.length })}
+            </Button>
+          )}
+          <Tooltip
+            label={t("imageDetail.settings.title")}
+            position="left"
+            withArrow
+          >
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={openDrawer}
+            >
+              <IconAdjustmentsHorizontal size={18}/>
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      </Flex>
       <Accordion
         multiple
         value={accordionValue}
         onChange={setAccordionValue}
       >
         <Stack gap="md" ml="sm" mr="sm">
-          {sections.map((section) => (<Box key={section.id}>{section.node}</Box>))}
+          {visibleSections.map((section) => (<Box key={section.id}>{section.node}</Box>))}
         </Stack>
       </Accordion>
+      <ImageFeatureSettings
+        opened={isDrawerOpened}
+        onClose={closeDrawer}
+        sections={drawerSections}
+        onToggleVisibility={toggleSectionVisibility}
+        onReorder={handleReorder}
+        onRestoreAll={restoreAllSections}
+        onResetDefaults={resetDefaults}
+      />
     </UiElementViewProvider>
-  ), [ sections, accordionValue ]);
+  ), [ visibleSections, accordionValue, isDrawerOpened, drawerSections, hiddenSectionIds, openDrawer, closeDrawer, t ]);
 }

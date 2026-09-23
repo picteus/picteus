@@ -16,6 +16,8 @@ const FOLDER_PICKER_LAST_LOCATION = `${prefix}extensionPickerLastLocation`;
 const AUTO_RELOAD_IMAGES_VIEWS = `${prefix}autoReloadImagesViews`;
 const EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION = `${prefix}extensionIntentShowShouldConfirmRedirection`;
 const IMAGE_DETAIL_TRAITS = `${prefix}imageDetailTraits`;
+const IMAGE_DETAIL_HIDDEN_SECTIONS = `${prefix}imageDetailHiddenSections`;
+const IMAGE_DETAIL_SECTIONS_ORDER = `${prefix}imageDetailSectionsOrder`;
 const SELECTED_IMAGE_IDS = `${prefix}selectedImagesIds`;
 const SELECTED_IMAGES_ACTION = `${prefix}selectedImagesAction`;
 
@@ -155,6 +157,22 @@ export default {
   setImageDetailTraits(value: string[]): void
   {
     storeJson(IMAGE_DETAIL_TRAITS, value);
+  },
+  getImageDetailHiddenSections(defaultValue: string[]): string[]
+  {
+    return getJsonNullValue<string[]>(IMAGE_DETAIL_HIDDEN_SECTIONS, defaultValue);
+  },
+  setImageDetailHiddenSections(value: string[]): void
+  {
+    storeJson(IMAGE_DETAIL_HIDDEN_SECTIONS, value);
+  },
+  getImageDetailSectionsOrder(defaultValue: string[]): string[]
+  {
+    return getJsonNullValue<string[]>(IMAGE_DETAIL_SECTIONS_ORDER, defaultValue);
+  },
+  setImageDetailSectionsOrder(value: string[]): void
+  {
+    storeJson(IMAGE_DETAIL_SECTIONS_ORDER, value);
   },
   getSelectedImagesIds(): string[]
   {

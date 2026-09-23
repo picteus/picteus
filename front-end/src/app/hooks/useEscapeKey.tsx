@@ -3,7 +3,7 @@ import { RefObject, useEffect, useRef } from "react";
 
 interface ElementAndCallback
 {
-  elementRef: RefObject<HTMLElement>;
+  elementRef: RefObject<HTMLElement | null>;
 
   callback: () => void;
 }
@@ -22,6 +22,7 @@ function onKeyDown(event: KeyboardEvent)
     if (elementAndCallback.elementRef.current !== null)
     {
       event.preventDefault();
+      event.stopPropagation();
       elementAndCallback.callback();
       break;
     }
@@ -41,13 +42,22 @@ function unregister()
   document.removeEventListener(event, onKeyDown, options);
 }
 
-export default function useEscapeKey(elementRef: RefObject<HTMLElement>, callback: () => void): void
+export default function useEscapeKey(
+  elementRef: RefObject<HTMLElement | null>,
+  callback: () => void,
+  isEnabled: boolean = true
+): void
 {
   const callbackRef = useRef<() => void>(callback);
   callbackRef.current = callback;
 
   useEffect(() =>
   {
+    if (!isEnabled)
+    {
+      return;
+    }
+
     if (elementAndCallbacks.length === 0)
     {
       register();
@@ -59,7 +69,7 @@ export default function useEscapeKey(elementRef: RefObject<HTMLElement>, callbac
       for (let index = 0; index < elementAndCallbacks.length; index++)
       {
         const elementAndCallback = elementAndCallbacks[index];
-        if (elementAndCallback.elementRef == elementRef)
+        if (elementAndCallback.elementRef === elementRef)
         {
           elementAndCallbacks.splice(index, 1);
           break;
@@ -70,5 +80,5 @@ export default function useEscapeKey(elementRef: RefObject<HTMLElement>, callbac
         unregister();
       }
     };
-  }, [ elementRef ]);
+  }, [ elementRef, isEnabled ]);
 }

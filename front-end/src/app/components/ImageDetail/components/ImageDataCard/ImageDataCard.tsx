@@ -1,27 +1,49 @@
 import React, { ReactNode } from "react";
-import { ActionIcon, Card, Collapse, Flex } from "@mantine/core";
+import { ActionIcon, Card, Collapse, Flex, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconChevronDown } from "@tabler/icons-react";
+import { IconChevronDown, IconEyeOff } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
+import Common from "../../../Common/Common.ts";
 
 
 export type ImageDataCardPropsType =
-{
-  readonly header: ReactNode;
-  readonly children: ReactNode;
-  readonly defaultExpanded?: boolean;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-};
+  {
+    readonly header: ReactNode;
+    readonly children: ReactNode;
+    readonly defaultExpanded?: boolean;
+    readonly isOpened?: boolean;
+    readonly onToggle?: () => void;
+    readonly onHide?: () => void;
+    readonly className?: string;
+    readonly style?: React.CSSProperties;
+  };
 
 export default function ImageDataCard({
   header,
   children,
   defaultExpanded = true,
+  isOpened: controlledIsOpened,
+  onToggle,
+  onHide,
   className,
   style
 }: ImageDataCardPropsType): ReactNode
 {
-  const [ isOpened, { toggle: toggleOpened } ] = useDisclosure(defaultExpanded);
+  const [ t ] = useTranslation();
+  const [ uncontrolledIsOpened, { toggle: toggleOpened } ] = useDisclosure(defaultExpanded);
+  const isOpened = controlledIsOpened !== undefined ? controlledIsOpened : uncontrolledIsOpened;
+
+  function handleToggle(): void
+  {
+    if (onToggle !== undefined)
+    {
+      onToggle();
+    }
+    else
+    {
+      toggleOpened();
+    }
+  }
 
   return (
     <Card shadow="xs" padding="sm" radius="md" withBorder className={className} style={{ width: "100%", ...style }}>
@@ -30,30 +52,47 @@ export default function ImageDataCard({
           align="center"
           justify="space-between"
           style={{ cursor: "pointer", userSelect: "none" }}
-          onClick={toggleOpened}
+          onClick={handleToggle}
         >
           <Flex align="center" gap="xs">
             {header}
           </Flex>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            onClick={(event) =>
-            {
-              event.stopPropagation();
-              toggleOpened();
-            }}
-            aria-label={isOpened ? "Collapse" : "Expand"}
-          >
-            <IconChevronDown
-              size={16}
-              style={{
-                transform: isOpened ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 200ms ease"
+          <Flex align="center" gap="xs">
+            {onHide !== undefined && (
+              <Tooltip label={t("imageDetail.settings.hide")} position="left" withArrow>
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  onClick={(event) =>
+                  {
+                    event.stopPropagation();
+                    onHide();
+                  }}
+                >
+                  <IconEyeOff size={Common.IconSmallSize} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={(event) =>
+              {
+                event.stopPropagation();
+                handleToggle();
               }}
-            />
-          </ActionIcon>
+            >
+              <IconChevronDown
+                size={Common.IconSmallSize}
+                style={{
+                  transform: isOpened ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 200ms ease"
+                }}
+              />
+            </ActionIcon>
+          </Flex>
         </Flex>
       </Card.Section>
       <Collapse expanded={isOpened}>

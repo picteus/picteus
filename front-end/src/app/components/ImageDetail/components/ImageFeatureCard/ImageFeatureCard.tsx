@@ -21,12 +21,18 @@ export type ImageFeatureCardType =
     readonly title: string;
     readonly featureContainers: ImageFeatureContainerType[];
     readonly defaultExpanded?: boolean;
+    readonly isOpened?: boolean;
+    readonly onToggle?: () => void;
+    readonly onHide?: () => void;
   };
 
 export default function ImageFeatureCard({
   title,
   featureContainers,
-  defaultExpanded = true
+  defaultExpanded = true,
+  isOpened,
+  onToggle,
+  onHide
 }: ImageFeatureCardType): ReactNode
 {
   const { data: extensions = [] } = useExtensions();
@@ -84,7 +90,13 @@ export default function ImageFeatureCard({
   );
 
   return (
-    <ImageDataCard header={headerNode} defaultExpanded={defaultExpanded}>
+    <ImageDataCard
+      header={headerNode}
+      defaultExpanded={defaultExpanded}
+      isOpened={isOpened}
+      onToggle={onToggle}
+      onHide={onHide}
+    >
       <Stack gap="md">
         {featureEntries.map(([ extensionId, extensionFeatures ], index) =>
           {
