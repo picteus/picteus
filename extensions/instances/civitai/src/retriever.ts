@@ -8,15 +8,20 @@ import {
 import {
   collapsibleGroup,
   createUiContainer,
+  flowing,
   type GenerationRecipe,
   type GenerationRecipePrompt,
   Helper,
   identifier,
   numberUnbounded,
   PromptKind,
+  ratio,
   stringLong,
   stringShort,
   table,
+  tableColumn,
+  TableColumnAlign,
+  TableColumnWidthMode,
   tableRow,
   type TableRow,
   TextIntensity,
@@ -81,11 +86,11 @@ export class CivitaiRetriever
       }
     }
     // @ts-ignore
-    const aspectRatioRawString: string | undefined = meta?.["aspectratio"];
+    const aspectRatioRawString: string | undefined = meta?.["aspectRatio"];
     let aspectRatio: number | undefined;
     if (aspectRatioRawString !== undefined)
     {
-      const [ width, height ] = aspectRatioRawString.split(":").map(string => parseInt(string));
+      const [ width, height ] = aspectRatioRawString.split(":").map((dimensionPart) => parseInt(dimensionPart, 10));
       aspectRatio = width / height;
     }
     const sanitizedModelTags = modelTags.map(tag => tag.replaceAll(" ", "_"));
@@ -161,34 +166,39 @@ export class CivitaiRetriever
   {
     const primaryRows: TableRow[] = [];
     const secondaryRows: TableRow[] = [];
-    const firstColumnOptions = {
-      modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low }
-    };
+    const firstColumnOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
     const copyableOptions = { modifiers: { copyable: true } };
-
-    const handledKeys = new Set<string>([
-      "prompt",
-      "comfy",
-      "models",
-      "aspectratio",
-      "aspectRatio"
-    ]);
+    const commonTableOptions =
+      {
+        withRowSeparators: true,
+        columns:
+          [
+            tableColumn({ align: TableColumnAlign.left, width: 25, widthMode: TableColumnWidthMode.maximum }),
+            tableColumn({ align: TableColumnAlign.left })
+          ]
+      };
 
     // Primary generation parameters in defined display order
     const primaryFieldDefinitions: ReadonlyArray<{
       readonly keys: readonly (keyof ImageMeta | string)[];
       readonly label: string;
-      readonly format: (value: unknown) => UiElement | undefined;
+      readonly format: (value: unknown, record: Record<string, unknown>) => UiElement | undefined;
     }> =
       [
+        {
+          keys: [ "prompt" ],
+          label: "Prompt",
+          format: (value: unknown): UiElement | undefined =>
+          {
+            return this.formatLongText(value, copyableOptions);
+          }
+        },
         {
           keys: [ "negativePrompt" ],
           label: "Negative Prompt",
           format: (value: unknown): UiElement | undefined =>
           {
-            return typeof value === "string" && value.trim().length > 0
-              ? stringLong(value.trim(), copyableOptions)
-              : undefined;
+            return this.formatLongText(value, copyableOptions);
           }
         },
         {
@@ -196,40 +206,27 @@ export class CivitaiRetriever
           label: "Model",
           format: (value: unknown): UiElement | undefined =>
           {
-            return typeof value === "string" && value.trim().length > 0
-              ? stringShort(value.trim(), copyableOptions)
-              : undefined;
+            return this.formatShortText(value, copyableOptions);
           }
         },
         {
           keys: [ "baseModel", "basemodel" ],
           label: "Base Model",
-          format: (value: unknown): UiElement | undefined =>
+          format: (value: unknown, record: Record<string, unknown>): UiElement | undefined =>
           {
-            const modelName = meta.Model ?? (meta as Record<string, unknown>)["model"];
+            const modelName = record["Model"] ?? record["model"];
             return typeof value === "string" && value.trim().length > 0 && value !== modelName
               ? stringShort(value.trim(), copyableOptions)
               : undefined;
           }
         },
-        {
-          keys: [ "Model hash", "modelHash" ],
-          label: "Model Hash",
-          format: (value: unknown): UiElement | undefined =>
-          {
-            return typeof value === "string" && value.trim().length > 0
-              ? identifier(value.trim(), copyableOptions)
-              : undefined;
-          }
-        },
+
         {
           keys: [ "sampler", "Sampler" ],
           label: "Sampler",
           format: (value: unknown): UiElement | undefined =>
           {
-            return typeof value === "string" && value.trim().length > 0
-              ? stringShort(value.trim(), copyableOptions)
-              : undefined;
+            return this.formatShortText(value, copyableOptions);
           }
         },
         {
@@ -237,10 +234,7 @@ export class CivitaiRetriever
           label: "Steps",
           format: (value: unknown): UiElement | undefined =>
           {
-            const stepCount = typeof value === "number" ? value : parseInt(String(value), 10);
-            return Number.isNaN(stepCount) === false
-              ? numberUnbounded(stepCount, copyableOptions)
-              : undefined;
+            return this.formatInteger(value, copyableOptions);
           }
         },
         {
@@ -248,10 +242,7 @@ export class CivitaiRetriever
           label: "CFG Scale",
           format: (value: unknown): UiElement | undefined =>
           {
-            const cfgValue = typeof value === "number" ? value : parseFloat(String(value));
-            return Number.isNaN(cfgValue) === false
-              ? numberUnbounded(cfgValue, copyableOptions)
-              : undefined;
+            return this.formatFloat(value, copyableOptions);
           }
         },
         {
@@ -265,13 +256,30 @@ export class CivitaiRetriever
           }
         },
         {
-          keys: [ "Size", "size" ],
-          label: "Dimensions",
-          format: (value: unknown): UiElement | undefined =>
+          keys: [ "width", "height" ],
+          label: "Dimension",
+          format: (propertyValue: unknown, record: Record<string, unknown>): UiElement | undefined =>
           {
-            return typeof value === "string" && value.trim().length > 0
-              ? stringShort(value.trim(), copyableOptions)
-              : undefined;
+            const rawWidth = record["width"];
+            const rawHeight = record["height"];
+            if (rawWidth === null || rawWidth === undefined || rawHeight === null || rawHeight === undefined)
+            {
+              return undefined;
+            }
+
+            const width = typeof rawWidth === "number" ? rawWidth : parseInt(String(rawWidth).trim(), 10);
+            const height = typeof rawHeight === "number" ? rawHeight : parseInt(String(rawHeight).trim(), 10);
+
+            if (Number.isNaN(width) === false && Number.isNaN(height) === false && width > 0 && height > 0)
+            {
+              const aspectRatio = width / height;
+              return flowing([
+                stringShort(`${width}x${height}`, copyableOptions),
+                ratio(aspectRatio)
+              ]);
+            }
+
+            return undefined;
           }
         },
         {
@@ -279,13 +287,26 @@ export class CivitaiRetriever
           label: "Clip Skip",
           format: (value: unknown): UiElement | undefined =>
           {
-            const clipSkip = typeof value === "number" ? value : parseInt(String(value), 10);
-            return Number.isNaN(clipSkip) === false
-              ? numberUnbounded(clipSkip, copyableOptions)
-              : undefined;
+            return this.formatInteger(value, copyableOptions);
           }
         }
       ];
+
+    const handledKeys = new Set<string>([
+      "comfy",
+      "models",
+      "aspectRatio",
+      "Model hash",
+      "modelHash",
+      "hashes",
+      "Created Date",
+      "civitaiResources",
+      "resources",
+      ...primaryFieldDefinitions.flatMap((definition) =>
+      {
+        return definition.keys;
+      })
+    ]);
 
     const metaRecord = meta as Record<string, unknown>;
 
@@ -293,11 +314,10 @@ export class CivitaiRetriever
     {
       for (const propertyKey of definition.keys)
       {
-        handledKeys.add(propertyKey);
         const propertyValue = metaRecord[propertyKey];
         if (propertyValue !== null && propertyValue !== undefined && propertyValue !== "Undefined")
         {
-          const element = definition.format(propertyValue);
+          const element = definition.format(propertyValue, metaRecord);
           if (element !== undefined)
           {
             primaryRows.push(tableRow([
@@ -311,63 +331,148 @@ export class CivitaiRetriever
     }
 
     // Civitai resources
-    handledKeys.add("civitaiResources");
+    let civitaiResourcesTable: UiElement | undefined;
     if (Array.isArray(meta.civitaiResources) === true && meta.civitaiResources.length > 0)
     {
-      for (const resource of meta.civitaiResources)
+      const candidateColumns: ReadonlyArray<{
+        readonly key: "type" | "modelVersionId" | "modelName" | "modelVersionName";
+        readonly header: string;
+      }> =
+        [
+          { key: "type", header: "Type" },
+          { key: "modelVersionId", header: "Model Version Id" },
+          { key: "modelName", header: "Model Name" },
+          { key: "modelVersionName", header: "Model Version Name" }
+        ];
+
+      const usedColumns = candidateColumns.filter(
+        (candidateColumn) => meta.civitaiResources!.some((resource) =>
+          {
+            const propertyValue = (resource as Record<string, unknown>)[candidateColumn.key];
+            return propertyValue !== null && propertyValue !== undefined && String(propertyValue).trim().length > 0;
+          }
+        ));
+
+      if (usedColumns.length > 0)
       {
-        const resourceType = resource.type !== undefined ? resource.type.toUpperCase() : "RESOURCE";
-        const detailsParts: string[] = [];
-        if (resource.modelVersionId !== undefined)
-        {
-          detailsParts.push(`Version ID: ${resource.modelVersionId}`);
-        }
-        if (resource.weight !== undefined)
-        {
-          detailsParts.push(`Weight: ${resource.weight}`);
-        }
-        const resourceDetails = detailsParts.length > 0 ? detailsParts.join(" | ") : "Active";
-        secondaryRows.push(tableRow([
-          stringShort(resourceType, firstColumnOptions),
-          stringShort(resourceDetails, copyableOptions)
-        ]));
+        const resourceTableColumns = usedColumns.map((usedColumn) =>
+          {
+            return tableColumn({
+              header: usedColumn.header,
+              align: TableColumnAlign.left
+            });
+          }
+        );
+
+        const resourceTableRows = meta.civitaiResources.map((resource) =>
+          {
+            const resourceRecord = resource as Record<string, unknown>;
+            const cells = usedColumns.map((usedColumn) =>
+              {
+                const cellValue = resourceRecord[usedColumn.key];
+                if (cellValue === null || cellValue === undefined || String(cellValue).trim().length === 0)
+                {
+                  return stringShort("");
+                }
+                const formattedValue = String(cellValue).trim();
+                if (usedColumn.key === "type")
+                {
+                  return stringShort(formattedValue);
+                }
+                if (usedColumn.key === "modelVersionId")
+                {
+                  return identifier(formattedValue, copyableOptions);
+                }
+                return stringShort(formattedValue, copyableOptions);
+              }
+            );
+            return tableRow(cells);
+          }
+        );
+
+        civitaiResourcesTable = table(
+          resourceTableRows,
+          {
+            withRowSeparators: true,
+            columns: resourceTableColumns
+          }
+        );
       }
     }
 
     // Generic resources list
-    handledKeys.add("resources");
-    if (Array.isArray(meta.resources) === true && meta.resources.length > 0)
+    let resourcesTable: UiElement | undefined;
+    const rawResources = meta.resources;
+    if (Array.isArray(rawResources) === true && rawResources.length > 0)
     {
-      for (const resource of meta.resources)
-      {
-        if (typeof resource === "object" && resource !== null)
-        {
-          const resourceName: string | undefined = resource["name"] ?? resource["modelName"];
-          const resourceType: string = (resource["type"] ?? "RESOURCE").toUpperCase();
-          const resourceWeight: number | undefined = resource["weight"];
-          const resourceLabel = resourceName !== undefined ? `${resourceType}: ${resourceName}` : resourceType;
-          const resourceValue = resourceWeight !== undefined ? `Weight: ${resourceWeight}` : "Active";
-          secondaryRows.push(tableRow([
-            stringShort(resourceLabel, firstColumnOptions),
-            stringShort(resourceValue, copyableOptions)
-          ]));
-        }
-      }
-    }
+      const resourceTableColumns =
+        [
+          tableColumn({
+            header: "Type",
+            align: TableColumnAlign.left,
+            width: 25
+          }),
+          tableColumn({
+            header: "Name",
+            align: TableColumnAlign.left,
+            width: 50
+          }),
+          tableColumn({
+            header: "Weight",
+            align: TableColumnAlign.left,
+            width: 25
+          })
+        ];
 
-    // Hashes dictionary
-    handledKeys.add("hashes");
-    if (meta.hashes !== null && meta.hashes !== undefined && typeof meta.hashes === "object")
-    {
-      for (const [ hashName, hashValue ] of Object.entries(meta.hashes))
-      {
-        if (hashValue !== null && hashValue !== undefined && String(hashValue).trim().length > 0)
+      const resourceTableRows = rawResources.map((resource) =>
         {
-          secondaryRows.push(tableRow([
-            stringShort(`Hash (${hashName})`, firstColumnOptions),
-            identifier(String(hashValue).trim(), copyableOptions)
-          ]));
+          const resourceRecord = (typeof resource === "object" && resource !== null ? resource : {}) as Record<string, unknown>;
+
+          // Type (not copyable)
+          const typeValue = resourceRecord["type"];
+          const formattedType = typeValue !== null && typeValue !== undefined ? String(typeValue).trim() : "";
+          const typeCell = formattedType.length > 0 ? stringShort(formattedType) : stringShort("");
+
+          // Name (50% width, copyable)
+          const nameValue = resourceRecord["name"] ?? resourceRecord["modelName"];
+          const formattedName = nameValue !== null && nameValue !== undefined ? String(nameValue).trim() : "";
+          const nameCell = formattedName.length > 0 ? stringShort(formattedName, copyableOptions) : stringShort("");
+
+          // Weight (25% width, copyable)
+          const weightValue = resourceRecord["weight"];
+          const weightCell = weightValue !== null && weightValue !== undefined && String(weightValue).trim().length > 0
+            ? this.formatScalarElement(weightValue, copyableOptions)
+            : stringShort("");
+
+          return tableRow([ typeCell, nameCell, weightCell ]);
         }
+      );
+
+      const hasAnyContent = rawResources.some((resource) =>
+        {
+          if (typeof resource !== "object" || resource === null)
+          {
+            return false;
+          }
+          const record = resource as Record<string, unknown>;
+          const name = record["name"] ?? record["modelName"];
+          return (
+            (record["type"] !== null && record["type"] !== undefined && String(record["type"]).trim().length > 0) ||
+            (name !== null && name !== undefined && String(name).trim().length > 0) ||
+            (record["weight"] !== null && record["weight"] !== undefined && String(record["weight"]).trim().length > 0)
+          );
+        }
+      );
+
+      if (hasAnyContent === true)
+      {
+        resourcesTable = table(
+          resourceTableRows,
+          {
+            withRowSeparators: true,
+            columns: resourceTableColumns
+          }
+        );
       }
     }
 
@@ -409,10 +514,7 @@ export class CivitaiRetriever
               };
 
             const propertyLabel = SECONDARY_LABELS[propertyKey] ?? propertyKey;
-            const numericValue = typeof propertyValue === "number" ? propertyValue : parseFloat(formattedStringValue);
-            const valueElement = typeof propertyValue === "number" || (Number.isNaN(numericValue) === false && String(numericValue) === formattedStringValue)
-              ? numberUnbounded(numericValue, copyableOptions)
-              : stringShort(formattedStringValue, copyableOptions);
+            const valueElement = this.formatScalarElement(propertyValue, copyableOptions);
 
             secondaryRows.push(tableRow([
               stringShort(propertyLabel, firstColumnOptions),
@@ -426,21 +528,107 @@ export class CivitaiRetriever
     const elements: UiElement[] = [];
     if (primaryRows.length > 0)
     {
-      elements.push(table(primaryRows, { withRowSeparators: true }));
+      elements.push(table(primaryRows, commonTableOptions));
+    }
+
+    if (civitaiResourcesTable !== undefined)
+    {
+      const resourceCount = meta.civitaiResources?.length ?? 0;
+      elements.push(this.createCollapsibleSection(
+        "Civitai Resources",
+        civitaiResourcesTable,
+        resourceCount,
+        "resource"
+      ));
+    }
+
+    if (resourcesTable !== undefined)
+    {
+      const resourceCount = rawResources?.length ?? 0;
+      elements.push(this.createCollapsibleSection(
+        "Resources",
+        resourcesTable,
+        resourceCount,
+        "resource"
+      ));
     }
 
     if (secondaryRows.length > 0)
     {
-      elements.push(collapsibleGroup(
-        "Details", [ table(secondaryRows, { withRowSeparators: true }) ],
-        {
-          summary: `${secondaryRows.length} ${secondaryRows.length === 1 ? "property" : "properties"}`,
-          defaultExpanded: false
-        }
+      elements.push(this.createCollapsibleSection(
+        "Details",
+        table(secondaryRows, commonTableOptions),
+        secondaryRows.length,
+        "property",
+        "properties"
       ));
     }
 
     return createUiContainer({ elements });
+  }
+
+  private formatLongText(value: unknown, options: { modifiers?: { copyable?: boolean; }; }): UiElement | undefined
+  {
+    return typeof value === "string" && value.trim().length > 0
+      ? stringLong(value.trim(), options)
+      : undefined;
+  }
+
+  private formatShortText(value: unknown, options: { modifiers?: { copyable?: boolean; }; }): UiElement | undefined
+  {
+    return typeof value === "string" && value.trim().length > 0
+      ? stringShort(value.trim(), options)
+      : undefined;
+  }
+
+  private formatInteger(value: unknown, options: { modifiers?: { copyable?: boolean; }; }): UiElement | undefined
+  {
+    const integerNumber = typeof value === "number" ? value : parseInt(String(value), 10);
+    return Number.isNaN(integerNumber) === false
+      ? numberUnbounded(integerNumber, options)
+      : undefined;
+  }
+
+  private formatFloat(value: unknown, options: { modifiers?: { copyable?: boolean; }; }): UiElement | undefined
+  {
+    const floatNumber = typeof value === "number" ? value : parseFloat(String(value));
+    return Number.isNaN(floatNumber) === false
+      ? numberUnbounded(floatNumber, options)
+      : undefined;
+  }
+
+  private formatScalarElement(value: unknown, options: { modifiers?: { copyable?: boolean; }; }): UiElement
+  {
+    if (typeof value === "number")
+    {
+      return numberUnbounded(value, options);
+    }
+    const formattedStringValue = String(value).trim();
+    const numericValue = parseFloat(formattedStringValue);
+    if (Number.isNaN(numericValue) === false && String(numericValue) === formattedStringValue)
+    {
+      return numberUnbounded(numericValue, options);
+    }
+    return stringShort(formattedStringValue, options);
+  }
+
+  private createCollapsibleSection(
+    title: string,
+    element: UiElement,
+    itemCount: number,
+    unitSingular: string,
+    unitPlural: string = `${unitSingular}s`
+  ): UiElement
+  {
+    const unit = itemCount === 1 ? unitSingular : unitPlural;
+    return collapsibleGroup(
+      title,
+      [ element ],
+      {
+        summary: `${itemCount} ${unit}`,
+        defaultExpanded: false
+      }
+    );
   }
 
 }
