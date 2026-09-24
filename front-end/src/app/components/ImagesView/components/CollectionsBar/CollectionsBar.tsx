@@ -217,7 +217,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
           <Button
             variant="default"
             px="xs"
-            disabled={!searchFilter || !extensionsImageCommands || extensionsImageCommands.length === 0}
+            disabled={!searchFilter || !extensionsImageCommands}
           >
             <IconPlayerPlayFilled size={Common.IconSmallSize}/>
           </Button>
@@ -230,23 +230,25 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
             subLabel={t("commands.allExtensionsDetails")}
             onClick={handleOnSynchronize}
           />
-          <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
-          {extensionsImageCommands?.map((extensionCommand) =>
-          {
-            const extension = extensionCommand.extension;
-            const command = extensionCommand.command;
-            const manifest = extension.manifest;
-            return (
-              <MenuItemEntry
-                key={`${manifest.id}-${command.id}`}
-                extensionId={manifest.id}
-                icon={<CommandIcon extensionId={manifest.id} command={command} size="sm"/>}
-                label={command.label}
-                subLabel={manifest.name}
-                onClick={() => commandRunner(manifest.id, command, searchFilter)}
-              />
-            );
-          })}
+          {extensionsImageCommands?.length > 0 && <>
+            <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
+            {extensionsImageCommands.map((extensionCommand) =>
+            {
+              const extension = extensionCommand.extension;
+              const command = extensionCommand.command;
+              const manifest = extension.manifest;
+              return (
+                <MenuItemEntry
+                  key={`${manifest.id}-${command.id}`}
+                  extensionId={manifest.id}
+                  icon={<CommandIcon extensionId={manifest.id} command={command} size="sm"/>}
+                  label={command.label}
+                  subLabel={manifest.name}
+                  onClick={() => commandRunner(manifest.id, command, searchFilter)}
+                />
+              );
+            })}
+          </>}
         </Menu.Dropdown>
       </Menu>
       {selectedCollection && (
