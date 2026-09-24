@@ -87,7 +87,7 @@ function resolvePythonType(type: ViewKitType): string
     case "string":
       return "str";
     case "number":
-      return "float";
+      return type.name === "int" ? "int" : "float";
     case "boolean":
       return "bool";
     case "literal":
@@ -248,7 +248,7 @@ function resolvePythonRequiredDefault(property: ViewKitProperty): string
     case "string":
       return '""';
     case "number":
-      return "0.0";
+      return property.type.name === "int" ? "0" : "0.0";
     case "boolean":
       return "False";
     case "array":

@@ -9,8 +9,10 @@ model Slot {
   @doc("Optional slot label (e.g. \"Slot A\")")
   label?: string;
 
-  @doc("Relative or fractional width proportion (e.g. \"1/3\", \"2/3\", \"100px\", \"auto\")")
-  width?: string;
+  @doc("Width percentage (1-100)")
+  @minValue(1)
+  @maxValue(100)
+  width?: integer;
 
   @doc("Rendered content inside the slot")
   content: UiElement;
@@ -82,6 +84,15 @@ enum TableColumnAlign {
   right: "right",
 }
 
+@doc("Width mode for table columns.")
+enum TableColumnWidthMode {
+  @doc("Fixed width constraint")
+  fixed: "fixed",
+
+  @doc("Maximum width upper bound constraint")
+  maximum: "maximum",
+}
+
 @doc("Column definition for structured tables.")
 model TableColumn {
   @doc("Display header text")
@@ -90,8 +101,13 @@ model TableColumn {
   @doc("Text horizontal alignment")
   align?: TableColumnAlign = TableColumnAlign.left;
 
-  @doc("Optional width constraint")
-  width?: string;
+  @doc("Width percentage (1-100)")
+  @minValue(1)
+  @maxValue(100)
+  width?: integer;
+
+  @doc("Sizing mode for the provided width")
+  widthMode?: TableColumnWidthMode = TableColumnWidthMode.fixed;
 }
 
 @doc("Single table row containing an array of cell values.")
@@ -108,9 +124,6 @@ model TableRow {
 model TableElement extends UiElement {
   @doc("Discriminator type")
   type: "table";
-
-  @doc("Whether to render a column header row")
-  hasHeader?: boolean = true;
 
   @doc("Whether to render alternating row background colors")
   isStriped?: boolean = false;

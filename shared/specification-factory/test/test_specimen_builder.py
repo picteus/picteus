@@ -26,6 +26,7 @@ from view_kit import (
     TimestampFormat,
     ButtonVariant,
     TableColumnAlign,
+    TableColumnWidthMode,
     DividerStyle,
     Shape,
     Size,
@@ -156,10 +157,9 @@ class TestSpecimenBuilder(unittest.TestCase):
                 table_row([string_short("Color Space"), string_short("sRGB")]),
             ],
             columns=[
-                table_column(header="Property", align=TableColumnAlign.left),
-                table_column(header="Value", align=TableColumnAlign.right),
+                table_column(header="Property", align=TableColumnAlign.left, width=30, width_mode=TableColumnWidthMode.maximum),
+                table_column(header="Value", align=TableColumnAlign.right, width=70),
             ],
-            has_header=True,
             is_striped=True,
             with_column_separators=True,
             with_row_separators=True,
@@ -172,12 +172,16 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(table_dict["withRowSeparators"], True)
         self.assertEqual(len(table_dict["rows"]), 2)
         self.assertEqual(len(table_dict["columns"]), 2)
+        self.assertEqual(table_dict["columns"][0]["width"], 30)
+        self.assertEqual(table_dict["columns"][0]["widthMode"], "maximum")
+        self.assertEqual(table_dict["columns"][1]["width"], 70)
+        self.assertEqual(table_dict["columns"][1]["widthMode"], "fixed")
         self.assertEqual(table_dict["columns"][1]["align"], "right")
 
         multi_slot_element = multi_slot(
             slots=[
-                slot(content=string_short("Slot 1"), width="1/3"),
-                slot(content=string_short("Slot 2"), width="2/3"),
+                slot(content=string_short("Slot 1"), width=33),
+                slot(content=string_short("Slot 2"), width=67),
             ],
             proportions="1/3 + 2/3",
         )
@@ -186,6 +190,8 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(multi_slot_dict["type"], "multi-slot")
         self.assertEqual(multi_slot_dict["proportions"], "1/3 + 2/3")
         self.assertEqual(len(multi_slot_dict["slots"]), 2)
+        self.assertEqual(multi_slot_dict["slots"][0]["width"], 33)
+        self.assertEqual(multi_slot_dict["slots"][1]["width"], 67)
 
     def test_repeating_groups(self):
         repeating_group_element = repeating_group(

@@ -52,6 +52,7 @@ import {
   table,
   tableColumn,
   TableColumnAlign,
+  TableColumnWidthMode,
   tableRow,
   TextWeight,
   timestamp,
@@ -166,10 +167,9 @@ describe("TypeScript Card & Visual DSL Builder", () =>
       ],
       {
         columns: [
-          tableColumn({ header: "Property", align: TableColumnAlign.left }),
-          tableColumn({ header: "Value", align: TableColumnAlign.right })
+          tableColumn({ header: "Property", align: TableColumnAlign.left, width: 30, widthMode: TableColumnWidthMode.maximum }),
+          tableColumn({ header: "Value", align: TableColumnAlign.right, width: 70 })
         ],
-        hasHeader: true,
         isStriped: true,
         withColumnSeparators: true,
         withRowSeparators: true
@@ -183,12 +183,16 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.equal(tableElement.withRowSeparators, true);
     assert.equal(tableElement.rows.length, 2);
     assert.ok(tableElement.columns && tableElement.columns.length === 2);
+    assert.equal(tableElement.columns[0].width, 30);
+    assert.equal(tableElement.columns[0].widthMode, TableColumnWidthMode.maximum);
+    assert.equal(tableElement.columns[1].width, 70);
+    assert.equal(tableElement.columns[1].widthMode, TableColumnWidthMode.fixed);
     assert.equal(tableElement.columns[1].align, TableColumnAlign.right);
 
     const multiSlotElement = multiSlot(
       [
-        slot(stringShort("Slot 1"), { width: "1/3" }),
-        slot(stringShort("Slot 2"), { width: "2/3" })
+        slot(stringShort("Slot 1"), { width: 33 }),
+        slot(stringShort("Slot 2"), { width: 67 })
       ],
       { proportions: "1/3 + 2/3" }
     );
@@ -196,6 +200,8 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.ok(isMultiSlotElement(multiSlotElement));
     assert.equal(multiSlotElement.type, "multi-slot");
     assert.equal(multiSlotElement.slots.length, 2);
+    assert.equal(multiSlotElement.slots[0].width, 33);
+    assert.equal(multiSlotElement.slots[1].width, 67);
     assert.equal(multiSlotElement.proportions, "1/3 + 2/3");
   });
 
@@ -663,7 +669,6 @@ describe("TypeScript Card & Visual DSL Builder", () =>
             }
           } ]
         } ],
-        "hasHeader": true,
         "isStriped": false,
         "withColumnSeparators": false,
         "withRowSeparators": true
@@ -690,7 +695,6 @@ describe("TypeScript Card & Visual DSL Builder", () =>
               }
             } ]
           } ],
-          "hasHeader": true,
           "isStriped": false,
           "withColumnSeparators": false,
           "withRowSeparators": true
@@ -720,7 +724,6 @@ describe("TypeScript Card & Visual DSL Builder", () =>
               }
             } ]
           } ],
-          "hasHeader": true,
           "isStriped": false,
           "withColumnSeparators": false,
           "withRowSeparators": true
@@ -750,7 +753,6 @@ describe("TypeScript Card & Visual DSL Builder", () =>
               }
             } ]
           } ],
-          "hasHeader": true,
           "isStriped": false,
           "withColumnSeparators": false,
           "withRowSeparators": true
@@ -831,7 +833,6 @@ describe("TypeScript Card & Visual DSL Builder", () =>
               }
             } ]
           } ],
-          "hasHeader": true,
           "isStriped": false,
           "withColumnSeparators": false,
           "withRowSeparators": true
@@ -917,7 +918,6 @@ describe("TypeScript Card & Visual DSL Builder", () =>
               }
             } ]
           } ],
-          "hasHeader": true,
           "isStriped": false,
           "withColumnSeparators": false,
           "withRowSeparators": true
@@ -1095,19 +1095,18 @@ describe("TypeScript Card & Visual DSL Builder", () =>
               }
             } ]
           } ],
-          "hasHeader": true,
           "isStriped": false,
           "withColumnSeparators": false,
           "withRowSeparators": true,
           "columns": [ {
             "header": "Category",
-            "width": "25%"
+            "width": 25
           }, {
             "header": "Count",
-            "width": "15%"
+            "width": 15
           }, {
             "header": "Node Types",
-            "width": "60%"
+            "width": 60
           } ]
         } ],
         "summary": "99 nodes (64 active)",
