@@ -36,7 +36,8 @@
     "MANUAL.md"
   ],
   "scripts": {
-    "build": "tsc && tsc-alias --resolve-full-paths"
+    "build": "tsc && tsc-alias --resolve-full-paths",
+    "test": "node --import tsx --test src/EmbeddingGenerator.test.ts"
   },
   "devDependencies": {
     "typescript": "5.9.2",

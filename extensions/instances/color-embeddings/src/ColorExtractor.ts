@@ -6,6 +6,10 @@ export interface RGBColor
   r: number;
   g: number;
   b: number;
+  // We carry the population (the number of pixels the extractor assigned to this color) so that downstream
+  // embedding generation can weight dominant colors more heavily. It is optional because not every code path
+  // that manipulates an RGBColor has a meaningful population to provide.
+  population?: number;
 }
 
 export type ColorLibrary = "color-thief" | "colorlip" | "node-vibrant";
@@ -27,7 +31,7 @@ class ColorThiefExtractor implements IColorExtractor
       .map((color) =>
       {
         const [r, g, b] = color.array();
-        return { r, g, b };
+        return { r, g, b, population: color.population };
       });
   }
 
