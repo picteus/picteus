@@ -29,6 +29,7 @@ import {
   table,
   tableColumn,
   TableColumnAlign,
+  TableColumnWidthMode,
   tableRow,
   TableRow,
   TextIntensity,
@@ -313,7 +314,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         elements: [
           table(rows, {
             columns: [
-              tableColumn({ align: TableColumnAlign.left }),
+              tableColumn({ align: TableColumnAlign.left, width: 25, widthMode: TableColumnWidthMode.maximum }),
               tableColumn({ align: TableColumnAlign.left })
             ]
           })
@@ -446,7 +447,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
             rows,
             {
               columns: [
-                tableColumn({ align: TableColumnAlign.left }),
+                tableColumn({ align: TableColumnAlign.left, width: 25, widthMode: TableColumnWidthMode.maximum }),
                 tableColumn({ align: TableColumnAlign.left })
               ]
             }
@@ -466,8 +467,10 @@ export default function ImageData({ image, viewMode }: ImageDataType)
             if (rows.length > 0)
             {
               container.elements.splice(0, 0, table(rows, {
-                hasHeader: false,
-                withRowSeparators: true
+                withRowSeparators: true,
+                columns: [
+                  tableColumn({ align: TableColumnAlign.left, width: 25, widthMode: TableColumnWidthMode.maximum }),
+                  tableColumn({ align: TableColumnAlign.left }) ]
               }), divider());
             }
           }
@@ -746,7 +749,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
 
               element = table(rows, {
                 columns: [
-                  tableColumn({ align: TableColumnAlign.left }),
+                  tableColumn({ align: TableColumnAlign.left, width: 25, widthMode: TableColumnWidthMode.maximum }),
                   tableColumn({ align: TableColumnAlign.left })
                 ]
               });
@@ -1042,7 +1045,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         value={accordionValue}
         onChange={setAccordionValue}
       >
-        <Stack gap="md" ml="sm" mr="sm">
+        <Stack gap="md" ml="sm" mr="sm" mb="sm">
           {visibleSections.map((section) => (<Box key={section.id}>{section.node}</Box>))}
         </Stack>
       </Accordion>
