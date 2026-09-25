@@ -4,6 +4,12 @@ Extensions are a central part of Picteus because they allow the application to e
 
 Extensions may be authored by software developers who need to integrate specialist tools, automate domain-specific workflows, or provide functionality for a wider user community. They may also be created by individual users with the help of AI-assisted vibe-coding. This lowers the threshold for adapting Picteus to a particular working method: a user can describe a need, produce a focused extension, and refine it as their workflow changes. In this way, each user can maintain a distinct version of the application — a personal flavor shaped around their own requirements, data, tools, and preferred interactions.
 
+Extensions also provide a bridge between Picteus and the complementary software around it. An extension can embed or use
+other APIs, making it straightforward to connect Picteus with third-party applications and services. It can translate
+between their contracts, pass data and actions across the boundary, and bring the result back into Picteus as part of a
+coherent workflow. This makes extensions an efficient way to build the integration glue that lets the platform
+collaborate with the tools users already rely on.
+
 The extensions documentation describes how these extensions are designed, authored, packaged, installed, and integrated with the application. It covers both conceptual guidance and the detailed contracts exposed by the extension SDKs and manifest format.
 
 ## Documentation in this section

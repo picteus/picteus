@@ -11,6 +11,9 @@ const sidebars: SidebarsConfig =
       "setup/traces",
       "setup/troubleshooting"
     ],
+    visionSidebar: [
+      "vision"
+    ],
     manualSidebar: [
       "manual",
       {

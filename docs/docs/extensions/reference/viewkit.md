@@ -42,40 +42,40 @@ Each element has a `type` discriminator.
 
 ### Values and content
 
-| Type | Purpose |
-|:---|:---|
-| `string-short` | Short text, optionally rendered as a `plain` value or a `chip`. |
-| `string-long` | Multiline text such as a description or comment. |
-| `string-code` | Formatted code with optional `xml`, `json`, or `yaml` language highlighting. |
-| `xml` | XML markup content. |
-| `json` | JSON data or structure. |
-| `string-url` | A URL with optional custom link text. |
-| `identifier` | A semantic identifier, generally rendered in monospace. |
-| `ratio` | An aspect ratio numeric decimal expression (e.g., `1.7778` or `1.3333`). |
-| `color` | A hexadecimal color code with configurable `shape` (`circle`, `square`), `size` (`small`, `medium`, `large`), optional `label`, `showText` display toggle, and copy affordance. |
-| `number-unbounded` | A numeric value with an optional unit. |
-| `number-stars` | A bounded numeric rating rendered as stars. |
-| `number-meter` | A bounded numeric value rendered as a read-only meter. |
-| `boolean-plain` | A boolean rendered as plain text. |
-| `boolean-badge` | A boolean rendered as a colored badge (`neutral`, `success`, `warning`, `danger`). |
-| `timestamp` | A date or time integer in milliseconds rendered as `datetime`, `date`, `time`, or `relative`. |
-| `image-ref` | An image thumbnail with alternative text, aspect ratio, and fallback placeholder. |
-| `markdown` | Markdown content rendered with the application's typography. |
-| `html` | Sandboxed HTML content for cases not covered by the other elements. |
+| Type               | Purpose                                                                                                                                                                         |
+|:-------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `string`           | Textual content with configurable `representation` (`plain`, `chip`, or `multiline`).                                                                                           |
+| `strings`          | Sequence of strings rendered inline or as chips with configurable `separator` (`bar`, `comma`, `dot`, `slash`, `dash`, `space`).                                                |
+| `string-code`      | Formatted code with optional `xml`, `json`, or `yaml` language highlighting.                                                                                                    |
+| `xml`              | XML markup content.                                                                                                                                                             |
+| `json`             | JSON data or structure.                                                                                                                                                         |
+| `string-url`       | A URL with optional custom link text.                                                                                                                                           |
+| `identifier`       | A semantic identifier, generally rendered in monospace.                                                                                                                         |
+| `ratio`            | An aspect ratio numeric decimal expression (e.g., `1.7778` or `1.3333`).                                                                                                        |
+| `dimensions`       | Image width and height dimensions separated by `x` with thousands formatting (e.g. `3,840 x 2,160`).                                                                            |
+| `color`            | A hexadecimal color code with configurable `shape` (`circle`, `square`), `size` (`small`, `medium`, `large`), optional `label`, `showText` display toggle, and copy affordance. |
+| `number-unbounded` | A numeric value with an optional unit.                                                                                                                                          |
+| `number-stars`     | A bounded numeric rating rendered as stars.                                                                                                                                     |
+| `number-meter`     | A bounded numeric value rendered as a read-only meter.                                                                                                                          |
+| `boolean`          | A boolean value rendered as plain text or as a colored badge (`neutral`, `success`, `warning`, `danger`) with optional custom labels.                                           |
+| `timestamp`        | A date or time integer in milliseconds rendered as `datetime`, `date`, `time`, or `relative`.                                                                                   |
+| `image-ref`        | An image thumbnail with alternative text, aspect ratio, and fallback placeholder.                                                                                               |
+| `markdown`         | Markdown content rendered with the application's typography.                                                                                                                    |
+| `html`             | Sandboxed HTML content for cases not covered by the other elements.                                                                                                             |
 
 Primitive elements can use modifiers such as text intensity (`low`, `medium`, `high`), weight (`thin`, `normal`, `heavy`), truncation (`characterLimit`, `showMore`), monospace rendering, or copy support.
 
 ### Layout and grouping
 
-| Type | Purpose |
-|:---|:---|
-| `multi-slot` | Horizontal row with slots and declared proportions such as `"1/3 + 2/3"` or `"equal"`. |
-| `flowing` | Flowing inline layout container with automatic line wrapping for child elements. |
-| `label-value` | Label on the left and a rendered value on the right, optionally separated by a divider. |
-| `table` | Structured rows and optional columns, headers, striping, and separators. |
-| `repeating-group` | Repeated entries sharing a common structure and retaining their labels. |
-| `collapsible-group` | Expandable section with a title, summary, and nested elements. |
-| `divider` | A visual separator with `hairline`, `solid`, or `dashed` styling. |
+| Type                | Purpose                                                                                 |
+|:--------------------|:----------------------------------------------------------------------------------------|
+| `multi-slot`        | Horizontal row with slots and configurable slot widths.                                 |
+| `flowing`           | Flowing inline layout container with automatic line wrapping for child elements.        |
+| `label-value`       | Label on the left and a rendered value on the right, optionally separated by a divider. |
+| `table`             | Structured rows and optional columns, headers, striping, and separators.                |
+| `repeating-group`   | Repeated entries sharing a common structure and retaining their labels.                 |
+| `collapsible-group` | Expandable section with a title, summary, and nested elements.                          |
+| `divider`           | A visual separator with `hairline`, `solid`, or `dashed` styling.                       |
 
 Layout elements contain other `UiElement` values where appropriate. Their order is significant: the front-end renders the elements in the order in which they occur in the document.
 
@@ -93,7 +93,7 @@ The following document presents a feature with a confidence meter, a label-value
       "type": "label-value",
       "label": "Primary object",
       "value": {
-        "type": "string-short",
+        "type": "string",
         "value": "Bicycle",
         "representation": "chip"
       }
@@ -112,8 +112,9 @@ The following document presents a feature with a confidence meter, a label-value
       "defaultExpanded": false,
       "elements": [
         {
-          "type": "string-long",
-          "value": "The model detected two bicycle regions."
+          "type": "string",
+          "value": "The model detected two bicycle regions.",
+          "representation": "multiline"
         }
       ]
     }

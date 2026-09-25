@@ -230,6 +230,7 @@ h1, h2, h3, h4, h5, h6
 }
 
 /* Navbar item icons */
+.navbar__item--vision::before,
 .navbar__item--setup::before,
 .navbar__item--manual::before,
 .navbar__item--developer::before,
@@ -249,6 +250,12 @@ h1, h2, h3, h4, h5, h6
   -webkit-mask-position: center;
   vertical-align: text-bottom;
   opacity: 0.85;
+}
+
+.navbar__item--vision::before
+{
+  mask-image: url("../../static/img/icon-vision.svg");
+  -webkit-mask-image: url("../../static/img/icon-vision.svg");
 }
 
 .navbar__item--setup::before

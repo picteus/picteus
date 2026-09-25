@@ -96,6 +96,13 @@ const config: Config =
               [
                 {
                   type: "docSidebar",
+                  sidebarId: "visionSidebar",
+                  position: "left",
+                  label: "Vision",
+                  className: "navbar__item--vision"
+                },
+                {
+                  type: "docSidebar",
                   sidebarId: "setupSidebar",
                   position: "left",
                   label: "Setup",
