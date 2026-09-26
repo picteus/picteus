@@ -2,6 +2,10 @@
 
 In Picteus, an image **feature** is a structured, typed, and attributed metadata entity attached to an image, generated programmatically by extensions or automated analysis pipelines. Image features dramatically expand the descriptive knowledge attached to an image beyond conventional file-level metadata, enabling fine-grained search, structured generation provenance, and rich user interface visualizations. Structured features are part of the image enrichment facets triplet of Picteus — the high-level overview of which is documented in [Facets](facets.md).
 
+Among the feature types, `recipe` is a specialized feature for recording the prompt or structured instructions and
+context used to generate an AI-generated image. See [Generation recipes](recipe.md) for its two prompt forms and how
+they help trace image origins.
+
 ---
 
 ## The role of image features

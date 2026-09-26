@@ -33,7 +33,9 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
-    "build": "docusaurus build",
+    "build:github": "docusaurus build",
+    "build:local": "cross-env DOCUSAURUS_BASE_URL=/ docusaurus build",
+    "build": "npm run build:github",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
@@ -55,6 +57,7 @@
     ]
   },
   "devDependencies": {
+    "cross-env": "10.0.0",
     "typescript": "5.9.2",
     "@docusaurus/module-type-aliases": "3.10.2",
     "@docusaurus/tsconfig": "3.10.2",

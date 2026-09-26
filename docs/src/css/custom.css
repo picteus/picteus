@@ -96,7 +96,7 @@
 
   --ifm-heading-color: var(--picteus-text-primary);
   --ifm-font-color-base: var(--picteus-text-secondary);
-  --ifm-link-color: var(--picteus-accent-olive);
+  --ifm-link-color: #0000FF;
   --ifm-link-hover-color: var(--picteus-text-primary);
 
   --ifm-toc-border-color: var(--picteus-border-color);

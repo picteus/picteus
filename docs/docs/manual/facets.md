@@ -93,6 +93,10 @@ For in-depth details on tag storage mechanics, extension calculation hooks, and 
 
 Structured features are strongly typed, attributed metadata entities designed to capture deep analytical findings, narrative evaluations, and complex computational provenance:
 
+The `recipe` feature is a specialized feature type for recording the prompt or structured instructions used to generate
+an image, together with generation context. See [Generation recipes](recipe.md) for its forms and how it helps trace
+image origins.
+
 - **Origin**: inferred and stored by specialized Picteus extensions — including vision-language models (VLMs), OCR
   pipelines, facial landmark detectors, or generative AI workflow analyzers;
 - **Storage**: persisted in the dedicated `ImageFeature` table within the relational SQL database;

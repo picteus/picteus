@@ -39,7 +39,9 @@ const sidebars: SidebarsConfig =
       "manual/facets",
       "manual/tags",
       "manual/features",
+      "manual/recipe",
       "manual/embedding",
+      "manual/schemas",
       "manual/container"
     ],
     developerSidebar: [

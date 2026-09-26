@@ -11,7 +11,7 @@ const config: Config =
     organizationName: "picteus",
     projectName: "picteus",
     url: "https://picteus.github.io",
-    baseUrl: "/picteus",
+    baseUrl: process.env.DOCUSAURUS_BASE_URL ?? "/picteus",
     deploymentBranch: "gh-pages",
     favicon: "img/favicon.ico",
     trailingSlash: false,
