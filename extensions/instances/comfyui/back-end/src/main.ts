@@ -60,7 +60,9 @@ class ComfyUiExtension extends PicteusExtension
 
   private temporaryDirectoryPath: string;
 
-  private extensionCurrentlyInstalled = false;
+  private comfyExtensionInstalled = false;
+
+  private comfyConnectionEstablished = false;
 
   private analyzerSettings: ComfyUIAnalyzerSettings = {};
 
@@ -162,8 +164,6 @@ class ComfyUiExtension extends PicteusExtension
       const extractedFeatures = analyzer.computeFeatures();
       for (const feature of extractedFeatures)
       {
-        console.log("==========================");
-        console.log(JSON.stringify(feature, null, 2));
         features.push(feature);
       }
       if (id !== undefined)
@@ -237,7 +237,11 @@ class ComfyUiExtension extends PicteusExtension
 
   private async openInComfyUi(communicator: Communicator, imageId: string): Promise<void>
   {
-    if (!(this.extensionCurrentlyInstalled === true && this.url !== undefined))
+    if (this.comfyExtensionInstalled === true && this.comfyConnectionEstablished === false)
+    {
+      await this.attemptComfyServerCommunication(communicator);
+    }
+    if (!(this.comfyExtensionInstalled === true && this.comfyConnectionEstablished === true))
     {
       throw new CommandError("Cannot open the ComfyUI workflow, because the application is not connected to the ComfyUI server");
     }
@@ -319,11 +323,12 @@ class ComfyUiExtension extends PicteusExtension
   private async setup(communicator: Communicator, value: SettingsValue): Promise<void>
   {
     this.url = value["url"];
-    this.analyzerSettings = {
-      extractLoRAsAndAdapters: value["extractLoRAsAndAdapters"] !== undefined ? Boolean(value["extractLoRAsAndAdapters"]) : true,
-      extractUpscalingAndRefinement: value["extractUpscalingAndRefinement"] !== undefined ? Boolean(value["extractUpscalingAndRefinement"]) : true,
-      extractWorkflowTopology: value["extractWorkflowTopology"] !== undefined ? Boolean(value["extractWorkflowTopology"]) : true
-    };
+    this.analyzerSettings =
+      {
+        extractLoRAsAndAdapters: value["extractLoRAsAndAdapters"],
+        extractUpscalingAndRefinement: value["extractUpscalingAndRefinement"],
+        extractWorkflowTopology: value["extractWorkflowTopology"]
+      };
 
     const directoryPath = value["directoryPath"];
     if (directoryPath !== undefined)
@@ -347,34 +352,40 @@ class ComfyUiExtension extends PicteusExtension
           }
         });
       }
-      if (this.url !== undefined)
+      this.comfyExtensionInstalled = true;
+      await this.attemptComfyServerCommunication(communicator);
+    }
+  }
+
+  private async attemptComfyServerCommunication(communicator: Communicator): Promise<void>
+  {
+    if (this.url !== undefined)
+    {
+      const extensionWebServiceUrl = `${this.url}/${ComfyUiExtension.webServiceFragment}/get_directory_paths`;
+      let response: Response;
+      try
       {
-        const extensionWebServiceUrl = `${this.url}/${ComfyUiExtension.webServiceFragment}/get_directory_paths`;
-        let response: Response;
-        try
-        {
-          response = await fetch(extensionWebServiceUrl, { method: "GET" });
-        }
-        catch (error)
-        {
-          // It is very likely that the ComfyUI server is not running
-          communicator.sendLog(`Failed to communicate with the ComfyUI server'. Reason: '${error.message}'`, "error");
-          return;
-        }
-        const result = await response.text();
-        if (response.ok === true)
-        {
-          const jsonObject = JSON.parse(result);
-          this.outputDirectoryPath = jsonObject["outputDirectoryPath"];
-          this.inputDirectoryPath = jsonObject["inputDirectoryPath"];
-          this.temporaryDirectoryPath = jsonObject["temporaryDirectoryPath"];
-        }
-        else
-        {
-          communicator.sendLog(`Failed to retrieve the ComfyUI output directory path via the extension web service at '${extensionWebServiceUrl}'. Reason: '${result}'`, "error");
-        }
+        response = await fetch(extensionWebServiceUrl, { method: "GET" });
       }
-      this.extensionCurrentlyInstalled = true;
+      catch (error)
+      {
+        // It is very likely that the ComfyUI server is not running
+        communicator.sendLog(`Failed to communicate with the ComfyUI server'. Reason: '${error.message}'`, "error");
+        return;
+      }
+      const result = await response.text();
+      if (response.ok === true)
+      {
+        const jsonObject = JSON.parse(result);
+        this.outputDirectoryPath = jsonObject["outputDirectoryPath"];
+        this.inputDirectoryPath = jsonObject["inputDirectoryPath"];
+        this.temporaryDirectoryPath = jsonObject["temporaryDirectoryPath"];
+        this.comfyConnectionEstablished = true;
+      }
+      else
+      {
+        communicator.sendLog(`Failed to retrieve the ComfyUI output directory path via the extension web service at '${extensionWebServiceUrl}'. Reason: '${result}'`, "error");
+      }
     }
   }
 
