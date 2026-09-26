@@ -42,7 +42,13 @@ function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Com
   {
     const order = computeTitleOrder(level, titleOrderOffset);
     return (
-      <Title order={order}>
+      <Title
+        order={order}
+        style={{
+          overflowWrap: "anywhere",
+          wordBreak: "break-word"
+        }}
+      >
         {children}
       </Title>
     );
@@ -76,7 +82,14 @@ function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Com
     p: ({ children }): ReactElement =>
     {
       return (
-        <Text component="p" size={size}>
+        <Text
+          component="p"
+          size={size}
+          style={{
+            overflowWrap: "anywhere",
+            wordBreak: "break-word"
+          }}
+        >
           {children}
         </Text>
       );
@@ -120,6 +133,10 @@ function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Com
         <Anchor
           href={href}
           size={size}
+          style={{
+            overflowWrap: "anywhere",
+            wordBreak: "break-word"
+          }}
           onClick={(event) =>
           {
             if (href !== undefined)
@@ -152,14 +169,29 @@ function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Com
           : children;
 
         return (
-          <Code block>
+          <Code
+            block
+            style={{
+              whiteSpace: "pre-wrap",
+              overflowWrap: "anywhere",
+              wordBreak: "break-all",
+              minWidth: 0,
+              maxWidth: "100%"
+            }}
+          >
             {formattedCode}
           </Code>
         );
       }
 
       return (
-        <Code>
+        <Code
+          style={{
+            whiteSpace: "pre-wrap",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word"
+          }}
+        >
           {children}
         </Code>
       );
@@ -167,7 +199,13 @@ function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Com
     blockquote: ({ children }): ReactElement =>
     {
       return (
-        <Blockquote my="sm">
+        <Blockquote
+          my="sm"
+          style={{
+            overflowWrap: "anywhere",
+            wordBreak: "break-word"
+          }}
+        >
           {children}
         </Blockquote>
       );
@@ -198,7 +236,13 @@ function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Com
     {
       const isTaskListItem = Boolean(className && className.includes("task-list-item"));
       return (
-        <List.Item style={isTaskListItem ? { listStyleType: "none" } : undefined}>
+        <List.Item
+          style={{
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+            ...(isTaskListItem ? { listStyleType: "none" } : undefined)
+          }}
+        >
           {children}
         </List.Item>
       );
@@ -228,7 +272,14 @@ function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Com
     {
       return (
         <Table.ScrollContainer minWidth={300} my="sm">
-          <Table withTableBorder withColumnBorders striped highlightOnHover fz={size}>
+          <Table
+            withTableBorder
+            withColumnBorders
+            striped
+            highlightOnHover
+            fz={size}
+            style={{ maxWidth: "100%" }}
+          >
             {children}
           </Table>
         </Table.ScrollContainer>
@@ -308,7 +359,14 @@ export default function Markdown({
   );
 
   return (
-    <Typography>
+    <Typography
+      style={{
+        minWidth: 0,
+        maxWidth: "100%",
+        overflowWrap: "anywhere",
+        wordBreak: "break-word"
+      }}
+    >
       <ReactMarkdown
         remarkPlugins={REMARK_PLUGINS}
         components={components}
