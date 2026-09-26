@@ -2335,7 +2335,25 @@
       "put": {
         "description": "Runs all extensions capabilities against the images following search parameters.",
         "operationId": "image_searchRunCapabilities",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "extensionIds",
+            "required": false,
+            "in": "query",
+            "description": "The extension identifiers the capabilities should be limited to",
+            "schema": {
+              "items": {
+                "description": "An extension identifier",
+                "type": "string",
+                "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+                "minLength": 1,
+                "maxLength": 32,
+                "example": "extension-id"
+              },
+              "type": "array"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "description": "The search parameters",
@@ -2413,6 +2431,23 @@
               "minLength": 36,
               "maxLength": 36,
               "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+            }
+          },
+          {
+            "name": "extensionIds",
+            "required": false,
+            "in": "query",
+            "description": "The extension identifiers the capabilities should be limited to",
+            "schema": {
+              "items": {
+                "description": "An extension identifier",
+                "type": "string",
+                "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+                "minLength": 1,
+                "maxLength": 32,
+                "example": "extension-id"
+              },
+              "type": "array"
             }
           }
         ],

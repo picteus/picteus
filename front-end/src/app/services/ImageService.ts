@@ -6,6 +6,8 @@ import {
   ImageApiImageClosestImagesRequest,
   ImageApiImageGetAllFeaturesRequest,
   ImageApiImageGetRequest,
+  ImageApiImageRunCapabilitiesRequest,
+  ImageApiImageSearchRunCapabilitiesRequest,
   ImageApiImageTextToImagesRequest,
   ImageDimensions,
   ImageDistance,
@@ -85,14 +87,14 @@ async function getClosestImages(
   return imageApi.imageClosestImages(requestParameters);
 }
 
-async function runCapabilities(id: string): Promise<void>
+async function runCapabilities(requestParameters: ImageApiImageRunCapabilitiesRequest): Promise<void>
 {
-  await imageApi.imageRunCapabilities({ id });
+  await imageApi.imageRunCapabilities(requestParameters);
 }
 
-async function searchRunCapabilities(searchParameters: SearchParameters): Promise<void>
+async function searchRunCapabilities(requestParameters: ImageApiImageSearchRunCapabilitiesRequest): Promise<void>
 {
-  await imageApi.imageSearchRunCapabilities({ searchParameters });
+  await imageApi.imageSearchRunCapabilities(requestParameters);
 }
 
 async function destroy(id: string): Promise<void>

@@ -151,11 +151,8 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
     if (selectedAction === synchronizeAction)
     {
       ImageService.searchRunCapabilities({
-        filter: {
-          origin: {
-            kind: SearchOriginNature.Images,
-            ids: imageIds
-          }
+        searchParameters: {
+          filter: { origin: { kind: SearchOriginNature.Images, ids: imageIds } }
         }
       }).catch(ToastService.apiCallError);
     }

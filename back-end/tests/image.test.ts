@@ -14,6 +14,7 @@ import {
   ApplicationMetadata,
   ApplicationMetadataItem,
   CommandEntity,
+  ExtensionState,
   FieldLengths,
   fileWithProtocol,
   GenerationRecipe,
@@ -2117,26 +2118,80 @@ describe("Image with application", () =>
     {
       for (const filePath of allFilePaths)
       {
-        fs.rmSync(filePath);
+        if (fs.existsSync(filePath) === true)
+        {
+          fs.rmSync(filePath);
+        }
+      }
+    };
+    const checkFilePaths = (filePaths: string[], shouldExist: boolean) =>
+    {
+      for (const filePath of filePaths)
+      {
+        expect(fs.existsSync(filePath)).toEqual(shouldExist);
       }
     };
     const checkAllFilePaths = () =>
     {
-      for (const filePath of allFilePaths)
-      {
-        expect(fs.existsSync(filePath)).toEqual(true);
+      checkFilePaths(allFilePaths, true);
+    };
+    const searchParameters: SearchParameters = {
+      filter: {
+        origin: {
+          kind: SearchOriginKind.Images,
+          ids: [ image.id ]
+        }
       }
     };
 
+    // We synchronize all the enabled extensions through the single-image endpoint
     deleteAllFilePaths();
-    await base.getImageController().runCapabilities(image.id);
+    await base.getImageController().runCapabilities(image.id, undefined);
     checkAllFilePaths();
 
+    // We synchronize all the enabled extensions through the search endpoint
     deleteAllFilePaths();
-    await base.getImageController().searchRunCapabilities({
-      filter: { origin: { kind: SearchOriginKind.Images, ids: [ image.id ] } }
-    });
+    await base.getImageController().searchRunCapabilities(undefined, searchParameters);
     checkAllFilePaths();
+
+    // We restrict the single-image synchronization to the first extension only
+    deleteAllFilePaths();
+    await base.getImageController().runCapabilities(image.id, [ extension1.manifest.id ]);
+    checkFilePaths(file1Paths, true);
+    checkFilePaths(file2Paths, false);
+
+    // We restrict the search synchronization to the second extension only
+    deleteAllFilePaths();
+    await base.getImageController().searchRunCapabilities([ extension2.manifest.id ], searchParameters);
+    checkFilePaths(file2Paths, true);
+    checkFilePaths(file1Paths, false);
+
+    // We verify that an empty identifier list behaves like an unrestricted synchronization
+    deleteAllFilePaths();
+    await base.getImageController().runCapabilities(image.id, []);
+    checkAllFilePaths();
+
+    // We verify that an unknown extension identifier is rejected by both endpoints
+    const unknownExtensionId = "unknownExtension";
+    await expect(async () =>
+    {
+      await base.getImageController().runCapabilities(image.id, [ unknownExtensionId ]);
+    }).rejects.toThrow(new ServiceError(`The parameter 'extensionIds' is invalid because the extension with id '${unknownExtensionId}' does not exist`, BAD_REQUEST, base.badParameterCode));
+    await expect(async () =>
+    {
+      await base.getImageController().searchRunCapabilities([ unknownExtensionId ], searchParameters);
+    }).rejects.toThrow(new ServiceError(`The parameter 'extensionIds' is invalid because the extension with id '${unknownExtensionId}' does not exist`, BAD_REQUEST, base.badParameterCode));
+
+    // We verify that a paused (disabled) extension identifier is rejected by both endpoints
+    await base.getExtensionController().changeState(extension2.manifest.id, ExtensionState.Paused);
+    await expect(async () =>
+    {
+      await base.getImageController().runCapabilities(image.id, [ extension2.manifest.id ]);
+    }).rejects.toThrow(new ServiceError(`The parameter 'extensionIds' is invalid because the extension with id '${extension2.manifest.id}' is not enabled`, BAD_REQUEST, base.badParameterCode));
+    await expect(async () =>
+    {
+      await base.getImageController().searchRunCapabilities([ extension2.manifest.id ], searchParameters);
+    }).rejects.toThrow(new ServiceError(`The parameter 'extensionIds' is invalid because the extension with id '${extension2.manifest.id}' is not enabled`, BAD_REQUEST, base.badParameterCode));
   });
 
   test.each(imageCases)("mediaUrl with image '$fileName'", async ({ format, fileName, width, height }: ImageCase) =>

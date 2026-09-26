@@ -1812,13 +1812,19 @@ export class ImageController
       description: "Runs all extensions capabilities against the images following search parameters."
     }
   )
+  @ApiQuery({
+    name: "extensionIds",
+    description: "The extension identifiers the capabilities should be limited to",
+    schema: { items: extensionIdSchema, type: "array" },
+    required: false
+  })
   @ApiBody({ description: "The search parameters", type: SearchParameters, required: true })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withAllPolicies([ ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingWrite ]))
-  async searchRunCapabilities(@Body() parameters: SearchParameters): Promise<void>
+  async searchRunCapabilities(@Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds: string[] | undefined, @Body() parameters: SearchParameters): Promise<void>
   {
-    return await this.imageService.searchForRunningCapabilities(parameters);
+    return await this.imageService.searchForRunningCapabilities(parameters, extensionIds);
   }
 
   @Get(":id/get")
@@ -1850,6 +1856,12 @@ export class ImageController
     }
   )
   @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
+  @ApiQuery({
+    name: "extensionIds",
+    description: "The extension identifiers the capabilities should be limited to",
+    schema: { items: extensionIdSchema, type: "array" },
+    required: false
+  })
   @ApiResponse(
     {
       status: OK,
@@ -1858,9 +1870,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withAllPolicies([ ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingWrite ]))
-  async runCapabilities(@Param("id") id: string): Promise<Image>
+  async runCapabilities(@Param("id") id: string, @Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds: string[] | undefined): Promise<Image>
   {
-    return await this.imageService.runCapability(id);
+    return await this.imageService.runCapability(id, extensionIds);
   }
 
   @Put(":id/modify")

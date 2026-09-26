@@ -166,7 +166,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
   {
     if (searchFilter)
     {
-      ImageService.searchRunCapabilities({ filter: searchFilter }).catch(ToastService.apiCallError);
+      ImageService.searchRunCapabilities({ searchParameters: { filter: searchFilter } }).catch(ToastService.apiCallError);
     }
   }
 

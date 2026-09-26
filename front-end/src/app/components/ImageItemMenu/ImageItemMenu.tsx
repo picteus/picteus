@@ -72,7 +72,7 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
 
   function handleOnClickSynchronize()
   {
-    ImageService.runCapabilities(image.id).catch(ToastService.apiCallError);
+    ImageService.runCapabilities({ id: image.id }).catch(ToastService.apiCallError);
   }
 
   function handleOnClickDelete()
