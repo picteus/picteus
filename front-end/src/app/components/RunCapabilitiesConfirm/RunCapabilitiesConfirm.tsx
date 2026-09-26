@@ -3,30 +3,12 @@ import { useTranslation } from "react-i18next";
 import { Alert, Button, Checkbox, Divider, Flex, ScrollArea, Stack, Text } from "@mantine/core";
 import { IconAlertTriangle } from "@tabler/icons-react";
 
-import {
-  Extension,
-  ExtensionState,
-  ManifestCapability,
-  ManifestCapabilityId,
-  SearchParameters
-} from "@picteus/ws-client";
+import { SearchParameters } from "@picteus/ws-client";
 
 import { useExtensionsAll } from "app/hooks";
-import { StorageService } from "app/services";
-import { ExtensionCapability, ExtensionIcon, ImagesCollection } from "app/components";
+import { EligibleExtensionType, ExtensionsService, StorageService } from "app/services";
+import { ExtensionBadge, ExtensionCapability, ImagesCollection } from "app/components";
 
-
-const capabilityIds: ManifestCapabilityId[] =
-  [
-    ManifestCapabilityId.ImageTags,
-    ManifestCapabilityId.ImageFeatures,
-    ManifestCapabilityId.ImageEmbeddings
-  ];
-
-type EligibleExtensionType = {
-  extension: Extension;
-  capabilities: ManifestCapability[];
-};
 
 type RunCapabilitiesConfirmPropsType = {
   searchParameters: SearchParameters;
@@ -45,30 +27,7 @@ export default function RunCapabilitiesConfirm({
 
   const eligibleExtensions = useMemo((): EligibleExtensionType[] =>
   {
-    if (data === undefined)
-    {
-      return [];
-    }
-    // We gather, per extension, the image capabilities it supports, keeping the canonical capability order
-    const capabilitiesByExtensionId = new Map<string, ManifestCapability[]>();
-    for (const capabilityId of capabilityIds)
-    {
-      const configurationCapability = data.extensionsConfiguration.capabilities.find((entity) => entity.capability.id === capabilityId);
-      if (configurationCapability === undefined)
-      {
-        continue;
-      }
-      for (const extensionId of configurationCapability.extensionIds)
-      {
-        const capabilities = capabilitiesByExtensionId.get(extensionId) ?? [];
-        capabilities.push(configurationCapability.capability);
-        capabilitiesByExtensionId.set(extensionId, capabilities);
-      }
-    }
-    return data.extensions
-      .filter((extension) => extension.state === ExtensionState.Enabled && capabilitiesByExtensionId.has(extension.manifest.id))
-      .sort((first, second) => first.manifest.name.localeCompare(second.manifest.name))
-      .map((extension) => ({ extension, capabilities: capabilitiesByExtensionId.get(extension.manifest.id) ?? [] }));
+    return ExtensionsService.computeEligibleExtensions(data?.extensions, data?.extensionsConfiguration);
   }, [ data ]);
 
   useEffect((): void =>
@@ -165,8 +124,7 @@ export default function RunCapabilitiesConfirm({
                   onChange={(event) => toggleExtension(eligibleExtension.extension.manifest.id, event.currentTarget.checked)}
                   label={
                     <Flex align="center" gap="xs" wrap="wrap">
-                      <ExtensionIcon idOrExtension={eligibleExtension.extension.manifest.id} size="sm"/>
-                      <Text>{eligibleExtension.extension.manifest.name}</Text>
+                      <ExtensionBadge idOrExtension={eligibleExtension.extension} size="lg" variant="subtle"/>
                       {eligibleExtension.capabilities.map((capability) => (
                         <ExtensionCapability key={capability.id} capability={capability}/>
                       ))}

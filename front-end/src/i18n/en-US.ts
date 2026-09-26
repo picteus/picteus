@@ -310,11 +310,12 @@ export default {
     successResetting: "The extension settings have been successfully reset"
   },
   imageDetail: {
+    aiGenerated: "AI-generated",
     information: "Information",
-    generator: "Generator",
     metadata: "Metadata",
     tags: "Tags",
     recipe: "Recipe",
+    recipeAvailable: "With {{extension}} recipe",
     features: "Features",
     rawFeatures: "Raw",
     newFeatures: "Features",
@@ -509,6 +510,13 @@ export default {
     collectionExplanation: "Images involved in the synchronization:",
     selectAll: "Select all",
     noExtensions: "There is no installed and enabled extension providing image capabilities."
+  },
+  synchronizeExtensionModal: {
+    title: "Synchronize extension",
+    explanation:
+      "Synchronization re-runs the \"{{name}}\" extension over the images of the library. Existing results may be overwritten and the operation can take a while.",
+    collectionExplanation: "Images that will be synchronized:",
+    facets: "Facets involved:"
   },
   useFileOrDirectoryPicker: {
     file: "Please, select a file",

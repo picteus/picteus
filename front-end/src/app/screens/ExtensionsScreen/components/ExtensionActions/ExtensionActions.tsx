@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ActionIcon, Flex, Tooltip } from "@mantine/core";
 import {
   IconAdjustmentsHorizontal,
@@ -13,8 +13,13 @@ import { useTranslation } from "react-i18next";
 import { Extension, ExtensionState } from "@picteus/ws-client";
 
 import { ToastService } from "utils";
-import { useChangeExtensionStateMutation, useConfirmAction, useUninstallExtensionMutation } from "app/hooks";
 import { ExtensionsService } from "app/services";
+import {
+  useChangeExtensionStateMutation,
+  useConfirmAction,
+  useSynchronizeExtension,
+  useUninstallExtensionMutation
+} from "app/hooks";
 
 
 interface ExtensionActionsType
@@ -37,10 +42,16 @@ export default function ExtensionActions({
 {
   const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
+  const synchronizeExtension = useSynchronizeExtension();
   const uninstallExtensionMutation = useUninstallExtensionMutation();
   const changeExtensionStateMutation = useChangeExtensionStateMutation();
 
-  const iconSizeAndStroke = {    size: 20,    stroke: 1  };
+  const hasEligibleCapabilities = useMemo<boolean>(() =>
+  {
+    return ExtensionsService.computeCapabilities(extension).length > 0;
+  }, [ extension ]);
+
+  const iconSizeAndStroke = { size: 20, stroke: 1 };
 
   async function handleOnUninstallExtension(extensionId: string): Promise<void>
   {
@@ -72,17 +83,9 @@ export default function ExtensionActions({
     }
   }
 
-  async function handleOnSynchronize(extension: Extension): Promise<void>
+  function handleOnSynchronize(extension: Extension): void
   {
-    try
-    {
-      await ExtensionsService.synchronize({ id: extension.manifest.id });
-      ToastService.success(t("extensionsScreen.successSynchronize", { name: extension.manifest.name }));
-    }
-    catch (error)
-    {
-      ToastService.apiCallI18nError(error, "extensionsScreen.errorToggleStatus");
-    }
+    synchronizeExtension(extension);
   }
 
   return (
@@ -101,7 +104,7 @@ export default function ExtensionActions({
           size="md"
           variant="default"
           onClick={() => handleOnSynchronize(extension)}
-          disabled={extension.state === ExtensionState.Paused}
+          disabled={extension.state === ExtensionState.Paused || hasEligibleCapabilities === false}
         >
           <IconReload {...iconSizeAndStroke} />
         </ActionIcon>

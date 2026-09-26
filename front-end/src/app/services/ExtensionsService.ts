@@ -17,7 +17,10 @@ import {
   ExtensionApiExtensionUninstallRequest,
   ExtensionApiExtensionUpdateRequest,
   ExtensionsConfiguration,
-  ExtensionSettings
+  ExtensionSettings,
+  ExtensionState,
+  ManifestCapability,
+  ManifestCapabilityId
 } from "@picteus/ws-client";
 
 import { BASE_PATH } from "utils";
@@ -120,7 +123,87 @@ function getCommandIconURL(extensionId: string, uri: string): string
   return buildUiURL(extensionId, uri);
 }
 
+const synchronizationCapabilityIds: ManifestCapabilityId[] =
+  [
+    ManifestCapabilityId.ImageTags,
+    ManifestCapabilityId.ImageFeatures,
+    ManifestCapabilityId.ImageEmbeddings
+  ];
+
+export type EligibleExtensionType = {
+  readonly extension: Extension;
+  readonly capabilities: ManifestCapability[];
+};
+
+function computeCapabilities(
+  extension?: Extension,
+  targetCapabilityIds: ManifestCapabilityId[] = synchronizationCapabilityIds
+): ManifestCapability[]
+{
+  if (extension === undefined)
+  {
+    return [];
+  }
+
+  // We gather the capabilities the extension declares, deduplicated and kept in the canonical order
+  const capabilitiesById = new Map<string, ManifestCapability>();
+  for (const instructions of extension.manifest.instructions)
+  {
+    for (const capability of instructions.capabilities ?? [])
+    {
+      if (targetCapabilityIds.indexOf(capability.id) !== -1)
+      {
+        capabilitiesById.set(capability.id, capability);
+      }
+    }
+  }
+  return targetCapabilityIds
+    .map((capabilityId) => capabilitiesById.get(capabilityId))
+    .filter((capability): capability is ManifestCapability => capability !== undefined);
+}
+
+function computeEligibleExtensions(
+  extensions?: Extension[],
+  extensionsConfiguration?: ExtensionsConfiguration,
+  targetCapabilityIds: ManifestCapabilityId[] = synchronizationCapabilityIds
+): EligibleExtensionType[]
+{
+  if (extensions === undefined || extensionsConfiguration === undefined)
+  {
+    return [];
+  }
+
+  // We gather, per extension, the capabilities it supports, keeping the canonical capability order
+  const capabilitiesByExtensionId = new Map<string, ManifestCapability[]>();
+  for (const capabilityId of targetCapabilityIds)
+  {
+    const configurationCapability = extensionsConfiguration.capabilities.find((entity) => entity.capability.id === capabilityId);
+    if (configurationCapability === undefined)
+    {
+      continue;
+    }
+    for (const extensionId of configurationCapability.extensionIds)
+    {
+      const capabilities = capabilitiesByExtensionId.get(extensionId) ?? [];
+      capabilities.push(configurationCapability.capability);
+      capabilitiesByExtensionId.set(extensionId, capabilities);
+    }
+  }
+
+  return extensions
+    .filter((extension) => extension.state === ExtensionState.Enabled && capabilitiesByExtensionId.has(extension.manifest.id))
+    .sort((first, second) => first.manifest.name.localeCompare(second.manifest.name))
+    .map((extension) => (
+      {
+        extension,
+        capabilities: capabilitiesByExtensionId.get(extension.manifest.id) ?? []
+      }
+    ));
+}
+
 export default {
+  computeCapabilities,
+  computeEligibleExtensions,
   fetchAll,
   get,
   install,

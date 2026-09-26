@@ -4,7 +4,7 @@ import { Badge, Box, Divider, Flex, Stack, Text, Tooltip } from "@mantine/core";
 import { ImageFeatureType } from "@picteus/ws-client";
 import { UiContainer } from "@picteus/shared-core";
 import { useExtensions } from "app/hooks";
-import { ExtensionIcon, UiContainerView } from "app/components";
+import { ExtensionBadge, ExtensionIcon, UiContainerView } from "app/components";
 import ImageDataCard from "../ImageDataCard/ImageDataCard.tsx";
 
 
@@ -100,22 +100,12 @@ export default function ImageFeatureCard({
       <Stack gap="md">
         {featureEntries.map(([ extensionId, extensionFeatures ], index) =>
           {
-            const extension = extensions.find((availableExtension) => availableExtension.manifest.id === extensionId);
-            const extensionName = extension?.manifest.name ?? extensionId;
-
             return (<Box key={`${extensionId}-${index}`}>
               {!hasSingleExtension && (
                 <>
                   {index > 0 && <Divider mb="sm"/>}
                   <Flex align="center" gap="xs" mb="xs">
-                    <Tooltip label={extensionName} position="top" withArrow>
-                      <Box style={{ display: "inline-flex" }}>
-                        <ExtensionIcon idOrExtension={extensionId} size="sm"/>
-                      </Box>
-                    </Tooltip>
-                    <Text size="xs" fw={500} c="dimmed">
-                      {extensionName}
-                    </Text>
+                    <ExtensionBadge idOrExtension={extensionId} size="lg" color="gray"/>
                   </Flex>
                 </>
               )}
