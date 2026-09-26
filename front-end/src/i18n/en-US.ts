@@ -502,6 +502,14 @@ export default {
       "Define the number of similar images to retrieve. The system will execute a nearest neighbor search against image embeddings in the library to identify the most relevant matches.",
     countPlaceholder: "The amount of images to retrieve"
   },
+  runCapabilitiesModal: {
+    title: "Synchronize extensions",
+    explanation:
+      "Synchronization re-runs the selected extensions' tagging, feature and embedding capabilities over the matching images. Existing results may be overwritten and the operation can take a while.",
+    collectionExplanation: "Images involved in the synchronization:",
+    selectAll: "Select all",
+    noExtensions: "There is no installed and enabled extension providing image capabilities."
+  },
   useFileOrDirectoryPicker: {
     file: "Please, select a file",
     directory: "Please, select a directory"
@@ -530,6 +538,28 @@ export default {
     buttonUnselectAll: "Unselect all",
     createCollection: "Create collection",
     addToCollection: "Add to collection"
+  },
+  imagesCollection: {
+    images: "images",
+    more: "more"
+  },
+  extensionCapabilities: {
+    imageFeatures: {
+      label: "Features",
+      description: "Extracts and analyzes image features, attributes, and generation metadata."
+    },
+    imageTags: {
+      label: "Tags",
+      description: "Detects and generates semantic tags and labels for images."
+    },
+    imageEmbeddings: {
+      label: "Image Embeddings",
+      description: "Computes vector embeddings from images for visual similarity search."
+    },
+    textEmbeddings: {
+      label: "Text Embeddings",
+      description: "Computes vector embeddings from text prompts for semantic search."
+    }
   },
   extensionIntent: {
     modalTitle: "{{extension}}",

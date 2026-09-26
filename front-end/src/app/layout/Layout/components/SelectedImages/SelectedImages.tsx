@@ -20,7 +20,7 @@ import { CommandEntity, Manifest, SearchOriginNature, SearchSortingProperty } fr
 import { ChannelEnum, ImageItemMode, UiCommandType } from "types";
 import { ToastService } from "utils";
 import { useActionModalContext, useImagesSelectedContext, useSocketEvent } from "app/context";
-import { useConfirmAction, useExtensionCommandRunner, useExtensionCommands } from "app/hooks";
+import { useConfirmAction, useExtensionCommandRunner, useExtensionCommands, useRunCapabilities } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
 import {
   Common,
@@ -49,6 +49,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
 {
   const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
+  const { searchRunCapabilities } = useRunCapabilities();
   const imagesContainerRef = useRef<HTMLDivElement>(null);
   const { ref: containerRef, height: containerHeight } = useElementSize();
   const { selectedImages, toggleSelectedImage, clearSelectedImages } = useImagesSelectedContext();
@@ -150,11 +151,11 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
 
     if (selectedAction === synchronizeAction)
     {
-      ImageService.searchRunCapabilities({
-        searchParameters: {
-          filter: { origin: { kind: SearchOriginNature.Images, ids: imageIds } }
+      searchRunCapabilities({
+        filter: {
+          origin: { kind: SearchOriginNature.Images, ids: imageIds }
         }
-      }).catch(ToastService.apiCallError);
+      });
     }
     else if (selectedAction === deleteAction)
     {

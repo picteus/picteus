@@ -26,9 +26,10 @@ import {
   useCollections,
   useExtensionCommandRunner,
   useExtensionCommands,
+  useRunCapabilities,
   useUpdateCollectionMutation
 } from "app/hooks";
-import { EventService, ImageService } from "app/services";
+import { EventService } from "app/services";
 import { CollectionIcon, CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
 import AddOrUpdateCollection
   from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
@@ -60,6 +61,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
   const updateCollectionMutation = useUpdateCollectionMutation();
   const commandRunner = useExtensionCommandRunner();
   const extensionsImageCommands = useExtensionCommands(commandEntities);
+  const { searchRunCapabilities } = useRunCapabilities();
   const [ menuOpened, setMenuOpened ] = useState<boolean>(false);
   const [ selectedCollection, setSelectedCollection ] = useState<PicteusCollection | undefined>();
   const [ saveDisabled, setSaveDisabled ] = useState<boolean>(true);
@@ -166,7 +168,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
   {
     if (searchFilter)
     {
-      ImageService.searchRunCapabilities({ searchParameters: { filter: searchFilter } }).catch(ToastService.apiCallError);
+      searchRunCapabilities({ filter: searchFilter });
     }
   }
 

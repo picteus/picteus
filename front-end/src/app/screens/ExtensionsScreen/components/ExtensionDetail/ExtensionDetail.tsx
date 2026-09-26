@@ -13,7 +13,7 @@ import { IconLibraryPhoto, IconPhoto, IconServer } from "@tabler/icons-react";
 import { ManualSection } from "types";
 import { extractMarkdownParagraph } from "utils";
 import { useExtension } from "app/hooks";
-import { CommandIcon, FieldValue, Manual, Markdown, NoValue } from "app/components";
+import { CommandIcon, ExtensionCapability, FieldValue, Manual, Markdown, NoValue } from "app/components";
 
 
 type ExtensionDetailProps = {
@@ -28,7 +28,7 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
   const manifestInstructionsArray = extension.manifest.instructions;
   const manifestRuntimes = extension.manifest.runtimes;
   const events = Array.from(new Set(manifestInstructionsArray?.flatMap(instructions => instructions.events) || []));
-  const capabilities = Array.from(new Set(manifestInstructionsArray?.flatMap(instructions => instructions.capabilities?.map(capability => capability.id) || []) || []));
+  const capabilities = Array.from(new Set(manifestInstructionsArray?.flatMap(instructions => instructions.capabilities || []) || []));
   const commands = manifestInstructionsArray?.flatMap(instructions => instructions.commands || []) || [];
 
   function getCommandSpecification(command: ManifestExtensionCommand): Omit<ManifestExtensionCommandSpecification, "locale">
@@ -88,8 +88,7 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
       <FieldValue name={t("field.capabilities")} value={
         capabilities.length > 0 ? (
           <Group gap="xs">
-            {capabilities.map((capability, index) => <Badge key={index} variant="outline"
-                                                            color="grape">{capability}</Badge>)}
+            {capabilities.map((capability, index) => <ExtensionCapability key={index} capability={capability}/>)}
           </Group>
         ) : <NoValue/>
       }/>

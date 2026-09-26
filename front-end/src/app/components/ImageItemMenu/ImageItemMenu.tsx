@@ -19,7 +19,8 @@ import {
   useConfirmAction,
   useExtensionCommandRunner,
   useExtensionCommands,
-  useExtensionsWithCapability
+  useExtensionsWithCapability,
+  useRunCapabilities
 } from "app/hooks";
 import { ImageService } from "app/services";
 import { CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
@@ -38,6 +39,7 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
   const [ t ] = useTranslation();
   const [ , addModal ] = useActionModalContext();
   const confirmAction = useConfirmAction();
+  const { runCapabilities } = useRunCapabilities();
   const [ imageTags, setImageTags ] = useState<ExtensionImageTag[]>([]);
   const extensionsImageCommands = useExtensionCommands(commandEntities);
   const extensionsWithImageEmbeddingsCapability = useExtensionsWithCapability(ManifestCapabilityId.ImageEmbeddings);
@@ -72,7 +74,7 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
 
   function handleOnClickSynchronize()
   {
-    ImageService.runCapabilities({ id: image.id }).catch(ToastService.apiCallError);
+    runCapabilities(image.id);
   }
 
   function handleOnClickDelete()

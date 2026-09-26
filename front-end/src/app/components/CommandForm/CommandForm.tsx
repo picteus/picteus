@@ -2,7 +2,7 @@ import { type ReactElement, useMemo, useState } from "react";
 import { Alert, Button, Flex, Stack, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { ManifestExtensionCommandSpecification, SearchFilter, SearchOriginNature } from "@picteus/ws-client";
+import { ManifestExtensionCommandSpecification, SearchFilter } from "@picteus/ws-client";
 
 import { ManualSection, UiCommandType } from "types";
 import { extractMarkdownParagraph } from "utils";
@@ -100,8 +100,7 @@ export default function CommandForm({
         </Stack>
       </Alert>
       }
-      {searchFilter?.origin?.kind === SearchOriginNature.Images &&
-        <ImagesCollection imageIds={searchFilter.origin.ids}/>}
+      <ImagesCollection searchParameters={{ filter: searchFilter }}/>
       {form.parameters && <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setParameters}/>}
       <Flex mt="md" align="flex-end" justify="flex-end" gap="sm">
         <Button onClick={() => onSend(extensionId, command.id, parameters)}>

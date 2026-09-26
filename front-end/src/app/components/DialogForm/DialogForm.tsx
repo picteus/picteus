@@ -1,6 +1,8 @@
 import { Alert, Button, Flex, Text } from "@mantine/core";
 import { IconCircleX, IconInfoCircle, IconQuestionMark } from "@tabler/icons-react";
 
+import { SearchOriginNature } from "@picteus/ws-client";
+
 import { DialogType } from "types";
 import { useKey } from "app/hooks";
 import { CopyText, ImagesCollection } from "app/components";
@@ -16,7 +18,7 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
 
   const Buttons = () =>
   {
-    return Object.entries(dialog.buttons).map(([key, label]) =>
+    return Object.entries(dialog.buttons).map(([ key, label ]) =>
     {
       const isYes = key === "yes";
       return (
@@ -52,7 +54,18 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
         <CopyText value={dialog.details}>
           <Text size="md" mt={10} dangerouslySetInnerHTML={{ __html: dialog.details }}/>
         </CopyText>}
-      {imageIds && <ImagesCollection imageIds={imageIds}/>}
+      {imageIds && (
+        <ImagesCollection
+          searchParameters={{
+            filter: {
+              origin: {
+                kind: SearchOriginNature.Images,
+                ids: imageIds
+              }
+            }
+          }}
+        />
+      )}
       {dialog.frame && <iframe className={style.iframe} style={{ height: `${dialog.frame.height}vh` }} {...{
         src: "url" in content ? content.url : undefined,
         srcDoc: "html" in content ? content.html : undefined
