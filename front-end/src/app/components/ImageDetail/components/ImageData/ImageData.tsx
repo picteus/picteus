@@ -82,6 +82,8 @@ import {
 } from "./ImageDataComputer.ts";
 import ImageFeatureSettings, { ImageDataDrawerSectionItemType } from "./ImageFeatureSettings.tsx";
 
+import style from "./ImageData.module.scss";
+
 
 type MetadataSourceConfigurationType =
   {
@@ -1010,42 +1012,46 @@ export default function ImageData({ image, viewMode }: ImageDataType)
                                  language="json"/>, element.value, element.modifiers?.copyable)
       )
     }}>
-      <Flex align="center" justify="flex-end" ml="sm" mr="sm" mb="xs">
-        <Group gap="xs" mt="xs">
-          {hiddenSectionIds.length > 0 && (<Button
-            variant="light"
-            color="orange"
-            size="compact-xs"
-            leftSection={<IconEyeOff size={Common.IconSmallSize}/>}
-            onClick={openDrawer}
-          >
-            {t("imageDetail.settings.reset", { count: hiddenSectionIds.length })}
-          </Button>)}
-          <Tooltip
-            label={t("imageDetail.settings.title")}
-            position="left"
-            withArrow
-          >
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="sm"
+      <div className={style.container}>
+        <Flex align="center" justify="flex-end" ml="sm" mr="sm" mb="xs" className={style.selectorContainer}>
+          <Group gap="xs" mt="xs">
+            {hiddenSectionIds.length > 0 && (<Button
+              variant="light"
+              color="orange"
+              size="compact-xs"
+              leftSection={<IconEyeOff size={Common.IconSmallSize}/>}
               onClick={openDrawer}
             >
-              <IconAdjustmentsHorizontal size={18}/>
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Flex>
-      <Accordion
-        multiple
-        value={accordionValue}
-        onChange={setAccordionValue}
-      >
-        <Stack gap="md" ml="sm" mr="sm" mb="sm">
-          {visibleSections.map((section) => (<Box key={section.id}>{section.node}</Box>))}
-        </Stack>
-      </Accordion>
+              {t("imageDetail.settings.reset", { count: hiddenSectionIds.length })}
+            </Button>)}
+            <Tooltip
+              label={t("imageDetail.settings.title")}
+              position="left"
+              withArrow
+            >
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                onClick={openDrawer}
+              >
+                <IconAdjustmentsHorizontal size={18}/>
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        </Flex>
+        <div className={style.cardsContainer}>
+          <Accordion
+            multiple
+            value={accordionValue}
+            onChange={setAccordionValue}
+          >
+            <Stack gap="md" ml="sm" mr="sm" mb="sm">
+              {visibleSections.map((section) => (<Box key={section.id}>{section.node}</Box>))}
+            </Stack>
+          </Accordion>
+        </div>
+      </div>
       <ImageFeatureSettings
         opened={isDrawerOpened}
         onClose={closeDrawer}

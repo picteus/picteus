@@ -18,6 +18,7 @@ export const StorageKeys =
     IMAGE_DETAIL_SECTIONS_ORDER: "imageDetailSectionsOrder",
     IMAGE_DETAIL_TRAITS: "imageDetailTraits",
     MAIN_TAB: "mainTab",
+    RUN_CAPABILITIES_EXCLUDED_EXTENSION_IDS: "runCapabilitiesExcludedExtensionIds",
     SELECTED_IMAGE_IDS: "selectedImagesIds",
     SELECTED_IMAGES_ACTION: "selectedImagesAction",
     TABS: "tabs",
@@ -253,6 +254,16 @@ function setImageDetailSectionsOrder(sectionsOrder: string[]): void
   setJson(StorageKeys.IMAGE_DETAIL_SECTIONS_ORDER, sectionsOrder);
 }
 
+function getRunCapabilitiesExcludedExtensionIds(): string[]
+{
+  return getJson<string[]>(StorageKeys.RUN_CAPABILITIES_EXCLUDED_EXTENSION_IDS, []);
+}
+
+function setRunCapabilitiesExcludedExtensionIds(extensionIds: string[]): void
+{
+  setJson(StorageKeys.RUN_CAPABILITIES_EXCLUDED_EXTENSION_IDS, extensionIds);
+}
+
 function getSelectedImagesIds(): string[]
 {
   return getJson<string[]>(StorageKeys.SELECTED_IMAGE_IDS, []);
@@ -303,6 +314,8 @@ export default {
   setImageDetailHiddenSections,
   getImageDetailSectionsOrder,
   setImageDetailSectionsOrder,
+  getRunCapabilitiesExcludedExtensionIds,
+  setRunCapabilitiesExcludedExtensionIds,
   getSelectedImagesIds,
   setSelectedImageIds,
   getSelectedImagesAction,

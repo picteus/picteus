@@ -12,6 +12,7 @@ import {
 } from "@picteus/ws-client";
 
 import { useExtensionsAll } from "app/hooks";
+import { StorageService } from "app/services";
 import { ExtensionCapability, ExtensionIcon, ImagesCollection } from "app/components";
 
 
@@ -72,13 +73,48 @@ export default function RunCapabilitiesConfirm({
 
   useEffect((): void =>
   {
-    // We select every eligible extension by default, once the list is available
+    // We restore the previous choice once the eligible list is available, defaulting every extension to selected
+    // and only opting out the ones the user previously excluded, so extensions installed since the last run are selected
     if (hasInitializedSelection.current === false && eligibleExtensions.length > 0)
     {
-      setSelectedExtensionIds(eligibleExtensions.map((eligibleExtension) => eligibleExtension.extension.manifest.id));
+      const excludedExtensionIds = new Set<string>(StorageService.getRunCapabilitiesExcludedExtensionIds());
+      setSelectedExtensionIds(eligibleExtensions
+        .map((eligibleExtension) => eligibleExtension.extension.manifest.id)
+        .filter((extensionId) => excludedExtensionIds.has(extensionId) === false));
       hasInitializedSelection.current = true;
     }
   }, [ eligibleExtensions ]);
+
+  function persistChoice(selectedIds: string[]): void
+  {
+    if (data === undefined)
+    {
+      return;
+    }
+    // We persist the opt-out set rather than the selection, which keeps newly installed extensions selected by default
+    const installedExtensionIds = new Set<string>(data.extensions.map((extension) => extension.manifest.id));
+    const eligibleExtensionIds = new Set<string>(eligibleExtensions.map((eligibleExtension) => eligibleExtension.extension.manifest.id));
+    const selectedExtensionIdSet = new Set<string>(selectedIds);
+    // We preserve the exclusions of extensions that are still installed but not currently eligible (for instance disabled ones)
+    const excludedExtensionIds = StorageService.getRunCapabilitiesExcludedExtensionIds()
+      .filter((extensionId) => installedExtensionIds.has(extensionId) === true && eligibleExtensionIds.has(extensionId) === false);
+    // We add the currently eligible extensions the user left unselected
+    for (const eligibleExtension of eligibleExtensions)
+    {
+      const extensionId = eligibleExtension.extension.manifest.id;
+      if (selectedExtensionIdSet.has(extensionId) === false)
+      {
+        excludedExtensionIds.push(extensionId);
+      }
+    }
+    StorageService.setRunCapabilitiesExcludedExtensionIds(excludedExtensionIds);
+  }
+
+  function handleConfirm(): void
+  {
+    persistChoice(selectedExtensionIds);
+    onConfirm(selectedExtensionIds);
+  }
 
   function toggleExtension(extensionId: string, isChecked: boolean): void
   {
@@ -120,7 +156,7 @@ export default function RunCapabilitiesConfirm({
             onChange={(event) => toggleAll(event.currentTarget.checked)}
           />
           <Divider/>
-          <ScrollArea.Autosize mah={220}>
+          <ScrollArea.Autosize mah="clamp(160px, 40dvh, 480px)">
             <Stack gap="xs">
               {eligibleExtensions.map((eligibleExtension) => (
                 <Checkbox
@@ -148,7 +184,7 @@ export default function RunCapabilitiesConfirm({
       )}
 
       <Flex justify="flex-end" gap="md">
-        <Button disabled={canConfirm === false} onClick={() => onConfirm(selectedExtensionIds)}>
+        <Button disabled={canConfirm === false} onClick={handleConfirm}>
           {t("button.synchronize")}
         </Button>
       </Flex>
