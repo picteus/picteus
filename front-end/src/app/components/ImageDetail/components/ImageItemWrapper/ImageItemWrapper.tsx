@@ -15,11 +15,11 @@ import style from "./ImageItemWrapper.module.scss";
 
 type ImageItemWrapperType = {
   imageId: string;
-  edge: number;
+  edge?: number;
   viewMode: ViewMode;
 }
 
-export default function ImageItemWrapper({ imageId, edge, viewMode }: ImageItemWrapperType)
+export default function ImageItemWrapper({ imageId, edge = 100, viewMode }: ImageItemWrapperType)
 {
   const [ t ] = useTranslation();
   const [ image, setImage ] = useState<Image | undefined>(undefined);

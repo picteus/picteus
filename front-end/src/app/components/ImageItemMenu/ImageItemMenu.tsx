@@ -23,7 +23,7 @@ import {
   useRunCapabilities
 } from "app/hooks";
 import { ImageService } from "app/services";
-import { CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
+import { CommandIcon, Common, computeIcon, ImageItemWrapper, MenuItemEntry } from "app/components";
 import { ClosestEmbeddingsImages } from "./components";
 
 
@@ -77,12 +77,16 @@ export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
     runCapabilities(image.id);
   }
 
-  function handleOnClickDelete()
+  function handleOnClickDelete(): void
   {
     confirmAction({
-      onConfirm: () => ImageService.destroy(image.id).catch(ToastService.apiCallError), options: {
+      onConfirm: () => ImageService.destroy(image.id).catch(ToastService.apiCallError),
+      options: {
         title: t("commands.confirmImageDeleteTitle"),
-        message: t("commands.confirmImageDeleteMessage")
+        message: t("commands.confirmImageDeleteMessage"),
+        content: (
+          <ImageItemWrapper imageId={image.id} viewMode={viewMode}/>
+        )
       }
     });
   }

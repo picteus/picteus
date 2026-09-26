@@ -16,7 +16,7 @@ type SynchronizeExtensionConfirmPropsType = {
 
 const searchParameters: SearchParameters =
   {
-    filter: {}
+    filter: { sorting: { property: "modificationDate", isAscending: false } }
   };
 
 export default function SynchronizeExtensionConfirm({

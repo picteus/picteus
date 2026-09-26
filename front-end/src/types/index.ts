@@ -129,7 +129,7 @@ export type DialogIconContent = DialogContent & {
 
 export type FrameContent = ({ url: string }) | ({ html: string });
 
-type SizeType = "auto" | "xs" | "s" | "m" | "l" | "xl";
+export type SizeType = "auto" | "xs" | "s" | "m" | "l" | "xl";
 
 export type DialogIconSizeContent = DialogIconContent & {
   size?: SizeType;

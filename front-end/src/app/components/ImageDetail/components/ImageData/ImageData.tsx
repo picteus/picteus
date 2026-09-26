@@ -240,7 +240,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       {
         rows.push(tableRow([
           string(t("field.parent"), labelOptions),
-            freeForm(<ImageItemWrapper imageId={image.parentId} edge={100} viewMode={viewMode}/>)
+          freeForm(<ImageItemWrapper imageId={image.parentId} viewMode={viewMode}/>)
           ])
         );
       }
