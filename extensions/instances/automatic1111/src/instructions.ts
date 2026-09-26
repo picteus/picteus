@@ -1,5 +1,10 @@
 import {
+  collapsibleGroup,
   createUiContainer,
+  dimensions,
+  flowing,
+  identifier,
+  ratio,
   string,
   table,
   tableColumn,
@@ -11,7 +16,7 @@ import {
   TextWeight,
   type UiContainer,
   type UiElement
-} from "@picteus/internal-extension-sdk";
+} from "@picteus/extension-sdk";
 
 
 export class Automatic1111Instruction
@@ -40,53 +45,170 @@ export class Automatic1111UserComment
     }
     const { positive, negative, rest } = elements;
     const instructions: Automatic1111Instruction[] = [];
-    const addInstruction = (key: string, value: string): void =>
-    {
-      if (value !== "Undefined")
-      {
-        instructions.push(new Automatic1111Instruction(key, Automatic1111UserComment.parseValue(value)));
-      }
-    };
     if (rest !== "")
     {
-      let string = rest;
-      while (true)
+      const parsedInstructions = Automatic1111UserComment.parseInstructionsBlock(rest);
+      for (const instruction of parsedInstructions)
       {
-        const result1 = /^([^"^:]*): .*$/m.exec(string);
-        if (result1 !== null)
+        if (instruction.value !== "Undefined")
         {
-          const key = result1[1];
-          string = string.substring(key.length + 2);
-          const result2 = /^([^"^:]*): .*$/m.exec(string);
-          if (result2 !== null)
-          {
-            const value = result2[1].substring(0, result2[1].lastIndexOf(","));
-            addInstruction(key, value);
-            string = string.substring(value.length + 2);
-          }
-          else
-          {
-            const result3 = /^(.*?), ([^"^:]*): .*$/m.exec(string);
-            if (result3 !== null)
-            {
-              const value = result3[1];
-              addInstruction(key, value);
-              string = string.substring(value.length + 2);
-            }
-            else
-            {
-              addInstruction(key, string);
-              break;
-            }
-          }
-        }
-        else
-        {
-          throw new Error("Unexpected Automatic1111 metadata format");
+          instructions.push(instruction);
         }
       }
     }
     return new Automatic1111UserComment(positive, negative, instructions);
+  }
+
+  static parseInstructionsBlock(instructionsBlock: string): Automatic1111Instruction[]
+  {
+    const instructions: Automatic1111Instruction[] = [];
+    let characterIndex = 0;
+    const totalLength = instructionsBlock.length;
+
+    while (characterIndex < totalLength)
+    {
+      // We skip leading delimiters (commas, newlines, spaces, tabs)
+      while (
+        characterIndex < totalLength &&
+        (instructionsBlock[characterIndex] === " " ||
+          instructionsBlock[characterIndex] === "\t" ||
+          instructionsBlock[characterIndex] === "\n" ||
+          instructionsBlock[characterIndex] === "\r" ||
+          instructionsBlock[characterIndex] === ",")
+        )
+      {
+        characterIndex++;
+      }
+
+      if (characterIndex >= totalLength)
+      {
+        break;
+      }
+
+      // We extract the key by searching for the colon ':' delimiter
+      const keyStartIndex = characterIndex;
+      let colonIndex = -1;
+      while (characterIndex < totalLength)
+      {
+        const currentCharacter = instructionsBlock[characterIndex];
+        if (currentCharacter === ":")
+        {
+          colonIndex = characterIndex;
+          characterIndex++;
+          break;
+        }
+        if (currentCharacter === "\n" || currentCharacter === "\r")
+        {
+          break;
+        }
+        characterIndex++;
+      }
+
+      if (colonIndex === -1)
+      {
+        break;
+      }
+
+      const key = instructionsBlock.substring(keyStartIndex, colonIndex).trim();
+      if (key.length === 0)
+      {
+        continue;
+      }
+
+      // We skip leading spaces after the colon
+      while (
+        characterIndex < totalLength &&
+        (instructionsBlock[characterIndex] === " " || instructionsBlock[characterIndex] === "\t")
+        )
+      {
+        characterIndex++;
+      }
+
+      // We scan the value taking into account quotes, braces, brackets, and parentheses
+      const valueStartIndex = characterIndex;
+      let isInDoubleQuotes = false;
+      let isInSingleQuotes = false;
+      let isEscaped = false;
+      let braceDepth = 0;
+      let bracketDepth = 0;
+      let parenthesisDepth = 0;
+
+      while (characterIndex < totalLength)
+      {
+        const currentCharacter = instructionsBlock[characterIndex];
+
+        if (isEscaped === true)
+        {
+          isEscaped = false;
+          characterIndex++;
+          continue;
+        }
+
+        if (currentCharacter === "\\")
+        {
+          isEscaped = true;
+          characterIndex++;
+          continue;
+        }
+
+        if (currentCharacter === "\"" && isInSingleQuotes === false)
+        {
+          isInDoubleQuotes = !isInDoubleQuotes;
+          characterIndex++;
+          continue;
+        }
+
+        if (currentCharacter === "'" && isInDoubleQuotes === false)
+        {
+          isInSingleQuotes = !isInSingleQuotes;
+          characterIndex++;
+          continue;
+        }
+
+        if (isInDoubleQuotes === false && isInSingleQuotes === false)
+        {
+          if (currentCharacter === "{")
+          {
+            braceDepth++;
+          }
+          else if (currentCharacter === "}")
+          {
+            braceDepth = Math.max(0, braceDepth - 1);
+          }
+          else if (currentCharacter === "[")
+          {
+            bracketDepth++;
+          }
+          else if (currentCharacter === "]")
+          {
+            bracketDepth = Math.max(0, bracketDepth - 1);
+          }
+          else if (currentCharacter === "(")
+          {
+            parenthesisDepth++;
+          }
+          else if (currentCharacter === ")")
+          {
+            parenthesisDepth = Math.max(0, parenthesisDepth - 1);
+          }
+          else if (braceDepth === 0 && bracketDepth === 0 && parenthesisDepth === 0)
+          {
+            if (currentCharacter === "," || currentCharacter === "\n" || currentCharacter === "\r")
+            {
+              break;
+            }
+          }
+        }
+
+        characterIndex++;
+      }
+
+      const rawValue = instructionsBlock.substring(valueStartIndex, characterIndex).trim();
+      const parsedValue = Automatic1111UserComment.parseValue(rawValue);
+      instructions.push(new Automatic1111Instruction(key, parsedValue));
+    }
+
+    return instructions;
   }
 
   static extractUserComment(userCommentOrParameters: string): {
@@ -100,47 +222,99 @@ export class Automatic1111UserComment
     let negative: string | undefined;
     let unexpected: string | undefined;
     let rest: string;
+
+    const newLine = "\n";
+    const negativePromptCoreMarker = "Negative prompt:";
+    const negativePromptMarker = `${newLine}${negativePromptCoreMarker}`;
+    const negativePromptIndex = userCommentOrParameters.indexOf(negativePromptMarker);
+
+    if (negativePromptIndex !== -1)
     {
-      const newLine = "\n";
-      const negativePromptCoreMarker = "Negative prompt:";
-      const negativePromptMarker = `${newLine}${negativePromptCoreMarker}`;
-      const negativePromptIndex = userCommentOrParameters.indexOf(negativePromptMarker);
-      if (negativePromptIndex !== -1)
+      positive = userCommentOrParameters.substring(0, negativePromptIndex).trim();
+      const remainingString = userCommentOrParameters.substring(negativePromptIndex + negativePromptMarker.length);
+      const lines = remainingString.split(newLine);
+      let parameterStartIndex = -1;
+
+      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++)
       {
-        positive = userCommentOrParameters.substring(0, negativePromptIndex).trim();
-        const remainingString = userCommentOrParameters.substring(negativePromptIndex + negativePromptMarker.length);
-        const result = /^(.*)\n[^:\n]*: .*$/sm.exec(remainingString);
-        negative = (result === null ? remainingString : result[1]).trim();
-        rest = result === null ? "" : remainingString.substring(result[1].length + 1);
+        const line = lines[lineIndex].trim();
+        if (/^[A-Za-z0-9 _-]+:\s*.+$/.test(line) === true)
+        {
+          parameterStartIndex = lineIndex;
+          break;
+        }
+      }
+
+      if (parameterStartIndex !== -1)
+      {
+        negative = lines.slice(0, parameterStartIndex).join(newLine).trim();
+        rest = lines.slice(parameterStartIndex).join(newLine).trim();
       }
       else
       {
-        const tokens = userCommentOrParameters.split(newLine);
-        if (tokens.length === 1)
+        negative = remainingString.trim();
+        rest = "";
+      }
+    }
+    else
+    {
+      const lines = userCommentOrParameters.split(newLine);
+      if (lines.length === 1)
+      {
+        if (/^Steps:\s*.+$/m.test(userCommentOrParameters) === true)
         {
-          // This does not correspond to a valid Automatic1111 generated image. This happens in the case of an image generated by ReActor, https://github.com/Gourieff/sd-webui-reactor
+          positive = "";
+          negative = undefined;
+          rest = userCommentOrParameters.trim();
+        }
+        else
+        {
           return undefined;
+        }
+      }
+      else
+      {
+        let parameterStartIndex = -1;
+        for (let lineIndex = 0; lineIndex < lines.length; lineIndex++)
+        {
+          const line = lines[lineIndex].trim();
+          if (/^Steps:\s*.+$/m.test(line) === true)
+          {
+            parameterStartIndex = lineIndex;
+            break;
+          }
+        }
+
+        if (parameterStartIndex !== -1)
+        {
+          positive = lines.slice(0, parameterStartIndex).join(newLine).trim();
+          negative = "";
+          rest = lines.slice(parameterStartIndex).join(newLine).trim();
         }
         else
         {
           let index = 0;
-          positive = tokens[index++];
-          if (tokens.length >= 3)
+          positive = lines[index++];
+          if (lines.length >= 3)
           {
-            negative = tokens[index++];
-            unexpected = tokens.slice(index++, tokens.length - 1).join(newLine);
+            negative = lines[index++];
+            unexpected = lines.slice(index++, lines.length - 1).join(newLine);
           }
-          rest = tokens[tokens.length - 1];
+          rest = lines[lines.length - 1];
         }
       }
     }
+
     return { positive, negative, unexpected, rest };
   }
 
   static parseValue(value: string): string | Record<string, any> | Array<Record<string, any>>
   {
     const trimmedValue = value.trim();
-    if ((trimmedValue.startsWith("{") && trimmedValue.endsWith("}")) || (trimmedValue.startsWith("[") && trimmedValue.endsWith("]")))
+    if (
+      (trimmedValue.startsWith("{") && trimmedValue.endsWith("}")) ||
+      (trimmedValue.startsWith("[") && trimmedValue.endsWith("]"))
+    )
     {
       try
       {
@@ -152,7 +326,7 @@ export class Automatic1111UserComment
       }
       catch (error)
       {
-        // Value is not valid JSON
+        // Value is not valid JSON, we return string representation
       }
     }
     return value;
@@ -162,51 +336,33 @@ export class Automatic1111UserComment
   {
   }
 
+  computeRecipeAttributes(): {
+    inceptionDate?: number;
+  }
+  {
+    const attributes: {
+      inceptionDate?: number;
+    } = {};
+
+    const inceptionDate = this.getInceptionDate();
+    if (inceptionDate !== undefined)
+    {
+      attributes.inceptionDate = inceptionDate;
+    }
+
+    return attributes;
+  }
+
   toUiContainer(): UiContainer
   {
-    const elements: UiElement[] = [];
-    const rows: TableRow[] = [];
+    const primaryRows: TableRow[] = [];
+    const secondaryRows: TableRow[] = [];
     const firstColumnOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
     const copyableOptions = { modifiers: { copyable: true } };
-    for (const instruction of this.instructions)
-    {
-      let element: UiElement;
-      if (typeof instruction.value === "string")
+    const commonTableOptions =
       {
-        if (instruction.value.length > 0)
-        {
-          element = string(instruction.value, copyableOptions);
-        }
-      }
-      else
-      {
-        if (Array.isArray(instruction.value) === true)
-        {
-          const values: Array<Record<string, any>> = instruction.value;
-          if (values.length > 0)
-          {
-            const tables = values.map(value => table(Object.entries(value).map(([ key, value ]) => tableRow([ string(key), string(value.toString()) ]))));
-            element = table(tables.map(table => tableRow([ table ])));
-          }
-        }
-        else
-        {
-          const value: Record<string, any> = instruction.value;
-          if (Object.keys(value).length > 0)
-          {
-            element = table(Object.entries(value).map(([ key, value ]) => tableRow([ string(key), string(value.toString()) ])));
-          }
-        }
-      }
-      if (element !== undefined)
-      {
-        rows.push(tableRow([ string(instruction.key, firstColumnOptions), element ]));
-      }
-    }
-    elements.push(table(rows, {
-      withRowSeparators: true,
-      columns:
-        [
+        withRowSeparators: true,
+        columns: [
           tableColumn({
             align: TableColumnAlign.left,
             width: 25,
@@ -214,8 +370,227 @@ export class Automatic1111UserComment
           }),
           tableColumn({ align: TableColumnAlign.left })
         ]
-    }));
+      };
+
+    if (this.positive !== undefined && this.positive.trim().length > 0)
+    {
+      primaryRows.push(tableRow([ string("Prompt", firstColumnOptions), string(this.positive.trim(), copyableOptions) ]));
+    }
+
+    if (this.negative !== undefined && this.negative.trim().length > 0)
+    {
+      primaryRows.push(tableRow([ string("Negative Prompt", firstColumnOptions), string(this.negative.trim(), copyableOptions) ]));
+    }
+
+    const primaryKeys = new Set([
+      "Prompt",
+      "Negative Prompt",
+      "Steps",
+      "Sampler",
+      "Seed",
+      "Dimensions",
+      "Size",
+      "CFG scale",
+      "CFG Scale"
+    ]);
+    const ignoredKeys = new Set([ "Created Date", "Civitai resources", "Civitai metadata" ]);
+
+    for (const instruction of this.instructions)
+    {
+      if (ignoredKeys.has(instruction.key) === true)
+      {
+        continue;
+      }
+
+      let element: UiElement | undefined;
+      let label: string = instruction.key;
+
+      if (instruction.key === "Size")
+      {
+        label = "Dimensions";
+        if (typeof instruction.value === "string")
+        {
+          const parts = instruction.value.split("x");
+          if (parts.length === 2)
+          {
+            const width = parseInt(parts[0].trim(), 10);
+            const height = parseInt(parts[1].trim(), 10);
+            if (Number.isNaN(width) === false && Number.isNaN(height) === false && width > 0 && height > 0)
+            {
+              const aspectRatio = width / height;
+              element = flowing([
+                dimensions(width, height, copyableOptions),
+                ratio(aspectRatio)
+              ]);
+            }
+          }
+        }
+        if (element === undefined && typeof instruction.value === "string" && instruction.value.length > 0)
+        {
+          element = string(instruction.value, copyableOptions);
+        }
+      }
+      else if (instruction.key === "Seed")
+      {
+        if (
+          instruction.value !== undefined &&
+          instruction.value !== null &&
+          String(instruction.value).trim().length > 0 &&
+          String(instruction.value) !== "-1"
+        )
+        {
+          element = identifier(String(instruction.value), copyableOptions);
+        }
+      }
+      else if (typeof instruction.value === "string")
+      {
+        if (instruction.value.length > 0)
+        {
+          element = string(instruction.value, copyableOptions);
+        }
+      }
+      else if (Array.isArray(instruction.value) === true)
+      {
+        const values: Array<Record<string, any>> = instruction.value;
+        if (values.length > 0)
+        {
+          const tables = values.map((item) =>
+          {
+            return table(
+              Object.entries(item).map(([ entryKey, entryValue ]) =>
+              {
+                const stringValue =
+                  typeof entryValue === "object" && entryValue !== null
+                    ? JSON.stringify(entryValue)
+                    : entryValue?.toString() ?? "";
+                return tableRow([ string(entryKey), string(stringValue) ]);
+              })
+            );
+          });
+          element = table(tables.map((itemTable) =>
+          {
+            return tableRow([ itemTable ]);
+          }));
+        }
+        else
+        {
+          element = string("[]", copyableOptions);
+        }
+      }
+      else if (typeof instruction.value === "object" && instruction.value !== null)
+      {
+        const value: Record<string, any> = instruction.value;
+        const entries = Object.entries(value);
+        if (entries.length > 0)
+        {
+          element = table(
+            entries.map(([ entryKey, entryValue ]) =>
+            {
+              const stringValue =
+                typeof entryValue === "object" && entryValue !== null
+                  ? JSON.stringify(entryValue)
+                  : entryValue?.toString() ?? "";
+              return tableRow([ string(entryKey), string(stringValue) ]);
+            })
+          );
+        }
+        else
+        {
+          element = string("{}", copyableOptions);
+        }
+      }
+
+      if (element !== undefined)
+      {
+        const row = tableRow([ string(label, firstColumnOptions), element ]);
+        if (primaryKeys.has(instruction.key) === true || primaryKeys.has(label) === true)
+        {
+          primaryRows.push(row);
+        }
+        else
+        {
+          secondaryRows.push(row);
+        }
+      }
+    }
+
+    const elements: UiElement[] = [];
+    if (primaryRows.length > 0)
+    {
+      elements.push(table(primaryRows, commonTableOptions));
+    }
+
+    if (secondaryRows.length > 0)
+    {
+      elements.push(
+        this.createCollapsibleSection(
+          "Details",
+          table(secondaryRows, commonTableOptions),
+          secondaryRows.length,
+          "property",
+          "properties"
+        )
+      );
+    }
+
     return createUiContainer({ elements });
+  }
+
+  private createCollapsibleSection(
+    title: string,
+    element: UiElement,
+    itemCount: number,
+    unitSingular: string,
+    unitPlural: string = `${unitSingular}s`
+  ): UiElement
+  {
+    const unit = itemCount === 1 ? unitSingular : unitPlural;
+    return collapsibleGroup(
+      title,
+      [ element ],
+      {
+        summary: `${itemCount} ${unit}`,
+        defaultExpanded: false
+      }
+    );
+  }
+
+  getInstructionValue(key: string): string | Record<string, any> | Array<Record<string, any>> | undefined
+  {
+    return this.instructions.find((candidateInstruction) => candidateInstruction.key === key)?.value;
+  }
+
+  getInceptionDate(): number | undefined
+  {
+    const createdDateValue = this.getInstructionValue("Created Date");
+    if (typeof createdDateValue === "string" && createdDateValue.trim().length > 0)
+    {
+      const timestamp = Date.parse(createdDateValue.trim());
+      if (Number.isNaN(timestamp) === false)
+      {
+        return timestamp;
+      }
+    }
+    return undefined;
+  }
+
+  getAspectRatio(): number | undefined
+  {
+    const sizeValue = this.getInstructionValue("Size");
+    if (typeof sizeValue === "string")
+    {
+      const parts = sizeValue.split("x");
+      if (parts.length === 2)
+      {
+        const width = parseInt(parts[0].trim(), 10);
+        const height = parseInt(parts[1].trim(), 10);
+        if (Number.isNaN(width) === false && Number.isNaN(height) === false && width > 0 && height > 0)
+        {
+          return width / height;
+        }
+      }
+    }
+    return undefined;
   }
 
 }

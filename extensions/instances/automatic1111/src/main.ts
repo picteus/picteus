@@ -67,6 +67,7 @@ class Automatic1111Extension extends PicteusExtension
           schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
           modelTags: [],
           software: "automatic1111",
+          ...userComment.computeRecipeAttributes(),
           prompt: { kind: PromptKind.Instructions, value: userComment }
         };
       await this.getImageApi().imageSetFeatures({

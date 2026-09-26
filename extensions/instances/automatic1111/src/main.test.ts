@@ -68,6 +68,12 @@ test("Parses complex prompt with Civitai resources and metadata", () =>
     modelName: "Double Exposure",
     modelVersionName: "Double Exposure"
   });
+
+  assert.equal(userComment.getInceptionDate(), Date.parse("2024-09-23T06:17:42.9952795Z"));
+  assert.equal(userComment.getAspectRatio(), 832 / 1216);
+  assert.deepEqual(userComment.computeRecipeAttributes(), {
+    inceptionDate: Date.parse("2024-09-23T06:17:42.9952795Z")
+  });
 });
 
 test("Parses Flux prompt with embedded LoRAs and no negative prompt", () =>
@@ -78,28 +84,55 @@ test("Parses Flux prompt with embedded LoRAs and no negative prompt", () =>
 <lora:Ars_MidJourney_Style_-_Flux:0.6>
 <lora:- Flux1 - vanta_black_V2.0:0.55>
 Steps: 20, Sampler: Euler, Schedule type: Simple, CFG scale: 1, Distilled CFG Scale: 3.5, Seed: 3045329758, Size: 832x1216, Model hash: 06f96f89f6, Model: flux_dev, Lora hashes: "FredFraiStyle-FLUX-Share: de92428f6411, Ars_MidJourney_Style_-_Flux: c4f0b45e6a60, - Flux1 - vanta_black_V2.0: 5d8cf3724039", Version: f2.0.1v1.10.1-previous-561-g82eb7566`);
-  assert.equal(userComment.positive, "FredFraiStyle \"positive.\"");
+  assert.equal(userComment.positive, `FredFraiStyle "positive."\n\n<lora:FredFraiStyle-FLUX-Share:0.95>\n<lora:Ars_MidJourney_Style_-_Flux:0.6>\n<lora:- Flux1 - vanta_black_V2.0:0.55>`);
   assert.equal(userComment.negative, "");
-  assert.equal(userComment.instructions.length, 13);
+  assert.equal(userComment.instructions.length, 11);
   assert.equal(userComment.instructions[0].key, "Steps");
   assert.equal(userComment.instructions[0].value, "20");
+  assert.equal(userComment.instructions[9].key, "Lora hashes");
+  assert.equal(
+    userComment.instructions[9].value,
+    "\"FredFraiStyle-FLUX-Share: de92428f6411, Ars_MidJourney_Style_-_Flux: c4f0b45e6a60, - Flux1 - vanta_black_V2.0: 5d8cf3724039\""
+  );
 });
 
 test("Parses nested JSON structures within instruction values", () =>
 {
-  const userComment = Automatic1111UserComment.parse("positive\nNegative prompt: negative\nSteps: 50, Sampler: DPM++ 3M SDE Karras, CFG scale: 3.6, Seed: 1087151610341875, Size: 768x1344, Model hash: {\"key1\": \"value1\", \"key2\": {\"sub\": \"value2\"}}, Model: Kolors v1, Hashes: {\"model\": \"\"}, Version: ComfyUI");
+  const userComment = Automatic1111UserComment.parse("positive\nNegative prompt: negative\nSteps: 50, Sampler: DPM++ 3M SDE Karras, CFG scale: 3.6, Seed: 1087151610341875, Size: 768x1344, Model hash: {\"key1\": \"value1: with colon, and comma\", \"key2\": {\"sub\": \"value2\"}}, Model: Kolors v1, Hashes: {\"model\": \"\"}, Civitai metadata: {\"prompt\": \"a, b: c\", \"resources\": [{\"id\": 1, \"name\": \"SD XL, v1.0\"}]}, Version: ComfyUI");
   assert.equal(userComment.positive, "positive");
   assert.equal(userComment.negative, "negative");
-  assert.equal(userComment.instructions.length, 9);
+  assert.equal(userComment.instructions.length, 10);
   assert.equal(userComment.instructions[5].key, "Model hash");
   assert.deepEqual(userComment.instructions[5].value, {
-    key1: "value1",
+    key1: "value1: with colon, and comma",
     key2: {
       sub: "value2"
     }
   });
   assert.equal(userComment.instructions[7].key, "Hashes");
   assert.deepEqual(userComment.instructions[7].value, { model: "" });
+  assert.equal(userComment.instructions[8].key, "Civitai metadata");
+  assert.deepEqual(userComment.instructions[8].value, {
+    prompt: "a, b: c",
+    resources: [
+      { id: 1, name: "SD XL, v1.0" }
+    ]
+  });
+});
+
+test("Parses ControlNet parameters with parenthesized tuples", () =>
+{
+  const userComment = Automatic1111UserComment.parse("positive\nNegative prompt: negative\nSteps: 20, ControlNet 0: \"preprocessor: canny, model: control_v11p_sd15_canny [d14c016b], weight: 1.0, starting/ending: (0.0, 1.0), resize mode: Crop and Resize, pixel perfect: True, control mode: Balanced, preprocessor params: (512, 100, 200)\", Size: 512x512");
+  assert.equal(userComment.instructions.length, 3);
+  assert.equal(userComment.instructions[0].key, "Steps");
+  assert.equal(userComment.instructions[0].value, "20");
+  assert.equal(userComment.instructions[1].key, "ControlNet 0");
+  assert.equal(
+    userComment.instructions[1].value,
+    "\"preprocessor: canny, model: control_v11p_sd15_canny [d14c016b], weight: 1.0, starting/ending: (0.0, 1.0), resize mode: Crop and Resize, pixel perfect: True, control mode: Balanced, preprocessor params: (512, 100, 200)\""
+  );
+  assert.equal(userComment.instructions[2].key, "Size");
+  assert.equal(userComment.instructions[2].value, "512x512");
 });
 
 test("Automatic1111Instruction only contains key and value properties", () =>
@@ -130,3 +163,28 @@ test("Automatic1111UserComment.parseValue parses JSON arrays and objects, and pr
   assert.deepEqual(Automatic1111UserComment.parseValue("  {\"a\": 1}  "), { a: 1 });
 });
 
+test("Automatic1111UserComment.toUiContainer generates valid UiContainer with Dimensions and Seed, omitting Civitai fields and Created Date", () =>
+{
+  const userComment = Automatic1111UserComment.parse("positive prompt text\nNegative prompt: negative prompt text\nSteps: 20, Sampler: Euler, Seed: 894409639, Size: 832x1216, CFG scale: 7, Model: SD XL, Clip skip: 2, Created Date: 2024-09-23T06:17:42.9952795Z, Civitai resources: [{\"type\":\"checkpoint\"}], Civitai metadata: {}");
+  const uiContainer = userComment.toUiContainer();
+  assert.ok(uiContainer !== undefined);
+  const jsonString = uiContainer.toString();
+  assert.ok(jsonString.includes("Prompt"));
+  assert.ok(jsonString.includes("positive prompt text"));
+  assert.ok(jsonString.includes("Negative Prompt"));
+  assert.ok(jsonString.includes("negative prompt text"));
+  assert.ok(jsonString.includes("Steps"));
+  assert.ok(jsonString.includes("Sampler"));
+  assert.ok(jsonString.includes("CFG scale"));
+  assert.ok(jsonString.includes("Dimensions"));
+  assert.ok(jsonString.includes("832"));
+  assert.ok(jsonString.includes("1216"));
+  assert.ok(jsonString.includes("894409639"));
+  assert.ok(jsonString.includes("Details"));
+  assert.ok(jsonString.includes("2 properties"));
+  assert.ok(jsonString.includes("Model"));
+  assert.ok(jsonString.includes("Clip skip"));
+  assert.ok(jsonString.includes("Created Date") === false);
+  assert.ok(jsonString.includes("Civitai resources") === false);
+  assert.ok(jsonString.includes("Civitai metadata") === false);
+});
