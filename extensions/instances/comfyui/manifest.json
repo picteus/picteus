@@ -105,6 +105,12 @@
         "title": "Extract workflow topology",
         "description": "Extract node category breakdown, workflow groups, and node statistics into the UI card.",
         "default": true
+      },
+      "extractWorkflowNotes": {
+        "type": "boolean",
+        "title": "Extract workflow notes",
+        "description": "Extract workflow notes and markdown documentation nodes into the UI card.",
+        "default": true
       }
     },
     "required": [

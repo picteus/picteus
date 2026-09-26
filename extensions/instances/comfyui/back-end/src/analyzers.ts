@@ -7,6 +7,7 @@ import {
   type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
+  markdown,
   numberUnbounded,
   ratio,
   Separator,
@@ -35,6 +36,7 @@ export interface ComfyUIAnalyzerSettings
   readonly extractLoRAsAndAdapters?: boolean;
   readonly extractUpscalingAndRefinement?: boolean;
   readonly extractWorkflowTopology?: boolean;
+  readonly extractWorkflowNotes?: boolean;
 }
 
 /**
@@ -93,6 +95,15 @@ export interface ComfyUIUpscaleData
 }
 
 /**
+ * Extracted workflow note and documentation entry.
+ */
+export interface ComfyUINoteData
+{
+  readonly title?: string;
+  readonly content: string;
+}
+
+/**
  * Extracted workflow topology metrics and breakdown.
  */
 export interface ComfyUIWorkflowTopology
@@ -121,6 +132,8 @@ export class ComfyUIAnalyzer
 
   private readonly inputImages: string[];
 
+  private readonly notes: ComfyUINoteData[];
+
   private readonly topology: ComfyUIWorkflowTopology;
 
   constructor(private readonly workflow: Json | undefined, private readonly prompt: Json, private readonly settings: ComfyUIAnalyzerSettings)
@@ -130,6 +143,7 @@ export class ComfyUIAnalyzer
     this.controlNets = this.extractControlNets();
     this.upscaleData = this.extractUpscaleData();
     this.inputImages = this.extractInputImages();
+    this.notes = this.extractNotes();
     this.topology = this.extractTopology();
   }
 
@@ -501,6 +515,30 @@ export class ComfyUIAnalyzer
       ));
     }
 
+    // Collapsible: Workflow Notes
+    if (this.settings.extractWorkflowNotes !== false && this.notes.length > 0)
+    {
+      const noteRows: TableRow[] = this.notes.map(
+        (note, noteIndex) =>
+        {
+          const title = note.title !== undefined ? note.title : (this.notes.length === 1 ? "Note" : `Note ${noteIndex + 1}`);
+          return tableRow([
+            string(title, firstColumnOptions),
+            markdown(note.content, copyableOptions)
+          ]);
+        }
+      );
+
+      elements.push(collapsibleGroup(
+        "Notes",
+        [ table(noteRows, commonTableOptions) ],
+        {
+          summary: `${this.notes.length} ${this.notes.length === 1 ? "note" : "notes"}`,
+          defaultExpanded: false
+        }
+      ));
+    }
+
     // Collapsible: Workflow Topology
     if (this.settings.extractWorkflowTopology !== false && this.topology.totalNodes > 0)
     {
@@ -564,6 +602,11 @@ export class ComfyUIAnalyzer
   getAspectRatio(): number | undefined
   {
     return (this.samplerData.width === undefined || this.samplerData.height === undefined || this.samplerData.height === 0) ? undefined : (this.samplerData.width / this.samplerData.height);
+  }
+
+  getNotes(): ComfyUINoteData[]
+  {
+    return this.notes;
   }
 
   private hasUpscaleData(): boolean
@@ -1932,6 +1975,218 @@ export class ComfyUIAnalyzer
     }
 
     return inputImages;
+  }
+
+  private extractNotes(): ComfyUINoteData[]
+  {
+    const notes: ComfyUINoteData[] = [];
+    const seenContents = new Set<string>();
+
+    const isGenericNoteTitle = (title: string): boolean =>
+    {
+      const normalized = title.trim().toLowerCase();
+      return (
+        normalized === "note" ||
+        normalized === "notes" ||
+        normalized === "markdownnote" ||
+        normalized === "markdown note" ||
+        normalized === "markdown_note" ||
+        normalized === "stickynote" ||
+        normalized === "sticky note" ||
+        normalized === "sticky_note" ||
+        normalized === "stickynotenode" ||
+        normalized === "note_o" ||
+        normalized === "text" ||
+        normalized === "text box" ||
+        normalized === "textbox" ||
+        normalized === "primitive" ||
+        normalized === "primitivenode"
+      );
+    };
+
+    const extractContentFromWidgetsOrInputs = (
+      widgetsValues: unknown,
+      inputs: unknown,
+      properties: unknown
+    ): string | undefined =>
+    {
+      // 1. Check widgets_values
+      if (typeof widgetsValues === "string" && widgetsValues.trim().length > 0)
+      {
+        return widgetsValues.trim();
+      }
+      if (Array.isArray(widgetsValues) === true)
+      {
+        const stringElements = widgetsValues.filter(
+          (element): element is string => typeof element === "string" && element.trim().length > 0
+        );
+        if (stringElements.length > 0)
+        {
+          return stringElements.map((item) => item.trim()).join("\n\n");
+        }
+      }
+      else if (widgetsValues && typeof widgetsValues === "object")
+      {
+        const widgetRecord = widgetsValues as Record<string, unknown>;
+        const candidateKeys = [ "text", "markdown", "note", "string", "value", "content", "comments" ];
+        for (const candidateKey of candidateKeys)
+        {
+          const candidateValue = widgetRecord[candidateKey];
+          if (typeof candidateValue === "string" && candidateValue.trim().length > 0)
+          {
+            return candidateValue.trim();
+          }
+        }
+      }
+
+      // 2. Check inputs
+      if (inputs && typeof inputs === "object")
+      {
+        const inputRecord = inputs as Record<string, unknown>;
+        const candidateKeys = [ "text", "markdown", "note", "string", "value", "content", "comments" ];
+        for (const candidateKey of candidateKeys)
+        {
+          const candidateValue = inputRecord[candidateKey];
+          if (typeof candidateValue === "string" && candidateValue.trim().length > 0)
+          {
+            return candidateValue.trim();
+          }
+        }
+      }
+
+      // 3. Check properties
+      if (properties && typeof properties === "object")
+      {
+        const propertyRecord = properties as Record<string, unknown>;
+        const candidateKeys = [ "text", "markdown", "note", "string", "value", "content", "comments" ];
+        for (const candidateKey of candidateKeys)
+        {
+          const candidateValue = propertyRecord[candidateKey];
+          if (typeof candidateValue === "string" && candidateValue.trim().length > 0)
+          {
+            return candidateValue.trim();
+          }
+        }
+      }
+
+      return undefined;
+    };
+
+    // Extract notes from workflow graph
+    if (this.workflow && Array.isArray(this.workflow.nodes) === true)
+    {
+      for (const node of this.workflow.nodes)
+      {
+        const nodeType: string = (node["type"] || "").toLowerCase();
+        const rawTitle: string = String(node["title"] || node["properties"]?.["title"] || "").trim();
+        const lowerTitle: string = rawTitle.toLowerCase();
+
+        const isPromptOrModelNode =
+          nodeType.includes("cliptextencode") ||
+          nodeType.includes("checkpoint") ||
+          nodeType.includes("loader") ||
+          nodeType.includes("sampler") ||
+          nodeType.includes("vae");
+
+        if (isPromptOrModelNode === true)
+        {
+          continue;
+        }
+
+        const isNoteType =
+          nodeType === "note" ||
+          nodeType.includes("note") ||
+          nodeType.includes("markdown") ||
+          nodeType.includes("stickynote") ||
+          nodeType.startsWith("note_") ||
+          nodeType.endsWith("note");
+
+        const isNoteTitled =
+          lowerTitle.includes("note") ||
+          lowerTitle.includes("readme") ||
+          lowerTitle.includes("instruction") ||
+          lowerTitle.includes("documentation") ||
+          lowerTitle.includes("comment");
+
+        if (isNoteType === true || isNoteTitled === true)
+        {
+          const content = extractContentFromWidgetsOrInputs(
+            node["widgets_values"],
+            node["inputs"],
+            node["properties"]
+          );
+
+          if (content !== undefined && content.length > 0 && seenContents.has(content) === false)
+          {
+            seenContents.add(content);
+            const title = rawTitle.length > 0 && isGenericNoteTitle(rawTitle) === false ? rawTitle : undefined;
+            notes.push({
+              title,
+              content
+            });
+          }
+        }
+      }
+    }
+
+    // Extract notes from prompt execution graph
+    if (this.prompt && typeof this.prompt === "object")
+    {
+      for (const node of Object.values(this.prompt))
+      {
+        const classType: string = (node["class_type"] || "").toLowerCase();
+        const rawTitle: string = String(node["_meta"]?.["title"] || "").trim();
+        const lowerTitle: string = rawTitle.toLowerCase();
+
+        const isPromptOrModelNode =
+          classType.includes("cliptextencode") ||
+          classType.includes("checkpoint") ||
+          classType.includes("loader") ||
+          classType.includes("sampler") ||
+          classType.includes("vae");
+
+        if (isPromptOrModelNode === true)
+        {
+          continue;
+        }
+
+        const isNoteType =
+          classType === "note" ||
+          classType.includes("note") ||
+          classType.includes("markdown") ||
+          classType.includes("stickynote") ||
+          classType.startsWith("note_") ||
+          classType.endsWith("note");
+
+        const isNoteTitled =
+          lowerTitle.includes("note") ||
+          lowerTitle.includes("readme") ||
+          lowerTitle.includes("instruction") ||
+          lowerTitle.includes("documentation") ||
+          lowerTitle.includes("comment");
+
+        if (isNoteType === true || isNoteTitled === true)
+        {
+          const content = extractContentFromWidgetsOrInputs(
+            undefined,
+            node["inputs"],
+            undefined
+          );
+
+          if (content !== undefined && content.length > 0 && seenContents.has(content) === false)
+          {
+            seenContents.add(content);
+            const title = rawTitle.length > 0 && isGenericNoteTitle(rawTitle) === false ? rawTitle : undefined;
+            notes.push({
+              title,
+              content
+            });
+          }
+        }
+      }
+    }
+
+    return notes;
   }
 
   private extractTopology(): ComfyUIWorkflowTopology

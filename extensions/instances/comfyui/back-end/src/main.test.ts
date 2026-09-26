@@ -7,6 +7,7 @@ import {
   type FlowingElement,
   ImageFeatureFormat,
   ImageFeatureType,
+  type MarkdownBlockElement,
   type RatioElement,
   type TableElement,
   type TableRow,
@@ -748,5 +749,144 @@ test("ComfyUIAnalyzer safely handles NaN, strings, and default numeric values in
     value: string;
   }).value === "Denoise");
   assert.equal(denoiseRow, undefined);
+});
+
+test("ComfyUIAnalyzer extracts workflow notes from standard and custom note nodes into collapsible group", () =>
+{
+  const workflowWithNotes = {
+    nodes: [
+      {
+        id: 1,
+        type: "KSampler",
+        title: "KSampler",
+        widgets_values: [ 12345, "fixed", 20, 7.0, "euler", "normal", 1.0 ]
+      },
+      {
+        id: 2,
+        type: "Note",
+        title: "Setup Instructions",
+        widgets_values: [ "Use SDXL base model with refiner at step 16." ]
+      },
+      {
+        id: 3,
+        type: "MarkdownNote",
+        title: "Note",
+        widgets_values: [ "# Important\n- Enable DPM++ 2M SDE\n- Set Karras scheduler" ]
+      },
+      {
+        id: 4,
+        type: "Note_O",
+        title: "Note_O",
+        widgets_values: [ "Quality of Life note: Remember to increase batch size." ]
+      },
+      {
+        id: 5,
+        type: "StickyNote",
+        title: "Floyo Sticky Note",
+        widgets_values: [ "Yellow sticky note: Check latent scale factor." ]
+      },
+      {
+        id: 6,
+        type: "CR Markdown Note",
+        title: "Comfyroll Note",
+        widgets_values: { markdown: "Comfyroll styling recipe notes." }
+      },
+      {
+        id: 7,
+        type: "PrimitiveNode",
+        title: "Workflow Documentation",
+        widgets_values: [ "Universal documentation primitive note." ]
+      }
+    ],
+    links: []
+  };
+
+  const analyzer = new ComfyUIAnalyzer(workflowWithNotes, undefined, {});
+  const notes = analyzer.getNotes();
+  assert.equal(notes.length, 6);
+  assert.equal(notes[0].title, "Setup Instructions");
+  assert.equal(notes[0].content, "Use SDXL base model with refiner at step 16.");
+  assert.equal(notes[1].title, undefined);
+  assert.ok(notes[1].content.includes("# Important"));
+  assert.equal(notes[2].title, undefined);
+  assert.equal(notes[2].content, "Quality of Life note: Remember to increase batch size.");
+  assert.equal(notes[3].title, "Floyo Sticky Note");
+  assert.equal(notes[3].content, "Yellow sticky note: Check latent scale factor.");
+  assert.equal(notes[4].title, "Comfyroll Note");
+  assert.equal(notes[4].content, "Comfyroll styling recipe notes.");
+  assert.equal(notes[5].title, "Workflow Documentation");
+  assert.equal(notes[5].content, "Universal documentation primitive note.");
+
+  const uiContainer = analyzer.toUiContainer();
+  const collapsibleGroups = uiContainer.elements.filter((element: UiElement) => element.type === "collapsible-group") as CollapsibleGroupElement[];
+  const notesGroup = collapsibleGroups.find((group) => group.title === "Workflow Notes");
+
+  assert.ok(notesGroup);
+  assert.equal(notesGroup.summary, "6 notes");
+  assert.equal(notesGroup.defaultExpanded, false);
+
+  const notesTable = notesGroup.elements[0] as TableElement;
+  assert.equal(notesTable.rows.length, 6);
+
+  // Check markdown element
+  const firstRowCell1 = notesTable.rows[0].cells[1] as MarkdownBlockElement;
+  assert.equal(firstRowCell1.type, "markdown");
+  assert.equal(firstRowCell1.content, "Use SDXL base model with refiner at step 16.");
+  assert.equal(firstRowCell1.modifiers?.copyable, true);
+
+  // Check title numbering fallback for generic titles
+  assert.equal((notesTable.rows[0].cells[0] as { value: string }).value, "Setup Instructions");
+  assert.equal((notesTable.rows[1].cells[0] as { value: string }).value, "Note 2");
+  assert.equal((notesTable.rows[2].cells[0] as { value: string }).value, "Note 3");
+  assert.equal((notesTable.rows[3].cells[0] as { value: string }).value, "Floyo Sticky Note");
+
+  // Check disabling via settings
+  const disabledAnalyzer = new ComfyUIAnalyzer(workflowWithNotes, undefined, { extractWorkflowNotes: false });
+  const disabledContainer = disabledAnalyzer.toUiContainer();
+  const disabledGroups = disabledContainer.elements.filter((element: UiElement) => element.type === "collapsible-group") as CollapsibleGroupElement[];
+  assert.equal(disabledGroups.some((group) => group.title === "Workflow Notes"), false);
+});
+
+test("ComfyUIAnalyzer extracts notes from prompt execution DAG", () =>
+{
+  const promptWithNotes = {
+    "1": {
+      class_type: "KSampler",
+      inputs: {
+        seed: 42,
+        steps: 25,
+        cfg: 7.0
+      }
+    },
+    "2": {
+      class_type: "Note",
+      _meta: {
+        title: "API Prompt Note"
+      },
+      inputs: {
+        text: "This image was generated via ComfyUI API endpoint."
+      }
+    },
+    "3": {
+      class_type: "MarkdownNote",
+      inputs: {
+        text: "## API Parameters\n- Batch: 1\n- Resolution: 1024x1024"
+      }
+    }
+  };
+
+  const analyzer = new ComfyUIAnalyzer(undefined, promptWithNotes, {});
+  const notes = analyzer.getNotes();
+  assert.equal(notes.length, 2);
+  assert.equal(notes[0].title, "API Prompt Note");
+  assert.equal(notes[0].content, "This image was generated via ComfyUI API endpoint.");
+  assert.equal(notes[1].title, undefined);
+  assert.ok(notes[1].content.includes("## API Parameters"));
+
+  const uiContainer = analyzer.toUiContainer();
+  const collapsibleGroups = uiContainer.elements.filter((element: UiElement) => element.type === "collapsible-group") as CollapsibleGroupElement[];
+  const notesGroup = collapsibleGroups.find((group) => group.title === "Workflow Notes");
+  assert.ok(notesGroup);
+  assert.equal(notesGroup.summary, "2 notes");
 });
 

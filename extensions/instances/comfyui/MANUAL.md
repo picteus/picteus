@@ -38,7 +38,10 @@ From here you can start using the Picteus "ComfyUI" extension.
     - `/home/<username>/ComfyUI-Installs/ComfyUI` on Linux.
 - `Extract LoRAs and adapters`: when enabled (default), extracts LoRA models, ControlNets, and IP-Adapters into collapsible sections in the UI card ;
 - `Extract upscaling and refinement`: when enabled (default), extracts upscale models, refiners, and face detailers into the UI card ;
-- `Extract workflow topology`: when enabled (default), extracts node category breakdown, workflow groups, and node statistics into a collapsible section in the UI card.
+- `Extract workflow topology`: when enabled (default), extracts node category breakdown, workflow groups, and node
+  statistics into a collapsible section in the UI card ;
+- `Extract workflow notes`: when enabled (default), extracts workflow notes and markdown documentation nodes into a
+  collapsible section in the UI card.
 
 # Commands
 

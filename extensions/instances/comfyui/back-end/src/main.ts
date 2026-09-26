@@ -327,7 +327,8 @@ class ComfyUiExtension extends PicteusExtension
       {
         extractLoRAsAndAdapters: value["extractLoRAsAndAdapters"],
         extractUpscalingAndRefinement: value["extractUpscalingAndRefinement"],
-        extractWorkflowTopology: value["extractWorkflowTopology"]
+        extractWorkflowTopology: value["extractWorkflowTopology"],
+        extractWorkflowNotes: value["extractWorkflowNotes"]
       };
 
     const directoryPath = value["directoryPath"];
