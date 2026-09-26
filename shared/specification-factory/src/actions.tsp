@@ -14,7 +14,7 @@ enum ButtonVariant {
   subtle: "subtle",
 
   @doc("Destructive / dangerous action button style")
-  danger: "danger",
+  danger: "danger"
 }
 
 @doc("Interactive button action triggering an extension command.")

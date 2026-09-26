@@ -16,15 +16,15 @@ import {
 import { useTranslation } from "react-i18next";
 
 import {
-  booleanPlain,
+  boolean,
   createUiContainer,
   divider,
   flowing,
   identifier,
   json,
   numberUnbounded,
-  stringLong,
-  stringShort,
+  string,
+  StringRepresentation,
   stringUrl,
   table,
   tableColumn,
@@ -237,7 +237,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       if (image.parentId)
       {
         rows.push(tableRow([
-            stringShort(t("field.parent"), labelOptions),
+          string(t("field.parent"), labelOptions),
             freeForm(<ImageItemWrapper imageId={image.parentId} edge={100} viewMode={viewMode}/>)
           ])
         );
@@ -247,9 +247,9 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       {
         rows.push(
           tableRow([
-            stringShort(t("field.repository"), labelOptions),
+            string(t("field.repository"), labelOptions),
             flowing([
-              stringShort(repository.name),
+              string(repository.name),
               freeForm(<Tooltip
                 label={t("button.open")}
                 position="right"
@@ -278,24 +278,24 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       {
         rows.push(
           tableRow([
-            stringShort(t("field.repository"), labelOptions),
+            string(t("field.repository"), labelOptions),
             identifier(image.repositoryId, { modifiers: { monospace: true, copyable: true } })
           ])
         );
       }
 
       rows.push(tableRow([
-          stringShort(t("field.createdOn"), labelOptions),
+        string(t("field.createdOn"), labelOptions),
           timestamp(image.fileDates.creationDate)
         ])
       );
       rows.push(tableRow([
-          stringShort(t("field.modifiedOn"), labelOptions),
+        string(t("field.modifiedOn"), labelOptions),
           timestamp(image.fileDates.modificationDate)
         ])
       );
       rows.push(tableRow([
-          stringShort(t("field.importedOn"), labelOptions),
+        string(t("field.importedOn"), labelOptions),
           timestamp(image.creationDate)
         ])
       );
@@ -304,7 +304,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       {
         rows.push(
           tableRow([
-            stringShort(t("field.sourceUrl"), labelOptions),
+            string(t("field.sourceUrl"), labelOptions),
             stringUrl(image.sourceUrl, { modifiers: { copyable: true } })
           ])
         );
@@ -422,8 +422,8 @@ export default function ImageData({ image, viewMode }: ImageDataType)
           if ("text" in prompt && prompt.text)
           {
             rows.push(tableRow([
-                stringShort(t("field.prompt"), options),
-                stringLong(prompt.text, { modifiers: { copyable: true } })
+              string(t("field.prompt"), options),
+              string(prompt.text, { modifiers: { copyable: true }, representation: StringRepresentation.multiline })
               ])
             );
           }
@@ -434,7 +434,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
               // We ignore the instructions when empty
               rows.push(
                 tableRow([
-                  stringShort(t("field.instructions"), options),
+                  string(t("field.instructions"), options),
                   json(JSON.stringify(prompt.value, undefined, 2), { modifiers: { copyable: true } })
                 ])
               );
@@ -680,12 +680,12 @@ export default function ImageData({ image, viewMode }: ImageDataType)
         {
           if (propertyValue === null || propertyValue === undefined)
           {
-            return stringShort("-", copyableOptions);
+            return string("-", copyableOptions);
           }
 
           if (typeof propertyValue === "boolean")
           {
-            return booleanPlain(propertyValue);
+            return boolean(propertyValue);
           }
 
           if (typeof propertyValue === "number")
@@ -719,7 +719,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
               return stringUrl(trimmedValue, copyableOptions);
             }
 
-            return stringLong(propertyValue, copyableOptions);
+            return string(propertyValue, { ...copyableOptions, representation: StringRepresentation.multiline });
           }
 
           if (typeof propertyValue === "object")
@@ -727,7 +727,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
             return json(JSON.stringify(propertyValue, undefined, 2), copyableOptions);
           }
 
-          return stringShort(String(propertyValue), copyableOptions);
+          return string(String(propertyValue), copyableOptions);
         }
 
         let element: UiElement;
@@ -742,7 +742,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
             {
               const rows: TableRow[] = entries.map(([ propertyKey, propertyValue ]) =>
                 tableRow([
-                  stringShort(propertyKey, labelOptions),
+                  string(propertyKey, labelOptions),
                   convertValueToUiElement(propertyValue)
                 ])
               );
@@ -777,7 +777,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
           }
           else
           {
-            element = stringLong(value, copyableOptions);
+            element = string(value, { ...copyableOptions, representation: StringRepresentation.multiline });
           }
         }
 
@@ -1013,17 +1013,15 @@ export default function ImageData({ image, viewMode }: ImageDataType)
     }}>
       <Flex align="center" justify="flex-end" ml="sm" mr="sm" mb="xs">
         <Group gap="xs" mt="xs">
-          {hiddenSectionIds.length > 0 && (
-            <Button
-              variant="light"
-              color="orange"
-              size="compact-xs"
-              leftSection={<IconEyeOff size={Common.IconSmallSize}/>}
-              onClick={openDrawer}
-            >
-              {t("imageDetail.settings.reset", { count: hiddenSectionIds.length })}
-            </Button>
-          )}
+          {hiddenSectionIds.length > 0 && (<Button
+            variant="light"
+            color="orange"
+            size="compact-xs"
+            leftSection={<IconEyeOff size={Common.IconSmallSize}/>}
+            onClick={openDrawer}
+          >
+            {t("imageDetail.settings.reset", { count: hiddenSectionIds.length })}
+          </Button>)}
           <Tooltip
             label={t("imageDetail.settings.title")}
             position="left"

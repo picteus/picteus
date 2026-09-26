@@ -649,10 +649,10 @@ function generateModelRenderBody(model: ViewKitModel): string
       return generateMeterWidgetBody(model);
     case "number-stars":
       return generateStarsWidgetBody(model);
-    case "string-short":
-      return generateStringShortWidgetBody();
-    case "string-long":
-      return generateStringLongWidgetBody();
+    case "string":
+      return generateStringWidgetBody();
+    case "strings":
+      return generateStringsWidgetBody();
     case "string-code":
     case "xml":
     case "json":
@@ -663,14 +663,14 @@ function generateModelRenderBody(model: ViewKitModel): string
       return generateIdentifierWidgetBody();
     case "ratio":
       return generateRatioWidgetBody();
+    case "dimensions":
+      return generateDimensionsWidgetBody();
     case "color":
       return generateColorWidgetBody();
     case "number-unbounded":
       return generateNumberUnboundedWidgetBody();
-    case "boolean-plain":
-      return generateBooleanPlainWidgetBody();
-    case "boolean-badge":
-      return generateBooleanBadgeWidgetBody();
+    case "boolean":
+      return generateBooleanWidgetBody();
     case "timestamp":
       return generateTimestampWidgetBody();
     case "image-ref":
@@ -732,10 +732,34 @@ function generateRowSlotsLayoutBody(): string
 function generateFlowingLayoutBody(): string
 {
   return [
+    `  function renderSeparator(separator: Separator | undefined, index: number): ReactNode`,
+    `  {`,
+    `    switch (separator)`,
+    `    {`,
+    `      case Separator.bar:`,
+    `        return <Divider key={\`sep-\${index}\`} orientation="vertical" h={12} style={{ alignSelf: "center" }}/>;`,
+    `      case Separator.comma:`,
+    `        return <Text key={\`sep-\${index}\`} size="sm" c="dimmed" style={{ userSelect: "none", marginLeft: -4 }}>,</Text>;`,
+    `      case Separator.dot:`,
+    `        return <Text key={\`sep-\${index}\`} size="xs" c="dimmed" style={{ userSelect: "none" }}>•</Text>;`,
+    `      case Separator.slash:`,
+    `        return <Text key={\`sep-\${index}\`} size="xs" c="dimmed" style={{ userSelect: "none" }}>/</Text>;`,
+    `      case Separator.dash:`,
+    `        return <Text key={\`sep-\${index}\`} size="xs" c="dimmed" style={{ userSelect: "none" }}>–</Text>;`,
+    `      case Separator.space:`,
+    `        return <Box key={\`sep-\${index}\`} style={{ width: 4 }}/>;`,
+    `      default:`,
+    `        return null;`,
+    `    }`,
+    `  }`,
+    ``,
     `  return (`,
     `    <Flex wrap="wrap" align="center" gap="xs" className={className} style={{ width: "100%", ...style }}>`,
     `      {element.elements.map((childElement, childIndex) => (`,
-    `        <UiElementView key={childIndex} element={childElement} onAction={onAction}/>`,
+    `        <React.Fragment key={childIndex}>`,
+    `          {childIndex > 0 && renderSeparator(element.separator, childIndex)}`,
+    `          <UiElementView element={childElement} onAction={onAction}/>`,
+    `        </React.Fragment>`,
     `      ))}`,
     `    </Flex>`,
     `  );`
@@ -784,7 +808,7 @@ function generateStarsWidgetBody(model: ViewKitModel): string
   ].join("\n");
 }
 
-function generateStringShortWidgetBody(): string
+function generateStringWidgetBody(): string
 {
   const typographyLines = generateTypographyModifiers();
   const nodeExpression = [
@@ -792,7 +816,7 @@ function generateStringShortWidgetBody(): string
     `    isChip ? (`,
     `      <Badge size="sm" variant="light" className={className} style={style}>{element.value}</Badge>`,
     `    ) : (`,
-    `      <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} className={className} style={{ ...TEXT_WRAP_STYLE, ...style }}>`,
+    `      <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} style={{ ...(isMultiline ? { whiteSpace: "pre-wrap" } : {}), ...TEXT_WRAP_STYLE, ...style }} className={className}>`,
     `        {element.value}`,
     `      </Text>`,
     `    )`,
@@ -800,28 +824,78 @@ function generateStringShortWidgetBody(): string
   ].join("\n");
 
   return [
-    `  const isChip = element.representation === StringShortRepresentation.chip;`,
+    `  const isChip = element.representation === StringRepresentation.chip;`,
+    `  const isMultiline = element.representation === StringRepresentation.multiline;`,
     typographyLines,
     ``,
     wrapWithCopyableModifier(nodeExpression)
   ].join("\n");
 }
 
-function generateStringLongWidgetBody(): string
+function generateStringsWidgetBody(): string
 {
   const typographyLines = generateTypographyModifiers();
-  const nodeExpression = [
-    `(`,
-    `    <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} style={{ whiteSpace: "pre-wrap", ...TEXT_WRAP_STYLE, ...style }} className={className}>`,
-    `      {element.value}`,
-    `    </Text>`,
-    `  )`
-  ].join("\n");
-
   return [
+    `  const isChip = element.representation === StringRepresentation.chip;`,
+    `  const isMultiline = element.representation === StringRepresentation.multiline;`,
     typographyLines,
     ``,
-    wrapWithCopyableModifier(nodeExpression)
+    `  function getInlineSeparator(separator: Separator | undefined): string`,
+    `  {`,
+    `    switch (separator)`,
+    `    {`,
+    `      case Separator.bar:`,
+    `        return " | ";`,
+    `      case Separator.dot:`,
+    `        return " • ";`,
+    `      case Separator.slash:`,
+    `        return " / ";`,
+    `      case Separator.dash:`,
+    `        return " – ";`,
+    `      case Separator.space:`,
+    `        return " ";`,
+    `      case Separator.comma:`,
+    `      default:`,
+    `        return ", ";`,
+    `    }`,
+    `  }`,
+    ``,
+    `  const inlineSeparator = getInlineSeparator(element.separator);`,
+    `  const joinedText = element.values.join(inlineSeparator);`,
+    ``,
+    `  const node = isChip ? (`,
+    `    <Flex wrap="wrap" align="center" gap="xs" className={className} style={{ ...CONSTRAINED_STYLE, ...style }}>`,
+    `      {element.values.map((itemValue, itemIndex) => (`,
+    `        <Badge key={itemIndex} size="sm" variant="light">{itemValue}</Badge>`,
+    `      ))}`,
+    `    </Flex>`,
+    `  ) : (`,
+    `    <Text`,
+    `      size="sm"`,
+    `      fw={fontWeight}`,
+    `      c={textColor}`,
+    `      ff={isMono ? "monospace" : undefined}`,
+    `      className={className}`,
+    `      style={{ ...(isMultiline ? { whiteSpace: "pre-wrap" } : {}), ...TEXT_WRAP_STYLE, ...style }}`,
+    `    >`,
+    `      {element.values.map((itemValue, itemIndex) => (`,
+    `        <React.Fragment key={itemIndex}>`,
+    `          {itemIndex > 0 && (`,
+    `            <span style={{ color: "var(--mantine-color-dimmed)", userSelect: "none" }}>`,
+    `              {inlineSeparator}`,
+    `            </span>`,
+    `          )}`,
+    `          <span>{itemValue}</span>`,
+    `        </React.Fragment>`,
+    `      ))}`,
+    `    </Text>`,
+    `  );`,
+    ``,
+    `  if (element.modifiers?.copyable)`,
+    `  {`,
+    `    return <CopyableWrapper value={joinedText}>{node}</CopyableWrapper>;`,
+    `  }`,
+    `  return node;`
   ].join("\n");
 }
 
@@ -878,6 +952,22 @@ function generateRatioWidgetBody(): string
   ].join("\n");
 }
 
+function generateDimensionsWidgetBody(): string
+{
+  const nodeExpression = [
+    `(`,
+    `    <Text size="sm" className={className} style={{ ...TEXT_WRAP_STYLE, ...style }}>`,
+    `      {formattedDimensions}`,
+    `    </Text>`,
+    `  )`
+  ].join("\n");
+
+  return [
+    `  const formattedDimensions = \`\${element.width.toLocaleString()} x \${element.height.toLocaleString()}\`;`,
+    wrapWithCopyableModifier(nodeExpression, "formattedDimensions")
+  ].join("\n");
+}
+
 function generateColorWidgetBody(): string
 {
   const nodeExpression = [
@@ -917,17 +1007,24 @@ function generateNumberUnboundedWidgetBody(): string
   ].join("\n");
 }
 
-function generateBooleanPlainWidgetBody(): string
+function generateBooleanWidgetBody(): string
 {
-  return [
-    `  return <Text size="sm" className={className} style={style}>{String(element.value)}</Text>;`
-  ].join("\n");
-}
-
-function generateBooleanBadgeWidgetBody(): string
-{
+  const typographyLines = generateTypographyModifiers();
   const label = "element.value ? (element.trueLabel ?? \"true\") : (element.falseLabel ?? \"false\")";
+  const nodeExpression = [
+    `(`,
+    `    isBadge ? (`,
+    `      <Badge color={variantColor} size="sm" variant="light" className={className} style={style}>{label}</Badge>`,
+    `    ) : (`,
+    `      <Text size="sm" fw={fontWeight} c={textColor} ff={isMono ? "monospace" : undefined} className={className} style={{ ...TEXT_WRAP_STYLE, ...style }}>`,
+    `        {label}`,
+    `      </Text>`,
+    `    )`,
+    `  )`
+  ].join("\n");
+
   return [
+    `  const isBadge = element.representation === BooleanRepresentation.badge;`,
     `  const label = ${label};`,
     `  const variantColor =`,
     `    {`,
@@ -936,8 +1033,9 @@ function generateBooleanBadgeWidgetBody(): string
     `      warning: "yellow",`,
     `      danger: "red"`,
     `    }[element.variant ?? "neutral"];`,
+    typographyLines,
     ``,
-    `  return <Badge color={variantColor} size="sm" variant="light" className={className} style={style}>{label}</Badge>;`
+    wrapWithCopyableModifier(nodeExpression, "label")
   ].join("\n");
 }
 

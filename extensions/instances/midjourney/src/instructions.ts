@@ -2,13 +2,13 @@ import { XMLParser } from "fast-xml-parser";
 
 import {
   BadgeVariant,
-  booleanBadge,
+  boolean,
+  BooleanRepresentation,
   collapsibleGroup,
   createUiContainer,
   identifier,
   numberUnbounded,
-  stringLong,
-  stringShort,
+  string,
   stringUrl,
   table,
   tableRow,
@@ -301,38 +301,39 @@ export class MidjourneyInstructions
 
     if (this.prompt !== undefined && this.prompt.length > 0)
     {
-      primaryRows.push(tableRow([ stringShort("Prompt", firstColumnOptions), stringLong(this.prompt, copiableOptions) ]));
+      primaryRows.push(tableRow([ string("Prompt", firstColumnOptions), string(this.prompt, copiableOptions) ]));
     }
 
     // The command is shifted to the second section
     if (this.command !== undefined && this.command.length > 0)
     {
-      secondaryRows.push(tableRow([ stringShort("Command", firstColumnOptions), stringLong(this.command, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Command", firstColumnOptions), string(this.command, copiableOptions) ]));
     }
 
     if (this.stylize !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Stylize", firstColumnOptions), numberUnbounded(this.stylize, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Stylize", firstColumnOptions), numberUnbounded(this.stylize, copiableOptions) ]));
     }
 
     if (this.chaos !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Chaos", firstColumnOptions), numberUnbounded(this.chaos, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Chaos", firstColumnOptions), numberUnbounded(this.chaos, copiableOptions) ]));
     }
 
     if (this.weird !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Weird", firstColumnOptions), numberUnbounded(this.weird, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Weird", firstColumnOptions), numberUnbounded(this.weird, copiableOptions) ]));
     }
 
     if (this.quality !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Quality", firstColumnOptions), numberUnbounded(this.quality, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Quality", firstColumnOptions), numberUnbounded(this.quality, copiableOptions) ]));
     }
 
     if (this.raw !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Raw", firstColumnOptions), booleanBadge(this.raw, {
+      secondaryRows.push(tableRow([ string("Raw", firstColumnOptions), boolean(this.raw, {
+        representation: BooleanRepresentation.badge,
         trueLabel: "Raw",
         falseLabel: "Standard",
         variant: BadgeVariant.success
@@ -341,7 +342,8 @@ export class MidjourneyInstructions
 
     if (this.tile !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Tile", firstColumnOptions), booleanBadge(this.tile, {
+      secondaryRows.push(tableRow([ string("Tile", firstColumnOptions), boolean(this.tile, {
+        representation: BooleanRepresentation.badge,
         trueLabel: "Tiled",
         falseLabel: "No",
         variant: BadgeVariant.success
@@ -350,43 +352,43 @@ export class MidjourneyInstructions
 
     if (this.seed !== undefined && this.seed !== -1)
     {
-      secondaryRows.push(tableRow([ stringShort("Seed", firstColumnOptions), identifier(String(this.seed), copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Seed", firstColumnOptions), identifier(String(this.seed), copiableOptions) ]));
     }
 
     if (this.profile !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Profile", firstColumnOptions), stringShort(this.profile, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Profile", firstColumnOptions), string(this.profile, copiableOptions) ]));
     }
 
     if (this.imageWeight !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Image Weight", firstColumnOptions), numberUnbounded(this.imageWeight, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Image Weight", firstColumnOptions), numberUnbounded(this.imageWeight, copiableOptions) ]));
     }
 
     if (this.styleWeight !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Style Weight", firstColumnOptions), numberUnbounded(this.styleWeight, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Style Weight", firstColumnOptions), numberUnbounded(this.styleWeight, copiableOptions) ]));
     }
 
     if (this.dref !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Dref", firstColumnOptions), stringShort(this.dref, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Dref", firstColumnOptions), string(this.dref, copiableOptions) ]));
     }
 
     if (this.repeat !== undefined)
     {
-      secondaryRows.push(tableRow([ stringShort("Repeat", firstColumnOptions), numberUnbounded(this.repeat, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Repeat", firstColumnOptions), numberUnbounded(this.repeat, copiableOptions) ]));
     }
 
     if (this.source !== undefined)
     {
       const isUrl = this.source.startsWith("http://") === true || this.source.startsWith("https://") === true;
-      secondaryRows.push(tableRow([ stringShort("Digital Source", firstColumnOptions), isUrl === true ? stringUrl(this.source) : stringShort(this.source) ]));
+      secondaryRows.push(tableRow([ string("Digital Source", firstColumnOptions), isUrl === true ? stringUrl(this.source) : string(this.source) ]));
     }
 
     if (this.guid !== undefined && Math.random() > 1)
     {
-      secondaryRows.push(tableRow([ stringShort("Job ID", firstColumnOptions), identifier(this.guid, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Job ID", firstColumnOptions), identifier(this.guid, copiableOptions) ]));
     }
 
     const elements: UiElement[] = [];

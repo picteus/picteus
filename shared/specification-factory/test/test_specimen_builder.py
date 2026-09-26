@@ -16,12 +16,13 @@ from view_kit import (
     UiActionBase,
     UiElementProtocol,
     UiActionProtocol,
-    StringShortElementProtocol,
+    StringElementProtocol,
     BaseModifiers,
     PrimitiveModifiers,
     TextWeight,
     TextIntensity,
-    StringShortRepresentation,
+    StringRepresentation,
+    BooleanRepresentation,
     BadgeVariant,
     TimestampFormat,
     ButtonVariant,
@@ -36,11 +37,13 @@ from view_kit import (
     parse_ui_container,
     parse_ui_card,
     label_value,
-    string_short,
+    string,
     number_unbounded,
     number_meter,
-    boolean_badge,
+    boolean,
     timestamp,
+    dimensions,
+    DimensionsElement,
     color,
     ColourElement,
     markdown,
@@ -49,6 +52,9 @@ from view_kit import (
     slot,
     flowing,
     FlowingElement,
+    Separator,
+    strings,
+    StringsElement,
     table,
     table_column,
     table_row,
@@ -76,7 +82,7 @@ class TestSpecimenBuilder(unittest.TestCase):
             ]))
             .add_label_value(
                 "Primary Hue",
-                string_short("Slate", representation=StringShortRepresentation.chip, modifiers=PrimitiveModifiers(weight=TextWeight.heavy))
+                string("Slate", representation=StringRepresentation.chip, modifiers=PrimitiveModifiers(weight=TextWeight.heavy))
             )
             .add_label_value("Confidence", number_meter(92, minimum=0, maximum=100, unit="%"))
             .add_divider(style=DividerStyle.hairline)
@@ -117,17 +123,17 @@ class TestSpecimenBuilder(unittest.TestCase):
             title="Image Metadata",
             description="EXIF and camera properties",
             elements=[
-                label_value("Camera Model", string_short("Sony Alpha 7 IV", modifiers=PrimitiveModifiers(copyable=True))),
-                label_value("Shutter Speed", string_short("1/250s")),
-                label_value("Aperture", string_short("f/2.8")),
+                label_value("Camera Model", string("Sony Alpha 7 IV", modifiers=PrimitiveModifiers(copyable=True))),
+                label_value("Shutter Speed", string("1/250s")),
+                label_value("Aperture", string("f/2.8")),
                 label_value("ISO Rating", number_unbounded(400, unit="ISO")),
                 label_value("Capture Time", timestamp(1788186600000, format=TimestampFormat.datetime)),
                 collapsible_group(
                     title="Detailed EXIF",
                     elements=[
-                        label_value("Focal Length", string_short("35mm")),
-                        label_value("Metering Mode", string_short("Multi-segment")),
-                        label_value("Flash Fired", boolean_badge(False, false_label="No Flash", variant=BadgeVariant.neutral)),
+                        label_value("Focal Length", string("35mm")),
+                        label_value("Metering Mode", string("Multi-segment")),
+                        label_value("Flash Fired", boolean(False, representation=BooleanRepresentation.badge, false_label="No Flash", variant=BadgeVariant.neutral)),
                     ],
                     summary="3 extra fields",
                     default_expanded=False,
@@ -153,8 +159,8 @@ class TestSpecimenBuilder(unittest.TestCase):
     def test_table_and_multislot(self):
         table_element = table(
             rows=[
-                table_row([string_short("Resolution"), string_short("3840 x 2160")]),
-                table_row([string_short("Color Space"), string_short("sRGB")]),
+                table_row([string("Resolution"), string("3840 x 2160")]),
+                table_row([string("Color Space"), string("sRGB")]),
             ],
             columns=[
                 table_column(header="Property", align=TableColumnAlign.left, width=30, width_mode=TableColumnWidthMode.maximum),
@@ -180,15 +186,13 @@ class TestSpecimenBuilder(unittest.TestCase):
 
         multi_slot_element = multi_slot(
             slots=[
-                slot(content=string_short("Slot 1"), width=33),
-                slot(content=string_short("Slot 2"), width=67),
+                slot(content=string("Slot 1"), width=33),
+                slot(content=string("Slot 2"), width=67),
             ],
-            proportions="1/3 + 2/3",
         )
 
         multi_slot_dict = multi_slot_element.to_dict()
         self.assertEqual(multi_slot_dict["type"], "multi-slot")
-        self.assertEqual(multi_slot_dict["proportions"], "1/3 + 2/3")
         self.assertEqual(len(multi_slot_dict["slots"]), 2)
         self.assertEqual(multi_slot_dict["slots"][0]["width"], 33)
         self.assertEqual(multi_slot_dict["slots"][1]["width"], 67)
@@ -196,8 +200,8 @@ class TestSpecimenBuilder(unittest.TestCase):
     def test_repeating_groups(self):
         repeating_group_element = repeating_group(
             entries=[
-                repeating_group_entry(label="Layer 1", value=string_short("Background")),
-                repeating_group_entry(label="Layer 2", value=string_short("Text Overlay")),
+                repeating_group_entry(label="Layer 1", value=string("Background")),
+                repeating_group_entry(label="Layer 2", value=string("Text Overlay")),
             ],
             title="Composition Layers",
         )
@@ -223,7 +227,7 @@ class TestSpecimenBuilder(unittest.TestCase):
     def test_json_serialization(self):
         card = (
             UiCardBuilder(title="JSON Test")
-            .add_label_value("Key", string_short("Value"))
+            .add_label_value("Key", string("Value"))
             .build()
         )
 
@@ -242,14 +246,14 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertTrue(isinstance(envelop, Envelop))
         self.assertTrue(isinstance(envelop, ViewKitBase))
 
-        container = UiContainer(elements=[string_short("Item")])
+        container = UiContainer(elements=[string("Item")])
         self.assertTrue(isinstance(container, UiContainer))
         self.assertTrue(isinstance(container, Envelop))
         self.assertTrue(isinstance(container, ViewKitBase))
         self.assertEqual(container.schema_version, "1.0")
         self.assertEqual(len(container.elements), 1)
 
-        card = UiCard(title="Test Inheritance", elements=[string_short("Item 2")])
+        card = UiCard(title="Test Inheritance", elements=[string("Item 2")])
         self.assertTrue(isinstance(card, UiCard))
         self.assertTrue(isinstance(card, UiContainer))
         self.assertTrue(isinstance(card, Envelop))
@@ -265,12 +269,12 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(primitive_modifiers.weight, TextWeight.heavy)
         self.assertEqual(primitive_modifiers.copyable, True)
 
-        element = string_short("Hello", representation=StringShortRepresentation.chip)
+        element = string("Hello", representation=StringRepresentation.chip)
         self.assertTrue(isinstance(element, UiElementBase))
         self.assertTrue(isinstance(element, ViewKitBase))
         self.assertTrue(isinstance(element, UiElementProtocol))
-        self.assertTrue(isinstance(element, StringShortElementProtocol))
-        self.assertEqual(element.type, "string-short")
+        self.assertTrue(isinstance(element, StringElementProtocol))
+        self.assertEqual(element.type, "string")
         self.assertEqual(element.value, "Hello")
 
         button_element = button_action(command_id="cmd", label="Action", variant=ButtonVariant.primary)
@@ -283,14 +287,14 @@ class TestSpecimenBuilder(unittest.TestCase):
     def test_ui_container_builder(self):
         container = (
             UiContainerBuilder()
-            .add_label_value("Key", string_short("Value"))
+            .add_label_value("Key", string("Value"))
             .build()
         )
         self.assertTrue(isinstance(container, UiContainer))
         self.assertEqual(container.schema_version, "1.0")
         self.assertEqual(len(container.elements), 1)
 
-        container_helper = create_ui_container(elements=[label_value(label="Direct", value=string_short("Text"))])
+        container_helper = create_ui_container(elements=[label_value(label="Direct", value=string("Text"))])
         self.assertEqual(container_helper.schema_version, "1.0")
         self.assertEqual(len(container_helper.elements), 1)
 
@@ -300,8 +304,8 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertNotIn("\n", json_str)
         self.assertEqual(json_str, container.to_json())
 
-        builder_json_str = str(UiContainerBuilder().add_label_value("Key", string_short("Value")))
-        self.assertEqual(builder_json_str, UiContainerBuilder().add_label_value("Key", string_short("Value")).build().to_string())
+        builder_json_str = str(UiContainerBuilder().add_label_value("Key", string("Value")))
+        self.assertEqual(builder_json_str, UiContainerBuilder().add_label_value("Key", string("Value")).build().to_string())
         parsed_builder = json.loads(builder_json_str)
         self.assertEqual(parsed_builder["schemaVersion"], "1.0")
         self.assertEqual(len(parsed_builder["elements"]), 1)
@@ -319,7 +323,7 @@ class TestSpecimenBuilder(unittest.TestCase):
         self.assertEqual(parsed_container_dict.elements[0].label, "Key")
 
         # Test UiCard.parse() and parse_ui_card()
-        card = UiCardBuilder("Test Python Card").add_label_value("A", string_short("B")).build()
+        card = UiCardBuilder("Test Python Card").add_label_value("A", string("B")).build()
         card_json = card.to_string()
         parsed_card = UiCard.parse(card_json)
         self.assertTrue(isinstance(parsed_card, UiCard))
@@ -343,8 +347,8 @@ class TestSpecimenBuilder(unittest.TestCase):
                     "rows": [
                         {
                             "cells": [
-                                {"type": "string-short", "value": "Valid cell"},
-                                {"type": "string-short"},
+                                {"type": "string", "value": "Valid cell"},
+                                {"type": "string"},
                             ]
                         }
                     ],
@@ -365,22 +369,75 @@ class TestSpecimenBuilder(unittest.TestCase):
         card = (
             UiCardBuilder("Flowing Tags")
             .add_flowing([
-                string_short("Tag 1"),
-                string_short("Tag 2"),
-                string_short("Tag 3")
-            ])
+                string("Tag 1"),
+                string("Tag 2"),
+                string("Tag 3")
+            ], separator=Separator.bar)
             .build()
         )
         self.assertEqual(len(card.elements), 1)
         flowing_elem = card.elements[0]
         self.assertTrue(isinstance(flowing_elem, FlowingElement))
         self.assertEqual(flowing_elem.type, "flowing")
+        self.assertEqual(flowing_elem.separator, Separator.bar)
         self.assertEqual(len(flowing_elem.elements), 3)
 
-        standalone = flowing([string_short("A"), string_short("B")])
+        standalone = flowing([string("A"), string("B")], separator=Separator.comma)
         self.assertTrue(isinstance(standalone, FlowingElement))
         self.assertEqual(standalone.type, "flowing")
+        self.assertEqual(standalone.separator, Separator.comma)
         self.assertEqual(len(standalone.elements), 2)
+
+        spaced = flowing([string("X"), string("Y")], separator=Separator.space)
+        self.assertEqual(spaced.separator, Separator.space)
+
+    def test_strings_element(self):
+        tags = strings(["portrait", "cinematic", "8k"], representation=StringRepresentation.chip, separator=Separator.dot)
+        self.assertTrue(isinstance(tags, StringsElement))
+        self.assertEqual(tags.type, "strings")
+        self.assertEqual(tags.values, ["portrait", "cinematic", "8k"])
+        self.assertEqual(tags.representation, StringRepresentation.chip)
+        self.assertEqual(tags.separator, Separator.dot)
+        self.assertEqual(tags.to_dict(), {
+            "type": "strings",
+            "values": ["portrait", "cinematic", "8k"],
+            "representation": "chip",
+            "separator": "dot"
+        })
+
+        card = (
+            UiCardBuilder("Tags")
+            .add_strings(["anime", "masterpiece"], separator=Separator.comma)
+            .build()
+        )
+        self.assertEqual(len(card.elements), 1)
+        self.assertEqual(card.elements[0].type, "strings")
+
+    def test_dimensions_element(self):
+        dims = dimensions(width=3840, height=2160, modifiers=BaseModifiers(copyable=True))
+        self.assertTrue(isinstance(dims, DimensionsElement))
+        self.assertEqual(dims.type, "dimensions")
+        self.assertEqual(dims.width, 3840)
+        self.assertEqual(dims.height, 2160)
+        self.assertEqual(dims.to_dict(), {
+            "type": "dimensions",
+            "width": 3840,
+            "height": 2160,
+            "modifiers": {
+                "copyable": True,
+            }
+        })
+
+        card = (
+            UiCardBuilder("Image Dimensions")
+            .add_dimensions(width=1920, height=1080)
+            .build()
+        )
+        self.assertEqual(len(card.elements), 1)
+        card_dims = card.elements[0]
+        self.assertTrue(isinstance(card_dims, DimensionsElement))
+        self.assertEqual(card_dims.width, 1920)
+        self.assertEqual(card_dims.height, 1080)
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ import {
   type ProcessCommandIntent,
   type SettingsValue,
   type ShowIntent,
+  string,
   UiContainer,
   type UiIntent,
   type Versions
@@ -248,7 +249,7 @@ class TypeScriptExtension extends PicteusExtension
           type: ImageFeatureType.Other,
           format: ImageFeatureFormat.Ui,
           name: "example-ui",
-          value: UiContainer.builder().addStringShort("This is a string").toString()
+          value: UiContainer.builder().addString("This is a string").toString()
         }
       ]
     });

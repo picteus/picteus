@@ -46,18 +46,18 @@ extern dec uiLayout(
 extern dec uiWidget(
   target: Model,
   widget: valueof (
-    | "string-short"
-    | "string-long"
+    | "string"
+    | "strings"
     | "string-code"
     | "string-url"
     | "identifier"
     | "ratio"
+    | "dimensions"
     | "color"
     | "number-unbounded"
     | "number-stars"
     | "meter"
-    | "boolean-plain"
-    | "boolean-badge"
+    | "boolean"
     | "timestamp"
     | "image-ref"
     | "divider"

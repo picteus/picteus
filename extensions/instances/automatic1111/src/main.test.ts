@@ -1,5 +1,5 @@
 import { test } from "node:test";
-import assert from "node:assert/strict";
+import { strict as assert } from "node:assert/strict";
 
 import { Automatic1111Instruction, Automatic1111UserComment } from "./instructions";
 

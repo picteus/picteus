@@ -8,6 +8,7 @@ import {
 import {
   collapsibleGroup,
   createUiContainer,
+  dimensions,
   flowing,
   type GenerationRecipe,
   type GenerationRecipePrompt,
@@ -16,8 +17,7 @@ import {
   numberUnbounded,
   PromptKind,
   ratio,
-  stringLong,
-  stringShort,
+  string,
   table,
   tableColumn,
   TableColumnAlign,
@@ -190,7 +190,7 @@ export class CivitaiRetriever
           label: "Prompt",
           format: (value: unknown): UiElement | undefined =>
           {
-            return this.formatLongText(value, copyableOptions);
+            return this.formatText(value, copyableOptions);
           }
         },
         {
@@ -198,7 +198,7 @@ export class CivitaiRetriever
           label: "Negative Prompt",
           format: (value: unknown): UiElement | undefined =>
           {
-            return this.formatLongText(value, copyableOptions);
+            return this.formatText(value, copyableOptions);
           }
         },
         {
@@ -206,7 +206,7 @@ export class CivitaiRetriever
           label: "Model",
           format: (value: unknown): UiElement | undefined =>
           {
-            return this.formatShortText(value, copyableOptions);
+            return this.formatIdentifier(value, copyableOptions);
           }
         },
         {
@@ -216,7 +216,7 @@ export class CivitaiRetriever
           {
             const modelName = record["Model"] ?? record["model"];
             return typeof value === "string" && value.trim().length > 0 && value !== modelName
-              ? stringShort(value.trim(), copyableOptions)
+              ? string(value.trim(), copyableOptions)
               : undefined;
           }
         },
@@ -226,7 +226,7 @@ export class CivitaiRetriever
           label: "Sampler",
           format: (value: unknown): UiElement | undefined =>
           {
-            return this.formatShortText(value, copyableOptions);
+            return this.formatText(value, copyableOptions);
           }
         },
         {
@@ -257,7 +257,7 @@ export class CivitaiRetriever
         },
         {
           keys: [ "width", "height" ],
-          label: "Dimension",
+          label: "Dimensions",
           format: (propertyValue: unknown, record: Record<string, unknown>): UiElement | undefined =>
           {
             const rawWidth = record["width"];
@@ -274,7 +274,7 @@ export class CivitaiRetriever
             {
               const aspectRatio = width / height;
               return flowing([
-                stringShort(`${width}x${height}`, copyableOptions),
+                dimensions(width, height, copyableOptions),
                 ratio(aspectRatio)
               ]);
             }
@@ -321,7 +321,7 @@ export class CivitaiRetriever
           if (element !== undefined)
           {
             primaryRows.push(tableRow([
-              stringShort(definition.label, firstColumnOptions),
+              string(definition.label, firstColumnOptions),
               element
             ]));
             break;
@@ -372,18 +372,18 @@ export class CivitaiRetriever
                 const cellValue = resourceRecord[usedColumn.key];
                 if (cellValue === null || cellValue === undefined || String(cellValue).trim().length === 0)
                 {
-                  return stringShort("");
+                  return string("");
                 }
                 const formattedValue = String(cellValue).trim();
                 if (usedColumn.key === "type")
                 {
-                  return stringShort(formattedValue);
+                  return string(formattedValue, firstColumnOptions);
                 }
                 if (usedColumn.key === "modelVersionId")
                 {
                   return identifier(formattedValue, copyableOptions);
                 }
-                return stringShort(formattedValue, copyableOptions);
+                return string(formattedValue, copyableOptions);
               }
             );
             return tableRow(cells);
@@ -431,18 +431,18 @@ export class CivitaiRetriever
           // Type (not copyable)
           const typeValue = resourceRecord["type"];
           const formattedType = typeValue !== null && typeValue !== undefined ? String(typeValue).trim() : "";
-          const typeCell = formattedType.length > 0 ? stringShort(formattedType) : stringShort("");
+          const typeCell = formattedType.length > 0 ? string(formattedType, firstColumnOptions) : string("");
 
           // Name (50% width, copyable)
           const nameValue = resourceRecord["name"] ?? resourceRecord["modelName"];
           const formattedName = nameValue !== null && nameValue !== undefined ? String(nameValue).trim() : "";
-          const nameCell = formattedName.length > 0 ? stringShort(formattedName, copyableOptions) : stringShort("");
+          const nameCell = formattedName.length > 0 ? identifier(formattedName, copyableOptions) : string("");
 
           // Weight (25% width, copyable)
           const weightValue = resourceRecord["weight"];
           const weightCell = weightValue !== null && weightValue !== undefined && String(weightValue).trim().length > 0
             ? this.formatScalarElement(weightValue, copyableOptions)
-            : stringShort("");
+            : string("");
 
           return tableRow([ typeCell, nameCell, weightCell ]);
         }
@@ -517,7 +517,7 @@ export class CivitaiRetriever
             const valueElement = this.formatScalarElement(propertyValue, copyableOptions);
 
             secondaryRows.push(tableRow([
-              stringShort(propertyLabel, firstColumnOptions),
+              string(propertyLabel, firstColumnOptions),
               valueElement
             ]));
           }
@@ -567,17 +567,17 @@ export class CivitaiRetriever
     return createUiContainer({ elements });
   }
 
-  private formatLongText(value: unknown, options: { modifiers?: { copyable?: boolean; }; }): UiElement | undefined
+  private formatText(value: unknown, options: { modifiers?: { copyable?: boolean; }; }): UiElement | undefined
   {
     return typeof value === "string" && value.trim().length > 0
-      ? stringLong(value.trim(), options)
+      ? string(value.trim(), options)
       : undefined;
   }
 
-  private formatShortText(value: unknown, options: { modifiers?: { copyable?: boolean; }; }): UiElement | undefined
+  private formatIdentifier(value: unknown, options: { modifiers?: { copyable?: boolean; }; }): UiElement | undefined
   {
     return typeof value === "string" && value.trim().length > 0
-      ? stringShort(value.trim(), options)
+      ? identifier(value.trim(), options)
       : undefined;
   }
 
@@ -609,7 +609,7 @@ export class CivitaiRetriever
     {
       return numberUnbounded(numericValue, options);
     }
-    return stringShort(formattedStringValue, options);
+    return string(formattedStringValue, options);
   }
 
   private createCollapsibleSection(

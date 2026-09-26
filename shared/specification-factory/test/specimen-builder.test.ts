@@ -1,11 +1,13 @@
 import { describe, it } from "node:test";
-import assert from "node:assert/strict";
+import { strict as assert } from "node:assert/strict";
 
 import {
   BadgeVariant,
   BaseUiAction,
   BaseUiElement,
-  booleanBadge,
+  boolean,
+  BooleanElementClass,
+  BooleanRepresentation,
   buttonAction,
   ButtonActionElementClass,
   ButtonVariant,
@@ -13,20 +15,24 @@ import {
   color,
   createUiCard,
   createUiContainer,
+  dimensions,
   divider,
   DividerStyle,
   EnvelopClass,
   externalLinkAction,
   flowing,
   html,
+  isBooleanElement,
   isButtonActionElement,
   isColourElement,
+  isDimensionsElement,
   isEnvelop,
   isFlowingElement,
   isJsonElement,
   isLabelValueElement,
   isMultiSlotElement,
-  isStringShortElement,
+  isStringElement,
+  isStringsElement,
   isTableElement,
   isUiAction,
   isUiCard,
@@ -43,12 +49,15 @@ import {
   parseUiContainer,
   repeatingGroup,
   repeatingGroupEntry,
+  Separator,
   Shape,
   Size,
   slot,
-  stringShort,
-  StringShortElementClass,
-  StringShortRepresentation,
+  string,
+  StringElementClass,
+  StringRepresentation,
+  strings,
+  StringsElementClass,
   table,
   tableColumn,
   TableColumnAlign,
@@ -78,8 +87,8 @@ describe("TypeScript Card & Visual DSL Builder", () =>
         color("#4A5568", { shape: Shape.square, size: Size.small, showText: false }),
         color("#CBD5E0", { shape: Shape.square, size: Size.small, showText: false })
       ]))
-      .addLabelValue("Primary Hue", stringShort("Slate", {
-        representation: StringShortRepresentation.chip,
+      .addLabelValue("Primary Hue", string("Slate", {
+        representation: StringRepresentation.chip,
         modifiers: { weight: TextWeight.heavy }
       }))
       .addLabelValue("Confidence", numberMeter(92, { minimum: 0, maximum: 100, unit: "%" }))
@@ -128,17 +137,21 @@ describe("TypeScript Card & Visual DSL Builder", () =>
       {
         description: "EXIF and camera properties",
         elements: [
-          labelValue("Camera Model", stringShort("Sony Alpha 7 IV", { modifiers: { copyable: true } })),
-          labelValue("Shutter Speed", stringShort("1/250s")),
-          labelValue("Aperture", stringShort("f/2.8")),
+          labelValue("Camera Model", string("Sony Alpha 7 IV", { modifiers: { copyable: true } })),
+          labelValue("Shutter Speed", string("1/250s")),
+          labelValue("Aperture", string("f/2.8")),
           labelValue("ISO Rating", numberUnbounded(400, { unit: "ISO" })),
           labelValue("Capture Time", timestamp(Date.parse("2026-08-31T14:30:00Z"), { format: TimestampFormat.datetime })),
           collapsibleGroup(
             "Detailed EXIF",
             [
-              labelValue("Focal Length", stringShort("35mm")),
-              labelValue("Metering Mode", stringShort("Multi-segment")),
-              labelValue("Flash Fired", booleanBadge(false, { falseLabel: "No Flash", variant: BadgeVariant.neutral }))
+              labelValue("Focal Length", string("35mm")),
+              labelValue("Metering Mode", string("Multi-segment")),
+              labelValue("Flash Fired", boolean(false, {
+                representation: BooleanRepresentation.badge,
+                falseLabel: "No Flash",
+                variant: BadgeVariant.neutral
+              }))
             ],
             { summary: "3 extra fields", defaultExpanded: false }
           ),
@@ -162,8 +175,8 @@ describe("TypeScript Card & Visual DSL Builder", () =>
   {
     const tableElement = table(
       [
-        tableRow([ stringShort("Resolution"), stringShort("3840 x 2160") ]),
-        tableRow([ stringShort("Color Space"), stringShort("sRGB") ])
+        tableRow([ string("Resolution"), string("3840 x 2160") ]),
+        tableRow([ string("Color Space"), string("sRGB") ])
       ],
       {
         columns: [
@@ -191,10 +204,9 @@ describe("TypeScript Card & Visual DSL Builder", () =>
 
     const multiSlotElement = multiSlot(
       [
-        slot(stringShort("Slot 1"), { width: 33 }),
-        slot(stringShort("Slot 2"), { width: 67 })
-      ],
-      { proportions: "1/3 + 2/3" }
+        slot(string("Slot 1"), { width: 33 }),
+        slot(string("Slot 2"), { width: 67 })
+      ]
     );
 
     assert.ok(isMultiSlotElement(multiSlotElement));
@@ -202,15 +214,14 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.equal(multiSlotElement.slots.length, 2);
     assert.equal(multiSlotElement.slots[0].width, 33);
     assert.equal(multiSlotElement.slots[1].width, 67);
-    assert.equal(multiSlotElement.proportions, "1/3 + 2/3");
   });
 
   it("should build repeating group elements", () =>
   {
     const repeatingGroupElement = repeatingGroup(
       [
-        repeatingGroupEntry("Layer 1", { value: stringShort("Background") }),
-        repeatingGroupEntry("Layer 2", { value: stringShort("Text Overlay") })
+        repeatingGroupEntry("Layer 1", { value: string("Background") }),
+        repeatingGroupEntry("Layer 2", { value: string("Text Overlay") })
       ],
       { title: "Composition Layers" }
     );
@@ -246,10 +257,15 @@ describe("TypeScript Card & Visual DSL Builder", () =>
 
   it("should validate all type guards correctly", () =>
   {
-    const shortElement = stringShort("Test");
+    const shortElement = string("Test");
     assert.ok(isUiElement(shortElement));
-    assert.ok(isStringShortElement(shortElement));
+    assert.ok(isStringElement(shortElement));
     assert.equal(isTableElement(shortElement), false);
+
+    const boolElement = boolean(true);
+    assert.ok(isUiElement(boolElement));
+    assert.ok(isBooleanElement(boolElement));
+    assert.equal(isBooleanElement(shortElement), false);
 
     const xmlElement = xml("<data/>");
     assert.ok(isXmlElement(xmlElement));
@@ -279,7 +295,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
   it("should serialize cleanly to JSON string matching schema shape", () =>
   {
     const card = UiCard.builder("JSON Test")
-      .addLabelValue("Key", stringShort("Value"))
+      .addLabelValue("Key", string("Value"))
       .build();
 
     const jsonString = JSON.stringify(card);
@@ -289,20 +305,33 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.equal(parsed.title, "JSON Test");
     assert.equal(parsed.elements[0].type, "label-value");
     assert.equal(parsed.elements[0].label, "Key");
-    assert.equal(parsed.elements[0].value.type, "string-short");
+    assert.equal(parsed.elements[0].value.type, "string");
     assert.equal(parsed.elements[0].value.value, "Value");
   });
 
   it("should support instantiated classes implementing element interfaces", () =>
   {
-    const shortClass = new StringShortElementClass("Class Value", { representation: StringShortRepresentation.chip });
+    const shortClass = new StringElementClass("Class Value", { representation: StringRepresentation.chip });
     assert.ok(shortClass instanceof BaseUiElement);
-    assert.ok(shortClass instanceof StringShortElementClass);
-    assert.equal(shortClass.type, "string-short");
+    assert.ok(shortClass instanceof StringElementClass);
+    assert.equal(shortClass.type, "string");
     assert.equal(shortClass.value, "Class Value");
-    assert.equal(shortClass.representation, StringShortRepresentation.chip);
+    assert.equal(shortClass.representation, StringRepresentation.chip);
     assert.ok(isUiElement(shortClass));
-    assert.ok(isStringShortElement(shortClass));
+    assert.ok(isStringElement(shortClass));
+
+    const boolClass = new BooleanElementClass(true, {
+      representation: BooleanRepresentation.badge,
+      trueLabel: "Active"
+    });
+    assert.ok(boolClass instanceof BaseUiElement);
+    assert.ok(boolClass instanceof BooleanElementClass);
+    assert.equal(boolClass.type, "boolean");
+    assert.equal(boolClass.value, true);
+    assert.equal(boolClass.representation, BooleanRepresentation.badge);
+    assert.equal(boolClass.trueLabel, "Active");
+    assert.ok(isUiElement(boolClass));
+    assert.ok(isBooleanElement(boolClass));
 
     const buttonClass = new ButtonActionElementClass("export", "Export", { variant: ButtonVariant.primary });
     assert.ok(buttonClass instanceof BaseUiAction);
@@ -314,7 +343,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.ok(isButtonActionElement(buttonClass));
 
     const jsonString = JSON.stringify(shortClass.toJSON());
-    assert.equal(jsonString, "{\"type\":\"string-short\",\"value\":\"Class Value\",\"representation\":\"chip\"}");
+    assert.equal(jsonString, "{\"type\":\"string\",\"value\":\"Class Value\",\"representation\":\"chip\"}");
 
     const envelopClass = new EnvelopClass();
     assert.ok(envelopClass instanceof ViewKitNode);
@@ -355,16 +384,16 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.equal(emptyCardClass.title, undefined);
     assert.equal(emptyCardClass.actions, undefined);
 
-    const emptyShortClass = new (StringShortElementClass as new () => StringShortElementClass)();
-    assert.ok(emptyShortClass instanceof StringShortElementClass);
-    assert.equal(emptyShortClass.type, "string-short");
-    assert.equal(emptyShortClass.representation, StringShortRepresentation.plain);
+    const emptyShortClass = new (StringElementClass as new () => StringElementClass)();
+    assert.ok(emptyShortClass instanceof StringElementClass);
+    assert.equal(emptyShortClass.type, "string");
+    assert.equal(emptyShortClass.representation, StringRepresentation.plain);
   });
 
   it("should construct UiContainer using UiContainer fluent builder and functional helper", () =>
   {
     const container = UiContainer.builder()
-      .addLabelValue("Key", stringShort("Value"))
+      .addLabelValue("Key", string("Value"))
       .build();
 
     assert.ok(container instanceof UiContainerClass);
@@ -374,7 +403,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.equal(container.elements[0].type, "label-value");
 
     const containerHelper = createUiContainer({
-      elements: [ labelValue("Direct", stringShort("Text")) ]
+      elements: [ labelValue("Direct", string("Text")) ]
     });
     assert.ok(containerHelper instanceof UiContainerClass);
     assert.ok(containerHelper instanceof ViewKitNode);
@@ -386,8 +415,8 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.equal(jsonString, JSON.stringify(container.toJSON()));
     assert.ok(!jsonString.includes("\n"));
 
-    const builderJsonString = UiContainer.builder().addLabelValue("Key", stringShort("Value")).toString();
-    assert.equal(builderJsonString, UiContainer.builder().addLabelValue("Key", stringShort("Value")).build().toString());
+    const builderJsonString = UiContainer.builder().addLabelValue("Key", string("Value")).toString();
+    assert.equal(builderJsonString, UiContainer.builder().addLabelValue("Key", string("Value")).build().toString());
     const parsedBuilder = JSON.parse(builderJsonString);
     assert.equal(parsedBuilder.schemaVersion, "1.0");
     assert.equal(parsedBuilder.elements.length, 1);
@@ -406,7 +435,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     assert.equal(parsedContainerObject.elements[0].type, "label-value");
 
     // Test UiCard.parse() and parseUiCard()
-    const card = UiCard.builder("Test Title").addLabelValue("A", stringShort("B")).build();
+    const card = UiCard.builder("Test Title").addLabelValue("A", string("B")).build();
     const cardJson = card.toString();
     const parsedCard = UiCard.parse(cardJson);
     assert.ok(parsedCard instanceof UiCardClass);
@@ -439,8 +468,8 @@ describe("TypeScript Card & Visual DSL Builder", () =>
           rows: [
             {
               cells: [
-                { type: "string-short", value: "Valid cell" },
-                { type: "string-short" }
+                { type: "string", value: "Valid cell" },
+                { type: "string" }
               ]
             }
           ]
@@ -472,10 +501,10 @@ describe("TypeScript Card & Visual DSL Builder", () =>
   {
     const card = UiCard.builder("Flowing Tags")
       .addFlowing([
-        stringShort("Tag 1"),
-        stringShort("Tag 2"),
-        stringShort("Tag 3")
-      ])
+        string("Tag 1"),
+        string("Tag 2"),
+        string("Tag 3")
+      ], { separator: Separator.bar })
       .build();
 
     assert.equal(card.elements.length, 1);
@@ -486,632 +515,840 @@ describe("TypeScript Card & Visual DSL Builder", () =>
     if (isFlowingElement(flowingContainer))
     {
       assert.equal(flowingContainer.type, "flowing");
+      assert.equal(flowingContainer.separator, Separator.bar);
       assert.equal(flowingContainer.elements.length, 3);
-      assert.equal(flowingContainer.elements[0].type, "string-short");
+      assert.equal(flowingContainer.elements[0].type, "string");
     }
 
     const standaloneFlow = flowing([
-      stringShort("Alpha"),
-      stringShort("Beta")
-    ]);
+      string("Alpha"),
+      string("Beta")
+    ], { separator: Separator.comma });
     assert.equal(standaloneFlow.type, "flowing");
+    assert.equal(standaloneFlow.separator, Separator.comma);
     assert.ok(isFlowingElement(standaloneFlow));
+
+    const spacedFlow = flowing([
+      string("One"),
+      string("Two")
+    ], { separator: Separator.space });
+    assert.equal(spacedFlow.separator, Separator.space);
+  });
+
+  it("should construct strings element and validate via type guard", () =>
+  {
+    const tagsElement = strings([ "portrait", "cinematic", "8k" ], {
+      representation: StringRepresentation.chip,
+      separator: Separator.dot,
+      modifiers: { copyable: true }
+    });
+    assert.ok(isUiElement(tagsElement));
+    assert.ok(isStringsElement(tagsElement));
+    assert.equal(tagsElement.type, "strings");
+    assert.deepEqual(tagsElement.values, [ "portrait", "cinematic", "8k" ]);
+    assert.equal(tagsElement.representation, StringRepresentation.chip);
+    assert.equal(tagsElement.separator, Separator.dot);
+    assert.equal(tagsElement.modifiers?.copyable, true);
+
+    const card = UiCard.builder("Tag Cloud")
+      .addStrings([ "anime", "masterpiece" ], {
+        representation: StringRepresentation.plain,
+        separator: Separator.comma
+      })
+      .build();
+    assert.equal(card.elements.length, 1);
+    const stringsInCard = card.elements[0];
+    assert.ok(isStringsElement(stringsInCard));
+
+    const stringsClass = new StringsElementClass([ "alpha", "beta" ], { separator: Separator.space });
+    assert.ok(stringsClass instanceof StringsElementClass);
+    assert.equal(stringsClass.type, "strings");
+    assert.equal(stringsClass.separator, Separator.space);
+    assert.deepEqual(stringsClass.values, [ "alpha", "beta" ]);
+  });
+
+  it("should construct dimensions element and validate via type guard", () =>
+  {
+    const dims = dimensions(3840, 2160, { modifiers: { copyable: true } });
+    assert.ok(isUiElement(dims));
+    assert.ok(isDimensionsElement(dims));
+    assert.equal(dims.type, "dimensions");
+    assert.equal(dims.width, 3840);
+    assert.equal(dims.height, 2160);
+    assert.equal(dims.modifiers?.copyable, true);
+
+    const card = UiCard.builder("Image Dimensions")
+      .addDimensions(1920, 1080)
+      .build();
+    assert.equal(card.elements.length, 1);
+    const element = card.elements[0];
+    assert.ok(isDimensionsElement(element));
+    assert.equal(element.width, 1920);
+    assert.equal(element.height, 1080);
   });
 
   it("should be parseable", () =>
   {
     const json = {
-      "elements": [ {
-        "type": "table",
-        "rows": [ {
-          "cells": [ {
-            "type": "string-short",
-            "value": "Prompt",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "string-long",
-            "value": "red substance raising to mid air forming three texts : \"LoRa\", \"ControlNet\", \"Negative Prompting\".\n\nHighly detailed with natural textures and intricate patterns, showcasing realistic lighting and deep shadows to give the scene a sense of depth. The focus should be clearly defined, making every object appear sharply focused with pin-sharp details.",
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        }, {
-          "cells": [ {
-            "type": "string-short",
-            "value": "Negative Prompt",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "string-long",
-            "value": "Horror,2d ,anime ,drawing",
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        }, {
-          "cells": [ {
-            "type": "string-short",
-            "value": "Model",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "string-short",
-            "value": "flux1-dev.sft",
-            "representation": "plain",
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        }, {
-          "cells": [ {
-            "type": "string-short",
-            "value": "Sampler",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "string-short",
-            "value": "euler (dpmpp_2m)",
-            "representation": "plain",
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        }, {
-          "cells": [ {
-            "type": "string-short",
-            "value": "Steps",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "number-unbounded",
-            "value": 1.234,
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        }, {
-          "cells": [ {
-            "type": "string-short",
-            "value": "CFG Scale",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "number-unbounded",
-            "value": 20,
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        }, {
-          "cells": [ {
-            "type": "string-short",
-            "value": "Seed",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "identifier",
-            "value": "euler",
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        }, {
-          "cells": [ {
-            "type": "string-short",
-            "value": "Dimensions",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "string-short",
-            "value": "NaN × NaN",
-            "representation": "plain",
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        }, {
-          "cells": [ {
-            "type": "string-short",
-            "value": "VAE",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "string-short",
-            "value": "ae.sft",
-            "representation": "plain",
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        }, {
-          "cells": [ {
-            "type": "string-short",
-            "value": "CLIP",
-            "representation": "plain",
-            "modifiers": {
-              "weight": "heavy",
-              "intensity": "low"
-            }
-          }, {
-            "type": "string-short",
-            "value": "t5xxl_fp16.safetensors, clip_l.safetensors",
-            "representation": "plain",
-            "modifiers": {
-              "copyable": true
-            }
-          } ]
-        } ],
-        "isStriped": false,
-        "withColumnSeparators": false,
-        "withRowSeparators": true
-      }, {
-        "type": "collapsible-group",
-        "title": "LoRAs",
-        "elements": [ {
+      "elements": [
+        {
           "type": "table",
-          "rows": [ {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Flux\\flux_realism_lora.safetensors",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "copyable": true
-              }
+          "rows": [
+            {
+              "cells": [
+                {
+                  "type": "string",
+                  "value": "Prompt",
+                  "representation": "plain",
+                  "modifiers": {
+                    "weight": "heavy",
+                    "intensity": "low"
+                  }
+                }, {
+                  "type": "string",
+                  "value": "(masterpiece,best quality, ultra realistic,32k,RAW photo,detail skin, 8k uhd, dslr,high quality, film grain:1.5),\n short hair , __*/haircolor__ hair,lady,  brown eyes, __*/colors__ __*/Wearcolors__ gradient background, simple background:1.3)",
+                  "representation": "plain",
+                  "modifiers": {
+                    "copyable": true
+                  }
+                }
+              ]
             }, {
-              "type": "string-short",
-              "value": "Model: 0.9500000000000001",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          } ],
-          "isStriped": false,
-          "withColumnSeparators": false,
-          "withRowSeparators": true
-        } ],
-        "summary": "1 LoRA",
-        "defaultExpanded": false
-      }, {
-        "type": "collapsible-group",
-        "title": "ControlNet & Adapters",
-        "elements": [ {
-          "type": "table",
-          "rows": [ {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Flux\\controlnet.safetensors",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "copyable": true
-              }
+              "cells": [
+                {
+                  "type": "string",
+                  "value": "Model",
+                  "representation": "plain",
+                  "modifiers": {
+                    "weight": "heavy",
+                    "intensity": "low"
+                  }
+                }, {
+                  "type": "identifier",
+                  "value": "Stable-diffusion\\XL\\Kitchen_Sink_Refiner_00001_.safetensors",
+                  "modifiers": {
+                    "copyable": true
+                  }
+                }
+              ]
             }, {
-              "type": "string-short",
-              "value": "Active",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          } ],
-          "isStriped": false,
-          "withColumnSeparators": false,
-          "withRowSeparators": true
-        } ],
-        "summary": "1 adapter",
-        "defaultExpanded": false
-      }, {
-        "type": "collapsible-group",
-        "title": "Upscaling & Refinement",
-        "elements": [ {
-          "type": "table",
-          "rows": [ {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Upscale Model",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
+              "cells": [
+                {
+                  "type": "string",
+                  "value": "Sampler",
+                  "representation": "plain",
+                  "modifiers": {
+                    "weight": "heavy",
+                    "intensity": "low"
+                  }
+                }, {
+                  "type": "string",
+                  "value": "ddim (ddim_uniform)",
+                  "representation": "plain",
+                  "modifiers": {
+                    "copyable": true
+                  }
+                }
+              ]
             }, {
-              "type": "string-short",
-              "value": "4xFFHQDAT.pth",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          } ],
-          "isStriped": false,
-          "withColumnSeparators": false,
-          "withRowSeparators": true
-        } ],
-        "summary": "1 property",
-        "defaultExpanded": false
-      }, {
-        "type": "collapsible-group",
-        "title": "Input Images",
-        "elements": [ {
-          "type": "table",
-          "rows": [ {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Image 1",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
+              "cells": [
+                {
+                  "type": "string",
+                  "value": "Steps",
+                  "representation": "plain",
+                  "modifiers": {
+                    "weight": "heavy",
+                    "intensity": "low"
+                  }
+                }, {
+                  "type": "number-unbounded",
+                  "value": 20,
+                  "modifiers": {
+                    "copyable": true
+                  }
+                }
+              ]
             }, {
-              "type": "string-short",
-              "value": "example.png",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Image 2",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
+              "cells": [
+                {
+                  "type": "string",
+                  "value": "CFG Scale",
+                  "representation": "plain",
+                  "modifiers": {
+                    "weight": "heavy",
+                    "intensity": "low"
+                  }
+                }, {
+                  "type": "number-unbounded",
+                  "value": 7,
+                  "modifiers": {
+                    "copyable": true
+                  }
+                }
+              ]
             }, {
-              "type": "string-short",
-              "value": "clipspace/clipspace-mask-9414958.699999988.png [input]",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Image 3",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
+              "cells": [
+                {
+                  "type": "string",
+                  "value": "Seed",
+                  "representation": "plain",
+                  "modifiers": {
+                    "weight": "heavy",
+                    "intensity": "low"
+                  }
+                }, {
+                  "type": "identifier",
+                  "value": "1009485416280513",
+                  "modifiers": {
+                    "copyable": true
+                  }
+                }
+              ]
             }, {
-              "type": "string-short",
-              "value": "pasted/image (81).png",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Image 4",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
+              "cells": [
+                {
+                  "type": "string",
+                  "value": "Dimensions",
+                  "representation": "plain",
+                  "modifiers": {
+                    "weight": "heavy",
+                    "intensity": "low"
+                  }
+                }, {
+                  "type": "flowing",
+                  "elements": [
+                    {
+                      "type": "dimensions",
+                      "width": 1536,
+                      "height": 768,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "ratio",
+                      "value": 2
+                    }
+                  ]
+                }
+              ]
             }, {
-              "type": "string-short",
-              "value": "pasted/image (82).png",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          } ],
-          "isStriped": false,
-          "withColumnSeparators": false,
-          "withRowSeparators": true
-        } ],
-        "summary": "4 images",
-        "defaultExpanded": false
-      }, {
-        "type": "collapsible-group",
-        "title": "Workflow Topology",
-        "elements": [ {
-          "type": "table",
-          "rows": [ {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Total Nodes",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
+              "cells": [
+                {
+                  "type": "string",
+                  "value": "Denoise",
+                  "representation": "plain",
+                  "modifiers": {
+                    "weight": "heavy",
+                    "intensity": "low"
+                  }
+                }, {
+                  "type": "number-unbounded",
+                  "value": 0.25,
+                  "modifiers": {
+                    "copyable": true
+                  }
+                }
+              ]
             }, {
-              "type": "number-unbounded",
-              "value": 99
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Active Nodes",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 64
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Bypassed Nodes",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 35
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Workflow Groups",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
-            }, {
-              "type": "string-short",
-              "value": "Model Loading : Unet | CLIP | | LoRA | ControlNet, Official implementation with a little tweak, Negative Prompting version from ComfyUI blog post (My interpretation), img to img or size picking, ControlNet Preprocessing, VisionLLM for detail caption | LLaVa 13B w/ Ollama | Florence2, Outputs, Simple inpaint, Upscale(Hi-resFix) with Tiled Diffusion",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "Custom Packs",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy",
-                "intensity": "low"
-              }
-            }, {
-              "type": "string-short",
-              "value": "rgthree-comfy, ComfyUI-Impact-Pack",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          } ],
-          "isStriped": false,
-          "withColumnSeparators": false,
-          "withRowSeparators": true
-        }, {
-          "type": "table",
-          "rows": [ {
-            "cells": [ {
-              "type": "string-short",
-              "value": "other",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 53
-            }, {
-              "type": "string-short",
-              "value": "VAELoader, VAEEncode, Anything Everywhere?, VAEDecode, Seed (rgthree), PlaySound|pysssss, FluxGuidance, PixelKSampleHookCombine, CfgScheduleHookProvider, StepsScheduleHookProvider, DenoiseScheduleHookProvider, ImpactSwitch, ShowText|pysssss, Anything Everywhere3, RandomNoise //Inspire, BasicScheduler, BasicGuider, String Literal, CannyEdgePreprocessor, Anything Everywhere, DynamicThresholdingFull, Get resolution [Crystools], OllamaVision, Florence2Run, PixelResolutionCalculator",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "image",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 16
-            }, {
-              "type": "string-short",
-              "value": "EmptyImage, PreviewImage, Image Comparer (rgthree), LoadImage, ImageResize+, ImageCrop+, ImageScaleToTotalPixels",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "conditioning",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 11
-            }, {
-              "type": "string-short",
-              "value": "DualCLIPLoader, CLIPTextEncode, InpaintModelConditioning",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "model",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 5
-            }, {
-              "type": "string-short",
-              "value": "Florence2ModelLoader, UNETLoader, ModelSamplingFlux, TiledDiffusion",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "sampling",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 4
-            }, {
-              "type": "string-short",
-              "value": "SamplerCustomAdvanced, KSamplerSelect, KSamplerAdvanced, KSamplerAdvanced //Inspire",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "controlnet",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 3
-            }, {
-              "type": "string-short",
-              "value": "ControlNetApplyAdvanced, ControlNetLoader, ControlNetApply",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "upscaling",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 3
-            }, {
-              "type": "string-short",
-              "value": "IterativeImageUpscale, PixelKSampleUpscalerProvider, UpscaleModelLoader",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "latent",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 3
-            }, {
-              "type": "string-short",
-              "value": "EmptyLatentImage, LatentSizeToPixelSize, SDXLEmptyLatentSizePicker+",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          }, {
-            "cells": [ {
-              "type": "string-short",
-              "value": "lora",
-              "representation": "plain",
-              "modifiers": {
-                "weight": "heavy"
-              }
-            }, {
-              "type": "number-unbounded",
-              "value": 1
-            }, {
-              "type": "string-short",
-              "value": "LoraLoaderModelOnly",
-              "representation": "plain",
-              "modifiers": {
-                "copyable": true
-              }
-            } ]
-          } ],
+              "cells": [
+                {
+                  "type": "string",
+                  "value": "VAE",
+                  "representation": "plain",
+                  "modifiers": {
+                    "weight": "heavy",
+                    "intensity": "low"
+                  }
+                }, {
+                  "type": "identifier",
+                  "value": "VAE\\sdxl_vae.safetensors",
+                  "modifiers": {
+                    "copyable": true
+                  }
+                }
+              ]
+            }
+          ],
           "isStriped": false,
           "withColumnSeparators": false,
           "withRowSeparators": true,
-          "columns": [ {
-            "header": "Category",
-            "width": 25
-          }, {
-            "header": "Count",
-            "width": 15
-          }, {
-            "header": "Node Types",
-            "width": 60
-          } ]
-        } ],
-        "summary": "99 nodes (64 active)",
-        "defaultExpanded": false
-      } ],
+          "columns": [
+            {
+              "align": "left",
+              "width": 25,
+              "widthMode": "maximum"
+            }, {
+              "align": "left",
+              "widthMode": "fixed"
+            }
+          ]
+        }, {
+          "type": "collapsible-group",
+          "title": "LoRAs",
+          "elements": [
+            {
+              "type": "table",
+              "rows": [
+                {
+                  "cells": [
+                    {
+                      "type": "identifier",
+                      "value": "Lora\\XL\\add-detail-xl.safetensors",
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 1,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 0.99,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "identifier",
+                      "value": "Lora\\XL\\JuggerCineXL2.safetensors",
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 1,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 1,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "identifier",
+                      "value": "Lora\\XL\\Kitchen_Sink_Lora.safetensors",
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 1,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 1,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "identifier",
+                      "value": "Lora\\XL\\SDXLHighDetail_v5-000004.safetensors",
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 1,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 1,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "identifier",
+                      "value": "On",
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": null,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 1,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "identifier",
+                      "value": "Off",
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": null,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 1,
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }
+                  ]
+                }
+              ],
+              "isStriped": false,
+              "withColumnSeparators": false,
+              "withRowSeparators": true,
+              "columns": [
+                {
+                  "header": "Name",
+                  "align": "left",
+                  "width": 50,
+                  "widthMode": "fixed"
+                }, {
+                  "header": "Model Strength",
+                  "align": "left",
+                  "width": 25,
+                  "widthMode": "fixed"
+                }, {
+                  "header": "CLIP Strength",
+                  "align": "left",
+                  "width": 25,
+                  "widthMode": "fixed"
+                }
+              ]
+            }
+          ],
+          "summary": "6 LoRAs",
+          "defaultExpanded": false
+        }, {
+          "type": "collapsible-group",
+          "title": "Upscaling & Refinement",
+          "elements": [
+            {
+              "type": "table",
+              "rows": [
+                {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "Upscale Model",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "identifier",
+                      "value": "ESRGAN\\4x_face_focus_275k.pth",
+                      "modifiers": {
+                        "copyable": true
+                      }
+                    }
+                  ]
+                }
+              ],
+              "isStriped": false,
+              "withColumnSeparators": false,
+              "withRowSeparators": true,
+              "columns": [
+                {
+                  "align": "left",
+                  "width": 25,
+                  "widthMode": "maximum"
+                }, {
+                  "align": "left",
+                  "widthMode": "fixed"
+                }
+              ]
+            }
+          ],
+          "summary": "1 property",
+          "defaultExpanded": false
+        }, {
+          "type": "collapsible-group",
+          "title": "Workflow Topology",
+          "elements": [
+            {
+              "type": "table",
+              "rows": [
+                {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "Total Nodes",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 110
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "Active Nodes",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 98
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "Bypassed Nodes",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 12
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "Workflow Groups",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "strings",
+                      "values": [ "Group" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "Custom Packs",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "strings",
+                      "values": [ "ComfyUI-Impact-Pack", "Comfyroll Studio" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }
+              ],
+              "isStriped": false,
+              "withColumnSeparators": false,
+              "withRowSeparators": true,
+              "columns": [
+                {
+                  "align": "left",
+                  "width": 25,
+                  "widthMode": "maximum"
+                }, {
+                  "align": "left",
+                  "widthMode": "fixed"
+                }
+              ]
+            }, {
+              "type": "table",
+              "rows": [
+                {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "other",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 34
+                    }, {
+                      "type": "strings",
+                      "values": [
+                        "Text Multiline", "VAEDecodeTiled", "StringFunction|pysssss", "SAMLoader", "DPRandomGenerator",
+                        "VAEDecode", "UltralyticsDetectorProvider", "ImpactWildcardProcessor", "VAEEncode", "ToBasicPipe",
+                        "VAEEncodeForInpaint", "PreviewBridge", "VAELoader", "DPFeelingLucky"
+                      ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "image",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 15
+                    }, {
+                      "type": "strings",
+                      "values": [ "ImageScaleBy", "PreviewImage", "SaveImage", "ImageBlend" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "conditioning",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 14
+                    }, {
+                      "type": "strings",
+                      "values": [
+                        "CLIPTextEncode", "DPMagicPrompt", "OneButtonPrompt", "SDXLPromptStylerbyArtist",
+                        "SDXLPromptStylerHorror", "SDXLPromptStylerMisc", "SDXLPromptStylerbyFantasySetting",
+                        "SDXLPromptStylerbyMythicalCreature"
+                      ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "utils",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 11
+                    }, {
+                      "type": "strings",
+                      "values": [ "Reroute", "Note", "PrimitiveNode" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "face",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 10
+                    }, {
+                      "type": "strings",
+                      "values": [
+                        "BasicPipeToDetailerPipe", "FromDetailerPipe", "FaceDetailerPipe", "ToDetailerPipe", "FaceDetailer"
+                      ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "sampling",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 6
+                    }, {
+                      "type": "strings",
+                      "values": [ "KSampler", "KSamplerAdvanced", "KSampler Adv. (Efficient)" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "latent",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 6
+                    }, {
+                      "type": "strings",
+                      "values": [ "EmptyLatentImage" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "upscaling",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 4
+                    }, {
+                      "type": "strings",
+                      "values": [ "ImageUpscaleWithModel", "UpscaleModelLoader" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "lora",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 4
+                    }, {
+                      "type": "strings",
+                      "values": [ "CR Load LoRA" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "mask",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 3
+                    }, {
+                      "type": "strings",
+                      "values": [ "MaskToImage" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }, {
+                  "cells": [
+                    {
+                      "type": "string",
+                      "value": "model",
+                      "representation": "plain",
+                      "modifiers": {
+                        "weight": "heavy",
+                        "intensity": "low"
+                      }
+                    }, {
+                      "type": "number-unbounded",
+                      "value": 3
+                    }, {
+                      "type": "strings",
+                      "values": [ "CheckpointLoaderSimple" ],
+                      "representation": "plain",
+                      "separator": "dot"
+                    }
+                  ]
+                }
+              ],
+              "isStriped": false,
+              "withColumnSeparators": false,
+              "withRowSeparators": true,
+              "columns": [
+                {
+                  "header": "Category",
+                  "width": 25
+                }, {
+                  "header": "Count",
+                  "width": 15
+                }, {
+                  "header": "Node Types",
+                  "width": 60
+                }
+              ]
+            }
+          ],
+          "summary": "110 nodes (98 active)",
+          "defaultExpanded": false
+        }
+      ],
       "schemaVersion": "1.0"
     };
     const uiContainer = UiContainer.parse(json, true);

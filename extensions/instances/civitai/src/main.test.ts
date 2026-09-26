@@ -118,7 +118,7 @@ test("toUiContainer creates expected primary table and collapsible details", () 
     value: string;
     modifiers?: { copyable?: boolean; };
   };
-  assert.equal(dimensionTextElement.type, "string-short");
+  assert.equal(dimensionTextElement.type, "string");
   assert.equal(dimensionTextElement.value, "1024x1024");
   assert.equal(dimensionTextElement.modifiers?.copyable, true);
   const dimensionRatioElement = dimensionValueCell.elements[1] as { type: string; value: number; };
@@ -452,7 +452,7 @@ test("toUiContainer shifts width and height into Dimension entry with ratio and 
     value: string;
     modifiers?: { copyable?: boolean; };
   };
-  assert.equal(textElement.type, "string-short");
+  assert.equal(textElement.type, "string");
   assert.equal(textElement.value, "1024x768");
   assert.equal(textElement.modifiers?.copyable, true);
 

@@ -1,8 +1,10 @@
 import {
   createUiContainer,
-  stringLong,
-  stringShort,
+  string,
   table,
+  tableColumn,
+  TableColumnAlign,
+  TableColumnWidthMode,
   tableRow,
   type TableRow,
   TextIntensity,
@@ -173,7 +175,7 @@ export class Automatic1111UserComment
       {
         if (instruction.value.length > 0)
         {
-          element = stringLong(instruction.value, copyableOptions);
+          element = string(instruction.value, copyableOptions);
         }
       }
       else
@@ -183,7 +185,7 @@ export class Automatic1111UserComment
           const values: Array<Record<string, any>> = instruction.value;
           if (values.length > 0)
           {
-            const tables = values.map(value => table(Object.entries(value).map(([ key, value ]) => tableRow([ stringShort(key), stringShort(value.toString()) ]))));
+            const tables = values.map(value => table(Object.entries(value).map(([ key, value ]) => tableRow([ string(key), string(value.toString()) ]))));
             element = table(tables.map(table => tableRow([ table ])));
           }
         }
@@ -192,16 +194,27 @@ export class Automatic1111UserComment
           const value: Record<string, any> = instruction.value;
           if (Object.keys(value).length > 0)
           {
-            element = table(Object.entries(value).map(([ key, value ]) => tableRow([ stringShort(key), stringShort(value.toString()) ])));
+            element = table(Object.entries(value).map(([ key, value ]) => tableRow([ string(key), string(value.toString()) ])));
           }
         }
       }
       if (element !== undefined)
       {
-        rows.push(tableRow([ stringShort(instruction.key, firstColumnOptions), element ]));
+        rows.push(tableRow([ string(instruction.key, firstColumnOptions), element ]));
       }
     }
-    elements.push(table(rows, { withRowSeparators: true }));
+    elements.push(table(rows, {
+      withRowSeparators: true,
+      columns:
+        [
+          tableColumn({
+            align: TableColumnAlign.left,
+            width: 25,
+            widthMode: TableColumnWidthMode.maximum
+          }),
+          tableColumn({ align: TableColumnAlign.left })
+        ]
+    }));
     return createUiContainer({ elements });
   }
 

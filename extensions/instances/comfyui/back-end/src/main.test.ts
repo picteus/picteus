@@ -1,10 +1,13 @@
 import { test } from "node:test";
-import assert from "node:assert/strict";
+import { strict as assert } from "node:assert/strict";
 
 import {
   type CollapsibleGroupElement,
+  type DimensionsElement,
+  type FlowingElement,
   ImageFeatureFormat,
   ImageFeatureType,
+  type RatioElement,
   type TableElement,
   type TableRow,
   type UiElement
@@ -261,9 +264,19 @@ test("ComfyUIAnalyzer extracts full generation recipe into ViewKit UiContainer",
   assert.equal((seedRow?.cells[1] as { value: string }).value, "849204128");
 
   const dimensionsRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
-    value: string
+    value: string;
   }).value === "Dimensions");
-  assert.ok((dimensionsRow?.cells[1] as { value: string }).value.includes("1344 × 768"));
+  assert.ok(dimensionsRow);
+  const dimensionsCell = dimensionsRow.cells[1] as FlowingElement;
+  assert.equal(dimensionsCell.type, "flowing");
+  assert.equal(dimensionsCell.elements.length, 2);
+  const dimensionsItem = dimensionsCell.elements[0] as DimensionsElement;
+  assert.equal(dimensionsItem.type, "dimensions");
+  assert.equal(dimensionsItem.width, 1344);
+  assert.equal(dimensionsItem.height, 768);
+  const dimensionsRatio = dimensionsCell.elements[1] as RatioElement;
+  assert.equal(dimensionsRatio.type, "ratio");
+  assert.equal(dimensionsRatio.value, 1344 / 768);
 
   // 2. Collapsible groups
   const collapsibleGroups = elements.filter((element: UiElement) => element.type === "collapsible-group") as CollapsibleGroupElement[];
@@ -280,15 +293,28 @@ test("ComfyUIAnalyzer extracts full generation recipe into ViewKit UiContainer",
   assert.equal(loraGroup?.summary, "1 LoRA");
   assert.equal(loraGroup?.elements.length, 1);
   const loraTable = loraGroup?.elements[0] as TableElement;
+  assert.ok(loraTable.columns);
+  assert.equal(loraTable.columns.length, 3);
+  assert.equal(loraTable.columns[0].header, "Name");
+  assert.equal(loraTable.columns[1].header, "Model Strength");
+  assert.equal(loraTable.columns[2].header, "CLIP Strength");
   assert.equal((loraTable.rows[0].cells[0] as { value: string }).value, "detail_slider_v1.safetensors");
-  assert.ok((loraTable.rows[0].cells[1] as { value: string }).value.includes("Model: 0.85"));
+  assert.equal((loraTable.rows[0].cells[1] as { value: number }).value, 0.85);
+  assert.equal((loraTable.rows[0].cells[2] as { value: number }).value, 0.8);
 
   // Verify ControlNet collapsible group
   const controlNetGroup = collapsibleGroups.find((group) => group.title === "ControlNet & Adapters");
   assert.equal(controlNetGroup?.summary, "1 adapter");
   const controlNetTable = controlNetGroup?.elements[0] as TableElement;
+  assert.equal(controlNetTable.columns.length, 4);
+  assert.equal(controlNetTable.columns[0].header, "Name");
+  assert.equal(controlNetTable.columns[1].header, "Strength");
+  assert.equal(controlNetTable.columns[2].header, "Start Percent");
+  assert.equal(controlNetTable.columns[3].header, "End Percent");
   assert.equal((controlNetTable.rows[0].cells[0] as { value: string }).value, "controlnet_depth_sdxl.safetensors");
-  assert.ok((controlNetTable.rows[0].cells[1] as { value: string }).value.includes("Strength: 0.75"));
+  assert.equal((controlNetTable.rows[0].cells[1] as { value: number }).value, 0.75);
+  assert.equal((controlNetTable.rows[0].cells[2] as { value: number }).value, 0);
+  assert.equal((controlNetTable.rows[0].cells[3] as { value: number }).value, 0.8);
 
   // Verify Upscaling collapsible group
   const upscaleGroup = collapsibleGroups.find((group) => group.title === "Upscaling & Refinement");
@@ -404,3 +430,323 @@ test("ComfyUIAnalyzer works with prompt-only input", () =>
   assert.ok(rowLabels.includes("Model"));
   assert.ok(rowLabels.includes("Sampler"));
 });
+
+test("ComfyUIAnalyzer resolves dimensions from linked PrimitiveNode inputs in prompt DAG", () =>
+{
+  const linkedDimensionsPrompt = {
+    "1": {
+      class_type: "PrimitiveNode",
+      inputs: {
+        value: 1280
+      }
+    },
+    "2": {
+      class_type: "PrimitiveNode",
+      inputs: {
+        value: 720
+      }
+    },
+    "3": {
+      class_type: "EmptyLatentImage",
+      inputs: {
+        width: [ "1", 0 ],
+        height: [ "2", 0 ],
+        batch_size: 1
+      }
+    },
+    "4": {
+      class_type: "KSampler",
+      inputs: {
+        latent_image: [ "3", 0 ],
+        steps: 20,
+        cfg: 7.0,
+        sampler_name: "euler",
+        scheduler: "normal",
+        denoise: 1.0
+      }
+    }
+  };
+
+  const analyzer = new ComfyUIAnalyzer(undefined, linkedDimensionsPrompt, {});
+  const uiContainer = analyzer.toUiContainer();
+  const primaryTable = uiContainer.elements[0] as TableElement;
+  const dimensionsRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "Dimensions");
+
+  assert.ok(dimensionsRow);
+  const dimensionsCell = dimensionsRow.cells[1] as FlowingElement;
+  assert.equal(dimensionsCell.type, "flowing");
+  const dimensionsItem = dimensionsCell.elements[0] as DimensionsElement;
+  assert.equal(dimensionsItem.type, "dimensions");
+  assert.equal(dimensionsItem.width, 1280);
+  assert.equal(dimensionsItem.height, 720);
+  const dimensionsRatio = dimensionsCell.elements[1] as RatioElement;
+  assert.equal(dimensionsRatio.type, "ratio");
+  assert.equal(dimensionsRatio.value, 1280 / 720);
+});
+
+test("ComfyUIAnalyzer resolves dimensions from resolution preset string in prompt", () =>
+{
+  const presetPrompt = {
+    "1": {
+      class_type: "CR SDXL Aspect Ratio",
+      inputs: {
+        aspect_ratio: "16:9 (1344x768)",
+        batch_size: 1
+      }
+    },
+    "2": {
+      class_type: "KSampler",
+      inputs: {
+        latent_image: [ "1", 0 ],
+        steps: 25,
+        cfg: 6.0,
+        sampler_name: "dpmpp_2m",
+        scheduler: "karras",
+        denoise: 1.0
+      }
+    }
+  };
+
+  const analyzer = new ComfyUIAnalyzer(undefined, presetPrompt, {});
+  const uiContainer = analyzer.toUiContainer();
+  const primaryTable = uiContainer.elements[0] as TableElement;
+  const dimensionsRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "Dimensions");
+
+  assert.ok(dimensionsRow);
+  const dimensionsCell = dimensionsRow.cells[1] as FlowingElement;
+  assert.equal(dimensionsCell.type, "flowing");
+  const dimensionsItem = dimensionsCell.elements[0] as DimensionsElement;
+  assert.equal(dimensionsItem.type, "dimensions");
+  assert.equal(dimensionsItem.width, 1344);
+  assert.equal(dimensionsItem.height, 768);
+  const dimensionsRatio = dimensionsCell.elements[1] as RatioElement;
+  assert.equal(dimensionsRatio.type, "ratio");
+  assert.equal(dimensionsRatio.value, 1344 / 768);
+});
+
+test("ComfyUIAnalyzer resolves dimensions through LatentUpscaleBy DAG link", () =>
+{
+  const upscalePrompt = {
+    "1": {
+      class_type: "EmptyLatentImage",
+      inputs: {
+        width: 512,
+        height: 512,
+        batch_size: 1
+      }
+    },
+    "2": {
+      class_type: "LatentUpscaleBy",
+      inputs: {
+        samples: [ "1", 0 ],
+        scale_by: 2.0
+      }
+    },
+    "3": {
+      class_type: "KSampler",
+      inputs: {
+        latent_image: [ "2", 0 ],
+        steps: 20,
+        cfg: 7.0,
+        sampler_name: "euler",
+        scheduler: "normal",
+        denoise: 0.5
+      }
+    }
+  };
+
+  const analyzer = new ComfyUIAnalyzer(undefined, upscalePrompt, {});
+  const uiContainer = analyzer.toUiContainer();
+  const primaryTable = uiContainer.elements[0] as TableElement;
+  const dimensionsRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "Dimensions");
+
+  assert.ok(dimensionsRow);
+  const dimensionsCell = dimensionsRow.cells[1] as FlowingElement;
+  assert.equal(dimensionsCell.type, "flowing");
+  const dimensionsItem = dimensionsCell.elements[0] as DimensionsElement;
+  assert.equal(dimensionsItem.type, "dimensions");
+  assert.equal(dimensionsItem.width, 1024);
+  assert.equal(dimensionsItem.height, 1024);
+  const dimensionsRatio = dimensionsCell.elements[1] as RatioElement;
+  assert.equal(dimensionsRatio.value, 1);
+});
+
+test("ComfyUIAnalyzer resolves linked seed from PrimitiveNode in prompt DAG", () =>
+{
+  const linkedSeedPrompt = {
+    "1": {
+      class_type: "PrimitiveNode",
+      inputs: {
+        value: 1234567890
+      }
+    },
+    "2": {
+      class_type: "KSampler",
+      inputs: {
+        seed: [ "1", 0 ],
+        steps: 20,
+        cfg: 7.0,
+        sampler_name: "euler",
+        scheduler: "normal",
+        denoise: 1.0
+      }
+    }
+  };
+
+  const analyzer = new ComfyUIAnalyzer(undefined, linkedSeedPrompt, {});
+  const uiContainer = analyzer.toUiContainer();
+  const primaryTable = uiContainer.elements[0] as TableElement;
+  const seedRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "Seed");
+
+  assert.ok(seedRow);
+  assert.equal((seedRow?.cells[1] as { value: string }).value, "1234567890");
+});
+
+test("ComfyUIAnalyzer resolves seed from RandomNoise linked to SamplerCustom in prompt DAG", () =>
+{
+  const customSamplerPrompt = {
+    "1": {
+      class_type: "RandomNoise",
+      inputs: {
+        noise_seed: 987654321
+      }
+    },
+    "2": {
+      class_type: "SamplerCustom",
+      inputs: {
+        noise: [ "1", 0 ],
+        steps: 30,
+        cfg: 5.0,
+        sampler_name: "dpmpp_2m"
+      }
+    }
+  };
+
+  const analyzer = new ComfyUIAnalyzer(undefined, customSamplerPrompt, {});
+  const uiContainer = analyzer.toUiContainer();
+  const primaryTable = uiContainer.elements[0] as TableElement;
+  const seedRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "Seed");
+
+  assert.ok(seedRow);
+  assert.equal((seedRow?.cells[1] as { value: string }).value, "987654321");
+});
+
+test("ComfyUIAnalyzer resolves seed correctly from KSamplerAdvanced and workflow links", () =>
+{
+  const workflowWithAdvancedSampler = {
+    nodes: [
+      {
+        id: 10,
+        type: "PrimitiveNode",
+        mode: 0,
+        widgets_values: [ 4455667788, "fixed" ]
+      },
+      {
+        id: 20,
+        type: "KSamplerAdvanced",
+        mode: 0,
+        inputs: [
+          { name: "noise_seed", type: "INT", link: 101 }
+        ],
+        widgets_values: [ "enable", 0, "fixed", 20, 7.0, "euler", "normal", 0, 10000, "disable" ]
+      }
+    ],
+    links: [
+      [ 101, 10, 0, 20, 0, "INT" ]
+    ],
+    groups: [],
+    version: 0.4
+  };
+
+  const analyzer = new ComfyUIAnalyzer(workflowWithAdvancedSampler, undefined, {});
+  const uiContainer = analyzer.toUiContainer();
+  const primaryTable = uiContainer.elements[0] as TableElement;
+  const seedRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "Seed");
+
+  assert.ok(seedRow);
+  assert.equal((seedRow?.cells[1] as { value: string }).value, "4455667788");
+});
+
+test("ComfyUIAnalyzer correctly preserves seed 0 without treating it as undefined", () =>
+{
+  const zeroSeedPrompt = {
+    "1": {
+      class_type: "KSampler",
+      inputs: {
+        seed: 0,
+        steps: 20,
+        cfg: 7.0,
+        sampler_name: "euler",
+        scheduler: "normal",
+        denoise: 1.0
+      }
+    }
+  };
+
+  const analyzer = new ComfyUIAnalyzer(undefined, zeroSeedPrompt, {});
+  const uiContainer = analyzer.toUiContainer();
+  const primaryTable = uiContainer.elements[0] as TableElement;
+  const seedRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "Seed");
+
+  assert.ok(seedRow);
+  assert.equal((seedRow?.cells[1] as { value: string }).value, "0");
+});
+
+test("ComfyUIAnalyzer safely handles NaN, strings, and default numeric values in prompt inputs", () =>
+{
+  const messyPrompt = {
+    "1": {
+      class_type: "KSampler",
+      inputs: {
+        seed: 12345,
+        steps: " 28 ",
+        cfg: "7.5",
+        denoise: "not-a-number",
+        sampler_name: "euler",
+        scheduler: "normal"
+      }
+    },
+    "2": {
+      class_type: "LoraLoader",
+      inputs: {
+        lora_name: "test_lora.safetensors",
+        strength_model: "0.9",
+        strength_clip: null
+      }
+    }
+  };
+
+  const analyzer = new ComfyUIAnalyzer(undefined, messyPrompt, {});
+  const uiContainer = analyzer.toUiContainer();
+  const primaryTable = uiContainer.elements[0] as TableElement;
+
+  const stepsRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "Steps");
+  assert.equal((stepsRow?.cells[1] as { value: number }).value, 28);
+
+  const cfgRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "CFG Scale");
+  assert.equal((cfgRow?.cells[1] as { value: number }).value, 7.5);
+
+  const denoiseRow = primaryTable.rows.find((row: TableRow) => (row.cells[0] as {
+    value: string;
+  }).value === "Denoise");
+  assert.equal(denoiseRow, undefined);
+});
+

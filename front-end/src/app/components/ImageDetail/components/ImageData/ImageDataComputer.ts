@@ -1,7 +1,7 @@
 import i18n, { TFunction } from "i18next";
 
 import {
-  booleanPlain,
+  boolean,
   CodeLanguage,
   createUiContainer,
   flowing,
@@ -11,10 +11,9 @@ import {
   markdown,
   numberUnbounded,
   ratio,
+  string,
   stringCode,
-  stringLong,
-  stringShort,
-  StringShortRepresentation,
+  StringRepresentation,
   stringUrl,
   tableRow,
   TableRow,
@@ -63,7 +62,7 @@ export function createSchemaComplianceUiContainer(t: TFunction = i18n.t): UiCont
 {
   return createUiContainer({
     elements: [
-      stringShort(t("imageDetail.schemaComplianceError"), {
+      string(t("imageDetail.schemaComplianceError"), {
         modifiers: {
           intensity: TextIntensity.low
         }
@@ -110,10 +109,10 @@ export function inferNonUiElement(imageFeature: ExtensionImageFeature): UiElemen
       element = html(String(value));
       break;
     case ImageFeatureFormat.Binary:
-      element = stringShort("<binary>", { modifiers: { monospace: true } });
+      element = string("<binary>", { modifiers: { monospace: true } });
       break;
     case ImageFeatureFormat.String:
-      element = stringLong(String(value), copyableOptions);
+      element = string(String(value), { ...copyableOptions, representation: StringRepresentation.multiline });
       break;
     case ImageFeatureFormat.Integer:
     {
@@ -130,11 +129,11 @@ export function inferNonUiElement(imageFeature: ExtensionImageFeature): UiElemen
     case ImageFeatureFormat.Boolean:
     {
       const parsedBoolean = typeof value === "boolean" ? value : String(value) === "true";
-      element = booleanPlain(parsedBoolean);
+      element = boolean(parsedBoolean);
       break;
     }
     default:
-      element = stringShort(String(value));
+      element = string(String(value));
       break;
   }
 
@@ -148,7 +147,7 @@ export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: T
   if (generationRecipe.schemaVersion !== undefined && Math.random() > 1)
   {
     rows.push(tableRow([
-        stringShort(t("field.schemaVersion"), options),
+      string(t("field.schemaVersion"), options),
         numberUnbounded(generationRecipe.schemaVersion)
       ])
     );
@@ -157,7 +156,7 @@ export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: T
   if (generationRecipe.id)
   {
     rows.push(tableRow([
-        stringShort(t("field.id"), options),
+      string(t("field.id"), options),
         identifier(generationRecipe.id, { modifiers: { monospace: true, copyable: true } })
       ])
     );
@@ -166,7 +165,7 @@ export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: T
   if (generationRecipe.url)
   {
     rows.push(tableRow([
-        stringShort(t("field.url"), options),
+      string(t("field.url"), options),
         stringUrl(generationRecipe.url, { modifiers: { copyable: true } })
       ])
     );
@@ -174,37 +173,37 @@ export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: T
 
   if (generationRecipe.software)
   {
-    rows.push(tableRow([ stringShort(t("field.software"), options), stringShort(generationRecipe.software, {
+    rows.push(tableRow([ string(t("field.software"), options), string(generationRecipe.software, {
       modifiers: { monospace: true, copyable: true }
     }) ]));
   }
 
   if (generationRecipe.author)
   {
-    rows.push(tableRow([ stringShort(t("field.author"), options), stringShort(generationRecipe.author, {
+    rows.push(tableRow([ string(t("field.author"), options), string(generationRecipe.author, {
       modifiers: { copyable: true }
     }) ]));
   }
 
   if (generationRecipe.inceptionDate)
   {
-    rows.push(tableRow([ stringShort(t("field.inceptionDate"), options), timestamp(generationRecipe.inceptionDate) ]));
+    rows.push(tableRow([ string(t("field.inceptionDate"), options), timestamp(generationRecipe.inceptionDate) ]));
   }
 
   if (generationRecipe.aspectRatio)
   {
-    rows.push(tableRow([ stringShort(t("field.aspectRatio"), options), ratio(generationRecipe.aspectRatio) ]));
+    rows.push(tableRow([ string(t("field.aspectRatio"), options), ratio(generationRecipe.aspectRatio) ]));
   }
 
   if (generationRecipe.modelTags && generationRecipe.modelTags.length > 0)
   {
-    rows.push(tableRow([ stringShort(t("field.modelTags"), options), flowing(generationRecipe.modelTags.map((modelTag) => stringShort(modelTag, { representation: StringShortRepresentation.chip }))) ]));
+    rows.push(tableRow([ string(t("field.modelTags"), options), flowing(generationRecipe.modelTags.map((modelTag) => string(modelTag, { representation: StringRepresentation.chip }))) ]));
   }
 
   if (generationRecipe.inputAssets && generationRecipe.inputAssets.length > 0)
   {
     rows.push(tableRow([
-        stringShort(t("field.assetIds"), options),
+      string(t("field.assetIds"), options),
         flowing(
           generationRecipe.inputAssets.map((asset) => identifier(asset, {
             modifiers: {

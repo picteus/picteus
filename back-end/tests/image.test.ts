@@ -1299,7 +1299,7 @@ describe("Image with module", () =>
         const jsonImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.JSON, undefined, `{"key":"value"}`);
         const yamlImageFeature = new ImageFeature(ImageFeatureType.METADATA, ImageFeatureFormat.YAML, undefined, `YAML:\n  - A human-readable data serialization language\n  - https://en.wikipedia.org/wiki/YAML`);
         const xmlImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.XML, "xml", `<element attribute="value"></element>`);
-        const uiImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.UI, "ui", `{"schemaVersion":"1.0","elements":[{"value":"This is a string","type":"string-short","representation":"plain"}]}`);
+        const uiImageFeature = new ImageFeature(ImageFeatureType.OTHER, ImageFeatureFormat.UI, "ui", `{"schemaVersion":"1.0","elements":[{"value":"This is a string","type":"string","representation":"plain"}]}`);
         const imageFeatures = [ stringImageFeature, integerImageFeature, floatImageFeature, booleanImageFeature, markdownImageFeature, jsonImageFeature, yamlImageFeature, xmlImageFeature, uiImageFeature ];
         const listener = base.computeEventListener();
         base.getNotifierService().once(EventEntity.Image, ImageEventAction.FeaturesUpdated, undefined, listener);

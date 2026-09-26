@@ -3,43 +3,76 @@ import "./modifiers.tsp";
 
 namespace Picteus.ViewKit;
 
-@doc("Representation style for short string values.")
-enum StringShortRepresentation {
-  @doc("Standard plain text rendering")
+@doc("Visual presentation style for string values.")
+enum StringRepresentation {
+  @doc("Standard inline text rendering")
   plain: "plain",
 
   @doc("Visual chip / tag pill representation")
-  chip: "chip"
+  chip: "chip",
+
+  @doc("Multiline text with preserved whitespace and line breaks")
+  multiline: "multiline"
 }
 
 @doc("""
-  Short string primitive element.
-  Supports plain text or compact chip pill presentation.
+  Universal textual string primitive element.
+  Supports plain text, compact chip pill, or multiline pre-wrapped presentation.
   """)
-@uiWidget("string-short")
-model StringShortElement extends UiElement {
+@uiWidget("string")
+model StringElement extends UiElement {
   @doc("Discriminator type")
-  type: "string-short";
+  type: "string";
 
   @doc("Text value")
   value: string;
 
   @doc("Display representation mode")
-  representation?: StringShortRepresentation = StringShortRepresentation.plain;
+  representation?: StringRepresentation = StringRepresentation.plain;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
   @uiModifiers
   modifiers?: PrimitiveModifiers;
 }
 
-@doc("Multiline text block primitive element for descriptions, comments, or prose.")
-@uiWidget("string-long")
-model StringLongElement extends UiElement {
-  @doc("Discriminator type")
-  type: "string-long";
+@doc("Visual separator rendered between sequential elements or items.")
+enum Separator {
+  @doc("Vertical dividing bar")
+  bar: "bar",
 
-  @doc("Text value")
-  value: string;
+  @doc("Comma separator")
+  comma: "comma",
+
+  @doc("Bullet dot separator")
+  dot: "dot",
+
+  @doc("Forward slash separator")
+  slash: "slash",
+
+  @doc("Dash separator")
+  dash: "dash",
+
+  @doc("Space separator")
+  space: "space"
+}
+
+@doc("""
+  Collection of textual string values rendered as a sequence of inline items or chips.
+  Supports visual separators (comma, dot, slash, bar, dash, space) and copyable affordance.
+  """)
+@uiWidget("strings")
+model StringsElement extends UiElement {
+  @doc("Discriminator type")
+  type: "strings";
+
+  @doc("Array of string values")
+  values: string[];
+
+  @doc("Display representation mode (plain text or visual chips)")
+  representation?: StringRepresentation = StringRepresentation.plain;
+
+  @doc("Optional visual separator rendered between sequential values")
+  separator?: Separator;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
   @uiModifiers
@@ -153,6 +186,25 @@ model RatioElement extends UiElement {
   modifiers?: PrimitiveModifiers;
 }
 
+@doc("Image dimensions representation displaying formatted width and height in pixels.")
+@uiWidget("dimensions")
+model DimensionsElement extends UiElement {
+  @doc("Discriminator type")
+  type: "dimensions";
+
+  @doc("Width in pixels")
+  @minValue(1)
+  width: integer;
+
+  @doc("Height in pixels")
+  @minValue(1)
+  height: integer;
+
+  @doc("Optional visual modifiers (copyable)")
+  @uiModifiers
+  modifiers?: BaseModifiers;
+}
+
 @doc("Single color representation with hex value, shape/size styling, text display toggle, and copy affordance.")
 @uiWidget("color")
 @dslAlias("color")
@@ -247,18 +299,13 @@ model NumberBoundedMeterElement extends UiElement {
   modifiers?: PrimitiveModifiers;
 }
 
-@doc("Plain boolean value representation (textual \"true\" / \"false\").")
-@uiWidget("boolean-plain")
-model BooleanPlainElement extends UiElement {
-  @doc("Discriminator type")
-  type: "boolean-plain";
+@doc("Visual presentation style for boolean values.")
+enum BooleanRepresentation {
+  @doc("Standard inline text rendering (e.g. \"true\" / \"false\" or custom labels)")
+  plain: "plain",
 
-  @doc("Boolean state value")
-  value: boolean;
-
-  @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")
-  @uiModifiers
-  modifiers?: PrimitiveModifiers;
+  @doc("Visual badge pill representation")
+  badge: "badge"
 }
 
 @doc("Visual color tone variants for badge pill representations.")
@@ -276,14 +323,20 @@ enum BadgeVariant {
   danger: "danger"
 }
 
-@doc("Visual badge pill representation of a boolean state.")
-@uiWidget("boolean-badge")
-model BooleanBadgeElement extends UiElement {
+@doc("""
+  Universal boolean primitive element.
+  Supports standard plain text or badge pill presentation with customizable labels and variants.
+  """)
+@uiWidget("boolean")
+model BooleanElement extends UiElement {
   @doc("Discriminator type")
-  type: "boolean-badge";
+  type: "boolean";
 
   @doc("Boolean state value")
   value: boolean;
+
+  @doc("Display representation mode")
+  representation?: BooleanRepresentation = BooleanRepresentation.plain;
 
   @doc("Custom display label when true (defaults to \"true\")")
   trueLabel?: string = "true";
@@ -291,7 +344,7 @@ model BooleanBadgeElement extends UiElement {
   @doc("Custom display label when false (defaults to \"false\")")
   falseLabel?: string = "false";
 
-  @doc("Badge color tone")
+  @doc("Badge color tone when rendered as badge")
   variant?: BadgeVariant = BadgeVariant.neutral;
 
   @doc("Optional visual modifiers (copyable, truncate, emphasis, monospace)")

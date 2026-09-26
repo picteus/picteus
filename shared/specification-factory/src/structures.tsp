@@ -19,17 +19,13 @@ model Slot {
 }
 
 @doc("""
-  Multi-slot horizontal row with declared column width proportions.
-  Examples: "1/3 + 2/3", "equal thirds", "1/4 + 3/4".
+  Multi-slot horizontal row layout comprising slots with individual widths.
   """)
 @uiLayout("row-slots")
 @dslAlias("multiSlot")
 model MultiSlotElement extends UiElement {
   @doc("Discriminator type")
   type: "multi-slot";
-
-  @doc("Proportions descriptor (e.g. \"1/3 + 2/3\", \"equal\", \"1/4 + 3/4\")")
-  proportions?: string;
 
   @doc("List of slots comprising the row")
   slots: Slot[];
@@ -44,6 +40,9 @@ model MultiSlotElement extends UiElement {
 model FlowingElement extends UiElement {
   @doc("Discriminator type")
   type: "flowing";
+
+  @doc("Optional visual separator rendered between sequential child elements")
+  separator?: Separator;
 
   @doc("List of child elements rendered sequentially with line wrapping")
   elements: UiElement[];
@@ -81,7 +80,7 @@ enum TableColumnAlign {
   center: "center",
 
   @doc("Right-aligned text")
-  right: "right",
+  right: "right"
 }
 
 @doc("Width mode for table columns.")
@@ -90,7 +89,7 @@ enum TableColumnWidthMode {
   fixed: "fixed",
 
   @doc("Maximum width upper bound constraint")
-  maximum: "maximum",
+  maximum: "maximum"
 }
 
 @doc("Column definition for structured tables.")
@@ -196,7 +195,7 @@ enum DividerStyle {
   solid: "solid",
 
   @doc("Dashed separator line")
-  dashed: "dashed",
+  dashed: "dashed"
 }
 
 @doc("Visual hairline separator separating sections or element groups.")

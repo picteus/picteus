@@ -167,7 +167,7 @@ class PythonExtension(PicteusExtension):
                                                                  format=ImageFeatureFormat.UI,
                                                                  name="example-ui",
                                                                  value=ImageFeatureValue(
-                                                                     UiContainerBuilder().add_string_short(
+                                                                     UiContainerBuilder().add_string(
                                                                          "This is a string").to_string()))
 
                                                 ])

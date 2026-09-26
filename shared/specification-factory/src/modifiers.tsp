@@ -9,7 +9,7 @@ enum TextWeight {
   normal: "normal",
 
   @doc("Heavy / bold text weight")
-  heavy: "heavy",
+  heavy: "heavy"
 }
 
 @doc("Visual text color intensity and contrast.")
@@ -21,7 +21,7 @@ enum TextIntensity {
   medium: "medium",
 
   @doc("High visual contrast / intense text color")
-  high: "high",
+  high: "high"
 }
 
 @doc("Geometric shape representation for visual containers and indicators.")
@@ -30,7 +30,7 @@ enum Shape {
   circle: "circle",
 
   @doc("Square container shape")
-  square: "square",
+  square: "square"
 }
 
 @doc("Relative sizing scale for visual elements and indicators.")
@@ -42,7 +42,7 @@ enum Size {
   medium: "medium",
 
   @doc("Prominent large size")
-  large: "large",
+  large: "large"
 }
 
 @doc("Truncation configuration for long textual content with optional expand affordance.")
