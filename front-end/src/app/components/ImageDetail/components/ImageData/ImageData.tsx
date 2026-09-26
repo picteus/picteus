@@ -999,8 +999,7 @@ export default function ImageData({ image, viewMode }: ImageDataType)
       void openBrowser(url);
     }} renderers={{
       markdown: (element, _context) => (
-        wrapWithCopy(<Markdown size="sm" titleOrderOffset={3}
-                               content={element.content}/>, element.content, element.modifiers?.copyable)
+        wrapWithCopy(<Markdown size="sm" content={element.content}/>, element.content, element.modifiers?.copyable)
       ),
       xml: (element, _context) => (
         wrapWithCopy(<CodeViewer code={element.value} size="sm"

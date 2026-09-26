@@ -30,7 +30,7 @@ export default function Manual({
           </Text>
         </Accordion.Control>
         <Accordion.Panel>
-          <Markdown content={content} titleOrderOffset={4}/>
+          <Markdown content={content}/>
         </Accordion.Panel>
       </Accordion.Item>
     </Accordion>

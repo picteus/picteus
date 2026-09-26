@@ -25,25 +25,27 @@ import { ToastService } from "../../../utils";
 export type MarkdownPropsType = {
   readonly content: string;
   readonly size?: MantineSize;
-  readonly titleOrderOffset?: number;
+  readonly withBoldTitles?: boolean;
 };
 
 const REMARK_PLUGINS = [ remarkGfm ];
 
-function computeTitleOrder(rawLevel: number, titleOrderOffset: number): TitleOrder
-{
-  const targetLevel = Math.min(6, Math.max(1, rawLevel + titleOrderOffset));
-  return targetLevel as TitleOrder;
-}
-
-function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Components
+function createMarkdownComponents(size?: MantineSize, withBoldTitles: boolean = true): Components
 {
   function renderHeading(level: TitleOrder, children: ReactNode): ReactElement
   {
-    const order = computeTitleOrder(level, titleOrderOffset);
+    if (withBoldTitles)
+    {
+      return (
+        <Text span fw={700} size={size}>
+          {children}
+        </Text>
+      );
+    }
+
     return (
       <Title
-        order={order}
+        order={level}
         style={{
           overflowWrap: "anywhere",
           wordBreak: "break-word"
@@ -344,7 +346,7 @@ function createMarkdownComponents(size?: MantineSize, titleOrderOffset = 0): Com
 export default function Markdown({
   content,
   size = "sm",
-  titleOrderOffset = 0
+  withBoldTitles = true
 }: MarkdownPropsType): ReactElement
 {
   // We need to handle the specific case of the linebreak "<br>", because the library does not handle it properly by default
@@ -353,9 +355,9 @@ export default function Markdown({
   const components = useMemo<Components>(
     () =>
     {
-      return createMarkdownComponents(size, titleOrderOffset);
+      return createMarkdownComponents(size, withBoldTitles);
     },
-    [ size, titleOrderOffset ]
+    [ size, withBoldTitles ]
   );
 
   return (
