@@ -157,7 +157,7 @@ export class CivitaiRetriever
       },
       image,
       uiContainer,
-      prompts: { positive: meta.prompt, negative: meta.negativePrompt },
+      prompts: { positive: meta?.prompt, negative: meta?.negativePrompt },
       postId: image.postId
     };
   }
