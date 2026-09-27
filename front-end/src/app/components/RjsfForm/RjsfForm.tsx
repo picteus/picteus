@@ -76,7 +76,40 @@ function ErrorFallback({ error })
 // We use the standard AJV8 validator without in-place mutation options (such as removeAdditional or useDefaults). Those mutative options delete and re-assign properties during schema branch evaluations, which corrupts compound schemas like oneOf and anyOf when users interact with the form.
 const Form = withTheme(MantineTheme);
 
-// Sanitizes the initial form data by populating missing defaults and pruning unattended properties. Stored form data (such as extension settings) may contain obsolete keys from previous versions or miss new properties added in schema revisions. We first populate defaults using RJSF's engine, retrieve the schema matching the active branch, and recursively filter out any keys not declared in the schema's path tree without resorting to destructive AJV in-place mutations.
+function sanitizeStoredDataAgainstSchema(
+  candidateData: JsonType,
+  schema: RJSFSchema
+): JsonType
+{
+  if (candidateData === null || candidateData === undefined || typeof candidateData !== "object")
+  {
+    return candidateData;
+  }
+  const clonedData: JsonType = JSON.parse(JSON.stringify(candidateData));
+  const validationResult = validator.rawValidation(schema, clonedData);
+  if (validationResult.errors && validationResult.errors.length > 0)
+  {
+    for (const validationError of validationResult.errors)
+    {
+      if (validationError.keyword === "additionalProperties" && validationError.params?.additionalProperty)
+      {
+        delete clonedData[validationError.params.additionalProperty];
+      }
+      else if (validationError.instancePath && validationError.keyword !== "required")
+      {
+        const pathSegments = validationError.instancePath.split("/").filter(Boolean);
+        if (pathSegments.length > 0)
+        {
+          const rootPropertyKey = pathSegments[0];
+          delete clonedData[rootPropertyKey];
+        }
+      }
+    }
+  }
+  return clonedData;
+}
+
+// Sanitizes the initial form data by populating missing defaults and pruning unattended properties. Stored form data (such as extension settings or command parameters) may contain obsolete keys from previous versions, invalid types from schema revisions, or miss new properties. We first sanitize candidate properties against schema constraints, populate defaults using RJSF's engine, retrieve the schema matching the active branch, and recursively filter out any keys not declared in the schema's path tree without resorting to destructive AJV in-place mutations.
 function cleanFormDataWithSchema(
   formData: object | undefined,
   schema: RJSFSchema
@@ -86,8 +119,9 @@ function cleanFormDataWithSchema(
   {
     return undefined;
   }
+  const sanitizedFormData = sanitizeStoredDataAgainstSchema(formData as JsonType, schema);
   const schemaUtils = createSchemaUtils(validator, schema);
-  const withDefaults = getDefaultFormState(validator, schema, formData, schema);
+  const withDefaults = getDefaultFormState(validator, schema, sanitizedFormData, schema);
   if (withDefaults === undefined || typeof withDefaults !== "object")
   {
     return withDefaults;

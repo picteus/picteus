@@ -13,6 +13,7 @@ export const StorageKeys =
     CLOSEST_IMAGES_RESULTS_COUNT: "closestImagesResultsCount",
     COLOR_SCHEME: "colorScheme",
     COMMANDS_DO_NOT_ASK_AGAIN: "commandsDoNotAskAgain",
+    COMMANDS_PARAMETERS: "commandsParameters",
     EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION: "extensionIntentShowShouldConfirmRedirection",
     FOLDER_PICKER_LAST_LOCATION: "extensionPickerLastLocation",
     IMAGE_DETAIL_HIDDEN_SECTIONS: "imageDetailHiddenSections",
@@ -332,6 +333,44 @@ function resetCommandsDoNotAskAgain(): void
   remove(StorageKeys.COMMANDS_DO_NOT_ASK_AGAIN);
 }
 
+function getCommandsParameters(): Record<string, Record<string, unknown>>
+{
+  return getJson<Record<string, Record<string, unknown>>>(StorageKeys.COMMANDS_PARAMETERS, {});
+}
+
+function setCommandsParameters(commandsParameters: Record<string, Record<string, unknown>>): void
+{
+  setJson(StorageKeys.COMMANDS_PARAMETERS, commandsParameters);
+}
+
+function getCommandParameters(extensionId: string, commandId: string): Record<string, unknown> | undefined
+{
+  const commandIdentifier = computeCommandStorageIdentifier(extensionId, commandId);
+  const commandsParameters = getCommandsParameters();
+  return commandsParameters[commandIdentifier];
+}
+
+function setCommandParameters(extensionId: string, commandId: string, parameters: Record<string, unknown>): void
+{
+  const commandIdentifier = computeCommandStorageIdentifier(extensionId, commandId);
+  const commandsParameters = getCommandsParameters();
+  commandsParameters[commandIdentifier] = parameters;
+  setCommandsParameters(commandsParameters);
+}
+
+function removeCommandParameters(extensionId: string, commandId: string): void
+{
+  const commandIdentifier = computeCommandStorageIdentifier(extensionId, commandId);
+  const commandsParameters = getCommandsParameters();
+  delete commandsParameters[commandIdentifier];
+  setCommandsParameters(commandsParameters);
+}
+
+function resetCommandsParameters(): void
+{
+  remove(StorageKeys.COMMANDS_PARAMETERS);
+}
+
 export default {
   COLOR_SCHEME: `${prefix}${StorageKeys.COLOR_SCHEME}`,
   getVersion,
@@ -371,5 +410,9 @@ export default {
   getCommandsDoNotAskAgainCount,
   isCommandDoNotAskAgain,
   setCommandDoNotAskAgain,
-  resetCommandsDoNotAskAgain
+  resetCommandsDoNotAskAgain,
+  getCommandParameters,
+  setCommandParameters,
+  removeCommandParameters,
+  resetCommandsParameters
 };

@@ -1,4 +1,4 @@
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useMemo, useState } from "react";
 import { Alert, Button, Checkbox, Divider, Flex, ScrollArea } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -27,18 +27,34 @@ export default function CommandForm({
   onSend
 }: CommandFormType): ReactElement
 {
-  const [ parameters, setParameters ] = useState<object>();
-  const [ shouldDoNotAskAgain, setShouldDoNotAskAgain ] = useState<boolean>(false);
-  const { t } = useTranslation();
-
   const form = command.form;
   const hasNoParameters = form === undefined || form.parameters === undefined;
 
+  const initialParameters = useMemo<Record<string, unknown> | undefined>(() =>
+  {
+    if (command.id === undefined || hasNoParameters === true)
+    {
+      return undefined;
+    }
+    return StorageService.getCommandParameters(extensionId, command.id);
+  }, [ extensionId, command.id, hasNoParameters ]);
+
+  const [ parameters, setParameters ] = useState<object | undefined>(initialParameters);
+  const [ shouldDoNotAskAgain, setShouldDoNotAskAgain ] = useState<boolean>(false);
+  const { t } = useTranslation();
+
   function handleSend(): void
   {
-    if (command.id !== undefined && hasNoParameters === true && shouldDoNotAskAgain === true)
+    if (command.id !== undefined)
     {
-      StorageService.setCommandDoNotAskAgain(extensionId, command.id, true);
+      if (hasNoParameters === true && shouldDoNotAskAgain === true)
+      {
+        StorageService.setCommandDoNotAskAgain(extensionId, command.id, true);
+      }
+      else if (hasNoParameters === false && parameters !== undefined)
+      {
+        StorageService.setCommandParameters(extensionId, command.id, parameters as Record<string, unknown>);
+      }
     }
     onSend(extensionId, command.id, parameters);
   }
@@ -76,7 +92,12 @@ export default function CommandForm({
           offsetScrollbars
           scrollbars="y"
         >
-          <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setParameters}/>
+          <RjsfForm
+            initialFormData={initialParameters}
+            schema={schema}
+            uiSchema={uiSchema}
+            onChange={setParameters}
+          />
         </ScrollArea.Autosize>
       )}
       <Divider my="md"/>
