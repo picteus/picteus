@@ -44,6 +44,6 @@
   },
   "dependencies": {
     "replicate": "1.4.0",
-    "@picteus/internal-extension-sdk": "0.17.0"
+    "@picteus/internal-extension-sdk": "0.18.0"
   }
 }
