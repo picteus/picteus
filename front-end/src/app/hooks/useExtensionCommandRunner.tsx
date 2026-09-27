@@ -6,7 +6,7 @@ import { SearchFilter } from "@picteus/ws-client";
 import { UiCommandType } from "types";
 import { ToastService } from "utils";
 import { useActionModalContext } from "app/context";
-import { ExtensionsService } from "app/services";
+import { ExtensionsService, StorageService } from "app/services";
 import { CommandForm } from "app/components";
 
 
@@ -14,8 +14,17 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
 {
   const [ , addModal, removeModal ] = useActionModalContext();
 
-  async function handleOnSendCommand(extensionId: string, commandId: string, parameters?: object, searchFilter?: SearchFilter, onRunning?: () => void, modalId?: string): Promise<void>
+  async function handleOnSendCommand(
+    extensionId: string,
+    commandId: string,
+    parameters?: object,
+    searchFilter?: SearchFilter,
+    onRunning?: () => void,
+    modalId?: string,
+    onCompleted?: (wasAborted: boolean) => void
+  ): Promise<void>
   {
+    let wasError = false;
     try
     {
       const commonParameters = { id: extensionId, commandId };
@@ -37,6 +46,7 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
     }
     catch (error)
     {
+      wasError = true;
       ToastService.apiCallI18nError(error, "commands.extensionCommandFailed", {
         command: commandId,
         extension: extensionId
@@ -46,22 +56,52 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
     {
       removeModal(modalId);
     }
+    if (onCompleted)
+    {
+      onCompleted(wasError);
+    }
   }
 
-  function callCommand(extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void): Promise<void>
+  async function callCommand(
+    extensionId: string,
+    command: UiCommandType,
+    searchFilter?: SearchFilter,
+    onRunning?: () => void,
+    onCompleted?: (wasAborted: boolean) => void
+  ): Promise<void>
   {
     console.debug(`Triggering command '${command.id}' of extension '${extensionId}'`);
     const form = command.form;
+    const hasNoParameters = form === undefined || form.parameters === undefined;
 
-    const modalId = randomId();
-
-    const handleOnCompleted = (wasAborted: boolean) =>
+    let hasCompletedBeenCalled = false;
+    const handleOnCompleted = (wasAborted: boolean): void =>
     {
-      if (onCompleted)
+      if (hasCompletedBeenCalled === false)
       {
-        onCompleted(wasAborted);
+        hasCompletedBeenCalled = true;
+        if (onCompleted)
+        {
+          onCompleted(wasAborted);
+        }
       }
     };
+
+    if (command.id !== undefined && hasNoParameters === true && StorageService.isCommandDoNotAskAgain(extensionId, command.id) === true)
+    {
+      await handleOnSendCommand(
+        extensionId,
+        command.id,
+        undefined,
+        searchFilter,
+        onRunning,
+        undefined,
+        handleOnCompleted
+      );
+      return;
+    }
+
+    const modalId = randomId();
 
     addModal({
       id: modalId,
@@ -75,7 +115,15 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
           searchFilter={searchFilter}
           command={command}
           onSend={(extensionId, commandId, commandParameters) =>
-            handleOnSendCommand(extensionId, commandId, commandParameters, searchFilter, onRunning, modalId)
+            void handleOnSendCommand(
+              extensionId,
+              commandId,
+              commandParameters,
+              searchFilter,
+              onRunning,
+              modalId,
+              handleOnCompleted
+            )
           }
         />
       ),
@@ -84,7 +132,6 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
         handleOnCompleted(viaOnSuccess === false);
       }
     });
-    return;
   }
 
   return callCommand;

@@ -1,10 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Checkbox, Flex, Stack, Switch, Tabs, Text, Title, useMantineColorScheme } from "@mantine/core";
+import {
+  Button,
+  Checkbox,
+  Divider,
+  Flex,
+  Stack,
+  Switch,
+  Tabs,
+  Text,
+  Title,
+  useMantineColorScheme
+} from "@mantine/core";
+import { IconActivity, IconDeviceLaptop, IconMoonStars, IconRotate, IconSun } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Container } from "app/components";
-import { IconActivity, IconDeviceLaptop, IconMoonStars, IconSun } from "@tabler/icons-react";
+import { ToastService } from "utils";
 import { StorageService } from "app/services";
+import { Common, Container } from "app/components";
 
 
 export default function SettingsScreen()
@@ -12,6 +24,7 @@ export default function SettingsScreen()
   const [t] = useTranslation();
   const [shouldConfirmRedirection, setShouldConfirmRedirection] = useState<boolean>(StorageService.getExtensionIntentShowShouldConfirm());
   const [autoReloadImagesViews, setAutoReloadImagesViews] = useState<boolean>(StorageService.getAutoReloadImagesViews);
+  const [ skippedCommandsCount, setSkippedCommandsCount ] = useState<number>(StorageService.getCommandsDoNotAskAgainCount());
   const { colorScheme, setColorScheme } = useMantineColorScheme({ keepTransitions: true });
 
   useEffect(() =>
@@ -32,6 +45,13 @@ export default function SettingsScreen()
   function handleOnChangeAutoReloadImagesViews({ target: { checked: value } }: { target: { checked: boolean } })
   {
     setAutoReloadImagesViews(value);
+  }
+
+  function handleResetSkippedCommands(): void
+  {
+    StorageService.resetCommandsDoNotAskAgain();
+    setSkippedCommandsCount(0);
+    ToastService.success();
   }
 
   return (
@@ -96,7 +116,7 @@ export default function SettingsScreen()
             </Stack>
           </Tabs.Panel>
           <Tabs.Panel value="extensions">
-            <Stack mt="lg">
+            <Stack mt="lg" gap="md">
               <Checkbox
                 label={t("settingsScreen.extensions.shouldConfirmRedirection")}
                 checked={shouldConfirmRedirection}
@@ -104,6 +124,28 @@ export default function SettingsScreen()
                   setShouldConfirmRedirection(target.checked)
                 }
               />
+              <Divider my="xs"/>
+              <Flex align="center" justify="space-between" gap="md">
+                <Stack gap={2}>
+                  <Text size="sm">
+                    {t("settingsScreen.extensions.resetDoNotAskAgainCommands")}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {t("settingsScreen.extensions.resetDoNotAskAgainCommandsDescription", {
+                      count: skippedCommandsCount
+                    })}
+                  </Text>
+                </Stack>
+                <Button
+                  variant="default"
+                  size="xs"
+                  leftSection={<IconRotate size={Common.IconSmallSize}/>}
+                  disabled={skippedCommandsCount === 0}
+                  onClick={handleResetSkippedCommands}
+                >
+                  {t("settingsScreen.extensions.resetDoNotAskAgainCommandsButton")}
+                </Button>
+              </Flex>
             </Stack>
           </Tabs.Panel>
         </Tabs>

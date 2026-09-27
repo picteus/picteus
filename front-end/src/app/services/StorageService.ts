@@ -12,6 +12,7 @@ export const StorageKeys =
     CLOSEST_IMAGES_EMBEDDING_NAME: "closestImagesEmbeddingName",
     CLOSEST_IMAGES_RESULTS_COUNT: "closestImagesResultsCount",
     COLOR_SCHEME: "colorScheme",
+    COMMANDS_DO_NOT_ASK_AGAIN: "commandsDoNotAskAgain",
     EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION: "extensionIntentShowShouldConfirmRedirection",
     FOLDER_PICKER_LAST_LOCATION: "extensionPickerLastLocation",
     IMAGE_DETAIL_HIDDEN_SECTIONS: "imageDetailHiddenSections",
@@ -284,6 +285,53 @@ function setSelectedImagesAction(action: string): void
   set(StorageKeys.SELECTED_IMAGES_ACTION, action);
 }
 
+function computeCommandStorageIdentifier(extensionId: string, commandId: string): string
+{
+  return `${extensionId}|${commandId}`;
+}
+
+function getCommandsDoNotAskAgain(): Record<string, boolean>
+{
+  return getJson<Record<string, boolean>>(StorageKeys.COMMANDS_DO_NOT_ASK_AGAIN, {});
+}
+
+function setCommandsDoNotAskAgain(commandsDoNotAskAgain: Record<string, boolean>): void
+{
+  setJson(StorageKeys.COMMANDS_DO_NOT_ASK_AGAIN, commandsDoNotAskAgain);
+}
+
+function getCommandsDoNotAskAgainCount(): number
+{
+  return Object.keys(getCommandsDoNotAskAgain()).length;
+}
+
+function isCommandDoNotAskAgain(extensionId: string, commandId: string): boolean
+{
+  const commandIdentifier = computeCommandStorageIdentifier(extensionId, commandId);
+  const commandsDoNotAskAgain = getCommandsDoNotAskAgain();
+  return commandsDoNotAskAgain[commandIdentifier] === true;
+}
+
+function setCommandDoNotAskAgain(extensionId: string, commandId: string, shouldDoNotAskAgain: boolean): void
+{
+  const commandIdentifier = computeCommandStorageIdentifier(extensionId, commandId);
+  const commandsDoNotAskAgain = getCommandsDoNotAskAgain();
+  if (shouldDoNotAskAgain === true)
+  {
+    commandsDoNotAskAgain[commandIdentifier] = true;
+  }
+  else
+  {
+    delete commandsDoNotAskAgain[commandIdentifier];
+  }
+  setCommandsDoNotAskAgain(commandsDoNotAskAgain);
+}
+
+function resetCommandsDoNotAskAgain(): void
+{
+  remove(StorageKeys.COMMANDS_DO_NOT_ASK_AGAIN);
+}
+
 export default {
   COLOR_SCHEME: `${prefix}${StorageKeys.COLOR_SCHEME}`,
   getVersion,
@@ -319,5 +367,9 @@ export default {
   getSelectedImagesIds,
   setSelectedImageIds,
   getSelectedImagesAction,
-  setSelectedImagesAction
+  setSelectedImagesAction,
+  getCommandsDoNotAskAgainCount,
+  isCommandDoNotAskAgain,
+  setCommandDoNotAskAgain,
+  resetCommandsDoNotAskAgain
 };

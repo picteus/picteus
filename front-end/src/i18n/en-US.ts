@@ -482,7 +482,11 @@ export default {
     },
     extensions: {
       shouldConfirmRedirection:
-        "Display a confirmation dialog before the extension triggers a redirection"
+        "Display a confirmation dialog before the extension triggers a redirection",
+      resetDoNotAskAgainCommands: "Reset skipped command confirmation prompts",
+      resetDoNotAskAgainCommandsDescription:
+        "Restore confirmation prompts for all commands previously marked as 'Do not ask again' ({{count}} currently skipped)",
+      resetDoNotAskAgainCommandsButton: "Reset prompts"
     },
     darkMode: "Dark color scheme",
     lightMode: "Light color scheme",
@@ -531,6 +535,7 @@ export default {
     noExtensionDetails: " ",
     delete: "Delete",
     textToImages: "Text to images",
+    doNotAskAgain: "Do not ask again",
     extensionCommandFailed:
       "The command '{{command}}' of extension '{{extension}}' failed to trigger",
     confirmImageDeleteTitle: "Image deletion",

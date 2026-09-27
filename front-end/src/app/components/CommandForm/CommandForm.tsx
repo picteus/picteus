@@ -1,5 +1,5 @@
 import { type ReactElement, useMemo, useState } from "react";
-import { Alert, Button, Flex, Stack, Text } from "@mantine/core";
+import { Alert, Button, Checkbox, Flex, Stack, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { ManifestExtensionCommandSpecification, SearchFilter } from "@picteus/ws-client";
@@ -7,6 +7,7 @@ import { ManifestExtensionCommandSpecification, SearchFilter } from "@picteus/ws
 import { ManualSection, UiCommandType } from "types";
 import { extractMarkdownParagraph } from "utils";
 import { useExtension, useKey } from "app/hooks";
+import { StorageService } from "app/services";
 import { ImagesCollection, Manual, Markdown, RjsfForm } from "app/components";
 
 import { extractSchemaAndUiSchema } from "../RjsfForm/RjsfForm.tsx";
@@ -29,10 +30,23 @@ export default function CommandForm({
 }: CommandFormType): ReactElement
 {
   const [ parameters, setParameters ] = useState<object>();
+  const [ shouldDoNotAskAgain, setShouldDoNotAskAgain ] = useState<boolean>(false);
   const { t, i18n } = useTranslation();
   const { data: extensionAndManual } = useExtension(extensionId);
 
-  useKey("Enter", () => onSend(extensionId, command.id, parameters));
+  const form = command.form;
+  const hasNoParameters = form === undefined || form.parameters === undefined;
+
+  function handleSend(): void
+  {
+    if (command.id !== undefined && hasNoParameters === true && shouldDoNotAskAgain === true)
+    {
+      StorageService.setCommandDoNotAskAgain(extensionId, command.id, true);
+    }
+    onSend(extensionId, command.id, parameters);
+  }
+
+  useKey("Enter", handleSend);
 
   const instructions = useMemo((): string | undefined =>
     {
@@ -40,10 +54,7 @@ export default function CommandForm({
       {
         return undefined;
       }
-      return extractMarkdownParagraph(
-        extensionAndManual.manual.instructions,
-        [ ManualSection.Commands, command.id ]
-      );
+      return extractMarkdownParagraph(extensionAndManual.manual.instructions, [ ManualSection.Commands, command.id ]);
     },
     [ command.id, extensionAndManual ]
   );
@@ -78,14 +89,13 @@ export default function CommandForm({
     [ command.id, extensionAndManual, i18n.language ]
   );
 
-  const form = command.form;
-  const { schema, uiSchema } = form.parameters === undefined ? {
+  const { schema, uiSchema } = hasNoParameters === true ? {
     schema: undefined,
     uiSchema: undefined
   } : extractSchemaAndUiSchema(form.parameters);
   return (
     <>
-      {form.dialogContent && (<Flex mt={"md"} direction={"column"} gap="sm">
+      {form?.dialogContent && (<Flex mt={"md"} direction={"column"} gap="sm">
         <Alert icon={<IconInfoCircle/>}>
           <Markdown content={form.dialogContent.description}/>
         </Alert>
@@ -101,9 +111,16 @@ export default function CommandForm({
       </Alert>
       }
       <ImagesCollection searchParameters={{ filter: searchFilter }}/>
-      {form.parameters && <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setParameters}/>}
-      <Flex mt="md" align="flex-end" justify="flex-end" gap="sm">
-        <Button onClick={() => onSend(extensionId, command.id, parameters)}>
+      {form?.parameters && <RjsfForm schema={schema} uiSchema={uiSchema} onChange={setParameters}/>}
+      <Flex mt="md" align="center" justify="flex-end" gap="md">
+        {hasNoParameters === true && command.id !== undefined && (
+          <Checkbox
+            label={t("commands.doNotAskAgain")}
+            checked={shouldDoNotAskAgain}
+            onChange={(event) => setShouldDoNotAskAgain(event.currentTarget.checked)}
+          />
+        )}
+        <Button onClick={handleSend}>
           {t("button.send")}
         </Button>
       </Flex>
