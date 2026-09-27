@@ -1,9 +1,9 @@
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
-import os from "node:os";
 import Timers from "node:timers";
 import process from "node:process";
+import os from "node:os";
 import { ChildProcess, fork } from "node:child_process";
 import { PassThrough } from "node:stream";
 import zlib from "node:zlib";
@@ -1057,7 +1057,7 @@ export class ApplicationWrapper
 
 async function main(): Promise<void>
 {
-  logger.info(`Starting the application v${app.getVersion()} running under Node.js ${process.version}, Electron v${process.versions.electron}, with working directory set to '${process.cwd()}', in the ${environment} environment`);
+  logger.info(`Starting the application v${app.getVersion()} running on a machine with ${os.cpus().length} CPUs, under ${os.platform()} v${os.release()} OS and architecture '${os.arch()}', Node.js ${process.version}, Electron v${process.versions.electron}, with working directory set to '${process.cwd()}', in the ${environment} environment, with the command line arguments [${process.argv.join(", ")}]`);
   const applicationWrapper = ApplicationWrapper.instance();
 
   if (environment === "production")

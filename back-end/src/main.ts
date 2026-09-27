@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import process from "node:process";
+import os from "node:os";
 import type { Server } from "node:http";
 
 import { Express, Request, Response } from "express";
@@ -624,7 +625,7 @@ async function run(): Promise<void>
 
 async function main(): Promise<void>
 {
-  logger.info(`Starting the back-end running under Node.js ${process.version} with working directory set to '${process.cwd()}'`);
+  logger.info(`Starting the back-end running on a machine with ${os.cpus().length} CPUs, under ${os.platform()} v${os.release()} OS and architecture '${os.arch()}', Node.js ${process.version}, with working directory set to '${process.cwd()}', with the command line arguments [${process.argv.join(", ")}]`);
 
   setExceptionHandlers();
 
