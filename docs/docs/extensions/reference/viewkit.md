@@ -4,7 +4,10 @@
 
 ViewKit complements the other types of image features. Those features are stored in a more **vectorial** manner: they represent extracted or computed values that can be indexed, compared, searched, or used by processing algorithms. ViewKit does not replace those values and is not an image embedding. It is a structured view of feature information for people.
 
-The ViewKit v1 JSON Schema is available at [`https://picteus.github.io/picteus/jsonschema/viewkit-v1.schema.json`](https://picteus.github.io/picteus/jsonschema/viewkit-v1.schema.json), which may be used to validate ViewKit documents — its source being located at [`docs/static/jsonschema/viewkit-v1.schema.json`](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/static/jsonschema/viewkit-v1.schema.json).
+The ViewKit v2 JSON Schema is available at [
+`https://picteus.github.io/picteus/jsonschema/viewkit-v2.schema.json`](https://picteus.github.io/picteus/jsonschema/viewkit-v2.schema.json),
+which may be used to validate ViewKit documents — its source being located at [
+`docs/static/jsonschema/viewkit-v2.schema.json`](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/static/jsonschema/viewkit-v2.schema.json).
 
 ---
 
@@ -52,7 +55,7 @@ Each element has a `type` discriminator.
 | `string-url`       | A URL with optional custom link text.                                                                                                                                           |
 | `identifier`       | A semantic identifier, generally rendered in monospace.                                                                                                                         |
 | `ratio`            | An aspect ratio numeric decimal expression (e.g., `1.7778` or `1.3333`).                                                                                                        |
-| `dimensions`       | Image width and height dimensions separated by `x` with thousands formatting (e.g. `3,840 x 2,160`).                                                                            |
+| `dimensions`       | Image width and height in pixels, formatted with thousands separators (e.g. `3,840 x 2,160`).                                                                                   |
 | `color`            | A hexadecimal color code with configurable `shape` (`circle`, `square`), `size` (`small`, `medium`, `large`), optional `label`, `showText` display toggle, and copy affordance. |
 | `number-unbounded` | A numeric value with an optional unit.                                                                                                                                          |
 | `number-stars`     | A bounded numeric rating rendered as stars.                                                                                                                                     |
@@ -67,15 +70,15 @@ Primitive elements can use modifiers such as text intensity (`low`, `medium`, `h
 
 ### Layout and grouping
 
-| Type                | Purpose                                                                                 |
-|:--------------------|:----------------------------------------------------------------------------------------|
-| `multi-slot`        | Horizontal row with slots and configurable slot widths.                                 |
-| `flowing`           | Flowing inline layout container with automatic line wrapping for child elements.        |
-| `label-value`       | Label on the left and a rendered value on the right, optionally separated by a divider. |
-| `table`             | Structured rows and optional columns, headers, striping, and separators.                |
-| `repeating-group`   | Repeated entries sharing a common structure and retaining their labels.                 |
-| `collapsible-group` | Expandable section with a title, summary, and nested elements.                          |
-| `divider`           | A visual separator with `hairline`, `solid`, or `dashed` styling.                       |
+| Type                | Purpose                                                                                         |
+|:--------------------|:------------------------------------------------------------------------------------------------|
+| `multi-slot`        | Horizontal row with slots. Each slot has an optional label, alignment, and width from 1 to 100. |
+| `flowing`           | Flowing inline layout container with automatic line wrapping for child elements.                |
+| `label-value`       | Label on the left and a rendered value on the right, optionally separated by a divider.         |
+| `table`             | Structured rows and optional columns, headers, striping, and separators.                        |
+| `repeating-group`   | Repeated entries sharing a common structure and retaining their labels.                         |
+| `collapsible-group` | Expandable section with a title, summary, and nested elements.                                  |
+| `divider`           | A visual separator with `hairline`, `solid`, or `dashed` styling.                               |
 
 Layout elements contain other `UiElement` values where appropriate. Their order is significant: the front-end renders the elements in the order in which they occur in the document.
 
@@ -97,6 +100,11 @@ The following document presents a feature with a confidence meter, a label-value
         "value": "Bicycle",
         "representation": "chip"
       }
+    },
+    {
+      "type": "dimensions",
+      "width": 3840,
+      "height": 2160
     },
     {
       "type": "number-meter",

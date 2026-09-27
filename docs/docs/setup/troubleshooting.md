@@ -13,6 +13,10 @@ Troubleshooting in Picteus follows a progressive inspection workflow:
 3. **Inspect Developer Tools in the desktop application**: analyze client-side JavaScript runtime errors and network exchanges ;
 4. **File an issue on the GitHub tracker**: if the issue is unresolvable or represents a bug, report it with supporting traces.
 
+The startup log records the operating system, OS release, CPU architecture, CPU count, Node.js version, working
+directory, and command-line arguments. Include that startup entry when reporting a platform-specific problem; it helps
+distinguish runtime and environment issues from application-level failures.
+
 ---
 
 ## 1. Inspecting front-end activities

@@ -150,6 +150,25 @@ Built-in metadata and the enrichment triplet are deliberately designed to comple
 5. **Action execution via gated commands**: with the image selected, extension commands gated on assigned tags — such as
    sending the generation recipe to an external editing application — become available.
 
+## Computing and updating enrichment facets
+
+Extensions compute tags, features, and embeddings when Picteus asks them to process images for the capabilities declared
+in their manifests. For each image, the back-end sends the corresponding capability event — `image.computeTags`,
+`image.computeFeatures`, or `image.computeEmbeddings` — to the responsible extension. The extension performs the
+computation and writes its results through the image web services.
+
+The UI can trigger this work by requesting extension synchronization, synchronization for images matching filters, or
+synchronization for a single image. These requests use the extension synchronization endpoint or the image capability
+endpoints. Extension synchronization checks the library for images that do not yet have results from that extension;
+image and filtered-image synchronization targets the requested image or matching set.
+
+Extensions persist their results through the [tag write endpoints](webservicesapi/images.md#tags)
+(`setTags` or `ensureTags`), [feature write endpoints](webservicesapi/images.md#features)
+(`setFeatures` or `ensureFeatures`), and [embedding write endpoint](webservicesapi/images.md#embeddings)
+(`setEmbeddings`). See [extension synchronization](webservicesapi/extensions.md#extension-synchronization) and
+[single-image and filtered-image capability requests](webservicesapi/images.md#running-image-capabilities) for the
+services that initiate computation.
+
 ---
 
 ## Storage architecture: relational SQL and vector database

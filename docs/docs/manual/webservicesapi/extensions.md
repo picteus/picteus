@@ -25,6 +25,13 @@ Extension endpoints install, build, compile, configure, run, and remove Picteus 
 
 See the [extensions documentation](../../extensions/guide.md) for extension authoring concepts. Endpoint contracts are defined in [`back-end/openapi.json`](https://github.com/picteus/picteus/blob/main/back-end/openapi.json).
 
+## Extension synchronization
+
+`PUT /extension/{id}/synchronize` asks the enabled extension to process library images for its declared image
+capabilities. The back-end schedules image capability events for images that do not yet have results from that
+extension. See [Computing and updating enrichment facets](../facets.md#computing-and-updating-enrichment-facets) for
+how the extension computes and writes those results.
+
 ## Installing and updating extensions
 
 Picteus provides two special web services for extending the application runtime:

@@ -27,6 +27,19 @@ The image service provides access to image records, binary representations, meta
 | `PUT` | `/image/{id}/runCapabilities` | Runs extension capabilities for one image. |
 | `PUT` | `/image/search/runCapabilities` | Runs extension capabilities for matching images. |
 
+## Running image capabilities
+
+`PUT /image/{id}/runCapabilities` requests capability processing for one image.
+`PUT /image/search/runCapabilities` requests it for images matching the supplied search parameters. Both endpoints
+accept an optional `extensionIds` query parameter to limit processing to selected enabled extensions. If it is omitted,
+all enabled extensions that provide image capabilities are considered. An empty list is rejected, as are disabled or
+unknown extension identifiers.
+
+The back-end sends the matching capability events to extensions, which write computed results through the tag, feature,
+and embedding endpoints below.
+See [Computing and updating enrichment facets](../facets.md#computing-and-updating-enrichment-facets)
+for the workflow.
+
 ## Tags
 
 The tag endpoints replace or extend extension-owned tags, retrieve tags for one image, list repository tags, and search tags:
