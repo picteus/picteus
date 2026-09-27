@@ -54,6 +54,40 @@ export default defineConfig(({ mode }) =>
     },
     build: {
       outDir: "../build/front-end",
+      emptyOutDir: true,
+      chunkSizeWarningLimit: 700,
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              {
+                name: "mantine",
+                test: /[\\/]node_modules[\\/]@mantine[\\/]/
+              },
+              {
+                name: "highlight",
+                test: /[\\/]node_modules[\\/]highlight\.js[\\/]/
+              },
+              {
+                name: "tabler-icons",
+                test: /[\\/]node_modules[\\/]@tabler[\\/]icons-react[\\/]/
+              },
+              {
+                name: "rjsf",
+                test: /[\\/]node_modules[\\/](@rjsf|@aokiapp)[\\/]/
+              },
+              {
+                name: "react-core",
+                test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/
+              },
+              {
+                name: "vendor",
+                test: /[\\/]node_modules[\\/]/
+              }
+            ]
+          }
+        }
+      },
       terserOptions: isProfiling === true ? { keep_fnames: true, keep_classnames: true } as TerserOptions : undefined,
       sourcemap: isProfiling === true
     }
