@@ -28,8 +28,7 @@
             "image.created",
             "image.updated",
             "image.computeEmbeddings",
-            "image.computeFeatures",
-            "image.runCommand"
+            "image.computeFeatures"
           ],
           "durationInMilliseconds": 100,
           "maximumCount": 10
