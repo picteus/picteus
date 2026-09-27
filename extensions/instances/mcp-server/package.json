@@ -1,6 +1,6 @@
 {
   "name": "@picteus/mcp-server",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "productName": "Picteus MCP Server",
   "description": "Exposes a MCP server over the Picteus API.",
   "keywords": [

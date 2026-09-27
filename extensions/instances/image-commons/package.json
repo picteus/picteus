@@ -1,6 +1,6 @@
 {
   "name": "@picteus/image-commons",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "productName": "Image Commons",
   "description": "Proposes common operations on images.",
   "keywords": [

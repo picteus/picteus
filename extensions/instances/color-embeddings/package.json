@@ -1,6 +1,6 @@
 {
   "name": "@picteus/color-embeddings",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "productName": "Picteus Color Embeddings",
   "description": "Computes embedding of the image dominant colors.",
   "keywords": [

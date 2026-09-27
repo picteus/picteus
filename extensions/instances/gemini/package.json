@@ -1,6 +1,6 @@
 {
   "name": "@picteus/gemini",
-  "version": "1.5.1",
+  "version": "1.6.1",
   "productName": "Google Gemini",
   "description": "Accesses to all sorts of Google Gemini image-related features.",
   "keywords": [

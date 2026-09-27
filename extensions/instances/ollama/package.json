@@ -1,6 +1,6 @@
 {
   "name": "@picteus/ollama",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "productName": "Picteus Llava extension",
   "description": "A Picteus extension wrapping Llava.",
   "keywords": [
