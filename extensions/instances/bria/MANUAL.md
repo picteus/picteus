@@ -18,6 +18,7 @@ An active internet connection is required during the initial execution to downlo
 ## removeBackground
 Isolates the foreground subject and removes the background from one or multiple selected images using the local Bria RMBG-1.4 segmentation model.
 
+### Details
 1. When invoked on one or more selected images, the command processes each image sequentially through the Bria AI segmentation pipeline.
 2. The image is downloaded from the repository in PNG format and passed to the neural network pipeline, which extracts the foreground subject and produces a transparent PNG.
 3. The background-less image is stored in the same repository as the source image, with `_backgroundless` appended to the original filename and the parent relationship preserved (`parentId` linked to the original image).

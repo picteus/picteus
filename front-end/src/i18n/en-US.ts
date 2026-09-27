@@ -27,6 +27,7 @@ export default {
     fileProcessing:
       "File processing is in progress and may take some time. Please do not close the window.",
     toastSuccessTitle: "Operation successful",
+    toastProgressTitle: "Operation ongoing",
     toastCancelTitle: "Operation cancelled",
     toastFailureTitle: "Operation failed"
   },
@@ -383,8 +384,7 @@ export default {
     errorUninstall: "An error occurred while uninstalling the extension",
     confirmDeleteTitle: "Uninstall extension",
     confirmDeleteMessage: "Are you sure you want to uninstall the extension '{{name}}'?",
-    errorToggleStatus: "An error occurred while trying to toggle the extension status.",
-    successSynchronize: "The extension '{{name}}' is now synchronizing."
+    synchronizing: "The extension '{{name}}' is now synchronizing…"
   },
   eventInformation: {
     idle: "Listening to events…",
@@ -513,7 +513,9 @@ export default {
       "Synchronization re-runs the selected extensions' tagging, feature and embedding capabilities over the matching images. Existing results may be overwritten and the operation can take a while.",
     collectionExplanation: "Images involved in the synchronization:",
     selectAll: "Select all",
-    noExtensions: "There is no installed and enabled extension providing image capabilities."
+    noExtensions: "There is no installed and enabled extension providing image capabilities.",
+    synchronizingSingle: "The image is now synchronizing…",
+    synchronizingMultiple: "The images are now synchronizing…"
   },
   synchronizeExtensionModal: {
     title: "Synchronize extension",
@@ -536,6 +538,8 @@ export default {
     delete: "Delete",
     textToImages: "Text to images",
     doNotAskAgain: "Do not ask again",
+    about: "About this command",
+    providedBy: "Provided by",
     extensionCommandFailed:
       "The command '{{command}}' of extension '{{extension}}' failed to trigger",
     confirmImageDeleteTitle: "Image deletion",

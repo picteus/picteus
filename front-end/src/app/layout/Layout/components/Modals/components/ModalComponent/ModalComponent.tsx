@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useRef } from "react";
+import React, { ReactElement, ReactNode, useCallback, useEffect, useRef } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { ActionIcon, Flex, Modal } from "@mantine/core";
 import { IconChevronLeft } from "@tabler/icons-react";
@@ -133,10 +133,10 @@ export default function ModalComponent({
 
   const fullScreen = modal.fullScreen;
 
-  function computeTitle()
+  function computeTitle(): ReactNode
   {
     const title = typeof modal.title === "string" ?
-      <ContentTitle text={modal.title} icon={modal.icon}/> : modal.title;
+      <ContentTitle text={modal.title} icon={modal.icon} details={modal.subtitle}/> : modal.title;
     if (fullScreen)
     {
       return (

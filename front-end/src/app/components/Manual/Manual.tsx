@@ -6,12 +6,14 @@ import Markdown from "../Markdown/Markdown.tsx";
 
 
 export type ManualType = {
-  content?: string;
+  content: string;
+  title?: string;
   isExpanded?: boolean;
 };
 
 export default function Manual({
   content,
+  title,
   isExpanded = false
 }: ManualType): ReactElement | null
 {
@@ -26,7 +28,7 @@ export default function Manual({
       <Accordion.Item value="manual">
         <Accordion.Control>
           <Text size="xs" fw={500}>
-            {t("field.manual")}
+            {title ?? t("field.manual")}
           </Text>
         </Accordion.Control>
         <Accordion.Panel>

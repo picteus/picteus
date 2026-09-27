@@ -13,7 +13,8 @@ function matchHeadingTitle(headingTitle: string, targetTitle: string): boolean
 
 export function extractMarkdownParagraph(
   markdown: string,
-  sectionPath: readonly string[] | string
+  sectionPath: readonly string[] | string,
+  withSubSections: boolean = true
 ): string | undefined
 {
   if (!markdown || markdown.trim().length === 0)
@@ -54,8 +55,9 @@ export function extractMarkdownParagraph(
 
         if (isCapturing)
         {
-          // We stop capturing when encountering a heading of the same or higher level.
-          if (depth <= targetDepth)
+          // We stop capturing when encountering a heading of the same or higher level,
+          // or any sub-heading if sub-sections should be stripped.
+          if (depth <= targetDepth || withSubSections === false)
           {
             break;
           }
@@ -66,7 +68,7 @@ export function extractMarkdownParagraph(
           while (
             headingStack.length > 0 &&
             headingStack[headingStack.length - 1].depth >= depth
-          )
+            )
           {
             headingStack.pop();
           }

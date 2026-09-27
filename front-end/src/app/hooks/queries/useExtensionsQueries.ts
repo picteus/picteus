@@ -85,14 +85,14 @@ export function useExtensionsAll(): UseQueryResult<{
   );
 }
 
-export function useExtension(id?: string): UseQueryResult<ExtensionAndManual, Error>
+export function useExtension(id: string): UseQueryResult<ExtensionAndManual, Error>
 {
   return useQuery(
     {
-      queryKey: queryKeys.extensions.detail(id ?? ""),
+      queryKey: queryKeys.extensions.detail(id),
       queryFn: (): Promise<ExtensionAndManual> =>
       {
-        return ExtensionsService.get({ id: id! });
+        return ExtensionsService.get({ id });
       },
       enabled: Boolean(id)
     }

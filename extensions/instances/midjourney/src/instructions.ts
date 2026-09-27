@@ -11,6 +11,7 @@ import {
   string,
   stringUrl,
   table,
+  TableColumnWidthMode,
   tableRow,
   type TableRow,
   TextIntensity,
@@ -391,25 +392,21 @@ export class MidjourneyInstructions
       secondaryRows.push(tableRow([ string("Job ID", firstColumnOptions), identifier(this.guid, copiableOptions) ]));
     }
 
+    const tableOptions =
+      {
+        withRowSeparators: true,
+        columns: [ { width: 25, widthMode: TableColumnWidthMode.maximum } ]
+      };
     const elements: UiElement[] = [];
     if (primaryRows.length > 0)
     {
-      elements.push(table(
-        primaryRows,
-        {
-          withRowSeparators: true
-        }
-      ));
+      elements.push(table(primaryRows, tableOptions));
     }
     if (secondaryRows.length > 0)
     {
       elements.push(collapsibleGroup("Details",
         [
-          table(secondaryRows,
-            {
-              withRowSeparators: true
-            }
-          )
+          table(secondaryRows, tableOptions)
         ],
         {
           summary: `${secondaryRows.length} properties`,

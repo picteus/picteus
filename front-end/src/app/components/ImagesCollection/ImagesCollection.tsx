@@ -44,27 +44,56 @@ function IndicatorCard({
   );
 }
 
-type ImagesCollectionType = {
-  searchParameters: SearchParameters;
+type CommonImagesCollectionPropsType = {
   count?: number;
   explanation?: string;
 };
 
+type WithSearchParametersImagesCollectionPropsType = CommonImagesCollectionPropsType & {
+  searchParameters: SearchParameters;
+  images?: never;
+  totalCount?: never;
+};
+
+type WithImagesImagesCollectionPropsType = CommonImagesCollectionPropsType & {
+  images: ImageSummary[];
+  totalCount?: number;
+  searchParameters?: never;
+};
+
+export type ImagesCollectionPropsType =
+  | WithSearchParametersImagesCollectionPropsType
+  | WithImagesImagesCollectionPropsType;
+
 export default function ImagesCollection({
-  searchParameters,
   count = 20,
-  explanation
-}: ImagesCollectionType): ReactElement
+  explanation,
+  searchParameters,
+  images: initialImages,
+  totalCount: initialTotalCount
+}: ImagesCollectionPropsType): ReactElement
 {
   const [ t ] = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [ images, setImages ] = useState<ImageSummary[]>([]);
-  const [ totalCount, setTotalCount ] = useState<number>();
+  const [ images, setImages ] = useState<ImageSummary[]>(initialImages ?? []);
+  const [ totalCount, setTotalCount ] = useState<number | undefined>(initialTotalCount);
   const [ , addModal, removeModal ] = useActionModalContext();
   const edge = 100;
 
   useEffect(() =>
   {
+    if (initialImages !== undefined)
+    {
+      setImages(initialImages);
+      setTotalCount(initialTotalCount);
+      return;
+    }
+
+    if (searchParameters === undefined)
+    {
+      return;
+    }
+
     async function load(): Promise<void>
     {
       try
@@ -86,7 +115,7 @@ export default function ImagesCollection({
     }
 
     void load();
-  }, [ searchParameters, count ]);
+  }, [ searchParameters, initialImages, initialTotalCount, count ]);
 
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {

@@ -2,15 +2,16 @@ import React, { ReactNode } from "react";
 import { Alert, Notification, Stack, Text } from "@mantine/core";
 import { randomId } from "@mantine/hooks";
 import { toast, ToastContent, ToastOptions } from "react-toastify";
-import { IconCancel, IconCheck, IconX } from "@tabler/icons-react";
+import { IconCancel, IconCheck, IconProgress, IconX } from "@tabler/icons-react";
 import i18n from "i18next";
 
 import { Common, CopyText } from "app/components";
 
 
-function withTitleAndSubtitle(type: "info" | "cancel" | "warn" | "error", title: string, subtitle?: ReactNode): void
+function withTitleAndSubtitle(type: "info" | "progress" | "cancel" | "warn" | "error", title: string, subtitle?: ReactNode): void
 {
   const isInfo = type === "info";
+  const isProgress = type === "progress";
   const isCancel = type === "cancel";
   const isWarn = type === "warn";
   const isErrorOrWarn = isWarn || type === "error";
@@ -24,9 +25,10 @@ function withTitleAndSubtitle(type: "info" | "cancel" | "warn" | "error", title:
     };
   triggerToast(({ closeToast }) => (
     <Notification
-      icon={isInfo ? <IconCheck size={Common.ToastIconEdge}/> : (isCancel ? <IconCancel size={Common.ToastIconEdge}/> :
-        <IconX size={Common.ToastIconEdge}/>)}
-      color={isInfo ? "teal" : (isCancel ? "orange" : "red")}
+      icon={isInfo ? <IconCheck size={Common.ToastIconEdge}/> : (isProgress ?
+        <IconProgress size={Common.ToastIconEdge}/> : (isCancel ? <IconCancel size={Common.ToastIconEdge}/> :
+          <IconX size={Common.ToastIconEdge}/>))}
+      color={isInfo ? "teal" : (isProgress ? "violet" : (isCancel ? "orange" : "red"))}
       title={title}
       onClose={closeToast}
       onClick={closeToast}
@@ -40,6 +42,11 @@ function withTitleAndSubtitle(type: "info" | "cancel" | "warn" | "error", title:
 function success(subtitle?: string): void
 {
   return withTitleAndSubtitle("info", i18n.t("message.toastSuccessTitle"), subtitle);
+}
+
+function progress(subtitle?: string): void
+{
+  return withTitleAndSubtitle("progress", i18n.t("message.toastProgressTitle"), subtitle);
 }
 
 function cancel(subtitle?: string): void
@@ -165,6 +172,7 @@ function triggerToast(content: ToastContent, options: ToastOptions, id: string):
 export default {
   withTitleAndSubtitle,
   success,
+  progress,
   cancel,
   failure,
   failureAndMessage,

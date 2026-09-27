@@ -1,5 +1,7 @@
 import React from "react";
+import { Flex, Text } from "@mantine/core";
 import { randomId } from "@mantine/hooks";
+import { useTranslation } from "react-i18next";
 
 import { SearchFilter } from "@picteus/ws-client";
 
@@ -7,11 +9,12 @@ import { UiCommandType } from "types";
 import { ToastService } from "utils";
 import { useActionModalContext } from "app/context";
 import { ExtensionsService, StorageService } from "app/services";
-import { CommandForm } from "app/components";
+import { CommandForm, ExtensionBadge } from "app/components";
 
 
 export default function useExtensionCommandRunner(): (extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void) => Promise<void>
 {
+  const { t } = useTranslation();
   const [ , addModal, removeModal ] = useActionModalContext();
 
   async function handleOnSendCommand(
@@ -102,11 +105,18 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
     }
 
     const modalId = randomId();
-
     addModal({
       id: modalId,
       title: command.label,
-      icon: form?.dialogContent?.icon ?? { url: command.iconUri ? ExtensionsService.getCommandIconURL(extensionId, command.iconUri) : ExtensionsService.getIconURL(extensionId) },
+      subtitle: (<Flex>
+        <Text size="sm" c="dimmed" mr="xs">{t("commands.providedBy")}</Text>
+        <ExtensionBadge idOrExtension={extensionId} color="gray"/>
+      </Flex>),
+      icon: form?.dialogContent?.icon ?? {
+        url: command.iconUri
+          ? ExtensionsService.getCommandIconURL(extensionId, command.iconUri)
+          : ExtensionsService.getIconURL(extensionId)
+      },
       // TODO: make this customizable in the definition of a command
       size: "m",
       component: (

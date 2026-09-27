@@ -37,17 +37,35 @@ export default function useRunCapabilities(): RunCapabilitiesHookType
   const runCapabilities = useCallback((id: string): void =>
   {
     const searchParameters: SearchParameters = { filter: { origin: { kind: SearchOriginNature.Images, ids: [ id ] } } };
-    openConfirmation(searchParameters, (extensionIds: string[]) =>
+    openConfirmation(searchParameters, async (extensionIds: string[]) =>
     {
-      ImageService.runCapabilities({ id, extensionIds }).catch(ToastService.apiCallError);
+      try
+      {
+        ToastService.progress(i18n.t("runCapabilitiesModal.synchronizingSingle"));
+        await ImageService.runCapabilities({ id, extensionIds });
+        ToastService.success();
+      }
+      catch (error)
+      {
+        ToastService.apiCallError(error);
+      }
     });
   }, [ openConfirmation ]);
 
   const searchRunCapabilities = useCallback((searchParameters: SearchParameters): void =>
   {
-    openConfirmation(searchParameters, (extensionIds: string[]) =>
+    openConfirmation(searchParameters, async (extensionIds: string[]) =>
     {
-      ImageService.searchRunCapabilities({ searchParameters, extensionIds }).catch(ToastService.apiCallError);
+      try
+      {
+        ToastService.progress(i18n.t("runCapabilitiesModal.synchronizingMultiple"));
+        await ImageService.searchRunCapabilities({ searchParameters, extensionIds });
+        ToastService.success();
+      }
+      catch (error)
+      {
+        ToastService.apiCallError(error);
+      }
     });
   }, [ openConfirmation ]);
 

@@ -8,6 +8,3 @@ This extension exposes 2 features:
 - The `Dominant Colors` specifies how any dominant colors should be extracted for an image.
 
 # Commands
-
-## compute
-Runs the computation of the vectorial embeddings and the dominant colors and stores them.

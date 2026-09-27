@@ -12,6 +12,7 @@ It adds the following capabilities:
 ## convert
 Converts one or multiple selected images into a target file format, with optional resizing and metadata removal, and saves the resulting images in the original image repository.
 
+### Details
 - `Format`: target image format (`jpeg`, `png`, `webp`, `gif`, `avif`, or `heif`).
 - `Strip metadata?`: whether embedded EXIF and format metadata are stripped from the converted images.
 - `Width`: optional target width in pixels. If omitted, the original image width is preserved.
@@ -27,6 +28,7 @@ Converts one or multiple selected images into a target file format, with optiona
 ## rateAndComment
 Enables users to assign a star rating and an optional textual comment to each selected image.
 
+### Details
 1. When invoked on one or more selected images, the command iterates through each image and presents an execution form dialog displaying the current image context.
 2. The form provides the following input fields:
    - `Rating`: an integer rating from 1 to 5 presented as radio buttons. Defaults to the image's existing rating, or 3 if unrated.
@@ -36,8 +38,9 @@ Enables users to assign a star rating and an optional textual comment to each se
 5. Cancelling the form for an image terminates processing without modifying remaining unsubmitted images.
 
 ## tag
-Opens an embedded interactive tagging interface within a dialog box to inspect, assign, and manage tags across selected images.
+Enables to assign, and manage tags across selected images.
 
+### Details
 1. When triggered on selected images, the extension serves an embedded web application bundle inside a modal dialog.
 2. The user interface displays:
    - visual thumbnail cards for all selected images ;
@@ -49,6 +52,7 @@ Opens an embedded interactive tagging interface within a dialog box to inspect, 
 ## analytics
 Computes and visualizes the statistical breakdown and temporal distribution of selected tags across an entire image collection.
 
+### Details
 - `Collection`: the image collection whose images will be analyzed.
 - `Tags`: the list of tag identifiers to analyze and compare.
 

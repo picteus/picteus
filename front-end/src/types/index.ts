@@ -298,6 +298,7 @@ export type ActionModalValue = {
   id?: string;
   isStackable?: boolean;
   title?: ReactNode;
+  subtitle?: ReactNode;
   withCloseButton?: boolean;
   closeOnEscape?: boolean;
   icon?: ContentIconType;

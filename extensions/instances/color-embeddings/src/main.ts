@@ -65,22 +65,6 @@ class ColorEmbeddingsExtension extends PicteusExtension
 
   protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], _parameters: CommandParameters): Promise<void>
   {
-    if (commandId === "compute")
-    {
-      const imagesCount = imageIds.length;
-      communicator.sendLog(`Computing the color embeddings and features for ${imagesCount} image(s)`, "info");
-      for (const imageId of imageIds)
-      {
-        try
-        {
-          await this.computeAndStoreEmbeddingsAndFeatures(communicator, imageId);
-        }
-        catch (error)
-        {
-          communicator.sendLog(`Failed to compute the color data for the image with id '${imageId}'. Reason: '${error.message}'`, "warn");
-        }
-      }
-    }
   }
 
   private async computeAndStoreEmbeddingsAndFeatures(communicator: Communicator, imageId: string): Promise<void>

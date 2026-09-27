@@ -25,6 +25,7 @@ The extension declares the following configuration setting:
 ## run
 Executes any public or accessible private Replicate model by providing its identifier, automatically querying its input parameters to generate an interactive configuration dialog.
 
+### Details
 - `Model Identifier`: the identifier of the Replicate model to execute, specified in `owner/name` or `owner/name:version` format (defaults to `bytedance/seedream-4`).
 
 1. The extension validates the model identifier format and queries Replicate for model details and its OpenAPI input schema.
@@ -36,6 +37,7 @@ Executes any public or accessible private Replicate model by providing its ident
 ## generate
 Generates a new image from scratch using the Flux Pro model (`black-forest-labs/flux-kontext-pro`) hosted on Replicate.
 
+### Details
 1. The extension queries Replicate for the current input schema of `black-forest-labs/flux-kontext-pro`.
 2. An interactive dialog prompts for generation instructions and parameters — including the prompt, aspect ratio, guidance, and output quality settings.
 3. The extension submits the prediction to Replicate and waits for processing to complete.
@@ -46,6 +48,7 @@ Generates a new image from scratch using the Flux Pro model (`black-forest-labs/
 ## modify
 Transforms an existing image from the Picteus library using the Flux Pro model (`black-forest-labs/flux-kontext-pro`) on Replicate.
 
+### Details
 1. The command operates on the currently selected image in the Picteus interface.
 2. The extension downloads the selected image, normalizes it to a 1024x1024 PNG asset with stripped metadata, and assigns it as the reference image.
 3. An interactive configuration dialog prompts for modification instructions and guidance parameters — with the reference image parameter handled automatically.
