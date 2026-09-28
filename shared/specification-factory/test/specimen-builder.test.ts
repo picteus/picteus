@@ -887,7 +887,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
                       }
                     }, {
                       "type": "number-unbounded",
-                      "value": null,
+                      "value": 0,
                       "modifiers": {
                         "copyable": true
                       }
@@ -909,7 +909,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
                       }
                     }, {
                       "type": "number-unbounded",
-                      "value": null,
+                      "value": 0,
                       "modifiers": {
                         "copyable": true
                       }
@@ -1352,7 +1352,7 @@ describe("TypeScript Card & Visual DSL Builder", () =>
       "schemaVersion": "1.0"
     };
     const uiContainer = UiContainer.parse(json, true);
-    assert.equal(uiContainer.elements.length, 6);
+    assert.equal(uiContainer.elements.length, 4);
   });
 
 });

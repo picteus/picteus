@@ -1,13 +1,18 @@
+import { CodeWriter, TsDocParam } from "./codeWriter.js";
+import {
+  capitalizeText,
+  computeBaseModelProperties,
+  computeFactoryNames,
+  DISCRIMINATOR_PROPERTY,
+  ELEMENTS_PROPERTY,
+  partitionProperties,
+  SCHEMA_VERSION_PROPERTY,
+  SCHEMA_VERSION_VALUE
+} from "./codegenModel.js";
 import { GrammarSpec, ViewKitModel, ViewKitProperty, ViewKitType } from "./typespecModel.js";
 
 
-const SCHEMA_VERSION_PROPERTY = "schemaVersion";
-const SCHEMA_VERSION_VALUE = "1.0";
-const DISCRIMINATOR_PROPERTY = "type";
-const ELEMENTS_PROPERTY = "elements";
-const ELEMENT_SUFFIX = "Element";
 const RECORD_TYPE = "Record<string, unknown>";
-
 const BUILDER_RETURN_DESCRIPTION = "This builder instance for method chaining.";
 const COMPACT_JSON_RETURN_DESCRIPTION = "Compact JSON string without indentation.";
 
@@ -20,133 +25,25 @@ const CONCRETE_CLASSES_SECTION_HEADER = "// --- Concrete Model Classes Implement
 const FUNCTIONAL_FACTORIES_SECTION_HEADER = "// --- Functional DSL Factory Helpers ---";
 const TYPE_GUARDS_SECTION_HEADER = "// --- Type Guards ---";
 
-
-export interface TsDocParam
+function formatTsDefaultValue(property: ViewKitProperty): string | undefined
 {
-
-  name: string;
-  description?: string;
-
-}
-
-export interface TsDocOptions
-{
-
-  summary?: string;
-  remarks?: string;
-  params?: TsDocParam[];
-  returns?: string;
-  defaultValue?: string;
-  example?: string;
-  indent?: string;
-
-}
-
-interface PropertyPartition
-{
-
-  readonly nonTypeProperties: ViewKitProperty[];
-  readonly requiredProperties: ViewKitProperty[];
-  readonly optionalProperties: ViewKitProperty[];
-  readonly arrayProperties: ViewKitProperty[];
-  readonly scalarRequiredProperties: ViewKitProperty[];
-  readonly scalarOptionalProperties: ViewKitProperty[];
-
-}
-
-function formatTsDoc(options: TsDocOptions): string
-{
-  const indent = options.indent ?? "";
-  const rawLines: string[] = [];
-
-  if (options.summary)
+  if (property.defaultValue === undefined)
   {
-    const summaryLines = options.summary.trim().split("\n");
-    rawLines.push(
-      ...summaryLines.map(
-        (line) =>
-        {
-          return line.trim();
-        }
-      )
-    );
+    return undefined;
   }
-
-  if (options.remarks)
+  if (property.type.kind === "enum")
   {
-    if (rawLines.length > 0)
-    {
-      rawLines.push("");
-    }
-    rawLines.push("@remarks");
-    const remarkLines = options.remarks.trim().split("\n");
-    rawLines.push(
-      ...remarkLines.map(
-        (line) =>
-        {
-          return line.trim();
-        }
-      )
-    );
+    return `${property.type.name}.${property.defaultValue}`;
   }
-
-  if (options.defaultValue !== undefined)
+  if (property.type.kind === "string" || typeof property.defaultValue === "string")
   {
-    if (rawLines.length > 0)
-    {
-      rawLines.push("");
-    }
-    rawLines.push(`@defaultValue ${options.defaultValue}`);
+    return `"${property.defaultValue}"`;
   }
-
-  if (options.params && options.params.length > 0)
+  if (typeof property.defaultValue === "boolean")
   {
-    if (rawLines.length > 0)
-    {
-      rawLines.push("");
-    }
-    for (const parameter of options.params)
-    {
-      const description = parameter.description ? ` - ${parameter.description.trim()}` : "";
-      rawLines.push(`@param ${parameter.name}${description}`);
-    }
+    return property.defaultValue ? "true" : "false";
   }
-
-  if (options.returns)
-  {
-    if (rawLines.length > 0 && (!options.params || options.params.length === 0))
-    {
-      rawLines.push("");
-    }
-    rawLines.push(`@returns ${options.returns}`);
-  }
-
-  if (options.example)
-  {
-    if (rawLines.length > 0)
-    {
-      rawLines.push("");
-    }
-    rawLines.push("@example", "```typescript", options.example.trim(), "```");
-  }
-
-  if (rawLines.length === 0)
-  {
-    return "";
-  }
-
-  if (rawLines.length === 1 && !rawLines[0].startsWith("@"))
-  {
-    return `${indent}/** ${rawLines[0]} */`;
-  }
-
-  const formattedLines = rawLines.map(
-    (line) =>
-    {
-      return line === "" ? `${indent} *` : `${indent} * ${line}`;
-    }
-  );
-  return `${indent}/**\n${formattedLines.join("\n")}\n${indent} */`;
+  return String(property.defaultValue);
 }
 
 function resolveTsType(type: ViewKitType): string
@@ -177,98 +74,6 @@ function resolveTsType(type: ViewKitType): string
     default:
       return "unknown";
   }
-}
-
-function capitalizeText(text: string): string
-{
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
-function getFactoryNames(model: ViewKitModel): { primary: string; aliases: string[] }
-{
-  let baseName = model.name;
-  if (baseName.endsWith(ELEMENT_SUFFIX))
-  {
-    baseName = baseName.slice(0, -ELEMENT_SUFFIX.length);
-  }
-  const primary = baseName.charAt(0).toLowerCase() + baseName.slice(1);
-  return { primary, aliases: model.aliases ?? [] };
-}
-
-function partitionProperties(
-  properties: ViewKitProperty[],
-  options?: { excludeSchemaVersion?: boolean }
-): PropertyPartition
-{
-  const nonTypeProperties = properties.filter(
-    (property) =>
-    {
-      return (
-        property.name !== DISCRIMINATOR_PROPERTY &&
-        (!options?.excludeSchemaVersion || property.name !== SCHEMA_VERSION_PROPERTY)
-      );
-    }
-  );
-  const requiredProperties = nonTypeProperties.filter(
-    (property) =>
-    {
-      return !property.optional && property.defaultValue === undefined;
-    }
-  );
-  const optionalProperties = nonTypeProperties.filter(
-    (property) =>
-    {
-      return property.optional || property.defaultValue !== undefined;
-    }
-  );
-  const arrayProperties = nonTypeProperties.filter(
-    (property) =>
-    {
-      return property.type.kind === "array";
-    }
-  );
-  const scalarRequiredProperties = requiredProperties.filter(
-    (property) =>
-    {
-      return property.type.kind !== "array";
-    }
-  );
-  const scalarOptionalProperties = optionalProperties.filter(
-    (property) =>
-    {
-      return property.type.kind !== "array";
-    }
-  );
-
-  return {
-    nonTypeProperties,
-    requiredProperties,
-    optionalProperties,
-    arrayProperties,
-    scalarRequiredProperties,
-    scalarOptionalProperties
-  };
-}
-
-function formatTsDefaultValue(property: ViewKitProperty): string | undefined
-{
-  if (property.defaultValue === undefined)
-  {
-    return undefined;
-  }
-  if (property.type.kind === "enum")
-  {
-    return `${property.type.name}.${property.defaultValue}`;
-  }
-  if (property.type.kind === "string" || typeof property.defaultValue === "string")
-  {
-    return `"${property.defaultValue}"`;
-  }
-  if (typeof property.defaultValue === "boolean")
-  {
-    return property.defaultValue ? "true" : "false";
-  }
-  return String(property.defaultValue);
 }
 
 function formatOptionsParameter(
@@ -315,7 +120,7 @@ function formatClassInvocationArgs(
   mode: "builder" | "params" | "helper"
 ): string[]
 {
-  const args: string[] = [];
+  const invocationArgs: string[] = [];
   const requiredArrays = arrayProperties.filter((property) => !property.optional);
   const optionalArrays = arrayProperties.filter((property) => property.optional);
 
@@ -323,15 +128,15 @@ function formatClassInvocationArgs(
   {
     if (mode === "builder")
     {
-      args.push(`this._${property.name}`);
+      invocationArgs.push(`this._${property.name}`);
     }
     else if (mode === "params")
     {
-      args.push(`params.${property.name}`);
+      invocationArgs.push(`params.${property.name}`);
     }
     else
     {
-      args.push(property.name);
+      invocationArgs.push(property.name);
     }
   }
 
@@ -339,15 +144,15 @@ function formatClassInvocationArgs(
   {
     if (mode === "builder")
     {
-      args.push(`this._${property.name}`);
+      invocationArgs.push(`this._${property.name}`);
     }
     else if (mode === "params")
     {
-      args.push(`params.${property.name}`);
+      invocationArgs.push(`params.${property.name}`);
     }
     else
     {
-      args.push(`options?.${property.name} ?? []`);
+      invocationArgs.push(`options?.${property.name} ?? []`);
     }
   }
 
@@ -387,10 +192,10 @@ function formatClassInvocationArgs(
   if (optEntries.length > 0)
   {
     const indent = mode === "helper" ? "      " : "        ";
-    args.push(`{\n${indent}${optEntries.join(`,\n${indent}`)}\n${mode === "helper" ? "    " : "      "}}`);
+    invocationArgs.push(`{\n${indent}${optEntries.join(`,\n${indent}`)}\n${mode === "helper" ? "    " : "      "}}`);
   }
 
-  return args;
+  return invocationArgs;
 }
 
 function generateModelPropertyChecks(
@@ -419,10 +224,9 @@ function generateModelPropertyChecks(
   return propertyChecks;
 }
 
-function generateModelFactory(model: ViewKitModel): string[]
+function generateModelFactory(model: ViewKitModel, writer: CodeWriter): void
 {
-  const lines: string[] = [];
-  const { primary, aliases } = getFactoryNames(model);
+  const { primary, aliases } = computeFactoryNames(model);
   const { requiredProperties, optionalProperties } = partitionProperties(model.properties);
 
   const parameters: string[] = [];
@@ -451,68 +255,71 @@ function generateModelFactory(model: ViewKitModel): string[]
 
   for (const functionName of allNames)
   {
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Creates a \`${model.name}\` component instance.`,
-          remarks: model.doc,
-          params: docParameters,
-          returns: `A strongly-typed \`${model.name}\` object.`
-        }
-      )
+    writer.writeTsDoc(
+      {
+        summary: `Creates a \`${model.name}\` component instance.`,
+        remarks: model.doc,
+        params: docParameters,
+        returns: `A strongly-typed \`${model.name}\` object.`
+      }
     );
-    lines.push(`export function ${functionName}(${parameters.join(", ")}): ${model.name}`);
-    lines.push("{");
-    lines.push("  return {");
-
-    if (model.discriminatorValue)
+    writer.allmanBlock(`export function ${functionName}(${parameters.join(", ")}): ${model.name}`, () =>
     {
-      lines.push(`    ${DISCRIMINATOR_PROPERTY}: "${model.discriminatorValue}",`);
-    }
+      writer.writeLine("return {");
+      writer.indent(() =>
+      {
+        const entries: string[] = [];
+        if (model.discriminatorValue)
+        {
+          entries.push(`${DISCRIMINATOR_PROPERTY}: "${model.discriminatorValue}"`);
+        }
 
-    for (const property of requiredProperties)
-    {
-      if (property.type.kind === "array")
-      {
-        lines.push(`    ${property.name}: [ ...${property.name} ],`);
-      }
-      else
-      {
-        lines.push(`    ${property.name},`);
-      }
-    }
+        for (const property of requiredProperties)
+        {
+          if (property.type.kind === "array")
+          {
+            entries.push(`${property.name}: [ ...${property.name} ]`);
+          }
+          else
+          {
+            entries.push(property.name);
+          }
+        }
 
-    for (const property of optionalProperties)
-    {
-      const defaultValue = formatTsDefaultValue(property);
-      if (defaultValue !== undefined)
-      {
-        lines.push(`    ${property.name}: options?.${property.name} ?? ${defaultValue},`);
-      }
-      else if (property.type.kind === "array")
-      {
-        lines.push(`    ${property.name}: options?.${property.name} ? [ ...options.${property.name} ] : undefined,`);
-      }
-      else
-      {
-        lines.push(`    ${property.name}: options?.${property.name},`);
-      }
-    }
+        for (const property of optionalProperties)
+        {
+          const defaultValue = formatTsDefaultValue(property);
+          if (defaultValue !== undefined)
+          {
+            entries.push(`${property.name}: options?.${property.name} ?? ${defaultValue}`);
+          }
+          else if (property.type.kind === "array")
+          {
+            entries.push(`${property.name}: options?.${property.name} ? [ ...options.${property.name} ] : undefined`);
+          }
+          else
+          {
+            entries.push(`${property.name}: options?.${property.name}`);
+          }
+        }
 
-    const lastIndex = lines.length - 1;
-    lines[lastIndex] = lines[lastIndex].replace(/,$/, "");
-
-    lines.push("  };");
-    lines.push("}");
-    lines.push("");
+        for (let index = 0; index < entries.length; index++)
+        {
+          writer.writeLine(index < entries.length - 1 ? `${entries[index]},` : entries[index]);
+        }
+      });
+      writer.writeLine("};");
+    });
+    writer.blankLine();
   }
-
-  return lines;
 }
 
-function generateModelClass(model: ViewKitModel, polymorphicRootNames: ReadonlySet<string>): string[]
+function generateModelClass(
+  model: ViewKitModel,
+  polymorphicRootNames: ReadonlySet<string>,
+  writer: CodeWriter
+): void
 {
-  const lines: string[] = [];
   const className = `${model.name}Class`;
   const baseClass = (model.baseModelName && polymorphicRootNames.has(model.baseModelName))
     ? `Base${model.baseModelName}<${model.name}>`
@@ -520,141 +327,107 @@ function generateModelClass(model: ViewKitModel, polymorphicRootNames: ReadonlyS
 
   const { requiredProperties, optionalProperties } = partitionProperties(model.properties);
 
-  lines.push(
-    formatTsDoc(
-      {
-        summary: `Class implementation of the \`${model.name}\` interface.`,
-        remarks: model.doc
-      }
-    )
+  writer.writeTsDoc(
+    {
+      summary: `Class implementation of the \`${model.name}\` interface.`,
+      remarks: model.doc
+    }
   );
-  lines.push(`export class ${className} extends ${baseClass} implements ${model.name}`);
-  lines.push("{");
-
-  if (model.discriminatorValue)
+  writer.classBlock(`export class ${className} extends ${baseClass} implements ${model.name}`, () =>
   {
-    lines.push(
-      formatTsDoc(
+    if (model.discriminatorValue)
+    {
+      writer.writeTsDoc(
         {
           summary: `Discriminator identifier for \`${model.name}\`.`,
-          defaultValue: `"${model.discriminatorValue}"`,
-          indent: "  "
+          defaultValue: `"${model.discriminatorValue}"`
         }
-      )
-    );
-    lines.push(`  readonly ${DISCRIMINATOR_PROPERTY} = "${model.discriminatorValue}";`);
-  }
+      );
+      writer.writeLine(`readonly ${DISCRIMINATOR_PROPERTY} = "${model.discriminatorValue}";`);
+    }
 
-  for (const property of requiredProperties)
-  {
-    lines.push(formatTsDoc({ summary: property.doc, indent: "  " }));
-    lines.push(`  readonly ${property.name}: ${resolveTsType(property.type)};`);
-  }
+    for (const property of requiredProperties)
+    {
+      writer.writeTsDoc({ summary: property.doc });
+      writer.writeLine(`readonly ${property.name}: ${resolveTsType(property.type)};`);
+    }
 
-  for (const property of optionalProperties)
-  {
-    lines.push(
-      formatTsDoc(
+    for (const property of optionalProperties)
+    {
+      writer.writeTsDoc(
         {
           summary: property.doc,
-          defaultValue: formatTsDefaultValue(property),
-          indent: "  "
+          defaultValue: formatTsDefaultValue(property)
         }
-      )
-    );
-    const optionalMarker = property.optional ? "?" : "";
-    lines.push(`  readonly ${property.name}${optionalMarker}: ${resolveTsType(property.type)};`);
-  }
-  lines.push("");
-
-  const constructorParams: string[] = [];
-  const constructorDocParams: TsDocParam[] = [];
-
-  for (const property of requiredProperties)
-  {
-    constructorParams.push(`${property.name}: ${resolveTsType(property.type)}`);
-    constructorDocParams.push({ name: property.name, description: property.doc });
-  }
-
-  const {
-    parameter: optionsParam,
-    docParam: optionsDocParam
-  } = formatOptionsParameter(optionalProperties);
-  if (optionsParam)
-  {
-    constructorParams.push(optionsParam);
-    if (optionsDocParam)
-    {
-      constructorDocParams.push(optionsDocParam);
+      );
+      const optionalMarker = property.optional ? "?" : "";
+      writer.writeLine(`readonly ${property.name}${optionalMarker}: ${resolveTsType(property.type)};`);
     }
-  }
+    writer.blankLine();
 
-  lines.push(
-    formatTsDoc(
+    const constructorParams: string[] = [];
+    const constructorDocParams: TsDocParam[] = [];
+
+    for (const property of requiredProperties)
+    {
+      constructorParams.push(`${property.name}: ${resolveTsType(property.type)}`);
+      constructorDocParams.push({ name: property.name, description: property.doc });
+    }
+
+    const {
+      parameter: optionsParam,
+      docParam: optionsDocParam
+    } = formatOptionsParameter(optionalProperties);
+    if (optionsParam)
+    {
+      constructorParams.push(optionsParam);
+      if (optionsDocParam)
+      {
+        constructorDocParams.push(optionsDocParam);
+      }
+    }
+
+    writer.writeTsDoc(
       {
         summary: `Constructs a new \`${className}\` instance.`,
-        params: constructorDocParams,
-        indent: "  "
+        params: constructorDocParams
       }
-    )
-  );
-  lines.push(`  constructor(${constructorParams.join(", ")})`);
-  lines.push("  {");
-  lines.push("    super();");
-
-  for (const property of requiredProperties)
-  {
-    if (property.type.kind === "array")
+    );
+    writer.allmanBlock(`constructor(${constructorParams.join(", ")})`, () =>
     {
-      lines.push(`    this.${property.name} = ${property.name} ? [ ...${property.name} ] : [];`);
-    }
-    else
-    {
-      lines.push(`    this.${property.name} = ${property.name};`);
-    }
-  }
+      writer.writeLine("super();");
 
-  for (const property of optionalProperties)
-  {
-    const defaultValue = formatTsDefaultValue(property);
-    if (defaultValue !== undefined)
-    {
-      lines.push(`    this.${property.name} = options?.${property.name} ?? ${defaultValue};`);
-    }
-    else if (property.type.kind === "array")
-    {
-      lines.push(`    this.${property.name} = options?.${property.name} ? [ ...options.${property.name} ] : undefined;`);
-    }
-    else
-    {
-      lines.push(`    this.${property.name} = options?.${property.name};`);
-    }
-  }
-  lines.push("  }");
-  lines.push("}");
-  lines.push("");
+      for (const property of requiredProperties)
+      {
+        if (property.type.kind === "array")
+        {
+          writer.writeLine(`this.${property.name} = ${property.name} ? [ ...${property.name} ] : [];`);
+        }
+        else
+        {
+          writer.writeLine(`this.${property.name} = ${property.name};`);
+        }
+      }
 
-  return lines;
-}
-
-function computeBaseModelProperties(model: ViewKitModel, spec: GrammarSpec): Map<string, ViewKitProperty>
-{
-  const baseProperties = new Map<string, ViewKitProperty>();
-  if (!model.baseModelName)
-  {
-    return baseProperties;
-  }
-
-  const baseModel = spec.models.find((candidate) => candidate.name === model.baseModelName);
-  if (baseModel)
-  {
-    for (const property of baseModel.properties)
-    {
-      baseProperties.set(property.name, property);
-    }
-  }
-
-  return baseProperties;
+      for (const property of optionalProperties)
+      {
+        const defaultValue = formatTsDefaultValue(property);
+        if (defaultValue !== undefined)
+        {
+          writer.writeLine(`this.${property.name} = options?.${property.name} ?? ${defaultValue};`);
+        }
+        else if (property.type.kind === "array")
+        {
+          writer.writeLine(`this.${property.name} = options?.${property.name} ? [ ...options.${property.name} ] : undefined;`);
+        }
+        else
+        {
+          writer.writeLine(`this.${property.name} = options?.${property.name};`);
+        }
+      }
+    });
+  });
+  writer.blankLine();
 }
 
 function shouldEmitInterfaceProperty(
@@ -679,17 +452,13 @@ function shouldEmitInterfaceProperty(
   const baseTsType = resolveTsType(baseProperty.type);
 
   // If the property is narrowed or changed from the base definition, we re-declare it
-  if (propertyTsType !== baseTsType || property.optional !== baseProperty.optional)
-  {
-    return true;
-  }
+  return propertyTsType !== baseTsType || property.optional !== baseProperty.optional;
 
-  return false;
 }
 
 export function generateTypeScriptCode(spec: GrammarSpec): string
 {
-  const lines: string[] = [];
+  const writer = new CodeWriter({ indentSize: 2 });
   const polymorphicRootNames = new Set(
     spec.polymorphicRoots.map(
       (root) =>
@@ -699,89 +468,89 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     )
   );
 
-  lines.push(...GENERATED_FILE_HEADER);
-  lines.push("");
+  writer.writeLines(GENERATED_FILE_HEADER);
+  writer.blankLine();
 
   // We define the generic base serialization class
-  lines.push(
-    formatTsDoc(
-      {
-        summary: "Generic base class providing recursive JSON serialization for all model instances."
-      }
-    )
+  writer.writeTsDoc(
+    {
+      summary: "Generic base class providing recursive JSON serialization for all model instances."
+    }
   );
-  lines.push("export abstract class ViewKitNode<T = unknown>");
-  lines.push("{");
-  lines.push(
-    formatTsDoc(
+  writer.classBlock("export abstract class ViewKitNode<T = unknown>", () =>
+  {
+    writer.writeTsDoc(
       {
         summary: "Serializes this model instance into a strongly-typed, JSON-compatible plain object.",
-        returns: "The plain object representation conforming to interface `T`.",
-        indent: "  "
+        returns: "The plain object representation conforming to interface `T`."
       }
-    )
-  );
-  lines.push("  toJSON(): T");
-  lines.push("  {");
-  lines.push("    const result: Record<string, unknown> = {};");
-  lines.push("    for (const [key, value] of Object.entries(this))");
-  lines.push("    {");
-  lines.push("      if (value !== undefined)");
-  lines.push("      {");
-  lines.push("        if (Array.isArray(value))");
-  lines.push("        {");
-  lines.push("          result[key] = value.map(");
-  lines.push("            (item) =>");
-  lines.push("            {");
-  lines.push("              return item && typeof item === \"object\" && typeof (item as { toJSON?: () => unknown }).toJSON === \"function\"");
-  lines.push("                ? (item as { toJSON: () => unknown }).toJSON()");
-  lines.push("                : item;");
-  lines.push("            }");
-  lines.push("          );");
-  lines.push("        }");
-  lines.push("        else if (value && typeof value === \"object\" && typeof (value as { toJSON?: () => unknown }).toJSON === \"function\")");
-  lines.push("        {");
-  lines.push("          result[key] = (value as { toJSON: () => unknown }).toJSON();");
-  lines.push("        }");
-  lines.push("        else");
-  lines.push("        {");
-  lines.push("          result[key] = value;");
-  lines.push("        }");
-  lines.push("      }");
-  lines.push("    }");
-  lines.push("    return result as T;");
-  lines.push("  }");
-  lines.push("");
-  lines.push("  /**");
-  lines.push("   * Returns the compact JSON string representation of this model instance with no indentation.");
-  lines.push("   *");
-  lines.push(`   * @returns ${COMPACT_JSON_RETURN_DESCRIPTION}`);
-  lines.push("   */");
-  lines.push("  toString(): string");
-  lines.push("  {");
-  lines.push("    return JSON.stringify(this.toJSON());");
-  lines.push("  }");
-  lines.push("}");
-  lines.push("");
+    );
+    writer.allmanBlock("toJSON(): T", () =>
+    {
+      writer.writeLine("const result: Record<string, unknown> = {};");
+      writer.allmanBlock("for (const [key, value] of Object.entries(this))", () =>
+      {
+        writer.allmanBlock("if (value !== undefined)", () =>
+        {
+          writer.allmanBlock("if (Array.isArray(value))", () =>
+          {
+            writer.writeLine("result[key] = value.map(");
+            writer.indent(() =>
+            {
+              writer.allmanBlock("(item) =>", () =>
+              {
+                writer.writeLine("return item && typeof item === \"object\" && typeof (item as { toJSON?: () => unknown }).toJSON === \"function\"");
+                writer.writeLine("  ? (item as { toJSON: () => unknown }).toJSON()");
+                writer.writeLine("  : item;");
+              });
+            });
+            writer.writeLine(");");
+          });
+          writer.allmanBlock("else if (value && typeof value === \"object\" && typeof (value as { toJSON?: () => unknown }).toJSON === \"function\")", () =>
+          {
+            writer.writeLine("result[key] = (value as { toJSON: () => unknown }).toJSON();");
+          });
+          writer.allmanBlock("else", () =>
+          {
+            writer.writeLine("result[key] = value;");
+          });
+        });
+      });
+      writer.writeLine("return result as T;");
+    });
+    writer.blankLine();
+
+    writer.writeTsDoc(
+      {
+        summary: "Returns the compact JSON string representation of this model instance with no indentation.",
+        returns: COMPACT_JSON_RETURN_DESCRIPTION
+      }
+    );
+    writer.allmanBlock("toString(): string", () =>
+    {
+      writer.writeLine("return JSON.stringify(this.toJSON());");
+    });
+  });
+  writer.blankLine();
 
   // 1. We generate Enums from AST
   for (const viewKitEnum of spec.enums)
   {
-    lines.push(formatTsDoc({ summary: viewKitEnum.doc }));
-    lines.push(`export enum ${viewKitEnum.name}`);
-    lines.push("{");
-    for (const member of viewKitEnum.members)
+    writer.writeTsDoc({ summary: viewKitEnum.doc });
+    writer.allmanBlock(`export enum ${viewKitEnum.name}`, () =>
     {
-      const doc = member.doc ? `  // ${member.doc}\n` : "";
-      lines.push(`${doc}  ${member.name} = "${member.value}",`);
-    }
-    if (viewKitEnum.members.length > 0)
-    {
-      const lastLineIndex = lines.length - 1;
-      lines[lastLineIndex] = lines[lastLineIndex].replace(/,$/, "");
-    }
-    lines.push("}");
-    lines.push("");
+      for (let index = 0; index < viewKitEnum.members.length; index++)
+      {
+        const member = viewKitEnum.members[index];
+        if (member.doc)
+        {
+          writer.writeLine(`// ${member.doc}`);
+        }
+        const isLast = index === viewKitEnum.members.length - 1;
+        writer.writeLine(`${member.name} = "${member.value}"${isLast ? "" : ","}`);
+      }
+    });
+    writer.blankLine();
   }
 
   // 2. We generate Base Interfaces and Abstract Base Classes for Polymorphic Roots
@@ -793,62 +562,55 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         return model.name === root.name;
       }
     );
-    lines.push(
-      formatTsDoc(
-        {
-          summary: root.doc ?? `Base structural contract for all \`${root.name}\` visual element models.`
-        }
-      )
-    );
-    lines.push(`export interface ${root.name}Base`);
-    lines.push("{");
-    lines.push(
-      formatTsDoc(
-        {
-          summary: "The polymorphic discriminator type tag.",
-          indent: "  "
-        }
-      )
-    );
-    lines.push(`  readonly ${root.discriminatorProperty}: string;`);
-    if (rootModel)
-    {
-      for (const property of rootModel.properties)
+    writer.writeTsDoc(
       {
-        if (property.name !== root.discriminatorProperty)
+        summary: root.doc ?? `Base structural contract for all \`${root.name}\` visual element models.`
+      }
+    );
+    writer.interfaceBlock(`export interface ${root.name}Base`, () =>
+    {
+      writer.writeTsDoc(
         {
-          lines.push(formatTsDoc({ summary: property.doc, indent: "  " }));
-          const optional = property.optional ? "?" : "";
-          lines.push(`  readonly ${property.name}${optional}: ${resolveTsType(property.type)};`);
+          summary: "The polymorphic discriminator type tag."
+        }
+      );
+      writer.writeLine(`readonly ${root.discriminatorProperty}: string;`);
+      if (rootModel)
+      {
+        for (const property of rootModel.properties)
+        {
+          if (property.name !== root.discriminatorProperty)
+          {
+            writer.writeTsDoc({ summary: property.doc });
+            const optional = property.optional ? "?" : "";
+            writer.writeLine(`readonly ${property.name}${optional}: ${resolveTsType(property.type)};`);
+          }
         }
       }
-    }
-    lines.push("}");
-    lines.push("");
+    });
+    writer.blankLine();
 
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Abstract base class for all \`${root.name}\` models.`
-        }
-      )
-    );
-    lines.push(`export abstract class Base${root.name}<T = ${root.name}> extends ViewKitNode<T> implements ${root.name}Base`);
-    lines.push("{");
-    lines.push(`  abstract readonly ${root.discriminatorProperty}: string;`);
-    if (rootModel)
-    {
-      for (const property of rootModel.properties)
+    writer.writeTsDoc(
       {
-        if (property.name !== root.discriminatorProperty)
+        summary: `Abstract base class for all \`${root.name}\` models.`
+      }
+    );
+    writer.classBlock(`export abstract class Base${root.name}<T = ${root.name}> extends ViewKitNode<T> implements ${root.name}Base`, () =>
+    {
+      writer.writeLine(`abstract readonly ${root.discriminatorProperty}: string;`);
+      if (rootModel)
+      {
+        for (const property of rootModel.properties)
         {
-          const optional = property.optional ? "?" : "";
-          lines.push(`  abstract readonly ${property.name}${optional}: ${resolveTsType(property.type)};`);
+          if (property.name !== root.discriminatorProperty)
+          {
+            const optional = property.optional ? "?" : "";
+            writer.writeLine(`abstract readonly ${property.name}${optional}: ${resolveTsType(property.type)};`);
+          }
         }
       }
-    }
-    lines.push("}");
-    lines.push("");
+    });
+    writer.blankLine();
   }
 
   // 3. We generate Interfaces for all concrete models with materialized inheritance
@@ -863,32 +625,32 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       : "";
     const baseProperties = computeBaseModelProperties(model, spec);
 
-    lines.push(formatTsDoc({ summary: model.doc }));
-    lines.push(`export interface ${model.name}${extendsClause}`);
-    lines.push("{");
-    for (const property of model.properties)
+    writer.writeTsDoc({ summary: model.doc });
+    writer.interfaceBlock(`export interface ${model.name}${extendsClause}`, () =>
     {
-      if (!shouldEmitInterfaceProperty(property, model, baseProperties))
+      for (const property of model.properties)
       {
-        continue;
-      }
+        if (!shouldEmitInterfaceProperty(property, model, baseProperties))
+        {
+          continue;
+        }
 
-      let defaultValueString: string | undefined;
-      if (property.name === DISCRIMINATOR_PROPERTY && model.discriminatorValue)
-      {
-        defaultValueString = `"${model.discriminatorValue}"`;
+        let defaultValueString: string | undefined;
+        if (property.name === DISCRIMINATOR_PROPERTY && model.discriminatorValue)
+        {
+          defaultValueString = `"${model.discriminatorValue}"`;
+        }
+        else if (property.defaultValue !== undefined)
+        {
+          defaultValueString = formatTsDefaultValue(property);
+        }
+        writer.writeTsDoc({ summary: property.doc, defaultValue: defaultValueString });
+        const optional = property.optional ? "?" : "";
+        const tsType = resolveTsType(property.type);
+        writer.writeLine(`readonly ${property.name}${optional}: ${tsType};`);
       }
-      else if (property.defaultValue !== undefined)
-      {
-        defaultValueString = formatTsDefaultValue(property);
-      }
-      lines.push(formatTsDoc({ summary: property.doc, defaultValue: defaultValueString, indent: "  " }));
-      const optional = property.optional ? "?" : "";
-      const tsType = resolveTsType(property.type);
-      lines.push(`  readonly ${property.name}${optional}: ${tsType};`);
-    }
-    lines.push("}");
-    lines.push("");
+    });
+    writer.blankLine();
   }
 
   // 4. We generate Discriminated Union Types dynamically from AST polymorphic roots
@@ -902,28 +664,25 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         }
       )
       .join(" | ");
-    lines.push(
-      formatTsDoc(
-        {
-          summary: root.doc ?? `Polymorphic discriminated union of all concrete \`${root.name}\` models.`
-        }
-      )
+    writer.writeTsDoc(
+      {
+        summary: root.doc ?? `Polymorphic discriminated union of all concrete \`${root.name}\` models.`
+      }
     );
-    lines.push(`export type ${root.name} = ${unionTypes};`);
-    lines.push("");
+    writer.writeLine(`export type ${root.name} = ${unionTypes};`);
+    writer.blankLine();
   }
 
   // 5. We generate Classes implementing the Interfaces
-  lines.push(CONCRETE_CLASSES_SECTION_HEADER);
-  lines.push("");
+  writer.writeLine(CONCRETE_CLASSES_SECTION_HEADER);
+  writer.blankLine();
   for (const model of spec.models)
   {
     if (polymorphicRootNames.has(model.name) || model.isDslIgnored)
     {
       continue;
     }
-    const classLines = generateModelClass(model, polymorphicRootNames);
-    lines.push(...classLines);
+    generateModelClass(model, polymorphicRootNames, writer);
   }
 
   // 6. We generate Model-Driven Fluent Builders for all @dslRoot models
@@ -937,35 +696,241 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       arrayProperties: rootArrayProperties
     } = partitionProperties(root.properties, { excludeSchemaVersion: true });
 
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Fluent builder for constructing strongly-typed \`${root.name}\` instances.`,
-          remarks: root.doc
-        }
-      )
+    writer.writeTsDoc(
+      {
+        summary: `Fluent builder for constructing strongly-typed \`${root.name}\` instances.`,
+        remarks: root.doc
+      }
     );
-    lines.push(`export class ${builderClassName}`);
-    lines.push("{");
+    writer.classBlock(`export class ${builderClassName}`, () =>
+    {
+      for (const property of rootRequiredProperties)
+      {
+        writer.writeLine(`private readonly _${property.name}: ${resolveTsType(property.type)};`);
+      }
+      for (const property of rootOptionalProperties)
+      {
+        writer.writeLine(`private _${property.name}?: ${resolveTsType(property.type)};`);
+      }
+      for (const property of rootArrayProperties)
+      {
+        const elementType = resolveTsType(property.type.elementType ?? { kind: "unknown", name: "unknown" });
+        writer.writeLine(`private readonly _${property.name}: ${elementType}[] = [];`);
+      }
+      if (rootRequiredProperties.length > 0 || rootOptionalProperties.length > 0 || rootArrayProperties.length > 0)
+      {
+        writer.blankLine();
+      }
 
-    for (const property of rootRequiredProperties)
-    {
-      lines.push(`  private readonly _${property.name}: ${resolveTsType(property.type)};`);
-    }
-    for (const property of rootOptionalProperties)
-    {
-      lines.push(`  private _${property.name}?: ${resolveTsType(property.type)};`);
-    }
-    for (const property of rootArrayProperties)
-    {
-      const elementType = resolveTsType(property.type.elementType ?? { kind: "unknown", name: "unknown" });
-      lines.push(`  private readonly _${property.name}: ${elementType}[] = [];`);
-    }
-    if (rootRequiredProperties.length > 0 || rootOptionalProperties.length > 0 || rootArrayProperties.length > 0)
-    {
-      lines.push("");
-    }
+      const constructorArguments = rootRequiredProperties
+        .map(
+          (property) =>
+          {
+            return `${property.name}: ${resolveTsType(property.type)}`;
+          }
+        )
+        .join(", ");
+      const constructorDocParameters: TsDocParam[] = rootRequiredProperties.map(
+        (property) =>
+        {
+          return { name: property.name, description: property.doc };
+        }
+      );
 
+      writer.writeTsDoc(
+        {
+          summary: `Initializes a new \`${builderClassName}\`.`,
+          params: constructorDocParameters
+        }
+      );
+      writer.allmanBlock(`constructor(${constructorArguments})`, () =>
+      {
+        for (const property of rootRequiredProperties)
+        {
+          writer.writeLine(`this._${property.name} = ${property.name};`);
+        }
+      });
+      writer.blankLine();
+
+      // We generate setters for scalar optional properties
+      for (const property of rootOptionalProperties)
+      {
+        writer.writeTsDoc(
+          {
+            summary: `Sets the \`${property.name}\` property on this builder.`,
+            params: [ { name: property.name, description: property.doc } ],
+            returns: BUILDER_RETURN_DESCRIPTION
+          }
+        );
+        writer.allmanBlock(`${property.name}(${property.name}: ${resolveTsType(property.type)}): this`, () =>
+        {
+          writer.writeLine(`this._${property.name} = ${property.name};`);
+          writer.writeLine("return this;");
+        });
+        writer.blankLine();
+      }
+
+      // We generate collection adders for array properties
+      for (const property of rootArrayProperties)
+      {
+        const elementType = resolveTsType(property.type.elementType ?? { kind: "unknown", name: "unknown" });
+        const singularName = property.name.endsWith("s") ? property.name.slice(0, -1) : property.name;
+        const addMethodName = `add${capitalizeText(singularName)}`;
+        const addAllMethodName = `add${capitalizeText(property.name)}`;
+
+        if (property.name === ELEMENTS_PROPERTY)
+        {
+          writer.writeTsDoc(
+            {
+              summary: "Appends a visual element.",
+              params: [ { name: "element", description: "The visual UI element component to add." } ],
+              returns: BUILDER_RETURN_DESCRIPTION
+            }
+          );
+          writer.allmanBlock(`add(element: ${elementType}): this`, () =>
+          {
+            writer.writeLine(`this._${property.name}.push(element);`);
+            writer.writeLine("return this;");
+          });
+          writer.blankLine();
+        }
+
+        writer.writeTsDoc(
+          {
+            summary: `Appends multiple ${property.name} items.`,
+            params: [ { name: "items", description: `The \`${elementType}\` items to add.` } ],
+            returns: BUILDER_RETURN_DESCRIPTION
+          }
+        );
+        writer.allmanBlock(`${addAllMethodName}(...items: ${elementType}[]): this`, () =>
+        {
+          writer.writeLine(`this._${property.name}.push(...items);`);
+          writer.writeLine("return this;");
+        });
+        writer.blankLine();
+
+        if (property.name !== ELEMENTS_PROPERTY)
+        {
+          writer.writeTsDoc(
+            {
+              summary: `Appends a single ${singularName}.`,
+              params: [ { name: "item", description: `The \`${elementType}\` item to add.` } ],
+              returns: BUILDER_RETURN_DESCRIPTION
+            }
+          );
+          writer.allmanBlock(`${addMethodName}(item: ${elementType}): this`, () =>
+          {
+            writer.writeLine(`this._${property.name}.push(item);`);
+            writer.writeLine("return this;");
+          });
+          writer.blankLine();
+        }
+      }
+
+      // We generate shortcut methods for every model in spec.uiElements
+      for (const uiModel of spec.uiElements)
+      {
+        if (uiModel.isDslIgnored)
+        {
+          continue;
+        }
+        const { primary, aliases } = computeFactoryNames(uiModel);
+        const allNames = Array.from(new Set([ primary, ...aliases ]));
+        const { requiredProperties, optionalProperties } = partitionProperties(uiModel.properties);
+
+        const parameters: string[] = [];
+        const callArguments: string[] = [];
+        const methodDocParameters: TsDocParam[] = [];
+
+        for (const property of requiredProperties)
+        {
+          parameters.push(`${property.name}: ${resolveTsType(property.type)}`);
+          callArguments.push(property.name);
+          methodDocParameters.push({ name: property.name, description: property.doc });
+        }
+
+        const {
+          parameter: optionsParam,
+          docParam: optionsDocParam
+        } = formatOptionsParameter(optionalProperties, "Optional component settings");
+        if (optionsParam)
+        {
+          parameters.push(optionsParam);
+          callArguments.push("options");
+          if (optionsDocParam)
+          {
+            methodDocParameters.push(optionsDocParam);
+          }
+        }
+
+        for (const functionName of allNames)
+        {
+          const methodName = `add${capitalizeText(functionName)}`;
+          writer.writeTsDoc(
+            {
+              summary: `Appends a \`${uiModel.name}\` component.`,
+              remarks: uiModel.doc,
+              params: methodDocParameters,
+              returns: BUILDER_RETURN_DESCRIPTION
+            }
+          );
+          writer.allmanBlock(`${methodName}(${parameters.join(", ")}): this`, () =>
+          {
+            writer.writeLine(`return this.add(${functionName}(${callArguments.join(", ")}));`);
+          });
+          writer.blankLine();
+        }
+      }
+
+      const className = `${root.name}Class`;
+      writer.writeTsDoc(
+        {
+          summary: `Finalizes and returns the complete strongly-typed \`${className}\` instance.`,
+          returns: `The constructed \`${className}\` instance.`
+        }
+      );
+      writer.allmanBlock(`build(): ${className}`, () =>
+      {
+        const buildArgs = formatClassInvocationArgs(rootRequiredProperties, rootArrayProperties, rootOptionalProperties, "builder");
+        writer.writeLine(`return new ${className}(`);
+        writer.indent(() =>
+        {
+          for (let index = 0; index < buildArgs.length; index++)
+          {
+            writer.writeLine(index < buildArgs.length - 1 ? `${buildArgs[index]},` : buildArgs[index]);
+          }
+        });
+        writer.writeLine(");");
+      });
+      writer.blankLine();
+
+      writer.writeTsDoc(
+        {
+          summary: `Serializes this builder into a strongly-typed, JSON-compatible plain object conforming to interface \`${root.name}\`.`,
+          returns: `The plain object representation conforming to interface \`${root.name}\`.`
+        }
+      );
+      writer.allmanBlock(`toJSON(): ${root.name}`, () =>
+      {
+        writer.writeLine("return this.build().toJSON();");
+      });
+      writer.blankLine();
+
+      writer.writeTsDoc(
+        {
+          summary: `Returns the compact JSON string representation of the built \`${className}\` instance with no indentation.`,
+          returns: COMPACT_JSON_RETURN_DESCRIPTION
+        }
+      );
+      writer.allmanBlock("toString(): string", () =>
+      {
+        writer.writeLine("return this.build().toString();");
+      });
+    });
+    writer.blankLine();
+
+    // 7. We generate Static Root Model Helpers
+    const className = `${root.name}Class`;
     const constructorArguments = rootRequiredProperties
       .map(
         (property) =>
@@ -981,279 +946,65 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       }
     );
 
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Initializes a new \`${builderClassName}\`.`,
-          params: constructorDocParameters,
-          indent: "  "
-        }
-      )
+    writer.writeTsDoc(
+      {
+        summary: `Static helper factory object for \`${root.name}\`.`
+      }
     );
-    lines.push(`  constructor(${constructorArguments})`);
-    lines.push("  {");
-    for (const property of rootRequiredProperties)
+    writer.allmanBlock(`export const ${root.name} =`, () =>
     {
-      lines.push(`    this._${property.name} = ${property.name};`);
-    }
-    lines.push("  }");
-    lines.push("");
-
-    // We generate setters for scalar optional properties
-    for (const property of rootOptionalProperties)
-    {
-      lines.push(
-        formatTsDoc(
-          {
-            summary: `Sets the \`${property.name}\` property on this builder.`,
-            params: [ { name: property.name, description: property.doc } ],
-            returns: BUILDER_RETURN_DESCRIPTION,
-            indent: "  "
-          }
-        )
-      );
-      lines.push(`  ${property.name}(${property.name}: ${resolveTsType(property.type)}): this`);
-      lines.push("  {");
-      lines.push(`    this._${property.name} = ${property.name};`);
-      lines.push("    return this;");
-      lines.push("  }");
-      lines.push("");
-    }
-
-    // We generate collection adders for array properties
-    for (const property of rootArrayProperties)
-    {
-      const elementType = resolveTsType(property.type.elementType ?? { kind: "unknown", name: "unknown" });
-      const singularName = property.name.endsWith("s") ? property.name.slice(0, -1) : property.name;
-      const addMethodName = `add${capitalizeText(singularName)}`;
-      const addAllMethodName = `add${capitalizeText(property.name)}`;
-
-      if (property.name === ELEMENTS_PROPERTY)
-      {
-        lines.push(
-          formatTsDoc(
-            {
-              summary: "Appends a visual element.",
-              params: [ { name: "element", description: "The visual UI element component to add." } ],
-              returns: BUILDER_RETURN_DESCRIPTION,
-              indent: "  "
-            }
-          )
-        );
-        lines.push(`  add(element: ${elementType}): this`);
-        lines.push("  {");
-        lines.push(`    this._${property.name}.push(element);`);
-        lines.push("    return this;");
-        lines.push("  }");
-        lines.push("");
-      }
-
-      lines.push(
-        formatTsDoc(
-          {
-            summary: `Appends multiple ${property.name} items.`,
-            params: [ { name: "items", description: `The \`${elementType}\` items to add.` } ],
-            returns: BUILDER_RETURN_DESCRIPTION,
-            indent: "  "
-          }
-        )
-      );
-      lines.push(`  ${addAllMethodName}(...items: ${elementType}[]): this`);
-      lines.push("  {");
-      lines.push(`    this._${property.name}.push(...items);`);
-      lines.push("    return this;");
-      lines.push("  }");
-      lines.push("");
-
-      if (property.name !== ELEMENTS_PROPERTY)
-      {
-        lines.push(
-          formatTsDoc(
-            {
-              summary: `Appends a single ${singularName}.`,
-              params: [ { name: "item", description: `The \`${elementType}\` item to add.` } ],
-              returns: BUILDER_RETURN_DESCRIPTION,
-              indent: "  "
-            }
-          )
-        );
-        lines.push(`  ${addMethodName}(item: ${elementType}): this`);
-        lines.push("  {");
-        lines.push(`    this._${property.name}.push(item);`);
-        lines.push("    return this;");
-        lines.push("  }");
-        lines.push("");
-      }
-    }
-
-    // We generate shortcut methods for every model in spec.uiElements
-    for (const uiModel of spec.uiElements)
-    {
-      if (uiModel.isDslIgnored)
-      {
-        continue;
-      }
-      const { primary, aliases } = getFactoryNames(uiModel);
-      const allNames = Array.from(new Set([ primary, ...aliases ]));
-      const { requiredProperties, optionalProperties } = partitionProperties(uiModel.properties);
-
-      const parameters: string[] = [];
-      const callArguments: string[] = [];
-      const methodDocParameters: TsDocParam[] = [];
-
-      for (const property of requiredProperties)
-      {
-        parameters.push(`${property.name}: ${resolveTsType(property.type)}`);
-        callArguments.push(property.name);
-        methodDocParameters.push({ name: property.name, description: property.doc });
-      }
-
-      const {
-        parameter: optionsParam,
-        docParam: optionsDocParam
-      } = formatOptionsParameter(optionalProperties, "Optional component settings");
-      if (optionsParam)
-      {
-        parameters.push(optionsParam);
-        callArguments.push("options");
-        if (optionsDocParam)
-        {
-          methodDocParameters.push(optionsDocParam);
-        }
-      }
-
-      for (const functionName of allNames)
-      {
-        const methodName = `add${capitalizeText(functionName)}`;
-        lines.push(
-          formatTsDoc(
-            {
-              summary: `Appends a \`${uiModel.name}\` component.`,
-              remarks: uiModel.doc,
-              params: methodDocParameters,
-              returns: BUILDER_RETURN_DESCRIPTION,
-              indent: "  "
-            }
-          )
-        );
-        lines.push(`  ${methodName}(${parameters.join(", ")}): this`);
-        lines.push("  {");
-        lines.push(`    return this.add(${functionName}(${callArguments.join(", ")}));`);
-        lines.push("  }");
-        lines.push("");
-      }
-    }
-
-    const className = `${root.name}Class`;
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Finalizes and returns the complete strongly-typed \`${className}\` instance.`,
-          returns: `The constructed \`${className}\` instance.`,
-          indent: "  "
-        }
-      )
-    );
-    lines.push(`  build(): ${className}`);
-    lines.push("  {");
-    const buildArgs = formatClassInvocationArgs(rootRequiredProperties, rootArrayProperties, rootOptionalProperties, "builder");
-    lines.push(`    return new ${className}(`);
-    lines.push(`      ${buildArgs.join(",\n      ")}`);
-    lines.push("    );");
-    lines.push("  }");
-    lines.push("");
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Serializes this builder into a strongly-typed, JSON-compatible plain object conforming to interface \`${root.name}\`.`,
-          returns: `The plain object representation conforming to interface \`${root.name}\`.`,
-          indent: "  "
-        }
-      )
-    );
-    lines.push(`  toJSON(): ${root.name}`);
-    lines.push("  {");
-    lines.push("    return this.build().toJSON();");
-    lines.push("  }");
-    lines.push("");
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Returns the compact JSON string representation of the built \`${className}\` instance with no indentation.`,
-          returns: COMPACT_JSON_RETURN_DESCRIPTION,
-          indent: "  "
-        }
-      )
-    );
-    lines.push("  toString(): string");
-    lines.push("  {");
-    lines.push("    return this.build().toString();");
-    lines.push("  }");
-    lines.push("}");
-    lines.push("");
-
-    // 7. We generate Static Root Model Helpers
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Static helper factory object for \`${root.name}\`.`
-        }
-      )
-    );
-    lines.push(`export const ${root.name} =`);
-    lines.push("{");
-    lines.push(
-      formatTsDoc(
+      writer.writeTsDoc(
         {
           summary: `Creates a new fluent builder for constructing a \`${root.name}\`.`,
           params: constructorDocParameters,
-          returns: `A new \`${builderClassName}\` instance.`,
-          indent: "  "
+          returns: `A new \`${builderClassName}\` instance.`
         }
-      )
-    );
-    lines.push(`  builder(${constructorArguments}): ${builderClassName}`);
-    lines.push("  {");
-    const builderCallArguments = rootRequiredProperties
-      .map(
-        (property) =>
-        {
-          return property.name;
-        }
-      )
-      .join(", ");
-    lines.push(`    return new ${builderClassName}(${builderCallArguments});`);
-    lines.push("  },");
-    lines.push("");
+      );
+      const builderCallArguments = rootRequiredProperties
+        .map(
+          (property) =>
+          {
+            return property.name;
+          }
+        )
+        .join(", ");
+      writer.allmanBlock(`builder(${constructorArguments}): ${builderClassName}`, () =>
+      {
+        writer.writeLine(`return new ${builderClassName}(${builderCallArguments});`);
+      }, ",");
+      writer.blankLine();
 
-    const createParameters = rootNonTypeProperties
-      .map(
-        (property) =>
-        {
-          return `${property.name}${property.optional ? "?" : ""}: ${resolveTsType(property.type)}`;
-        }
-      )
-      .join("; ");
-    lines.push(
-      formatTsDoc(
+      const createParameters = rootNonTypeProperties
+        .map(
+          (property) =>
+          {
+            return `${property.name}${property.optional ? "?" : ""}: ${resolveTsType(property.type)}`;
+          }
+        )
+        .join("; ");
+      writer.writeTsDoc(
         {
           summary: `Creates a \`${className}\` directly from a properties object.`,
           params: [ { name: "params", description: "Configuration properties." } ],
-          returns: `A completed \`${className}\` instance.`,
-          indent: "  "
+          returns: `A completed \`${className}\` instance.`
         }
-      )
-    );
-    lines.push(`  create(params: { ${createParameters} }): ${className}`);
-    lines.push("  {");
-    const createArgs = formatClassInvocationArgs(rootRequiredProperties, rootArrayProperties, rootOptionalProperties, "params");
-    lines.push(`    return new ${className}(`);
-    lines.push(`      ${createArgs.join(",\n      ")}`);
-    lines.push("    );");
-    lines.push("  },");
-    lines.push("");
-    lines.push(
-      formatTsDoc(
+      );
+      writer.allmanBlock(`create(params: { ${createParameters} }): ${className}`, () =>
+      {
+        const createArgs = formatClassInvocationArgs(rootRequiredProperties, rootArrayProperties, rootOptionalProperties, "params");
+        writer.writeLine(`return new ${className}(`);
+        writer.indent(() =>
+        {
+          for (let index = 0; index < createArgs.length; index++)
+          {
+            writer.writeLine(index < createArgs.length - 1 ? `${createArgs[index]},` : createArgs[index]);
+          }
+        });
+        writer.writeLine(");");
+      }, ",");
+      writer.blankLine();
+
+      writer.writeTsDoc(
         {
           summary: `Parses a JSON string or raw object into a validated \`${className}\` instance.`,
           params: [
@@ -1261,22 +1012,20 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
             { name: "withDeepValidation", description: "Whether to recursively validate all nested child entities." }
           ],
           returns: `A strongly-typed \`${className}\` instance.`,
-          remarks: `Throws an \`Error\` if the input does not conform to the \`${root.name}\` schema.`,
-          indent: "  "
+          remarks: `Throws an \`Error\` if the input does not conform to the \`${root.name}\` schema.`
         }
-      )
-    );
-    lines.push(`  parse(json: string | unknown, withDeepValidation = true): ${className}`);
-    lines.push("  {");
-    lines.push("    const data: unknown = typeof json === \"string\" ? JSON.parse(json) : json;");
-    lines.push(`    if (!is${root.name}(data, withDeepValidation))`);
-    lines.push("    {");
-    lines.push(`      throw new Error("Invalid JSON: value does not match the \`${root.name}\` schema.");`);
-    lines.push("    }");
-    lines.push(`    return ${root.name}.create(data);`);
-    lines.push("  }");
-    lines.push("};");
-    lines.push("");
+      );
+      writer.allmanBlock(`parse(json: string | unknown, withDeepValidation = true): ${className}`, () =>
+      {
+        writer.writeLine("const data: unknown = typeof json === \"string\" ? JSON.parse(json) : json;");
+        writer.allmanBlock(`if (!is${root.name}(data, withDeepValidation))`, () =>
+        {
+          writer.writeLine(`throw new Error("Invalid JSON: value does not match the \`${root.name}\` schema.");`);
+        });
+        writer.writeLine(`return ${root.name}.create(data);`);
+      });
+    }, ";");
+    writer.blankLine();
 
     // 8. We generate create<RootModel> and parse<RootModel> Functional Factories
     const createFunctionName = `create${root.name}`;
@@ -1294,58 +1043,60 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         }
       )
       .join("; ");
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Functional helper to create a \`${className}\` instance directly.`,
-          remarks: root.doc,
-          params: [
-            ...constructorDocParameters,
-            ...(rootOptionalCreateFields.length > 0 ? [ {
-              name: "options",
-              description: "Optional configuration properties."
-            } ] : [])
-          ],
-          returns: `A strongly-typed \`${className}\` instance.`
-        }
-      )
+    writer.writeTsDoc(
+      {
+        summary: `Functional helper to create a \`${className}\` instance directly.`,
+        remarks: root.doc,
+        params: [
+          ...constructorDocParameters,
+          ...(rootOptionalCreateFields.length > 0 ? [ {
+            name: "options",
+            description: "Optional configuration properties."
+          } ] : [])
+        ],
+        returns: `A strongly-typed \`${className}\` instance.`
+      }
     );
     const optionsParameter = rootOptionalCreateFields.length > 0
       ? (rootRequiredProperties.length > 0 ? `, options?: { ${rootOptionalCreateFields} }` : `options?: { ${rootOptionalCreateFields} }`)
       : "";
-    lines.push(`export function ${createFunctionName}(${constructorArguments}${optionsParameter}): ${className}`);
-    lines.push("{");
-    const helperArgs = formatClassInvocationArgs(rootRequiredProperties, rootArrayProperties, rootOptionalProperties, "helper");
-    lines.push(`  return new ${className}(`);
-    lines.push(`    ${helperArgs.join(",\n    ")}`);
-    lines.push("  );");
-    lines.push("}");
-    lines.push("");
+    writer.allmanBlock(`export function ${createFunctionName}(${constructorArguments}${optionsParameter}): ${className}`, () =>
+    {
+      const helperArgs = formatClassInvocationArgs(rootRequiredProperties, rootArrayProperties, rootOptionalProperties, "helper");
+      writer.writeLine(`return new ${className}(`);
+      writer.indent(() =>
+      {
+        for (let index = 0; index < helperArgs.length; index++)
+        {
+          writer.writeLine(index < helperArgs.length - 1 ? `${helperArgs[index]},` : helperArgs[index]);
+        }
+      });
+      writer.writeLine(");");
+    });
+    writer.blankLine();
 
     const parseFunctionName = `parse${root.name}`;
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Parses a JSON string or raw object into a validated \`${className}\` instance.`,
-          remarks: root.doc,
-          params: [
-            { name: "json", description: "JSON string or parsed JavaScript object to validate and hydrate." },
-            { name: "withDeepValidation", description: "Whether to recursively validate all nested child entities." }
-          ],
-          returns: `A strongly-typed \`${className}\` instance.`
-        }
-      )
+    writer.writeTsDoc(
+      {
+        summary: `Parses a JSON string or raw object into a validated \`${className}\` instance.`,
+        remarks: root.doc,
+        params: [
+          { name: "json", description: "JSON string or parsed JavaScript object to validate and hydrate." },
+          { name: "withDeepValidation", description: "Whether to recursively validate all nested child entities." }
+        ],
+        returns: `A strongly-typed \`${className}\` instance.`
+      }
     );
-    lines.push(`export function ${parseFunctionName}(json: string | unknown, withDeepValidation = true): ${className}`);
-    lines.push("{");
-    lines.push(`  return ${root.name}.parse(json, withDeepValidation);`);
-    lines.push("}");
-    lines.push("");
+    writer.allmanBlock(`export function ${parseFunctionName}(json: string | unknown, withDeepValidation = true): ${className}`, () =>
+    {
+      writer.writeLine(`return ${root.name}.parse(json, withDeepValidation);`);
+    });
+    writer.blankLine();
   }
 
   // 9. We generate Functional DSL Factories for all models from AST
-  lines.push(FUNCTIONAL_FACTORIES_SECTION_HEADER);
-  lines.push("");
+  writer.writeLine(FUNCTIONAL_FACTORIES_SECTION_HEADER);
+  writer.blankLine();
 
   for (const model of spec.models)
   {
@@ -1353,13 +1104,12 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     {
       continue;
     }
-    const factoryLines = generateModelFactory(model);
-    lines.push(...factoryLines);
+    generateModelFactory(model, writer);
   }
 
   // 10. We generate Type Guards dynamically from AST polymorphic roots, supporting models, and root models
-  lines.push(TYPE_GUARDS_SECTION_HEADER);
-  lines.push("");
+  writer.writeLine(TYPE_GUARDS_SECTION_HEADER);
+  writer.blankLine();
 
   const supportingModels = spec.models.filter(
     (model) =>
@@ -1376,181 +1126,179 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
 
   for (const model of supportingModels)
   {
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Type guard predicate verifying whether an unknown value conforms to \`${model.name}\`.`,
-          params: [
-            { name: "value", description: "The value to inspect." },
-            { name: "withDeepValidation", description: "Whether to recursively validate all properties." }
-          ],
-          returns: `\`true\` if the value conforms to \`${model.name}\`, otherwise \`false\`.`
-        }
-      )
+    writer.writeTsDoc(
+      {
+        summary: `Type guard predicate verifying whether an unknown value conforms to \`${model.name}\`.`,
+        params: [
+          { name: "value", description: "The value to inspect." },
+          { name: "withDeepValidation", description: "Whether to recursively validate all properties." }
+        ],
+        returns: `\`true\` if the value conforms to \`${model.name}\`, otherwise \`false\`.`
+      }
     );
-    lines.push(`export function is${model.name}(value: unknown, withDeepValidation = false): value is ${model.name}`);
-    lines.push("{");
-    lines.push("  if (typeof value !== \"object\" || value === null)");
-    lines.push("  {");
-    lines.push("    return false;");
-    lines.push("  }");
-    lines.push("  if (!withDeepValidation)");
-    lines.push("  {");
-    lines.push("    return true;");
-    lines.push("  }");
-    lines.push(`  const element = value as ${model.name};`);
-    const propertyChecks = generateModelPropertyChecks(model.properties, spec, "element");
-    if (propertyChecks.length === 0)
+    writer.allmanBlock(`export function is${model.name}(value: unknown, withDeepValidation = false): value is ${model.name}`, () =>
     {
-      lines.push("  return true;");
-    }
-    else
-    {
-      lines.push(`  return ${propertyChecks.join(" &&\n    ")};`);
-    }
-    lines.push("}");
-    lines.push("");
+      writer.allmanBlock("if (typeof value !== \"object\" || value === null)", () =>
+      {
+        writer.writeLine("return false;");
+      });
+      writer.allmanBlock("if (!withDeepValidation)", () =>
+      {
+        writer.writeLine("return true;");
+      });
+      writer.writeLine(`const element = value as ${model.name};`);
+      const propertyChecks = generateModelPropertyChecks(model.properties, spec, "element");
+      if (propertyChecks.length === 0)
+      {
+        writer.writeLine("return true;");
+      }
+      else
+      {
+        writer.writeLine(`return ${propertyChecks.join(" &&\n    ")};`);
+      }
+    });
+    writer.blankLine();
   }
 
   for (const root of spec.polymorphicRoots)
   {
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Type guard predicate verifying whether an unknown value conforms to \`${root.name}\`.`,
-          params: [
-            { name: "value", description: "The value to inspect." },
-            { name: "withDeepValidation", description: "Whether to recursively validate all properties." }
-          ],
-          returns: `\`true\` if the value is a valid \`${root.name}\`, otherwise \`false\`.`
-        }
-      )
-    );
-    lines.push(`export function is${root.name}(value: unknown, withDeepValidation = false): value is ${root.name}`);
-    lines.push("{");
-    lines.push(`  if (typeof value !== "object" || value === null || !("${root.discriminatorProperty}" in value) || typeof (value as { ${root.discriminatorProperty}: unknown }).${root.discriminatorProperty} !== "string")`);
-    lines.push("  {");
-    lines.push("    return false;");
-    lines.push("  }");
-    lines.push("  if (!withDeepValidation)");
-    lines.push("  {");
-    lines.push("    return true;");
-    lines.push("  }");
-    lines.push(`  const element = value as ${root.name};`);
-    lines.push(`  switch (element.${root.discriminatorProperty})`);
-    lines.push("  {");
-    for (const derivedModel of root.derivedModels)
-    {
-      if (derivedModel.discriminatorValue && !derivedModel.isDslIgnored)
+    writer.writeTsDoc(
       {
-        lines.push(`    case "${derivedModel.discriminatorValue}":`);
-        lines.push(`      return is${derivedModel.name}(element, true);`);
+        summary: `Type guard predicate verifying whether an unknown value conforms to \`${root.name}\`.`,
+        params: [
+          { name: "value", description: "The value to inspect." },
+          { name: "withDeepValidation", description: "Whether to recursively validate all properties." }
+        ],
+        returns: `\`true\` if the value is a valid \`${root.name}\`, otherwise \`false\`.`
       }
-    }
-    lines.push("    default:");
-    lines.push("      return false;");
-    lines.push("  }");
-    lines.push("}");
-    lines.push("");
+    );
+    writer.allmanBlock(`export function is${root.name}(value: unknown, withDeepValidation = false): value is ${root.name}`, () =>
+    {
+      writer.allmanBlock(`if (typeof value !== "object" || value === null || !("${root.discriminatorProperty}" in value) || typeof (value as { ${root.discriminatorProperty}: unknown }).${root.discriminatorProperty} !== "string")`, () =>
+      {
+        writer.writeLine("return false;");
+      });
+      writer.allmanBlock("if (!withDeepValidation)", () =>
+      {
+        writer.writeLine("return true;");
+      });
+      writer.writeLine(`const element = value as ${root.name};`);
+      writer.allmanBlock(`switch (element.${root.discriminatorProperty})`, () =>
+      {
+        for (const derivedModel of root.derivedModels)
+        {
+          if (derivedModel.discriminatorValue && !derivedModel.isDslIgnored)
+          {
+            writer.writeLine(`case "${derivedModel.discriminatorValue}":`);
+            writer.indent(() =>
+            {
+              writer.writeLine(`return is${derivedModel.name}(element, true);`);
+            });
+          }
+        }
+        writer.writeLine("default:");
+        writer.indent(() =>
+        {
+          writer.writeLine("return false;");
+        });
+      });
+    });
+    writer.blankLine();
 
     for (const derivedModel of root.derivedModels)
     {
       if (derivedModel.discriminatorValue && !derivedModel.isDslIgnored)
       {
         const guardName = `is${derivedModel.name}`;
-        lines.push(
-          formatTsDoc(
-            {
-              summary: `Type guard predicate narrowing a value to \`${derivedModel.name}\`.`,
-              params: [
-                { name: "value", description: "The value to inspect." },
-                { name: "withDeepValidation", description: "Whether to recursively validate all properties." }
-              ],
-              returns: `\`true\` if the value is a \`${derivedModel.name}\` (type = "${derivedModel.discriminatorValue}"), otherwise \`false\`.`
-            }
-          )
+        writer.writeTsDoc(
+          {
+            summary: `Type guard predicate narrowing a value to \`${derivedModel.name}\`.`,
+            params: [
+              { name: "value", description: "The value to inspect." },
+              { name: "withDeepValidation", description: "Whether to recursively validate all properties." }
+            ],
+            returns: `\`true\` if the value is a \`${derivedModel.name}\` (type = "${derivedModel.discriminatorValue}"), otherwise \`false\`.`
+          }
         );
-        lines.push(`export function ${guardName}(value: unknown, withDeepValidation = false): value is ${derivedModel.name}`);
-        lines.push("{");
-        lines.push(`  if (typeof value !== "object" || value === null || !("${root.discriminatorProperty}" in value) || (value as { ${root.discriminatorProperty}: unknown }).${root.discriminatorProperty} !== "${derivedModel.discriminatorValue}")`);
-        lines.push("  {");
-        lines.push("    return false;");
-        lines.push("  }");
-        lines.push("  if (!withDeepValidation)");
-        lines.push("  {");
-        lines.push("    return true;");
-        lines.push("  }");
-        lines.push(`  const element = value as ${derivedModel.name};`);
-        const propertyChecks = generateModelPropertyChecks(derivedModel.properties, spec, "element");
-        if (propertyChecks.length === 0)
+        writer.allmanBlock(`export function ${guardName}(value: unknown, withDeepValidation = false): value is ${derivedModel.name}`, () =>
         {
-          lines.push("  return true;");
-        }
-        else
-        {
-          lines.push(`  return ${propertyChecks.join(" &&\n    ")};`);
-        }
-        lines.push("}");
-        lines.push("");
+          writer.allmanBlock(`if (typeof value !== "object" || value === null || !("${root.discriminatorProperty}" in value) || (value as { ${root.discriminatorProperty}: unknown }).${root.discriminatorProperty} !== "${derivedModel.discriminatorValue}")`, () =>
+          {
+            writer.writeLine("return false;");
+          });
+          writer.allmanBlock("if (!withDeepValidation)", () =>
+          {
+            writer.writeLine("return true;");
+          });
+          writer.writeLine(`const element = value as ${derivedModel.name};`);
+          const propertyChecks = generateModelPropertyChecks(derivedModel.properties, spec, "element");
+          if (propertyChecks.length === 0)
+          {
+            writer.writeLine("return true;");
+          }
+          else
+          {
+            writer.writeLine(`return ${propertyChecks.join(" &&\n    ")};`);
+          }
+        });
+        writer.blankLine();
       }
     }
   }
 
   for (const root of spec.rootModels)
   {
-    lines.push(
-      formatTsDoc(
-        {
-          summary: `Type guard predicate verifying whether an unknown value conforms to \`${root.name}\`.`,
-          params: [
-            { name: "value", description: "The value to inspect." },
-            { name: "withDeepValidation", description: "Whether to recursively validate all properties." }
-          ],
-          returns: `\`true\` if the value is a valid \`${root.name}\`, otherwise \`false\`.`
-        }
-      )
+    writer.writeTsDoc(
+      {
+        summary: `Type guard predicate verifying whether an unknown value conforms to \`${root.name}\`.`,
+        params: [
+          { name: "value", description: "The value to inspect." },
+          { name: "withDeepValidation", description: "Whether to recursively validate all properties." }
+        ],
+        returns: `\`true\` if the value is a valid \`${root.name}\`, otherwise \`false\`.`
+      }
     );
-    lines.push(`export function is${root.name}(value: unknown, withDeepValidation = false): value is ${root.name}`);
-    lines.push("{");
-    lines.push("  if (typeof value !== \"object\" || value === null)");
-    lines.push("  {");
-    lines.push("    return false;");
-    lines.push("  }");
-    const shallowConditions: string[] = [];
-    if (root.properties.some((property) => property.name === SCHEMA_VERSION_PROPERTY))
+    writer.allmanBlock(`export function is${root.name}(value: unknown, withDeepValidation = false): value is ${root.name}`, () =>
     {
-      shallowConditions.push(`!("${SCHEMA_VERSION_PROPERTY}" in value) || (value as { ${SCHEMA_VERSION_PROPERTY}: unknown }).${SCHEMA_VERSION_PROPERTY} !== "${SCHEMA_VERSION_VALUE}"`);
-    }
-    for (const property of root.properties.filter((property) => !property.optional && property.defaultValue === undefined && property.name !== DISCRIMINATOR_PROPERTY && property.name !== SCHEMA_VERSION_PROPERTY))
-    {
-      shallowConditions.push(`!("${property.name}" in value)`);
-    }
-    if (shallowConditions.length > 0)
-    {
-      lines.push(`  if (${shallowConditions.join(" || ")})`);
-      lines.push("  {");
-      lines.push("    return false;");
-      lines.push("  }");
-    }
-    lines.push("  if (!withDeepValidation)");
-    lines.push("  {");
-    lines.push("    return true;");
-    lines.push("  }");
-    lines.push(`  const element = value as ${root.name};`);
-    const propertyChecks = generateModelPropertyChecks(root.properties, spec, "element");
-    if (propertyChecks.length === 0)
-    {
-      lines.push("  return true;");
-    }
-    else
-    {
-      lines.push(`  return ${propertyChecks.join(" &&\n    ")};`);
-    }
-    lines.push("}");
-    lines.push("");
+      writer.allmanBlock("if (typeof value !== \"object\" || value === null)", () =>
+      {
+        writer.writeLine("return false;");
+      });
+      const shallowConditions: string[] = [];
+      if (root.properties.some((property) => property.name === SCHEMA_VERSION_PROPERTY))
+      {
+        shallowConditions.push(`!("${SCHEMA_VERSION_PROPERTY}" in value) || (value as { ${SCHEMA_VERSION_PROPERTY}: unknown }).${SCHEMA_VERSION_PROPERTY} !== "${SCHEMA_VERSION_VALUE}"`);
+      }
+      for (const property of root.properties.filter((property) => !property.optional && property.defaultValue === undefined && property.name !== DISCRIMINATOR_PROPERTY && property.name !== SCHEMA_VERSION_PROPERTY))
+      {
+        shallowConditions.push(`!("${property.name}" in value)`);
+      }
+      if (shallowConditions.length > 0)
+      {
+        writer.allmanBlock(`if (${shallowConditions.join(" || ")})`, () =>
+        {
+          writer.writeLine("return false;");
+        });
+      }
+      writer.allmanBlock("if (!withDeepValidation)", () =>
+      {
+        writer.writeLine("return true;");
+      });
+      writer.writeLine(`const element = value as ${root.name};`);
+      const propertyChecks = generateModelPropertyChecks(root.properties, spec, "element");
+      if (propertyChecks.length === 0)
+      {
+        writer.writeLine("return true;");
+      }
+      else
+      {
+        writer.writeLine(`return ${propertyChecks.join(" &&\n    ")};`);
+      }
+    });
+    writer.blankLine();
   }
 
-  return lines.join("\n");
+  return writer.toString();
 }
 
 function generateDeepTypeCheck(access: string, type: ViewKitType, spec: GrammarSpec): string

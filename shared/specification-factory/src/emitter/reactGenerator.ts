@@ -1,5 +1,7 @@
 // noinspection TypeScriptMissingConfigOption
 
+import { CodeWriter } from "./codeWriter.js";
+import { uncapitalizeText } from "./codegenModel.js";
 import { GrammarSpec, ViewKitModel, ViewKitProperty } from "./typespecModel.js";
 
 
@@ -361,7 +363,7 @@ function computeCustomRendererSlotName(model: ViewKitModel): string
 {
   if (model.discriminatorValue)
   {
-    return toLowerCamelCase(model.discriminatorValue.replace(/-([a-z0-9])/g, (_, letter: string) => letter.toUpperCase()));
+    return uncapitalizeText(model.discriminatorValue.replace(/-([a-z0-9])/g, (matchedSubstring: string, letter: string) => letter.toUpperCase()));
   }
 
   let baseName = model.name;
@@ -369,7 +371,7 @@ function computeCustomRendererSlotName(model: ViewKitModel): string
   {
     baseName = baseName.slice(0, -"Element".length);
   }
-  return toLowerCamelCase(baseName);
+  return uncapitalizeText(baseName);
 }
 
 function generateElementRendererContext(): string
@@ -1252,22 +1254,12 @@ function generatePolymorphicDispatcher(
   );
 }
 
-function toLowerCamelCase(value: string): string
-{
-  if (value.length === 0)
-  {
-    return "";
-  }
-
-  return value.charAt(0).toLowerCase() + value.slice(1);
-}
-
 function generateRootContainerComponent(rootModel: ViewKitModel): string
 {
   const layout = rootModel.uiLayout ?? "card";
   const componentName = `${rootModel.name}${VIEW_SUFFIX}`;
   const propsTypeName = `${componentName}${PROPS_TYPE_SUFFIX}`;
-  const propName = toLowerCamelCase(rootModel.name);
+  const propName = uncapitalizeText(rootModel.name);
   const hasActions = rootModel.properties.some((property) => property.name === "actions");
 
   const propsTypeBlock = [
@@ -1393,63 +1385,7 @@ function generateRootContainerComponent(rootModel: ViewKitModel): string
 
 export function generateReactCode(spec: GrammarSpec): string
 {
-  const componentBlocks: string[] = [];
-
-  // We generate common style constants
-  componentBlocks.push(generateStyleConstants());
-
-  // We generate ElementRendererContext and UiElementViewRenderers
-  componentBlocks.push(generateElementRendererContext());
-  componentBlocks.push(generateUiElementViewRenderers(spec));
-
-  // We generate UiElementViewContext, useUiElementViewContext, and UiElementViewProvider
-  componentBlocks.push(generateUiElementViewContextAndProvider());
-
-  // We generate generic CopyableWrapper
-  componentBlocks.push(generateCopyableWrapper());
-
-  // We generate formatRatio and formatTimestamp helper functions
-  componentBlocks.push(generateRatioFormatterHelper());
-  componentBlocks.push(generateTimestampFormatterHelper());
-
-  // We generate component views for all UiElement models
-  for (const elementModel of spec.uiElements)
-  {
-    componentBlocks.push(generateUiElementComponent(elementModel));
-  }
-
-  // We generate FreeFormElementView component and freeForm DSL helper
-  componentBlocks.push(generateFreeFormElementComponent());
-
-  // We generate component views for all ActionElement models
-  for (const actionModel of spec.actionElements)
-  {
-    componentBlocks.push(generateActionElementComponent(actionModel));
-  }
-
-  // We generate universal ActionElement dispatcher
-  componentBlocks.push(
-    generatePolymorphicDispatcher(
-      ACTION_ELEMENT_ROOT_NAME,
-      "action",
-      spec.actionElements
-    )
-  );
-
-  // We generate universal UiElement dispatcher
-  componentBlocks.push(
-    generatePolymorphicDispatcher(
-      UI_ELEMENT_ROOT_NAME,
-      "element",
-      spec.uiElements
-    )
-  );
-
-  // We generate root components (e.g. UiContainerView, UiCardView)
-  for (const rootModel of spec.rootModels)
-  {
-    componentBlocks.push(generateRootContainerComponent(rootModel));
-  }
+  const writer = new CodeWriter({ indentSize: 2 });
 
   // We assemble file header with exact imports
   const typeImports = computeTypeScriptImports(spec);
@@ -1468,10 +1404,30 @@ export function generateReactCode(spec: GrammarSpec): string
     `} from "${SHARED_CORE_PACKAGE}";`
   ];
 
-  return [
-    headerLines.join("\n"),
-    "",
-    componentBlocks.join("\n\n"),
-    ""
-  ].join("\n");
+  writer.writeLines(headerLines);
+  writer.blankLine();
+
+  const componentBlocks: string[] = [
+    generateStyleConstants(),
+    generateElementRendererContext(),
+    generateUiElementViewRenderers(spec),
+    generateUiElementViewContextAndProvider(),
+    generateCopyableWrapper(),
+    generateRatioFormatterHelper(),
+    generateTimestampFormatterHelper(),
+    ...spec.uiElements.map((elementModel) => generateUiElementComponent(elementModel)),
+    generateFreeFormElementComponent(),
+    ...spec.actionElements.map((actionModel) => generateActionElementComponent(actionModel)),
+    generatePolymorphicDispatcher(ACTION_ELEMENT_ROOT_NAME, "action", spec.actionElements),
+    generatePolymorphicDispatcher(UI_ELEMENT_ROOT_NAME, "element", spec.uiElements),
+    ...spec.rootModels.map((rootModel) => generateRootContainerComponent(rootModel))
+  ];
+
+  for (const block of componentBlocks)
+  {
+    writer.writeLine(block);
+    writer.blankLine();
+  }
+
+  return writer.toString();
 }
