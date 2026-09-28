@@ -89,7 +89,12 @@ type ConnectionValue = SocketMessageValue & {
   sdkVersion?: string,
   environment?: ManifestRuntimeEnvironment
 };
-type InstructionsLog = { log: string, level: string }
+type InstructionsLog =
+  {
+    message: string,
+    level: string,
+    entity?: { type: "image" | "repository" | "collection", id: string | number }
+  }
 type InstructionsAcknowledgment = WithContextId & { success: boolean }
 type InstructionsNotification = Record<string, any>
 

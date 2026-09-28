@@ -57,6 +57,48 @@ The base class provides several lifecycle methods that your implementation class
 
 ---
 
+## The Communicator
+
+The SDK passes a `Communicator` instance to lifecycle hooks and event handlers that accept one. Use it to send
+user-visible logs and notifications or to launch an intent that requests a user interaction. In TypeScript, the
+communicator is provided as a handler argument; in Python, it is provided as the `communicator` argument.
+
+| Method (TypeScript)                | Method (Python)                         | Purpose                                                                                                                                                   |
+|:-----------------------------------|:----------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `sendLog(message, level, entity?)` | `send_log(message, level, entity=None)` | Sends a log with level `debug`, `info`, `warn`, or `error`. An optional entity can associate the log with an image, repository, or collection.            |
+| `forEntity(entity)`                | `for_entity(entity)`                    | Sets the entity context for subsequent logs sent through this communicator and returns the same communicator.                                             |
+| `sendNotification(value)`          | `send_notification(value)`              | Sends a notification object to the application.                                                                                                           |
+| `launchIntent(intent)`             | `launch_intent(intent)`                 | Requests a user interaction, such as a dialog, form, or toast. TypeScript resolves the returned promise with the intent result; Python awaits the result. |
+
+For image tag, feature, and embedding computation events, the SDK initializes the communicator with the image entity
+from the event. Logs sent through it automatically carry that entity. You can override the context for subsequent logs
+with `forEntity()` / `for_entity()`; alternatively, pass an entity directly to `sendLog()` / `send_log()` for a single
+log. Supported entity values have a `type` of `"image"`, `"repository"`, or `"collection"` and the corresponding entity
+`id`. Logs sent without an entity context retain the existing payload format.
+
+```typescript
+protected async
+onImageCreated(communicator
+:
+Communicator, imageId
+:
+string
+):
+Promise<void>
+{
+  communicator.forEntity({ type: "image", id: imageId });
+  communicator.sendLog("Processing the image", "info");
+}
+```
+
+```python
+async def on_image_created(self, communicator: Communicator, image_id: str) -> None:
+    communicator.for_entity({"type": "image", "id": image_id})
+    communicator.send_log("Processing the image", "info")
+```
+
+---
+
 ## Event routing & domain handlers
 
 The base class implements `onEvent` / `on_event`, which automatically dispatches incoming events to specialized domain handler methods. You can override individual hook methods directly without needing to write manual event dispatching logic:

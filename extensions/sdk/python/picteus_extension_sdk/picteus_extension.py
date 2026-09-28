@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, is_dataclass, dataclass
 from enum import StrEnum
 from logging import getLogger, basicConfig
-from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never, List
+from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never, List, TypedDict
 
 import aiohttp
 import socketio
@@ -68,6 +68,11 @@ class EventName(StrEnum):
     TEXT_COMPUTE_EMBEDDINGS = "text.computeEmbeddings"
 
 
+class Entity(TypedDict):
+    type: Literal["image", "repository", "collection"]
+    id: str | int
+
+
 extension_versions_channel: str = "extension.versions"
 extension_ready_channel: str = "extension.ready"
 extension_settings_channel: str = "extension.settings"
@@ -121,7 +126,7 @@ class _MessageSender:
     def maximum_payload_size_in_bytes(self, value):
         self._maximum_payload_size_in_bytes = value
 
-    async def send_log(self, message: str, level: LogLevel) -> None:
+    async def send_log(self, message: str, level: LogLevel, entity: Optional[Entity] = None) -> None:
         if level == "debug":
             log_level = logging.DEBUG
         elif level == "info":
@@ -133,7 +138,10 @@ class _MessageSender:
         else:
             raise RuntimeError(f"Unhandled log level '{level}'")
         self.logger.log(log_level, message)
-        await self.send_message(instructions_event, {"log": {"message": message, "level": level}})
+        log_value: Dict[str, Any] = {"message": message, "level": level}
+        if entity is not None:
+            log_value["entity"] = entity
+        await self.send_message(instructions_event, {"log": log_value})
 
     async def send_notification(self, value: Dict[str, Any]) -> None:
         await self.send_message(instructions_event, {"notification": value})
@@ -194,12 +202,18 @@ class _MessageSender:
 
 class Communicator:
 
-    def __init__(self, logger: logging.Logger, sender: _MessageSender, queue: asyncio.Queue) -> None:
+    def __init__(self, logger: logging.Logger, sender: _MessageSender, queue: asyncio.Queue,
+                 entity: Optional[Entity] = None) -> None:
         super().__init__()
         self.logger: logging.Logger = logger
         self._sender: _MessageSender = sender
         self._queue: asyncio.Queue = queue
         self._loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+        self._entity: Optional[Entity] = entity
+
+    def for_entity(self, entity: Entity) -> "Communicator":
+        self._entity = entity
+        return self
 
     def _push_to_queue(self, item: Dict[str, Any]) -> None:
         if self._loop.is_running():
@@ -215,8 +229,12 @@ class Communicator:
         else:
             self._queue.put_nowait(item)
 
-    def send_log(self, log: str, level: LogLevel) -> None:
-        self._push_to_queue({"sender": self._sender, "type": "log", "log": log, "level": level})
+    def send_log(self, log: str, level: LogLevel, entity: Optional[Entity] = None) -> None:
+        queue_item: Dict[str, Any] = {"sender": self._sender, "type": "log", "log": log, "level": level}
+        actual_entity = entity if entity is not None else self._entity
+        if actual_entity is not None:
+            queue_item["entity"] = dict(actual_entity)
+        self._push_to_queue(queue_item)
 
     def send_notification(self, value: Dict[str, Any]) -> None:
         self._push_to_queue({"sender": self._sender, "type": "notification", "notification": value})
@@ -336,7 +354,7 @@ class PicteusExtension:
                     try:
                         sender: _MessageSender = data["sender"]
                         if data_type == "log":
-                            await sender.send_log(data["log"], data["level"])
+                            await sender.send_log(data["log"], data["level"], data.get("entity"))
                         elif data_type == "notification":
                             await sender.send_notification(data["notification"])
                         elif data_type == "intent":
@@ -391,38 +409,29 @@ class PicteusExtension:
     # noinspection PyMethodMayBeStatic
     async def on_event(self, communicator: Communicator, event: EventName, value: EventValue) -> Any | None:
         if event == EventName.IMAGE_CREATED:
-            image_id: str = value["id"]
-            return await self.on_image_created(communicator, image_id)
+            return await self.on_image_created(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_UPDATED:
-            image_id: str = value["id"]
-            return await self.on_image_updated(communicator, image_id)
+            return await self.on_image_updated(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_DELETED:
-            image_id: str = value["id"]
-            return await self.on_image_deleted(communicator, image_id)
+            return await self.on_image_deleted(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_TAGS_UPDATED:
-            image_id: str = value["id"]
-            return await self.on_image_tags_updated(communicator, image_id)
+            return await self.on_image_tags_updated(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_FEATURES_UPDATED:
-            image_id: str = value["id"]
-            return await self.on_image_features_updated(communicator, image_id)
+            return await self.on_image_features_updated(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_COMPUTE_TAGS:
-            image_id: str = value["id"]
-            return await self.on_compute_image_tags(communicator, image_id)
+            return await self.on_compute_image_tags(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_COMPUTE_FEATURES:
-            image_id: str = value["id"]
-            return await self.on_compute_image_features(communicator, image_id)
+            return await self.on_compute_image_features(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_COMPUTE_EMBEDDINGS:
-            image_id: str = value["id"]
-            return await self.on_compute_image_embeddings(communicator, image_id)
+            return await self.on_compute_image_embeddings(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_RUN_COMMAND:
-            command_id: str = value["commandId"]
             image_ids: List[str] = value["imageIds"]
             parameters: CommandParameters = value.get("parameters", {})
-            return await self.on_images_command(communicator, command_id, image_ids, parameters)
+            return await self.on_images_command(communicator, self._extract_event_command_id(value), image_ids,
+                                                parameters)
         elif event == EventName.PROCESS_RUN_COMMAND:
-            command_id: str = value["commandId"]
             parameters: CommandParameters = value.get("parameters", {})
-            return await self.on_process_command(communicator, command_id, parameters)
+            return await self.on_process_command(communicator, self._extract_event_command_id(value), parameters)
         elif event == EventName.TEXT_COMPUTE_EMBEDDINGS:
             text: str = value["text"]
             return await self.on_compute_text_embeddings(communicator, text)
@@ -546,7 +555,8 @@ class PicteusExtension:
                 f"The {self.to_string()} received at {timestamp_string} the command {command} on channel '{channel}' attached to the context with id '{context_id}'")
             sender = _MessageSender(self.logger, self.parameters, sio, self.to_string, context_id)
             sender.maximum_payload_size_in_bytes = global_sender.maximum_payload_size_in_bytes
-            communicator = Communicator(self.logger, sender, queue)
+            entity: Optional[Entity] = self._compute_event_entity(channel, value)
+            communicator = Communicator(self.logger, sender, queue, entity)
 
             async def handle_event() -> Any | None:
                 requires_result: bool = channel != extension_settings_channel
@@ -634,3 +644,26 @@ class PicteusExtension:
                                                         api_key={"api-key": self.api_key} if self.api_key else None)
         configuration.verify_ssl = False
         return picteus_ws_client.ApiClient(configuration)
+
+    def _compute_event_entity(self, channel: str, value: EventValue) -> Entity | None:
+        image_computation_events = {
+            EventName.IMAGE_CREATED,
+            EventName.IMAGE_UPDATED,
+            EventName.IMAGE_TAGS_UPDATED,
+            EventName.IMAGE_FEATURES_UPDATED,
+            EventName.IMAGE_DELETED,
+            EventName.IMAGE_COMPUTE_TAGS,
+            EventName.IMAGE_COMPUTE_FEATURES,
+            EventName.IMAGE_COMPUTE_EMBEDDINGS
+        }
+        if channel not in image_computation_events:
+            return None
+        return {"type": "image", "id": self._extract_event_value_id(value)}
+
+    # noinspection method-may-be-static
+    def _extract_event_value_id(self, value: EventValue) -> str:
+        return value["id"]
+
+    # noinspection method-may-be-static
+    def _extract_event_command_id(self, value: EventValue) -> str:
+        return value["commandId"]

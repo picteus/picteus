@@ -71,6 +71,11 @@ export const EventName =
   } as const;
 export type EventName = (typeof EventName)[keyof typeof EventName];
 
+export type Entity = {
+  type: "image" | "repository" | "collection";
+  id: string | number;
+};
+
 const extensionVersionsChannel = "extension.versions";
 const extensionReadyChannel = "extension.ready";
 const extensionSettingsChannel = "extension.settings";
@@ -252,16 +257,27 @@ export class Communicator
 
   private readonly sender: MessageSender;
 
-  constructor(logger: Logger, sender: MessageSender)
+  private entity: Entity | undefined;
+
+  constructor(logger: Logger, sender: MessageSender, entity?: Entity)
   {
     this.logger = logger;
     this.sender = sender;
+    this.entity = entity;
   }
 
-  sendLog(message: string, level: "debug" | "info" | "warn" | "error"): void
+  forEntity(entity: Entity): this
+  {
+    this.entity = entity;
+    return this;
+  }
+
+  sendLog(message: string, level: "debug" | "info" | "warn" | "error", entity?: Entity): void
   {
     this.logger[level](message);
-    this.sendMessage(instructionsEvent, { log: { message, level } });
+    const actualEntity = entity ?? this.entity;
+    const log = actualEntity === undefined ? { message, level } : { message, level, entity: actualEntity };
+    this.sendMessage(instructionsEvent, { log });
   }
 
   // noinspection JSUnusedGlobalSymbols
@@ -431,56 +447,46 @@ export class PicteusExtension
   {
     if (event === EventName.ImageCreated)
     {
-      const imageId: string = value["id"];
-      return await this.onImageCreated(communicator, imageId);
+      return await this.onImageCreated(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageUpdated)
     {
-      const imageId: string = value["id"];
-      return await this.onImageUpdated(communicator, imageId);
+      return await this.onImageUpdated(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageDeleted)
     {
-      const imageId: string = value["id"];
-      return await this.onImageDeleted(communicator, imageId);
+      return await this.onImageDeleted(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageTagsUpdated)
     {
-      const imageId: string = value["id"];
-      return await this.onImageTagsUpdated(communicator, imageId);
+      return await this.onImageTagsUpdated(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageFeaturesUpdated)
     {
-      const imageId: string = value["id"];
-      return await this.onImageFeaturesUpdated(communicator, imageId);
+      return await this.onImageFeaturesUpdated(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageComputeTags)
     {
-      const imageId: string = value["id"];
-      return await this.onComputeImageTags(communicator, imageId);
+      return await this.onComputeImageTags(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageComputeFeatures)
     {
-      const imageId: string = value["id"];
-      return await this.onComputeImageFeatures(communicator, imageId);
+      return await this.onComputeImageFeatures(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageComputeEmbeddings)
     {
-      const imageId: string = value["id"];
-      return await this.onComputeImageEmbeddings(communicator, imageId);
+      return await this.onComputeImageEmbeddings(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageRunCommand)
     {
-      const commandId: string = value["commandId"];
       const imageIds: string[] = value["imageIds"];
       const parameters: CommandParameters = value["parameters"] ?? {};
-      return await this.onImagesCommand(communicator, commandId, imageIds, parameters);
+      return await this.onImagesCommand(communicator, this.extractEventCommandId(value), imageIds, parameters);
     }
     else if (event === EventName.ProcessRunCommand)
     {
-      const commandId: string = value["commandId"];
       const parameters: CommandParameters = value["parameters"] ?? {};
-      return await this.onProcessCommand(communicator, commandId, parameters);
+      return await this.onProcessCommand(communicator, this.extractEventCommandId(value), parameters);
     }
     else if (event === EventName.TextComputeEmbeddings)
     {
@@ -636,7 +642,8 @@ export class PicteusExtension
           return this.toString();
         }, contextId);
         sender.maximumPayloadSizeInBytes = globalSender.maximumPayloadSizeInBytes;
-        const communicator: Communicator = new Communicator(this.logger, sender);
+        const entity: Entity | undefined = this.computeEventEntity(channel, value);
+        const communicator: Communicator = new Communicator(this.logger, sender, entity);
         const requiresResult = channel !== extensionSettingsChannel;
         let result: any;
         let success = false;
@@ -765,6 +772,35 @@ export class PicteusExtension
           }
         ]
     });
+  }
+
+  private computeEventEntity(channel: string, value: EventValue): Entity | undefined
+  {
+    const imageComputationEvents: ReadonlySet<string> = new Set([
+      EventName.ImageCreated,
+      EventName.ImageUpdated,
+      EventName.ImageTagsUpdated,
+      EventName.ImageFeaturesUpdated,
+      EventName.ImageDeleted,
+      EventName.ImageComputeTags,
+      EventName.ImageComputeFeatures,
+      EventName.ImageComputeEmbeddings
+    ]);
+    if (imageComputationEvents.has(channel) === false)
+    {
+      return undefined;
+    }
+    return { type: "image", id: this.extractEventValueId(value) };
+  }
+
+  private extractEventValueId(value: EventValue): string
+  {
+    return value["id"];
+  }
+
+  private extractEventCommandId(value: EventValue): string
+  {
+    return value["commandId"];
   }
 
 }
