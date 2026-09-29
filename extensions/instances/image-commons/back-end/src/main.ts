@@ -74,7 +74,7 @@ class ImageCommonsExtension extends PicteusExtension
         });
         return;
       }
-      communicator.sendLog(`Converting the image with id '${image.id}' and URL '${image.url}'`, "debug");
+      communicator.sendLog(`Converting the image URL '${image.url}'`, "debug", { type: "image", id: imageId });
       const blob: Blob = await this.getImageApi().imageDownload({
         id: imageId,
         format,

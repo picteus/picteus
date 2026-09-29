@@ -1,6 +1,6 @@
 import React from "react";
-import { Button, Image as MantineImage, Notification as MantineNotification, Text } from "@mantine/core";
-import { IconInfoCircle } from "@tabler/icons-react";
+import { Button, Notification as MantineNotification, Text } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 import { OpenBrowserIntent, ProcessCommandIntent, ShowIntent, UiIntent } from "@picteus/shared-core";
 import { Image } from "@picteus/ws-client";
@@ -10,11 +10,9 @@ import { timeAgoFromMilliseconds, ToastService } from "utils";
 import { useExtensionIntentRunner } from "app/hooks";
 import { useActionModalContext } from "app/context";
 import { ImageService } from "app/services";
-import { Common, ImageDetail } from "app/components";
+import { EntityVisual, ImageDetail } from "app/components";
 
-import variables from "../../../assets/style/variablesExport.module.scss";
 import style from "./Notification.module.scss";
-import { useTranslation } from "react-i18next";
 
 
 function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notification: NotificationType) => () => Promise<void>
@@ -78,28 +76,6 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
   };
 }
 
-type NotificationIconType = {
-  notification: NotificationType;
-  size: number;
-};
-
-function NotificationIcon({ notification, size }: NotificationIconType)
-{
-  if (notification.illustrationUri === undefined)
-  {
-    return <IconInfoCircle stroke={Common.IconStrokeSize} size={size}/>;
-  }
-  return <MantineImage
-    alt={"Illustration"}
-    w={size}
-    h={size}
-    fit="contain"
-    radius={variables.imageRadius}
-    src={notification.illustrationUri}
-    fallbackSrc={Common.FallbackImageUrl}
-  />;
-}
-
 type NotificationBodyType = {
   isCompact: boolean;
   notification: NotificationType;
@@ -151,8 +127,7 @@ export default function Notification({ isCompact, notification, onOpen, onClose 
         root: isCompact === true ? style.rootCompact : style.root,
         icon: isCompact === true ? style.iconCompact : style.icon
       }}
-      icon={<NotificationIcon notification={notification}
-                              size={isCompact === true ? Common.ToastIconEdge : Common.NotificationIllustrationEdge}/>}
+      icon={<EntityVisual illustrationUri={notification.illustrationUri} isCompact={isCompact}/>}
       title={notification.title}
       withBorder={isCompact}
       onClose={onClose}

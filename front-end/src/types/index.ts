@@ -63,12 +63,18 @@ export type NotificationType = WithIdAndMilliseconds & {
   actionLabel?: string;
 };
 
+export type LogEntityType = {
+  type: "image" | "repository" | "collection";
+  id: string | number;
+};
+
 export type LogType = WithIdAndMilliseconds & {
   type: "image" | "repository" | "collection" | "extension" | "unknown";
   text: string;
   level: string;
   entityId?: string | number;
   extensionId?: string;
+  entity?: LogEntityType;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

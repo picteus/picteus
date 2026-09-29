@@ -18,7 +18,6 @@ import {
   type ProcessCommandIntent,
   type SettingsValue,
   type ShowIntent,
-  string,
   UiContainer,
   type UiIntent,
   type Versions
@@ -108,7 +107,10 @@ class TypeScriptExtension extends PicteusExtension
       const image = await this.getImageApi().imageGet({ id: imageId });
       if (commandId === "logDimensions")
       {
-        communicator.sendLog(`The image with id '${image.id}', URL '${image.url}' has dimensions ${image.dimensions.width}x${image.dimensions.height}`, "info");
+        communicator.sendLog(`The image with URL '${image.url}' has dimensions ${image.dimensions.width}x${image.dimensions.height}`, "info", {
+          type: "image",
+          id: image.id
+        });
       }
       else if (commandId === "convert")
       {
@@ -131,7 +133,7 @@ class TypeScriptExtension extends PicteusExtension
           });
           return;
         }
-        communicator.sendLog(`Converting the image with id '${image.id}' and URL '${image.url}'`, "debug");
+        communicator.sendLog(`Converting the image with URL '${image.url}'`, "debug", { type: "image", id: image.id });
         const blob: Blob = await this.getImageApi().imageDownload({
           id: imageId,
           format,
@@ -214,17 +216,17 @@ class TypeScriptExtension extends PicteusExtension
 
   private onImageTouched(communicator: Communicator, imageId: string): void
   {
-    communicator.sendLog(`The image with id '${imageId}' was touched`, "info");
+    communicator.sendLog(`The image was touched`, "info");
   }
 
   private onTagsOrFeaturesUpdated(communicator: Communicator, imageId: string): void
   {
-    communicator.sendLog(`The tags or features of the image with id '${imageId}' were updated`, "info");
+    communicator.sendLog(`The tags or features of the image were updated`, "info");
   }
 
   private async computeImageTags(imageId: string): Promise<void>
   {
-    this.logger.debug(`Setting the tags for the image with id '${imageId}'`);
+    this.logger.debug(`Setting the tags for the image`);
     await this.getImageApi().imageSetTags({
       extensionId: this.extensionId,
       id: imageId,
@@ -234,7 +236,7 @@ class TypeScriptExtension extends PicteusExtension
 
   private async computeImageFeatures(imageId: string): Promise<void>
   {
-    this.logger.debug(`Setting the features for the image with id '${imageId}'`);
+    this.logger.debug(`Setting the features for the image`);
     await this.getImageApi().imageSetFeatures({
       extensionId: this.extensionId,
       id: imageId,

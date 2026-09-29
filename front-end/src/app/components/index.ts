@@ -24,6 +24,7 @@ export { default as ImagesCollection } from "./ImagesCollection/ImagesCollection
 export { default as RunCapabilitiesConfirm } from "./RunCapabilitiesConfirm/RunCapabilitiesConfirm.tsx";
 export { default as SynchronizeExtensionConfirm } from "./SynchronizeExtensionConfirm/SynchronizeExtensionConfirm.tsx";
 export { default as ImagesStack } from "./ImagesStack/ImagesStack.tsx";
+export { default as EntityVisual } from "./EntityVisual/EntityVisual.tsx";
 export { default as Notification } from "./Notification/Notification.tsx";
 export { default as RefreshButton } from "./RefreshButton/RefreshButton.tsx";
 export { default as DialogForm } from "./DialogForm/DialogForm.tsx";

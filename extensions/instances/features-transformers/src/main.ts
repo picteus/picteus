@@ -63,7 +63,7 @@ class FeaturesTransformersExtension extends PicteusExtension
 
   async getImageBuffer(communicator: Communicator, imageId: string): Promise<string>
   {
-    communicator.sendLog(`Downloading the bitmap for the image with id '${imageId}'`, "info");
+    communicator.sendLog(`Downloading the bitmap for the image`, "info");
     const blob: Blob = await this.getImageApi().imageDownload({
       id: imageId,
       format: "PNG",
@@ -80,7 +80,7 @@ class FeaturesTransformersExtension extends PicteusExtension
 
   private async computeCaption(communicator: Communicator, imageId: string, filePath: string): Promise<string>
   {
-    communicator.sendLog(`Computing the caption for the image with id '${imageId}'`, "info");
+    communicator.sendLog(`Computing the caption for the image`, "info");
     const caption = await this.classifiers.computeCaption(filePath);
     communicator.sendLog(`The image caption is '${caption}'`, "debug");
     return caption;

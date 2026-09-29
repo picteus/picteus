@@ -15,7 +15,7 @@ from picteus_extension_sdk import PicteusExtension, InstructionReturnedError, Co
     IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
     IntentNotification, ActionIntent, IntentAction, ProcessCommandIntent, \
     IntentProcessCommand, ToastIntent, IntentToast, Versions, CommandParameters, OpenBrowserIntent, IntentOpenBrowser, \
-    UiContainerBuilder
+    UiContainerBuilder, Entity
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -81,8 +81,8 @@ class PythonExtension(PicteusExtension):
             image: Image = self.get_image_api().image_get(id=image_id)
             if command_id == "logDimensions":
                 communicator.send_log(
-                    f"The image with id '{image.id}', URL '{image.url}' has dimensions {image.dimensions.width}x{image.dimensions.height}",
-                    "info")
+                    f"The image with URL '{image.url}' has dimensions {image.dimensions.width}x{image.dimensions.height}",
+                    "info", {"type": "image", "id": image_id})
             elif command_id == "convert":
                 image_format: ImageFormat = parameters["format"]
                 strip_metadata: bool = parameters["stripMetadata"]
@@ -97,7 +97,8 @@ class PythonExtension(PicteusExtension):
                         buttons=IntentDialogButtons(yes="OK"))))
                     return None
 
-                communicator.send_log(f"Converting the image with id '{image.id}' and URL '{image.url}'", "debug")
+                communicator.send_log(f"Converting the image with URL '{image.url}'", "debug",
+                                      {"type": "image", "id": image_id})
                 image_bytes: bytearray = self.get_image_api().image_download(id=image_id, format=image_format,
                                                                              width=width, height=height,
                                                                              resize_render=resize_render,
@@ -144,18 +145,18 @@ class PythonExtension(PicteusExtension):
             await self._handle_application(communicator)
 
     def _on_image_touched(self, communicator: Communicator, image_id: str) -> None:
-        communicator.send_log(f"The image with id '{image_id}' was touched", "info")
+        communicator.send_log(f"The image was touched", "info")
 
     async def _on_tags_or_features_updated(self, communicator: Communicator, image_id: str) -> None:
-        communicator.send_log(f"The tags or features of the image with id '{image_id}' were updated", "info")
+        communicator.send_log(f"The tags or features of the image were updated", "info")
 
     async def _compute_image_tags(self, communicator: Communicator, image_id: str) -> None:
-        communicator.send_log(f"Setting the tags for the image with id '{image_id}'", "debug")
+        communicator.send_log(f"Setting the tags for the image", "debug")
         self.get_image_api().image_set_tags(id=image_id, extension_id=self.extension_id,
                                             request_body=[self.extension_id])
 
     async def _compute_image_features(self, communicator: Communicator, image_id: str) -> None:
-        communicator.send_log(f"Setting the features for the image with id '{image_id}'", "debug")
+        communicator.send_log(f"Setting the features for the image", "debug")
         self.get_image_api().image_set_features(id=image_id, extension_id=self.extension_id,
                                                 image_feature=[
                                                     ImageFeature(type=ImageFeatureType.OTHER,

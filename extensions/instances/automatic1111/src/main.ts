@@ -43,7 +43,6 @@ class Automatic1111Extension extends PicteusExtension
 
   protected async onComputeImageFeatures(_communicator: Communicator, imageId: string): Promise<void>
   {
-    _communicator.sendLog("testing", "debug")
     const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
     await this.computeFeatures(imageId, metadata);
   }

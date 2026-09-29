@@ -38,6 +38,7 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
         if command_id == "upscale":
             new_images: List[IntentImage] = []
             for image_id in image_ids:
+                communicator.for_entity({"type": "image", "id": image_id})
                 new_image = await self._handle_image(communicator, image_id)
                 if new_image is not None:
                     new_images.append(IntentImage(new_image.id))
@@ -49,7 +50,7 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
                                                                                description="These are the upscaled images"))))
 
     async def _handle_image(self, communicator: Communicator, image_id: str) -> PicteusImage | None:
-        communicator.send_log(f"Retrieving the image with id '{image_id}'", "debug")
+        communicator.send_log(f"Retrieving the image", "debug")
         image: PicteusImage = self.get_image_api().image_get(id=image_id)
         communicator.send_log(f"Upscaling the image with URL '{image.url}'", "info")
         surface_pixels = image.dimensions.width * image.dimensions.height

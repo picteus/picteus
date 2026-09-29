@@ -12,7 +12,7 @@ import {
   isUiIntent
 } from "@picteus/shared-core";
 
-import { ChannelEnum, ExtensionIntentType, LogType, NotificationType, SocketEventType } from "types";
+import { ChannelEnum, ExtensionIntentType, LogEntityType, LogType, NotificationType, SocketEventType } from "types";
 import { ImageService } from "app/services";
 import { Common } from "app/components";
 import { getObjectStore, INDEXED_DB_NAME, StoreKind } from "./IndexDbService.ts";
@@ -129,10 +129,25 @@ function computeLog(event: SocketEventType): LogType
     extensionId = entityId as string;
   }
 
+  let entity: LogEntityType;
+  if ((type === "image" || type === "repository" || type === "collection") && entityId !== undefined)
+  {
+    entity = { type, id: entityId };
+  }
+
   if (channel === ChannelEnum.EXTENSION_LOG)
   {
     const message = value.message;
-    return { type, id, milliseconds, text: message.message, level: message.level, entityId, extensionId };
+    return {
+      type,
+      id,
+      milliseconds,
+      text: message.message,
+      level: message.level,
+      entityId,
+      extensionId,
+      entity: message.entity
+    };
   }
 
   const i18nMnemonic = `eventInformation.${channel}`;
@@ -189,28 +204,23 @@ function computeLog(event: SocketEventType): LogType
       text: i18n.t(i18nMnemonic, { id: entityId, type: intentType }),
       level,
       entityId,
-      extensionId
+      extensionId,
+      entity
     };
   }
 
-  return { type, id, milliseconds, text: i18n.t(i18nMnemonic, { id: entityId }), level, entityId, extensionId };
+  return { type, id, milliseconds, text: i18n.t(i18nMnemonic, { id: entityId }), level, entityId, extensionId, entity };
 }
 
-async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<NotificationType>
+async function computeImageIllustrationUri(imageUrl: string, edge): Promise<string>
 {
-  const imageId = event?.value?.id;
-  const image = await ImageService.get({ id: imageId });
-  const suffix = event.channel === ChannelEnum.IMAGE_CREATED ? "imageCreated" : "imageUpdated";
-  const title = i18n.t(`notifications.${suffix}`);
-  const subtitle = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
-  const imageUrl = ImageService.getImageSrc(image.url, Common.NotificationIllustrationEdge, Common.NotificationIllustrationEdge);
-  let illustrationUri = imageUrl;
+  const resizedImageUrl = ImageService.getImageSrc(imageUrl, edge, edge);
+  let illustrationUri = resizedImageUrl;
   try
   {
-    const response = await fetch(imageUrl);
+    const response = await fetch(resizedImageUrl);
     const blob = await response.blob();
-    illustrationUri = await new Promise<string>(
-      (resolve) =>
+    illustrationUri = await new Promise<string>((resolve) =>
       {
         const reader = new FileReader();
         reader.onloadend = () =>
@@ -227,8 +237,19 @@ async function generateImageCreatedOrUpdatedNotification(event: SocketEventType)
   }
   catch (error)
   {
-    console.warn(`Failed to convert the image with URL '${imageUrl}' into a data URI`, error);
+    console.warn(`Failed to convert the image with URL '${resizedImageUrl}' into a data URI`, error);
   }
+  return illustrationUri;
+}
+
+async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<NotificationType>
+{
+  const imageId = event?.value?.id;
+  const image = await ImageService.get({ id: imageId });
+  const suffix = event.channel === ChannelEnum.IMAGE_CREATED ? "imageCreated" : "imageUpdated";
+  const title = i18n.t(`notifications.${suffix}`);
+  const subtitle = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
+  const illustrationUri = await computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
   return {
     id: event.id,
     milliseconds: event.milliseconds,
@@ -279,5 +300,6 @@ export default {
   computeEventEntityId,
   computeEventExtensionId,
   computeLog,
-  computeLogLevelColor
+  computeLogLevelColor,
+  computeImageIllustrationUri
 };

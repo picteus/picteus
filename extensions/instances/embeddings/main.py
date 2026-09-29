@@ -87,13 +87,14 @@ class Embeddings(PicteusExtension):
         images_count = len(ids)
         for index, image_id in enumerate(ids):
             percentage = int(((index + 1) / images_count) * 100)
+            communicator.for_entity({"type": "image", "id": image_id})
             communicator.send_log(
-                f"Processing the image at index {index + 1}/{images_count} ({percentage}%), image with id '{image_id}'",
+                f"Processing the image at index {index + 1}/{images_count} ({percentage}%), image",
                 "info")
             try:
                 await self._compute_image_embeddings(communicator, image_id, clip_enabled, dino_enabled)
             except Exception as exception:
-                communicator.send_log(f"Failed to process the image with id '{image_id}'. Reason: '{exception}'",
+                communicator.send_log(f"Failed to process the image. Reason: '{exception}'",
                                       "error")
         await self.run_in_executor(self._clean_up_torch)
 
@@ -115,7 +116,7 @@ class Embeddings(PicteusExtension):
                 existing_embeddings = existing_embeddings_result.embeddings
             except Exception as exception:
                 communicator.send_log(
-                    f"Could not retrieve the existing embeddings for image '{image_id}': overwriting its value. Reason: '{exception}'",
+                    f"Could not retrieve the existing embeddings for the image: overwriting its value. Reason: '{exception}'",
                     "warn")
                 existing_embeddings = []
 
@@ -144,7 +145,7 @@ class Embeddings(PicteusExtension):
         return await self.run_in_executor(lambda: self._compute_clip_text_embedding(communicator, text))
 
     def _compute_clip_image_embedding(self, communicator: Communicator, image_id: str, image: ImageFile) -> list[float]:
-        communicator.send_log(f"Computing the CLIP image embeddings for the image with id '{image_id}'", "info")
+        communicator.send_log(f"Computing the CLIP image embeddings for the image", "info")
         image_preprocess = self.clip_preprocess(image).unsqueeze(0).to(self.device)
         with torch.no_grad():
             image_features = self.clip_model.encode_image(image_preprocess)
@@ -159,7 +160,7 @@ class Embeddings(PicteusExtension):
         return text_features.cpu().detach().numpy().tolist()[0]
 
     def _compute_dino_image_embedding(self, communicator: Communicator, image_id: str, image: ImageFile) -> list[float]:
-        communicator.send_log(f"Computing the DINO image embeddings for the image with id '{image_id}'", "info")
+        communicator.send_log(f"Computing the DINO image embeddings for the image", "info")
         inputs = self.dino_processor(images=image.convert("RGB"), return_tensors="pt").to(self.device)
         with torch.no_grad():
             outputs = self.dino_model(**inputs)
