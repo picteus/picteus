@@ -11,6 +11,7 @@ import Providers, { useAdditionalUiContext } from "app/context";
 import {
   ActivityScreen,
   CollectionsScreen,
+  DeskScreen,
   ExtensionsScreen,
   ImagesScreen,
   RepositoriesScreen,
@@ -80,6 +81,7 @@ function RouterContent({}: RouterContentType)
     {
       const ComponentMap: Record<string, FunctionComponent> = {
         home: ImagesScreen,
+        desk: DeskScreen,
         collections: CollectionsScreen,
         repositories: RepositoriesScreen,
         extensions: ExtensionsScreen,

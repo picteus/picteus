@@ -14,7 +14,7 @@ import {
   ViewTabDataType
 } from "types";
 import { ToastService } from "utils";
-import { useImagesTabsContext, useSocketEvents } from "app/context";
+import { useSocketEvents } from "app/context";
 import { useInterceptedState } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
 import { Container, EmptyResults } from "app/components";
@@ -37,7 +37,6 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollRootRef = useRef<HTMLDivElement>(null);
-  const { addTab } = useImagesTabsContext();
   const [ filterOrCollectionId, setFilterOrCollectionId ] = useInterceptedState<FilterOrCollectionId>("filterOrCollectionId" in viewData ? viewData.filterOrCollectionId : {
     filter: {
       origin: {
@@ -47,7 +46,6 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
     }
   });
   const hasFilterOrCollectionId = useMemo<boolean>(() => "filterOrCollectionId" in viewData, [ viewData ]);
-  const pinnable = useMemo<boolean>(() => "pinnable" in viewData ? viewData.pinnable : false, [ viewData ]);
   const [ images, setImages ] = useState<ImageWithCaption[] | undefined>("images" in viewData ? viewData.images : undefined);
   const [ viewMode, setViewMode ] = useInterceptedState<ViewMode>("mode" in viewData ? viewData.mode : viewData.viewMode);
   const [ displayRefreshAlert, setDisplayRefreshAlert ] = useState<boolean>(false);
@@ -176,37 +174,21 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
       {
         StorageService.setMainViewTabData({
           mode: viewMode,
-          pinnable,
           filterOrCollectionId: updatedFilterOrCollectionId
         });
       }
     }
-  }, [ filterOrCollectionId, viewMode, pinnable ]);
+  }, [ filterOrCollectionId, viewMode ]);
 
   const handleOnViewMode = useCallback((updatedViewMode: ViewMode) =>
   {
     setViewMode(updatedViewMode);
     if (isDefault === true)
     {
-      StorageService.setMainViewTabData({ mode: updatedViewMode, pinnable, filterOrCollectionId });
+      StorageService.setMainViewTabData({ mode: updatedViewMode, filterOrCollectionId });
     }
     handleOnRefresh();
-  }, [ pinnable, filterOrCollectionId, handleOnRefresh ]);
-
-  const handleOnPin = useMemo(() =>
-  {
-    if (pinnable)
-    {
-      return () =>
-      {
-        addTab({
-          content: { title: "New tab", description: "" },
-          data: { mode: "masonry", pinnable: true, filterOrCollectionId }
-        });
-      };
-    }
-    return undefined;
-  }, [ pinnable, filterOrCollectionId ]);
+  }, [ filterOrCollectionId, handleOnRefresh ]);
 
   return (<Flex ref={containerRef} direction="column" className={style.container}>
     <ControllerBar
@@ -219,7 +201,6 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
       onRefresh={handleOnRefresh}
       viewMode={viewMode}
       onViewMode={handleOnViewMode}
-      onPin={handleOnPin}
     />
     <div ref={contentRef} className={style.content}>
       <div ref={scrollRootRef} className={style.scrolling}>

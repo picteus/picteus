@@ -7,7 +7,8 @@ import {
   IconBox,
   IconFolderOpen,
   IconLibraryPhoto,
-  IconPhotoMinus
+  IconPhotoMinus,
+  IconStack2
 } from "@tabler/icons-react";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
@@ -17,7 +18,7 @@ import { useAdditionalUiContext, useCommandSocket } from "app/context";
 import { Common, ExtensionIcon } from "app/components";
 import { useOpenWindow } from "app/hooks";
 import { computeResourceTypeUrl } from "types";
-import { ImagesNavbarLink, NavbarLink } from "./components";
+import { SidebarLink } from "./components";
 
 import style from "./Sidebar.module.scss";
 
@@ -35,6 +36,7 @@ export default function Sidebar()
 
   const mainElementData = [
     { route: ROUTES.home, label: "images", icon: <IconPhotoMinus {...commonIconStyle} /> },
+    { route: ROUTES.desk, label: "desk", icon: <IconStack2 {...commonIconStyle} /> },
     { route: ROUTES.repositories, label: "repositories", icon: <IconFolderOpen {...commonIconStyle} /> },
     { route: ROUTES.collections, label: "collections", icon: <IconLibraryPhoto {...commonIconStyle} /> },
     { route: ROUTES.extensions, label: "extensions", icon: <IconBox {...commonIconStyle} /> }
@@ -43,19 +45,8 @@ export default function Sidebar()
 
   const mainElements = useMemo(() => (mainElementData.map(element =>
   {
-    if (element.route === ROUTES.home)
-    {
-      return (
-        <ImagesNavbarLink
-          key={element.route}
-          icon={element.icon}
-          label={t("menu." + element.label)}
-          route={element.route}
-        />
-      );
-    }
     return (
-      <NavbarLink
+      <SidebarLink
         key={element.route}
         icon={element.icon}
         label={t(`menu.${element.label}`)}
@@ -71,7 +62,7 @@ export default function Sidebar()
       const routePathFragment = computeExtensionSidebarRoute(element.uuid);
       return (
         // TODO: handle the case of the closeable items
-        <NavbarLink
+        <SidebarLink
           key={element.uuid}
           icon={<ExtensionIcon idOrExtension={element.extensionId} url={computeResourceTypeUrl(element.icon)}
                                size="md"/>}
@@ -136,7 +127,7 @@ export default function Sidebar()
             {additionalElements}
           </Stack>
         </ScrollArea>
-        <NavbarLink
+        <SidebarLink
           icon={<IconAdjustmentsHorizontal {...commonIconStyle} />}
           label={t("menu.settings")}
           route={ROUTES.settings}

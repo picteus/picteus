@@ -1,1 +1,1 @@
-export { ImagesNavbarLink, NavbarLink } from "./ImagesNavbar/ImagesNavbar.tsx";
+export { SidebarLink } from "./SidebarLink/SidebarLink.tsx";

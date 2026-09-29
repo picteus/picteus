@@ -10,6 +10,7 @@ export default {
   },
   menu: {
     images: "Images",
+    desk: "Desk",
     imageCommands: "Image commands",
     repositories: "Repositories",
     collections: "Collections",
@@ -179,6 +180,10 @@ export default {
       "There is no more image in the collection or in the initial set.",
     descriptionNoEmbedding: "There is no image displayed, because no embedding was computed so far: install or enable an extension which compute embeddings.",
     buttonTextNoRepository: "Manage repositories"
+  },
+  emptyDesk: {
+    title: "Desk is empty",
+    description: "There are currently no tabs on the desk. Generated images and interactive extension results will appear here as tabs."
   },
   emptySelectedImages: {
     title: "No selected image",
@@ -458,8 +463,7 @@ export default {
   imagesScreen: {
     masonryView: "Masonry",
     galleryView: "Gallery",
-    detailView: "Detail",
-    explore: "Explore"
+    detailView: "Detail"
   },
   activityScreen: {
     title: "Activity",

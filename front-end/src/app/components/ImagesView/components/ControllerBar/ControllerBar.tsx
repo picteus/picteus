@@ -1,6 +1,6 @@
 import React, { ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { ActionIcon, Box, Flex, Tooltip } from "@mantine/core";
-import { IconLayoutDashboard, IconListDetails, IconPhoto, IconPin } from "@tabler/icons-react";
+import { IconLayoutDashboard, IconListDetails, IconPhoto } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Collection, SearchFilterFromJSON } from "@picteus/ws-client";
 
@@ -22,7 +22,6 @@ type ControllerBarType = {
   onRefresh?: () => void;
   viewMode: ViewMode;
   onViewMode: (mode: ViewMode) => void;
-  onPin?: () => void;
 };
 
 export default function ControllerBar({
@@ -34,8 +33,7 @@ export default function ControllerBar({
   displayRefreshAlert,
   onRefresh,
   viewMode,
-  onViewMode,
-  onPin
+  onViewMode
 }: ControllerBarType)
 {
   const [ t ] = useTranslation();
@@ -142,11 +140,6 @@ export default function ControllerBar({
         alert={displayRefreshAlert}
         onRefresh={handleOnRefresh}
       />}
-      {onPin && <Tooltip label={t("button.pin")}>
-        <ActionIcon size="lg" variant={"default"} onClick={onPin}>
-          <IconPin stroke={1.2}/>
-        </ActionIcon>
-      </Tooltip>}
     </Flex>;
   }
 

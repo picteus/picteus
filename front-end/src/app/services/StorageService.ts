@@ -1,6 +1,6 @@
 import { SearchFilter } from "@picteus/ws-client";
 
-import { FolderTypes, TabsType, ViewTabDataType } from "types";
+import { DeskTabType, FolderTypes, TabsType, ViewTabDataType } from "types";
 
 
 export const prefix = "picteus_";
@@ -14,6 +14,8 @@ export const StorageKeys =
     COLOR_SCHEME: "colorScheme",
     COMMANDS_DO_NOT_ASK_AGAIN: "commandsDoNotAskAgain",
     COMMANDS_PARAMETERS: "commandsParameters",
+    DESK_ACTIVE_TAB: "deskActiveTab",
+    DESK_TABS: "deskTabs",
     EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION: "extensionIntentShowShouldConfirmRedirection",
     FOLDER_PICKER_LAST_LOCATION: "extensionPickerLastLocation",
     IMAGE_DETAIL_HIDDEN_SECTIONS: "imageDetailHiddenSections",
@@ -205,7 +207,6 @@ function getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType
     StorageKeys.MAIN_TAB,
     {
       mode: "masonry",
-      pinnable: true,
       filterOrCollectionId: { filter: defaultFilter }
     }
   );
@@ -224,6 +225,26 @@ function getGalleryTabs(): TabsType[]
 function setGalleryTabs(tabs: TabsType[]): void
 {
   setJson(StorageKeys.TABS, tabs);
+}
+
+function getDeskTabs(): DeskTabType[]
+{
+  return getJson<DeskTabType[]>(StorageKeys.DESK_TABS, []);
+}
+
+function setDeskTabs(tabs: DeskTabType[]): void
+{
+  setJson(StorageKeys.DESK_TABS, tabs);
+}
+
+function getDeskActiveTab(): string | undefined
+{
+  return get(StorageKeys.DESK_ACTIVE_TAB);
+}
+
+function setDeskActiveTab(activeTabId: string): void
+{
+  set(StorageKeys.DESK_ACTIVE_TAB, activeTabId);
 }
 
 function getImageDetailTraits(defaultValue: string[]): string[]
@@ -358,6 +379,7 @@ function setCommandParameters(extensionId: string, commandId: string, parameters
   setCommandsParameters(commandsParameters);
 }
 
+// noinspection JSUnusedLocalSymbols
 function removeCommandParameters(extensionId: string, commandId: string): void
 {
   const commandIdentifier = computeCommandStorageIdentifier(extensionId, commandId);
@@ -366,6 +388,7 @@ function removeCommandParameters(extensionId: string, commandId: string): void
   setCommandsParameters(commandsParameters);
 }
 
+// noinspection JSUnusedLocalSymbols
 function resetCommandsParameters(): void
 {
   remove(StorageKeys.COMMANDS_PARAMETERS);
@@ -395,6 +418,10 @@ export default {
   setMainViewTabData,
   getGalleryTabs,
   setGalleryTabs,
+  getDeskTabs,
+  setDeskTabs,
+  getDeskActiveTab,
+  setDeskActiveTab,
   getImageDetailTraits,
   setImageDetailTraits,
   getImageDetailHiddenSections,
@@ -412,7 +439,5 @@ export default {
   setCommandDoNotAskAgain,
   resetCommandsDoNotAskAgain,
   getCommandParameters,
-  setCommandParameters,
-  removeCommandParameters,
-  resetCommandsParameters
+  setCommandParameters
 };

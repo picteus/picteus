@@ -1,7 +1,7 @@
 import { ReactElement, ReactNode } from "react";
 import { RJSFSchema } from "@rjsf/utils";
 
-import { FrontIntent } from "@picteus/shared-core";
+import { FrontIntent, IntentDialogIconContent } from "@picteus/shared-core";
 import { detectImageMimeType } from "@picteus/shared-front-end";
 import {
   Extension,
@@ -198,7 +198,6 @@ export type ViewMode = "masonry" | "gallery" | "table";
 
 export type ViewTabDataType = {
   mode: ViewMode;
-  pinnable: boolean;
   filterOrCollectionId: FilterOrCollectionId;
 }
 
@@ -207,6 +206,43 @@ export type TabsType = {
   extensionId?: string;
   content: DialogContent;
   data: ViewTabDataType;
+};
+
+export type DeskTabImagesContentType = {
+  kind: "images";
+  images: Array<{ imageId: string }>;
+  data: ViewTabDataType;
+};
+
+export type DeskTabUrlContentType = {
+  kind: "url";
+  url: string;
+};
+
+export type DeskTabHtmlContentType = {
+  kind: "html";
+  html: string;
+};
+
+export type DeskTabMarkdownContentType = {
+  kind: "markdown";
+  markdown: string;
+};
+
+export type DeskTabContentType =
+  | DeskTabImagesContentType
+  | DeskTabUrlContentType
+  | DeskTabHtmlContentType
+  | DeskTabMarkdownContentType;
+
+export type DeskTabType = {
+  id: string;
+  extensionId?: string;
+  header: IntentDialogIconContent;
+  content: DeskTabContentType;
+  isShiftable?: boolean;
+  isClosable?: boolean;
+  createdAt?: number;
 };
 
 export enum ChannelEnum

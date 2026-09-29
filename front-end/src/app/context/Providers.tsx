@@ -7,7 +7,7 @@ import { EventSocketProvider } from "./EventSocketContext.tsx";
 import { ActionModalProvider } from "./ActionModalContext.tsx";
 import { ImagesSelectedProvider } from "./ImagesSelectedContext.tsx";
 import { AdditionalUiProvider } from "./AdditionalUiContext.tsx";
-import { ImagesTabsProvider } from "./ImagesTabsContext.tsx";
+import { DeskTabsProvider } from "./DeskTabsContext.tsx";
 
 
 export default function Providers({ children }: { children?: ReactNode })
@@ -19,9 +19,9 @@ export default function Providers({ children }: { children?: ReactNode })
           <SocketCacheSync/>
           <ActionModalProvider>
             <AdditionalUiProvider>
-              <ImagesTabsProvider>
+              <DeskTabsProvider>
                 <ImagesSelectedProvider>{children}</ImagesSelectedProvider>
-              </ImagesTabsProvider>
+              </DeskTabsProvider>
             </AdditionalUiProvider>
           </ActionModalProvider>
         </EventSocketProvider>

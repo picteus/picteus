@@ -7,7 +7,7 @@ import { ROUTES } from "utils";
 import { useContainerDimensions } from "app/hooks";
 import { Common } from "app/components";
 import { EventInformation } from "./components";
-import { NavbarLink } from "../../../Sidebar/components";
+import { SidebarLink } from "../../../Sidebar/components";
 
 import style from "./BottomBar.module.scss";
 
@@ -22,8 +22,8 @@ export default function BottomBar({ containerRef }: BottomBarType)
   return (
     <>
       <Flex align="center" className={style.bottomBar} gap={10}>
-        <NavbarLink icon={<IconActivity stroke={Common.IconStrokeSize}/>} label={t("menu.activity")}
-                    route={ROUTES.activity}/>
+        <SidebarLink icon={<IconActivity stroke={Common.IconStrokeSize}/>} label={t("menu.activity")}
+                     route={ROUTES.activity}/>
         <EventInformation containerHeight={height}/>
       </Flex>
     </>
