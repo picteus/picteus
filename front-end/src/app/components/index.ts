@@ -35,6 +35,7 @@ export { default as CollectionIcon } from "./CollectionIcon/CollectionIcon.tsx";
 export { default as ExtensionIcon } from "./ExtensionIcon/ExtensionIcon.tsx";
 export { default as ExtensionBadge } from "./ExtensionBadge/ExtensionBadge.tsx";
 export { default as CommandIcon } from "./CommandIcon/CommandIcon.tsx";
+export { default as ResourceIcon } from "./ResourceIcon/ResourceIcon.tsx";
 export { default as ImageThumbnail } from "./ImageThumbnail/ImageThumbnail.tsx";
 export { default as ImageTag } from "./ImageTag/ImageTag.tsx";
 export { default as EntityState } from "./EntityState/EntityState.tsx";

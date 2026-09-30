@@ -1,12 +1,10 @@
 import { ReactElement } from "react";
-import { ScrollArea } from "@mantine/core";
+import { Box, Container, ScrollArea } from "@mantine/core";
 import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
 import { EmptyResults, Iframe, ImagesView, Markdown } from "app/components";
-
-import style from "../DeskScreen.module.scss";
 
 
 export interface DeskTabContentPropsType
@@ -14,7 +12,7 @@ export interface DeskTabContentPropsType
   tab: DeskTabType;
 }
 
-export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactElement
+export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactElement | null
 {
   const [ t ] = useTranslation();
 
@@ -37,31 +35,22 @@ export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactE
     );
   }
 
-  if (content.kind === "url")
+  if (content.kind === "url" || content.kind === "html")
   {
     return (
-      <div className={style.iframeContainer}>
-        <Iframe content={{ url: content.url }}/>
-      </div>
-    );
-  }
-
-  if (content.kind === "html")
-  {
-    return (
-      <div className={style.iframeContainer}>
-        <Iframe content={{ html: content.html }}/>
-      </div>
+      <Box h="100%" w="100%">
+        <Iframe content={content.kind === "url" ? { url: content.url } : { html: content.html }}/>
+      </Box>
     );
   }
 
   if (content.kind === "markdown")
   {
     return (
-      <ScrollArea style={{ height: "100%", width: "100%" }}>
-        <div className={style.markdownContainer}>
+      <ScrollArea h="100%" w="100%">
+        <Container size="md" py="xl">
           <Markdown content={content.markdown}/>
-        </div>
+        </Container>
       </ScrollArea>
     );
   }

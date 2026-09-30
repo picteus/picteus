@@ -9,56 +9,27 @@
 
 .topBar
 {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 42px;
-  min-height: 42px;
-  padding: 0 8px;
-  background-color: var(--mantine-color-body);
   border-bottom: 1px solid var(--mantine-color-default-border);
   user-select: none;
 }
 
-.shiftButton
+.tabHeader
 {
-  flex-shrink: 0;
-}
-
-.scrollArea
-{
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-}
-
-.tabsList
-{
-  display: flex;
-  align-items: flex-end;
-  height: 100%;
-  gap: 4px;
-  padding-top: 4px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
 .tabItem
 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  height: 36px;
   border-radius: 6px 6px 0 0;
   border: 1px solid transparent;
   border-bottom: none;
   background-color: transparent;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
-  flex-shrink: 0;
   color: var(--mantine-color-dimmed);
 }
 
-.tabItem:hover
+.tabItem:not([data-active="true"]):hover
 {
   background-color: var(--mantine-color-default-hover);
   color: var(--mantine-color-text);
@@ -73,6 +44,12 @@
   box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.tabItem[data-active="true"]:hover
+{
+  background-color: var(--mantine-color-default);
+  color: var(--mantine-color-text);
+}
+
 .tabItem[data-dragging="true"]
 {
   opacity: 0.4;
@@ -81,14 +58,6 @@
 .tabItem[data-drop-target="true"]
 {
   border-left: 2px solid var(--mantine-color-blue-filled);
-}
-
-.label
-{
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .closeButton
@@ -101,42 +70,4 @@
 .closeButton:hover
 {
   opacity: 1;
-}
-
-.contentArea
-{
-  flex: 1;
-  min-height: 0;
-  height: calc(100% - 42px);
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-}
-
-.contentPanel
-{
-  height: 100%;
-  width: 100%;
-  display: none;
-}
-
-.contentPanel[data-active="true"]
-{
-  display: block;
-}
-
-.markdownContainer
-{
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.emptyContainer
-{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
 }

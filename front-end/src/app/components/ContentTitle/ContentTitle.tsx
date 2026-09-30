@@ -1,8 +1,8 @@
 import { type ReactElement, type ReactNode } from "react";
-import { Divider, Flex, Image, Stack, Title } from "@mantine/core";
+import { Divider, Flex, Stack, Title } from "@mantine/core";
 
-import { computeResourceTypeUrl, ContentIconType } from "types";
-import { Common } from "app/components";
+import { ContentIconType } from "types";
+import { ResourceIcon } from "app/components";
 
 
 type ContentTitleType = {
@@ -11,22 +11,12 @@ type ContentTitleType = {
   details?: ReactNode;
 };
 
-export default function ContentTitle({
-  text,
-  icon,
-  details
-}: ContentTitleType): ReactElement
+export default function ContentTitle(props: ContentTitleType): ReactElement
 {
+  const { text, icon, details } = props;
   const titleContent = (
     <Flex gap="sm">
-      {(icon !== undefined && ("url" in icon || "content" in icon)) && (
-        <Image
-          src={computeResourceTypeUrl(icon)}
-          fallbackSrc={Common.FallbackImageUrl}
-          h={Common.IconLargeSize}
-          w={Common.IconLargeSize}
-        />
-      )}
+      <ResourceIcon icon={icon} isCompact={false}/>
       {(icon !== undefined && "icon" in icon) && icon.icon}
       <Title order={3}>{text}</Title>
     </Flex>

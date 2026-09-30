@@ -1,19 +1,42 @@
 import { DragEvent, ReactElement, ReactNode, useRef, useState } from "react";
-import { ActionIcon, CloseButton, ScrollArea, Text, Tooltip } from "@mantine/core";
 import {
+  ActionIcon,
+  Box,
+  Center,
+  CloseButton,
+  Collapse,
+  Group,
+  Paper,
+  ScrollArea,
+  Stack,
+  Text,
+  Title,
+  Tooltip
+} from "@mantine/core";
+import {
+  IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
+  IconChevronUp,
   IconCode,
   IconFileText,
   IconPhoto,
-  IconStack,
+  IconStack2,
   IconWorld
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
 import { useDeskTabsContext } from "app/context";
-import { EmptyResults, ExtensionIcon, StackableScreen } from "app/components";
+import {
+  Common,
+  EmptyResults,
+  ExtensionBadge,
+  ExtensionIcon,
+  Markdown,
+  ResourceIcon,
+  StackableScreen
+} from "app/components";
 import DeskTabContent from "./components/DeskTabContent.tsx";
 
 import style from "./DeskScreen.module.scss";
@@ -24,6 +47,7 @@ export default function DeskScreen(): ReactElement
   const [ t ] = useTranslation();
   const { tabs, activeTab, setActiveTab, removeTab, reorderTabs } = useDeskTabsContext();
 
+  const [ isHeaderExpanded, setIsHeaderExpanded ] = useState<boolean>(true);
   const [ draggedTabId, setDraggedTabId ] = useState<string | null>(null);
   const [ dropTargetTabId, setDropTargetTabId ] = useState<string | null>(null);
   const scrollViewportReference = useRef<HTMLDivElement>(null);
@@ -93,69 +117,73 @@ export default function DeskScreen(): ReactElement
       return <ExtensionIcon idOrExtension={tabItem.extensionId} size="sm"/>;
     }
 
-    if (tabItem.header.icon && "url" in tabItem.header.icon)
+    if (tabItem.header.icon)
     {
-      return (
-        <img
-          src={tabItem.header.icon.url}
-          alt=""
-          style={{ width: 16, height: 16, objectFit: "contain" }}
-        />
-      );
+      return <ResourceIcon icon={tabItem.header.icon} isCompact={false}/>;
     }
 
     if (tabItem.content.kind === "images")
     {
-      return <IconPhoto size={16} stroke={1.5}/>;
+      return <IconPhoto size={Common.IconSmallSize} stroke={1.5}/>;
     }
     if (tabItem.content.kind === "url")
     {
-      return <IconWorld size={16} stroke={1.5}/>;
+      return <IconWorld size={Common.IconSmallSize} stroke={1.5}/>;
     }
     if (tabItem.content.kind === "html")
     {
-      return <IconCode size={16} stroke={1.5}/>;
+      return <IconCode size={Common.IconSmallSize} stroke={1.5}/>;
     }
     if (tabItem.content.kind === "markdown")
     {
-      return <IconFileText size={16} stroke={1.5}/>;
+      return <IconFileText size={Common.IconSmallSize} stroke={1.5}/>;
     }
 
-    return <IconStack size={16} stroke={1.5}/>;
+    return <IconStack2 size={Common.IconSmallSize} stroke={1.5}/>;
   }
 
   if (tabs.length === 0)
   {
     return (
-      <div className={style.emptyContainer}>
+      <Center h="100%" w="100%">
         <EmptyResults
-          icon={IconStack}
+          icon={IconStack2}
           title={t("emptyDesk.title")}
           description={t("emptyDesk.description")}
         />
-      </div>
+      </Center>
     );
   }
 
   const selectedTab = tabs.find((tabItem) => tabItem.id === activeTab) ?? tabs[0];
+  const hasTitle = Boolean(selectedTab?.header?.title);
+  const hasDescription = Boolean(selectedTab?.header?.description);
+  const hasDetails = Boolean(selectedTab?.header?.details);
+  const hasHeader = hasTitle === true || hasDescription === true || hasDetails === true;
+  const isCollapsible = hasDescription === true || hasDetails === true;
 
   return (
     <StackableScreen resetTrigger={activeTab} className={style.container}>
-      <div className={style.topBar}>
+      <Group
+        h={42}
+        px="xs"
+        gap="xs"
+        wrap="nowrap"
+        className={style.topBar}
+      >
         <ActionIcon
           variant="subtle"
           size="sm"
-          className={style.shiftButton}
           onClick={() => handleScroll("left")}
         >
-          <IconChevronLeft size={16}/>
+          <IconChevronLeft size={Common.IconSmallSize}/>
         </ActionIcon>
         <ScrollArea
-          className={style.scrollArea}
+          flex={1}
           viewportRef={scrollViewportReference}
           type="never"
         >
-          <div className={style.tabsList}>
+          <Group gap="xs" align="flex-end" h="100%" pt="xs" wrap="nowrap">
             {tabs.map((tabItem) =>
             {
               const isTabActive = tabItem.id === activeTab;
@@ -167,8 +195,12 @@ export default function DeskScreen(): ReactElement
                 : tabItem.header.title;
 
               return (
-                <div
+                <Group
                   key={tabItem.id}
+                  gap="xs"
+                  px={10}
+                  h={36}
+                  wrap="nowrap"
                   className={style.tabItem}
                   data-active={isTabActive === true ? "true" : undefined}
                   data-dragging={isTabDragging === true ? "true" : undefined}
@@ -185,11 +217,9 @@ export default function DeskScreen(): ReactElement
 
                   <Tooltip
                     label={tooltipLabel}
-                    openDelay={500}
-                    withArrow
                     withinPortal
                   >
-                    <Text size="sm" className={style.label}>
+                    <Text size="sm" maw={140} truncate>
                       {tabItem.header.title || "Tab"}
                     </Text>
                   </Tooltip>
@@ -197,7 +227,6 @@ export default function DeskScreen(): ReactElement
                   {tabItem.isClosable !== false && (
                     <CloseButton
                       size="xs"
-                      aria-label="Close tab"
                       className={style.closeButton}
                       onClick={(event) =>
                       {
@@ -206,23 +235,88 @@ export default function DeskScreen(): ReactElement
                       }}
                     />
                   )}
-                </div>
+                </Group>
               );
             })}
-          </div>
+          </Group>
         </ScrollArea>
         <ActionIcon
           variant="subtle"
           size="sm"
-          className={style.shiftButton}
           onClick={() => handleScroll("right")}
         >
-          <IconChevronRight size={16}/>
+          <IconChevronRight size={Common.IconSmallSize}/>
         </ActionIcon>
-      </div>
-      <div className={style.contentArea}>
-        {selectedTab && <DeskTabContent tab={selectedTab}/>}
-      </div>
+      </Group>
+
+      <Box flex={1} pos="relative" style={{ overflow: "hidden" }}>
+        {selectedTab && (
+          <Stack h="100%" w="100%" gap={0} style={{ overflow: "hidden" }}>
+            {hasHeader === true && (
+              <Box
+                p="xs"
+                px="md"
+                bg="var(--mantine-color-body)"
+                className={style.tabHeader}
+              >
+                <Group justify="space-between" align="center" gap="md" wrap="nowrap">
+                  <Group gap="xs" align="center" wrap="nowrap" style={{ minWidth: 0 }}>
+                    <Title order={1} lineClamp={1}>
+                      {selectedTab.header.title}
+                    </Title>
+                    {selectedTab.extensionId && (
+                      <ExtensionBadge idOrExtension={selectedTab.extensionId} size="lg" color="gray"/>)}
+                  </Group>
+
+                  {isCollapsible === true && (
+                    <ActionIcon
+                      variant="subtle"
+                      size="sm"
+                      onClick={() =>
+                      {
+                        setIsHeaderExpanded((previousState) => !previousState);
+                      }}
+                    >
+                      {isHeaderExpanded === true ? <IconChevronUp size={Common.IconSmallSize}/> :
+                        <IconChevronDown size={Common.IconSmallSize}/>}
+                    </ActionIcon>
+                  )}
+                </Group>
+
+                {isCollapsible === true && (
+                  <Collapse expanded={isHeaderExpanded === true}>
+                    <Stack gap="xs" pt="md">
+                      {hasDescription === true && (
+                        <Text size="sm" c="dimmed" lh={1.4}>
+                          {selectedTab.header.description}
+                        </Text>
+                      )}
+
+                      {hasDetails === true && selectedTab.header.details && (
+                        <Paper
+                          p="xs"
+                          px="sm"
+                          withBorder
+                          radius="sm"
+                          bg="var(--mantine-color-default)"
+                          fz="xs"
+                        >
+                          <ScrollArea.Autosize mah={160}>
+                            <Markdown content={selectedTab.header.details} size="xs"/>
+                          </ScrollArea.Autosize>
+                        </Paper>
+                      )}
+                    </Stack>
+                  </Collapse>
+                )}
+              </Box>
+            )}
+            <Box flex={1} pos="relative" style={{ overflow: "hidden" }}>
+              <DeskTabContent tab={selectedTab}/>
+            </Box>
+          </Stack>
+        )}
+      </Box>
     </StackableScreen>
   );
 }
