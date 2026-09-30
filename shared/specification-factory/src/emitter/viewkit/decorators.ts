@@ -1,7 +1,9 @@
 import { DecoratorContext, Model, ModelProperty, Program } from "@typespec/compiler";
 
+import { PICTEUS_NAMESPACE } from "../common.js";
 
-export const namespace = "Picteus.ViewKit";
+
+export const namespace = `${PICTEUS_NAMESPACE}.ViewKit`;
 
 export type DslAliasName =
   | "multiSlot"

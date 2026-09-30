@@ -72,7 +72,7 @@ import {
   UiContainerClass,
   ViewKitNode,
   xml
-} from "../dist/typescript/viewKit.js";
+} from "../dist/viewkit/typescript/viewKit.js";
 
 
 describe("TypeScript Card & Visual DSL Builder", () =>

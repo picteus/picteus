@@ -1,9 +1,12 @@
 import { createTypeSpecLibrary, EmitContext, emitFile, resolvePath } from "@typespec/compiler";
 
-import { extractTypeSpecViewKitModel } from "./typespecModel.js";
-import { generateTypeScriptCode } from "./typescriptGenerator.js";
-import { generatePythonCode } from "./pythonGenerator.js";
-import { generateReactCode } from "./reactGenerator.js";
+import { extractTypeSpecViewKitModel } from "./viewkit/typespecModel.js";
+import { generateTypeScriptCode } from "./viewkit/typescriptGenerator.js";
+import { generatePythonCode } from "./viewkit/pythonGenerator.js";
+import { generateReactCode } from "./viewkit/reactGenerator.js";
+import { extractTypeSpecIntents } from "./intents/intentsModel.js";
+import { generateIntentPythonCode, generateIntentTypeScriptCode } from "./intents/intentsGenerator.js";
+import { PICTEUS_NAMESPACE } from "./common.js";
 
 
 export {
@@ -35,7 +38,13 @@ export {
   UiDividerOrientation,
   UiDividerOptions,
   UiMeterBoundKind
-} from "./decorators.js";
+} from "./viewkit/decorators.js";
+export {
+  $frontEndIntent,
+  $backEndIntent,
+  getIntentAudience,
+  IntentAudience
+} from "./intents/decorators.js";
 
 export interface EmitterOptions
 {
@@ -69,29 +78,67 @@ export const $lib = createTypeSpecLibrary(
 export async function $onEmit(context: EmitContext<EmitterOptions>): Promise<void>
 {
   const program = context.program;
-  const spec = extractTypeSpecViewKitModel(program);
+  const picteusNamespace = program.getGlobalNamespaceType().namespaces.get(PICTEUS_NAMESPACE);
+  const shouldGenerateViewKit = picteusNamespace?.namespaces.has("ViewKit") ?? false;
+  const shouldGenerateIntents = picteusNamespace?.namespaces.has("Intents") ?? false;
   const targets = context.options.targets ?? [ "typescript", "python", "react" ];
   const outputDir = context.emitterOutputDir;
 
-  if (targets.includes("typescript"))
+  if (shouldGenerateViewKit)
   {
-    const typeScriptCode = generateTypeScriptCode(spec);
-    const typeScriptPath = resolvePath(outputDir, "typescript", "viewKit.ts");
-    await emitFile(program, { path: typeScriptPath, content: typeScriptCode });
+    const spec = extractTypeSpecViewKitModel(program);
+
+    if (targets.includes("typescript"))
+    {
+      const typeScriptCode = generateTypeScriptCode(spec);
+      const typeScriptPath = resolvePath(outputDir, "viewkit", "typescript", "viewKit.ts");
+      await emitFile(program, { path: typeScriptPath, content: typeScriptCode });
+    }
+
+    if (targets.includes("python"))
+    {
+      const pythonCode = generatePythonCode(spec);
+      const pythonPath = resolvePath(outputDir, "viewkit", "python", "view_kit.py");
+      await emitFile(program, { path: pythonPath, content: pythonCode });
+    }
+
+    if (targets.includes("react"))
+    {
+      const reactCode = generateReactCode(spec);
+      const reactPath = resolvePath(outputDir, "viewkit", "react", "ViewKit.tsx");
+      await emitFile(program, { path: reactPath, content: reactCode });
+    }
   }
 
-  if (targets.includes("python"))
+  if (shouldGenerateIntents)
   {
-    const pythonCode = generatePythonCode(spec);
-    const pythonPath = resolvePath(outputDir, "python", "view_kit.py");
-    await emitFile(program, { path: pythonPath, content: pythonCode });
+    const intents = extractTypeSpecIntents(program);
+
+    if (targets.includes("typescript"))
+    {
+      const frontEndIntentsTypeScriptCode = generateIntentTypeScriptCode(intents, "frontEnd");
+      const frontEndIntentsTypeScriptPath = resolvePath(outputDir, "intents", "typescript", "frontEndIntents.ts");
+      await emitFile(program, { path: frontEndIntentsTypeScriptPath, content: frontEndIntentsTypeScriptCode });
+
+      const backEndIntentsTypeScriptCode = generateIntentTypeScriptCode(intents, "backEnd");
+      const backEndIntentsTypeScriptPath = resolvePath(outputDir, "intents", "typescript", "backEndIntents.ts");
+      await emitFile(program, { path: backEndIntentsTypeScriptPath, content: backEndIntentsTypeScriptCode });
+    }
+
+    if (targets.includes("python"))
+    {
+      const frontEndIntentsPythonCode = generateIntentPythonCode(intents, "frontEnd");
+      const frontEndIntentsPythonPath = resolvePath(outputDir, "intents", "python", "front_end_intents.py");
+      await emitFile(program, { path: frontEndIntentsPythonPath, content: frontEndIntentsPythonCode });
+
+      const backEndIntentsPythonCode = generateIntentPythonCode(intents, "backEnd");
+      const backEndIntentsPythonPath = resolvePath(outputDir, "intents", "python", "back_end_intents.py");
+      await emitFile(program, { path: backEndIntentsPythonPath, content: backEndIntentsPythonCode });
+    }
   }
 
-  if (targets.includes("react"))
+  if (!shouldGenerateViewKit && !shouldGenerateIntents)
   {
-    const reactCode = generateReactCode(spec);
-    const reactPath = resolvePath(outputDir, "react", "ViewKit.tsx");
-    await emitFile(program, { path: reactPath, content: reactCode });
+    throw new Error("The TypeSpec program must contain the Picteus.ViewKit or Picteus.Intents namespace.");
   }
 }
-

@@ -1,8 +1,9 @@
 // noinspection TypeScriptMissingConfigOption
 
-import { CodeWriter } from "./codeWriter.js";
+import { CodeWriter } from "../codeWriter.js";
 import { uncapitalizeText } from "./codegenModel.js";
 import { GrammarSpec, ViewKitModel, ViewKitProperty } from "./typespecModel.js";
+import { createGeneratedFileHeader } from "../common.js";
 
 
 const PROPS_TYPE_SUFFIX = "PropsType";
@@ -1386,6 +1387,9 @@ function generateRootContainerComponent(rootModel: ViewKitModel): string
 export function generateReactCode(spec: GrammarSpec): string
 {
   const writer = new CodeWriter({ indentSize: 2 });
+
+  writer.writeLines(createGeneratedFileHeader("//"));
+  writer.blankLine();
 
   // We assemble file header with exact imports
   const typeImports = computeTypeScriptImports(spec);

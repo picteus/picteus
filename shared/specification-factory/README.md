@@ -44,26 +44,60 @@ graph TD
 
 ## 2. Directory structure
 
-All source code is located within `src/` and generated targets in `dist/`:
+TypeSpec specifications and emitter implementations are grouped by feature within `src/`. Shared emitter code remains
+directly under `src/emitter/`. Generated ViewKit resources are grouped under `dist/viewkit/`, while Intents resources
+remain under `dist/intents/`:
 
 ```
-shared/specification-factory/
-├── tspconfig.yaml               # TypeSpec project configuration & JSON Schema emitter
-├── package.json                 # @picteus/specification-factory package metadata & scripts
-├── README.md                    # Specifications documentation
-├── dist/
-│   ├── schema/
-│   │   └── viewkit.json             # Compiled JSON Schema
-└── src/
-    ├── main.tsp                 # Picteus.FeatureViewGrammar entrypoint & namespace aggregator
-    ├── base.tsp                 # Polymorphic base models: @discriminator("type") model UiElement
-    ├── envelope.tsp             # @jsonSchema model FeatureBlock (root schema entry point)
-    ├── primitives.tsp           # Factorized primitive base models & concrete elements
-    ├── modifiers.tsp            # Visual modifiers (copyable, truncate, emphasis, monospace)
-    ├── structures.tsp           # Higher-order layouts (LabelValue, MultiSlot, Table, Groups)
-    ├── actions.tsp              # Interactive triggers (Button command invocation, ExternalLink)
-    ├── escapeHatches.tsp        # Markdown and HTML fallback blocks
-    └── examples.tsp             # Specimen compositions matching the Figma sheet
+dist/
+├── viewkit/
+│   ├── python/view_kit.py
+│   ├── react/ViewKit.tsx
+│   ├── schema/viewkit.json
+│   └── typescript/viewKit.ts
+└── intents/
+    ├── python/
+    └── typescript/
+
+src/
+├── viewkit/
+│   ├── index.tsp
+│   ├── actions.tsp
+│   ├── base.tsp
+│   ├── decorators.tsp
+│   ├── envelope.tsp
+│   ├── escapeHatches.tsp
+│   ├── modifiers.tsp
+│   ├── primitives.tsp
+│   └── structures.tsp
+├── intents/
+│   └── index.tsp
+└── emitter/
+    ├── codeWriter.ts
+    ├── common.ts
+    ├── index.ts
+    ├── intents/
+    │   ├── decorators.ts
+    │   ├── intentsGenerator.ts
+    │   └── intentsModel.ts
+    └── viewkit/
+        ├── codegenModel.ts
+        ├── decorators.ts
+        ├── pythonGenerator.ts
+        ├── reactGenerator.ts
+        ├── typescriptGenerator.ts
+        └── typespecModel.ts
 ```
+
+## Intent contract
+
+`src/intents/index.tsp` defines the intent contract in the `Picteus.Intents` namespace. `@frontEndIntent` and
+`@backEndIntent` mark intent models for their respective generated unions. The factory emits separate front-end and
+back-end TypeScript and Python files, including each union's supporting model definitions.
+
+Run `npm run build:viewkit` or `npm run build:intents` to build and deploy each specification independently.
+`npm run build` builds both. The shared core receives the front-end intents; the back-end receives only the back-end
+intents; and both extension SDKs receive both files. The front-end imports `FrontIntent` from the shared core and
+receives no generated intent file. The `ServeBundleIntent` name is used consistently in both SDKs.
 
 ---

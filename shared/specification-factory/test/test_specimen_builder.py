@@ -4,7 +4,7 @@ import sys
 import unittest
 
 # Add dist/python to sys.path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dist", "python"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dist", "viewkit", "python"))
 
 from view_kit import (
     Envelop,

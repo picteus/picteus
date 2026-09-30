@@ -76,7 +76,15 @@ import {
 } from "./extensionServices";
 import { ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionTaskExecutor, ExtensionTaskExecutorError } from "./extensionTaskExecutor";
-import { BundleIntent, Intent, ReadFileIntent, WriteFileIntent } from "./intents";
+import {
+  Intent,
+  isReadFileIntent,
+  isServeBundleIntent,
+  isWriteFileIntent,
+  ReadFileIntent,
+  ServeBundleIntent,
+  WriteFileIntent
+} from "./intents";
 import { HostService } from "./hostService";
 
 
@@ -105,19 +113,6 @@ type InstructionValue = SocketMessageValue & {
   intent?: Intent
 }
 export type InstructionReturnedValue = { value?: any, cancel?: string, error?: string }
-
-const isBundleIntent = (intent: Intent): intent is BundleIntent =>
-{
-  return (intent as BundleIntent).serveBundle !== undefined;
-};
-const isReadFileIntent = (intent: Intent): intent is ReadFileIntent =>
-{
-  return (intent as ReadFileIntent).readFile !== undefined;
-};
-const isWriteFileIntent = (intent: Intent): intent is WriteFileIntent =>
-{
-  return (intent as WriteFileIntent).writeFile !== undefined;
-};
 
 const zodDialogContent = z.object({
   title: z.string(),
@@ -933,16 +928,16 @@ export class NotificationsGateway
       // TODO: in case of a process command, check that the extension and the command exist
       onAcknowledged = onAcknowledgedFromMasterSocketFactory();
     }
-    else if (isBundleIntent(intent) === true)
+    else if (isServeBundleIntent(intent) === true)
     {
       intentName = "serveBundle";
-      const specificIntent: BundleIntent = intent;
+      const specificIntent: ServeBundleIntent = intent;
       if (await checkSchema(z.object({
         content: z.instanceof(Buffer),
         settings: z.object().optional()
       }), specificIntent.serveBundle) === false)
       {
-        return resolveWithInvalidIntentSchema("BundleIntent");
+        return resolveWithInvalidIntentSchema("ServeBundleIntent");
       }
       onAcknowledged = null;
       const extensionApiKey = AuthenticationGuard.registerExtensionApiKey(extensionId);

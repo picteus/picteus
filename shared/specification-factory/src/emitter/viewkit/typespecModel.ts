@@ -1,4 +1,5 @@
 import { getDiscriminator, getDoc, Model, ModelProperty, Namespace, Program, Scalar, Type } from "@typespec/compiler";
+import { PICTEUS_NAMESPACE } from "../common.js";
 
 import {
   DslAliasName,
@@ -242,7 +243,10 @@ function findViewKitNamespaces(program: Program): Namespace[]
   return allNamespaces.filter(
     (namespace) =>
     {
-      return !isBuiltinNamespace(namespace) && (namespace.models.size > 0 || namespace.enums.size > 0);
+      return namespace.name === "ViewKit"
+        && namespace.namespace?.name === PICTEUS_NAMESPACE
+        && !isBuiltinNamespace(namespace)
+        && (namespace.models.size > 0 || namespace.enums.size > 0);
     }
   );
 }

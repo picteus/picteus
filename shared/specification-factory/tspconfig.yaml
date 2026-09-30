@@ -4,7 +4,7 @@ emit:
 
 options:
   "@typespec/json-schema":
-    emitter-output-dir: "{project-root}/dist/schema"
+    emitter-output-dir: "{project-root}/dist/viewkit/schema"
     file-type: "json"
     bundleId: "viewkit.json"
     polymorphic-models-strategy: "oneOf"

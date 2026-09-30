@@ -1,4 +1,4 @@
-import "../dist/emitter/decorators.js";
+import "../../dist/emitter/viewkit/decorators.js";
 
 using TypeSpec.Reflection;
 
@@ -93,4 +93,3 @@ extern dec uiModifiers(target: ModelProperty);
 
 /** Marks an element model as having delegated rendering in host applications. */
 extern dec customRenderer(target: Model);
-

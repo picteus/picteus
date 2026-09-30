@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, is_dataclass, dataclass
 from enum import StrEnum
 from logging import getLogger, basicConfig
-from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never, List, TypedDict
+from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never, List, TypedDict, Union
 
 import aiohttp
 import socketio
@@ -17,9 +17,10 @@ import urllib3
 from socketio import SimpleClient
 
 import picteus_ws_client
-from picteus_extension_sdk import get_version, ToastIntent, IntentToastType
-from picteus_extension_sdk.intents import Intent, IntentToast
+from picteus_extension_sdk import get_version, ToastIntent, IntentToastType, FrontIntent, BackIntent, IntentToast
 from picteus_ws_client import Manifest
+
+Intent = Union[FrontIntent, BackIntent]
 
 basicConfig(
     level=logging.DEBUG,

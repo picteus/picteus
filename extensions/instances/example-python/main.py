@@ -9,13 +9,13 @@ from picteus_extension_sdk import PicteusExtension, InstructionReturnedError, Co
     IntentUi, DialogIntent, IntentDialog, IntentDialogButtons, IntentImage, \
     ImagesIntent, IntentImages, ShowIntent, IntentShow, IntentShowType, \
     SettingsValue, IntentContext, ServeBundleIntent, \
-    IntentServeBundle, IntentFrame, IntentFrameUrlContent, IntentFrameHtmlContent, \
+    IntentServeBundle, IntentFrame, IntentUrlContent, IntentHtmlContent, \
     IntentFormContent, IntentDialogIconContent, FormIntent, IntentResourceContent, \
     IntentDialogIconSizeContent, IntentUISidebarIntegration, IntentUIModalIntegration, \
     IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
     IntentNotification, ActionIntent, IntentAction, ProcessCommandIntent, \
     IntentProcessCommand, ToastIntent, IntentToast, Versions, CommandParameters, OpenBrowserIntent, IntentOpenBrowser, \
-    UiContainerBuilder, Entity
+    UiContainerBuilder
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -238,7 +238,7 @@ class PythonExtension(PicteusExtension):
                 description="This is a dialog question",
                 details="Please, click the right button.",
                 frame=None if parameters.get("type") != "With HTML" else IntentFrame(
-                    content=IntentFrameHtmlContent(
+                    content=IntentHtmlContent(
                         html="""<html lang="en"><body>This is an <b>HTML</b> content within a dialog box.</body></html>"""),
                     height=50),
                 buttons=IntentDialogButtons(
@@ -255,8 +255,8 @@ class PythonExtension(PicteusExtension):
                                "swaggerui.png" if is_url == True else "icon.svg"),
                   mode="rb") as file:
             icon_content: bytes = file.read()
-        frame_content = IntentFrameUrlContent(
-            url=self.web_services_base_url + "/swaggerui") if is_url == True else IntentFrameHtmlContent(
+        frame_content = IntentUrlContent(
+            url=self.web_services_base_url + "/swaggerui") if is_url == True else IntentHtmlContent(
             html=f"""<html lang="en"><head><title>${title}</title></head><body style="border: 0; margin: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "{anchor}" UI element.</div></body></html>""")
         await communicator.launch_intent(
             UiIntent(ui=IntentUi(id=f"ui-{anchor}-{nature}",
@@ -344,7 +344,7 @@ class PythonExtension(PicteusExtension):
         if intent == "ui":
             intent: UiIntent = UiIntent(
                 ui=IntentUi(id=f"{self.extension_id}-action-ui", integration=IntentUIModalIntegration(),
-                            frameContent=IntentFrameHtmlContent(
+                            frameContent=IntentHtmlContent(
                                 html='''<html lang="en"><body style="width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is the content of the modal.</div></body></html>'''),
                             dialogContent=IntentDialogIconContent(title="Modal",
                                                                   description="The content of the modal")))
@@ -394,7 +394,7 @@ class PythonExtension(PicteusExtension):
                 title="Application",
                 description="This dialog box integrates an iframe application.",
                 size="l",
-                frame=IntentFrame(content=IntentFrameUrlContent(url=result + "/index.html"),
+                frame=IntentFrame(content=IntentUrlContent(url=result + "/index.html"),
                                   height=70),
                 buttons=IntentDialogButtons(yes="Close"))))
 

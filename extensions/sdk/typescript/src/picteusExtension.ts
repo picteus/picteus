@@ -8,10 +8,12 @@ import { io, Socket } from "socket.io-client";
 
 import {
   ApiSecretApi,
+  BackIntent,
   CollectionApi,
   Configuration,
   ErrorContext,
   ExtensionApi,
+  FrontIntent,
   ImageApi,
   ImageAttachmentApi,
   IntentToastType,
@@ -20,8 +22,9 @@ import {
   MiscellaneousApi,
   RepositoryApi
 } from "./index";
-import { Intent } from "./intents";
 
+
+export type Intent = FrontIntent | BackIntent;
 
 export type EventValue = Record<string, any>;
 
