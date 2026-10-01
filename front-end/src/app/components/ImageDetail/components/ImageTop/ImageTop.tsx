@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { Button, CloseButton, Group, Menu, Stack, Text, Tooltip } from "@mantine/core";
-import { IconChevronDown, IconPlayerPlayFilled, IconSquare, IconSquareCheck, IconWand } from "@tabler/icons-react";
+import { CloseButton, Group, Stack, Text, Tooltip } from "@mantine/core";
+import { IconWand } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Image, ImageFeatureType } from "@picteus/ws-client";
@@ -8,9 +8,8 @@ import { Image, ImageFeatureType } from "@picteus/ws-client";
 import { ViewMode } from "types";
 import { capitalizeText } from "utils";
 import { useExtensions } from "app/hooks";
-import { useImagesSelectedContext } from "app/context";
-import { Common, CopyText, ExtensionBadge, ExternalLink, ImageItemMenu, TopPanel } from "app/components";
-import { ImageDimensions, ImageRatio, ImageWeight } from "../index.ts";
+import { Common, CopyText, ExtensionBadge, TopPanel } from "app/components";
+import { ImageCommandsBar, ImageDimensions, ImageRatio, ImageWeight } from "../index.ts";
 
 import style from "./ImageTop.module.scss";
 
@@ -29,8 +28,6 @@ type RecipeExtensionType = {
 export default function ImageTop({ image, viewMode, onClose }: ImageTopType)
 {
   const [ t ] = useTranslation();
-  const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
-  const isSelected = isSelectedImage(image);
   const { data: extensions = [] } = useExtensions();
 
   const recipeExtensions = useMemo<RecipeExtensionType[]>(() =>
@@ -102,42 +99,7 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType)
         </div>
         <CloseButton size="lg" variant="subtle" onClick={onClose}/>
       </>}
-      actions={<Group>
-        <Menu
-          withinPortal={false}
-          position="bottom-end"
-          trigger="hover"
-          trapFocus={false}
-          openDelay={80}
-          closeDelay={400}
-          shadow="md"
-          width={200}
-        >
-          <Menu.Target>
-            <Button
-              variant="default"
-              leftSection={<IconPlayerPlayFilled stroke={Common.IconStrokeSize}/>}
-              rightSection={<IconChevronDown stroke={1.2} size={16}/>}
-            >
-              {t("menu.imageCommands")}
-            </Button>
-          </Menu.Target>
-          <ImageItemMenu image={image} viewMode={viewMode}/>
-        </Menu>
-        <ExternalLink url={image.url} type="button"/>
-        <Tooltip
-          label={t(`button.${isSelected ? "removeFromSelection" : "addToSelection"}`)}
-          position="bottom"
-        >
-          <Button
-            variant="default"
-            leftSection={isSelected ? <IconSquareCheck size={16}/> : <IconSquare size={16}/>}
-            onClick={() => toggleSelectedImage(image)}
-          >
-            {t(`button.${isSelected ? "remove" : "add"}`)}
-          </Button>
-        </Tooltip>
-      </Group>}
+      actions={<ImageCommandsBar image={image} viewMode={viewMode}/>}
     />
   );
 }

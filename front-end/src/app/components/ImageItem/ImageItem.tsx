@@ -1,18 +1,30 @@
 import React, { ReactElement, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IconDots } from "@tabler/icons-react";
-import { ActionIcon, Checkbox, Flex, MantineStyleProp, Menu, Text } from "@mantine/core";
+import { ActionIcon, Flex, MantineStyleProp, Menu, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { ImageDimensions, ImageResizeRender } from "@picteus/ws-client";
 
 import { ImageItemMode, ImageOrSummary, ViewMode } from "types";
-import { useImagesSelectedContext } from "app/context";
 import { useImageDateChanged } from "app/hooks";
 import { ImageService } from "app/services";
-import { ImageItemMenu } from "app/components";
+import { ImageItemMenu, ImageSelectCheckbox, useImageSelection } from "app/components";
 
 import style from "./ImageItem.module.scss";
 
+
+const OPACITY_ONE_STYLE = { opacity: 1 } as const;
+const MAX_LOADED_CACHE_SIZE = 1_000;
+const loadedImagesCache = new Set<string>();
+
+function markImageAsLoaded(src: string): void
+{
+  if (loadedImagesCache.size >= MAX_LOADED_CACHE_SIZE)
+  {
+    loadedImagesCache.clear();
+  }
+  loadedImagesCache.add(src);
+}
 
 function useImageRefStatus(src: string): {
   imageRef: RefObject<HTMLImageElement | null>;
@@ -22,7 +34,7 @@ function useImageRefStatus(src: string): {
   handleError: () => void;
 }
 {
-  const [ isLoaded, setIsLoaded ] = useState<boolean>(false);
+  const [ isLoaded, setIsLoaded ] = useState<boolean>(() => loadedImagesCache.has(src));
   const [ hasError, setHasError ] = useState<boolean>(false);
   const imageRef = useRef<HTMLImageElement | null>(null);
 
@@ -37,10 +49,11 @@ function useImageRefStatus(src: string): {
     // We check whether the image bitmap has already been loaded from the browser cache. Indeed, in many browsers, when an image is cached, the browser decodes it immediately and may not fire a native "load" event upon element creation or "src" update (or fires it before React binds the synthetic event listener). The "complete" property indicates whether the browser has finished attempting to load the image. We also verify that "naturalWidth !== 0" because the browser marks broken or failed images as "complete = true" with a zero intrinsic width.
     if (imageElement.complete === true && imageElement.naturalWidth !== 0)
     {
+      markImageAsLoaded(src);
       setIsLoaded(true);
       setHasError(false);
     }
-    else
+    else if (loadedImagesCache.has(src) === false)
     {
       setIsLoaded(false);
       setHasError(false);
@@ -49,15 +62,17 @@ function useImageRefStatus(src: string): {
 
   const handleLoad = useCallback((): void =>
   {
+    markImageAsLoaded(src);
     setIsLoaded(true);
     setHasError(false);
-  }, []);
+  }, [ src ]);
 
   const handleError = useCallback((): void =>
   {
+    loadedImagesCache.delete(src);
     setIsLoaded(false);
     setHasError(true);
-  }, []);
+  }, [ src ]);
 
   return {
     imageRef,
@@ -132,7 +147,7 @@ type ImageItemType = {
   onClick: (image: ImageOrSummary) => void;
 };
 
-export default function ImageItem({
+function ImageItem({
   image,
   width,
   height,
@@ -140,52 +155,61 @@ export default function ImageItem({
   overlay,
   viewMode,
   onClick
-}: ImageItemType)
+}: ImageItemType): ReactElement
 {
   const [ t ] = useTranslation();
   const [ menuOpened, setMenuOpened ] = useState<boolean>(false);
-  const { toggleSelectedImage, isSelectedImage } = useImagesSelectedContext();
+  const { isSelected, toggleSelectedImage } = useImageSelection(image);
   const { latestDate: latestImageDate } = useImageDateChanged(image);
 
-  const imageWidth = useMemo<number>(() => image.dimensions.width, [ image.dimensions ]);
-  const imageHeight = useMemo<number>(() => image.dimensions.height, [ image.dimensions ]);
+  const imageWidth = image.dimensions.width;
+  const imageHeight = image.dimensions.height;
   const {
     resizeRender,
     expectedDimensions: imageExpectedDimensions
   } = useMemo(() => computeExpectedDimensions(width, height, imageWidth, imageHeight), [ width, height, imageWidth, imageHeight ]);
 
-  const imageSrc = useMemo<string>(() => computeImageSrc(image.uri, width, height, resizeRender, latestImageDate), [ image.uri, width, height, resizeRender, latestImageDate ]);
+  const imageSrc = useMemo<string>(() =>
+  {
+    return computeImageSrc(image.uri, width, height, resizeRender, latestImageDate);
+  }, [ image.uri, width, height, resizeRender, latestImageDate ]);
 
   const { imageRef, isLoaded, hasError, handleLoad, handleError } = useImageRefStatus(imageSrc);
 
-  const handleOnSelectImage = useCallback((): void =>
-  {
-    toggleSelectedImage(image);
-  }, [ image, toggleSelectedImage ]);
+  // We keep stable refs for handlers so callbacks have a permanent reference across renders
+  const onClickRef = useRef(onClick);
+  onClickRef.current = onClick;
 
-  function handleOnClick(event: React.MouseEvent<HTMLElement>): void
+  const toggleSelectedImageRef = useRef(toggleSelectedImage);
+  toggleSelectedImageRef.current = toggleSelectedImage;
+
+  const imageRefForClick = useRef(image);
+  imageRefForClick.current = image;
+
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+
+  const handleOverlayClick = useCallback((event: React.MouseEvent<HTMLElement>): void =>
   {
     event.stopPropagation();
-    const target = event.target as HTMLElement;
-    if (mode === ImageItemMode.SELECT)
+    if (modeRef.current === ImageItemMode.SELECT)
     {
-      handleOnSelectImage();
+      toggleSelectedImageRef.current();
     }
     else
     {
-      // We ignore clicks originating from interactive controls like buttons and checkboxes
-      if (target.closest("button, input") !== null)
-      {
-        return;
-      }
-      if (target.closest("[data-action]") !== null)
-      {
-        onClick(image);
-      }
+      onClickRef.current(imageRefForClick.current);
     }
-  }
+  }, []);
 
-  const isSelected = useMemo<boolean>(() => isSelectedImage(image), [ image, isSelectedImage ]);
+  const handleRootClick = useCallback((event: React.MouseEvent<HTMLElement>): void =>
+  {
+    event.stopPropagation();
+    if (modeRef.current === ImageItemMode.SELECT)
+    {
+      toggleSelectedImageRef.current();
+    }
+  }, []);
 
   const containerStyle = useMemo<MantineStyleProp>(() =>
   {
@@ -206,83 +230,122 @@ export default function ImageItem({
     }
     else
     {
-      return (<Menu
-        withinPortal={false}
-        position="bottom-end"
-        trigger="hover"
-        openDelay={50}
-        closeDelay={600}
-        opened={menuOpened}
-        onChange={setMenuOpened}
-        shadow="md"
-        width={260}
-      >
-        <Menu.Target>
-          <ActionIcon variant="default">
-            <IconDots/>
-          </ActionIcon>
-        </Menu.Target>
-        {menuOpened && <ImageItemMenu image={image} viewMode={viewMode}/>}
-      </Menu>);
+      return (
+        <Menu
+          withinPortal={false}
+          position="bottom-end"
+          trigger="hover"
+          openDelay={50}
+          closeDelay={600}
+          opened={menuOpened}
+          onChange={setMenuOpened}
+          shadow="md"
+          width={260}
+        >
+          <Menu.Target>
+            <ActionIcon
+              variant="default"
+              onClick={(event: React.MouseEvent<HTMLButtonElement>): void =>
+              {
+                event.stopPropagation();
+              }}
+            >
+              <IconDots/>
+            </ActionIcon>
+          </Menu.Target>
+          {menuOpened && <ImageItemMenu image={image} viewMode={viewMode}/>}
+        </Menu>
+      );
     }
   }, [ mode, menuOpened, image, viewMode ]);
 
   const actions = useMemo<ReactElement>(() =>
   {
-    return (<Flex
-      data-action={true}
-      p="sm"
-      align="start"
-      justify="space-between"
-      style={menuOpened ? { opacity: 1 } : {}}
-      className={style.overlay}
+    return (
+      <Flex
+        p="sm"
+        align="start"
+        justify="space-between"
+        style={menuOpened ? OPACITY_ONE_STYLE : undefined}
+        className={style.overlay}
+        onClick={handleOverlayClick}
+      >
+        {mode !== ImageItemMode.PASSIVE && (
+          <ImageSelectCheckbox
+            image={image}
+            isCompact={width < 200}
+            checked={isSelected}
+          />
+        )}
+        {menu}
+      </Flex>
+    );
+  }, [ menuOpened, mode, image, width, menu, handleOverlayClick, isSelected ]);
+
+  const containerClassName = `${style.imageWrapper}${isSelected ? ` ${style.hover}` : ""}`;
+  const imgClassName = `${style.image} ${isLoaded === true ? style.loaded : style.notLoaded}`;
+
+  const overlayElement = useMemo<ReactElement | null>(() =>
+  {
+    if (!overlay || mode === ImageItemMode.SELECT)
+    {
+      return null;
+    }
+    return (
+      <div
+        className={style.captionContainer}
+        onClick={(event: React.MouseEvent<HTMLDivElement>): void =>
+        {
+          event.stopPropagation();
+        }}
+      >
+        {overlay}
+      </div>
+    );
+  }, [ overlay, mode ]);
+
+  const loadingOrErrorElement = useMemo<ReactElement | null>(() =>
+  {
+    if (isLoaded === true)
+    {
+      return null;
+    }
+    return (
+      <Flex
+        className={`${style.placeholder}${hasError === true ? ` ${style.error}` : ""}`}
+        align="center"
+        justify="center"
+      >
+        {hasError === true && <Text c="red">{t("errors.imageCondensed")}</Text>}
+      </Flex>
+    );
+  }, [ isLoaded, hasError, t ]);
+
+  return (
+    <Flex
+      align="center"
+      justify="center"
+      className={containerClassName}
+      onClick={handleRootClick}
+      style={containerStyle}
     >
-      {mode !== ImageItemMode.PASSIVE && (
-        <Checkbox
-          checked={isSelected}
-          size={width < 200 ? "sm" : "md"}
-          onChange={handleOnSelectImage}
-        />
-      )}
-      {menu}
-    </Flex>);
-  }, [ menuOpened, mode, isSelected, width, handleOnSelectImage, menu ]);
-
-  const containerClassName = useMemo<string>(() => `${style.imageWrapper} ${isSelected ? style.hover : ""}`, [ isSelected ]);
-  const imgClassName = useMemo<string>(() => `${style.image} ${isLoaded === true ? style.loaded : style.notLoaded}`, [ isLoaded ]);
-
-  const overlayElement = useMemo<ReactElement>(() => overlay && mode !== ImageItemMode.SELECT && (
-    <div className={style.captionContainer}>{overlay}</div>), [ overlay, mode ]);
-
-  const loadingOrErrorElement = useMemo<ReactElement>(() => (isLoaded === false && (<Flex
-    className={`${style.placeholder}${hasError === true ? (` ${style.error}`) : ""}`}
-    align="center"
-    justify="center"
-  >
-    {hasError === true && (<Text c="red">{t("errors.imageCondensed")}</Text>)}
-  </Flex>)), [ isLoaded, hasError ]);
-
-  return (<Flex
-    align="center"
-    justify="center"
-    className={containerClassName}
-    onClick={handleOnClick}
-    style={containerStyle}
-  >
-    {actions}
-    <img
-      ref={imageRef}
-      className={imgClassName}
-      loading="lazy"
-      src={imageSrc}
-      alt={image.name}
-      width={imageExpectedDimensions.width}
-      height={imageExpectedDimensions.height}
-      style={imageExpectedDimensions}
-      onLoad={handleLoad}
-      onError={handleError}
-    />
-    {overlayElement}
-    {loadingOrErrorElement}
-  </Flex>);
+      {actions}
+      <img
+        ref={imageRef}
+        className={imgClassName}
+        loading="lazy"
+        src={imageSrc}
+        alt={image.name}
+        width={imageExpectedDimensions.width}
+        height={imageExpectedDimensions.height}
+        style={imageExpectedDimensions}
+        onLoad={handleLoad}
+        onError={handleError}
+      />
+      {overlayElement}
+      {loadingOrErrorElement}
+    </Flex>
+  );
 }
+
+export default React.memo(ImageItem);

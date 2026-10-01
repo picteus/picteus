@@ -10,7 +10,7 @@ export default function useFolderPicker(): (type: FolderTypes) => Promise<string
   return async (type: FolderTypes): Promise<string> =>
   {
     const defaultPath = StorageService.getLastFolderLocation(type);
-    const directoryPath = await pickFileOrDirectory("directory", defaultPath);
+    const directoryPath = await pickFileOrDirectory("directory", "open", defaultPath);
     if (directoryPath)
     {
       StorageService.setLastFolderLocation(type, directoryPath);

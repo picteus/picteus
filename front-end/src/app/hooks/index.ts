@@ -19,4 +19,6 @@ export { default as useImageDateChanged } from "./useImageDateChanged.tsx";
 export { default as useReadyRef } from "./useReadyRef.tsx";
 export { default as useTraceUpdate } from "./useTraceUpdate.tsx";
 export { default as useThrottledAsyncAction } from "./useThrottledAsyncAction.tsx";
+export { default as useImageCommands, type UseImageCommandsResultType } from "./useImageCommands.tsx";
+export { default as useImageCommand, type UseImageCommandResultType } from "./useImageCommand.tsx";
 export * from "./queries";

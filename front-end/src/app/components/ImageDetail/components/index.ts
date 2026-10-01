@@ -9,3 +9,4 @@ export type { ImageFeatureCardType, ImageFeatureContainerType } from "./ImageFea
 export { default as ImageDataCard } from "./ImageDataCard/ImageDataCard.tsx";
 export { default as ImageRatio } from "./ImageRatio/ImageRatio.tsx";
 export { default as ImageItemWrapper } from "./ImageItemWrapper/ImageItemWrapper.tsx";
+export { default as ImageCommandsBar } from "./ImageCommandsBar/ImageCommandsBar.tsx";

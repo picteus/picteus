@@ -1,180 +1,64 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { Menu } from "@mantine/core";
-import { IconTopologyRing3 } from "@tabler/icons-react";
 
-import {
-  CommandEntity,
-  ExtensionImageTag,
-  Image,
-  ImageSummary,
-  ManifestCapabilityId,
-  SearchOriginNature
-} from "@picteus/ws-client";
+import { ImageSummary } from "@picteus/ws-client";
 
 import { ViewMode } from "types";
-import { ToastService } from "utils";
-import { useActionModalContext } from "app/context";
-import {
-  useConfirmAction,
-  useExtensionCommandRunner,
-  useExtensionCommands,
-  useExtensionsWithCapability,
-  useRunCapabilities
-} from "app/hooks";
-import { ImageService } from "app/services";
-import { CommandIcon, Common, computeIcon, ImageItemWrapper, MenuItemEntry } from "app/components";
-import { ClosestEmbeddingsImages } from "./components";
+import { useImageCommands } from "app/hooks";
+import { ImageCommand } from "app/components";
 
 
-const commandEntities = [ CommandEntity.Images, CommandEntity.Image ];
-
-type ImageItemMenuType = {
+type ImageItemMenuPropsType = {
   image: ImageSummary;
   viewMode: ViewMode;
 };
 
-export default function ImageItemMenu({ image, viewMode }: ImageItemMenuType)
+export default function ImageItemMenu({ image, viewMode }: ImageItemMenuPropsType): ReactElement
 {
   const [ t ] = useTranslation();
-  const [ , addModal ] = useActionModalContext();
-  const confirmAction = useConfirmAction();
-  const { runCapabilities } = useRunCapabilities();
-  const [ imageTags, setImageTags ] = useState<ExtensionImageTag[]>([]);
-  const extensionsImageCommands = useExtensionCommands(commandEntities);
-  const extensionsWithImageEmbeddingsCapability = useExtensionsWithCapability(ManifestCapabilityId.ImageEmbeddings);
-  const commandRunner = useExtensionCommandRunner();
+  const { coreCommands, extensionCommands } = useImageCommands({ image, viewMode });
 
-  async function load()
+  function handleClick(event: React.MouseEvent<HTMLDivElement>): void
   {
-    const tags = "tags" in image ? (image as Image).tags : await ImageService.getAllTags(image.id);
-    setImageTags(tags);
+    event.stopPropagation();
   }
-
-  useEffect(() =>
-  {
-    void load();
-  }, []);
-
-
-  function handleOnClickClosestImages()
-  {
-    addModal({
-      component: (
-        <ClosestEmbeddingsImages
-          image={image}
-          viewMode={viewMode}
-        />
-      ),
-      isStackable: true,
-      title: t("closestEmbeddingsImagesModal.title"),
-      size: "l"
-    });
-  }
-
-  function handleOnClickSynchronize()
-  {
-    runCapabilities(image.id);
-  }
-
-  function handleOnClickDelete(): void
-  {
-    confirmAction({
-      onConfirm: () => ImageService.destroy(image.id).catch(ToastService.apiCallError),
-      options: {
-        title: t("commands.confirmImageDeleteTitle"),
-        message: t("commands.confirmImageDeleteMessage"),
-        content: (
-          <ImageItemWrapper imageId={image.id} viewMode={viewMode}/>
-        )
-      }
-    });
-  }
-
-  const menu = useMemo(() =>
-  {
-
-    function renderCoreFeatures()
-    {
-      return (
-        <>
-          <Menu.Label>{t("commands.coreFeatures")}</Menu.Label>
-          {extensionsWithImageEmbeddingsCapability && (<MenuItemEntry
-            onClick={() => handleOnClickClosestImages()}
-            icon={<IconTopologyRing3 style={{ width: Common.IconSmallSize, height: Common.IconSmallSize }}/>}
-            label={t("commands.closestImages")}
-            subLabel={t("commands.allExtensionsDetails")}
-          />)}
-          <MenuItemEntry
-            key={"synchronize"}
-            onClick={handleOnClickSynchronize}
-            icon={computeIcon("synchronize")}
-            label={t("commands.synchronize")}
-            subLabel={t("commands.allExtensionsDetails")}
-          />
-          <MenuItemEntry
-            key={"delete"}
-            onClick={handleOnClickDelete}
-            icon={computeIcon("delete")}
-            label={t("commands.delete")}
-            subLabel={t("commands.noExtensionDetails")}
-          />
-        </>
-      );
-    }
-
-    function renderExtensionsCommands()
-    {
-      return (
-        <>
-          <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
-          {extensionsImageCommands
-            ?.filter((extensionCommand) =>
-            {
-              const { withTags } = extensionCommand.command;
-
-              if (withTags?.length)
-              {
-                return withTags.some((tag) =>
-                  imageTags.some((imageTag) => imageTag.value === tag)
-                );
-              }
-              return true;
-            })
-            .map((extensionCommand) =>
-            {
-              const manifest = extensionCommand.extension.manifest;
-              return (<MenuItemEntry
-                key={`${extensionCommand.extension.manifest.id}-${extensionCommand.command.id}`}
-                onClick={() => commandRunner(manifest.id, extensionCommand.command, {
-                  origin: {
-                    kind: SearchOriginNature.Images,
-                    ids: [ image.id ]
-                  }
-                })}
-                extensionId={manifest.id}
-                icon={<CommandIcon extensionId={manifest.id} command={extensionCommand.command} size="sm"/>}
-                label={extensionCommand.command.label}
-                subLabel={extensionCommand.extension.manifest.name}
-              />);
-            })}
-        </>
-      );
-    }
-
-    return (
-      <>
-        {extensionsWithImageEmbeddingsCapability && renderCoreFeatures()}
-        {extensionsImageCommands && renderExtensionsCommands()}
-      </>
-    );
-  }, [ image, imageTags, extensionsImageCommands, extensionsWithImageEmbeddingsCapability ]);
 
   return (
-    <>
-      <Menu.Dropdown style={{ maxHeight: 400, overflowY: "auto" }}>
-        {menu}
-      </Menu.Dropdown>
-    </>
+    <Menu.Dropdown
+      style={{ maxHeight: 400, overflowY: "auto" }}
+      onClick={handleClick}
+    >
+      {coreCommands.length > 0 && (
+        <>
+          <Menu.Label>{t("commands.coreFeatures")}</Menu.Label>
+          {coreCommands.map((command) =>
+          {
+            return (
+              <ImageCommand.MenuItem
+                key={command.id}
+                image={image}
+                command={command}
+              />
+            );
+          })}
+        </>
+      )}
+      {extensionCommands.length > 0 && (
+        <>
+          <Menu.Label>{t("commands.extensionsCommands")}</Menu.Label>
+          {extensionCommands.map((command) =>
+          {
+            return (
+              <ImageCommand.MenuItem
+                key={command.id}
+                image={image}
+                command={command}
+              />
+            );
+          })}
+        </>
+      )}
+    </Menu.Dropdown>
   );
 }

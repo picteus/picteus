@@ -1,55 +1,12 @@
-.imageContainer,
-.imageWrapper,
-.informationContainer
-{
-  height: 100%;
-}
-
-.imageWrapper,
-.image
-{
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-}
-
-.imageContainer
-{
-  padding-top: 15px;
-  padding-bottom: 15px;
-  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-8));
-}
-
-.imageWrapper
-{
-  flex: 1;
-  align-content: center;
-  position: relative;
-}
-
-.image
-{
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.image.notLoaded
-{
-  opacity: 0;
-}
-
-.image.loaded
+.loaded
 {
   opacity: 1;
+  transition: opacity 200ms ease;
 }
 
-.scalingRatio
+.notLoaded
 {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+  opacity: 0;
 }
 
 .placeholder
@@ -59,7 +16,6 @@
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: $image-radius;
   background-color: #f0f0f0;
   background-image: linear-gradient(to right, #f0f0f0 0%, #e0e0e0 20%, #f0f0f0 40%, #f0f0f0 100%);
   background-size: 200% 100%;

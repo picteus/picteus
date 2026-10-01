@@ -24,11 +24,11 @@ function extractCommandInstructions(
 ): InstructionsType | undefined
 {
   return extensionAndManual === undefined ? undefined : {
-    summary: extractMarkdownParagraph(extensionAndManual.manual.instructions, [
+    summary: extractMarkdownParagraph(extensionAndManual.manual?.instructions, [
       ManualSection.Commands,
       commandId
     ], false),
-    details: extractMarkdownParagraph(extensionAndManual.manual.instructions, [
+    details: extractMarkdownParagraph(extensionAndManual.manual?.instructions, [
       ManualSection.Commands,
       commandId, "Details"
     ])

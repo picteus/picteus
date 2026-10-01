@@ -187,6 +187,34 @@ export type UiExtensionCommandType = {
   command: UiCommandType;
 };
 
+export type ImageCommandKindType = "core" | "extension";
+
+export type CoreImageCommandIdType = "synchronize" | "delete" | "closestImages" | "open" | "download";
+
+export type ExtensionImageCommandIdType = {
+  extensionId: string;
+  commandId: string;
+};
+
+export type ImageCommandIdType = CoreImageCommandIdType | ExtensionImageCommandIdType;
+
+export type ImageCommandIconSizeType = "sm" | "md" | number;
+
+export type ImageCommandType = {
+  id: string;
+  kind: ImageCommandKindType;
+  commandId: string;
+  extensionId?: string;
+  label: string;
+  subLabel?: string;
+  icon: (size?: ImageCommandIconSizeType) => ReactElement;
+  execute: () => Promise<void> | void;
+  isAvailable: boolean;
+  isLoading?: boolean;
+  disabled?: boolean;
+  rawExtensionCommand?: UiExtensionCommandType;
+};
+
 export type ExtensionIntentType = {
   id: string;
   intent: FrontIntent;

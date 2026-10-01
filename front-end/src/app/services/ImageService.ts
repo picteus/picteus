@@ -58,6 +58,11 @@ async function get(parameters: ImageApiImageGetRequest): Promise<Image>
   return imageApi.imageGet(parameters);
 }
 
+async function download(id: string): Promise<Blob>
+{
+  return imageApi.imageDownload({ id });
+}
+
 function getImageSrc(url: string, width?: number, height?: number, render?: ImageResizeRender)
 {
   const widthParameter = width ? `&w=${width}` : "";
@@ -139,6 +144,7 @@ export default {
   searchImages,
   searchSummaries,
   get,
+  download,
   getImageSrc,
   getAllFeatures,
   getClosestImages,

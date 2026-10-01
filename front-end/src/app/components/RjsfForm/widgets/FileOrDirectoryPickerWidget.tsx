@@ -19,7 +19,7 @@ export default function FileOrDirectoryPickerWidget(props: FileOrDirectoryPicker
   async function handleOnClickBrowse(): Promise<void>
   {
     const currentPath = typeof value === "string" && value.trim() !== "" ? value : "";
-    const selectedPath = await pickFileOrDirectory(kind, currentPath);
+    const selectedPath = await pickFileOrDirectory(kind, "open", currentPath);
     if (selectedPath !== undefined)
     {
       onChange(selectedPath);
