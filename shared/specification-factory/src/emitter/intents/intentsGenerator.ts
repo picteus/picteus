@@ -1,6 +1,7 @@
 import { IntentAudience } from "./decorators.js";
 import { IntentEnum, IntentModel, IntentSpec, IntentType, IntentUnion } from "./intentsModel.js";
 import { createGeneratedFileHeader } from "../common.js";
+import { CodeWriter } from "../codeWriter.js";
 
 
 function collectIntentDeclarations(spec: IntentSpec, audience: IntentAudience): IntentSpec
@@ -125,36 +126,48 @@ function resolveTypeScriptType(type: IntentType): string
   }
 }
 
-function generateTypeScriptEnum(intentEnum: IntentEnum): string[]
+function writeTypeScriptEnum(intentEnum: IntentEnum, writer: CodeWriter, isExported: boolean = true): void
 {
-  const lines = [ `export enum ${intentEnum.name}`, "{" ];
-  for (let index = 0; index < intentEnum.members.length; index++)
+  const exportPrefix = isExported ? "export " : "";
+  writer.writeLine(`${exportPrefix}enum ${intentEnum.name}`);
+  writer.writeLine("{");
+  writer.indent(() =>
   {
-    const member = intentEnum.members[index];
-    const comma = index < intentEnum.members.length - 1 ? "," : "";
-    lines.push(`  ${member.name.charAt(0).toUpperCase()}${member.name.slice(1)} = ${JSON.stringify(member.value)}${comma}`);
-  }
-  lines.push("}");
-  return lines;
+    for (let index = 0; index < intentEnum.members.length; index++)
+    {
+      const member = intentEnum.members[index];
+      const comma = index < intentEnum.members.length - 1 ? "," : "";
+      writer.writeLine(`${member.name.charAt(0).toUpperCase()}${member.name.slice(1)} = ${JSON.stringify(member.value)}${comma}`);
+    }
+  });
+  writer.writeLine("}");
+  writer.blankLine();
 }
 
-function generateTypeScriptModel(model: IntentModel): string[]
+function writeTypeScriptModel(model: IntentModel, writer: CodeWriter, isExported: boolean = true): void
 {
+  const exportPrefix = isExported ? "export " : "";
   const extendsClause = model.baseModelName ? ` extends ${model.baseModelName}` : "";
-  const lines = [ `export interface ${model.name}${extendsClause}`, "{" ];
-  for (const property of model.properties)
+  writer.writeLine(`${exportPrefix}interface ${model.name}${extendsClause}`);
+  writer.writeLine("{");
+  writer.indent(() =>
   {
-    const optionalMarker = property.optional ? "?" : "";
-    lines.push(`  readonly ${property.name}${optionalMarker}: ${resolveTypeScriptType(property.type)};`);
-  }
-  lines.push("}");
-  return lines;
+    for (const property of model.properties)
+    {
+      const optionalMarker = property.optional ? "?" : "";
+      writer.writeLine(`readonly ${property.name}${optionalMarker}: ${resolveTypeScriptType(property.type)};`);
+    }
+  });
+  writer.writeLine("}");
+  writer.blankLine();
 }
 
-function generateTypeScriptUnion(intentUnion: IntentUnion): string[]
+function writeTypeScriptUnion(intentUnion: IntentUnion, writer: CodeWriter, isExported: boolean = true): void
 {
+  const exportPrefix = isExported ? "export " : "";
   const unionTypes = intentUnion.variants.map(resolveTypeScriptType);
-  return [ `export type ${intentUnion.name} = ${unionTypes.join(" | ")};` ];
+  writer.writeLine(`${exportPrefix}type ${intentUnion.name} = ${unionTypes.join(" | ")};`);
+  writer.blankLine();
 }
 
 function getIntentPayloadProperty(intentModel: IntentModel): IntentModel["properties"][number] | undefined
@@ -169,15 +182,16 @@ function getIntentPayloadProperty(intentModel: IntentModel): IntentModel["proper
   return intentModel.properties.find((property) => property.name === payloadPropertyName);
 }
 
-function generateTypeScriptIntentGuards(intentModels: IntentModel[]): string[]
+function writeTypeScriptIntentGuards(intentModels: IntentModel[], writer: CodeWriter): void
 {
-  const lines = [
-    "function hasIntentProperty(intent: unknown, propertyName: string): boolean",
-    "{",
-    "  return typeof intent === \"object\" && intent !== null && Reflect.get(intent, propertyName) !== undefined;",
-    "}",
-    ""
-  ];
+  writer.writeLine("function hasIntentProperty(intent: unknown, propertyName: string): boolean");
+  writer.writeLine("{");
+  writer.indent(() =>
+  {
+    writer.writeLine("return typeof intent === \"object\" && intent !== null && Reflect.get(intent, propertyName) !== undefined;");
+  });
+  writer.writeLine("}");
+  writer.blankLine();
 
   for (const intentModel of intentModels)
   {
@@ -187,16 +201,15 @@ function generateTypeScriptIntentGuards(intentModels: IntentModel[]): string[]
       throw new Error(`Intent model ${intentModel.name} must define its ${intentModel.name.slice(0, -"Intent".length)} payload property.`);
     }
 
-    lines.push(
-      `export function is${intentModel.name}(intent: unknown): intent is ${intentModel.name}`,
-      "{",
-      `  return hasIntentProperty(intent, ${JSON.stringify(intentProperty.name)});`,
-      "}",
-      ""
-    );
+    writer.writeLine(`export function is${intentModel.name}(intent: unknown): intent is ${intentModel.name}`);
+    writer.writeLine("{");
+    writer.indent(() =>
+    {
+      writer.writeLine(`return hasIntentProperty(intent, ${JSON.stringify(intentProperty.name)});`);
+    });
+    writer.writeLine("}");
+    writer.blankLine();
   }
-
-  return lines;
 }
 
 export function generateIntentTypeScriptCode(spec: IntentSpec, audience: IntentAudience): string
@@ -211,42 +224,30 @@ export function generateIntentTypeScriptCode(spec: IntentSpec, audience: IntentA
     ...(commonSpec?.enums.map((intentEnum) => intentEnum.name) ?? []),
     ...(commonSpec?.unions.map((intentUnion) => intentUnion.name) ?? [])
   ]);
-  const lines = [
-    ...createGeneratedFileHeader("//"),
-    "import type { Buffer } from \"node:buffer\";",
-    "",
-    `${audience === "backEnd" ? "" : "export "}type IntentJson = Record<string, unknown>;`,
-    ""
-  ];
+
+  const writer = new CodeWriter({ indentSize: 2 });
+  writer.writeLines(createGeneratedFileHeader("//"));
+  writer.writeLine("import type { Buffer } from \"node:buffer\";");
+  writer.blankLine();
+  writer.writeLine(`${audience === "backEnd" ? "" : "export "}type IntentJson = Record<string, unknown>;`);
+  writer.blankLine();
 
   for (const intentEnum of selectedSpec.enums)
   {
-    const enumCode = generateTypeScriptEnum(intentEnum);
-    if (audience === "backEnd" && commonDeclarations.has(intentEnum.name))
-    {
-      enumCode[0] = enumCode[0].replace("export ", "");
-    }
-    lines.push(...enumCode, "");
+    const isExported = !(audience === "backEnd" && commonDeclarations.has(intentEnum.name));
+    writeTypeScriptEnum(intentEnum, writer, isExported);
   }
 
   for (const model of selectedSpec.models)
   {
-    const modelCode = generateTypeScriptModel(model);
-    if (audience === "backEnd" && commonDeclarations.has(model.name))
-    {
-      modelCode[0] = modelCode[0].replace("export ", "");
-    }
-    lines.push(...modelCode, "");
+    const isExported = !(audience === "backEnd" && commonDeclarations.has(model.name));
+    writeTypeScriptModel(model, writer, isExported);
   }
 
   for (const intentUnion of selectedSpec.unions)
   {
-    const unionCode = generateTypeScriptUnion(intentUnion);
-    if (audience === "backEnd" && commonDeclarations.has(intentUnion.name))
-    {
-      unionCode[0] = unionCode[0].replace("export ", "");
-    }
-    lines.push(...unionCode, "");
+    const isExported = !(audience === "backEnd" && commonDeclarations.has(intentUnion.name));
+    writeTypeScriptUnion(intentUnion, writer, isExported);
   }
 
   const selectedIntentModels = selectedSpec.models.filter(
@@ -256,9 +257,10 @@ export function generateIntentTypeScriptCode(spec: IntentSpec, audience: IntentA
         || (model.audience === undefined && getIntentPayloadProperty(model) !== undefined);
     }
   );
-  lines.push(...generateTypeScriptIntentGuards(selectedIntentModels));
-  lines.push(`export type ${unionName} = ${intentModels.map((model) => model.name).join(" | ")};`);
-  return `${lines.join("\n").trimEnd()}\n`;
+  writeTypeScriptIntentGuards(selectedIntentModels, writer);
+  writer.writeLine(`export type ${unionName} = ${intentModels.map((model) => model.name).join(" | ")};`);
+
+  return `${writer.toString().trimEnd()}\n`;
 }
 
 function convertToSnakeCase(value: string): string
@@ -292,21 +294,25 @@ function resolvePythonType(type: IntentType): string
   }
 }
 
-function generatePythonEnum(intentEnum: IntentEnum): string[]
+function writePythonEnum(intentEnum: IntentEnum, writer: CodeWriter): void
 {
-  const lines = [ `class ${intentEnum.name}(str, Enum):` ];
-  if (intentEnum.members.length === 0)
+  writer.writeLine(`class ${intentEnum.name}(str, Enum):`);
+  writer.indent(() =>
   {
-    lines.push("    pass");
-  }
-  for (const member of intentEnum.members)
-  {
-    lines.push(`    ${convertToSnakeCase(member.name)} = ${JSON.stringify(member.value)}`);
-  }
-  return lines;
+    if (intentEnum.members.length === 0)
+    {
+      writer.writeLine("pass");
+      return;
+    }
+    for (const member of intentEnum.members)
+    {
+      writer.writeLine(`${convertToSnakeCase(member.name)} = ${JSON.stringify(member.value)}`);
+    }
+  });
+  writer.blankLine();
 }
 
-function generatePythonModel(model: IntentModel, modelMap: ReadonlyMap<string, IntentModel>): string[]
+function writePythonModel(model: IntentModel, modelMap: ReadonlyMap<string, IntentModel>, writer: CodeWriter): void
 {
   const baseModel = model.baseModelName ? modelMap.get(model.baseModelName) : undefined;
   const extendsClause = model.baseModelName ? `(${model.baseModelName})` : "(SuperDataClass)";
@@ -344,36 +350,43 @@ function generatePythonModel(model: IntentModel, modelMap: ReadonlyMap<string, I
   }) && hasOptionalInheritedProperty;
   const useKeywordOnlyProperties = hasRequiredAfterInheritedDefaults || hasDefaultBeforeRequired;
   const dataclassDecorator = useKeywordOnlyProperties ? "@dataclass(kw_only=True)" : "@dataclass";
-  const lines = [ dataclassDecorator, `class ${model.name}${extendsClause}:` ];
-  if (ownProperties.length === 0)
+
+  writer.writeLine(dataclassDecorator);
+  writer.writeLine(`class ${model.name}${extendsClause}:`);
+  writer.indent(() =>
   {
-    lines.push("    pass");
-  }
-  for (const property of ownProperties)
-  {
-    const pythonType = resolvePythonType(property.type);
-    const optionalType = property.optional ? `Optional[${pythonType}]` : pythonType;
-    const literalValue = property.type.kind === "literal" ? property.type.literalValue : undefined;
-    if (literalValue !== undefined)
+    if (ownProperties.length === 0)
     {
-      lines.push(`    ${property.name}: ${optionalType} = field(default=${JSON.stringify(literalValue)}, init=False)`);
+      writer.writeLine("pass");
+      return;
     }
-    else if (property.optional)
+    for (const property of ownProperties)
     {
-      lines.push(`    ${property.name}: ${optionalType} = None`);
+      const pythonType = resolvePythonType(property.type);
+      const optionalType = property.optional ? `Optional[${pythonType}]` : pythonType;
+      const literalValue = property.type.kind === "literal" ? property.type.literalValue : undefined;
+      if (literalValue !== undefined)
+      {
+        writer.writeLine(`${property.name}: ${optionalType} = field(default=${JSON.stringify(literalValue)}, init=False)`);
+      }
+      else if (property.optional)
+      {
+        writer.writeLine(`${property.name}: ${optionalType} = None`);
+      }
+      else
+      {
+        writer.writeLine(`${property.name}: ${pythonType}`);
+      }
     }
-    else
-    {
-      lines.push(`    ${property.name}: ${pythonType}`);
-    }
-  }
-  return lines;
+  });
+  writer.blankLine();
 }
 
-function generatePythonUnion(intentUnion: IntentUnion): string[]
+function writePythonUnion(intentUnion: IntentUnion, writer: CodeWriter): void
 {
   const unionTypes = intentUnion.variants.map(resolvePythonType);
-  return [ `${intentUnion.name} = Union[${unionTypes.join(", ")}]` ];
+  writer.writeLine(`${intentUnion.name} = Union[${unionTypes.join(", ")}]`);
+  writer.blankLine();
 }
 
 export function generateIntentPythonCode(spec: IntentSpec, audience: IntentAudience): string
@@ -382,43 +395,53 @@ export function generateIntentPythonCode(spec: IntentSpec, audience: IntentAudie
   const intentModels = selectedSpec.models.filter((model) => model.audience === audience);
   const modelMap = new Map(selectedSpec.models.map((model) => [ model.name, model ]));
   const unionName = audience === "frontEnd" ? "FrontIntent" : "BackIntent";
-  const lines = [
-    ...createGeneratedFileHeader("#"),
-    "from __future__ import annotations",
-    "",
-    "import json",
-    "from dataclasses import asdict, dataclass, field",
-    "from enum import Enum",
-    "from typing import Any, Dict, List, Literal, Optional, Union",
-    "",
-    "Json = Dict[str, Any]",
-    "",
-    "class SuperDataClass:",
-    "    @property",
-    "    def __dict__(self) -> Dict[str, Any]:",
-    "        return asdict(self)",
-    "",
-    "    @property",
-    "    def json(self) -> str:",
-    "        return json.dumps(self.__dict__)",
-    ""
-  ];
+
+  const writer = new CodeWriter({ indentSize: 4 });
+  writer.writeLines(createGeneratedFileHeader("#"));
+  writer.writeLine("from __future__ import annotations");
+  writer.blankLine();
+  writer.writeLine("import json");
+  writer.writeLine("from dataclasses import asdict, dataclass, field");
+  writer.writeLine("from enum import Enum");
+  writer.writeLine("from typing import Any, Dict, List, Literal, Optional, Union");
+  writer.blankLine();
+  writer.writeLine("Json = Dict[str, Any]");
+  writer.blankLine();
+  writer.writeLine("class SuperDataClass:");
+  writer.indent(() =>
+  {
+    writer.writeLine("@property");
+    writer.writeLine("def __dict__(self) -> Dict[str, Any]:");
+    writer.indent(() =>
+    {
+      writer.writeLine("return asdict(self)");
+    });
+    writer.blankLine();
+    writer.writeLine("@property");
+    writer.writeLine("def json(self) -> str:");
+    writer.indent(() =>
+    {
+      writer.writeLine("return json.dumps(self.__dict__)");
+    });
+  });
+  writer.blankLine();
 
   for (const intentEnum of selectedSpec.enums)
   {
-    lines.push(...generatePythonEnum(intentEnum), "");
+    writePythonEnum(intentEnum, writer);
   }
 
   for (const model of selectedSpec.models)
   {
-    lines.push(...generatePythonModel(model, modelMap), "");
+    writePythonModel(model, modelMap, writer);
   }
 
   for (const intentUnion of selectedSpec.unions)
   {
-    lines.push(...generatePythonUnion(intentUnion), "");
+    writePythonUnion(intentUnion, writer);
   }
 
-  lines.push(`${unionName} = Union[${intentModels.map((model) => model.name).join(", ")}]`, "");
-  return `${lines.join("\n").trimEnd()}\n`;
+  writer.writeLine(`${unionName} = Union[${intentModels.map((model) => model.name).join(", ")}]`);
+
+  return `${writer.toString().trimEnd()}\n`;
 }

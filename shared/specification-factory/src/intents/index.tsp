@@ -113,6 +113,7 @@ model UiIntent extends WithContextIntent {
 }
 
 model IntentOpenBrowser {
+  @format("url")
   url: string;
 }
 
@@ -129,6 +130,8 @@ enum IntentDialogType {
 
 model IntentFrame {
   content: IntentFrameContent;
+  @minValue(0)
+  @maxValue(100)
   height: int32;
 }
 

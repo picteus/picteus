@@ -6,6 +6,7 @@ import { generatePythonCode } from "./viewkit/pythonGenerator.js";
 import { generateReactCode } from "./viewkit/reactGenerator.js";
 import { extractTypeSpecIntents } from "./intents/intentsModel.js";
 import { generateIntentPythonCode, generateIntentTypeScriptCode } from "./intents/intentsGenerator.js";
+import { generateZodIntentsTypeScriptCode } from "./intents/zodGenerator.js";
 import { PICTEUS_NAMESPACE } from "./common.js";
 
 
@@ -123,6 +124,10 @@ export async function $onEmit(context: EmitContext<EmitterOptions>): Promise<voi
       const backEndIntentsTypeScriptCode = generateIntentTypeScriptCode(intents, "backEnd");
       const backEndIntentsTypeScriptPath = resolvePath(outputDir, "intents", "typescript", "backEndIntents.ts");
       await emitFile(program, { path: backEndIntentsTypeScriptPath, content: backEndIntentsTypeScriptCode });
+
+      const zodIntentsTypeScriptCode = generateZodIntentsTypeScriptCode(intents);
+      const zodIntentsTypeScriptPath = resolvePath(outputDir, "intents", "typescript", "intentsZod.ts");
+      await emitFile(program, { path: zodIntentsTypeScriptPath, content: zodIntentsTypeScriptCode });
     }
 
     if (targets.includes("python"))

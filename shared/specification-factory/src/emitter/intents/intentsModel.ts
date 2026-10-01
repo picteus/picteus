@@ -1,4 +1,18 @@
-import { getDoc, Model, Namespace, Program, Type } from "@typespec/compiler";
+import {
+  getDoc,
+  getFormat,
+  getMaxItems,
+  getMaxLength,
+  getMaxValue,
+  getMinItems,
+  getMinLength,
+  getMinValue,
+  getPattern,
+  Model,
+  Namespace,
+  Program,
+  Type
+} from "@typespec/compiler";
 import { PICTEUS_NAMESPACE } from "../common.js";
 import { getIntentAudience, IntentAudience } from "./decorators.js";
 
@@ -16,6 +30,14 @@ export interface IntentProperty
 {
   readonly name: string;
   readonly doc?: string;
+  readonly format?: string;
+  readonly minLength?: number;
+  readonly maxLength?: number;
+  readonly minValue?: number;
+  readonly maxValue?: number;
+  readonly pattern?: string;
+  readonly minItems?: number;
+  readonly maxItems?: number;
   readonly optional: boolean;
   readonly type: IntentType;
 }
@@ -155,14 +177,68 @@ function getModelProperties(program: Program, model: Model): IntentProperty[]
   const properties: IntentProperty[] = [];
   for (const [ propertyName, property ] of model.properties)
   {
-    properties.push(
-      {
-        name: propertyName,
-        doc: getDoc(program, property),
-        optional: property.optional,
-        type: resolveIntentType(property.type)
-      }
-    );
+    const propertyDefinition: {
+      name: string;
+      doc?: string;
+      format?: string;
+      minLength?: number;
+      maxLength?: number;
+      minValue?: number;
+      maxValue?: number;
+      pattern?: string;
+      minItems?: number;
+      maxItems?: number;
+      optional: boolean;
+      type: IntentType;
+    } = {
+      name: propertyName,
+      doc: getDoc(program, property),
+      optional: property.optional,
+      type: resolveIntentType(property.type)
+    };
+
+    const format = getFormat(program, property);
+    if (format !== undefined)
+    {
+      propertyDefinition.format = format;
+    }
+    const minLength = getMinLength(program, property);
+    if (minLength !== undefined)
+    {
+      propertyDefinition.minLength = minLength;
+    }
+    const maxLength = getMaxLength(program, property);
+    if (maxLength !== undefined)
+    {
+      propertyDefinition.maxLength = maxLength;
+    }
+    const minValue = getMinValue(program, property);
+    if (minValue !== undefined)
+    {
+      propertyDefinition.minValue = minValue;
+    }
+    const maxValue = getMaxValue(program, property);
+    if (maxValue !== undefined)
+    {
+      propertyDefinition.maxValue = maxValue;
+    }
+    const pattern = getPattern(program, property);
+    if (pattern !== undefined)
+    {
+      propertyDefinition.pattern = pattern;
+    }
+    const minItems = getMinItems(program, property);
+    if (minItems !== undefined)
+    {
+      propertyDefinition.minItems = minItems;
+    }
+    const maxItems = getMaxItems(program, property);
+    if (maxItems !== undefined)
+    {
+      propertyDefinition.maxItems = maxItems;
+    }
+
+    properties.push(propertyDefinition);
   }
   return properties;
 }

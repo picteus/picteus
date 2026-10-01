@@ -23,10 +23,6 @@ import {
   DialogIntent,
   FormIntent,
   ImagesIntent,
-  IntentDialogType,
-  IntentShowType,
-  IntentToastType,
-  IntentUiAnchor,
   isActionIntent,
   isDialogIntent,
   isFormIntent,
@@ -83,7 +79,19 @@ import {
   isWriteFileIntent,
   ReadFileIntent,
   ServeBundleIntent,
-  WriteFileIntent
+  WriteFileIntent,
+  zodActionIntent,
+  zodIntentDialog,
+  zodIntentFormContent,
+  zodIntentImages,
+  zodIntentOpenBrowser,
+  zodIntentServeBundle,
+  zodIntentShow,
+  zodIntentUi,
+  zodNotificationIntent,
+  zodReadFileIntent,
+  zodToastIntent,
+  zodWriteFileIntent
 } from "./intents";
 import { HostService } from "./hostService";
 
@@ -114,42 +122,6 @@ type InstructionValue = SocketMessageValue & {
 }
 export type InstructionReturnedValue = { value?: any, cancel?: string, error?: string }
 
-const zodDialogContent = z.object({
-  title: z.string(),
-  description: z.string(),
-  details: z.string().optional()
-});
-const zodDialogIconContent = zodDialogContent.extend({
-  icon: z.object({ url: z.string().optional(), content: z.instanceof(Buffer).optional() }).optional()
-});
-const zodDialogIconSizeContent = zodDialogIconContent.extend({
-  size: z.enum([ "auto", "xs", "s", "m", "l", "xl" ]).optional()
-});
-
-const zodFrameContent = z.union([ z.object({ url: z.string() }), z.object({ html: z.string() }) ]);
-
-const zodUi = z.object({
-  id: z.string(),
-  integration: z.union([
-    z.object({
-      anchor: z.string(IntentUiAnchor.Sidebar),
-      isExternal: z.boolean()
-    }),
-    z.object({ anchor: z.string(IntentUiAnchor.Window) }),
-    z.object({ anchor: z.string(IntentUiAnchor.Modal) })
-  ]),
-  frameContent: zodFrameContent,
-  dialogContent: zodDialogIconContent.optional()
-});
-
-const zodShow = z.object({
-  type: z.enum(IntentShowType),
-  id: z.string()
-});
-
-const zodOpenBrowser = z.object({
-  url: z.url()
-});
 
 @WebSocketGateway<GatewayMetadata>({
   transports: [ "websocket" ],
@@ -741,10 +713,7 @@ export class NotificationsGateway
     {
       intentName = "parameters";
       const specificIntent: FormIntent = intent;
-      if (await checkSchema(z.object({
-        parameters: z.object(),
-        dialogContent: zodDialogIconSizeContent.optional()
-      }), intent.form) === false)
+      if (await checkSchema(zodIntentFormContent, specificIntent.form) === false)
       {
         return resolveWithInvalidIntentSchema("FormIntent");
       }
@@ -787,7 +756,7 @@ export class NotificationsGateway
     {
       intentName = "UI";
       const specificIntent: UiIntent = intent;
-      if (await checkSchema(zodUi, specificIntent.ui) === false)
+      if (await checkSchema(zodIntentUi, specificIntent.ui) === false)
       {
         return resolveWithInvalidIntentSchema("UiIntent");
       }
@@ -797,7 +766,7 @@ export class NotificationsGateway
     {
       intentName = "openBrowser";
       const specificIntent: OpenBrowserIntent = intent;
-      if (await checkSchema(zodOpenBrowser, specificIntent.openBrowser) === false)
+      if (await checkSchema(zodIntentOpenBrowser, specificIntent.openBrowser) === false)
       {
         return resolveWithInvalidIntentSchema("OpenBrowserIntent");
       }
@@ -807,17 +776,7 @@ export class NotificationsGateway
     {
       intentName = "dialog";
       const specificIntent: DialogIntent = intent;
-      if (await checkSchema(zodDialogIconSizeContent.extend({
-        type: z.enum(IntentDialogType),
-        frame: z.object({
-          content: zodFrameContent,
-          height: z.int32().min(0).max(100)
-        }).optional(),
-        buttons: z.object({
-          yes: z.string(),
-          no: z.string().optional()
-        })
-      }), specificIntent.dialog) === false)
+      if (await checkSchema(zodIntentDialog, specificIntent.dialog) === false)
       {
         return resolveWithInvalidIntentSchema("DialogIntent");
       }
@@ -827,13 +786,7 @@ export class NotificationsGateway
     {
       intentName = "images";
       const specificIntent: ImagesIntent = intent;
-      if (await checkSchema(z.object({
-        images: z.array(z.object({
-          imageId: z.string(),
-          dialogContent: zodDialogContent.optional()
-        })),
-        dialogContent: zodDialogIconContent.optional()
-      }), specificIntent.images) === false)
+      if (await checkSchema(zodIntentImages, specificIntent.images) === false)
       {
         return resolveWithInvalidIntentSchema("ImagesIntent");
       }
@@ -843,7 +796,7 @@ export class NotificationsGateway
     {
       intentName = "show";
       const specificIntent: ShowIntent = intent;
-      if (await checkSchema(zodShow, specificIntent.show) === false)
+      if (await checkSchema(zodIntentShow, specificIntent.show) === false)
       {
         return resolveWithInvalidIntentSchema("ShowIntent");
       }
@@ -853,13 +806,7 @@ export class NotificationsGateway
     {
       intentName = "toast";
       const specificIntent: ToastIntent = intent;
-      if (await checkSchema(z.object({
-        toast: z.object({
-          type: z.enum(IntentToastType),
-          title: z.string().optional(),
-          subtitle: z.string()
-        })
-      }), specificIntent) === false)
+      if (await checkSchema(zodToastIntent, specificIntent) === false)
       {
         return resolveWithInvalidIntentSchema("ToastIntent");
       }
@@ -869,16 +816,7 @@ export class NotificationsGateway
     {
       intentName = "notification";
       const specificIntent: NotificationIntent = intent;
-      if (await checkSchema(z.object({
-        notification: z.object({
-          title: z.string(),
-          subtitle: z.string(),
-          body: z.string(),
-          silent: z.boolean(),
-          icon: z.instanceof(Buffer).optional(),
-          isNative: z.boolean()
-        })
-      }), specificIntent) === false)
+      if (await checkSchema(zodNotificationIntent, specificIntent) === false)
       {
         return resolveWithInvalidIntentSchema("NotificationIntent");
       }
@@ -905,23 +843,7 @@ export class NotificationsGateway
     {
       intentName = "action";
       const specificIntent: ActionIntent = intent;
-      if (await checkSchema(z.object({
-        action: z.object({
-          intent: z.xor([
-            z.object({ ui: zodUi }),
-            z.object({ show: zodShow }),
-            z.object({ openBrowser: zodOpenBrowser }),
-            z.object({
-              processCommand: z.object({
-                extensionId: z.string(),
-                commandId: z.string()
-              })
-            })
-          ]),
-          dialogContent: zodDialogIconSizeContent,
-          label: z.string().optional()
-        })
-      }), specificIntent) === false)
+      if (await checkSchema(zodActionIntent, specificIntent) === false)
       {
         return resolveWithInvalidIntentSchema("ActionIntent");
       }
@@ -932,10 +854,7 @@ export class NotificationsGateway
     {
       intentName = "serveBundle";
       const specificIntent: ServeBundleIntent = intent;
-      if (await checkSchema(z.object({
-        content: z.instanceof(Buffer),
-        settings: z.object().optional()
-      }), specificIntent.serveBundle) === false)
+      if (await checkSchema(zodIntentServeBundle, specificIntent.serveBundle) === false)
       {
         return resolveWithInvalidIntentSchema("ServeBundleIntent");
       }
@@ -954,12 +873,7 @@ export class NotificationsGateway
     {
       intentName = "readFile";
       const specificIntent: ReadFileIntent = intent;
-      if (await checkSchema(z.object({
-        readFile: z.object({
-          extensions: z.string().array(),
-          message: z.string()
-        })
-      }), specificIntent) === false)
+      if (await checkSchema(zodReadFileIntent, specificIntent) === false)
       {
         return resolveWithInvalidIntentSchema("ReadFileIntent");
       }
@@ -985,14 +899,7 @@ export class NotificationsGateway
     {
       intentName = "writeFile";
       const specificIntent: WriteFileIntent = intent;
-      if (await checkSchema(z.object({
-        writeFile: z.object({
-          name: z.string(),
-          extension: z.string(),
-          content: z.instanceof(Buffer),
-          message: z.string()
-        })
-      }), specificIntent) === false)
+      if (await checkSchema(zodWriteFileIntent, specificIntent) === false)
       {
         return resolveWithInvalidIntentSchema("WriteFileIntent");
       }
