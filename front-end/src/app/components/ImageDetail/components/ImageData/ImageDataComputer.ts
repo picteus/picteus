@@ -33,15 +33,16 @@ import {
   ExtensionImageFeature,
   GenerationRecipe,
   GenerationRecipeFromJSON,
+  Image,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageMetadata as PicteusImageMetadata
 } from "@picteus/ws-client";
 
-import { capitalizeText } from "../../../../../utils";
+import { capitalizeText } from "utils";
 
 
-export const SORTED_FEATURE_TYPES: readonly ImageFeatureType[] =
+const sortedFeatureTypes: readonly ImageFeatureType[] =
   [
     ImageFeatureType.Description,
     ImageFeatureType.Caption,
@@ -52,6 +53,32 @@ export const SORTED_FEATURE_TYPES: readonly ImageFeatureType[] =
     ImageFeatureType.Metadata,
     ImageFeatureType.Other
   ] as const;
+
+export const builtInSectionIds =
+  {
+    information: "information",
+    tags: "tags",
+    recipe: "recipe",
+    rawFeatures: "rawFeatures",
+    metadata: "metadata"
+  } as const;
+
+export const defaultOrderSectionIds: readonly string[] =
+  [
+    builtInSectionIds.recipe,
+    builtInSectionIds.tags,
+    builtInSectionIds.information,
+    ...sortedFeatureTypes.map((type) => `feature:${type}`),
+    builtInSectionIds.rawFeatures,
+    builtInSectionIds.metadata
+  ] as const;
+
+export type ImageDataSectionDescriptorType =
+  {
+    readonly id: string;
+    readonly label: string;
+    readonly badge?: string | number;
+  };
 
 export const METADATA_SOURCES_KEYS: readonly (keyof PicteusImageMetadata)[] =
   [
@@ -85,8 +112,8 @@ export function getPresentMetadataKeys(metadata: PicteusImageMetadata | undefine
 
 export function featureTypeComparison(type1: ImageFeatureType, type2: ImageFeatureType): number
 {
-  const index1 = SORTED_FEATURE_TYPES.indexOf(type1);
-  const index2 = SORTED_FEATURE_TYPES.indexOf(type2);
+  const index1 = sortedFeatureTypes.indexOf(type1);
+  const index2 = sortedFeatureTypes.indexOf(type2);
   if (index1 !== -1 && index2 !== -1)
   {
     return index1 - index2;
@@ -618,4 +645,74 @@ export function inferMetadataUiContainer(value: string): UiContainer
   return createUiContainer({
     elements: [ element ]
   });
+}
+
+export function computeAvailableSectionDescriptors(
+  image: Image,
+  t: TFunction = i18n.t
+): ImageDataSectionDescriptorType[]
+{
+  const sections: ImageDataSectionDescriptorType[] = [
+    {
+      id: builtInSectionIds.information,
+      label: t("imageDetail.information")
+    }
+  ];
+
+  if (image.tags && image.tags.length > 0)
+  {
+    sections.push({
+      id: builtInSectionIds.tags,
+      label: t("imageDetail.tags"),
+      badge: image.tags.length
+    });
+  }
+
+  const recipeFeatures = image.features.filter((feature) => feature.type === ImageFeatureType.Recipe);
+  const recipeFeatureContainers = computeRecipeFeatureContainers(recipeFeatures, t);
+  if (recipeFeatureContainers.length > 0)
+  {
+    sections.push({
+      id: builtInSectionIds.recipe,
+      label: t("imageDetail.recipe")
+    });
+  }
+
+  const availableFeatureTypes = getAvailableFeatureTypes(image.features);
+  for (const featureType of availableFeatureTypes)
+  {
+    const sectionId = `feature:${featureType}`;
+    const featuresForTypeCount = image.features.filter(
+      (feature) => feature.type === featureType && isDisplayedInFeatureTypeCards(feature)
+    ).length;
+
+    sections.push({
+      id: sectionId,
+      label: t(`imageDetail.type.${featureType}`),
+      badge: featuresForTypeCount
+    });
+  }
+
+  const rawFeatures = image.features.filter(
+    (feature) => !isDisplayedInRecipeCard(feature) && !isDisplayedInFeatureTypeCards(feature)
+  );
+  if (rawFeatures.length > 0)
+  {
+    sections.push({
+      id: builtInSectionIds.rawFeatures,
+      label: t("imageDetail.rawFeatures")
+    });
+  }
+
+  const metadataEntriesCount = getPresentMetadataKeys(image.metadata).length;
+  if (metadataEntriesCount > 0)
+  {
+    sections.push({
+      id: builtInSectionIds.metadata,
+      label: t("imageDetail.metadata"),
+      badge: metadataEntriesCount > 1 ? metadataEntriesCount : undefined
+    });
+  }
+
+  return sections;
 }

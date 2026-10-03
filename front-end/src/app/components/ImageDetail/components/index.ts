@@ -6,3 +6,4 @@ export { default as ImageData } from "./ImageData/ImageData.tsx";
 export { default as ImageRatio } from "./ImageRatio/ImageRatio.tsx";
 export { default as ImageItemWrapper } from "./ImageItemWrapper/ImageItemWrapper.tsx";
 export { default as ImageCommandsBar } from "./ImageCommandsBar/ImageCommandsBar.tsx";
+export { default as ImageCardsSettings } from "./ImageData/components/ImageCardsSettings/ImageCardsSettings.tsx";

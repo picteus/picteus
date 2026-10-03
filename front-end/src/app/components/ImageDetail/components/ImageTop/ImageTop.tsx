@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { ReactElement, useMemo } from "react";
 import { CloseButton, Group, Stack, Text, Tooltip } from "@mantine/core";
 import { IconWand } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -9,23 +9,25 @@ import { ViewMode } from "types";
 import { capitalizeText } from "utils";
 import { useExtensions } from "app/hooks";
 import { Common, CopyText, ExtensionBadge, TopPanel } from "app/components";
-import { ImageCommandsBar, ImageDimensions, ImageRatio, ImageWeight } from "../index.ts";
+import { ImageCardsSettings, ImageCommandsBar, ImageDimensions, ImageRatio, ImageWeight } from "../index.ts";
 
 import style from "./ImageTop.module.scss";
 
 
-type ImageTopType = {
-  image: Image;
-  viewMode: ViewMode;
-  onClose: () => void;
-};
+type ImageTopType =
+  {
+    readonly image: Image;
+    readonly viewMode: ViewMode;
+    readonly onClose: () => void;
+  };
 
-type RecipeExtensionType = {
-  id: string;
-  name: string;
-};
+type RecipeExtensionType =
+  {
+    readonly id: string;
+    readonly name: string;
+  };
 
-export default function ImageTop({ image, viewMode, onClose }: ImageTopType)
+export default function ImageTop({ image, viewMode, onClose }: ImageTopType): ReactElement
 {
   const [ t ] = useTranslation();
   const { data: extensions = [] } = useExtensions();
@@ -63,7 +65,7 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType)
   return (<TopPanel
       info={<>
         <div className={style.titleBox}>
-          <Stack className={style.title} gap={3}>
+          <Stack className={style.title} gap="xs">
             <CopyText value={image.name} inline={true}>
               <Text size="md" truncate="end">{image.name}</Text>
             </CopyText>
@@ -97,7 +99,10 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopType)
             </CopyText>
           </Stack>
         </div>
-        <CloseButton size="lg" variant="subtle" onClick={onClose}/>
+        <Group gap="xs" align="center" wrap="nowrap">
+          <ImageCardsSettings/>
+          <CloseButton size="lg" variant="subtle" onClick={onClose}/>
+        </Group>
       </>}
       actions={<ImageCommandsBar image={image} viewMode={viewMode}/>}
     />

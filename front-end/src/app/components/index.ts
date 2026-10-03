@@ -15,6 +15,7 @@ export {
 } from "./ActionEntry/ActionEntry.tsx";
 export { default as ImageDetail } from "./ImageDetail/ImageDetail.tsx";
 export { default as ImageItem } from "./ImageItem/ImageItem.tsx";
+export { ImageItemWrapper } from "./ImageDetail/components";
 export {
   default as ImageSelectCheckbox,
   useImageSelection,
@@ -25,7 +26,6 @@ export { default as ImageCommand } from "./ImageCommand/ImageCommand.ts";
 export { default as ProcessCommand } from "./ProcessCommand/ProcessCommand.ts";
 export { default as ImageItemMenu } from "./ImageItemMenu/ImageItemMenu.tsx";
 export { default as ClosestEmbeddingsImages } from "./ClosestEmbeddingsImages/ClosestEmbeddingsImages.tsx";
-export { default as ImageItemWrapper } from "./ImageDetail/components/ImageItemWrapper/ImageItemWrapper.tsx";
 export { default as ImageMasonry } from "./ImageMasonry/ImageMasonry.tsx";
 export { default as ImageGallery } from "./ImageGallery/ImageGallery.tsx";
 export { default as ImageTable } from "./ImageTable/ImageTable.tsx";

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { ReactElement, useEffect, useMemo, useState } from "react";
 import { getHotkeyHandler, useFocusTrap } from "@mantine/hooks";
 import { Group as ResizableGroup, Layout, Panel, Separator } from "react-resizable-panels";
 
@@ -10,18 +10,20 @@ import { useSocketEvents } from "app/context";
 import { useImageNavigation } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
 import { ImageData, ImageTop, ImageVisual } from "./components";
+import { ImageDataSectionsProvider } from "./context/ImageDataSectionsContext.tsx";
 
 import style from "./ImageDetail.module.scss";
 
 
-type ImageDetailType = {
-  image: ImageOrSummary;
-  images: ImageOrSummary [];
-  viewMode: ViewMode;
-  onClose: () => void;
-};
+type ImageDetailType =
+  {
+    readonly image: ImageOrSummary;
+    readonly images: ImageOrSummary[];
+    readonly viewMode: ViewMode;
+    readonly onClose: () => void;
+  };
 
-export default function ImageDetail({ image, images, viewMode, onClose }: ImageDetailType)
+export default function ImageDetail({ image, images, viewMode, onClose }: ImageDetailType): ReactElement
 {
   const ref = useFocusTrap();
   const navigation = useImageNavigation({
@@ -89,14 +91,16 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
         <div className={style.paneSeparatorHandle}/>
       </Separator>
       <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%" className={style.right}>
-        {imageData && <>
-          <div className={style.rightTop}>
-            <ImageTop image={imageData} viewMode={viewMode} onClose={onClose}/>
-          </div>
-          <div className={style.rightBottom}>
-            <ImageData image={imageData} viewMode={viewMode}/>
-          </div>
-        </>}
+        {imageData && (
+          <ImageDataSectionsProvider image={imageData}>
+            <div className={style.rightTop}>
+              <ImageTop image={imageData} viewMode={viewMode} onClose={onClose}/>
+            </div>
+            <div className={style.rightBottom}>
+              <ImageData image={imageData} viewMode={viewMode}/>
+            </div>
+          </ImageDataSectionsProvider>
+        )}
       </Panel>
     </ResizableGroup>
   );

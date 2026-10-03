@@ -12,12 +12,12 @@ type TopPanelType = {
 export default function TopPanel({ info, actions }: TopPanelType)
 {
   return <div className={style.content}>
-    <Flex align="center" justify="space-between" gap={10} p={20}>
+    <Flex align="center" justify="space-between" gap="md" p="lg">
       {info}
     </Flex>
     <Flex px="md">
       {actions}
     </Flex>
-    <Divider my="md"/>
+    <Divider my="sm"/>
   </div>;
 }
