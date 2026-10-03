@@ -241,7 +241,7 @@ export default function ImageData({ image, viewMode }: ImageDataType): ReactElem
             value={accordionValue}
             onChange={setAccordionValue}
           >
-            <Stack gap="md" ml="sm" mr="sm" mb="sm">
+            <Stack gap="md" ml="sm" mr="sm" my="sm">
               {sections.filter((section) => section.isVisible && sectionNodeMap[section.id] !== undefined).map((section) => (
                 <Box key={section.id}>{sectionNodeMap[section.id]}</Box>))}
             </Stack>

@@ -55,6 +55,12 @@ export default function ImageInformationCard({
       const rows: TableRow[] = [];
       const labelOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
 
+      rows.push(tableRow([
+          string(t("field.id"), labelOptions),
+          identifier(image.id, { modifiers: { copyable: true } })
+        ])
+      );
+
       if (image.parentId)
       {
         rows.push(tableRow([

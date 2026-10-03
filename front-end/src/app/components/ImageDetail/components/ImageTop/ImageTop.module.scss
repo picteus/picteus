@@ -1,12 +1,14 @@
-.titleBox
+.titleWrapper
 {
-  flex: 1;
+  display: flex;
   min-width: 0;
+
+  > span
+  {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-width: 0;
+  }
 }
 
-.title
-{
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}

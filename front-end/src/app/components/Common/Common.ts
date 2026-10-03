@@ -1,5 +1,6 @@
 const Common = {
   IconSmallSize: 16,
+  IconMediumSize: 20,
   IconLargeSize: 24,
   IconXLargeSize: 32,
   ToastIconEdge: 32,

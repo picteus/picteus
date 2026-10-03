@@ -5,7 +5,6 @@ import {
   IconAdjustmentsHorizontal,
   IconArrowDown,
   IconArrowUp,
-  IconEyeOff,
   IconGripVertical,
   IconRestore,
   IconRotate
@@ -107,33 +106,20 @@ export default function ImageCardsSettings(): ReactElement
   return (
     <>
       {drawerOpened === false && (
-        <>
-          {hasHiddenSections && (
-            <Button
-              variant="light"
-              color="orange"
-              size="compact-xs"
-              leftSection={<IconEyeOff size={Common.IconSmallSize}/>}
-              onClick={openDrawer}
-            >
-              {t("imageDetail.settings.reset", { count: hiddenSectionsCount })}
-            </Button>
-          )}
-          <Tooltip
-            label={t("imageDetail.settings.title")}
-            position="bottom"
-            withArrow
+        <Tooltip
+          label={t("imageDetail.settings.title")}
+          position="bottom"
+          withArrow
+        >
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="lg"
+            onClick={openDrawer}
           >
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="lg"
-              onClick={openDrawer}
-            >
-              <IconAdjustmentsHorizontal size={18}/>
-            </ActionIcon>
-          </Tooltip>
-        </>
+            <IconAdjustmentsHorizontal size={Common.IconMediumSize}/>
+          </ActionIcon>
+        </Tooltip>
       )}
       <Drawer
         opened={drawerOpened}
