@@ -32,11 +32,12 @@ export default function ImageTagsCard({
       title={t("imageDetail.tags")}
       items={tags}
       getExtensionId={(tag) => tag.id}
+      showExtensionBadge={true}
       defaultExpanded={defaultExpanded}
       isOpened={isOpened}
       onToggle={onToggle}
       onHide={onHide}
-      renderSection={(_extensionId, extensionTags) =>
+      renderSection={(_hasSingleExtension, _extensionId, extensionTags) =>
         (
           <Group gap="xs">
             {extensionTags.map((imageTag, tagIndex) =>
@@ -45,6 +46,8 @@ export default function ImageTagsCard({
                   key={`tag-${tagIndex}`}
                   tag={imageTag}
                   kind="badge"
+                  color="gray"
+                  variant="light"
                   withExtensionPrefix={false}
                 />
               )

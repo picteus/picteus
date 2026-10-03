@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react";
 import { Box, Flex, Text } from "@mantine/core";
 
-import { UiContainerView } from "app/components";
+import { ExtensionBadge, UiContainerView } from "app/components";
 import { ImageFeatureContainerType } from "../../ImageDataComputer.ts";
 import ExtensionGroupedCard from "../ExtensionGroupedCard/ExtensionGroupedCard.tsx";
 
@@ -30,21 +30,26 @@ export default function ImageFeatureCard({
       title={title}
       items={featureContainers}
       getExtensionId={(feature) => feature.extensionId}
+      showExtensionBadge={false}
       defaultExpanded={defaultExpanded}
       isOpened={isOpened}
       onToggle={onToggle}
       onHide={onHide}
-      renderSection={(_extensionId, extensionFeatures) =>
+      renderSection={(hasSingleExtension, extensionId, extensionFeatures) =>
         (
           <Flex direction="column" gap="xs">
             {extensionFeatures.map((feature, featureIndex) =>
               (
                 <Box key={featureIndex}>
-                  {feature.name && (
-                    <Text size="xs" fw={600} c="dimmed" mb={4}>
-                      {feature.name}
-                    </Text>
-                  )}
+                  <Flex align="center" gap="xs" mb="xs">
+                    {hasSingleExtension === false &&
+                      <ExtensionBadge idOrExtension={extensionId} size="lg" color="gray"/>}
+                    {feature.name && (
+                      <Text size="xs" fw={500} c="dimmed">
+                        {hasSingleExtension === false && <span>•</span>} {feature.name}
+                      </Text>
+                    )}
+                  </Flex>
                   <UiContainerView uiContainer={feature.uiContainer}/>
                 </Box>
               )

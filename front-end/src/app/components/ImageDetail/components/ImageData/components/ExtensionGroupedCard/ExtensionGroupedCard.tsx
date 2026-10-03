@@ -11,17 +11,19 @@ export type ExtensionGroupedCardPropsType<T> =
     readonly title: string;
     readonly items: readonly T[];
     readonly getExtensionId: (item: T) => string;
+    readonly showExtensionBadge: boolean;
     readonly defaultExpanded: boolean;
     readonly isOpened: boolean;
     readonly onToggle: () => void;
     readonly onHide: () => void;
-    readonly renderSection: (extensionId: string, items: readonly T[], index: number) => ReactElement;
+    readonly renderSection: (hasSingleExtension: boolean, extensionId: string, items: readonly T[], index: number) => ReactElement;
   };
 
 export default function ExtensionGroupedCard<T>({
   title,
   items,
   getExtensionId,
+  showExtensionBadge,
   defaultExpanded = true,
   isOpened,
   onToggle,
@@ -63,14 +65,12 @@ export default function ExtensionGroupedCard<T>({
 
   const hasSingleExtension = resolvedEntries.length === 1;
   const singleExtensionId = hasSingleExtension ? resolvedEntries[0][0] : undefined;
-  const singleExtension = singleExtensionId
-    ? extensions.find((anExtension) => anExtension.manifest.id === singleExtensionId)
-    : undefined;
+  const singleExtension = singleExtensionId ? extensions.find((anExtension) => anExtension.manifest.id === singleExtensionId) : undefined;
 
   const headerNode = (
     <>
       {hasSingleExtension && singleExtensionId && (
-        <Tooltip label={singleExtension?.manifest.name ?? singleExtensionId} position="top" withArrow>
+        <Tooltip label={singleExtension?.manifest.name} position="top" withArrow>
           <Box style={{ display: "inline-flex" }}>
             <ExtensionIcon idOrExtension={singleExtensionId} size="sm"/>
           </Box>
@@ -79,7 +79,7 @@ export default function ExtensionGroupedCard<T>({
       <Text fw={600} size="sm">
         {title}
       </Text>
-      {!hasSingleExtension && (
+      {hasSingleExtension === false && (
         <Badge size="xs" variant="light" color="gray">
           {resolvedEntries.length}
         </Badge>
@@ -100,15 +100,15 @@ export default function ExtensionGroupedCard<T>({
           {
             return (
               <Box key={`${extensionId}-${index}`}>
-                {!hasSingleExtension && (
+                {hasSingleExtension === false && (
                   <>
                     {index > 0 && <Divider mb="sm"/>}
-                    <Flex align="center" gap="xs" mb="xs">
-                      <ExtensionBadge idOrExtension={extensionId} size="lg" color="gray"/>
-                    </Flex>
+                      {showExtensionBadge && <Flex align="center" gap="xs" mb="xs">
+                        <ExtensionBadge idOrExtension={extensionId} size="lg" color="gray"/>
+                      </Flex>}
                   </>
                 )}
-                {renderSection(extensionId, extensionItems, index)}
+                {renderSection(hasSingleExtension, extensionId, extensionItems, index)}
               </Box>
             );
           }
