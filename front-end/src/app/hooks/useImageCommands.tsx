@@ -185,7 +185,7 @@ export default function useImageCommands({
             kind: "image",
             imageId: image.id
           }
-        });
+        }, false);
         const illustrationUri = await EventService.computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
         void NotificationService.storeNotification({
           id,

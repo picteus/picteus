@@ -12,7 +12,7 @@ export type DeskTabsContextType = {
   addTab: (tab: Omit<DeskTabType, "id" | "timestampInMilliseconds"> & {
     id?: string,
     timestampInMilliseconds?: number
-  }) => string;
+  }, isShow: boolean) => string;
   removeTab: (id: string) => void;
   setActiveTab: (id: string | null) => void;
   reorderTabs: (sourceIndex: number, destinationIndex: number) => void;
@@ -69,13 +69,16 @@ export function DeskTabsProvider({ children }: { children?: ReactNode }): ReactN
   function addTab(tab: Omit<DeskTabType, "id" | "timestampInMilliseconds"> & {
     id?: string,
     timestampInMilliseconds?: number
-  }): string
+  }, isShow: boolean): string
   {
     const tabId = tab.id || randomId();
     const timestampInMilliseconds = tab.timestampInMilliseconds ?? Date.now();
     const newTab: DeskTabType = { ...tab, id: tabId, timestampInMilliseconds };
     setTabs((previousTabs) => [ ...previousTabs, newTab ]);
-    setActiveTab(tabId);
+    if (isShow === true)
+    {
+      setActiveTab(tabId);
+    }
     return tabId;
   }
 

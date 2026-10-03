@@ -180,7 +180,7 @@ export default function IntentCenter()
             kind: "images",
             images: images.images
           }
-        });
+        }, false);
         void NotificationService.storeNotification({
           id,
           milliseconds: Date.now(),

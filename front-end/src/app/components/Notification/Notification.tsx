@@ -7,7 +7,7 @@ import { OpenBrowserIntent, ProcessCommandIntent, ShowIntent, UiIntent } from "@
 import { Image } from "@picteus/ws-client";
 
 import { NotificationType } from "types";
-import { ROUTES, timeAgoFromMilliseconds, ToastService } from "utils";
+import { computeDeskRoute, timeAgoFromMilliseconds, ToastService } from "utils";
 import { useExtensionIntentRunner } from "app/hooks";
 import { useActionModalContext } from "app/context";
 import { ImageService } from "app/services";
@@ -70,9 +70,7 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
         }
         else if (notification.type === "tab")
         {
-          // TODO: select the tab
-          const tabId: string = notification.data.id;
-          navigate(ROUTES.desk);
+          navigate(computeDeskRoute(notification.data.id));
         }
         onOpen();
       }

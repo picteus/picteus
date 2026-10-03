@@ -23,9 +23,9 @@ export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactE
   const content = tab.content;
   useEffect(() =>
   {
-    if (content.kind === "image")
+    if (content.kind === "image" || (content.kind === "images" && content.images.length === 1))
     {
-      ImageService.get({ id: content.imageId }).then(setImage).catch(() => ToastService.apiCallError);
+      ImageService.get({ id: content.kind === "image" ? content.imageId : content.images[0].imageId }).then(setImage).catch(() => ToastService.apiCallError);
     }
   }, [ content ]);
 
@@ -50,6 +50,25 @@ export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactE
 
   if (content.kind === "images")
   {
+    if (content.images.length === 1)
+    {
+      if (image === undefined)
+      {
+        return null;
+      }
+
+      return (
+        <ImageDetail
+          image={image}
+          images={[ image ]}
+          viewMode="gallery"
+          onClose={() =>
+          {
+          }}
+        />
+      );
+    }
+
     return (
       <ImagesView
         viewData={{
