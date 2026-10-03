@@ -18,7 +18,7 @@ export default function EntityVisual({ illustrationUri, isCompact, onClick }: En
   const size = isCompact === true ? Common.ToastIconEdge : Common.NotificationIllustrationEdge;
   if (illustrationUri === undefined)
   {
-    return <IconInfoCircle stroke={Common.IconStrokeSize} size={size}/>;
+    return <IconInfoCircle color="grey" stroke={Common.IconStrokeSize} size={size}/>;
   }
   return <Image
     alt={"EntityVisual"}

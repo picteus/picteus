@@ -1,6 +1,5 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { randomId } from "@mantine/hooks";
 import i18n from "i18next";
 
@@ -25,7 +24,7 @@ import { detectImageMimeType } from "@picteus/shared-front-end";
 import { SearchOriginNature } from "@picteus/ws-client";
 
 import { ChannelEnum, ContentIconType, EventOnResultValueType, ExtensionIntentType, ResourceType } from "types";
-import { ROUTES, ToastService } from "utils";
+import { ToastService } from "utils";
 import { useActionModalContext, useDeskTabsContext, useSocketEvent } from "app/context";
 import { useExtensionIntentRunner, useExtensions } from "app/hooks";
 import { ExtensionsService, NotificationService } from "app/services";
@@ -35,7 +34,6 @@ import { CommandForm, DialogForm } from "app/components";
 export default function IntentCenter()
 {
   const [ t ] = useTranslation();
-  const navigate = useNavigate();
   const [ , addModal, removeModal ] = useActionModalContext();
   const intentRunner = useExtensionIntentRunner();
   const { addTab } = useDeskTabsContext();
@@ -167,33 +165,30 @@ export default function IntentCenter()
       {
         const images = imagesIntent.images;
         const dialogContent = images.dialogContent;
+        const id = randomId();
         addTab({
+          id,
           extensionId,
+          label: dialogContent.title,
           header: {
             title: dialogContent.title,
             description: dialogContent.description,
             details: dialogContent.details,
             icon: dialogContent.icon
           },
-          isShiftable: true,
-          isClosable: true,
           content: {
             kind: "images",
-            images: images.images,
-            data: {
-              mode: "masonry",
-              filterOrCollectionId: {
-                filter: {
-                  origin: {
-                    kind: SearchOriginNature.Images,
-                    ids: images.images.map((image) => image.imageId)
-                  }
-                }
-              }
-            }
+            images: images.images
           }
         });
-        navigate(ROUTES.desk);
+        void NotificationService.storeNotification({
+          id,
+          milliseconds: Date.now(),
+          type: "tab",
+          title: dialogContent.title,
+          subtitle: dialogContent.description,
+          data: { id }
+        });
         respondWithValue();
       }
 

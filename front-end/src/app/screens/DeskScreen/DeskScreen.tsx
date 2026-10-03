@@ -110,31 +110,35 @@ export default function DeskScreen(): ReactElement
     setDropTargetTabId(null);
   }
 
-  function renderTabIcon(tabItem: DeskTabType): ReactNode
+  function renderTabIcon(tab: DeskTabType): ReactNode
   {
-    if (tabItem.extensionId)
+    if (tab.extensionId)
     {
-      return <ExtensionIcon idOrExtension={tabItem.extensionId} size="sm"/>;
+      return <ExtensionIcon idOrExtension={tab.extensionId} size="sm"/>;
     }
 
-    if (tabItem.header.icon)
+    if (tab.header?.icon)
     {
-      return <ResourceIcon icon={tabItem.header.icon} isCompact={false}/>;
+      return <ResourceIcon icon={tab.header.icon} isCompact={false}/>;
     }
 
-    if (tabItem.content.kind === "images")
+    if (tab.content.kind === "image")
     {
       return <IconPhoto size={Common.IconSmallSize} stroke={1.5}/>;
     }
-    if (tabItem.content.kind === "url")
+    if (tab.content.kind === "images")
+    {
+      return <IconPhoto size={Common.IconSmallSize} stroke={1.5}/>;
+    }
+    if (tab.content.kind === "url")
     {
       return <IconWorld size={Common.IconSmallSize} stroke={1.5}/>;
     }
-    if (tabItem.content.kind === "html")
+    if (tab.content.kind === "html")
     {
       return <IconCode size={Common.IconSmallSize} stroke={1.5}/>;
     }
-    if (tabItem.content.kind === "markdown")
+    if (tab.content.kind === "markdown")
     {
       return <IconFileText size={Common.IconSmallSize} stroke={1.5}/>;
     }
@@ -184,19 +188,16 @@ export default function DeskScreen(): ReactElement
           type="never"
         >
           <Group gap="xs" align="flex-end" h="100%" pt="xs" wrap="nowrap">
-            {tabs.map((tabItem) =>
+            {tabs.map((tab) =>
             {
-              const isTabActive = tabItem.id === activeTab;
-              const isTabDragging = tabItem.id === draggedTabId;
-              const isTabDropTarget = tabItem.id === dropTargetTabId;
-
-              const tooltipLabel = tabItem.header.description
-                ? `${tabItem.header.title} — ${tabItem.header.description}`
-                : tabItem.header.title;
+              const isTabActive = tab.id === activeTab;
+              const isTabDragging = tab.id === draggedTabId;
+              const isTabDropTarget = tab.id === dropTargetTabId;
+              const tooltipLabel = tab.header === undefined ? tab.label : (tab.header.description ? `${tab.header.title} — ${tab.header.description}` : tab.header.title);
 
               return (
                 <Group
-                  key={tabItem.id}
+                  key={tab.id}
                   gap="xs"
                   px={10}
                   h={36}
@@ -205,33 +206,33 @@ export default function DeskScreen(): ReactElement
                   data-active={isTabActive === true ? "true" : undefined}
                   data-dragging={isTabDragging === true ? "true" : undefined}
                   data-drop-target={isTabDropTarget === true ? "true" : undefined}
-                  draggable={tabItem.isShiftable !== false}
-                  onDragStart={(event) => handleDragStart(event, tabItem.id)}
-                  onDragOver={(event) => handleDragOver(event, tabItem.id)}
-                  onDragLeave={() => handleDragLeave(tabItem.id)}
-                  onDrop={(event) => handleDrop(event, tabItem.id)}
+                  draggable={tab.isShiftable !== false}
+                  onDragStart={(event) => handleDragStart(event, tab.id)}
+                  onDragOver={(event) => handleDragOver(event, tab.id)}
+                  onDragLeave={() => handleDragLeave(tab.id)}
+                  onDrop={(event) => handleDrop(event, tab.id)}
                   onDragEnd={handleDragEnd}
-                  onClick={() => setActiveTab(tabItem.id)}
+                  onClick={() => setActiveTab(tab.id)}
                 >
-                  {renderTabIcon(tabItem)}
+                  {renderTabIcon(tab)}
 
                   <Tooltip
                     label={tooltipLabel}
                     withinPortal
                   >
                     <Text size="sm" maw={140} truncate>
-                      {tabItem.header.title || "Tab"}
+                      {tab.label}
                     </Text>
                   </Tooltip>
 
-                  {tabItem.isClosable !== false && (
+                  {tab.isClosable !== false && (
                     <CloseButton
                       size="xs"
                       className={style.closeButton}
                       onClick={(event) =>
                       {
                         event.stopPropagation();
-                        removeTab(tabItem.id);
+                        removeTab(tab.id);
                       }}
                     />
                   )}

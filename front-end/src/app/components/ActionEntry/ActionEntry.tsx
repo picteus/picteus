@@ -1,6 +1,6 @@
 import React, { ReactElement, ReactNode } from "react";
 import { Flex, Menu, Text } from "@mantine/core";
-import { IconDownload, IconExternalLink, IconRefresh, IconTrash } from "@tabler/icons-react";
+import { IconDownload, IconExternalLink, IconPin, IconRefresh, IconTrash } from "@tabler/icons-react";
 
 import { Manifest } from "@picteus/ws-client";
 
@@ -8,13 +8,15 @@ import { UiCommandType } from "types";
 import { CommandIcon, Common, ExtensionIcon } from "app/components";
 
 
-export function computeIcon(action: "synchronize" | "open" | "download" | "delete", size?: "sm" | "md" | number): ReactElement
+export function computeIcon(action: "synchronize" | "pin" | "open" | "download" | "delete", size?: "sm" | "md" | number): ReactElement
 {
   const iconDimension = typeof size === "number" ? size : (size === "md" ? Common.IconLargeSize : Common.IconSmallSize);
   switch (action)
   {
     case "synchronize":
       return <IconRefresh style={{ width: iconDimension, height: iconDimension }}/>;
+    case "pin":
+      return <IconPin style={{ width: iconDimension, height: iconDimension }}/>;
     case "open":
       return <IconExternalLink style={{ width: iconDimension, height: iconDimension }}/>;
     case "download":

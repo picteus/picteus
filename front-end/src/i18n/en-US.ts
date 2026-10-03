@@ -158,7 +158,6 @@ export default {
     settings: "Settings",
     cancel: "Cancel",
     refresh: "Refresh",
-    pin: "Pin",
     addToSelection: "Add to selection",
     removeFromSelection: "Remove from selection"
   },
@@ -541,6 +540,11 @@ export default {
     extensionsCommands: "Extensions commands",
     closestImages: "Closest images",
     synchronize: "Synchronize",
+    pin: "Pin",
+    pinNotification: {
+      title: "Image pinned",
+      subtitle: "The image has been added to the Desk"
+    },
     allExtensionsDetails: "All extensions",
     noExtensionDetails: " ",
     open: "Open",

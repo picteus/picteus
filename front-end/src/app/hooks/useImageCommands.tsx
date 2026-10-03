@@ -6,7 +6,7 @@ import { CommandEntity, ExtensionImageTag, Image, ManifestCapabilityId, SearchOr
 
 import { CommandIconSizeType, ImageCommandIdType, ImageCommandType, ImageOrSummary, ViewMode } from "types";
 import { removeFilePrefixFromUrl, ToastService } from "utils";
-import { useActionModalContext, useCommandSocket } from "app/context";
+import { useActionModalContext, useCommandSocket, useDeskTabsContext } from "app/context";
 import {
   useConfirmAction,
   useExtensionCommandRunner,
@@ -16,8 +16,9 @@ import {
   useOpenExplorer,
   useRunCapabilities
 } from "app/hooks";
-import { ImageService } from "app/services";
+import { EventService, ImageService, NotificationService } from "app/services";
 import { ClosestEmbeddingsImages, CommandIcon, Common, computeIcon, ImageItemWrapper } from "app/components";
+import { randomId } from "@mantine/hooks";
 
 
 type UseImageCommandsOptionsType = {
@@ -51,6 +52,7 @@ export default function useImageCommands({
   const [ imageTags, setImageTags ] = useState<ExtensionImageTag[]>([]);
   const [ isLoadingTags, setIsLoadingTags ] = useState<boolean>(Boolean(image.id));
   const [ runningCommandId, setRunningCommandId ] = useState<string | null>(null);
+  const { addTab } = useDeskTabsContext();
   const openExplorer = useOpenExplorer();
   const pickFileOrDirectory = useFileOrDirectoryPicker();
   const { sendCommand } = useCommandSocket();
@@ -158,6 +160,42 @@ export default function useImageCommands({
         {
           setRunningCommandId(null);
         }
+      }
+    });
+
+    list.push({
+      id: "pin",
+      kind: "core",
+      commandId: "pin",
+      label: t("commands.pin"),
+      subLabel: t("commands.allExtensionsDetails"),
+      isAvailable: true,
+      isLoading: runningCommandId === "synchronize",
+      icon: (size?: CommandIconSizeType) =>
+      {
+        return computeIcon("pin", size);
+      },
+      execute: async () =>
+      {
+        const id = randomId();
+        addTab({
+          id,
+          label: image.name,
+          content: {
+            kind: "image",
+            imageId: image.id
+          }
+        });
+        const illustrationUri = await EventService.computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
+        void NotificationService.storeNotification({
+          id,
+          milliseconds: Date.now(),
+          type: "tab",
+          title: t("commands.pinNotification.title"),
+          subtitle: t("commands.pinNotification.subtitle"),
+          data: { id },
+          illustrationUri
+        });
       }
     });
 

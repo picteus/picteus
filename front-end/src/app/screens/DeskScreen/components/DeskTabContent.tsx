@@ -1,10 +1,14 @@
-import { ReactElement } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { Box, Container, ScrollArea } from "@mantine/core";
 import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
+import { Image, SearchOriginNature } from "@picteus/ws-client";
+
 import { DeskTabType } from "types";
-import { EmptyResults, Iframe, ImagesView, Markdown } from "app/components";
+import { ToastService } from "utils";
+import { ImageService } from "app/services";
+import { EmptyResults, Iframe, ImageDetail, ImagesView, Markdown } from "app/components";
 
 
 export interface DeskTabContentPropsType
@@ -15,14 +19,51 @@ export interface DeskTabContentPropsType
 export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactElement | null
 {
   const [ t ] = useTranslation();
-
+  const [ image, setImage ] = useState<Image | undefined>(undefined);
   const content = tab.content;
+  useEffect(() =>
+  {
+    if (content.kind === "image")
+    {
+      ImageService.get({ id: content.imageId }).then(setImage).catch(() => ToastService.apiCallError);
+    }
+  }, [ content ]);
+
+  if (content.kind === "image")
+  {
+    if (image === undefined)
+    {
+      return null;
+    }
+
+    return (
+      <ImageDetail
+        image={image}
+        images={[ image ]}
+        viewMode="gallery"
+        onClose={() =>
+        {
+        }}
+      />
+    );
+  }
 
   if (content.kind === "images")
   {
     return (
       <ImagesView
-        viewData={content.data}
+        viewData={{
+          mode: "masonry",
+          filterOrCollectionId: {
+            filter: {
+              origin: {
+                kind: SearchOriginNature.Images,
+                ids: content.images.map((image) => image.imageId)
+              }
+            }
+          }
+        }
+        }
         isDefault={false}
         onEmptyResults={() => (
           <EmptyResults

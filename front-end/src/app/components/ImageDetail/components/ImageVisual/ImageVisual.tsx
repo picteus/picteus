@@ -25,6 +25,7 @@ function TopBar({ image, zoom, onZoomChange }: TopBarPropsType): ReactNode
   const { getCommand } = useImageCommands({ image });
   const closestImagesCommand = getCommand("closestImages");
   const openCommand = getCommand("open");
+  const pinCommand = getCommand("pin");
   const downloadCommand = getCommand("download");
   const synchronizeCommand = getCommand("synchronize");
   const deleteCommand = getCommand("delete");
@@ -52,6 +53,13 @@ function TopBar({ image, zoom, onZoomChange }: TopBarPropsType): ReactNode
         <ImageCommand.ActionIcon
           image={image}
           command={closestImagesCommand}
+          variant="subtle"
+          color="gray"
+          size="md"
+        />
+        <ImageCommand.ActionIcon
+          image={image}
+          command={pinCommand}
           variant="subtle"
           color="gray"
           size="md"

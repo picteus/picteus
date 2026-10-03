@@ -9,7 +9,10 @@ import createHmrStableContext from "./createHmrStableContext.ts";
 export type DeskTabsContextType = {
   tabs: DeskTabType[];
   activeTab: string | null;
-  addTab: (tab: Omit<DeskTabType, "id"> & { id?: string }) => string;
+  addTab: (tab: Omit<DeskTabType, "id" | "timestampInMilliseconds"> & {
+    id?: string,
+    timestampInMilliseconds?: number
+  }) => string;
   removeTab: (id: string) => void;
   setActiveTab: (id: string | null) => void;
   reorderTabs: (sourceIndex: number, destinationIndex: number) => void;
@@ -63,17 +66,14 @@ export function DeskTabsProvider({ children }: { children?: ReactNode }): ReactN
     }
   }, [ activeTab ]);
 
-  function addTab(tab: Omit<DeskTabType, "id"> & { id?: string }): string
+  function addTab(tab: Omit<DeskTabType, "id" | "timestampInMilliseconds"> & {
+    id?: string,
+    timestampInMilliseconds?: number
+  }): string
   {
     const tabId = tab.id || randomId();
-    const newTab: DeskTabType = {
-      ...tab,
-      id: tabId,
-      isShiftable: tab.isShiftable ?? true,
-      isClosable: tab.isClosable ?? true,
-      createdAt: tab.createdAt ?? Date.now()
-    };
-
+    const timestampInMilliseconds = tab.timestampInMilliseconds ?? Date.now();
+    const newTab: DeskTabType = { ...tab, id: tabId, timestampInMilliseconds };
     setTabs((previousTabs) => [ ...previousTabs, newTab ]);
     setActiveTab(tabId);
     return tabId;

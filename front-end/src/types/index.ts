@@ -53,7 +53,7 @@ export interface CommandContextType
 }
 
 export type NotificationType = WithIdAndMilliseconds & {
-  type: "image" | "repository" | "notification" | "action";
+  type: "image" | "repository" | "notification" | "action" | "tab";
   title: string;
   subtitle: string;
   body?: string;
@@ -194,7 +194,7 @@ export type ExtensionCommandIdType = {
   commandId: string;
 };
 
-export type CoreImageCommandIdType = "synchronize" | "delete" | "closestImages" | "open" | "download";
+export type CoreImageCommandIdType = "synchronize" | "pin" | "delete" | "closestImages" | "open" | "download";
 
 export type ImageCommandIdType = CoreImageCommandIdType | ExtensionCommandIdType;
 
@@ -265,10 +265,14 @@ export type TabsType = {
   data: ViewTabDataType;
 };
 
+export type DeskTabImageContentType = {
+  kind: "image";
+  imageId: string;
+};
+
 export type DeskTabImagesContentType = {
   kind: "images";
   images: Array<{ imageId: string }>;
-  data: ViewTabDataType;
 };
 
 export type DeskTabUrlContentType = {
@@ -287,6 +291,7 @@ export type DeskTabMarkdownContentType = {
 };
 
 export type DeskTabContentType =
+  | DeskTabImageContentType
   | DeskTabImagesContentType
   | DeskTabUrlContentType
   | DeskTabHtmlContentType
@@ -294,12 +299,13 @@ export type DeskTabContentType =
 
 export type DeskTabType = {
   id: string;
+  timestampInMilliseconds: number;
   extensionId?: string;
-  header: IntentDialogIconContent;
+  label: string;
+  header?: IntentDialogIconContent;
   content: DeskTabContentType;
   isShiftable?: boolean;
   isClosable?: boolean;
-  createdAt?: number;
 };
 
 export enum ChannelEnum

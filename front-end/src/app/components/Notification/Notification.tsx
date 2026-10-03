@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button, Notification as MantineNotification, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
@@ -6,7 +7,7 @@ import { OpenBrowserIntent, ProcessCommandIntent, ShowIntent, UiIntent } from "@
 import { Image } from "@picteus/ws-client";
 
 import { NotificationType } from "types";
-import { timeAgoFromMilliseconds, ToastService } from "utils";
+import { ROUTES, timeAgoFromMilliseconds, ToastService } from "utils";
 import { useExtensionIntentRunner } from "app/hooks";
 import { useActionModalContext } from "app/context";
 import { ImageService } from "app/services";
@@ -19,6 +20,7 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
 {
   const intentRunner = useExtensionIntentRunner();
   const [ , addModal, removeModal ] = useActionModalContext();
+  const navigate = useNavigate();
 
   return (notification: NotificationType) =>
   {
@@ -66,6 +68,12 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
             onFailure: ToastService.failure
           });
         }
+        else if (notification.type === "tab")
+        {
+          // TODO: select the tab
+          const tabId: string = notification.data.id;
+          navigate(ROUTES.desk);
+        }
         onOpen();
       }
       finally
@@ -97,7 +105,7 @@ function NotificationBody({ isCompact, notification, onClick }: NotificationBody
             {notification.body}
           </Text>
         )}
-        {(notification.type === "action" || notification.type === "repository" || notification.type === "image") && (
+        {(notification.type === "action" || notification.type === "repository" || notification.type === "image" || notification.type === "tab") && (
           <Button variant="light" size="xs" mt="xs" onClick={onClick}>
             {notification.type === "action" ? (notification.actionLabel ?? t("button.run")) : t("button.view")}
           </Button>
