@@ -1,4 +1,4 @@
-import React, { ReactNode, useRef, useState } from "react";
+import React, { ReactElement, useRef, useState } from "react";
 import { ActionIcon, Badge, Button, Divider, Drawer, Group, Paper, Stack, Switch, Text, Tooltip } from "@mantine/core";
 import { IconArrowDown, IconArrowUp, IconGripVertical, IconRestore, IconRotate } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -33,7 +33,7 @@ export default function ImageFeatureSettings({
   onReorder,
   onRestoreAll,
   onResetDefaults
-}: ImageFeatureSettingsType): ReactNode
+}: ImageFeatureSettingsType): ReactElement
 {
   const [ t ] = useTranslation();
   const contentRef = useRef<HTMLDivElement>(null);

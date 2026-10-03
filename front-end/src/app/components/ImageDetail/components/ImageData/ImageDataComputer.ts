@@ -4,6 +4,7 @@ import {
   boolean,
   CodeLanguage,
   createUiContainer,
+  divider,
   flowing,
   html,
   identifier,
@@ -15,6 +16,10 @@ import {
   stringCode,
   StringRepresentation,
   stringUrl,
+  table,
+  tableColumn,
+  TableColumnAlign,
+  TableColumnWidthMode,
   tableRow,
   TableRow,
   TextIntensity,
@@ -24,7 +29,16 @@ import {
   UiElement,
   xml
 } from "@picteus/shared-core";
-import { ExtensionImageFeature, GenerationRecipe, ImageFeatureFormat, ImageFeatureType } from "@picteus/ws-client";
+import {
+  ExtensionImageFeature,
+  GenerationRecipe,
+  GenerationRecipeFromJSON,
+  ImageFeatureFormat,
+  ImageFeatureType,
+  ImageMetadata as PicteusImageMetadata
+} from "@picteus/ws-client";
+
+import { capitalizeText } from "../../../../../utils";
 
 
 export const SORTED_FEATURE_TYPES: readonly ImageFeatureType[] =
@@ -38,6 +52,36 @@ export const SORTED_FEATURE_TYPES: readonly ImageFeatureType[] =
     ImageFeatureType.Metadata,
     ImageFeatureType.Other
   ] as const;
+
+export const METADATA_SOURCES_KEYS: readonly (keyof PicteusImageMetadata)[] =
+  [
+    "all",
+    "exif",
+    "iptc",
+    "xmp",
+    "icc",
+    "tiffTagPhotoshop",
+    "others"
+  ] as const;
+
+export function isMetadataValuePresent(value: string | undefined): boolean
+{
+  return value !== undefined && value !== "{}" && value.trim().length > 0;
+}
+
+export function getPresentMetadataKeys(metadata: PicteusImageMetadata | undefined | null): (keyof PicteusImageMetadata)[]
+{
+  if (metadata === undefined || metadata === null)
+  {
+    return [];
+  }
+
+  return METADATA_SOURCES_KEYS.filter((metadataKey) =>
+  {
+    const rawValue = metadata[metadataKey];
+    return isMetadataValuePresent(rawValue);
+  });
+}
 
 export function featureTypeComparison(type1: ImageFeatureType, type2: ImageFeatureType): number
 {
@@ -244,4 +288,334 @@ export function isDisplayedInFeatureTypeCards(feature: ExtensionImageFeature): b
     );
   }
   return false;
+}
+
+export function extractRecipe(feature: ExtensionImageFeature): GenerationRecipe | undefined
+{
+  try
+  {
+    const parsed = typeof feature.value === "string" ? JSON.parse(feature.value) : feature.value;
+    return GenerationRecipeFromJSON(parsed);
+  }
+  catch (error)
+  {
+    return undefined;
+  }
+}
+
+export function convertRecipeToContainer(generationRecipe: GenerationRecipe | undefined, t: TFunction = i18n.t): UiContainer
+{
+  if (generationRecipe === undefined)
+  {
+    return createSchemaComplianceUiContainer(t);
+  }
+
+  const rows = computeRecipeCommonRows(generationRecipe, t);
+  if (generationRecipe.prompt && typeof generationRecipe.prompt === "object")
+  {
+    const options = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
+    const prompt = generationRecipe.prompt;
+    if ("text" in prompt && prompt.text)
+    {
+      rows.push(tableRow([
+          string(t("field.prompt"), options),
+          string(prompt.text, { modifiers: { copyable: true }, representation: StringRepresentation.multiline })
+        ])
+      );
+    }
+    else if ("value" in prompt && prompt.value)
+    {
+      if (Object.keys(prompt.value).length > 0)
+      {
+        // We ignore the instructions when empty
+        rows.push(
+          tableRow([
+            string(t("field.instructions"), options),
+            json(JSON.stringify(prompt.value, undefined, 2), { modifiers: { copyable: true } })
+          ])
+        );
+      }
+    }
+  }
+
+  return createUiContainer({
+    elements: [ table(
+      rows,
+      {
+        columns: [
+          tableColumn({ align: TableColumnAlign.left, width: 25, widthMode: TableColumnWidthMode.maximum }),
+          tableColumn({ align: TableColumnAlign.left })
+        ]
+      }
+    ) ]
+  });
+}
+
+export function augmentRecipeUiContainer(
+  feature: ExtensionImageFeature,
+  container: UiContainer,
+  recipeFeatures: readonly ExtensionImageFeature[],
+  t: TFunction = i18n.t
+): UiContainer
+{
+  const vectorialFeature = recipeFeatures.find((candidateFeature) => candidateFeature.id === feature.id && candidateFeature.format === ImageFeatureFormat.Json);
+  if (vectorialFeature !== undefined)
+  {
+    const generationRecipe = extractRecipe(vectorialFeature);
+    if (generationRecipe !== undefined)
+    {
+      const rows = computeRecipeCommonRows(generationRecipe, t);
+      if (rows.length > 0)
+      {
+        container.elements.splice(0, 0, table(rows, {
+          withRowSeparators: true,
+          columns: [
+            tableColumn({ align: TableColumnAlign.left, width: 25, widthMode: TableColumnWidthMode.maximum }),
+            tableColumn({ align: TableColumnAlign.left })
+          ]
+        }), divider());
+      }
+    }
+  }
+  return container;
+}
+
+export type ImageFeatureContainerType =
+  {
+    readonly extensionId: string;
+    readonly type: ImageFeatureType;
+    readonly name?: string;
+    readonly uiContainer: UiContainer;
+  };
+
+export function computeRecipeFeatureContainers(recipeFeatures: readonly ExtensionImageFeature[], t: TFunction = i18n.t): ImageFeatureContainerType[]
+{
+  // We group recipe features by extension identifier
+  const featuresByExtensionMap = new Map<string, ExtensionImageFeature[]>();
+  for (const feature of recipeFeatures)
+  {
+    let extensionFeatures = featuresByExtensionMap.get(feature.id);
+    if (extensionFeatures === undefined)
+    {
+      extensionFeatures = [];
+      featuresByExtensionMap.set(feature.id, extensionFeatures);
+    }
+    extensionFeatures.push(feature);
+  }
+
+  const featureContainers: ImageFeatureContainerType[] = [];
+  for (const extensionFeatures of featuresByExtensionMap.values())
+  {
+    const uiFeatures = extensionFeatures.filter((feature) => feature.format === ImageFeatureFormat.Ui);
+    if (uiFeatures.length > 0)
+    {
+      for (const feature of uiFeatures)
+      {
+        const container = augmentRecipeUiContainer(feature, parseFeatureUiContainer(feature, t), recipeFeatures, t);
+        featureContainers.push({
+          extensionId: feature.id,
+          type: feature.type,
+          name: feature.name,
+          uiContainer: container
+        });
+      }
+    }
+    else
+    {
+      for (const feature of extensionFeatures)
+      {
+        const container = feature.format === ImageFeatureFormat.Json
+          ? convertRecipeToContainer(extractRecipe(feature), t)
+          : UiContainer.builder().add(inferNonUiElement(feature)).build();
+        featureContainers.push({
+          extensionId: feature.id,
+          type: feature.type,
+          name: feature.name,
+          uiContainer: container
+        });
+      }
+    }
+  }
+
+  return featureContainers;
+}
+
+export function getAvailableFeatureTypes(features: readonly ExtensionImageFeature[]): ImageFeatureType[]
+{
+  const distinctTypesSet = new Set<ImageFeatureType>();
+  for (const feature of features)
+  {
+    if (isDisplayedInFeatureTypeCards(feature))
+    {
+      distinctTypesSet.add(feature.type);
+    }
+  }
+  return Array.from(distinctTypesSet).sort(featureTypeComparison);
+}
+
+export function computeTypeFeatureContainers(
+  type: ImageFeatureType,
+  features: readonly ExtensionImageFeature[],
+  t: TFunction = i18n.t
+): ImageFeatureContainerType[]
+{
+  const featuresForType = features.filter((feature) => feature.type === type && isDisplayedInFeatureTypeCards(feature));
+  const extensionIds = Array.from(new Set(featuresForType.map((feature) => feature.id)));
+
+  const featureContainers: ImageFeatureContainerType[] = [];
+  for (const extensionId of extensionIds)
+  {
+    const extensionUiFeatures = featuresForType.filter((feature) => feature.id === extensionId && isDisplayedInFeatureTypeCards(feature));
+
+    for (const uiFeature of extensionUiFeatures)
+    {
+      featureContainers.push({
+        extensionId,
+        type,
+        name: uiFeature.name,
+        uiContainer: uiFeature.format === ImageFeatureFormat.Ui
+          ? parseFeatureUiContainer(uiFeature, t)
+          : UiContainer.builder().add(inferNonUiElement(uiFeature)).build()
+      });
+    }
+  }
+
+  return featureContainers;
+}
+
+export function computeRawFeatureContainers(
+  rawFeatures: readonly ExtensionImageFeature[],
+  _t: TFunction = i18n.t
+): ImageFeatureContainerType[]
+{
+  return rawFeatures.map((rawFeature) =>
+  {
+    const featureName = rawFeature.name !== undefined
+      ? `${capitalizeText(rawFeature.type)} (${rawFeature.name})`
+      : capitalizeText(rawFeature.type);
+
+    return {
+      extensionId: rawFeature.id,
+      type: rawFeature.type,
+      name: featureName,
+      uiContainer: rawFeature.format === ImageFeatureFormat.Ui
+        ? parseFeatureUiContainer(rawFeature)
+        : UiContainer.builder().add(inferNonUiElement(rawFeature)).build()
+    };
+  });
+}
+
+export function inferMetadataUiContainer(value: string): UiContainer
+{
+  const copyableOptions = { modifiers: { copyable: true } };
+  const labelOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
+
+  function convertValueToUiElement(propertyValue: unknown): UiElement
+  {
+    if (propertyValue === null || propertyValue === undefined)
+    {
+      return string("-", copyableOptions);
+    }
+
+    if (typeof propertyValue === "boolean")
+    {
+      return boolean(propertyValue);
+    }
+
+    if (typeof propertyValue === "number")
+    {
+      return numberUnbounded(propertyValue, copyableOptions);
+    }
+
+    if (typeof propertyValue === "string")
+    {
+      const trimmedValue = propertyValue.trim();
+      if (trimmedValue.startsWith("<") && trimmedValue.endsWith(">"))
+      {
+        return xml(propertyValue, copyableOptions);
+      }
+
+      if ((trimmedValue.startsWith("{") && trimmedValue.endsWith("}")) || (trimmedValue.startsWith("[") && trimmedValue.endsWith("]")))
+      {
+        try
+        {
+          const parsedNested = JSON.parse(trimmedValue);
+          return json(JSON.stringify(parsedNested, undefined, 2), copyableOptions);
+        }
+        catch (error)
+        {
+          // We treat unparseable strings as standard text
+        }
+      }
+
+      if (trimmedValue.startsWith("http://") || trimmedValue.startsWith("https://"))
+      {
+        return stringUrl(trimmedValue, copyableOptions);
+      }
+
+      return string(propertyValue, { ...copyableOptions, representation: StringRepresentation.multiline });
+    }
+
+    if (typeof propertyValue === "object")
+    {
+      return json(JSON.stringify(propertyValue, undefined, 2), copyableOptions);
+    }
+
+    return string(String(propertyValue), copyableOptions);
+  }
+
+  let element: UiElement;
+
+  try
+  {
+    const parsed = JSON.parse(value);
+    if (typeof parsed === "object" && parsed !== null && Array.isArray(parsed) === false)
+    {
+      const entries = Object.entries(parsed as Record<string, unknown>);
+      if (entries.length > 0)
+      {
+        const rows: TableRow[] = entries.map(([ propertyKey, propertyValue ]) =>
+          tableRow([
+            string(propertyKey, labelOptions),
+            convertValueToUiElement(propertyValue)
+          ])
+        );
+
+        element = table(rows, {
+          columns: [
+            tableColumn({ align: TableColumnAlign.left, width: 25, widthMode: TableColumnWidthMode.maximum }),
+            tableColumn({ align: TableColumnAlign.left })
+          ]
+        });
+      }
+      else
+      {
+        element = json("{}", copyableOptions);
+      }
+    }
+    else if (Array.isArray(parsed))
+    {
+      element = json(JSON.stringify(parsed, undefined, 2), copyableOptions);
+    }
+    else
+    {
+      element = convertValueToUiElement(parsed);
+    }
+  }
+  catch (error)
+  {
+    const trimmedValue = value.trim();
+    if (trimmedValue.startsWith("<") && trimmedValue.endsWith(">"))
+    {
+      element = xml(value, copyableOptions);
+    }
+    else
+    {
+      element = string(value, { ...copyableOptions, representation: StringRepresentation.multiline });
+    }
+  }
+
+  return createUiContainer({
+    elements: [ element ]
+  });
 }

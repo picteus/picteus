@@ -1,20 +1,10 @@
-import React, { ReactNode, useMemo } from "react";
+import React, { ReactElement, useMemo } from "react";
 import { Badge, Box, Divider, Flex, Stack, Text, Tooltip } from "@mantine/core";
-
-import { ImageFeatureType } from "@picteus/ws-client";
-import { UiContainer } from "@picteus/shared-core";
 import { useExtensions } from "app/hooks";
 import { ExtensionBadge, ExtensionIcon, UiContainerView } from "app/components";
+import { ImageFeatureContainerType } from "../../ImageDataComputer.ts";
 import ImageDataCard from "../ImageDataCard/ImageDataCard.tsx";
 
-
-export type ImageFeatureContainerType =
-  {
-    readonly extensionId: string;
-    readonly type: ImageFeatureType;
-    readonly name?: string;
-    readonly uiContainer: UiContainer;
-  };
 
 export type ImageFeatureCardType =
   {
@@ -33,7 +23,7 @@ export default function ImageFeatureCard({
   isOpened,
   onToggle,
   onHide
-}: ImageFeatureCardType): ReactNode
+}: ImageFeatureCardType): ReactElement
 {
   const { data: extensions = [] } = useExtensions();
   const featureEntries = useMemo((): [ string, ImageFeatureContainerType[] ][] =>

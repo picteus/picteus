@@ -1,9 +1,10 @@
-import React, { ReactNode } from "react";
+import React, { ReactElement, ReactNode } from "react";
 import { ActionIcon, Card, Collapse, Flex, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconChevronDown, IconEyeOff } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import Common from "../../../Common/Common.ts";
+
+import { Common } from "app/components";
 
 
 export type ImageDataCardPropsType =
@@ -27,7 +28,7 @@ export default function ImageDataCard({
   onHide,
   className,
   style
-}: ImageDataCardPropsType): ReactNode
+}: ImageDataCardPropsType): ReactElement
 {
   const [ t ] = useTranslation();
   const [ uncontrolledIsOpened, { toggle: toggleOpened } ] = useDisclosure(defaultExpanded);
@@ -70,7 +71,7 @@ export default function ImageDataCard({
                     onHide();
                   }}
                 >
-                  <IconEyeOff size={Common.IconSmallSize} />
+                  <IconEyeOff size={Common.IconSmallSize}/>
                 </ActionIcon>
               </Tooltip>
             )}
