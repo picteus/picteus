@@ -12,11 +12,9 @@ export type ImageDataCardPropsType =
     readonly header: ReactNode;
     readonly children: ReactNode;
     readonly defaultExpanded?: boolean;
-    readonly isOpened?: boolean;
-    readonly onToggle?: () => void;
-    readonly onHide?: () => void;
-    readonly className?: string;
-    readonly style?: React.CSSProperties;
+    readonly isOpened: boolean;
+    readonly onToggle: () => void;
+    readonly onHide: () => void;
   };
 
 export default function ImageDataCard({
@@ -25,9 +23,7 @@ export default function ImageDataCard({
   defaultExpanded = true,
   isOpened: controlledIsOpened,
   onToggle,
-  onHide,
-  className,
-  style
+  onHide
 }: ImageDataCardPropsType): ReactElement
 {
   const [ t ] = useTranslation();
@@ -47,7 +43,7 @@ export default function ImageDataCard({
   }
 
   return (
-    <Card shadow="xs" padding="sm" radius="md" withBorder className={className} style={{ width: "100%", ...style }}>
+    <Card shadow="xs" padding="sm" radius="md" withBorder style={{ width: "100%" }}>
       <Card.Section inheritPadding px="sm" py="xs">
         <Flex
           align="center"
