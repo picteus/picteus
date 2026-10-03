@@ -22,6 +22,7 @@ export {
   type UseImageSelectionResultType
 } from "./ImageSelectCheckbox/ImageSelectCheckbox.tsx";
 export { default as ImageCommand } from "./ImageCommand/ImageCommand.ts";
+export { default as ProcessCommand } from "./ProcessCommand/ProcessCommand.ts";
 export { default as ImageItemMenu } from "./ImageItemMenu/ImageItemMenu.tsx";
 export { default as ClosestEmbeddingsImages } from "./ClosestEmbeddingsImages/ClosestEmbeddingsImages.tsx";
 export { default as ImageItemWrapper } from "./ImageDetail/components/ImageItemWrapper/ImageItemWrapper.tsx";

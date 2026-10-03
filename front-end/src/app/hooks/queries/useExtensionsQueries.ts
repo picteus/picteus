@@ -124,24 +124,22 @@ export function useExtensionCommands(commandEntities: CommandEntity[]): UiExtens
     return [];
   }
 
-  return extensionsConfiguration.commands
-    .filter((entity) => commandEntities.indexOf(entity.command.on.entity) !== -1)
-    .map((entity) =>
-    {
-      const extension = extensions.find((extensionItem) => extensionItem.manifest.id === entity.extensionId);
-      return {
-        extension,
-        command: {
-          id: entity.command.id,
-          withTags: entity.command.on?.withTags,
-          label: entity.command.specifications.find(
-            (specification) => specification.locale === i18n.language
-          )?.label ?? entity.command.id,
-          form: { parameters: entity.command.parameters },
-          iconUri: entity.command.ui?.iconUri
-        }
-      };
-    });
+  return extensionsConfiguration.commands.filter((entity) => commandEntities.indexOf(entity.command.on.entity) !== -1).map((entity) =>
+  {
+    const extension = extensions.find((extensionItem) => extensionItem.manifest.id === entity.extensionId);
+    return {
+      extension,
+      command: {
+        id: entity.command.id,
+        withTags: entity.command.on?.withTags,
+        label: entity.command.specifications.find(
+          (specification) => specification.locale === i18n.language
+        )?.label ?? entity.command.id,
+        form: { parameters: entity.command.parameters },
+        iconUri: entity.command.ui?.iconUri
+      }
+    };
+  });
 }
 
 export function useExtensionsWithCapability(capabilityId: ManifestCapabilityId): Extension[]

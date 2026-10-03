@@ -187,27 +187,56 @@ export type UiExtensionCommandType = {
   command: UiCommandType;
 };
 
-export type ImageCommandKindType = "core" | "extension";
+export type CommandKindType = "core" | "extension";
 
-export type CoreImageCommandIdType = "synchronize" | "delete" | "closestImages" | "open" | "download";
-
-export type ExtensionImageCommandIdType = {
+export type ExtensionCommandIdType = {
   extensionId: string;
   commandId: string;
 };
 
-export type ImageCommandIdType = CoreImageCommandIdType | ExtensionImageCommandIdType;
+export type CoreImageCommandIdType = "synchronize" | "delete" | "closestImages" | "open" | "download";
 
-export type ImageCommandIconSizeType = "sm" | "md" | number;
+export type ImageCommandIdType = CoreImageCommandIdType | ExtensionCommandIdType;
+
+export type CommandIconSizeType = "sm" | "md" | number;
 
 export type ImageCommandType = {
   id: string;
-  kind: ImageCommandKindType;
+  kind: CommandKindType;
   commandId: string;
   extensionId?: string;
   label: string;
   subLabel?: string;
-  icon: (size?: ImageCommandIconSizeType) => ReactElement;
+  icon: (size?: CommandIconSizeType) => ReactElement;
+  execute: () => Promise<void> | void;
+  isAvailable: boolean;
+  isLoading?: boolean;
+  disabled?: boolean;
+  rawExtensionCommand?: UiExtensionCommandType;
+};
+
+export type CoreProcessCommandIdType = "textToImages";
+
+export type ProcessCommandIdType = CoreProcessCommandIdType | ExtensionCommandIdType;
+
+export type ProcessCommandShortcutType = {
+  key: string;
+  shiftKey?: boolean;
+  metaKey?: boolean;
+  ctrlKey?: boolean;
+  altKey?: boolean;
+  label?: ReactNode;
+};
+
+export type ProcessCommandType = {
+  id: string;
+  kind: CommandKindType;
+  commandId: string;
+  extensionId?: string;
+  label: string;
+  subLabel?: string;
+  shortcut?: ProcessCommandShortcutType;
+  icon: (size?: CommandIconSizeType) => ReactElement;
   execute: () => Promise<void> | void;
   isAvailable: boolean;
   isLoading?: boolean;

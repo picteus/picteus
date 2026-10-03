@@ -21,4 +21,8 @@ export { default as useTraceUpdate } from "./useTraceUpdate.tsx";
 export { default as useThrottledAsyncAction } from "./useThrottledAsyncAction.tsx";
 export { default as useImageCommands, type UseImageCommandsResultType } from "./useImageCommands.tsx";
 export { default as useImageCommand, type UseImageCommandResultType } from "./useImageCommand.tsx";
+export {
+  default as useProcessCommands, type UseProcessCommandsResultType, type UseProcessCommandsOptionsType
+} from "./useProcessCommands.tsx";
+export { default as useProcessCommand, type UseProcessCommandResultType } from "./useProcessCommand.tsx";
 export * from "./queries";

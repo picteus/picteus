@@ -546,6 +546,7 @@ export default {
     open: "Open",
     download: "Download",
     delete: "Delete",
+    noCommandsAvailable: "No commands available",
     textToImages: "Text to images",
     doNotAskAgain: "Do not ask again",
     about: "About this command",
