@@ -164,18 +164,13 @@ export default function IntentCenter()
       function handleImages(imagesIntent: ImagesIntent): void
       {
         const images = imagesIntent.images;
-        const dialogContent = images.dialogContent;
+        const content = images.content;
         const id = randomId();
         addTab({
           id,
           extensionId,
-          label: dialogContent.title,
-          header: {
-            title: dialogContent.title,
-            description: dialogContent.description,
-            details: dialogContent.details,
-            icon: dialogContent.icon
-          },
+          label: content.title,
+          header: content,
           content: {
             kind: "images",
             images: images.images
@@ -185,8 +180,8 @@ export default function IntentCenter()
           id,
           milliseconds: Date.now(),
           type: "tab",
-          title: dialogContent.title,
-          subtitle: dialogContent.description,
+          title: content.title,
+          subtitle: content.subtitle,
           data: { id }
         });
         respondWithValue();

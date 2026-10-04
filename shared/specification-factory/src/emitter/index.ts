@@ -41,6 +41,8 @@ export {
   UiMeterBoundKind
 } from "./viewkit/decorators.js";
 export {
+  $intent,
+  isIntent,
   $frontEndIntent,
   $backEndIntent,
   getIntentAudience,

@@ -9,8 +9,7 @@ from PIL.ImageFile import ImageFile
 from diffusers import StableDiffusionUpscalePipeline
 from diffusers.utils import load_image
 from picteus_extension_sdk import PicteusExtension, Communicator, SettingsValue, IntentImage, \
-    ImagesIntent, IntentImages, Helper, IntentDialogIconContent, CommandParameters, ToastIntent, IntentToast, \
-    CommandError
+    ImagesIntent, IntentImages, Helper, CommandParameters, IntentImagesContent
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
     GenerationRecipePrompt, InstructionsPrompt, PromptKind, ImageFeatureValue
@@ -45,8 +44,9 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
             if len(new_images) > 0:
                 await communicator.launch_intent(ImagesIntent(images=
                                                               IntentImages(images=new_images,
-                                                                           dialogContent=IntentDialogIconContent(
+                                                                           content=IntentImagesContent(
                                                                                title="Upscaled images",
+                                                                               subtitle=f"{len(new_images)} image{'s' if len(new_images) >= 2 else ''} upscaled",
                                                                                description="These are the upscaled images"))))
 
     async def _handle_image(self, communicator: Communicator, image_id: str) -> PicteusImage | None:

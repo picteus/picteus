@@ -4,6 +4,38 @@ import { createGeneratedFileHeader } from "../common.js";
 import { CodeWriter } from "../codeWriter.js";
 
 
+const INTENT_TOKEN = "Intent";
+
+interface IntentGeneratorContext
+{
+  readonly selectedSpec: IntentSpec;
+  readonly intentModels: IntentModel[];
+  readonly unionName: string;
+  readonly intentModelNames: ReadonlySet<string>;
+}
+
+interface PythonModelLayout
+{
+  readonly ownProperties: IntentModel["properties"];
+  readonly useKeywordOnlyProperties: boolean;
+}
+
+function getPublicIntentName(item: { readonly name: string; readonly isIntent?: boolean }): string
+{
+  return item.isIntent ? item.name : `${INTENT_TOKEN}${item.name}`;
+}
+
+function getPythonInternalName(name: string, isIntent: boolean): string
+{
+  return isIntent ? name : `_${name}`;
+}
+
+function resolvePublicTargetName(type: IntentType, intentModelNames: ReadonlySet<string>): string
+{
+  const isIntentModel = type.kind === "model" && intentModelNames.has(type.name);
+  return isIntentModel ? type.name : `${INTENT_TOKEN}${type.name}`;
+}
+
 function collectIntentDeclarations(spec: IntentSpec, audience: IntentAudience): IntentSpec
 {
   const modelMap = new Map(spec.models.map((model) => [ model.name, model ]));
@@ -97,7 +129,24 @@ function collectIntentDeclarations(spec: IntentSpec, audience: IntentAudience): 
   };
 }
 
-function resolveTypeScriptType(type: IntentType): string
+function createIntentGeneratorContext(spec: IntentSpec, audience: IntentAudience): IntentGeneratorContext
+{
+  const selectedSpec = collectIntentDeclarations(spec, audience);
+  const intentModels = selectedSpec.models.filter((model) => model.audience === audience);
+  const unionName = audience === "frontEnd" ? `Front${INTENT_TOKEN}` : `Back${INTENT_TOKEN}`;
+  const intentModelNames = new Set(
+    spec.models.filter((model) => model.isIntent === true).map((model) => model.name)
+  );
+
+  return {
+    selectedSpec,
+    intentModels,
+    unionName,
+    intentModelNames
+  };
+}
+
+function resolveTypeScriptType(type: IntentType, intentModelNames: ReadonlySet<string>): string
 {
   switch (type.kind)
   {
@@ -110,26 +159,30 @@ function resolveTypeScriptType(type: IntentType): string
     case "bytes":
       return "Buffer";
     case "enum":
+      return resolvePublicTargetName(type, intentModelNames);
     case "model":
-      return type.name;
+      return resolvePublicTargetName(type, intentModelNames);
     case "array":
     {
-      const elementType = resolveTypeScriptType(type.elementType ?? { kind: "string", name: "string" });
+      const elementType = resolveTypeScriptType(type.elementType ?? {
+        kind: "string",
+        name: "string"
+      }, intentModelNames);
       return type.elementType?.kind === "union" ? `(${elementType})[]` : `${elementType}[]`;
     }
     case "record":
-      return "IntentJson";
+      return "Record<string, unknown>";
     case "literal":
       return type.name;
     case "union":
-      return (type.unionTypes ?? []).map(resolveTypeScriptType).join(" | ");
+      return (type.unionTypes ?? []).map((unionType) => resolveTypeScriptType(unionType, intentModelNames)).join(" | ");
   }
 }
 
 function writeTypeScriptEnum(intentEnum: IntentEnum, writer: CodeWriter, isExported: boolean = true): void
 {
   const exportPrefix = isExported ? "export " : "";
-  writer.writeLine(`${exportPrefix}enum ${intentEnum.name}`);
+  writer.writeLine(`enum ${intentEnum.name}`);
   writer.writeLine("{");
   writer.indent(() =>
   {
@@ -142,42 +195,65 @@ function writeTypeScriptEnum(intentEnum: IntentEnum, writer: CodeWriter, isExpor
   });
   writer.writeLine("}");
   writer.blankLine();
+  const publicName = getPublicIntentName(intentEnum);
+  writer.writeLine(`${exportPrefix}const ${publicName} = ${intentEnum.name};`);
+  writer.writeLine(`${exportPrefix}type ${publicName} = ${intentEnum.name};`);
+  writer.blankLine();
 }
 
-function writeTypeScriptModel(model: IntentModel, writer: CodeWriter, isExported: boolean = true): void
+function writeTypeScriptModel(
+  model: IntentModel,
+  intentModelNames: ReadonlySet<string>,
+  writer: CodeWriter,
+  isExported: boolean = true
+): void
 {
-  const exportPrefix = isExported ? "export " : "";
   const extendsClause = model.baseModelName ? ` extends ${model.baseModelName}` : "";
-  writer.writeLine(`${exportPrefix}interface ${model.name}${extendsClause}`);
+  const declarationPrefix = model.isIntent && isExported ? "export " : "";
+  writer.writeLine(`${declarationPrefix}interface ${model.name}${extendsClause}`);
   writer.writeLine("{");
   writer.indent(() =>
   {
     for (const property of model.properties)
     {
       const optionalMarker = property.optional ? "?" : "";
-      writer.writeLine(`readonly ${property.name}${optionalMarker}: ${resolveTypeScriptType(property.type)};`);
+      writer.writeLine(`readonly ${property.name}${optionalMarker}: ${resolveTypeScriptType(property.type, intentModelNames)};`);
     }
   });
   writer.writeLine("}");
   writer.blankLine();
+
+  if (!model.isIntent)
+  {
+    const exportPrefix = isExported ? "export " : "";
+    writer.writeLine(`${exportPrefix}type ${getPublicIntentName(model)} = ${model.name};`);
+    writer.blankLine();
+  }
 }
 
-function writeTypeScriptUnion(intentUnion: IntentUnion, writer: CodeWriter, isExported: boolean = true): void
+function writeTypeScriptUnion(
+  intentUnion: IntentUnion,
+  intentModelNames: ReadonlySet<string>,
+  writer: CodeWriter,
+  isExported: boolean = true
+): void
 {
   const exportPrefix = isExported ? "export " : "";
-  const unionTypes = intentUnion.variants.map(resolveTypeScriptType);
-  writer.writeLine(`${exportPrefix}type ${intentUnion.name} = ${unionTypes.join(" | ")};`);
+  const unionTypes = intentUnion.variants.map((variant) => resolveTypeScriptType(variant, intentModelNames));
+  writer.writeLine(`type ${intentUnion.name} = ${unionTypes.join(" | ")};`);
+  writer.blankLine();
+  writer.writeLine(`${exportPrefix}type ${getPublicIntentName(intentUnion)} = ${intentUnion.name};`);
   writer.blankLine();
 }
 
 function getIntentPayloadProperty(intentModel: IntentModel): IntentModel["properties"][number] | undefined
 {
-  if (!intentModel.name.endsWith("Intent"))
+  if (!intentModel.name.endsWith(INTENT_TOKEN))
   {
     return undefined;
   }
 
-  const payloadName = intentModel.name.slice(0, -"Intent".length);
+  const payloadName = intentModel.name.slice(0, -INTENT_TOKEN.length);
   const payloadPropertyName = `${payloadName.charAt(0).toLowerCase()}${payloadName.slice(1)}`;
   return intentModel.properties.find((property) => property.name === payloadPropertyName);
 }
@@ -198,7 +274,7 @@ function writeTypeScriptIntentGuards(intentModels: IntentModel[], writer: CodeWr
     const intentProperty = getIntentPayloadProperty(intentModel);
     if (!intentProperty)
     {
-      throw new Error(`Intent model ${intentModel.name} must define its ${intentModel.name.slice(0, -"Intent".length)} payload property.`);
+      throw new Error(`Intent model ${intentModel.name} must define its ${intentModel.name.slice(0, -INTENT_TOKEN.length)} payload property.`);
     }
 
     writer.writeLine(`export function is${intentModel.name}(intent: unknown): intent is ${intentModel.name}`);
@@ -214,43 +290,40 @@ function writeTypeScriptIntentGuards(intentModels: IntentModel[], writer: CodeWr
 
 export function generateIntentTypeScriptCode(spec: IntentSpec, audience: IntentAudience): string
 {
-  const selectedSpec = collectIntentDeclarations(spec, audience);
-  const intentModels = selectedSpec.models.filter((model) => model.audience === audience);
-  const unionName = audience === "frontEnd" ? "FrontIntent" : "BackIntent";
+  const context = createIntentGeneratorContext(spec, audience);
   const commonSpec = audience === "backEnd" ? collectIntentDeclarations(spec, "frontEnd") : undefined;
-  const commonDeclarations = new Set([
-    "IntentJson",
-    ...(commonSpec?.models.map((model) => model.name) ?? []),
-    ...(commonSpec?.enums.map((intentEnum) => intentEnum.name) ?? []),
-    ...(commonSpec?.unions.map((intentUnion) => intentUnion.name) ?? [])
-  ]);
+  const commonDeclarations = new Set(
+    commonSpec
+      ? [ ...commonSpec.models, ...commonSpec.enums, ...commonSpec.unions ].map(getPublicIntentName)
+      : []
+  );
+
+  function isExported(item: { readonly name: string; readonly isIntent?: boolean }): boolean
+  {
+    return !(audience === "backEnd" && commonDeclarations.has(getPublicIntentName(item)));
+  }
 
   const writer = new CodeWriter({ indentSize: 2 });
   writer.writeLines(createGeneratedFileHeader("//"));
   writer.writeLine("import type { Buffer } from \"node:buffer\";");
   writer.blankLine();
-  writer.writeLine(`${audience === "backEnd" ? "" : "export "}type IntentJson = Record<string, unknown>;`);
-  writer.blankLine();
 
-  for (const intentEnum of selectedSpec.enums)
+  for (const intentEnum of context.selectedSpec.enums)
   {
-    const isExported = !(audience === "backEnd" && commonDeclarations.has(intentEnum.name));
-    writeTypeScriptEnum(intentEnum, writer, isExported);
+    writeTypeScriptEnum(intentEnum, writer, isExported(intentEnum));
   }
 
-  for (const model of selectedSpec.models)
+  for (const model of context.selectedSpec.models)
   {
-    const isExported = !(audience === "backEnd" && commonDeclarations.has(model.name));
-    writeTypeScriptModel(model, writer, isExported);
+    writeTypeScriptModel(model, context.intentModelNames, writer, isExported(model));
   }
 
-  for (const intentUnion of selectedSpec.unions)
+  for (const intentUnion of context.selectedSpec.unions)
   {
-    const isExported = !(audience === "backEnd" && commonDeclarations.has(intentUnion.name));
-    writeTypeScriptUnion(intentUnion, writer, isExported);
+    writeTypeScriptUnion(intentUnion, context.intentModelNames, writer, isExported(intentUnion));
   }
 
-  const selectedIntentModels = selectedSpec.models.filter(
+  const selectedIntentModels = context.selectedSpec.models.filter(
     (model) =>
     {
       return model.audience === audience
@@ -258,7 +331,7 @@ export function generateIntentTypeScriptCode(spec: IntentSpec, audience: IntentA
     }
   );
   writeTypeScriptIntentGuards(selectedIntentModels, writer);
-  writer.writeLine(`export type ${unionName} = ${intentModels.map((model) => model.name).join(" | ")};`);
+  writer.writeLine(`export type ${context.unionName} = ${context.intentModels.map((model) => model.name).join(" | ")};`);
 
   return `${writer.toString().trimEnd()}\n`;
 }
@@ -268,7 +341,7 @@ function convertToSnakeCase(value: string): string
   return value.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toUpperCase();
 }
 
-function resolvePythonType(type: IntentType): string
+function resolvePythonType(type: IntentType, intentModelNames: ReadonlySet<string>): string
 {
   switch (type.kind)
   {
@@ -281,22 +354,24 @@ function resolvePythonType(type: IntentType): string
     case "bytes":
       return "bytearray";
     case "enum":
+      return resolvePublicTargetName(type, intentModelNames);
     case "model":
-      return type.name;
+      return resolvePublicTargetName(type, intentModelNames);
     case "array":
-      return `List[${resolvePythonType(type.elementType ?? { kind: "string", name: "string" })}]`;
+      return `List[${resolvePythonType(type.elementType ?? { kind: "string", name: "string" }, intentModelNames)}]`;
     case "record":
-      return "Json";
+      return "Dict[str, Any]";
     case "literal":
       return `Literal[${type.name}]`;
     case "union":
-      return `Union[${(type.unionTypes ?? []).map(resolvePythonType).join(", ")}]`;
+      return `Union[${(type.unionTypes ?? []).map((unionType) => resolvePythonType(unionType, intentModelNames)).join(", ")}]`;
   }
 }
 
 function writePythonEnum(intentEnum: IntentEnum, writer: CodeWriter): void
 {
-  writer.writeLine(`class ${intentEnum.name}(str, Enum):`);
+  const enumName = getPythonInternalName(intentEnum.name, false);
+  writer.writeLine(`class ${enumName}(str, Enum):`);
   writer.indent(() =>
   {
     if (intentEnum.members.length === 0)
@@ -310,12 +385,16 @@ function writePythonEnum(intentEnum: IntentEnum, writer: CodeWriter): void
     }
   });
   writer.blankLine();
+  writer.writeLine(`${getPublicIntentName(intentEnum)} = ${enumName}`);
+  writer.blankLine();
 }
 
-function writePythonModel(model: IntentModel, modelMap: ReadonlyMap<string, IntentModel>, writer: CodeWriter): void
+function analyzePythonModelLayout(
+  model: IntentModel,
+  modelMap: ReadonlyMap<string, IntentModel>
+): PythonModelLayout
 {
   const baseModel = model.baseModelName ? modelMap.get(model.baseModelName) : undefined;
-  const extendsClause = model.baseModelName ? `(${model.baseModelName})` : "(SuperDataClass)";
   const requiredProperties = model.properties.filter((property) => !property.optional && property.type.kind !== "literal");
   const inheritedPropertyNames = new Set<string>();
   let ancestor = baseModel;
@@ -349,10 +428,30 @@ function writePythonModel(model: IntentModel, modelMap: ReadonlyMap<string, Inte
     return !inheritedPropertyNames.has(property.name);
   }) && hasOptionalInheritedProperty;
   const useKeywordOnlyProperties = hasRequiredAfterInheritedDefaults || hasDefaultBeforeRequired;
+
+  return {
+    ownProperties,
+    useKeywordOnlyProperties
+  };
+}
+
+function writePythonModel(
+  model: IntentModel,
+  modelMap: ReadonlyMap<string, IntentModel>,
+  intentModelNames: ReadonlySet<string>,
+  writer: CodeWriter
+): void
+{
+  const modelName = getPythonInternalName(model.name, model.isIntent === true);
+  const baseModelName = model.baseModelName
+    ? getPythonInternalName(model.baseModelName, intentModelNames.has(model.baseModelName))
+    : undefined;
+  const extendsClause = baseModelName ? `(${baseModelName})` : "(SuperDataClass)";
+  const { ownProperties, useKeywordOnlyProperties } = analyzePythonModelLayout(model, modelMap);
   const dataclassDecorator = useKeywordOnlyProperties ? "@dataclass(kw_only=True)" : "@dataclass";
 
   writer.writeLine(dataclassDecorator);
-  writer.writeLine(`class ${model.name}${extendsClause}:`);
+  writer.writeLine(`class ${modelName}${extendsClause}:`);
   writer.indent(() =>
   {
     if (ownProperties.length === 0)
@@ -362,7 +461,7 @@ function writePythonModel(model: IntentModel, modelMap: ReadonlyMap<string, Inte
     }
     for (const property of ownProperties)
     {
-      const pythonType = resolvePythonType(property.type);
+      const pythonType = resolvePythonType(property.type, intentModelNames);
       const optionalType = property.optional ? `Optional[${pythonType}]` : pythonType;
       const literalValue = property.type.kind === "literal" ? property.type.literalValue : undefined;
       if (literalValue !== undefined)
@@ -379,34 +478,30 @@ function writePythonModel(model: IntentModel, modelMap: ReadonlyMap<string, Inte
       }
     }
   });
+  if (!model.isIntent)
+  {
+    writer.blankLine();
+    writer.writeLine(`${getPublicIntentName(model)} = ${modelName}`);
+  }
   writer.blankLine();
 }
 
-function writePythonUnion(intentUnion: IntentUnion, writer: CodeWriter): void
+function writePythonUnion(
+  intentUnion: IntentUnion,
+  intentModelNames: ReadonlySet<string>,
+  writer: CodeWriter
+): void
 {
-  const unionTypes = intentUnion.variants.map(resolvePythonType);
-  writer.writeLine(`${intentUnion.name} = Union[${unionTypes.join(", ")}]`);
+  const unionName = getPythonInternalName(intentUnion.name, false);
+  const unionTypes = intentUnion.variants.map((variant) => resolvePythonType(variant, intentModelNames));
+  writer.writeLine(`${unionName} = Union[${unionTypes.join(", ")}]`);
+  writer.blankLine();
+  writer.writeLine(`${getPublicIntentName(intentUnion)} = ${unionName}`);
   writer.blankLine();
 }
 
-export function generateIntentPythonCode(spec: IntentSpec, audience: IntentAudience): string
+function writePythonSuperDataClass(writer: CodeWriter): void
 {
-  const selectedSpec = collectIntentDeclarations(spec, audience);
-  const intentModels = selectedSpec.models.filter((model) => model.audience === audience);
-  const modelMap = new Map(selectedSpec.models.map((model) => [ model.name, model ]));
-  const unionName = audience === "frontEnd" ? "FrontIntent" : "BackIntent";
-
-  const writer = new CodeWriter({ indentSize: 4 });
-  writer.writeLines(createGeneratedFileHeader("#"));
-  writer.writeLine("from __future__ import annotations");
-  writer.blankLine();
-  writer.writeLine("import json");
-  writer.writeLine("from dataclasses import asdict, dataclass, field");
-  writer.writeLine("from enum import Enum");
-  writer.writeLine("from typing import Any, Dict, List, Literal, Optional, Union");
-  writer.blankLine();
-  writer.writeLine("Json = Dict[str, Any]");
-  writer.blankLine();
   writer.writeLine("class SuperDataClass:");
   writer.indent(() =>
   {
@@ -424,24 +519,41 @@ export function generateIntentPythonCode(spec: IntentSpec, audience: IntentAudie
       writer.writeLine("return json.dumps(self.__dict__)");
     });
   });
+}
+
+export function generateIntentPythonCode(spec: IntentSpec, audience: IntentAudience): string
+{
+  const context = createIntentGeneratorContext(spec, audience);
+  const modelMap = new Map(context.selectedSpec.models.map((model) => [ model.name, model ]));
+
+  const writer = new CodeWriter({ indentSize: 4 });
+  writer.writeLines(createGeneratedFileHeader("#"));
+  writer.writeLine("from __future__ import annotations");
+  writer.blankLine();
+  writer.writeLine("import json");
+  writer.writeLine("from dataclasses import asdict, dataclass, field");
+  writer.writeLine("from enum import Enum");
+  writer.writeLine("from typing import Any, Dict, List, Literal, Optional, Union");
+  writer.blankLine();
+  writePythonSuperDataClass(writer);
   writer.blankLine();
 
-  for (const intentEnum of selectedSpec.enums)
+  for (const intentEnum of context.selectedSpec.enums)
   {
     writePythonEnum(intentEnum, writer);
   }
 
-  for (const model of selectedSpec.models)
+  for (const model of context.selectedSpec.models)
   {
-    writePythonModel(model, modelMap, writer);
+    writePythonModel(model, modelMap, context.intentModelNames, writer);
   }
 
-  for (const intentUnion of selectedSpec.unions)
+  for (const intentUnion of context.selectedSpec.unions)
   {
-    writePythonUnion(intentUnion, writer);
+    writePythonUnion(intentUnion, context.intentModelNames, writer);
   }
 
-  writer.writeLine(`${unionName} = Union[${intentModels.map((model) => model.name).join(", ")}]`);
+  writer.writeLine(`${context.unionName} = Union[${context.intentModels.map((model) => model.name).join(", ")}]`);
 
   return `${writer.toString().trimEnd()}\n`;
 }

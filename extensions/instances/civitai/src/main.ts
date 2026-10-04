@@ -101,7 +101,7 @@ class CivitaiExtension extends PicteusExtension
         });
         newImages.push({
           imageId: image.id,
-          dialogContent:
+          details:
             {
               title: `Image with id '${image.id}'`,
               description: prompts.positive === undefined ? "" : `With prompt '${prompts.positive}`
@@ -125,13 +125,14 @@ class CivitaiExtension extends PicteusExtension
         communicator.sendLog(`The fetched image with id '${id}' could not be imported. Reason: '${error.message}'`, "warn");
       }
     }
-    await communicator.launchIntent({
+    await communicator.launchIntent<void>({
       images:
         {
           images: newImages,
-          dialogContent:
+          content:
             {
               title: "Retrieved Images",
+              subtitle: `${newImages.length} retrieved image${newImages.length >= 2 ? "s" : ""}`,
               description: "These are the retrieved images"
             }
         }

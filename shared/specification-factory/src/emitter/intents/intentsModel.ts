@@ -14,7 +14,7 @@ import {
   Type
 } from "@typespec/compiler";
 import { PICTEUS_NAMESPACE } from "../common.js";
-import { getIntentAudience, IntentAudience } from "./decorators.js";
+import { getIntentAudience, IntentAudience, isIntent } from "./decorators.js";
 
 
 export interface IntentType
@@ -48,6 +48,7 @@ export interface IntentModel
   readonly doc?: string;
   readonly baseModelName?: string;
   readonly audience?: IntentAudience;
+  readonly isIntent?: boolean;
   readonly properties: IntentProperty[];
 }
 
@@ -125,6 +126,10 @@ function resolveIntentType(type: Type): IntentType
       if (scalarName === "boolean")
       {
         return { kind: "boolean", name: "boolean" };
+      }
+      if (scalarName === "record")
+      {
+        return { kind: "record", name: "Record" };
       }
       if ([ "int8", "int16", "int32", "int64", "integer", "safeint" ].includes(scalarName))
       {
@@ -258,6 +263,7 @@ export function extractTypeSpecIntents(program: Program): IntentSpec
         doc: getDoc(program, model),
         baseModelName: model.baseModel?.name,
         audience: getIntentAudience(program, model),
+        isIntent: isIntent(program, model),
         properties: getModelProperties(program, model)
       }
     );

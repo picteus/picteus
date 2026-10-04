@@ -249,14 +249,14 @@ class ReplicateExtension extends PicteusExtension
           images: [
             {
               imageId: image.id,
-              dialogContent: { title: image.name, description: input.prompt === undefined ? "Image" : input.prompt }
+              details: { title: image.name, description: input.prompt === undefined ? "Image" : input.prompt }
             } ],
-          dialogContent:
+          content:
             {
               title: "Generated Images",
-              description: "These are generated images",
-              // TODO: fulfill this
-              details: ``
+              subtitle: "1 generated image",
+              description: "This is the generated image.",
+              details: `It was generated through the '${prediction.model}' model with the prediction with id '${prediction.id}'.`
             }
         }
     });

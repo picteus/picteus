@@ -77,7 +77,7 @@ class ColorEmbeddingsExtension extends PicteusExtension
     const colors = await this.extractColors(imageId);
     await this.storeEmbeddings(imageId, colors);
     await this.storeFeatures(imageId, colors);
-    communicator.sendLog(`Computed the color embedding and dominant color features for the image with id '${imageId}'`, "info");
+    communicator.sendLog(`Computed the color embedding and dominant color features for the image`, "info");
   }
 
   private async storeEmbeddings(imageId: string, colors: RGBColor[]): Promise<void>

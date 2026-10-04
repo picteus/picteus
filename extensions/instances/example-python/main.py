@@ -15,7 +15,7 @@ from picteus_extension_sdk import PicteusExtension, InstructionReturnedError, Co
     IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
     IntentNotification, ActionIntent, IntentAction, ProcessCommandIntent, \
     IntentProcessCommand, ToastIntent, IntentToast, Versions, CommandParameters, OpenBrowserIntent, IntentOpenBrowser, \
-    UiContainerBuilder
+    UiContainerBuilder, IntentImagesContent
 from picteus_ws_client import Image, ImageResizeRender, ImageFormat, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFeatureValue, SearchRange, SearchFilter, SearchSorting, SearchSortingProperty, SearchParameters
 
@@ -111,8 +111,9 @@ class PythonExtension(PicteusExtension):
         if command_id == "convert":
             await communicator.launch_intent(ImagesIntent(images=
                                                           IntentImages(images=new_images,
-                                                                       dialogContent=IntentDialogIconContent(
+                                                                       content=IntentImagesContent(
                                                                            title="Converted images",
+                                                                           subtitle=f"{len(new_images)} image{'s' if len(new_images) >= 2 else ''} converted",
                                                                            description="These are the converted images"))))
         return None
 

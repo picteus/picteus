@@ -1,7 +1,7 @@
 import { ReactElement, ReactNode } from "react";
 import { RJSFSchema } from "@rjsf/utils";
 
-import { FrontIntent, IntentDialogIconContent } from "@picteus/shared-core";
+import { FrontIntent, IntentTitleSubtitleDescriptionDetailsIcon } from "@picteus/shared-core";
 import { detectImageMimeType } from "@picteus/shared-front-end";
 import {
   Extension,
@@ -154,7 +154,7 @@ export type ShowType = {
 
 export type ImagesType = {
   images: Array<{ imageId: string }>;
-  dialogContent: DialogContent;
+  content: DialogContent;
 };
 
 export type ContextType = {
@@ -170,7 +170,9 @@ export type UiCommandType = {
   withTags?: string[];
   ui?: {
     id: string;
-    integration: { anchor: "modal" } | { anchor: "sidebar", isExternal: boolean } | { anchor: "window" };
+    integration: { anchor: "modal" } | { anchor: "sidebar", isExternal: boolean } | { anchor: "window" } | {
+      anchor: "tab"
+    };
     frameContent: FrameContent;
     dialogContent?: DialogIconContent;
   };
@@ -302,7 +304,7 @@ export type DeskTabType = {
   timestampInMilliseconds: number;
   extensionId?: string;
   label: string;
-  header?: IntentDialogIconContent;
+  header?: IntentTitleSubtitleDescriptionDetailsIcon;
   content: DeskTabContentType;
   isShiftable?: boolean;
   isClosable?: boolean;

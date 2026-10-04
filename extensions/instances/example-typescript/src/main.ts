@@ -155,9 +155,10 @@ class TypeScriptExtension extends PicteusExtension
       await communicator.launchIntent({
         images: {
           images: newImages,
-          dialogContent:
+          content:
             {
               title: "Converted images",
+              subtitle: `${newImages} image${newImages.length >= 2 ? "s" : ""} converted`,
               description: "These are the converted images"
             }
         }
@@ -214,12 +215,12 @@ class TypeScriptExtension extends PicteusExtension
     }
   }
 
-  private onImageTouched(communicator: Communicator, imageId: string): void
+  private onImageTouched(communicator: Communicator, _imageId: string): void
   {
     communicator.sendLog(`The image was touched`, "info");
   }
 
-  private onTagsOrFeaturesUpdated(communicator: Communicator, imageId: string): void
+  private onTagsOrFeaturesUpdated(communicator: Communicator, _imageId: string): void
   {
     communicator.sendLog(`The tags or features of the image were updated`, "info");
   }

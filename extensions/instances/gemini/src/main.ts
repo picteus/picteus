@@ -98,7 +98,7 @@ class GeminiExtension extends PicteusExtension
   {
     if ((await this.checkGeminiApiKey(communicator)) === false)
     {
-      return await communicator.launchIntent({
+      return await communicator.launchIntent<void>({
         toast: {
           type: IntentToastType.Cancel,
           subtitle: "The Gemini API key is not defined"
@@ -158,7 +158,7 @@ class GeminiExtension extends PicteusExtension
           // We take the default message
         }
       }
-      return await communicator.launchIntent({
+      return await communicator.launchIntent<void>({
         toast: {
           type: IntentToastType.Error,
           subtitle
@@ -222,14 +222,15 @@ class GeminiExtension extends PicteusExtension
               }
             ]
         });
-        await communicator.launchIntent({
+        await communicator.launchIntent<void>({
           images: {
-            images: [ { imageId: image.id, dialogContent: { title: image.name, description: prompt } } ],
-            dialogContent:
+            images: [ { imageId: image.id, details: { title: image.name, description: prompt } } ],
+            content:
               {
                 title: "Generated Images",
-                description: "These are generated images",
-                details: `part.text=${part.text}\npart.inlineData.displayName=${part.inlineData.displayName}\npart.inlineData.mimeType=${part.inlineData.mimeType}\n`
+                subtitle: "1 generated image",
+                description: "This is the generated image.",
+                details: `It was generated through the '${model}' model with the ${aspectRatio} aspect ratio.`
               }
           }
         });
@@ -288,7 +289,7 @@ class GeminiExtension extends PicteusExtension
       let value: SettingsValue;
       try
       {
-        value = await communicator.launchIntent({
+        value = await communicator.launchIntent<SettingsValue>({
           show: {
             type: IntentShowType.ExtensionSettings,
             id: this.extensionId

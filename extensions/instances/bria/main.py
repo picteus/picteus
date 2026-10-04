@@ -6,7 +6,7 @@ from typing import Any, List, Optional
 from PIL import Image
 from PIL.ImageFile import ImageFile
 from picteus_extension_sdk import PicteusExtension, Communicator, SettingsValue, IntentImage, \
-    ImagesIntent, IntentImages, Helper, IntentDialogIconContent, CommandParameters
+    ImagesIntent, IntentImages, Helper, CommandParameters, IntentImagesContent
 from picteus_ws_client import Repository, Image as PicteusImage, ImageFeature, ImageFeatureType, ImageFeatureFormat, \
     ImageFormat, ApplicationMetadata, ApplicationMetadataItem, ApplicationMetadataItemValue, GenerationRecipe, \
     InstructionsPrompt, PromptKind, GenerationRecipePrompt, ImageFeatureValue
@@ -38,9 +38,10 @@ class BriaExtension(PicteusExtension):
             if len(new_images) > 0:
                 await communicator.launch_intent(ImagesIntent(images=
                                                               IntentImages(images=new_images,
-                                                                           dialogContent=IntentDialogIconContent(
+                                                                           content=IntentImagesContent(
                                                                                title="Background-less images",
-                                                                               description="These are the images without background"))))
+                                                                               subtitle=f"{len(new_images)} image{'s' if len(new_images) >= 2 else ''} handled",
+                                                                               description="These are the images without background."))))
 
     async def _handle_image(self, communicator: Communicator, image_id: str) -> PicteusImage | None:
         image: PicteusImage = self.get_image_api().image_get(id=image_id)

@@ -42,7 +42,8 @@
   },
   "devDependencies": {
     "typescript": "5.9.2",
-    "@types/node": "22.17.1"
+    "@types/node": "22.17.1",
+    "tsx": "4.23.13"
   },
   "dependencies": {
     "@picteus/internal-extension-sdk": "0.18.0"
