@@ -1,11 +1,19 @@
-import { formatDate } from "utils";
+import React, { ReactElement } from "react";
+
+import { formatAbsoluteDate, formatDate, FormatDateOptionsType } from "utils";
 
 
-type FormatedDateType = {
-  timestamp: number;
-};
+type FormatedDatePropsType =
+  {
+    readonly timestamp: number;
+    readonly options?: FormatDateOptionsType;
+  };
 
-export default function FormatedDate({ timestamp }: FormatedDateType)
+export default function FormatedDate({ timestamp, options }: FormatedDatePropsType): ReactElement
 {
-  return formatDate(timestamp);
+  return (
+    <span title={formatAbsoluteDate(timestamp)}>
+      {formatDate(timestamp, options)}
+    </span>
+  );
 }

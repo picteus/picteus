@@ -28,13 +28,14 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
-import { DESK_TAB_QUERY_PARAMETER_NAME, formatDate, ROUTES } from "utils";
+import { DESK_TAB_QUERY_PARAMETER_NAME, ROUTES } from "utils";
 import { useDeskTabsContext } from "app/context";
 import {
   Common,
   EmptyResults,
   ExtensionBadge,
   ExtensionIcon,
+  FormatedDate,
   Markdown,
   ResourceIcon,
   StackableScreen
@@ -472,7 +473,7 @@ export default function DeskScreen(): ReactElement
                   {selectedTab.header.description && selectedTab.header.description.length > 0 && (
                     <span>{selectedTab.header.description} • </span>
                   )}
-                  {formatDate(selectedTab.timestampInMilliseconds)}
+                  <FormatedDate timestamp={selectedTab.timestampInMilliseconds}/>
                 </Text>
 
                 {isCollapsible === true && selectedTab.header.details && (
