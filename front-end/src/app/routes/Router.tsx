@@ -12,8 +12,8 @@ import {
   ActivityScreen,
   CollectionsScreen,
   DeskScreen,
+  ExplorerScreen,
   ExtensionsScreen,
-  ImagesScreen,
   RepositoriesScreen,
   SettingsScreen,
   SidebarAnchorScreen,
@@ -80,7 +80,7 @@ function RouterContent({}: RouterContentType)
     return Object.entries(ROUTES).map(([ key, path ]) =>
     {
       const ComponentMap: Record<string, FunctionComponent> = {
-        home: ImagesScreen,
+        home: ExplorerScreen,
         desk: DeskScreen,
         collections: CollectionsScreen,
         repositories: RepositoriesScreen,

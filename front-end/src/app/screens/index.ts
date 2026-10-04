@@ -1,5 +1,5 @@
 export { default as BootstrapScreen } from "./BootstrapScreen/BootstrapScreen.tsx";
-export { default as ImagesScreen } from "./ImagesScreen/ImagesScreen.tsx";
+export { default as ExplorerScreen } from "./ExplorerScreen/ExplorerScreen.tsx";
 export { default as DeskScreen } from "./DeskScreen/DeskScreen.tsx";
 export { default as RepositoriesScreen } from "./RepositoriesScreen/RepositoriesScreen.tsx";
 export { default as CollectionsScreen } from "./CollectionsScreen/CollectionsScreen.tsx";

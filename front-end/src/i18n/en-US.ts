@@ -9,7 +9,7 @@ export default {
     firstStartNotice: "The first time the application starts, it may take between 2 and 5 minutes to initialize."
   },
   menu: {
-    images: "Images",
+    explorer: "Explorer",
     desk: "Desk",
     imageCommands: "Image commands",
     repositories: "Repositories",

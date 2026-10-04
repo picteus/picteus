@@ -35,7 +35,7 @@ export default function Sidebar()
   const commonIconStyle = useMemo(() => ({ stroke: Common.IconStrokeSize }), []);
 
   const mainElementData = [
-    { route: ROUTES.home, label: "images", icon: <IconPhotoMinus {...commonIconStyle} /> },
+    { route: ROUTES.home, label: "explorer", icon: <IconPhotoMinus {...commonIconStyle} /> },
     { route: ROUTES.desk, label: "desk", icon: <IconStack2 {...commonIconStyle} /> },
     { route: ROUTES.repositories, label: "repositories", icon: <IconFolderOpen {...commonIconStyle} /> },
     { route: ROUTES.collections, label: "collections", icon: <IconLibraryPhoto {...commonIconStyle} /> },

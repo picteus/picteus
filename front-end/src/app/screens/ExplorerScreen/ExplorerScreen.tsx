@@ -8,10 +8,10 @@ import { useRepositories } from "app/hooks";
 import { FiltersService, StorageService } from "app/services";
 import { EmptyResults, ImagesView, StackableScreen } from "app/components";
 
-import style from "./ImagesScreen.module.scss";
+import style from "./ExplorerScreen.module.scss";
 
 
-export default function ImagesScreen(): ReactElement
+export default function ExplorerScreen(): ReactElement
 {
   const [ t ] = useTranslation();
   const navigate = useNavigate();
