@@ -1,24 +1,9 @@
 import React, { DragEvent, ReactElement, ReactNode, useEffect, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
+import { ActionIcon, Box, Center, CloseButton, Group, ScrollArea, Stack, Text, Tooltip } from "@mantine/core";
 import {
-  ActionIcon,
-  Box,
-  Center,
-  CloseButton,
-  Collapse,
-  Group,
-  Paper,
-  ScrollArea,
-  Stack,
-  Text,
-  Title,
-  Tooltip
-} from "@mantine/core";
-import {
-  IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
-  IconChevronUp,
   IconCode,
   IconFileText,
   IconPhoto,
@@ -30,17 +15,8 @@ import { useTranslation } from "react-i18next";
 import { DeskTabType } from "types";
 import { DESK_TAB_QUERY_PARAMETER_NAME, ROUTES } from "utils";
 import { useDeskTabsContext } from "app/context";
-import {
-  Common,
-  EmptyResults,
-  ExtensionBadge,
-  ExtensionIcon,
-  FormatedDate,
-  Markdown,
-  ResourceIcon,
-  StackableScreen
-} from "app/components";
-import DeskTabContent from "./components/DeskTabContent.tsx";
+import { Common, EmptyResults, ExtensionIcon, ResourceIcon, StackableScreen } from "app/components";
+import { DeskTabContent, TabHeader } from "./components";
 
 import style from "./DeskScreen.module.scss";
 
@@ -62,7 +38,6 @@ export default function DeskScreen(): ReactElement
   const [ searchParameters, setSearchParameters ] = useSearchParams();
   const { tabs, activeTab, setActiveTab, removeTab, reorderTabs } = useDeskTabsContext();
 
-  const [ isHeaderExpanded, setIsHeaderExpanded ] = useState<boolean>(true);
   const [ draggedTabId, setDraggedTabId ] = useState<string | null>(null);
   const [ dropTargetTabId, setDropTargetTabId ] = useState<string | null>(null);
   const scrollViewportReference = useRef<HTMLDivElement>(null);
@@ -336,9 +311,6 @@ export default function DeskScreen(): ReactElement
     );
   }
 
-  const showHeader = selectedTab?.header !== undefined;
-  const isCollapsible = Boolean(selectedTab?.header?.details && selectedTab.header.details.length > 0);
-
   return (
     <StackableScreen resetTrigger={selectedTab?.id} className={style.container}>
       <Group
@@ -438,63 +410,7 @@ export default function DeskScreen(): ReactElement
       <Box flex={1} pos="relative" style={{ overflow: "hidden" }}>
         {selectedTab && (
           <Stack h="100%" w="100%" gap={0} style={{ overflow: "hidden" }}>
-            {showHeader === true && (
-              <Box
-                p="xs"
-                px="md"
-                bg="var(--mantine-color-body)"
-                className={style.tabHeader}
-              >
-                <Group justify="space-between" align="center" gap="md" wrap="nowrap">
-                  <Group gap="xs" align="center" wrap="nowrap" style={{ minWidth: 0 }}>
-                    <Title order={1} lineClamp={1}>
-                      {selectedTab.header.title}
-                    </Title>
-                    {selectedTab.extensionId && (
-                      <ExtensionBadge idOrExtension={selectedTab.extensionId} size="lg" color="gray"/>)}
-                  </Group>
-
-                  {isCollapsible === true && (
-                    <ActionIcon
-                      variant="subtle"
-                      size="sm"
-                      onClick={() =>
-                      {
-                        setIsHeaderExpanded((previousState) => !previousState);
-                      }}
-                    >
-                      {isHeaderExpanded === true ? <IconChevronUp size={Common.IconSmallSize}/> :
-                        <IconChevronDown size={Common.IconSmallSize}/>}
-                    </ActionIcon>
-                  )}
-                </Group>
-
-                <Text size="sm" c="dimmed" lh={1.4} pt="xs">
-                  {selectedTab.header.description && selectedTab.header.description.length > 0 && (
-                    <span>{selectedTab.header.description} • </span>
-                  )}
-                  <FormatedDate timestamp={selectedTab.timestampInMilliseconds}/>
-                </Text>
-
-                {isCollapsible === true && selectedTab.header.details && (
-                  <Collapse expanded={isHeaderExpanded === true}>
-                    <Box pt="xs">
-                      <Paper
-                        p="xs"
-                        px="sm"
-                        withBorder
-                        radius="sm"
-                        fz="xs"
-                      >
-                        <ScrollArea.Autosize mah={160}>
-                          <Markdown content={selectedTab.header.details} size="xs"/>
-                        </ScrollArea.Autosize>
-                      </Paper>
-                    </Box>
-                  </Collapse>
-                )}
-              </Box>
-            )}
+            <TabHeader tab={selectedTab}/>
             <Box flex={1} pos="relative" style={{ overflow: "hidden" }}>
               <DeskTabContent tab={selectedTab}/>
             </Box>

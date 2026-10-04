@@ -1,5 +1,5 @@
 import { ReactElement, useEffect, useState } from "react";
-import { Box, Container, ScrollArea } from "@mantine/core";
+import { Box, Container, Divider, ScrollArea } from "@mantine/core";
 import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -58,14 +58,17 @@ export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactE
       }
 
       return (
-        <ImageDetail
-          image={image}
-          images={[ image ]}
-          viewMode="gallery"
-          onClose={() =>
-          {
-          }}
-        />
+        <>
+          <Divider/>
+          <ImageDetail
+            image={image}
+            images={[ image ]}
+            viewMode="gallery"
+            onClose={() =>
+            {
+            }}
+          />
+        </>
       );
     }
 
