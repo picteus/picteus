@@ -4,14 +4,12 @@ import { Button, Notification as MantineNotification, Text } from "@mantine/core
 import { useTranslation } from "react-i18next";
 
 import { OpenBrowserIntent, ProcessCommandIntent, ShowIntent, UiIntent } from "@picteus/shared-core";
-import { Image } from "@picteus/ws-client";
 
 import { NotificationType } from "types";
 import { computeDeskRoute, timeAgoFromMilliseconds, ToastService } from "utils";
 import { useExtensionIntentRunner } from "app/hooks";
-import { useActionModalContext } from "app/context";
-import { ImageService } from "app/services";
-import { EntityVisual, ImageDetail } from "app/components";
+import { useDeskTabsContext } from "app/context";
+import { EntityVisual } from "app/components";
 
 import style from "./Notification.module.scss";
 
@@ -19,7 +17,7 @@ import style from "./Notification.module.scss";
 function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notification: NotificationType) => () => Promise<void>
 {
   const intentRunner = useExtensionIntentRunner();
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addTab } = useDeskTabsContext();
   const navigate = useNavigate();
 
   return (notification: NotificationType) =>
@@ -30,30 +28,15 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
       {
         if (notification.type === "image")
         {
-          const imageId = notification.data.id;
-          let image: Image;
-          try
-          {
-            image = await ImageService.get({ id: imageId });
-          }
-          catch (error)
-          {
-            return ToastService.apiCallError(error);
-          }
-          const id = addModal({
-            component: (
-              <ImageDetail
-                image={image}
-                images={[ image ]}
-                viewMode="masonry"
-                onClose={() =>
-                {
-                  removeModal(id);
-                }}
-              />),
-            withCloseButton: false,
-            fullScreen: true
-          });
+          addTab({
+            id: notification.id,
+            extensionId: notification.extensionId,
+            label: notification.title,
+            content: {
+              kind: "image",
+              imageId: notification.data.id
+            }
+          }, true);
         }
         else if (notification.type === "action")
         {

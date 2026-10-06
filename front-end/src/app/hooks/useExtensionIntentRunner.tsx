@@ -16,10 +16,10 @@ import {
   ShowIntent,
   UiIntent
 } from "@picteus/shared-core";
-import { CommandEntity, ExtensionSettings, UserInterfaceAnchor } from "@picteus/ws-client";
+import { CommandEntity, ExtensionSettings, Image, UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, ToastService } from "utils";
-import { useActionModalContext, useAdditionalUiContext } from "app/context";
+import { useActionModalContext, useAdditionalUiContext, useDeskTabsContext } from "app/context";
 import { ExtensionsService, ImageService, StorageService } from "app/services";
 import {
   ConfirmOptions,
@@ -31,7 +31,7 @@ import {
   useOpenWindow,
   useRepositories
 } from "app/hooks";
-import { Iframe, ImageDetail } from "app/components";
+import { Iframe } from "app/components";
 import { ExtensionSettingsModal } from "app/screens/ExtensionsScreen/components";
 import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
 
@@ -49,7 +49,8 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
 {
   const [ t ] = useTranslation();
   const navigate = useNavigate();
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const [ , addModal ] = useActionModalContext();
+  const { addTab } = useDeskTabsContext();
   const [ additionalUiContextValue, , addTransient ] = useAdditionalUiContext();
   const commandRunner = useExtensionCommandRunner();
   const openBrowser = useOpenBrowser();
@@ -247,21 +248,23 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
       {
         return confirmActionWrapper(async () =>
           {
-            const image = await ImageService.get({ id: show.id });
-            const id = addModal({
-              component: (
-                <ImageDetail
-                  image={image}
-                  images={[ image ]}
-                  viewMode="masonry"
-                  onClose={() =>
-                  {
-                    removeModal(id);
-                  }}
-                />),
-              withCloseButton: false,
-              fullScreen: true
-            });
+            let image: Image;
+            try
+            {
+              image = await ImageService.get({ id: show.id });
+            }
+            catch (error)
+            {
+              return ToastService.apiCallError(error);
+            }
+            addTab({
+              extensionId,
+              label: image.name,
+              content: {
+                kind: "image",
+                imageId: show.id
+              }
+            }, true);
             listener.onSuccess();
           },
           {
