@@ -184,6 +184,12 @@ export default {
     title: "Desk is empty",
     description: "There are currently no tabs on the desk. Generated images and interactive extension results will appear here as tabs."
   },
+  deskTabsMenu: {
+    allTabs: "All tabs",
+    searchPlaceholder: "Search open tabs",
+    newBadge: "New",
+    noTabsFound: "No matching tabs found"
+  },
   emptySelectedImages: {
     title: "No selected image",
     description: "There are currently no images selected."

@@ -16,7 +16,7 @@ import { DeskTabType } from "types";
 import { DESK_TAB_QUERY_PARAMETER_NAME, ROUTES } from "utils";
 import { useDeskTabsContext } from "app/context";
 import { Common, EmptyResults, ExtensionIcon, ResourceIcon, StackableScreen } from "app/components";
-import { DeskTabContent, TabHeader } from "./components";
+import { DeskTabContent, DeskTabsMenu, TabHeader } from "./components";
 
 import style from "./DeskScreen.module.scss";
 
@@ -43,7 +43,7 @@ export default function DeskScreen(): ReactElement
   const scrollViewportReference = useRef<HTMLDivElement>(null);
   const tabElementsReference = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const queryTabIdentifier = searchParameters.get(DESK_TAB_QUERY_PARAMETER_NAME) || searchParameters.get("tab");
+  const queryTabIdentifier = searchParameters.get(DESK_TAB_QUERY_PARAMETER_NAME);
   const tabMatchingQuery = queryTabIdentifier ? tabs.find((tabItem) => tabItem.id === queryTabIdentifier) : undefined;
   const tabMatchingActive = tabs.find((tabItem) => tabItem.id === activeTab);
   const mostRecentTab = findMostRecentTab(tabs);
@@ -405,6 +405,12 @@ export default function DeskScreen(): ReactElement
         >
           <IconChevronRight size={Common.IconSmallSize}/>
         </ActionIcon>
+        <DeskTabsMenu
+          tabs={tabs}
+          activeTabId={selectedTab?.id ?? null}
+          onSelectTab={handleSelectTab}
+          onCloseTab={removeTab}
+        />
       </Group>
 
       <Box flex={1} pos="relative" style={{ overflow: "hidden" }}>
