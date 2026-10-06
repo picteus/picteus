@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ExtensionImageFeature, Image, ImageFeatureType } from "@picteus/ws-client";
 
 import { ViewMode } from "types";
+import { formatDate } from "utils";
 import { useOpenBrowser } from "app/hooks";
 import { StorageService } from "app/services";
 import { CodeViewer, CopyText, Markdown, UiElementViewProvider } from "app/components";
@@ -217,23 +218,27 @@ export default function ImageData({ image, viewMode }: ImageDataType): ReactElem
   }
 
   return useMemo<ReactElement>(() => (
-    <UiElementViewProvider onAnchorClick={(event: React.MouseEvent<HTMLAnchorElement>, url: string) =>
-    {
-      event.preventDefault();
-      void openBrowser(url);
-    }} renderers={{
-      markdown: (element, _context) => (
-        wrapWithCopy(<Markdown size="sm" content={element.content}/>, element.content, element.modifiers?.copyable)
-      ),
-      xml: (element, _context) => (
-        wrapWithCopy(<CodeViewer code={element.value} size="sm"
-                                 language="xml"/>, element.value, element.modifiers?.copyable)
-      ),
-      json: (element, _context) => (
-        wrapWithCopy(<CodeViewer code={element.value} size="sm"
-                                 language="json"/>, element.value, element.modifiers?.copyable)
-      )
-    }}>
+    <UiElementViewProvider
+      onAnchorClick={(event: React.MouseEvent<HTMLAnchorElement>, url: string) =>
+      {
+        event.preventDefault();
+        void openBrowser(url);
+      }}
+      timestampFormatter={(timestampInMilliseconds: number) => formatDate(timestampInMilliseconds)}
+      renderers={{
+        markdown: (element, _context) => (
+          wrapWithCopy(<Markdown size="sm" content={element.content}/>, element.content, element.modifiers?.copyable)
+        ),
+        xml: (element, _context) => (
+          wrapWithCopy(<CodeViewer code={element.value} size="sm"
+                                   language="xml"/>, element.value, element.modifiers?.copyable)
+        ),
+        json: (element, _context) => (
+          wrapWithCopy(<CodeViewer code={element.value} size="sm"
+                                   language="json"/>, element.value, element.modifiers?.copyable)
+        )
+      }}
+    >
       <div className={style.container}>
         <div className={style.cardsContainer}>
           <Accordion
