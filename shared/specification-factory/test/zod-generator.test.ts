@@ -127,4 +127,64 @@ describe("Zod Intents Generator", () =>
     // Verify inheritance extension
     assert.match(code, /export const zodOpenBrowserIntent = zodBasisIntent\.extend\(\{/);
   });
+
+  it("generates Intent-prefixed aliases and companion types for non-intent declarations", () =>
+  {
+    const spec: IntentSpec = {
+      enums: [
+        {
+          name: "DialogType",
+          members: [
+            { name: "info", value: "info" }
+          ]
+        }
+      ],
+      unions: [
+        {
+          name: "DialogBody",
+          variants: [
+            { kind: "string", name: "string" }
+          ]
+        }
+      ],
+      models: [
+        {
+          name: "Dialog",
+          properties: [
+            { name: "title", optional: false, type: { kind: "string", name: "string" } }
+          ]
+        },
+        {
+          name: "DialogIntent",
+          isIntent: true,
+          properties: [
+            { name: "dialog", optional: false, type: { kind: "model", name: "Dialog" } }
+          ]
+        }
+      ]
+    };
+
+    const code = generateZodIntentsTypeScriptCode(spec);
+
+    // Verify primary schemas and companion types
+    assert.match(code, /export const zodDialog = z\.object\(\{/);
+    assert.match(code, /export type zodDialog = typeof zodDialog;/);
+
+    // Verify Intent aliases and types
+    assert.match(code, /export const zodIntentDialog = zodDialog;/);
+    assert.match(code, /export type zodIntentDialog = typeof zodDialog;/);
+
+    // Verify Enum alias
+    assert.match(code, /export const zodIntentDialogType = zodDialogType;/);
+    assert.match(code, /export type zodIntentDialogType = typeof zodDialogType;/);
+
+    // Verify Union alias
+    assert.match(code, /export const zodIntentDialogBody = zodDialogBody;/);
+    assert.match(code, /export type zodIntentDialogBody = typeof zodDialogBody;/);
+
+    // Verify intent models do not receive a duplicate Intent-prefixed alias
+    assert.match(code, /export const zodDialogIntent = z\.object\(\{/);
+    assert.doesNotMatch(code, /zodIntentDialogIntent/);
+  });
 });
+

@@ -1,6 +1,20 @@
 import { createGeneratedFileHeader, DocumentationType, getDocumentationText } from "../common.js";
 import { CodeWriter } from "../codeWriter.js";
-import { IntentEnum, IntentModel, IntentProperty, IntentSpec, IntentType, IntentUnion } from "./intentsModel.js";
+import {
+  INTENT_TOKEN,
+  IntentEnum,
+  IntentModel,
+  IntentProperty,
+  IntentSpec,
+  IntentType,
+  IntentUnion
+} from "./intentsModel.js";
+
+
+function getPublicIntentName(item: { readonly name: string; readonly isIntent?: boolean }): string
+{
+  return item.isIntent || item.name.endsWith(INTENT_TOKEN) ? item.name : `${INTENT_TOKEN}${item.name}`;
+}
 
 
 function resolveZodTypeExpression(type: IntentType, property?: IntentProperty): string
@@ -238,7 +252,16 @@ function writeZodEnum(intentEnum: IntentEnum, writer: CodeWriter): void
     intentEnum
   );
   writer.writeLine(`export const zod${intentEnum.name} = ${documentedSchema};`);
+  writer.writeLine(`export type zod${intentEnum.name} = typeof zod${intentEnum.name};`);
   writer.blankLine();
+
+  const publicName = getPublicIntentName(intentEnum);
+  if (publicName !== intentEnum.name)
+  {
+    writer.writeLine(`export const zod${publicName} = zod${intentEnum.name};`);
+    writer.writeLine(`export type zod${publicName} = typeof zod${intentEnum.name};`);
+    writer.blankLine();
+  }
 }
 
 function writeZodUnion(intentUnion: IntentUnion, writer: CodeWriter): void
@@ -255,7 +278,16 @@ function writeZodUnion(intentUnion: IntentUnion, writer: CodeWriter): void
   });
   const unionDocumentation = getSchemaDocumentation(intentUnion);
   writer.writeLine(`])${unionDocumentation ? `.describe(${JSON.stringify(unionDocumentation)})` : ""};`);
+  writer.writeLine(`export type zod${intentUnion.name} = typeof zod${intentUnion.name};`);
   writer.blankLine();
+
+  const publicName = getPublicIntentName(intentUnion);
+  if (publicName !== intentUnion.name)
+  {
+    writer.writeLine(`export const zod${publicName} = zod${intentUnion.name};`);
+    writer.writeLine(`export type zod${publicName} = typeof zod${intentUnion.name};`);
+    writer.blankLine();
+  }
 }
 
 function writeZodModel(model: IntentModel, writer: CodeWriter): void
@@ -305,7 +337,19 @@ function writeZodModel(model: IntentModel, writer: CodeWriter): void
       writer.writeLine(`})${modelDocumentation ? `.describe(${JSON.stringify(modelDocumentation)})` : ""};`);
     }
   }
+  writer.writeLine(`export type zod${model.name} = typeof zod${model.name};`);
   writer.blankLine();
+
+  if (!model.isIntent)
+  {
+    const publicName = getPublicIntentName(model);
+    if (publicName !== model.name)
+    {
+      writer.writeLine(`export const zod${publicName} = zod${model.name};`);
+      writer.writeLine(`export type zod${publicName} = typeof zod${model.name};`);
+      writer.blankLine();
+    }
+  }
 }
 
 export function generateZodIntentsTypeScriptCode(spec: IntentSpec): string

@@ -18,6 +18,9 @@ import { DocumentationType, PICTEUS_NAMESPACE } from "../common.js";
 import { getIntentAudience, IntentAudience, isIntent } from "./decorators.js";
 
 
+export const INTENT_TOKEN = "Intent";
+
+
 export interface IntentType
 {
   readonly kind: "string" | "number" | "boolean" | "bytes" | "enum" | "model" | "array" | "record" | "union" | "literal";

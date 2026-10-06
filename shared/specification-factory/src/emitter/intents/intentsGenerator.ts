@@ -1,10 +1,8 @@
 import { IntentAudience } from "./decorators.js";
-import { IntentEnum, IntentModel, IntentSpec, IntentType, IntentUnion } from "./intentsModel.js";
+import { INTENT_TOKEN, IntentEnum, IntentModel, IntentSpec, IntentType, IntentUnion } from "./intentsModel.js";
 import { createGeneratedFileHeader, DocumentationType, getDocumentationText } from "../common.js";
 import { CodeWriter } from "../codeWriter.js";
 
-
-const INTENT_TOKEN = "Intent";
 
 interface IntentGeneratorContext
 {
@@ -337,7 +335,7 @@ export function generateIntentTypeScriptCode(spec: IntentSpec, audience: IntentA
 
   const writer = new CodeWriter({ indentSize: 2 });
   writer.writeLines(createGeneratedFileHeader("//"));
-  writer.writeLine(" type { Buffer } from \"node:buffer\";");
+  writer.writeLine("import type { Buffer } from \"node:buffer\";");
   writer.blankLine();
 
   for (const intentEnum of context.selectedSpec.enums)
