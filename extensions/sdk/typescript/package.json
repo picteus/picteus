@@ -38,14 +38,12 @@
     "./dist"
   ],
   "scripts": {
-    "compile": "tsc && tsc-alias --resolve-full-paths",
-    "compileWithTsup": "tsup src/index.ts --tsconfig tsconfig.json --format cjs,esm --dts --clean --minify-whitespace --minify-identifiers --minify-syntax"
+    "compile": "tsc && tsc-alias --resolve-full-paths"
   },
   "devDependencies": {
     "typescript": "5.9.2",
-    "@types/node": "20.19.0",
-    "tsc-alias": "1.8.17",
-    "tsup": "8.5.1"
+    "@types/node": "22.17.1",
+    "tsc-alias": "1.8.17"
   },
   "dependencies": {
     "socket.io-client": "4.8.3"
