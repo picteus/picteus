@@ -1,22 +1,23 @@
 namespace Picteus.ViewKit;
 
-@doc("""
-  Polymorphic root base model for all visual UI elements in Picteus feature views.
-  Uses the @discriminator("type") decorator so all child models inheriting from UiElement
-  are automatically recognized by schema emitters and SDK code generators.
-  """)
+@summary("Polymorphic root model for visual UI elements.")
+@doc("Every concrete visual element carries a type discriminator whose literal value selects its model and renderer. The @discriminator(\"type\") metadata lets schema emitters and SDK generators represent derived models as a polymorphic hierarchy. Consumers should dispatch on the discriminator and preserve unknown elements when round-tripping data where possible.")
 @discriminator("type")
 model UiElement {
-  @doc("Discriminator property identifying the concrete visual component")
+  @summary("Discriminator property identifying the concrete visual component")
+  @doc("Concrete element tag. Derived models narrow this string to a literal such as string, table, or image-ref; it is used for polymorphic decoding and renderer selection.")
   type: string;
 }
 
-@doc("Polymorphic base model for interactive actions.")
+@summary("Polymorphic base model for interactive actions.")
+@doc("Shared action contract for user-invokable card controls. Concrete action models provide their own discriminator and action-specific destination or command fields.")
 @discriminator("type")
 model UiAction {
-  @doc("Discriminator property")
+  @summary("Discriminator property")
+  @doc("Concrete action tag used by clients to select the action behavior.")
   type: string;
 
-  @doc("Display label for the action")
+  @summary("Display label for the action")
+  @doc("User-facing label shown on the control. Keep it short and action-oriented.")
   label: string;
 }

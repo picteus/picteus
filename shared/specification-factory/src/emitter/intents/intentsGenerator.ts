@@ -1,6 +1,6 @@
 import { IntentAudience } from "./decorators.js";
 import { IntentEnum, IntentModel, IntentSpec, IntentType, IntentUnion } from "./intentsModel.js";
-import { createGeneratedFileHeader } from "../common.js";
+import { createGeneratedFileHeader, DocumentationType, getDocumentationText } from "../common.js";
 import { CodeWriter } from "../codeWriter.js";
 
 
@@ -179,9 +179,33 @@ function resolveTypeScriptType(type: IntentType, intentModelNames: ReadonlySet<s
   }
 }
 
+function writePythonDocumentation(documentation: DocumentationType, writer: CodeWriter): void
+{
+  const text = getDocumentationText(documentation);
+  if (text)
+  {
+    writer.writePythonDoc(text);
+  }
+}
+
+function writePythonInlineDocumentation(documentation: DocumentationType, writer: CodeWriter): void
+{
+  for (const text of [ documentation.summary, documentation.doc ])
+  {
+    if (text)
+    {
+      for (const line of text.trim().split("\n"))
+      {
+        writer.writeLine(`# ${line.trim()}`);
+      }
+    }
+  }
+}
+
 function writeTypeScriptEnum(intentEnum: IntentEnum, writer: CodeWriter, isExported: boolean = true): void
 {
   const exportPrefix = isExported ? "export " : "";
+  writer.writeTsDoc({ documentation: intentEnum });
   writer.writeLine(`enum ${intentEnum.name}`);
   writer.writeLine("{");
   writer.indent(() =>
@@ -190,13 +214,16 @@ function writeTypeScriptEnum(intentEnum: IntentEnum, writer: CodeWriter, isExpor
     {
       const member = intentEnum.members[index];
       const comma = index < intentEnum.members.length - 1 ? "," : "";
+      writer.writeTsDoc({ documentation: member });
       writer.writeLine(`${member.name.charAt(0).toUpperCase()}${member.name.slice(1)} = ${JSON.stringify(member.value)}${comma}`);
     }
   });
   writer.writeLine("}");
   writer.blankLine();
   const publicName = getPublicIntentName(intentEnum);
+  writer.writeTsDoc({ documentation: intentEnum });
   writer.writeLine(`${exportPrefix}const ${publicName} = ${intentEnum.name};`);
+  writer.writeTsDoc({ documentation: intentEnum });
   writer.writeLine(`${exportPrefix}type ${publicName} = ${intentEnum.name};`);
   writer.blankLine();
 }
@@ -210,6 +237,7 @@ function writeTypeScriptModel(
 {
   const extendsClause = model.baseModelName ? ` extends ${model.baseModelName}` : "";
   const declarationPrefix = model.isIntent && isExported ? "export " : "";
+  writer.writeTsDoc({ documentation: model });
   writer.writeLine(`${declarationPrefix}interface ${model.name}${extendsClause}`);
   writer.writeLine("{");
   writer.indent(() =>
@@ -217,6 +245,7 @@ function writeTypeScriptModel(
     for (const property of model.properties)
     {
       const optionalMarker = property.optional ? "?" : "";
+      writer.writeTsDoc({ documentation: property });
       writer.writeLine(`readonly ${property.name}${optionalMarker}: ${resolveTypeScriptType(property.type, intentModelNames)};`);
     }
   });
@@ -226,6 +255,7 @@ function writeTypeScriptModel(
   if (!model.isIntent)
   {
     const exportPrefix = isExported ? "export " : "";
+    writer.writeTsDoc({ documentation: model });
     writer.writeLine(`${exportPrefix}type ${getPublicIntentName(model)} = ${model.name};`);
     writer.blankLine();
   }
@@ -240,8 +270,10 @@ function writeTypeScriptUnion(
 {
   const exportPrefix = isExported ? "export " : "";
   const unionTypes = intentUnion.variants.map((variant) => resolveTypeScriptType(variant, intentModelNames));
+  writer.writeTsDoc({ documentation: intentUnion });
   writer.writeLine(`type ${intentUnion.name} = ${unionTypes.join(" | ")};`);
   writer.blankLine();
+  writer.writeTsDoc({ documentation: intentUnion });
   writer.writeLine(`${exportPrefix}type ${getPublicIntentName(intentUnion)} = ${intentUnion.name};`);
   writer.blankLine();
 }
@@ -305,7 +337,7 @@ export function generateIntentTypeScriptCode(spec: IntentSpec, audience: IntentA
 
   const writer = new CodeWriter({ indentSize: 2 });
   writer.writeLines(createGeneratedFileHeader("//"));
-  writer.writeLine("import type { Buffer } from \"node:buffer\";");
+  writer.writeLine(" type { Buffer } from \"node:buffer\";");
   writer.blankLine();
 
   for (const intentEnum of context.selectedSpec.enums)
@@ -374,6 +406,7 @@ function writePythonEnum(intentEnum: IntentEnum, writer: CodeWriter): void
   writer.writeLine(`class ${enumName}(str, Enum):`);
   writer.indent(() =>
   {
+    writePythonDocumentation(intentEnum, writer);
     if (intentEnum.members.length === 0)
     {
       writer.writeLine("pass");
@@ -381,6 +414,7 @@ function writePythonEnum(intentEnum: IntentEnum, writer: CodeWriter): void
     }
     for (const member of intentEnum.members)
     {
+      writePythonInlineDocumentation(member, writer);
       writer.writeLine(`${convertToSnakeCase(member.name)} = ${JSON.stringify(member.value)}`);
     }
   });
@@ -454,6 +488,7 @@ function writePythonModel(
   writer.writeLine(`class ${modelName}${extendsClause}:`);
   writer.indent(() =>
   {
+    writePythonDocumentation(model, writer);
     if (ownProperties.length === 0)
     {
       writer.writeLine("pass");
@@ -464,6 +499,7 @@ function writePythonModel(
       const pythonType = resolvePythonType(property.type, intentModelNames);
       const optionalType = property.optional ? `Optional[${pythonType}]` : pythonType;
       const literalValue = property.type.kind === "literal" ? property.type.literalValue : undefined;
+      writePythonInlineDocumentation(property, writer);
       if (literalValue !== undefined)
       {
         writer.writeLine(`${property.name}: ${optionalType} = field(default=${JSON.stringify(literalValue)}, init=False)`);
@@ -494,6 +530,7 @@ function writePythonUnion(
 {
   const unionName = getPythonInternalName(intentUnion.name, false);
   const unionTypes = intentUnion.variants.map((variant) => resolvePythonType(variant, intentModelNames));
+  writePythonInlineDocumentation(intentUnion, writer);
   writer.writeLine(`${unionName} = Union[${unionTypes.join(", ")}]`);
   writer.blankLine();
   writer.writeLine(`${getPublicIntentName(intentUnion)} = ${unionName}`);

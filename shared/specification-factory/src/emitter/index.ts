@@ -7,6 +7,7 @@ import { generateReactCode } from "./viewkit/reactGenerator.js";
 import { extractTypeSpecIntents } from "./intents/intentsModel.js";
 import { generateIntentPythonCode, generateIntentTypeScriptCode } from "./intents/intentsGenerator.js";
 import { generateZodIntentsTypeScriptCode } from "./intents/zodGenerator.js";
+import { generateIntentsMarkdown, generateViewKitMarkdown } from "./markdownGenerator.js";
 import { PICTEUS_NAMESPACE } from "./common.js";
 
 
@@ -53,7 +54,7 @@ export interface EmitterOptions
 {
 
   readonly "emitter-output-dir"?: string;
-  readonly targets?: ("typescript" | "python" | "react")[];
+  readonly targets?: ("typescript" | "python" | "react" | "markdown")[];
 
 }
 
@@ -68,7 +69,7 @@ export const $lib = createTypeSpecLibrary(
           "emitter-output-dir": { type: "string", nullable: true },
           targets: {
             type: "array",
-            items: { type: "string", enum: [ "typescript", "python", "react" ] },
+            items: { type: "string", enum: [ "typescript", "python", "react", "markdown" ] },
             nullable: true
           }
         },
@@ -111,6 +112,13 @@ export async function $onEmit(context: EmitContext<EmitterOptions>): Promise<voi
       const reactPath = resolvePath(outputDir, "viewkit", "react", "ViewKit.tsx");
       await emitFile(program, { path: reactPath, content: reactCode });
     }
+
+    if (targets.includes("markdown"))
+    {
+      const markdown = generateViewKitMarkdown(spec);
+      const markdownPath = resolvePath(outputDir, "viewkit", "markdown", "viewkit.md");
+      await emitFile(program, { path: markdownPath, content: markdown });
+    }
   }
 
   if (shouldGenerateIntents)
@@ -141,6 +149,13 @@ export async function $onEmit(context: EmitContext<EmitterOptions>): Promise<voi
       const backEndIntentsPythonCode = generateIntentPythonCode(intents, "backEnd");
       const backEndIntentsPythonPath = resolvePath(outputDir, "intents", "python", "back_end_intents.py");
       await emitFile(program, { path: backEndIntentsPythonPath, content: backEndIntentsPythonCode });
+    }
+
+    if (targets.includes("markdown"))
+    {
+      const markdown = generateIntentsMarkdown(intents);
+      const markdownPath = resolvePath(outputDir, "intents", "markdown", "intents.md");
+      await emitFile(program, { path: markdownPath, content: markdown });
     }
   }
 

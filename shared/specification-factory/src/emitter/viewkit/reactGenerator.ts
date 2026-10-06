@@ -16,6 +16,7 @@ const ACTION_ELEMENT_VIEW_NAME = `${ACTION_ELEMENT_ROOT_NAME}${VIEW_SUFFIX}`;
 const SHARED_CORE_PACKAGE = "@picteus/shared-core";
 const RENDERERS_PROP_NAME = "renderers";
 const ON_ANCHOR_CLICK_PROP_NAME = "onAnchorClick";
+const TIMESTAMP_FORMATTER_PROP_NAME = "timestampFormatter";
 const ON_ACTION_PROP_NAME = "onAction";
 const UI_ELEMENT_VIEW_RENDERERS_TYPE_NAME = "UiElementViewRenderers";
 const UI_ELEMENT_VIEW_CONTEXT_TYPE_NAME = "UiElementViewContextType";
@@ -421,12 +422,14 @@ function generateUiElementViewContextAndProvider(): string
     `{`,
     `  readonly ${RENDERERS_PROP_NAME}?: ${UI_ELEMENT_VIEW_RENDERERS_TYPE_NAME};`,
     `  readonly ${ON_ANCHOR_CLICK_PROP_NAME}?: (event: React.MouseEvent<HTMLAnchorElement>, url: string) => void;`,
+    `  readonly ${TIMESTAMP_FORMATTER_PROP_NAME}?: (timestampInMilliseconds: number, format?: TimestampFormat) => string;`,
     `};`,
     ``,
     `const ${UI_ELEMENT_VIEW_CONTEXT_NAME} = React.createContext<${UI_ELEMENT_VIEW_CONTEXT_TYPE_NAME}>(`,
     `  {`,
     `    ${RENDERERS_PROP_NAME}: undefined,`,
-    `    ${ON_ANCHOR_CLICK_PROP_NAME}: undefined`,
+    `    ${ON_ANCHOR_CLICK_PROP_NAME}: undefined,`,
+    `    ${TIMESTAMP_FORMATTER_PROP_NAME}: undefined`,
     `  }`,
     `);`,
     ``,
@@ -439,13 +442,14 @@ function generateUiElementViewContextAndProvider(): string
     `{`,
     `  readonly ${RENDERERS_PROP_NAME}?: ${UI_ELEMENT_VIEW_RENDERERS_TYPE_NAME};`,
     `  readonly ${ON_ANCHOR_CLICK_PROP_NAME}?: (event: React.MouseEvent<HTMLAnchorElement>, url: string) => void;`,
+    `  readonly ${TIMESTAMP_FORMATTER_PROP_NAME}?: (timestampInMilliseconds: number, format?: TimestampFormat) => string;`,
     `  readonly children: ReactNode;`,
     `};`,
     ``,
-    `export function ${UI_ELEMENT_VIEW_PROVIDER_NAME}({ ${RENDERERS_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME}, children }: ${UI_ELEMENT_VIEW_PROVIDER_PROPS_TYPE_NAME}): ReactNode`,
+    `export function ${UI_ELEMENT_VIEW_PROVIDER_NAME}({ ${RENDERERS_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME}, ${TIMESTAMP_FORMATTER_PROP_NAME}, children }: ${UI_ELEMENT_VIEW_PROVIDER_PROPS_TYPE_NAME}): ReactNode`,
     `{`,
     `  return (`,
-    `    <${UI_ELEMENT_VIEW_CONTEXT_NAME}.Provider value={{ ${RENDERERS_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME} }}>`,
+    `    <${UI_ELEMENT_VIEW_CONTEXT_NAME}.Provider value={{ ${RENDERERS_PROP_NAME}, ${ON_ANCHOR_CLICK_PROP_NAME}, ${TIMESTAMP_FORMATTER_PROP_NAME} }}>`,
     `      {children}`,
     `    </${UI_ELEMENT_VIEW_CONTEXT_NAME}.Provider>`,
     `  );`,
@@ -1046,7 +1050,8 @@ function generateTimestampWidgetBody(): string
 {
   const nodeExpression = `<Text size="sm" className={className} style={style}>{formattedTimestamp}</Text>`;
   return [
-    `  const formattedTimestamp = formatTimestamp(element.value, element.format);`,
+    `  const { ${TIMESTAMP_FORMATTER_PROP_NAME} } = ${USE_UI_ELEMENT_VIEW_CONTEXT_NAME}();`,
+    `  const formattedTimestamp = ${TIMESTAMP_FORMATTER_PROP_NAME}?.(element.value, element.format) ?? formatTimestamp(element.value, element.format);`,
     wrapWithCopyableModifier(nodeExpression, "formattedTimestamp")
   ].join("\n");
 }

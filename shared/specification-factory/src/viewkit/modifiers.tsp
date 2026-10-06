@@ -1,76 +1,86 @@
 namespace Picteus.ViewKit;
 
-@doc("Typographic stroke weight styling.")
+@summary("Typographic stroke weight styling.")
 enum TextWeight {
-  @doc("Thin / light text weight")
+  @summary("Thin / light text weight")
   thin: "thin",
 
-  @doc("Standard text weight")
+  @summary("Standard text weight")
   normal: "normal",
 
-  @doc("Heavy / bold text weight")
+  @summary("Heavy / bold text weight")
   heavy: "heavy"
 }
 
-@doc("Visual text color intensity and contrast.")
+@summary("Visual text color intensity and contrast.")
 enum TextIntensity {
-  @doc("Low visual contrast / subdued text color")
+  @summary("Low visual contrast / subdued text color")
   low: "low",
 
-  @doc("Standard text color")
+  @summary("Standard text color")
   medium: "medium",
 
-  @doc("High visual contrast / intense text color")
+  @summary("High visual contrast / intense text color")
   high: "high"
 }
 
-@doc("Geometric shape representation for visual containers and indicators.")
+@summary("Geometric shape representation for visual containers and indicators.")
 enum Shape {
-  @doc("Circular container shape")
+  @summary("Circular container shape")
   circle: "circle",
 
-  @doc("Square container shape")
+  @summary("Square container shape")
   square: "square"
 }
 
-@doc("Relative sizing scale for visual elements and indicators.")
+@summary("Relative sizing scale for visual elements and indicators.")
 enum Size {
-  @doc("Compact small size")
+  @summary("Compact small size")
   small: "small",
 
-  @doc("Standard medium size")
+  @summary("Standard medium size")
   medium: "medium",
 
-  @doc("Prominent large size")
+  @summary("Prominent large size")
   large: "large"
 }
 
-@doc("Truncation configuration for long textual content with optional expand affordance.")
+@summary("Truncation configuration for long textual content with optional expand affordance.")
+@doc("Controls how a renderer abbreviates long text. The character limit is a presentation threshold rather than a validation limit; showMore lets the user reveal the remaining text.")
 model TruncateOptions {
-  @doc("Maximum number of characters to display before truncating")
+  @summary("Maximum number of characters to display before truncating")
+  @doc("Threshold after which the renderer can shorten the displayed text. This does not constrain the stored string or remove its undisplayed content.")
   characterLimit: int32;
 
-  @doc("Whether to render a \"Show more\" / \"Show less\" toggle affordance")
+  @summary("Whether to render a \"Show more\" / \"Show less\" toggle affordance")
+  @doc("When true, permits an expand/collapse control for text beyond the truncation threshold. Defaults to true.")
   showMore?: boolean = true;
 }
 
-@doc("Base modifier traits for elements that support copy affordance.")
+@summary("Base modifier traits for elements that support copy affordance.")
+@doc("Common optional presentation traits shared by primitive values and content renderers. Modifiers affect how content is displayed or copied; they do not transform the source value.")
 model BaseModifiers {
-  @doc("Adds an interactive copy button/action next to the rendered value")
+  @summary("Adds an interactive copy button/action next to the rendered value")
+  @doc("When true, exposes a copy affordance for the associated value where supported by the renderer.")
   copyable?: boolean;
 }
 
-@doc("Common modifier traits that can be attached to primitive elements.")
+@summary("Common modifier traits that can be attached to primitive elements.")
+@doc("Extends BaseModifiers with text styling controls. Defaults provide normal weight, medium intensity, and proportional text unless a feature explicitly overrides them.")
 model PrimitiveModifiers extends BaseModifiers {
-  @doc("Configures character truncation threshold with show-more affordance")
+  @summary("Configures character truncation threshold with show-more affordance")
+  @doc("Optional text abbreviation behavior. The source text remains unchanged, and the renderer may offer expansion according to showMore.")
   truncate?: TruncateOptions;
 
-  @doc("Typographic text weight")
+  @summary("Typographic text weight")
+  @doc("Relative font weight for textual rendering; defaults to normal.")
   weight?: TextWeight = TextWeight.normal;
 
-  @doc("Visual text color intensity")
+  @summary("Visual text color intensity")
+  @doc("Relative contrast treatment for the text; defaults to medium.")
   intensity?: TextIntensity = TextIntensity.medium;
 
-  @doc("Whether to use monospace font rendering (for hashes, IDs, codes)")
+  @summary("Whether to use monospace font rendering (for hashes, IDs, codes)")
+  @doc("When true, requests a fixed-width font suitable for identifiers and code-like values. Defaults to false.")
   monospace?: boolean = false;
 }

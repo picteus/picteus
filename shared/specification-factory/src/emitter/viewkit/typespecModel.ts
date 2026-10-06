@@ -1,5 +1,15 @@
-import { getDiscriminator, getDoc, Model, ModelProperty, Namespace, Program, Scalar, Type } from "@typespec/compiler";
-import { PICTEUS_NAMESPACE } from "../common.js";
+import {
+  getDiscriminator,
+  getDoc,
+  getSummary,
+  Model,
+  ModelProperty,
+  Namespace,
+  Program,
+  Scalar,
+  Type
+} from "@typespec/compiler";
+import { DocumentationType, PICTEUS_NAMESPACE } from "../common.js";
 
 import {
   DslAliasName,
@@ -21,20 +31,17 @@ import {
 } from "./decorators.js";
 
 
-export interface ViewKitEnumMember
+export interface ViewKitEnumMember extends DocumentationType
 {
 
   readonly name: string;
   readonly value: string;
-  readonly doc?: string;
-
 }
 
-export interface ViewKitEnum
+export interface ViewKitEnum extends DocumentationType
 {
 
   readonly name: string;
-  readonly doc?: string;
   readonly members: ViewKitEnumMember[];
 
 }
@@ -62,11 +69,10 @@ export interface ViewKitType
 
 }
 
-export interface ViewKitProperty
+export interface ViewKitProperty extends DocumentationType
 {
 
   readonly name: string;
-  readonly doc?: string;
   readonly optional: boolean;
   readonly type: ViewKitType;
   readonly defaultValue?: string | number | boolean;
@@ -78,11 +84,10 @@ export interface ViewKitProperty
 
 }
 
-export interface ViewKitModel
+export interface ViewKitModel extends DocumentationType
 {
 
   readonly name: string;
-  readonly doc?: string;
   readonly baseModelName?: string;
   readonly isDiscriminated: boolean;
   readonly discriminatorValue?: string;
@@ -96,11 +101,10 @@ export interface ViewKitModel
 
 }
 
-export interface PolymorphicRoot
+export interface PolymorphicRoot extends DocumentationType
 {
 
   readonly name: string;
-  readonly doc?: string;
   readonly discriminatorProperty: string;
   readonly derivedModels: ViewKitModel[];
 
@@ -109,6 +113,7 @@ export interface PolymorphicRoot
 export interface GrammarSpec
 {
 
+  readonly namespaceSummary?: string;
   readonly namespaceDoc?: string;
   readonly enums: ViewKitEnum[];
   readonly models: ViewKitModel[];
@@ -260,6 +265,7 @@ export function extractTypeSpecViewKitModel(program: Program): GrammarSpec
     throw new Error("Could not locate any user ViewKit namespace with models or enums in TypeSpec program.");
   }
 
+  const namespaceSummary = viewKitNamespaces.map((namespace) => getSummary(program, namespace)).find(Boolean);
   const namespaceDoc = viewKitNamespaces.map((namespace) => getDoc(program, namespace)).find(Boolean);
   const enums: ViewKitEnum[] = [];
   const models: ViewKitModel[] = [];
@@ -275,6 +281,7 @@ export function extractTypeSpecViewKitModel(program: Program): GrammarSpec
           {
             name: memberName,
             value: typeof member.value === "string" ? member.value : memberName,
+            summary: getSummary(program, member),
             doc: getDoc(program, member)
           }
         );
@@ -282,6 +289,7 @@ export function extractTypeSpecViewKitModel(program: Program): GrammarSpec
       enums.push(
         {
           name: enumName,
+          summary: getSummary(program, enumType),
           doc: getDoc(program, enumType),
           members
         }
@@ -350,6 +358,7 @@ export function extractTypeSpecViewKitModel(program: Program): GrammarSpec
         properties.push(
           {
             name: propertyName,
+            summary: getSummary(program, property),
             doc: getDoc(program, property),
             optional: property.optional,
             type: propertyType,
@@ -371,6 +380,7 @@ export function extractTypeSpecViewKitModel(program: Program): GrammarSpec
       models.push(
         {
           name: modelName,
+          summary: getSummary(program, modelType),
           doc: getDoc(program, modelType),
           baseModelName: modelType.baseModel?.name,
           isDiscriminated,
@@ -400,6 +410,7 @@ export function extractTypeSpecViewKitModel(program: Program): GrammarSpec
         polymorphicRoots.push(
           {
             name: modelName,
+            summary: getSummary(program, modelType),
             doc: getDoc(program, modelType),
             discriminatorProperty: discriminator.propertyName,
             derivedModels: derived
@@ -417,6 +428,7 @@ export function extractTypeSpecViewKitModel(program: Program): GrammarSpec
   const actionElements = actionElementRoot ? actionElementRoot.derivedModels : [];
 
   return {
+    namespaceSummary,
     namespaceDoc,
     enums,
     models,

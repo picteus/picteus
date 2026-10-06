@@ -1,3 +1,6 @@
+import { DocumentationType } from "./common.js";
+
+
 export interface TsDocParam
 {
 
@@ -9,6 +12,7 @@ export interface TsDocParam
 export interface TsDocOptions
 {
 
+  readonly documentation?: DocumentationType;
   readonly summary?: string;
   readonly remarks?: string;
   readonly params?: TsDocParam[];
@@ -173,21 +177,23 @@ export class CodeWriter
   writeTsDoc(options: TsDocOptions): this
   {
     const rawLines: string[] = [];
+    const summary = options.documentation?.summary ?? options.summary;
+    const remarks = options.documentation?.doc ?? options.remarks;
 
-    if (options.summary)
+    if (summary)
     {
-      const summaryLines = options.summary.trim().split("\n");
+      const summaryLines = summary.trim().split("\n");
       rawLines.push(...summaryLines.map((line) => line.trim()));
     }
 
-    if (options.remarks)
+    if (remarks)
     {
       if (rawLines.length > 0)
       {
         rawLines.push("");
       }
       rawLines.push("@remarks");
-      const remarkLines = options.remarks.trim().split("\n");
+      const remarkLines = remarks.trim().split("\n");
       rawLines.push(...remarkLines.map((line) => line.trim()));
     }
 

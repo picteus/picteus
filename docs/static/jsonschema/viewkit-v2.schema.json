@@ -10,7 +10,8 @@
                     "items": {
                         "$ref": "#/$defs/UiElement"
                     },
-                    "description": "Ordered list of visual elements, structures, and content"
+                  "description": "Top-level visual content in render order. Use a structural element to group related children and primitive elements for individual values.",
+                  "title": "Ordered list of visual elements, structures, and content"
                 }
             },
             "required": [
@@ -21,25 +22,29 @@
                     "$ref": "#/$defs/Envelop"
                 }
             ],
-            "description": "Container model representing an ordered list of visual elements."
+          "description": "Provides the shared root content collection inherited by cards and other root models. The order of elements is significant and is preserved by the renderer.",
+          "title": "Root container holding an ordered list of visual elements."
         },
         "UiCard": {
             "type": "object",
             "properties": {
                 "title": {
                     "type": "string",
-                    "description": "Human-readable feature title displayed in the card header"
+                  "description": "Primary heading for the card. Keep it concise enough for the card header; longer explanatory text belongs in description or elements.",
+                  "title": "Human-readable feature title displayed in the card header"
                 },
                 "description": {
                     "type": "string",
-                    "description": "Optional neutral subtitle / description for the feature"
+                  "description": "Brief secondary context shown with the title. Use the content elements for detailed information rather than placing an entire report in this field.",
+                  "title": "Optional neutral subtitle / description for the feature"
                 },
                 "actions": {
                     "type": "array",
                     "items": {
                         "$ref": "#/$defs/UiAction"
                     },
-                    "description": "Optional card action buttons rendered at the base of the feature card"
+                  "description": "Optional user-invokable actions shown after the card content. Their order is preserved and each action's own fields define its command or link behavior.",
+                  "title": "Optional card action buttons rendered at the base of the feature card"
                 }
             },
             "required": [
@@ -50,14 +55,16 @@
                     "$ref": "#/$defs/UiContainer"
                 }
             ],
-            "description": "Root Card container model.\nRepresents a complete feature card rendered inside the 360px panel."
+          "description": "A complete card has a required title and ordered content inherited from UiContainer. It is designed for the feature-card surface; description and actions supplement the content, with action controls rendered separately from the element list.",
+          "title": "Root container for a complete feature card."
         },
         "UiElement": {
             "type": "object",
             "properties": {
                 "type": {
                     "type": "string",
-                    "description": "Discriminator property identifying the concrete visual component"
+                  "description": "Concrete element tag. Derived models narrow this string to a literal such as string, table, or image-ref; it is used for polymorphic decoding and renderer selection.",
+                  "title": "Discriminator property identifying the concrete visual component"
                 }
             },
             "required": [
@@ -180,7 +187,8 @@
                     ]
                 }
             ],
-            "description": "Polymorphic root base model for all visual UI elements in Picteus feature views.\nUses the @discriminator(\"type\") decorator so all child models inheriting from UiElement\nare automatically recognized by schema emitters and SDK code generators."
+          "description": "Every concrete visual element carries a type discriminator whose literal value selects its model and renderer. The @discriminator(\"type\") metadata lets schema emitters and SDK generators represent derived models as a polymorphic hierarchy. Consumers should dispatch on the discriminator and preserve unknown elements when round-tripping data where possible.",
+          "title": "Polymorphic root model for visual UI elements."
         },
         "Envelop": {
             "type": "object",
@@ -189,13 +197,15 @@
                     "type": "string",
                     "const": "1.0",
                     "default": "1.0",
-                    "description": "Schema specification version"
+                  "description": "Version of the ViewKit envelope contract. It is a literal value and should be preserved when serializing or forwarding a document.",
+                  "title": "Schema specification version"
                 }
             },
             "required": [
                 "schemaVersion"
             ],
-            "description": "Base envelope container model holding the schema version attribute."
+          "description": "All root ViewKit documents extend this envelope so consumers can identify the schema contract version before processing the root content.",
+          "title": "Base envelope containing the schema version."
         },
       "StringElement": {
             "type": "object",
@@ -203,27 +213,30 @@
                 "type": {
                     "type": "string",
                   "const": "string",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
-                    "description": "Text value"
+                  "description": "Text to render. Supply plain text; this field is not a Markdown or HTML document.",
+                  "title": "Text value"
                 },
                 "representation": {
                   "$ref": "#/$defs/StringRepresentation",
                     "default": "plain",
-                    "description": "Display representation mode"
+                  "description": "Selects inline, chip, or multiline rendering. The default is plain, so callers can omit this for ordinary text.",
+                  "title": "Display representation mode"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-        "description": "Universal textual string primitive element.\nSupports plain text, compact chip pill, or multiline pre-wrapped presentation."
+        "description": "Use this primitive for one textual value when a structured label/value row is unnecessary. Choose multiline for content whose line breaks should remain visible; modifiers apply presentation traits without changing the underlying value.",
+        "title": "Text value primitive with selectable inline, chip, or multiline presentation."
         },
       "StringsElement": {
             "type": "object",
@@ -231,34 +244,38 @@
                 "type": {
                     "type": "string",
                   "const": "strings",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
               "values": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
-                "description": "Array of string values"
+                "description": "Values to render in order. Each array entry remains a distinct item for chip presentation and is not parsed as a delimited string.",
+                "title": "Array of string values"
               },
               "representation": {
                 "$ref": "#/$defs/StringRepresentation",
                 "default": "plain",
-                "description": "Display representation mode (plain text or visual chips)"
+                "description": "Selects whether values appear as ordinary inline text or as separate visual chips. The default uses the plain representation.",
+                "title": "Display representation mode (plain text or visual chips)"
               },
               "separator": {
                 "$ref": "#/$defs/Separator",
-                "description": "Optional visual separator rendered between sequential values"
+                "description": "Separator inserted between adjacent values in plain representation. It does not become part of any value.",
+                "title": "Optional visual separator rendered between sequential values"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
               "values"
             ],
-        "description": "Collection of textual string values rendered as a sequence of inline items or chips.\nSupports visual separators (comma, dot, slash, bar, dash, space) and copyable affordance."
+        "description": "Use this primitive when several related strings should be rendered as one compact sequence. The client preserves the array order and inserts the selected separator between values.",
+        "title": "Collection of textual values rendered as an inline sequence or chips."
         },
         "StringCodeElement": {
             "type": "object",
@@ -266,26 +283,29 @@
                 "type": {
                     "type": "string",
                     "const": "string-code",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
-                    "description": "Text value"
+                  "description": "Code or text snippet to display. Include any desired line breaks in this string.",
+                  "title": "Text value"
                 },
                 "language": {
                     "$ref": "#/$defs/CodeLanguage",
-                    "description": "Optional syntax highlighting language identifier"
+                  "description": "Optional syntax hint for the renderer. Supported values describe highlighting modes and do not validate the snippet's syntax.",
+                  "title": "Optional syntax highlighting language identifier"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/BaseModifiers",
-                    "description": "Optional visual modifiers (copyable)"
+                  "title": "Optional visual modifiers (copyable)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "Monospace code block or formatted code snippet representation."
+          "description": "Use for source-like or preformatted textual content that should be rendered in a code-oriented style. The language is a presentation hint; the content is not parsed or validated as code by this contract.",
+          "title": "Monospace code block or formatted code snippet representation."
         },
         "XmlElement": {
             "type": "object",
@@ -293,22 +313,24 @@
                 "type": {
                     "type": "string",
                     "const": "xml",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
-                    "description": "XML content value"
+                  "description": "XML markup to render. The contract carries the source text; it does not guarantee that the document is well-formed.",
+                  "title": "XML content value"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/BaseModifiers",
-                    "description": "Optional visual modifiers (copyable)"
+                  "title": "Optional visual modifiers (copyable)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "XML markup code block element."
+          "description": "Specialized code-oriented element for XML content. It uses the custom XML renderer rather than requiring consumers to construct a generic code block.",
+          "title": "XML markup code block element."
         },
         "JsonElement": {
             "type": "object",
@@ -316,22 +338,24 @@
                 "type": {
                     "type": "string",
                     "const": "json",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
-                    "description": "JSON content value"
+                  "description": "Serialized JSON text to render. No parsing or schema validation is implied by this element.",
+                  "title": "JSON content value"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/BaseModifiers",
-                    "description": "Optional visual modifiers (copyable)"
+                  "title": "Optional visual modifiers (copyable)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "JSON data or structure representation element."
+          "description": "Specialized representation for JSON text. Supply serialized JSON when consumers should display a JSON document; this field is a string and is not structurally validated here.",
+          "title": "JSON data or structure representation element."
         },
         "StringUrlElement": {
             "type": "object",
@@ -339,26 +363,28 @@
                 "type": {
                     "type": "string",
                     "const": "string-url",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
-                    "description": "Target URL or navigation destination"
+                  "description": "Destination associated with the link. Supply a URL or client-recognized navigation target supported by the renderer.",
+                  "title": "Target URL or navigation destination"
                 },
                 "label": {
                     "type": "string",
-                    "description": "Optional custom anchor text label"
+                  "title": "Optional custom anchor text label"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "Hyperlink representation for external or internal URL navigation."
+          "description": "Use this element when displayed text should also behave as a link. Unlike StringElement, the value is a navigation destination and may be paired with a separate human-readable label.",
+          "title": "Hyperlink representation for external or internal URL navigation."
         },
         "IdentifierElement": {
             "type": "object",
@@ -366,22 +392,24 @@
                 "type": {
                     "type": "string",
                     "const": "identifier",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
-                    "description": "Identifier string value"
+                  "description": "Identifier text to display, such as an opaque ID or hash. Avoid embedding presentation markup in the value.",
+                  "title": "Identifier string value"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "Monospace semantic identifier representation."
+          "description": "Use for identifiers, hashes, and other machine-oriented strings that benefit from monospace styling. The value remains text and is not resolved as a Picteus entity.",
+          "title": "Monospace semantic identifier representation."
         },
         "RatioElement": {
             "type": "object",
@@ -389,22 +417,24 @@
                 "type": {
                     "type": "string",
                     "const": "ratio",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
-                    "description": "Aspect ratio numerical expression"
+                  "description": "Numeric ratio value used by the renderer to produce an aspect-ratio display.",
+                  "title": "Aspect ratio numerical expression"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "Aspect ratio representation (e.g. \"16:9\", \"4:3\", \"1:1\")."
+          "description": "Displays a numeric aspect ratio as a ratio expression. Provide a positive value meaningful to the surrounding content; this type does not encode the source image dimensions.",
+          "title": "Aspect ratio representation (e.g. \"16:9\", \"4:3\", \"1:1\")."
         },
       "DimensionsElement": {
         "type": "object",
@@ -412,21 +442,23 @@
           "type": {
             "type": "string",
             "const": "dimensions",
-            "description": "Discriminator type"
+            "title": "Discriminator type"
           },
           "width": {
             "type": "integer",
             "minimum": 1,
-            "description": "Width in pixels"
+            "description": "Horizontal pixel count. Values below one are rejected by the schema constraint.",
+            "title": "Width in pixels"
           },
           "height": {
             "type": "integer",
             "minimum": 1,
-            "description": "Height in pixels"
+            "description": "Vertical pixel count. Values below one are rejected by the schema constraint.",
+            "title": "Height in pixels"
           },
           "modifiers": {
             "$ref": "#/$defs/BaseModifiers",
-            "description": "Optional visual modifiers (copyable)"
+            "title": "Optional visual modifiers (copyable)"
           }
         },
         "required": [
@@ -434,7 +466,8 @@
           "width",
           "height"
         ],
-        "description": "Image dimensions representation displaying formatted width and height in pixels."
+        "description": "Displays a width/height pair as image dimensions. Both values are positive pixel counts; together they describe dimensions, not an aspect ratio or a resize request.",
+        "title": "Image dimensions representation displaying formatted width and height in pixels."
       },
         "ColourElement": {
             "type": "object",
@@ -442,41 +475,47 @@
                 "type": {
                     "type": "string",
                     "const": "color",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
-                    "description": "Hexadecimal color code"
+                  "description": "Color value used to draw the swatch. Use a hexadecimal representation supported by the client renderer.",
+                  "title": "Hexadecimal color code"
                 },
                 "label": {
                     "type": "string",
-                    "description": "Optional descriptive color name label"
+                  "description": "Human-readable color name available to the renderer when text is shown.",
+                  "title": "Optional descriptive color name label"
                 },
                 "showText": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Whether to display the textual color code or label next to the swatch"
+                  "description": "When true, allows the renderer to show the color's text label alongside the swatch. The default is true.",
+                  "title": "Whether to display the textual color code or label next to the swatch"
                 },
                 "shape": {
                     "$ref": "#/$defs/Shape",
                     "default": "circle",
-                    "description": "Visual shape of the color indicator"
+                  "description": "Geometry used for the swatch; defaults to a circle.",
+                  "title": "Visual shape of the color indicator"
                 },
                 "size": {
                     "$ref": "#/$defs/Size",
                     "default": "medium",
-                    "description": "Visual size of the color indicator"
+                  "description": "Relative size class for the swatch; defaults to medium.",
+                  "title": "Visual size of the color indicator"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "Single color representation with hex value, shape/size styling, text display toggle, and copy affordance."
+          "description": "Displays one color swatch with configurable geometry and optional adjacent text. Supply the color as a hexadecimal string; the schema leaves exact accepted hex formats to the renderer.",
+          "title": "Single color representation with hex value, shape/size styling, text display toggle, and copy affordance."
         },
         "NumberUnboundedElement": {
             "type": "object",
@@ -484,26 +523,29 @@
                 "type": {
                     "type": "string",
                     "const": "number-unbounded",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "number",
-                    "description": "Numeric value"
+                  "description": "Number to display. Its meaning and any valid range are defined by the producing feature.",
+                  "title": "Numeric value"
                 },
                 "unit": {
                     "type": "string",
-                    "description": "Optional unit suffix (e.g. \"px\", \"ms\", \"MB\")"
+                  "description": "Short unit label appended or otherwise associated with the displayed value. Include only the unit text, not a second copy of the number.",
+                  "title": "Optional unit suffix (e.g. \"px\", \"ms\", \"MB\")"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "Plain unbounded numeric value primitive element."
+          "description": "Displays a numeric value without a progress scale or rating interpretation. Use unit to communicate the measurement context; no range is imposed by this model.",
+          "title": "Plain unbounded numeric value primitive element."
         },
         "NumberBoundedStarsElement": {
             "type": "object",
@@ -511,27 +553,30 @@
                 "type": {
                     "type": "string",
                     "const": "number-stars",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "number",
-                    "description": "Numeric rating score"
+                  "description": "Score represented by the filled portion of the star display.",
+                  "title": "Numeric rating score"
                 },
                 "maximum": {
                     "type": "number",
                     "default": 5,
-                    "description": "Maximum rating scale (defaults to 5)"
+                  "description": "Upper end of the rating scale. When omitted, the scale is five; value should use the same scale.",
+                  "title": "Maximum rating scale (defaults to 5)"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "Bounded numeric rating represented as visual stars."
+          "description": "Displays a score on a star scale. Keep value within the scale from zero through maximum; this model declares the scale metadata but does not impose a numeric validation bound.",
+          "title": "Bounded numeric rating represented as visual stars."
         },
         "NumberBoundedMeterElement": {
             "type": "object",
@@ -539,40 +584,46 @@
                 "type": {
                     "type": "string",
                     "const": "number-meter",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "number",
-                    "description": "Numeric value"
+                  "description": "Current measurement or score represented by the meter.",
+                  "title": "Numeric value"
                 },
                 "minimum": {
                     "type": "number",
                     "default": 0,
-                    "description": "Minimum scale bound (defaults to 0)"
+                  "description": "Lower end of the meter range. Defaults to zero when omitted.",
+                  "title": "Minimum scale bound (defaults to 0)"
                 },
                 "maximum": {
                     "type": "number",
                     "default": 100,
-                    "description": "Maximum scale bound (e.g. 100)"
+                  "description": "Upper end of the meter range. Choose a bound consistent with value and minimum.",
+                  "title": "Maximum scale bound (e.g. 100)"
                 },
                 "label": {
                     "type": "string",
-                    "description": "Optional custom text label override (e.g. \"68 / 100\")"
+                  "description": "Optional readout text to use instead of a renderer-generated value and range label.",
+                  "title": "Optional custom text label override (e.g. \"68 / 100\")"
                 },
                 "unit": {
                     "type": "string",
-                    "description": "Optional unit suffix (e.g. \"%\")"
+                  "description": "Unit associated with the value, such as a percent sign. This affects display only and does not convert the numeric value.",
+                  "title": "Optional unit suffix (e.g. \"%\")"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "Bounded numeric meter representation (read-only progress / score bar)."
+          "description": "Displays a scalar value against a minimum-to-maximum range. Supply comparable bounds and a value in that range; optional label and unit customize the textual readout without changing the meter scale.",
+          "title": "Bounded numeric meter representation (read-only progress / score bar)."
         },
       "BooleanElement": {
             "type": "object",
@@ -580,42 +631,48 @@
                 "type": {
                     "type": "string",
                   "const": "boolean",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "boolean",
-                    "description": "Boolean state value"
+                  "description": "State to display. This remains a boolean value in the data model even when the renderer substitutes custom labels.",
+                  "title": "Boolean state value"
                 },
               "representation": {
                 "$ref": "#/$defs/BooleanRepresentation",
                 "default": "plain",
-                "description": "Display representation mode"
+                "description": "Selects ordinary text or a badge pill. Badge color applies only to badge presentation.",
+                "title": "Display representation mode"
                 },
                 "trueLabel": {
                     "type": "string",
                     "default": "true",
-                    "description": "Custom display label when true (defaults to \"true\")"
+                  "description": "Text used for the true state in plain representation. Defaults to the literal text true.",
+                  "title": "Custom display label when true (defaults to \"true\")"
                 },
                 "falseLabel": {
                     "type": "string",
                     "default": "false",
-                    "description": "Custom display label when false (defaults to \"false\")"
+                  "description": "Text used for the false state in plain representation. Defaults to the literal text false.",
+                  "title": "Custom display label when false (defaults to \"false\")"
                 },
                 "variant": {
                     "$ref": "#/$defs/BadgeVariant",
                     "default": "neutral",
-                  "description": "Badge color tone when rendered as badge"
+                  "description": "Semantic color treatment for badge presentation; it has no effect in plain representation.",
+                  "title": "Badge color tone when rendered as badge"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-        "description": "Universal boolean primitive element.\nSupports standard plain text or badge pill presentation with customizable labels and variants."
+        "description": "Displays a boolean state using text or a badge. The representation determines whether true/false labels or a colored badge are used; configured labels and variant are presentation choices only.",
+        "title": "Boolean value primitive with text or badge presentation."
         },
         "TimestampElement": {
             "type": "object",
@@ -623,27 +680,30 @@
                 "type": {
                     "type": "string",
                     "const": "timestamp",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "value": {
                     "type": "string",
-                    "description": "The timestamp in milliseconds"
+                  "description": "Unix epoch timestamp measured in milliseconds. Convert seconds-based timestamps before assigning this value.",
+                  "title": "The timestamp in milliseconds"
                 },
                 "format": {
                     "$ref": "#/$defs/TimestampFormat",
                     "default": "datetime",
-                    "description": "Presentation date/time format"
+                  "description": "Controls whether the timestamp is shown as date and time, date only, time only, or relative text. The default is datetime.",
+                  "title": "Presentation date/time format"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/PrimitiveModifiers",
-                    "description": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
+                  "title": "Optional visual modifiers (copyable, truncate, emphasis, monospace)"
                 }
             },
             "required": [
                 "type",
                 "value"
             ],
-            "description": "Formatted date and time representation."
+          "description": "Displays an epoch timestamp using a selected date/time format. The input is a count of milliseconds, not seconds; relative formatting is interpreted by the consumer.",
+          "title": "Formatted date and time representation."
         },
         "ImageReferenceElement": {
             "type": "object",
@@ -651,31 +711,36 @@
                 "type": {
                     "type": "string",
                     "const": "image-ref",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "src": {
                     "type": "string",
-                    "description": "Image source URI (HTTPS URL, base64 data URI, or asset path)"
+                  "description": "Source URI understood by the client renderer. Supported forms include HTTPS locations, base64 data URIs, and client asset paths; this field is not raw image bytes.",
+                  "title": "Image source URI (HTTPS URL, base64 data URI, or asset path)"
                 },
                 "alt": {
                     "type": "string",
-                    "description": "Accessible alternative description"
+                  "description": "Alternative text describing the image for assistive technology. Provide meaningful text when the image conveys information; omit it only when it is decorative.",
+                  "title": "Accessible alternative description"
                 },
                 "aspectRatio": {
                     "type": "string",
                     "default": "1:1",
-                    "description": "Aspect ratio of the thumbnail container"
+                  "description": "Preferred ratio of the rendered thumbnail container, expressed as a ratio string such as 1:1. It controls presentation rather than modifying the source image.",
+                  "title": "Aspect ratio of the thumbnail container"
                 },
                 "placeholder": {
                     "type": "string",
-                    "description": "Fallback placeholder image URI"
+                  "description": "Optional source to display when the primary image cannot be loaded. It follows the same URI conventions as src.",
+                  "title": "Fallback placeholder image URI"
                 }
             },
             "required": [
                 "type",
                 "src"
             ],
-            "description": "Thumbnail image reference with placeholder fallback handling."
+          "description": "References an image source for thumbnail rendering and provides accessible text and a fallback source. The client determines loading, sizing, and placeholder behavior.",
+          "title": "Thumbnail image reference with placeholder fallback handling."
         },
         "MarkdownBlockElement": {
             "type": "object",
@@ -683,22 +748,24 @@
                 "type": {
                     "type": "string",
                     "const": "markdown",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "content": {
                     "type": "string",
-                    "description": "Raw Markdown markup content"
+                  "description": "Markdown source consumed by the client renderer. The schema treats it as an opaque string and does not validate the markup or its links.",
+                  "title": "Raw Markdown markup content"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/BaseModifiers",
-                    "description": "Optional visual modifiers (copyable)"
+                  "title": "Optional visual modifiers (copyable)"
                 }
             },
             "required": [
                 "type",
                 "content"
             ],
-            "description": "Full Markdown fallback block rendered with core typographic hierarchy, spacing, and styling."
+          "description": "Use this custom-renderer escape hatch when the structured ViewKit elements cannot express the required rich text. Markdown rendering is a presentation fallback; prefer typed elements when consumers need to inspect individual values.",
+          "title": "Full Markdown fallback block rendered with core typographic hierarchy, spacing, and styling."
         },
         "HtmlBlockElement": {
             "type": "object",
@@ -706,22 +773,24 @@
                 "type": {
                     "type": "string",
                     "const": "html",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "content": {
                     "type": "string",
-                    "description": "Raw HTML markup content"
+                  "description": "HTML source passed to the custom renderer. This is an opaque string, not a typed or sanitized DOM structure.",
+                  "title": "Raw HTML markup content"
                 },
                 "modifiers": {
                     "$ref": "#/$defs/BaseModifiers",
-                    "description": "Optional visual modifiers (copyable)"
+                  "title": "Optional visual modifiers (copyable)"
                 }
             },
             "required": [
                 "type",
                 "content"
             ],
-            "description": "Sandboxed HTML rendering escape hatch."
+          "description": "Use only when structured elements or Markdown cannot represent the required content. Rendering occurs in a sandboxed host context, but callers should still avoid embedding untrusted content and should not assume access to application privileges.",
+          "title": "Sandboxed HTML rendering escape hatch."
         },
         "MultiSlotElement": {
             "type": "object",
@@ -729,21 +798,23 @@
                 "type": {
                     "type": "string",
                     "const": "multi-slot",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "slots": {
                     "type": "array",
                     "items": {
                         "$ref": "#/$defs/Slot"
                     },
-                    "description": "List of slots comprising the row"
+                  "description": "Ordered slots in the row. Each slot's width is a percentage; arrange slot definitions in the intended visual order.",
+                  "title": "List of slots comprising the row"
                 }
             },
             "required": [
                 "type",
                 "slots"
             ],
-          "description": "Multi-slot horizontal row layout comprising slots with individual widths."
+          "description": "Use this layout when a row needs explicit regions with independently controlled widths. Each slot contains one child element; unlike FlowingElement, the layout does not automatically wrap a sequence of children.",
+          "title": "Horizontal row layout with individually sized slots."
         },
         "FlowingElement": {
             "type": "object",
@@ -751,25 +822,28 @@
                 "type": {
                     "type": "string",
                     "const": "flowing",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
               "separator": {
                 "$ref": "#/$defs/Separator",
-                "description": "Optional visual separator rendered between sequential child elements"
+                "description": "Separator placed between adjacent elements. Omit it when spacing or the child renderers already provide sufficient separation.",
+                "title": "Optional visual separator rendered between sequential child elements"
               },
                 "elements": {
                     "type": "array",
                     "items": {
                         "$ref": "#/$defs/UiElement"
                     },
-                    "description": "List of child elements rendered sequentially with line wrapping"
+                  "description": "Ordered children rendered in the flow. The client wraps them as needed rather than requiring callers to calculate line breaks.",
+                  "title": "List of child elements rendered sequentially with line wrapping"
                 }
             },
             "required": [
                 "type",
                 "elements"
             ],
-            "description": "Flowing inline layout container with automatic line wrapping.\nRenders child elements horizontally in sequence, automatically wrapping to the next line when space runs out."
+          "description": "Use for compact related values that should flow horizontally and wrap naturally at the available width. Child order is preserved; an optional separator is placed between neighboring children.",
+          "title": "Inline layout container that wraps child elements."
         },
         "LabelValueElement": {
             "type": "object",
@@ -777,20 +851,23 @@
                 "type": {
                     "type": "string",
                     "const": "label-value",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "label": {
                     "type": "string",
-                    "description": "Key or descriptive label displayed muted on the left"
+                  "description": "Human-readable name for the value. This text is rendered as the row label rather than as a separate UiElement.",
+                  "title": "Key or descriptive label displayed muted on the left"
                 },
                 "value": {
-                    "description": "Rendered value element on the right",
+                  "description": "Value content rendered in the right-hand region. It may be a primitive or a nested structural element.",
+                  "title": "Rendered value element on the right",
                     "$ref": "#/$defs/UiElement"
                 },
                 "withDivider": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Whether to render a bottom border/hairline divider"
+                  "description": "Enables a horizontal separator beneath this row when true. Defaults to false.",
+                  "title": "Whether to render a bottom border/hairline divider"
                 }
             },
             "required": [
@@ -798,7 +875,8 @@
                 "label",
                 "value"
             ],
-            "description": "Standard label and value row.\nDisplays a muted label on the left and value representation on the right with a vertical dividing line."
+          "description": "Represents one named value with a muted left-hand label and a right-hand visual element. Use it for a single field; use TableElement for repeated rows or column-aligned data.",
+          "title": "Label and value row with an optional divider."
         },
         "TableElement": {
             "type": "object",
@@ -806,43 +884,49 @@
                 "type": {
                     "type": "string",
                     "const": "table",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "isStriped": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Whether to render alternating row background colors"
+                  "description": "Enables alternating backgrounds across successive rows to improve scanability. Defaults to false.",
+                  "title": "Whether to render alternating row background colors"
                 },
                 "withColumnSeparators": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Whether to render vertical column separators"
+                  "description": "Adds vertical dividers between columns when true. Defaults to false.",
+                  "title": "Whether to render vertical column separators"
                 },
                 "withRowSeparators": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Whether to render horizontal row separators"
+                  "description": "Adds horizontal dividers between rows when true. Defaults to false.",
+                  "title": "Whether to render horizontal row separators"
                 },
                 "columns": {
                     "type": "array",
                     "items": {
                         "$ref": "#/$defs/TableColumn"
                     },
-                    "description": "Optional explicit column definitions"
+                  "description": "Optional ordered column metadata defining headers, alignment, and width. When omitted, the renderer may infer a basic layout from row cells.",
+                  "title": "Optional explicit column definitions"
                 },
                 "rows": {
                     "type": "array",
                     "items": {
                         "$ref": "#/$defs/TableRow"
                     },
-                    "description": "Tabular data rows"
+                  "description": "Ordered table rows. Each row's cells correspond positionally to the declared columns.",
+                  "title": "Tabular data rows"
                 }
             },
             "required": [
                 "type",
                 "rows"
             ],
-            "description": "Structured tabular data representation.\nSupports header/borderless modes, 2-column key-value tables, and 3-column data tables."
+          "description": "Use for data that benefits from aligned rows and columns, including key/value and multi-column tables. Supply rows in display order; explicit columns are optional, and divider/striping flags independently control visual separators and alternating backgrounds.",
+          "title": "Structured tabular data with optional columns and separators."
         },
         "RepeatingGroupElement": {
             "type": "object",
@@ -850,25 +934,28 @@
                 "type": {
                     "type": "string",
                     "const": "repeating-group",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "title": {
                     "type": "string",
-                    "description": "Optional section header for the group"
+                  "description": "Heading displayed for the repeated section, separate from the labels of individual entries.",
+                  "title": "Optional section header for the group"
                 },
                 "entries": {
                     "type": "array",
                     "items": {
                         "$ref": "#/$defs/RepeatingGroupEntry"
                     },
-                    "description": "List of repeated entry records"
+                  "description": "Entries in display order. Each entry supplies its own label and content.",
+                  "title": "List of repeated entry records"
                 }
             },
             "required": [
                 "type",
                 "entries"
             ],
-            "description": "Repeating group container where entries share uniform structure and retain per-entry labels."
+          "description": "Groups a sequence of labeled entries under one optional section title. Use it when records have the same general presentation but need their own labels.",
+          "title": "Repeating group container where entries share uniform structure and retain per-entry labels."
         },
         "CollapsibleGroupElement": {
             "type": "object",
@@ -876,27 +963,31 @@
                 "type": {
                     "type": "string",
                     "const": "collapsible-group",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "title": {
                     "type": "string",
-                    "description": "Group title (e.g. \"Show specimen details\")"
+                  "description": "Text shown on the disclosure control. Use a concise action or section name that remains meaningful while the content is collapsed.",
+                  "title": "Group title (e.g. \"Show specimen details\")"
                 },
                 "summary": {
                     "type": "string",
-                    "description": "Secondary summary indicator (e.g. \"2 neutral values\")"
+                  "description": "Compact contextual text shown alongside the title while the group is collapsed or expanded. It does not replace the nested content.",
+                  "title": "Secondary summary indicator (e.g. \"2 neutral values\")"
                 },
                 "defaultExpanded": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Whether the disclosure is open/expanded by default"
+                  "description": "Initial expanded state requested by the data. Defaults to false; subsequent interaction is managed by the client.",
+                  "title": "Whether the disclosure is open/expanded by default"
                 },
                 "elements": {
                     "type": "array",
                     "items": {
                         "$ref": "#/$defs/UiElement"
                     },
-                    "description": "Nested content elements revealed when expanded"
+                  "description": "Ordered child elements made visible by expanding the group.",
+                  "title": "Nested content elements revealed when expanded"
                 }
             },
             "required": [
@@ -904,7 +995,8 @@
                 "title",
                 "elements"
             ],
-            "description": "Collapsible disclosure container (accordion) with summary badge."
+          "description": "Groups nested content behind a disclosure control. The title names the group, summary can provide a compact status indicator, and defaultExpanded controls only the initial state.",
+          "title": "Collapsible disclosure container (accordion) with summary badge."
         },
         "DividerElement": {
             "type": "object",
@@ -912,18 +1004,20 @@
                 "type": {
                     "type": "string",
                     "const": "divider",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "style": {
                     "$ref": "#/$defs/DividerStyle",
                     "default": "hairline",
-                    "description": "Line styling"
+                  "description": "Visual stroke treatment for the separator. Defaults to a subtle hairline.",
+                  "title": "Line styling"
                 }
             },
             "required": [
                 "type"
             ],
-            "description": "Visual hairline separator separating sections or element groups."
+          "description": "A standalone visual separator for dividing adjacent sections or element groups. Use the divider flags on tables or rows when the separator is part of that structure.",
+          "title": "Visual hairline separator separating sections or element groups."
         },
       "StringRepresentation": {
             "type": "string",
@@ -932,29 +1026,33 @@
               "chip",
               "multiline"
             ],
-        "description": "Visual presentation style for string values."
+        "title": "Visual presentation style for string values."
         },
         "PrimitiveModifiers": {
             "type": "object",
             "properties": {
                 "truncate": {
                     "$ref": "#/$defs/TruncateOptions",
-                    "description": "Configures character truncation threshold with show-more affordance"
+                  "description": "Optional text abbreviation behavior. The source text remains unchanged, and the renderer may offer expansion according to showMore.",
+                  "title": "Configures character truncation threshold with show-more affordance"
                 },
                 "weight": {
                     "$ref": "#/$defs/TextWeight",
                     "default": "normal",
-                    "description": "Typographic text weight"
+                  "description": "Relative font weight for textual rendering; defaults to normal.",
+                  "title": "Typographic text weight"
                 },
                 "intensity": {
                     "$ref": "#/$defs/TextIntensity",
                     "default": "medium",
-                    "description": "Visual text color intensity"
+                  "description": "Relative contrast treatment for the text; defaults to medium.",
+                  "title": "Visual text color intensity"
                 },
                 "monospace": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Whether to use monospace font rendering (for hashes, IDs, codes)"
+                  "description": "When true, requests a fixed-width font suitable for identifiers and code-like values. Defaults to false.",
+                  "title": "Whether to use monospace font rendering (for hashes, IDs, codes)"
                 }
             },
             "allOf": [
@@ -962,7 +1060,8 @@
                     "$ref": "#/$defs/BaseModifiers"
                 }
             ],
-            "description": "Common modifier traits that can be attached to primitive elements."
+          "description": "Extends BaseModifiers with text styling controls. Defaults provide normal weight, medium intensity, and proportional text unless a feature explicitly overrides them.",
+          "title": "Common modifier traits that can be attached to primitive elements."
         },
       "Separator": {
         "type": "string",
@@ -974,7 +1073,7 @@
           "dash",
           "space"
         ],
-        "description": "Visual separator rendered between sequential elements or items."
+        "title": "Visual separator rendered between sequential elements or items."
       },
         "CodeLanguage": {
             "type": "string",
@@ -983,17 +1082,19 @@
                 "json",
                 "yaml"
             ],
-            "description": "Supported syntax highlighting languages for formatted code blocks."
+          "title": "Supported syntax highlighting languages for formatted code blocks."
         },
         "BaseModifiers": {
             "type": "object",
             "properties": {
                 "copyable": {
                     "type": "boolean",
-                    "description": "Adds an interactive copy button/action next to the rendered value"
+                  "description": "When true, exposes a copy affordance for the associated value where supported by the renderer.",
+                  "title": "Adds an interactive copy button/action next to the rendered value"
                 }
             },
-            "description": "Base modifier traits for elements that support copy affordance."
+          "description": "Common optional presentation traits shared by primitive values and content renderers. Modifiers affect how content is displayed or copied; they do not transform the source value.",
+          "title": "Base modifier traits for elements that support copy affordance."
         },
         "Shape": {
             "type": "string",
@@ -1001,7 +1102,7 @@
                 "circle",
                 "square"
             ],
-            "description": "Geometric shape representation for visual containers and indicators."
+          "title": "Geometric shape representation for visual containers and indicators."
         },
         "Size": {
             "type": "string",
@@ -1010,7 +1111,7 @@
                 "medium",
                 "large"
             ],
-            "description": "Relative sizing scale for visual elements and indicators."
+          "title": "Relative sizing scale for visual elements and indicators."
         },
       "BooleanRepresentation": {
         "type": "string",
@@ -1018,7 +1119,7 @@
           "plain",
           "badge"
         ],
-        "description": "Visual presentation style for boolean values."
+        "title": "Visual presentation style for boolean values."
       },
         "BadgeVariant": {
             "type": "string",
@@ -1028,7 +1129,7 @@
                 "warning",
                 "danger"
             ],
-            "description": "Visual color tone variants for badge pill representations."
+          "title": "Visual color tone variants for badge pill representations."
         },
         "TimestampFormat": {
             "type": "string",
@@ -1038,56 +1139,65 @@
                 "time",
                 "relative"
             ],
-            "description": "Presentation format styles for timestamp elements."
+          "title": "Presentation format styles for timestamp elements."
         },
         "Slot": {
             "type": "object",
             "properties": {
                 "label": {
                     "type": "string",
-                    "description": "Optional slot label (e.g. \"Slot A\")"
+                  "description": "Short text identifying this region of the row. It is independent of the rendered content.",
+                  "title": "Optional slot label (e.g. \"Slot A\")"
                 },
                 "width": {
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Width percentage (1-100)"
+                  "description": "Relative share of the row width. The schema constrains explicit values to the inclusive range 1 through 100.",
+                  "title": "Width percentage (1-100)"
                 },
                 "content": {
-                    "description": "Rendered content inside the slot",
+                  "description": "One visual element displayed in this slot. Use a nested layout element when the slot itself needs multiple children.",
+                  "title": "Rendered content inside the slot",
                     "$ref": "#/$defs/UiElement"
                 }
             },
             "required": [
                 "content"
             ],
-            "description": "Single slot within a multi-slot horizontal row layout."
+          "description": "A slot combines an optional label, a relative width, and one visual child. Slot widths are percentages of the row and should be chosen so the full row's widths form a usable layout.",
+          "title": "Single slot within a multi-slot horizontal row layout."
         },
         "TableColumn": {
             "type": "object",
             "properties": {
                 "header": {
                     "type": "string",
-                    "description": "Display header text"
+                  "description": "Optional header shown above values in this column. Omit when the table has no header row.",
+                  "title": "Display header text"
                 },
                 "align": {
                     "$ref": "#/$defs/TableColumnAlign",
                     "default": "left",
-                    "description": "Text horizontal alignment"
+                  "description": "Horizontal alignment applied to cell content in the column. Defaults to left.",
+                  "title": "Text horizontal alignment"
                 },
                 "width": {
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Width percentage (1-100)"
+                  "description": "Column width percentage used with widthMode. Explicit values are constrained to 1 through 100.",
+                  "title": "Width percentage (1-100)"
                 },
                 "widthMode": {
                     "$ref": "#/$defs/TableColumnWidthMode",
                     "default": "fixed",
-                    "description": "Sizing mode for the provided width"
+                  "description": "Determines whether width is a fixed percentage allocation or an upper bound. Defaults to fixed.",
+                  "title": "Sizing mode for the provided width"
                 }
             },
-            "description": "Column definition for structured tables."
+          "description": "Describes one table column and its visual sizing. When columns are supplied, their order corresponds to the position of each cell in a row.",
+          "title": "Column definition for structured tables."
         },
         "TableRow": {
             "type": "object",
@@ -1097,23 +1207,27 @@
                     "items": {
                         "$ref": "#/$defs/UiElement"
                     },
-                    "description": "Array of cell values corresponding to table columns"
+                  "description": "Ordered contents for this row. Each cell is a UiElement so values can use the same primitive and layout renderers as other ViewKit content.",
+                  "title": "Array of cell values corresponding to table columns"
                 }
             },
             "required": [
                 "cells"
             ],
-            "description": "Single table row containing an array of cell values."
+          "description": "A row's cell array is positional: cell at each index corresponds to the column at that index. Keep row lengths aligned with the table's explicit column definitions when present.",
+          "title": "Single table row containing an array of cell values."
         },
         "RepeatingGroupEntry": {
             "type": "object",
             "properties": {
                 "label": {
                     "type": "string",
-                    "description": "Entry label"
+                  "description": "Short label identifying this entry within the repeated group.",
+                  "title": "Entry label"
                 },
                 "value": {
-                    "description": "Primary entry value or nested elements",
+                  "description": "Optional primary visual value for a compact entry. Use elements for a multi-part structured entry.",
+                  "title": "Primary entry value or nested elements",
                     "$ref": "#/$defs/UiElement"
                 },
                 "elements": {
@@ -1121,13 +1235,15 @@
                     "items": {
                         "$ref": "#/$defs/UiElement"
                     },
-                    "description": "Nested elements for structured entries"
+                  "description": "Optional ordered content for entries that require more than one value element.",
+                  "title": "Nested elements for structured entries"
                 }
             },
             "required": [
                 "label"
             ],
-            "description": "Single entry within a repeating group."
+          "description": "A repeating entry carries a stable display label and either one primary value or a list of nested elements, depending on the shape needed by the feature.",
+          "title": "Single entry within a repeating group."
         },
         "DividerStyle": {
             "type": "string",
@@ -1136,7 +1252,8 @@
                 "solid",
                 "dashed"
             ],
-            "description": "Visual styling variants for hairline dividers."
+          "description": "Selects the visual stroke treatment used by DividerElement.",
+          "title": "Visual styling variants for hairline dividers."
         },
         "TruncateOptions": {
             "type": "object",
@@ -1145,18 +1262,21 @@
                     "type": "integer",
                     "minimum": -2147483648,
                     "maximum": 2147483647,
-                    "description": "Maximum number of characters to display before truncating"
+                  "description": "Threshold after which the renderer can shorten the displayed text. This does not constrain the stored string or remove its undisplayed content.",
+                  "title": "Maximum number of characters to display before truncating"
                 },
                 "showMore": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Whether to render a \"Show more\" / \"Show less\" toggle affordance"
+                  "description": "When true, permits an expand/collapse control for text beyond the truncation threshold. Defaults to true.",
+                  "title": "Whether to render a \"Show more\" / \"Show less\" toggle affordance"
                 }
             },
             "required": [
                 "characterLimit"
             ],
-            "description": "Truncation configuration for long textual content with optional expand affordance."
+          "description": "Controls how a renderer abbreviates long text. The character limit is a presentation threshold rather than a validation limit; showMore lets the user reveal the remaining text.",
+          "title": "Truncation configuration for long textual content with optional expand affordance."
         },
         "TextWeight": {
             "type": "string",
@@ -1165,7 +1285,7 @@
                 "normal",
                 "heavy"
             ],
-            "description": "Typographic stroke weight styling."
+          "title": "Typographic stroke weight styling."
         },
         "TextIntensity": {
             "type": "string",
@@ -1174,7 +1294,7 @@
                 "medium",
                 "high"
             ],
-            "description": "Visual text color intensity and contrast."
+          "title": "Visual text color intensity and contrast."
         },
         "TableColumnAlign": {
             "type": "string",
@@ -1183,7 +1303,8 @@
                 "center",
                 "right"
             ],
-            "description": "Text horizontal alignment options for table columns."
+          "description": "Horizontal alignment applied within cells of a TableColumn. The alignment is a presentation choice and does not affect the stored cell values.",
+          "title": "Text horizontal alignment options for table columns."
         },
         "TableColumnWidthMode": {
             "type": "string",
@@ -1191,18 +1312,21 @@
                 "fixed",
                 "maximum"
             ],
-            "description": "Width mode for table columns."
+          "description": "Controls how an optional TableColumn width is interpreted by the table renderer.",
+          "title": "Width mode for table columns."
         },
         "UiAction": {
             "type": "object",
             "properties": {
                 "type": {
                     "type": "string",
-                    "description": "Discriminator property"
+                  "description": "Concrete action tag used by clients to select the action behavior.",
+                  "title": "Discriminator property"
                 },
                 "label": {
                     "type": "string",
-                    "description": "Display label for the action"
+                  "description": "User-facing label shown on the control. Keep it short and action-oriented.",
+                  "title": "Display label for the action"
                 }
             },
             "required": [
@@ -1230,7 +1354,8 @@
                         },
                         "label": {
                             "type": "string",
-                            "description": "Display label for the action"
+                          "description": "User-facing label shown on the control. Keep it short and action-oriented.",
+                          "title": "Display label for the action"
                         }
                     },
                     "required": [
@@ -1239,7 +1364,8 @@
                     ]
                 }
             ],
-            "description": "Polymorphic base model for interactive actions."
+          "description": "Shared action contract for user-invokable card controls. Concrete action models provide their own discriminator and action-specific destination or command fields.",
+          "title": "Polymorphic base model for interactive actions."
         },
         "ButtonActionElement": {
             "type": "object",
@@ -1247,37 +1373,44 @@
                 "type": {
                     "type": "string",
                     "const": "button",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "label": {
                     "type": "string",
-                    "description": "Display label for the action"
+                  "description": "User-facing label shown on the control. Keep it short and action-oriented.",
+                  "title": "Display label for the action"
                 },
                 "extensionId": {
                     "type": "string",
-                    "description": "Extension identifier owning the target command"
+                  "description": "Extension that registers commandId. Omit only when the client can resolve the command in the current extension context.",
+                  "title": "Extension identifier owning the target command"
                 },
                 "commandId": {
                     "type": "string",
-                    "description": "Command identifier to invoke"
+                  "description": "Identifier of the registered extension command to dispatch when the button is activated.",
+                  "title": "Command identifier to invoke"
                 },
                 "target": {
                     "type": "string",
-                    "description": "Target entity or context identifier"
+                  "description": "Optional entity or context identifier forwarded to the command handler. Its format is determined by the target extension.",
+                  "title": "Target entity or context identifier"
                 },
                 "parameters": {
                     "$ref": "#/$defs/RecordUnknown",
-                    "description": "Optional arbitrary parameters payload forwarded to the command handler"
+                  "description": "JSON-compatible arguments passed to the extension command. Define and validate their shape in the command implementation.",
+                  "title": "Optional arbitrary parameters payload forwarded to the command handler"
                 },
                 "disabled": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Whether the button is disabled / unavailable"
+                  "description": "When true, the client renders the action as unavailable and should not dispatch it from user activation.",
+                  "title": "Whether the button is disabled / unavailable"
                 },
                 "variant": {
                     "$ref": "#/$defs/ButtonVariant",
                     "default": "secondary",
-                    "description": "Button visual style variant"
+                  "description": "Selects the button's emphasis style. Use danger for destructive operations and primary for the main recommended action; the variant does not change behavior.",
+                  "title": "Button visual style variant"
                 }
             },
             "required": [
@@ -1285,7 +1418,8 @@
                 "label",
                 "commandId"
             ],
-            "description": "Interactive button action triggering an extension command."
+          "description": "When activated, the client dispatches commandId to the specified extension and may include target and parameters as command input. disabled and variant affect presentation and availability, not the command's authorization.",
+          "title": "Interactive button action triggering an extension command."
         },
         "ExternalLinkActionElement": {
             "type": "object",
@@ -1293,15 +1427,17 @@
                 "type": {
                     "type": "string",
                     "const": "external-link",
-                    "description": "Discriminator type"
+                  "title": "Discriminator type"
                 },
                 "label": {
                     "type": "string",
-                    "description": "Display label for the action"
+                  "description": "User-facing label shown on the control. Keep it short and action-oriented.",
+                  "title": "Display label for the action"
                 },
                 "url": {
                     "type": "string",
-                    "description": "Target URL destination"
+                  "description": "External destination opened when the user activates the link action. The client controls how external navigation is handed to the platform.",
+                  "title": "Target URL destination"
                 }
             },
             "required": [
@@ -1309,7 +1445,8 @@
                 "label",
                 "url"
             ],
-            "description": "External link action distinct from inline URL text values."
+          "description": "Renders a user-invokable action that opens a destination externally. Use StringUrlElement for a link embedded in content rather than an action control.",
+          "title": "External link action distinct from inline URL text values."
         },
         "RecordUnknown": {
             "type": "object",
@@ -1324,7 +1461,7 @@
                 "subtle",
                 "danger"
             ],
-            "description": "Visual style variants for interactive button actions."
+          "title": "Visual style variants for interactive button actions."
         }
     }
 }

@@ -1,4 +1,4 @@
-import { createGeneratedFileHeader } from "../common.js";
+import { createGeneratedFileHeader, DocumentationType, getDocumentationText } from "../common.js";
 import { CodeWriter } from "../codeWriter.js";
 import { IntentEnum, IntentModel, IntentProperty, IntentSpec, IntentType, IntentUnion } from "./intentsModel.js";
 
@@ -107,7 +107,19 @@ function formatZodPropertyDefinition(property: IntentProperty): string
 {
   const baseExpression = resolveZodTypeExpression(property.type, property);
   const optionalExpression = property.optional ? `${baseExpression}.optional()` : baseExpression;
-  return `${property.name}: ${optionalExpression}`;
+  const documentedExpression = appendSchemaDocumentation(optionalExpression, property);
+  return `${property.name}: ${documentedExpression}`;
+}
+
+function getSchemaDocumentation(documentation: DocumentationType): string | undefined
+{
+  return getDocumentationText(documentation);
+}
+
+function appendSchemaDocumentation(expression: string, documentation: DocumentationType): string
+{
+  const text = getSchemaDocumentation(documentation);
+  return text ? `${expression}.describe(${JSON.stringify(text)})` : expression;
 }
 
 interface DeclarationItem
@@ -221,16 +233,11 @@ function orderDeclarationsTopologically(spec: IntentSpec): DeclarationItem[]
 function writeZodEnum(intentEnum: IntentEnum, writer: CodeWriter): void
 {
   const memberValues = intentEnum.members.map((member) => JSON.stringify(member.value));
-  writer.writeLine(`export const zod${intentEnum.name} = z.enum([`);
-  writer.indent(() =>
-  {
-    for (let index = 0; index < memberValues.length; index++)
-    {
-      const isLast = index === memberValues.length - 1;
-      writer.writeLine(`${memberValues[index]}${isLast ? "" : ","}`);
-    }
-  });
-  writer.writeLine("]);");
+  const documentedSchema = appendSchemaDocumentation(
+    `z.enum([ ${memberValues.join(", ")} ])`,
+    intentEnum
+  );
+  writer.writeLine(`export const zod${intentEnum.name} = ${documentedSchema};`);
   writer.blankLine();
 }
 
@@ -246,17 +253,19 @@ function writeZodUnion(intentUnion: IntentUnion, writer: CodeWriter): void
       writer.writeLine(`${variantExpressions[index]}${isLast ? "" : ","}`);
     }
   });
-  writer.writeLine("]);");
+  const unionDocumentation = getSchemaDocumentation(intentUnion);
+  writer.writeLine(`])${unionDocumentation ? `.describe(${JSON.stringify(unionDocumentation)})` : ""};`);
   writer.blankLine();
 }
 
 function writeZodModel(model: IntentModel, writer: CodeWriter): void
 {
+  const modelDocumentation = getSchemaDocumentation(model);
   if (model.baseModelName)
   {
     if (model.properties.length === 0)
     {
-      writer.writeLine(`export const zod${model.name} = zod${model.baseModelName};`);
+      writer.writeLine(`export const zod${model.name} = ${appendSchemaDocumentation(`zod${model.baseModelName}`, model)};`);
     }
     else
     {
@@ -271,14 +280,14 @@ function writeZodModel(model: IntentModel, writer: CodeWriter): void
           writer.writeLine(`${propertyLine}${isLast ? "" : ","}`);
         }
       });
-      writer.writeLine("});");
+      writer.writeLine(`})${modelDocumentation ? `.describe(${JSON.stringify(modelDocumentation)})` : ""};`);
     }
   }
   else
   {
     if (model.properties.length === 0)
     {
-      writer.writeLine(`export const zod${model.name} = z.object({});`);
+      writer.writeLine(`export const zod${model.name} = z.object({})${modelDocumentation ? `.describe(${JSON.stringify(modelDocumentation)})` : ""};`);
     }
     else
     {
@@ -293,7 +302,7 @@ function writeZodModel(model: IntentModel, writer: CodeWriter): void
           writer.writeLine(`${propertyLine}${isLast ? "" : ","}`);
         }
       });
-      writer.writeLine("});");
+      writer.writeLine(`})${modelDocumentation ? `.describe(${JSON.stringify(modelDocumentation)})` : ""};`);
     }
   }
   writer.blankLine();

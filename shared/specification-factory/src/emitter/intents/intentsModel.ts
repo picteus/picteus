@@ -8,12 +8,13 @@ import {
   getMinLength,
   getMinValue,
   getPattern,
+  getSummary,
   Model,
   Namespace,
   Program,
   Type
 } from "@typespec/compiler";
-import { PICTEUS_NAMESPACE } from "../common.js";
+import { DocumentationType, PICTEUS_NAMESPACE } from "../common.js";
 import { getIntentAudience, IntentAudience, isIntent } from "./decorators.js";
 
 
@@ -26,10 +27,9 @@ export interface IntentType
   readonly unionTypes?: IntentType[];
 }
 
-export interface IntentProperty
+export interface IntentProperty extends DocumentationType
 {
   readonly name: string;
-  readonly doc?: string;
   readonly format?: string;
   readonly minLength?: number;
   readonly maxLength?: number;
@@ -42,39 +42,39 @@ export interface IntentProperty
   readonly type: IntentType;
 }
 
-export interface IntentModel
+export interface IntentModel extends DocumentationType
 {
   readonly name: string;
-  readonly doc?: string;
   readonly baseModelName?: string;
   readonly audience?: IntentAudience;
   readonly isIntent?: boolean;
   readonly properties: IntentProperty[];
 }
 
-export interface IntentEnumMember
+export interface IntentEnumMember extends DocumentationType
 {
   readonly name: string;
   readonly value: string;
-  readonly doc?: string;
 }
 
-export interface IntentEnum
+export interface IntentEnum extends DocumentationType
 {
   readonly name: string;
-  readonly doc?: string;
   readonly members: IntentEnumMember[];
 }
 
-export interface IntentUnion
+export interface IntentUnion extends DocumentationType
 {
   readonly name: string;
-  readonly doc?: string;
   readonly variants: IntentType[];
 }
 
 export interface IntentSpec
 {
+  readonly namespaceSummary?: string;
+  readonly namespaceDoc?: string;
+  readonly frontEndIntentDocumentation?: DocumentationType;
+  readonly backEndIntentDocumentation?: DocumentationType;
   readonly models: IntentModel[];
   readonly enums: IntentEnum[];
   readonly unions: IntentUnion[];
@@ -184,6 +184,7 @@ function getModelProperties(program: Program, model: Model): IntentProperty[]
   {
     const propertyDefinition: {
       name: string;
+      summary?: string;
       doc?: string;
       format?: string;
       minLength?: number;
@@ -197,6 +198,7 @@ function getModelProperties(program: Program, model: Model): IntentProperty[]
       type: IntentType;
     } = {
       name: propertyName,
+      summary: getSummary(program, property),
       doc: getDoc(program, property),
       optional: property.optional,
       type: resolveIntentType(property.type)
@@ -260,6 +262,7 @@ export function extractTypeSpecIntents(program: Program): IntentSpec
     models.push(
       {
         name: modelName,
+        summary: getSummary(program, model),
         doc: getDoc(program, model),
         baseModelName: model.baseModel?.name,
         audience: getIntentAudience(program, model),
@@ -278,11 +281,12 @@ export function extractTypeSpecIntents(program: Program): IntentSpec
         {
           name: memberName,
           value: typeof member.value === "string" ? member.value : memberName,
+          summary: getSummary(program, member),
           doc: getDoc(program, member)
         }
       );
     }
-    enums.push({ name: enumName, doc: getDoc(program, enumType), members });
+    enums.push({ name: enumName, summary: getSummary(program, enumType), doc: getDoc(program, enumType), members });
   }
 
   for (const [ unionName, unionType ] of namespace.unions)
@@ -296,8 +300,44 @@ export function extractTypeSpecIntents(program: Program): IntentSpec
     {
       variants.push(resolveIntentType(variant.type));
     }
-    unions.push({ name: unionName, doc: getDoc(program, unionType), variants });
+    unions.push({
+      name: unionName,
+      summary: getSummary(program, unionType),
+      doc: getDoc(program, unionType),
+      variants
+    });
   }
 
-  return { models, enums, unions };
+  return {
+    namespaceSummary: getSummary(program, namespace),
+    namespaceDoc: getDoc(program, namespace),
+    frontEndIntentDocumentation: getIntentAudienceDocumentation(program, namespace, "frontEndIntent"),
+    backEndIntentDocumentation: getIntentAudienceDocumentation(program, namespace, "backEndIntent"),
+    models,
+    enums,
+    unions
+  };
+}
+
+function getIntentAudienceDocumentation(
+  program: Program,
+  namespace: Namespace,
+  decoratorName: "frontEndIntent" | "backEndIntent"
+): DocumentationType
+{
+  const decorator = namespace.decoratorDeclarations.get(decoratorName);
+  if (!decorator)
+  {
+    throw new Error(`Could not locate the @${decoratorName} decorator declaration.`);
+  }
+
+  const comment = decorator.node?.docs
+    ?.map((docComment) => docComment.content.map((content) => content.text).join(""))
+    .join("\n\n")
+    .trim();
+
+  return {
+    summary: getSummary(program, decorator),
+    doc: getDoc(program, decorator) ?? comment
+  };
 }

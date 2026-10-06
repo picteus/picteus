@@ -51,12 +51,15 @@ remain under `dist/intents/`:
 ```
 dist/
 ├── viewkit/
+│   ├── markdown/viewkit.md
 │   ├── python/view_kit.py
 │   ├── react/ViewKit.tsx
 │   ├── schema/viewkit.json
 │   └── typescript/viewKit.ts
 └── intents/
+    ├── markdown/intents.md
     ├── python/
+    ├── schema/intents.json
     └── typescript/
 
 src/
@@ -98,6 +101,10 @@ back-end TypeScript and Python files, including each union's supporting model de
 Run `npm run build:viewkit` or `npm run build:intents` to build and deploy each specification independently.
 `npm run build` builds both. The shared core receives the front-end intents; the back-end receives only the back-end
 intents; and both extension SDKs receive both files. The front-end imports `FrontIntent` from the shared core and
-receives no generated intent file. The `ServeBundleIntent` name is used consistently in both SDKs.
+receives no generated intent file. The intents build also emits a bundled JSON Schema for the TypeSpec models to
+`dist/intents/schema/intents.json` and publishes it to
+`docs/static/jsonschema/intents.schema.json`. Both builds generate structural Markdown references directly from
+their TypeSpec models and deploy them to the extension reference docs. These generated pages complement the manually
+maintained usage guides. The `ServeBundleIntent` name is used consistently in both SDKs.
 
 ---

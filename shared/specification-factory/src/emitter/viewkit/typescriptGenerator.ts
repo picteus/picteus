@@ -10,7 +10,7 @@ import {
   SCHEMA_VERSION_VALUE
 } from "./codegenModel.js";
 import { GrammarSpec, ViewKitModel, ViewKitProperty, ViewKitType } from "./typespecModel.js";
-import { createGeneratedFileHeader } from "../common.js";
+import { createGeneratedFileHeader, getDocumentationText } from "../common.js";
 
 
 const RECORD_TYPE = "Record<string, unknown>";
@@ -231,7 +231,7 @@ function generateModelFactory(model: ViewKitModel, writer: CodeWriter): void
   for (const property of requiredProperties)
   {
     parameters.push(`${property.name}: ${resolveTsType(property.type)}`);
-    docParameters.push({ name: property.name, description: property.doc });
+    docParameters.push({ name: property.name, description: getDocumentationText(property) });
   }
 
   const {
@@ -254,7 +254,7 @@ function generateModelFactory(model: ViewKitModel, writer: CodeWriter): void
     writer.writeTsDoc(
       {
         summary: `Creates a \`${model.name}\` component instance.`,
-        remarks: model.doc,
+        documentation: { doc: model.doc },
         params: docParameters,
         returns: `A strongly-typed \`${model.name}\` object.`
       }
@@ -326,7 +326,7 @@ function generateModelClass(
   writer.writeTsDoc(
     {
       summary: `Class implementation of the \`${model.name}\` interface.`,
-      remarks: model.doc
+      documentation: { doc: model.doc }
     }
   );
   writer.classBlock(`export class ${className} extends ${baseClass} implements ${model.name}`, () =>
@@ -344,7 +344,7 @@ function generateModelClass(
 
     for (const property of requiredProperties)
     {
-      writer.writeTsDoc({ summary: property.doc });
+      writer.writeTsDoc({ documentation: property });
       writer.writeLine(`readonly ${property.name}: ${resolveTsType(property.type)};`);
     }
 
@@ -352,7 +352,7 @@ function generateModelClass(
     {
       writer.writeTsDoc(
         {
-          summary: property.doc,
+          documentation: property,
           defaultValue: formatTsDefaultValue(property)
         }
       );
@@ -367,7 +367,7 @@ function generateModelClass(
     for (const property of requiredProperties)
     {
       constructorParams.push(`${property.name}: ${resolveTsType(property.type)}`);
-      constructorDocParams.push({ name: property.name, description: property.doc });
+      constructorDocParams.push({ name: property.name, description: getDocumentationText(property) });
     }
 
     const {
@@ -532,16 +532,13 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
   // 1. We generate Enums from AST
   for (const viewKitEnum of spec.enums)
   {
-    writer.writeTsDoc({ summary: viewKitEnum.doc });
+    writer.writeTsDoc({ documentation: viewKitEnum });
     writer.allmanBlock(`export enum ${viewKitEnum.name}`, () =>
     {
       for (let index = 0; index < viewKitEnum.members.length; index++)
       {
         const member = viewKitEnum.members[index];
-        if (member.doc)
-        {
-          writer.writeLine(`// ${member.doc}`);
-        }
+        writer.writeTsDoc({ documentation: member });
         const isLast = index === viewKitEnum.members.length - 1;
         writer.writeLine(`${member.name} = "${member.value}"${isLast ? "" : ","}`);
       }
@@ -560,7 +557,10 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     );
     writer.writeTsDoc(
       {
-        summary: root.doc ?? `Base structural contract for all \`${root.name}\` visual element models.`
+        documentation: {
+          summary: root.summary ?? `Base structural contract for all \`${root.name}\` visual element models.`,
+          doc: root.doc
+        }
       }
     );
     writer.interfaceBlock(`export interface ${root.name}Base`, () =>
@@ -577,7 +577,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         {
           if (property.name !== root.discriminatorProperty)
           {
-            writer.writeTsDoc({ summary: property.doc });
+            writer.writeTsDoc({ documentation: property });
             const optional = property.optional ? "?" : "";
             writer.writeLine(`readonly ${property.name}${optional}: ${resolveTsType(property.type)};`);
           }
@@ -621,7 +621,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       : "";
     const baseProperties = computeBaseModelProperties(model, spec);
 
-    writer.writeTsDoc({ summary: model.doc });
+    writer.writeTsDoc({ documentation: model });
     writer.interfaceBlock(`export interface ${model.name}${extendsClause}`, () =>
     {
       for (const property of model.properties)
@@ -640,7 +640,12 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         {
           defaultValueString = formatTsDefaultValue(property);
         }
-        writer.writeTsDoc({ summary: property.doc, defaultValue: defaultValueString });
+        writer.writeTsDoc(
+          {
+            documentation: property,
+            defaultValue: defaultValueString
+          }
+        );
         const optional = property.optional ? "?" : "";
         const tsType = resolveTsType(property.type);
         writer.writeLine(`readonly ${property.name}${optional}: ${tsType};`);
@@ -662,7 +667,10 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       .join(" | ");
     writer.writeTsDoc(
       {
-        summary: root.doc ?? `Polymorphic discriminated union of all concrete \`${root.name}\` models.`
+        documentation: {
+          summary: root.summary ?? `Polymorphic discriminated union of all concrete \`${root.name}\` models.`,
+          doc: root.doc
+        }
       }
     );
     writer.writeLine(`export type ${root.name} = ${unionTypes};`);
@@ -695,7 +703,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     writer.writeTsDoc(
       {
         summary: `Fluent builder for constructing strongly-typed \`${root.name}\` instances.`,
-        remarks: root.doc
+        documentation: { doc: root.doc }
       }
     );
     writer.classBlock(`export class ${builderClassName}`, () =>
@@ -729,7 +737,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
       const constructorDocParameters: TsDocParam[] = rootRequiredProperties.map(
         (property) =>
         {
-          return { name: property.name, description: property.doc };
+          return { name: property.name, description: getDocumentationText(property) };
         }
       );
 
@@ -754,7 +762,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         writer.writeTsDoc(
           {
             summary: `Sets the \`${property.name}\` property on this builder.`,
-            params: [ { name: property.name, description: property.doc } ],
+            params: [ { name: property.name, description: getDocumentationText(property) } ],
             returns: BUILDER_RETURN_DESCRIPTION
           }
         );
@@ -842,7 +850,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
         {
           parameters.push(`${property.name}: ${resolveTsType(property.type)}`);
           callArguments.push(property.name);
-          methodDocParameters.push({ name: property.name, description: property.doc });
+          methodDocParameters.push({ name: property.name, description: getDocumentationText(property) });
         }
 
         const {
@@ -865,7 +873,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
           writer.writeTsDoc(
             {
               summary: `Appends a \`${uiModel.name}\` component.`,
-              remarks: uiModel.doc,
+              documentation: { doc: uiModel.doc },
               params: methodDocParameters,
               returns: BUILDER_RETURN_DESCRIPTION
             }
@@ -938,7 +946,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     const constructorDocParameters: TsDocParam[] = rootRequiredProperties.map(
       (property) =>
       {
-        return { name: property.name, description: property.doc };
+        return { name: property.name, description: getDocumentationText(property) };
       }
     );
 
@@ -1042,7 +1050,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     writer.writeTsDoc(
       {
         summary: `Functional helper to create a \`${className}\` instance directly.`,
-        remarks: root.doc,
+        documentation: { doc: root.doc },
         params: [
           ...constructorDocParameters,
           ...(rootOptionalCreateFields.length > 0 ? [ {
@@ -1075,7 +1083,7 @@ export function generateTypeScriptCode(spec: GrammarSpec): string
     writer.writeTsDoc(
       {
         summary: `Parses a JSON string or raw object into a validated \`${className}\` instance.`,
-        remarks: root.doc,
+        documentation: { doc: root.doc },
         params: [
           { name: "json", description: "JSON string or parsed JavaScript object to validate and hydrate." },
           { name: "withDeepValidation", description: "Whether to recursively validate all nested child entities." }

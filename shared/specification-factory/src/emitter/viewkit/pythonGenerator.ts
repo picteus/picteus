@@ -6,7 +6,7 @@ import {
   partitionProperties
 } from "./codegenModel.js";
 import { GrammarSpec, ViewKitModel, ViewKitProperty, ViewKitType } from "./typespecModel.js";
-import { createGeneratedFileHeader } from "../common.js";
+import { createGeneratedFileHeader, DocumentationType, getDocumentationText } from "../common.js";
 
 
 /**
@@ -66,6 +66,32 @@ function computeNoinspectionLines(indent: string = ""): string[]
     `${indent}# noinspection PyShadowingBuiltins`,
     `${indent}# noinspection shadowing-builtins`
   ];
+}
+
+function writePythonDocumentation(documentation: DocumentationType, writer: CodeWriter): void
+{
+  const text = getDocumentationText(documentation);
+  if (text)
+  {
+    writer.writePythonDoc(text);
+  }
+}
+
+function writePythonInlineDocumentation(
+  documentation: DocumentationType,
+  writer: CodeWriter
+): void
+{
+  for (const text of [ documentation.summary, documentation.doc ])
+  {
+    if (text)
+    {
+      for (const line of text.trim().split("\n"))
+      {
+        writer.writeLine(`# ${line.trim()}`);
+      }
+    }
+  }
 }
 
 function resolvePythonType(type: ViewKitType): string
@@ -200,10 +226,7 @@ function generatePythonModelFactory(model: ViewKitModel, writer: CodeWriter): vo
     }
     writer.pythonBlock(`def ${functionName}(${parameters.join(", ")}) -> ${model.name}:${noqa}`, () =>
     {
-      if (model.doc)
-      {
-        writer.writePythonDoc(model.doc);
-      }
+      writePythonDocumentation(model, writer);
       writer.writeLine(`return ${model.name}(${callArguments.join(", ")})`);
     });
     writer.blankLine();
@@ -444,12 +467,10 @@ export function generatePythonCode(spec: GrammarSpec): string
   {
     writer.pythonBlock(`class ${viewKitEnum.name}(str, Enum):`, () =>
     {
-      if (viewKitEnum.doc)
-      {
-        writer.writePythonDoc(viewKitEnum.doc);
-      }
+      writePythonDocumentation(viewKitEnum, writer);
       for (const member of viewKitEnum.members)
       {
+        writePythonInlineDocumentation(member, writer);
         writer.writeLine(`${convertToSnakeCase(member.name)} = "${member.value}"`);
       }
     });
@@ -466,7 +487,13 @@ export function generatePythonCode(spec: GrammarSpec): string
     writer.writeLine("@runtime_checkable");
     writer.pythonBlock(`class ${root.name}Protocol(Protocol):`, () =>
     {
-      writer.writePythonDoc(root.doc ?? `Structural interface protocol for ${root.name}.`);
+      writePythonDocumentation(
+        {
+          summary: root.summary ?? `Structural interface protocol for ${root.name}.`,
+          doc: root.doc
+        },
+        writer
+      );
       writer.writeLine("@property");
       const rootDiscriminatorName = convertToSnakeCase(root.discriminatorProperty);
       if (PROTECTED_PYTHON_NAMES.has(rootDiscriminatorName))
@@ -505,7 +532,13 @@ export function generatePythonCode(spec: GrammarSpec): string
       writer.writeLine("@runtime_checkable");
       writer.pythonBlock(`class ${derived.name}Protocol(${root.name}Protocol, Protocol):`, () =>
       {
-        writer.writePythonDoc(derived.doc ?? `Protocol contract for ${derived.name}.`);
+        writePythonDocumentation(
+          {
+            summary: derived.summary ?? `Protocol contract for ${derived.name}.`,
+            doc: derived.doc
+          },
+          writer
+        );
         for (const property of derived.properties)
         {
           if (property.name !== root.discriminatorProperty && !baseProperties.has(property.name))
@@ -532,7 +565,13 @@ export function generatePythonCode(spec: GrammarSpec): string
     writer.writeLine("@dataclass");
     writer.pythonBlock(`class ${root.name}Base(ViewKitBase):`, () =>
     {
-      writer.writePythonDoc(`Base dataclass for all ${root.name} models.`);
+      writePythonDocumentation(
+        {
+          summary: root.summary ?? `Base dataclass for all ${root.name} models.`,
+          doc: root.doc
+        },
+        writer
+      );
       writer.writeLine("pass");
     });
     writer.blankLine();
@@ -563,10 +602,7 @@ export function generatePythonCode(spec: GrammarSpec): string
     writer.writeLine("@dataclass");
     writer.pythonBlock(`class ${model.name}(${baseClassName}):`, () =>
     {
-      if (model.doc)
-      {
-        writer.writePythonDoc(model.doc);
-      }
+      writePythonDocumentation(model, writer);
 
       const declaredProperties = model.properties.filter((property) => !baseProperties.has(property.name));
       const { requiredProperties, optionalProperties } = partitionProperties(declaredProperties);
@@ -580,6 +616,7 @@ export function generatePythonCode(spec: GrammarSpec): string
       {
         const pythonName = convertToSnakeCase(property.name);
         const pythonType = resolvePythonType(property.type);
+        writePythonInlineDocumentation(property, writer);
         if (PROTECTED_PYTHON_NAMES.has(pythonName))
         {
           writer.writeLines(computeNoinspectionLines());
@@ -600,6 +637,7 @@ export function generatePythonCode(spec: GrammarSpec): string
         const pythonName = convertToSnakeCase(property.name);
         const baseType = resolvePythonType(property.type);
         const pythonType = property.optional ? `Optional[${baseType}]` : baseType;
+        writePythonInlineDocumentation(property, writer);
 
         if (PROTECTED_PYTHON_NAMES.has(pythonName))
         {
@@ -648,10 +686,7 @@ export function generatePythonCode(spec: GrammarSpec): string
       writer.writeLine("@dataclass");
       writer.pythonBlock(`class ${model.name}(${baseClassName}):`, () =>
       {
-        if (model.doc)
-        {
-          writer.writePythonDoc(model.doc);
-        }
+        writePythonDocumentation(model, writer);
 
         const { requiredProperties, optionalProperties } = partitionProperties(model.properties);
 
@@ -659,6 +694,7 @@ export function generatePythonCode(spec: GrammarSpec): string
         {
           const pythonName = convertToSnakeCase(property.name);
           const pythonType = resolvePythonType(property.type);
+          writePythonInlineDocumentation(property, writer);
           if (PROTECTED_PYTHON_NAMES.has(pythonName))
           {
             writer.writeLines(computeNoinspectionLines());
@@ -675,6 +711,7 @@ export function generatePythonCode(spec: GrammarSpec): string
           const pythonName = convertToSnakeCase(property.name);
           const baseType = resolvePythonType(property.type);
           const pythonType = property.optional ? `Optional[${baseType}]` : baseType;
+          writePythonInlineDocumentation(property, writer);
 
           if (PROTECTED_PYTHON_NAMES.has(pythonName))
           {
@@ -726,10 +763,7 @@ export function generatePythonCode(spec: GrammarSpec): string
     writer.writeLine("@dataclass");
     writer.pythonBlock(`class ${root.name}(${baseClassName}):`, () =>
     {
-      if (root.doc)
-      {
-        writer.writePythonDoc(root.doc);
-      }
+      writePythonDocumentation(root, writer);
 
       const declaredProperties = root.properties.filter((property) => !baseProperties.has(property.name));
       const declaredHasSchemaVersion = declaredProperties.some((property) => property.name === "schemaVersion");
@@ -743,6 +777,7 @@ export function generatePythonCode(spec: GrammarSpec): string
       {
         const pythonName = convertToSnakeCase(property.name);
         const baseType = resolvePythonType(property.type);
+        writePythonInlineDocumentation(property, writer);
         if (PROTECTED_PYTHON_NAMES.has(pythonName))
         {
           writer.writeLines(computeNoinspectionLines());
@@ -767,6 +802,7 @@ export function generatePythonCode(spec: GrammarSpec): string
       {
         const pythonName = convertToSnakeCase(property.name);
         const baseType = resolvePythonType(property.type);
+        writePythonInlineDocumentation(property, writer);
         if (PROTECTED_PYTHON_NAMES.has(pythonName))
         {
           writer.writeLines(computeNoinspectionLines());
@@ -785,6 +821,7 @@ export function generatePythonCode(spec: GrammarSpec): string
       {
         const pythonName = convertToSnakeCase(property.name);
         const baseType = resolvePythonType(property.type);
+        writePythonInlineDocumentation(property, writer);
         if (PROTECTED_PYTHON_NAMES.has(pythonName))
         {
           writer.writeLines(computeNoinspectionLines());

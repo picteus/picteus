@@ -30,12 +30,22 @@ const intentSpec: IntentSpec = {
     },
     {
       name: "FormContent",
+      summary: "Form schema and dialog settings.",
+      doc: "The schema drives generated inputs and validation; dialog settings only affect modal presentation.",
       properties: [
-        { name: "parameters", optional: false, type: { kind: "record", name: "Record" } }
+        {
+          name: "parameters",
+          summary: "JSON Schema for form fields.",
+          doc: "Use an object schema with named properties so submitted values can be returned as a keyed object.",
+          optional: false,
+          type: { kind: "record", name: "Record" }
+        }
       ]
     },
     {
       name: "FormIntent",
+      summary: "Collects values for a form.",
+      doc: "The client renders the schema and returns the user's submitted values through the intent interaction flow.",
       isIntent: true,
       baseModelName: "BasisIntent",
       audience: "frontEnd",
@@ -116,6 +126,10 @@ describe("Intent code generation", () =>
     assert.doesNotMatch(backEndTypeScriptCode, /isBasisIntent|isWithContextIntent/);
     assert.match(backEndTypeScriptCode, /readonly content: Buffer;/);
     assert.match(frontEndTypeScriptCode, /readonly parameters: Record<string, unknown>;/);
+    assert.match(frontEndTypeScriptCode, /Collects values for a form\.[\s\S]*@remarks[\s\S]*The client renders the schema/);
+    assert.match(frontEndTypeScriptCode, /JSON Schema for form fields\.[\s\S]*@remarks[\s\S]*Use an object schema/);
+    assert.match(frontEndPythonCode, /The schema drives generated inputs and validation/);
+    assert.match(frontEndPythonCode, /# JSON Schema for form fields\./);
     assert.doesNotMatch(frontEndTypeScriptCode, /\b(IntentJson|Json)\b/);
     assert.doesNotMatch(backEndTypeScriptCode, /\b(IntentJson|Json)\b/);
     assert.match(backEndPythonCode, /BackIntent = Union\[ServeBundleIntent]/);
@@ -239,4 +253,3 @@ describe("Intent code generation", () =>
     assert.doesNotMatch(pythonCode, /IntentBasisIntent/);
   });
 });
-

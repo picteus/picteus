@@ -4,10 +4,11 @@
 
 ViewKit complements the other types of image features. Those features are stored in a more **vectorial** manner: they represent extracted or computed values that can be indexed, compared, searched, or used by processing algorithms. ViewKit does not replace those values and is not an image embedding. It is a structured view of feature information for people.
 
-The ViewKit v2 JSON Schema is available at [
-`https://picteus.github.io/picteus/jsonschema/viewkit-v2.schema.json`](https://picteus.github.io/picteus/jsonschema/viewkit-v2.schema.json),
-which may be used to validate ViewKit documents — its source being located at [
+> See its ["ViewKit" v2 JSON Schema](https://picteus.github.io/picteus/jsonschema/viewkit-v2.schema.json), which may be
+> used to validate ViewKit documents — its source file being located at [
 `docs/static/jsonschema/viewkit-v2.schema.json`](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/static/jsonschema/viewkit-v2.schema.json).
+>
+> See its generated ["ViewKit" model reference](./viewkit-models.md) for the TypeSpec models and UI metadata.
 
 ---
 

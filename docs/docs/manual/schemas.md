@@ -85,5 +85,15 @@ around an image feature.
 The ViewKit schema version is 2:
 
 - [ViewKit version 2 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/viewkit-v2.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/viewkit-v2.schema.json).
+- [Generated ViewKit model reference](../extensions/reference/viewkit-models.md).
 
 See the [ViewKit reference](../extensions/reference/viewkit.md) for the visual grammar and extension usage.
+
+## Intent models schema
+
+The intent models schema describes the TypeSpec models used by the extension SDK.
+
+- [Intent models schema on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/intents.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/intents.schema.json).
+- [Generated intent model reference](../extensions/reference/intents-models.md).
+
+See the [intents reference](../extensions/reference/intents.md) for intent behavior and usage examples.
