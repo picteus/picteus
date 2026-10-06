@@ -65,7 +65,13 @@ export class CommandsManager
     this.webServer = new WebServer(logger);
     const webCoordinates: WebCoordinates = await this.webServer.start(portNumber, useSsl, directoryPath, secretsDirectoryPath);
     const secret = randomUUID();
-    const options: Partial<ServerOptions> = {};
+    const options: Partial<ServerOptions> =
+      {
+        transports: [ "websocket" ],
+        httpCompression: true,
+        // We augment the maximum buffer size to 16 MB., otherwise the socket closes unexpectedly when a message being sent exceeds that limit
+        maxHttpBufferSize: 16 * 1_024 * 1_024
+      };
     this.socketServer = new SocketServer(webCoordinates.httpServer, options);
     this.socketServer.on("connection", (socket: Socket) =>
     {
@@ -247,7 +253,7 @@ export class CommandsManager
     {
       case "pickFile":
       {
-        const nodePath = await this.pickFileOrDirectory(parameters.title, "file", "open", parameters.filter, parameters.defaultPath);
+        const nodePath = await this.pickFileOrDirectory(parameters.title, "file", parameters.nature, parameters.filter, parameters.defaultPath);
         this.sendCommandSuccess(socket, id, nodePath);
       }
         break;
