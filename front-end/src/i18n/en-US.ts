@@ -564,9 +564,9 @@ export default {
     extensionCommandFailed:
       "The command '{{command}}' of extension '{{extension}}' failed to trigger",
     confirmImageDeleteTitle: "Image deletion",
-    confirmImageDeleteMessage: "Are you sure you want to delete this image?",
+    confirmImageDeleteMessage: "Are you sure you want to delete this image? It will be deleted from your file system and cannot be recovered.",
     confirmImagesDeleteTitle: "Images deletion",
-    confirmImagesDeleteMessage: "Are you sure you want to delete those image?"
+    confirmImagesDeleteMessage: "Are you sure you want to delete those image? They will be deleted from your file system and cannot be recovered."
   },
   selectedImages: {
     selectLabel: "Select bulk action for images",

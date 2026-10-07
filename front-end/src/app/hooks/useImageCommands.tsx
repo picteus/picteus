@@ -271,7 +271,7 @@ export default function useImageCommands({
         confirmAction({
           onConfirm: () =>
           {
-            return ImageService.destroy(image.id).catch(ToastService.apiCallError);
+            return ImageService.destroy(image.id).then(() => ToastService.success()).catch(ToastService.apiCallError);
           },
           options: {
             title: t("commands.confirmImageDeleteTitle"),
