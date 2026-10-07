@@ -1,27 +1,10 @@
-.container
-{
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-}
-
-.topBar
-{
-  border-bottom: 1px solid var(--mantine-color-default-border);
-  user-select: none;
-}
-
 .tabItem
 {
   border-radius: 6px 6px 0 0;
   border: 1px solid transparent;
   border-bottom: none;
-  background-color: transparent;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
-  color: var(--mantine-color-dimmed);
 }
 
 .tabItem:not([data-active="true"]):hover
@@ -32,37 +15,6 @@
 
 .tabItem[data-active="true"]
 {
-  background-color: var(--mantine-color-default);
   border-color: var(--mantine-color-default-border);
-  color: var(--mantine-color-text);
-  font-weight: 500;
   box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.tabItem[data-active="true"]:hover
-{
-  background-color: var(--mantine-color-default);
-  color: var(--mantine-color-text);
-}
-
-.tabItem[data-dragging="true"]
-{
-  opacity: 0.4;
-}
-
-.tabItem[data-drop-target="true"]
-{
-  border-left: 2px solid var(--mantine-color-blue-filled);
-}
-
-.closeButton
-{
-  opacity: 0.6;
-  border-radius: 4px;
-  transition: opacity 0.15s ease;
-}
-
-.closeButton:hover
-{
-  opacity: 1;
 }

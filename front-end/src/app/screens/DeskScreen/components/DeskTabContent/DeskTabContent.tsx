@@ -1,11 +1,11 @@
-import { ReactElement, useEffect, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Container, Divider, ScrollArea } from "@mantine/core";
 import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Image, SearchOriginNature } from "@picteus/ws-client";
 
-import { DeskTabType } from "types";
+import { DeskTabType, ViewTabDataType } from "types";
 import { ToastService } from "utils";
 import { ImageService } from "app/services";
 import { EmptyResults, Iframe, ImageDetail, ImagesView, Markdown } from "app/components";
@@ -13,21 +13,60 @@ import { EmptyResults, Iframe, ImageDetail, ImagesView, Markdown } from "app/com
 
 export interface DeskTabContentPropsType
 {
-  tab: DeskTabType;
+
+  readonly tab: DeskTabType;
+
 }
 
-export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactElement | null
+function DeskTabContent({ tab }: DeskTabContentPropsType): ReactElement | null
 {
   const [ t ] = useTranslation();
   const [ image, setImage ] = useState<Image | undefined>(undefined);
   const content = tab.content;
+
+  const singleImageId = content.kind === "image" ? content.imageId : (content.kind === "images" && content.images.length === 1) ? content.images[0].imageId : undefined;
+
   useEffect(() =>
   {
-    if (content.kind === "image" || (content.kind === "images" && content.images.length === 1))
+    if (singleImageId !== undefined)
     {
-      ImageService.get({ id: content.kind === "image" ? content.imageId : content.images[0].imageId }).then(setImage).catch(() => ToastService.apiCallError);
+      ImageService.get({ id: singleImageId }).then(setImage).catch(() => ToastService.apiCallError);
     }
-  }, [ content ]);
+  }, [ singleImageId ]);
+
+  const imageIdentifiers = content.kind === "images"
+    ? content.images.map((imageItem) => imageItem.imageId).join(",")
+    : "";
+
+  const viewData = useMemo<ViewTabDataType>(() =>
+  {
+    const ids = content.kind === "images"
+      ? content.images.map((imageItem) => imageItem.imageId)
+      : [];
+
+    return {
+      mode: "masonry",
+      filterOrCollectionId: {
+        filter: {
+          origin: {
+            kind: SearchOriginNature.Images,
+            ids
+          }
+        }
+      }
+    };
+  }, [ content.kind, imageIdentifiers ]);
+
+  const handleEmptyResults = useCallback((): ReactElement<typeof EmptyResults> =>
+  {
+    return (
+      <EmptyResults
+        icon={IconPhotoSearch}
+        title={t("emptyImages.title")}
+        description={t("emptyImages.description")}
+      />
+    );
+  }, [ t ]);
 
   if (content.kind === "image")
   {
@@ -74,26 +113,9 @@ export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactE
 
     return (
       <ImagesView
-        viewData={{
-          mode: "masonry",
-          filterOrCollectionId: {
-            filter: {
-              origin: {
-                kind: SearchOriginNature.Images,
-                ids: content.images.map((image) => image.imageId)
-              }
-            }
-          }
-        }
-        }
+        viewData={viewData}
         isDefault={false}
-        onEmptyResults={() => (
-          <EmptyResults
-            icon={IconPhotoSearch}
-            title={t("emptyImages.title")}
-            description={t("emptyImages.description")}
-          />
-        )}
+        onEmptyResults={handleEmptyResults}
       />
     );
   }
@@ -120,3 +142,5 @@ export default function DeskTabContent({ tab }: DeskTabContentPropsType): ReactE
 
   return null;
 }
+
+export default React.memo(DeskTabContent);

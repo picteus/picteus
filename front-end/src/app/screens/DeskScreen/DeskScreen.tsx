@@ -1,6 +1,6 @@
 import React, { DragEvent, ReactElement, ReactNode, useEffect, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { ActionIcon, Box, Center, CloseButton, Group, ScrollArea, Stack, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Box, Center, CloseButton, Divider, Group, ScrollArea, Stack, Text, Tooltip } from "@mantine/core";
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -15,8 +15,8 @@ import { useTranslation } from "react-i18next";
 import { DeskTabType } from "types";
 import { DESK_TAB_QUERY_PARAMETER_NAME, ROUTES } from "utils";
 import { useDeskTabsContext } from "app/context";
-import { Common, EmptyResults, ExtensionIcon, ResourceIcon, StackableScreen } from "app/components";
-import { DeskTabContent, DeskTabsMenu, TabHeader } from "./components";
+import { Common, EmptyResults, ExtensionIcon, ResourceIcon } from "app/components";
+import { DeskTabPanel, DeskTabsMenu } from "./components";
 
 import style from "./DeskScreen.module.scss";
 
@@ -312,13 +312,12 @@ export default function DeskScreen(): ReactElement
   }
 
   return (
-    <StackableScreen resetTrigger={selectedTab?.id} className={style.container}>
+    <Stack h="100%" w="100%" gap={0} style={{ overflow: "hidden" }}>
       <Group
         h={42}
         px="xs"
         gap="xs"
         wrap="nowrap"
-        className={style.topBar}
       >
         <ActionIcon
           variant="subtle"
@@ -361,8 +360,11 @@ export default function DeskScreen(): ReactElement
                   className={style.tabItem}
                   data-active={isTabActive === true ? "true" : undefined}
                   data-tab-id={tab.id}
-                  data-dragging={isTabDragging === true ? "true" : undefined}
-                  data-drop-target={isTabDropTarget === true ? "true" : undefined}
+                  opacity={isTabDragging === true ? 0.4 : 1}
+                  bg={isTabActive === true ? "var(--mantine-color-default)" : "transparent"}
+                  c={isTabActive === true ? undefined : "dimmed"}
+                  fw={isTabActive === true ? 500 : undefined}
+                  bd={isTabDropTarget === true ? "2px solid var(--mantine-color-blue-filled)" : undefined}
                   draggable={tab.isShiftable !== false}
                   onDragStart={(event) => handleDragStart(event, tab.id)}
                   onDragOver={(event) => handleDragOver(event, tab.id)}
@@ -385,7 +387,9 @@ export default function DeskScreen(): ReactElement
                   {tab.isClosable !== false && (
                     <CloseButton
                       size="xs"
-                      className={style.closeButton}
+                      variant="subtle"
+                      c="dimmed"
+                      radius="sm"
                       onClick={(event) =>
                       {
                         event.stopPropagation();
@@ -413,16 +417,18 @@ export default function DeskScreen(): ReactElement
         />
       </Group>
 
+      <Divider/>
+
       <Box flex={1} pos="relative" style={{ overflow: "hidden" }}>
-        {selectedTab && (
-          <Stack h="100%" w="100%" gap={0} style={{ overflow: "hidden" }}>
-            <TabHeader tab={selectedTab}/>
-            <Box flex={1} pos="relative" style={{ overflow: "hidden" }}>
-              <DeskTabContent tab={selectedTab}/>
-            </Box>
-          </Stack>
-        )}
+        {tabs.map((tab) =>
+          (
+            <DeskTabPanel
+              key={tab.id}
+              tab={tab}
+              isActive={tab.id === selectedTab?.id}
+            />
+          ))}
       </Box>
-    </StackableScreen>
+    </Stack>
   );
 }
