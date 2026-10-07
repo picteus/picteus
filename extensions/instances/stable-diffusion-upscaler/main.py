@@ -61,7 +61,6 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
             return None
 
         repository: Repository = self.get_repository_api().repository_get(id=image.repository_id)
-        name_without_extension = os.path.splitext(os.path.basename(image.name))[0]
         relative_directory_path: str = os.path.split(image.url[len(repository.url) + 1:])[0]
 
         image_bytes: bytearray = self.get_image_api().image_download(id=image_id, format=ImageFormat.PNG, width=None,
@@ -80,7 +79,6 @@ class StableDiffusionUpscalerExtension(PicteusExtension):
                                                         InstructionsPrompt(kind=PromptKind.INSTRUCTIONS, value={})))
         stored_image: PicteusImage = self.get_repository_api().repository_store_image(id=repository.id,
                                                                                       body=new_image_bytes,
-                                                                                      name_without_extension=name_without_extension + "_upscaled",
                                                                                       relative_directory_path=relative_directory_path,
                                                                                       application_metadata=ApplicationMetadata(
                                                                                           items=

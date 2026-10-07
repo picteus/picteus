@@ -48,7 +48,6 @@ class BriaExtension(PicteusExtension):
         communicator.send_log(f"Removing the background of the image with URL '{image.url}'", "info")
 
         repository: Repository = self.get_repository_api().repository_get(id=image.repository_id)
-        name_without_extension = os.path.splitext(os.path.basename(image.name))[0]
         relative_directory_path: str = os.path.split(image.url[len(repository.url) + 1:])[0]
 
         image_bytes: bytearray = self.get_image_api().image_download(image_id, ImageFormat.PNG, None, None, None, True)
@@ -65,7 +64,6 @@ class BriaExtension(PicteusExtension):
                                                         InstructionsPrompt(kind=PromptKind.INSTRUCTIONS, value={})))
         stored_image: PicteusImage = self.get_repository_api().repository_store_image(id=repository.id,
                                                                                       body=new_image_bytes,
-                                                                                      name_without_extension=name_without_extension + "_backgroundless",
                                                                                       relative_directory_path=relative_directory_path,
                                                                                       application_metadata=ApplicationMetadata(
                                                                                           items=
