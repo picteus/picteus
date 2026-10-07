@@ -12,7 +12,15 @@ import {
   isUiIntent
 } from "@picteus/shared-core";
 
-import { ChannelEnum, ExtensionIntentType, LogEntityType, LogType, NotificationType, SocketEventType } from "types";
+import {
+  ChannelEnum,
+  ExtensionIntentType,
+  ImageNotificationType,
+  LogEntityType,
+  LogType,
+  NotificationType,
+  SocketEventType
+} from "types";
 import { ImageService } from "app/services";
 import { Common } from "app/components";
 import { getObjectStore, INDEXED_DB_NAME, StoreKind } from "./IndexDbService.ts";
@@ -242,7 +250,7 @@ async function computeImageIllustrationUri(imageUrl: string, edge): Promise<stri
   return illustrationUri;
 }
 
-async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<NotificationType>
+async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<ImageNotificationType>
 {
   const imageId = event?.value?.id;
   const image = await ImageService.get({ id: imageId });

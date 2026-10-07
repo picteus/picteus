@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Button, Notification as MantineNotification, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
-import { OpenBrowserIntent, ProcessCommandIntent, ShowIntent, UiIntent } from "@picteus/shared-core";
-
 import { NotificationType } from "types";
 import { computeDeskRoute, timeAgoFromMilliseconds, ToastService } from "utils";
 import { useExtensionIntentRunner } from "app/hooks";
@@ -40,7 +38,7 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
         }
         else if (notification.type === "action")
         {
-          const intent: ShowIntent | UiIntent | OpenBrowserIntent | ProcessCommandIntent = notification.data.intent;
+          const intent = notification.data.intent;
           intentRunner(notification.data.extensionId, intent, {
             onSuccess: (_result?: any) =>
             {
@@ -54,6 +52,10 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
         else if (notification.type === "tab")
         {
           navigate(computeDeskRoute(notification.data.id));
+        }
+        else
+        {
+          console.warn(`Cannot handle the unknown notification type '${notification.type}'`);
         }
         onOpen();
       }
@@ -86,7 +88,7 @@ function NotificationBody({ isCompact, notification, onClick }: NotificationBody
             {notification.body}
           </Text>
         )}
-        {(notification.type === "action" || notification.type === "repository" || notification.type === "image" || notification.type === "tab") && (
+        {(notification.type === "action" || notification.type === "image" || notification.type === "tab") && (
           <Button variant="light" size="xs" mt="xs" onClick={onClick}>
             {notification.type === "action" ? (notification.actionLabel ?? t("button.run")) : t("button.view")}
           </Button>

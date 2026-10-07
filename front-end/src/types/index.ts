@@ -1,7 +1,14 @@
 import { ReactElement, ReactNode } from "react";
 import { RJSFSchema } from "@rjsf/utils";
 
-import { FrontIntent, IntentTitleSubtitleDescriptionDetailsIcon } from "@picteus/shared-core";
+import {
+  FrontIntent,
+  IntentTitleSubtitleDescriptionDetailsIcon,
+  OpenBrowserIntent,
+  ProcessCommandIntent,
+  ShowIntent,
+  UiIntent
+} from "@picteus/shared-core";
 import { detectImageMimeType } from "@picteus/shared-front-end";
 import {
   Extension,
@@ -52,16 +59,52 @@ export interface CommandContextType
   sendCommandOnConnected: SendCommandType;
 }
 
-export type NotificationType = WithIdAndMilliseconds & {
-  type: "image" | "repository" | "notification" | "action" | "tab";
-  title: string;
-  subtitle: string;
-  body?: string;
-  extensionId?: string;
-  data: Record<string, any>;
-  illustrationUri?: string;
-  actionLabel?: string;
+export type ImageNotificationDataType = {
+  readonly id: string;
 };
+
+export type RepositoryNotificationDataType = {
+  readonly id: string;
+};
+
+export type TabNotificationDataType = {
+  readonly id: string;
+};
+
+export type ActionNotificationIntentType =
+  | ShowIntent
+  | UiIntent
+  | OpenBrowserIntent
+  | ProcessCommandIntent;
+
+export type ActionNotificationDataType = {
+  readonly extensionId: string;
+  readonly intent: ActionNotificationIntentType;
+};
+
+export type NotificationNotificationDataType = Record<string, never>;
+
+type BaseNotificationType<Type extends string, Data> = WithIdAndMilliseconds & {
+  readonly type: Type;
+  readonly title: string;
+  readonly subtitle: string;
+  readonly body?: string;
+  readonly extensionId?: string;
+  readonly data: Data;
+  readonly illustrationUri?: string;
+  readonly actionLabel?: string;
+};
+
+export type ImageNotificationType = BaseNotificationType<"image", ImageNotificationDataType>;
+export type TabNotificationType = BaseNotificationType<"tab", TabNotificationDataType>;
+export type ActionNotificationType = BaseNotificationType<"action", ActionNotificationDataType>;
+export type NotificationNotificationType = BaseNotificationType<"notification", NotificationNotificationDataType>;
+
+export type NotificationType =
+  | ImageNotificationType
+  | TabNotificationType
+  | ActionNotificationType
+  | NotificationNotificationType;
 
 export type LogEntityType = {
   type: "image" | "repository" | "collection";
