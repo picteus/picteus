@@ -1,6 +1,6 @@
-import React from "react";
+import React, { type ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Notification as MantineNotification, Text } from "@mantine/core";
+import { Button, Group, Notification as MantineNotification, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { NotificationType } from "types";
@@ -69,46 +69,72 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
 
 type NotificationBodyType = {
   isCompact: boolean;
+  showAction: boolean;
   notification: NotificationType;
   onClick: () => void;
 };
 
-function NotificationBody({ isCompact, notification, onClick }: NotificationBodyType)
+function NotificationBody({
+  showAction,
+  isCompact,
+  notification,
+  onClick
+}: NotificationBodyType): ReactElement
 {
   const [ t ] = useTranslation();
+  const hasAction = notification.type === "action" || notification.type === "image" || notification.type === "tab";
+  const canShowAction = showAction === true && hasAction;
+
+  const actionButton = (
+    <Button
+      variant="light"
+      size="xs"
+      mt={isCompact === true ? undefined : "xs"}
+      style={{ flexShrink: 0 }}
+      onClick={onClick}
+    >
+      {notification.type === "action" ? (notification.actionLabel ?? t("button.run")) : t("button.view")}
+    </Button>
+  );
 
   return (
     <>
-      <div className={style.subtitle}>
-        {notification.subtitle}
-      </div>
-      {isCompact === false && <>
-        {notification.body !== undefined && (
-          <Text size="sm" mt="xs" className={style.body}>
-            {notification.body}
+      <Group justify="space-between" align="center" wrap="nowrap" gap="xs">
+        <div className={style.subtitle} style={{ minWidth: 0 }}>
+          {notification.subtitle}
+        </div>
+        {isCompact === true && canShowAction === true && actionButton}
+      </Group>
+      {isCompact === false &&
+        <>
+          {notification.body !== undefined && (
+            <Text size="sm" mt="xs" className={style.body}>
+              {notification.body}
+            </Text>
+          )}
+          {canShowAction === true && actionButton}
+          <Text c="dimmed" size="xs" mt="xs">
+            {timeAgoFromMilliseconds(notification.milliseconds)}
           </Text>
-        )}
-        {(notification.type === "action" || notification.type === "image" || notification.type === "tab") && (
-          <Button variant="light" size="xs" mt="xs" onClick={onClick}>
-            {notification.type === "action" ? (notification.actionLabel ?? t("button.run")) : t("button.view")}
-          </Button>
-        )}
-        <Text c="dimmed" size="xs" mt="xs">
-          {timeAgoFromMilliseconds(notification.milliseconds)}
-        </Text>
-      </>}
+        </>}
     </>
   );
 }
 
-type TheNotificationType = {
+type NotificationPropsType = {
   isCompact: boolean;
   notification: NotificationType;
   onOpen: () => void;
   onClose: () => void;
+  showAction?: boolean;
 };
 
-export default function Notification({ isCompact, notification, onOpen, onClose }: TheNotificationType)
+export default function Notification({
+  isCompact,
+  notification,
+  onOpen,
+  onClose
+}: NotificationPropsType): ReactElement
 {
   const handleOnClick = useNotificationOnClick(onClose, onOpen)(notification);
 
@@ -123,8 +149,12 @@ export default function Notification({ isCompact, notification, onOpen, onClose 
       withBorder={isCompact}
       onClose={onClose}
     >
-      <NotificationBody isCompact={isCompact} notification={notification} onClick={handleOnClick}/>
+      <NotificationBody
+        isCompact={isCompact}
+        showAction={true}
+        notification={notification}
+        onClick={handleOnClick}
+      />
     </MantineNotification>
   );
-
 }
