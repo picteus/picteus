@@ -54,6 +54,11 @@ function cancel(subtitle?: string): void
   return withTitleAndSubtitle("cancel", i18n.t("message.toastCancelTitle"), subtitle);
 }
 
+function warning(subtitle?: string): void
+{
+  return withTitleAndSubtitle("warn", i18n.t("message.toastWarningTitle", "Warning"), subtitle);
+}
+
 function internalFailure(subtitle?: ReactNode): void
 {
   return withTitleAndSubtitle("error", i18n.t("message.toastFailureTitle"), subtitle);
@@ -174,6 +179,7 @@ export default {
   success,
   progress,
   cancel,
+  warning,
   failure,
   failureAndMessage,
   apiCallError,

@@ -1,6 +1,7 @@
 import React, { ReactElement, useEffect, useMemo, useState } from "react";
 import { getHotkeyHandler, useFocusTrap } from "@mantine/hooks";
 import { Group as ResizableGroup, Layout, Panel, Separator } from "react-resizable-panels";
+import { useTranslation } from "react-i18next";
 
 import { Image } from "@picteus/ws-client";
 
@@ -25,6 +26,7 @@ type ImageDetailType =
 
 export default function ImageDetail({ image, images, viewMode, onClose }: ImageDetailType): ReactElement
 {
+  const [ t ] = useTranslation();
   const ref = useFocusTrap();
   const navigation = useImageNavigation({
     selectedImage: "metadata" in image ? image as Image : undefined,
@@ -63,9 +65,13 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
   {
     if (image)
     {
-      ("metadata" in image ? Promise.resolve(image as Image) : ImageService.get({ id: image.id })).then(navigation.setSelectedImage).catch(ToastService.apiCallError);
+      ("metadata" in image ? Promise.resolve(image as Image) : ImageService.get({ id: image.id })).then(navigation.setSelectedImage).catch(() =>
+      {
+        onClose();
+        ToastService.warning(t("message.notFoundImage"));
+      });
     }
-  }, [ image, navigation.setSelectedImage ]);
+  }, [ image, navigation.setSelectedImage, onClose, t ]);
 
   function handleOnLayoutChanged(layout: Layout)
   {

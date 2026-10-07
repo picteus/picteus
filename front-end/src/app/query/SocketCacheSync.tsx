@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ChannelEnum, EventInformationType } from "types";
+import { EventService } from "app/services";
 import { useEventSocket } from "app/context";
 import { queryKeys } from "./queryKeys.ts";
 
@@ -17,7 +18,17 @@ export function SocketCacheSync(): null
     {
       const channel = event.channel;
 
-      if (channel.startsWith(ChannelEnum.COLLECTION_PREFIX))
+      if (channel === ChannelEnum.IMAGE_DELETED || channel === ChannelEnum.IMAGE_UPDATED)
+      {
+        const imageId = EventService.computeEventEntityId<string>(event);
+        if (imageId)
+        {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.images.detail(imageId) });
+        }
+        void queryClient.invalidateQueries({ queryKey: queryKeys.images.all });
+      }
+
+      if (channel.startsWith(ChannelEnum.COLLECTION_PREFIX) || channel === ChannelEnum.IMAGE_DELETED)
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.collections.all });
       }

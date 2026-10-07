@@ -1,35 +1,28 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { ReactElement, useCallback } from "react";
 import { Alert, Box, Loader, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Image } from "@picteus/ws-client";
-
 import { ImageItemMode, ImageOrSummary, ViewMode } from "types";
 import { useActionModalContext } from "app/context";
-import { ImageService } from "app/services";
+import { useImage } from "app/hooks";
 import { ImageDetail, ImageItem } from "app/components";
 
 import style from "./ImageItemWrapper.module.scss";
 
 
-type ImageItemWrapperType = {
-  imageId: string;
-  edge?: number;
-  viewMode: ViewMode;
-}
+type ImageItemWrapperType =
+  {
+    readonly imageId: string;
+    readonly edge?: number;
+    readonly viewMode: ViewMode;
+  };
 
-export default function ImageItemWrapper({ imageId, edge = 100, viewMode }: ImageItemWrapperType)
+export default function ImageItemWrapper({ imageId, edge = 100, viewMode }: ImageItemWrapperType): ReactElement
 {
   const [ t ] = useTranslation();
-  const [ image, setImage ] = useState<Image | undefined>(undefined);
-  const [ error, setError ] = useState<boolean>(false);
+  const { data: image, isError, isLoading } = useImage(imageId);
   const [ , addModal, removeModal ] = useActionModalContext();
-
-  useEffect(() =>
-  {
-    ImageService.get({ id: imageId }).then(setImage).catch(() => setError(true));
-  }, [ imageId ]);
 
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
@@ -48,9 +41,9 @@ export default function ImageItemWrapper({ imageId, edge = 100, viewMode }: Imag
       withCloseButton: false,
       fullScreen: true
     });
-  }, [ image, viewMode ]);
+  }, [ addModal, removeModal, viewMode ]);
 
-  if (error)
+  if (isError)
   {
     return <Box w={edge} h={edge}>
       <Alert variant="outline" color="red" title={<Text size="xs">{t("errors.imageNotAvailable")}</Text>}
@@ -59,7 +52,7 @@ export default function ImageItemWrapper({ imageId, edge = 100, viewMode }: Imag
     </Box>;
   }
 
-  return image === undefined ? <Loader size={edge}/> :
+  return isLoading || !image ? <Loader size={edge}/> :
     <ImageItem image={image} width={edge} height={edge} mode={ImageItemMode.PASSIVE} viewMode={viewMode}
                onClick={handleOnClick}/>;
 }

@@ -1,8 +1,9 @@
 import { ReactNode, useContext, useEffect, useState } from "react";
 import { randomId } from "@mantine/hooks";
 
-import { DeskTabType } from "types";
-import { StorageService } from "app/services";
+import { ChannelEnum, DeskTabType } from "types";
+import { EventService, NotificationService, StorageService } from "app/services";
+import { useSocketEvent } from "./EventSocketContext.tsx";
 import createHmrStableContext from "./createHmrStableContext.ts";
 
 
@@ -66,6 +67,58 @@ export function DeskTabsProvider({ children }: { children?: ReactNode }): ReactN
     }
   }, [ activeTab ]);
 
+  useSocketEvent(ChannelEnum.IMAGE_DELETED, (event) =>
+  {
+    const imageId = EventService.computeEventEntityId<string>(event);
+    if (imageId === undefined)
+    {
+      return;
+    }
+
+    const removedTabIds: Set<string> = new Set<string>();
+    const remainingTabs: DeskTabType[] = [];
+    for (const tab of tabs)
+    {
+      if (tab.content.kind === "image" && tab.content.imageId === imageId)
+      {
+        removedTabIds.add(tab.id);
+      }
+      else if (tab.content.kind === "images")
+      {
+        const updatedImages = tab.content.images.filter((image) => image.imageId !== imageId);
+        if (updatedImages.length === 0)
+        {
+          removedTabIds.add(tab.id);
+          continue;
+        }
+        remainingTabs.push({ ...tab, content: { ...tab.content, images: updatedImages } });
+      }
+      else
+      {
+        remainingTabs.push(tab);
+      }
+    }
+
+    if (removedTabIds.size > 0)
+    {
+      setTabs(remainingTabs);
+      if (activeTab !== null && removedTabIds.has(activeTab))
+      {
+        if (remainingTabs.length === 0)
+        {
+          setActiveTab(null);
+        }
+        else
+        {
+          const removedIndex = tabs.findIndex((tab) => tab.id === activeTab);
+          setActiveTab(remainingTabs[removedIndex < remainingTabs.length ? removedIndex : (remainingTabs.length - 1)].id);
+        }
+      }
+    }
+
+    void NotificationService.deleteNotificationsForImage(imageId, removedTabIds);
+  });
+
   function addTab(tab: Omit<DeskTabType, "id" | "timestampInMilliseconds"> & {
     id?: string,
     timestampInMilliseconds?: number
@@ -107,6 +160,8 @@ export function DeskTabsProvider({ children }: { children?: ReactNode }): ReactN
 
       return remainingTabs;
     });
+
+    void NotificationService.deleteNotificationsForTab(id);
   }
 
   function reorderTabs(sourceIndex: number, destinationIndex: number): void
@@ -181,8 +236,10 @@ export function DeskTabsProvider({ children }: { children?: ReactNode }): ReactN
 
   function closeAllTabs(): void
   {
+    const tabIds = new Set<string>(tabs.map((tab) => tab.id));
     setTabs([]);
     setActiveTab(null);
+    void NotificationService.deleteNotificationsForTabs(tabIds);
   }
 
   return (

@@ -16,5 +16,9 @@ export const queryKeys =
     detail: (extensionId: string) => [ "extensions", extensionId ] as const,
     configuration: [ "extensions", "configuration" ] as const,
     activities: [ "extensions", "activities" ] as const
+  },
+  images: {
+    all: [ "images" ] as const,
+    detail: (imageId: string) => [ "images", imageId ] as const
   }
 } as const;

@@ -1,13 +1,15 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ReactElement, useCallback, useMemo } from "react";
 import { Box, Container, Divider, ScrollArea } from "@mantine/core";
 import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Image, SearchOriginNature } from "@picteus/ws-client";
+import { SearchOriginNature } from "@picteus/ws-client";
 
 import { DeskTabType, ViewTabDataType } from "types";
 import { ToastService } from "utils";
-import { ImageService } from "app/services";
+import { NotificationService } from "app/services";
+import { useDeskTabsContext } from "app/context";
+import { useImage } from "app/hooks";
 import { EmptyResults, Iframe, ImageDetail, ImagesView, Markdown } from "app/components";
 
 
@@ -21,18 +23,19 @@ export interface DeskTabContentPropsType
 function DeskTabContent({ tab }: DeskTabContentPropsType): ReactElement | null
 {
   const [ t ] = useTranslation();
-  const [ image, setImage ] = useState<Image | undefined>(undefined);
+  const { removeTab } = useDeskTabsContext();
   const content = tab.content;
 
   const singleImageId = content.kind === "image" ? content.imageId : (content.kind === "images" && content.images.length === 1) ? content.images[0].imageId : undefined;
 
-  useEffect(() =>
+  const handleImageError = useCallback((): void =>
   {
-    if (singleImageId !== undefined)
-    {
-      ImageService.get({ id: singleImageId }).then(setImage).catch(() => ToastService.apiCallError);
-    }
-  }, [ singleImageId ]);
+    removeTab(tab.id);
+    void NotificationService.deleteNotificationsForImage(singleImageId, new Set<string>([ tab.id ]));
+    ToastService.warning(t("message.notFoundImage"));
+  }, [ singleImageId, tab.id, removeTab, t ]);
+
+  const { data: image } = useImage(singleImageId, { onError: handleImageError });
 
   const imageIdentifiers = content.kind === "images"
     ? content.images.map((imageItem) => imageItem.imageId).join(",")

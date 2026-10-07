@@ -27,6 +27,10 @@ export default function NotificationCenter()
                                     }}
                                     onClose={noOperation}/>;
       const dismiss = ToastService.triggerToast(content, options, id);
+      return () =>
+      {
+        dismiss();
+      };
     }
   }, [ notification ]);
 

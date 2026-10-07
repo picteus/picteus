@@ -30,7 +30,14 @@ export default {
     toastSuccessTitle: "Operation successful",
     toastProgressTitle: "Operation ongoing",
     toastCancelTitle: "Operation cancelled",
-    toastFailureTitle: "Operation failed"
+    toastFailureTitle: "Operation failed",
+    notFoundImage: "The image no longer exists"
+  },
+  errors: {
+    imageTitle: "Loading error",
+    imageDetail: "An error occurred: could not load the image visual.",
+    imageCondensed: "Could not load the visual",
+    imageNotAvailable: "Image not available anymore"
   },
   field: {
     noValue: "—",
@@ -612,12 +619,6 @@ export default {
     showImageMessage: "An image is about to be displayed.",
     showSidebarMessage: "A new sidebar is about to be opened.",
     openBrowserMessage: "Your browser is about to be opened with the '{{url}}' URL."
-  },
-  errors: {
-    imageTitle: "Loading error",
-    imageDetail: "An error occurred: could not load the image visual.",
-    imageCondensed: "Could not load the visual",
-    imageNotAvailable: "Image not available anymore."
   },
   utils: {
     timeAgo: {

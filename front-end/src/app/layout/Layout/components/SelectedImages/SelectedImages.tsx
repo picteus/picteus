@@ -17,11 +17,11 @@ import { useTranslation } from "react-i18next";
 
 import { CommandEntity, Manifest, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
 
-import { ChannelEnum, ImageItemMode, UiCommandType } from "types";
+import { ImageItemMode, UiCommandType } from "types";
 import { ToastService } from "utils";
-import { useActionModalContext, useImagesSelectedContext, useSocketEvent } from "app/context";
+import { useActionModalContext, useImagesSelectedContext } from "app/context";
 import { useConfirmAction, useExtensionCommandRunner, useExtensionCommands, useRunCapabilities } from "app/hooks";
-import { EventService, ImageService, StorageService } from "app/services";
+import { ImageService, StorageService } from "app/services";
 import {
   Common,
   computeIcon,
@@ -52,7 +52,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
   const { searchRunCapabilities } = useRunCapabilities();
   const imagesContainerRef = useRef<HTMLDivElement>(null);
   const { ref: containerRef, height: containerHeight } = useElementSize();
-  const { selectedImages, toggleSelectedImage, clearSelectedImages } = useImagesSelectedContext();
+  const { selectedImages, clearSelectedImages } = useImagesSelectedContext();
   const extensionsImageCommands = useExtensionCommands(commandEntities);
   const commandRunner = useExtensionCommandRunner();
   const [ selectedAction, setSelectedAction ] = useState<string>();
@@ -67,16 +67,6 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
       setSelectedAction(latestAction);
     }
   }, []);
-
-  useSocketEvent(ChannelEnum.IMAGE_DELETED, (event) =>
-  {
-    const imageId = EventService.computeEventEntityId<string>(event);
-    const selectedImage = selectedImages.find(aSelectedImage => aSelectedImage.id === imageId);
-    if (selectedImage)
-    {
-      toggleSelectedImage(selectedImage);
-    }
-  });
 
   const synchronizeAction = "synchronize";
   const deleteAction = "delete";

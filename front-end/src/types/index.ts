@@ -63,10 +63,6 @@ export type ImageNotificationDataType = {
   readonly id: string;
 };
 
-export type RepositoryNotificationDataType = {
-  readonly id: string;
-};
-
 export type TabNotificationDataType = {
   readonly id: string;
 };

@@ -2,9 +2,10 @@ import React, { useCallback, useContext, useEffect, useState } from "react";
 
 import { ImageSummary } from "@picteus/ws-client";
 
-import { ImageOrSummary } from "types";
+import { ChannelEnum, ImageOrSummary } from "types";
 import { ToastService } from "utils";
-import { ImageService, StorageService } from "app/services";
+import { EventService, ImageService, StorageService } from "app/services";
+import { useSocketEvent } from "./EventSocketContext.tsx";
 import createHmrStableContext from "./createHmrStableContext.ts";
 
 
@@ -23,6 +24,15 @@ export function useImagesSelectedContext()
 export function ImagesSelectedProvider({ children })
 {
   const [ selectedImages, setSelectedImages ] = useState<ImageOrSummary[]>([]);
+
+  useSocketEvent(ChannelEnum.IMAGE_DELETED, (event) =>
+  {
+    const imageId = EventService.computeEventEntityId<string>(event);
+    if (imageId !== undefined)
+    {
+      setSelectedImages((previousImages) => previousImages.filter((image) => image.id !== imageId));
+    }
+  });
 
   useEffect(() =>
   {
