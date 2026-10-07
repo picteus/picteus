@@ -21,7 +21,7 @@ export default function SelectedImagesHover()
     closeDelay={Common.HoverCloseDelayInMilliseconds}
   >
     <HoverCard.Target>
-      <Indicator inline color="orange" label={selectedImages.length} size={16}>
+      <Indicator inline color="orange" label={selectedImages.length} size={16} disabled={selectedImages.length === 0}>
         <ActionIcon variant="outline" size="md">
           <IconPhoto stroke={Common.IconStrokeSize}/>
         </ActionIcon>

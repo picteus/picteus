@@ -88,7 +88,14 @@ export default function Notifications()
     width={350}
   >
     <HoverCard.Target>
-      <Indicator inline color="orange" label={notifications.length} size={16} processing={isAnimating}>
+      <Indicator
+        inline
+        color="orange"
+        label={notifications.length}
+        size={Common.IconSmallSize}
+        processing={isAnimating}
+        disabled={notifications.length === 0}
+      >
         <ActionIcon variant="outline" size="md" className={isAnimating ? style.ringAnimation : undefined}>
           <IconBell stroke={Common.IconStrokeSize}/>
         </ActionIcon>
