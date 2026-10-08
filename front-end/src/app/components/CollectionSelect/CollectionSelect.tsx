@@ -25,9 +25,9 @@ type CollectionSelectType = {
   description?: string;
   required?: boolean;
   disabled: boolean;
-  initialValue?: any;
+  initialValue?: string;
   comboboxProps?: ComboboxProps;
-  onChange: (value: string | null, option: ComboboxItem<string>) => void;
+  onChange: (value: string | null, option: ComboboxItem) => void;
   onBlur?: FocusEventHandler<HTMLInputElement> | undefined;
   onFocus?: FocusEventHandler<HTMLInputElement> | undefined;
 };
@@ -71,7 +71,7 @@ export default function CollectionSelect({
   const data = collections.map((collection) => ({ value: collection.id.toString(), label: collection.name }));
   const selectedCollection = selectedId ? collections.find((collection) => collection.id.toString() === selectedId) : null;
 
-  function handleOnChange(value: string | null, option: ComboboxItem<string>)
+  function handleOnChange(value: string | null, option: ComboboxItem)
   {
     setSelectedId(value);
     onChange(value, option);

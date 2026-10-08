@@ -30,7 +30,7 @@ export type MarkdownPropsType = {
 
 const REMARK_PLUGINS = [ remarkGfm ];
 
-function createMarkdownComponents(size?: MantineSize, withBoldTitles: boolean = true): Components
+function createMarkdownComponents(openBrowser: (url: string) => Promise<void>, size?: MantineSize, withBoldTitles?: boolean): Components
 {
   function renderHeading(level: TitleOrder, children: ReactNode): ReactElement
   {
@@ -130,7 +130,6 @@ function createMarkdownComponents(size?: MantineSize, withBoldTitles: boolean = 
     },
     a: ({ href, children }): ReactElement =>
     {
-      const openBrowser = useOpenBrowser();
       return (
         <Anchor
           href={href}
@@ -349,15 +348,16 @@ export default function Markdown({
   withBoldTitles = true
 }: MarkdownPropsType): ReactElement
 {
+  const openBrowser = useOpenBrowser();
   // We need to handle the specific case of the linebreak "<br>", because the library does not handle it properly by default
   const sanitizedContent = content.replace(/<br\s*\/?>/gi, "\n \n");
 
   const components = useMemo<Components>(
     () =>
     {
-      return createMarkdownComponents(size, withBoldTitles);
+      return createMarkdownComponents(openBrowser, size, withBoldTitles);
     },
-    [ size, withBoldTitles ]
+    [ openBrowser, size, withBoldTitles ]
   );
 
   return (

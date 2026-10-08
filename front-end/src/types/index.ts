@@ -119,7 +119,7 @@ export type LogType = WithIdAndMilliseconds & {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type EventOnResultValueType = any;
 
-export type EventOnResultType = (result: EventOnResultValueType) => void;
+export type EventOnResultType = (result?: EventOnResultValueType) => void;
 
 export type EventInformationType = SocketEventType & {
   onResult?: EventOnResultType;

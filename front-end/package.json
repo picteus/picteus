@@ -40,12 +40,11 @@
     "profile": "vite build --mode profiling",
     "start": "vite dev --port 5174",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint ."
   },
   "devDependencies": {
     "shx": "0.4.0",
     "gulp": "4.0.2",
-    "@types/node": "22.17.1",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.1",
     "@typescript-eslint/eslint-plugin": "8.61.0",

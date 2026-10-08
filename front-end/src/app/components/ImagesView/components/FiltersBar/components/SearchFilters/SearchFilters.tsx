@@ -25,13 +25,14 @@ import {
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
+import { SearchFeatures, SearchProperties, SearchSortingProperty } from "@picteus/ws-client";
+
 import { LocalFiltersType } from "types";
 import { useContainerDimensions, useDebouncedCallback, useRepositories, useTags } from "app/hooks";
 import { FiltersService, WithValueAndLabel } from "app/services";
 
 import { Common, ExtensionIcon, ImageTag } from "app/components";
-import { FeaturesQueryBuilder, GeneralFilters, PropertiesFilters } from "../../components";
-import { FilterSelect } from "..";
+import { FeaturesQueryBuilder, FilterSelect, GeneralFilters, PropertiesFilters } from "../../components";
 
 import style from "./SearchFilters.module.scss";
 
@@ -39,7 +40,7 @@ import style from "./SearchFilters.module.scss";
 type SearchFiltersType = {
   filters?: LocalFiltersType;
   setFilters: React.Dispatch<React.SetStateAction<LocalFiltersType | undefined>>;
-  onFilterChange: (key: string, value?: any) => void;
+  onFilterChange: (key: string, value?: string[] | SearchProperties | SearchFeatures | SearchSortingProperty | ("-1" | "1")) => void;
   onClearAll: () => void;
 };
 

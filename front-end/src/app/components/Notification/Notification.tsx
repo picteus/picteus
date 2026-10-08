@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, Group, Notification as MantineNotification, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
-import { NotificationType } from "types";
+import { EventOnResultValueType, NotificationType } from "types";
 import { computeDeskRoute, timeAgoFromMilliseconds, ToastService } from "utils";
 import { useExtensionIntentRunner } from "app/hooks";
 import { useDeskTabsContext } from "app/context";
@@ -40,7 +40,7 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
         {
           const intent = notification.data.intent;
           intentRunner(notification.data.extensionId, intent, {
-            onSuccess: (_result?: any) =>
+            onSuccess: (_value?: EventOnResultValueType) =>
             {
             },
             onCancel: () =>

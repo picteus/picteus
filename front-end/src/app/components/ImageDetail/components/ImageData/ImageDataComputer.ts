@@ -512,7 +512,6 @@ export function computeTypeFeatureContainers(
 
 export function computeRawFeatureContainers(
   rawFeatures: readonly ExtensionImageFeature[],
-  _t: TFunction = i18n.t
 ): ImageFeatureContainerType[]
 {
   return rawFeatures.map((rawFeature) =>

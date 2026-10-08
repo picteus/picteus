@@ -14,7 +14,7 @@ function matchHeadingTitle(headingTitle: string, targetTitle: string): boolean
 export function extractMarkdownParagraph(
   markdown: string,
   sectionPath: readonly string[] | string,
-  withSubSections: boolean = true
+  withSubSections = true
 ): string | undefined
 {
   if (!markdown || markdown.trim().length === 0)

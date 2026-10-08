@@ -64,7 +64,7 @@ function setNumber(key: string, value: number): void
   set(key, value.toString());
 }
 
-function getBoolean(key: string, isDefaultTrue: boolean = true): boolean
+function getBoolean(key: string, isDefaultTrue = true): boolean
 {
   const value = get(key);
   if (value === undefined)

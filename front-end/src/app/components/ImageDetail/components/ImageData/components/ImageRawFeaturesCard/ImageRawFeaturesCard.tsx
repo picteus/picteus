@@ -24,8 +24,8 @@ export default function ImageRawFeaturesCard({
 {
   const [ t ] = useTranslation();
 
-  const rawFeatureContainers = useMemo(() => computeRawFeatureContainers(rawFeatures, t),
-    [ rawFeatures, t ]
+  const rawFeatureContainers = useMemo(() => computeRawFeatureContainers(rawFeatures),
+    [ rawFeatures ]
   );
 
   if (rawFeatureContainers.length === 0)

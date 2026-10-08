@@ -18,6 +18,7 @@ import {
 } from "@picteus/shared-core";
 import { CommandEntity, ExtensionSettings, Image, UserInterfaceAnchor } from "@picteus/ws-client";
 
+import { EventOnResultType } from "types";
 import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, ToastService } from "utils";
 import { useActionModalContext, useAdditionalUiContext, useDeskTabsContext } from "app/context";
 import { ExtensionsService, ImageService, StorageService } from "app/services";
@@ -40,7 +41,7 @@ const commandEntities = [ CommandEntity.Process ];
 
 export interface IntentListener
 {
-  onSuccess: (result?: any) => void;
+  onSuccess: EventOnResultType;
   onCancel: () => void;
   onFailure: (message: string) => void;
 }
@@ -63,7 +64,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
   {
     ToastService.withTitleAndSubtitle("info", t("extensionIntent.onAction"));
   }, []);
-  const confirmActionWrapper = useCallback((onConfirm: () => void, options: ConfirmOptions, listener: IntentListener, extensionId: string, actuallyAsk: boolean = false): void =>
+  const confirmActionWrapper = useCallback((onConfirm: () => void, options: ConfirmOptions, listener: IntentListener, extensionId: string, actuallyAsk = false): void =>
   {
     const shouldConfirm = actuallyAsk === true && StorageService.getExtensionIntentShowShouldConfirm();
 

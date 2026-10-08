@@ -27,11 +27,11 @@ export default function useContainerDimensions(containerRef: RefObject<HTMLEleme
 
   const debounce = (theFunction: () => void, delay: number): () => void =>
   {
-    let timer: any;
-    return function (this: any, ...args: any[])
+    let timer: number;
+    return function (this: unknown, ...args: unknown[])
     {
-      clearTimeout(timer);
-      timer = setTimeout(() => theFunction.apply(this, args), delay);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => theFunction.apply(this, args), delay);
     };
   };
 
