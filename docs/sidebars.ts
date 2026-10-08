@@ -66,8 +66,30 @@ const sidebars: SidebarsConfig =
           "extensions/reference/manifest",
           "extensions/reference/class",
           "extensions/reference/api",
-          "extensions/reference/viewkit",
-          "extensions/reference/intents",
+          {
+            type: "category",
+            label: "ViewKit",
+            link: {
+              type: "doc",
+              id: "extensions/reference/viewkit/index"
+            },
+            collapsed: false,
+            items: [
+              "extensions/reference/viewkit/models-reference"
+            ]
+          },
+          {
+            type: "category",
+            label: "Intents",
+            link: {
+              type: "doc",
+              id: "extensions/reference/intents/index"
+            },
+            collapsed: false,
+            items: [
+              "extensions/reference/intents/models-reference"
+            ]
+          },
           "extensions/reference/manual"
         ]
       },

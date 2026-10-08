@@ -1,4 +1,4 @@
-# Intent models
+# Intent model reference
 
 Intent models describe the payloads sent from an extension to the back-end. An intent always travels through the
 back-end first, which checks that it is well formed: when it is "front-end", it is transmitted to the front-end,

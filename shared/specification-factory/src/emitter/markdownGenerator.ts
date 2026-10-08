@@ -414,7 +414,7 @@ export function generateViewKitMarkdown(spec: GrammarSpec): string
     { title: "Action elements", models: spec.actionElements }
   ];
   const content = [
-    "# ViewKit models",
+    "# ViewKit model reference",
     "",
     renderSummaryAndDoc({ summary: spec.namespaceSummary, doc: spec.namespaceDoc }),
     ""

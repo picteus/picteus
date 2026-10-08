@@ -1,4 +1,4 @@
-# ViewKit models
+# ViewKit model reference
 
 Declarative UI specification and visual component kit for representing structured entity data, metrics, layouts, and
 interactive actions.

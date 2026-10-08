@@ -80,7 +80,8 @@ about that image.
 - **Vectorial features** store this information in formats suited to machine processing, indexing, comparison, and search.
 
 - **UI features** provide the complementary presentation model used to display that information in the Picteus front-end. They describe the visual elements,
-grouping, and layout rather than replacing the underlying feature values. See the [ViewKit](./viewkit.md) reference for the visual grammar used to define these UI features.
+  grouping, and layout rather than replacing the underlying feature values. See
+  the [ViewKit overview](./viewkit/index.md) for the visual grammar used to define these UI features.
 
 For comprehensive documentation about image features, including their role and storage formats, see the [Features](../../manual/features.md) documentation.
 
@@ -113,7 +114,8 @@ Intents enable an extension to initiate rich, interactive experiences with the u
 - **native file dialogues**: opening native OS file picker prompts to let the user select a file to import or choose a save destination for an export ;
 - **embedded web application bundles**: serving rich interactive web applications hosted seamlessly inside the interface.
 
-For full technical specifications, available intent interfaces, parameters, and complete TypeScript and Python code examples, refer to the [Intents documentation](./intents.md).
+For intent behavior and usage examples, start with the [intents overview](./intents/index.md), then consult
+the [intent model reference](./intents/models-reference.md) for structural details.
 
 
 ---

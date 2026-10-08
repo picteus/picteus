@@ -1,4 +1,4 @@
-# Intents
+# Intents overview
 
 Intents are at the core of Picteus extensibility: they let extensions request user interactions through Picteus-managed
 interfaces, without having to implement those interfaces themselves. The range of interactions available through intents
@@ -18,7 +18,7 @@ generates the typed Python and TypeScript SDK definitions, which extensions use 
 > being located at [
 `docs/static/jsonschema/intents.schema.json`](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/static/jsonschema/intents.schema.json).
 >
-> See the generated ["Intents" model reference](./intents-models.md) for the structural contract, properties and
+> See the generated [intent model reference](./models-reference.md) for the structural contract, properties and
 > inheritance relationships.
 
 Two types of intents exist: **front-end** and **back-end**. Front-end intents are forwarded to the Picteus UI, while

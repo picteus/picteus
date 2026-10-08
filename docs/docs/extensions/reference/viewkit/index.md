@@ -1,14 +1,19 @@
-# ViewKit
+# ViewKit overview
 
-**ViewKit** is a visual grammar for describing how the UI features of an image should be displayed and laid out in the Picteus front-end application. It describes presentation: the elements to render, their order, their grouping, and their layout.
+**ViewKit** is a visual grammar for describing how the UI features of an image should be displayed and laid out in the
+Picteus front-end application. It describes presentation: the elements to render, their order, their grouping, and their
+layout.
 
-ViewKit complements the other types of image features. Those features are stored in a more **vectorial** manner: they represent extracted or computed values that can be indexed, compared, searched, or used by processing algorithms. ViewKit does not replace those values and is not an image embedding. It is a structured view of feature information for people.
+ViewKit complements the other types of image features. Those features are stored in a more **vectorial** manner: they
+represent extracted or computed values that can be indexed, compared, searched, or used by processing algorithms.
+ViewKit does not replace those values and is not an image embedding. It is a structured view of feature information for
+people.
 
 > See its ["ViewKit" v2 JSON Schema](https://picteus.github.io/picteus/jsonschema/viewkit-v2.schema.json), which may be
 > used to validate ViewKit documents — its source file being located at [
 `docs/static/jsonschema/viewkit-v2.schema.json`](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/static/jsonschema/viewkit-v2.schema.json).
 >
-> See its generated ["ViewKit" model reference](./viewkit-models.md) for the TypeSpec models and UI metadata.
+> See its generated ["ViewKit" model reference](./models-reference.md) for the TypeSpec models and UI metadata.
 
 ---
 
@@ -23,7 +28,8 @@ Use ViewKit when a feature needs a meaningful visual presentation in the front-e
 - a table or a repeated group of records ;
 - a collapsible section containing additional details.
 
-The same underlying feature can therefore have both a vectorial representation for machines and a ViewKit representation for the UI.
+The same underlying feature can therefore have both a vectorial representation for machines and a ViewKit representation
+for the UI.
 
 ---
 
@@ -31,12 +37,13 @@ The same underlying feature can therefore have both a vectorial representation f
 
 A ViewKit document is a `UiContainer` object with the following envelope:
 
-| Property | Required | Description |
-|:---|:---|:---|
-| `schemaVersion` | Yes | ViewKit schema version. Version 1 uses the value `"1.0"`. |
-| `elements` | Yes | Ordered list of visual elements and layout structures. |
+| Property        | Required | Description                                               |
+|:----------------|:---------|:----------------------------------------------------------|
+| `schemaVersion` | Yes      | ViewKit schema version. Version 1 uses the value `"1.0"`. |
+| `elements`      | Yes      | Ordered list of visual elements and layout structures.    |
 
-`UiContainer` is the only supported root for now. It contains the ordered `elements` list and the required ViewKit schema version.
+`UiContainer` is the only supported root for now. It contains the ordered `elements` list and the required ViewKit
+schema version.
 
 Each element has a `type` discriminator.
 
@@ -67,7 +74,8 @@ Each element has a `type` discriminator.
 | `markdown`         | Markdown content rendered with the application's typography.                                                                                                                    |
 | `html`             | Sandboxed HTML content for cases not covered by the other elements.                                                                                                             |
 
-Primitive elements can use modifiers such as text intensity (`low`, `medium`, `high`), weight (`thin`, `normal`, `heavy`), truncation (`characterLimit`, `showMore`), monospace rendering, or copy support.
+Primitive elements can use modifiers such as text intensity (`low`, `medium`, `high`), weight (`thin`, `normal`,
+`heavy`), truncation (`characterLimit`, `showMore`), monospace rendering, or copy support.
 
 ### Layout and grouping
 
@@ -81,7 +89,8 @@ Primitive elements can use modifiers such as text intensity (`low`, `medium`, `h
 | `collapsible-group` | Expandable section with a title, summary, and nested elements.                                  |
 | `divider`           | A visual separator with `hairline`, `solid`, or `dashed` styling.                               |
 
-Layout elements contain other `UiElement` values where appropriate. Their order is significant: the front-end renders the elements in the order in which they occur in the document.
+Layout elements contain other `UiElement` values where appropriate. Their order is significant: the front-end renders
+the elements in the order in which they occur in the document.
 
 ---
 
@@ -131,10 +140,14 @@ The following document presents a feature with a confidence meter, a label-value
 }
 ```
 
-The values in this example remain structured data: `0.92` is still a numeric confidence value and `"Bicycle"` is still text that can be processed or indexed independently of its visual representation. ViewKit adds the front-end grammar that determines how those values are presented to the user.
+The values in this example remain structured data: `0.92` is still a numeric confidence value and `"Bicycle"` is still
+text that can be processed or indexed independently of its visual representation. ViewKit adds the front-end grammar
+that determines how those values are presented to the user.
 
 ---
 
 ## Best practices
 
-When producing ViewKit from an extension, keep the document focused on display. Store searchable, comparable, or algorithmic feature data through the regular feature APIs as well; use ViewKit to give that data a clear and useful visual layout.
+When producing ViewKit from an extension, keep the document focused on display. Store searchable, comparable, or
+algorithmic feature data through the regular feature APIs as well; use ViewKit to give that data a clear and useful
+visual layout.

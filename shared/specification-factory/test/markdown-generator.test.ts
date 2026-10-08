@@ -202,7 +202,7 @@ describe("TypeSpec Markdown documentation generator", () =>
 
     const markdown = generateViewKitMarkdown(grammarSpec);
 
-    assert.match(markdown, /# ViewKit models/);
+    assert.match(markdown, /# ViewKit model reference/);
     assert.doesNotMatch(markdown, /This file is generated/);
     assert.match(markdown, /## Root models/);
     assert.match(markdown, /## UI elements/);
