@@ -1,6 +1,6 @@
 import { SearchFilter } from "@picteus/ws-client";
 
-import { DeskTabType, FolderTypes, TabsType, ViewTabDataType } from "types";
+import { DeskTabType, FolderTypes, ViewTabDataType } from "types";
 
 
 export const prefix = "picteus_";
@@ -25,11 +25,19 @@ export const StorageKeys =
     RUN_CAPABILITIES_EXCLUDED_EXTENSION_IDS: "runCapabilitiesExcludedExtensionIds",
     SELECTED_IMAGE_IDS: "selectedImagesIds",
     SELECTED_IMAGES_ACTION: "selectedImagesAction",
-    TABS: "tabs",
     TEXT_TO_IMAGES_RESULTS_COUNT: "textToImagesResultsCount",
     VERSION: "version",
     VISUALIZER_PANEL_SIZES: "visualizerPanelSizes"
   } as const;
+
+async function upgrade(_previousVersion: string, currentVersion: string): Promise<void>
+{
+  if (currentVersion === "0.11.0")
+  {
+    setDeskTabs([]);
+    setDeskActiveTab("");
+  }
+}
 
 function get(key: string, defaultValue?: string): string | undefined
 {
@@ -93,6 +101,7 @@ function getJson<ValueType>(key: string, defaultValue?: ValueType): ValueType
     const parsed = JSON.parse(value);
     return parsed === null ? defaultValue : (parsed as ValueType);
   }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   catch (error)
   {
     return defaultValue;
@@ -215,16 +224,6 @@ function getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType
 function setMainViewTabData(viewTabData: ViewTabDataType): void
 {
   setJson(StorageKeys.MAIN_TAB, viewTabData);
-}
-
-function getGalleryTabs(): TabsType[]
-{
-  return getJson<TabsType[]>(StorageKeys.TABS, []);
-}
-
-function setGalleryTabs(tabs: TabsType[]): void
-{
-  setJson(StorageKeys.TABS, tabs);
 }
 
 function getDeskTabs(): DeskTabType[]
@@ -396,6 +395,7 @@ function resetCommandsParameters(): void
 
 export default {
   COLOR_SCHEME: `${prefix}${StorageKeys.COLOR_SCHEME}`,
+  upgrade,
   getVersion,
   setVersion,
   getActivityLogsBatchSize,
@@ -416,8 +416,6 @@ export default {
   setExtensionIntentShowShouldConfirm,
   getMainViewTabData,
   setMainViewTabData,
-  getGalleryTabs,
-  setGalleryTabs,
   getDeskTabs,
   setDeskTabs,
   getDeskActiveTab,

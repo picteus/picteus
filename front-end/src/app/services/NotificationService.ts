@@ -24,7 +24,7 @@ function notifyListeners(): void
 
 async function upgrade(_previousVersion: string, currentVersion: string): Promise<void>
 {
-  if (currentVersion === "0.7.0")
+  if (currentVersion === "0.7.0" || currentVersion === "0.11.0")
   {
     await deleteAllNotifications();
   }

@@ -34,6 +34,10 @@ async function upgrade(_previousVersion: string, currentVersion: string): Promis
   {
     indexedDB.deleteDatabase(INDEXED_DB_NAME);
   }
+  else if (currentVersion === "0.11.0")
+  {
+    await deleteAllSocketEvents();
+  }
 }
 
 async function getSocketEvents(): Promise<SocketEventType []>

@@ -63,6 +63,7 @@ function App()
   {
     await EventService.upgrade(previousVersion, currentVersion);
     await NotificationService.upgrade(previousVersion, currentVersion);
+    await StorageService.upgrade(previousVersion, currentVersion);
   }
 
   useEffect(() =>
