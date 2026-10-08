@@ -1,4 +1,4 @@
-import { ReactNode, useContext, useEffect, useState } from "react";
+import { ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { randomId } from "@mantine/hooks";
 
 import { ChannelEnum, DeskTabType } from "types";
@@ -11,8 +11,8 @@ export type DeskTabsContextType = {
   tabs: DeskTabType[];
   activeTab: string | null;
   addTab: (tab: Omit<DeskTabType, "id" | "timestampInMilliseconds"> & {
-    id?: string,
-    timestampInMilliseconds?: number
+    id?: string;
+    timestampInMilliseconds?: number;
   }, isShow: boolean) => string;
   removeTab: (id: string) => void;
   setActiveTab: (id: string | null) => void;
@@ -53,6 +53,11 @@ export function DeskTabsProvider({ children }: { children?: ReactNode }): ReactN
     }
     return initialTabs.length > 0 ? initialTabs[0].id : null;
   });
+
+  const findImageTab = useCallback((imageId: string): DeskTabType | undefined =>
+  {
+    return tabs.find((tab) => tab.content.kind === "image" && tab.content.imageId === imageId);
+  }, [ tabs ]);
 
   useEffect(() =>
   {
@@ -120,10 +125,20 @@ export function DeskTabsProvider({ children }: { children?: ReactNode }): ReactN
   });
 
   function addTab(tab: Omit<DeskTabType, "id" | "timestampInMilliseconds"> & {
-    id?: string,
-    timestampInMilliseconds?: number
+    id?: string;
+    timestampInMilliseconds?: number;
   }, isShow: boolean): string
   {
+    const targetImageId = tab.content.kind === "image" && tab.content.imageId;
+    if (targetImageId !== undefined)
+    {
+      const existingTab = findImageTab(targetImageId);
+      if (existingTab !== undefined)
+      {
+        return existingTab.id;
+      }
+    }
+
     const tabId = tab.id || randomId();
     const timestampInMilliseconds = tab.timestampInMilliseconds ?? Date.now();
     const newTab: DeskTabType = { ...tab, id: tabId, timestampInMilliseconds };

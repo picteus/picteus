@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { randomId } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { IconTopologyRing3 } from "@tabler/icons-react";
 
@@ -18,7 +19,6 @@ import {
 } from "app/hooks";
 import { EventService, ImageService, NotificationService } from "app/services";
 import { ClosestEmbeddingsImages, CommandIcon, Common, computeIcon, ImageItemWrapper } from "app/components";
-import { randomId } from "@mantine/hooks";
 
 
 type UseImageCommandsOptionsType = {
@@ -242,7 +242,7 @@ export default function useImageCommands({
         ImageService.download(image.id).then(async blob =>
         {
           const filePath = await pickFileOrDirectory("file", "save", image.name);
-          const base64Content = await new Promise<string>((resolve, _) =>
+          const base64Content = await new Promise<string>((resolve) =>
           {
             const reader = new FileReader();
             reader.onloadend = () => resolve((reader.result as string).split(",")[1]);
