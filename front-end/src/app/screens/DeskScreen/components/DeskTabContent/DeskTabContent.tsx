@@ -83,9 +83,6 @@ function DeskTabContent({ tab }: DeskTabContentPropsType): ReactElement | null
         image={image}
         images={[ image ]}
         viewMode="gallery"
-        onClose={() =>
-        {
-        }}
       />
     );
   }
@@ -106,9 +103,6 @@ function DeskTabContent({ tab }: DeskTabContentPropsType): ReactElement | null
             image={image}
             images={[ image ]}
             viewMode="gallery"
-            onClose={() =>
-            {
-            }}
           />
         </>
       );

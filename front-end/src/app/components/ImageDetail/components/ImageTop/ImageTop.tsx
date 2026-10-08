@@ -18,7 +18,7 @@ type ImageTopPropsType =
   {
     readonly image: Image;
     readonly viewMode: ViewMode;
-    readonly onClose: () => void;
+    readonly onClose?: () => void;
   };
 
 type RecipeExtensionType =
@@ -27,7 +27,11 @@ type RecipeExtensionType =
     readonly name: string;
   };
 
-export default function ImageTop({ image, viewMode, onClose }: ImageTopPropsType): ReactElement
+export default function ImageTop({
+  image,
+  viewMode,
+  onClose
+}: ImageTopPropsType): ReactElement
 {
   const [ t ] = useTranslation();
   const { data: extensions = [] } = useExtensions();
@@ -92,7 +96,9 @@ export default function ImageTop({ image, viewMode, onClose }: ImageTopPropsType
           </Box>
           <Group gap="xs" align="center" wrap="nowrap">
             <ImageCardsSettings/>
-            <CloseButton size="lg" variant="subtle" onClick={onClose}/>
+            {onClose !== undefined && (
+              <CloseButton size="lg" variant="subtle" onClick={onClose}/>
+            )}
           </Group>
         </Group>
 

@@ -16,15 +16,20 @@ import { ImageDataSectionsProvider } from "./context/ImageDataSectionsContext.ts
 import style from "./ImageDetail.module.scss";
 
 
-type ImageDetailType =
+type ImageDetailPropsType =
   {
     readonly image: ImageOrSummary;
     readonly images: ImageOrSummary[];
     readonly viewMode: ViewMode;
-    readonly onClose: () => void;
+    readonly onClose?: () => void;
   };
 
-export default function ImageDetail({ image, images, viewMode, onClose }: ImageDetailType): ReactElement
+export default function ImageDetail({
+  image,
+  images,
+  viewMode,
+  onClose
+}: ImageDetailPropsType): ReactElement
 {
   const [ t ] = useTranslation();
   const ref = useFocusTrap();
@@ -52,12 +57,12 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
     {
       if (navigation.removeImage(imageId) === 0)
       {
-        onClose();
+        onClose?.();
       }
     }
     else if (navigation.containsImage(imageId))
     {
-      ImageService.get({ id: imageId }).then(anImage => navigation.updateImage(anImage)).catch(ToastService.apiCallError);
+      ImageService.get({ id: imageId }).then((anImage) => navigation.updateImage(anImage)).catch(ToastService.apiCallError);
     }
   });
 
@@ -67,7 +72,7 @@ export default function ImageDetail({ image, images, viewMode, onClose }: ImageD
     {
       ("metadata" in image ? Promise.resolve(image as Image) : ImageService.get({ id: image.id })).then(navigation.setSelectedImage).catch(() =>
       {
-        onClose();
+        onClose?.();
         ToastService.warning(t("message.notFoundImage"));
       });
     }
