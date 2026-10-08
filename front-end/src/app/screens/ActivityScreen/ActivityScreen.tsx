@@ -121,7 +121,7 @@ export default function ActivityScreen(): ReactElement
       await load();
       ToastService.success(t("activityScreen.successDelete"));
     }
-    catch (error)
+    catch (_error)
     {
       ToastService.failure(t("activityScreen.errorDelete"));
     }

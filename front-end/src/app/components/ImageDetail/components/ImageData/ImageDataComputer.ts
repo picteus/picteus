@@ -148,7 +148,7 @@ export function parseFeatureUiContainer(feature: ExtensionImageFeature, t: TFunc
   {
     return UiContainer.parse(feature.value);
   }
-  catch (error)
+  catch (_error)
   {
     return createSchemaComplianceUiContainer(t);
   }
@@ -324,7 +324,7 @@ export function extractRecipe(feature: ExtensionImageFeature): GenerationRecipe 
     const parsed = typeof feature.value === "string" ? JSON.parse(feature.value) : feature.value;
     return GenerationRecipeFromJSON(parsed);
   }
-  catch (error)
+  catch (_error)
   {
     return undefined;
   }
@@ -568,9 +568,9 @@ export function inferMetadataUiContainer(value: string): UiContainer
           const parsedNested = JSON.parse(trimmedValue);
           return json(JSON.stringify(parsedNested, undefined, 2), copyableOptions);
         }
-        catch (error)
+        catch (_error)
         {
-          // We treat unparseable strings as standard text
+          // We treat unparseable JSON strings as standard text
         }
       }
 
@@ -628,7 +628,7 @@ export function inferMetadataUiContainer(value: string): UiContainer
       element = convertValueToUiElement(parsed);
     }
   }
-  catch (error)
+  catch (_error)
   {
     const trimmedValue = value.trim();
     if (trimmedValue.startsWith("<") && trimmedValue.endsWith(">"))

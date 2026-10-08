@@ -101,8 +101,7 @@ function getJson<ValueType>(key: string, defaultValue?: ValueType): ValueType
     const parsed = JSON.parse(value);
     return parsed === null ? defaultValue : (parsed as ValueType);
   }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  catch (error)
+  catch (_error)
   {
     return defaultValue;
   }
@@ -379,7 +378,7 @@ function setCommandParameters(extensionId: string, commandId: string, parameters
 }
 
 // noinspection JSUnusedLocalSymbols
-function removeCommandParameters(extensionId: string, commandId: string): void
+function _removeCommandParameters(extensionId: string, commandId: string): void
 {
   const commandIdentifier = computeCommandStorageIdentifier(extensionId, commandId);
   const commandsParameters = getCommandsParameters();
@@ -388,7 +387,7 @@ function removeCommandParameters(extensionId: string, commandId: string): void
 }
 
 // noinspection JSUnusedLocalSymbols
-function resetCommandsParameters(): void
+function _resetCommandsParameters(): void
 {
   remove(StorageKeys.COMMANDS_PARAMETERS);
 }

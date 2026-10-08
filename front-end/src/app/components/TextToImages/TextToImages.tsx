@@ -22,7 +22,7 @@ type TextToImageType = {
   extensionId: string;
 };
 
-export default function TextToImages({ extensionId }: TextToImageType)
+export default function TextToImages({ extensionId: _extensionId }: TextToImageType)
 {
   const [ t ] = useTranslation();
   const [ images, setImages ] = useState<ImageWithCaption[]>([]);

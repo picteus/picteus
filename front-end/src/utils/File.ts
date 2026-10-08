@@ -6,8 +6,8 @@ export const mimeTypes = {
 };
 
 export const fileSignatures = {
-  zip: [0x50, 0x4b], // "PK" in ASCII for ZIP files
-  tarGz: [0x1f, 0x8b] // GZIP files start with 0x1F 0x8B
+  zip: [ 0x50, 0x4b ], // "PK" in ASCII for ZIP files
+  tarGz: [ 0x1f, 0x8b ] // GZIP files start with 0x1F 0x8B
 };
 
 export async function fileToBlob(file: File): Promise<Blob>
@@ -17,11 +17,11 @@ export async function fileToBlob(file: File): Promise<Blob>
     try
     {
       // As File is a subtype of Blob, we can directly resolve it as a Blob
-      resolve(new Blob([file], { type: file.type }));
+      resolve(new Blob([ file ], { type: file.type }));
     }
     catch (error)
     {
-      reject(new Error("Failed to convert file to Blob"));
+      reject(new Error(`Failed to convert file to Blob. Reason: '${error.message}'`));
     }
   });
 }

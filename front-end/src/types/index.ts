@@ -406,7 +406,7 @@ export function computeResourceTypeUrl(resourceType: ResourceType): string | nul
     {
       mimeType = detectImageMimeType(uint8Array);
     }
-    catch (error)
+    catch (_error)
     {
       return null;
     }

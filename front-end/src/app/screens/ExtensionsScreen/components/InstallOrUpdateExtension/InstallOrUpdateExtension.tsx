@@ -79,7 +79,7 @@ export default function InstallOrUpdateExtension({
           new URL(url);
           return null;
         }
-        catch (error)
+        catch (_error)
         {
           return t("fieldError.badUrl");
         }
