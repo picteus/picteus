@@ -45,7 +45,7 @@ function unregister()
 export default function useEscapeKey(
   elementRef: RefObject<HTMLElement | null>,
   callback: () => void,
-  isEnabled: boolean = true
+  isEnabled = true
 ): void
 {
   const callbackRef = useRef<() => void>(callback);

@@ -17,7 +17,7 @@ function sentinelObserverNullGuardPlugin(): Plugin
   return {
     name: "sentinel-observer-null-guard",
     enforce: "pre",
-    transform(code, _id)
+    transform(code)
     {
       if (code.includes("this.observer.externalUnobserve()"))
       {
@@ -35,11 +35,11 @@ export default defineConfig(({ mode }) =>
 {
   const isProfiling = mode === "profiling";
   return {
-    plugins: [sentinelObserverNullGuardPlugin(), react()],
+    plugins: [ sentinelObserverNullGuardPlugin(), react() ],
     resolve: {
-      dedupe: ["react", "react-dom"],
+      dedupe: [ "react", "react-dom" ],
       tsconfigPaths: true,
-      alias: isProfiling === true ? [{ find: "react-dom/client", replacement: "react-dom/profiling" }] : undefined
+      alias: isProfiling === true ? [ { find: "react-dom/client", replacement: "react-dom/profiling" } ] : undefined
     },
     base: "",
     define: {

@@ -3,9 +3,8 @@ const INDEXED_DB_SOCKET_EVENTS_STORE = "socketEvents";
 const INDEXED_DB_NOTIFICATIONS_STORE = "notifications";
 
 const socketEventsKind = "socketEvents";
-const notificationsKind = "notifications";
 
-export type StoreKind = typeof socketEventsKind | typeof notificationsKind;
+export type StoreKind = typeof socketEventsKind | "notifications";
 
 let indexedDbSocketEventsInstance: IDBDatabase | null = null;
 let indexedDbNotificationsInstance: IDBDatabase | null = null;

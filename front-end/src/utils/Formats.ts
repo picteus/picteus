@@ -26,7 +26,7 @@ const defaultCalendarFormats =
 
 const defaultCalendarFormatsWithSeconds = new Map<string, string>([ ...Object.entries(defaultCalendarFormats) ].map(([ key, value ]) => [ key, value + secondsSuffixFormat ]));
 
-export function formatAbsoluteDate(timestampInMilliseconds: number, withSeconds: boolean = true): string
+export function formatAbsoluteDate(timestampInMilliseconds: number, withSeconds = true): string
 {
   return dayjs(timestampInMilliseconds).format(coldDateFormat + (withSeconds ? secondsSuffixFormat : ""));
 }
