@@ -100,9 +100,10 @@ class ImageCommonsExtension extends PicteusExtension
       images:
         {
           images: newImages,
-          dialogContent:
+          content:
             {
               title: "Converted images",
+              subtitle: `${newImages.length} converted image${newImages.length >= 2 ? "s" : ""}`,
               description: "These are the converted images"
             }
         }
