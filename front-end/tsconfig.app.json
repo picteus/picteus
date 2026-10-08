@@ -16,12 +16,11 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-
-
+    "types": [],
     "baseUrl": "src",
     "paths": {
       "~/*": ["./src"]
-    },
+    }
   },
   "include": ["src"]
 }

@@ -10,7 +10,8 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "scripts/updateVersion.ts"]
 }
