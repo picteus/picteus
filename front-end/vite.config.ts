@@ -1,5 +1,3 @@
-import path from "node:path";
-
 import { defineConfig, type Plugin, TerserOptions } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -48,7 +46,7 @@ export default defineConfig(({ mode }) =>
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: `@import "${path.resolve(__dirname, "src/assets/style/variables.scss").replace(/\\/g, "/")}";`
+          additionalData: `@import "/src/assets/style/variables.scss";`
         }
       }
     },

@@ -3,11 +3,6 @@ export const FOCUS_SELECTOR = "a, input, select, textarea, button, object, [tabi
 
 function hidden(element: HTMLElement)
 {
-  if (process.env.NODE_ENV === "test")
-  {
-    return false;
-  }
-
   return element.style.display === "none";
 }
 

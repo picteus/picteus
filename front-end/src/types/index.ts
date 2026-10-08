@@ -390,7 +390,7 @@ export enum ChannelEnum
 }
 
 
-export type ResourceType = ({ url: string }) | ({ content: Buffer });
+export type ResourceType = ({ url: string }) | ({ content: Uint8Array });
 
 export function computeResourceTypeUrl(resourceType: ResourceType): string | null
 {

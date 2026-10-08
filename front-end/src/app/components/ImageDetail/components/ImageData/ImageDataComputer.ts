@@ -129,6 +129,24 @@ export function featureTypeComparison(type1: ImageFeatureType, type2: ImageFeatu
   return type1.localeCompare(type2);
 }
 
+function attempt<T>(operation: () => T): T | undefined
+{
+  try
+  {
+    return operation();
+  }
+  catch (_error)
+  {
+    return undefined;
+  }
+}
+
+// JSON.parse never returns undefined on success, so an undefined result unambiguously denotes a parsing failure
+function tryParseJson(value: string): unknown
+{
+  return attempt(() => JSON.parse(value));
+}
+
 export function createSchemaComplianceUiContainer(t: TFunction = i18n.t): UiContainer
 {
   return createUiContainer({
@@ -144,14 +162,7 @@ export function createSchemaComplianceUiContainer(t: TFunction = i18n.t): UiCont
 
 export function parseFeatureUiContainer(feature: ExtensionImageFeature, t: TFunction = i18n.t): UiContainer
 {
-  try
-  {
-    return UiContainer.parse(feature.value);
-  }
-  catch (_error)
-  {
-    return createSchemaComplianceUiContainer(t);
-  }
+  return attempt(() => UiContainer.parse(feature.value)) ?? createSchemaComplianceUiContainer(t);
 }
 
 export function inferNonUiElement(imageFeature: ExtensionImageFeature): UiElement
@@ -319,15 +330,13 @@ export function isDisplayedInFeatureTypeCards(feature: ExtensionImageFeature): b
 
 export function extractRecipe(feature: ExtensionImageFeature): GenerationRecipe | undefined
 {
-  try
-  {
-    const parsed = typeof feature.value === "string" ? JSON.parse(feature.value) : feature.value;
-    return GenerationRecipeFromJSON(parsed);
-  }
-  catch (_error)
+  const parsed = typeof feature.value === "string" ? tryParseJson(feature.value) : feature.value;
+  if (parsed === undefined)
   {
     return undefined;
   }
+
+  return attempt(() => GenerationRecipeFromJSON(parsed));
 }
 
 export function convertRecipeToContainer(generationRecipe: GenerationRecipe | undefined, t: TFunction = i18n.t): UiContainer
@@ -511,7 +520,7 @@ export function computeTypeFeatureContainers(
 }
 
 export function computeRawFeatureContainers(
-  rawFeatures: readonly ExtensionImageFeature[],
+  rawFeatures: readonly ExtensionImageFeature[]
 ): ImageFeatureContainerType[]
 {
   return rawFeatures.map((rawFeature) =>
@@ -563,15 +572,12 @@ export function inferMetadataUiContainer(value: string): UiContainer
 
       if ((trimmedValue.startsWith("{") && trimmedValue.endsWith("}")) || (trimmedValue.startsWith("[") && trimmedValue.endsWith("]")))
       {
-        try
+        const parsedNested = tryParseJson(trimmedValue);
+        if (parsedNested !== undefined)
         {
-          const parsedNested = JSON.parse(trimmedValue);
           return json(JSON.stringify(parsedNested, undefined, 2), copyableOptions);
         }
-        catch (_error)
-        {
-          // We treat unparseable JSON strings as standard text
-        }
+        // We treat unparseable JSON strings as standard text
       }
 
       if (trimmedValue.startsWith("http://") || trimmedValue.startsWith("https://"))
@@ -592,9 +598,9 @@ export function inferMetadataUiContainer(value: string): UiContainer
 
   let element: UiElement;
 
-  try
+  const parsed = tryParseJson(value);
+  if (parsed !== undefined)
   {
-    const parsed = JSON.parse(value);
     if (typeof parsed === "object" && parsed !== null && Array.isArray(parsed) === false)
     {
       const entries = Object.entries(parsed as Record<string, unknown>);
@@ -628,7 +634,7 @@ export function inferMetadataUiContainer(value: string): UiContainer
       element = convertValueToUiElement(parsed);
     }
   }
-  catch (_error)
+  else
   {
     const trimmedValue = value.trim();
     if (trimmedValue.startsWith("<") && trimmedValue.endsWith(">"))
