@@ -687,7 +687,7 @@ export class ApplicationWrapper
       minimizable: true,
       maximizable: true,
       fullscreenable: true,
-      autoHideMenuBar: process.platform === "darwin",
+      autoHideMenuBar: true,
       webPreferences:
         {
           // We disable the access to the DevTools in production mode
@@ -701,10 +701,26 @@ export class ApplicationWrapper
     };
   }
 
+  private computeMainWindowOptions(): Electron.BrowserWindowConstructorOptions
+  {
+    const isDarwin = process.platform === "darwin";
+    const trafficLightPosition: Electron.Point = { x: 14, y: 9 };
+    const otherOptions = { titleBarOverlay: { color: "#00000000", symbolColor: "#747880", height: 32 } };
+    return {
+      ...this.computeWindowOptions(),
+      titleBarStyle: "hidden",
+      ...(isDarwin ? { ...trafficLightPosition } : otherOptions)
+    };
+  }
+
   private createMainWindow(useSsl: boolean, apiServerPortNumber: number, webServerPortNumber: number): Electron.BrowserWindow
   {
     const store: Store = new Store("windows");
-    const commonOptions: Electron.BrowserWindowConstructorOptions = { ...this.computeWindowOptions(), closable: false };
+    const commonOptions: Electron.BrowserWindowConstructorOptions =
+      {
+        ...this.computeMainWindowOptions(),
+        closable: false
+      };
     const size: Size = screen.getPrimaryDisplay().workAreaSize;
     const bounds: Rectangle = store.get<Rectangle>("bounds", { x: 0, y: 0, width: size.width, height: size.height });
     const isWindows = os.platform() === "win32";

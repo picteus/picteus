@@ -6,20 +6,21 @@ import {
   Container,
   createTheme,
   localStorageColorSchemeManager,
-  MantineProvider
+  MantineProvider,
+  Text
 } from "@mantine/core";
 import { ErrorBoundary } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
-import "react-toastify/dist/ReactToastify.css";
-import "@mantine/core/styles.css";
-
 import { Configuration, DefaultConfig } from "@picteus/ws-client";
 
 import { API_KEY, BASE_PATH } from "utils";
-import { EventService, NotificationService, StorageService } from "./app/services";
+import { WindowContainer } from "app/layout";
 import { BootstrapScreen } from "app/screens";
-import "i18n/i18n.ts";
+import { EventService, NotificationService, StorageService } from "./app/services";
 import Initializer from "./Initializer.tsx";
+import "i18n/i18n.ts";
+import "react-toastify/dist/ReactToastify.css";
+import "@mantine/core/styles.css";
 import "assets/style/style.scss";
 import "assets/style/override.scss";
 
@@ -79,23 +80,23 @@ function App()
       }
       const boostrapInterval = setInterval(() =>
       {
-        fetch(BASE_PATH + "/bootstrap")
-          .then(async (response) =>
+        fetch(BASE_PATH + "/bootstrap").then(async (response) =>
+        {
+          if (!response.ok)
           {
-            if (!response.ok)
-            {
-              // The server indicates that it is now ready
-              setBootstrapping(false);
-              clearInterval(boostrapInterval);
-              return;
-            }
-            const res = await response.json();
-            setBootstrapLogs(res.logs);
-          })
-          .catch(() =>
+            // The server indicates that it is now ready
+            setBootstrapping(false);
+            clearInterval(boostrapInterval);
+          }
+          else
           {
-            // This happens as long as the server is not reachable
-          });
+            const content = await response.json();
+            setBootstrapLogs(content.logs);
+          }
+        }).catch(() =>
+        {
+          // This happens as long as the server is not reachable
+        });
       }, 250);
     };
     void run();
@@ -108,11 +109,9 @@ function App()
   return (
     <MantineProvider colorSchemeManager={colorSchemeManager} theme={theme}>
       <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
-        {bootstrapping ? (
-          <BootstrapScreen logs={bootstrapLogs}/>
-        ) : (
-          <Initializer/>
-        )}
+        <WindowContainer titleBarContent={<Text size="md" c="dimmed" fw={500}>Picteus</Text>}>
+          {bootstrapping ? (<BootstrapScreen logs={bootstrapLogs}/>) : (<Initializer/>)}
+        </WindowContainer>
       </ErrorBoundary>
     </MantineProvider>
   );

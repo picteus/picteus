@@ -1,9 +1,37 @@
 
 :root
 {
+  --titlebar-height: 0px;
+  --titlebar-inset-left: 0px;
+  --titlebar-inset-right: 0px;
   --toastify-font-family: "Roboto";
   --override-divider-color: var(--mantine-color-gray-4);
-  --toastify-toast-width: 500px
+  --toastify-toast-width: 500px;
+}
+
+html.electron
+{
+  --titlebar-height: 32px;
+  --titlebar-inset-left: env(titlebar-area-x, 0px);
+  --titlebar-inset-right: 0px;
+}
+
+html.electron.electron-darwin
+{
+  --titlebar-inset-left: max(90px, env(titlebar-area-x, 0px));
+  --titlebar-inset-right: 0px;
+}
+
+html.electron.electron-win32
+{
+  --titlebar-inset-left: 0px;
+  --titlebar-inset-right: max(140px, calc(100vw - env(titlebar-area-width, 100vw)));
+}
+
+html.electron.electron-linux
+{
+  --titlebar-inset-left: 0px;
+  --titlebar-inset-right: max(140px, calc(100vw - env(titlebar-area-width, 100vw)));
 }
 
 [data-mantine-color-scheme="dark"]

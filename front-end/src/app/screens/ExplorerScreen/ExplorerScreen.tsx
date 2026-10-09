@@ -4,6 +4,7 @@ import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "utils";
+import { TitleBarPortal } from "app/layout";
 import { useRepositories } from "app/hooks";
 import { FiltersService, StorageService } from "app/services";
 import { EmptyResults, ImagesView, StackableScreen } from "app/components";
@@ -33,6 +34,9 @@ export default function ExplorerScreen(): ReactElement
 
   return (
     <StackableScreen className={style.mainContainer}>
+      <TitleBarPortal>
+        {null}
+      </TitleBarPortal>
       <ImagesView
         viewData={StorageService.getMainViewTabData(FiltersService.defaultFilter)}
         isDefault={true}
