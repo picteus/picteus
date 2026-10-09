@@ -36,6 +36,7 @@ export enum StringNature
 {
   Free = "free",
   Technical = "technical",
+  TechnicalRelaxed = "technicalRelaxed",
   Tag = "tag",
   FileSystemFileName = "fileSystemFileName",
   FileSystemRelativeDirectoryPath = "fileSystemRelativeDirectoryPath",
@@ -82,7 +83,7 @@ export class ParametersChecker
           this.throwBadParameter(name, value, `${returnType.error.issues[0].code === "too_small" ? "it is empty" : `it exceeds ${maximumLength} characters`}`);
         }
       }
-      if (nature === StringNature.Technical || nature === StringNature.Tag)
+      if (nature === StringNature.Technical || nature === StringNature.TechnicalRelaxed || nature === StringNature.Tag)
       {
         const returnType = z.string().regex(new RegExp(`^[${nature === StringNature.Technical ? alphaNumericPlusPattern : alphaNumericPlusAdditionalAuthorizedCharactersPattern}]*$`)).safeParse(value);
         if (returnType.success === false)

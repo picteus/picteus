@@ -72,14 +72,14 @@ export class ApiSecret extends ApiSecretSummary
       description: "The secret scope",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.technical,
+      maxLength: FieldLengths.longTechnical,
       required: false,
       example: "image:read,repository:read"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.technical)
+  @MaxLength(FieldLengths.longTechnical)
   @IsOptional()
   @Expose()
   readonly scope?: string;
@@ -89,14 +89,14 @@ export class ApiSecret extends ApiSecretSummary
       description: "The secret value",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.technical,
+      maxLength: FieldLengths.longTechnical,
       required: true,
       example: "Z&Q78&fqkPq"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.technical)
+  @MaxLength(FieldLengths.longTechnical)
   @Expose()
   readonly value: string;
 

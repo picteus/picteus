@@ -198,14 +198,14 @@ export class SearchFeatureCondition
       description: "The image feature name",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.technical,
+      maxLength: FieldLengths.longTechnical,
       required: false,
       example: "field"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.technical)
+  @MaxLength(FieldLengths.longTechnical)
   @IsOptional()
   @Expose()
   readonly name?: string;

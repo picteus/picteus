@@ -44,8 +44,10 @@ import {
   type Json,
   namePattern,
   repositoryIdSchema,
-  technicalRelaxedPattern,
-  technicalRelaxedSchema,
+  technicalLongRelaxedPattern,
+  technicalLongRelaxedSchema,
+  technicalShortRelaxedPattern,
+  technicalShortRelaxedSchema,
   toMimeType,
   uniqueIdPattern,
   uriPathPattern,
@@ -344,7 +346,7 @@ export class GenerationRecipe
       description: "The identifier of the recipe instance",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.technical,
+      maxLength: FieldLengths.longTechnical,
       required: false,
       example: "820hh5e0w5rmc0ctgw38b1t4pr"
     }
@@ -352,7 +354,7 @@ export class GenerationRecipe
   @IsString()
   @IsOptional()
   @MinLength(1)
-  @MaxLength(FieldLengths.technical)
+  @MaxLength(FieldLengths.longTechnical)
   @Expose()
   readonly id?: string;
 
@@ -686,17 +688,17 @@ export class ImageFeature
 
   @ApiProperty(
     {
+      ...technicalLongRelaxedSchema,
       description: "The image feature name",
       type: String,
-      minLength: 1,
-      maxLength: FieldLengths.technical,
       required: false,
       example: "field"
     }
   )
   @IsString()
+  @Matches(technicalLongRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.technical)
+  @MaxLength(FieldLengths.longTechnical)
   @IsOptional()
   @Expose()
   readonly name?: string;
@@ -827,17 +829,17 @@ export class ExtensionImageFeatureName
 
   @ApiProperty(
     {
+      ...technicalLongRelaxedSchema,
       description: "The image feature name",
       type: String,
-      minLength: 1,
-      maxLength: FieldLengths.technical,
       required: true,
       example: "field"
     }
   )
   @IsString()
+  @Matches(technicalLongRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.technical)
+  @MaxLength(FieldLengths.longTechnical)
   @Expose()
   readonly name: string;
 
@@ -876,15 +878,16 @@ export class ExtensionImageTag
 
   @ApiProperty(
     {
-      ...technicalRelaxedSchema,
+      ...technicalShortRelaxedSchema,
       description: "The image tag value",
       type: String,
       required: true
     }
   )
   @IsString()
+  @Matches(technicalShortRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.technical)
+  @MaxLength(FieldLengths.longTechnical)
   @Expose()
   readonly value: ImageTag;
 
@@ -910,14 +913,14 @@ export class ImageEmbedding
 
   @ApiProperty(
     {
-      ...technicalRelaxedSchema,
+      ...technicalShortRelaxedSchema,
       description: "The image embedding name",
       type: String,
       required: true
     }
   )
   @IsString()
-  @Matches(technicalRelaxedPattern)
+  @Matches(technicalShortRelaxedPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()
@@ -1009,14 +1012,14 @@ export class ExtensionIdImageEmbeddingName
 
   @ApiProperty(
     {
-      ...technicalRelaxedSchema,
+      ...technicalShortRelaxedSchema,
       description: "The embedding name",
       type: String,
       required: true
     }
   )
   @IsString()
-  @Matches(technicalRelaxedPattern)
+  @Matches(technicalShortRelaxedPattern)
   @MinLength(1)
   @MaxLength(FieldLengths.shortTechnical)
   @Expose()

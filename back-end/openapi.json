@@ -5925,6 +5925,7 @@
           "name": {
             "type": "string",
             "description": "The image feature name",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
             "minLength": 1,
             "maxLength": 64,
             "example": "field"
@@ -6258,6 +6259,7 @@
           "name": {
             "type": "string",
             "description": "The image feature name",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
             "minLength": 1,
             "maxLength": 64,
             "example": "field"
@@ -6314,6 +6316,7 @@
           "name": {
             "type": "string",
             "description": "The image feature name",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
             "minLength": 1,
             "maxLength": 64,
             "example": "field"

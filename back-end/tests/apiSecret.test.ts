@@ -7,6 +7,7 @@ import { ApiSecretType, FieldLengths } from "../src/dtos/app.dtos";
 import { ServiceError } from "../src/app.exceptions";
 import { apiKeyHeaderName, ApiScope, AuthenticationGuard } from "../src/app.guards";
 
+
 const { OK, BAD_REQUEST, UNAUTHORIZED } = HttpCodes;
 
 
@@ -70,7 +71,7 @@ describe("API Secret with module", () =>
         }).rejects.toThrow(new ServiceError(`The parameter 'scope' with value '${scope}' is invalid because it contains the invalid scope '${scope}'`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const scope = "a".repeat(FieldLengths.technical + 1);
+        const scope = "a".repeat(FieldLengths.longTechnical + 1);
         await expect(async () =>
         {
           await base.getApiSecretController().create(keyType, validName, undefined, undefined, scope);

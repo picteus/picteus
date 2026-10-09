@@ -473,7 +473,7 @@ export class ImageService
     for (let index = 0; index < features.length; index++)
     {
       const imageFeature = features[index];
-      parametersChecker.checkString(`features[${index}].name`, imageFeature.name, FieldLengths.technical, StringNature.Technical, true);
+      parametersChecker.checkString(`features[${index}].name`, imageFeature.name, FieldLengths.longTechnical, StringNature.TechnicalRelaxed, true);
       if (typeof imageFeature.value === "string")
       {
         parametersChecker.checkString(`features[${index}].value`, imageFeature.value, FieldLengths.value, StringNature.Free);
@@ -731,7 +731,7 @@ export class ImageService
     }
     for (let index = 0; index < tags.length; index++)
     {
-      parametersChecker.checkString(`tags[${index}]`, tags[index], FieldLengths.technical, StringNature.Tag);
+      parametersChecker.checkString(`tags[${index}]`, tags[index], FieldLengths.longTechnical, StringNature.Tag);
     }
 
     // We remember the existing tags, before the modification

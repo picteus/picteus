@@ -195,7 +195,7 @@ export class ManifestExtensionCommandOn
       type: String,
       isArray: true,
       minLength: 1,
-      maxLength: FieldLengths.technical,
+      maxLength: FieldLengths.longTechnical,
       required: false
     }
   )
@@ -203,7 +203,7 @@ export class ManifestExtensionCommandOn
   @IsString({ each: true })
   @ValidateNested({ each: true })
   @MinLength(1, { each: true })
-  @MaxLength(FieldLengths.technical, { each: true })
+  @MaxLength(FieldLengths.longTechnical, { each: true })
   @IsOptional()
   @Expose()
   readonly withTags?: ImageTag[];

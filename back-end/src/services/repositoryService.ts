@@ -555,7 +555,6 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       parametersChecker.throwBadParameter("nameWithoutExtension", nameWithoutExtension, "it contains a file extension");
     }
-    const fileName = `${actualNameWithoutExtension}.${fileExtension}`;
     const repository = await this.getRepository(id);
     if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
     {
@@ -563,6 +562,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     const repositoryDirectoryPath = repository.url.substring(fileWithProtocol.length);
     const fileDirectoryPath = relativeDirectoryPath === undefined ? repositoryDirectoryPath : path.resolve(repositoryDirectoryPath, relativeDirectoryPath);
+    const fileName = `${actualNameWithoutExtension}.${fileExtension}`;
     const filePath = path.resolve(fileDirectoryPath, fileName);
     if (fs.existsSync(filePath) === true)
     {

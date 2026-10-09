@@ -411,7 +411,7 @@ export class ApiSecretController
     description: "The API secret scope",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.technical,
+    maxLength: FieldLengths.longTechnical,
     required: false,
     example: "image:read,repository:read"
   })
@@ -2216,7 +2216,12 @@ export class ImageController
     schema:
       {
         type: "array",
-        items: { type: "string", pattern: alphaNumericPlusPattern, minLength: 1, maxLength: FieldLengths.technical },
+        items: {
+          type: "string",
+          pattern: alphaNumericPlusPattern,
+          minLength: 1,
+          maxLength: FieldLengths.longTechnical
+        },
         minItems: 0,
         maxItems: ExtensionImageTag.PER_EXTENSION_TAGS_MAXIMUM
       },

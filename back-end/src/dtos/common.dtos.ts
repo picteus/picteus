@@ -31,7 +31,7 @@ export const FieldLengths =
     eight: 8,
     uid: 36,
     shortTechnical: 32,
-    technical: 64,
+    longTechnical: 64,
     name: 128,
     command: 512,
     fileName: 512,
@@ -68,7 +68,9 @@ export const shortTechnicalIdPattern = computeIdPattern(FieldLengths.shortTechni
 
 export const extensionIdPattern = shortTechnicalIdPattern;
 
-export const technicalRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.shortTechnical);
+export const technicalShortRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.shortTechnical);
+
+export const technicalLongRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.longTechnical);
 
 const noProtocolUriPathPattern = "[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
@@ -152,13 +154,23 @@ export const shortTechnicalSchema: SchemaObject =
     example: "technical-id"
   };
 
-export const technicalRelaxedSchema: SchemaObject =
+export const technicalShortRelaxedSchema: SchemaObject =
   {
-    description: "A relaxed technical identifier",
+    description: "A relaxed short technical identifier",
     type: "string",
-    pattern: technicalRelaxedPattern,
+    pattern: technicalShortRelaxedPattern,
     minLength: 1,
     maxLength: FieldLengths.shortTechnical,
+    example: "a:relaxed/id"
+  };
+
+export const technicalLongRelaxedSchema: SchemaObject =
+  {
+    description: "A relaxed long technical identifier",
+    type: "string",
+    pattern: technicalLongRelaxedPattern,
+    minLength: 1,
+    maxLength: FieldLengths.longTechnical,
     example: "a:relaxed/id"
   };
 
@@ -166,9 +178,9 @@ export const technicalSchema: SchemaObject =
   {
     description: "A technical identifier",
     type: "string",
-    pattern: computeIdPattern(FieldLengths.technical),
+    pattern: computeIdPattern(FieldLengths.longTechnical),
     minLength: 1,
-    maxLength: FieldLengths.technical,
+    maxLength: FieldLengths.longTechnical,
     example: "technical-id"
   };
 

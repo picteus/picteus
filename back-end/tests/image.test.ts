@@ -1250,7 +1250,7 @@ describe("Image with module", () =>
           }).rejects.toThrow(new ServiceError(`The parameter '[0].value' is invalid because it does not comply with the recipe schema`, BAD_REQUEST, base.badParameterCode));
         }
         {
-          for (const recipe of [ new GenerationRecipe(1, [], prompt, "a".repeat(FieldLengths.technical + 1)), new GenerationRecipe(1, [], prompt, undefined, "malformed URL"), new GenerationRecipe(2, [], prompt, undefined, undefined, "malformed software"), new GenerationRecipe(1, [], prompt, undefined, undefined, undefined, [ "" ]), new GenerationRecipe(1, [], prompt, undefined, undefined, undefined, undefined, -1) ])
+          for (const recipe of [ new GenerationRecipe(1, [], prompt, "a".repeat(FieldLengths.longTechnical + 1)), new GenerationRecipe(1, [], prompt, undefined, "malformed URL"), new GenerationRecipe(2, [], prompt, undefined, undefined, "malformed software"), new GenerationRecipe(1, [], prompt, undefined, undefined, undefined, [ "" ]), new GenerationRecipe(1, [], prompt, undefined, undefined, undefined, undefined, -1) ])
           {
             const value = JSON.stringify(recipe);
             await expect(async () =>
@@ -1508,7 +1508,7 @@ describe("Image with module", () =>
     const firstTags = [ "tag4" ];
     {
       const tag1 = "tag.1";
-      const secondTags = [ "tag-2", tag1 ];
+      const secondTags = [ "tag-2:with/special", tag1 ];
       const thirdTags = [ tag1, "tag_3" ];
       {
         const emptyTags: string[] = [];

@@ -43,7 +43,7 @@ export class ApiSecretService
     }
     parametersChecker.checkString("name", name, FieldLengths.name);
     parametersChecker.checkString("comment", comment, FieldLengths.comment, undefined, true);
-    parametersChecker.checkString("scope", scope, FieldLengths.technical, undefined, true);
+    parametersChecker.checkString("scope", scope, FieldLengths.longTechnical, undefined, true);
     if (scope !== undefined)
     {
       const tokens = scope.split(apiScopesSeparator);
