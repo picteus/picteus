@@ -11,6 +11,8 @@ export const additionalAuthorizedCharacters = ":;|/";
 
 export const alphaNumericPlusAdditionalAuthorizedCharactersPattern = alphaNumericPlusPattern + additionalAuthorizedCharacters;
 
+export const alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern = alphaNumericPlusAdditionalAuthorizedCharactersPattern + " ";
+
 const computePattern = (pattern: string, maximumLength: number): string =>
 {
   return `^[${pattern}]{1,${maximumLength}}$`;
@@ -19,11 +21,6 @@ const computePattern = (pattern: string, maximumLength: number): string =>
 const computeIdPattern = (maximumLength: number): string =>
 {
   return computePattern(alphaNumericPlusPattern, maximumLength);
-};
-
-const computeNamePattern = (maximumLength: number): string =>
-{
-  return computePattern(`${alphaNumericPlusPattern}${additionalAuthorizedCharacters} `, maximumLength);
 };
 
 export const FieldLengths =
@@ -62,7 +59,7 @@ const alphaNumericPattern = "0-9a-f";
 
 export const uniqueIdPattern = `[${alphaNumericPattern}]{8}-[${alphaNumericPattern}]{4}-[${alphaNumericPattern}]{4}-[${alphaNumericPattern}]{4}-[${alphaNumericPattern}]{12}`;
 
-export const namePattern = computeNamePattern(FieldLengths.name);
+export const namePattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern, FieldLengths.name);
 
 export const shortTechnicalIdPattern = computeIdPattern(FieldLengths.shortTechnical);
 

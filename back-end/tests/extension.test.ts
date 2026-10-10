@@ -22,9 +22,11 @@ import { stringify } from "../src/utils";
 import { computeAttachmentDisposition, copyDirectoryRecursively } from "../src/services/utils/downloader";
 import { Base, Core, ExtensionBasisBuilder, ListenerMock } from "./base";
 import {
+  AiModel,
   applicationXGzipMimeType,
   CommandEntity,
   ExtensionActivityState,
+  ExtensionAiModel,
   ExtensionCategory,
   ExtensionGenerationOptions,
   ExtensionSettings,
@@ -1353,6 +1355,10 @@ describe("Extensions", () =>
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     const extension = await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
     await base.getExtensionController().setSettings(Base.allPolicyContext, manifest.id, new ExtensionSettings({ [key]: "value" }));
+    await base.getExtensionController().setAiModels(Base.allPolicyContext, manifest.id, [ {
+      technicalId: "gemma4",
+      name: "Gemma 4 E2B"
+    } ]);
 
     const { images } = await builder.createRepositoryAndGetImages();
     await waitForExpect(async () =>
@@ -1389,10 +1395,11 @@ describe("Extensions", () =>
       expect(listener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Uninstalled, { id: manifest.id });
     });
     {
-      // We check that the features, their attachments, and the embeddings and the settings attached to the extension are deleted
+      // We check that the features, their attachments, and the embeddings, the settings and the AI models attached to the extension are deleted
       expect(await base.getEntitiesProvider().imageFeature.findMany({ where: { extensionId: id } })).toEqual([]);
       expect(await base.getModuleProvider(ImageAttachmentService).list(imageId)).toEqual([]);
       expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageId, id)).toEqual([]);
+      expect(await base.getEntitiesProvider().aiModel.findMany({ where: { extensionId: id } })).toEqual([]);
       await expect(async () =>
       {
         await base.getExtensionController().getSettings(Base.allPolicyContext, manifest.id);
@@ -2312,6 +2319,179 @@ describe("Extensions", () =>
         expect(updatedExtensionSettings.value).toEqual(defaultValue);
       }
     });
+  });
+
+  test("AI models", async () =>
+  {
+    const extension1Id = "id1";
+    const extension2Id = "id2";
+    for (const extensionId of [ extension1Id, extension2Id ])
+    {
+      const manifest = new ExtensionBuilder(false, undefined, extensionId, extensionId).computeSimpleManifest();
+      const zip = new AdmZip();
+      zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
+      await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
+    }
+    expect(await base.getExtensionController().listAiModels()).toEqual([]);
+
+    {
+      // We assess with invalid parameters
+      {
+        // We assess with an inexistent extension
+        await expect(async () =>
+        {
+          await base.getExtensionController().setAiModels(Base.allPolicyContext, "inexistentId", []);
+        }).rejects.toThrow(new ServiceError(`The parameter 'id' with value 'inexistentId' is invalid because there is no extension with that identifier`, BAD_REQUEST, base.badParameterCode));
+      }
+
+      {
+        // We assess with duplicate technical identifiers
+        await expect(async () =>
+        {
+          const technicalId = "gemma4";
+          await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1Id, [
+            { technicalId, name: "A" },
+            { technicalId, name: "B" }
+          ]);
+        }).rejects.toThrow(new ServiceError("The models contain duplicate technical identifiers", BAD_REQUEST, base.badParameterCode));
+      }
+
+      {
+        // We assess with unauthorized values
+        interface Case
+        {
+          technicalId: string;
+          name: string;
+          errorMessage: string;
+          comment?: string;
+        }
+
+        const validTechnicalId = "id";
+        const validName = "Name";
+        const withSpaceTechnicalId = "id with space";
+        const tooLongTechnicalId = "a".repeat(64 + 1);
+        const tooLongName = "a".repeat(128 + 1);
+        const tooLongComment = "a".repeat(1_024 + 1);
+        const cases: Case[] =
+          [
+            {
+              technicalId: "id with space",
+              name: validName,
+              errorMessage: `The parameter '[0].technicalId' with value '${withSpaceTechnicalId}' is invalid because it contains illegal characters`
+            },
+            {
+              technicalId: tooLongTechnicalId,
+              name: validName,
+              errorMessage: `The parameter '[0].technicalId' with value '${tooLongTechnicalId}' is invalid because it exceeds 64 characters`
+            },
+            {
+              technicalId: "",
+              name: validName,
+              errorMessage: `The parameter '[0].technicalId' with value '' is invalid because it is empty`
+            },
+            {
+              technicalId: validTechnicalId,
+              name: "",
+              errorMessage: `The parameter '[0].name' with value '' is invalid because it is empty`
+            },
+            {
+              technicalId: validTechnicalId,
+              name: "",
+              errorMessage: `The parameter '[0].name' with value '' is invalid because it is empty`
+            },
+            {
+              technicalId: validTechnicalId,
+              name: tooLongName,
+              errorMessage: `The parameter '[0].name' with value '${tooLongName}' is invalid because it exceeds 128 characters`
+            },
+            {
+              technicalId: validTechnicalId,
+              name: validName,
+              comment: "",
+              errorMessage: `The parameter '[0].comment' with value '' is invalid because it is empty`
+            },
+            {
+              technicalId: validTechnicalId,
+              name: validName,
+              comment: tooLongComment,
+              errorMessage: `The parameter '[0].comment' with value '${tooLongComment}' is invalid because it exceeds 1024 characters`
+            }
+          ];
+        for (const aCase of cases)
+        {
+          await expect(async () =>
+          {
+            await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1Id, [ {
+              technicalId: aCase.technicalId,
+              name: aCase.name,
+              comment: aCase.comment
+            } ]);
+          }).rejects.toThrow(new ServiceError(aCase.errorMessage, BAD_REQUEST, base.badParameterCode));
+        }
+      }
+
+      // The previous declarations must be untouched by the faulty requests
+      expect(await base.getExtensionController().listAiModels()).toEqual([]);
+    }
+
+    {
+      // We assess with valid parameters
+      function generateAiModel(model: AiModel, extensionId: string): Omit<ExtensionAiModel, "creationDate"> & {
+        creationDate: unknown
+      }
+      {
+        return { ...model, extensionId, creationDate: expect.any(Number) };
+      }
+
+      function sortItems<T extends { extensionId: string, technicalId: string }>(models: T[]): T[]
+      {
+        return models.sort((item1, item2) =>
+        {
+          const result = item1.extensionId.localeCompare(item2.extensionId);
+          return result !== 0 ? result : item1.technicalId.localeCompare(item2.technicalId);
+        });
+      }
+
+      const extension1Models =
+        [
+          {
+            technicalId: "ggml-org/Qwen3.8-27B-GGUF:Q8_0",
+            name: "Qwen 3.8 27B",
+            comment: "Alibaba's latest multimodal reasoning models"
+          },
+          {
+            technicalId: "ggml-org/gemma-4-E2B-it-GGUF:Q8_0",
+            name: "Gemma 4 E2B Q8"
+          }
+        ];
+      {
+        // We set the AI models of the first extension, which are returned sorted by technical identifier
+        const models = await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1Id, extension1Models);
+        expect(models).toEqual(sortItems(extension1Models.map(model => generateAiModel(model, extension1Id))));
+      }
+
+      const extension2Models =
+        [
+          {
+            technicalId: "ggml-org/Ministral-3-3B-Instruct-2512-GGUF:Q8_0",
+            name: "Ministral 3 3B"
+          }
+        ];
+
+      {
+        // We set the AI models of the second extension, and check that the list returns the models of all extensions
+        await base.getExtensionController().setAiModels(Base.allPolicyContext, extension2Id, extension2Models);
+        const models = await base.getExtensionController().listAiModels();
+        expect(models).toEqual(sortItems([ ...extension1Models.map(model => generateAiModel(model, extension1Id)), ...extension2Models.map(model => generateAiModel(model, extension2Id)) ]));
+      }
+
+      {
+        // We check that with an empty array
+        expect(await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1Id, [])).toEqual([]);
+        const models = await base.getExtensionController().listAiModels();
+        expect(models).toEqual(sortItems(extension2Models.map(model => generateAiModel(model, extension2Id))));
+      }
+    }
   });
 
   test("built-in", async () =>

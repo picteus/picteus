@@ -775,6 +775,89 @@
         ]
       }
     },
+    "/extension/listAiModels": {
+      "get": {
+        "description": "Returns the AI models declared by all installed extensions.",
+        "operationId": "extension_listAiModels",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The extension AI models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExtensionAiModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the AI models declared by all extensions",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
+    "/extension/{id}/setAiModels": {
+      "put": {
+        "description": "Overwrites the AI models previously declared for an extension and returns them. An empty array clears them.",
+        "operationId": "extension_setAiModels",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The AI models declared for the extension",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AiModel"
+                },
+                "minItems": 0,
+                "maxItems": 256
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The extension AI models stored after the overwrite",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExtensionAiModel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sets the AI models declared for an extension",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
     "/extension/{id}/synchronize": {
       "put": {
         "description": "Iterates over all images available in the repositories and asks the extension to operate its work if the image is not indexed by it.",
@@ -5103,6 +5186,88 @@
           "value"
         ]
       },
+      "AiModel": {
+        "type": "object",
+        "properties": {
+          "technicalId": {
+            "type": "string",
+            "description": "The model technical identifier, unique within the extension",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
+          },
+          "name": {
+            "type": "string",
+            "description": "The model display name",
+            "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
+            "minLength": 1,
+            "maxLength": 128,
+            "example": "Gemma 4 E2B"
+          },
+          "comment": {
+            "type": "string",
+            "description": "The model comment",
+            "minLength": 1,
+            "maxLength": 1024,
+            "example": "Vision model used for captioning"
+          }
+        },
+        "description": "An AI model declared by an extension",
+        "required": [
+          "technicalId",
+          "name"
+        ]
+      },
+      "ExtensionAiModel": {
+        "type": "object",
+        "properties": {
+          "technicalId": {
+            "type": "string",
+            "description": "The model technical identifier, unique within the extension",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
+          },
+          "name": {
+            "type": "string",
+            "description": "The model display name",
+            "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
+            "minLength": 1,
+            "maxLength": 128,
+            "example": "Gemma 4 E2B"
+          },
+          "comment": {
+            "type": "string",
+            "description": "The model comment",
+            "minLength": 1,
+            "maxLength": 1024,
+            "example": "Vision model used for captioning"
+          },
+          "extensionId": {
+            "type": "string",
+            "description": "The identifier of the extension which declared the model",
+            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "extension-id"
+          },
+          "creationDate": {
+            "type": "integer",
+            "description": "The date of the declaration",
+            "format": "int64",
+            "example": 1761384334302
+          }
+        },
+        "description": "An AI model declared by an extension, with its owner and declaration date",
+        "required": [
+          "technicalId",
+          "name",
+          "extensionId",
+          "creationDate"
+        ]
+      },
       "SearchOriginNature": {
         "type": "string",
         "enum": [
@@ -6164,7 +6329,7 @@
           },
           "author": {
             "type": "string",
-            "description": "The author of the recipte",
+            "description": "The author of the recipe",
             "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
             "minLength": 1,
             "maxLength": 128,

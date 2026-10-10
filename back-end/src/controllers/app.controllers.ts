@@ -50,6 +50,7 @@ import {
   withOneOfPolicies
 } from "../app.guards";
 import {
+  AiModel,
   alphaNumericPlusPattern,
   ApiSecret,
   ApiSecretSummary,
@@ -65,6 +66,7 @@ import {
   Extension,
   ExtensionActivities,
   ExtensionActivity,
+  ExtensionAiModel,
   ExtensionAndManual,
   ExtensionGenerationOptions,
   ExtensionIdImageEmbeddingName,
@@ -789,6 +791,66 @@ export class ExtensionController
       throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
     }
     return await this.extensionService.resetSettings(id);
+  }
+
+  @Get("listAiModels")
+  @ApiOperation(
+    {
+      summary: "Lists the AI models declared by all extensions",
+      description: "Returns the AI models declared by all installed extensions."
+    }
+  )
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The extension AI models",
+      type: ExtensionAiModel,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
+  async listAiModels(): Promise<ExtensionAiModel[]>
+  {
+    return await this.extensionService.listAiModels();
+  }
+
+  @Put(":id/setAiModels")
+  @ApiOperation(
+    {
+      summary: "Sets the AI models declared for an extension",
+      description: "Overwrites the AI models previously declared for an extension and returns them. An empty array clears them."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiBody({
+    description: "The AI models declared for the extension",
+    schema:
+      {
+        type: "array",
+        items: { $ref: getSchemaPath(AiModel) },
+        minItems: 0,
+        maxItems: ExtensionAiModel.PER_EXTENSION_AI_MODEL_MAXIMUM
+      },
+    required: true
+  })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The extension AI models stored after the overwrite",
+      type: ExtensionAiModel,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
+  async setAiModels(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Body(new ParseArrayPipe({
+    items: AiModel, exceptionFactory
+  })) models: AiModel[]): Promise<ExtensionAiModel[]>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.extensionService.setAiModels(id, models);
   }
 
   @Put(":id/synchronize")

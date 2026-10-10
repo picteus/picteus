@@ -101,7 +101,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     logger.info(`Creating the repository with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}, of type '${type}', URL '${url}' ${doNotWatch === true ? "but does not watch it" : "and starts watching it"}`);
     parametersChecker.checkString("technicalId", technicalId, StringLengths.Length32, StringNature.Technical, true);
     parametersChecker.checkFileUrl("url", url);
-    parametersChecker.checkString("name", name, StringLengths.Length64);
+    parametersChecker.checkString("name", name, StringLengths.Length64, StringNature.Name);
     parametersChecker.checkString("comment", comment, StringLengths.Length256, StringNature.Free, true);
     if ((await this.entitiesProvider.repositories.findUnique({ where: { name } })) !== null)
     {

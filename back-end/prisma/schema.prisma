@@ -33,6 +33,18 @@ model ExtensionSettings {
   versions    String?
 }
 
+model AiModel {
+  id           Int      @id @default(autoincrement())
+  extensionId  String
+  technicalId  String
+  name         String
+  comment      String?
+  creationDate DateTime @default(now())
+
+  @@unique([extensionId, technicalId])
+  @@index([extensionId])
+}
+
 model Repository {
   id               String   @id @default(uuid())
   technicalId      String?  @unique

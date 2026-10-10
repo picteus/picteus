@@ -40,6 +40,7 @@ import {
 import { ExtensionsManager } from "../threads/managers";
 import { AuthenticationGuard, ExtensionApiKey } from "../app.guards";
 import {
+  AiModel,
   applicationXGzipMimeType,
   CommandEntity,
   computeImageFormatsExtensions,
@@ -49,11 +50,13 @@ import {
   ExtensionActivities,
   ExtensionActivity,
   ExtensionActivityState,
+  ExtensionAiModel,
   ExtensionAndManual,
   ExtensionGenerationOptions,
   ExtensionsConfiguration,
   ExtensionSettings,
   ExtensionState,
+  FieldLengths,
   ImageFormats,
   Manifest,
   ManifestCapability,
@@ -64,7 +67,7 @@ import {
   SearchParameters,
   UserInterfaceAnchor
 } from "../dtos/app.dtos";
-import { parametersChecker } from "./utils/parametersChecker";
+import { parametersChecker, StringNature } from "./utils/parametersChecker";
 import { spawn, waitFor } from "./utils/processWrapper";
 import {
   ensureNpm,
@@ -144,7 +147,7 @@ export class ExtensionsUiServer
   {
     // By default, the cache is set to 10 seconds
     response.set(headers.request.CACHE_CONTROL, "private, max-age=10");
-    
+
     const pathSeparator = "/";
     const pathTokens = request.path.split(pathSeparator);
     if (pathTokens.length < 2)
@@ -808,6 +811,8 @@ export class ExtensionService
     await this.vectorDatabaseAccessor.deleteExtensionEmbeddings(id);
     // We delete all the tags set by the extension
     await this.entitiesProvider.imageTag.deleteMany({ where: { extensionId: id } });
+    // We delete the AI models declared by the extension
+    await this.entitiesProvider.aiModel.deleteMany({ where: { extensionId: id } });
     // We delete all the attachments set by the extension
     await this.imageAttachmentService.deleteForExtension(id);
     if ((await this.getPersistedSettings(id)) !== null)
@@ -935,6 +940,42 @@ export class ExtensionService
     // We indicate to the extension that its settings have changed so that it can take action
     this.notifierService.emit(EventEntity.Extension, ExtensionEventAction.Settings, undefined, { id, value }, id);
     return new ExtensionSettings(value);
+  }
+
+  async setAiModels(id: string, models: AiModel[]): Promise<ExtensionAiModel[]>
+  {
+    logger.info(`Setting the AI models of the extension with id '${id}'`);
+    this.checkExtensionExists(id);
+    const technicalIds = models.map((model: AiModel) => model.technicalId);
+    if (new Set<string>(technicalIds).size !== technicalIds.length)
+    {
+      parametersChecker.throwBadParameterError("The models contain duplicate technical identifiers");
+    }
+
+    for (let index = 0; index < models.length; index++)
+    {
+      const model = models[index];
+      parametersChecker.checkString(`[${index}].technicalId`, model.technicalId, FieldLengths.longTechnical, StringNature.TechnicalRelaxed);
+      parametersChecker.checkString(`[${index}].name`, model.name, FieldLengths.name, StringNature.Name);
+      parametersChecker.checkString(`[${index}].comment`, model.comment, FieldLengths.comment, StringNature.Free, true);
+    }
+
+    const operations: Prisma.PrismaPromise<Prisma.BatchPayload>[] = [ this.entitiesProvider.aiModel.deleteMany({ where: { extensionId: id } }) ];
+    if (models.length > 0)
+    {
+      operations.push(this.entitiesProvider.aiModel.createMany({
+        data: models.map((model: AiModel) => ({ extensionId: id, ...model }))
+      }));
+    }
+    // We overwrite the previous models atomically
+    await this.entitiesProvider.prisma.$transaction(operations);
+    return await this.findAiModels(id);
+  }
+
+  async listAiModels(): Promise<ExtensionAiModel[]>
+  {
+    logger.debug("Listing all extensions AI models");
+    return await this.findAiModels();
   }
 
   async synchronize(id: string): Promise<void>
@@ -2268,6 +2309,18 @@ export class ExtensionService
       }
       this.perExtensionIdChromeExtensionNameMap.delete(id);
     }
+  }
+
+  private async findAiModels(extensionId?: string): Promise<ExtensionAiModel[]>
+  {
+    const entities = await this.entitiesProvider.aiModel.findMany({
+      where: extensionId === undefined ? undefined : { extensionId },
+      orderBy: [ { extensionId: "asc" }, { technicalId: "asc" } ]
+    });
+    return entities.map((entity) =>
+    {
+      return new ExtensionAiModel(entity.extensionId, entity.technicalId, entity.name, entity.creationDate.getTime(), entity.comment === null ? undefined : entity.comment);
+    });
   }
 
 }

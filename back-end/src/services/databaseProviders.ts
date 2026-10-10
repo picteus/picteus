@@ -125,6 +125,11 @@ export class EntitiesProvider implements OnModuleInit, OnModuleDestroy, Persiste
     return this.persistence.imageAttachment;
   }
 
+  get aiModel(): Prisma.AiModelDelegate
+  {
+    return this.persistence.aiModel;
+  }
+
 }
 
 class ChromaProvider

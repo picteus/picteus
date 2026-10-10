@@ -8,6 +8,7 @@ import { toInstanceAndValidate } from "./classValidatorWrapper";
 import { ServiceError } from "../../app.exceptions";
 import {
   alphaNumericPlusAdditionalAuthorizedCharactersPattern,
+  alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern,
   alphaNumericPlusPattern,
   fileWithProtocol
 } from "../../dtos/app.dtos";
@@ -35,6 +36,7 @@ export enum StringLengths
 export enum StringNature
 {
   Free = "free",
+  Name = "name",
   Technical = "technical",
   TechnicalRelaxed = "technicalRelaxed",
   Tag = "tag",
@@ -83,9 +85,10 @@ export class ParametersChecker
           this.throwBadParameter(name, value, `${returnType.error.issues[0].code === "too_small" ? "it is empty" : `it exceeds ${maximumLength} characters`}`);
         }
       }
-      if (nature === StringNature.Technical || nature === StringNature.TechnicalRelaxed || nature === StringNature.Tag)
+      if (nature === StringNature.Name || nature === StringNature.Technical || nature === StringNature.TechnicalRelaxed || nature === StringNature.Tag)
       {
-        const returnType = z.string().regex(new RegExp(`^[${nature === StringNature.Technical ? alphaNumericPlusPattern : alphaNumericPlusAdditionalAuthorizedCharactersPattern}]*$`)).safeParse(value);
+        const pattern = nature === StringNature.Name ? alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern : (nature === StringNature.Technical ? alphaNumericPlusPattern : alphaNumericPlusAdditionalAuthorizedCharactersPattern);
+        const returnType = z.string().regex(new RegExp(`^[${pattern}]*$`)).safeParse(value);
         if (returnType.success === false)
         {
           this.throwBadParameter(name, value, "it contains illegal characters");

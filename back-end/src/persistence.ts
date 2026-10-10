@@ -41,6 +41,8 @@ export interface PersistenceProvider
 
   get imageAttachment(): Prisma.ImageAttachmentDelegate;
 
+  get aiModel(): Prisma.AiModelDelegate;
+
 }
 
 export class Persistence implements PersistenceProvider
@@ -189,6 +191,11 @@ export class Persistence implements PersistenceProvider
   get imageAttachment(): Prisma.ImageAttachmentDelegate
   {
     return this.prisma["imageAttachment"];
+  }
+
+  get aiModel(): Prisma.AiModelDelegate
+  {
+    return this.prisma["aiModel"];
   }
 
   async getMigration(): Promise<string>

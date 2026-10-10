@@ -2,6 +2,7 @@ import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 
 import {
   alphaNumericPlusAdditionalAuthorizedCharactersPattern,
+  alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern,
   alphaNumericPlusPattern,
   applicationXGzipMimeType,
   attachmentUriPrefix,
@@ -35,6 +36,7 @@ import {
   urlSchema
 } from "./common.dtos";
 import {
+  AiModel,
   CommandEntity,
   ConfigurationCapability,
   ConfigurationExtensionCommand,
@@ -42,6 +44,7 @@ import {
   ExtensionActivities,
   ExtensionActivity,
   ExtensionActivityState,
+  ExtensionAiModel,
   ExtensionAndManual,
   ExtensionCategory,
   ExtensionGenerationOptions,
@@ -165,7 +168,9 @@ class ConstantsRegistry
 
 export {
   alphaNumericPlusPattern,
+  AiModel,
   alphaNumericPlusAdditionalAuthorizedCharactersPattern,
+  alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern,
   ApiSecret,
   ApiSecretSummary,
   ApiSecretType,
@@ -190,6 +195,7 @@ export {
   type ExtensionActivities,
   ExtensionActivity,
   ExtensionActivityState,
+  ExtensionAiModel,
   ExtensionAndManual,
   ExtensionCategory,
   ExtensionsConfiguration,

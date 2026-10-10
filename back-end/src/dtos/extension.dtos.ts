@@ -30,6 +30,8 @@ import {
   semverPattern,
   shortTechnicalIdPattern,
   shortTechnicalSchema,
+  technicalLongRelaxedPattern,
+  technicalLongRelaxedSchema,
   uriPathPattern,
   uriPathSchema
 } from "./common.dtos";
@@ -1324,6 +1326,120 @@ export class ExtensionSettings
   @NotEquals(null)
   @Expose()
   readonly value: Json;
+
+}
+
+@ApiSchema({ description: "An AI model declared by an extension" })
+export class AiModel
+{
+
+  constructor(technicalId: string, name: string, comment?: string)
+  {
+    this.technicalId = technicalId;
+    this.name = name;
+    this.comment = comment;
+  }
+
+  @ApiProperty(
+    {
+      ...technicalLongRelaxedSchema,
+      description: "The model technical identifier, unique within the extension",
+      type: "string",
+      required: true,
+      example: "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.longTechnical)
+  @Matches(technicalLongRelaxedPattern)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly technicalId: string;
+
+  @ApiProperty(
+    {
+      description: "The model display name",
+      type: String,
+      pattern: namePattern,
+      minLength: 1,
+      maxLength: FieldLengths.name,
+      required: true,
+      example: "Gemma 4 E2B"
+    }
+  )
+  @IsString()
+  @Matches(namePattern)
+  @MinLength(1)
+  @MaxLength(FieldLengths.name)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly name: string;
+
+  @ApiProperty(
+    {
+      description: "The model comment",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.comment,
+      required: false,
+      example: "Vision model used for captioning"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.comment)
+  @IsOptional()
+  @Expose()
+  readonly comment?: string;
+
+}
+
+@ApiSchema({ description: "An AI model declared by an extension, with its owner and declaration date" })
+@ApiExtraModels(AiModel)
+export class ExtensionAiModel extends AiModel
+{
+
+  // The maximum number of AI models an extension can declare
+  static readonly PER_EXTENSION_AI_MODEL_MAXIMUM = 256;
+
+  constructor(extensionId: ExtensionIdType, technicalId: string, name: string, creationDate: number, comment?: string)
+  {
+    super(technicalId, name, comment);
+    this.extensionId = extensionId;
+    this.creationDate = creationDate;
+  }
+
+  @ApiProperty(
+    {
+      ...extensionIdSchema,
+      description: "The identifier of the extension which declared the model",
+      type: "string",
+      required: true
+    }
+  )
+  @IsString()
+  @Matches(extensionIdPattern)
+  @IsDefined()
+  @Expose()
+  readonly extensionId: ExtensionIdType;
+
+  @ApiProperty(
+    {
+      description: "The date of the declaration",
+      type: "integer",
+      format: "int64",
+      required: true,
+      example: 1761384334302
+    }
+  )
+  @IsInt()
+  @Type(() => Number)
+  @IsDefined()
+  @Expose()
+  readonly creationDate: number;
 
 }
 

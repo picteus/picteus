@@ -396,7 +396,7 @@ export class GenerationRecipe
 
   @ApiProperty(
     {
-      description: "The author of the recipte",
+      description: "The author of the recipe",
       type: String,
       pattern: namePattern,
       minLength: 1,
