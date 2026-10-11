@@ -29,7 +29,7 @@ function StackableScreenBridge({
   className
 }: StackableScreenBridgePropsType): ReactNode
 {
-  const [ , , removeModal, subscribeToModals ] = useActionModalContext();
+  const { removeModal, subscribeToModals } = useActionModalContext();
   const { push, pop, popToRoot, subscribe } = useStackNavigator();
 
   useEffect(() =>
@@ -93,7 +93,7 @@ export default function StackableScreen({
   className
 }: StackableScreenPropsType): ReactElement
 {
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
 
   return (
     <ActionModalProvider>

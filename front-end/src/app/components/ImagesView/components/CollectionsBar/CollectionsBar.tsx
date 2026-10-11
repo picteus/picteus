@@ -55,7 +55,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
 }, ref) =>
 {
   const [ t ] = useTranslation();
-  const [ , addModal ] = useActionModalContext();
+  const { addModal } = useActionModalContext();
   const { data: collections = [], isLoading: loading } = useCollections();
   const { data: initialCollection } = useCollection(initialCollectionId);
   const updateCollectionMutation = useUpdateCollectionMutation();
@@ -122,7 +122,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
       title: t("addOrUpdateCollectionModal.addTitle"),
       icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
       size: "s",
-      component: (
+      body: (
         <AddOrUpdateCollection
           searchFilter={searchFilter!}
           onSuccess={(collection) =>

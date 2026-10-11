@@ -22,12 +22,12 @@ export default function ImageItemWrapper({ imageId, edge = 100, viewMode }: Imag
 {
   const [ t ] = useTranslation();
   const { data: image, isError, isLoading } = useImage(imageId);
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
 
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
     const id = addModal({
-      component: (
+      body: (
         <ImageDetail
           image={image}
           images={[ image ]}

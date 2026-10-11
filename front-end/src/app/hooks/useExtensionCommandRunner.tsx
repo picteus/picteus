@@ -15,7 +15,7 @@ import { CommandForm, ExtensionBadge } from "app/components";
 export default function useExtensionCommandRunner(): (extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void) => Promise<void>
 {
   const { t } = useTranslation();
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
 
   async function handleOnSendCommand(
     extensionId: string,
@@ -119,7 +119,7 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
       },
       // TODO: make this customizable in the definition of a command
       size: "m",
-      component: (
+      body: (
         <CommandForm
           extensionId={extensionId}
           searchFilter={searchFilter}

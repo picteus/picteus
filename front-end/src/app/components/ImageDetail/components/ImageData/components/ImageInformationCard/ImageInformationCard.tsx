@@ -47,7 +47,7 @@ export default function ImageInformationCard({
 }: ImageInformationCardPropsType): ReactElement
 {
   const [ t ] = useTranslation();
-  const [ , addModal ] = useActionModalContext();
+  const { addModal } = useActionModalContext();
   const { data: repository } = useRepository(image.repositoryId);
 
   const uiContainer = useMemo(() =>
@@ -90,7 +90,7 @@ export default function ImageInformationCard({
                       {
                       }}/>,
                       size: "m",
-                      component: <RepositoryDetail repository={repository}/>
+                      body: <RepositoryDetail repository={repository}/>
                     });
                   }}
                 >

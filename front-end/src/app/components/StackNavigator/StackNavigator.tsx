@@ -71,19 +71,21 @@ function StackedElement({ stackedComponent, visible, pop }: StackedElementType)
       className={`${style.stack}${visible ? "" : ` ${style.stackHidden}`}`}
       direction="column"
     >
-      {stackedComponent.fullScreen !== true && <Flex align="center" p="md" gap="md" className={style.topBar}>
-        <ActionIcon variant="default" onClick={pop}>
-          <IconArrowLeft size={20}/>
-        </ActionIcon>
-        {stackedComponent.title && (
-          <Title order={4} style={{ flex: 1 }}>
-            {stackedComponent.title}
-          </Title>
-        )}
-        <CloseButton size="lg" variant="subtle" onClick={pop}/>
-      </Flex>}
+      {stackedComponent.fullScreen !== true && (
+        <Flex align="center" p="md" gap="md" className={style.topBar}>
+          <ActionIcon variant="default" onClick={pop}>
+            <IconArrowLeft size={20}/>
+          </ActionIcon>
+          {stackedComponent.title && (
+            <Title order={4} style={{ flex: 1 }}>
+              {stackedComponent.title}
+            </Title>
+          )}
+          <CloseButton size="lg" variant="subtle" onClick={pop}/>
+        </Flex>
+      )}
       <Box flex={1} className={style.componentWrapper}>
-        {stackedComponent.component}
+        {stackedComponent.body}
       </Box>
     </Flex>
   );
@@ -96,13 +98,13 @@ interface StackNavigatorType
 
 export default function StackNavigator({ children }: StackNavigatorType)
 {
-  const [stack, setStack] = useState<StackedComponentType[]>([]);
+  const [ stack, setStack ] = useState<StackedComponentType[]>([]);
   const stackRef = useRef<StackedComponentType[]>(stack);
   const listenersRef = useRef<ListenerType[]>([]);
 
   const push = useCallback((stackedComponent: StackedComponentType) =>
   {
-    const newStack = [...stackRef.current, stackedComponent];
+    const newStack = [ ...stackRef.current, stackedComponent ];
     stackRef.current = newStack;
     setStack(newStack);
     for (const listener of listenersRef.current)
@@ -150,7 +152,7 @@ export default function StackNavigator({ children }: StackNavigatorType)
 
   const subscribe = useCallback((listener: ListenerType): (() => void) =>
   {
-    listenersRef.current = [...listenersRef.current, listener];
+    listenersRef.current = [ ...listenersRef.current, listener ];
     return () =>
     {
       listenersRef.current.splice(listenersRef.current.indexOf(listener), 1);
@@ -168,7 +170,7 @@ export default function StackNavigator({ children }: StackNavigatorType)
         pop={pop}
       />
     );
-  })), [stack, pop]);
+  })), [ stack, pop ]);
 
   return (
     <StackContext.Provider value={{ push, pop, popToRoot, set, subscribe }}>

@@ -1,9 +1,10 @@
-import React, { ReactElement, ReactNode, useCallback, useEffect, useRef } from "react";
-import { useDisclosure } from "@mantine/hooks";
-import { ActionIcon, Flex, Modal } from "@mantine/core";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { randomId, useDisclosure } from "@mantine/hooks";
+import { ActionIcon, Box, Button, Flex, Modal, ScrollArea } from "@mantine/core";
 import { IconChevronLeft } from "@tabler/icons-react";
 
 import { ActionModalValue } from "types";
+import { ModalContext, ModalContextType } from "app/context";
 import { useEscapeKey } from "app/hooks";
 // A copy-and-paste from Mantine in order to fix a bug with the focus
 import { FOCUS_SELECTOR, focusable, tabbable } from "./tabbable.ts";
@@ -13,9 +14,9 @@ import style from "./ModalComponent.module.scss";
 
 
 type ModalChildType = {
-  component: ReactElement;
+  component: ReactNode;
   fullScreen: boolean;
-}
+};
 
 function ModalChild({ component, fullScreen }: ModalChildType)
 {
@@ -62,12 +63,12 @@ function ModalChild({ component, fullScreen }: ModalChildType)
         }
       };
     }
-  }, [focusRef]);
+  }, [ focusRef ]);
 
   return (
-    <div ref={focusRef} className={`${style.child}${fullScreen ? ` ${style.childFullScreen}` : ""}`}>
+    <Box ref={focusRef} h={fullScreen ? "100%" : undefined}>
       {component}
-    </div>
+    </Box>
   );
 }
 
@@ -81,7 +82,7 @@ function useRememberActiveElement(shouldRemember: boolean): () => void
     {
       previousActiveElementRef.current = document.activeElement as HTMLElement | null;
     }
-  }, [shouldRemember]);
+  }, [ shouldRemember ]);
 
   return useCallback(() =>
   {
@@ -97,31 +98,33 @@ type ModalComponentType = {
   onClose: (modalId: string) => void;
 };
 
-export default function ModalComponent({
-  modal,
-  onClose
-}: ModalComponentType)
+export default function ModalComponent({ modal, onClose }: ModalComponentType)
 {
-  const [opened, disclosureHandlers] = useDisclosure(true);
+  const [ opened, disclosureHandlers ] = useDisclosure(true);
   const ref = useRef<HTMLDivElement>(null);
+  const [ footerElement, setFooterElement ] = useState<HTMLDivElement | null>(null);
+  const [ hasPortaledActions, setHasPortaledActions ] = useState<boolean>(false);
+  const modalId = modal.id ?? randomId();
 
   const restoreFocus = useRememberActiveElement(opened);
 
   const handleOnClose = useCallback((viaOnSuccess: boolean): void =>
-  {
-    if (modal.onBeforeClose !== undefined)
     {
-      modal.onBeforeClose(viaOnSuccess);
-    }
-    restoreFocus();
-    disclosureHandlers.close();
-    onClose(modal.id);
-  }, [modal, restoreFocus]);
+      if (modal.onBeforeClose !== undefined)
+      {
+        modal.onBeforeClose(viaOnSuccess);
+      }
+      restoreFocus();
+      disclosureHandlers.close();
+      onClose(modalId);
+    },
+    [ modal, restoreFocus, onClose, disclosureHandlers ]
+  );
 
   const handleOnCloseCancel = useCallback((): void =>
   {
     handleOnClose(false);
-  }, [handleOnClose]);
+  }, [ handleOnClose ]);
 
   useEscapeKey(ref, () =>
   {
@@ -135,8 +138,13 @@ export default function ModalComponent({
 
   function computeTitle(): ReactNode
   {
-    const title = typeof modal.title === "string" ?
-      <ContentTitle text={modal.title} icon={modal.icon} details={modal.subtitle}/> : modal.title;
+    const title = typeof modal.title === "string" ? (
+      <ContentTitle
+        text={modal.title}
+        icon={modal.icon}
+        details={modal.subtitle}
+      />
+    ) : modal.title;
     if (fullScreen)
     {
       return (
@@ -151,13 +159,51 @@ export default function ModalComponent({
     return title;
   }
 
-  const wrappedComponent = !(modal.component.props.onSuccess !== undefined && typeof modal.component.props.onSuccess === "function") ? modal.component : React.cloneElement(modal.component, {
-    onSuccess: (args) =>
+  const modalContextValue = useMemo<ModalContextType>(() => ({
+      modalId,
+      closeModal: (viaOnSuccess = false) => handleOnClose(viaOnSuccess),
+      footerElement,
+      hasPortaledActions,
+      setHasPortaledActions
+    }),
+    [ modalId, handleOnClose, footerElement, hasPortaledActions ]
+  );
+
+  function renderStaticActions(): ReactNode
+  {
+    if (!modal.actions)
     {
-      modal.component.props.onSuccess(args);
-      handleOnClose(true);
+      return null;
     }
-  });
+    return (
+      <Flex justify="flex-end" gap="sm" align="center" w="100%">
+        {modal.actions.map((action, index) =>
+        {
+          return (
+            <Button
+              key={`action-${index}`}
+              variant={index !== (modal.actions.length - 1) ? "subtle" : undefined}
+              color={action.color}
+              type="button"
+              onClick={() =>
+              {
+                if (action.onClick)
+                {
+                  void action.onClick(() => handleOnClose(true));
+                }
+                else
+                {
+                  handleOnClose(true);
+                }
+              }}
+            >
+              {action.label}
+            </Button>
+          );
+        })}
+      </Flex>
+    );
+  }
 
   const classNames = {
     content: `${style.content}${fullScreen ? ` ${style.contentFullScreen}` : ""}`,
@@ -170,7 +216,7 @@ export default function ModalComponent({
     <Modal
       ref={ref}
       classNames={classNames}
-      stackId={modal.id}
+      stackId={modalId}
       withinPortal={true}
       closeOnEscape={false}
       withOverlay={true}
@@ -184,7 +230,26 @@ export default function ModalComponent({
       title={modal.title === undefined ? undefined : computeTitle()}
       zIndex={10}
     >
-      <ModalChild component={wrappedComponent} fullScreen={fullScreen}/>
+      <ModalContext.Provider value={modalContextValue}>
+        <ScrollArea
+          flex={1}
+          mih={0}
+          h={fullScreen ? "100%" : undefined}
+          p={fullScreen ? 0 : "md"}
+          offsetScrollbars
+          scrollbars="y"
+        >
+          <ModalChild component={modal.body} fullScreen={fullScreen}/>
+        </ScrollArea>
+        <Box
+          ref={setFooterElement}
+          p="md"
+          bg="var(--mantine-color-body)"
+          className={style.footer}
+        >
+          {!hasPortaledActions && renderStaticActions()}
+        </Box>
+      </ModalContext.Provider>
     </Modal>
   );
 }

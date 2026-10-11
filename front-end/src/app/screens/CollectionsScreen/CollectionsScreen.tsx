@@ -26,7 +26,7 @@ export default function CollectionsScreen()
   const { data: collections = [], isLoading, isFetching, refetch } = useCollections();
   const [ selectedCollection, setSelectedCollection ] = useState<Collection>();
   const [ t ] = useTranslation();
-  const [ , addModal ] = useActionModalContext();
+  const { addModal } = useActionModalContext();
 
   useEffect(() =>
   {
@@ -56,7 +56,7 @@ export default function CollectionsScreen()
       title: t(`addOrUpdateCollectionModal.${collection ? "updateTitle" : "addTitle"}`),
       icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
       size: "s",
-      component: <AddOrUpdateCollection collection={collection} onSuccess={nothing}/>
+      body: <AddOrUpdateCollection collection={collection}/>
     });
   }
 

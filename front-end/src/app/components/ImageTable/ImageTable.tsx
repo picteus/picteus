@@ -26,11 +26,11 @@ export default function ImageTable({
 {
   const edge = 160;
   const { width: containerWidth } = useContainerDimensions(containerRef);
-  const [, addModal, removeModal] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
   const handleOnClick = useCallback((image: ImageOrSummary) =>
   {
     const id = addModal({
-      component: (
+      body: (
         <ImageDetail
           image={image}
           images={images}
@@ -44,8 +44,8 @@ export default function ImageTable({
       withCloseButton: false,
       fullScreen: true
     });
-  }, [images]);
-  const [t] = useTranslation();
+  }, [ images ]);
+  const [ t ] = useTranslation();
   const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });
 
   useEffect(() =>
@@ -54,7 +54,7 @@ export default function ImageTable({
     {
       loadMore();
     }
-  }, [entry?.isIntersecting, loadMore]);
+  }, [ entry?.isIntersecting, loadMore ]);
 
   if (!images || images.length === 0 || containerWidth <= 0)
   {

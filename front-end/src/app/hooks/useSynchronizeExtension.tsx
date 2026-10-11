@@ -11,7 +11,7 @@ import { ExtensionIcon, SynchronizeExtensionConfirm } from "app/components";
 
 export default function useSynchronizeExtension(): (extension: Extension) => void
 {
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
 
   return useCallback((extension: Extension): void =>
   {
@@ -19,7 +19,7 @@ export default function useSynchronizeExtension(): (extension: Extension) => voi
       title: i18n.t("synchronizeExtensionModal.title"),
       size: "s",
       icon: { icon: <ExtensionIcon idOrExtension={extension.manifest.id} size="md"/> },
-      component: <SynchronizeExtensionConfirm
+      body: <SynchronizeExtensionConfirm
         extension={extension}
         onConfirm={() =>
         {

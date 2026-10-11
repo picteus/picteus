@@ -1,5 +1,8 @@
 .content
 {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 3rem);
 }
 
 .contentFullScreen
@@ -7,10 +10,18 @@
   background: transparent;
   display: flex;
   flex-direction: column;
+  max-height: 100dvh;
+  height: 100dvh;
 }
 
 .body
 {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
 }
 
 .bodyFullScreen
@@ -23,16 +34,21 @@
   flex: 1;
 }
 
-.child
-{
-}
-
-.childFullScreen
-{
-  height: 100%;
-}
-
 .header
 {
   align-items: flex-start;
 }
+
+.footer
+{
+  border-top: 1px solid var(--mantine-color-default-border);
+  flex-shrink: 0;
+
+  &:empty
+  {
+    display: none;
+    padding: 0;
+    border-top: none;
+  }
+}
+

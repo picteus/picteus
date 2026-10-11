@@ -34,7 +34,7 @@ export default function ExtensionsScreen()
   const [ t ] = useTranslation();
   const { data: extensions = [], isLoading, isFetching, refetch: refetchExtensions } = useExtensions();
   const { data: activities = [], refetch: refetchActivities } = useExtensionActivities();
-  const [ , addModal ] = useActionModalContext();
+  const { addModal } = useActionModalContext();
   const [ selectedExtension, setSelectedExtension ] = useState<Extension>();
   const [ viewMode, setViewMode ] = useState<"table" | "card">("table");
 
@@ -59,7 +59,7 @@ export default function ExtensionsScreen()
       title: t("extensionSettingsModal.title"),
       icon: { url: ExtensionsService.getIconURL(extension.manifest.id) },
       size: "s",
-      component: (
+      body: (
         <ExtensionSettingsModal
           extension={extension}
           onSuccess={refetchAll}
@@ -76,7 +76,7 @@ export default function ExtensionsScreen()
         icon: <IconBox stroke={Common.IconStrokeSize}/>
       },
       size: "m",
-      component: (
+      body: (
         <InstallOrUpdateExtension
           extension={extension}
           onSuccess={(extensionItem: Extension) =>
@@ -97,7 +97,7 @@ export default function ExtensionsScreen()
         icon: <IconBox stroke={Common.IconStrokeSize}/>
       },
       size: "m",
-      component: (
+      body: (
         <CreateExtensionModal
           onSuccess={setSelectedExtension}
         />

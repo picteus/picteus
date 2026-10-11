@@ -1,5 +1,5 @@
 import React, { type ReactNode, useCallback } from "react";
-import { Alert, Button, Flex, Text } from "@mantine/core";
+import { Alert, Flex, Text } from "@mantine/core";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import i18n from "i18next";
 
@@ -47,18 +47,18 @@ function computeIcon(icon: ContentIconType | ReactNode | undefined, extensionId?
 
 export default function useConfirmAction(): (confirmActionType: ConfirmActionType) => void
 {
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal } = useActionModalContext();
 
   return useCallback(({ onConfirm, onCancel, options, content, icon, extensionId }: ConfirmActionType): void =>
   {
     const contentNode = content ?? options.content;
     const computedIcon = computeIcon(icon ?? options.icon, extensionId);
 
-    const modalId = addModal({
+    addModal({
       title: options.title,
       size: options.size ?? "s",
       icon: computedIcon,
-      component: (
+      body: (
         <>
           <Alert icon={<IconAlertTriangle/>} color="orange">
             {options.message}
@@ -73,33 +73,30 @@ export default function useConfirmAction(): (confirmActionType: ConfirmActionTyp
               {options.question}
             </Text>
           )}
-          <Flex justify="flex-end" gap="md" mt="md">
-            <Button
-              variant="subtle"
-              onClick={() =>
-              {
-                if (onCancel)
-                {
-                  onCancel();
-                }
-                removeModal(modalId);
-              }}
-            >
-              {i18n.t("button.cancel")}
-            </Button>
-            <Button
-              color="red"
-              onClick={() =>
-              {
-                onConfirm();
-                removeModal(modalId);
-              }}
-            >
-              {i18n.t("button.confirm")}
-            </Button>
-          </Flex>
         </>
-      )
+      ),
+      actions: [
+        {
+          label: i18n.t("button.cancel"),
+          onClick: (close) =>
+          {
+            if (onCancel)
+            {
+              onCancel();
+            }
+            close();
+          }
+        },
+        {
+          label: i18n.t("button.confirm"),
+          color: "red",
+          onClick: (close) =>
+          {
+            onConfirm();
+            close();
+          }
+        }
+      ]
     });
-  }, [ addModal, removeModal ]);
+  }, [ addModal ]);
 }

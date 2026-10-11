@@ -7,7 +7,7 @@ import { ModalComponent } from "./components";
 
 export default function Modals()
 {
-  const [modals, , removeModal] = useActionModalContext();
+  const { modals, removeModal } = useActionModalContext();
 
   function onCloseActionModal(modalId: string): void
   {
@@ -20,5 +20,5 @@ export default function Modals()
         modal={modal}
         onClose={onCloseActionModal}
       />)
-    ), [modals]);
+    ), [ modals ]);
 }

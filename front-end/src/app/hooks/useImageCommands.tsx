@@ -45,7 +45,7 @@ export default function useImageCommands({
 }: UseImageCommandsOptionsType): UseImageCommandsResultType
 {
   const [ t ] = useTranslation();
-  const [ , addModal ] = useActionModalContext();
+  const { addModal } = useActionModalContext();
   const confirmAction = useConfirmAction();
   const { runCapabilities } = useRunCapabilities();
   const commandRunner = useExtensionCommandRunner();
@@ -123,7 +123,7 @@ export default function useImageCommands({
         execute: () =>
         {
           addModal({
-            component: (
+            body: (
               <ClosestEmbeddingsImages
                 image={image}
                 viewMode={viewMode}

@@ -34,7 +34,7 @@ import { CommandForm, DialogForm } from "app/components";
 export default function IntentCenter()
 {
   const [ t ] = useTranslation();
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
   const intentRunner = useExtensionIntentRunner();
   const { addTab } = useDeskTabsContext();
   const { data: extensions = [] } = useExtensions();
@@ -108,7 +108,7 @@ export default function IntentCenter()
         addModal({
           id: modalId,
           icon: computeIcon(form?.dialogContent?.icon),
-          component: (
+          body: (
             <CommandForm
               command={intent}
               extensionId={extensionId}
@@ -140,7 +140,7 @@ export default function IntentCenter()
         addModal({
           id: modalId,
           icon: computeIcon(dialog.icon),
-          component: (
+          body: (
             <DialogForm
               onSend={(isYes) =>
                 handleOnSend(isYes, modalId)

@@ -297,7 +297,7 @@ export type ViewMode = "masonry" | "gallery" | "table";
 export type ViewTabDataType = {
   mode: ViewMode;
   filterOrCollectionId: FilterOrCollectionId;
-}
+};
 
 export type TabsType = {
   id?: string;
@@ -416,7 +416,7 @@ export function computeResourceTypeUrl(resourceType: ResourceType): string | nul
 }
 
 export type AdditionalUi = {
-  uuid: string,
+  uuid: string;
   integration: ManifestInterfaceElementIntegration;
   content: FrameContent;
   icon: ResourceType;
@@ -440,6 +440,12 @@ export type LocalFiltersType = {
 
 export type ContentIconType = ResourceType | { icon: ReactNode };
 
+export type ModalAction = {
+  label: string;
+  color?: string;
+  onClick?: (close: () => void) => void | Promise<void>;
+};
+
 export type ActionModalValue = {
   id?: string;
   isStackable?: boolean;
@@ -450,7 +456,8 @@ export type ActionModalValue = {
   icon?: ContentIconType;
   fullScreen?: boolean;
   size?: SizeType;
-  component: ReactElement;
+  body: ReactElement;
+  actions?: ModalAction[];
   onBeforeClose?: (viaOnSuccess: boolean) => void;
 };
 

@@ -26,7 +26,7 @@ export default function ActivityScreen(): ReactElement
 {
   const [ t ] = useTranslation();
   const { eventStore } = useEventSocket();
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
   const confirmAction = useConfirmAction();
   type TableRowDisplayType = { log: LogType; };
   const [ rows, setRows ] = useState<TableRowDisplayType[]>([]);
@@ -171,7 +171,7 @@ export default function ActivityScreen(): ReactElement
     }
 
     const modalId = addModal({
-      component: (
+      body: (
         <ImageDetail
           image={image}
           images={[ image ]}

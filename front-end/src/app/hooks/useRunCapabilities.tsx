@@ -16,14 +16,14 @@ type RunCapabilitiesHookType = {
 
 export default function useRunCapabilities(): RunCapabilitiesHookType
 {
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
 
   const openConfirmation = useCallback((searchParameters: SearchParameters, onConfirm: (extensionIds: string[]) => void): void =>
   {
     const id = addModal({
       title: i18n.t("runCapabilitiesModal.title"),
       size: "m",
-      component: <RunCapabilitiesConfirm
+      body: <RunCapabilitiesConfirm
         searchParameters={searchParameters}
         onConfirm={(extensionIds: string[]) =>
         {

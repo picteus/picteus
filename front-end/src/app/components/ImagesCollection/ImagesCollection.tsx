@@ -77,7 +77,7 @@ export default function ImagesCollection({
   const containerRef = useRef<HTMLDivElement>(null);
   const [ images, setImages ] = useState<ImageSummary[]>(initialImages ?? []);
   const [ totalCount, setTotalCount ] = useState<number | undefined>(initialTotalCount);
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
   const edge = 100;
 
   useEffect(() =>
@@ -120,7 +120,7 @@ export default function ImagesCollection({
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
     const id = addModal({
-      component: (
+      body: (
         <ImageDetail
           image={image}
           images={images}

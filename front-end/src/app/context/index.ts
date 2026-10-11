@@ -5,4 +5,5 @@ export * from "./ImagesSelectedContext.tsx";
 export * from "./AdditionalUiContext.tsx";
 export * from "./DeskTabsContext.tsx";
 export * from "./TitleBarContext.tsx";
+export * from "./ModalContext.tsx";
 export { default } from "./Providers.tsx";

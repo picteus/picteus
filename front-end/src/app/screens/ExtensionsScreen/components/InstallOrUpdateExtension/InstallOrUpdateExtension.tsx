@@ -9,6 +9,7 @@ import { IconAlertTriangle, IconFileZip, IconTrash, IconUpload, IconX } from "@t
 import { Extension, ExtensionState } from "@picteus/ws-client";
 
 import { fileToBlob, mimeTypes, ToastService, Validators } from "utils";
+import { useModalContext } from "app/context";
 import { useInstallExtensionMutation, useUpdateExtensionMutation } from "app/hooks";
 
 
@@ -35,6 +36,7 @@ export default function InstallOrUpdateExtension({
 }: InstallOrUpdateExtensionType)
 {
   const [ t ] = useTranslation();
+  const modalContext = useModalContext();
   const [ fileIsValid, setFileIsValid ] = useState(false);
   const dropzoneRef = useRef<() => void>(null);
   const [ loading, setLoading ] = useState<boolean>(false);
@@ -124,6 +126,7 @@ export default function InstallOrUpdateExtension({
             body: blob
           });
         onSuccess(installedOrUpdatedExtension);
+        modalContext?.closeModal(true);
       }
       catch (error)
       {

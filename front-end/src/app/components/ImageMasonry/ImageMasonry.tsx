@@ -30,7 +30,7 @@ export default function ImageMasonry({
 {
   const [ hostRef, hostRefRectangle ] = useResizeObserver();
   const { height: containerHeight } = useContainerDimensions(containerRef);
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
 
   const imagesRef = useRef<ImageOrSummary[]>(images);
   imagesRef.current = images;
@@ -41,7 +41,7 @@ export default function ImageMasonry({
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
     const id = addModal({
-      component: (
+      body: (
         <ImageDetail
           image={image}
           images={imagesRef.current}
@@ -90,14 +90,14 @@ export default function ImageMasonry({
 
   const roundedContainerWidth = Math.round(hostRefRectangle.width);
 
-  const sizes: [MasonrySizing, ...MasonrySizing[]] = useMemo<[MasonrySizing, ...MasonrySizing[]]>(() =>
+  const sizes: [ MasonrySizing, ...MasonrySizing[] ] = useMemo<[ MasonrySizing, ...MasonrySizing[] ]>(() =>
   {
     const gutter = 10;
     const approximateWidth = imageSize;
     const columns = Math.max(1, Math.floor(roundedContainerWidth / approximateWidth));
     const remainingSpace = roundedContainerWidth - (columns * approximateWidth) - ((columns - 1) * gutter);
     const columnWidth = approximateWidth + Math.floor(remainingSpace / columns);
-    return [{ columns, gutter, columnWidth }];
+    return [ { columns, gutter, columnWidth } ];
   }, [ roundedContainerWidth, imageSize ]);
 
   const renderItem = useCallback(({ columnWidth }: MasonrySizing, index: number): ReactElement =>

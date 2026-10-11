@@ -50,7 +50,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
 {
   const [ t ] = useTranslation();
   const navigate = useNavigate();
-  const [ , addModal ] = useActionModalContext();
+  const { addModal } = useActionModalContext();
   const { addTab } = useDeskTabsContext();
   const [ additionalUiContextValue, , addTransient ] = useAdditionalUiContext();
   const commandRunner = useExtensionCommandRunner();
@@ -153,7 +153,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
       {
         addModal({
           fullScreen: true,
-          component: <Iframe content={frameContent}/>,
+          body: <Iframe content={frameContent}/>,
           icon: ui.dialogContent?.icon,
           title: ui.dialogContent?.title
         });
@@ -192,7 +192,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
             addModal({
               title: t("extensionSettingsModal.title"),
               size: "m",
-              component: (
+              body: (
                 <ExtensionSettingsModal
                   extension={extension}
                   onSuccess={(settings: ExtensionSettings) =>
@@ -230,7 +230,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
               {
               }}/>,
               size: "m",
-              component: <RepositoryDetail repository={repository}/>,
+              body: <RepositoryDetail repository={repository}/>,
               onBeforeClose: (viaOnSuccess: boolean) =>
               {
                 if (viaOnSuccess === false)

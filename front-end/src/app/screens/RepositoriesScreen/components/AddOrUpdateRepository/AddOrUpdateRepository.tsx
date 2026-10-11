@@ -8,6 +8,7 @@ import { Repository, RepositoryApiRepositoryCreateRequest } from "@picteus/ws-cl
 
 import { FolderTypes } from "types";
 import { computePathSeparator, ToastService, Validators } from "utils";
+import { useModalContext } from "app/context";
 import { useAddRepositoryMutation, useFolderPicker, useUpdateRepositoryMutation } from "app/hooks";
 
 
@@ -21,30 +22,36 @@ const initialValues: RepositoryApiRepositoryCreateRequest = {
 
 type AddOrUpdateRepositoryType = {
   repository?: Repository;
-  onSuccess: () => void;
 };
 
-export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUpdateRepositoryType)
+export default function AddOrUpdateRepository({
+  repository
+}: AddOrUpdateRepositoryType)
 {
   const [ t ] = useTranslation();
+  const modalContext = useModalContext();
   const openFolderPicker = useFolderPicker();
   const updateRepositoryMutation = useUpdateRepositoryMutation();
   const addRepositoryMutation = useAddRepositoryMutation();
 
   const form = useForm({
     mode: "uncontrolled",
-    initialValues: repository ? {
-      type: "file" as const,
-      url: repository.url,
-      name: repository.name,
-      comment: repository.comment ?? undefined,
-      watch: undefined
-    } : initialValues,
+    initialValues: repository
+      ? {
+        type: "file" as const,
+        url: repository.url,
+        name: repository.name,
+        comment: repository.comment ?? undefined,
+        watch: undefined
+      }
+      : initialValues,
     validate: { name: Validators.isNotEmpty, url: Validators.isNotEmpty }
   });
   const [ loading, setLoading ] = useState<boolean>(false);
 
-  async function handleSubmit(values: RepositoryApiRepositoryCreateRequest): Promise<void>
+  async function handleSubmit(
+    values: RepositoryApiRepositoryCreateRequest
+  ): Promise<void>
   {
     setLoading(true);
     try
@@ -59,14 +66,24 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
       }
       else
       {
-        await addRepositoryMutation.mutateAsync({ ...values, url: `file://${values.url}` });
+        await addRepositoryMutation.mutateAsync({
+          ...values,
+          url: `file://${values.url}`
+        });
       }
-      ToastService.success(t(`addOrUpdateRepositoryModal.${repository ? "successUpdate" : "successAdd"}`));
-      onSuccess();
+      ToastService.success(
+        t(
+          `addOrUpdateRepositoryModal.${repository ? "successUpdate" : "successAdd"}`
+        )
+      );
+      modalContext?.closeModal(true);
     }
     catch (error)
     {
-      ToastService.apiCallI18nError(error, `addOrUpdateRepositoryModal.${repository ? "errorUpdate" : "errorAdd"}`);
+      ToastService.apiCallI18nError(
+        error,
+        `addOrUpdateRepositoryModal.${repository ? "errorUpdate" : "errorAdd"}`
+      );
     }
     finally
     {
@@ -84,7 +101,10 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
     const currentRepositoryName = form.getValues().name;
     if (!currentRepositoryName || currentRepositoryName?.trim() === "")
     {
-      const lastUrlSegment = directoryPath.split(computePathSeparator(directoryPath)).filter((segment) => segment !== "").pop();
+      const lastUrlSegment = directoryPath
+        .split(computePathSeparator(directoryPath))
+        .filter((segment) => segment !== "")
+        .pop();
       form.setFieldValue("name", lastUrlSegment);
     }
     form.setFieldValue("url", directoryPath);
@@ -130,8 +150,16 @@ export default function AddOrUpdateRepository({ repository, onSuccess }: AddOrUp
       />
       <Flex justify="flex-end">
         <Button
-          loading={loading || updateRepositoryMutation.isPending || addRepositoryMutation.isPending}
-          disabled={loading || updateRepositoryMutation.isPending || addRepositoryMutation.isPending}
+          loading={
+            loading ||
+            updateRepositoryMutation.isPending ||
+            addRepositoryMutation.isPending
+          }
+          disabled={
+            loading ||
+            updateRepositoryMutation.isPending ||
+            addRepositoryMutation.isPending
+          }
           type="submit"
         >
           {t(repository ? "button.save" : "button.add")}

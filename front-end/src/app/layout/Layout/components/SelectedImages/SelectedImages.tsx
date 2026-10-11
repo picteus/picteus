@@ -57,7 +57,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
   const commandRunner = useExtensionCommandRunner();
   const [ selectedAction, setSelectedAction ] = useState<string>();
   const [ isAddingToCollection, setAddingToCollection ] = useState<boolean>(false);
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
 
   useEffect(() =>
   {
@@ -193,7 +193,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
       title: t("addOrUpdateCollectionModal.addTitle"),
       icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
       size: "s",
-      component: (
+      body: (
         <AddOrUpdateCollection
           searchFilter={{
             origin: {

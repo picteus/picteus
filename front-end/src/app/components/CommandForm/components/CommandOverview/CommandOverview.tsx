@@ -224,12 +224,12 @@ export default function CommandOverview({
   const { i18n } = useTranslation();
   const { data: extensionAndManual } = useExtension(extensionId);
   const { images, totalCount } = useCommandOverviewImages(searchFilter);
-  const [ , addModal, removeModal ] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
 
   const handleOpenImageDetail = useCallback((image: ImageOrSummary): void =>
   {
     const modalId = addModal({
-      component: (
+      body: (
         <ImageDetail
           image={image}
           images={[ image ]}

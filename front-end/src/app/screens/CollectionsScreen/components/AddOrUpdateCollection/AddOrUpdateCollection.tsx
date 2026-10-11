@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Collection as PicteusCollection, SearchFilter } from "@picteus/ws-client";
 
 import { ToastService } from "utils";
+import { useModalContext } from "app/context";
 import { useCreateCollectionMutation, useUpdateCollectionMutation } from "app/hooks";
 import { FiltersService } from "app/services";
 
@@ -13,7 +14,7 @@ import { FiltersService } from "app/services";
 type AddOrUpdateCollectionType = {
   collection?: PicteusCollection;
   searchFilter?: SearchFilter;
-  onSuccess: (collection: PicteusCollection) => void;
+  onSuccess?: (collection: PicteusCollection) => void;
   onClose?: () => void;
 };
 
@@ -25,6 +26,7 @@ export default function AddOrUpdateCollection({
 }: AddOrUpdateCollectionType)
 {
   const [ t ] = useTranslation();
+  const modalContext = useModalContext();
   const [ loading, setLoading ] = useState<boolean>(false);
   const createCollectionMutation = useCreateCollectionMutation();
   const updateCollectionMutation = useUpdateCollectionMutation();
@@ -64,8 +66,9 @@ export default function AddOrUpdateCollection({
         });
         ToastService.success(t("addOrUpdateCollectionModal.successAdd"));
       }
-      onSuccess(newCollection);
+      onSuccess?.(newCollection);
       onClose?.();
+      modalContext?.closeModal(true);
     }
     catch (error)
     {

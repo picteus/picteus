@@ -29,16 +29,16 @@ export default function ImageGallery({
 }: ImageGalleryType)
 {
   const gutter = 10;
-  const [hostRef, hostRefRectangle] = useResizeObserver();
+  const [ hostRef, hostRefRectangle ] = useResizeObserver();
   const { height: containerHeight } = useContainerDimensions(containerRef);
-  const [sentinel, setSentinel] = useState<HTMLHeadingElement | null>(null);
+  const [ sentinel, setSentinel ] = useState<HTMLHeadingElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
-  const [, addModal, removeModal] = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
   const handleOnClick = useCallback((image: ImageOrSummary) =>
   {
     const id = addModal({
-      component: (
+      body: (
         <ImageDetail
           image={image}
           images={images}
@@ -52,12 +52,12 @@ export default function ImageGallery({
       withCloseButton: false,
       fullScreen: true
     });
-  }, [images]);
+  }, [ images ]);
 
   useEffect(() =>
   {
     loadMoreRef.current = loadMore;
-  }, [loadMore]);
+  }, [ loadMore ]);
 
   const sentinelRef = useCallback((node: HTMLHeadingElement | null) =>
   {
@@ -95,7 +95,7 @@ export default function ImageGallery({
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
-  }, [containerHeight, scrollRootRef, sentinel]);
+  }, [ containerHeight, scrollRootRef, sentinel ]);
 
   useEffect(() =>
   {
@@ -106,7 +106,7 @@ export default function ImageGallery({
     }
     observer.unobserve(sentinel);
     observer.observe(sentinel);
-  }, [images]);
+  }, [ images ]);
 
   const { columns, columnWidth } = useMemo(() =>
   {
@@ -115,7 +115,7 @@ export default function ImageGallery({
     const columns = Math.max(1, Math.floor(containerWidth / approximateWidth));
     const remainingSpace = containerWidth - columns * approximateWidth - gutter * (columns - 1);
     return { columns, columnWidth: approximateWidth + Math.floor(remainingSpace / columns) };
-  }, [imageSize, hostRefRectangle]);
+  }, [ imageSize, hostRefRectangle ]);
 
   const renderedImages = useMemo(() => images.map((image) => (
     <Grid.Col span={1} key={image.id}>
@@ -129,7 +129,7 @@ export default function ImageGallery({
         onClick={handleOnClick}
       />
     </Grid.Col>
-  )), [images, columnWidth, imageItemMode, handleOnClick]);
+  )), [ images, columnWidth, imageItemMode, handleOnClick ]);
 
   const renderedGrid = useMemo(() => (
     <Grid columns={columns} gap={gutter}>
@@ -138,7 +138,7 @@ export default function ImageGallery({
         <div ref={sentinelRef} className={style.sentinel}/>
       </Grid.Col>
     </Grid>
-  ), [renderedImages, columns]);
+  ), [ renderedImages, columns ]);
 
   return (
     images.length !== 0 && columns > 0 && (

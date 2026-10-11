@@ -30,7 +30,7 @@ export default function useProcessCommands(
 {
   const [ t ] = useTranslation();
   const { registerShortcuts = false } = options;
-  const [ , addModal ] = useActionModalContext();
+  const { addModal } = useActionModalContext();
   const commandRunner = useExtensionCommandRunner();
   const [ runningCommandId, setRunningCommandId ] = useState<string | null>(null);
 
@@ -74,7 +74,7 @@ export default function useProcessCommands(
         execute: (): void =>
         {
           addModal({
-            component: <TextToImages extensionId={extension.manifest.id}/>,
+            body: <TextToImages extensionId={extension.manifest.id}/>,
             title: t("textToImagesModal.title"),
             size: "l"
           });

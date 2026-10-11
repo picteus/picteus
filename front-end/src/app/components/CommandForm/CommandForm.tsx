@@ -1,5 +1,5 @@
 import { type ReactElement, useMemo, useState } from "react";
-import { Alert, Button, Checkbox, Divider, Flex, ScrollArea } from "@mantine/core";
+import { Alert, Button, Checkbox, Stack, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { SearchFilter } from "@picteus/ws-client";
@@ -7,10 +7,8 @@ import { SearchFilter } from "@picteus/ws-client";
 import { UiCommandType } from "types";
 import { useKey } from "app/hooks";
 import { StorageService } from "app/services";
-import { extractSchemaAndUiSchema, Markdown, RjsfForm } from "app/components";
+import { extractSchemaAndUiSchema, Markdown, ModalActions, RjsfForm } from "app/components";
 import { CommandOverview } from "./components";
-
-import style from "./CommandForm.module.scss";
 
 
 type CommandFormType = {
@@ -67,16 +65,18 @@ export default function CommandForm({
   } : extractSchemaAndUiSchema(form.parameters);
 
   return (
-    <Flex direction="column" className={style.root}>
+    <Stack gap="md">
       {form?.dialogContent && (
-        <Flex direction="column" gap="sm" mb="sm">
+        <Stack gap="xs">
           <Alert icon={<IconInfoCircle/>}>
             <Markdown content={form.dialogContent.description}/>
           </Alert>
           {form.dialogContent.details && (
-            <div className={style.details}><Markdown content={form.dialogContent.details}/></div>
+            <Text component="div" c="dimmed" size="sm" fs="italic">
+              <Markdown content={form.dialogContent.details}/>
+            </Text>
           )}
-        </Flex>
+        </Stack>
       )}
       {command.id && (
         <CommandOverview
@@ -86,22 +86,14 @@ export default function CommandForm({
         />
       )}
       {form?.parameters && (
-        <ScrollArea.Autosize
-          className={style.formScrollArea}
-          mah="calc(100dvh - 320px)"
-          offsetScrollbars
-          scrollbars="y"
-        >
-          <RjsfForm
-            initialFormData={initialParameters}
-            schema={schema}
-            uiSchema={uiSchema}
-            onChange={setParameters}
-          />
-        </ScrollArea.Autosize>
+        <RjsfForm
+          initialFormData={initialParameters}
+          schema={schema}
+          uiSchema={uiSchema}
+          onChange={setParameters}
+        />
       )}
-      <Divider my="md"/>
-      <Flex align="center" justify="flex-end" gap="md" className={style.footer}>
+      <ModalActions>
         {hasNoParameters === true && command.id !== undefined && (
           <Checkbox
             label={t("commands.doNotAskAgain")}
@@ -112,7 +104,7 @@ export default function CommandForm({
         <Button onClick={handleSend}>
           {t("button.send")}
         </Button>
-      </Flex>
-    </Flex>
+      </ModalActions>
+    </Stack>
   );
 }

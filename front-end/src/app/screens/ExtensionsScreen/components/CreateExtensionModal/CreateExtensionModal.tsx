@@ -13,6 +13,7 @@ import {
 } from "@picteus/ws-client";
 
 import { computeFilePath, ToastService } from "utils";
+import { useModalContext } from "app/context";
 import { useExtensions, useFolderPicker, useInstallExtensionMutation, useOpenExplorer } from "app/hooks";
 import { ExtensionsService } from "app/services";
 import { FolderTypes } from "types";
@@ -25,6 +26,7 @@ type CreateExtensionModalProps = {
 export default function CreateExtensionModal({ onSuccess }: CreateExtensionModalProps)
 {
   const [ t ] = useTranslation();
+  const modalContext = useModalContext();
   const openFolderPicker = useFolderPicker();
   const openExplorer = useOpenExplorer();
   const { data: extensions = [] } = useExtensions();
@@ -127,6 +129,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
       ToastService.success(t("createExtensionModal.success"));
       await openExplorer(extensionDirectoryPath);
       onSuccess(extension);
+      modalContext?.closeModal(true);
     }
     catch (error)
     {

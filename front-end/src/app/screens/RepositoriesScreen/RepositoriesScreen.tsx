@@ -26,7 +26,7 @@ export default function RepositoriesScreen()
   const [ t ] = useTranslation();
   const { data: repositories = [], isLoading, isFetching, refetch } = useRepositories();
   const [ selectedRepository, setSelectedRepository ] = useState<Repository>();
-  const [ , addModal ] = useActionModalContext();
+  const { addModal } = useActionModalContext();
 
   function nothing(): void
   {
@@ -38,7 +38,7 @@ export default function RepositoriesScreen()
       title: t(`addOrUpdateRepositoryModal.${repository ? "updateTitle" : "addTitle"}`),
       icon: { icon: <IconFolderOpen stroke={Common.IconStrokeSize}/> },
       size: "s",
-      component: <AddOrUpdateRepository repository={repository} onSuccess={nothing}/>
+      body: <AddOrUpdateRepository repository={repository}/>
     });
   }
 

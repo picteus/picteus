@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Alert, Button, Flex, Stack } from "@mantine/core";
+import { Alert, Button, Stack } from "@mantine/core";
 import { IconCircleX, IconInfoCircle } from "@tabler/icons-react";
 
 import { Extension, ExtensionSettings } from "@picteus/ws-client";
 
-
+import { ManualSection } from "types";
 import { extractMarkdownParagraph, ToastService } from "utils";
+import { useModalContext } from "app/context";
 import { useExtension, useResetExtensionSettingsMutation, useSetExtensionSettingsMutation } from "app/hooks";
 import { ExtensionsService } from "app/services";
-import { extractSchemaAndUiSchema, Manual, RjsfForm } from "app/components";
-import { ManualSection } from "../../../../../types";
+import { extractSchemaAndUiSchema, Manual, ModalActions, RjsfForm } from "app/components";
 
 
 const propertiesName = "properties";
@@ -31,15 +31,14 @@ export default function ExtensionSettingsModal({
 }: ExtensionSettingsModalType)
 {
   const [ t ] = useTranslation();
+  const modalContext = useModalContext();
   const [ loading, setLoading ] = useState<boolean>(false);
   const [ extensionSettings, setExtensionSettings ] = useState<ExtensionSettings>();
   const [ saveFailed, setSaveFailed ] = useState<boolean>(false);
   const [ isValid, setIsValid ] = useState<boolean>(true);
 
   const { data: extensionAndManual } = useExtension(extension.manifest.id);
-  const instructions = extensionAndManual?.manual?.instructions === undefined
-    ? undefined
-    : extractMarkdownParagraph(extensionAndManual.manual.instructions, ManualSection.Settings);
+  const instructions = extensionAndManual?.manual?.instructions === undefined ? undefined : extractMarkdownParagraph(extensionAndManual.manual.instructions, ManualSection.Settings);
 
   const setExtensionSettingsMutation = useSetExtensionSettingsMutation();
   const resetExtensionSettingsMutation = useResetExtensionSettingsMutation();
@@ -77,6 +76,7 @@ export default function ExtensionSettingsModal({
       });
       ToastService.success(t("extensionSettingsModal.successSaving"));
       onSuccess(extensionSettings);
+      modalContext?.closeModal(true);
     }
     catch (error)
     {
@@ -101,6 +101,7 @@ export default function ExtensionSettingsModal({
       setSaveFailed(false);
       ToastService.success(t("extensionSettingsModal.successResetting"));
       onSuccess(settings);
+      modalContext?.closeModal(true);
     }
     catch (error)
     {
@@ -124,43 +125,47 @@ export default function ExtensionSettingsModal({
       return undefined;
     }
     const { schema, uiSchema } = extractSchemaAndUiSchema(extension?.manifest.settings);
-    return <Stack gap="sm">
-      <Alert mb="sm" icon={<IconInfoCircle/>}>
-        <Trans
-          i18nKey="extensionSettingsModal.warning"
-          components={{ strong: <b/> }}
-          values={{ name: extension.manifest.name }}
+    return (
+      <Stack gap="sm">
+        <Alert mb="sm" icon={<IconInfoCircle/>}>
+          <Trans
+            i18nKey="extensionSettingsModal.warning"
+            components={{ strong: <b/> }}
+            values={{ name: extension.manifest.name }}
+          />
+        </Alert>
+        {instructions && <Manual content={instructions}/>}
+        <RjsfForm
+          initialFormData={extensionSettings?.value}
+          schema={schema}
+          uiSchema={uiSchema}
+          onChange={(value) => setExtensionSettings({ value })}
+          onValidationChange={setIsValid}
         />
-      </Alert>
-      {instructions && <Manual content={instructions}/>}
-      <RjsfForm
-        initialFormData={extensionSettings?.value}
-        schema={schema}
-        uiSchema={uiSchema}
-        onChange={(value) => setExtensionSettings({ value })}
-        onValidationChange={setIsValid}
-      />
-      <Flex justify="flex-end" mt="md" gap="sm">
-        {saveFailed && (
+        <ModalActions>
+          {saveFailed && (
+            <Button
+              onClick={() => void handleOnResetSettings()}
+              loading={loading || resetExtensionSettingsMutation.isPending}
+              disabled={loading || resetExtensionSettingsMutation.isPending}
+              color="red"
+            >
+              {t("extensionSettingsModal.reset")}
+            </Button>
+          )}
           <Button
-            onClick={() => void handleOnResetSettings()}
-            loading={loading || resetExtensionSettingsMutation.isPending}
-            disabled={loading || resetExtensionSettingsMutation.isPending}
-            color="red"
+            onClick={() => void handleOnSaveSettings()}
+            loading={loading || setExtensionSettingsMutation.isPending}
+            disabled={
+              loading || setExtensionSettingsMutation.isPending || !isValid
+            }
+            type="submit"
           >
-            {t("extensionSettingsModal.reset")}
+            {t("button.save")}
           </Button>
-        )}
-        <Button
-          onClick={() => void handleOnSaveSettings()}
-          loading={loading || setExtensionSettingsMutation.isPending}
-          disabled={loading || setExtensionSettingsMutation.isPending || !isValid}
-          type="submit"
-        >
-          {t("button.save")}
-        </Button>
-      </Flex>
-    </Stack>;
+        </ModalActions>
+      </Stack>
+    );
   }
 
   function renderError()
