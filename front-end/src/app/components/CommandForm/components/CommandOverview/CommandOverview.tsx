@@ -13,7 +13,7 @@ import { extractMarkdownParagraph, ToastService } from "utils";
 import { useActionModalContext } from "app/context";
 import { useExtension } from "app/hooks";
 import { ImageService } from "app/services";
-import { ImageDetail, ImageItem, ImagesCollection, Manual } from "app/components";
+import { ImageDetail, ImageItem, ImagesCollection, Manual, Markdown } from "app/components";
 
 
 type InstructionsType = { summary?: string, details?: string };
@@ -131,8 +131,9 @@ function CommandHeader({ specification, instructions }: CommandHeaderPropsType):
   return (
     <>
       {specification.name && <Text fw={600} size="sm">{specification.name}</Text>}
-      {(instructions || specification.description) &&
-        <Text size="sm" c="dimmed">{instructions?.summary ? instructions.summary : specification.description}</Text>}
+        {(specification.description === undefined && instructions) &&
+          <Text size="sm" c="dimmed">{instructions.summary}</Text>}
+        {specification.description && <Markdown content={instructions.summary}/>}
     </>);
 }
 
@@ -155,8 +156,8 @@ function SingleImageOverview({
   const edge = 100;
   return (
     <Stack gap="md" my="sm">
-      <Flex align="center" justify="space-between" gap="md">
-        <Alert variant="default" color="transparent" my="sm" p="sm">
+      <Flex align="start" justify="space-between" gap="md">
+        <Alert variant="default" color="transparent" p="sm">
           <Stack gap="sm">
             <CommandHeader specification={specification} instructions={instructions}/>
           </Stack>
