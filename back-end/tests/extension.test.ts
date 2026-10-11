@@ -39,10 +39,13 @@ import {
   ImageSummary,
   Manifest,
   ManifestCapability,
+  ManifestCapabilityCaptionsDetails,
   ManifestCapabilityId,
   ManifestEvent,
   ManifestExecution,
   ManifestExtensionCommand,
+  ManifestImageFeaturesCapability,
+  ManifestImageTagsCapability,
   ManifestInstructions,
   ManifestRuntimeEnvironment,
   ManifestUserInterface,
@@ -262,7 +265,10 @@ describe("Extensions", () =>
                   durationInMilliseconds: Math.round(throttlingDurationInMilliseconds ?? Core.fastestIntervalInMilliseconds)
                 }
               ],
-            capabilities: [ { id: ManifestCapabilityId.ImageTags }, { id: ManifestCapabilityId.ImageFeatures }, { id: ManifestCapabilityId.TextEmbeddings } ],
+            capabilities: [ { id: ManifestCapabilityId.ImageTags }, {
+              id: ManifestCapabilityId.ImageFeatures,
+              details: new ManifestCapabilityCaptionsDetails()
+            }, { id: ManifestCapabilityId.TextEmbeddings } ],
             execution:
               {
                 executable: ExtensionBuilder.nodeExecutable,
@@ -526,6 +532,26 @@ describe("Extensions", () =>
       {
         await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The archive contains a manifest 'manifest.json' file which is not a valid JSON content", BAD_REQUEST, base.badParameterCode));
+    }
+    {
+      // We assess with an invalid capability
+      const manifest = new ExtensionBuilder(false).computeWithInstructionsManifest([
+        {
+          events: [ ManifestEvent.ProcessStarted, ManifestEvent.ImageComputeFeatures ],
+          capabilities: [ {
+            id: ManifestCapabilityId.ImageFeatures,
+            details: "invalid"
+          } as unknown as ManifestCapability ],
+          execution: ExtensionBuilder.dummyExecution
+        }
+      ]);
+
+      const zip = new AdmZip();
+      zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
+      await expect(async () =>
+      {
+        await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
+      }).rejects.toThrow(new ServiceError(`The manifest 'manifest.json' file does not respect the expected schema: the property 'instructions' is invalid, because at the level of 'instructions.0.capabilities.0', details must be an object`, BAD_REQUEST, base.badParameterCode));
     }
     const manifest: Record<string, any> = {};
     {
@@ -1486,7 +1512,10 @@ describe("Extensions", () =>
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
     zip.addFile(ExtensionBuilder.startedJsFileName, Buffer.from(builder.computeStartedFileContent(), "utf8"));
-    await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
+    const extension = await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
+    const capabilities = extension.manifest.instructions[0].capabilities;
+    expect(capabilities![0]).toBeInstanceOf(ManifestImageTagsCapability);
+    expect(capabilities![1]).toBeInstanceOf(ManifestImageFeaturesCapability);
 
     {
       const {

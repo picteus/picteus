@@ -32,6 +32,8 @@ import {
   shortTechnicalSchema,
   technicalLongRelaxedPattern,
   technicalLongRelaxedSchema,
+  technicalShortRelaxedPattern,
+  technicalShortRelaxedSchema,
   uriPathPattern,
   uriPathSchema
 } from "./common.dtos";
@@ -374,6 +376,76 @@ export class ManifestCapability
 
 }
 
+@ApiSchema({ description: "A marker to indicate the capability to compute captions" })
+export class ManifestCapabilityCaptionsDetails
+{
+
+  constructor()
+  {
+  }
+
+}
+
+@ApiSchema({ description: "A marker to indicate the capability to compute eligible tags" })
+export class ManifestCapabilityEligibleTagsDetails
+{
+
+  constructor()
+  {
+  }
+
+}
+
+@ApiSchema({ description: "A capability to compute features, optionally captions" })
+export class ManifestImageFeaturesCapability extends ManifestCapability
+{
+
+  constructor(details?: ManifestCapabilityCaptionsDetails)
+  {
+    super(ManifestCapabilityId.ImageFeatures);
+    this.details = details;
+  }
+
+  @ApiProperty(
+    {
+      description: "Present to mark this image.features capability as computing captions",
+      type: ManifestCapabilityCaptionsDetails,
+      required: false
+    }
+  )
+  @Type(() => ManifestCapabilityCaptionsDetails)
+  @IsObject()
+  @IsOptional()
+  @Expose()
+  readonly details?: ManifestCapabilityCaptionsDetails;
+
+}
+
+@ApiSchema({ description: "A capability to compute tags, optionally eligible tags" })
+export class ManifestImageTagsCapability extends ManifestCapability
+{
+
+  constructor(details?: ManifestCapabilityEligibleTagsDetails)
+  {
+    super(ManifestCapabilityId.ImageTags);
+    this.details = details;
+  }
+
+  @ApiProperty(
+    {
+      description: "Present to mark this image.tags capability as computing eligible tags",
+      type: ManifestCapabilityEligibleTagsDetails,
+      required: false
+    }
+  )
+  @Type(() => ManifestCapabilityEligibleTagsDetails)
+  @IsObject()
+  @IsOptional()
+  @Expose()
+  readonly details?: ManifestCapabilityEligibleTagsDetails;
+
+}
+
 @ApiSchema({ description: "The definition on how events should be throttled" })
 export class ManifestThrottlingPolicy
 {
@@ -495,10 +567,11 @@ export class ManifestExecution
  * The instructions of an extension depending on events.
  */
 @ApiSchema({ description: "The full specifications of an extension, including the events it handles, its capabilities, its execution and its commands" })
+@ApiExtraModels(ManifestImageFeaturesCapability, ManifestImageTagsCapability)
 export class ManifestInstructions
 {
 
-  constructor(events: ManifestEvent[], capabilities: ManifestCapability[], execution: ManifestExecution, commands: ManifestExtensionCommand[])
+  constructor(events: ManifestEvent[], capabilities: (ManifestImageFeaturesCapability | ManifestImageTagsCapability | ManifestCapability)[], execution: ManifestExecution, commands: ManifestExtensionCommand[])
   {
     this.events = events;
     this.capabilities = capabilities;
@@ -528,15 +601,46 @@ export class ManifestInstructions
       description: "The capabilities attached to the instructions",
       type: ManifestCapability,
       isArray: true,
+      oneOf:
+        [
+          { $ref: getSchemaPath(ManifestImageFeaturesCapability) },
+          { $ref: getSchemaPath(ManifestImageTagsCapability) },
+          { $ref: getSchemaPath(ManifestCapability) }
+        ],
+      discriminator:
+        {
+          propertyName: "id",
+          mapping:
+            {
+              [ManifestCapabilityId.ImageFeatures]: getSchemaPath(ManifestImageFeaturesCapability),
+              [ManifestCapabilityId.ImageTags]: getSchemaPath(ManifestImageTagsCapability),
+              [ManifestCapabilityId.ImageEmbeddings]: getSchemaPath(ManifestCapability),
+              [ManifestCapabilityId.TextEmbeddings]: getSchemaPath(ManifestCapability)
+            }
+        },
       required: false
     }
   )
-  @Type(() => ManifestCapability)
+  @Type(() => ManifestCapability,
+    {
+      discriminator:
+        {
+          property: "id",
+          subTypes:
+            [
+              { value: ManifestImageFeaturesCapability, name: ManifestCapabilityId.ImageFeatures },
+              { value: ManifestImageTagsCapability, name: ManifestCapabilityId.ImageTags },
+              { value: ManifestCapability, name: ManifestCapabilityId.ImageEmbeddings },
+              { value: ManifestCapability, name: ManifestCapabilityId.TextEmbeddings }
+            ]
+        },
+      keepDiscriminatorProperty: true
+    })
   @IsArray()
   @ValidateNested({ each: true })
   @IsOptional()
   @Expose()
-  readonly capabilities?: ManifestCapability[];
+  readonly capabilities?: (ManifestImageFeaturesCapability | ManifestImageTagsCapability | ManifestCapability)[];
 
   @ApiProperty(
     {
@@ -1440,6 +1544,133 @@ export class ExtensionAiModel extends AiModel
   @IsDefined()
   @Expose()
   readonly creationDate: number;
+
+}
+
+@ApiSchema({ description: "A caption computation entry declared for an AI model" })
+export class ExtensionCaption
+{
+
+  constructor(aiModelTechnicalId: string, question: string, enabled: boolean)
+  {
+    this.aiModelTechnicalId = aiModelTechnicalId;
+    this.question = question;
+    this.enabled = enabled;
+  }
+
+  @ApiProperty(
+    {
+      ...technicalLongRelaxedSchema,
+      description: "The technical identifier of the AI model to use",
+      type: "string",
+      required: true,
+      example: "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.longTechnical)
+  @Matches(technicalLongRelaxedPattern)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly aiModelTechnicalId: string;
+
+  @ApiProperty(
+    {
+      description: "The question submitted to the AI model to produce the caption",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.comment,
+      required: true,
+      example: "Describe this image in one sentence"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.comment)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly question: string;
+
+  @ApiProperty(
+    {
+      description: "Whether this caption entry is active",
+      type: Boolean,
+      required: true,
+      example: true
+    }
+  )
+  @IsBoolean()
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly enabled: boolean;
+
+}
+
+@ApiSchema({ description: "An eligible tags computation entry declared for an AI model" })
+export class ExtensionEligibleTags
+{
+
+  constructor(aiModelTechnicalId: string, tags: ImageTag[], enabled: boolean)
+  {
+    this.aiModelTechnicalId = aiModelTechnicalId;
+    this.tags = tags;
+    this.enabled = enabled;
+  }
+
+  @ApiProperty(
+    {
+      ...technicalLongRelaxedSchema,
+      description: "The technical identifier of the AI model to use",
+      type: "string",
+      required: true,
+      example: "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.longTechnical)
+  @Matches(technicalLongRelaxedPattern)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly aiModelTechnicalId: string;
+
+  @ApiProperty(
+    {
+      ...technicalShortRelaxedSchema,
+      description: "The candidate tags the AI model picks from",
+      type: [ String ],
+      required: true,
+      example: [ "portrait", "landscape", "night" ]
+    }
+  )
+  @IsArray()
+  @IsString({ each: true })
+  @MinLength(1, { each: true })
+  @MaxLength(FieldLengths.longTechnical, { each: true })
+  @Matches(technicalShortRelaxedPattern, undefined, { each: true })
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly tags: ImageTag[];
+
+  @ApiProperty(
+    {
+      description: "Whether this eligible tags entry is active",
+      type: Boolean,
+      required: true,
+      example: true
+    }
+  )
+  @IsBoolean()
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly enabled: boolean;
 
 }
 

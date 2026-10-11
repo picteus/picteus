@@ -4426,7 +4426,8 @@
               {
                 "$ref": "#/components/schemas/ManifestCapabilityId"
               }
-            ]
+            ],
+            "type": "string"
           }
         },
         "description": "The expression of an extension's capability",
@@ -4687,6 +4688,70 @@
           "environment"
         ]
       },
+      "ManifestCapabilityCaptionsDetails": {
+        "type": "object",
+        "properties": {},
+        "description": "A marker to indicate the capability to compute captions"
+      },
+      "ManifestImageFeaturesCapability": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The identifier of the extension capability",
+            "example": "image.embeddings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ManifestCapabilityId"
+              }
+            ],
+            "type": "string"
+          },
+          "details": {
+            "description": "Present to mark this image.features capability as computing captions",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ManifestCapabilityCaptionsDetails"
+              }
+            ]
+          }
+        },
+        "description": "A capability to compute features, optionally captions",
+        "required": [
+          "id"
+        ]
+      },
+      "ManifestCapabilityEligibleTagsDetails": {
+        "type": "object",
+        "properties": {},
+        "description": "A marker to indicate the capability to compute eligible tags"
+      },
+      "ManifestImageTagsCapability": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The identifier of the extension capability",
+            "example": "image.embeddings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ManifestCapabilityId"
+              }
+            ],
+            "type": "string"
+          },
+          "details": {
+            "description": "Present to mark this image.tags capability as computing eligible tags",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ManifestCapabilityEligibleTagsDetails"
+              }
+            ]
+          }
+        },
+        "description": "A capability to compute tags, optionally eligible tags",
+        "required": [
+          "id"
+        ]
+      },
       "ManifestEvent": {
         "type": "string",
         "enum": [
@@ -4779,9 +4844,28 @@
           },
           "capabilities": {
             "description": "The capabilities attached to the instructions",
+            "discriminator": {
+              "propertyName": "id",
+              "mapping": {
+                "image.features": "#/components/schemas/ManifestImageFeaturesCapability",
+                "image.tags": "#/components/schemas/ManifestImageTagsCapability",
+                "image.embeddings": "#/components/schemas/ManifestCapability",
+                "text.embeddings": "#/components/schemas/ManifestCapability"
+              }
+            },
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ManifestCapability"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ManifestImageFeaturesCapability"
+                },
+                {
+                  "$ref": "#/components/schemas/ManifestImageTagsCapability"
+                },
+                {
+                  "$ref": "#/components/schemas/ManifestCapability"
+                }
+              ]
             }
           },
           "throttlingPolicies": {

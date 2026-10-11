@@ -32,11 +32,11 @@ The manifest schema validates an extension's `manifest.json` file. It defines th
 requirements, event instructions, capabilities, commands, settings, user-interface declarations, and other contracts
 with Picteus.
 
-The current extension manifest contract is version 3:
+The current extension manifest contract is version 4:
 
 - [GitHub source:
-  `manifest-v3.schema.json`](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v3.schema.json);
-- [Published manifest schema](https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json);
+  `manifest-v4.schema.json`](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v4.schema.json);
+- [Published manifest schema](https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json);
 - [Manifest reference](../extensions/reference/manifest.md).
 
 Add this top-level property to a manifest to enable schema-aware editor support. The snippet shows the property only,
@@ -44,14 +44,15 @@ not a complete manifest:
 
 ```json
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json"
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json"
 }
 ```
 
 Previous manifest schema versions remain available for compatibility:
 
 - [Manifest version 1 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v1.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json);
-- [Manifest version 2 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v2.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json).
+- [Manifest version 2 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v2.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json);
+- [Manifest version 3 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v3.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json).
 
 ## Generation recipe schema
 

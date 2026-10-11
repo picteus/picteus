@@ -147,7 +147,7 @@ export class ExtensionGenerator
               "required": [ "parameter" ]
             }
         };
-      fs.writeFileSync(path.join(moduleDirectoryPath, ExtensionRegistry.manifestFileName), stringify({ $schema: "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json", ...manifest }), "utf8");
+      fs.writeFileSync(path.join(moduleDirectoryPath, ExtensionRegistry.manifestFileName), stringify({ $schema: "https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json", ...manifest }), "utf8");
     }
   }
 

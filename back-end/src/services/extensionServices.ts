@@ -890,7 +890,7 @@ export class ExtensionService
     logger.info(`Getting the settings of the extension with id '${id}'`);
     this.checkExtensionExists(id);
     const entity = await this.getPersistedSettings(id);
-    return new ExtensionSettings((entity === null || entity.value === null) ? {} : JSON.parse(entity.value));
+    return new ExtensionSettings((entity === null || entity.value === null) ? {} : (entity.value as Json));
   }
 
   async setSettings(id: string, settings: ExtensionSettings): Promise<void>
@@ -1735,7 +1735,6 @@ export class ExtensionService
         await this.entitiesProvider.extensionSettings.create({
           data: {
             extensionId: manifest.id,
-            value: null,
             versions: stringify({ current: manifest.version, upgraded: false })
           }
         });

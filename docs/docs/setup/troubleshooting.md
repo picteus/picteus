@@ -54,7 +54,9 @@ Refer to [Accessing front-end logs via Chromium Developer Tools](traces.md#acces
 
 If the issue specifically relates to an extension failing to install, start, or respond to events:
 
-- **Manifest validation**: ensure that `manifest.json` complies strictly with the [`manifest-v3.schema.json`](https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json) contract. Refer to [Manifest](../extensions/reference/manifest.md) for schema details ;
+- **Manifest validation**: ensure that `manifest.json` complies strictly with the [
+  `manifest-v4.schema.json`](https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json) contract. Refer
+  to [Manifest](../extensions/reference/manifest.md) for schema details ;
 - **Troubleshooting checklist**: consult the [Extension troubleshooting checklist](../extensions/guide.md#troubleshooting-checklist) for common symptoms — such as missing command buttons or unhandled event hooks ;
 - **Debugging unpacked extensions**: run the extension in debug mode from your IDE as an unpacked extension. Refer to [Unpacked extensions](../extensions/unpacked.md) for development workflows.
 
