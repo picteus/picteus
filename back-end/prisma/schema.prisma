@@ -27,10 +27,12 @@ model ApiSecret {
 }
 
 model ExtensionSettings {
-  id          Int     @id @default(autoincrement())
-  extensionId String  @unique
-  value       String?
-  versions    String?
+  id           Int     @id @default(autoincrement())
+  extensionId  String  @unique
+  value        Json?
+  captions     Json?
+  eligibleTags Json?
+  versions     String?
 }
 
 model AiModel {
