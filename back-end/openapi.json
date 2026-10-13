@@ -858,6 +858,202 @@
         ]
       }
     },
+    "/extension/{id}/getCaptionInstructions": {
+      "get": {
+        "description": "Returns the caption instructions declared for an extension.",
+        "operationId": "extension_getCaptionInstructions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caption instructions for the extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CaptionInstruction"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the caption instructions for an extension",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
+    "/extension/{id}/setCaptionInstructions": {
+      "put": {
+        "description": "Overwrites the caption instructions declared for an extension.",
+        "operationId": "extension_setCaptionInstructions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The caption instructions for the extension",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CaptionInstruction"
+                },
+                "minItems": 0,
+                "maxItems": 256
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The caption instructions for the extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CaptionInstruction"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sets the caption instructions for an extension",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
+    "/extension/{id}/getEligibleTagsInstructions": {
+      "get": {
+        "description": "Returns the eligible tags instructions declared for an extension.",
+        "operationId": "extension_getEligibleTagsInstructions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The eligible tags instructions for the extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EligibleTagsInstruction"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the eligible tags instructions for an extension",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
+    "/extension/{id}/setEligibleTagsInstructions": {
+      "put": {
+        "description": "Overwrites the eligible tags instructions declared for an extension.",
+        "operationId": "extension_setEligibleTagsInstructions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The eligible tags instructions for the extension",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EligibleTagsInstruction"
+                },
+                "minItems": 0,
+                "maxItems": 256
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The eligible tags instructions for the extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EligibleTagsInstruction"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sets the eligible tags instructions for an extension",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
     "/extension/{id}/synchronize": {
       "put": {
         "description": "Iterates over all images available in the repositories and asks the extension to operate its work if the image is not indexed by it.",
@@ -2420,6 +2616,24 @@
         "operationId": "image_searchRunCapabilities",
         "parameters": [
           {
+            "name": "capabilityIds",
+            "required": false,
+            "in": "query",
+            "description": "The capabilities to run",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "image.features",
+                  "image.embeddings",
+                  "image.tags",
+                  "text.embeddings"
+                ]
+              }
+            }
+          },
+          {
             "name": "extensionIds",
             "required": false,
             "in": "query",
@@ -2514,6 +2728,24 @@
               "minLength": 36,
               "maxLength": 36,
               "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+            }
+          },
+          {
+            "name": "capabilityIds",
+            "required": false,
+            "in": "query",
+            "description": "The capabilities to run",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "image.features",
+                  "image.embeddings",
+                  "image.tags",
+                  "text.embeddings"
+                ]
+              }
             }
           },
           {
@@ -5350,6 +5582,78 @@
           "name",
           "extensionId",
           "creationDate"
+        ]
+      },
+      "CaptionInstruction": {
+        "type": "object",
+        "properties": {
+          "aiModelTechnicalId": {
+            "type": "string",
+            "description": "The technical identifier of the AI model to use",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether this instruction is active",
+            "example": true
+          },
+          "question": {
+            "type": "string",
+            "description": "The question submitted to the AI model to produce the caption",
+            "minLength": 1,
+            "maxLength": 1024,
+            "example": "Describe this image in one sentence"
+          }
+        },
+        "description": "An instruction for computing captions with an AI model",
+        "required": [
+          "aiModelTechnicalId",
+          "enabled",
+          "question"
+        ]
+      },
+      "EligibleTagsInstruction": {
+        "type": "object",
+        "properties": {
+          "aiModelTechnicalId": {
+            "type": "string",
+            "description": "The technical identifier of the AI model to use",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "minLength": 1,
+            "maxLength": 64,
+            "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether this instruction is active",
+            "example": true
+          },
+          "tags": {
+            "description": "The candidate tags the AI model picks from",
+            "example": [
+              "portrait",
+              "landscape",
+              "night"
+            ],
+            "minItems": 1,
+            "maxItems": 1024,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 32,
+              "minLength": 1,
+              "pattern": "^[a-z0-9A-Z-_.:;|/]{1,32}$"
+            }
+          }
+        },
+        "description": "An instruction for computing eligible tags with an AI model",
+        "required": [
+          "aiModelTechnicalId",
+          "enabled",
+          "tags"
         ]
       },
       "SearchOriginNature": {

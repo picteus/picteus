@@ -56,6 +56,7 @@ import {
   ImageSummary,
   ImageTag,
   IntegerIdType,
+  ManifestCapabilityId,
   NumericRange,
   RepositoryLocation,
   RepositoryLocationType,
@@ -264,15 +265,16 @@ export class ImageService
     return new SearchMediaUrlResult(entities.map(entity => new ImageMediaUrl(entity.id, computer.computeUrl(entity.url))), totalCount);
   }
 
-  async searchForRunningCapabilities(parameters: SearchParameters, extensionIds?: string[]): Promise<void>
+  async searchForRunningCapabilities(parameters: SearchParameters, extensionIds?: string[], capabilityIds?: ManifestCapabilityId[]): Promise<void>
   {
     extensionIds = this.checkExtensions(extensionIds, true);
+    const actualCapabilityIds = this.checkCapabilities(capabilityIds);
     const imageIds = await this.requestForImageIds(parameters, "Running the capabilities for the image ids of the search parameters");
     const manifests: ExtendedManifest[] = await this.listCapabilityManifests(extensionIds);
     const extensionService: ExtensionService = this.moduleRef.get(ExtensionService);
     for (const imageId of imageIds)
     {
-      await this.runCapabilitiesOnImage(imageId, manifests, extensionService);
+      await this.runCapabilitiesOnImage(imageId, manifests, extensionService, actualCapabilityIds);
     }
   }
 
@@ -297,14 +299,15 @@ export class ImageService
     return this.toDto(Image, entity as PersistedImage, entity.metadata as PersistedImageMetadata, entity.features, entity.tags);
   }
 
-  async runCapability(id: string, extensionIds?: string[]): Promise<Image>
+  async runCapability(id: string, extensionIds?: string[], capabilityIds?: ManifestCapabilityId[]): Promise<Image>
   {
     logger.info(`Running the capabilities on the image with id '${id}'`);
     extensionIds = this.checkExtensions(extensionIds, true);
+    const actualCapabilityIds = this.checkCapabilities(capabilityIds);
     await this.getPersistedImage(id, false, false, false);
     const manifests: ExtendedManifest[] = await this.listCapabilityManifests(extensionIds);
     const extensionService: ExtensionService = this.moduleRef.get(ExtensionService);
-    await this.runCapabilitiesOnImage(id, manifests, extensionService);
+    await this.runCapabilitiesOnImage(id, manifests, extensionService, actualCapabilityIds);
     const entity: ImageWithIncludes = await this.getPersistedImage(id, true, true, true);
     return this.toDto(Image, entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags);
   }
@@ -1233,11 +1236,11 @@ export class ImageService
     return entity;
   }
 
-  private async runCapabilitiesOnImage(id: string, manifests: ExtendedManifest[], extensionService: ExtensionService): Promise<void>
+  private async runCapabilitiesOnImage(id: string, manifests: ExtendedManifest[], extensionService: ExtensionService, capabilityIds: ManifestCapabilityId[]): Promise<void>
   {
     for (const manifest of manifests)
     {
-      await extensionService.synchronizeImage(manifest, id);
+      await extensionService.synchronizeImage(manifest, id, capabilityIds);
     }
   }
 
@@ -1280,6 +1283,19 @@ export class ImageService
       }
     }
     return extensionIds;
+  }
+
+  private checkCapabilities(capabilityIds: ManifestCapabilityId[] | undefined): ManifestCapabilityId[]
+  {
+    if (capabilityIds !== undefined)
+    {
+      if (capabilityIds.length === 0)
+      {
+        parametersChecker.throwBadParameter("capabilityIds", capabilityIds, "it cannot be empty");
+      }
+      return capabilityIds;
+    }
+    return Object.values(ManifestCapabilityId);
   }
 
   private checkImageBinaryWeight(buffer: Buffer<ArrayBufferLike>): void

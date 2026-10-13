@@ -4,7 +4,9 @@ import Timers from "node:timers";
 import { randomUUID } from "node:crypto";
 
 import { ModuleRef } from "@nestjs/core";
+import { ClassConstructor, instanceToPlain } from "class-transformer";
 import { Prisma } from ".prisma/client";
+import { JsonArray } from "@prisma/client/runtime/library";
 import { fdir } from "fdir";
 import AdmZip from "adm-zip";
 import semver from "semver";
@@ -42,10 +44,12 @@ import { AuthenticationGuard, ExtensionApiKey } from "../app.guards";
 import {
   AiModel,
   applicationXGzipMimeType,
+  CaptionInstruction,
   CommandEntity,
   computeImageFormatsExtensions,
   ConfigurationCapability,
   ConfigurationExtensionCommand,
+  EligibleTagsInstruction,
   Extension,
   ExtensionActivities,
   ExtensionActivity,
@@ -58,6 +62,7 @@ import {
   ExtensionState,
   FieldLengths,
   ImageFormats,
+  ImageTag,
   Manifest,
   ManifestCapability,
   ManifestCapabilityId,
@@ -110,6 +115,7 @@ import { ImageAttachmentService } from "./imageAttachmentService";
 import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import { HostService } from "./hostService";
 import { ImageService } from "./imageServices";
+import { BasisInstruction } from "../dtos/extension.dtos";
 
 
 type ExtensionBundleServe = { extensionApiKey: ExtensionApiKey, settings?: Json, directoryPath: string };
@@ -359,9 +365,19 @@ type Runnable = () => Promise<void>;
 
 export type CapabilityResult<T> = { extensionId: string, value: T };
 
-export type UIProperty = { property: string, ui: Record<string, any> };
+type UIProperty = { property: string, ui: Record<string, any> };
 
 const uiPropertyName = "ui";
+
+type WithAiModel = { aiModel: AiModel };
+
+type CapabilityAdditionalCaptions = WithAiModel & { question: string };
+
+type CapabilityAdditionalEligibleTags = WithAiModel & { tags: ImageTag[] };
+
+type CapabilityAdditionalParameters = { captions: CapabilityAdditionalCaptions[] } | {
+  eligibleTags: CapabilityAdditionalEligibleTags[]
+};
 
 export interface ExtensionSettingsVersions
 {
@@ -890,7 +906,7 @@ export class ExtensionService
     logger.info(`Getting the settings of the extension with id '${id}'`);
     this.checkExtensionExists(id);
     const entity = await this.getPersistedSettings(id);
-    return new ExtensionSettings((entity === null || entity.value === null) ? {} : (entity.value as Json));
+    return new ExtensionSettings((entity === null || entity.value === null) ? {} : entity.value as Json);
   }
 
   async setSettings(id: string, settings: ExtensionSettings): Promise<void>
@@ -947,7 +963,8 @@ export class ExtensionService
     logger.info(`Setting the AI models of the extension with id '${id}'`);
     this.checkExtensionExists(id);
     const technicalIds = models.map((model: AiModel) => model.technicalId);
-    if (new Set<string>(technicalIds).size !== technicalIds.length)
+    const technicalIdsSet = new Set<string>(technicalIds);
+    if (technicalIdsSet.size !== technicalIds.length)
     {
       parametersChecker.throwBadParameterError("The models contain duplicate technical identifiers");
     }
@@ -969,6 +986,19 @@ export class ExtensionService
     }
     // We overwrite the previous models atomically
     await this.entitiesProvider.prisma.$transaction(operations);
+
+    // We delete the "CaptionInstruction" and "EligibleTagsInstruction" items which do not have a matching "technicalId" with the latest AI models
+    for (const instructionClass of [ CaptionInstruction, EligibleTagsInstruction ])
+    {
+      const constructorClass: ClassConstructor<CaptionInstruction | EligibleTagsInstruction> = instructionClass;
+      const instructions = await this.getPersistedSettingsInstructions(id, constructorClass);
+      const filteredInstructions = instructions.filter(instruction => technicalIdsSet.has(instruction.aiModelTechnicalId) === true);
+      if (filteredInstructions.length !== instructions.length)
+      {
+        await this.setPersistedSettingsInstructions(id, filteredInstructions, constructorClass);
+      }
+    }
+
     return await this.findAiModels(id);
   }
 
@@ -976,6 +1006,38 @@ export class ExtensionService
   {
     logger.debug("Listing all extensions AI models");
     return await this.findAiModels();
+  }
+
+  async getCaptionInstructions(id: string): Promise<CaptionInstruction[]>
+  {
+    logger.info(`Getting the caption instructions of the extension with id '${id}'`);
+    this.checkExtensionExists(id);
+    return await this.getPersistedSettingsInstructions<CaptionInstruction>(id, CaptionInstruction);
+  }
+
+  async setCaptionInstructions(id: string, captionInstructions: CaptionInstruction[]): Promise<CaptionInstruction[]>
+  {
+    logger.info(`Setting the caption instructions of the extension with id '${id}'`);
+    this.checkExtensionExists(id);
+    const instructions = await this.checkSettingsInstructions<CaptionInstruction>(id, captionInstructions, CaptionInstruction);
+    await this.setPersistedSettingsInstructions<CaptionInstruction>(id, instructions, CaptionInstruction);
+    return instructions;
+  }
+
+  async getEligibleTagsInstructions(id: string): Promise<EligibleTagsInstruction[]>
+  {
+    logger.info(`Getting the eligible tags instructions of the extension with id '${id}'`);
+    this.checkExtensionExists(id);
+    return await this.getPersistedSettingsInstructions<EligibleTagsInstruction>(id, EligibleTagsInstruction);
+  }
+
+  async setEligibleTagsInstructions(id: string, eligibleTagsInstructions: EligibleTagsInstruction[]): Promise<EligibleTagsInstruction[]>
+  {
+    logger.info(`Setting the eligible tags instructions of the extension with id '${id}'`);
+    this.checkExtensionExists(id);
+    const instructions = await this.checkSettingsInstructions<EligibleTagsInstruction>(id, eligibleTagsInstructions, EligibleTagsInstruction);
+    await this.setPersistedSettingsInstructions<EligibleTagsInstruction>(id, instructions, EligibleTagsInstruction);
+    return instructions;
   }
 
   async synchronize(id: string): Promise<void>
@@ -1003,7 +1065,7 @@ export class ExtensionService
     }
   }
 
-  async synchronizeImage(manifest: Manifest, imageId: string): Promise<void>
+  async synchronizeImage(manifest: Manifest, imageId: string, capabilityIds: ManifestCapabilityId[]): Promise<void>
   {
     logger.info(`Synchronizing the image with id '${imageId}' through the extension with id '${manifest.id}'`);
     for (const instructions of manifest.instructions)
@@ -1012,10 +1074,16 @@ export class ExtensionService
       {
         for (const capability of instructions.capabilities)
         {
+          // We skip the capabilities which are not part of the requested selection, if any
+          if (capabilityIds.indexOf(capability.id) === -1)
+          {
+            continue;
+          }
           const action = fromCapacityToImageEventAction(capability);
           if (action !== undefined && action !== null)
           {
-            await this.synchronizeCapabilityForImage(manifest.id, imageId, action, instructions.events.indexOf(ManifestEvent.ProcessStarted) !== -1, true);
+            const additionalParameters = await this.computeCapabilityAdditionalParameters(manifest.id, capability);
+            await this.synchronizeCapabilityForImage(manifest.id, imageId, additionalParameters, action, instructions.events.indexOf(ManifestEvent.ProcessStarted) !== -1, true);
           }
         }
       }
@@ -2226,9 +2294,11 @@ export class ExtensionService
       }
       logger.info(`Synchronizing ${imageIds.length} image(s) through the extension with id '${id}' for the capability with id '${capability.id}'`);
       const action: ImageEventAction = fromCapacityToImageEventAction(capability)!;
+      // We compute the additional parameters once, as the configured entries cannot differ per image
+      const additionalParameters = await this.computeCapabilityAdditionalParameters(id, capability);
       for (const imageId of imageIds)
       {
-        await this.synchronizeCapabilityForImage(id, imageId, action, viaSocket);
+        await this.synchronizeCapabilityForImage(id, imageId, additionalParameters, action, viaSocket, false);
       }
     };
     if (viaSocket === true && this.perExtensionIdConnections.get(id) !== true)
@@ -2242,20 +2312,21 @@ export class ExtensionService
     }
   }
 
-  private async synchronizeCapabilityForImage(id: string, imageId: string, action: ImageEventAction, viaSocket: boolean, wait: boolean = false): Promise<void>
+  private async synchronizeCapabilityForImage(id: string, imageId: string, additionalParameters: CapabilityAdditionalParameters | undefined, action: ImageEventAction, viaSocket: boolean, wait: boolean = false): Promise<void>
   {
     logger.debug(`Synchronizing the image with id '${imageId}' for the extension with id '${id}' via the '${action}' action`);
     if (viaSocket === true)
     {
+      const value: { id: string } & Partial<CapabilityAdditionalParameters> = { id: imageId, ...additionalParameters };
       if (wait === false)
       {
-        this.notifierService.emit(EventEntity.Image, action, undefined, { id: imageId }, id);
+        this.notifierService.emit(EventEntity.Image, action, undefined, value, id);
       }
       else
       {
         return new Promise<void>(resolve =>
         {
-          this.notifierService.emit(EventEntity.Image, action, undefined, { id: imageId }, id, () =>
+          this.notifierService.emit(EventEntity.Image, action, undefined, value, id, () =>
           {
             resolve();
           });
@@ -2308,6 +2379,108 @@ export class ExtensionService
       }
       this.perExtensionIdChromeExtensionNameMap.delete(id);
     }
+  }
+
+  async getPersistedSettingsInstructions<T extends CaptionInstruction | EligibleTagsInstruction>(id: string, theClass: ClassConstructor<T>): Promise<T[]>
+  {
+    const captionInstructionClass: ClassConstructor<CaptionInstruction> = CaptionInstruction;
+    const isForCaptions = theClass === captionInstructionClass;
+    const result = await this.entitiesProvider.extensionSettings.findUnique({
+      select: { captions: isForCaptions, eligibleTags: !isForCaptions },
+      where: { extensionId: id }
+    });
+    if (result == null)
+    {
+      return [];
+    }
+    const values: JsonArray = (isForCaptions ? result.captions : result.eligibleTags) as JsonArray;
+    return values === null ? [] : values.map(value => plainToInstanceViaJSON(theClass, value as unknown as T));
+  }
+
+  async setPersistedSettingsInstructions<T extends CaptionInstruction | EligibleTagsInstruction>(id: string, instructions: T[], theClass: ClassConstructor<T>): Promise<void>
+  {
+    const captionInstructionClass: ClassConstructor<CaptionInstruction> = CaptionInstruction;
+    const isForCaptions = theClass === captionInstructionClass;
+    const value = instanceToPlain<T>(instructions);
+    const update = isForCaptions ? { captions: value } : { eligibleTags: value };
+    await this.entitiesProvider.extensionSettings.upsert({
+      where: { extensionId: id },
+      create: { extensionId: id, ...update },
+      update
+    });
+  }
+
+  private async checkSettingsInstructions<T extends CaptionInstruction | EligibleTagsInstruction>(id: string, instructions: T[], theClass: ClassConstructor<T>): Promise<T[]>
+  {
+    const technicalIds = instructions.map((entry) => entry.aiModelTechnicalId);
+    if (new Set<string>(technicalIds).size !== technicalIds.length)
+    {
+      parametersChecker.throwBadParameterError(`There are duplicate technical identifiers`);
+    }
+    const checkedInstructions: T[] = [];
+    for (let index = 0; index < instructions.length; index++)
+    {
+      checkedInstructions.push(await parametersChecker.checkObject<T>(theClass, instructions[index], `The item with index '${index}' is invalid`));
+    }
+    const models = await this.findAiModels(id);
+    for (let index = 0; index < instructions.length; index++)
+    {
+      const instruction = instructions[index];
+      if (models.find((model) => model.technicalId === instruction.aiModelTechnicalId) === undefined)
+      {
+        parametersChecker.throwBadParameter(`[${index}].aiModelTechnicalId`, instruction.aiModelTechnicalId, "there is no AI model with that technical identifier");
+      }
+    }
+    return checkedInstructions.sort((instruction1, instruction2) => instruction1.aiModelTechnicalId.localeCompare(instruction2.aiModelTechnicalId));
+  }
+
+  private async computeCapabilityAdditionalParameters(id: string, capability: ManifestCapability): Promise<CapabilityAdditionalParameters | undefined>
+  {
+    const hasDetails: boolean = (capability as { details?: object }).details !== undefined;
+    if (hasDetails === false)
+    {
+      return undefined;
+    }
+
+    function findAiModel<T extends BasisInstruction>(instruction: T, models: ExtensionAiModel[]): AiModel
+    {
+      const extensionAiModel = models.find((aiModel) => aiModel.technicalId === instruction.aiModelTechnicalId);
+      // The AI model cannot be undefined, because of the harness in the "setAiModels()" method
+      const { extensionId, creationDate, ...aiModel } = extensionAiModel!;
+      return aiModel;
+    }
+
+    if (capability.id === ManifestCapabilityId.ImageFeatures)
+    {
+      const instructions = await this.getCaptionInstructions(id);
+      let captions: CapabilityAdditionalCaptions[] = [];
+      if (instructions.length > 0)
+      {
+        const models = await this.findAiModels(id);
+        captions = instructions.filter(instruction => instruction.enabled).map(instruction =>
+        {
+          const aiModel = findAiModel(instruction, models);
+          return { aiModel, question: instruction.question };
+        });
+      }
+      return { captions };
+    }
+    else if (capability.id === ManifestCapabilityId.ImageTags)
+    {
+      const instructions = await this.getEligibleTagsInstructions(id);
+      let eligibleTags: CapabilityAdditionalEligibleTags[] = [];
+      if (instructions.length > 0)
+      {
+        const models = await this.findAiModels(id);
+        eligibleTags = instructions.filter(instruction => instruction.enabled).map(instruction =>
+        {
+          const aiModel = findAiModel(instruction, models);
+          return { aiModel, tags: instruction.tags };
+        });
+      }
+      return { eligibleTags };
+    }
+    return undefined;
   }
 
   private async findAiModels(extensionId?: string): Promise<ExtensionAiModel[]>

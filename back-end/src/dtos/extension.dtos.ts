@@ -1547,14 +1547,13 @@ export class ExtensionAiModel extends AiModel
 
 }
 
-@ApiSchema({ description: "A caption computation entry declared for an AI model" })
-export class ExtensionCaption
+@ApiSchema({ description: "A basis instruction for computing with an AI model" })
+export class BasisInstruction
 {
 
-  constructor(aiModelTechnicalId: string, question: string, enabled: boolean)
+  constructor(aiModelTechnicalId: string, enabled: boolean)
   {
     this.aiModelTechnicalId = aiModelTechnicalId;
-    this.question = question;
     this.enabled = enabled;
   }
 
@@ -1575,6 +1574,35 @@ export class ExtensionCaption
   @NotEquals(null)
   @Expose()
   readonly aiModelTechnicalId: string;
+
+  @ApiProperty(
+    {
+      description: "Whether this instruction is active",
+      type: Boolean,
+      required: true,
+      example: true
+    }
+  )
+  @IsBoolean()
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly enabled: boolean;
+
+}
+
+@ApiSchema({ description: "An instruction for computing captions with an AI model" })
+export class CaptionInstruction extends BasisInstruction
+{
+
+  // The maximum number of captions an extension can declare
+  static readonly PER_EXTENSION_CAPTIONS_MAXIMUM = 256;
+
+  constructor(aiModelTechnicalId: string, enabled: boolean, question: string)
+  {
+    super(aiModelTechnicalId, enabled);
+    this.question = question;
+  }
 
   @ApiProperty(
     {
@@ -1594,56 +1622,31 @@ export class ExtensionCaption
   @Expose()
   readonly question: string;
 
-  @ApiProperty(
-    {
-      description: "Whether this caption entry is active",
-      type: Boolean,
-      required: true,
-      example: true
-    }
-  )
-  @IsBoolean()
-  @IsDefined()
-  @NotEquals(null)
-  @Expose()
-  readonly enabled: boolean;
-
 }
 
-@ApiSchema({ description: "An eligible tags computation entry declared for an AI model" })
-export class ExtensionEligibleTags
+@ApiSchema({ description: "An instruction for computing eligible tags with an AI model" })
+export class EligibleTagsInstruction extends BasisInstruction
 {
 
-  constructor(aiModelTechnicalId: string, tags: ImageTag[], enabled: boolean)
-  {
-    this.aiModelTechnicalId = aiModelTechnicalId;
-    this.tags = tags;
-    this.enabled = enabled;
-  }
+  // The maximum number of eligible tags an extension can declare
+  static readonly PER_EXTENSION_ELIGIBLE_TAGS_MAXIMUM = 256;
 
-  @ApiProperty(
-    {
-      ...technicalLongRelaxedSchema,
-      description: "The technical identifier of the AI model to use",
-      type: "string",
-      required: true,
-      example: "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
-    }
-  )
-  @IsString()
-  @MinLength(1)
-  @MaxLength(FieldLengths.longTechnical)
-  @Matches(technicalLongRelaxedPattern)
-  @IsDefined()
-  @NotEquals(null)
-  @Expose()
-  readonly aiModelTechnicalId: string;
+  // The maximum number of eligible tags
+  static readonly PER_EXTENSION_TAGS_MAXIMUM = 1_024;
+
+  constructor(aiModelTechnicalId: string, enabled: boolean, tags: ImageTag[])
+  {
+    super(aiModelTechnicalId, enabled);
+    this.tags = tags;
+  }
 
   @ApiProperty(
     {
       ...technicalShortRelaxedSchema,
       description: "The candidate tags the AI model picks from",
       type: [ String ],
+      minItems: 1,
+      maxItems: EligibleTagsInstruction.PER_EXTENSION_TAGS_MAXIMUM,
       required: true,
       example: [ "portrait", "landscape", "night" ]
     }
@@ -1657,20 +1660,6 @@ export class ExtensionEligibleTags
   @NotEquals(null)
   @Expose()
   readonly tags: ImageTag[];
-
-  @ApiProperty(
-    {
-      description: "Whether this eligible tags entry is active",
-      type: Boolean,
-      required: true,
-      example: true
-    }
-  )
-  @IsBoolean()
-  @IsDefined()
-  @NotEquals(null)
-  @Expose()
-  readonly enabled: boolean;
 
 }
 

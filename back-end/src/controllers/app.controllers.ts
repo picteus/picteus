@@ -60,9 +60,11 @@ import {
   ApplicationSettings,
   applicationXGzipMimeType,
   attachmentUriSchema,
+  CaptionInstruction,
   Collection,
   CommandEntity,
   ComputedImageFormat,
+  EligibleTagsInstruction,
   Extension,
   ExtensionActivities,
   ExtensionActivity,
@@ -95,6 +97,7 @@ import {
   imageUrlSchema,
   integerIdSchema,
   IntegerIdType,
+  ManifestCapabilityId,
   NumericRange,
   Repository,
   RepositoryActivities,
@@ -851,6 +854,136 @@ export class ExtensionController
       throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
     }
     return await this.extensionService.setAiModels(id, models);
+  }
+
+  @Get(":id/getCaptionInstructions")
+  @ApiOperation(
+    {
+      summary: "Gets the caption instructions for an extension",
+      description: "Returns the caption instructions declared for an extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The caption instructions for the extension",
+      type: CaptionInstruction,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionSettingsRead ]))
+  async getCaptionInstructions(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType): Promise<CaptionInstruction[]>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.extensionService.getCaptionInstructions(id);
+  }
+
+  @Put(":id/setCaptionInstructions")
+  @ApiOperation(
+    {
+      summary: "Sets the caption instructions for an extension",
+      description: "Overwrites the caption instructions declared for an extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiBody({
+    description: "The caption instructions for the extension",
+    schema:
+      {
+        type: "array",
+        items: { $ref: getSchemaPath(CaptionInstruction) },
+        minItems: 0,
+        maxItems: CaptionInstruction.PER_EXTENSION_CAPTIONS_MAXIMUM
+      },
+    required: true
+  })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The caption instructions for the extension",
+      type: CaptionInstruction,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionSettingsWrite ]))
+  async setCaptionInstructions(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Body(new ParseArrayPipe({
+    items: CaptionInstruction, exceptionFactory
+  })) captionInstructions: CaptionInstruction[]): Promise<CaptionInstruction[]>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.extensionService.setCaptionInstructions(id, captionInstructions);
+  }
+
+  @Get(":id/getEligibleTagsInstructions")
+  @ApiOperation(
+    {
+      summary: "Gets the eligible tags instructions for an extension",
+      description: "Returns the eligible tags instructions declared for an extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The eligible tags instructions for the extension",
+      type: EligibleTagsInstruction,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionSettingsRead ]))
+  async getEligibleTagsInstructions(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType): Promise<EligibleTagsInstruction[]>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.extensionService.getEligibleTagsInstructions(id);
+  }
+
+  @Put(":id/setEligibleTagsInstructions")
+  @ApiOperation(
+    {
+      summary: "Sets the eligible tags instructions for an extension",
+      description: "Overwrites the eligible tags instructions declared for an extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiBody({
+    description: "The eligible tags instructions for the extension",
+    schema:
+      {
+        type: "array",
+        items: { $ref: getSchemaPath(EligibleTagsInstruction) },
+        minItems: 0,
+        maxItems: EligibleTagsInstruction.PER_EXTENSION_ELIGIBLE_TAGS_MAXIMUM
+      },
+    required: true
+  })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The eligible tags instructions for the extension",
+      type: EligibleTagsInstruction,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionSettingsWrite ]))
+  async setEligibleTagsInstructions(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Body(new ParseArrayPipe({
+    items: EligibleTagsInstruction, exceptionFactory
+  })) eligibleTagsInstructions: EligibleTagsInstruction[]): Promise<EligibleTagsInstruction[]>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.extensionService.setEligibleTagsInstructions(id, eligibleTagsInstructions);
   }
 
   @Put(":id/synchronize")
@@ -1880,13 +2013,19 @@ export class ImageController
     schema: { items: extensionIdSchema, type: "array" },
     required: false
   })
+  @ApiQuery({
+    name: "capabilityIds",
+    description: "The capabilities to run",
+    schema: { type: "array", items: { type: "string", enum: Object.values(ManifestCapabilityId) } },
+    required: false
+  })
   @ApiBody({ description: "The search parameters", type: SearchParameters, required: true })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withAllPolicies([ ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingWrite ]))
-  async searchRunCapabilities(@Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds: string[] | undefined, @Body() parameters: SearchParameters): Promise<void>
+  async searchRunCapabilities(@Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds: string[] | undefined, @Body() parameters: SearchParameters, @Query("capabilityIds", new ArrayValidationPipe<ManifestCapabilityId>()) capabilityIds: ManifestCapabilityId[] | undefined): Promise<void>
   {
-    return await this.imageService.searchForRunningCapabilities(parameters, extensionIds);
+    return await this.imageService.searchForRunningCapabilities(parameters, extensionIds, capabilityIds);
   }
 
   @Get(":id/get")
@@ -1924,6 +2063,12 @@ export class ImageController
     schema: { items: extensionIdSchema, type: "array" },
     required: false
   })
+  @ApiQuery({
+    name: "capabilityIds",
+    description: "The capabilities to run",
+    schema: { type: "array", items: { type: "string", enum: Object.values(ManifestCapabilityId) } },
+    required: false
+  })
   @ApiResponse(
     {
       status: OK,
@@ -1932,9 +2077,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withAllPolicies([ ApiScope.ImageTagWrite, ApiScope.ImageFeatureWrite, ApiScope.ImageEmbeddingWrite ]))
-  async runCapabilities(@Param("id") id: string, @Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds: string[] | undefined): Promise<Image>
+  async runCapabilities(@Param("id") id: string, @Query("extensionIds", new ArrayValidationPipe<ExtensionIdType>()) extensionIds: string[] | undefined, @Query("capabilityIds", new ArrayValidationPipe<ManifestCapabilityId>()) capabilityIds: ManifestCapabilityId[] | undefined): Promise<Image>
   {
-    return await this.imageService.runCapability(id, extensionIds);
+    return await this.imageService.runCapability(id, extensionIds, capabilityIds);
   }
 
   @Put(":id/modify")
