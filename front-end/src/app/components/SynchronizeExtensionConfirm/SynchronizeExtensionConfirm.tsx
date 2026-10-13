@@ -5,8 +5,9 @@ import { IconAlertTriangle } from "@tabler/icons-react";
 
 import { Extension, ManifestCapability, SearchParameters } from "@picteus/ws-client";
 
+import { useModalContext } from "app/context";
 import { ExtensionsService } from "app/services";
-import { ExtensionCapability, ImagesCollection } from "app/components";
+import { ExtensionCapability, ImagesCollection, ModalActions } from "app/components";
 
 
 type SynchronizeExtensionConfirmPropsType = {
@@ -25,11 +26,17 @@ export default function SynchronizeExtensionConfirm({
 }: SynchronizeExtensionConfirmPropsType): ReactElement
 {
   const [ t ] = useTranslation();
+  const modalContext = useModalContext();
 
   const capabilities = useMemo((): ManifestCapability[] =>
   {
     return ExtensionsService.computeCapabilities(extension);
   }, [ extension ]);
+
+  function handleCancel(): void
+  {
+    modalContext?.closeModal(false);
+  }
 
   return (
     <Stack gap="md">
@@ -51,11 +58,17 @@ export default function SynchronizeExtensionConfirm({
         </Flex>
       </Stack>
 
-      <Flex justify="flex-end" gap="md">
+      <ModalActions>
+        <Button
+          variant="subtle"
+          onClick={handleCancel}
+        >
+          {t("button.cancel")}
+        </Button>
         <Button onClick={onConfirm}>
           {t("button.synchronize")}
         </Button>
-      </Flex>
+      </ModalActions>
     </Stack>
   );
 }
