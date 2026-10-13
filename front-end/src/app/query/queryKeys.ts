@@ -19,6 +19,7 @@ export const queryKeys =
   },
   images: {
     all: [ "images" ] as const,
-    detail: (imageId: string) => [ "images", imageId ] as const
+    detail: (imageId: string) => [ "images", imageId ] as const,
+    recentSummaries: (imageIds: readonly string[]) => [ "images", "recentSummaries", imageIds ] as const
   }
 } as const;

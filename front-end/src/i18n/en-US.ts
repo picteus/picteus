@@ -24,7 +24,7 @@ export default {
     placeholder: "Jump to, search images, run a command…",
     imageTab: "Image",
     routes: {
-      explore: "Explore",
+      explorer: "Explorer",
       desk: "Desk",
       repositories: "Repositories",
       collections: "Collections",

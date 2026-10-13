@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Group, Kbd, Text, useMantineColorScheme } from "@mantine/core";
 import { randomId } from "@mantine/hooks";
 import { Spotlight } from "@mantine/spotlight";
+import { useQuery } from "@tanstack/react-query";
 import {
   IconActivity,
   IconBooks,
@@ -16,11 +17,14 @@ import {
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
+import { ImageSummary, SearchImageSummaryResult, SearchOriginNature } from "@picteus/ws-client";
+
 import type { ProcessCommandType } from "types";
 import { ROUTES } from "utils";
-import { StorageService } from "app/services";
+import { queryKeys } from "app/query";
+import { ImageService, StorageService } from "app/services";
 import { useDeskTabsContext } from "app/context";
-import { useImage, useProcessCommands } from "app/hooks";
+import { useProcessCommands } from "app/hooks";
 import { ImageThumbnail, ProcessCommand } from "app/components";
 
 import style from "./UniversalActionCenter.module.scss";
@@ -28,21 +32,16 @@ import style from "./UniversalActionCenter.module.scss";
 
 type RecentImageSpotlightActionPropsType = {
   readonly imageId: string;
+  readonly image?: ImageSummary;
   readonly onSelect: (imageId: string, imageName?: string) => void;
 };
 
-type ActionItemType = {
-  readonly id: string;
-  readonly label: string;
-  readonly icon: ReactElement;
-  readonly execute: () => void;
-};
-
-function RecentImageSpotlightAction(props: RecentImageSpotlightActionPropsType): ReactElement
+function RecentImageSpotlightAction({
+  imageId,
+  image,
+  onSelect
+}: RecentImageSpotlightActionPropsType): ReactElement
 {
-  const { imageId, onSelect } = props;
-  const { data: image } = useImage(imageId);
-
   const subLabel = useMemo<string | undefined>(() =>
   {
     if (!image)
@@ -71,6 +70,20 @@ function RecentImageSpotlightAction(props: RecentImageSpotlightActionPropsType):
   );
 }
 
+type RecentImageItemType = {
+  readonly imageId: string;
+  readonly image?: ImageSummary;
+  readonly isLoading: boolean;
+};
+
+type ActionItemType = {
+  readonly id: string;
+  readonly label: string;
+  readonly icon: ReactElement;
+  readonly execute: () => void;
+};
+
+
 export default function UniversalActionCenter(): ReactElement
 {
   const [ t ] = useTranslation();
@@ -78,84 +91,83 @@ export default function UniversalActionCenter(): ReactElement
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const { commands } = useProcessCommands();
   const { addTab } = useDeskTabsContext();
-
   const [ searchQuery, setSearchQuery ] = useState("");
-
   const isDark = colorScheme === "dark";
+  const iconSize = 18;
 
   const [ recentImageIds, setRecentImageIds ] = useState<string[]>(() =>
   {
     return StorageService.getRecentImageIds();
   });
 
-  const navActions = useMemo<ActionItemType[]>(() =>
+  const screenActions = useMemo<ActionItemType[]>(() =>
   {
     return [
       {
-        id: "nav-explore",
-        label: t("actionsCenter.routes.explore"),
-        icon: <IconPhoto size={18}/>,
+        id: "explorer",
+        label: t("actionsCenter.routes.explorer"),
+        icon: <IconPhoto size={iconSize}/>,
         execute: (): void =>
         {
           navigate(ROUTES.home);
         }
       },
       {
-        id: "nav-desk",
+        id: "desk",
         label: t("actionsCenter.routes.desk"),
-        icon: <IconLayout size={18}/>,
+        icon: <IconLayout size={iconSize}/>,
         execute: (): void =>
         {
           navigate(ROUTES.desk);
         }
       },
       {
-        id: "nav-repositories",
+        id: "repositories",
         label: t("actionsCenter.routes.repositories"),
-        icon: <IconFolderOpen size={18}/>,
+        icon: <IconFolderOpen size={iconSize}/>,
         execute: (): void =>
         {
           navigate(ROUTES.repositories);
         }
       },
       {
-        id: "nav-collections",
+        id: "collections",
         label: t("actionsCenter.routes.collections"),
-        icon: <IconBooks size={18}/>,
+        icon: <IconBooks size={iconSize}/>,
         execute: (): void =>
         {
           navigate(ROUTES.collections);
         }
       },
       {
-        id: "nav-extensions",
+        id: "extensions",
         label: t("actionsCenter.routes.extensions"),
-        icon: <IconLayout size={18}/>,
+        icon: <IconLayout size={iconSize}/>,
         execute: (): void =>
         {
           navigate(ROUTES.extensions);
         }
       },
       {
-        id: "nav-activity",
+        id: "activity",
         label: t("actionsCenter.routes.activity"),
-        icon: <IconActivity size={18}/>,
+        icon: <IconActivity size={iconSize}/>,
         execute: (): void =>
         {
           navigate(ROUTES.activity);
         }
       },
       {
-        id: "nav-settings",
+        id: "settings",
         label: t("actionsCenter.routes.settings"),
-        icon: <IconSettings size={18}/>,
+        icon: <IconSettings size={iconSize}/>,
         execute: (): void =>
         {
           navigate(ROUTES.settings);
         }
       }
     ];
-  }, [ navigate, t ]);
+  }, [ navigate ]);
 
   const toggleActions = useMemo<ActionItemType[]>(() =>
   {
@@ -163,28 +175,28 @@ export default function UniversalActionCenter(): ReactElement
       {
         id: "toggle-color-scheme",
         label: isDark ? t("actionsCenter.switchToLight") : t("actionsCenter.switchToDark"),
-        icon: isDark ? <IconSun size={18}/> : <IconMoon size={18}/>,
+        icon: isDark ? <IconSun size={iconSize}/> : <IconMoon size={iconSize}/>,
         execute: (): void =>
         {
           setColorScheme(isDark ? "light" : "dark");
         }
       }
     ];
-  }, [ isDark, setColorScheme, t ]);
+  }, [ isDark, setColorScheme ]);
 
   const query = searchQuery.trim().toLowerCase();
 
-  const filteredNavActions = useMemo<ActionItemType[]>(() =>
+  const filteredScreenActions = useMemo<ActionItemType[]>(() =>
   {
     if (!query)
     {
-      return navActions;
+      return screenActions;
     }
-    return navActions.filter((navAction) =>
+    return screenActions.filter((action) =>
     {
-      return navAction.label.toLowerCase().includes(query);
+      return action.label.toLowerCase().includes(query);
     });
-  }, [ navActions, query ]);
+  }, [ screenActions, query ]);
 
   const filteredCommands = useMemo<ProcessCommandType[]>(() =>
   {
@@ -207,29 +219,83 @@ export default function UniversalActionCenter(): ReactElement
     {
       return toggleActions;
     }
-    return toggleActions.filter((toggleAction) =>
+    return toggleActions.filter((action) =>
     {
-      return toggleAction.label.toLowerCase().includes(query);
+      return action.label.toLowerCase().includes(query);
     });
   }, [ toggleActions, query ]);
 
-  const filteredRecentImageIds = useMemo<string[]>(() =>
-  {
-    if (!query)
-    {
-      return recentImageIds;
-    }
-    return recentImageIds.filter((imageId) =>
-    {
-      return imageId.toLowerCase().includes(query);
-    });
-  }, [ recentImageIds, query ]);
+  const uniqueRecentImageIds = useMemo<string[]>(() => Array.from(new Set(recentImageIds)), [ recentImageIds ]);
 
-  const totalResults =
-    filteredNavActions.length +
-    filteredCommands.length +
-    filteredToggleActions.length +
-    filteredRecentImageIds.length;
+  const { data: recentImagesResult, isLoading: isRecentImagesLoading } = useQuery(
+    {
+      queryKey: queryKeys.images.recentSummaries(uniqueRecentImageIds),
+      queryFn: (): Promise<SearchImageSummaryResult> =>
+      {
+        return ImageService.searchSummaries(
+          {
+            filter: {
+              origin: {
+                kind: SearchOriginNature.Images,
+                ids: uniqueRecentImageIds
+              }
+            },
+            range: { take: uniqueRecentImageIds.length }
+          }
+        );
+      },
+      enabled: uniqueRecentImageIds.length > 0
+    }
+  );
+
+  const recentImages = useMemo<RecentImageItemType[]>(() =>
+    {
+      const summaryItems = recentImagesResult?.items ?? [];
+      const summariesById = new Map<string, ImageSummary>(
+        summaryItems.map(
+          (summary): [ string, ImageSummary ] =>
+          {
+            return [ summary.id, summary ];
+          }
+        )
+      );
+
+      return recentImageIds.map((imageId): RecentImageItemType =>
+        {
+          return {
+            imageId,
+            image: summariesById.get(imageId),
+            isLoading: isRecentImagesLoading
+          };
+        }
+      );
+    },
+    [ recentImageIds, recentImagesResult, isRecentImagesLoading ]
+  );
+
+  const filteredRecentImages = useMemo<RecentImageItemType[]>(() =>
+    {
+      return recentImages.filter(
+        (recentImageItem): boolean =>
+        {
+          if (!recentImageItem.image)
+          {
+            return recentImageItem.isLoading;
+          }
+          if (!query)
+          {
+            return true;
+          }
+          const nameMatch = recentImageItem.image.name.toLowerCase().includes(query);
+          const idMatch = recentImageItem.imageId.toLowerCase().includes(query);
+          return Boolean(nameMatch || idMatch);
+        }
+      );
+    },
+    [ recentImages, query ]
+  );
+
+  const totalResults = filteredScreenActions.length + filteredCommands.length + filteredToggleActions.length + filteredRecentImages.length;
 
   function handleSelectRecentImage(imageId: string, imageName?: string): void
   {
@@ -269,14 +335,14 @@ export default function UniversalActionCenter(): ReactElement
     >
       <Spotlight.Search
         placeholder={t("actionsCenter.placeholder")}
-        leftSection={<IconSearch size={18} style={{ opacity: 0.6 }}/>}
+        leftSection={<IconSearch size={iconSize} style={{ opacity: 0.6 }}/>}
         rightSection={<Kbd size="xs">{t("actionsCenter.keys.esc")}</Kbd>}
       />
 
       <Spotlight.ActionsList>
-        {filteredNavActions.length > 0 && (
+        {filteredScreenActions.length > 0 && (
           <Spotlight.ActionsGroup label={t("actionsCenter.sections.jumpTo")}>
-            {filteredNavActions.map((navAction) => (
+            {filteredScreenActions.map((navAction) => (
               <Spotlight.Action
                 key={navAction.id}
                 onClick={navAction.execute}
@@ -311,12 +377,13 @@ export default function UniversalActionCenter(): ReactElement
           </Spotlight.ActionsGroup>
         )}
 
-        {filteredRecentImageIds.length > 0 && (
+        {filteredRecentImages.length > 0 && (
           <Spotlight.ActionsGroup label={t("actionsCenter.sections.recentImages")}>
-            {filteredRecentImageIds.map((imageId) => (
+            {filteredRecentImages.map((recentImageItem) => (
               <RecentImageSpotlightAction
-                key={imageId}
-                imageId={imageId}
+                key={recentImageItem.imageId}
+                imageId={recentImageItem.imageId}
+                image={recentImageItem.image}
                 onSelect={handleSelectRecentImage}
               />
             ))}

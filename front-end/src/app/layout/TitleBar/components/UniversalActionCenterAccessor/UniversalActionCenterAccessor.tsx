@@ -26,7 +26,7 @@ export default function UniversalActionCenterAccessor(): ReactElement
           {t("actionsCenter.searchOrJump")}
         </Text>
       </Group>
-      <ShortcutBadge combo="mod+k" size="xs"/>
+      <ShortcutBadge combo="mod + k" size="xs"/>
     </UnstyledButton>
   );
 }
