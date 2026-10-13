@@ -175,11 +175,10 @@ export default function useImageCommands({
       {
         return computeIcon("pin", size);
       },
-      execute: async () =>
+      execute: async (): Promise<void> =>
       {
-        const id = randomId();
-        addTab({
-          id,
+        const tabId = addTab({
+          id: randomId(),
           label: image.name,
           content: {
             kind: "image",
@@ -188,12 +187,12 @@ export default function useImageCommands({
         }, false);
         const illustrationUri = await EventService.computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
         void NotificationService.storeNotification({
-          id,
+          id: tabId,
           milliseconds: Date.now(),
           type: "tab",
           title: t("commands.pinNotification.title"),
           subtitle: t("commands.pinNotification.subtitle"),
-          data: { id },
+          data: { id: tabId },
           illustrationUri
         });
       }

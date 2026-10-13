@@ -37,15 +37,11 @@ function DeskTabContent({ tab }: DeskTabContentPropsType): ReactElement | null
 
   const { data: image } = useImage(singleImageId, { onError: handleImageError });
 
-  const imageIdentifiers = content.kind === "images"
-    ? content.images.map((imageItem) => imageItem.imageId).join(",")
-    : "";
+  const imageIdentifiers = content.kind === "images" ? content.images.map((imageItem) => imageItem.imageId).join(",") : "";
 
   const viewData = useMemo<ViewTabDataType>(() =>
   {
-    const ids = content.kind === "images"
-      ? content.images.map((imageItem) => imageItem.imageId)
-      : [];
+    const ids = content.kind === "images" ? content.images.map((imageItem) => imageItem.imageId) : [];
 
     return {
       mode: "masonry",

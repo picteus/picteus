@@ -17,10 +17,10 @@ import {
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { ImageSummary, SearchImageSummaryResult, SearchOriginNature } from "@picteus/ws-client";
+import { type ImageSummary, type SearchImageSummaryResult, SearchOriginNature } from "@picteus/ws-client";
 
 import type { ProcessCommandType } from "types";
-import { ROUTES } from "utils";
+import { computeDeskRoute, ROUTES } from "utils";
 import { queryKeys } from "app/query";
 import { ImageService, StorageService } from "app/services";
 import { useDeskTabsContext } from "app/context";
@@ -299,7 +299,7 @@ export default function UniversalActionCenter(): ReactElement
 
   function handleSelectRecentImage(imageId: string, imageName?: string): void
   {
-    addTab({
+    const tabId = addTab({
       id: randomId(),
       label: imageName ?? t("actionsCenter.imageTab"),
       content: {
@@ -307,7 +307,7 @@ export default function UniversalActionCenter(): ReactElement
         imageId
       }
     }, true);
-    navigate(ROUTES.desk);
+    navigate(computeDeskRoute(tabId));
   }
 
   return (

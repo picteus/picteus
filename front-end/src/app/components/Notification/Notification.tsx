@@ -20,13 +20,13 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
 
   return (notification: NotificationType) =>
   {
-    return async () =>
+    return async (): Promise<void> =>
     {
       try
       {
         if (notification.type === "image")
         {
-          addTab({
+          const tabId = addTab({
             id: notification.id,
             extensionId: notification.extensionId,
             label: notification.title,
@@ -35,6 +35,7 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
               imageId: notification.data.id
             }
           }, true);
+          navigate(computeDeskRoute(tabId));
         }
         else if (notification.type === "action")
         {

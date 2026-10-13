@@ -129,13 +129,18 @@ export function DeskTabsProvider({ children }: { children?: ReactNode }): ReactN
     timestampInMilliseconds?: number;
   }, isShow: boolean): string
   {
-    const targetImageId = tab.content.kind === "image" && tab.content.imageId;
+    const targetImageId = tab.content.kind === "image" ? tab.content.imageId : undefined;
     if (targetImageId !== undefined)
     {
       StorageService.addRecentImageId(targetImageId);
       const existingTab = findImageTab(targetImageId);
       if (existingTab !== undefined)
       {
+        if (isShow === true)
+        {
+          setActiveTab(existingTab.id);
+        }
+
         return existingTab.id;
       }
     }

@@ -42,9 +42,10 @@ export default function DeskScreen(): ReactElement
   const [ dropTargetTabId, setDropTargetTabId ] = useState<string | null>(null);
   const scrollViewportReference = useRef<HTMLDivElement>(null);
   const tabElementsReference = useRef<Map<string, HTMLDivElement>>(new Map());
+  const imageIdQueryParameterName = "imageId";
 
-  const queryTabIdentifier = searchParameters.get(DESK_TAB_QUERY_PARAMETER_NAME);
-  const tabMatchingQuery = queryTabIdentifier ? tabs.find((tabItem) => tabItem.id === queryTabIdentifier) : undefined;
+  const queryTabIdentifier = searchParameters.get(DESK_TAB_QUERY_PARAMETER_NAME) ?? searchParameters.get(imageIdQueryParameterName);
+  const tabMatchingQuery = queryTabIdentifier ? tabs.find((tabItem) => tabItem.id === queryTabIdentifier || (tabItem.content.kind === "image" && tabItem.content.imageId === queryTabIdentifier)) : undefined;
   const tabMatchingActive = tabs.find((tabItem) => tabItem.id === activeTab);
   const mostRecentTab = findMostRecentTab(tabs);
   const selectedTab = (queryTabIdentifier ? (tabMatchingQuery ?? mostRecentTab) : undefined) ?? tabMatchingActive ??
@@ -97,6 +98,7 @@ export default function DeskScreen(): ReactElement
 
   useEffect(() =>
   {
+    const tabQueryParameterName = "tab";
     if (tabs.length === 0)
     {
       if (queryTabIdentifier)
@@ -105,7 +107,8 @@ export default function DeskScreen(): ReactElement
           {
             const nextParameters = new URLSearchParams(previousParameters);
             nextParameters.delete(DESK_TAB_QUERY_PARAMETER_NAME);
-            nextParameters.delete("tab");
+            nextParameters.delete(tabQueryParameterName);
+            nextParameters.delete(imageIdQueryParameterName);
             return nextParameters;
           },
           { replace: true }
@@ -122,6 +125,20 @@ export default function DeskScreen(): ReactElement
         {
           setActiveTab(tabMatchingQuery.id);
         }
+
+        if (queryTabIdentifier !== tabMatchingQuery.id)
+        {
+          setSearchParameters((previousParameters) =>
+            {
+              const nextParameters = new URLSearchParams(previousParameters);
+              nextParameters.set(DESK_TAB_QUERY_PARAMETER_NAME, tabMatchingQuery.id);
+              nextParameters.delete(imageIdQueryParameterName);
+              nextParameters.delete(tabQueryParameterName);
+              return nextParameters;
+            },
+            { replace: true }
+          );
+        }
       }
       else if (mostRecentTab)
       {
@@ -136,6 +153,8 @@ export default function DeskScreen(): ReactElement
           {
             const nextParameters = new URLSearchParams(previousParameters);
             nextParameters.set(DESK_TAB_QUERY_PARAMETER_NAME, mostRecentTab.id);
+            nextParameters.delete(imageIdQueryParameterName);
+            nextParameters.delete(tabQueryParameterName);
             return nextParameters;
           },
           { replace: true }

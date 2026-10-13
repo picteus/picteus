@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 import { Box, Stack } from "@mantine/core";
 
 import { DeskTabType } from "types";
@@ -17,6 +17,18 @@ export interface DeskTabPanelPropsType
 
 function DeskTabPanel({ tab, isActive }: DeskTabPanelPropsType): ReactElement
 {
+  const [ hasBeenActive, setHasBeenActive ] = useState<boolean>(isActive);
+
+  useEffect(() =>
+  {
+    if (isActive === true && hasBeenActive === false)
+    {
+      setHasBeenActive(true);
+    }
+  }, [ isActive, hasBeenActive ]);
+
+  const shouldRenderContent = isActive === true || hasBeenActive === true;
+
   return (
     <Box
       pos="absolute"
@@ -28,7 +40,7 @@ function DeskTabPanel({ tab, isActive }: DeskTabPanelPropsType): ReactElement
         <Stack h="100%" w="100%" gap={0} style={{ overflow: "hidden" }}>
           <TabHeader tab={tab}/>
           <Box flex={1} pos="relative" style={{ overflow: "hidden" }}>
-            <DeskTabContent tab={tab}/>
+            {shouldRenderContent === true && <DeskTabContent tab={tab}/>}
           </Box>
         </Stack>
       </StackableScreen>
