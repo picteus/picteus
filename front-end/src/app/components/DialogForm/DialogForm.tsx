@@ -1,60 +1,98 @@
-import { Alert, Button, Flex, Text } from "@mantine/core";
+import React, { type ReactElement, type ReactNode, useCallback } from "react";
+import { Alert, Box, Button, Flex, Text } from "@mantine/core";
 import { IconCircleX, IconInfoCircle, IconQuestionMark } from "@tabler/icons-react";
 
 import { SearchOriginNature } from "@picteus/ws-client";
 
 import { DialogType } from "types";
+import { useModalContext } from "app/context";
 import { useKey } from "app/hooks";
-import { CopyText, ImagesCollection } from "app/components";
-
-import style from "./DialogForm.module.scss";
+import { CopyText, Iframe, ImagesCollection, Markdown, ModalActions } from "app/components";
 
 
-type DialogFormType = { dialog: DialogType; imageIds?: string[]; onSend(isYes: boolean): void };
-
-export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
-{
-  useKey("Enter", () => onSend(true));
-
-  const Buttons = () =>
+export type DialogFormPropsType =
   {
-    return Object.entries(dialog.buttons).map(([ key, label ]) =>
-    {
-      const isYes = key === "yes";
-      return (
-        <Button
-          {...(!isYes ? { variant: "default" } : {})}
-          key={key}
-          onClick={() => onSend(isYes)}
-        >
-          {label}
-        </Button>
-      );
-    });
+    readonly dialog: DialogType;
+    readonly imageIds?: string[];
+    readonly onSend: (isYes: boolean) => void;
   };
 
-  function computeAlertProps()
+type AlertPropsType =
+  {
+    readonly color: string;
+    readonly icon: ReactNode;
+  };
+
+export default function DialogForm(props: DialogFormPropsType): ReactElement
+{
+  const { dialog, imageIds, onSend } = props;
+  const modalContext = useModalContext();
+
+  const handleSend = useCallback(
+    (isYes: boolean): void =>
+    {
+      onSend(isYes);
+      if (modalContext !== null)
+      {
+        modalContext.closeModal(true);
+      }
+    },
+    [ onSend, modalContext ]
+  );
+
+  useKey("Enter", () =>
+  {
+    handleSend(true);
+  });
+
+  function computeAlertProps(): AlertPropsType
   {
     switch (dialog.type)
     {
       case "error":
-        return { color: "red", icon: <IconCircleX/> };
-      case "info":
-        return { color: "blue", icon: <IconInfoCircle/> };
+      {
+        return {
+          color: "red",
+          icon: <IconCircleX/>
+        };
+      }
       case "question":
-        return { color: "teal", icon: <IconQuestionMark/> };
+      {
+        return {
+          color: "teal",
+          icon: <IconQuestionMark/>
+        };
+      }
+      case "info":
+      default:
+      {
+        return {
+          color: "blue",
+          icon: <IconInfoCircle/>
+        };
+      }
     }
   }
 
-  const content = dialog.frame?.content;
+  const alertProps = computeAlertProps();
+  const frame = dialog.frame;
+  const buttons = dialog.buttons;
+
   return (
-    <Flex direction="column" gap="xs">
-      <Alert {...computeAlertProps()}><span dangerouslySetInnerHTML={{ __html: dialog.description }}/></Alert>
-      {dialog.details &&
+    <Flex direction="column" gap="sm">
+      <Alert color={alertProps.color} icon={alertProps.icon}>
+        <Markdown content={dialog.description}/>
+      </Alert>
+
+      {dialog.details !== undefined && (
         <CopyText value={dialog.details}>
-          <Text size="md" mt={10} dangerouslySetInnerHTML={{ __html: dialog.details }}/>
-        </CopyText>}
-      {imageIds && (
+          <Text size="sm" mt="xs" c="dimmed">
+            <Markdown content={dialog.details}/>
+          </Text>
+        </CopyText>
+      )}
+
+      {imageIds !== undefined && imageIds.length > 0 && (
         <ImagesCollection
           searchParameters={{
             filter: {
@@ -66,13 +104,35 @@ export default function DialogForm({ dialog, imageIds, onSend }: DialogFormType)
           }}
         />
       )}
-      {dialog.frame && <iframe className={style.iframe} style={{ height: `${dialog.frame.height}vh` }} {...{
-        src: "url" in content ? content.url : undefined,
-        srcDoc: "html" in content ? content.html : undefined
-      }} />}
-      <Flex mt="md" align="center" justify="flex-end" gap={10}>
-        <Buttons/>
-      </Flex>
+
+      {frame !== undefined && (
+        <Box h={`${frame.height}vh`} w="100%">
+          <Iframe content={frame.content}/>
+        </Box>
+      )}
+
+      <ModalActions>
+        {buttons.no !== undefined && (
+          <Button
+            variant="default"
+            onClick={() =>
+            {
+              handleSend(false);
+            }}
+          >
+            {buttons.no}
+          </Button>
+        )}
+        <Button
+          color={dialog.type === "error" ? "red" : undefined}
+          onClick={() =>
+          {
+            handleSend(true);
+          }}
+        >
+          {buttons.yes}
+        </Button>
+      </ModalActions>
     </Flex>
   );
 }

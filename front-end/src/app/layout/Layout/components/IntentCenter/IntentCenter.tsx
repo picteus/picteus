@@ -136,26 +136,32 @@ export default function IntentCenter()
       function handleDialog(dialogIntent: DialogIntent): void
       {
         const dialog = dialogIntent.dialog;
-        const modalId = randomId();
         addModal({
-          id: modalId,
           icon: computeIcon(dialog.icon),
           body: (
             <DialogForm
-              onSend={(isYes) =>
-                handleOnSend(isYes, modalId)
-              }
+              onSend={(isYes: boolean): void =>
+              {
+                try
+                {
+                  respondWithValue(isYes);
+                }
+                catch (error)
+                {
+                  ToastService.failureAndMessage(error, t("extensionIntent.onResultError"));
+                }
+              }}
               dialog={dialog}
               imageIds={dialogIntent.context?.imageIds}
             />
           ),
           title: dialog.title,
           size: dialog.size,
-          onBeforeClose: (viaOnSuccess: boolean) =>
+          onBeforeClose: (viaOnSuccess: boolean): void =>
           {
             if (viaOnSuccess === false)
             {
-              handleOnSend({}, modalId);
+              respondWithCancel();
             }
           }
         });
