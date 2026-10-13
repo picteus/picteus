@@ -276,6 +276,38 @@ class InternalServer
       fixSchemaReference(document);
     }
     {
+      // We ensure discriminator specifications on array properties are properly located on their inner items schema.
+      // In the OpenAPI 3.x specification, an array schema cannot declare a discriminator directly. Discriminator metadata belongs exclusively on the schema containing the polymorphic composition (the "oneOf" or "anyOf" definition), which for array properties is located on the inner "items" schema.
+      // When NestJS Swagger (@nestjs/swagger) compiles a DTO property with "isArray: true" alongside "discriminator" and "oneOf" options (such as "ManifestInstructions.capabilities"), it incorrectly attaches the "discriminator" metadata to the outer array property rather than inside the nested "items" schema.
+      // As a consequence, client generators like OpenAPI Generator (typescript-fetch) fail to recognize that the array items form a discriminated union and fall back to sequential type guards ("instanceOf<Type>()") in alphabetical order of schema names. Because the base model ("ManifestCapability") only validates the existence of the "id" property, it matches every capability payload first, discarding subtype-specific fields such as "details".
+      // By transferring the discriminator definition from the outer array property onto its "items" schema (and removing it from the outer array), OpenAPI Generator produces a proper switch statement on the discriminator property (e.g. "switch (json['id'])"), preserving subtype instances and their payload properties.
+      const fixArrayDiscriminators = (openApiDocument: OpenAPIObject): void =>
+      {
+        const schemas = openApiDocument.components?.schemas;
+        if (schemas !== undefined)
+        {
+          for (const schemaName in schemas)
+          {
+            const schemaObject = schemas[schemaName];
+            if (schemaObject !== null && typeof schemaObject === "object" && "properties" in schemaObject && schemaObject.properties !== undefined)
+            {
+              const properties = schemaObject.properties as Record<string, any>;
+              for (const propertyName in properties)
+              {
+                const propertySchema = properties[propertyName];
+                if (propertySchema !== null && typeof propertySchema === "object" && propertySchema.type === "array" && propertySchema.discriminator !== undefined && propertySchema.items !== undefined && typeof propertySchema.items === "object")
+                {
+                  propertySchema.items.discriminator = propertySchema.discriminator;
+                  delete propertySchema.discriminator;
+                }
+              }
+            }
+          }
+        }
+      };
+      fixArrayDiscriminators(document);
+    }
+    {
       // We ensure discriminator properties on referenced descendant schemas declare "type: string"
       const fixDiscriminatorPropertyTypes = (openApiDocument: OpenAPIObject): void =>
       {
@@ -291,22 +323,23 @@ class InternalServer
               for (const propertyName in properties)
               {
                 const propertySchema = properties[propertyName];
-                if (propertySchema !== null && typeof propertySchema === "object" && propertySchema.discriminator !== undefined)
+                const discriminatorSchema = propertySchema !== null && typeof propertySchema === "object" ? (propertySchema.discriminator !== undefined ? propertySchema : (propertySchema.items !== undefined && typeof propertySchema.items === "object" && propertySchema.items.discriminator !== undefined ? propertySchema.items : undefined)) : undefined;
+                if (discriminatorSchema !== undefined)
                 {
-                  const discriminatorPropertyName = propertySchema.discriminator.propertyName;
+                  const discriminatorPropertyName = discriminatorSchema.discriminator.propertyName;
                   const candidateSchemaNames: string[] = [];
-                  if (propertySchema.discriminator.mapping !== undefined)
+                  if (discriminatorSchema.discriminator.mapping !== undefined)
                   {
-                    for (const mappingKey in propertySchema.discriminator.mapping)
+                    for (const mappingKey in discriminatorSchema.discriminator.mapping)
                     {
-                      const mappingRef = propertySchema.discriminator.mapping[mappingKey];
+                      const mappingRef = discriminatorSchema.discriminator.mapping[mappingKey];
                       const mappedSchemaName = mappingRef.replace(schemaReferenceValue, "");
                       candidateSchemaNames.push(mappedSchemaName);
                     }
                   }
-                  if (Array.isArray(propertySchema.oneOf))
+                  if (Array.isArray(discriminatorSchema.oneOf))
                   {
-                    for (const oneOfItem of propertySchema.oneOf)
+                    for (const oneOfItem of discriminatorSchema.oneOf)
                     {
                       if (typeof oneOfItem.$ref === "string")
                       {

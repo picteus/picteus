@@ -5076,15 +5076,6 @@
           },
           "capabilities": {
             "description": "The capabilities attached to the instructions",
-            "discriminator": {
-              "propertyName": "id",
-              "mapping": {
-                "image.features": "#/components/schemas/ManifestImageFeaturesCapability",
-                "image.tags": "#/components/schemas/ManifestImageTagsCapability",
-                "image.embeddings": "#/components/schemas/ManifestCapability",
-                "text.embeddings": "#/components/schemas/ManifestCapability"
-              }
-            },
             "type": "array",
             "items": {
               "oneOf": [
@@ -5097,7 +5088,16 @@
                 {
                   "$ref": "#/components/schemas/ManifestCapability"
                 }
-              ]
+              ],
+              "discriminator": {
+                "propertyName": "id",
+                "mapping": {
+                  "image.features": "#/components/schemas/ManifestImageFeaturesCapability",
+                  "image.tags": "#/components/schemas/ManifestImageTagsCapability",
+                  "image.embeddings": "#/components/schemas/ManifestCapability",
+                  "text.embeddings": "#/components/schemas/ManifestCapability"
+                }
+              }
             }
           },
           "throttlingPolicies": {
