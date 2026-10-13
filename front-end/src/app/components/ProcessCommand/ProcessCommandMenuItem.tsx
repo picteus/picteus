@@ -2,6 +2,7 @@ import React, { ReactElement } from "react";
 import { Menu, Text } from "@mantine/core";
 
 import { useProcessCommand } from "app/hooks";
+import { ShortcutBadge } from "app/components";
 import { ProcessCommandMenuItemPropsType } from "./types.ts";
 
 
@@ -37,11 +38,15 @@ export default function ProcessCommandMenuItem({
     }
   }
 
+  const shortcutDisplay = resolvedCommand.shortcut?.label ?? (resolvedCommand.shortcut?.combo ? (
+    <ShortcutBadge combo={resolvedCommand.shortcut.combo} size="xs"/>
+  ) : undefined);
+
   return (
     <Menu.Item
       onClick={handleClick}
       leftSection={leftSection ?? resolvedCommand.icon("sm")}
-      rightSection={rightSection ?? resolvedCommand.shortcut?.label}
+      rightSection={rightSection ?? shortcutDisplay}
       disabled={disabled ?? !isAvailable}
       {...others}
     >

@@ -131,9 +131,9 @@ function CommandHeader({ specification, instructions }: CommandHeaderPropsType):
   return (
     <>
       {specification.name && <Text fw={600} size="sm">{specification.name}</Text>}
-        {(specification.description === undefined && instructions) &&
-          <Text size="sm" c="dimmed">{instructions.summary}</Text>}
-        {specification.description && <Markdown content={instructions.summary}/>}
+      {(instructions.summary === undefined && specification) &&
+        <Text size="sm" c="dimmed">{specification.description}</Text>}
+      {instructions.summary && <Markdown content={instructions.summary}/>}
     </>);
 }
 

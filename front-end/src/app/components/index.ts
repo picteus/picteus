@@ -65,4 +65,5 @@ export { default as StandardMenu } from "./StandardMenu/StandardMenu.tsx";
 export { default as CollectionSelect } from "./CollectionSelect/CollectionSelect.tsx";
 export { default as EmbeddingSelect } from "./EmbeddingSelect/EmbeddingSelect.tsx";
 export { default as ModalActions } from "./ModalActions/ModalActions.tsx";
+export { default as ShortcutBadge, type ShortcutBadgePropsType } from "./ShortcutBadge/ShortcutBadge.tsx";
 export * from "../../generated/ViewKit.tsx";

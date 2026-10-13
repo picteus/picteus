@@ -2,6 +2,7 @@ import React, { ReactElement } from "react";
 import { Spotlight } from "@mantine/spotlight";
 
 import { useProcessCommand } from "app/hooks";
+import { ShortcutBadge } from "app/components";
 import { ProcessCommandSpotlightActionPropsType } from "./types.ts";
 
 
@@ -33,11 +34,15 @@ export default function ProcessCommandSpotlightAction({
     }
   }
 
+  const shortcutDisplay = resolvedCommand.shortcut?.label ?? (resolvedCommand.shortcut?.combo ? (
+    <ShortcutBadge combo={resolvedCommand.shortcut.combo} size="xs"/>
+  ) : undefined);
+
   return (
     <Spotlight.Action
       onClick={handleClick}
       leftSection={resolvedCommand.icon("sm")}
-      rightSection={resolvedCommand.shortcut?.label}
+      rightSection={shortcutDisplay}
       disabled={disabled ?? !isAvailable}
       label={resolvedCommand.label}
       description={resolvedCommand.subLabel}

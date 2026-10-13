@@ -261,11 +261,7 @@ export type CoreProcessCommandIdType = "textToImages";
 export type ProcessCommandIdType = CoreProcessCommandIdType | ExtensionCommandIdType;
 
 export type ProcessCommandShortcutType = {
-  key: string;
-  shiftKey?: boolean;
-  metaKey?: boolean;
-  ctrlKey?: boolean;
-  altKey?: boolean;
+  combo: string;
   label?: ReactNode;
 };
 

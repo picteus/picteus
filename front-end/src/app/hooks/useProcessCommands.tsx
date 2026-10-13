@@ -1,6 +1,6 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactElement, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Kbd } from "@mantine/core";
+import { type HotkeyItem, useHotkeys } from "@mantine/hooks";
 
 import { CommandEntity, ManifestCapabilityId } from "@picteus/ws-client";
 
@@ -55,14 +55,7 @@ export default function useProcessCommands(
         label: t("commands.textToImages"),
         subLabel: extension.manifest.name,
         shortcut: index === 0 ? {
-          key: "f",
-          metaKey: true,
-          shiftKey: true,
-          label: (
-            <>
-              <Kbd>⌘</Kbd> + <Kbd>Shift</Kbd> + <Kbd>F</Kbd>
-            </>
-          )
+          combo: "mod+shift+f"
         } : undefined,
         isAvailable: true,
         isLoading: runningCommandId === compositeId,
@@ -146,49 +139,26 @@ export default function useProcessCommands(
     return [ ...coreCommands, ...extensionCommands ];
   }, [ coreCommands, extensionCommands ]);
 
-  useEffect(() =>
+  const hotkeys = useMemo<HotkeyItem[]>(() =>
   {
     if (!registerShortcuts)
     {
-      return;
+      return [];
     }
 
-    function handleKeyDown(event: KeyboardEvent): void
+    return commands.filter((command) =>
     {
-      const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable))
+      return Boolean(command.shortcut?.combo && command.isAvailable && !command.disabled);
+    }).map((command): HotkeyItem => ([
+      command.shortcut!.combo,
+      (): void =>
       {
-        return;
+        void command.execute();
       }
-
-      for (const command of commands)
-      {
-        if (!command.shortcut || !command.isAvailable || command.disabled)
-        {
-          continue;
-        }
-
-        const shortcut = command.shortcut;
-        const matchesKey = event.key.toLowerCase() === shortcut.key.toLowerCase();
-        const matchesMeta = Boolean(shortcut.metaKey) === (event.metaKey || event.ctrlKey);
-        const matchesShift = Boolean(shortcut.shiftKey) === event.shiftKey;
-        const matchesAlt = Boolean(shortcut.altKey) === event.altKey;
-
-        if (matchesKey && matchesMeta && matchesShift && matchesAlt)
-        {
-          event.preventDefault();
-          void command.execute();
-          break;
-        }
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () =>
-    {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
+    ]));
   }, [ registerShortcuts, commands ]);
+
+  useHotkeys(hotkeys);
 
   const getCommand = useCallback((
     commandIdentifier: ProcessCommandIdType | string,

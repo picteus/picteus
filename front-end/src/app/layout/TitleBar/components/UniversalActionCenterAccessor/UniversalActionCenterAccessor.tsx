@@ -1,8 +1,10 @@
-import { type ReactElement, useMemo } from "react";
-import { Group, Kbd, Text, UnstyledButton } from "@mantine/core";
+import { type ReactElement } from "react";
+import { Group, Text, UnstyledButton } from "@mantine/core";
 import { spotlight } from "@mantine/spotlight";
 import { IconSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+
+import { ShortcutBadge } from "app/components";
 
 import style from "./UniversalActionCenterAccessor.module.scss";
 
@@ -10,11 +12,6 @@ import style from "./UniversalActionCenterAccessor.module.scss";
 export default function UniversalActionCenterAccessor(): ReactElement
 {
   const [ t ] = useTranslation();
-
-  const isMac = useMemo(() =>
-  {
-    return typeof window !== "undefined" && /Mac|iPod|iPhone|iPad/.test(window.navigator.userAgent || window.navigator.platform);
-  }, []);
 
   return (
     <UnstyledButton
@@ -29,10 +26,7 @@ export default function UniversalActionCenterAccessor(): ReactElement
           {t("actionsCenter.searchOrJump")}
         </Text>
       </Group>
-      <Group gap={2} wrap="nowrap" style={{ flexShrink: 0 }}>
-        <Kbd size="xs">{isMac ? "⌘" : "Ctrl"}</Kbd>
-        <Kbd size="xs">K</Kbd>
-      </Group>
+      <ShortcutBadge combo="mod+k" size="xs"/>
     </UnstyledButton>
   );
 }
