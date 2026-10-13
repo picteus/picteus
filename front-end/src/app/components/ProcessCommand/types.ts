@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { ActionIconProps, ButtonProps, ElementProps, MenuItemProps } from "@mantine/core";
+import { SpotlightActionProps } from "@mantine/spotlight";
 
 import { ProcessCommandIdType, ProcessCommandType } from "types";
 
@@ -31,5 +32,11 @@ export type ProcessCommandActionIconPropsType = ProcessCommandBasePropsType &
 export type ProcessCommandMenuItemPropsType = ProcessCommandBasePropsType &
   MenuItemProps &
   ElementProps<"button", keyof MenuItemProps> & {
+  showSubLabel?: boolean;
+};
+
+export type ProcessCommandSpotlightActionPropsType = ProcessCommandBasePropsType &
+  SpotlightActionProps &
+  ElementProps<"button", keyof SpotlightActionProps> & {
   showSubLabel?: boolean;
 };

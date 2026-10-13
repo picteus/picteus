@@ -132,6 +132,7 @@ export function DeskTabsProvider({ children }: { children?: ReactNode }): ReactN
     const targetImageId = tab.content.kind === "image" && tab.content.imageId;
     if (targetImageId !== undefined)
     {
+      StorageService.addRecentImageId(targetImageId);
       const existingTab = findImageTab(targetImageId);
       if (existingTab !== undefined)
       {

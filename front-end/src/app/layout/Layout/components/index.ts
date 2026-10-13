@@ -7,3 +7,4 @@ export { default as Notifications } from "./Notifications/Notifications.tsx";
 export { default as IntentCenter } from "./IntentCenter/IntentCenter.tsx";
 export { default as GeneralCommands } from "./GeneralCommands/GeneralCommands.tsx";
 export { default as Modals } from "./Modals/Modals.tsx";
+export { default as UniversalActionCenter } from "./UniversalActionCenter/UniversalActionCenter.tsx";

@@ -1,0 +1,25 @@
+.accessor
+{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 28px;
+  min-width: 230px;
+  max-width: 290px;
+  padding: 0 8px;
+  border-radius: var(--mantine-radius-sm);
+  border: 1px solid var(--mantine-color-default-border);
+  background-color: var(--mantine-color-default);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
+  //noinspection CssUnknownProperty
+  -webkit-app-region: no-drag;
+
+  &:hover
+  {
+    background-color: var(--mantine-color-default-hover);
+    border-color: var(--mantine-color-default-border);
+  }
+}

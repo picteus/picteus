@@ -21,6 +21,7 @@ import Initializer from "./Initializer.tsx";
 import "i18n/i18n.ts";
 import "react-toastify/dist/ReactToastify.css";
 import "@mantine/core/styles.css";
+import "@mantine/spotlight/styles.css";
 import "assets/style/style.scss";
 import "assets/style/override.scss";
 

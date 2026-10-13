@@ -2,14 +2,7 @@ import { useTranslation } from "react-i18next";
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Divider, ScrollArea, Stack } from "@mantine/core";
-import {
-  IconAdjustmentsHorizontal,
-  IconBox,
-  IconFolderOpen,
-  IconLibraryPhoto,
-  IconPhotoMinus,
-  IconStack2
-} from "@tabler/icons-react";
+import { IconBooks, IconBox, IconFolderOpen, IconPhotoMinus, IconSettings, IconStack2 } from "@tabler/icons-react";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
@@ -35,11 +28,31 @@ export default function Sidebar()
   const commonIconStyle = useMemo(() => ({ stroke: Common.IconStrokeSize }), []);
 
   const mainElementData = [
-    { route: ROUTES.home, label: "explorer", icon: <IconPhotoMinus {...commonIconStyle} /> },
-    { route: ROUTES.desk, label: "desk", icon: <IconStack2 {...commonIconStyle} /> },
-    { route: ROUTES.repositories, label: "repositories", icon: <IconFolderOpen {...commonIconStyle} /> },
-    { route: ROUTES.collections, label: "collections", icon: <IconLibraryPhoto {...commonIconStyle} /> },
-    { route: ROUTES.extensions, label: "extensions", icon: <IconBox {...commonIconStyle} /> }
+    {
+      route: ROUTES.home,
+      label: "explorer",
+      icon: <IconPhotoMinus {...commonIconStyle} />
+    },
+    {
+      route: ROUTES.desk,
+      label: "desk",
+      icon: <IconStack2 {...commonIconStyle} />
+    },
+    {
+      route: ROUTES.repositories,
+      label: "repositories",
+      icon: <IconFolderOpen {...commonIconStyle} />
+    },
+    {
+      route: ROUTES.collections,
+      label: "collections",
+      icon: <IconBooks {...commonIconStyle} />
+    },
+    {
+      route: ROUTES.extensions,
+      label: "extensions",
+      icon: <IconBox {...commonIconStyle} />
+    }
     // { route: ROUTES.test, label: "test", icon: <IconFlask2 {...commonIconStyle} /> }
   ];
 
@@ -118,17 +131,20 @@ export default function Sidebar()
   return (
     <nav className={style.container}>
       <Stack gap={15} align="stretch" className={style.wrapper}>
-        <Stack gap={15}>
-          {mainElements}
-        </Stack>
+        <Stack gap={15}>{mainElements}</Stack>
         <Divider/>
-        <ScrollArea flex={1} scrollbarSize={5} scrollbars="y" className={style.additional}>
+        <ScrollArea
+          flex={1}
+          scrollbarSize={5}
+          scrollbars="y"
+          className={style.additional}
+        >
           <Stack gap={15} justify="start">
             {additionalElements}
           </Stack>
         </ScrollArea>
         <SidebarLink
-          icon={<IconAdjustmentsHorizontal {...commonIconStyle} />}
+          icon={<IconSettings {...commonIconStyle} />}
           label={t("menu.settings")}
           route={ROUTES.settings}
         />

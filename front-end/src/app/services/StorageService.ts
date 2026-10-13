@@ -22,6 +22,7 @@ export const StorageKeys =
     IMAGE_DETAIL_SECTIONS_ORDER: "imageDetailSectionsOrder",
     IMAGE_DETAIL_TRAITS: "imageDetailTraits",
     MAIN_TAB: "mainTab",
+    RECENT_IMAGE_IDS: "recentImageIds",
     RUN_CAPABILITIES_EXCLUDED_EXTENSION_IDS: "runCapabilitiesExcludedExtensionIds",
     SELECTED_IMAGE_IDS: "selectedImagesIds",
     SELECTED_IMAGES_ACTION: "selectedImagesAction",
@@ -392,6 +393,23 @@ function _resetCommandsParameters(): void
   remove(StorageKeys.COMMANDS_PARAMETERS);
 }
 
+
+function getRecentImageIds(): string[]
+{
+  return getJson<string[]>(StorageKeys.RECENT_IMAGE_IDS, []);
+}
+
+function setRecentImageIds(imageIds: string[]): void
+{
+  setJson(StorageKeys.RECENT_IMAGE_IDS, imageIds);
+}
+
+function addRecentImageId(imageId: string): void
+{
+  const otherImageIds = getRecentImageIds().filter((id) => id !== imageId);
+  setRecentImageIds([ imageId, ...otherImageIds ].slice(0, 20));
+}
+
 export default {
   COLOR_SCHEME: `${prefix}${StorageKeys.COLOR_SCHEME}`,
   upgrade,
@@ -436,5 +454,7 @@ export default {
   setCommandDoNotAskAgain,
   resetCommandsDoNotAskAgain,
   getCommandParameters,
-  setCommandParameters
+  setCommandParameters,
+  getRecentImageIds,
+  addRecentImageId
 };

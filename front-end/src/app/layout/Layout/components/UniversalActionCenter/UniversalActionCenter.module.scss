@@ -1,0 +1,38 @@
+
+.content
+{
+  display: flex;
+  flex-direction: column;
+}
+
+.body
+{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.actionsList
+{
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+
+  & > div
+  {
+    min-height: 0;
+  }
+}
+
+.footer
+{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-top: 1px solid var(--mantine-color-default-border);
+  background-color: var(--mantine-color-body);
+  flex-shrink: 0;
+}

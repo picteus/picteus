@@ -3,7 +3,7 @@ import { Flex } from "@mantine/core";
 
 import { Sidebar } from "app/layout";
 import { BottomBar, GeneralCommands, IntentCenter, Modals, NotificationCenter, Notifications } from "./components";
-import { SelectedImagesHover } from "./components/index.ts";
+import { SelectedImagesHover, UniversalActionCenter } from "./components/index.ts";
 
 import style from "./Layout.module.scss";
 
@@ -18,6 +18,7 @@ export default function Layout({ children }: { children: ReactNode })
         <Modals/>
         <IntentCenter/>
         <NotificationCenter/>
+        <UniversalActionCenter/>
       </>
     );
   }, []);
