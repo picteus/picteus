@@ -21,12 +21,12 @@ export default function UniversalActionCenterAccessor(): ReactElement
       className={style.accessor}
       onClick={spotlight.open}
       data-no-drag
-      aria-label={t("actionsCenter.searchOrJump", "Jump to or run a command...")}
+      aria-label={t("actionsCenter.searchOrJump")}
     >
       <Group gap={6} wrap="nowrap" style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
         <IconSearch size={14} style={{ flexShrink: 0, opacity: 0.6 }}/>
         <Text size="xs" c="dimmed" truncate style={{ flex: 1 }}>
-          {t("actionsCenter.searchOrJump", "Jump to or run a command...")}
+          {t("actionsCenter.searchOrJump")}
         </Text>
       </Group>
       <Group gap={2} wrap="nowrap" style={{ flexShrink: 0 }}>

@@ -19,6 +19,37 @@ export default {
     test: "Test",
     settings: "Settings"
   },
+  actionsCenter: {
+    searchOrJump: "Jump to or run an action…",
+    placeholder: "Jump to, search images, run a command…",
+    imageTab: "Image",
+    routes: {
+      explore: "Explore",
+      desk: "Desk",
+      repositories: "Repositories",
+      collections: "Collections",
+      extensions: "Extensions",
+      activity: "Activity",
+      settings: "Settings"
+    },
+    sections: {
+      jumpTo: "JUMP TO",
+      commands: "COMMANDS",
+      quickToggles: "QUICK TOGGLES",
+      recentImages: "RECENT IMAGES"
+    },
+    switchToLight: "Switch to light mode",
+    switchToDark: "Switch to dark mode",
+    noResults: "No results found",
+    navigate: "navigate",
+    select: "select",
+    resultsCount_zero: "0 results",
+    resultsCount_one: "1 result",
+    resultsCount_other: "{{count}} results",
+    keys: {
+      esc: "ESC"
+    }
+  },
   titles: {
     warning: "Warning",
     error: "Error"
