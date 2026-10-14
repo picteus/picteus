@@ -380,9 +380,23 @@ export class ManifestCapability
 export class ManifestCapabilityCaptionsDetails
 {
 
-  constructor()
+  constructor(caption: boolean = true)
   {
+    this.caption = caption;
   }
+
+  @ApiProperty(
+    {
+      description: "Whether caption computation is supported",
+      type: Boolean,
+      required: false,
+      example: true
+    }
+  )
+  @IsBoolean()
+  @IsOptional()
+  @Expose()
+  readonly caption?: boolean;
 
 }
 
@@ -390,9 +404,23 @@ export class ManifestCapabilityCaptionsDetails
 export class ManifestCapabilityEligibleTagsDetails
 {
 
-  constructor()
+  constructor(eligibleTags: boolean = true)
   {
+    this.eligibleTags = eligibleTags;
   }
+
+  @ApiProperty(
+    {
+      description: "Whether eligible tags computation is supported",
+      type: Boolean,
+      required: false,
+      example: true
+    }
+  )
+  @IsBoolean()
+  @IsOptional()
+  @Expose()
+  readonly eligibleTags?: boolean;
 
 }
 
@@ -414,6 +442,7 @@ export class ManifestImageFeaturesCapability extends ManifestCapability
     }
   )
   @Type(() => ManifestCapabilityCaptionsDetails)
+  @ValidateNested()
   @IsObject()
   @IsOptional()
   @Expose()
@@ -439,6 +468,7 @@ export class ManifestImageTagsCapability extends ManifestCapability
     }
   )
   @Type(() => ManifestCapabilityEligibleTagsDetails)
+  @ValidateNested()
   @IsObject()
   @IsOptional()
   @Expose()

@@ -4922,7 +4922,13 @@
       },
       "ManifestCapabilityCaptionsDetails": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "caption": {
+            "type": "boolean",
+            "description": "Whether caption computation is supported",
+            "example": true
+          }
+        },
         "description": "A marker to indicate the capability to compute captions"
       },
       "ManifestImageFeaturesCapability": {
@@ -4954,7 +4960,13 @@
       },
       "ManifestCapabilityEligibleTagsDetails": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "eligibleTags": {
+            "type": "boolean",
+            "description": "Whether eligible tags computation is supported",
+            "example": true
+          }
+        },
         "description": "A marker to indicate the capability to compute eligible tags"
       },
       "ManifestImageTagsCapability": {
