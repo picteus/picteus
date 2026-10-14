@@ -14,7 +14,7 @@ type ExtensionTopType = {
   extension: Extension;
   activity?: ApiExtensionActivity;
   openAddOrUpdateExtensionModal: (extension: Extension) => void;
-  openExtensionSettingsModal: (extension: Extension) => void;
+  openExtensionConfiguration: (extension: Extension) => void;
   onUninstalled: () => void;
 };
 
@@ -22,7 +22,7 @@ export default function ExtensionTop({
   extension,
   activity,
   openAddOrUpdateExtensionModal,
-  openExtensionSettingsModal,
+  openExtensionConfiguration,
   onUninstalled
 }: ExtensionTopType)
 {
@@ -50,7 +50,7 @@ export default function ExtensionTop({
           <ExtensionActions
             extension={extension}
             onUpdate={openAddOrUpdateExtensionModal}
-            onSettings={openExtensionSettingsModal}
+            onConfiguration={openExtensionConfiguration}
             onUninstalled={onUninstalled}
           />
         </Flex>

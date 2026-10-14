@@ -1,3 +1,4 @@
+
 export default {
   errorBoundary: {
     message: "Something went wrong!!!",
@@ -344,7 +345,7 @@ export default {
       }
     }
   },
-  extensionSettingsModal: {
+  extensionConfiguration: {
     title: "Extension settings",
     warning:
       "This enables to define the settings of the <strong>{{name}}</strong> extension.",
@@ -356,7 +357,25 @@ export default {
     successSaving: "The extension settings have been successfully saved",
     reset: "Reset",
     errorResetting: "An error occurred while resetting the extension settings",
-    successResetting: "The extension settings have been successfully reset"
+    successResetting: "The extension settings have been successfully reset",
+    tabs: {
+      settings: "General settings",
+      instructions: "AI model instructions"
+    },
+    instructions: {
+      batchTitle: "Batch configuration",
+      batchDescription: "Define instructions to quickly apply to all enabled AI models below.",
+      applyToAll: "Apply to all enabled models",
+      commonCaptionQuestion: "Caption question template",
+      commonEligibleTags: "Eligible tags template",
+      enableCaptions: "Enable captions",
+      captionQuestion: "Caption question",
+      captionQuestionPlaceholder: "e.g., Describe this image in one concise sentence.",
+      enableEligibleTags: "Enable eligible tags",
+      eligibleTags: "Candidate tags",
+      eligibleTagsPlaceholder: "Type a tag and press Enter…",
+      noModels: "No AI models have been declared by this extension yet."
+    }
   },
   imageDetail: {
     aiGenerated: "AI-generated",

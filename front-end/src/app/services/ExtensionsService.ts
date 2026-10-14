@@ -1,17 +1,24 @@
 import {
+  CaptionInstruction,
+  EligibleTagsInstruction,
   Extension,
   ExtensionActivity,
+  ExtensionAiModel,
   ExtensionAndManual,
   ExtensionApi,
   ExtensionApiExtensionBuildRequest,
   ExtensionApiExtensionChangeStateRequest,
   ExtensionApiExtensionGenerateRequest,
+  ExtensionApiExtensionGetCaptionInstructionsRequest,
+  ExtensionApiExtensionGetEligibleTagsInstructionsRequest,
   ExtensionApiExtensionGetRequest,
   ExtensionApiExtensionGetSettingsRequest,
   ExtensionApiExtensionInstallRequest,
   ExtensionApiExtensionResetSettingsRequest,
   ExtensionApiExtensionRunImageCommandRequest,
   ExtensionApiExtensionRunProcessCommandRequest,
+  ExtensionApiExtensionSetCaptionInstructionsRequest,
+  ExtensionApiExtensionSetEligibleTagsInstructionsRequest,
   ExtensionApiExtensionSetSettingsRequest,
   ExtensionApiExtensionSynchronizeRequest,
   ExtensionApiExtensionUninstallRequest,
@@ -20,7 +27,9 @@ import {
   ExtensionSettings,
   ExtensionState,
   ManifestCapability,
-  ManifestCapabilityId
+  ManifestCapabilityId,
+  ManifestImageFeaturesCapability,
+  ManifestImageTagsCapability
 } from "@picteus/ws-client";
 
 import { BASE_PATH } from "utils";
@@ -106,6 +115,31 @@ async function generate(parameters: ExtensionApiExtensionGenerateRequest): Promi
 async function build(parameters: ExtensionApiExtensionBuildRequest): Promise<Blob>
 {
   return extensionApi.extensionBuild(parameters);
+}
+
+async function listAiModels(): Promise<ExtensionAiModel[]>
+{
+  return extensionApi.extensionListAiModels();
+}
+
+async function getCaptionInstructions(parameters: ExtensionApiExtensionGetCaptionInstructionsRequest): Promise<CaptionInstruction[]>
+{
+  return extensionApi.extensionGetCaptionInstructions(parameters);
+}
+
+async function setCaptionInstructions(parameters: ExtensionApiExtensionSetCaptionInstructionsRequest): Promise<CaptionInstruction[]>
+{
+  return extensionApi.extensionSetCaptionInstructions(parameters);
+}
+
+async function getEligibleTagsInstructions(parameters: ExtensionApiExtensionGetEligibleTagsInstructionsRequest): Promise<EligibleTagsInstruction[]>
+{
+  return extensionApi.extensionGetEligibleTagsInstructions(parameters);
+}
+
+async function setEligibleTagsInstructions(parameters: ExtensionApiExtensionSetEligibleTagsInstructionsRequest): Promise<EligibleTagsInstruction[]>
+{
+  return extensionApi.extensionSetEligibleTagsInstructions(parameters);
 }
 
 function buildUiURL(extensionId: string, url: string): string
@@ -201,9 +235,53 @@ function computeEligibleExtensions(
     ));
 }
 
+export type ExtensionInstructionCapabilitiesType =
+  {
+    readonly hasCaptionCapability: boolean;
+    readonly hasEligibleTagsCapability: boolean;
+    readonly hasAnyInstructionCapability: boolean;
+  };
+
+function computeInstructionCapabilities(extension: Extension): ExtensionInstructionCapabilitiesType
+{
+  let hasCaptionCapability = false;
+  let hasEligibleTagsCapability = false;
+  for (const instructions of extension.manifest.instructions)
+  {
+    if (instructions.capabilities !== undefined)
+    {
+      for (const capability of instructions.capabilities)
+      {
+        if (capability.id === ManifestCapabilityId.ImageFeatures)
+        {
+          const featureDetails = (capability as ManifestImageFeaturesCapability).details;
+          if (featureDetails !== undefined && featureDetails.caption !== false)
+          {
+            hasCaptionCapability = true;
+          }
+        }
+        else if (capability.id === ManifestCapabilityId.ImageTags)
+        {
+          const tagDetails = (capability as ManifestImageTagsCapability).details;
+          if (tagDetails !== undefined && tagDetails.eligibleTags !== false)
+          {
+            hasEligibleTagsCapability = true;
+          }
+        }
+      }
+    }
+  }
+  return {
+    hasCaptionCapability,
+    hasEligibleTagsCapability,
+    hasAnyInstructionCapability: hasCaptionCapability || hasEligibleTagsCapability
+  };
+}
+
 export default {
   computeCapabilities,
   computeEligibleExtensions,
+  computeInstructionCapabilities,
   fetchAll,
   get,
   install,
@@ -219,6 +297,11 @@ export default {
   getSettings,
   setSettings,
   resetSettings,
+  listAiModels,
+  getCaptionInstructions,
+  setCaptionInstructions,
+  getEligibleTagsInstructions,
+  setEligibleTagsInstructions,
   runImageCommand,
   runProcessCommand,
   activities

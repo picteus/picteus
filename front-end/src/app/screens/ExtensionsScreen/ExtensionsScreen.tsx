@@ -22,8 +22,8 @@ import {
   CreateExtensionModal,
   ExtensionActions,
   ExtensionActivity,
+  ExtensionConfiguration,
   ExtensionDetail,
-  ExtensionSettingsModal,
   ExtensionTop,
   InstallOrUpdateExtension
 } from "./components";
@@ -53,14 +53,15 @@ export default function ExtensionsScreen()
     void refetchActivities();
   }
 
-  function openExtensionSettingsModal(extension: Extension)
+  function openExtensionConfiguration(extension: Extension)
   {
+    const instructionCapabilities = ExtensionsService.computeInstructionCapabilities(extension);
     addModal({
-      title: t("extensionSettingsModal.title"),
+      title: t("extensionConfiguration.title"),
       icon: { url: ExtensionsService.getIconURL(extension.manifest.id) },
-      size: "s",
+      size: instructionCapabilities.hasAnyInstructionCapability ? "m" : "s",
       body: (
-        <ExtensionSettingsModal
+        <ExtensionConfiguration
           extension={extension}
           onSuccess={refetchAll}
         />
@@ -81,7 +82,7 @@ export default function ExtensionsScreen()
           extension={extension}
           onSuccess={(extensionItem: Extension) =>
           {
-            openExtensionSettingsModal(extensionItem);
+            openExtensionConfiguration(extensionItem);
             refetchAll();
           }}
         />
@@ -138,7 +139,7 @@ export default function ExtensionsScreen()
           <ExtensionActions
             extension={extension}
             onUpdate={openInstallOrUpdateExtensionModal}
-            onSettings={openExtensionSettingsModal}
+            onConfiguration={openExtensionConfiguration}
             onUninstalled={refetchAll}
           />
         </Table.Td>
@@ -189,7 +190,7 @@ export default function ExtensionsScreen()
               extension={extension}
               activity={perExtensionIdActivities[extension.manifest.id]}
               openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
-              openExtensionSettingsModal={openExtensionSettingsModal}
+              openExtensionConfiguration={openExtensionConfiguration}
               onUninstalled={refetchAll}
             />
           </Card>
@@ -250,7 +251,7 @@ export default function ExtensionsScreen()
               extension={selectedExtension}
               activity={perExtensionIdActivities[selectedExtension.manifest.id]}
               openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
-              openExtensionSettingsModal={openExtensionSettingsModal}
+              openExtensionConfiguration={openExtensionConfiguration}
               onUninstalled={() =>
               {
                 setSelectedExtension(undefined);

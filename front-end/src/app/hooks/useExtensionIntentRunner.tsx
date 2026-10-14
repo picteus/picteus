@@ -33,7 +33,7 @@ import {
   useRepositories
 } from "app/hooks";
 import { Iframe } from "app/components";
-import { ExtensionSettingsModal } from "app/screens/ExtensionsScreen/components";
+import { ExtensionConfiguration } from "app/screens/ExtensionsScreen/components";
 import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
 
 
@@ -190,14 +190,17 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
               return listener.onFailure(`The extension with id '${show.id}' is not installed`);
             }
             addModal({
-              title: t("extensionSettingsModal.title"),
+              title: t("extensionConfiguration.title"),
               size: "m",
               body: (
-                <ExtensionSettingsModal
+                <ExtensionConfiguration
                   extension={extension}
-                  onSuccess={(settings: ExtensionSettings) =>
+                  onSuccess={(settings?: ExtensionSettings) =>
                   {
-                    listener.onSuccess(settings);
+                    if (settings)
+                    {
+                      listener.onSuccess(settings);
+                    }
                   }}
                 />
               ),

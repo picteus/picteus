@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { ReactElement, useMemo } from "react";
 import { ActionIcon, Flex, Tooltip } from "@mantine/core";
 import {
   IconAdjustmentsHorizontal,
@@ -22,23 +22,19 @@ import {
 } from "app/hooks";
 
 
-interface ExtensionActionsType
-{
+export type ExtensionActionsType = {
   extension: Extension;
-
   onUpdate: (extension: Extension) => void;
-
-  onSettings: (extension: Extension) => void;
-
+  onConfiguration: (extension: Extension) => void;
   onUninstalled: () => void;
 }
 
 export default function ExtensionActions({
   extension,
   onUpdate,
-  onSettings,
+  onConfiguration,
   onUninstalled
-}: ExtensionActionsType)
+}: ExtensionActionsType): ReactElement
 {
   const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
@@ -113,7 +109,7 @@ export default function ExtensionActions({
         <ActionIcon
           size="md"
           variant="default"
-          onClick={() => onSettings(extension)}
+          onClick={() => onConfiguration(extension)}
           disabled={extension.state === ExtensionState.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
         >
           <IconAdjustmentsHorizontal {...iconSizeAndStroke} />
