@@ -232,9 +232,11 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
     >
       <ModalContext.Provider value={modalContextValue}>
         <ScrollArea
+          className={style.scrollArea}
           flex={1}
           mih={0}
-          h={fullScreen ? "100%" : undefined}
+          h="100%"
+          type="auto"
           p={fullScreen ? 0 : "md"}
           offsetScrollbars
           scrollbars="y"
