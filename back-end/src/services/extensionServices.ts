@@ -906,7 +906,8 @@ export class ExtensionService
     logger.info(`Getting the settings of the extension with id '${id}'`);
     this.checkExtensionExists(id);
     const entity = await this.getPersistedSettings(id);
-    return new ExtensionSettings((entity === null || entity.value === null) ? {} : entity.value as Json);
+    const value = entity?.value == null ? {} : entity.value;
+    return new ExtensionSettings(value as Json);
   }
 
   async setSettings(id: string, settings: ExtensionSettings): Promise<void>
@@ -927,8 +928,7 @@ export class ExtensionService
     {
       parametersChecker.throwBadParameter("settings", stringify(settings, false), `it does not comply with the settings JSON schema. Reason: '${(error as Error).message}'`);
     }
-    const settingsValue = stringify(value);
-    const objectValue = { extensionId: id, value: settingsValue };
+    const objectValue = { extensionId: id, value: value as Prisma.InputJsonValue };
     await this.entitiesProvider.extensionSettings.upsert({
       where: { extensionId: id },
       create: objectValue,
@@ -946,8 +946,7 @@ export class ExtensionService
     const withStrippedUiPropertiesExtensionSettings = extension.settings;
     stripAndExtractParametersUiProperties(withStrippedUiPropertiesExtensionSettings);
     const value = computeDefaultValueFromSchema(withStrippedUiPropertiesExtensionSettings);
-    const settingsValue = stringify(value);
-    const objectValue = { extensionId: id, value: settingsValue };
+    const objectValue = { extensionId: id, value: value as Prisma.InputJsonValue };
     await this.entitiesProvider.extensionSettings.upsert({
       where: { extensionId: id },
       create: objectValue,
@@ -2385,8 +2384,9 @@ export class ExtensionService
   {
     const captionInstructionClass: ClassConstructor<CaptionInstruction> = CaptionInstruction;
     const isForCaptions = theClass === captionInstructionClass;
+    const select = isForCaptions ? { captions: true } : { eligibleTags: true };
     const result = await this.entitiesProvider.extensionSettings.findUnique({
-      select: { captions: isForCaptions, eligibleTags: !isForCaptions },
+      select: select,
       where: { extensionId: id }
     });
     if (result == null)
