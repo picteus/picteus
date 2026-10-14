@@ -7,6 +7,7 @@ import console from "node:console";
 import { io, Socket } from "socket.io-client";
 
 import {
+  AiModel,
   ApiSecretApi,
   BackIntent,
   CollectionApi,
@@ -42,6 +43,18 @@ export class InstructionReturnedError extends Error
 }
 
 export type CommandParameters = Record<string, any>;
+
+export type ComputeImageCaption =
+  {
+    aiModel: AiModel;
+    question: string;
+  };
+
+export type ComputeImageEligibleTags =
+  {
+    aiModel: AiModel;
+    tags: string[];
+  };
 
 export class CommandError extends Error
 {
@@ -470,10 +483,20 @@ export class PicteusExtension
     }
     else if (event === EventName.ImageComputeTags)
     {
+      const eligibleTags: ComputeImageEligibleTags[] | undefined = value["eligibleTags"];
+      if (eligibleTags !== undefined)
+      {
+        return await this.onComputeImageEligibleTags(communicator, this.extractEventValueId(value), eligibleTags);
+      }
       return await this.onComputeImageTags(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageComputeFeatures)
     {
+      const captions: ComputeImageCaption[] | undefined = value["captions"];
+      if (captions !== undefined)
+      {
+        return await this.onComputeImageCaptions(communicator, this.extractEventValueId(value), captions);
+      }
       return await this.onComputeImageFeatures(communicator, this.extractEventValueId(value));
     }
     else if (event === EventName.ImageComputeEmbeddings)
@@ -522,7 +545,15 @@ export class PicteusExtension
   {
   }
 
+  protected async onComputeImageEligibleTags(_communicator: Communicator, _imageId: string, _eligibleTags: ComputeImageEligibleTags[]): Promise<void>
+  {
+  }
+
   protected async onComputeImageFeatures(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onComputeImageCaptions(_communicator: Communicator, _imageId: string, _captions: ComputeImageCaption[]): Promise<void>
   {
   }
 

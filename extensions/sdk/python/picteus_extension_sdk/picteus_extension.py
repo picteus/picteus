@@ -10,6 +10,7 @@ from dataclasses import asdict, is_dataclass, dataclass
 from enum import StrEnum
 from logging import getLogger, basicConfig
 from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never, List, TypedDict, Union
+from typing_extensions import NotRequired
 
 import aiohttp
 import socketio
@@ -72,6 +73,22 @@ class EventName(StrEnum):
 class Entity(TypedDict):
     type: Literal["image", "repository", "collection"]
     id: str | int
+
+
+class AiModel(TypedDict):
+    technicalId: str
+    name: str
+    comment: NotRequired[str]
+
+
+class ComputeImageCaption(TypedDict):
+    aiModel: AiModel
+    question: str
+
+
+class ComputeImageEligibleTags(TypedDict):
+    aiModel: AiModel
+    tags: List[str]
 
 
 extension_versions_channel: str = "extension.versions"
@@ -420,8 +437,15 @@ class PicteusExtension:
         elif event == EventName.IMAGE_FEATURES_UPDATED:
             return await self.on_image_features_updated(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_COMPUTE_TAGS:
+            eligible_tags: Optional[List[ComputeImageEligibleTags]] = value.get("eligibleTags")
+            if eligible_tags is not None:
+                return await self.on_compute_image_eligible_tags(communicator, self._extract_event_value_id(value),
+                                                                 eligible_tags)
             return await self.on_compute_image_tags(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_COMPUTE_FEATURES:
+            captions: Optional[List[ComputeImageCaption]] = value.get("captions")
+            if captions is not None:
+                return await self.on_compute_image_captions(communicator, self._extract_event_value_id(value), captions)
             return await self.on_compute_image_features(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_COMPUTE_EMBEDDINGS:
             return await self.on_compute_image_embeddings(communicator, self._extract_event_value_id(value))
@@ -456,7 +480,15 @@ class PicteusExtension:
     async def on_compute_image_tags(self, communicator: Communicator, image_id: str) -> None:
         pass
 
+    async def on_compute_image_eligible_tags(self, communicator: Communicator, image_id: str,
+                                             eligible_tags: List[ComputeImageEligibleTags]) -> None:
+        pass
+
     async def on_compute_image_features(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_compute_image_captions(self, communicator: Communicator, image_id: str,
+                                        captions: List[ComputeImageCaption]) -> None:
         pass
 
     async def on_compute_image_embeddings(self, communicator: Communicator, image_id: str) -> None:
