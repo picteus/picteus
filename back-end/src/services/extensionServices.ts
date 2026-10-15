@@ -532,6 +532,17 @@ export class ExtensionService
       {
         const { id } = value as { id: string };
         await this.extensionsManager.onImageEvent({ imageId: id, action });
+        if (action === ImageEventAction.Created || action === ImageEventAction.Updated)
+        {
+          try
+          {
+            await this.triggerCapabilitiesOnImage(id);
+          }
+          catch (error)
+          {
+            logger.error(`Could not automatically trigger capabilities on the image with id '${id}'`, error);
+          }
+        }
       }
       return Promise.resolve();
     });
@@ -1879,13 +1890,13 @@ export class ExtensionService
                 default:
                   parametersChecker.throwInternalError(`The capability with id '${capability.id}' is not handled`);
                 case ManifestCapabilityId.ImageFeatures:
-                  requiredEvents = [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeFeatures ];
+                  requiredEvents = capability.isCaptions() === true ? [ ManifestEvent.ImageComputeFeatures ] : [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeFeatures ];
                   break;
                 case ManifestCapabilityId.ImageEmbeddings:
-                  requiredEvents = [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeEmbeddings ];
+                  requiredEvents = [ ManifestEvent.ImageComputeEmbeddings ];
                   break;
                 case ManifestCapabilityId.ImageTags:
-                  requiredEvents = [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags ];
+                  requiredEvents = capability.isEligibleTags() === true ? [ ManifestEvent.ImageComputeTags ] : [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags ];
                   break;
                 case ManifestCapabilityId.TextEmbeddings:
                   requiredEvents = [ ManifestEvent.TextComputeEmbeddings ];
@@ -2313,6 +2324,17 @@ export class ExtensionService
 
   private async synchronizeCapabilityForImage(id: string, imageId: string, additionalParameters: CapabilityAdditionalParameters | undefined, action: ImageEventAction, viaSocket: boolean, wait: boolean = false): Promise<void>
   {
+    if (additionalParameters !== undefined)
+    {
+      if ("captions" in additionalParameters && additionalParameters.captions.length === 0)
+      {
+        return;
+      }
+      if ("eligibleTags" in additionalParameters && additionalParameters.eligibleTags.length === 0)
+      {
+        return;
+      }
+    }
     logger.debug(`Synchronizing the image with id '${imageId}' for the extension with id '${id}' via the '${action}' action`);
     if (viaSocket === true)
     {
@@ -2335,6 +2357,30 @@ export class ExtensionService
     else
     {
       await this.extensionsManager.onImageEvent({ imageId, action });
+    }
+  }
+
+  private async triggerCapabilitiesOnImage(imageId: string): Promise<void>
+  {
+    const manifests = await this.extensionsRegistry.list(false);
+    for (const manifest of manifests)
+    {
+      for (const instructions of manifest.instructions)
+      {
+        if (instructions.capabilities === undefined)
+        {
+          continue;
+        }
+        for (const capability of instructions.capabilities)
+        {
+          if (capability.isCaptions() === true || capability.isEligibleTags() === true || capability.isImageEmbeddings() === true)
+          {
+            const additionalParameters = await this.computeCapabilityAdditionalParameters(manifest.id, capability);
+            const action = fromCapacityToImageEventAction(capability)!;
+            await this.synchronizeCapabilityForImage(manifest.id, imageId, additionalParameters, action, instructions.events.indexOf(ManifestEvent.ProcessStarted) !== -1, false);
+          }
+        }
+      }
     }
   }
 
@@ -2436,8 +2482,7 @@ export class ExtensionService
 
   private async computeCapabilityAdditionalParameters(id: string, capability: ManifestCapability): Promise<CapabilityAdditionalParameters | undefined>
   {
-    const hasDetails: boolean = (capability as { details?: object }).details !== undefined;
-    if (hasDetails === false)
+    if (capability.isCaptions() === false && capability.isEligibleTags() === false)
     {
       return undefined;
     }

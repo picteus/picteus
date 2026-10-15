@@ -46,21 +46,9 @@ class Embeddings(PicteusExtension):
     async def on_ready(self, communicator: Optional[Communicator]) -> None:
         self._setup(self.get_settings())
 
-    async def on_image_created(self, communicator: Communicator, image_id: str) -> None:
-        await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
-        await self.run_in_executor(self._clean_up_torch)
-
-    async def on_image_updated(self, communicator: Communicator, image_id: str) -> None:
-        await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
-        await self.run_in_executor(self._clean_up_torch)
-
     async def on_compute_image_embeddings(self, communicator: Communicator, image_id: str) -> None:
         await self._compute_image_embeddings(communicator, image_id, self.clip_enabled, self.dino_enabled)
         await self.run_in_executor(self._clean_up_torch)
-
-    async def on_images_command(self, communicator: Communicator, command_id: str, image_ids: List[str],
-                                parameters: CommandParameters) -> None:
-        pass
 
     async def on_process_command(self, communicator: Communicator, command_id: str,
                                  parameters: CommandParameters) -> None:
@@ -103,8 +91,8 @@ class Embeddings(PicteusExtension):
         async with self._get_semaphore():
             image: bytearray = await self.run_in_executor(
                 lambda: self.get_image_api().image_download(id=image_id, format=ImageFormat.PNG, width=256,
-                                                           height=256, resize_render=ImageResizeRender.OUTBOX,
-                                                           strip_metadata=True))
+                                                            height=256, resize_render=ImageResizeRender.OUTBOX,
+                                                            strip_metadata=True))
             pil_image: ImageFile = Image.open(io.BytesIO(image))
 
             await self.run_in_executor(lambda: self._ensure_models(clip_enabled, dino_enabled))

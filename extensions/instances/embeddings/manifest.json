@@ -16,16 +16,12 @@
     {
       "events": [
         "process.started",
-        "image.created",
-        "image.updated",
         "image.computeEmbeddings",
         "text.computeEmbeddings"
       ],
       "throttlingPolicies": [
         {
           "events": [
-            "image.created",
-            "image.updated",
             "image.computeEmbeddings",
             "text.computeEmbeddings"
           ],

@@ -2110,26 +2110,27 @@ describe("Image with application", () =>
   {
     const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
     const imageId = image.id;
+    // extension1 is configured with captions, eligible tags and embeddings
     const extension1 = await base.prepareExtension("extension1", [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings ], [], [ new ManifestImageFeaturesCapability(new ManifestCapabilityCaptionsDetails()), new ManifestImageTagsCapability(new ManifestCapabilityEligibleTagsDetails()), new ManifestCapability(ManifestCapabilityId.ImageEmbeddings) ]);
+    // extension2 is configured with tags
     const extension2 = await base.prepareExtension("extension2", [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags ], [], [ new ManifestCapability(ManifestCapabilityId.ImageTags) ]);
 
     const extension1DirectoryPath = path.join(paths.installedExtensionsDirectoryPath, extension1.manifest.id);
     const extension2DirectoryPath = path.join(paths.installedExtensionsDirectoryPath, extension2.manifest.id);
-    const functionFilePaths1 = [ `tag-${imageId}`, `feature-${imageId}`, `embeddings-${imageId}` ].map(fileName => path.join(extension1DirectoryPath, fileName));
-    const functionFilePaths2 = [ `tag-${imageId}` ].map(fileName => path.join(extension2DirectoryPath, fileName));
+    const extension1FunctionFilePaths = [ `tag-${imageId}`, `feature-${imageId}`, `embeddings-${imageId}` ].map(fileName => path.join(extension1DirectoryPath, fileName));
+    const extension1TagsFilePath = extension1FunctionFilePaths[0];
+    const extension1FeaturesFilePath = extension1FunctionFilePaths[1];
+    const extension1EmbeddingsFilePath = extension1FunctionFilePaths[2];
+    const extension2FunctionFilePaths = [ `tag-${imageId}` ].map(fileName => path.join(extension2DirectoryPath, fileName));
     const extension1FeaturesEventFilePath = path.join(extension1DirectoryPath, "image.computeFeatures");
     const extension1TagsEventFilePath = path.join(extension1DirectoryPath, "image.computeTags");
     const extension1FilePaths = [ extension1FeaturesEventFilePath, extension1TagsEventFilePath ];
     const extension2FeaturesEventFilePath = path.join(extension2DirectoryPath, "image.computeFeatures");
     const extension2TagsEventFilePath = path.join(extension2DirectoryPath, "image.computeTags");
     const extension2FilePaths = [ extension2FeaturesEventFilePath, extension2TagsEventFilePath ];
-
-    await base.waitUntil(async () =>
-    {
-      return functionFilePaths1.filter(filePath => fs.existsSync(filePath) === true).length === functionFilePaths1.length && functionFilePaths2.filter(filePath => fs.existsSync(filePath) === true).length === functionFilePaths2.length;
-    });
-    const functionFilePaths = functionFilePaths1.concat(functionFilePaths2);
+    const functionFilePaths = extension1FunctionFilePaths.concat(extension2FunctionFilePaths);
     const allFilePaths = functionFilePaths.concat(extension1FilePaths).concat(extension2FilePaths);
+
     const deleteAllFilePaths = () =>
     {
       for (const filePath of allFilePaths)
@@ -2139,6 +2140,14 @@ describe("Image with application", () =>
           fs.rmSync(filePath);
         }
       }
+    };
+    const waitForFilePaths = async (filePaths: string[]): Promise<void> =>
+    {
+      await base.waitUntil(async () =>
+      {
+        return filePaths.map(filePath => fs.existsSync(filePath) === true).filter(value => value === false).length === 0;
+      });
+
     };
     const checkFilePaths = (filePaths: string[], shouldExist: boolean) =>
     {
@@ -2156,6 +2165,11 @@ describe("Image with application", () =>
       return JSON.parse(fs.readFileSync(eventFilePath, { encoding: "utf8" }));
     };
 
+    // With no captions nor eligible tags configuration, features and tags events are not emitted at startup, only embeddings and plain tags are
+    await waitForFilePaths([ extension1EmbeddingsFilePath, ...extension2FunctionFilePaths ]);
+    checkFilePaths([ extension1TagsFilePath, extension1FeaturesFilePath ], false);
+    checkFilePaths([ extension1FeaturesEventFilePath, extension1TagsEventFilePath ], false);
+
     const searchParameters: SearchParameters = {
       filter: {
         origin: {
@@ -2166,35 +2180,9 @@ describe("Image with application", () =>
     };
 
     {
-      // We synchronize all the enabled extensions through the single-image endpoint
-      deleteAllFilePaths();
+      // With captions nor eligible tags configuration, no events are emitted for features and tags
       await base.getImageController().runCapabilities(imageId, undefined, undefined);
-      checkAllFilePaths();
-
-      // We synchronize all the enabled extensions through the search endpoint
-      deleteAllFilePaths();
-      await base.getImageController().searchRunCapabilities(undefined, searchParameters, undefined);
-      checkAllFilePaths();
-
-      // We restrict the single-image synchronization to the first extension only
-      deleteAllFilePaths();
-      await base.getImageController().runCapabilities(imageId, [ extension1.manifest.id ], undefined);
-      checkFilePaths(functionFilePaths1, true);
-      checkFilePaths(functionFilePaths2, false);
-
-      // We restrict the search synchronization to the second extension only
-      deleteAllFilePaths();
-      await base.getImageController().searchRunCapabilities([ extension2.manifest.id ], searchParameters, undefined);
-      checkFilePaths(functionFilePaths2, true);
-      checkFilePaths(functionFilePaths1, false);
-      deleteAllFilePaths();
-    }
-
-    {
-      // With the marker but no configured entry, the emitted values carry the key as an empty array
-      await base.getImageController().runCapabilities(imageId, undefined, undefined);
-      expect(readEventValue(extension1FeaturesEventFilePath)).toEqual({ id: imageId, captions: [] });
-      expect(readEventValue(extension1TagsEventFilePath)).toEqual({ id: imageId, eligibleTags: [] });
+      checkFilePaths([ extension1FeaturesEventFilePath, extension1TagsEventFilePath ], false);
       deleteAllFilePaths();
     }
 
@@ -2234,6 +2222,31 @@ describe("Image with application", () =>
       });
       checkFilePaths([ extension2FeaturesEventFilePath ], false);
       expect(readEventValue(extension2TagsEventFilePath)).toEqual({ id: imageId });
+      deleteAllFilePaths();
+    }
+
+    {
+      // We synchronize all the enabled extensions through the single-image endpoint
+      deleteAllFilePaths();
+      await base.getImageController().runCapabilities(imageId, undefined, undefined);
+      checkAllFilePaths();
+
+      // We synchronize all the enabled extensions through the search endpoint
+      deleteAllFilePaths();
+      await base.getImageController().searchRunCapabilities(undefined, searchParameters, undefined);
+      checkAllFilePaths();
+
+      // We restrict the single-image synchronization to the extension1 only
+      deleteAllFilePaths();
+      await base.getImageController().runCapabilities(imageId, [ extension1.manifest.id ], undefined);
+      checkFilePaths(extension1FunctionFilePaths, true);
+      checkFilePaths(extension2FunctionFilePaths, false);
+
+      // We restrict the search synchronization to the extension1 only
+      deleteAllFilePaths();
+      await base.getImageController().searchRunCapabilities([ extension2.manifest.id ], searchParameters, undefined);
+      checkFilePaths(extension2FunctionFilePaths, true);
+      checkFilePaths(extension1FunctionFilePaths, false);
       deleteAllFilePaths();
     }
 
@@ -2300,9 +2313,9 @@ describe("Image with application", () =>
 
     {
       // We verify that an empty identifier list behaves like an unrestricted synchronization
-      deleteAllFilePaths();
       await base.getImageController().runCapabilities(imageId, [], undefined);
       checkAllFilePaths();
+      deleteAllFilePaths();
     }
 
     {
@@ -2319,7 +2332,7 @@ describe("Image with application", () =>
     }
 
     {
-      // We verify that a paused (disabled) extension identifier is rejected by both endpoints
+      // We verify that a paused extension identifier is rejected by both endpoints
       await base.getExtensionController().changeState(extension2.manifest.id, ExtensionState.Paused);
       await expect(async () =>
       {
@@ -2341,6 +2354,54 @@ describe("Image with application", () =>
       {
         await base.getImageController().searchRunCapabilities(undefined, searchParameters, []);
       }).rejects.toThrow(new ServiceError("The parameter 'capabilityIds' with value [] is invalid because it cannot be empty", BAD_REQUEST, base.badParameterCode));
+    }
+
+    {
+      // We verify automatic triggering of capabilities on image creation and update
+      await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1.manifest.id, [ aiModel1, aiModel2 ]);
+
+      {
+        // When an image is created and instructions are configured, features, tags, and embeddings are automatically triggered
+        await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [ {
+          aiModelTechnicalId: aiModel1.technicalId,
+          question: question1,
+          enabled: true
+        } ]);
+        await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
+          { aiModelTechnicalId: aiModel2.technicalId, tags: tags2, enabled: true }
+        ]);
+        // We simulate the creation event of the already existing image
+        base.getNotifierService().emit(EventEntity.Image, ImageEventAction.Created, undefined, { id: imageId });
+
+        await waitForFilePaths([ extension1FeaturesEventFilePath, extension1TagsEventFilePath, extension1EmbeddingsFilePath ]);
+
+        expect(readEventValue(extension1FeaturesEventFilePath)).toEqual({
+          id: imageId,
+          captions: [ { aiModel: aiModel1, question: question1 } ]
+        });
+        expect(readEventValue(extension1TagsEventFilePath)).toEqual({
+          id: imageId,
+          eligibleTags: [ { aiModel: aiModel2, tags: tags2 } ]
+        });
+
+        checkFilePaths([ extension1EmbeddingsFilePath ], true);
+        deleteAllFilePaths();
+      }
+
+      {
+        // When an image is updated and instructions are empty, features and tags are not emitted, but embeddings are
+        await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, []);
+        await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, []);
+
+        // We simulate the update event of the already existing image
+        base.getNotifierService().emit(EventEntity.Image, ImageEventAction.Updated, undefined, { id: imageId });
+        await waitForFilePaths([ extension1EmbeddingsFilePath ]);
+
+        checkFilePaths([ extension1FeaturesEventFilePath ], false);
+        checkFilePaths([ extension1TagsEventFilePath ], false);
+        checkFilePaths([ extension1EmbeddingsFilePath ], true);
+        deleteAllFilePaths();
+      }
     }
   });
 

@@ -374,6 +374,31 @@ export class ManifestCapability
   @Expose()
   readonly id: ManifestCapabilityId;
 
+  isCaptions(): boolean
+  {
+    if (this.id !== ManifestCapabilityId.ImageFeatures)
+    {
+      return false;
+    }
+    const captionsDetails = (this as ManifestImageFeaturesCapability).details;
+    return captionsDetails !== undefined && captionsDetails.caption !== false;
+  }
+
+  isEligibleTags(): boolean
+  {
+    if (this.id !== ManifestCapabilityId.ImageTags)
+    {
+      return false;
+    }
+    const eligibleTagsDetails = (this as ManifestImageTagsCapability).details;
+    return eligibleTagsDetails !== undefined && eligibleTagsDetails.eligibleTags !== false;
+  }
+
+  isImageEmbeddings(): boolean
+  {
+    return this.id === ManifestCapabilityId.ImageEmbeddings;
+  }
+
 }
 
 @ApiSchema({ description: "A marker to indicate the capability to compute captions" })

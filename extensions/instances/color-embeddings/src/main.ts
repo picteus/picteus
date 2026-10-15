@@ -29,10 +29,6 @@ class ColorEmbeddingsExtension extends PicteusExtension
 
   private colorCount: number;
 
-  private usePCA: boolean;
-
-  private hasWarnedAboutPCA: boolean;
-
   protected async onReady(_communicator?: Communicator): Promise<void>
   {
     await this.setup(await this.getSettings());
@@ -45,12 +41,12 @@ class ColorEmbeddingsExtension extends PicteusExtension
 
   protected async onImageCreated(communicator: Communicator, imageId: string): Promise<void>
   {
-    await this.computeAndStoreEmbeddingsAndFeatures(communicator, imageId);
+    await this.computeAndStoreFeatures(communicator, imageId);
   }
 
   protected async onImageUpdated(communicator: Communicator, imageId: string): Promise<void>
   {
-    await this.computeAndStoreEmbeddingsAndFeatures(communicator, imageId);
+    await this.computeAndStoreFeatures(communicator, imageId);
   }
 
   protected async onComputeImageFeatures(_communicator: Communicator, imageId: string): Promise<void>
@@ -67,15 +63,9 @@ class ColorEmbeddingsExtension extends PicteusExtension
   {
   }
 
-  private async computeAndStoreEmbeddingsAndFeatures(communicator: Communicator, imageId: string): Promise<void>
+  private async computeAndStoreFeatures(communicator: Communicator, imageId: string): Promise<void>
   {
-    if (this.usePCA === true && this.hasWarnedAboutPCA === false)
-    {
-      communicator.sendLog("PCA dimensionality reduction is not implemented in this version of the extension: the full embedding vector will be used instead", "warn");
-      this.hasWarnedAboutPCA = true;
-    }
     const colors = await this.extractColors(imageId);
-    await this.storeEmbeddings(imageId, colors);
     await this.storeFeatures(imageId, colors);
     communicator.sendLog(`Computed the color embedding and dominant color features for the image`, "info");
   }
@@ -152,7 +142,6 @@ class ColorEmbeddingsExtension extends PicteusExtension
   {
     this.colorLibrary = value["colorLibrary"] as ColorLibrary ?? "color-thief";
     this.colorCount = value["colorCount"] ?? 8;
-    this.usePCA = value["usePCA"] !== undefined ? value["usePCA"] : false;
   }
 
 }

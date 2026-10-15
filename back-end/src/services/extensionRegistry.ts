@@ -12,6 +12,7 @@ import { Injectable } from "@nestjs/common";
 
 import { logger } from "../logger";
 import { paths } from "../paths";
+import { plainToInstanceViaJSON } from "../utils";
 import {
   Extension,
   ExtensionManual,
@@ -146,7 +147,8 @@ export class ExtensionRegistry
   parseManifest(filePath: string): ExtendedManifest
   {
     const content = fs.readFileSync(filePath, { encoding: "utf8" });
-    const manifest: Manifest = JSON.parse(content);
+    const manifestJson: Manifest = JSON.parse(content);
+    const manifest: Manifest = plainToInstanceViaJSON(Manifest, manifestJson);
     const directoryPath = path.resolve(filePath, "..");
     return ExtensionRegistry.from(manifest, directoryPath);
   }

@@ -134,6 +134,12 @@
                       "allOf": [
                         {
                           "type": "object",
+                          "properties": {
+                            "caption": {
+                              "type": "boolean",
+                              "description": "Whether caption computation is supported"
+                            }
+                          },
                           "description": "A marker to indicate the capability to compute captions"
                         }
                       ]
@@ -168,6 +174,12 @@
                       "allOf": [
                         {
                           "type": "object",
+                          "properties": {
+                            "eligibleTags": {
+                              "type": "boolean",
+                              "description": "Whether eligible tags computation is supported"
+                            }
+                          },
                           "description": "A marker to indicate the capability to compute eligible tags"
                         }
                       ]
