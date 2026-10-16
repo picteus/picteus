@@ -17,15 +17,13 @@ export type AddOrUpdateCollectionPropsType =
     readonly collection?: PicteusCollection;
     readonly searchFilter?: SearchFilter;
     readonly onSuccess?: (collection: PicteusCollection) => void;
-    readonly onClose?: () => void;
   };
 
 export default function AddOrUpdateCollection(
   {
     collection,
     searchFilter = FiltersService.defaultFilter,
-    onSuccess,
-    onClose
+    onSuccess
   }: AddOrUpdateCollectionPropsType
 ): ReactElement
 {
@@ -71,7 +69,6 @@ export default function AddOrUpdateCollection(
         ToastService.success(t("addOrUpdateCollectionModal.successAdd"));
       }
       onSuccess?.(newCollection);
-      onClose?.();
       modalContext?.closeModal(true);
     }
     catch (error)
@@ -82,12 +79,6 @@ export default function AddOrUpdateCollection(
     {
       setLoading(false);
     }
-  }
-
-  function handleCancel(): void
-  {
-    onClose?.();
-    modalContext?.closeModal(false);
   }
 
   const isPending = loading || createCollectionMutation.isPending || updateCollectionMutation.isPending;
@@ -110,14 +101,7 @@ export default function AddOrUpdateCollection(
           {...form.getInputProps("comment")}
           mb="sm"
         />
-        <ModalActions>
-          <Button
-            variant="subtle"
-            disabled={isPending}
-            onClick={handleCancel}
-          >
-            {t("button.cancel")}
-          </Button>
+        <ModalActions isBusy={isPending}>
           <Button
             type="submit"
             form={formId}

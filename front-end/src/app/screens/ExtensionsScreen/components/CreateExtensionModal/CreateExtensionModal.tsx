@@ -145,11 +145,6 @@ export default function CreateExtensionModal(
     }
   }
 
-  function handleCancel(): void
-  {
-    modalContext?.closeModal(false);
-  }
-
   const formId = "create-extension-form";
 
   return (
@@ -230,14 +225,7 @@ export default function CreateExtensionModal(
         </Alert>
       )}
 
-      <ModalActions>
-        <Button
-          variant="subtle"
-          disabled={loading}
-          onClick={handleCancel}
-        >
-          {t("button.cancel")}
-        </Button>
+      <ModalActions isBusy={loading}>
         <Button
           type="submit"
           form={formId}

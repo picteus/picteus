@@ -112,11 +112,6 @@ export default function AddOrUpdateRepository(
     form.setFieldValue("url", directoryPath);
   }
 
-  function handleCancel(): void
-  {
-    modalContext?.closeModal(false);
-  }
-
   const isPending =
     loading ||
     updateRepositoryMutation.isPending ||
@@ -162,14 +157,7 @@ export default function AddOrUpdateRepository(
         placeholder={t("addOrUpdateRepositoryModal.commentPlaceholder")}
         {...form.getInputProps("comment")}
       />
-      <ModalActions>
-        <Button
-          variant="subtle"
-          disabled={isPending}
-          onClick={handleCancel}
-        >
-          {t("button.cancel")}
-        </Button>
+      <ModalActions isBusy={isPending}>
         <Button
           type="submit"
           form={formId}

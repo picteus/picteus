@@ -57,7 +57,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
   const commandRunner = useExtensionCommandRunner();
   const [ selectedAction, setSelectedAction ] = useState<string>();
   const [ isAddingToCollection, setAddingToCollection ] = useState<boolean>(false);
-  const { addModal, removeModal } = useActionModalContext();
+  const { addModal } = useActionModalContext();
 
   useEffect(() =>
   {
@@ -189,7 +189,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
   function handleCreateCollection()
   {
     const imageIds = selectedImages.map((image) => image.id);
-    const modalId = addModal({
+    addModal({
       title: t("addOrUpdateCollectionModal.addTitle"),
       icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
       size: "s",
@@ -206,7 +206,6 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
           {
             clearSelectedImages();
           }}
-          onClose={() => removeModal(modalId)}
         />
       )
     });

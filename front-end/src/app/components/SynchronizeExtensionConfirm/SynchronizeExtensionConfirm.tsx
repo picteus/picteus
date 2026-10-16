@@ -4,8 +4,6 @@ import { Alert, Button, Flex, Stack, Text } from "@mantine/core";
 import { IconAlertTriangle } from "@tabler/icons-react";
 
 import { Extension, ManifestCapability, SearchParameters } from "@picteus/ws-client";
-
-import { useModalContext } from "app/context";
 import { ExtensionsService } from "app/services";
 import { ExtensionCapability, ImagesCollection, ModalActions } from "app/components";
 
@@ -26,17 +24,10 @@ export default function SynchronizeExtensionConfirm({
 }: SynchronizeExtensionConfirmPropsType): ReactElement
 {
   const [ t ] = useTranslation();
-  const modalContext = useModalContext();
-
   const capabilities = useMemo((): ManifestCapability[] =>
   {
     return ExtensionsService.computeCapabilities(extension);
   }, [ extension ]);
-
-  function handleCancel(): void
-  {
-    modalContext?.closeModal(false);
-  }
 
   return (
     <Stack gap="md">
@@ -59,12 +50,6 @@ export default function SynchronizeExtensionConfirm({
       </Stack>
 
       <ModalActions>
-        <Button
-          variant="subtle"
-          onClick={handleCancel}
-        >
-          {t("button.cancel")}
-        </Button>
         <Button onClick={onConfirm}>
           {t("button.synchronize")}
         </Button>

@@ -4,8 +4,6 @@ import { Alert, Button, Checkbox, Divider, Flex, ScrollArea, Stack, Text } from 
 import { IconAlertTriangle } from "@tabler/icons-react";
 
 import { SearchParameters } from "@picteus/ws-client";
-
-import { useModalContext } from "app/context";
 import { useExtensionsAll } from "app/hooks";
 import { EligibleExtensionType, ExtensionsService, StorageService } from "app/services";
 import { ExtensionBadge, ExtensionCapability, ImagesCollection, ModalActions } from "app/components";
@@ -22,7 +20,6 @@ export default function RunCapabilitiesConfirm({
 }: RunCapabilitiesConfirmPropsType): ReactElement
 {
   const [ t ] = useTranslation();
-  const modalContext = useModalContext();
   const { data } = useExtensionsAll();
   const [ selectedExtensionIds, setSelectedExtensionIds ] = useState<string[]>([]);
   const hasInitializedSelection = useRef<boolean>(false);
@@ -75,11 +72,6 @@ export default function RunCapabilitiesConfirm({
   {
     persistChoice(selectedExtensionIds);
     onConfirm(selectedExtensionIds);
-  }
-
-  function handleCancel(): void
-  {
-    modalContext?.closeModal(false);
   }
 
   function toggleExtension(extensionId: string, isChecked: boolean): void
@@ -149,12 +141,6 @@ export default function RunCapabilitiesConfirm({
       )}
 
       <ModalActions>
-        <Button
-          variant="subtle"
-          onClick={handleCancel}
-        >
-          {t("button.cancel")}
-        </Button>
         <Button
           disabled={canConfirm === false}
           onClick={handleConfirm}

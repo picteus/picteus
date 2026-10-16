@@ -220,11 +220,6 @@ export default function InstallOrUpdateExtension(
     );
   }
 
-  function handleCancel(): void
-  {
-    modalContext?.closeModal(false);
-  }
-
   const canSubmit = form.getValues().source === "url" ? true : fileIsValid;
 
   const formId = "install-or-update-extension-form";
@@ -267,19 +262,15 @@ export default function InstallOrUpdateExtension(
           />
         )}
 
-        <ModalActions>
-          {loading && (
-            <Text size="xs" c="dimmed" mr="auto">
+        {loading && (
+          <Flex justify="flex-end">
+            <Text mt="xs" size="xs" c="dimmed">
               {t("message.fileProcessing")}
             </Text>
-          )}
-          <Button
-            variant="subtle"
-            disabled={loading}
-            onClick={handleCancel}
-          >
-            {t("button.cancel")}
-          </Button>
+          </Flex>
+        )}
+
+        <ModalActions isBusy={loading}>
           <Button
             type="submit"
             form={formId}
