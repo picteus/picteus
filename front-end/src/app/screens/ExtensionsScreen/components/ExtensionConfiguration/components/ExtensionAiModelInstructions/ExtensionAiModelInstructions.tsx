@@ -22,6 +22,24 @@ import ModelInstructionCard, {
 } from "../ModelInstructionCard/ModelInstructionCard.tsx";
 
 
+const defaultCaptionQuestion = "Describe in detail what you see in this image. Do not output Markdown but plain text.";
+
+const defaultEligibleTags =
+  [
+    "animal",
+    "insect",
+    "mammal",
+    "vegetal",
+    "mineral",
+    "architecture",
+    "food",
+    "landscape",
+    "portrait",
+    "vehicle",
+    "art",
+    "fashion"
+  ];
+
 export type ExtensionAiModelInstructionsRefType =
   {
     save: () => Promise<void>;
@@ -60,6 +78,7 @@ function ExtensionAiModelInstructions(
   const initialEntriesRef = useRef<AiModelInstructionFormEntryType[]>([]);
 
   const [ batchCaptionQuestion, setBatchCaptionQuestion ] = useState<string>("");
+  const [ batchEligibleTagsQuestion, setBatchEligibleTagsQuestion ] = useState<string>("");
   const [ batchEligibleTags, setBatchEligibleTags ] = useState<string[]>([]);
 
   async function load(): Promise<void>
@@ -86,9 +105,10 @@ function ExtensionAiModelInstructions(
           name: model.name,
           comment: model.comment,
           captionEnabled: captionInstruction?.enabled ?? false,
-          captionQuestion: captionInstruction?.question ?? "",
+          captionQuestion: captionInstruction?.question ?? defaultCaptionQuestion,
           eligibleTagsEnabled: tagsInstruction?.enabled ?? false,
-          eligibleTags: tagsInstruction?.tags ? [ ...tagsInstruction.tags ] : []
+          eligibleTagsQuestion: tagsInstruction?.question ?? "Pick the tags that best fit the image from this list: {tags}.",
+          eligibleTags: tagsInstruction?.tags ? [ ...tagsInstruction.tags ] : defaultEligibleTags
         };
       });
 
@@ -141,9 +161,16 @@ function ExtensionAiModelInstructions(
         {
           updatedEntry.captionQuestion = batchCaptionQuestion.trim();
         }
-        if (hasEligibleTagsCapability && entry.eligibleTagsEnabled && batchEligibleTags.length > 0)
+        if (hasEligibleTagsCapability && entry.eligibleTagsEnabled)
         {
-          updatedEntry.eligibleTags = [ ...batchEligibleTags ];
+          if (batchEligibleTagsQuestion.trim().length > 0)
+          {
+            updatedEntry.eligibleTagsQuestion = batchEligibleTagsQuestion.trim();
+          }
+          if (batchEligibleTags.length > 0)
+          {
+            updatedEntry.eligibleTags = [ ...batchEligibleTags ];
+          }
         }
         return updatedEntry;
       });
@@ -182,6 +209,10 @@ function ExtensionAiModelInstructions(
         {
           return true;
         }
+        if (current.eligibleTagsQuestion !== initial.eligibleTagsQuestion)
+        {
+          return true;
+        }
         if (current.eligibleTags.length !== initial.eligibleTags.length)
         {
           return true;
@@ -206,29 +237,21 @@ function ExtensionAiModelInstructions(
       {
         return false;
       }
+      if (entry.eligibleTagsEnabled && entry.eligibleTagsQuestion.trim().length === 0)
+      {
+        return false;
+      }
     }
     return true;
   }, [ entries ]);
 
-  const isDirty = useMemo((): boolean =>
-  {
-    return computeIsDirty(entries);
-  }, [ entries, hasCaptionCapability, hasEligibleTagsCapability ]);
+  const isDirty = useMemo((): boolean => computeIsDirty(entries), [ entries, hasCaptionCapability, hasEligibleTagsCapability ]);
 
-  useEffect(() =>
-  {
-    onValidityChange(isValid);
-  }, [ isValid, onValidityChange ]);
+  useEffect(() => onValidityChange(isValid), [ isValid, onValidityChange ]);
 
-  useEffect(() =>
-  {
-    onDirtyChange(isDirty);
-  }, [ isDirty, onDirtyChange ]);
+  useEffect(() => onDirtyChange(isDirty), [ isDirty, onDirtyChange ]);
 
-  useEffect(() =>
-  {
-    onLoadingChange(loading || saving);
-  }, [ loading, saving, onLoadingChange ]);
+  useEffect(() => onLoadingChange(loading || saving), [ loading, saving, onLoadingChange ]);
 
   async function handleSave(): Promise<void>
   {
@@ -262,6 +285,7 @@ function ExtensionAiModelInstructions(
         const tagsPayload: EligibleTagsInstruction[] = entries.map((entry) => (
           {
             aiModelTechnicalId: entry.technicalId,
+            question: entry.eligibleTagsQuestion.trim(),
             enabled: entry.eligibleTagsEnabled,
             tags: entry.eligibleTags
           }
@@ -312,7 +336,7 @@ function ExtensionAiModelInstructions(
 
   const hasBatchContent =
     (hasCaptionCapability && batchCaptionQuestion.trim().length > 0) ||
-    (hasEligibleTagsCapability && batchEligibleTags.length > 0);
+    (hasEligibleTagsCapability && (batchEligibleTagsQuestion.trim().length > 0 || batchEligibleTags.length > 0));
 
   return (
     <Stack gap="md">
@@ -349,13 +373,24 @@ function ExtensionAiModelInstructions(
           )}
 
           {hasEligibleTagsCapability && (
-            <TagsInput
-              label={t("extensionConfiguration.instructions.commonEligibleTags")}
-              placeholder={t("extensionConfiguration.instructions.eligibleTagsPlaceholder")}
-              value={batchEligibleTags}
-              onChange={setBatchEligibleTags}
-              clearable
-            />
+            <>
+              <Textarea
+                label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion")}
+                placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder")}
+                value={batchEligibleTagsQuestion}
+                onChange={(event) => setBatchEligibleTagsQuestion(event.currentTarget.value)}
+                autosize
+                minRows={2}
+                maxRows={4}
+              />
+              <TagsInput
+                label={t("extensionConfiguration.instructions.commonEligibleTags")}
+                placeholder={t("extensionConfiguration.instructions.eligibleTagsPlaceholder")}
+                value={batchEligibleTags}
+                onChange={setBatchEligibleTags}
+                clearable
+              />
+            </>
           )}
         </Stack>
       </Paper>

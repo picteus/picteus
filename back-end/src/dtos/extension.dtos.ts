@@ -1606,9 +1606,10 @@ export class ExtensionAiModel extends AiModel
 export class BasisInstruction
 {
 
-  constructor(aiModelTechnicalId: string, enabled: boolean)
+  constructor(aiModelTechnicalId: string, question: string, enabled: boolean)
   {
     this.aiModelTechnicalId = aiModelTechnicalId;
+    this.question = question;
     this.enabled = enabled;
   }
 
@@ -1629,6 +1630,24 @@ export class BasisInstruction
   @NotEquals(null)
   @Expose()
   readonly aiModelTechnicalId: string;
+
+  @ApiProperty(
+    {
+      description: "The question submitted to the AI model to produce the caption or the eligible tags",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.comment,
+      required: true,
+      example: "Describe this image in one sentence"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.comment)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly question: string;
 
   @ApiProperty(
     {
@@ -1653,29 +1672,10 @@ export class CaptionInstruction extends BasisInstruction
   // The maximum number of captions an extension can declare
   static readonly PER_EXTENSION_CAPTIONS_MAXIMUM = 256;
 
-  constructor(aiModelTechnicalId: string, enabled: boolean, question: string)
+  constructor(aiModelTechnicalId: string, question: string, enabled: boolean)
   {
-    super(aiModelTechnicalId, enabled);
-    this.question = question;
+    super(aiModelTechnicalId, question, enabled);
   }
-
-  @ApiProperty(
-    {
-      description: "The question submitted to the AI model to produce the caption",
-      type: String,
-      minLength: 1,
-      maxLength: FieldLengths.comment,
-      required: true,
-      example: "Describe this image in one sentence"
-    }
-  )
-  @IsString()
-  @MinLength(1)
-  @MaxLength(FieldLengths.comment)
-  @IsDefined()
-  @NotEquals(null)
-  @Expose()
-  readonly question: string;
 
 }
 
@@ -1689,9 +1689,9 @@ export class EligibleTagsInstruction extends BasisInstruction
   // The maximum number of eligible tags
   static readonly PER_EXTENSION_TAGS_MAXIMUM = 1_024;
 
-  constructor(aiModelTechnicalId: string, enabled: boolean, tags: ImageTag[])
+  constructor(aiModelTechnicalId: string, question: string, enabled: boolean, tags: ImageTag[])
   {
-    super(aiModelTechnicalId, enabled);
+    super(aiModelTechnicalId, question, enabled);
     this.tags = tags;
   }
 

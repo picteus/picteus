@@ -2188,8 +2188,10 @@ describe("Image with application", () =>
 
     const aiModel1 = { technicalId: "gemma4", name: "Gemma 4 E2B", comment: "Multimodal model" };
     const aiModel2 = { technicalId: "qwen3", name: "Qwen 3 8B" };
-    const question1 = "Describe this image in one sentence.";
-    const question2 = "Indicate the tags which best apply to the image.";
+    const captionsQuestion1 = "Describe this image in one sentence.";
+    const captionsQuestion2 = "Indicate the tags which best apply to the image.";
+    const eligibleTagsQuestion1 = "What are the tags which best apply to the image among the following list: {tags}.";
+    const eligibleTagsQuestion2 = "Pick the tags that best fit the image from this list: {tags}.";
     const tags1 = [ "portrait", "landscape", "night" ];
     const tags2 = [ "sunset", "mountain" ];
 
@@ -2198,19 +2200,19 @@ describe("Image with application", () =>
       await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1.manifest.id, [ aiModel1, aiModel2 ]);
 
       await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [
-        { aiModelTechnicalId: aiModel1.technicalId, question: question1, enabled: true },
-        { aiModelTechnicalId: aiModel2.technicalId, question: question2, enabled: true }
+        { aiModelTechnicalId: aiModel1.technicalId, question: captionsQuestion1, enabled: true },
+        { aiModelTechnicalId: aiModel2.technicalId, question: captionsQuestion2, enabled: true }
       ]);
       await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
-        { aiModelTechnicalId: aiModel1.technicalId, tags: tags1, enabled: true },
-        { aiModelTechnicalId: aiModel2.technicalId, tags: tags2, enabled: true }
+        { aiModelTechnicalId: aiModel1.technicalId, question: eligibleTagsQuestion1, tags: tags1, enabled: true },
+        { aiModelTechnicalId: aiModel2.technicalId, question: eligibleTagsQuestion2, tags: tags2, enabled: true }
       ]);
       await base.getImageController().runCapabilities(imageId, undefined, undefined);
       expect(readEventValue(extension1FeaturesEventFilePath)).toEqual({
         id: imageId,
         captions: [
-          { aiModel: aiModel1, question: question1 },
-          { aiModel: aiModel2, question: question2 }
+          { aiModel: aiModel1, question: captionsQuestion1 },
+          { aiModel: aiModel2, question: captionsQuestion2 }
         ]
       });
       expect(readEventValue(extension1TagsEventFilePath)).toEqual({
@@ -2256,7 +2258,7 @@ describe("Image with application", () =>
       await base.getImageController().runCapabilities(imageId, undefined, undefined);
       expect(readEventValue(extension1FeaturesEventFilePath)).toEqual({
         id: imageId,
-        captions: [ { aiModel: aiModel2, question: question2 } ]
+        captions: [ { aiModel: aiModel2, question: captionsQuestion2 } ]
       });
       expect(readEventValue(extension1TagsEventFilePath)).toEqual({
         id: imageId,
@@ -2268,17 +2270,17 @@ describe("Image with application", () =>
       // With one enabled and one disabled caption and eligible tags instruction, only the enabled entry belongs to the emitted arrays
       await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1.manifest.id, [ aiModel1, aiModel2 ]);
       await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [
-        { aiModelTechnicalId: aiModel1.technicalId, question: question1, enabled: true },
-        { aiModelTechnicalId: aiModel2.technicalId, question: question2, enabled: false }
+        { aiModelTechnicalId: aiModel1.technicalId, question: captionsQuestion1, enabled: true },
+        { aiModelTechnicalId: aiModel2.technicalId, question: captionsQuestion2, enabled: false }
       ]);
       await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
-        { aiModelTechnicalId: aiModel1.technicalId, tags: tags1, enabled: false },
-        { aiModelTechnicalId: aiModel2.technicalId, tags: tags2, enabled: true }
+        { aiModelTechnicalId: aiModel1.technicalId, question: eligibleTagsQuestion1, tags: tags1, enabled: false },
+        { aiModelTechnicalId: aiModel2.technicalId, question: eligibleTagsQuestion2, tags: tags2, enabled: true }
       ]);
       await base.getImageController().runCapabilities(imageId, undefined, undefined);
       expect(readEventValue(extension1FeaturesEventFilePath)).toEqual({
         id: imageId,
-        captions: [ { aiModel: aiModel1, question: question1 } ]
+        captions: [ { aiModel: aiModel1, question: captionsQuestion1 } ]
       });
       expect(readEventValue(extension1TagsEventFilePath)).toEqual({
         id: imageId,
@@ -2364,11 +2366,11 @@ describe("Image with application", () =>
         // When an image is created and instructions are configured, features, tags, and embeddings are automatically triggered
         await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [ {
           aiModelTechnicalId: aiModel1.technicalId,
-          question: question1,
+          question: captionsQuestion1,
           enabled: true
         } ]);
         await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
-          { aiModelTechnicalId: aiModel2.technicalId, tags: tags2, enabled: true }
+          { aiModelTechnicalId: aiModel2.technicalId, question: eligibleTagsQuestion2, tags: tags2, enabled: true }
         ]);
         // We simulate the creation event of the already existing image
         base.getNotifierService().emit(EventEntity.Image, ImageEventAction.Created, undefined, { id: imageId });
@@ -2377,7 +2379,7 @@ describe("Image with application", () =>
 
         expect(readEventValue(extension1FeaturesEventFilePath)).toEqual({
           id: imageId,
-          captions: [ { aiModel: aiModel1, question: question1 } ]
+          captions: [ { aiModel: aiModel1, question: captionsQuestion1 } ]
         });
         expect(readEventValue(extension1TagsEventFilePath)).toEqual({
           id: imageId,

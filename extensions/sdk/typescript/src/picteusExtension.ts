@@ -53,6 +53,7 @@ export type ComputeImageCaption =
 export type ComputeImageEligibleTags =
   {
     aiModel: AiModel;
+    question: string;
     tags: string[];
   };
 

@@ -11,6 +11,7 @@ export type AiModelInstructionFormEntryType =
     captionEnabled: boolean;
     captionQuestion: string;
     eligibleTagsEnabled: boolean;
+    eligibleTagsQuestion: string;
     eligibleTags: string[];
   };
 
@@ -31,6 +32,7 @@ export default function ModelInstructionCard({
 {
   const [ t ] = useTranslation();
 
+  const questionCharactersMaximum = 1024;
   return (
     <Card withBorder padding="md" radius="md">
       <Stack gap="sm">
@@ -57,10 +59,7 @@ export default function ModelInstructionCard({
               checked={modelEntry.captionEnabled}
               onChange={(event) =>
               {
-                onChange({
-                  ...modelEntry,
-                  captionEnabled: event.currentTarget.checked
-                });
+                onChange({ ...modelEntry, captionEnabled: event.currentTarget.checked });
               }}
               label={t("extensionConfiguration.instructions.enableCaptions")}
             />
@@ -71,21 +70,14 @@ export default function ModelInstructionCard({
                 value={modelEntry.captionQuestion}
                 onChange={(event) =>
                 {
-                  onChange({
-                    ...modelEntry,
-                    captionQuestion: event.currentTarget.value
-                  });
+                  onChange({ ...modelEntry, captionQuestion: event.currentTarget.value });
                 }}
                 autosize
                 minRows={2}
                 maxRows={6}
-                maxLength={1024}
+                maxLength={questionCharactersMaximum}
                 required
-                error={
-                  modelEntry.captionEnabled && modelEntry.captionQuestion.trim().length === 0
-                    ? t("fieldError.empty")
-                    : undefined
-                }
+                error={modelEntry.captionEnabled && modelEntry.captionQuestion.trim().length === 0 ? t("fieldError.empty") : undefined}
               />
             )}
           </Stack>
@@ -105,19 +97,33 @@ export default function ModelInstructionCard({
               label={t("extensionConfiguration.instructions.enableEligibleTags")}
             />
             {modelEntry.eligibleTagsEnabled && (
-              <TagsInput
-                label={t("extensionConfiguration.instructions.eligibleTags")}
-                placeholder={t("extensionConfiguration.instructions.eligibleTagsPlaceholder")}
-                value={modelEntry.eligibleTags}
-                onChange={(tags) =>
-                {
-                  onChange({
-                    ...modelEntry,
-                    eligibleTags: tags
-                  });
-                }}
-                clearable
-              />
+              <>
+                <Textarea
+                  label={t("extensionConfiguration.instructions.eligibleTagsQuestion")}
+                  placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder")}
+                  value={modelEntry.eligibleTagsQuestion}
+                  onChange={(event) =>
+                  {
+                    onChange({ ...modelEntry, eligibleTagsQuestion: event.currentTarget.value });
+                  }}
+                  autosize
+                  minRows={2}
+                  maxRows={6}
+                  maxLength={questionCharactersMaximum}
+                  required
+                  error={modelEntry.eligibleTagsEnabled && modelEntry.eligibleTagsQuestion.trim().length === 0 ? t("fieldError.empty") : undefined}
+                />
+                <TagsInput
+                  label={t("extensionConfiguration.instructions.eligibleTags")}
+                  placeholder={t("extensionConfiguration.instructions.eligibleTagsPlaceholder")}
+                  value={modelEntry.eligibleTags}
+                  onChange={(tags) =>
+                  {
+                    onChange({ ...modelEntry, eligibleTags: tags });
+                  }}
+                  clearable
+                />
+              </>
             )}
           </Stack>
         )}

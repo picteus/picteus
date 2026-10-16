@@ -88,6 +88,7 @@ class ComputeImageCaption(TypedDict):
 
 class ComputeImageEligibleTags(TypedDict):
     aiModel: AiModel
+    question: str
     tags: List[str]
 
 

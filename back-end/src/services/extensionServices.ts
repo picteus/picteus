@@ -373,11 +373,11 @@ type WithAiModel = { aiModel: AiModel };
 
 type CapabilityAdditionalCaptions = WithAiModel & { question: string };
 
-type CapabilityAdditionalEligibleTags = WithAiModel & { tags: ImageTag[] };
+type CapabilityAdditionalEligibleTags = CapabilityAdditionalCaptions & { tags: ImageTag[] };
 
-type CapabilityAdditionalParameters = { captions: CapabilityAdditionalCaptions[] } | {
-  eligibleTags: CapabilityAdditionalEligibleTags[]
-};
+type CapabilityAdditionalParameters =
+  { captions: CapabilityAdditionalCaptions[] } |
+  { eligibleTags: CapabilityAdditionalEligibleTags[] };
 
 export interface ExtensionSettingsVersions
 {
@@ -2520,7 +2520,7 @@ export class ExtensionService
         eligibleTags = instructions.filter(instruction => instruction.enabled).map(instruction =>
         {
           const aiModel = findAiModel(instruction, models);
-          return { aiModel, tags: instruction.tags };
+          return { aiModel, question: instruction.question, tags: instruction.tags };
         });
       }
       return { eligibleTags };

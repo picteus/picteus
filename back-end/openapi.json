@@ -5607,24 +5607,24 @@
             "maxLength": 64,
             "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
           },
+          "question": {
+            "type": "string",
+            "description": "The question submitted to the AI model to produce the caption or the eligible tags",
+            "minLength": 1,
+            "maxLength": 1024,
+            "example": "Describe this image in one sentence"
+          },
           "enabled": {
             "type": "boolean",
             "description": "Whether this instruction is active",
             "example": true
-          },
-          "question": {
-            "type": "string",
-            "description": "The question submitted to the AI model to produce the caption",
-            "minLength": 1,
-            "maxLength": 1024,
-            "example": "Describe this image in one sentence"
           }
         },
         "description": "An instruction for computing captions with an AI model",
         "required": [
           "aiModelTechnicalId",
-          "enabled",
-          "question"
+          "question",
+          "enabled"
         ]
       },
       "EligibleTagsInstruction": {
@@ -5637,6 +5637,13 @@
             "minLength": 1,
             "maxLength": 64,
             "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
+          },
+          "question": {
+            "type": "string",
+            "description": "The question submitted to the AI model to produce the caption or the eligible tags",
+            "minLength": 1,
+            "maxLength": 1024,
+            "example": "Describe this image in one sentence"
           },
           "enabled": {
             "type": "boolean",
@@ -5664,6 +5671,7 @@
         "description": "An instruction for computing eligible tags with an AI model",
         "required": [
           "aiModelTechnicalId",
+          "question",
           "enabled",
           "tags"
         ]
