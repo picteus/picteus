@@ -1606,10 +1606,11 @@ export class ExtensionAiModel extends AiModel
 export class BasisInstruction
 {
 
-  constructor(aiModelTechnicalId: string, question: string, enabled: boolean)
+  constructor(aiModelTechnicalId: string, question: string, isAuto: boolean, enabled: boolean)
   {
     this.aiModelTechnicalId = aiModelTechnicalId;
     this.question = question;
+    this.isAuto = isAuto;
     this.enabled = enabled;
   }
 
@@ -1651,6 +1652,20 @@ export class BasisInstruction
 
   @ApiProperty(
     {
+      description: "Whether the instruction should run automatically on image indexing",
+      type: Boolean,
+      required: true,
+      example: true
+    }
+  )
+  @IsBoolean()
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly isAuto: boolean;
+
+  @ApiProperty(
+    {
       description: "Whether this instruction is active",
       type: Boolean,
       required: true,
@@ -1672,9 +1687,9 @@ export class CaptionInstruction extends BasisInstruction
   // The maximum number of captions an extension can declare
   static readonly PER_EXTENSION_CAPTIONS_MAXIMUM = 256;
 
-  constructor(aiModelTechnicalId: string, question: string, enabled: boolean)
+  constructor(aiModelTechnicalId: string, question: string, enabled: boolean, isAuto: boolean)
   {
-    super(aiModelTechnicalId, question, enabled);
+    super(aiModelTechnicalId, question, isAuto, enabled);
   }
 
 }
@@ -1689,9 +1704,9 @@ export class EligibleTagsInstruction extends BasisInstruction
   // The maximum number of eligible tags
   static readonly PER_EXTENSION_TAGS_MAXIMUM = 1_024;
 
-  constructor(aiModelTechnicalId: string, question: string, enabled: boolean, tags: ImageTag[])
+  constructor(aiModelTechnicalId: string, question: string, enabled: boolean, isAuto: boolean, tags: ImageTag[])
   {
-    super(aiModelTechnicalId, question, enabled);
+    super(aiModelTechnicalId, question, isAuto, enabled);
     this.tags = tags;
   }
 

@@ -113,8 +113,10 @@ function ExtensionAiModelInstructions(
           name: model.name,
           comment: model.comment,
           captionEnabled: captionInstruction?.enabled ?? false,
+          captionIsAuto: captionInstruction?.isAuto ?? false,
           captionQuestion: captionInstruction?.question ?? defaultCaptionQuestion,
           eligibleTagsEnabled: tagsInstruction?.enabled ?? false,
+          eligibleTagsIsAuto: tagsInstruction?.isAuto ?? false,
           eligibleTagsQuestion: tagsInstruction?.question ?? `Pick the tags that best fit the image from this list: ${tagsPlaceholder}.`,
           eligibleTags: tagsInstruction?.tags ? [ ...tagsInstruction.tags ] : defaultEligibleTags
         };
@@ -206,6 +208,10 @@ function ExtensionAiModelInstructions(
         {
           return true;
         }
+        if (current.captionIsAuto !== initial.captionIsAuto)
+        {
+          return true;
+        }
         if (current.captionQuestion !== initial.captionQuestion)
         {
           return true;
@@ -214,6 +220,10 @@ function ExtensionAiModelInstructions(
       if (hasEligibleTagsCapability)
       {
         if (current.eligibleTagsEnabled !== initial.eligibleTagsEnabled)
+        {
+          return true;
+        }
+        if (current.eligibleTagsIsAuto !== initial.eligibleTagsIsAuto)
         {
           return true;
         }
@@ -282,6 +292,7 @@ function ExtensionAiModelInstructions(
           {
             aiModelTechnicalId: entry.technicalId,
             enabled: entry.captionEnabled,
+            isAuto: entry.captionIsAuto,
             question: entry.captionQuestion.trim()
           }
         ));
@@ -299,6 +310,7 @@ function ExtensionAiModelInstructions(
             aiModelTechnicalId: entry.technicalId,
             question: entry.eligibleTagsQuestion.trim(),
             enabled: entry.eligibleTagsEnabled,
+            isAuto: entry.eligibleTagsIsAuto,
             tags: entry.eligibleTags
           }
         ));

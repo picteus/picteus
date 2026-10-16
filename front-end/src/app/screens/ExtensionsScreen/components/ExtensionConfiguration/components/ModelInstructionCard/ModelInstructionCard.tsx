@@ -9,8 +9,10 @@ export type AiModelInstructionFormEntryType =
     readonly name: string;
     readonly comment?: string;
     captionEnabled: boolean;
+    captionIsAuto: boolean;
     captionQuestion: string;
     eligibleTagsEnabled: boolean;
+    eligibleTagsIsAuto: boolean;
     eligibleTagsQuestion: string;
     eligibleTags: string[];
   };
@@ -64,21 +66,31 @@ export default function ModelInstructionCard({
               label={t("extensionConfiguration.instructions.enableCaptions")}
             />
             {modelEntry.captionEnabled && (
-              <Textarea
-                label={t("extensionConfiguration.instructions.captionQuestion")}
-                placeholder={t("extensionConfiguration.instructions.captionQuestionPlaceholder")}
-                value={modelEntry.captionQuestion}
-                onChange={(event) =>
-                {
-                  onChange({ ...modelEntry, captionQuestion: event.currentTarget.value });
-                }}
-                autosize
-                minRows={2}
-                maxRows={6}
-                maxLength={questionCharactersMaximum}
-                required
-                error={modelEntry.captionEnabled && modelEntry.captionQuestion.trim().length === 0 ? t("fieldError.empty") : undefined}
-              />
+              <>
+                <Switch
+                  checked={modelEntry.captionIsAuto}
+                  onChange={(event) =>
+                  {
+                    onChange({ ...modelEntry, captionIsAuto: event.currentTarget.checked });
+                  }}
+                  label={t("extensionConfiguration.instructions.iAutoCaptions")}
+                />
+                <Textarea
+                  label={t("extensionConfiguration.instructions.captionQuestion")}
+                  placeholder={t("extensionConfiguration.instructions.captionQuestionPlaceholder")}
+                  value={modelEntry.captionQuestion}
+                  onChange={(event) =>
+                  {
+                    onChange({ ...modelEntry, captionQuestion: event.currentTarget.value });
+                  }}
+                  autosize
+                  minRows={2}
+                  maxRows={6}
+                  maxLength={questionCharactersMaximum}
+                  required
+                  error={modelEntry.captionEnabled && modelEntry.captionQuestion.trim().length === 0 ? t("fieldError.empty") : undefined}
+                />
+              </>
             )}
           </Stack>
         )}
@@ -98,6 +110,17 @@ export default function ModelInstructionCard({
             />
             {modelEntry.eligibleTagsEnabled && (
               <>
+                <Switch
+                  checked={modelEntry.eligibleTagsIsAuto}
+                  onChange={(event) =>
+                  {
+                    onChange({
+                      ...modelEntry,
+                      eligibleTagsIsAuto: event.currentTarget.checked
+                    });
+                  }}
+                  label={t("extensionConfiguration.instructions.iAutoEligibleTags")}
+                />
                 <Textarea
                   label={t("extensionConfiguration.instructions.eligibleTagsQuestion")}
                   placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder")}

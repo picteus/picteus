@@ -1103,7 +1103,7 @@ export class ExtensionService
           const action = fromCapacityToImageEventAction(capability);
           if (action !== undefined && action !== null)
           {
-            const additionalParameters = await this.computeCapabilityAdditionalParameters(manifest.id, capability);
+            const additionalParameters = await this.computeCapabilityAdditionalParameters(manifest.id, capability, false);
             await this.synchronizeCapabilityForImage(manifest.id, imageId, additionalParameters, action, instructions.events.indexOf(ManifestEvent.ProcessStarted) !== -1, true);
           }
         }
@@ -2316,7 +2316,7 @@ export class ExtensionService
       logger.info(`Synchronizing ${imageIds.length} image(s) through the extension with id '${id}' for the capability with id '${capability.id}'`);
       const action: ImageEventAction = fromCapacityToImageEventAction(capability)!;
       // We compute the additional parameters once, as the configured entries cannot differ per image
-      const additionalParameters = await this.computeCapabilityAdditionalParameters(id, capability);
+      const additionalParameters = await this.computeCapabilityAdditionalParameters(id, capability, false);
       for (const imageId of imageIds)
       {
         await this.synchronizeCapabilityForImage(id, imageId, additionalParameters, action, viaSocket, false);
@@ -2386,7 +2386,7 @@ export class ExtensionService
         {
           if (capability.isCaptions() === true || capability.isEligibleTags() === true || capability.isImageEmbeddings() === true)
           {
-            const additionalParameters = await this.computeCapabilityAdditionalParameters(manifest.id, capability);
+            const additionalParameters = await this.computeCapabilityAdditionalParameters(manifest.id, capability, true);
             const action = fromCapacityToImageEventAction(capability)!;
             await this.synchronizeCapabilityForImage(manifest.id, imageId, additionalParameters, action, instructions.events.indexOf(ManifestEvent.ProcessStarted) !== -1, false);
           }
@@ -2491,7 +2491,7 @@ export class ExtensionService
     return checkedInstructions.sort((instruction1, instruction2) => instruction1.aiModelTechnicalId.localeCompare(instruction2.aiModelTechnicalId));
   }
 
-  private async computeCapabilityAdditionalParameters(id: string, capability: ManifestCapability): Promise<CapabilityAdditionalParameters | undefined>
+  private async computeCapabilityAdditionalParameters(id: string, capability: ManifestCapability, appliesOnlyIfIsAuto: boolean): Promise<CapabilityAdditionalParameters | undefined>
   {
     if (capability.isCaptions() === false && capability.isEligibleTags() === false)
     {
@@ -2513,7 +2513,7 @@ export class ExtensionService
       if (instructions.length > 0)
       {
         const models = await this.findAiModels(id);
-        captions = instructions.filter(instruction => instruction.enabled).map(instruction =>
+        captions = instructions.filter(instruction => instruction.enabled === true && (appliesOnlyIfIsAuto === false || instruction.isAuto === true)).map(instruction =>
         {
           const aiModel = findAiModel(instruction, models);
           return { aiModel, question: instruction.question };
@@ -2528,7 +2528,7 @@ export class ExtensionService
       if (instructions.length > 0)
       {
         const models = await this.findAiModels(id);
-        eligibleTags = instructions.filter(instruction => instruction.enabled).map(instruction =>
+        eligibleTags = instructions.filter(instruction => instruction.enabled === true && (appliesOnlyIfIsAuto === false || instruction.isAuto === true)).map(instruction =>
         {
           const aiModel = findAiModel(instruction, models);
           return { aiModel, question: instruction.question, tags: instruction.tags };

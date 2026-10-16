@@ -5614,6 +5614,11 @@
             "maxLength": 1024,
             "example": "Describe this image in one sentence"
           },
+          "isAuto": {
+            "type": "boolean",
+            "description": "Whether the instruction should run automatically on image indexing",
+            "example": true
+          },
           "enabled": {
             "type": "boolean",
             "description": "Whether this instruction is active",
@@ -5624,6 +5629,7 @@
         "required": [
           "aiModelTechnicalId",
           "question",
+          "isAuto",
           "enabled"
         ]
       },
@@ -5644,6 +5650,11 @@
             "minLength": 1,
             "maxLength": 1024,
             "example": "Describe this image in one sentence"
+          },
+          "isAuto": {
+            "type": "boolean",
+            "description": "Whether the instruction should run automatically on image indexing",
+            "example": true
           },
           "enabled": {
             "type": "boolean",
@@ -5672,6 +5683,7 @@
         "required": [
           "aiModelTechnicalId",
           "question",
+          "isAuto",
           "enabled",
           "tags"
         ]

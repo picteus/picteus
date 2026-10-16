@@ -2206,18 +2206,47 @@ describe("Image with application", () =>
         await expect(async () =>
         {
           await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
-            { aiModelTechnicalId: aiModel1.technicalId, question: invalidQuestion, tags: tags1, enabled: true }
+            {
+              aiModelTechnicalId: aiModel1.technicalId,
+              question: invalidQuestion,
+              tags: tags1,
+              isAuto: true,
+              enabled: true
+            }
           ]);
         }).rejects.toThrow(new ServiceError(`The parameter '[0].question' with value '${invalidQuestion}' is invalid because it does not contain the '${tagsPlaceholder}' string`, BAD_REQUEST, base.badParameterCode));
       }
 
+      {
+        // We verify that an instruction without the mandatory isAuto flag is rejected
+        await expect(async () =>
+        {
+          await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [
+            // @ts-ignore
+            { aiModelTechnicalId: aiModel1.technicalId, question: captionsQuestion1, enabled: true }
+          ]);
+        }).rejects.toThrow(new ServiceError("The item with index '0' is invalid: the property 'isAuto' is invalid, because isAuto should not be null or undefined", BAD_REQUEST, base.badParameterCode));
+      }
+
       await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [
-        { aiModelTechnicalId: aiModel1.technicalId, question: captionsQuestion1, enabled: true },
-        { aiModelTechnicalId: aiModel2.technicalId, question: captionsQuestion2, enabled: true }
+        { aiModelTechnicalId: aiModel1.technicalId, question: captionsQuestion1, isAuto: true, enabled: true },
+        { aiModelTechnicalId: aiModel2.technicalId, question: captionsQuestion2, isAuto: true, enabled: true }
       ]);
       await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
-        { aiModelTechnicalId: aiModel1.technicalId, question: eligibleTagsQuestion1, tags: tags1, enabled: true },
-        { aiModelTechnicalId: aiModel2.technicalId, question: eligibleTagsQuestion2, tags: tags2, enabled: true }
+        {
+          aiModelTechnicalId: aiModel1.technicalId,
+          question: eligibleTagsQuestion1,
+          tags: tags1,
+          isAuto: true,
+          enabled: true
+        },
+        {
+          aiModelTechnicalId: aiModel2.technicalId,
+          question: eligibleTagsQuestion2,
+          tags: tags2,
+          isAuto: true,
+          enabled: true
+        }
       ]);
       await base.getImageController().runCapabilities(imageId, undefined, undefined);
       expect(readEventValue(extension1FeaturesEventFilePath)).toEqual({
@@ -2282,12 +2311,24 @@ describe("Image with application", () =>
       // With one enabled and one disabled caption and eligible tags instruction, only the enabled entry belongs to the emitted arrays
       await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1.manifest.id, [ aiModel1, aiModel2 ]);
       await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [
-        { aiModelTechnicalId: aiModel1.technicalId, question: captionsQuestion1, enabled: true },
-        { aiModelTechnicalId: aiModel2.technicalId, question: captionsQuestion2, enabled: false }
+        { aiModelTechnicalId: aiModel1.technicalId, question: captionsQuestion1, isAuto: true, enabled: true },
+        { aiModelTechnicalId: aiModel2.technicalId, question: captionsQuestion2, isAuto: true, enabled: false }
       ]);
       await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
-        { aiModelTechnicalId: aiModel1.technicalId, question: eligibleTagsQuestion1, tags: tags1, enabled: false },
-        { aiModelTechnicalId: aiModel2.technicalId, question: eligibleTagsQuestion2, tags: tags2, enabled: true }
+        {
+          aiModelTechnicalId: aiModel1.technicalId,
+          question: eligibleTagsQuestion1,
+          tags: tags1,
+          isAuto: true,
+          enabled: false
+        },
+        {
+          aiModelTechnicalId: aiModel2.technicalId,
+          question: eligibleTagsQuestion2,
+          tags: tags2,
+          isAuto: true,
+          enabled: true
+        }
       ]);
       await base.getImageController().runCapabilities(imageId, undefined, undefined);
       expect(readEventValue(extension1FeaturesEventFilePath)).toEqual({
@@ -2379,10 +2420,17 @@ describe("Image with application", () =>
         await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [ {
           aiModelTechnicalId: aiModel1.technicalId,
           question: captionsQuestion1,
+          isAuto: true,
           enabled: true
         } ]);
         await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
-          { aiModelTechnicalId: aiModel2.technicalId, question: eligibleTagsQuestion2, tags: tags2, enabled: true }
+          {
+            aiModelTechnicalId: aiModel2.technicalId,
+            question: eligibleTagsQuestion2,
+            tags: tags2,
+            isAuto: true,
+            enabled: true
+          }
         ]);
         // We simulate the creation event of the already existing image
         base.getNotifierService().emit(EventEntity.Image, ImageEventAction.Created, undefined, { id: imageId });
@@ -2399,6 +2447,45 @@ describe("Image with application", () =>
         });
 
         checkFilePaths([ extension1EmbeddingsFilePath ], true);
+        deleteAllFilePaths();
+      }
+
+      {
+        // When an image is created and instructions are configured with non-auto mode, features and tags are not emitted automatically
+        await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [ {
+          aiModelTechnicalId: aiModel1.technicalId,
+          question: captionsQuestion1,
+          isAuto: false,
+          enabled: true
+        } ]);
+        await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
+          {
+            aiModelTechnicalId: aiModel2.technicalId,
+            question: eligibleTagsQuestion2,
+            tags: tags2,
+            isAuto: false,
+            enabled: true
+          }
+        ]);
+
+        base.getNotifierService().emit(EventEntity.Image, ImageEventAction.Created, undefined, { id: imageId });
+        await waitForFilePaths([ extension1EmbeddingsFilePath ]);
+
+        checkFilePaths([ extension1FeaturesEventFilePath ], false);
+        checkFilePaths([ extension1TagsEventFilePath ], false);
+        checkFilePaths([ extension1EmbeddingsFilePath ], true);
+        deleteAllFilePaths();
+
+        // But manual runCapabilities still executes them because it ignores the auto mode and only checks whether an instruction is enabled
+        await base.getImageController().runCapabilities(imageId, undefined, undefined);
+        expect(readEventValue(extension1FeaturesEventFilePath)).toEqual({
+          id: imageId,
+          captions: [ { aiModel: aiModel1, question: captionsQuestion1 } ]
+        });
+        expect(readEventValue(extension1TagsEventFilePath)).toEqual({
+          id: imageId,
+          eligibleTags: [ { aiModel: aiModel2, question: eligibleTagsQuestion2, tags: tags2 } ]
+        });
         deleteAllFilePaths();
       }
 
