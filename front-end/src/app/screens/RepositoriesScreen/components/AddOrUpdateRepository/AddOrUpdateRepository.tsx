@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { type ReactElement, useState } from "react";
 import { IconFolderSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { ActionIcon, Button, Flex, Textarea, TextInput } from "@mantine/core";
+import { ActionIcon, Button, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 
 import { Repository, RepositoryApiRepositoryCreateRequest } from "@picteus/ws-client";
@@ -10,6 +10,7 @@ import { FolderTypes } from "types";
 import { computePathSeparator, ToastService, Validators } from "utils";
 import { useModalContext } from "app/context";
 import { useAddRepositoryMutation, useFolderPicker, useUpdateRepositoryMutation } from "app/hooks";
+import { ModalActions } from "app/components";
 
 
 const initialValues: RepositoryApiRepositoryCreateRequest = {
@@ -20,13 +21,14 @@ const initialValues: RepositoryApiRepositoryCreateRequest = {
   watch: undefined
 };
 
-type AddOrUpdateRepositoryType = {
-  repository?: Repository;
-};
+export type AddOrUpdateRepositoryPropsType =
+  {
+    readonly repository?: Repository;
+  };
 
-export default function AddOrUpdateRepository({
-  repository
-}: AddOrUpdateRepositoryType)
+export default function AddOrUpdateRepository(
+  { repository }: AddOrUpdateRepositoryPropsType
+): ReactElement
 {
   const [ t ] = useTranslation();
   const modalContext = useModalContext();
@@ -110,8 +112,20 @@ export default function AddOrUpdateRepository({
     form.setFieldValue("url", directoryPath);
   }
 
+  function handleCancel(): void
+  {
+    modalContext?.closeModal(false);
+  }
+
+  const isPending =
+    loading ||
+    updateRepositoryMutation.isPending ||
+    addRepositoryMutation.isPending;
+
+  const formId = "add-or-update-repository-form";
+
   return (
-    <form onSubmit={form.onSubmit(handleSubmit)}>
+    <form id={formId} onSubmit={form.onSubmit(handleSubmit)}>
       <TextInput
         mb="lg"
         withAsterisk
@@ -148,23 +162,23 @@ export default function AddOrUpdateRepository({
         placeholder={t("addOrUpdateRepositoryModal.commentPlaceholder")}
         {...form.getInputProps("comment")}
       />
-      <Flex justify="flex-end">
+      <ModalActions>
         <Button
-          loading={
-            loading ||
-            updateRepositoryMutation.isPending ||
-            addRepositoryMutation.isPending
-          }
-          disabled={
-            loading ||
-            updateRepositoryMutation.isPending ||
-            addRepositoryMutation.isPending
-          }
-          type="submit"
+          variant="subtle"
+          disabled={isPending}
+          onClick={handleCancel}
         >
-          {t(repository ? "button.save" : "button.add")}
+          {t("button.cancel")}
         </Button>
-      </Flex>
+        <Button
+          type="submit"
+          form={formId}
+          loading={isPending}
+          disabled={isPending}
+        >
+          {t(repository !== undefined ? "button.save" : "button.add")}
+        </Button>
+      </ModalActions>
     </form>
   );
 }

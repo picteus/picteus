@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { type ReactElement, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { ActionIcon, Alert, Button, Flex, SegmentedControl, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
@@ -11,6 +11,7 @@ import { Extension, ExtensionState } from "@picteus/ws-client";
 import { fileToBlob, mimeTypes, ToastService, Validators } from "utils";
 import { useModalContext } from "app/context";
 import { useInstallExtensionMutation, useUpdateExtensionMutation } from "app/hooks";
+import { ModalActions } from "app/components";
 
 
 type FormValueType = {
@@ -25,15 +26,18 @@ const initialValues: FormValueType = {
   url: ""
 };
 
-type InstallOrUpdateExtensionType = {
-  extension?: Extension;
-  onSuccess: (extension: Extension) => void;
-};
+export type InstallOrUpdateExtensionPropsType =
+  {
+    readonly extension?: Extension;
+    readonly onSuccess: (extension: Extension) => void;
+  };
 
-export default function InstallOrUpdateExtension({
-  extension,
-  onSuccess
-}: InstallOrUpdateExtensionType)
+export default function InstallOrUpdateExtension(
+  {
+    extension,
+    onSuccess
+  }: InstallOrUpdateExtensionPropsType
+): ReactElement
 {
   const [ t ] = useTranslation();
   const modalContext = useModalContext();
@@ -89,7 +93,7 @@ export default function InstallOrUpdateExtension({
     }
   });
 
-  async function handleSubmit(values: FormValueType)
+  async function handleSubmit(values: FormValueType): Promise<void>
   {
     setLoading(true);
     try
@@ -216,7 +220,14 @@ export default function InstallOrUpdateExtension({
     );
   }
 
+  function handleCancel(): void
+  {
+    modalContext?.closeModal(false);
+  }
+
   const canSubmit = form.getValues().source === "url" ? true : fileIsValid;
+
+  const formId = "install-or-update-extension-form";
 
   return (
     <>
@@ -229,7 +240,7 @@ export default function InstallOrUpdateExtension({
           />
         </Alert>
       )}
-      <form onSubmit={form.onSubmit(handleSubmit)}>
+      <form id={formId} onSubmit={form.onSubmit(handleSubmit)}>
         <SegmentedControl
           mb="lg"
           fullWidth
@@ -256,22 +267,28 @@ export default function InstallOrUpdateExtension({
           />
         )}
 
-        <Flex justify="flex-end">
-          <Button
-            loading={loading}
-            disabled={loading || !canSubmit}
-            type="submit"
-          >
-            {t(extension ? "button.update" : "button.install")}
-          </Button>
-        </Flex>
-        {loading && (
-          <Flex justify="flex-end">
-            <Text mt="xs" size="xs">
+        <ModalActions>
+          {loading && (
+            <Text size="xs" c="dimmed" mr="auto">
               {t("message.fileProcessing")}
             </Text>
-          </Flex>
-        )}
+          )}
+          <Button
+            variant="subtle"
+            disabled={loading}
+            onClick={handleCancel}
+          >
+            {t("button.cancel")}
+          </Button>
+          <Button
+            type="submit"
+            form={formId}
+            loading={loading}
+            disabled={loading || !canSubmit}
+          >
+            {t(extension !== undefined ? "button.update" : "button.install")}
+          </Button>
+        </ModalActions>
       </form>
     </>
   );

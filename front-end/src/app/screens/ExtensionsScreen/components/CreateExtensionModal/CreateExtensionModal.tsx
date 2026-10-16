@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { type ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Flex, MultiSelect, Select, Textarea, TextInput } from "@mantine/core";
+import { Alert, Button, MultiSelect, Select, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconAlertTriangle, IconX } from "@tabler/icons-react";
 import {
@@ -16,14 +16,18 @@ import { computeFilePath, ToastService } from "utils";
 import { useModalContext } from "app/context";
 import { useExtensions, useFolderPicker, useInstallExtensionMutation, useOpenExplorer } from "app/hooks";
 import { ExtensionsService } from "app/services";
+import { ModalActions } from "app/components";
 import { FolderTypes } from "types";
 
 
-type CreateExtensionModalProps = {
-  onSuccess: (extension: Extension) => void;
-};
+export type CreateExtensionModalPropsType =
+  {
+    readonly onSuccess: (extension: Extension) => void;
+  };
 
-export default function CreateExtensionModal({ onSuccess }: CreateExtensionModalProps)
+export default function CreateExtensionModal(
+  { onSuccess }: CreateExtensionModalPropsType
+): ReactElement
 {
   const [ t ] = useTranslation();
   const modalContext = useModalContext();
@@ -97,7 +101,7 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
     }
   });
 
-  async function handleSubmit(values: ExtensionGenerationOptions)
+  async function handleSubmit(values: ExtensionGenerationOptions): Promise<void>
   {
     setSubmitError(undefined);
     try
@@ -141,8 +145,15 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
     }
   }
 
+  function handleCancel(): void
+  {
+    modalContext?.closeModal(false);
+  }
+
+  const formId = "create-extension-form";
+
   return (
-    <form onSubmit={form.onSubmit(handleSubmit)}>
+    <form id={formId} onSubmit={form.onSubmit(handleSubmit)}>
       {unpackedPathNotDefined && (
         <Alert mb="md" color="orange"
                title={t("titles.warning")}
@@ -219,11 +230,23 @@ export default function CreateExtensionModal({ onSuccess }: CreateExtensionModal
         </Alert>
       )}
 
-      <Flex justify="flex-end">
-        <Button loading={loading} disabled={loading} type="submit">
+      <ModalActions>
+        <Button
+          variant="subtle"
+          disabled={loading}
+          onClick={handleCancel}
+        >
+          {t("button.cancel")}
+        </Button>
+        <Button
+          type="submit"
+          form={formId}
+          loading={loading}
+          disabled={loading}
+        >
           {t("button.create")}
         </Button>
-      </Flex>
+      </ModalActions>
     </form>
   );
 }

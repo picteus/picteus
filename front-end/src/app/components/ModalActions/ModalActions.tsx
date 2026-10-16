@@ -1,16 +1,18 @@
-import React, { type ReactNode, useEffect } from "react";
+import React, { type ReactElement, type ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Flex } from "@mantine/core";
 
 import { useModalContext } from "app/context";
 
 
-export type ModalActionsProps = {
-  children: ReactNode;
-};
+export type ModalActionsPropsType =
+  {
+    readonly children: ReactNode;
+  };
 
-export default function ModalActions({ children }: ModalActionsProps)
+export default function ModalActions(props: ModalActionsPropsType): ReactElement
 {
+  const { children } = props;
   const modalContext = useModalContext();
 
   useEffect(() =>
@@ -43,3 +45,4 @@ export default function ModalActions({ children }: ModalActionsProps)
     modalContext.footerElement
   );
 }
+

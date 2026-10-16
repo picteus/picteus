@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Box, Button, Group, Textarea, TextInput } from "@mantine/core";
+import React, { type ReactElement, useState } from "react";
+import { Box, Button, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useTranslation } from "react-i18next";
 
@@ -9,21 +9,25 @@ import { ToastService } from "utils";
 import { useModalContext } from "app/context";
 import { useCreateCollectionMutation, useUpdateCollectionMutation } from "app/hooks";
 import { FiltersService } from "app/services";
+import { ModalActions } from "app/components";
 
 
-type AddOrUpdateCollectionType = {
-  collection?: PicteusCollection;
-  searchFilter?: SearchFilter;
-  onSuccess?: (collection: PicteusCollection) => void;
-  onClose?: () => void;
-};
+export type AddOrUpdateCollectionPropsType =
+  {
+    readonly collection?: PicteusCollection;
+    readonly searchFilter?: SearchFilter;
+    readonly onSuccess?: (collection: PicteusCollection) => void;
+    readonly onClose?: () => void;
+  };
 
-export default function AddOrUpdateCollection({
-  collection,
-  searchFilter = FiltersService.defaultFilter,
-  onSuccess,
-  onClose
-}: AddOrUpdateCollectionType)
+export default function AddOrUpdateCollection(
+  {
+    collection,
+    searchFilter = FiltersService.defaultFilter,
+    onSuccess,
+    onClose
+  }: AddOrUpdateCollectionPropsType
+): ReactElement
 {
   const [ t ] = useTranslation();
   const modalContext = useModalContext();
@@ -80,9 +84,19 @@ export default function AddOrUpdateCollection({
     }
   }
 
+  function handleCancel(): void
+  {
+    onClose?.();
+    modalContext?.closeModal(false);
+  }
+
+  const isPending = loading || createCollectionMutation.isPending || updateCollectionMutation.isPending;
+
+  const formId = "add-or-update-collection-form";
+
   return (
     <Box p="sm">
-      <form onSubmit={form.onSubmit(handleOnSubmit)}>
+      <form id={formId} onSubmit={form.onSubmit(handleOnSubmit)}>
         <TextInput
           label={t("field.name")}
           required
@@ -96,19 +110,23 @@ export default function AddOrUpdateCollection({
           {...form.getInputProps("comment")}
           mb="sm"
         />
-        <Group justify="flex-end" mt="md">
-          <Button variant="subtle" onClick={onClose}
-                  disabled={loading || createCollectionMutation.isPending || updateCollectionMutation.isPending}>
+        <ModalActions>
+          <Button
+            variant="subtle"
+            disabled={isPending}
+            onClick={handleCancel}
+          >
             {t("button.cancel")}
           </Button>
           <Button
             type="submit"
-            loading={loading || createCollectionMutation.isPending || updateCollectionMutation.isPending}
-            disabled={loading || createCollectionMutation.isPending || updateCollectionMutation.isPending}
+            form={formId}
+            loading={isPending}
+            disabled={isPending}
           >
             {t("button.save")}
           </Button>
-        </Group>
+        </ModalActions>
       </form>
     </Box>
   );
