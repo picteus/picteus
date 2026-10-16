@@ -29,6 +29,7 @@ import {
   ApplicationMetadata,
   Collection,
   computeImageFormatsExtensions,
+  ConstantsRegistry,
   Dates,
   ExtensionImageEmbeddings,
   ExtensionImageFeature,
@@ -45,7 +46,6 @@ import {
   ImageEmbedding,
   ImageFeature,
   ImageFeatureFormat,
-  ImageFeatureNullValue,
   ImageFeatureType,
   ImageFeatureValue,
   ImageFormat,
@@ -1136,7 +1136,7 @@ export class ImageService
         }
         const fieldName: ImageFeatureValueField = (format !== ImageFeatureFormat.INTEGER && format !== ImageFeatureFormat.FLOAT && format !== ImageFeatureFormat.BOOLEAN) ? featureFieldStringValue : featureFieldNumericValue;
         const value: string | number = this.fromDtoToPersistentFeatureValue(condition.value);
-        const withNullValue = (operator === SearchFeatureComparisonOperator.DIFFERENT && value === ImageFeatureNullValue.Null) ? null : value;
+        const withNullValue = (operator === SearchFeatureComparisonOperator.DIFFERENT && value === ConstantsRegistry.imageFeatureNullValue) ? null : value;
         whereInputs.push({ [fieldName]: { [comparisonOperator]: withNullValue } });
         return { AND: whereInputs };
       };

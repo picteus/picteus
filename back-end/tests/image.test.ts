@@ -14,6 +14,7 @@ import {
   ApplicationMetadata,
   ApplicationMetadataItem,
   CommandEntity,
+  ConstantsRegistry,
   ExtensionState,
   FieldLengths,
   fileWithProtocol,
@@ -22,7 +23,6 @@ import {
   ImageEmbedding,
   ImageFeature,
   ImageFeatureFormat,
-  ImageFeatureNullValue,
   ImageFeatureType,
   ImageFormat,
   ImageFormats,
@@ -552,14 +552,14 @@ describe("Image with module", () =>
                 logicalOperator: SearchFeatureLogicalOperator.AND,
                 comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
                 extensionId: undefined,
-                value: ImageFeatureNullValue.Null,
+                value: ConstantsRegistry.imageFeatureNullValue,
                 count: withFeaturesAndTagsCount
               },
               {
                 logicalOperator: SearchFeatureLogicalOperator.NOT,
                 comparisonOperator: SearchFeatureComparisonOperator.DIFFERENT,
                 extensionId: undefined,
-                value: ImageFeatureNullValue.Null,
+                value: ConstantsRegistry.imageFeatureNullValue,
                 count: onlyOne
               },
               {
@@ -2186,18 +2186,30 @@ describe("Image with application", () =>
       deleteAllFilePaths();
     }
 
+    const tagsPlaceholder = "{tags}";
     const aiModel1 = { technicalId: "gemma4", name: "Gemma 4 E2B", comment: "Multimodal model" };
     const aiModel2 = { technicalId: "qwen3", name: "Qwen 3 8B" };
     const captionsQuestion1 = "Describe this image in one sentence.";
     const captionsQuestion2 = "Indicate the tags which best apply to the image.";
-    const eligibleTagsQuestion1 = "What are the tags which best apply to the image among the following list: {tags}.";
-    const eligibleTagsQuestion2 = "Pick the tags that best fit the image from this list: {tags}.";
+    const eligibleTagsQuestion1 = `What are the tags which best apply to the image among the following list: ${tagsPlaceholder}.`;
+    const eligibleTagsQuestion2 = `Pick the tags that best fit the image from this list: ${tagsPlaceholder}.`;
     const tags1 = [ "portrait", "landscape", "night" ];
     const tags2 = [ "sunset", "mountain" ];
 
     {
       // With configured caption and eligible tags instructions, the emitted arrays carry the resolved entries with the full model descriptors
       await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1.manifest.id, [ aiModel1, aiModel2 ]);
+
+      {
+        // We verify that an eligible tags question without the placeholder is rejected
+        const invalidQuestion = "Pick the tags that best fit the image.";
+        await expect(async () =>
+        {
+          await base.getExtensionController().setEligibleTagsInstructions(Base.allPolicyContext, extension1.manifest.id, [
+            { aiModelTechnicalId: aiModel1.technicalId, question: invalidQuestion, tags: tags1, enabled: true }
+          ]);
+        }).rejects.toThrow(new ServiceError(`The parameter '[0].question' with value '${invalidQuestion}' is invalid because it does not contain the '${tagsPlaceholder}' string`, BAD_REQUEST, base.badParameterCode));
+      }
 
       await base.getExtensionController().setCaptionInstructions(Base.allPolicyContext, extension1.manifest.id, [
         { aiModelTechnicalId: aiModel1.technicalId, question: captionsQuestion1, enabled: true },
@@ -2218,8 +2230,8 @@ describe("Image with application", () =>
       expect(readEventValue(extension1TagsEventFilePath)).toEqual({
         id: imageId,
         eligibleTags: [
-          { aiModel: aiModel1, tags: tags1 },
-          { aiModel: aiModel2, tags: tags2 }
+          { aiModel: aiModel1, question: eligibleTagsQuestion1, tags: tags1 },
+          { aiModel: aiModel2, question: eligibleTagsQuestion2, tags: tags2 }
         ]
       });
       checkFilePaths([ extension2FeaturesEventFilePath ], false);
@@ -2262,7 +2274,7 @@ describe("Image with application", () =>
       });
       expect(readEventValue(extension1TagsEventFilePath)).toEqual({
         id: imageId,
-        eligibleTags: [ { aiModel: aiModel2, tags: tags2 } ]
+        eligibleTags: [ { aiModel: aiModel2, question: eligibleTagsQuestion2, tags: tags2 } ]
       });
     }
 
@@ -2284,7 +2296,7 @@ describe("Image with application", () =>
       });
       expect(readEventValue(extension1TagsEventFilePath)).toEqual({
         id: imageId,
-        eligibleTags: [ { aiModel: aiModel2, tags: tags2 } ]
+        eligibleTags: [ { aiModel: aiModel2, question: eligibleTagsQuestion2, tags: tags2 } ]
       });
       deleteAllFilePaths();
     }
@@ -2383,7 +2395,7 @@ describe("Image with application", () =>
         });
         expect(readEventValue(extension1TagsEventFilePath)).toEqual({
           id: imageId,
-          eligibleTags: [ { aiModel: aiModel2, tags: tags2 } ]
+          eligibleTags: [ { aiModel: aiModel2, question: eligibleTagsQuestion2, tags: tags2 } ]
         });
 
         checkFilePaths([ extension1EmbeddingsFilePath ], true);

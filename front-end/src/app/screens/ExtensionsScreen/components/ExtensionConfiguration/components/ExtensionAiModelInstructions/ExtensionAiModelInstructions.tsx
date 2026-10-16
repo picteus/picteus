@@ -12,7 +12,13 @@ import { useTranslation } from "react-i18next";
 import { Alert, Button, Group, Paper, Stack, TagsInput, Text, Textarea } from "@mantine/core";
 import { IconCopy, IconInfoCircle } from "@tabler/icons-react";
 
-import { CaptionInstruction, EligibleTagsInstruction, Extension, ExtensionAiModel } from "@picteus/ws-client";
+import {
+  CaptionInstruction,
+  EligibleTagsInstruction,
+  Extension,
+  ExtensionAiModel,
+  TagsPlaceholder
+} from "@picteus/ws-client";
 
 import { ToastService } from "utils";
 import { ExtensionsService } from "app/services";
@@ -21,6 +27,8 @@ import ModelInstructionCard, {
   AiModelInstructionFormEntryType
 } from "../ModelInstructionCard/ModelInstructionCard.tsx";
 
+
+const tagsPlaceholder = TagsPlaceholder.Tags;
 
 const defaultCaptionQuestion = "Describe in detail what you see in this image. Do not output Markdown but plain text.";
 
@@ -107,7 +115,7 @@ function ExtensionAiModelInstructions(
           captionEnabled: captionInstruction?.enabled ?? false,
           captionQuestion: captionInstruction?.question ?? defaultCaptionQuestion,
           eligibleTagsEnabled: tagsInstruction?.enabled ?? false,
-          eligibleTagsQuestion: tagsInstruction?.question ?? "Pick the tags that best fit the image from this list: {tags}.",
+          eligibleTagsQuestion: tagsInstruction?.question ?? `Pick the tags that best fit the image from this list: ${tagsPlaceholder}.`,
           eligibleTags: tagsInstruction?.tags ? [ ...tagsInstruction.tags ] : defaultEligibleTags
         };
       });
@@ -237,13 +245,17 @@ function ExtensionAiModelInstructions(
       {
         return false;
       }
+      if (hasEligibleTagsCapability && entry.eligibleTagsQuestion.includes(tagsPlaceholder) === false)
+      {
+        return false;
+      }
       if (entry.eligibleTagsEnabled && entry.eligibleTagsQuestion.trim().length === 0)
       {
         return false;
       }
     }
     return true;
-  }, [ entries ]);
+  }, [ entries, hasEligibleTagsCapability ]);
 
   const isDirty = useMemo((): boolean => computeIsDirty(entries), [ entries, hasCaptionCapability, hasEligibleTagsCapability ]);
 
@@ -375,8 +387,8 @@ function ExtensionAiModelInstructions(
           {hasEligibleTagsCapability && (
             <>
               <Textarea
-                label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion")}
-                placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder")}
+                label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion", { tags: tagsPlaceholder })}
+                placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder", { tags: tagsPlaceholder })}
                 value={batchEligibleTagsQuestion}
                 onChange={(event) => setBatchEligibleTagsQuestion(event.currentTarget.value)}
                 autosize

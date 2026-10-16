@@ -15,13 +15,16 @@ import {
   ErrorContext,
   ExtensionApi,
   FrontIntent,
+  GenerationRecipeVersion,
   ImageApi,
   ImageAttachmentApi,
   IntentToastType,
   Manifest,
   ManifestFromJSON,
   MiscellaneousApi,
-  RepositoryApi
+  RepositoryApi,
+  Software,
+  TagsPlaceholder
 } from "./index";
 
 
@@ -35,7 +38,7 @@ export type InstructionReturnedErrorCause = (typeof InstructionReturnedErrorCaus
 export class InstructionReturnedError extends Error
 {
 
-  constructor(message: string, public readonly reason: InstructionReturnedErrorCause)
+  constructor(message: string, readonly reason: InstructionReturnedErrorCause)
   {
     super(message);
   }
@@ -101,7 +104,11 @@ const extensionSettingsChannel = "extension.settings";
 export class Helper
 {
 
-  static readonly GENERATION_RECIPE_SCHEMA_VERSION = 2;
+  static readonly SOFTWARE: string = Software.Picteus;
+
+  static readonly GENERATION_RECIPE_SCHEMA_VERSION: number = GenerationRecipeVersion.NUMBER_2;
+
+  static readonly TAGS_PLACEHOLDER: string = TagsPlaceholder.Tags;
 
 }
 
@@ -115,7 +122,7 @@ export interface ApiCallErrorDetails
 export class ApiCallError extends Error
 {
 
-  constructor(public readonly details: ApiCallErrorDetails)
+  constructor(readonly details: ApiCallErrorDetails)
   {
     super(details.message);
   }
@@ -215,7 +222,7 @@ class MessageSender
 
   private readonly socket: Socket;
 
-  public readonly toString: () => string;
+  readonly toString: () => string;
 
   private readonly contextId?: string;
 
@@ -343,28 +350,28 @@ export type Versions = { previous: string | undefined, current: string };
 export class PicteusExtension
 {
 
-  public static getManifest(): Manifest
+  static getManifest(): Manifest
   {
     return ManifestFromJSON(JSON.parse(fs.readFileSync(path.join(PicteusExtension.getExtensionHomeDirectoryPath(), "manifest.json"), { encoding: "utf8" })));
   }
 
-  public static getSdkVersion(): string
+  static getSdkVersion(): string
   {
     return JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "package.json"), { encoding: "utf8" })).version;
   }
 
   // noinspection JSUnusedGlobalSymbols
-  public static getCacheDirectoryPath(): string
+  static getCacheDirectoryPath(): string
   {
     return path.join(PicteusExtension.getExtensionHomeDirectoryPath(), ".cache");
   }
 
-  public static getExtensionHomeDirectoryPath(): string
+  static getExtensionHomeDirectoryPath(): string
   {
     return path.resolve(process.cwd());
   }
 
-  public static readonly SOFTWARE: string = "picteus";
+  static readonly SOFTWARE: string = Software.Picteus;
 
   protected readonly logger: Logger = new Logger();
 
@@ -404,7 +411,7 @@ export class PicteusExtension
     this.configuration = this.getApiConfiguration();
   }
 
-  public async run(): Promise<void>
+  async run(): Promise<void>
   {
     this.logger.info(`Running the ${(this.toString())}`);
     let result;

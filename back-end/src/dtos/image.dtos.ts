@@ -732,10 +732,7 @@ export class ImageFeature
 /**
  * The definition of the "null" value of a feature value.
  */
-export enum ImageFeatureNullValue
-{
-  Null = ""
-}
+export const ImageFeatureNullValue = "";
 
 /**
  * The different ways an image should be resized.

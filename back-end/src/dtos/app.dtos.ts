@@ -115,13 +115,14 @@ import {
   ExtensionImageTag,
   ExtensionImageTagsAttribute,
   GenerationRecipe,
+  generationRecipeSchemaVersion,
   Image,
   ImageDimensions,
   ImageDistance,
   ImageDistances,
   ImageEmbedding,
   ImageFeature,
-  ImageFeatureNullValue,
+  ImageFeatureNullValue as ImageFeatureNullValueConstant,
   ImageMediaUrl,
   ImageMetadata,
   ImageResizeRender,
@@ -147,28 +148,88 @@ import { ApplicationConfiguration, ApplicationSettings } from "./miscellaneous.d
  */
 enum Software
 {
-  picteus = "picteus"
+  value = "picteus"
 }
 
-@ApiSchema({ description: "Contains the definition of all the application constants" })
+/**
+ * The tags placeholder to be used in questions for eligible tags.
+ */
+enum TagsPlaceholder
+{
+  value = "{tags}"
+}
+
+/**
+ * The generation recipe schema version.
+ */
+enum GenerationRecipeVersion
+{
+  value = generationRecipeSchemaVersion
+}
+
+/**
+ * The value to pass to the image search web services to designate a 'non-null' feature value.
+ */
+enum ImageFeatureNullValue
+{
+  value = ImageFeatureNullValueConstant
+}
+
+@ApiSchema(
+  {
+    description: "Contains the definition of all the application constants"
+  }
+)
 class ConstantsRegistry
 {
 
-  @ApiProperty({
-    description: "The application name",
-    enum: Software,
-    enumName: "Software",
-    required: true
-  })
-  applicationName: Software = Software.picteus;
+  static readonly applicationName: string = Software.value;
 
-  @ApiProperty({
-    description: "The value to pass to the image search web services to designate a 'non-null' feature value",
-    enum: ImageFeatureNullValue,
-    enumName: "ImageFeatureNullValue",
-    required: true
-  })
-  imageFeatureNullValue: ImageFeatureNullValue = ImageFeatureNullValue.Null;
+  static readonly generationRecipeVersion: number = GenerationRecipeVersion.value;
+
+  static readonly tagsPlaceholder: string = TagsPlaceholder.value;
+
+  static readonly imageFeatureNullValue: string = ImageFeatureNullValue.value;
+
+  @ApiProperty(
+    {
+      description: "The application name",
+      enum: Software,
+      enumName: "Software",
+      required: true
+    }
+  )
+  applicationName: Software = Software.value;
+
+  @ApiProperty(
+    {
+      description: "The generation recipe schema version",
+      enum: GenerationRecipeVersion,
+      enumName: "GenerationRecipeVersion",
+      required: true
+    }
+  )
+  generationRecipeVersion: GenerationRecipeVersion = GenerationRecipeVersion.value;
+
+  @ApiProperty(
+    {
+      description: "The tags placeholder to be used in questions for eligible tags",
+      enum: TagsPlaceholder,
+      enumName: "TagsPlaceholder",
+      required: true
+    }
+  )
+  tagsPlaceholder: TagsPlaceholder = TagsPlaceholder.value;
+
+  @ApiProperty(
+    {
+      description: "The value to pass to the image search web services to designate a 'non-null' feature value",
+      enum: ImageFeatureNullValue,
+      enumName: "ImageFeatureNullValue",
+      required: true
+    }
+  )
+  imageFeatureNullValue: ImageFeatureNullValue = ImageFeatureNullValue.value;
 
 }
 
@@ -231,7 +292,6 @@ export {
   ExtensionIdImageEmbeddingName,
   ImageFeature,
   ImageFeatureFormat,
-  ImageFeatureNullValue,
   ImageFeatureType,
   type ImageFeatureValue,
   ImageFormat,
@@ -296,7 +356,6 @@ export {
   SearchTagsResult,
   SearchTags,
   shortTechnicalSchema,
-  Software,
   technicalSchema,
   technicalShortRelaxedSchema,
   technicalLongRelaxedSchema,

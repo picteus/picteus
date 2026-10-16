@@ -10,16 +10,16 @@ from dataclasses import asdict, is_dataclass, dataclass
 from enum import StrEnum
 from logging import getLogger, basicConfig
 from typing import Dict, Any, Literal, TypeVar, Callable, Optional, Never, List, TypedDict, Union
-from typing_extensions import NotRequired
 
 import aiohttp
 import socketio
 import urllib3
 from socketio import SimpleClient
+from typing_extensions import NotRequired
 
 import picteus_ws_client
 from picteus_extension_sdk import get_version, ToastIntent, IntentToastType, FrontIntent, BackIntent, IntentToast
-from picteus_ws_client import Manifest
+from picteus_ws_client import Manifest, GenerationRecipeVersion, TagsPlaceholder, Software
 
 Intent = Union[FrontIntent, BackIntent]
 
@@ -100,7 +100,9 @@ instructions_event: str = "instructions"
 
 
 class Helper:
-    GENERATION_RECIPE_SCHEMA_VERSION: int = 2
+    SOFTWARE: str = Software.value
+    GENERATION_RECIPE_SCHEMA_VERSION: int = GenerationRecipeVersion.value
+    TAGS_PLACEHOLDER: str = TagsPlaceholder.value
 
 
 class _ExtensionParameters:
@@ -305,7 +307,7 @@ class PicteusExtension:
     def get_extension_home_directory_path() -> str:
         return os.path.abspath(os.path.join(os.getcwd(), "."))
 
-    SOFTWARE: str = "picteus"
+    SOFTWARE: str = Software.value
 
     def __init__(self) -> None:
         self.logger: logging.Logger = getLogger(__name__)

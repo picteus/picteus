@@ -49,6 +49,7 @@ import {
   computeImageFormatsExtensions,
   ConfigurationCapability,
   ConfigurationExtensionCommand,
+  ConstantsRegistry,
   EligibleTagsInstruction,
   Extension,
   ExtensionActivities,
@@ -1046,6 +1047,16 @@ export class ExtensionService
     logger.info(`Setting the eligible tags instructions of the extension with id '${id}'`);
     this.checkExtensionExists(id);
     const instructions = await this.checkSettingsInstructions<EligibleTagsInstruction>(id, eligibleTagsInstructions, EligibleTagsInstruction);
+
+    const tagsPlaceholder = ConstantsRegistry.tagsPlaceholder;
+    for (let index = 0; index < instructions.length; index++)
+    {
+      const instruction = instructions[index];
+      if (instruction.question.includes(tagsPlaceholder) === false)
+      {
+        parametersChecker.throwBadParameter(`[${index}].question`, instruction.question, `it does not contain the '${tagsPlaceholder}' string`);
+      }
+    }
     await this.setPersistedSettingsInstructions<EligibleTagsInstruction>(id, instructions, EligibleTagsInstruction);
     return instructions;
   }

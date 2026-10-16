@@ -7632,6 +7632,20 @@
         ],
         "description": "The application name"
       },
+      "GenerationRecipeVersion": {
+        "type": "number",
+        "enum": [
+          2
+        ],
+        "description": "The generation recipe schema version"
+      },
+      "TagsPlaceholder": {
+        "type": "string",
+        "enum": [
+          "{tags}"
+        ],
+        "description": "The tags placeholder to be used in questions for eligible tags"
+      },
       "ImageFeatureNullValue": {
         "type": "string",
         "enum": [
@@ -7650,6 +7664,22 @@
               }
             ]
           },
+          "generationRecipeVersion": {
+            "description": "The generation recipe schema version",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GenerationRecipeVersion"
+              }
+            ]
+          },
+          "tagsPlaceholder": {
+            "description": "The tags placeholder to be used in questions for eligible tags",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TagsPlaceholder"
+              }
+            ]
+          },
           "imageFeatureNullValue": {
             "description": "The value to pass to the image search web services to designate a 'non-null' feature value",
             "allOf": [
@@ -7662,6 +7692,8 @@
         "description": "Contains the definition of all the application constants",
         "required": [
           "applicationName",
+          "generationRecipeVersion",
+          "tagsPlaceholder",
           "imageFeatureNullValue"
         ]
       }
