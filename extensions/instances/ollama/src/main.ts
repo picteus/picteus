@@ -1,38 +1,32 @@
-import { type ChatResponse, Ollama } from "ollama";
+import { type ChatResponse, type ModelResponse, Ollama } from "ollama";
 
 import {
-  CommandError,
-  type CommandParameters,
+  type AiModel,
   Communicator,
+  type ComputeImageCaption,
+  type ComputeImageEligibleTags,
+  Helper,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
   ImageResizeRender,
-  IntentDialogType,
   PicteusExtension,
   type SettingsValue,
   type Versions
 } from "@picteus/extension-sdk";
 
 
+interface OllamaModelItem extends ModelResponse
+{
+
+  readonly capabilities?: string[];
+
+}
+
 class OllamaExtension extends PicteusExtension
 {
 
   private ollamaUrl?: string;
-
-  private captionEnabled?: boolean;
-
-  private captionModels?: string[];
-
-  private captionQuestions?: string[];
-
-  private tagsEnabled?: boolean;
-
-  private tagsModel?: string;
-
-  private tagsList?: string[];
-
-  private tagsQuestionTemplate?: string;
 
   private ollama?: Ollama;
 
@@ -56,154 +50,66 @@ class OllamaExtension extends PicteusExtension
     await this.setup(communicator, value);
   }
 
-  protected async onImageCreated(communicator: Communicator, imageId: string): Promise<void>
-  {
-    await this.computeTagsAndFeatures(communicator, imageId);
-  }
-
-  protected async onImageUpdated(communicator: Communicator, imageId: string): Promise<void>
-  {
-    await this.computeTagsAndFeatures(communicator, imageId);
-  }
-
-  protected async onComputeImageTags(communicator: Communicator, imageId: string): Promise<void>
-  {
-    if (this.tagsEnabled)
-    {
-      await this.computeTags(communicator, imageId, await this.downloadImage(imageId));
-    }
-  }
-
-  protected async onComputeImageFeatures(communicator: Communicator, imageId: string): Promise<void>
-  {
-    if (this.captionEnabled)
-    {
-      await this.computeFeatures(communicator, imageId, await this.downloadImage(imageId));
-    }
-  }
-
-  protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: CommandParameters): Promise<void>
-  {
-    if (commandId === "askQuestion")
-    {
-      const imageId = imageIds[0];
-      await this.askQuestion(communicator, imageId, parameters["model"], parameters["question"]);
-    }
-  }
-
-  private async computeTagsAndFeatures(communicator: Communicator, imageId: string): Promise<void>
-  {
-    if (this.captionEnabled === true || this.tagsEnabled === true)
-    {
-      const imageUint8Array = await this.downloadImage(imageId);
-      if (this.tagsEnabled)
-      {
-        await this.computeTags(communicator, imageId, imageUint8Array);
-      }
-      if (this.captionEnabled)
-      {
-        await this.computeFeatures(communicator, imageId, imageUint8Array);
-      }
-    }
-  }
-
-  private async computeTags(communicator: Communicator, imageId: string, imageUint8Array: Uint8Array): Promise<void>
+  protected async onComputeImageEligibleTags(communicator: Communicator, imageId: string, eligibleTags: ComputeImageEligibleTags[]): Promise<void>
   {
     if (await this.ensureOllamaServer(communicator, false) === false)
     {
       return;
     }
-    const tagsToQuery = this.tagsList || [];
-    if (tagsToQuery.length === 0)
+    const imageBase64 = await this.downloadImage(imageId);
+    const collectedTags: string[] = [];
+    for (const eligibleTag of eligibleTags)
     {
-      return;
-    }
-    if (this.tagsModel !== undefined)
-    {
-      const question = (this.tagsQuestionTemplate + " Respond only with a comma-separated list of selected tags.").replace("{tags}", tagsToQuery.join(", "));
-      const chosenTagsSet = new Set<string>();
-      if (await this.ensureOllamaModels(communicator, [ this.tagsModel ], false) === true)
+      const model: string = eligibleTag.aiModel.technicalId;
+      const question = eligibleTag.question.replace(Helper.TAGS_PLACEHOLDER, eligibleTag.tags.join(", "));
+      if (await this.ensureOllamaModels(communicator, [ model ], false) === true)
       {
-        const response: string = await this.requestOllama(communicator, this.tagsModel, imageUint8Array, question);
-        for (const tag of tagsToQuery)
+        const response: string = await this.requestOllama(communicator, model, imageBase64, question);
+        for (const tag of eligibleTag.tags)
         {
           const escapedTag = tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
           const regex = new RegExp(`\\b${escapedTag}\\b`, "i");
           if (regex.test(response) === true)
           {
-            chosenTagsSet.add(tag);
+            collectedTags.push(tag);
           }
         }
       }
-      await this.getImageApi().imageSetTags({
-        id: imageId,
-        extensionId: this.parameters.extensionId,
-        requestBody: Array.from(chosenTagsSet)
-      });
     }
+    await this.getImageApi().imageSetTags({
+      id: imageId,
+      extensionId: this.parameters.extensionId,
+      requestBody: Array.from(new Set<string>(collectedTags))
+    });
   }
 
-  private async computeFeatures(communicator: Communicator, imageId: string, imageUint8Array: Uint8Array): Promise<void>
+  protected async onComputeImageCaptions(communicator: Communicator, imageId: string, captions: ComputeImageCaption[]): Promise<void>
   {
     if (await this.ensureOllamaServer(communicator, false) === false)
     {
       return;
     }
-    if (this.captionModels !== undefined)
+    const imageBase64 = await this.downloadImage(imageId);
+    const modelAndCaptions = [];
+    for (const caption of captions)
     {
-      const modelAndCaptions = [];
-      for (const model of this.captionModels)
+      const question = caption.question;
+      const model = caption.aiModel.technicalId;
+      if (await this.ensureOllamaModels(communicator, [ model ], false) === true)
       {
-        if (await this.ensureOllamaModels(communicator, [ model ], false) === true)
-        {
-          for (const question of this.captionQuestions || [])
-          {
-            const caption: string = await this.requestOllama(communicator, model, imageUint8Array, question);
-            modelAndCaptions.push({ model, caption });
-          }
-        }
+        const caption: string = await this.requestOllama(communicator, model, imageBase64, question);
+        modelAndCaptions.push({ model, caption });
       }
-      await this.getImageApi().imageSetFeatures({
-        id: imageId,
-        extensionId: this.parameters.extensionId,
-        imageFeature: modelAndCaptions.map(modelAndCaption => ({
-          type: ImageFeatureType.Caption,
-          format: ImageFeatureFormat.String,
-          name: modelAndCaption.model,
-          value: modelAndCaption.caption
-        }))
-      });
     }
-  }
-
-  private async askQuestion(communicator: Communicator, imageId: string, model: string, question: string): Promise<void>
-  {
-    if (await this.ensureOllamaServer(communicator, false) === false)
-    {
-      throw new CommandError("The Ollama server is not available");
-    }
-    if (await this.ensureOllamaModels(communicator, [ model ], false) === false)
-    {
-      throw new CommandError(`The Ollama model '${model}' is not available`);
-    }
-    let answer: string;
-    try
-    {
-      answer = await this.requestOllama(communicator, model, imageId, question);
-    }
-    catch (error)
-    {
-      throw CommandError.fromError(error);
-    }
-    await communicator.launchIntent<void>({
-      dialog: {
-        type: IntentDialogType.Info,
-        title: `Response from the '${model}' model`,
-        description: `After having analyzed the image, here is the answer to your question <b>"${question}"</b>.`,
-        details: `${answer}`,
-        size: "m",
-        buttons: { yes: "OK" }
-      }
+    await this.getImageApi().imageSetFeatures({
+      id: imageId,
+      extensionId: this.parameters.extensionId,
+      imageFeature: modelAndCaptions.map(modelAndCaption => ({
+        type: ImageFeatureType.Caption,
+        format: ImageFeatureFormat.String,
+        name: modelAndCaption.model,
+        value: modelAndCaption.caption
+      }))
     });
   }
 
@@ -239,26 +145,146 @@ class OllamaExtension extends PicteusExtension
   private async setup(communicator: Communicator, value: SettingsValue): Promise<void>
   {
     this.ollamaUrl = value["ollamaUrl"];
-
-    const caption = value["caption"];
-    this.captionEnabled = caption["enabled"] !== false;
-    this.captionModels = caption["models"] || [];
-    this.captionQuestions = caption["questions"] || [];
-
-    const tags = value["tags"];
-    this.tagsEnabled = tags["enabled"] !== false;
-    this.tagsModel = tags["model"];
-    this.tagsList = tags["tags"] || [];
-    this.tagsQuestionTemplate = tags["question"];
-
     await this.ensureOllamaServer(communicator, true);
-
-    const toPullModels = new Set<string>(this.captionModels);
-    toPullModels.add(this.tagsModel);
-    await this.ensureOllamaModels(communicator, Array.from(toPullModels), true);
+    await this.sendAvailableAiModels(communicator);
   }
 
-  private async ensureOllamaServer(communicator: Communicator, force: boolean): Promise<boolean>
+  private async sendAvailableAiModels(communicator?: Communicator): Promise<void>
+  {
+    if (await this.ensureOllamaServer(communicator, false) === true && this.ollama !== undefined)
+    {
+      const response = await this.ollama.list();
+      const aiModels: AiModel[] = [];
+      for (const model of response.models as OllamaModelItem[])
+      {
+        if (this.isVisionCapableModel(model) === true)
+        {
+          const commentDetails: string[] = [];
+          if (typeof model.details?.parameter_size === "string" && model.details.parameter_size.length > 0)
+          {
+            commentDetails.push(model.details.parameter_size);
+          }
+          if (typeof model.details?.quantization_level === "string" && model.details.quantization_level.length > 0)
+          {
+            commentDetails.push(model.details.quantization_level);
+          }
+          if (typeof model.details?.format === "string" && model.details.format.length > 0)
+          {
+            commentDetails.push(model.details.format.toUpperCase());
+          }
+          aiModels.push(
+            {
+              technicalId: model.name,
+              name: this.computeModelDisplayName(model.name),
+              comment: commentDetails.length > 0 ? `Ollama model (${commentDetails.join(", ")})` : `Ollama model (${model.name})`
+            }
+          );
+        }
+      }
+      await this.getExtensionApi().extensionSetAiModels(
+        {
+          id: this.extensionId,
+          aiModel: aiModels
+        }
+      );
+      communicator?.sendLog(`Registered ${aiModels.length} AI model(s) from Ollama`, "info");
+    }
+  }
+
+  private computeModelDisplayName(modelName: string): string
+  {
+    const sanitized = modelName.trim();
+    if (sanitized.length === 0)
+    {
+      return "Ollama";
+    }
+
+    const friendlyDisplayNames: Record<string, string> =
+      {
+        "gemma4": "Gemma 4",
+        "gemma3": "Gemma 3",
+        "qwen2.5vl": "Qwen 2.5-VL",
+        "qwen2.5-vl": "Qwen 2.5-VL",
+        "qwen3-vl": "Qwen 3-VL",
+        "llama3.2-vision": "Llama 3.2 Vision",
+        "pixtral": "Pixtral",
+        "minicpm-v": "MiniCPM-V",
+        "moondream": "Moondream",
+        "smolvlm": "SmolVLM",
+        "llava": "LLaVA",
+        "llava-llama3": "LLaVA Llama 3",
+        "llava-phi3": "LLaVA Phi 3",
+        "bakllava": "BakLLaVA",
+        "granite3.2-vision": "Granite 3.2 Vision",
+        "mistral-small3.2": "Mistral Small 3.2",
+        "nemotron3": "Nemotron 3"
+      };
+
+    // We strip repository prefixes if any (e.g., "library/llava" -> "llava")
+    const withoutRepository = sanitized.includes("/") === true
+      ? sanitized.split("/").slice(1).join("/")
+      : sanitized;
+
+    const segments = withoutRepository.split(":");
+    const baseName = segments[0] ?? "";
+    const tag = segments[1] ?? "";
+
+    const baseDisplayName = friendlyDisplayNames[baseName] ?? this.formatModelBaseName(baseName);
+
+    if (tag.length > 0 && tag !== "latest")
+    {
+      const formattedTag = tag.split(/[-_]+/).map((segment) =>
+        {
+          if (/^\d+[A-Za-z]+$/.test(segment) === true || /^[A-Z0-9]+$/.test(segment) === true)
+          {
+            return segment.toUpperCase();
+          }
+          return segment.charAt(0).toUpperCase() + segment.slice(1);
+        }
+      ).join(" ");
+      return `${baseDisplayName} ${formattedTag}`.trim();
+    }
+
+    return baseDisplayName;
+  }
+
+  private formatModelBaseName(baseName: string): string
+  {
+    const words: string[] = baseName.split(/[-_]+/).filter((word) => word.length > 0);
+    const capitalizedWords: string[] = words.map(
+      (word) =>
+      {
+        if (/^\d+[A-Za-z]+$/.test(word) === true || /^[A-Z0-9]+$/.test(word) === true)
+        {
+          return word;
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
+    );
+    const displayName: string = capitalizedWords.join(" ");
+    return displayName.length > 0 ? displayName : baseName;
+  }
+
+  private isVisionCapableModel(model: OllamaModelItem): boolean
+  {
+    if (Array.isArray(model.capabilities) === true)
+    {
+      return model.capabilities.includes("vision");
+    }
+
+    // We check families and known vision prefixes if capabilities are not returned
+    const families: string[] = model.details?.families ?? [];
+    if (families.some((family) => family.toLowerCase().includes("clip") === true || family.toLowerCase().includes("vl") === true))
+    {
+      return true;
+    }
+
+    const lowerCaseName: string = model.name.toLowerCase();
+    const visionKeywords: readonly string[] = [ "vl", "vision", "llava", "bakllava", "moondream", "minicpm", "pixtral", "smolvlm" ];
+    return visionKeywords.some((keyword) => lowerCaseName.includes(keyword) === true);
+  }
+
+  private async ensureOllamaServer(communicator: Communicator | undefined, force: boolean): Promise<boolean>
   {
     if (this.ollamaUrl !== undefined)
     {
@@ -269,11 +295,11 @@ class OllamaExtension extends PicteusExtension
       try
       {
         const version = await this.ollama.version();
-        communicator.sendLog(`Ollama server v${version.version} is running`, "debug");
+        communicator?.sendLog(`Ollama server v${version.version} is running`, "debug");
       }
       catch (error)
       {
-        communicator.sendLog(`The Ollama server is not running properly. Reason: '${error.message}'`, "warn");
+        communicator?.sendLog(`The Ollama server is not running properly. Reason: '${error.message}'`, "warn");
         this.ollama = undefined;
       }
     }
