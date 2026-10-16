@@ -31,7 +31,6 @@
   "main": "dist/main.js",
   "files": [
     "dist",
-    "assets",
     "manifest.json",
     "MANUAL.md",
     "icon.svg"

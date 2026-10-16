@@ -5,6 +5,8 @@ import type {
   ChatCompletionMessageParam
 } from "openai/resources/chat/completions";
 
+import { Helper } from "@picteus/extension-sdk";
+
 import type {
   ChatRequestOptions,
   ChatResponseResult,
@@ -300,7 +302,7 @@ export class LlamaClient
   }): Promise<TagExtractionResult>
   {
     const activeModel = await this.resolveModel(options.model);
-    const promptText = options.promptTemplate.replace("{tags}", options.tags.join(", "));
+    const promptText = options.promptTemplate.replace(Helper.TAGS_PLACEHOLDER, options.tags.join(", "));
 
     const userContentParts: ChatCompletionContentPart[] = [
       {

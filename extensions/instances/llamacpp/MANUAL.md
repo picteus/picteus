@@ -42,7 +42,8 @@ with a single-model server, the active model must correspond to the model reques
 
 - **llama.cpp URL** (`llamaUrl`): the base URL of the `llama-server` instance; defaults to `http://127.0.0.1:8080`;
 - **Temperature** (`temperature`): sampling temperature for caption generation, from `0` to `1`; defaults to `0.2`;
-- **Maximum tokens** (`maxTokens`): upper token limit for caption generation, from `256` to `16384`; defaults to `2048`.
+- **Maximum tokens** (`maximumTokens`): upper token limit for caption generation, from `256` to `16384`; defaults to
+  `2048`.
 
 Picteus supplies the model and prompt for each caption request, and the model, prompt, and candidate tags for each tag
 request. The temperature and maximum-token settings apply to caption generation; tag extraction uses a fixed temperature

@@ -2,7 +2,6 @@ import { Blob, Buffer } from "node:buffer";
 
 import {
   type AiModel,
-  type CommandParameters,
   Communicator,
   type ComputeImageCaption,
   type ComputeImageEligibleTags,
@@ -20,11 +19,11 @@ import { LlamaClient } from "./llamaClient";
 class LlamaCppExtension extends PicteusExtension
 {
 
-  private llamaUrl: string = "http://127.0.0.1:8080";
+  private llamaUrl?: string;
 
-  private temperature?: number = 0.2;
+  private temperature?: number;
 
-  private maxTokens?: number = 2_048;
+  private maximumTokens?: number;
 
   private llamaClient?: LlamaClient;
 
@@ -54,20 +53,20 @@ class LlamaCppExtension extends PicteusExtension
     const collectedTags: string[] = [];
     let hasComputedSuccessfully = false;
 
-    for (const entry of eligibleTags)
+    for (const eligibleTag of eligibleTags)
     {
-      const model = entry.aiModel.technicalId;
+      const model = eligibleTag.aiModel.technicalId;
       const isModelLoaded = await this.ensureLlamaModels(communicator, [ model ], false);
       if (isModelLoaded === true)
       {
-        communicator.sendLog(`Evaluating image against ${entry.tags.length} candidate tag(s) using model '${model}'…`, "info");
+        communicator.sendLog(`Evaluating image against ${eligibleTag.tags.length} candidate tag(s) using model '${model}'…`, "info");
         try
         {
           const result = await this.llamaClient.extractTagsWithSchema({
             model: model,
             imageBase64: imageBase64,
-            tags: entry.tags,
-            promptTemplate: entry.question
+            tags: eligibleTag.tags,
+            promptTemplate: eligibleTag.question
           });
 
           hasComputedSuccessfully = true;
@@ -132,7 +131,7 @@ class LlamaCppExtension extends PicteusExtension
             prompt: caption.question,
             imageBase64,
             temperature: this.temperature,
-            maxTokens: this.maxTokens
+            maxTokens: this.maximumTokens
           });
 
           communicator.sendLog(`The generated caption took ${result.durationInMilliseconds} ms and returned the response '${result.content}'`, "debug");
@@ -169,10 +168,6 @@ class LlamaCppExtension extends PicteusExtension
         })
       });
     }
-  }
-
-  protected async onImagesCommand(_communicator: Communicator, _commandId: string, _imageIds: string[], _parameters: CommandParameters): Promise<void>
-  {
   }
 
   private async downloadImageAsBase64Jpeg(imageId: string): Promise<string>
@@ -378,7 +373,7 @@ class LlamaCppExtension extends PicteusExtension
   {
     this.llamaUrl = value["llamaUrl"];
     this.temperature = value["temperature"];
-    this.maxTokens = value["maxTokens"];
+    this.maximumTokens = value["maximumTokens"];
 
     if (this.llamaUrl !== undefined)
     {

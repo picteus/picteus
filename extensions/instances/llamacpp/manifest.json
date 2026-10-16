@@ -24,15 +24,13 @@
       "events": [
         "process.started",
         "image.computeFeatures",
-        "image.computeTags",
-        "image.runCommand"
+        "image.computeTags"
       ],
       "throttlingPolicies": [
         {
           "events": [
             "image.computeFeatures",
-            "image.computeTags",
-            "image.runCommand"
+            "image.computeTags"
           ],
           "durationInMilliseconds": 1000,
           "maximumCount": 1
@@ -75,7 +73,7 @@
           "widget": "range"
         }
       },
-      "maxTokens": {
+      "maximumTokens": {
         "type": "integer",
         "title": "Maximum tokens",
         "description": "Maximum number of tokens that llama.cpp should accept.",
@@ -90,7 +88,7 @@
     "required": [
       "llamaUrl",
       "temperature",
-      "maxTokens"
+      "maximumTokens"
     ]
   }
 }
