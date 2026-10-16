@@ -1,0 +1,52 @@
+{
+  "name": "@picteus/llamacpp",
+  "version": "0.1.0",
+  "productName": "llama.cpp",
+  "description": "Computes caption and tag features of an image through Vision-Language Models using llama.cpp.",
+  "keywords": [
+    "picteus",
+    "extension",
+    "llamacpp",
+    "vision"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "GNU Affero General Public License",
+  "private": false,
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "homepage": "https://github.com/picteus/Picteus",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/Picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "type": "module",
+  "main": "dist/main.js",
+  "files": [
+    "dist",
+    "assets",
+    "manifest.json",
+    "MANUAL.md",
+    "icon.svg"
+  ],
+  "scripts": {
+    "build": "tsc && tsc-alias --resolve-full-paths"
+  },
+  "devDependencies": {
+    "@types/node": "22.17.1",
+    "typescript": "5.9.2",
+    "tsc-alias": "1.9.1",
+    "tsx": "4.23.13"
+  },
+  "dependencies": {
+    "openai": "7.30.1",
+    "@picteus/internal-extension-sdk": "0.19.0"
+  }
+}

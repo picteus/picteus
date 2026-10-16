@@ -1,0 +1,96 @@
+{
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
+  "id": "llamacpp",
+  "version": "0.1.0",
+  "name": "llama.cpp",
+  "description": "Computes facets of an image through Vision Languages (VL) through llama.cpp.",
+  "categories": [
+    "enrichment",
+    "integration"
+  ],
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "execution": {
+        "executable": "${node}",
+        "arguments": [
+          "./dist/main.js"
+        ]
+      },
+      "events": [
+        "process.started",
+        "image.computeFeatures",
+        "image.computeTags",
+        "image.runCommand"
+      ],
+      "throttlingPolicies": [
+        {
+          "events": [
+            "image.computeFeatures",
+            "image.computeTags",
+            "image.runCommand"
+          ],
+          "durationInMilliseconds": 1000,
+          "maximumCount": 1
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "image.features",
+          "details": {
+            "caption": true
+          }
+        },
+        {
+          "id": "image.tags",
+          "details": {
+            "eligibleTags": true
+          }
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "llamaUrl": {
+        "type": "string",
+        "format": "uri",
+        "title": "llama.cpp URL",
+        "description": "The URL of the llama-server instance running locally or on the network.",
+        "default": "http://127.0.0.1:8080"
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "description": "Sampling temperature for generation (0.0 to 1.0).",
+        "default": 0.2,
+        "minimum": 0,
+        "maximum": 1,
+        "ui": {
+          "widget": "range"
+        }
+      },
+      "maxTokens": {
+        "type": "integer",
+        "title": "Maximum tokens",
+        "description": "Maximum number of tokens that llama.cpp should accept.",
+        "default": 2048,
+        "minimum": 256,
+        "maximum": 16384,
+        "ui": {
+          "widget": "range"
+        }
+      }
+    },
+    "required": [
+      "llamaUrl",
+      "temperature",
+      "maxTokens"
+    ]
+  }
+}
