@@ -1,0 +1,78 @@
+{
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
+  "id": "openai",
+  "version": "0.1.0",
+  "name": "OpenAI",
+  "description": "Computes image facets through Vision Models exposed by OpenAI.",
+  "categories": [
+    "enrichment"
+  ],
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "events": [
+        "process.started",
+        "image.computeFeatures",
+        "image.computeTags"
+      ],
+      "throttlingPolicies": [
+        {
+          "events": [
+            "image.computeFeatures",
+            "image.computeTags"
+          ],
+          "maximumCount": 2
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "image.features",
+          "details": {
+            "caption": true
+          }
+        },
+        {
+          "id": "image.tags",
+          "details": {
+            "eligibleTags": true
+          }
+        }
+      ],
+      "execution": {
+        "executable": "${node}",
+        "arguments": [
+          "./dist/main.js"
+        ]
+      }
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "title": "OpenAI API Key",
+        "description": "The OpenAI API key used when interacting with OpenAI vision models.",
+        "ui": {
+          "widget": "password"
+        }
+      },
+      "maximumTokens": {
+        "type": "integer",
+        "title": "Maximum tokens",
+        "description": "The maximum number of tokens in the generated response.",
+        "default": 2048,
+        "minimum": 256,
+        "maximum": 16384,
+        "ui": {
+          "widget": "range"
+        }
+      }
+    },
+    "required": ["apiKey", "maximumTokens"]
+  }
+}
