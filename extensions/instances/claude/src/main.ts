@@ -50,20 +50,15 @@ class ClaudeExtension extends PicteusExtension
     const collectedTags: string[] = [];
     let hasComputedSuccessfully: boolean = false;
 
-    for (const entry of eligibleTags)
+    for (const eligibleTag of eligibleTags)
     {
-      if (entry.tags.length === 0)
-      {
-        continue;
-      }
-
-      const model: string = entry.aiModel.technicalId;
-      communicator.sendLog(`Evaluating image against ${entry.tags.length} candidate tag(s) using model '${model}'…`, "info");
+      const model: string = eligibleTag.aiModel.technicalId;
+      communicator.sendLog(`Evaluating image against ${eligibleTag.tags.length} candidate tag(s) using model '${model}'…`, "info");
       const startTimeInMilliseconds: number = Date.now();
 
       try
       {
-        const selectedTags: string[] = await this.extractTagsWithClaude(model, imageBase64, entry.tags, entry.question);
+        const selectedTags: string[] = await this.extractTagsWithClaude(model, imageBase64, eligibleTag.tags, eligibleTag.question);
         hasComputedSuccessfully = true;
         const durationInMilliseconds: number = Date.now() - startTimeInMilliseconds;
 

@@ -1,7 +1,6 @@
 import { Blob, Buffer } from "node:buffer";
 
 import {
-  type AiModel,
   Communicator,
   type ComputeImageCaption,
   type ComputeImageEligibleTags,
@@ -396,12 +395,16 @@ class LlamaCppExtension extends PicteusExtension
     }
 
     const details = await this.llamaClient.getAvailableModelDetails();
-    const aiModels: AiModel[] = details.map(detail => ({
-      technicalId: detail.id,
-      name: this.computeModelDisplayName(detail.id),
-      comment: detail.comment
-    }));
-    await this.getExtensionApi().extensionSetAiModels({ id: this.extensionId, aiModel: aiModels });
+    await this.getExtensionApi().extensionSetAiModels(
+      {
+        id: this.extensionId,
+        aiModel: details.map(detail => ({
+          technicalId: detail.id,
+          name: this.computeModelDisplayName(detail.id),
+          comment: detail.comment
+        }))
+      }
+    );
   }
 
   private async verifyLlamaServer(communicator: Communicator, isStartup: boolean): Promise<boolean>

@@ -7,14 +7,6 @@ import type {
 
 import { Helper } from "@picteus/extension-sdk";
 
-import type {
-  ChatRequestOptions,
-  ChatResponseResult,
-  LlamaModelDetail,
-  LlamaServerHealth,
-  TagExtractionResult
-} from "./types";
-
 
 interface ExtendedMessage
 {
@@ -22,6 +14,56 @@ interface ExtendedMessage
   readonly content?: string | null | Array<{ readonly text?: string }>;
   readonly reasoning_content?: string;
   readonly reasoning?: string;
+
+}
+
+export interface LlamaServerHealth
+{
+
+  readonly isReachable: boolean;
+  readonly isReady: boolean;
+  readonly status: string;
+  readonly details?: string;
+
+}
+
+export interface ChatRequestOptions
+{
+
+  readonly model: string;
+  readonly prompt: string;
+  readonly imageBase64: string;
+  readonly temperature?: number;
+  readonly maxTokens?: number;
+
+}
+
+export interface ChatResponseResult
+{
+
+  readonly content: string;
+  readonly durationInMilliseconds: number;
+  readonly model: string;
+  readonly promptTokens?: number;
+  readonly completionTokens?: number;
+  readonly totalTokens?: number;
+
+}
+
+export interface TagExtractionResult
+{
+
+  readonly tags: string[];
+  readonly durationInMilliseconds: number;
+  readonly model: string;
+
+}
+
+export interface LlamaModelDetail
+{
+
+  readonly id: string;
+  readonly comment?: string;
 
 }
 
