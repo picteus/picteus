@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import Anthropic, { APIError, AuthenticationError, RateLimitError } from "@anthropic-ai/sdk";
 
 import { Helper } from "@picteus/extension-sdk";
 
@@ -60,6 +60,37 @@ export interface ClaudeModelDetail
 
 }
 
+export interface AnthropicErrorOptions
+{
+
+  readonly status?: number;
+  readonly isApiKeyInvalid?: boolean;
+  readonly isQuotaExceeded?: boolean;
+  readonly cause?: unknown;
+
+}
+
+export class AnthropicError extends Error
+{
+
+  public readonly status?: number;
+
+  public readonly isApiKeyInvalid: boolean;
+
+  public readonly isQuotaExceeded: boolean;
+
+  constructor(message: string, options?: AnthropicErrorOptions)
+  {
+    super(message);
+    this.name = "AnthropicError";
+    this.status = options?.status;
+    this.isApiKeyInvalid = options?.isApiKeyInvalid ?? false;
+    this.isQuotaExceeded = options?.isQuotaExceeded ?? false;
+    this.cause = options?.cause;
+  }
+
+}
+
 export class ClaudeClient
 {
 
@@ -76,24 +107,29 @@ export class ClaudeClient
 
   public async getAvailableModelDetails(): Promise<ClaudeModelDetail[]>
   {
-    const modelsPage = await this.anthropic.models.list();
-    const retrievedModels: ClaudeModelDetail[] = [];
-
-    for await (const modelInfo of modelsPage)
+    try
     {
-      if (this.isVisionCapableModel(modelInfo.id) === true)
+      const modelsPage = await this.anthropic.models.list();
+      const retrievedModels: ClaudeModelDetail[] = [];
+      for await (const modelInfo of modelsPage)
       {
-        retrievedModels.push(
-          {
-            id: modelInfo.id,
-            name: modelInfo.display_name,
-            comment: `Anthropic Claude model (${modelInfo.id})`
-          }
-        );
+        if (this.isVisionCapableModel(modelInfo.id) === true)
+        {
+          retrievedModels.push(
+            {
+              id: modelInfo.id,
+              name: modelInfo.display_name,
+              comment: `Anthropic Claude model (${modelInfo.id})`
+            }
+          );
+        }
       }
+      return retrievedModels;
     }
-
-    return retrievedModels;
+    catch (error: unknown)
+    {
+      throw this.createAnthropicError(error, "Failed to retrieve available models from the Anthropic API");
+    }
   }
 
   public async generateChatCompletion(options: ChatRequestOptions): Promise<ChatResponseResult>
@@ -106,7 +142,7 @@ export class ClaudeClient
       response = await this.anthropic.messages.create(
         {
           model: options.model,
-          max_tokens: options.maxTokens ?? 2048,
+          max_tokens: options.maxTokens,
           messages: [
             {
               role: "user",
@@ -132,8 +168,7 @@ export class ClaudeClient
     }
     catch (error: unknown)
     {
-      const errorMessage: string = error instanceof Error ? error.message : String(error);
-      throw new Error(`The request to the Claude API failed: ${errorMessage}`);
+      throw this.createAnthropicError(error, "The request to the Claude API failed");
     }
 
     const durationInMilliseconds: number = Date.now() - startTimestamp;
@@ -162,7 +197,7 @@ export class ClaudeClient
       const response: Anthropic.Messages.Message = await this.anthropic.messages.create(
         {
           model: options.model,
-          max_tokens: options.maxTokens ?? 2048,
+          max_tokens: options.maxTokens,
           tools: [
             {
               name: "select_tags",
@@ -238,8 +273,13 @@ export class ClaudeClient
         }
       }
     }
-    catch
+    catch (error: unknown)
     {
+      const anthropicError: AnthropicError = this.createAnthropicError(error);
+      if (anthropicError.isApiKeyInvalid === true || anthropicError.isQuotaExceeded === true)
+      {
+        throw anthropicError;
+      }
       // We fall back to prompt-based extraction below
     }
 
@@ -251,7 +291,7 @@ export class ClaudeClient
       fallbackResponse = await this.anthropic.messages.create(
         {
           model: options.model,
-          max_tokens: options.maxTokens ?? 2048,
+          max_tokens: options.maxTokens,
           messages: [
             {
               role: "user",
@@ -277,8 +317,7 @@ export class ClaudeClient
     }
     catch (error: unknown)
     {
-      const errorMessage: string = error instanceof Error ? error.message : String(error);
-      throw new Error(`The tag extraction request to the Claude API failed: ${errorMessage}`);
+      throw this.createAnthropicError(error, "The tag extraction request to the Claude API failed");
     }
 
     const rawText: string = this.extractTextFromResponse(fallbackResponse);
@@ -301,7 +340,7 @@ export class ClaudeClient
     const candidateTagsSet: Set<string> = new Set<string>(candidateTags);
     try
     {
-      const jsonMatch: RegExpMatchArray | null = text.match(/\{[\s\S]*\}/);
+      const jsonMatch: RegExpMatchArray | null = text.match(/\{[\s\S]*}/);
       if (jsonMatch !== null)
       {
         const parsedJson = JSON.parse(jsonMatch[0]) as { readonly tags?: unknown };
@@ -355,6 +394,73 @@ export class ClaudeClient
       (prefix) =>
       {
         return lowerCaseModelId.startsWith(prefix) === true;
+      }
+    );
+  }
+
+  private createAnthropicError(error: unknown, prefix?: string): AnthropicError
+  {
+    if (error instanceof AnthropicError)
+    {
+      return error;
+    }
+
+    let status: number | undefined;
+    let isApiKeyInvalid: boolean = false;
+    let isQuotaExceeded: boolean = false;
+    let message: string;
+
+    if (error instanceof APIError || (typeof error === "object" && error !== null && "status" in error))
+    {
+      const apiError = error as APIError;
+      status = apiError.status;
+      isApiKeyInvalid = apiError.status === 401 || error instanceof AuthenticationError;
+      isQuotaExceeded = apiError.status === 429 || error instanceof RateLimitError;
+
+      const rawError = apiError.error as {
+        readonly error?: { readonly message?: string; readonly type?: string };
+        readonly message?: string
+      } | undefined;
+      const apiErrorMessage = rawError?.error?.message ?? rawError?.message;
+
+      let subtitle: string;
+      if (isApiKeyInvalid === true)
+      {
+        subtitle = "The Anthropic API key is invalid";
+      }
+      else if (isQuotaExceeded === true)
+      {
+        subtitle = "The Anthropic API quota or rate limit has been exceeded";
+      }
+      else if (typeof apiErrorMessage === "string" && apiErrorMessage.length > 0)
+      {
+        subtitle = apiErrorMessage;
+      }
+      else
+      {
+        subtitle = apiError.message;
+      }
+
+      message = subtitle;
+    }
+    else if (error instanceof Error)
+    {
+      message = error.message;
+    }
+    else
+    {
+      message = String(error);
+    }
+
+    const fullMessage = prefix !== undefined ? `${prefix}: ${message}` : message;
+
+    return new AnthropicError(
+      fullMessage,
+      {
+        status: status,
+        isApiKeyInvalid: isApiKeyInvalid,
+        isQuotaExceeded: isQuotaExceeded,
+        cause: error
       }
     );
   }

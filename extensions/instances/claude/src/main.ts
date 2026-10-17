@@ -1,7 +1,6 @@
 import { Blob, Buffer } from "node:buffer";
 
 import {
-  type AiModel,
   Communicator,
   type ComputeImageCaption,
   type ComputeImageEligibleTags,
@@ -19,8 +18,6 @@ import { ClaudeClient } from "./claudeClient.js";
 class ClaudeExtension extends PicteusExtension
 {
 
-  private anthropicApiKey?: string;
-
   private maximumTokens?: number;
 
   private claudeClient?: ClaudeClient;
@@ -28,20 +25,17 @@ class ClaudeExtension extends PicteusExtension
   protected async onReady(communicator?: Communicator): Promise<void>
   {
     await this.setup(communicator, await this.getSettings());
-    communicator?.sendLog(`The ${this.toString()} is ready`, "info");
   }
 
   protected async onSettings(communicator: Communicator, value: SettingsValue): Promise<void>
   {
     await this.setup(communicator, value);
-    communicator.sendLog(`The ${this.toString()} settings updated`, "info");
   }
 
   protected async onComputeImageEligibleTags(communicator: Communicator, imageId: string, eligibleTags: ComputeImageEligibleTags[]): Promise<void>
   {
     if (this.claudeClient === undefined)
     {
-      communicator.sendLog("Anthropic API key is not configured: skipping eligible tags computation", "warn");
       return;
     }
 
@@ -66,35 +60,24 @@ class ClaudeExtension extends PicteusExtension
           }
         );
         hasComputedSuccessfully = true;
-
-        if (result.tags.length > 0)
-        {
-          communicator.sendLog(`Auto-tagging completed in ${result.durationInMilliseconds} ms. Selected ${result.tags.length} tag(s): [${result.tags.join(", ")}]`, "info");
-          collectedTags.push(...result.tags);
-        }
-        else
-        {
-          communicator.sendLog(`Auto-tagging completed in ${result.durationInMilliseconds} ms. No candidate tags matched the image content.`, "info");
-        }
+        communicator.sendLog(`Auto-tagging completed in ${result.durationInMilliseconds} ms. Selected ${result.tags.length} tag(s): [${result.tags.join(", ")}]`, "info");
+        collectedTags.push(...result.tags);
       }
       catch (error: unknown)
       {
-        const errorMessage: string = error instanceof Error ? error.message : String(error);
-        communicator.sendLog(`Failed to compute tags for image '${imageId}' with model '${model}'. Reason: ${errorMessage}`, "error");
+        communicator.sendLog(`Failed to compute tags for image '${imageId}' with model '${model}'. Reason: ${error instanceof Error ? error.message : String(error)}`, "error");
       }
     }
 
     if (hasComputedSuccessfully === true)
     {
-      const uniqueTags: string[] = Array.from(new Set(collectedTags));
       await this.getImageApi().imageSetTags(
         {
           id: imageId,
           extensionId: this.extensionId,
-          requestBody: uniqueTags
+          requestBody: Array.from(new Set(collectedTags))
         }
       );
-      communicator.sendLog(`Updated tags for image '${imageId}'`, "info");
     }
   }
 
@@ -102,7 +85,6 @@ class ClaudeExtension extends PicteusExtension
   {
     if (this.claudeClient === undefined)
     {
-      communicator.sendLog("Anthropic API key is not configured: skipping image captions computation", "warn");
       return;
     }
 
@@ -140,51 +122,36 @@ class ClaudeExtension extends PicteusExtension
       }
       catch (error: unknown)
       {
-        const errorMessage: string = error instanceof Error ? error.message : String(error);
-        communicator.sendLog(`Failed to compute caption for image '${imageId}' with model '${model}'. Reason: ${errorMessage}`, "error");
+        communicator.sendLog(`Failed to compute caption for the image with model '${model}'. Reason: ${error instanceof Error ? error.message : String(error)}`, "error");
       }
     }
 
-    if (generatedFeatures.length > 0)
-    {
-      await this.getImageApi().imageSetFeatures(
-        {
-          id: imageId,
-          extensionId: this.extensionId,
-          imageFeature: generatedFeatures.map(
-            (feature) =>
-            {
-              return {
-                type: ImageFeatureType.Caption,
-                format: ImageFeatureFormat.Markdown,
-                name: feature.name,
-                value: feature.value
-              };
-            }
-          )
-        }
-      );
-      communicator.sendLog(`Updated ${generatedFeatures.length} caption feature(s) for image '${imageId}'`, "info");
-    }
+    await this.getImageApi().imageSetFeatures(
+      {
+        id: imageId,
+        extensionId: this.extensionId,
+        imageFeature: generatedFeatures.map((feature) =>
+          {
+            return {
+              type: ImageFeatureType.Caption,
+              format: ImageFeatureFormat.Markdown,
+              name: feature.name,
+              value: feature.value
+            };
+          }
+        )
+      }
+    );
   }
 
   private async setup(communicator: Communicator | undefined, value: SettingsValue): Promise<void>
   {
-    this.anthropicApiKey = value["apiKey"];
+    const anthropicApiKey: string = value["apiKey"];
     this.maximumTokens = value["maximumTokens"];
-
-    if (this.anthropicApiKey !== undefined && this.anthropicApiKey.length > 0)
-    {
-      this.claudeClient = new ClaudeClient(this.anthropicApiKey);
-    }
-    else
-    {
-      this.claudeClient = undefined;
-    }
-
+    this.claudeClient = anthropicApiKey === undefined ? undefined : new ClaudeClient(anthropicApiKey);
     try
     {
-      await this.sendAvailableAiModels(communicator);
+      await this.sendAvailableAiModels();
     }
     catch (error: unknown)
     {
@@ -192,29 +159,22 @@ class ClaudeExtension extends PicteusExtension
     }
   }
 
-  private async sendAvailableAiModels(communicator?: Communicator): Promise<void>
+  private async sendAvailableAiModels(): Promise<void>
   {
     if (this.claudeClient !== undefined)
     {
       const modelDetails = await this.claudeClient.getAvailableModelDetails();
-      const retrievedModels: AiModel[] = modelDetails.map(
-        (detail) =>
-        {
-          return {
-            technicalId: detail.id,
-            name: detail.name,
-            comment: detail.comment
-          };
-        }
-      );
-
       await this.getExtensionApi().extensionSetAiModels(
         {
           id: this.extensionId,
-          aiModel: retrievedModels
+          aiModel: modelDetails.map((detail) =>
+            ({
+              technicalId: detail.id,
+              name: detail.name,
+              comment: detail.comment
+            }))
         }
       );
-      communicator?.sendLog(`Registered ${retrievedModels.length} Claude AI model(s) from the Anthropic API`, "info");
     }
   }
 
