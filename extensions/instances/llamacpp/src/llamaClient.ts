@@ -70,7 +70,7 @@ export interface LlamaModelDetail
 export class LlamaClient
 {
 
-  private readonly baseUrl: string;
+  public readonly baseUrl: string;
 
   private readonly openai: OpenAI;
 

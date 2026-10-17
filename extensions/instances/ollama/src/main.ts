@@ -11,7 +11,7 @@ import {
   type Versions
 } from "@picteus/extension-sdk";
 
-import { OllamaClient } from "./ollamaClient";
+import { OllamaClient } from "./ollamaClient.js";
 
 
 class OllamaExtension extends PicteusExtension

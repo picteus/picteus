@@ -12,13 +12,11 @@ import {
   type SettingsValue
 } from "@picteus/extension-sdk";
 
-import { LlamaClient } from "./llamaClient";
+import { LlamaClient } from "./llamaClient.js";
 
 
 class LlamaCppExtension extends PicteusExtension
 {
-
-  private llamaUrl?: string;
 
   private temperature?: number;
 
@@ -370,13 +368,13 @@ class LlamaCppExtension extends PicteusExtension
 
   private async setup(communicator: Communicator, value: SettingsValue): Promise<void>
   {
-    this.llamaUrl = value["llamaUrl"];
+    const llamaUrl: string = value["llamaUrl"];
     this.temperature = value["temperature"];
     this.maximumTokens = value["maximumTokens"];
 
-    if (this.llamaUrl !== undefined)
+    if (llamaUrl !== undefined)
     {
-      this.llamaClient = new LlamaClient(this.llamaUrl);
+      this.llamaClient = new LlamaClient(llamaUrl);
       const isServerReady = await this.verifyLlamaServer(communicator, true);
       if (isServerReady === true)
       {
@@ -416,7 +414,7 @@ class LlamaCppExtension extends PicteusExtension
 
     if (isStartup === true)
     {
-      communicator.sendLog(`Verifying llama.cpp server connectivity at '${this.llamaUrl}'…`, "debug");
+      communicator.sendLog(`Verifying llama.cpp server connectivity at '${this.llamaClient.baseUrl}'…`, "debug");
     }
 
     const health = await this.llamaClient.checkHealth();
@@ -433,7 +431,7 @@ class LlamaCppExtension extends PicteusExtension
       return false;
     }
 
-    communicator.sendLog(`Cannot connect to llama.cpp server at '${this.llamaUrl}'${health.details !== undefined ? `. Reason: ${health.details}.` : ""}`, "warn");
+    communicator.sendLog(`Cannot connect to llama.cpp server at '${this.llamaClient.baseUrl}'${health.details !== undefined ? `. Reason: ${health.details}.` : ""}`, "warn");
     return false;
   }
 
