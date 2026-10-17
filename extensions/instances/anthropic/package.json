@@ -1,8 +1,8 @@
 {
-  "name": "@picteus/claude",
-  "version": "0.4.0",
-  "productName": "Picteus Claude extension",
-  "description": "Integrates Anthropic Claude into Picteus.",
+  "name": "@picteus/anthropic",
+  "version": "0.1.0",
+  "productName": "Picteus Anthropic extension",
+  "description": "Integrates Claude into Picteus.",
   "keywords": [
     "picteus",
     "extension",

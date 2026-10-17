@@ -51,7 +51,7 @@ export interface TagExtractionResult extends BaseResponseResult
 
 }
 
-export interface ClaudeModelDetail
+export interface AnthropicModelDetail
 {
 
   readonly id: string;
@@ -91,7 +91,7 @@ export class AnthropicError extends Error
 
 }
 
-export class ClaudeClient
+export class AnthropicClient
 {
 
   private readonly anthropic: Anthropic;
@@ -105,12 +105,12 @@ export class ClaudeClient
     );
   }
 
-  public async getAvailableModelDetails(): Promise<ClaudeModelDetail[]>
+  public async getAvailableModelDetails(): Promise<AnthropicModelDetail[]>
   {
     try
     {
       const modelsPage = await this.anthropic.models.list();
-      const retrievedModels: ClaudeModelDetail[] = [];
+      const retrievedModels: AnthropicModelDetail[] = [];
       for await (const modelInfo of modelsPage)
       {
         if (this.isVisionCapableModel(modelInfo.id) === true)

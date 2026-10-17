@@ -12,15 +12,15 @@ import {
   type SettingsValue
 } from "@picteus/extension-sdk";
 
-import { ClaudeClient } from "./claudeClient.js";
+import { AnthropicClient } from "./anthropicClient.js";
 
 
-class ClaudeExtension extends PicteusExtension
+class AnthropicExtension extends PicteusExtension
 {
 
   private maximumTokens?: number;
 
-  private claudeClient?: ClaudeClient;
+  private anthropicClient?: AnthropicClient;
 
   protected async onReady(communicator?: Communicator): Promise<void>
   {
@@ -34,7 +34,7 @@ class ClaudeExtension extends PicteusExtension
 
   protected async onComputeImageEligibleTags(communicator: Communicator, imageId: string, eligibleTags: ComputeImageEligibleTags[]): Promise<void>
   {
-    if (this.claudeClient === undefined)
+    if (this.anthropicClient === undefined)
     {
       return;
     }
@@ -50,7 +50,7 @@ class ClaudeExtension extends PicteusExtension
 
       try
       {
-        const result = await this.claudeClient.extractTags(
+        const result = await this.anthropicClient.extractTags(
           {
             model: model,
             imageBase64: imageBase64,
@@ -83,7 +83,7 @@ class ClaudeExtension extends PicteusExtension
 
   protected async onComputeImageCaptions(communicator: Communicator, imageId: string, captions: ComputeImageCaption[]): Promise<void>
   {
-    if (this.claudeClient === undefined)
+    if (this.anthropicClient === undefined)
     {
       return;
     }
@@ -99,7 +99,7 @@ class ClaudeExtension extends PicteusExtension
 
       try
       {
-        const result = await this.claudeClient.generateChatCompletion(
+        const result = await this.anthropicClient.generateChatCompletion(
           {
             model: model,
             prompt: question,
@@ -148,7 +148,7 @@ class ClaudeExtension extends PicteusExtension
   {
     const anthropicApiKey: string = value["apiKey"];
     this.maximumTokens = value["maximumTokens"];
-    this.claudeClient = anthropicApiKey === undefined ? undefined : new ClaudeClient(anthropicApiKey);
+    this.anthropicClient = anthropicApiKey === undefined ? undefined : new AnthropicClient(anthropicApiKey);
     try
     {
       await this.sendAvailableAiModels();
@@ -161,9 +161,9 @@ class ClaudeExtension extends PicteusExtension
 
   private async sendAvailableAiModels(): Promise<void>
   {
-    if (this.claudeClient !== undefined)
+    if (this.anthropicClient !== undefined)
     {
-      const modelDetails = await this.claudeClient.getAvailableModelDetails();
+      const modelDetails = await this.anthropicClient.getAvailableModelDetails();
       await this.getExtensionApi().extensionSetAiModels(
         {
           id: this.extensionId,
@@ -198,7 +198,7 @@ class ClaudeExtension extends PicteusExtension
 
 }
 
-new ClaudeExtension().run().catch(
+new AnthropicExtension().run().catch(
   (error: unknown) =>
   {
     console.error(error);

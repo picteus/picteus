@@ -1,9 +1,9 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
-  "id": "claude",
-  "version": "0.4.0",
-  "name": "Claude",
-  "description": "Integrates Anthropic Claude through its Opus, Sonnet, Haiku, Fable ML models.",
+  "id": "anthropic",
+  "version": "0.1.0",
+  "name": "Anthropic",
+  "description": "Computes image facets through Vision Languages (VL) exposed by Anthropic.",
   "categories": [
     "enrichment"
   ],
