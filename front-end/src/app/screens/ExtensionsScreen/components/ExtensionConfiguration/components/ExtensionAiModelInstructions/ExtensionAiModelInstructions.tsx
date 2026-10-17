@@ -9,8 +9,22 @@ import React, {
   useState
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Group, Paper, Stack, TagsInput, Text, Textarea } from "@mantine/core";
-import { IconCopy, IconInfoCircle } from "@tabler/icons-react";
+import {
+  Accordion,
+  Alert,
+  Badge,
+  Button,
+  Divider,
+  Group,
+  Paper,
+  ScrollArea,
+  Stack,
+  TagsInput,
+  Text,
+  Textarea,
+  TextInput
+} from "@mantine/core";
+import { IconCopy, IconInfoCircle, IconPlus, IconSearch } from "@tabler/icons-react";
 
 import {
   CaptionInstruction,
@@ -85,6 +99,7 @@ function ExtensionAiModelInstructions(
   const [ entries, setEntries ] = useState<AiModelInstructionFormEntryType[]>([]);
   const initialEntriesRef = useRef<AiModelInstructionFormEntryType[]>([]);
 
+  const [ searchQuery, setSearchQuery ] = useState<string>("");
   const [ batchCaptionQuestion, setBatchCaptionQuestion ] = useState<string>("");
   const [ batchEligibleTagsQuestion, setBatchEligibleTagsQuestion ] = useState<string>("");
   const [ batchEligibleTags, setBatchEligibleTags ] = useState<string[]>([]);
@@ -104,7 +119,10 @@ function ExtensionAiModelInstructions(
       const captionMap = new Map<string, CaptionInstruction>(captionInstructions.map((instruction) => [ instruction.aiModelTechnicalId, instruction ]));
       const tagsMap = new Map<string, EligibleTagsInstruction>(eligibleTagsInstructions.map((instruction) => [ instruction.aiModelTechnicalId, instruction ]));
 
-      const initialEntries: AiModelInstructionFormEntryType[] = extensionModels.map((model) =>
+      // We treat a model as configured if an instruction was previously persisted for it
+      const configuredModels = extensionModels.filter((model) => captionMap.has(model.technicalId) || tagsMap.has(model.technicalId));
+
+      const initialEntries: AiModelInstructionFormEntryType[] = configuredModels.map((model) =>
       {
         const captionInstruction = captionMap.get(model.technicalId);
         const tagsInstruction = tagsMap.get(model.technicalId);
@@ -160,6 +178,32 @@ function ExtensionAiModelInstructions(
     });
   }
 
+  function handleConfigureModel(model: ExtensionAiModel): void
+  {
+    const newEntry: AiModelInstructionFormEntryType =
+      {
+        technicalId: model.technicalId,
+        name: model.name,
+        comment: model.comment,
+        captionEnabled: hasCaptionCapability,
+        captionIsAuto: false,
+        captionQuestion: batchCaptionQuestion.trim().length > 0 ? batchCaptionQuestion.trim() : defaultCaptionQuestion,
+        eligibleTagsEnabled: hasEligibleTagsCapability,
+        eligibleTagsIsAuto: false,
+        eligibleTagsQuestion: batchEligibleTagsQuestion.trim().length > 0 ? batchEligibleTagsQuestion.trim() : `Pick the tags that best fit the image from this list: ${tagsPlaceholder}.`,
+        eligibleTags: batchEligibleTags.length > 0 ? [ ...batchEligibleTags ] : [ ...defaultEligibleTags ]
+      };
+    setEntries((previousEntries) => [ ...previousEntries, newEntry ]);
+  }
+
+  function handleDeleteModel(technicalId: string): void
+  {
+    setEntries((previousEntries) =>
+    {
+      return previousEntries.filter((entry) => entry.technicalId !== technicalId);
+    });
+  }
+
   function handleApplyBatch(): void
   {
     setEntries((previousEntries) =>
@@ -187,6 +231,28 @@ function ExtensionAiModelInstructions(
     });
   }
 
+  const unconfiguredModels = useMemo((): ExtensionAiModel[] =>
+  {
+    const configuredTechnicalIds = new Set<string>(entries.map((entry) => entry.technicalId));
+    return models.filter((model) => configuredTechnicalIds.has(model.technicalId) === false);
+  }, [ models, entries ]);
+
+  const filteredUnconfiguredModels = useMemo((): ExtensionAiModel[] =>
+  {
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+    if (trimmedQuery.length === 0)
+    {
+      return unconfiguredModels;
+    }
+    return unconfiguredModels.filter((model) =>
+    {
+      const matchesName = model.name.toLowerCase().includes(trimmedQuery);
+      const matchesId = model.technicalId.toLowerCase().includes(trimmedQuery);
+      const matchesComment = model.comment ? model.comment.toLowerCase().includes(trimmedQuery) : false;
+      return matchesName || matchesId || matchesComment;
+    });
+  }, [ unconfiguredModels, searchQuery ]);
+
   function computeIsDirty(currentEntries: AiModelInstructionFormEntryType[]): boolean
   {
     if (currentEntries.length !== initialEntriesRef.current.length)
@@ -194,11 +260,14 @@ function ExtensionAiModelInstructions(
       return true;
     }
 
-    for (let index = 0; index < currentEntries.length; index += 1)
+    const initialEntriesMap = new Map<string, AiModelInstructionFormEntryType>(
+      initialEntriesRef.current.map((entry) => [ entry.technicalId, entry ])
+    );
+
+    for (const current of currentEntries)
     {
-      const current = currentEntries[index];
-      const initial = initialEntriesRef.current[index];
-      if (!initial || current.technicalId !== initial.technicalId)
+      const initial = initialEntriesMap.get(current.technicalId);
+      if (!initial)
       {
         return true;
       }
@@ -255,7 +324,7 @@ function ExtensionAiModelInstructions(
       {
         return false;
       }
-      if (hasEligibleTagsCapability && entry.eligibleTagsQuestion.includes(tagsPlaceholder) === false)
+      if (hasEligibleTagsCapability && entry.eligibleTagsEnabled && entry.eligibleTagsQuestion.includes(tagsPlaceholder) === false)
       {
         return false;
       }
@@ -364,71 +433,178 @@ function ExtensionAiModelInstructions(
 
   return (
     <Stack gap="md">
-      <Paper withBorder p="md" radius="md">
-        <Stack gap="xs">
-          <Group justify="space-between" align="center">
-            <Text fw={600} size="sm">
+      <Accordion variant="separated" radius="md">
+        <Accordion.Item value="batch">
+          <Accordion.Control icon={<IconCopy size={16}/>}>
+            <Text fw={500} size="sm">
               {t("extensionConfiguration.instructions.batchTitle")}
             </Text>
-            <Button
-              size="xs"
-              variant="light"
-              leftSection={<IconCopy size={16}/>}
-              onClick={handleApplyBatch}
-              disabled={!hasBatchContent}
-            >
-              {t("extensionConfiguration.instructions.applyToAll")}
-            </Button>
-          </Group>
-          <Text size="xs" c="dimmed">
-            {t("extensionConfiguration.instructions.batchDescription")}
-          </Text>
+          </Accordion.Control>
+          <Accordion.Panel>
+            <Stack gap="xs">
+              <Text size="xs" c="dimmed">
+                {t("extensionConfiguration.instructions.batchDescription")}
+              </Text>
 
-          {hasCaptionCapability && (
-            <Textarea
-              label={t("extensionConfiguration.instructions.commonCaptionQuestion")}
-              placeholder={t("extensionConfiguration.instructions.captionQuestionPlaceholder")}
-              value={batchCaptionQuestion}
-              onChange={(event) => setBatchCaptionQuestion(event.currentTarget.value)}
-              autosize
-              minRows={2}
-              maxRows={4}
+              {hasCaptionCapability && (
+                <Textarea
+                  label={t("extensionConfiguration.instructions.commonCaptionQuestion")}
+                  placeholder={t("extensionConfiguration.instructions.captionQuestionPlaceholder")}
+                  value={batchCaptionQuestion}
+                  onChange={(event) =>
+                  {
+                    setBatchCaptionQuestion(event.currentTarget.value);
+                  }}
+                  autosize
+                  minRows={2}
+                  maxRows={4}
+                />
+              )}
+
+              {hasEligibleTagsCapability && (
+                <>
+                  <Textarea
+                    label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion", { tags: tagsPlaceholder })}
+                    placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder", { tags: tagsPlaceholder })}
+                    value={batchEligibleTagsQuestion}
+                    onChange={(event) =>
+                    {
+                      setBatchEligibleTagsQuestion(event.currentTarget.value);
+                    }}
+                    autosize
+                    minRows={2}
+                    maxRows={4}
+                  />
+                  <TagsInput
+                    label={t("extensionConfiguration.instructions.commonEligibleTags")}
+                    placeholder={t("extensionConfiguration.instructions.eligibleTagsPlaceholder")}
+                    value={batchEligibleTags}
+                    onChange={setBatchEligibleTags}
+                    clearable
+                  />
+                </>
+              )}
+
+              <Group justify="flex-end" mt="xs">
+                <Button
+                  size="xs"
+                  variant="light"
+                  leftSection={<IconCopy size={16}/>}
+                  onClick={handleApplyBatch}
+                  disabled={!hasBatchContent || entries.length === 0}
+                >
+                  {t("extensionConfiguration.instructions.applyToAll")}
+                </Button>
+              </Group>
+            </Stack>
+          </Accordion.Panel>
+        </Accordion.Item>
+      </Accordion>
+
+      <Stack gap="xs">
+        <Group justify="space-between" align="center">
+          <Group gap="xs" align="center">
+            <Text fw={600} size="sm">
+              {t("extensionConfiguration.instructions.configuredModelsTitle")}
+            </Text>
+            <Badge variant="light" size="sm" color={entries.length > 0 ? "blue" : "gray"}>
+              {entries.length}
+            </Badge>
+          </Group>
+        </Group>
+
+        {entries.length === 0 ? (
+          <Alert icon={<IconInfoCircle size={16}/>} color="blue" variant="light">
+            {t("extensionConfiguration.instructions.noConfiguredModels")}
+          </Alert>
+        ) : (
+          <Stack gap="sm">
+            {entries.map((entry) => (
+              <ModelInstructionCard
+                key={entry.technicalId}
+                modelEntry={entry}
+                hasCaptionCapability={hasCaptionCapability}
+                hasEligibleTagsCapability={hasEligibleTagsCapability}
+                onChange={handleEntryChange}
+                onDelete={handleDeleteModel}
+              />
+            ))}
+          </Stack>
+        )}
+      </Stack>
+
+      <Divider my="xs"/>
+
+      <Stack gap="xs">
+        <Group justify="space-between" align="center" wrap="wrap">
+          <Group gap="xs" align="center">
+            <Text fw={600} size="sm">
+              {t("extensionConfiguration.instructions.availableModelsTitle")}
+            </Text>
+            <Badge variant="light" size="sm" color="gray">
+              {unconfiguredModels.length}
+            </Badge>
+          </Group>
+          {unconfiguredModels.length > 2 && (
+            <TextInput
+              size="xs"
+              placeholder={t("extensionConfiguration.instructions.searchModelsPlaceholder")}
+              leftSection={<IconSearch size={14}/>}
+              value={searchQuery}
+              onChange={(event) =>
+              {
+                setSearchQuery(event.currentTarget.value);
+              }}
             />
           )}
+        </Group>
 
-          {hasEligibleTagsCapability && (
-            <>
-              <Textarea
-                label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion", { tags: tagsPlaceholder })}
-                placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder", { tags: tagsPlaceholder })}
-                value={batchEligibleTagsQuestion}
-                onChange={(event) => setBatchEligibleTagsQuestion(event.currentTarget.value)}
-                autosize
-                minRows={2}
-                maxRows={4}
-              />
-              <TagsInput
-                label={t("extensionConfiguration.instructions.commonEligibleTags")}
-                placeholder={t("extensionConfiguration.instructions.eligibleTagsPlaceholder")}
-                value={batchEligibleTags}
-                onChange={setBatchEligibleTags}
-                clearable
-              />
-            </>
-          )}
-        </Stack>
-      </Paper>
-
-      <Stack gap="sm">
-        {entries.map((entry) => (
-          <ModelInstructionCard
-            key={entry.technicalId}
-            modelEntry={entry}
-            hasCaptionCapability={hasCaptionCapability}
-            hasEligibleTagsCapability={hasEligibleTagsCapability}
-            onChange={handleEntryChange}
-          />
-        ))}
+        {unconfiguredModels.length === 0 ? (
+          <Text size="xs" c="dimmed">
+            {t("extensionConfiguration.instructions.allModelsConfigured")}
+          </Text>
+        ) : filteredUnconfiguredModels.length === 0 ? (
+          <Text size="xs" c="dimmed">
+            {t("extensionConfiguration.instructions.noMatchingModels")}
+          </Text>
+        ) : (
+          <ScrollArea.Autosize mah={280} offsetScrollbars>
+            <Stack gap="xs">
+              {filteredUnconfiguredModels.map((model) => (
+                <Paper key={model.technicalId} withBorder p="xs" radius="md">
+                  <Group justify="space-between" align="center" wrap="nowrap">
+                    <Stack gap={2} style={{ overflow: "hidden", minWidth: 0 }}>
+                      <Group gap="xs" align="center" wrap="nowrap">
+                        <Text fw={600} size="sm" truncate>
+                          {model.name}
+                        </Text>
+                        <Badge variant="light" size="sm" tt="none">
+                          {model.technicalId}
+                        </Badge>
+                      </Group>
+                      {model.comment && (
+                        <Text size="xs" c="dimmed" lineClamp={2}>
+                          {model.comment}
+                        </Text>
+                      )}
+                    </Stack>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      leftSection={<IconPlus size={14}/>}
+                      onClick={() =>
+                      {
+                        handleConfigureModel(model);
+                      }}
+                    >
+                      {t("extensionConfiguration.instructions.configureModel")}
+                    </Button>
+                  </Group>
+                </Paper>
+              ))}
+            </Stack>
+          </ScrollArea.Autosize>
+        )}
       </Stack>
     </Stack>
   );

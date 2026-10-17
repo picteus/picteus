@@ -370,15 +370,23 @@ export default {
       commonEligibleTagsQuestion: "Eligible tags question template. Should contain the {{tags}} string.",
       commonEligibleTags: "Eligible tags template",
       enableCaptions: "Enable captions",
-      iAutoCaptions: "Run automatically on image creation and update",
+      isAutoCaptions: "Run automatically on image indexing",
       captionQuestion: "Caption question",
       captionQuestionPlaceholder: "Describe this image in one concise sentence in plain text.",
       enableEligibleTags: "Enable eligible tags",
-      iAutoEligibleTags: "Run automatically on image creation and update",
+      iAutoEligibleTags: "Run automatically on image indexing",
       eligibleTagsQuestionPlaceholder: "Which of the candidate following tags best describe this image: {{tags}}?",
       eligibleTags: "Candidate tags",
       eligibleTagsPlaceholder: "Type a tag and press Enter…",
-      noModels: "No AI models have been declared by this extension yet."
+      noModels: "No AI models have been declared by this extension yet.",
+      configuredModelsTitle: "Configured models",
+      availableModelsTitle: "Available models",
+      noConfiguredModels: "No AI models have been configured yet. Select a model below to configure it.",
+      allModelsConfigured: "All available AI models are currently configured.",
+      noMatchingModels: "No matching models found.",
+      configureModel: "Configure",
+      deleteModel: "Remove model configuration",
+      searchModelsPlaceholder: "Search available models…"
     }
   },
   imageDetail: {

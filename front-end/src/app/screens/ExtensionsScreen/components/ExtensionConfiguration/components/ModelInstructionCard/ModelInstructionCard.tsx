@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge, Card, Group, Stack, Switch, TagsInput, Text, Textarea } from "@mantine/core";
+import { ActionIcon, Badge, Card, Group, Stack, Switch, TagsInput, Text, Textarea, Tooltip } from "@mantine/core";
+import { IconTrash } from "@tabler/icons-react";
 
 
 export type AiModelInstructionFormEntryType =
@@ -23,18 +24,20 @@ export type ModelInstructionCardPropsType =
     readonly hasCaptionCapability: boolean;
     readonly hasEligibleTagsCapability: boolean;
     readonly onChange: (updatedEntry: AiModelInstructionFormEntryType) => void;
+    readonly onDelete: (technicalId: string) => void;
   };
 
 export default function ModelInstructionCard({
   modelEntry,
   hasCaptionCapability,
   hasEligibleTagsCapability,
-  onChange
+  onChange,
+  onDelete
 }: ModelInstructionCardPropsType): ReactElement
 {
   const [ t ] = useTranslation();
 
-  const questionCharactersMaximum = 1024;
+  const questionCharactersMaximum = 1_024;
   return (
     <Card withBorder padding="md" radius="md">
       <Stack gap="sm">
@@ -47,6 +50,19 @@ export default function ModelInstructionCard({
               {modelEntry.technicalId}
             </Badge>
           </Group>
+          <Tooltip label={t("extensionConfiguration.instructions.deleteModel")}>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={() =>
+              {
+                onDelete(modelEntry.technicalId);
+              }}
+              aria-label={t("extensionConfiguration.instructions.deleteModel")}
+            >
+              <IconTrash size={16}/>
+            </ActionIcon>
+          </Tooltip>
         </Group>
 
         {modelEntry.comment && (
@@ -57,59 +73,61 @@ export default function ModelInstructionCard({
 
         {hasCaptionCapability && (
           <Stack gap="xs" mt="xs">
-            <Switch
-              checked={modelEntry.captionEnabled}
-              onChange={(event) =>
-              {
-                onChange({ ...modelEntry, captionEnabled: event.currentTarget.checked });
-              }}
-              label={t("extensionConfiguration.instructions.enableCaptions")}
-            />
-            {modelEntry.captionEnabled && (
-              <>
+            <Group gap="lg" align="center" wrap="wrap">
+              <Switch
+                checked={modelEntry.captionEnabled}
+                onChange={(event) =>
+                {
+                  onChange({ ...modelEntry, captionEnabled: event.currentTarget.checked });
+                }}
+                label={t("extensionConfiguration.instructions.enableCaptions")}
+              />
+              {modelEntry.captionEnabled && (
                 <Switch
                   checked={modelEntry.captionIsAuto}
                   onChange={(event) =>
                   {
                     onChange({ ...modelEntry, captionIsAuto: event.currentTarget.checked });
                   }}
-                  label={t("extensionConfiguration.instructions.iAutoCaptions")}
+                  label={t("extensionConfiguration.instructions.isAutoCaptions")}
                 />
-                <Textarea
-                  label={t("extensionConfiguration.instructions.captionQuestion")}
-                  placeholder={t("extensionConfiguration.instructions.captionQuestionPlaceholder")}
-                  value={modelEntry.captionQuestion}
-                  onChange={(event) =>
-                  {
-                    onChange({ ...modelEntry, captionQuestion: event.currentTarget.value });
-                  }}
-                  autosize
-                  minRows={2}
-                  maxRows={6}
-                  maxLength={questionCharactersMaximum}
-                  required
-                  error={modelEntry.captionEnabled && modelEntry.captionQuestion.trim().length === 0 ? t("fieldError.empty") : undefined}
-                />
-              </>
+              )}
+            </Group>
+            {modelEntry.captionEnabled && (
+              <Textarea
+                label={t("extensionConfiguration.instructions.captionQuestion")}
+                placeholder={t("extensionConfiguration.instructions.captionQuestionPlaceholder")}
+                value={modelEntry.captionQuestion}
+                onChange={(event) =>
+                {
+                  onChange({ ...modelEntry, captionQuestion: event.currentTarget.value });
+                }}
+                autosize
+                minRows={2}
+                maxRows={6}
+                maxLength={questionCharactersMaximum}
+                required
+                error={modelEntry.captionEnabled && modelEntry.captionQuestion.trim().length === 0 ? t("fieldError.empty") : undefined}
+              />
             )}
           </Stack>
         )}
 
         {hasEligibleTagsCapability && (
           <Stack gap="xs" mt="xs">
-            <Switch
-              checked={modelEntry.eligibleTagsEnabled}
-              onChange={(event) =>
-              {
-                onChange({
-                  ...modelEntry,
-                  eligibleTagsEnabled: event.currentTarget.checked
-                });
-              }}
-              label={t("extensionConfiguration.instructions.enableEligibleTags")}
-            />
-            {modelEntry.eligibleTagsEnabled && (
-              <>
+            <Group gap="lg" align="center" wrap="wrap">
+              <Switch
+                checked={modelEntry.eligibleTagsEnabled}
+                onChange={(event) =>
+                {
+                  onChange({
+                    ...modelEntry,
+                    eligibleTagsEnabled: event.currentTarget.checked
+                  });
+                }}
+                label={t("extensionConfiguration.instructions.enableEligibleTags")}
+              />
+              {modelEntry.eligibleTagsEnabled && (
                 <Switch
                   checked={modelEntry.eligibleTagsIsAuto}
                   onChange={(event) =>
@@ -121,6 +139,10 @@ export default function ModelInstructionCard({
                   }}
                   label={t("extensionConfiguration.instructions.iAutoEligibleTags")}
                 />
+              )}
+            </Group>
+            {modelEntry.eligibleTagsEnabled && (
+              <>
                 <Textarea
                   label={t("extensionConfiguration.instructions.eligibleTagsQuestion")}
                   placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder")}
