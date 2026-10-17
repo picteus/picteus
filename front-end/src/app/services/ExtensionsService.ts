@@ -157,7 +157,7 @@ function getCommandIconURL(extensionId: string, uri: string): string
   return buildUiURL(extensionId, uri);
 }
 
-const synchronizationCapabilityIds: ManifestCapabilityId[] =
+export const synchronizationCapabilityIds: ManifestCapabilityId[] =
   [
     ManifestCapabilityId.ImageTags,
     ManifestCapabilityId.ImageFeatures,
@@ -199,7 +199,7 @@ function computeCapabilities(
 function computeEligibleExtensions(
   extensions?: Extension[],
   extensionsConfiguration?: ExtensionsConfiguration,
-  targetCapabilityIds: ManifestCapabilityId[] = synchronizationCapabilityIds
+  capabilityIds: ManifestCapabilityId[] = synchronizationCapabilityIds
 ): EligibleExtensionType[]
 {
   if (extensions === undefined || extensionsConfiguration === undefined)
@@ -209,7 +209,7 @@ function computeEligibleExtensions(
 
   // We gather, per extension, the capabilities it supports, keeping the canonical capability order
   const capabilitiesByExtensionId = new Map<string, ManifestCapability[]>();
-  for (const capabilityId of targetCapabilityIds)
+  for (const capabilityId of capabilityIds)
   {
     const configurationCapability = extensionsConfiguration.capabilities.find((entity) => entity.capability.id === capabilityId);
     if (configurationCapability === undefined)
@@ -279,6 +279,7 @@ function computeInstructionCapabilities(extension: Extension): ExtensionInstruct
 }
 
 export default {
+  synchronizationCapabilityIds,
   computeCapabilities,
   computeEligibleExtensions,
   computeInstructionCapabilities,

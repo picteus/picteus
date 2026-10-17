@@ -594,6 +594,8 @@ export default {
     explanation:
       "Synchronization re-runs the selected extensions' tagging, feature and embedding capabilities over the matching images. Existing results may be overwritten and the operation can take a while.",
     collectionExplanation: "Images involved in the synchronization:",
+    capabilities: "Capabilities to run:",
+    noCapabilities: "Please select at least one capability.",
     selectAll: "Select all",
     noExtensions: "There is no installed and enabled extension providing image capabilities.",
     synchronizingSingle: "The image is now synchronizing…",

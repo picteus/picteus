@@ -1,4 +1,4 @@
-import { SearchFilter } from "@picteus/ws-client";
+import { ManifestCapabilityId, SearchFilter } from "@picteus/ws-client";
 
 import { DeskTabType, FolderTypes, ViewTabDataType } from "types";
 
@@ -23,6 +23,7 @@ export const StorageKeys =
     IMAGE_DETAIL_TRAITS: "imageDetailTraits",
     MAIN_TAB: "mainTab",
     RECENT_IMAGE_IDS: "recentImageIds",
+    RUN_CAPABILITIES_EXCLUDED_CAPABILITY_IDS: "runCapabilitiesExcludedCapabilityIds",
     RUN_CAPABILITIES_EXCLUDED_EXTENSION_IDS: "runCapabilitiesExcludedExtensionIds",
     SELECTED_IMAGE_IDS: "selectedImagesIds",
     SELECTED_IMAGES_ACTION: "selectedImagesAction",
@@ -276,6 +277,16 @@ function setImageDetailSectionsOrder(sectionsOrder: string[]): void
   setJson(StorageKeys.IMAGE_DETAIL_SECTIONS_ORDER, sectionsOrder);
 }
 
+function getRunCapabilitiesExcludedCapabilityIds(): ManifestCapabilityId[]
+{
+  return getJson<ManifestCapabilityId[]>(StorageKeys.RUN_CAPABILITIES_EXCLUDED_CAPABILITY_IDS, []);
+}
+
+function setRunCapabilitiesExcludedCapabilityIds(capabilityIds: ManifestCapabilityId[]): void
+{
+  setJson(StorageKeys.RUN_CAPABILITIES_EXCLUDED_CAPABILITY_IDS, capabilityIds);
+}
+
 function getRunCapabilitiesExcludedExtensionIds(): string[]
 {
   return getJson<string[]>(StorageKeys.RUN_CAPABILITIES_EXCLUDED_EXTENSION_IDS, []);
@@ -443,6 +454,8 @@ export default {
   setImageDetailHiddenSections,
   getImageDetailSectionsOrder,
   setImageDetailSectionsOrder,
+  getRunCapabilitiesExcludedCapabilityIds,
+  setRunCapabilitiesExcludedCapabilityIds,
   getRunCapabilitiesExcludedExtensionIds,
   setRunCapabilitiesExcludedExtensionIds,
   getSelectedImagesIds,
