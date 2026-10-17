@@ -1,0 +1,81 @@
+{
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
+  "id": "mistral",
+  "version": "0.1.0",
+  "name": "Mistral",
+  "description": "Computes image facets through Vision Languages (VL) exposed by Mistral.",
+  "categories": [
+    "enrichment"
+  ],
+  "runtimes": [
+    {
+      "environment": "node"
+    }
+  ],
+  "instructions": [
+    {
+      "events": [
+        "process.started",
+        "image.computeFeatures",
+        "image.computeTags"
+      ],
+      "throttlingPolicies": [
+        {
+          "events": [
+            "image.computeFeatures",
+            "image.computeTags"
+          ],
+          "maximumCount": 2
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "image.features",
+          "details": {
+            "caption": true
+          }
+        },
+        {
+          "id": "image.tags",
+          "details": {
+            "eligibleTags": true
+          }
+        }
+      ],
+      "execution": {
+        "executable": "${node}",
+        "arguments": [
+          "./dist/main.js"
+        ]
+      }
+    }
+  ],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "title": "Mistral API Key",
+        "description": "The Mistral API key used when interacting with Mistral AI.",
+        "ui": {
+          "widget": "password"
+        }
+      },
+      "maximumTokens": {
+        "type": "integer",
+        "title": "Maximum tokens",
+        "description": "The maximum number of tokens in the generated response.",
+        "default": 2048,
+        "minimum": 256,
+        "maximum": 16384,
+        "ui": {
+          "widget": "range"
+        }
+      }
+    },
+    "required": [
+      "apiKey",
+      "maximumTokens"
+    ]
+  }
+}
