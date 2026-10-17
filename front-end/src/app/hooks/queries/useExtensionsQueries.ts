@@ -4,6 +4,7 @@ import {
   CommandEntity,
   Extension,
   ExtensionActivity,
+  ExtensionActivityState,
   ExtensionAndManual,
   ExtensionApiExtensionChangeStateRequest,
   ExtensionApiExtensionInstallRequest,
@@ -19,6 +20,20 @@ import { UiExtensionCommandType } from "types";
 import { ExtensionsService } from "app/services";
 import { queryKeys } from "app/query";
 
+
+export function isExtensionActivityReady(activity?: ExtensionActivity): boolean
+{
+  if (!activity)
+  {
+    return false;
+  }
+
+  return (
+    activity.connection === ExtensionActivityState.Started &&
+    activity.process === ExtensionActivityState.Started &&
+    activity.isInError === false
+  );
+}
 
 export function useExtensions(): UseQueryResult<Extension[], Error>
 {
@@ -115,6 +130,7 @@ export function useExtensionActivities(): UseQueryResult<ExtensionActivity[], Er
 export function useExtensionCommands(commandEntities: CommandEntity[]): UiExtensionCommandType[]
 {
   const { data } = useExtensionsAll();
+  const { data: activities = [] } = useExtensionActivities();
   const extensions = data?.extensions ?? [];
   // "extensionsConfiguration" should only contain commands for extensions with status "Enabled"
   const extensionsConfiguration = data?.extensionsConfiguration;
@@ -124,10 +140,30 @@ export function useExtensionCommands(commandEntities: CommandEntity[]): UiExtens
     return [];
   }
 
-  return extensionsConfiguration.commands.filter((entity) => commandEntities.indexOf(entity.command.on.entity) !== -1).map((entity) =>
+  const activityMap = new Map<string, ExtensionActivity>();
+  for (const activity of activities)
   {
+    activityMap.set(activity.id, activity);
+  }
+
+  const matchingCommands: UiExtensionCommandType[] = [];
+  for (const entity of extensionsConfiguration.commands)
+  {
+    if (commandEntities.indexOf(entity.command.on.entity) === -1)
+    {
+      continue;
+    }
+    const activity = activityMap.get(entity.extensionId);
+    if (!isExtensionActivityReady(activity))
+    {
+      continue;
+    }
     const extension = extensions.find((extensionItem) => extensionItem.manifest.id === entity.extensionId);
-    return {
+    if (!extension)
+    {
+      continue;
+    }
+    matchingCommands.push({
       extension,
       command: {
         id: entity.command.id,
@@ -138,13 +174,16 @@ export function useExtensionCommands(commandEntities: CommandEntity[]): UiExtens
         form: { parameters: entity.command.parameters },
         iconUri: entity.command.ui?.iconUri
       }
-    };
-  });
+    });
+  }
+
+  return matchingCommands;
 }
 
 export function useExtensionsWithCapability(capabilityId: ManifestCapabilityId): Extension[]
 {
   const { data } = useExtensionsAll();
+  const { data: activities = [] } = useExtensionActivities();
   const extensions = data?.extensions ?? [];
   const extensionsConfiguration = data?.extensionsConfiguration;
 
@@ -162,9 +201,20 @@ export function useExtensionsWithCapability(capabilityId: ManifestCapabilityId):
     return [];
   }
 
+  const activityMap = new Map<string, ExtensionActivity>();
+  for (const activity of activities)
+  {
+    activityMap.set(activity.id, activity);
+  }
+
   const matchingExtensions: Extension[] = [];
   for (const extensionId of matchingCapability.extensionIds)
   {
+    const activity = activityMap.get(extensionId);
+    if (!isExtensionActivityReady(activity))
+    {
+      continue;
+    }
     const foundExtension = extensions.find(
       (extensionItem) => extensionItem.manifest.id === extensionId
     );

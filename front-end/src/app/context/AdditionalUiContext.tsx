@@ -1,13 +1,13 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
-import { Extension, ExtensionState, UserInterfaceAnchor } from "@picteus/ws-client";
+import { Extension, ExtensionActivity, ExtensionState, UserInterfaceAnchor } from "@picteus/ws-client";
 
 import { AdditionalUi, ChannelEnum } from "types";
 import { computeExtensionSidebarUuid, ToastService } from "utils";
 import { ExtensionsService } from "app/services";
+import { isExtensionActivityReady, useExtensionActivities, useExtensions } from "app/hooks";
 import useOpenWindow from "../hooks/useOpenWindow.tsx";
 import createHmrStableContext from "./createHmrStableContext.ts";
-import { useExtensions } from "../hooks";
 import { useSocketEvents } from "./EventSocketContext.tsx";
 
 
@@ -36,6 +36,7 @@ export function useAdditionalUiContext(): AdditionalUiContextType
 export function AdditionalUiProvider({ children }: { children?: React.ReactNode }): JSX.Element
 {
   const { data: extensions = [] } = useExtensions();
+  const { data: activities = [] } = useExtensionActivities();
   const openWindow = useOpenWindow();
   const windowsOpened = useRef<boolean>(false);
 
@@ -61,31 +62,31 @@ export function AdditionalUiProvider({ children }: { children?: React.ReactNode 
     windowsOpened.current = true;
   }
 
-  function getAdditionalUis(extensions: Extension[]): AdditionalUi[]
+  function getAdditionalUis(extensionsList: Extension[], activitiesList: ExtensionActivity[]): AdditionalUi[]
   {
-    return extensions.flatMap(
-      (extension) =>
+    const perExtensionIdActivityMap = new Map<string, ExtensionActivity>();
+    for (const activity of activitiesList)
+    {
+      perExtensionIdActivityMap.set(activity.id, activity);
+    }
+
+    return extensionsList.flatMap((extension) =>
       {
-        return extension.manifest.ui?.elements
-          ?.filter(
-            (element) =>
-            {
-              return (element.integration.anchor === UserInterfaceAnchor.Sidebar || element.integration.anchor === UserInterfaceAnchor.Window) &&
-                extension.state === ExtensionState.Enabled;
-            }
-          )
-          .map(
-            (element) =>
+        const activity = perExtensionIdActivityMap.get(extension.manifest.id);
+        const isReady = isExtensionActivityReady(activity);
+
+        return extension.manifest.ui?.elements?.filter((element) => (element.integration.anchor === UserInterfaceAnchor.Sidebar || element.integration.anchor === UserInterfaceAnchor.Window) &&
+          extension.state === ExtensionState.Enabled && isReady)
+          .map((element) =>
             {
               const integration = element.integration;
               return {
                 uuid: computeExtensionSidebarUuid(extension.manifest.id, element.id),
                 integration,
-                content: {
-                  url: (integration.anchor === UserInterfaceAnchor.Window || (integration.anchor === UserInterfaceAnchor.Sidebar && integration.isExternal === true))
-                    ? element.url
-                    : ExtensionsService.buildUiURL(extension.manifest.id, element.url)
-                },
+                content:
+                  {
+                    url: (integration.anchor === UserInterfaceAnchor.Window || (integration.anchor === UserInterfaceAnchor.Sidebar && integration.isExternal === true)) ? element.url : ExtensionsService.buildUiURL(extension.manifest.id, element.url)
+                  },
                 icon: { url: ExtensionsService.getIconURL(extension) },
                 title: extension.manifest.name,
                 extensionId: extension.manifest.id,
@@ -99,7 +100,7 @@ export function AdditionalUiProvider({ children }: { children?: React.ReactNode 
 
   function computeAdditionalUi(): AdditionalUiContextValue
   {
-    const additionalUis = getAdditionalUis(extensions);
+    const additionalUis = getAdditionalUis(extensions, activities);
     openWindows(additionalUis);
     return {
       sidebar: additionalUis.filter(
@@ -132,7 +133,7 @@ export function AdditionalUiProvider({ children }: { children?: React.ReactNode 
       const additionalUis = [ ...computeAdditionalUi().sidebar, ...newAdditionalUis ];
       setAdditionalContextValue({ sidebar: [ ...additionalUis ] });
     },
-    [ transientUis, extensions ]
+    [ transientUis, extensions, activities ]
   );
 
   const addTransient = useCallback(
@@ -159,7 +160,10 @@ export function AdditionalUiProvider({ children }: { children?: React.ReactNode 
         ChannelEnum.EXTENSION_INSTALLED,
         ChannelEnum.EXTENSION_UNINSTALLED,
         ChannelEnum.EXTENSION_CONNECTION_STARTED,
-        ChannelEnum.EXTENSION_CONNECTION_STOPPED
+        ChannelEnum.EXTENSION_CONNECTION_STOPPED,
+        ChannelEnum.EXTENSION_PROCESS_STARTED,
+        ChannelEnum.EXTENSION_PROCESS_STOPPED,
+        ChannelEnum.EXTENSION_ERROR
       ] as const;
     },
     []
@@ -178,7 +182,7 @@ export function AdditionalUiProvider({ children }: { children?: React.ReactNode 
     {
       refresh();
     },
-    [ extensions ]
+    [ extensions, activities ]
   );
 
   return (

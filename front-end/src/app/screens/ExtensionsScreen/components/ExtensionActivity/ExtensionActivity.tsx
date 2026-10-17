@@ -12,7 +12,12 @@ export default function ExtensionActivity({
   activity
 }: ExtensionActivityType)
 {
-  return (<Badge
-    color={activity.connection === ExtensionActivityState.Started ? "green" : activity.connection === ExtensionActivityState.Stopped ? "orange" : "red"}
-    variant="dot"/>);
+  const color = activity.isInError ? "red" : ((activity.connection === ExtensionActivityState.Started && activity.process === ExtensionActivityState.Started) ? "green" : ((activity.connection === ExtensionActivityState.Stopped || activity.process === ExtensionActivityState.Stopped) ? "orange" : "red"));
+
+  return (
+    <Badge
+      color={color}
+      variant="dot"
+    />
+  );
 }
