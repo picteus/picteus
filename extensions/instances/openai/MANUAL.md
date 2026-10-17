@@ -1,6 +1,6 @@
 # Summary
 
-This extension connects [Picteus](https://www.picteus.com) to the [OpenAI API](https://developers.openai.com/api/docs/)
+This extension connects Picteus to the [OpenAI API](https://developers.openai.com/api/docs/)
 to compute image captions and eligible tags with available vision-capable models. It reports model identifiers to
 Picteus, then sends each requested image, prompt, and candidate tags to OpenAI. Generated captions are stored as
 Markdown caption features under the model identifier, and selected tags are assigned to the image.

@@ -1,29 +1,34 @@
 # Summary
 
-This extension connects Picteus with [Google Gemini](https://gemini.google.com) to generate images, analyze images,
-compute image captions, and evaluate eligible tags. It reports available Gemini vision models to Picteus, then processes
-the models, prompts, and candidate tags supplied with Picteus image-enrichment requests. Generated captions are stored
-as string image caption features under the technical model identifier, and selected candidate tags are assigned to
-the image.
+This extension connects Picteus to the [Gemini API](https://ai.google.dev/gemini-api/docs)
+for image generation, image modification, captioning, and eligible-tag computation. It reports available models to
+Picteus and sends image data, prompts, and candidate tags to Google for the requested operation. Captions are stored as
+string caption features under the model identifier, and selected tags are assigned to the image. The "Generate" command
+creates an image from a text prompt; "Modify" uses selected images as references. Generated images and generation
+metadata are stored in the extension's Picteus repository.
 
-Whenever an image is created or updated, the extension also inspects image metadata to assess whether the image was
-created with Google AI or Picasa, tagging it accordingly.
+The extension also provides a sidebar integration for [Google Gemini](https://gemini.google.com) and tags images whose
+metadata identifies them as created with Google AI or Picasa.
+
+# Prerequisites
+
+Create a [Gemini API key](https://aistudio.google.com/api-keys) and configure it in the extension settings.
 
 # Settings
 
 - **Google Gemini API Key** (`apiKey`): the secret [Google Gemini API key](https://aistudio.google.com/api-keys) used
   when interacting with Gemini via web services;
 - **Maximum tokens** (`maximumTokens`): upper token limit for generated text and enrichment responses, from `256` to
-  `8192`; defaults to `2048`.
+  `16384`; defaults to `2048`.
 
 # Commands
 
 ## Generate
 
-Generates an image from a prompt, following a specified aspect ratio, using image generative models exposed through
-Gemini.
+Generates an image from a text prompt using the selected Gemini image model and aspect ratio, then stores the image
+with generation metadata in the extension's Picteus repository.
 
 ## Modify
 
-Generates an image from a prompt combined with reference images, following an aspect ratio, using image generative
-models exposed through Gemini.
+Generates an image from a text prompt and the selected images as references using the selected Gemini image model and
+aspect ratio, then stores the result with generation metadata in the extension's Picteus repository.

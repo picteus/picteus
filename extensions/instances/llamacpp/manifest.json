@@ -3,7 +3,7 @@
   "id": "llamacpp",
   "version": "0.1.0",
   "name": "llama.cpp",
-  "description": "Computes facets of an image through Vision Languages (VL) through llama.cpp.",
+  "description": "Computes image facets through Vision Languages (VL) exposed by llama.cpp.",
   "categories": [
     "enrichment",
     "integration"

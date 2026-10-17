@@ -3,7 +3,7 @@
   "id": "ollama",
   "version": "0.8.0",
   "name": "Ollama",
-  "description": "Computes facets of an image through Vision Languages (VL) through Ollama.",
+  "description": "Computes image facets through Vision Languages (VL) exposed by Ollama.",
   "categories": [
     "enrichment",
     "integration"

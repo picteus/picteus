@@ -1,19 +1,22 @@
 # Summary
-This extension offers a bridge between Picteus and Ollama.
 
-It offers 3 features:
-- "auto-captioning": everytime an image is indexed in Picteus, Ollama will be requested to compute its caption, which is stored and available in the image detail page ;
-- "auto-tagging": everytime an image is indexed in Picteus, Ollama will be requested to compute the tags which best fit
-  for it, which are stored and available in the image detail page.
+This extension connects Picteus to a configured
+[Ollama](https://ollama.com) server to compute image captions and eligible tags using vision-language models. It
+reports available models to Picteus and pulls a requested model from
+the [Ollama model library](https://ollama.com/library)
+when needed. Images and prompts are sent to the configured server; generated captions are stored as string caption
+features, and selected tags are assigned to the image.
 
-This extension requires that you have a running Ollama instance and that the settings are properly configured. When an image is indexed but Ollama is not running, the "auto-captioning" and "auto-tagging" are disabled.
-
-You do not need to install the Vision Language models, Picteus will perform that action when required.
+The extension runs as part of Picteus and requires a reachable Ollama server. If the server is unavailable or a model
+cannot be pulled, the corresponding image computation is skipped.
 
 # Prerequisites
-[Ollama](https://ollama.com) must be installed and must be up and running.
+
+[Ollama](https://docs.ollama.com/) must be installed and running at a URL reachable from Picteus.
 
 # Settings
-- The `Ollama URL` indicates the URL at which the Ollama server listens to. By default, the server listens to `http://127.0.0.1:11434`.
-- Some parameters indicate whether Ollama should be requested for every indexed image for computing its caption, for "auto-captioning" ; you can decide what Vision Language (VL) to use, and you can tune the question which is sent to it.
-- Some parameters indicate whether Ollama should be requested for every indexed image for computing its tags for "auto-tagging" ; you can decide what Vision Language (VL) to use, and you can tune the allowed tags.
+
+- **Ollama URL** (`ollamaUrl`): base URL of the Ollama server; defaults to `http://127.0.0.1:11434`.
+
+Picteus supplies the model, prompt, and candidate tags for each image-computation request. The extension pulls a model
+from Ollama when it is requested and not already available locally.

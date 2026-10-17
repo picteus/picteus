@@ -1,13 +1,14 @@
 # Summary
 
-This extension connects Picteus to a `llama-server` instance and uses its vision-language models to compute image
-captions and eligible tags. It reports model identifiers available from the server to Picteus, then processes the
-models, prompts, and tag candidates supplied with Picteus image-computation requests. Generated captions are stored as
-image caption features, and selected tags are submitted to Picteus for the image.
+This extension connects Picteus to a configured
+[`llama-server`](https://github.com/ggml-org/llama.cpp/tree/master/tools/server) instance from
+[llama.cpp](https://github.com/ggml-org/llama.cpp). It reports available model identifiers to Picteus, then sends each
+requested image, prompt, and candidate tags to the server for captioning or eligible-tag computation. Captions are
+stored as image caption features, and selected tags are assigned to the image.
 
-The extension runs as part of Picteus and depends on a reachable `llama-server`; it does not provide a separate
-question-and-answer command. If the server is unavailable or a requested model cannot be loaded, that computation is
-skipped and a diagnostic is sent to the Picteus activity log.
+The extension runs as part of Picteus and depends on a reachable `llama-server` with a vision-language model and its
+matching multimodal projector. Image processing is performed by the configured server; if it is unavailable or a
+requested model cannot be loaded, that computation is skipped and a diagnostic is sent to the Picteus activity log.
 
 # Prerequisites
 
