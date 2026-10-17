@@ -6,7 +6,8 @@
   "description": "Accesses to all sorts of Google Gemini image-related features.",
   "categories": [
     "capture",
-    "generation"
+    "generation",
+    "enrichment"
   ],
   "runtimes": [
     {
@@ -20,6 +21,7 @@
         "process.runCommand",
         "image.created",
         "image.updated",
+        "image.computeFeatures",
         "image.computeTags",
         "image.runCommand"
       ],
@@ -28,6 +30,7 @@
           "events": [
             "image.created",
             "image.updated",
+            "image.computeFeatures",
             "image.computeTags"
           ],
           "maximumCount": 4
@@ -35,7 +38,16 @@
       ],
       "capabilities": [
         {
-          "id": "image.tags"
+          "id": "image.features",
+          "details": {
+            "caption": true
+          }
+        },
+        {
+          "id": "image.tags",
+          "details": {
+            "eligibleTags": true
+          }
         }
       ],
       "execution": {
@@ -203,15 +215,27 @@
     "properties": {
       "apiKey": {
         "type": "string",
-        "title": "API Key",
+        "title": "Google Gemini API Key",
         "description": "The Google Gemini API key used when interacting with Gemini.",
         "ui": {
           "widget": "password"
         }
+      },
+      "maximumTokens": {
+        "type": "integer",
+        "title": "Maximum tokens",
+        "description": "The maximum number of tokens in the generated response.",
+        "default": 2048,
+        "minimum": 256,
+        "maximum": 16384,
+        "ui": {
+          "widget": "range"
+        }
       }
     },
     "required": [
-      "apiKey"
+      "apiKey",
+      "maximumTokens"
     ]
   }
 }

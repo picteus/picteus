@@ -4,14 +4,18 @@ import * as path from "node:path";
 import AdmZip from "adm-zip";
 
 import {
+  type AiModel,
   type ApplicationMetadata,
   type CommandParameters,
   Communicator,
+  type ComputeImageCaption,
+  type ComputeImageEligibleTags,
   type GenerationRecipe,
   Helper,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
+  ImageResizeRender,
   IntentShowType,
   IntentToastType,
   PicteusExtension,
@@ -20,7 +24,7 @@ import {
   type SettingsValue
 } from "@picteus/extension-sdk";
 
-import { GeminiClient, type GenerateImageResult, type ReferenceImage } from "./geminiClient.js";
+import { GeminiClient, GeminiError, type GenerateImageResult, type ReferenceImage } from "./geminiClient.js";
 
 
 class GeminiExtension extends PicteusExtension
@@ -28,13 +32,15 @@ class GeminiExtension extends PicteusExtension
 
   private geminiApiKey?: string;
 
+  private maximumTokens?: number;
+
   private geminiClient?: GeminiClient;
 
   private repository?: Repository;
 
   protected async onReady(communicator?: Communicator): Promise<void>
   {
-    this.setup(await this.getSettings());
+    await this.setup(communicator, await this.getSettings());
     await this.ensureRepository(communicator);
     try
     {
@@ -46,9 +52,10 @@ class GeminiExtension extends PicteusExtension
     }
   }
 
-  protected async onSettings(_communicator: Communicator, value: SettingsValue): Promise<void>
+  protected async onSettings(communicator: Communicator, value: SettingsValue): Promise<void>
   {
-    this.setup(value);
+    await this.setup(communicator, value);
+    communicator.sendLog(`The ${this.toString()} settings updated`, "info");
   }
 
   protected async onImageCreated(_communicator: Communicator, imageId: string): Promise<void>
@@ -64,6 +71,139 @@ class GeminiExtension extends PicteusExtension
   protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
   {
     await this.computeTags(imageId);
+  }
+
+  protected async onComputeImageEligibleTags(communicator: Communicator, imageId: string, eligibleTags: ComputeImageEligibleTags[]): Promise<void>
+  {
+    if (this.geminiClient === undefined)
+    {
+      communicator.sendLog("Gemini API key is not configured: skipping eligible tags computation", "warn");
+      return;
+    }
+
+    const imageBase64: string = await this.downloadImageAsBase64Jpeg(imageId);
+    const collectedTags: string[] = [];
+    let hasComputedSuccessfully: boolean = false;
+
+    for (const eligibleTag of eligibleTags)
+    {
+      const model: string = eligibleTag.aiModel.technicalId;
+      communicator.sendLog(`Evaluating image against ${eligibleTag.tags.length} candidate tag(s) using model '${model}'…`, "info");
+
+      try
+      {
+        const result = await this.geminiClient.extractTags(
+          {
+            model: model,
+            imageBase64: imageBase64,
+            tags: eligibleTag.tags,
+            promptTemplate: eligibleTag.question,
+            maxTokens: this.maximumTokens
+          }
+        );
+        hasComputedSuccessfully = true;
+
+        if (result.tags.length > 0)
+        {
+          communicator.sendLog(`Auto-tagging completed in ${result.durationInMilliseconds} ms. Selected ${result.tags.length} tag(s): [${result.tags.join(", ")}]`, "info");
+          collectedTags.push(...result.tags);
+        }
+        else
+        {
+          communicator.sendLog(`Auto-tagging completed in ${result.durationInMilliseconds} ms. No candidate tags matched the image content.`, "info");
+        }
+      }
+      catch (error: unknown)
+      {
+        communicator.sendLog(`Failed to compute tags for the image with model '${model}'. Reason: ${error instanceof Error ? error.message : String(error)}`, "error");
+      }
+    }
+
+    if (hasComputedSuccessfully === true)
+    {
+      const uniqueTags: string[] = Array.from(new Set(collectedTags));
+      await this.getImageApi().imageSetTags(
+        {
+          id: imageId,
+          extensionId: this.extensionId,
+          requestBody: uniqueTags
+        }
+      );
+      communicator.sendLog(`Updated tags for image '${imageId}'`, "info");
+    }
+  }
+
+  protected async onComputeImageCaptions(communicator: Communicator, imageId: string, captions: ComputeImageCaption[]): Promise<void>
+  {
+    if (this.geminiClient === undefined)
+    {
+      communicator.sendLog("Gemini API key is not configured: skipping image captions computation", "warn");
+      return;
+    }
+
+    const imageBase64: string = await this.downloadImageAsBase64Jpeg(imageId);
+    const generatedFeatures: Array<{ name: string; value: string }> = [];
+
+    for (const caption of captions)
+    {
+      const model: string = caption.aiModel.technicalId;
+      const question: string = caption.question;
+      communicator.sendLog(`Generating caption for image '${imageId}' using model '${model}'…`, "info");
+
+      try
+      {
+        const result = await this.geminiClient.generateChatCompletion(
+          {
+            model: model,
+            prompt: question,
+            imageBase64: imageBase64,
+            maxTokens: this.maximumTokens
+          }
+        );
+
+        communicator.sendLog(`The generated caption took ${result.durationInMilliseconds} ms and returned the response '${result.content}'`, "debug");
+
+        if (result.content.length > 0)
+        {
+          generatedFeatures.push(
+            {
+              name: model,
+              value: result.content
+            }
+          );
+        }
+      }
+      catch (error: unknown)
+      {
+        if (error instanceof GeminiError && error.isApiKeyInvalid === true)
+        {
+          this.geminiClient = undefined;
+        }
+        communicator.sendLog(`Failed to compute caption for the image with model '${model}'. Reason: ${error instanceof Error ? error.message : String(error)}`, "error");
+      }
+    }
+
+    if (generatedFeatures.length > 0)
+    {
+      await this.getImageApi().imageSetFeatures(
+        {
+          id: imageId,
+          extensionId: this.extensionId,
+          imageFeature: generatedFeatures.map(
+            (feature) =>
+            {
+              return {
+                type: ImageFeatureType.Caption,
+                format: ImageFeatureFormat.String,
+                name: feature.name,
+                value: feature.value
+              };
+            }
+          )
+        }
+      );
+      communicator.sendLog(`Updated ${generatedFeatures.length} caption feature(s) for image '${imageId}'`, "info");
+    }
   }
 
   protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], parameters: CommandParameters): Promise<void>
@@ -84,7 +224,11 @@ class GeminiExtension extends PicteusExtension
 
   private async computeTags(imageId: string): Promise<void>
   {
-    const metadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+    const metadata = await this.getImageApi().imageGetMetadata(
+      {
+        id: imageId
+      }
+    );
     let hasMatchingSoftwareMetadata: boolean = false;
     if (metadata.all !== undefined)
     {
@@ -115,9 +259,9 @@ class GeminiExtension extends PicteusExtension
       );
     }
 
-    const model: string = parameters["model"];
-    const aspectRatio: string = parameters["aspectRatio"];
-    const prompt: string = parameters["prompt"];
+    const model: string = String(parameters["model"]);
+    const aspectRatio: string = String(parameters["aspectRatio"]);
+    const prompt: string = String(parameters["prompt"]);
     communicator.sendLog(`Asking Gemini to generate an image with prompt '${prompt}'`, "debug");
 
     const referenceImages: ReferenceImage[] = [];
@@ -126,7 +270,7 @@ class GeminiExtension extends PicteusExtension
       for (const imageId of imageIds)
       {
         const edge = 1_024;
-        const blob: Blob = await this.getImageApi().imageDownload(
+        const blob = await this.getImageApi().imageDownload(
           {
             id: imageId,
             format: ImageFormat.Png,
@@ -163,7 +307,13 @@ class GeminiExtension extends PicteusExtension
         }
       );
     }
+
     communicator.sendLog(`Gemini responded in ${result.durationInMilliseconds} ms with ${result.totalPartsCount} part(s)`, "debug");
+
+    for (const textPart of result.textParts)
+    {
+      this.logger.debug(textPart);
+    }
 
     for (const generatedImage of result.images)
     {
@@ -306,6 +456,53 @@ class GeminiExtension extends PicteusExtension
     }
   }
 
+  private async sendAvailableAiModels(communicator?: Communicator): Promise<void>
+  {
+    if (this.geminiClient !== undefined)
+    {
+      const modelDetails = await this.geminiClient.getAvailableModelDetails();
+      const retrievedModels: AiModel[] = modelDetails.map(
+        (detail) =>
+        {
+          return {
+            technicalId: detail.id,
+            name: detail.name ?? detail.id,
+            comment: detail.comment
+          };
+        }
+      );
+
+      if (retrievedModels.length > 0)
+      {
+        await this.getExtensionApi().extensionSetAiModels(
+          {
+            id: this.extensionId,
+            aiModel: retrievedModels
+          }
+        );
+        communicator?.sendLog(`Registered ${retrievedModels.length} Gemini AI model(s) from the Gemini API`, "info");
+      }
+    }
+  }
+
+  private async downloadImageAsBase64Jpeg(imageId: string): Promise<string>
+  {
+    const edge: number = 1_024;
+    const blob = await this.getImageApi().imageDownload(
+      {
+        id: imageId,
+        format: ImageFormat.Jpeg,
+        width: edge,
+        height: edge,
+        resizeRender: ImageResizeRender.Outbox,
+        stripMetadata: true
+      }
+    );
+    const arrayBuffer: ArrayBuffer = await blob.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    return buffer.toString("base64");
+  }
+
   private async checkGeminiApiKey(communicator: Communicator): Promise<boolean>
   {
     if (this.geminiClient === undefined)
@@ -328,15 +525,34 @@ class GeminiExtension extends PicteusExtension
         // The user has cancelled
         return false;
       }
-      this.setup(value);
+      await this.setup(communicator, value);
     }
     return this.geminiClient !== undefined;
   }
 
-  private setup(value: SettingsValue): void
+  private async setup(communicator: Communicator | undefined, value: SettingsValue): Promise<void>
   {
     this.geminiApiKey = value["apiKey"];
-    this.geminiClient = this.geminiApiKey === undefined ? undefined : new GeminiClient(this.geminiApiKey);
+    this.maximumTokens = value["maximumTokens"];
+
+    if (typeof this.geminiApiKey === "string" && this.geminiApiKey.length > 0)
+    {
+      this.geminiClient = new GeminiClient(this.geminiApiKey);
+    }
+    else
+    {
+      this.geminiClient = undefined;
+    }
+
+    try
+    {
+      await this.sendAvailableAiModels(communicator);
+    }
+    catch (error: unknown)
+    {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      communicator?.sendLog(`Could not fetch the models dynamically from the Gemini API. Reason: '${errorMessage}'`, "warn");
+    }
   }
 
   private async ensureRepository(communicator?: Communicator): Promise<void>
