@@ -16,6 +16,7 @@ import CollectionWidget from "./widgets/CollectionWidget";
 import TagsWidget from "./widgets/TagsWidget";
 import FilePickerWidget from "./widgets/FilePickerWidget";
 import DirectoryPickerWidget from "./widgets/DirectoryPickerWidget";
+import RangeWidget from "./widgets/RangeWidget";
 
 
 type RsfjFormType = {
@@ -27,7 +28,30 @@ type RsfjFormType = {
 };
 
 type UIProperty = { property: string, ui: JsonType };
-const uiPropertyName = "ui";
+const uiPropertyKeys = [ "ui", "ui.widget", "ui:widget" ] as const;
+
+// We extract and delete UI configuration declared via nested "ui", dot-notated "ui.widget", or colon-notated "ui:widget"
+function extractPropertyUi(childProperty: JsonType): JsonType
+{
+  let ui: JsonType = undefined;
+  for (const uiPropertyKey of uiPropertyKeys)
+  {
+    const propertyValue = childProperty[uiPropertyKey];
+    if (propertyValue !== undefined)
+    {
+      delete childProperty[uiPropertyKey];
+      if (uiPropertyKey === "ui" && typeof propertyValue === "object" && propertyValue !== null)
+      {
+        ui = { ...((ui as object) || {}), ...(propertyValue as object) };
+      }
+      else
+      {
+        ui = { ...((ui as object) || {}), widget: propertyValue };
+      }
+    }
+  }
+  return ui;
+}
 
 function stripAndExtractParametersUiProperties(parameters: JsonType): UIProperty[]
 {
@@ -38,8 +62,18 @@ function stripAndExtractParametersUiProperties(parameters: JsonType): UIProperty
     for (const property in properties)
     {
       const childProperty = properties[property];
-      const ui: JsonType = childProperty[uiPropertyName];
-      delete childProperty[uiPropertyName];
+      const ui: JsonType = extractPropertyUi(childProperty);
+
+      // We normalize float and double schema types to standard JSON Schema number
+      if (childProperty.type === "float" || childProperty.type === "double")
+      {
+        if (childProperty.format === undefined)
+        {
+          childProperty.format = childProperty.type;
+        }
+        childProperty.type = "number";
+      }
+
       if (ui !== undefined)
       {
         uis.push({ property, ui });
@@ -59,7 +93,14 @@ export function extractSchemaAndUiSchema(parameters: object): {
   const uiSchema: UiSchema = {};
   uiProperties.forEach((uiProperty: UIProperty) =>
   {
-    uiSchema[uiProperty.property] = { "ui:options": uiProperty.ui };
+    const widgetName = typeof uiProperty.ui === "object" && uiProperty.ui !== null
+      ? (uiProperty.ui as Record<string, unknown>).widget
+      : undefined;
+
+    uiSchema[uiProperty.property] = {
+      "ui:options": uiProperty.ui,
+      ...(widgetName ? { "ui:widget": widgetName as string } : {})
+    };
   });
   return { schema: deepCopiedParameters, uiSchema };
 }
@@ -169,7 +210,7 @@ export default function RjsfForm({
 {
   const formRef = useRef(null);
 
-  // Ensures boolean schema properties default to false when undefined, preventing uncontrolled input warnings in UI widgets
+  // Ensures boolean schema properties default to false when undefined and normalizes float and double types to number
   function ensureSchemaBooleanDefaultValues(schema: RJSFSchema): RJSFSchema
   {
     if (schema.type === "object" && schema.properties)
@@ -180,6 +221,14 @@ export default function RjsfForm({
         if (property.type === "boolean" && property.default === undefined)
         {
           property.default = false;
+        }
+        if (property.type === "float" || property.type === "double")
+        {
+          if (property.format === undefined)
+          {
+            property.format = property.type;
+          }
+          property.type = "number";
         }
         if (property.type === "object")
         {
@@ -238,7 +287,9 @@ export default function RjsfForm({
       file: FilePickerWidget,
       filePicker: FilePickerWidget,
       directory: DirectoryPickerWidget,
-      directoryPicker: DirectoryPickerWidget
+      directoryPicker: DirectoryPickerWidget,
+      range: RangeWidget,
+      RangeWidget
     };
 
   return (
