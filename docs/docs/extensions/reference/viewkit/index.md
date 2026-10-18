@@ -75,7 +75,7 @@ Each element has a `type` discriminator.
 | `html`             | Sandboxed HTML content for cases not covered by the other elements.                                                                                                             |
 
 Primitive elements can use modifiers such as text intensity (`low`, `medium`, `high`), weight (`thin`, `normal`,
-`heavy`), truncation (`characterLimit`, `showMore`), monospace rendering, or copy support.
+`heavy`), truncation (`limit`, `mode`, `showMore`), monospace rendering, or copy support.
 
 ### Layout and grouping
 

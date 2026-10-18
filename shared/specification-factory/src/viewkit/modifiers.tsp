@@ -45,12 +45,25 @@ enum Size {
   large: "large"
 }
 
+@summary("Measurement unit for text truncation.")
+enum TruncateMode {
+  @summary("Truncate by total character count")
+  characters: "characters",
+
+  @summary("Truncate by number of rendered lines")
+  lines: "lines"
+}
+
 @summary("Truncation configuration for long textual content with optional expand affordance.")
-@doc("Controls how a renderer abbreviates long text. The character limit is a presentation threshold rather than a validation limit; showMore lets the user reveal the remaining text.")
+@doc("Controls how a renderer abbreviates long text. When mode is characters, limit represents maximum character count; when mode is lines, limit represents visual line count.")
 model TruncateOptions {
-  @summary("Maximum number of characters to display before truncating")
-  @doc("Threshold after which the renderer can shorten the displayed text. This does not constrain the stored string or remove its undisplayed content.")
-  characterLimit: int32;
+  @summary("Maximum threshold limit before truncating")
+  @doc("Threshold after which the renderer can shorten the displayed text. When mode is characters, this represents character count; when mode is lines, this represents visual line count.")
+  limit: int32;
+
+  @summary("Truncation measurement mode (characters or lines)")
+  @doc("Whether limit represents character count or line count. Defaults to lines.")
+  mode?: TruncateMode = TruncateMode.lines;
 
   @summary("Whether to render a \"Show more\" / \"Show less\" toggle affordance")
   @doc("When true, permits an expand/collapse control for text beyond the truncation threshold. Defaults to true.")
@@ -68,7 +81,7 @@ model BaseModifiers {
 @summary("Common modifier traits that can be attached to primitive elements.")
 @doc("Extends BaseModifiers with text styling controls. Defaults provide normal weight, medium intensity, and proportional text unless a feature explicitly overrides them.")
 model PrimitiveModifiers extends BaseModifiers {
-  @summary("Configures character truncation threshold with show-more affordance")
+  @summary("Configures truncation threshold with show-more affordance")
   @doc("Optional text abbreviation behavior. The source text remains unchanged, and the renderer may offer expansion according to showMore.")
   truncate?: TruncateOptions;
 
