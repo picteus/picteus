@@ -135,7 +135,7 @@ class MistralExtension extends PicteusExtension
           {
             return {
               type: ImageFeatureType.Caption,
-              format: ImageFeatureFormat.Markdown,
+              format: ImageFeatureFormat.String,
               name: feature.name,
               value: feature.value
             };
