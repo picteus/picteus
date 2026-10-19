@@ -25,6 +25,8 @@ import {
   TextIntensity,
   TextWeight,
   timestamp,
+  TruncateMode,
+  truncateOptions,
   UiContainer,
   UiElement,
   xml
@@ -167,8 +169,19 @@ export function parseFeatureUiContainer(feature: ExtensionImageFeature, t: TFunc
 
 export function inferNonUiElement(imageFeature: ExtensionImageFeature): UiElement
 {
-  const value = imageFeature.value;
   const copyableOptions = { modifiers: { copyable: true } };
+  const value = imageFeature.value;
+  if (imageFeature.type === ImageFeatureType.Caption)
+  {
+    return string(String(value), {
+      modifiers: {
+        ...copyableOptions,
+        truncate: truncateOptions(5, { mode: TruncateMode.lines })
+      },
+      representation: StringRepresentation.multiline
+    });
+  }
+
   let element: UiElement;
   switch (imageFeature.format)
   {
@@ -229,7 +242,7 @@ export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: T
   if (generationRecipe.schemaVersion !== undefined && Math.random() > 1)
   {
     rows.push(tableRow([
-      string(t("field.schemaVersion"), options),
+        string(t("field.schemaVersion"), options),
         numberUnbounded(generationRecipe.schemaVersion)
       ])
     );
@@ -238,7 +251,7 @@ export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: T
   if (generationRecipe.id)
   {
     rows.push(tableRow([
-      string(t("field.id"), options),
+        string(t("field.id"), options),
         identifier(generationRecipe.id, { modifiers: { monospace: true, copyable: true } })
       ])
     );
@@ -247,7 +260,7 @@ export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: T
   if (generationRecipe.url)
   {
     rows.push(tableRow([
-      string(t("field.url"), options),
+        string(t("field.url"), options),
         stringUrl(generationRecipe.url, { modifiers: { copyable: true } })
       ])
     );
@@ -285,7 +298,7 @@ export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: T
   if (generationRecipe.inputAssets && generationRecipe.inputAssets.length > 0)
   {
     rows.push(tableRow([
-      string(t("field.assetIds"), options),
+        string(t("field.assetIds"), options),
         flowing(
           generationRecipe.inputAssets.map((asset) => identifier(asset, {
             modifiers: {
@@ -312,6 +325,10 @@ export function isDisplayedInFeatureTypeCards(feature: ExtensionImageFeature): b
   {
     return false;
   }
+  if (feature.type === ImageFeatureType.Caption)
+  {
+    return true;
+  }
   if (feature.format === ImageFeatureFormat.Ui || feature.format === ImageFeatureFormat.Html || feature.format === ImageFeatureFormat.Markdown)
   {
     return true;
@@ -319,7 +336,6 @@ export function isDisplayedInFeatureTypeCards(feature: ExtensionImageFeature): b
   if (feature.format === ImageFeatureFormat.String)
   {
     return (
-      feature.type === ImageFeatureType.Caption ||
       feature.type === ImageFeatureType.Description ||
       feature.type === ImageFeatureType.Comment ||
       feature.type === ImageFeatureType.Identity
@@ -509,7 +525,7 @@ export function computeTypeFeatureContainers(
         extensionId,
         type,
         name: uiFeature.name,
-        uiContainer: uiFeature.format === ImageFeatureFormat.Ui
+        uiContainer: uiFeature.format === ImageFeatureFormat.Ui && uiFeature.type !== ImageFeatureType.Caption
           ? parseFeatureUiContainer(uiFeature, t)
           : UiContainer.builder().add(inferNonUiElement(uiFeature)).build()
       });
@@ -533,7 +549,7 @@ export function computeRawFeatureContainers(
       extensionId: rawFeature.id,
       type: rawFeature.type,
       name: featureName,
-      uiContainer: rawFeature.format === ImageFeatureFormat.Ui
+      uiContainer: rawFeature.format === ImageFeatureFormat.Ui && rawFeature.type !== ImageFeatureType.Caption
         ? parseFeatureUiContainer(rawFeature)
         : UiContainer.builder().add(inferNonUiElement(rawFeature)).build()
     };
