@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert/strict";
 
-import type { ImageMeta } from "@stable-canvas/civitai-rest-api-client";
 import type { CollapsibleGroupElement, FlowingElement, TableElement } from "@picteus/extension-sdk";
 
-import { CivitaiRetriever } from "./retriever";
+import { type CivitaiAspectRatio, type CivitaiImageMeta as ImageMeta } from "./civitaiClient.js";
+import { CivitaiAnalyzer } from "./civitaiAnalyzer.js";
 
 
 test("toUiContainer creates expected primary table and collapsible details", () =>
@@ -66,7 +66,7 @@ test("toUiContainer creates expected primary table and collapsible details", () 
         }
     };
 
-  const retriever = new CivitaiRetriever();
+  const retriever = new CivitaiAnalyzer();
   const uiContainer = retriever.toUiContainer(meta);
 
   assert.ok(uiContainer);
@@ -102,24 +102,26 @@ test("toUiContainer creates expected primary table and collapsible details", () 
   assert.ok(primaryRowLabels.includes("Steps"));
   assert.ok(primaryRowLabels.includes("CFG Scale"));
   assert.ok(primaryRowLabels.includes("Seed"));
-  assert.ok(primaryRowLabels.includes("Dimension"));
-  assert.equal(primaryRowLabels.includes("Dimensions"), false);
+  assert.ok(primaryRowLabels.includes("Dimensions"));
+  assert.equal(primaryRowLabels.includes("Dimension"), false);
   assert.equal(primaryRowLabels.includes("Created Date"), false);
   assert.ok(primaryRowLabels.includes("Clip Skip"));
 
   // Check Dimension cell content
-  const dimensionRowIndex = primaryRowLabels.indexOf("Dimension");
+  const dimensionRowIndex = primaryRowLabels.indexOf("Dimensions");
   const dimensionRow = primaryElement.rows[dimensionRowIndex];
   const dimensionValueCell = dimensionRow.cells[1] as FlowingElement;
   assert.equal(dimensionValueCell.type, "flowing");
   assert.equal(dimensionValueCell.elements.length, 2);
   const dimensionTextElement = dimensionValueCell.elements[0] as {
     type: string;
-    value: string;
+    width: number;
+    height: number;
     modifiers?: { copyable?: boolean; };
   };
-  assert.equal(dimensionTextElement.type, "string");
-  assert.equal(dimensionTextElement.value, "1024x1024");
+  assert.equal(dimensionTextElement.type, "dimensions");
+  assert.equal(dimensionTextElement.width, 1024);
+  assert.equal(dimensionTextElement.height, 1024);
   assert.equal(dimensionTextElement.modifiers?.copyable, true);
   const dimensionRatioElement = dimensionValueCell.elements[1] as { type: string; value: number; };
   assert.equal(dimensionRatioElement.type, "ratio");
@@ -198,7 +200,7 @@ test("toUiContainer creates expected primary table and collapsible details", () 
 
 test("toUiContainer handles empty and minimal metadata gracefully", () =>
 {
-  const retriever = new CivitaiRetriever();
+  const retriever = new CivitaiAnalyzer();
 
   // Empty metadata produces no elements
   const emptyContainer = retriever.toUiContainer({});
@@ -227,7 +229,7 @@ test("toUiContainer handles empty and minimal metadata gracefully", () =>
 
 test("toUiContainer handles dynamic extra properties and resources list", () =>
 {
-  const retriever = new CivitaiRetriever();
+  const retriever = new CivitaiAnalyzer();
   const meta: ImageMeta & Record<string, unknown> =
     {
       Model: "SDXL",
@@ -294,7 +296,7 @@ test("toUiContainer handles dynamic extra properties and resources list", () =>
 
 test("toUiContainer displays civitaiResources with only used columns among type, modelVersionId, modelName, modelVersionName", () =>
 {
-  const retriever = new CivitaiRetriever();
+  const retriever = new CivitaiAnalyzer();
   const meta: ImageMeta =
     {
       Model: "Pony Diffusion V6",
@@ -355,7 +357,7 @@ test("toUiContainer displays civitaiResources with only used columns among type,
 
 test("toUiContainer handles resources table with Type, Name, Weight columns ignoring extra fields and falling back to modelName", () =>
 {
-  const retriever = new CivitaiRetriever();
+  const retriever = new CivitaiAnalyzer();
 
   // Empty resources array does not produce a collapsible group
   const emptyContainer = retriever.toUiContainer({
@@ -419,7 +421,7 @@ test("toUiContainer handles resources table with Type, Name, Weight columns igno
 
 test("toUiContainer shifts width and height into Dimension entry with ratio and omits Created Date", () =>
 {
-  const retriever = new CivitaiRetriever();
+  const retriever = new CivitaiAnalyzer();
   const meta: ImageMeta & Record<string, unknown> =
     {
       Model: "SDXL",
@@ -436,12 +438,12 @@ test("toUiContainer shifts width and height into Dimension entry with ratio and 
   // 1. Primary table
   const primaryTable = uiContainer.elements[0] as TableElement;
   const primaryLabels = primaryTable.rows.map((row) => (row.cells[0] as { value?: string; }).value);
-  assert.ok(primaryLabels.includes("Dimension"));
+  assert.ok(primaryLabels.includes("Dimensions"));
   assert.equal(primaryLabels.includes("width"), false);
   assert.equal(primaryLabels.includes("height"), false);
   assert.equal(primaryLabels.includes("Created Date"), false);
 
-  const dimensionRowIndex = primaryLabels.indexOf("Dimension");
+  const dimensionRowIndex = primaryLabels.indexOf("Dimensions");
   const dimensionRow = primaryTable.rows[dimensionRowIndex];
   const dimensionCell = dimensionRow.cells[1] as FlowingElement;
   assert.equal(dimensionCell.type, "flowing");
@@ -449,11 +451,13 @@ test("toUiContainer shifts width and height into Dimension entry with ratio and 
 
   const textElement = dimensionCell.elements[0] as {
     type: string;
-    value: string;
+    width: number;
+    height: number;
     modifiers?: { copyable?: boolean; };
   };
-  assert.equal(textElement.type, "string");
-  assert.equal(textElement.value, "1024x768");
+  assert.equal(textElement.type, "dimensions");
+  assert.equal(textElement.width, 1024);
+  assert.equal(textElement.height, 768);
   assert.equal(textElement.modifiers?.copyable, true);
 
   const ratioElement = dimensionCell.elements[1] as { type: string; value: number; };
@@ -473,4 +477,69 @@ test("toUiContainer shifts width and height into Dimension entry with ratio and 
   assert.equal(secondaryLabels.includes("Created Date"), false);
 });
 
+test("computeData handles aspectRatio as an object or a legacy string", () =>
+{
+  function checkAspectRatio(aspectRatio: string | CivitaiAspectRatio, expectedAspectRatio: number): void
+  {
+    const analyzer = new CivitaiAnalyzer();
+    const data = analyzer.computeData({
+      id: 12345,
+      url: "https://image.civitai.com/test.jpg",
+      meta:
+        {
+          prompt: "A beautiful scenery",
+          aspectRatio
+        }
+    });
+    assert.equal(data.recipe.aspectRatio, expectedAspectRatio);
+  }
+
+  checkAspectRatio({ value: "9:16", width: 768, height: 1376 }, 768 / 1376);
+  checkAspectRatio({ value: "9:16" }, 9 / 16);
+  checkAspectRatio("16:9", 16 / 9);
+});
+
+test("toUiContainer extracts Dimensions from aspectRatio object when top-level width and height are absent", () =>
+{
+  const analyzer = new CivitaiAnalyzer();
+  const meta: ImageMeta =
+    {
+      Model: "SDXL",
+      prompt: "A cinematic vertical portrait",
+      aspectRatio:
+        {
+          value: "9:16",
+          width: 768,
+          height: 1376
+        }
+    };
+
+  const uiContainer = analyzer.toUiContainer(meta);
+  assert.equal(uiContainer.elements.length, 1);
+
+  const primaryTable = uiContainer.elements[0] as TableElement;
+  const primaryLabels = primaryTable.rows.map((row) => (row.cells[0] as { value?: string; }).value);
+  assert.ok(primaryLabels.includes("Dimensions"));
+
+  const dimensionRowIndex = primaryLabels.indexOf("Dimensions");
+  const dimensionRow = primaryTable.rows[dimensionRowIndex];
+  const dimensionCell = dimensionRow.cells[1] as FlowingElement;
+  assert.equal(dimensionCell.type, "flowing");
+  assert.equal(dimensionCell.elements.length, 2);
+
+  const textElement = dimensionCell.elements[0] as {
+    type: string;
+    width: number;
+    height: number;
+    modifiers?: { copyable?: boolean; };
+  };
+  assert.equal(textElement.type, "dimensions");
+  assert.equal(textElement.width, 768);
+  assert.equal(textElement.height, 1376);
+  assert.equal(textElement.modifiers?.copyable, true);
+
+  const ratioElement = dimensionCell.elements[1] as { type: string; value: number; };
+  assert.equal(ratioElement.type, "ratio");
+  assert.equal(ratioElement.value, 768 / 1376);
+});
 

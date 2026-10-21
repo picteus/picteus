@@ -10,4 +10,9 @@ It allows to retrieve images from this web site and to store all the information
 # Commands
 
 ## fetchImages
-It retrieves a given amount of images from Civitai from a user or from a post. The images are stored along with the metadata coming from the Civitai web service invocation, and marked with the `civitai` tag.
+Retrieves a specified quantity of images from Civitai for a given user or post. The images are stored in the extension repository alongside their generation recipe and metadata, tagged with `civitai`.
+
+### Parameters
+* `source`: the source of images — either a user identifier (`userName`) or a post identifier (`postId`);
+* `count`: the number of images to retrieve — defaults to 10;
+* `onlyWithMetadata`: whether to retain only images that include generation metadata — defaults to `true`. When set to `true`, the extension automatically paginates through Civitai results until the requested count is met or no further images are available.

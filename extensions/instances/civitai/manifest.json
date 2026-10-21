@@ -79,11 +79,18 @@
                 "minimum": 1,
                 "maximum": 100,
                 "default": 10
+              },
+              "onlyWithMetadata": {
+                "type": "boolean",
+                "title": "Only with metadata",
+                "description": "Whether to fetch only images that include generation metadata",
+                "default": true
               }
             },
             "required": [
               "source",
-              "count"
+              "count",
+              "onlyWithMetadata"
             ]
           },
           "specifications": [
@@ -91,7 +98,7 @@
               "locale": "en",
               "label": "Fetch",
               "name": "Fetch images",
-              "description": "Asks the user the identifier of the Civitai user or of a post, a number of images, and then fetches the corresponding count of latest images and stores them with their metadata and sources in the extension's repository."
+              "description": "Asks the user the identifier of the Civitai user or of a post, a number of images, whether to keep only images with metadata, and then fetches the corresponding count of latest images and stores them with their metadata and sources in the extension's repository."
             }
           ]
         }

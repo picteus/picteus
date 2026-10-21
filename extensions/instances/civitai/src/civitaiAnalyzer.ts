@@ -1,11 +1,4 @@
 import {
-  CivitaiRESTAPIClient,
-  type Image,
-  type ImageMeta,
-  type ImagesResponse
-} from "@stable-canvas/civitai-rest-api-client";
-
-import {
   collapsibleGroup,
   createUiContainer,
   dimensions,
@@ -18,6 +11,7 @@ import {
   PromptKind,
   ratio,
   string,
+  StringRepresentation,
   table,
   tableColumn,
   TableColumnAlign,
@@ -30,68 +24,86 @@ import {
   type UiElement
 } from "@picteus/extension-sdk";
 
+import { type CivitaiAspectRatio, type CivitaiImage, type CivitaiImageMeta } from "./civitaiClient.js";
+
 
 export interface CitivaiImageData
 {
-  recipe: GenerationRecipe;
-  image: Image;
-  uiContainer?: UiContainer;
-  prompts:
+
+  readonly image: CivitaiImage;
+  readonly prompts:
     {
-      positive?: string;
-      negative?: string;
+      readonly positive?: string;
+      readonly negative?: string;
     };
-  postId?: number;
+  readonly postId?: number;
+  readonly recipe: GenerationRecipe;
+  readonly uiContainer?: UiContainer;
+
 }
 
-export class CivitaiRetriever
+export class CivitaiAnalyzer
 {
 
-  async run(options: Record<string, any>): Promise<CitivaiImageData[]>
-  {
-    const client = new CivitaiRESTAPIClient();
-    const response: ImagesResponse = await client.default.getImages(options);
-    return response.items.map(image => this.computeData(image));
-  }
-
-  computeData(image: Image): CitivaiImageData
+  computeData(image: CivitaiImage): CitivaiImageData
   {
     const modelTags: string[] = [];
-    const baseModelProperties = [ "basemodel", "baseModel" ];
-    for (const baseModelProperty of baseModelProperties)
+    for (const model of [ image.basemodel, image.baseModel ])
     {
-      if (baseModelProperty in image)
+      if (model !== undefined && model !== null)
       {
-        // @ts-ignore
-        modelTags.push(image[baseModelProperty]);
+        modelTags.push(model);
       }
     }
-    const meta: ImageMeta | undefined = image.meta;
+    const meta: CivitaiImageMeta | undefined = image.meta === undefined ? undefined : (image.meta.meta !== undefined ? image.meta.meta : image.meta);
     if (meta)
     {
       if ("models" in meta)
       {
-        // @ts-ignore
         modelTags.push(...meta["models"]);
       }
       if ("Model" in meta)
       {
-        // @ts-ignore
         modelTags.push(meta["Model"]);
       }
       if ("baseModel" in meta)
       {
-        // @ts-ignore
         modelTags.push(meta["baseModel"]);
       }
     }
-    // @ts-ignore
-    const aspectRatioRawString: string | undefined = meta?.["aspectRatio"];
     let aspectRatio: number | undefined;
-    if (aspectRatioRawString !== undefined)
+    const rawAspectRatio: string | CivitaiAspectRatio | null | undefined = meta?.aspectRatio;
+    if (rawAspectRatio !== null && rawAspectRatio !== undefined)
     {
-      const [ width, height ] = aspectRatioRawString.split(":").map((dimensionPart) => parseInt(dimensionPart, 10));
-      aspectRatio = width / height;
+      if (typeof rawAspectRatio === "object")
+      {
+        const width = typeof rawAspectRatio.width === "number" ? rawAspectRatio.width : parseInt(String(rawAspectRatio.width).trim(), 10);
+        const height = typeof rawAspectRatio.height === "number" ? rawAspectRatio.height : parseInt(String(rawAspectRatio.height).trim(), 10);
+        if (Number.isNaN(width) === false && Number.isNaN(height) === false && height > 0)
+        {
+          aspectRatio = width / height;
+        }
+        else if (typeof rawAspectRatio.value === "string")
+        {
+          const [ widthPart, heightPart ] = rawAspectRatio.value.split(":").map((dimensionPart) => parseInt(dimensionPart, 10));
+          if (Number.isNaN(widthPart) === false && Number.isNaN(heightPart) === false && heightPart > 0)
+          {
+            aspectRatio = widthPart / heightPart;
+          }
+        }
+      }
+      else if (typeof rawAspectRatio === "string")
+      {
+        const [ widthPart, heightPart ] = rawAspectRatio.split(":").map((dimensionPart) => parseInt(dimensionPart, 10));
+        if (Number.isNaN(widthPart) === false && Number.isNaN(heightPart) === false && heightPart > 0)
+        {
+          aspectRatio = widthPart / heightPart;
+        }
+      }
+      else if (typeof rawAspectRatio === "number")
+      {
+        aspectRatio = rawAspectRatio;
+      }
     }
     const sanitizedModelTags = modelTags.map(tag => tag.replaceAll(" ", "_"));
     let prompt: GenerationRecipePrompt;
@@ -145,9 +157,12 @@ export class CivitaiRetriever
       uiContainer = undefined;
     }
     return {
+      image,
+      prompts: { positive: meta?.prompt, negative: meta?.negativePrompt },
+      postId: image.postId,
       recipe: {
         schemaVersion: Helper.GENERATION_RECIPE_SCHEMA_VERSION,
-        id: image.id?.toString(10),
+        id: image.id.toString(10),
         url: image.url,
         inceptionDate: image.createdAt === undefined ? undefined : Date.parse(image.createdAt),
         author: image.username,
@@ -155,19 +170,17 @@ export class CivitaiRetriever
         aspectRatio,
         prompt
       },
-      image,
-      uiContainer,
-      prompts: { positive: meta?.prompt, negative: meta?.negativePrompt },
-      postId: image.postId
+      uiContainer
     };
   }
 
-  toUiContainer(meta: ImageMeta): UiContainer
+  toUiContainer(meta: CivitaiImageMeta): UiContainer
   {
     const primaryRows: TableRow[] = [];
     const secondaryRows: TableRow[] = [];
     const firstColumnOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
     const copyableOptions = { modifiers: { copyable: true } };
+    const multilineOptions = { ...copyableOptions, representation: StringRepresentation.multiline };
     const commonTableOptions =
       {
         withRowSeparators: true,
@@ -180,7 +193,7 @@ export class CivitaiRetriever
 
     // Primary generation parameters in defined display order
     const primaryFieldDefinitions: ReadonlyArray<{
-      readonly keys: readonly (keyof ImageMeta | string)[];
+      readonly keys: readonly (keyof CivitaiImageMeta & string)[];
       readonly label: string;
       readonly format: (value: unknown, record: Record<string, unknown>) => UiElement | undefined;
     }> =
@@ -190,7 +203,7 @@ export class CivitaiRetriever
           label: "Prompt",
           format: (value: unknown): UiElement | undefined =>
           {
-            return this.formatText(value, copyableOptions);
+            return this.formatText(value, multilineOptions);
           }
         },
         {
@@ -198,7 +211,7 @@ export class CivitaiRetriever
           label: "Negative Prompt",
           format: (value: unknown): UiElement | undefined =>
           {
-            return this.formatText(value, copyableOptions);
+            return this.formatText(value, multilineOptions);
           }
         },
         {
@@ -256,12 +269,13 @@ export class CivitaiRetriever
           }
         },
         {
-          keys: [ "width", "height" ],
+          keys: [ "width", "height", "aspectRatio" ],
           label: "Dimensions",
           format: (propertyValue: unknown, record: Record<string, unknown>): UiElement | undefined =>
           {
-            const rawWidth = record["width"];
-            const rawHeight = record["height"];
+            const aspectRatioRecord = typeof record["aspectRatio"] === "object" && record["aspectRatio"] !== null ? (record["aspectRatio"] as Record<string, unknown>) : undefined;
+            const rawWidth = record["width"] ?? aspectRatioRecord?.["width"];
+            const rawHeight = record["height"] ?? aspectRatioRecord?.["height"];
             if (rawWidth === null || rawWidth === undefined || rawHeight === null || rawHeight === undefined)
             {
               return undefined;
