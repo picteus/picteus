@@ -9,6 +9,7 @@ import {
   identifier,
   numberUnbounded,
   string,
+  StringRepresentation,
   stringUrl,
   table,
   TableColumnWidthMode,
@@ -299,16 +300,17 @@ export class MidjourneyInstructions
     const secondaryRows: TableRow[] = [];
     const firstColumnOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
     const copiableOptions = { modifiers: { copyable: true } };
+    const copiableAndMultilineOptions = { ...copiableOptions, representation: StringRepresentation.multiline };
 
     if (this.prompt !== undefined && this.prompt.length > 0)
     {
-      primaryRows.push(tableRow([ string("Prompt", firstColumnOptions), string(this.prompt, copiableOptions) ]));
+      primaryRows.push(tableRow([ string("Prompt", firstColumnOptions), string(this.prompt, copiableAndMultilineOptions) ]));
     }
 
     // The command is shifted to the second section
     if (this.command !== undefined && this.command.length > 0)
     {
-      secondaryRows.push(tableRow([ string("Command", firstColumnOptions), string(this.command, copiableOptions) ]));
+      secondaryRows.push(tableRow([ string("Command", firstColumnOptions), string(this.command, copiableAndMultilineOptions) ]));
     }
 
     if (this.stylize !== undefined)

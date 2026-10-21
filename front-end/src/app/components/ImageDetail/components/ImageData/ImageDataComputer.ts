@@ -25,8 +25,6 @@ import {
   TextIntensity,
   TextWeight,
   timestamp,
-  TruncateMode,
-  truncateOptions,
   UiContainer,
   UiElement,
   xml
@@ -173,13 +171,7 @@ export function inferNonUiElement(imageFeature: ExtensionImageFeature): UiElemen
   const value = imageFeature.value;
   if (imageFeature.type === ImageFeatureType.Caption)
   {
-    return string(String(value), {
-      modifiers: {
-        ...copyableOptions,
-        truncate: truncateOptions(5, { mode: TruncateMode.lines })
-      },
-      representation: StringRepresentation.multiline
-    });
+    return string(String(value), { ...copyableOptions, representation: StringRepresentation.multiline });
   }
 
   let element: UiElement;

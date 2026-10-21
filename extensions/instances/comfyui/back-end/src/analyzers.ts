@@ -12,6 +12,7 @@ import {
   ratio,
   Separator,
   string,
+  StringRepresentation,
   strings,
   table,
   tableColumn,
@@ -180,6 +181,7 @@ export class ComfyUIAnalyzer
     const primaryRows: TableRow[] = [];
     const firstColumnOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
     const copyableOptions = { modifiers: { copyable: true } };
+    const multilineOptions = { ...copyableOptions, representation: StringRepresentation.multiline };
     const commonTableOptions =
       {
         withRowSeparators: true,
@@ -195,7 +197,7 @@ export class ComfyUIAnalyzer
     {
       primaryRows.push(tableRow([
         string("Prompt", firstColumnOptions),
-        string(this.samplerData.positivePrompt.trim(), copyableOptions)
+        string(this.samplerData.positivePrompt.trim(), multilineOptions)
       ]));
     }
 
@@ -204,7 +206,7 @@ export class ComfyUIAnalyzer
     {
       primaryRows.push(tableRow([
         string("Negative Prompt", firstColumnOptions),
-        string(this.samplerData.negativePrompt.trim(), copyableOptions)
+        string(this.samplerData.negativePrompt.trim(), multilineOptions)
       ]));
     }
 
