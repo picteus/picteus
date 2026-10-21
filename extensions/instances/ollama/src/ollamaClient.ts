@@ -18,7 +18,7 @@ export interface ChatRequestOptions
 
   readonly model: string;
   readonly prompt: string;
-  readonly image: Uint8Array;
+  readonly imagePngBytes: Uint8Array;
 
 }
 
@@ -37,7 +37,7 @@ export interface TagExtractionOptions
   readonly model: string;
   readonly promptTemplate: string;
   readonly tags: string[];
-  readonly image: Uint8Array;
+  readonly imagePngBytes: Uint8Array;
 
 }
 
@@ -159,7 +159,7 @@ export class OllamaClient
               content: options.prompt,
               images:
                 [
-                  options.image
+                  options.imagePngBytes
                 ]
             }
           ]
@@ -181,7 +181,7 @@ export class OllamaClient
       {
         model: options.model,
         prompt: promptText,
-        image: options.image
+        imagePngBytes: options.imagePngBytes
       }
     );
 

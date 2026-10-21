@@ -48,7 +48,7 @@ class OllamaExtension extends PicteusExtension
       return;
     }
 
-    const imageBytes = await this.downloadImage(imageId);
+    const imagePngBytes = await this.downloadImageAsPng(imageId);
     const collectedTags: string[] = [];
     let hasComputedSuccessfully = false;
 
@@ -64,7 +64,7 @@ class OllamaExtension extends PicteusExtension
             model: model,
             promptTemplate: eligibleTag.question,
             tags: eligibleTag.tags,
-            image: imageBytes
+            imagePngBytes
           }
         );
 
@@ -94,8 +94,8 @@ class OllamaExtension extends PicteusExtension
       return;
     }
 
-    const imageBytes = await this.downloadImage(imageId);
-    const modelAndCaptions: Array<{ model: string; caption: string }> = [];
+    const imagePngBytes = await this.downloadImageAsPng(imageId);
+    const generatedFeatures: Array<{ name: string; value: string }> = [];
 
     for (const caption of captions)
     {
@@ -107,13 +107,13 @@ class OllamaExtension extends PicteusExtension
         communicator.sendLog(`Generating caption for image using model '${model}'…`, "info");
         const result = await this.ollamaClient.generateChatCompletion(
           {
-            model: model,
+            model,
             prompt: question,
-            image: imageBytes
+            imagePngBytes
           }
         );
         communicator.sendLog(`The generated caption took ${result.durationInMilliseconds} ms and returned the response '${result.content}'`, "debug");
-        modelAndCaptions.push({ model: model, caption: result.content });
+        generatedFeatures.push({ name: model, value: result.content });
       }
       else
       {
@@ -121,27 +121,21 @@ class OllamaExtension extends PicteusExtension
       }
     }
 
-    if (modelAndCaptions.length > 0)
-    {
-      await this.getImageApi().imageSetFeatures(
-        {
-          id: imageId,
-          extensionId: this.extensionId,
-          imageFeature: modelAndCaptions.map(
-            (modelAndCaption) =>
-            {
-              return {
-                type: ImageFeatureType.Caption,
-                format: ImageFeatureFormat.String,
-                name: modelAndCaption.model,
-                value: modelAndCaption.caption
-              };
-            }
-          )
-        }
-      );
-      communicator.sendLog(`Updated ${modelAndCaptions.length} caption feature(s) for image '${imageId}'`, "info");
-    }
+    await this.getImageApi().imageEnsureFeatures({
+        id: imageId,
+        extensionId: this.extensionId,
+        imageFeature: generatedFeatures.map((feature) =>
+          {
+            return {
+              type: ImageFeatureType.Caption,
+              format: ImageFeatureFormat.String,
+              name: feature.name,
+              value: feature.value
+            };
+          }
+        )
+      }
+    );
   }
 
   private async setup(communicator: Communicator | undefined, value: SettingsValue): Promise<void>
@@ -236,7 +230,7 @@ class OllamaExtension extends PicteusExtension
     return models.filter((model) => this.pulledModels.has(model) === true).length === models.length;
   }
 
-  private async downloadImage(imageId: string): Promise<Uint8Array>
+  private async downloadImageAsPng(imageId: string): Promise<Uint8Array>
   {
     const blob: Blob = await this.getImageApi().imageDownload(
       {
