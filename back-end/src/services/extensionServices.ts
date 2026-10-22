@@ -2153,7 +2153,7 @@ export class ExtensionService
             if (fs.existsSync(requirementsFilePath) === true)
             {
               const sdkInfo = await ExtensionRegistry.getSdkInfo(ManifestRuntimeEnvironment.Python);
-              await installViaVirtualEnvironmentRequirements(requirementsFilePath, sdkInfo.version);
+              await installViaVirtualEnvironmentRequirements(requirementsFilePath, sdkInfo.version, sdkInfo.filePath);
             }
             else
             {

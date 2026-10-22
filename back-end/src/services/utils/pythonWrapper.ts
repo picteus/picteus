@@ -492,7 +492,7 @@ export async function ensureVirtualEnvironment(pythonVersion: string, parentDire
   }
 }
 
-export async function installViaVirtualEnvironmentRequirements(requirementsFilePath: string, sdkArchiveVersion: string): Promise<void>
+export async function installViaVirtualEnvironmentRequirements(requirementsFilePath: string, sdkArchiveVersion: string, sdkArchiveFilePath: string): Promise<void>
 {
   logger.info(`Installing the Python requirements expressed through the file '${requirementsFilePath}'`);
   const parentDirectoryPath = path.join(requirementsFilePath, "..");
@@ -518,7 +518,7 @@ export async function installViaVirtualEnvironmentRequirements(requirementsFileP
   if (pythonInternalSdkDirectoryPath !== undefined)
   {
     // We want to make sure that no cached version of the SDK is used
-    await spawnAndWait(pipFilePath, [ "install", "--no-cache-dir", "--force", "--find-links", pythonInternalSdkDirectoryPath, internalPythonSdkIdentifier ], parentDirectoryPath, undefined, false);
+    await spawnAndWait(pipFilePath, [ "install", "--no-cache-dir", "--force-reinstall", "--no-deps", sdkArchiveFilePath ], parentDirectoryPath, undefined, false);
   }
 }
 
