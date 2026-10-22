@@ -307,7 +307,7 @@ class PicteusExtension:
     def get_extension_home_directory_path() -> str:
         return os.path.abspath(os.path.join(os.getcwd(), "."))
 
-    SOFTWARE: str = Software.value
+    SOFTWARE: str = Helper.SOFTWARE
 
     def __init__(self) -> None:
         self.logger: logging.Logger = getLogger(__name__)

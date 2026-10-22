@@ -46,6 +46,6 @@
   },
   "dependencies": {
     "@mistralai/mistralai": "3.1.0",
-    "@picteus/internal-extension-sdk": "0.20.0"
+    "@picteus/internal-extension-sdk": "0.20.2"
   }
 }

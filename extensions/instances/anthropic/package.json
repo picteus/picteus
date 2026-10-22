@@ -46,6 +46,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
-    "@picteus/internal-extension-sdk": "0.20.0"
+    "@picteus/internal-extension-sdk": "0.20.2"
   }
 }
