@@ -280,35 +280,30 @@ export class LlamaClient
 
   private currentLoadedModel?: string;
 
-  public static detectCliPath(): string | undefined
-  {
-    return LlamaDownloader.detectCliPath();
-  }
-
   public static findCuratedModel(modelIdentifier: string): CuratedLlamaModel | undefined
   {
-    const trimmedIdentifier = modelIdentifier.trim();
-    if (trimmedIdentifier.length === 0)
-    {
-      return undefined;
-    }
-
-    const lowerIdentifier = trimmedIdentifier.toLowerCase();
-    const baseWithoutTag = trimmedIdentifier.split(":")[0]?.toLowerCase() ?? lowerIdentifier;
+    const lowerIdentifier = modelIdentifier.toLowerCase();
+    const normalizedIdentifier = LlamaClient.normalizeModelIdentifier(modelIdentifier);
+    const cleanedBaseIdentifier = LlamaClient.cleanServerModelId(modelIdentifier).toLowerCase();
 
     // 1. Direct match on id
-    const idMatch = CURATED_LLAMA_MODELS.find((candidate) => candidate.id.toLowerCase() === lowerIdentifier);
+    const idMatch = CURATED_LLAMA_MODELS.find((candidate) =>
+    {
+      const lowerCandidateId = candidate.id.toLowerCase();
+      return lowerCandidateId === lowerIdentifier || lowerCandidateId === normalizedIdentifier || lowerCandidateId === cleanedBaseIdentifier;
+    });
     if (idMatch !== undefined)
     {
       return idMatch;
     }
 
-    // 2. Match on default repository (with or without tag)
+    // 2. Match on default repository (exact or normalized)
     const repoMatch = CURATED_LLAMA_MODELS.find((candidate) =>
     {
       const lowerRepo = candidate.defaultRepository.toLowerCase();
-      const repoWithoutTag = lowerRepo.split(":")[0] ?? lowerRepo;
-      return lowerRepo === lowerIdentifier || repoWithoutTag === lowerIdentifier || repoWithoutTag === baseWithoutTag;
+      const normalizedRepo = LlamaClient.normalizeModelIdentifier(candidate.defaultRepository);
+      const cleanedRepo = LlamaClient.cleanServerModelId(candidate.defaultRepository).toLowerCase();
+      return lowerRepo === lowerIdentifier || normalizedRepo === lowerIdentifier || normalizedRepo === normalizedIdentifier || lowerRepo === normalizedIdentifier || cleanedRepo === cleanedBaseIdentifier;
     });
     if (repoMatch !== undefined)
     {
@@ -321,7 +316,9 @@ export class LlamaClient
       return candidate.aliases?.some((alias) =>
       {
         const lowerAlias = alias.toLowerCase();
-        return lowerAlias === lowerIdentifier || lowerAlias === baseWithoutTag;
+        const normalizedAlias = LlamaClient.normalizeModelIdentifier(alias);
+        const cleanedAlias = LlamaClient.cleanServerModelId(alias).toLowerCase();
+        return lowerAlias === lowerIdentifier || normalizedAlias === lowerIdentifier || normalizedAlias === normalizedIdentifier || lowerAlias === normalizedIdentifier || cleanedAlias === cleanedBaseIdentifier;
       }) === true;
     });
     if (aliasMatch !== undefined)
@@ -329,19 +326,23 @@ export class LlamaClient
       return aliasMatch;
     }
 
-    // 4. Match cleaned base name (e.g. from local file paths or custom filenames)
-    const cleanedBase = LlamaClient.cleanServerModelId(trimmedIdentifier).toLowerCase();
-    return CURATED_LLAMA_MODELS.find((candidate) =>
+    return undefined;
+  }
+
+  private static normalizeModelIdentifier(rawIdentifier: string): string
+  {
+    let normalized = rawIdentifier.toLowerCase().replace(/\.(gguf|bin)$/i, "");
+    if (normalized.includes(":") === true)
     {
-      return candidate.id.toLowerCase() === cleanedBase ||
-        candidate.aliases?.some((alias) => alias.toLowerCase() === cleanedBase) === true;
-    });
+      normalized = normalized.split(":")[0] ?? normalized;
+    }
+    normalized = normalized.replace(/-(saved|custom|user|copy|default)$/i, "");
+    return normalized;
   }
 
   private static cleanServerModelId(rawId: string): string
   {
-    const trimmed = rawId.trim();
-    let baseName = trimmed;
+    let baseName = rawId;
     if (baseName.includes("/") === true)
     {
       const segments = baseName.split("/");
@@ -358,54 +359,8 @@ export class LlamaClient
     }
 
     baseName = baseName.replace(/\.(gguf|bin)$/i, "");
-    return baseName.length > 0 ? baseName : trimmed;
-  }
-
-  private static extractMatchedTags(rawContent: string, candidateTags: readonly string[]): string[]
-  {
-    const allowedTagsSet = new Set<string>(candidateTags);
-
-    try
-    {
-      const parsedObject = JSON.parse(rawContent) as { readonly tags?: unknown };
-      if (Array.isArray(parsedObject.tags) === true)
-      {
-        return parsedObject.tags
-          .filter((item): item is string => typeof item === "string" && allowedTagsSet.has(item) === true);
-      }
-    }
-    catch
-    {
-      // In case structured parsing fails, we fallback to safe token matching
-    }
-
-    return candidateTags.filter((candidateTag) =>
-    {
-      const escapedTag = candidateTag.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-      const pattern = new RegExp(`\\b${escapedTag}\\b`, "i");
-      return pattern.test(rawContent) === true;
-    });
-  }
-
-  private static buildVisionMessages(prompt: string, imageBase64: string): ChatCompletionMessageParam[]
-  {
-    return [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: prompt
-          },
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:image/jpeg;base64,${imageBase64}`
-            }
-          }
-        ]
-      }
-    ];
+    baseName = baseName.replace(/-(saved|custom|user|copy|default)$/i, "");
+    return baseName.length > 0 ? baseName : rawId;
   }
 
   private static buildServerModelDetail(rawServerId: string, commentOverride?: string): LlamaModelDetail
@@ -424,23 +379,17 @@ export class LlamaClient
 
   private static computeModelDisplayName(modelId: string): string
   {
-    const trimmedId = modelId.trim();
-    if (trimmedId.length === 0)
-    {
-      return "llama.cpp";
-    }
-
-    const matchedCurated = LlamaClient.findCuratedModel(trimmedId);
+    const matchedCurated = LlamaClient.findCuratedModel(modelId);
     if (matchedCurated !== undefined)
     {
       return matchedCurated.name;
     }
 
-    let baseName = LlamaClient.cleanServerModelId(trimmedId);
+    let baseName = LlamaClient.cleanServerModelId(modelId);
     let quantizationSuffix = "";
-    if (trimmedId.includes(":") === true)
+    if (modelId.includes(":") === true)
     {
-      const rawQuantization = trimmedId.split(":")[1] ?? "";
+      const rawQuantization = modelId.split(":")[1] ?? "";
       if (rawQuantization.length > 0)
       {
         quantizationSuffix = rawQuantization.replace(/_0$/, "").toUpperCase();
@@ -464,7 +413,7 @@ export class LlamaClient
     }
 
     const displayName = capitalizedWords.join(" ");
-    return displayName.length > 0 ? displayName : trimmedId;
+    return displayName.length > 0 ? displayName : modelId;
   }
 
   constructor(baseUrl: string)
@@ -514,9 +463,14 @@ export class LlamaClient
     }
   }
 
-  public async loadModel(model: string): Promise<boolean>
+  public async loadModel(model: string, isForcingReload: boolean): Promise<boolean>
   {
-    const modelDetail = await this.resolveModelDetail(model);
+    let modelDetail = await this.resolveModelDetail(model, isForcingReload);
+    if (modelDetail?.isAvailableOnServer !== true && isForcingReload === false)
+    {
+      modelDetail = await this.resolveModelDetail(model, true);
+    }
+
     const resolvedModel = modelDetail?.serverId ?? modelDetail?.id ?? model;
     const response = await fetch(`${this.baseUrl}/models/load`, {
       method: "POST",
@@ -577,7 +531,7 @@ export class LlamaClient
     {
       try
       {
-        await this.loadModel(model);
+        await this.loadModel(model, hasAttemptedDownload);
         const logKind = hasAttemptedDownload === true ? "info" : "debug";
         const message = hasAttemptedDownload === true ? `The llama.cpp server has loaded the tensors for newly downloaded model '${model}'` : `The llama.cpp server has loaded the tensors for the model '${model}'`;
         options?.communicator?.sendLog(message, logKind);
@@ -600,6 +554,14 @@ export class LlamaClient
           });
           if (isDownloadSuccessful === true)
           {
+            try
+            {
+              await this.fetchServerModels(true);
+            }
+            catch
+            {
+              // We ignore refresh errors and proceed to the next load attempt
+            }
             continue;
           }
         }
@@ -613,9 +575,9 @@ export class LlamaClient
     }
   }
 
-  public async getAllModelDetails(): Promise<LlamaModelDetail[]>
+  public async getAllModelDetails(isForcingReload: boolean): Promise<LlamaModelDetail[]>
   {
-    const serverDetails = await this.fetchServerModels();
+    const serverDetails = await this.fetchServerModels(isForcingReload);
     const serverModelIds = new Set<string>(serverDetails.map((detail) => detail.id));
     const mergedDetails: LlamaModelDetail[] = [ ...serverDetails ];
     for (const curatedModel of CURATED_LLAMA_MODELS)
@@ -692,7 +654,7 @@ export class LlamaClient
       );
 
     const rawContent = this.extractChoiceContent(completion.choices[0]);
-    const matchedTags = LlamaClient.extractMatchedTags(rawContent, options.tags);
+    const matchedTags = this.extractMatchedTags(rawContent, options.tags);
 
     return {
       tags: matchedTags,
@@ -718,9 +680,26 @@ export class LlamaClient
     readonly modelDetail?: LlamaModelDetail;
   }>
   {
-    const modelDetail = await this.resolveModelDetail(options.model);
+    const modelDetail = await this.resolveModelDetail(options.model, false);
     const activeModel = modelDetail?.serverId ?? modelDetail?.id ?? options.model;
-    const messages = LlamaClient.buildVisionMessages(promptText, options.imageBase64);
+    const messages: ChatCompletionMessageParam[] =
+      [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: promptText
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${options.imageBase64}`
+              }
+            }
+          ]
+        }
+      ];
 
     const startTimestamp = Date.now();
     let completion: ChatCompletion;
@@ -729,7 +708,7 @@ export class LlamaClient
       completion = await this.openai.chat.completions.create(
         {
           model: activeModel,
-          messages: messages,
+          messages,
           temperature: executionParameters.temperature,
           max_tokens: executionParameters.maxTokens,
           response_format: executionParameters.responseFormat
@@ -751,72 +730,19 @@ export class LlamaClient
     };
   }
 
-  private extractChoiceContent(
-    choice?: ChatCompletion.Choice,
-    options?: { readonly withAnswerExtraction?: boolean }
-  ): string
+  private async resolveModelDetail(modelIdentifier: string, isForcingReload: boolean): Promise<LlamaModelDetail | undefined>
   {
-    const message = choice?.message as ExtendedMessage | undefined;
-
-    let content = "";
-    if (typeof message?.content === "string")
-    {
-      content = message.content.trim();
-    }
-    else if (Array.isArray(message?.content) === true)
-    {
-      content = (message?.content ?? [])
-        .map((part) => (typeof part.text === "string" ? part.text : ""))
-        .join("")
-        .trim();
-    }
-
-    const choiceWithText = choice as unknown as { readonly text?: string } | undefined;
-    if (content.length === 0 && typeof choiceWithText?.text === "string")
-    {
-      content = choiceWithText.text.trim();
-    }
-
-    // We strip thinking tags if present in content
-    if (content.includes("</think>") === true)
-    {
-      const postThinkContent = content.split("</think>")[1]?.trim();
-      if (postThinkContent !== undefined && postThinkContent.length > 0)
-      {
-        content = postThinkContent;
-      }
-    }
-
-    // If content is empty, e.g., model generated only reasoning or hit the token limit during thinking
-    if (content.length === 0)
-    {
-      const reasoning = message?.reasoning_content ?? message?.reasoning;
-      if (typeof reasoning === "string" && reasoning.trim().length > 0)
-      {
-        content = options?.withAnswerExtraction === true
-          ? this.extractAnswerFromReasoning(reasoning)
-          : reasoning.trim();
-      }
-    }
-
-    return content;
-  }
-
-  private async resolveModelDetail(modelIdentifier: string): Promise<LlamaModelDetail | undefined>
-  {
-    const trimmed = modelIdentifier.trim();
-    if (trimmed.length === 0)
-    {
-      return undefined;
-    }
-
-    const allDetails = await this.getAllModelDetails();
-    const lower = trimmed.toLowerCase();
+    const allDetails = await this.getAllModelDetails(isForcingReload);
+    const lower = modelIdentifier.toLowerCase();
+    const normalized = LlamaClient.normalizeModelIdentifier(modelIdentifier);
+    const cleanedBase = LlamaClient.cleanServerModelId(modelIdentifier).toLowerCase();
 
     // 1. Exact match on id or serverId (prioritizing available server models)
     const matchingDetails = allDetails.filter((detail) =>
     {
-      return detail.id.toLowerCase() === lower || detail.serverId?.toLowerCase() === lower;
+      const detailServerId = detail.serverId?.toLowerCase();
+      const detailNormalizedServerId = detail.serverId !== undefined ? LlamaClient.normalizeModelIdentifier(detail.serverId) : undefined;
+      return detail.id.toLowerCase() === lower || detail.id.toLowerCase() === normalized || detailServerId === lower || detailNormalizedServerId === normalized;
     });
     const exactMatch = matchingDetails.find((detail) => detail.isAvailableOnServer === true) ?? matchingDetails[0];
     if (exactMatch !== undefined)
@@ -825,7 +751,7 @@ export class LlamaClient
     }
 
     // 2. Curated match via aliases or repository
-    const curated = LlamaClient.findCuratedModel(trimmed);
+    const curated = LlamaClient.findCuratedModel(modelIdentifier);
     if (curated !== undefined)
     {
       const curatedMatch = allDetails.find((detail) => detail.id === curated.id);
@@ -835,10 +761,25 @@ export class LlamaClient
       }
     }
 
-    // 3. Fallback synthesized detail
+    // 3. Fallback: match by checking if any available server model's repo or cleaned ID matches
+    const fallbackServerMatch = allDetails.find((detail) =>
+    {
+      if (detail.isAvailableOnServer !== true)
+      {
+        return false;
+      }
+      const detailCleanedBase = LlamaClient.cleanServerModelId(detail.serverId ?? detail.id).toLowerCase();
+      return detailCleanedBase === cleanedBase;
+    });
+    if (fallbackServerMatch !== undefined)
+    {
+      return fallbackServerMatch;
+    }
+
+    // 4. Fallback synthesized detail
     return {
-      id: trimmed,
-      name: LlamaClient.computeModelDisplayName(trimmed),
+      id: modelIdentifier,
+      name: LlamaClient.computeModelDisplayName(modelIdentifier),
       isAvailableOnServer: false
     };
   }
@@ -860,11 +801,27 @@ export class LlamaClient
     return undefined;
   }
 
-  private async fetchServerModels(): Promise<LlamaModelDetail[]>
+  private async fetchServerModels(isForcingReload: boolean): Promise<LlamaModelDetail[]>
   {
+    if (isForcingReload === true)
+    {
+      try
+      {
+        await fetch(`${this.baseUrl}/models?reload=1`, {
+          method: "GET",
+          signal: AbortSignal.timeout(3_000)
+        });
+      }
+      catch
+      {
+        // We ignore errors when triggering preset reload
+      }
+    }
+
+    const reloadQuery = isForcingReload === true ? "?reload=1" : "";
     try
     {
-      const response = await fetch(`${this.baseUrl}/v1/models`, {
+      const response = await fetch(`${this.baseUrl}/v1/models${reloadQuery}`, {
         signal: AbortSignal.timeout(5_000)
       });
       if (response.ok === true)
@@ -941,14 +898,7 @@ export class LlamaClient
       }
     }
 
-    const paragraphs = trimmedReasoning
-      .split(/\n\s*\n/)
-      .map((paragraph) => paragraph.trim())
-      .filter((paragraph) =>
-      {
-        return paragraph.length > 0 &&
-          paragraph.toLowerCase().startsWith("thinking process") === false;
-      });
+    const paragraphs = trimmedReasoning.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter((paragraph) => paragraph.length > 0 && paragraph.toLowerCase().startsWith("thinking process") === false);
 
     if (paragraphs.length > 0)
     {
@@ -960,6 +910,77 @@ export class LlamaClient
     }
 
     return trimmedReasoning;
+  }
+
+  private extractChoiceContent(choice?: ChatCompletion.Choice, options?: {
+    readonly withAnswerExtraction?: boolean
+  }): string
+  {
+    const message = choice?.message as ExtendedMessage | undefined;
+
+    let content = "";
+    if (typeof message?.content === "string")
+    {
+      content = message.content.trim();
+    }
+    else if (Array.isArray(message?.content) === true)
+    {
+      content = (message?.content ?? []).map((part) => (typeof part.text === "string" ? part.text : "")).join("").trim();
+    }
+
+    const choiceWithText = choice as unknown as { readonly text?: string } | undefined;
+    if (content.length === 0 && typeof choiceWithText?.text === "string")
+    {
+      content = choiceWithText.text.trim();
+    }
+
+    // We strip thinking tags if present in content
+    if (content.includes("</think>") === true)
+    {
+      const postThinkContent = content.split("</think>")[1]?.trim();
+      if (postThinkContent !== undefined && postThinkContent.length > 0)
+      {
+        content = postThinkContent;
+      }
+    }
+
+    // If content is empty, e.g., model generated only reasoning or hit the token limit during thinking
+    if (content.length === 0)
+    {
+      const reasoning = message?.reasoning_content ?? message?.reasoning;
+      if (typeof reasoning === "string" && reasoning.trim().length > 0)
+      {
+        content = options?.withAnswerExtraction === true ? this.extractAnswerFromReasoning(reasoning) : reasoning.trim();
+      }
+    }
+
+    return content;
+  }
+
+  private extractMatchedTags(rawContent: string, candidateTags: readonly string[]): string[]
+  {
+    const allowedTagsSet = new Set<string>(candidateTags);
+
+    try
+    {
+      const parsedObject = JSON.parse(rawContent) as { readonly tags?: unknown };
+      if (Array.isArray(parsedObject.tags) === true)
+      {
+        return parsedObject.tags
+          .filter((item): item is string => typeof item === "string" && allowedTagsSet.has(item) === true);
+      }
+    }
+    catch
+    {
+      // In case structured parsing fails, we fallback to safe token matching
+    }
+
+    return candidateTags.filter((candidateTag) =>
+    {
+      const escapedTag = candidateTag.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const pattern = new RegExp(`\\b${escapedTag}\\b`, "i");
+      return pattern.test(rawContent) === true;
+    });
   }
 
 }

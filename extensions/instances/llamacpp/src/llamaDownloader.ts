@@ -423,6 +423,7 @@ export class LlamaDownloader
         if (typeof modelDirectory === "string" && modelDirectory.length > 0)
         {
           environmentVariables["HF_HUB_CACHE"] = modelDirectory;
+          environmentVariables["HUGGINGFACE_HUB_CACHE"] = modelDirectory;
         }
 
         const childProcess = spawn(

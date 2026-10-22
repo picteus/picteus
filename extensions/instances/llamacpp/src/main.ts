@@ -176,7 +176,7 @@ class LlamaCppExtension extends PicteusExtension
       return;
     }
 
-    const details = await this.llamaClient.getAllModelDetails();
+    const details = await this.llamaClient.getAllModelDetails(false);
     await this.getExtensionApi().extensionSetAiModels({
       id: this.extensionId,
       aiModel: details.map((detail) => ({
