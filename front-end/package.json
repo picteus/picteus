@@ -1,6 +1,6 @@
 {
   "name": "@picteus/front-end",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "productName": "Picteus front-end",
   "description": "The Picteus front-end web application.",
   "keywords": [
@@ -98,7 +98,7 @@
     "remark-gfm": "4.0.1",
     "@picteus/shared-core": "file:../shared/core",
     "@picteus/shared-front-end": "file:../shared/front-end",
-    "@picteus/ws-client": "file:../generated/openapi/typescript-fetch/picteus-ws-client-0.23.0.tgz"
+    "@picteus/ws-client": "file:../generated/openapi/typescript-fetch/picteus-ws-client-0.24.0.tgz"
   },
   "prettier": {
     "singleQuote": false
