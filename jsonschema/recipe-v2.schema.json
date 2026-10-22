@@ -34,7 +34,7 @@
     },
     "author": {
       "type": "string",
-      "description": "The author of the recipte",
+      "description": "The author of the recipe",
       "pattern": "^[a-z0-9A-Z-_.:;|/ ]{1,128}$",
       "minLength": 1,
       "maxLength": 128
