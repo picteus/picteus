@@ -39,6 +39,11 @@ jobs:
         with:
           node-version: '22.x'
           cache: 'npm'
+      - id: python-setup
+        name: Sets up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
       - id: java-setup
         name: Sets up Java
         uses: actions/setup-java@v5
