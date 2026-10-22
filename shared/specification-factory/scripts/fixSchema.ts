@@ -97,13 +97,15 @@ if (schemaDocument.$defs && typeof schemaDocument.$defs === "object")
   schemaDocument.$defs = hoistedDefinitions;
 
   // We write the fixed schema with 4-space indentation matching TypeSpec formatting
-  fs.writeFileSync(schemaFilePath, `${JSON.stringify(schemaDocument, null, 4)}\n`, "utf8");
+  const replacer = null;
+  const space = 2;
+  fs.writeFileSync(schemaFilePath, `${JSON.stringify(schemaDocument, replacer, space)}\n`, "utf8");
 
   // We also keep the project root schema file updated if it exists
   const rootSchemaFilePath = path.resolve(currentDirectoryPath, `../${schemaFilePath}`);
   if (fs.existsSync(rootSchemaFilePath))
   {
-    fs.writeFileSync(rootSchemaFilePath, `${JSON.stringify(schemaDocument, null, 4)}\n`, "utf8");
+    fs.writeFileSync(rootSchemaFilePath, `${JSON.stringify(schemaDocument, replacer, space)}\n`, "utf8");
   }
 
   console.log(`[fixSchema] Successfully fixed the JSON schema definitions in file '${schemaFilePath}'`);
