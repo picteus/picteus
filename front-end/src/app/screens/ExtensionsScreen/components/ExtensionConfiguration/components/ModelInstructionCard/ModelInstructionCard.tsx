@@ -144,7 +144,7 @@ export default function ModelInstructionCard({
             {modelEntry.eligibleTagsEnabled && (
               <>
                 <Textarea
-                  label={t("extensionConfiguration.instructions.eligibleTagsQuestion")}
+                  label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion")}
                   placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder")}
                   value={modelEntry.eligibleTagsQuestion}
                   onChange={(event) =>
