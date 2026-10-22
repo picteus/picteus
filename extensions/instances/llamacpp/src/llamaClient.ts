@@ -114,160 +114,161 @@ export interface TagExtractionResult extends BaseExecutionResult
 
 }
 
-const CURATED_LLAMA_MODELS: readonly CuratedLlamaModel[] = [
-  // Qwen 2.5-VL & Qwen 2-VL
-  {
-    id: "qwen2.5-vl-7b",
-    name: "Qwen 2.5-VL 7B",
-    defaultRepository: "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF",
-    comment: "Flagship vision-language model with state-of-the-art document, OCR, and visual reasoning (7B)",
-    aliases: [ "qwen2.5vl", "qwen2.5-vl", "qwen2.5-vl-7b-instruct", "qwen-2.5-vl-7b" ]
-  },
-  {
-    id: "qwen2.5-vl-3b",
-    name: "Qwen 2.5-VL 3B",
-    defaultRepository: "ggml-org/Qwen2.5-VL-3B-Instruct-GGUF",
-    comment: "Lightweight and fast vision-language model offering exceptional OCR and detail recognition (3B)",
-    aliases: [ "qwen2.5-vl-3b-instruct", "qwen-2.5-vl-3b" ]
-  },
-  {
-    id: "qwen2.5-vl-32b",
-    name: "Qwen 2.5-VL 32B",
-    defaultRepository: "ggml-org/Qwen2.5-VL-32B-Instruct-GGUF",
-    comment: "High-capacity vision model for complex document layouts, dense text, and advanced reasoning (32B)",
-    aliases: [ "qwen2.5-vl-32b-instruct", "qwen-2.5-vl-32b" ]
-  },
-  {
-    id: "qwen2-vl-2b",
-    name: "Qwen 2-VL 2B",
-    defaultRepository: "ggml-org/Qwen2-VL-2B-Instruct-GGUF",
-    comment: "Ultra-compact vision model suitable for resource-constrained systems (2B)",
-    aliases: [ "qwen2-vl", "qwen2vl" ]
-  },
+const CURATED_LLAMA_MODELS: readonly CuratedLlamaModel[] =
+  [
+    // Qwen 2.5-VL & Qwen 2-VL
+    {
+      id: "qwen2.5-vl-7b",
+      name: "Qwen 2.5-VL 7B",
+      defaultRepository: "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF",
+      comment: "Flagship vision-language model with state-of-the-art document, OCR, and visual reasoning (7B)",
+      aliases: [ "qwen2.5vl", "qwen2.5-vl", "qwen2.5-vl-7b-instruct", "qwen-2.5-vl-7b" ]
+    },
+    {
+      id: "qwen2.5-vl-3b",
+      name: "Qwen 2.5-VL 3B",
+      defaultRepository: "ggml-org/Qwen2.5-VL-3B-Instruct-GGUF",
+      comment: "Lightweight and fast vision-language model offering exceptional OCR and detail recognition (3B)",
+      aliases: [ "qwen2.5-vl-3b-instruct", "qwen-2.5-vl-3b" ]
+    },
+    {
+      id: "qwen2.5-vl-32b",
+      name: "Qwen 2.5-VL 32B",
+      defaultRepository: "ggml-org/Qwen2.5-VL-32B-Instruct-GGUF",
+      comment: "High-capacity vision model for complex document layouts, dense text, and advanced reasoning (32B)",
+      aliases: [ "qwen2.5-vl-32b-instruct", "qwen-2.5-vl-32b" ]
+    },
+    {
+      id: "qwen2-vl-2b",
+      name: "Qwen 2-VL 2B",
+      defaultRepository: "ggml-org/Qwen2-VL-2B-Instruct-GGUF",
+      comment: "Ultra-compact vision model suitable for resource-constrained systems (2B)",
+      aliases: [ "qwen2-vl", "qwen2vl" ]
+    },
 
-  // Google Gemma 3
-  {
-    id: "gemma-3-4b",
-    name: "Gemma 3 4B",
-    defaultRepository: "ggml-org/gemma-3-4b-it-GGUF",
-    comment: "Google multimodal model offering strong spatial reasoning and natural image captioning (4B)",
-    aliases: [ "gemma3", "gemma-3", "gemma-3-4b-it" ]
-  },
-  {
-    id: "gemma-3-12b",
-    name: "Gemma 3 12B",
-    defaultRepository: "ggml-org/gemma-3-12b-it-GGUF",
-    comment: "Balanced Google vision-language model with high-fidelity visual understanding (12B)",
-    aliases: [ "gemma-3-12b-it" ]
-  },
-  {
-    id: "gemma-3-27b",
-    name: "Gemma 3 27B",
-    defaultRepository: "ggml-org/gemma-3-27b-it-GGUF",
-    comment: "Large-scale Google vision model for comprehensive scene analysis and instruction following (27B)",
-    aliases: [ "gemma-3-27b-it" ]
-  },
+    // Google Gemma 3
+    {
+      id: "gemma-3-4b",
+      name: "Gemma 3 4B",
+      defaultRepository: "ggml-org/gemma-3-4b-it-GGUF",
+      comment: "Google multimodal model offering strong spatial reasoning and natural image captioning (4B)",
+      aliases: [ "gemma3", "gemma-3", "gemma-3-4b-it" ]
+    },
+    {
+      id: "gemma-3-12b",
+      name: "Gemma 3 12B",
+      defaultRepository: "ggml-org/gemma-3-12b-it-GGUF",
+      comment: "Balanced Google vision-language model with high-fidelity visual understanding (12B)",
+      aliases: [ "gemma-3-12b-it" ]
+    },
+    {
+      id: "gemma-3-27b",
+      name: "Gemma 3 27B",
+      defaultRepository: "ggml-org/gemma-3-27b-it-GGUF",
+      comment: "Large-scale Google vision model for comprehensive scene analysis and instruction following (27B)",
+      aliases: [ "gemma-3-27b-it" ]
+    },
 
-  // Mistral Pixtral & Mistral Small
-  {
-    id: "pixtral-12b",
-    name: "Pixtral 12B",
-    defaultRepository: "ggml-org/pixtral-12b-GGUF",
-    comment: "Mistral multimodal model featuring a native-resolution vision encoder for complex images (12B)",
-    aliases: [ "pixtral", "pixtral-12b-2409" ]
-  },
-  {
-    id: "mistral-small-3.1-24b",
-    name: "Mistral Small 3.1 24B",
-    defaultRepository: "ggml-org/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
-    comment: "Mistral advanced reasoning model with multi-image and document understanding capabilities (24B)",
-    aliases: [ "mistral-small3.2", "mistral-small" ]
-  },
+    // Mistral Pixtral & Mistral Small
+    {
+      id: "pixtral-12b",
+      name: "Pixtral 12B",
+      defaultRepository: "ggml-org/pixtral-12b-GGUF",
+      comment: "Mistral multimodal model featuring a native-resolution vision encoder for complex images (12B)",
+      aliases: [ "pixtral", "pixtral-12b-2409" ]
+    },
+    {
+      id: "mistral-small-3.1-24b",
+      name: "Mistral Small 3.1 24B",
+      defaultRepository: "ggml-org/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+      comment: "Mistral advanced reasoning model with multi-image and document understanding capabilities (24B)",
+      aliases: [ "mistral-small3.2", "mistral-small" ]
+    },
 
-  // Meta Llama 3.2 Vision
-  {
-    id: "llama-3.2-11b-vision",
-    name: "Llama 3.2 Vision 11B",
-    defaultRepository: "bartowski/Llama-3.2-11B-Vision-Instruct-GGUF:Q4_K_M",
-    comment: "Meta vision-language model fine-tuned for high-detail image description and question answering (11B)",
-    aliases: [ "llama3.2-vision", "llama-3.2-vision", "llama-3.2-11b" ]
-  },
+    // Meta Llama 3.2 Vision
+    {
+      id: "llama-3.2-11b-vision",
+      name: "Llama 3.2 Vision 11B",
+      defaultRepository: "bartowski/Llama-3.2-11B-Vision-Instruct-GGUF:Q4_K_M",
+      comment: "Meta vision-language model fine-tuned for high-detail image description and question answering (11B)",
+      aliases: [ "llama3.2-vision", "llama-3.2-vision", "llama-3.2-11b" ]
+    },
 
-  // SmolVLM Series
-  {
-    id: "smolvlm2-2.2b",
-    name: "SmolVLM 2 2.2B",
-    defaultRepository: "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
-    comment: "Compact and efficient multimodal model by Hugging Face optimized for local on-device inference (2.2B)",
-    aliases: [ "smolvlm", "smolvlm2", "smolvlm-2.2b" ]
-  },
-  {
-    id: "smolvlm-500m",
-    name: "SmolVLM 500M",
-    defaultRepository: "ggml-org/SmolVLM-500M-Instruct-GGUF",
-    comment: "Ultra-lightweight multimodal model designed for quick tagging and low-resource environments (500M)",
-    aliases: [ "smolvlm-500m-instruct" ]
-  },
+    // SmolVLM Series
+    {
+      id: "smolvlm2-2.2b",
+      name: "SmolVLM 2 2.2B",
+      defaultRepository: "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+      comment: "Compact and efficient multimodal model by Hugging Face optimized for local on-device inference (2.2B)",
+      aliases: [ "smolvlm", "smolvlm2", "smolvlm-2.2b" ]
+    },
+    {
+      id: "smolvlm-500m",
+      name: "SmolVLM 500M",
+      defaultRepository: "ggml-org/SmolVLM-500M-Instruct-GGUF",
+      comment: "Ultra-lightweight multimodal model designed for quick tagging and low-resource environments (500M)",
+      aliases: [ "smolvlm-500m-instruct" ]
+    },
 
-  // Moondream 2
-  {
-    id: "moondream2",
-    name: "Moondream 2",
-    defaultRepository: "ggml-org/moondream2-20250414-GGUF",
-    comment: "Very fast, tiny vision model tailored for rapid image captioning and visual queries (1.4B)",
-    aliases: [ "moondream", "moondream2-text-model" ]
-  },
+    // Moondream 2
+    {
+      id: "moondream2",
+      name: "Moondream 2",
+      defaultRepository: "ggml-org/moondream2-20250414-GGUF",
+      comment: "Very fast, tiny vision model tailored for rapid image captioning and visual queries (1.4B)",
+      aliases: [ "moondream", "moondream2-text-model" ]
+    },
 
-  // InternVL Series
-  {
-    id: "internvl2.5-4b",
-    name: "InternVL 2.5 4B",
-    defaultRepository: "ggml-org/InternVL2_5-4B-GGUF",
-    comment: "High-performance multimodal model with strong OCR and general scene understanding (4B)",
-    aliases: [ "internvl2.5", "internvl-4b" ]
-  },
-  {
-    id: "internvl3-8b",
-    name: "InternVL 3 8B",
-    defaultRepository: "ggml-org/InternVL3-8B-Instruct-GGUF",
-    comment: "Advanced vision model with enhanced multi-aspect analysis and visual comprehension (8B)",
-    aliases: [ "internvl3", "internvl-8b" ]
-  },
+    // InternVL Series
+    {
+      id: "internvl2.5-4b",
+      name: "InternVL 2.5 4B",
+      defaultRepository: "ggml-org/InternVL2_5-4B-GGUF",
+      comment: "High-performance multimodal model with strong OCR and general scene understanding (4B)",
+      aliases: [ "internvl2.5", "internvl-4b" ]
+    },
+    {
+      id: "internvl3-8b",
+      name: "InternVL 3 8B",
+      defaultRepository: "ggml-org/InternVL3-8B-Instruct-GGUF",
+      comment: "Advanced vision model with enhanced multi-aspect analysis and visual comprehension (8B)",
+      aliases: [ "internvl3", "internvl-8b" ]
+    },
 
-  // OpenBMB MiniCPM-V
-  {
-    id: "minicpm-v-2.6",
-    name: "MiniCPM-V 2.6",
-    defaultRepository: "openbmb/MiniCPM-V-2_6-gguf:Q4_K_M",
-    comment: "Top-tier compact vision model with superior optical character recognition and visual reasoning (8B)",
-    aliases: [ "minicpm-v", "minicpm" ]
-  },
+    // OpenBMB MiniCPM-V
+    {
+      id: "minicpm-v-2.6",
+      name: "MiniCPM-V 2.6",
+      defaultRepository: "openbmb/MiniCPM-V-2_6-gguf:Q4_K_M",
+      comment: "Top-tier compact vision model with superior optical character recognition and visual reasoning (8B)",
+      aliases: [ "minicpm-v", "minicpm" ]
+    },
 
-  // Classic LLaVA
-  {
-    id: "llava-1.5-7b",
-    name: "LLaVA 1.5 7B",
-    defaultRepository: "mys/ggml_llava-v1.5-7b:q4_k",
-    comment: "Pioneering open-source vision-language model for general visual instruction following (7B)",
-    aliases: [ "llava", "llava1.5", "llava-v1.5-7b" ]
-  },
-  {
-    id: "llava-llama3-8b",
-    name: "LLaVA Llama 3 8B",
-    defaultRepository: "xtuner/llava-llama-3-8b-v1_1-gguf:Q4_K_M",
-    comment: "LLaVA visual architecture integrated with Meta Llama 3 language foundation (8B)",
-    aliases: [ "llava-llama3", "llava-llama-3" ]
-  },
+    // Classic LLaVA
+    {
+      id: "llava-1.5-7b",
+      name: "LLaVA 1.5 7B",
+      defaultRepository: "mys/ggml_llava-v1.5-7b:q4_k",
+      comment: "Pioneering open-source vision-language model for general visual instruction following (7B)",
+      aliases: [ "llava", "llava1.5", "llava-v1.5-7b" ]
+    },
+    {
+      id: "llava-llama3-8b",
+      name: "LLaVA Llama 3 8B",
+      defaultRepository: "xtuner/llava-llama-3-8b-v1_1-gguf:Q4_K_M",
+      comment: "LLaVA visual architecture integrated with Meta Llama 3 language foundation (8B)",
+      aliases: [ "llava-llama3", "llava-llama-3" ]
+    },
 
-  // IBM Granite Vision
-  {
-    id: "granite-3.2-vision-8b",
-    name: "Granite 3.2 Vision 8B",
-    defaultRepository: "ibm-granite/granite-3.2-8b-instruct-GGUF:Q4_K_M",
-    comment: "Enterprise-grade vision-language model by IBM designed for visual inspection and document analysis (8B)",
-    aliases: [ "granite3.2-vision", "granite-vision" ]
-  }
-];
+    // IBM Granite Vision
+    {
+      id: "granite-3.2-vision-8b",
+      name: "Granite 3.2 Vision 8B",
+      defaultRepository: "ibm-granite/granite-3.2-8b-instruct-GGUF:Q4_K_M",
+      comment: "Enterprise-grade vision-language model by IBM designed for visual inspection and document analysis (8B)",
+      aliases: [ "granite3.2-vision", "granite-vision" ]
+    }
+  ];
 
 export class LlamaClient
 {

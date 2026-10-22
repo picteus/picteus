@@ -3,7 +3,7 @@ import { accessSync, constants, existsSync, readFileSync, statSync } from "node:
 import { homedir } from "node:os";
 import { basename, delimiter, join } from "node:path";
 
-import { Communicator } from "@picteus/extension-sdk";
+import { Communicator, IntentDialogType } from "@picteus/extension-sdk";
 
 import { LlamaClient } from "./llamaClient.js";
 
@@ -276,10 +276,11 @@ export class LlamaDownloader
     }
 
     const localAppData = process.env["LOCALAPPDATA"] ?? join(homedir(), "AppData", "Local");
-    const candidateConfigPaths = [
-      join(localAppData, "Llama", "settings.json"),
-      join(localAppData, "LlamaApp", "settings.json")
-    ];
+    const candidateConfigPaths =
+      [
+        join(localAppData, "Llama", "settings.json"),
+        join(localAppData, "LlamaApp", "settings.json")
+      ];
 
     for (const candidatePath of candidateConfigPaths)
     {
@@ -383,7 +384,30 @@ export class LlamaDownloader
 
     try
     {
-      return await downloadPromise;
+      const isDownloadSucceeded = await downloadPromise;
+      if (isDownloadSucceeded === false)
+      {
+        return false;
+      }
+      try
+      {
+        await options.communicator.launchIntent<boolean>({
+          dialog:
+            {
+              type: IntentDialogType.Question,
+              size: "m",
+              title: "llama.cpp model downloaded",
+              description: `The llama.cpp model '${options.model}' has been downloaded: click on the menu bar llama.cpp icon, and make sure that the new downloaded model is listed: this will force llama.cpp to take this into account.`,
+              details: "Click on the 'OK' button only once you have operated that action.",
+              buttons: { yes: "OK" }
+            }
+        });
+      }
+      catch (_error: unknown)
+      {
+        // In case the user canceled the dialog box
+      }
+      return await this.awaitServerModelRecognition(options.baseUrl, options.model, options.communicator);
     }
     finally
     {
@@ -399,36 +423,27 @@ export class LlamaDownloader
     modelDirectory?: string
   ): Promise<boolean>
   {
-    return new Promise<boolean>(
-      (resolve) =>
+    return new Promise<boolean>((resolve) =>
       {
-        const directoryNotice = typeof modelDirectory === "string" && modelDirectory.length > 0
-          ? ` into '${modelDirectory}'`
-          : "";
+        const directoryNotice = typeof modelDirectory === "string" && modelDirectory.length > 0 ? ` into '${modelDirectory}'` : "";
         communicator.sendLog(`Initiating download of repository '${repository}' for model '${model}' using executable '${executablePath}'${directoryNotice}…`, "info");
 
         const binaryBaseName = basename(executablePath).toLowerCase();
         const isLlamaCliBinary = binaryBaseName.startsWith("llama-cli");
-        const commandArguments = isLlamaCliBinary === true
-          ? [ "-hf", repository ]
-          : [ "download", "-hf", repository ];
+        const commandArguments = isLlamaCliBinary === true ? [ "-hf", repository ] : [ "download", "-hf", repository ];
 
         let hasFinished = false;
         let lastReportedTimestamp = Date.now();
         let collectedErrorOutput = "";
 
-        const environmentVariables: NodeJS.ProcessEnv = {
-          ...process.env
-        };
+        const environmentVariables: NodeJS.ProcessEnv = { ...process.env };
         if (typeof modelDirectory === "string" && modelDirectory.length > 0)
         {
           environmentVariables["HF_HUB_CACHE"] = modelDirectory;
           environmentVariables["HUGGINGFACE_HUB_CACHE"] = modelDirectory;
         }
 
-        const childProcess = spawn(
-          executablePath,
-          commandArguments,
+        const childProcess = spawn(executablePath, commandArguments,
           {
             stdio: [ "ignore", "pipe", "pipe" ],
             windowsHide: true,
@@ -463,9 +478,7 @@ export class LlamaDownloader
         childProcess.stdout?.on("data", handleDataChunk);
         childProcess.stderr?.on("data", handleDataChunk);
 
-        childProcess.on(
-          "error",
-          (error: Error) =>
+        childProcess.on("error", (error: Error) =>
           {
             if (hasFinished === false)
             {
@@ -476,9 +489,7 @@ export class LlamaDownloader
           }
         );
 
-        childProcess.on(
-          "close",
-          (exitCode: number | null) =>
+        childProcess.on("close", (exitCode: number | null) =>
           {
             if (hasFinished === false)
             {
@@ -499,6 +510,109 @@ export class LlamaDownloader
         );
       }
     );
+  }
+
+  private async awaitServerModelRecognition(
+    baseUrl: string,
+    model: string,
+    communicator: Communicator,
+    timeoutInMilliseconds: number = 60_000,
+    pollIntervalInMilliseconds: number = 2_000
+  ): Promise<boolean>
+  {
+    communicator.sendLog(`Model '${model}' files were downloaded into cache. Waiting for the llama.cpp server to register the new model…`, "warn");
+
+    const startTimestamp = Date.now();
+    let lastReportedSeconds = 0;
+
+    while (Date.now() - startTimestamp < timeoutInMilliseconds)
+    {
+      // We trigger a preset reload on the server
+      try
+      {
+        await fetch(`${baseUrl}/models?reload=1`, { signal: AbortSignal.timeout(pollIntervalInMilliseconds) });
+      }
+      catch
+      {
+        // We ignore network errors on reload endpoints
+      }
+
+      const isModelRegistered = await this.checkServerModelRegistered(baseUrl, model);
+      if (isModelRegistered === true)
+      {
+        communicator.sendLog(`The llama.cpp server has registered and recognized the model '${model}'.`, "info");
+        return true;
+      }
+
+      const elapsedSeconds = Math.round((Date.now() - startTimestamp) / 1_000);
+      if (elapsedSeconds >= lastReportedSeconds + 8)
+      {
+        communicator.sendLog(`Waiting for llama.cpp server to register '${model}' (${elapsedSeconds}s elapsed)…`, "debug");
+        lastReportedSeconds = elapsedSeconds;
+      }
+
+      await new Promise<void>((resolve) =>
+        {
+          setTimeout(resolve, pollIntervalInMilliseconds);
+        }
+      );
+    }
+
+    communicator.sendLog(`The model '${model}' was downloaded, but was not recognized by the llama.cpp server within ${Math.round(timeoutInMilliseconds / 1_000)} seconds. If using the Llama desktop app, ensure it is open and refreshed.`, "warn"
+    );
+    return false;
+  }
+
+  private async checkServerModelRegistered(baseUrl: string, model: string): Promise<boolean>
+  {
+    try
+    {
+      const response = await fetch(`${baseUrl}/v1/models?reload=1`, { signal: AbortSignal.timeout(5_000) });
+      if (response.ok === true)
+      {
+        const payload = (await response.json()) as { readonly data?: Array<{ readonly id?: string }>; };
+        if (Array.isArray(payload.data) === true)
+        {
+          for (const item of payload.data)
+          {
+            if (typeof item.id === "string" && item.id.length > 0)
+            {
+              if (this.isMatchingModelIdentifier(item.id, model) === true)
+              {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+    catch
+    {
+      // We ignore transient polling errors
+    }
+
+    return false;
+  }
+
+  private isMatchingModelIdentifier(serverId: string, requestedModel: string): boolean
+  {
+    if (serverId.toLowerCase() === requestedModel.toLowerCase())
+    {
+      return true;
+    }
+
+    const serverCurated = LlamaClient.findCuratedModel(serverId);
+    const requestedCurated = LlamaClient.findCuratedModel(requestedModel);
+    if (serverCurated !== undefined && requestedCurated !== undefined && serverCurated.id === requestedCurated.id)
+    {
+      return true;
+    }
+
+    const normalizedServerId = serverId.split(":")[0]?.toLowerCase();
+    const normalizedRequested = requestedModel.split(":")[0]?.toLowerCase();
+    return normalizedServerId !== undefined && normalizedRequested !== undefined && normalizedServerId === normalizedRequested;
+
+
   }
 
 }
