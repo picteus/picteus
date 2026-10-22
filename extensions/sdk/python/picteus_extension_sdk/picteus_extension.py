@@ -100,9 +100,9 @@ instructions_event: str = "instructions"
 
 
 class Helper:
-    SOFTWARE: str = Software.value
-    GENERATION_RECIPE_SCHEMA_VERSION: int = GenerationRecipeVersion.value
-    TAGS_PLACEHOLDER: str = TagsPlaceholder.value
+    SOFTWARE: str = Software.PICTEUS
+    GENERATION_RECIPE_SCHEMA_VERSION: int = GenerationRecipeVersion.NUMBER_2
+    TAGS_PLACEHOLDER: str = TagsPlaceholder.LEFT_CURLY_BRACKET_TAGS_RIGHT_CURLY_BRACKET
 
 
 class _ExtensionParameters:
