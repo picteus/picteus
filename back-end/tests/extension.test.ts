@@ -266,7 +266,7 @@ describe("Extensions", () =>
                   durationInMilliseconds: Math.round(throttlingDurationInMilliseconds ?? Core.fastestIntervalInMilliseconds)
                 }
               ],
-            capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageTags), new ManifestImageFeaturesCapability(new ManifestCapabilityCaptionsDetails(true)), new ManifestCapability(ManifestCapabilityId.TextEmbeddings) ],
+            capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageTags), new ManifestCapability(ManifestCapabilityId.ImageFeatures), new ManifestCapability(ManifestCapabilityId.TextEmbeddings) ],
             execution:
               {
                 executable: ExtensionBuilder.nodeExecutable,
@@ -2932,7 +2932,7 @@ describe("Extensions", () =>
       await base.getExtensionController().changeState(manifest.id, ExtensionState.Enabled);
       await waitForExpect(() =>
       {
-        expectEvent(initialEventsCount + 4 + 7, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.State + NotifierService.delimiter + ActionState.Started, { id: manifest.id });
+        expectEvent(initialEventsCount + 4 + 6, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.State + NotifierService.delimiter + ActionState.Started, { id: manifest.id });
       });
     }
     finally

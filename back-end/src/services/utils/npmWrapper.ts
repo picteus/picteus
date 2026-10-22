@@ -65,7 +65,8 @@ export async function runNpm(parameters: string[], directoryPath: string): Promi
   logger.info(`Running the npm command with parameters '${parameters.join(" ")}' in directory '${directoryPath}'`);
   const fromRootPaths = os.platform() === "win32" ? [ "node_modules", "npm", "index.js" ] : [ "bin", "npm" ];
   const npmFilePath = path.join(paths.npmDirectoryPath, ...fromRootPaths);
-  return fork(npmFilePath, parameters, directoryPath, null);
+  // We redirect the forked process stderr to the parent's process stdout
+  return fork(npmFilePath, parameters, directoryPath, [ "inherit", process.stdout, process.stdout, "ipc" ]);
 }
 
 export async function installPackages(packageJsonFilePath: string, isProduction: boolean, sdkArchiveVersion: string, sdkArchiveFilePath: string): Promise<void>
