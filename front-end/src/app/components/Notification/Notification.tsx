@@ -7,7 +7,8 @@ import { EventOnResultValueType, NotificationType } from "types";
 import { computeDeskRoute, timeAgoFromMilliseconds, ToastService } from "utils";
 import { useExtensionIntentRunner } from "app/hooks";
 import { useDeskTabsContext } from "app/context";
-import { EntityVisual } from "app/components";
+import { ImageService } from "app/services";
+import { Common, EntityVisual } from "app/components";
 
 import style from "./Notification.module.scss";
 
@@ -29,6 +30,7 @@ function useNotificationOnClick(onClose: () => void, onOpen: () => void): (notif
           const tabId = addTab({
             id: notification.id,
             extensionId: notification.extensionId,
+            icon: { url: await ImageService.computeImageUriFromIds([ notification.data.id ], Common.NotificationIllustrationEdge) },
             label: notification.title,
             content: {
               kind: "image",

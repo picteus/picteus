@@ -177,15 +177,16 @@ export default function useImageCommands({
       },
       execute: async (): Promise<void> =>
       {
+        const illustrationUri = await ImageService.computeImageUriFromUrls([ image.url ], Common.NotificationIllustrationEdge);
         const tabId = addTab({
           id: randomId(),
           label: image.name,
+          icon: { url: await ImageService.computeImageUriFromUrls([ image.url ], Common.NotificationIllustrationEdge) },
           content: {
             kind: "image",
             imageId: image.id
           }
         }, false);
-        const illustrationUri = await ImageService.computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
         void NotificationService.storeNotification({
           id: tabId,
           milliseconds: Date.now(),

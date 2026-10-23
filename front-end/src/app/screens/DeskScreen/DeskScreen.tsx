@@ -1,22 +1,14 @@
-import React, { DragEvent, ReactElement, ReactNode, useEffect, useRef, useState } from "react";
+import React, { DragEvent, ReactElement, useEffect, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { ActionIcon, Box, Center, CloseButton, Divider, Group, ScrollArea, Stack, Text, Tooltip } from "@mantine/core";
-import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconCode,
-  IconFileText,
-  IconPhoto,
-  IconStack2,
-  IconWorld
-} from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconStack2 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
 import { DESK_TAB_QUERY_PARAMETER_NAME, ROUTES } from "utils";
 import { useDeskTabsContext } from "app/context";
-import { Common, EmptyResults, ExtensionIcon, ResourceIcon } from "app/components";
-import { DeskTabPanel, DeskTabsMenu } from "./components";
+import { Common, EmptyResults } from "app/components";
+import { DeskTabIcon, DeskTabPanel, DeskTabsMenu } from "./components";
 
 import style from "./DeskScreen.module.scss";
 
@@ -281,42 +273,6 @@ export default function DeskScreen(): ReactElement
     setDropTargetTabId(null);
   }
 
-  function renderTabIcon(tab: DeskTabType): ReactNode
-  {
-    if (tab.extensionId)
-    {
-      return <ExtensionIcon idOrExtension={tab.extensionId} size="sm"/>;
-    }
-
-    if (tab.header?.icon)
-    {
-      return <ResourceIcon icon={tab.header.icon} isCompact={false}/>;
-    }
-
-    if (tab.content.kind === "image")
-    {
-      return <IconPhoto size={Common.IconSmallSize} stroke={1.5}/>;
-    }
-    if (tab.content.kind === "images")
-    {
-      return <IconPhoto size={Common.IconSmallSize} stroke={1.5}/>;
-    }
-    if (tab.content.kind === "url")
-    {
-      return <IconWorld size={Common.IconSmallSize} stroke={1.5}/>;
-    }
-    if (tab.content.kind === "html")
-    {
-      return <IconCode size={Common.IconSmallSize} stroke={1.5}/>;
-    }
-    if (tab.content.kind === "markdown")
-    {
-      return <IconFileText size={Common.IconSmallSize} stroke={1.5}/>;
-    }
-
-    return <IconStack2 size={Common.IconSmallSize} stroke={1.5}/>;
-  }
-
   if (tabs.length === 0)
   {
     return (
@@ -392,7 +348,7 @@ export default function DeskScreen(): ReactElement
                   onDragEnd={handleDragEnd}
                   onClick={() => handleSelectTab(tab.id)}
                 >
-                  {renderTabIcon(tab)}
+                  <DeskTabIcon tab={tab} isCompact={true}/>
 
                   <Tooltip
                     label={tooltipLabel}

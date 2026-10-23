@@ -27,8 +27,8 @@ import { ChannelEnum, ContentIconType, EventOnResultValueType, ExtensionIntentTy
 import { ToastService } from "utils";
 import { useActionModalContext, useDeskTabsContext, useSocketEvent } from "app/context";
 import { useExtensionIntentRunner, useExtensions } from "app/hooks";
-import { ExtensionsService, NotificationService } from "app/services";
-import { CommandForm, DialogForm } from "app/components";
+import { ExtensionsService, ImageService, NotificationService } from "app/services";
+import { CommandForm, Common, DialogForm } from "app/components";
 
 
 export default function IntentCenter()
@@ -167,14 +167,42 @@ export default function IntentCenter()
         });
       }
 
-      function handleImages(imagesIntent: ImagesIntent): void
+      async function handleImages(imagesIntent: ImagesIntent): Promise<void>
       {
         const images = imagesIntent.images;
         const content = images.content;
+        let icon = content.icon;
+        let illustrationUri: string | undefined;
+
+        if (icon === undefined)
+        {
+          if (images.images.length > 0)
+          {
+            illustrationUri = await ImageService.computeImageUriFromIds(images.images.map(image => image.imageId), Common.NotificationIllustrationEdge);
+            icon = { url: illustrationUri };
+          }
+        }
+        else if ("url" in icon)
+        {
+          illustrationUri = icon.url;
+        }
+        else if ("content" in icon)
+        {
+          try
+          {
+            illustrationUri = await computeIllustrationUriViaBlob(icon.content as unknown as ArrayBuffer);
+          }
+          catch (error)
+          {
+            console.warn("Failed to compute illustration URI from icon content", error);
+          }
+        }
+
         const id = randomId();
         addTab({
           id,
           extensionId,
+          icon,
           label: content.title,
           header: content,
           content: {
@@ -188,7 +216,8 @@ export default function IntentCenter()
           type: "tab",
           title: content.title,
           subtitle: content.subtitle,
-          data: { id }
+          data: { id },
+          illustrationUri
         });
         respondWithValue();
       }
@@ -256,7 +285,7 @@ export default function IntentCenter()
       }
       else if (isImagesIntent(intent))
       {
-        handleImages(intent);
+        void handleImages(intent);
       }
       else if (isNotificationIntent(intent))
       {

@@ -231,7 +231,7 @@ async function generateImageCreatedOrUpdatedNotification(event: SocketEventType)
   const suffix = event.channel === ChannelEnum.IMAGE_CREATED ? "imageCreated" : "imageUpdated";
   const title = i18n.t(`notifications.${suffix}`);
   const subtitle = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
-  const illustrationUri = await ImageService.computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
+  const illustrationUri = await ImageService.computeImageUriFromUrls([image.url], Common.NotificationIllustrationEdge);
   return {
     id: event.id,
     milliseconds: event.milliseconds,

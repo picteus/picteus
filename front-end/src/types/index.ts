@@ -3,6 +3,8 @@ import { RJSFSchema } from "@rjsf/utils";
 
 import {
   FrontIntent,
+  IntentResourceContent,
+  IntentResourceUrl,
   IntentTitleSubtitleDescriptionDetailsIcon,
   OpenBrowserIntent,
   ProcessCommandIntent,
@@ -338,6 +340,7 @@ export type DeskTabType = {
   id: string;
   timestampInMilliseconds: number;
   extensionId?: string;
+  icon?: IntentResourceUrl | IntentResourceContent;
   label: string;
   header?: IntentTitleSubtitleDescriptionDetailsIcon;
   content: DeskTabContentType;

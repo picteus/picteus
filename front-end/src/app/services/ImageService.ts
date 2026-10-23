@@ -1,7 +1,7 @@
 import {
   ExtensionImageFeature,
   ExtensionImageTag,
-  Image,
+  type Image,
   ImageApi,
   ImageApiImageClosestImagesRequest,
   ImageApiImageGetAllFeaturesRequest,
@@ -92,34 +92,177 @@ async function getClosestImages(
   return imageApi.imageClosestImages(requestParameters);
 }
 
-async function computeImageIllustrationUri(imageUrl: string, edge: number): Promise<string>
+async function computeImageUriFromUrls(imageUrls: string[], edge: number): Promise<string>
 {
-  const resizedImageUrl = getImageSrc(imageUrl, edge, edge);
-  let illustrationUri = resizedImageUrl;
+  function drawErrorRepresentation(content: CanvasRenderingContext2D, x: number, y: number,
+    width: number, height: number, radius: number): void
+  {
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    const size = Math.min(width, height) * 0.4;
+
+    content.save();
+    content.beginPath();
+    content.moveTo(x + radius, y);
+    content.lineTo(x + width - radius, y);
+    content.quadraticCurveTo(x + width, y, x + width, y + radius);
+    content.lineTo(x + width, y + height - radius);
+    content.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    content.lineTo(x + radius, y + height);
+    content.quadraticCurveTo(x, y + height, x, y + height - radius);
+    content.lineTo(x, y + radius);
+    content.quadraticCurveTo(x, y, x + radius, y);
+    content.closePath();
+    content.clip();
+    content.fillStyle = "#e0e0e0";
+    content.fillRect(x, y, width, height);
+    content.fillStyle = "#9e9e9e";
+    content.font = `${size}px sans-serif`;
+    content.textAlign = "center";
+    content.textBaseline = "middle";
+    content.fillText("X", centerX, centerY);
+    content.restore();
+  }
+
+  async function drawSingleImage(context: CanvasRenderingContext2D, image: HTMLImageElement | null, x: number, y: number, width: number, height: number, radius: number): Promise<void>
+  {
+    if (image === null)
+    {
+      drawErrorRepresentation(context, x, y, width, height, radius);
+      return;
+    }
+
+    const imageWidth = image.naturalWidth || image.width;
+    const imageHeight = image.naturalHeight || image.height;
+    if (imageWidth === 0 || imageHeight === 0)
+    {
+      drawErrorRepresentation(context, x, y, width, height, radius);
+      return;
+    }
+
+    const scale = Math.max(width / imageWidth, height / imageHeight);
+    const drawWidth = imageWidth * scale;
+    const drawHeight = imageHeight * scale;
+    const drawX = x + (width - drawWidth) / 2;
+    const drawY = y + (height - drawHeight) / 2;
+
+    context.save();
+    context.beginPath();
+    context.moveTo(x + radius, y);
+    context.lineTo(x + width - radius, y);
+    context.quadraticCurveTo(x + width, y, x + width, y + radius);
+    context.lineTo(x + width, y + height - radius);
+    context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    context.lineTo(x + radius, y + height);
+    context.quadraticCurveTo(x, y + height, x, y + height - radius);
+    context.lineTo(x, y + radius);
+    context.quadraticCurveTo(x, y, x + radius, y);
+    context.closePath();
+    context.clip();
+    context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    context.restore();
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = edge;
+  canvas.height = edge;
+  const context = canvas.getContext("2d");
+  const separator = 2;
+  const cellSize = (edge - separator) / 2;
+  const offset = cellSize + separator;
+  const radius = edge / 8;
+  const objectUrls: (string | null)[] = [];
+
   try
   {
-    const response = await fetch(resizedImageUrl);
-    const blob = await response.blob();
-    illustrationUri = await new Promise<string>((resolve) =>
+    const items: { blob: Blob | null, url: string, error: boolean }[] = await Promise.all(imageUrls.map(async (url) =>
       {
-        const reader = new FileReader();
-        reader.onloadend = () =>
+        try
         {
-          resolve(reader.result as string);
-        };
-        reader.onerror = () =>
+          const resizedUrl = getImageSrc(url, edge, edge);
+          const response = await fetch(resizedUrl);
+          if (!response.ok)
+          {
+            return { blob: null, url, error: true };
+          }
+          const blob = await response.blob();
+          return { blob, url, error: false };
+        }
+        catch
         {
-          resolve(illustrationUri);
-        };
-        reader.readAsDataURL(blob);
-      }
+          return { blob: null, url, error: true };
+        }
+      })
     );
+
+    const loadedImages: (HTMLImageElement | null)[] = await Promise.all(items.map(async (item, index) =>
+      {
+        if (item.error)
+        {
+          objectUrls[index] = null;
+          return null;
+        }
+        const objectUrl = URL.createObjectURL(item.blob!);
+        objectUrls[index] = objectUrl;
+        return new Promise<HTMLImageElement>((resolve) =>
+        {
+          const imageElement = new Image();
+          imageElement.onload = () => resolve(imageElement);
+          imageElement.onerror = () => resolve(null);
+          imageElement.src = objectUrl;
+        });
+      })
+    );
+
+    let layoutRectangles: { x: number, y: number, width: number, height: number }[];
+    if (imageUrls.length === 1)
+    {
+      layoutRectangles = [ { x: 0, y: 0, width: edge, height: edge } ];
+    }
+    else if (imageUrls.length === 2)
+    {
+      layoutRectangles =
+        [
+          { x: 0, y: 0, width: cellSize, height: edge },
+          { x: offset, y: 0, width: cellSize, height: edge }
+        ];
+    }
+    else
+    {
+      layoutRectangles =
+        [
+          { x: 0, y: 0, width: cellSize, height: cellSize },
+          { x: offset, y: 0, width: cellSize, height: cellSize },
+          { x: 0, y: offset, width: cellSize, height: cellSize },
+          { x: offset, y: offset, width: cellSize, height: cellSize }
+        ];
+    }
+
+    for (let index = 0; index < loadedImages.length; index++)
+    {
+      const { x, y, width, height } = layoutRectangles[index];
+      await drawSingleImage(context, loadedImages[index], x, y, width, height, radius);
+    }
+
+    return canvas.toDataURL();
   }
-  catch (error)
+  finally
   {
-    console.warn(`Failed to convert the image with URL '${resizedImageUrl}' into a data URI`, error);
+    objectUrls.forEach(url =>
+    {
+      if (url)
+      {
+        URL.revokeObjectURL(url);
+      }
+    });
   }
-  return illustrationUri;
+}
+
+async function computeImageUriFromIds(imageIds: string[], edge: number): Promise<string>
+{
+  const fetchedResults = await Promise.allSettled(imageIds.slice(0, 4).map(imageId => get({ id: imageId })));
+  const imageUrls = fetchedResults.filter((result): result is PromiseFulfilledResult<Image> => result.status === "fulfilled" && Boolean(result.value?.url)).map(result => result.value.url);
+  return computeImageUriFromUrls(imageUrls, edge);
 }
 
 async function runCapabilities(requestParameters: ImageApiImageRunCapabilitiesRequest): Promise<void>
@@ -184,5 +327,6 @@ export default {
   getAllTags,
   textToImages,
   computeImageDimensions,
-  computeImageIllustrationUri
+  computeImageUriFromUrls,
+  computeImageUriFromIds
 };

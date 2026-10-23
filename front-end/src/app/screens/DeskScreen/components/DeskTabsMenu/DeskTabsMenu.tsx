@@ -12,19 +12,12 @@ import {
   Text,
   TextInput
 } from "@mantine/core";
-import {
-  IconChevronDown,
-  IconCode,
-  IconFileText,
-  IconPhoto,
-  IconSearch,
-  IconStack2,
-  IconWorld
-} from "@tabler/icons-react";
+import { IconChevronDown, IconSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
-import { Common, ExtensionIcon, FormatedDate, ResourceIcon } from "app/components";
+import { FormatedDate } from "app/components";
+import { DeskTabIcon } from "../index";
 
 
 export interface DeskTabsMenuPropsType
@@ -35,38 +28,6 @@ export interface DeskTabsMenuPropsType
   onSelectTab: (tabIdentifier: string) => void;
   onCloseTab: (tabIdentifier: string) => void;
 
-}
-
-function renderDeskTabIcon(tab: DeskTabType): ReactElement
-{
-  if (tab.extensionId)
-  {
-    return <ExtensionIcon idOrExtension={tab.extensionId} size="sm"/>;
-  }
-
-  if (tab.header?.icon)
-  {
-    return <ResourceIcon icon={tab.header.icon} isCompact={false}/>;
-  }
-
-  if (tab.content.kind === "image" || tab.content.kind === "images")
-  {
-    return <IconPhoto size={Common.IconSmallSize} stroke={1.5}/>;
-  }
-  if (tab.content.kind === "url")
-  {
-    return <IconWorld size={Common.IconSmallSize} stroke={1.5}/>;
-  }
-  if (tab.content.kind === "html")
-  {
-    return <IconCode size={Common.IconSmallSize} stroke={1.5}/>;
-  }
-  if (tab.content.kind === "markdown")
-  {
-    return <IconFileText size={Common.IconSmallSize} stroke={1.5}/>;
-  }
-
-  return <IconStack2 size={Common.IconSmallSize} stroke={1.5}/>;
 }
 
 function matchesTabSearch(tab: DeskTabType, searchCriterion: string): boolean
@@ -223,22 +184,22 @@ export default function DeskTabsMenu({
               {t("deskTabsMenu.noTabsFound", "No matching tabs found")}
             </Text>
           ) : (
-            filteredTabs.map((tabItem) =>
+            filteredTabs.map((tab) =>
             {
-              const isTabActive = tabItem.id === activeTabId;
-              const isNewestTab = tabItem.id === newestTabId;
-              const tabTitle = tabItem.header?.title || tabItem.label;
+              const isTabActive = tab.id === activeTabId;
+              const isNewestTab = tab.id === newestTabId;
+              const tabTitle = tab.header?.title || tab.label;
 
               return (
                 <NavLink
-                  key={tabItem.id}
+                  key={tab.id}
                   component="button"
                   active={isTabActive}
                   variant="light"
                   color="blue"
                   w="100%"
                   noWrap
-                  leftSection={renderDeskTabIcon(tabItem)}
+                  leftSection={<DeskTabIcon tab={tab} isCompact={false}/>}
                   label={
                     <Group gap="xs" wrap="nowrap" miw={0} w="100%">
                       <Text
@@ -260,26 +221,26 @@ export default function DeskTabsMenu({
                   }
                   description={
                     <Text size="xs" c="dimmed" truncate miw={0}>
-                      {Boolean(tabItem.header?.subtitle && tabItem.header.subtitle.trim().length > 0) && (
-                        <span>{tabItem.header.subtitle.trim()} · </span>
+                      {Boolean(tab.header?.subtitle && tab.header.subtitle.trim().length > 0) && (
+                        <span>{tab.header.subtitle.trim()} · </span>
                       )}
-                      <FormatedDate timestamp={tabItem.timestampInMilliseconds}/>
+                      <FormatedDate timestamp={tab.timestampInMilliseconds}/>
                     </Text>
                   }
                   rightSection={
-                    tabItem.isClosable !== false ? (
+                    tab.isClosable !== false ? (
                       <CloseButton
                         size="xs"
                         onClick={(event) =>
                         {
-                          handleClose(event, tabItem.id);
+                          handleClose(event, tab.id);
                         }}
                       />
                     ) : undefined
                   }
                   onClick={() =>
                   {
-                    handleSelect(tabItem.id);
+                    handleSelect(tab.id);
                   }}
                 />
               );
