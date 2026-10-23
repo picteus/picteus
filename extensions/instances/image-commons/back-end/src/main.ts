@@ -226,7 +226,7 @@ class ImageCommonsExtension extends PicteusExtension
           size: "m",
           title: "Tag",
           description: "Please, tag the images",
-          frame: { content: { url: result + "/index.html" }, height: 50 },
+          document: { url: result + "/index.html" },
           buttons: { yes: "Close" }
         }
     });
@@ -444,9 +444,10 @@ class ImageCommonsExtension extends PicteusExtension
     await communicator.launchIntent({
       dialog: {
         type: IntentDialogType.Info,
+        size: "m",
         title: "Analytics",
         description: "Breakdown of provided tags within the collection over time.",
-        details: html,
+        document: { inline: html },
         buttons: { yes: "OK" }
       }
     });

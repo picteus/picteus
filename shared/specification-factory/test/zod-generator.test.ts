@@ -21,10 +21,10 @@ describe("Zod Intents Generator", () =>
       ],
       unions: [
         {
-          name: "IntentFrameContent",
+          name: "IntentDocumentContent",
           variants: [
             { kind: "model", name: "IntentUrlContent" },
-            { kind: "model", name: "IntentHtmlContent" }
+            { kind: "model", name: "IntentInlineContent" }
           ]
         }
       ],
@@ -42,9 +42,9 @@ describe("Zod Intents Generator", () =>
           ]
         },
         {
-          name: "IntentHtmlContent",
+          name: "IntentInlineContent",
           properties: [
-            { name: "html", optional: false, type: { kind: "string", name: "string" } }
+            { name: "inline", optional: false, type: { kind: "string", name: "string" } }
           ]
         },
         {
@@ -71,7 +71,7 @@ describe("Zod Intents Generator", () =>
               summary: "Frame content source.",
               doc: "Select either a URL or inline HTML variant.",
               optional: false,
-              type: { kind: "model", name: "IntentFrameContent" }
+              type: { kind: "model", name: "IntentDocumentContent" }
             },
             { name: "height", optional: false, type: { kind: "number", name: "int32" }, minValue: 0, maxValue: 100 }
           ]
@@ -111,14 +111,14 @@ describe("Zod Intents Generator", () =>
     assert.match(code, /export const zodIntentUiAnchor = z\.enum\(\[\s*"modal",\s*"sidebar"\s*]\);/);
 
     // Verify Union schema
-    assert.match(code, /export const zodIntentFrameContent = z\.union\(\[\s*zodIntentUrlContent,\s*zodIntentHtmlContent\s*]\);/);
+    assert.match(code, /export const zodIntentDocumentContent = z\.union\(\[\s*zodIntentUrlContent,\s*zodIntentInlineContent\s*]\);/);
 
     // Verify URL constraint
     assert.match(code, /url: z\.url\(\)/);
 
     // Verify int32 min/max constraints
     assert.match(code, /height: z\.int32\(\)\.min\(0\)\.max\(100\)/);
-    assert.match(code, /content: zodIntentFrameContent\.describe\("Frame content source\.\\n\\nSelect either a URL or inline HTML variant\."\)/);
+    assert.match(code, /content: zodIntentDocumentContent\.describe\("Frame content source\.\\n\\nSelect either a URL or inline HTML variant\."\)/);
     assert.match(code, /zodIntentFrame = z\.object\(\{[\s\S]*}\)\.describe\("Embedded frame configuration\.\\n\\nThe frame height/);
 
     // Verify IntentImages has required dialogContent (not optional)

@@ -9,10 +9,11 @@ from picteus_extension_sdk import PicteusExtension, InstructionReturnedError, Co
     IntentUi, DialogIntent, IntentDialog, IntentDialogButtons, IntentImage, \
     ImagesIntent, IntentImages, ShowIntent, IntentShow, IntentShowType, \
     SettingsValue, IntentContext, ServeBundleIntent, \
-    IntentServeBundle, IntentFrame, IntentUrlContent, IntentHtmlContent, \
-    IntentFormContent, IntentDialogIconContent, FormIntent, IntentResourceContent, \
+    IntentServeBundle, IntentUrlContent, IntentInlineContent, \
+    IntentFormContent, IntentHeaderContent, FormIntent, IntentResourceContent, \
     IntentDialogIconSizeContent, IntentUISidebarIntegration, IntentUIModalIntegration, \
-    IntentUIWindowIntegration, ReadFileIntent, IntentReadFile, WriteFileIntent, IntentWriteFile, NotificationIntent, \
+    IntentUIWindowIntegration, IntentUITabIntegration, IntentDocumentNature, ReadFileIntent, IntentReadFile, \
+    WriteFileIntent, IntentWriteFile, NotificationIntent, \
     IntentNotification, ActionIntent, IntentAction, ProcessCommandIntent, \
     IntentProcessCommand, ToastIntent, IntentToast, Versions, CommandParameters, OpenBrowserIntent, IntentOpenBrowser, \
     UiContainerBuilder, IntentImagesContent
@@ -238,10 +239,8 @@ class PythonExtension(PicteusExtension):
                 title="Dialog",
                 description="This is a dialog question",
                 details="Please, click the right button.",
-                frame=None if parameters.get("type") != "With HTML" else IntentFrame(
-                    content=IntentHtmlContent(
-                        html="""<html lang="en"><body>This is an <b>HTML</b> content within a dialog box.</body></html>"""),
-                    height=50),
+                document=None if parameters.get("type") != "With HTML" else IntentInlineContent(
+                    inline="""<html lang="en"><body>This is an <b>HTML</b> content within a dialog box.</body></html>"""),
                 buttons=IntentDialogButtons(
                     yes="Yes", no="No"))))
         button = "Yes" if result == True else "No"
@@ -256,18 +255,32 @@ class PythonExtension(PicteusExtension):
                                "swaggerui.png" if is_url == True else "icon.svg"),
                   mode="rb") as file:
             icon_content: bytes = file.read()
-        frame_content = IntentUrlContent(
-            url=self.web_services_base_url + "/swaggerui") if is_url == True else IntentHtmlContent(
-            html=f"""<html lang="en"><head><title>${title}</title></head><body style="border: 0; margin: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "{anchor}" UI element.</div></body></html>""")
+        content = IntentUrlContent(
+            url=self.web_services_base_url + "/swaggerui") if is_url == True else IntentInlineContent(
+            inline=f"""<html lang="en"><head><title>${title}</title></head><body style="border: 0; margin: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "{anchor}" UI element.</div></body></html>""")
+        if anchor == "Modal":
+            integration = IntentUIModalIntegration(
+                nature=IntentDocumentNature.HTML,
+                content=content
+            )
+        elif anchor == "Sidebar" or anchor == "SidebarExternal":
+            integration = IntentUISidebarIntegration(
+                isExternal=anchor == "SidebarExternal",
+                content=content
+            )
+        elif anchor == "Tab":
+            integration = IntentUITabIntegration(
+                nature=IntentDocumentNature.HTML,
+                content=content
+            )
+        else:
+            integration = IntentUIWindowIntegration(
+                content=content
+            )
         await communicator.launch_intent(
             UiIntent(ui=IntentUi(id=f"ui-{anchor}-{nature}",
-                                 integration=IntentUIModalIntegration() if (
-                                         anchor == "Modal") else (
-                                     IntentUISidebarIntegration(
-                                         isExternal=anchor == "SidebarExternal") if (
-                                             anchor == "Sidebar" or anchor == "SidebarExternal") else IntentUIWindowIntegration()),
-                                 frameContent=frame_content,
-                                 dialogContent=IntentDialogIconContent(
+                                 integration=integration,
+                                 headerContent=IntentHeaderContent(
                                      title=title,
                                      description="Demonstrates how to open a dedicated UI.",
                                      icon=IntentResourceContent(
@@ -344,11 +357,15 @@ class PythonExtension(PicteusExtension):
         intent = parameters.get("intent", None)
         if intent == "ui":
             intent: UiIntent = UiIntent(
-                ui=IntentUi(id=f"{self.extension_id}-action-ui", integration=IntentUIModalIntegration(),
-                            frameContent=IntentHtmlContent(
-                                html='''<html lang="en"><body style="width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is the content of the modal.</div></body></html>'''),
-                            dialogContent=IntentDialogIconContent(title="Modal",
-                                                                  description="The content of the modal")))
+                ui=IntentUi(id=f"{self.extension_id}-action-ui",
+                            integration=IntentUIModalIntegration(
+                                nature=IntentDocumentNature.HTML,
+                                content=IntentInlineContent(
+                                    inline='''<html lang="en"><body style="width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is the content of the modal.</div></body></html>'''
+                                )
+                            ),
+                            headerContent=IntentHeaderContent(title="Modal",
+                                                              description="The content of the modal")))
             description: str = "This is an action which opens a modal"
         elif intent == "show":
             intent: ShowIntent = ShowIntent(
@@ -395,8 +412,7 @@ class PythonExtension(PicteusExtension):
                 title="Application",
                 description="This dialog box integrates an iframe application.",
                 size="l",
-                frame=IntentFrame(content=IntentUrlContent(url=result + "/index.html"),
-                                  height=70),
+                document=IntentUrlContent(url=result + "/index.html"),
                 buttons=IntentDialogButtons(yes="Close"))))
 
 

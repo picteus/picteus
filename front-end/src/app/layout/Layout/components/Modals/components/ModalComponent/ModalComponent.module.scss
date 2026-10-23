@@ -5,6 +5,20 @@
   max-height: calc(100dvh - var(--modal-y-offset, 5dvh) * 2);
 }
 
+.contentFullHeight
+{
+  height: calc(100dvh - var(--modal-y-offset, 5dvh) * 2);
+
+  .scrollArea
+  {
+    :global(.mantine-ScrollArea-viewport > div)
+    {
+      display: block !important;
+      height: 100%;
+    }
+  }
+}
+
 .contentFullScreen
 {
   background: transparent;

@@ -152,6 +152,11 @@ function resolveIntentType(type: Type): IntentType
       return { kind: "literal", name: String(type.value), literalValue: type.value };
     case "Enum":
       return { kind: "enum", name: type.name };
+    case "EnumMember":
+    {
+      const value = typeof type.value === "string" ? type.value : (typeof type.value === "number" ? type.value : type.name);
+      return { kind: "literal", name: JSON.stringify(value), literalValue: value };
+    }
     case "Model":
       if (type.name === "Array" && type.indexer)
       {

@@ -293,31 +293,31 @@ export class CommandsManager
         break;
       case "openWindow":
       {
-        const { id: parametersId, isTransient, automaticallyReopen, url, html }: {
+        const { id: parametersId, isTransient, automaticallyReopen, url, inline }: {
           id?: string,
           isTransient?: boolean,
           automaticallyReopen?: boolean,
           url?: string,
-          html?: string
+          inline?: string
         } = parameters;
         if (parametersId === undefined)
         {
           return this.sendCommandError(socket, id, "Missing 'id' parameter");
         }
-        if (url === undefined && html === undefined)
+        if (url === undefined && inline === undefined)
         {
-          return this.sendCommandError(socket, id, "Missing 'url' or 'html' parameter");
+          return this.sendCommandError(socket, id, "Missing 'url' or 'inline' parameter");
         }
-        else if (url !== undefined && html !== undefined)
+        else if (url !== undefined && inline !== undefined)
         {
-          return this.sendCommandError(socket, id, "The 'url' or 'html' parameters should not be defined at the same time");
+          return this.sendCommandError(socket, id, "The 'url' or 'inline' parameters should not be defined at the same time");
         }
         let actualUrl: string;
-        if (html !== undefined)
+        if (inline !== undefined)
         {
           const directoryPath = fs.mkdtempSync(path.join(os.tmpdir(), "picteus-"));
           const filePath = path.join(directoryPath, "index.html");
-          fs.writeFileSync(filePath, html);
+          fs.writeFileSync(filePath, inline);
           actualUrl = `file://${filePath}`;
         }
         else

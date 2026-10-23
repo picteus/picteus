@@ -156,16 +156,19 @@ Opens a dedicated UI frame in a modal, sidebar, window, or tab, rendering a URL 
 ````carousel
 ```typescript
 // TypeScript example
-import { IntentUiAnchor } from "@picteus/extension-sdk";
+import { IntentDocumentNature, IntentUiAnchor } from "@picteus/extension-sdk";
 
 await communicator.launchIntent({
   ui: {
     id: "my-custom-modal",
-    integration: { anchor: IntentUiAnchor.Modal },
-    frameContent: {
-      html: `<!DOCTYPE html><html><body><h2>Custom Interface</h2><p>Extension content rendered here.</p></body></html>`
+    integration: {
+      anchor: IntentUiAnchor.Modal,
+      nature: IntentDocumentNature.Html,
+      documentContent: {
+        inline: "<!DOCTYPE html><html><body><h2>Custom Interface</h2><p>Extension content rendered here.</p></body></html>"
+      }
     },
-    dialogContent: {
+    headerContent: {
       title: "Custom Tool",
       description: "Embedded extension UI."
     }
@@ -175,16 +178,25 @@ await communicator.launchIntent({
 <!-- slide -->
 ```python
 # Python example
-from picteus_extension_sdk import UiIntent, IntentUi, IntentUIModalIntegration, IntentHtmlContent, IntentDialogIconContent
+from picteus_extension_sdk import (
+    IntentDocumentNature,
+    IntentHeaderContent,
+    IntentInlineContent,
+    IntentUi,
+    IntentUIModalIntegration,
+    UiIntent
+)
 
 await communicator.launch_intent(UiIntent(
     ui=IntentUi(
         id="my-custom-modal",
-        integration=IntentUIModalIntegration(),
-        frameContent=IntentHtmlContent(
-            html="<!DOCTYPE html><html><body><h2>Custom Interface</h2><p>Extension content rendered here.</p></body></html>"
+        integration=IntentUIModalIntegration(
+            nature=IntentDocumentNature.HTML,
+            documentContent=IntentInlineContent(
+                inline="<!DOCTYPE html><html><body><h2>Custom Interface</h2><p>Extension content rendered here.</p></body></html>"
+            )
         ),
-        dialogContent=IntentDialogIconContent(
+        headerContent=IntentHeaderContent(
             title="Custom Tool",
             description="Embedded extension UI."
         )

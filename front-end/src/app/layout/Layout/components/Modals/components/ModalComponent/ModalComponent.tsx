@@ -135,6 +135,7 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
   });
 
   const fullScreen = modal.fullScreen;
+  const isFullHeight = !fullScreen && (modal.isFullHeight ?? false);
 
   function computeTitle(): ReactNode
   {
@@ -206,7 +207,7 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
   }
 
   const classNames = {
-    content: `${style.content}${fullScreen ? ` ${style.contentFullScreen}` : ""}`,
+    content: `${style.content}${fullScreen ? ` ${style.contentFullScreen}` : ""}${isFullHeight ? ` ${style.contentFullHeight}` : ""}`,
     body: `${style.body}${fullScreen ? ` ${style.bodyFullScreen}` : ""}`,
     header: style.header
   };
@@ -241,7 +242,7 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
           offsetScrollbars
           scrollbars="y"
         >
-          <ModalChild component={modal.body} fullScreen={fullScreen}/>
+          <ModalChild component={modal.body} fullScreen={fullScreen || isFullHeight}/>
         </ScrollArea>
         <Box
           ref={setFooterElement}

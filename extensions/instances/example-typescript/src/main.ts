@@ -10,6 +10,7 @@ import {
   ImageResizeRender,
   InstructionReturnedError,
   IntentDialogType,
+  IntentDocumentNature,
   type IntentImage,
   IntentShowType,
   IntentUiAnchor,
@@ -344,9 +345,8 @@ class TypeScriptExtension extends PicteusExtension
           title: "Dialog",
           description: "This is a dialog question",
           details: "Please, click the right button.",
-          frame: parameters["type"] !== "With HTML" ? undefined : {
-            content: { html: `<html lang="en"><body>This is an <b>HTML</b> content within a dialog box.</body></html>` },
-            height: 50
+          document: parameters["type"] !== "With HTML" ? undefined : {
+            inline: `<html lang="en"><body>This is an <b>HTML</b> content within a dialog box.</body></html>`
           },
           buttons: { yes: "Yes", no: "No" }
         }
@@ -360,22 +360,46 @@ class TypeScriptExtension extends PicteusExtension
     const nature: string = parameters["nature"];
     const isUrl = nature === "URL";
     const title = `${anchor} UI`;
-    const frameContent = isUrl === true ? { url: `${this.webServicesBaseUrl}/swaggerui` } : { html: `<html lang="en"><head><title>${title}</title></head><body style="border: 0; margin: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "${anchor}" UI element.</div></body></html>` };
+    const content = isUrl === true ? { url: `${this.webServicesBaseUrl}/swaggerui` } : { inline: `<html lang="en"><head><title>${title}</title></head><body style="border: 0; margin: 0; width: 100vw; height: 100vh; background: beige; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is an <b>HTML</b> content with a "${anchor}" UI element.</div></body></html>` };
+    let integration: UiIntent["ui"]["integration"];
+    switch (anchor)
+    {
+      case "Modal":
+        integration = {
+          anchor: IntentUiAnchor.Modal,
+          nature: IntentDocumentNature.Html,
+          content
+        };
+        break;
+      case "Sidebar":
+      case "SidebarExternal":
+        integration = {
+          anchor: IntentUiAnchor.Sidebar,
+          isExternal: anchor === "SidebarExternal",
+          content
+        };
+        break;
+      case "Tab":
+        integration = {
+          anchor: IntentUiAnchor.Tab,
+          nature: IntentDocumentNature.Html,
+          content
+        };
+        break;
+      case "Window":
+      default:
+        integration = {
+          anchor: IntentUiAnchor.Window,
+          content
+        };
+        break;
+    }
     await communicator.launchIntent<boolean>({
       ui:
         {
           id: `ui-${anchor}-${nature}`,
-          integration: anchor === "Modal" ? { anchor: IntentUiAnchor.Modal } : ((anchor === "Sidebar" || anchor === "SidebarExternal") ?
-            {
-              anchor: IntentUiAnchor.Sidebar,
-              isExternal: anchor === "SidebarExternal"
-            }
-            :
-            {
-              anchor: IntentUiAnchor.Window
-            }),
-          frameContent,
-          dialogContent:
+          integration,
+          headerContent:
             {
               title,
               description: "Demonstrates how to open a dedicated UI.",
@@ -502,8 +526,11 @@ class TypeScriptExtension extends PicteusExtension
         intent = {
           ui: {
             id: `${this.extensionId}-action-ui`,
-            integration: { anchor: IntentUiAnchor.Modal },
-            frameContent: { html: `<html lang="en"><body style="width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is the content of the modal.</div></body></html>` }
+            integration: {
+              anchor: IntentUiAnchor.Modal,
+              nature: IntentDocumentNature.Html,
+              content: { inline: `<html lang="en"><body style="width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center;"><div style="font-size: x-large;">This is the content of the modal.</div></body></html>` }
+            }
           }
         };
         description = "This is an action which opens a modal";
@@ -571,7 +598,7 @@ class TypeScriptExtension extends PicteusExtension
           title: "Application",
           description: "This dialog box integrates an iframe application.",
           size: "l",
-          frame: { content: { url: result + "/index.html" }, height: 70 },
+          document: { url: result + "/index.html" },
           buttons: { yes: "Close" }
         }
     });

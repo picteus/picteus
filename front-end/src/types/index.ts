@@ -3,9 +3,18 @@ import { RJSFSchema } from "@rjsf/utils";
 
 import {
   FrontIntent,
+  IntentContext,
+  IntentDescriptionDetails,
+  IntentDialog,
+  IntentDialogIconSizeContent,
+  IntentImages,
+  IntentInlineContent,
   IntentResourceContent,
   IntentResourceUrl,
+  IntentShow,
   IntentTitleSubtitleDescriptionDetailsIcon,
+  IntentUi,
+  IntentUrlContent,
   OpenBrowserIntent,
   ProcessCommandIntent,
   ShowIntent,
@@ -164,65 +173,22 @@ export interface WithNavigationType
   onNext: () => void;
 }
 
-export type DialogContent = {
-  title: string;
-  description: string;
-  details?: string;
-};
-
-export type DialogIconContent = DialogContent & {
-  icon?: ResourceType;
-};
-
-export type FrameContent = ({ url: string }) | ({ html: string });
-
-export type SizeType = "auto" | "xs" | "s" | "m" | "l" | "xl";
-
-export type DialogIconSizeContent = DialogIconContent & {
-  size?: SizeType;
-};
-
-export type DialogType = DialogIconSizeContent & {
-  type: "error" | "info" | "question";
-  frame?: { content: FrameContent; height: number };
-  buttons: { yes: string; no?: string };
-};
-
-export type ShowType = {
-  type: "sidebar" | "extensionSettings" | "image" | "repository";
-  id: string;
-};
-
-export type ImagesType = {
-  images: Array<{ imageId: string }>;
-  content: DialogContent;
-};
-
-export type ContextType = {
-  imageIds?: string[];
-};
+export type SizeType = IntentDialogIconSizeContent["size"];
 
 export type UiCommandType = {
-  context?: ContextType;
+  context?: IntentContext;
   id?: string;
   label?: string;
   iconUri?: string;
-  form?: { parameters: RJSFSchema, dialogContent?: DialogIconSizeContent };
+  form?: { parameters: RJSFSchema, dialogContent?: IntentDialogIconSizeContent };
   withTags?: string[];
-  ui?: {
-    id: string;
-    integration: { anchor: "modal" } | { anchor: "sidebar", isExternal: boolean } | { anchor: "window" } | {
-      anchor: "tab"
-    };
-    frameContent: FrameContent;
-    dialogContent?: DialogIconContent;
-  };
+  ui?: IntentUi;
   openBrowser?: {
     url: string
   }
-  dialog?: DialogType;
-  show?: ShowType;
-  images?: ImagesType;
+  dialog?: IntentDialog;
+  show?: IntentShow;
+  images?: IntentImages;
 };
 
 export type UiExtensionCommandType = {
@@ -300,7 +266,7 @@ export type ViewTabDataType = {
 export type TabsType = {
   id?: string;
   extensionId?: string;
-  content: DialogContent;
+  content: IntentDescriptionDetails;
   data: ViewTabDataType;
 };
 
@@ -314,17 +280,22 @@ export type DeskTabImagesContentType = {
   images: Array<{ imageId: string }>;
 };
 
-export type DeskTabUrlContentType = {
-  kind: "url";
+export type DeskTabHtmlUrlContentType = {
+  kind: "html";
   url: string;
 };
 
-export type DeskTabHtmlContentType = {
+export type DeskTabHtmlInlineContentType = {
   kind: "html";
   html: string;
 };
 
-export type DeskTabMarkdownContentType = {
+export type DeskTabMarkdownUrlContentType = {
+  kind: "markdown";
+  url: string;
+};
+
+export type DeskTabMarkdownInlineContentType = {
   kind: "markdown";
   markdown: string;
 };
@@ -332,9 +303,10 @@ export type DeskTabMarkdownContentType = {
 export type DeskTabContentType =
   | DeskTabImageContentType
   | DeskTabImagesContentType
-  | DeskTabUrlContentType
-  | DeskTabHtmlContentType
-  | DeskTabMarkdownContentType;
+  | DeskTabHtmlUrlContentType
+  | DeskTabHtmlInlineContentType
+  | DeskTabMarkdownUrlContentType
+  | DeskTabMarkdownInlineContentType;
 
 export type DeskTabType = {
   id: string;
@@ -389,7 +361,7 @@ export enum ChannelEnum
 }
 
 
-export type ResourceType = ({ url: string }) | ({ content: Uint8Array });
+export type ResourceType = IntentResourceUrl | IntentResourceContent;
 
 export function computeResourceTypeUrl(resourceType: ResourceType): string | null
 {
@@ -417,7 +389,7 @@ export function computeResourceTypeUrl(resourceType: ResourceType): string | nul
 export type AdditionalUi = {
   uuid: string;
   integration: ManifestInterfaceElementIntegration;
-  content: FrameContent;
+  content: IntentUrlContent | IntentInlineContent;
   icon: ResourceType;
   title: string;
   extensionId: string;
@@ -454,6 +426,7 @@ export type ActionModalValue = {
   closeOnEscape?: boolean;
   icon?: ContentIconType;
   fullScreen?: boolean;
+  isFullHeight?: boolean;
   size?: SizeType;
   body: ReactElement;
   actions?: ModalAction[];

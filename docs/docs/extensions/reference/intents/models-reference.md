@@ -11,7 +11,7 @@ Front-end intents are operations handled by the front-end. They may request navi
 | Intent model | Description | Base model |
 | --- | --- | --- |
 | [FormIntent](#formintent) | An intent that displays a JSON Schema-based form in a modal dialog to collect user input. The front-end renders the form associated to the schema, collects values, and returns them through the intent interaction flow. Use this for capturing structured input rather than embedding a hand-built form in a custom UI frame. | [WithContextIntent](#withcontextintent) |
-| [UiIntent](#uiintent) | An intent that opens a dedicated UI frame — modal, sidebar, window or tab — rendering a URL or raw inline HTML. Requests that the front-end mount the content in the selected integration surface, supplying the frame source and optional header metadata. | [WithContextIntent](#withcontextintent) |
+| [UiIntent](#uiintent) | An intent that opens a dedicated UI view — modal, sidebar, window, or tab — rendering a URL, inline HTML markup, or Markdown document. Requests that the front-end mount the content in the selected integration surface, supplying the document source and optional header metadata. | [WithContextIntent](#withcontextintent) |
 | [OpenBrowserIntent](#openbrowserintent) | An intent that prompts the user for confirmation and opens an external URL in the default web browser. | [BasisIntent](#basisintent) |
 | [DialogIntent](#dialogintent) | An intent that displays an interactive modal dialog and returns the user's response. Requests a front-end-managed modal using the supplied dialog configuration. The front-end presents the available controls and resolves the interaction with the user's response. | [WithContextIntent](#withcontextintent) |
 | [ImagesIntent](#imagesintent) | An intent that opens a tab displaying an image gallery. Requests a dedicated desk tab for the supplied ordered image collection and header metadata. | [WithContextIntent](#withcontextintent) |
@@ -38,9 +38,9 @@ Extends [WithContextIntent](#withcontextintent).
 
 ### UiIntent
 
-An intent that opens a dedicated UI frame — modal, sidebar, window or tab — rendering a URL or raw inline HTML.
+An intent that opens a dedicated UI view — modal, sidebar, window, or tab — rendering a URL, inline HTML markup, or Markdown document.
 
-Requests that the front-end mount the content in the selected integration surface, supplying the frame source and optional header metadata.
+Requests that the front-end mount the content in the selected integration surface, supplying the document source and optional header metadata.
 
 Extends [WithContextIntent](#withcontextintent).
 
@@ -70,7 +70,7 @@ Extends [WithContextIntent](#withcontextintent).
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `dialog` | [Dialog](#dialog) | Yes |  | Modal dialog configuration including type, title, buttons, and optional frame content. Required modal content and interaction configuration. Its type, buttons, and optional frame determine what the user sees and which response can be returned. |
+| `dialog` | [Dialog](#dialog) | Yes |  | Modal dialog configuration including type, title, buttons, and optional document content. Required modal content and interaction configuration. Its type, buttons, and optional document determine what the user sees and which response can be returned. |
 
 
 ### ImagesIntent
@@ -264,7 +264,7 @@ Reusable heading metadata for dialog, notification, and view content. The title 
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `title` | string | No |  | Optional headline or primary title text. Short heading intended for a title position in the associated UI. Keep this concise; place explanatory prose in description, subtitle, or details fields. |
+| `title` | string | No |  | Optional headline or primary title text. Short heading intended for a title position in the associated UI. Keep this concise; place explanatory prose in description, subtitle, or details fields. The title should be pure text. |
 
 
 ### WithSubtitle
@@ -275,7 +275,7 @@ Reusable secondary text content. This model makes the subtitle required because 
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `subtitle` | string | Yes |  | Descriptive subtitle or message text. Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content. |
+| `subtitle` | string | Yes |  | Descriptive subtitle or message text. Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content. The subtitle should be pure text. |
 
 
 ### TitleSubtitle
@@ -288,18 +288,18 @@ Extends [WithTitle](#withtitle).
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `subtitle` | string | Yes |  | Descriptive subtitle or message text. Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content. |
+| `subtitle` | string | Yes |  | Descriptive subtitle or message text. Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content. The subtitle should be pure text. |
 
 
 ### WithDescription
 
 Base content structure providing a description.
 
-Reusable explanatory text for content that needs a description independent of its heading. The value is plain text and is not interpreted as markup.
+Reusable explanatory text for content that needs a description independent of its heading. The value may contain Markdown.
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `description` | string | Yes |  | Descriptive subtitle or explanatory message text. Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field. |
+| `description` | string | Yes |  | Descriptive subtitle or explanatory message text. Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field. The description may contain Markdown. |
 
 
 ### WithDetails
@@ -310,7 +310,7 @@ Reusable extended body text, intended for information that is useful but should 
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `details` | string | No |  | Optional supplementary details or extended body text. Optional longer-form supporting content. Consumers may present it as secondary or expandable text; it remains plain text rather than a markup document. |
+| `details` | string | No |  | Optional supplementary details or extended body text. Optional longer-form supporting content. Consumers may present it as secondary or expandable text; the details may contain Markdown. |
 
 
 ### DescriptionDetails
@@ -323,7 +323,7 @@ Extends [WithDescription](#withdescription).
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `details` | string | No |  | Optional supplementary details or extended body text. Optional longer-form supporting content. Consumers may present it as secondary or expandable text; it remains plain text rather than a markup document. |
+| `details` | string | No |  | Optional supplementary details or extended body text. Optional longer-form supporting content. Consumers may present it as secondary or expandable text; the details may contain Markdown. |
 
 
 ### TitleDescriptionDetails
@@ -361,7 +361,18 @@ Use this representation to transfer a resource as bytes in the intent payload in
 | `content` | bytes | Yes |  | Raw binary byte content of the resource. Complete binary representation of the resource. The consumer is responsible for interpreting the bytes in the context in which the resource is used. |
 
 
-### TitleDescriptionDetailsIcon
+### WithIcon
+
+Base content structure providing an optional icon resource.
+
+Reusable icon metadata for content headers, dialogs, and notifications. The icon can be supplied as a URL or inline binary bytes.
+
+| Property | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `icon` | [ResourceUrl](#resourceurl) \| [ResourceContent](#resourcecontent) | No |  | Optional visual icon resource — supplied as a URL or binary bytes. Decorative or identifying image for the content header. Choose a URL for separately hosted assets or inline bytes when the asset must travel with the payload. |
+
+
+### HeaderContent
 
 Base content structure extending TitleDescriptionDetails with an optional icon resource.
 
@@ -385,9 +396,9 @@ Extends [TitleSubtitle](#titlesubtitle).
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `title` | string | Yes |  | Primary title text. Required concise heading for the content. It is distinct from the supporting subtitle and longer description/details fields. |
-| `details` | string | No |  | Optional supplementary details or extended body text. Optional longer-form supporting content. Consumers may present it as secondary or expandable text; it remains plain text rather than a markup document. |
-| `description` | string | Yes |  | Descriptive subtitle or explanatory message text. Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field. |
-| `icon` | [ResourceUrl](#resourceurl) \| [ResourceContent](#resourcecontent) | No |  | Optional visual icon resource — supplied as a URL or binary bytes. Optional image accompanying the content heading. Its resource can be inline or externally located, as described by Resource. |
+| `details` | string | No |  | Optional supplementary details or extended body text. Optional longer-form supporting content. Consumers may present it as secondary or expandable text; the details may contain Markdown. |
+| `description` | string | Yes |  | Descriptive subtitle or explanatory message text. Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field. The description may contain Markdown. |
+| `icon` | [ResourceUrl](#resourceurl) \| [ResourceContent](#resourcecontent) | No |  | Optional visual icon resource — supplied as a URL or binary bytes. Decorative or identifying image for the content header. Choose a URL for separately hosted assets or inline bytes when the asset must travel with the payload. |
 
 
 ### DialogContent
@@ -403,11 +414,11 @@ _No properties._
 
 ### DialogIconContent
 
-Dialog content structure extending TitleDescriptionDetailsIcon with an optional icon resource.
+Dialog content structure extending HeaderContent with an optional icon resource.
 
 Adds the optional resource icon to standard title and description content for dialogs.
 
-Extends [TitleDescriptionDetailsIcon](#titledescriptiondetailsicon).
+Extends [HeaderContent](#headercontent).
 
 _No properties._
 
@@ -437,51 +448,6 @@ The parameters value is a JSON Schema object used by the front-end to construct 
 | `dialogContent` | [DialogIconSizeContent](#dialogiconsizecontent) | No |  | Optional presentation settings for the modal dialog housing the form. Optional title, descriptive content, icon, and preferred size for the form dialog. Leave this out when the form can use the front-end's default dialog presentation. |
 
 
-### UISidebarIntegration
-
-UI integration configuration for mounting an extension view inside the collateral sidebar.
-
-Selects the front-end's sidebar host as the integration point. The external flag allows the view to be presented in an independent window instead of occupying the docked sidebar surface.
-
-| Property | Type | Required | Default | Details |
-| --- | --- | --- | --- | --- |
-| `anchor` | "sidebar" | Yes |  | Layout anchor discriminator specifying sidebar placement. Literal integration discriminator for the sidebar variant. Keep it set to sidebar so consumers can distinguish this payload from other integration modes. |
-| `isExternal` | boolean | Yes |  | Whether the sidebar view should open in an external window rather than docked directly in the sidebar. When true, asks the front-end to open the sidebar-backed view in a separate window. When false, the view is embedded in the sidebar; this flag does not change the integration anchor. |
-
-
-### UIWindowIntegration
-
-UI integration configuration for rendering an extension view inside an independent window.
-
-Selects a standalone host window without additional window-specific options in this contract.
-
-| Property | Type | Required | Default | Details |
-| --- | --- | --- | --- | --- |
-| `anchor` | "window" | Yes |  | Layout anchor discriminator specifying window placement. Literal integration discriminator for the independent-window variant. |
-
-
-### UIModalIntegration
-
-UI integration configuration for rendering an extension view inside a modal dialog.
-
-Selects a front-end-managed modal as the host surface for the embedded extension view.
-
-| Property | Type | Required | Default | Details |
-| --- | --- | --- | --- | --- |
-| `anchor` | "modal" | Yes |  | Layout anchor discriminator specifying modal placement. Literal integration discriminator for the modal variant. |
-
-
-### UITabIntegration
-
-UI integration configuration for rendering an extension view inside a tab.
-
-Selects a dedicated front-end tab as the host surface for the embedded extension view.
-
-| Property | Type | Required | Default | Details |
-| --- | --- | --- | --- | --- |
-| `anchor` | "tab" | Yes |  | Layout anchor discriminator specifying tab placement. Literal integration discriminator for the tab variant. |
-
-
 ### UrlContent
 
 Embedded frame content specified by a web URL.
@@ -493,29 +459,79 @@ URL-backed frame content is loaded by the front-end. The target must be reachabl
 | `url` | string | Yes |  | Target web URL to load inside the embedded frame. Address of the web document to load. The frame host must be able to reach the location; use a secure URL for remote content. |
 
 
-### HtmlContent
+### InlineContent
 
-Embedded frame content specified by raw inline HTML markup.
+Embedded document content specified by a raw inline string — HTML markup or Markdown text.
 
-Inline document content supplied as a string. It is rendered by the host frame rather than fetched as a separate page; callers should not assume access to the host application's privileges.
+Inline document content supplied as a string. Depending on the integration nature, it is interpreted as HTML markup or Markdown text rendered by the front-end; callers should not assume access to the host application's privileges.
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `html` | string | Yes |  | Raw HTML markup string to render directly inside the embedded frame. HTML source rendered as the frame document. The TypeSpec contract treats it as an opaque string and does not validate markup or grant access to the host application's privileges. |
+| `inline` | string | Yes |  | Raw inline string — HTML markup or Markdown text — to render directly inside the embedded view. Source rendered as the view document. The TypeSpec contract treats it as an opaque string interpreted as HTML markup or Markdown text depending on the container's nature; callers should not assume access to the host application's privileges. |
+
+
+### UISidebarIntegration
+
+UI integration configuration for mounting an extension view inside the collateral sidebar.
+
+Selects the front-end's sidebar host as the integration point. The external flag allows the view to be presented in an independent window instead of occupying the docked sidebar surface.
+
+| Property | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `anchor` | "sidebar" | Yes |  | Layout anchor discriminator specifying sidebar placement. Literal integration discriminator for the sidebar variant. Keep it set to sidebar so consumers can distinguish this payload from other integration modes. |
+| `isExternal` | boolean | Yes |  | Whether the sidebar view should open in an external window rather than docked directly in the sidebar. When true, asks the front-end to open the sidebar-backed view in a separate window. When false, the view is embedded in the sidebar; this flag does not change the integration anchor. |
+| `content` | [UrlContent](#urlcontent) \| [InlineContent](#inlinecontent) | Yes |  | Web content to render inside the view — either a URL or raw HTML. Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline HTML for a self-contained document. |
+
+
+### UIWindowIntegration
+
+UI integration configuration for rendering an extension view inside an independent window.
+
+Selects a standalone host window without additional window-specific options in this contract.
+
+| Property | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `anchor` | "window" | Yes |  | Layout anchor discriminator specifying window placement. Literal integration discriminator for the independent-window variant. |
+| `content` | [UrlContent](#urlcontent) \| [InlineContent](#inlinecontent) | Yes |  | Web content to render inside the view — either a URL or raw HTML. Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline HTML for a self-contained document. |
+
+
+### UIModalIntegration
+
+UI integration configuration for rendering an extension view inside a modal dialog.
+
+Selects a front-end-managed modal as the host surface for the embedded extension view.
+
+| Property | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `anchor` | "modal" | Yes |  | Layout anchor discriminator specifying modal placement. Literal integration discriminator for the modal variant. |
+| `nature` | [DocumentNature](#documentnature) | Yes |  | Nature classification of the modal content — HTML or Markdown. Format of the document content, specifying whether to render as HTML or Markdown. |
+| `content` | [UrlContent](#urlcontent) \| [InlineContent](#inlinecontent) | Yes |  | Document content to render inside the view — either a URL or raw HTML/Markdown. Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline markup/text for a self-contained document. |
+
+
+### UITabIntegration
+
+UI integration configuration for rendering an extension view inside a tab.
+
+Selects a dedicated front-end tab as the host surface for the embedded extension view.
+
+| Property | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `anchor` | "tab" | Yes |  | Layout anchor discriminator specifying tab placement. Literal integration discriminator for the tab variant. |
+| `nature` | [DocumentNature](#documentnature) | Yes |  | Nature classification of the tab content — HTML or Markdown. Format of the document content, specifying whether to render as HTML or Markdown. |
+| `content` | [UrlContent](#urlcontent) \| [InlineContent](#inlinecontent) | Yes |  | Document content to render inside the view — either a URL or raw HTML/Markdown. Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline markup/text for a self-contained document. |
 
 
 ### Ui
 
 Complete specification for embedding a custom extension user interface within the front-end.
 
-The front-end uses id to identify the view, integration to choose its host surface, and frameContent to load its contents. dialogContent supplies optional header metadata where the selected integration supports it.
+The front-end uses id to identify the view, and integration to choose its host surface and contents. headerContent supplies optional header metadata where the selected integration supports it.
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `id` | string | Yes |  | Unique identifier for the UI instance or transient panel. Identifier for this view instance. Supply a stable identifier when the front-end should recognize the same registered view across invocations; otherwise use an identifier appropriate to the transient view lifecycle. |
-| `integration` | [UISidebarIntegration](#uisidebarintegration) \| [UIWindowIntegration](#uiwindowintegration) \| [UIModalIntegration](#uimodalintegration) \| [UITabIntegration](#uitabintegration) | Yes |  | Placement strategy defining where and how the UI is mounted. Discriminated integration configuration. The anchor selects a supported host surface, while fields on that specific variant refine its presentation. |
-| `frameContent` | [UrlContent](#urlcontent) \| [HtmlContent](#htmlcontent) | Yes |  | Web content to render inside the frame — either a URL or raw HTML. Content source for the embedded frame. Supply one supported variant; use a URL for hosted application content or inline HTML for a self-contained document. |
-| `dialogContent` | [DialogIconContent](#dialogiconcontent) | No |  | Optional header title, description, and icon metadata for the view. Optional display metadata associated with the embedded view. It does not control the integration anchor or the content rendered within the frame. |
+| `integration` | [UISidebarIntegration](#uisidebarintegration) \| [UIWindowIntegration](#uiwindowintegration) \| [UIModalIntegration](#uimodalintegration) \| [UITabIntegration](#uitabintegration) | Yes |  | Placement strategy defining where and how the UI is mounted, including its content. Discriminated integration configuration. The anchor selects a supported host surface, while fields on that specific variant refine its presentation and contents. |
+| `headerContent` | [HeaderContent](#headercontent) | No |  | Optional header title, description, and icon metadata for the view. Optional display metadata associated with the embedded view. It does not control the integration anchor or the content rendered within the frame. |
 
 
 ### OpenBrowser
@@ -527,18 +543,6 @@ This payload targets external browser navigation rather than an embedded UI fram
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `url` | string | Yes |  | Destination web URL to open externally in the default browser. External destination passed to the platform's default browser. — Format: `url` |
-
-
-### Frame
-
-Embedded frame configuration rendered within a dialog modal.
-
-The frame embeds URL- or HTML-based content in a dialog body. Its height is expressed as a percentage of the available dialog height so that the front-end can adapt the frame to the dialog's rendered dimensions.
-
-| Property | Type | Required | Default | Details |
-| --- | --- | --- | --- | --- |
-| `content` | [UrlContent](#urlcontent) \| [HtmlContent](#htmlcontent) | Yes |  | Embedded web content to render inside the dialog frame. Source for the embedded content. The selected FrameContent variant determines whether the front-end loads a URL or renders supplied markup. |
-| `height` | int | Yes |  | Frame height expressed as a percentage of available dialog height (0 to 100). Relative height request, bounded from 0 through 100. A value of 100 requests the full available dialog height; the final rendered dimensions remain controlled by the front-end. — Range: 0–100 |
 
 
 ### DialogButtons
@@ -555,16 +559,17 @@ Defines user-visible text for the dialog's affirmative choice and optional secon
 
 ### Dialog
 
-Configuration for interactive modal dialogs displaying notices, confirmation questions, or embedded frames.
+Configuration for interactive modal dialogs displaying notices, confirmation questions, or embedded documents.
 
-Defines the dialog's semantic type and user-facing content, with optional embedded content and button labels. Use question for a decision that requires an explicit response; other types communicate status or errors.
+Defines the dialog's semantic type and user-facing content, with optional embedded content and button labels. Use question for a decision that requires an explicit response; alert, error, and info communicate messages without a question response.
 
 Extends [DialogIconSizeContent](#dialogiconsizecontent).
 
 | Property | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `type` | [DialogType](#dialogtype) | Yes |  | Semantic dialog type — error, info, or question. Selects the dialog's interaction and visual treatment. Use question when the caller needs a yes/no choice, and error or info for non-question messages. |
-| `frame` | [Frame](#frame) | No |  | Optional embedded HTML or URL frame rendered inside the dialog body. Optional embedded content displayed within the dialog. Omit it for text-only dialogs; when present, content should be suitable for the dialog's available space. |
+| `type` | [DialogType](#dialogtype) | Yes |  | Semantic dialog type — error, warning, info, or question. Selects the dialog's interaction and visual treatment. Use question when the caller needs a yes/no choice, and error, alert, or info for non-question messages. |
+| `isClosable` | boolean | No |  | Whether the dialog may be dismissed via the escape key or a close button. When true, allows the user to dismiss the dialog by pressing the escape key or clicking the window close button. Defaults to true. |
+| `document` | [UrlContent](#urlcontent) \| [InlineContent](#inlinecontent) | No |  | Optional embedded document rendered inside the dialog body — either a URL or raw HTML. Optional embedded content displayed within the dialog. Omit it for text-only dialogs; when present, content should be suitable for the dialog's available space. |
 | `buttons` | [DialogButtons](#dialogbuttons) | Yes |  | Button label definitions for user response choices. Labels for the affirmative action and optional secondary cancellation action. The front-end determines the button behavior and returns the user's choice to the intent caller. |
 
 
@@ -723,6 +728,17 @@ The selected anchor is the discriminator for the supported integration surface. 
 | `imageDetail` | `imageDetail` | Embedded within the image detail inspection view. |
 | `tab` | `tab` | Displayed within a dedicated tab. |
 
+### DocumentNature
+
+Nature classification of document or frame content.
+
+Format of the document content. Controls how the front-end renders the document.
+
+| Member | Value | Description |
+| --- | --- | --- |
+| `html` | `html` | HTML markup document. |
+| `markdown` | `markdown` | Markdown formatted document. |
+
 ### DialogType
 
 Semantic classification and visual styling category of a modal dialog.
@@ -730,6 +746,7 @@ Semantic classification and visual styling category of a modal dialog.
 | Member | Value | Description |
 | --- | --- | --- |
 | `error` | `error` | Error notice dialog indicating a failure or critical condition. |
+| `warning` | `warning` | Alert dialog displaying an important message which should be acknowledged. |
 | `info` | `info` | Informational dialog displaying status, instructions, or notices. |
 | `question` | `question` | Question or confirmation prompt requiring explicit user decision. |
 
@@ -767,6 +784,17 @@ Exactly one resource representation is selected by the union variant: a resolvab
 | 1 | [ResourceUrl](#resourceurl) |
 | 2 | [ResourceContent](#resourcecontent) |
 
+### DocumentContent
+
+Union of supported document content formats — URL or raw inline string.
+
+Selects exactly one source for document contents. Depending on the integration's declared nature, inline content may represent HTML markup or Markdown text. The URL and inline variants are alternative transport forms, not fields to combine in one value.
+
+| Variant | Type |
+| --- | --- |
+| 1 | [UrlContent](#urlcontent) |
+| 2 | [InlineContent](#inlinecontent) |
+
 ### UIIntegration
 
 Union of supported UI integration placement strategies.
@@ -779,14 +807,3 @@ Discriminated by each integration model's anchor field. Use the matching variant
 | 2 | [UIWindowIntegration](#uiwindowintegration) |
 | 3 | [UIModalIntegration](#uimodalintegration) |
 | 4 | [UITabIntegration](#uitabintegration) |
-
-### FrameContent
-
-Union of supported embedded frame content formats — URL or inline HTML.
-
-Selects exactly one source for frame contents. The URL and inline HTML variants are alternative transport forms, not fields to combine in one value.
-
-| Variant | Type |
-| --- | --- |
-| 1 | [UrlContent](#urlcontent) |
-| 2 | [HtmlContent](#htmlcontent) |

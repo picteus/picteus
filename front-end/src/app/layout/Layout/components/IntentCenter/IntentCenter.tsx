@@ -107,7 +107,9 @@ export default function IntentCenter()
         const modalId = randomId();
         addModal({
           id: modalId,
+          size: form.dialogContent?.size,
           icon: computeIcon(form?.dialogContent?.icon),
+          title: form.dialogContent?.title || t("extensionIntent.modalTitle", { extension: extensionName }),
           body: (
             <CommandForm
               command={intent}
@@ -121,8 +123,6 @@ export default function IntentCenter()
               onSend={(_extensionId, _commandId, parameters) => handleOnSend(parameters, modalId)}
             />
           ),
-          title: form.dialogContent?.title || t("extensionIntent.modalTitle", { extension: extensionName }),
-          size: form.dialogContent?.size,
           onBeforeClose: (viaOnSuccess: boolean) =>
           {
             if (viaOnSuccess === false)
@@ -137,7 +137,12 @@ export default function IntentCenter()
       {
         const dialog = dialogIntent.dialog;
         addModal({
+          withCloseButton: dialogIntent.dialog.isClosable,
+          closeOnEscape: dialogIntent.dialog.isClosable,
+          isFullHeight: true,
+          size: dialog.size,
           icon: computeIcon(dialog.icon),
+          title: dialog.title,
           body: (
             <DialogForm
               onSend={(isYes: boolean): void =>
@@ -155,8 +160,6 @@ export default function IntentCenter()
               imageIds={dialogIntent.context?.imageIds}
             />
           ),
-          title: dialog.title,
-          size: dialog.size,
           onBeforeClose: (viaOnSuccess: boolean): void =>
           {
             if (viaOnSuccess === false)

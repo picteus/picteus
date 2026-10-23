@@ -110,13 +110,13 @@ export default function Sidebar()
                 {
                   parameters = { url: content.url };
                 }
-                else if ("html" in content)
+                else if ("inline" in content)
                 {
-                  parameters = { html: content.html };
+                  parameters = { inline: content.inline };
                 }
                 else
                 {
-                  return ToastService.failure("Cannot handle a content with no 'frameContent.url' nor 'frameContent.html' property");
+                  return ToastService.failure("Cannot handle a content with no 'documentContent.url' nor 'documentContent.inline' property");
                 }
                 openWindow(element.uuid, parameters, false).catch(error => ToastService.failureAndMessage(error, "Cannot open the window"));
               }

@@ -1,12 +1,15 @@
 import React, { useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Container, ScrollArea } from "@mantine/core";
 
 import {
+  IntentDocumentNature,
   IntentOpenBrowser,
   IntentProcessCommand,
   IntentShow,
   IntentUi,
+  IntentUiAnchor,
   isOpenBrowserIntent,
   isProcessCommandIntent,
   isShowIntent,
@@ -18,8 +21,14 @@ import {
 } from "@picteus/shared-core";
 import { CommandEntity, ExtensionSettings, Image, UserInterfaceAnchor } from "@picteus/ws-client";
 
-import { EventOnResultType } from "types";
-import { computeExtensionSidebarRoute, computeExtensionSidebarUuid, ToastService } from "utils";
+import {
+  DeskTabHtmlInlineContentType,
+  DeskTabHtmlUrlContentType,
+  DeskTabMarkdownInlineContentType,
+  DeskTabMarkdownUrlContentType,
+  EventOnResultType
+} from "types";
+import { computeDeskRoute, computeExtensionSidebarRoute, computeExtensionSidebarUuid, ToastService } from "utils";
 import { useActionModalContext, useAdditionalUiContext, useDeskTabsContext } from "app/context";
 import { ExtensionsService, ImageService, StorageService } from "app/services";
 import {
@@ -32,7 +41,7 @@ import {
   useOpenWindow,
   useRepositories
 } from "app/hooks";
-import { Iframe } from "app/components";
+import { Iframe, Markdown } from "app/components";
 import { ExtensionConfiguration } from "app/screens/ExtensionsScreen/components";
 import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
 
@@ -99,46 +108,33 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
 
     async function handleUi(ui: IntentUi): Promise<void>
     {
-      const frameContent = ui.frameContent;
-      const openWindowFromUi = (id: string) =>
+      const integration = ui.integration;
+      const documentContent = integration.content;
+      const openWindowFromUi = (id: string): void =>
       {
-        let parameters: { url: string } | { html: string; };
-        if ("url" in frameContent)
-        {
-          parameters = { url: frameContent.url };
-        }
-        else if ("html" in frameContent)
-        {
-          parameters = { html: frameContent.html };
-        }
-        else
-        {
-          listener.onFailure("Cannot handle the 'ui' intent with no 'frameContent.url' nor 'frameContent.html' property");
-          return;
-        }
-        openWindow(id, parameters, false).then(() =>
+        openWindow(id, documentContent, false).then(() =>
         {
           listener.onSuccess();
         }).catch(error => listener.onFailure(error.message));
       };
-      if (ui.integration.anchor === UserInterfaceAnchor.Window)
+      if (integration.anchor === IntentUiAnchor.Window)
       {
         openWindowFromUi(ui.id);
         triggerToast();
       }
-      else if (ui.integration.anchor === UserInterfaceAnchor.Sidebar)
+      else if (integration.anchor === IntentUiAnchor.Sidebar)
       {
         const uuid = computeExtensionSidebarUuid(extensionId, ui.id);
         addTransient({
           uuid,
-          integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: ui.integration.isExternal },
-          content: frameContent,
-          icon: ui.dialogContent?.icon ?? { url: ExtensionsService.getIconURL(extensionId) },
-          title: ui.dialogContent?.title,
+          integration: { anchor: UserInterfaceAnchor.Sidebar, isExternal: integration.isExternal },
+          content: documentContent,
+          icon: ui.headerContent?.icon ?? { url: ExtensionsService.getIconURL(extensionId) },
+          title: ui.headerContent?.title,
           extensionId,
           automaticallyReopen: false
         });
-        if (ui.integration.isExternal === false)
+        if (integration.isExternal === false)
         {
           navigate(computeExtensionSidebarRoute(uuid));
           listener.onSuccess();
@@ -149,16 +145,56 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
         }
         triggerToast();
       }
-      else
+      else if (integration.anchor === IntentUiAnchor.Modal)
       {
+        const body = integration.nature === IntentDocumentNature.Markdown
+          ? (
+            <ScrollArea h="100%" w="100%">
+              <Container size="md" py="xl">
+                <Markdown content={"inline" in documentContent ? documentContent.inline : ""}/>
+              </Container>
+            </ScrollArea>
+          )
+          : <Iframe content={documentContent}/>;
         addModal({
           fullScreen: true,
-          body: <Iframe content={frameContent}/>,
-          icon: ui.dialogContent?.icon,
-          title: ui.dialogContent?.title
+          body,
+          icon: ui.headerContent?.icon,
+          title: ui.headerContent?.title
         });
         triggerToast();
         listener.onSuccess();
+      }
+      else if (integration.anchor === IntentUiAnchor.Tab)
+      {
+        let content: DeskTabHtmlUrlContentType | DeskTabHtmlInlineContentType | DeskTabMarkdownUrlContentType | DeskTabMarkdownInlineContentType;
+        if (integration.nature === IntentDocumentNature.Markdown)
+        {
+          content = "url" in documentContent ? { kind: "markdown", url: documentContent.url } : {
+            kind: "markdown",
+            markdown: documentContent.inline
+          };
+        }
+        else if (integration.nature === IntentDocumentNature.Html)
+        {
+          content = "url" in documentContent ? { kind: "html", url: documentContent.url } : {
+            kind: "html",
+            html: documentContent.inline
+          };
+        }
+        const tabId = addTab({
+          extensionId,
+          icon: ui.headerContent?.icon ?? { url: ExtensionsService.getIconURL(extensionId) },
+          label: ui.headerContent?.title ?? ui.id,
+          content
+        }, true);
+        navigate(computeDeskRoute(tabId));
+        triggerToast();
+        listener.onSuccess();
+      }
+      else
+      {
+        ToastService.failure("Cannot handle a UI intent with integration '" + JSON.stringify(integration) + "'");
       }
     }
 

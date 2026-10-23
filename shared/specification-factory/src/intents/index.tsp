@@ -55,7 +55,7 @@ model WithContextIntent extends BasisIntent {
 @doc("Reusable heading metadata for dialog, notification, and view content. The title is optional in this base so that a consumer can render content that has a description or body without a heading.")
 model WithTitle {
   @summary("Optional headline or primary title text.")
-  @doc("Short heading intended for a title position in the associated UI. Keep this concise; place explanatory prose in description, subtitle, or details fields.")
+  @doc("Short heading intended for a title position in the associated UI. Keep this concise; place explanatory prose in description, subtitle, or details fields. The title should be pure text.")
   title?: string;
 }
 
@@ -63,7 +63,7 @@ model WithTitle {
 @doc("Reusable secondary text content. This model makes the subtitle required because its consumers use it as the primary short message when no separate body field is available.")
 model WithSubtitle {
   @summary("Descriptive subtitle or message text.")
-  @doc("Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content.")
+  @doc("Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content. The subtitle should be pure text.")
   subtitle: string;
 }
 
@@ -74,10 +74,10 @@ model TitleSubtitle extends WithTitle {
 }
 
 @summary("Base content structure providing a description.")
-@doc("Reusable explanatory text for content that needs a description independent of its heading. The value is plain text and is not interpreted as markup.")
+@doc("Reusable explanatory text for content that needs a description independent of its heading. The value may contain Markdown.")
 model WithDescription {
   @summary("Descriptive subtitle or explanatory message text.")
-  @doc("Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field.")
+  @doc("Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field. The description may contain Markdown.")
   description: string;
 }
 
@@ -85,7 +85,7 @@ model WithDescription {
 @doc("Reusable extended body text, intended for information that is useful but should not be part of the primary heading or message.")
 model WithDetails {
   @summary("Optional supplementary details or extended body text.")
-  @doc("Optional longer-form supporting content. Consumers may present it as secondary or expandable text; it remains plain text rather than a markup document.")
+  @doc("Optional longer-form supporting content. Consumers may present it as secondary or expandable text; the details may contain Markdown.")
   details?: string;
 }
 
@@ -128,12 +128,18 @@ union Resource {
   content: ResourceContent
 }
 
-@summary("Base content structure extending TitleDescriptionDetails with an optional icon resource.")
-@doc("Combines a title and explanatory text with an optional icon for headers and notification cards. The icon can be supplied by URL or as bytes through Resource.")
-model TitleDescriptionDetailsIcon extends TitleDescriptionDetails {
+@summary("Base content structure providing an optional icon resource.")
+@doc("Reusable icon metadata for content headers, dialogs, and notifications. The icon can be supplied as a URL or inline binary bytes.")
+model WithIcon {
   @summary("Optional visual icon resource — supplied as a URL or binary bytes.")
   @doc("Decorative or identifying image for the content header. Choose a URL for separately hosted assets or inline bytes when the asset must travel with the payload.")
   icon?: Resource;
+}
+
+@summary("Base content structure extending TitleDescriptionDetails with an optional icon resource.")
+@doc("Combines a title and explanatory text with an optional icon for headers and notification cards. The icon can be supplied by URL or as bytes through Resource.")
+model HeaderContent extends TitleDescriptionDetails {
+  ...WithIcon;
 }
 
 @summary("Base content structure extending title, subtitle, description, and details content with an optional icon.")
@@ -144,10 +150,7 @@ model TitleSubtitleDescriptionDetailsIcon extends TitleSubtitle {
   title: string;
 
   ...DescriptionDetails;
-
-  @summary("Optional visual icon resource — supplied as a URL or binary bytes.")
-  @doc("Optional image accompanying the content heading. Its resource can be inline or externally located, as described by Resource.")
-  icon?: Resource;
+  ...WithIcon;
 }
 
 @summary("Textual content configuration for modal dialogs and notification cards.")
@@ -155,9 +158,9 @@ model TitleSubtitleDescriptionDetailsIcon extends TitleSubtitle {
 model DialogContent extends TitleDescriptionDetails {
 }
 
-@summary("Dialog content structure extending TitleDescriptionDetailsIcon with an optional icon resource.")
+@summary("Dialog content structure extending HeaderContent with an optional icon resource.")
 @doc("Adds the optional resource icon to standard title and description content for dialogs.")
-model DialogIconContent extends TitleDescriptionDetailsIcon {
+model DialogIconContent extends HeaderContent {
 }
 
 @summary("Dialog content structure extending DialogIconContent with a modal window size preference.")
@@ -209,16 +212,56 @@ enum UiAnchor {
   tab: "tab"
 }
 
+@summary("Nature classification of document or frame content.")
+@doc("Format of the document content. Controls how the front-end renders the document.")
+enum DocumentNature {
+  @summary("HTML markup document.")
+  html: "html",
+
+  @summary("Markdown formatted document.")
+  markdown: "markdown"
+}
+
+@summary("Embedded frame content specified by a web URL.")
+@doc("URL-backed frame content is loaded by the front-end. The target must be reachable from that front-end's environment and should use an appropriate secure scheme.")
+model UrlContent {
+  @summary("Target web URL to load inside the embedded frame.")
+  @doc("Address of the web document to load. The frame host must be able to reach the location; use a secure URL for remote content.")
+  url: string;
+}
+
+@summary("Embedded document content specified by a raw inline string — HTML markup or Markdown text.")
+@doc("Inline document content supplied as a string. Depending on the integration nature, it is interpreted as HTML markup or Markdown text rendered by the front-end; callers should not assume access to the host application's privileges.")
+model InlineContent {
+  @summary("Raw inline string — HTML markup or Markdown text — to render directly inside the embedded view.")
+  @doc("Source rendered as the view document. The TypeSpec contract treats it as an opaque string interpreted as HTML markup or Markdown text depending on the container's nature; callers should not assume access to the host application's privileges.")
+  inline: string;
+}
+
+@summary("Union of supported document content formats — URL or raw inline string.")
+@doc("Selects exactly one source for document contents. Depending on the integration's declared nature, inline content may represent HTML markup or Markdown text. The URL and inline variants are alternative transport forms, not fields to combine in one value.")
+union DocumentContent {
+  @summary("Document content loaded from a URL.")
+  url: UrlContent,
+
+  @summary("Document content provided as an inline string — HTML markup or Markdown text.")
+  inline: InlineContent
+}
+
 @summary("UI integration configuration for mounting an extension view inside the collateral sidebar.")
 @doc("Selects the front-end's sidebar host as the integration point. The external flag allows the view to be presented in an independent window instead of occupying the docked sidebar surface.")
 model UISidebarIntegration {
   @summary("Layout anchor discriminator specifying sidebar placement.")
   @doc("Literal integration discriminator for the sidebar variant. Keep it set to sidebar so consumers can distinguish this payload from other integration modes.")
-  anchor: "sidebar";
+  anchor: UiAnchor.sidebar;
 
   @summary("Whether the sidebar view should open in an external window rather than docked directly in the sidebar.")
   @doc("When true, asks the front-end to open the sidebar-backed view in a separate window. When false, the view is embedded in the sidebar; this flag does not change the integration anchor.")
   isExternal: boolean;
+
+  @summary("Web content to render inside the view — either a URL or raw HTML.")
+  @doc("Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline HTML for a self-contained document.")
+  content: DocumentContent;
 }
 
 @summary("UI integration configuration for rendering an extension view inside an independent window.")
@@ -226,7 +269,11 @@ model UISidebarIntegration {
 model UIWindowIntegration {
   @summary("Layout anchor discriminator specifying window placement.")
   @doc("Literal integration discriminator for the independent-window variant.")
-  anchor: "window";
+  anchor: UiAnchor.window;
+
+  @summary("Web content to render inside the view — either a URL or raw HTML.")
+  @doc("Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline HTML for a self-contained document.")
+  content: DocumentContent;
 }
 
 @summary("UI integration configuration for rendering an extension view inside a modal dialog.")
@@ -234,7 +281,15 @@ model UIWindowIntegration {
 model UIModalIntegration {
   @summary("Layout anchor discriminator specifying modal placement.")
   @doc("Literal integration discriminator for the modal variant.")
-  anchor: "modal";
+  anchor: UiAnchor.modal;
+
+  @summary("Nature classification of the modal content — HTML or Markdown.")
+  @doc("Format of the document content, specifying whether to render as HTML or Markdown.")
+  nature: DocumentNature;
+
+  @summary("Document content to render inside the view — either a URL or raw HTML/Markdown.")
+  @doc("Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline markup/text for a self-contained document.")
+  content: DocumentContent;
 }
 
 @summary("UI integration configuration for rendering an extension view inside a tab.")
@@ -242,7 +297,15 @@ model UIModalIntegration {
 model UITabIntegration {
   @summary("Layout anchor discriminator specifying tab placement.")
   @doc("Literal integration discriminator for the tab variant.")
-  anchor: "tab";
+  anchor: UiAnchor.tab;
+
+  @summary("Nature classification of the tab content — HTML or Markdown.")
+  @doc("Format of the document content, specifying whether to render as HTML or Markdown.")
+  nature: DocumentNature;
+
+  @summary("Document content to render inside the view — either a URL or raw HTML/Markdown.")
+  @doc("Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline markup/text for a self-contained document.")
+  content: DocumentContent;
 }
 
 @summary("Union of supported UI integration placement strategies.")
@@ -261,54 +324,24 @@ union UIIntegration {
   tab: UITabIntegration
 }
 
-@summary("Embedded frame content specified by a web URL.")
-@doc("URL-backed frame content is loaded by the front-end. The target must be reachable from that front-end's environment and should use an appropriate secure scheme.")
-model UrlContent {
-  @summary("Target web URL to load inside the embedded frame.")
-  @doc("Address of the web document to load. The frame host must be able to reach the location; use a secure URL for remote content.")
-  url: string;
-}
-
-@summary("Embedded frame content specified by raw inline HTML markup.")
-@doc("Inline document content supplied as a string. It is rendered by the host frame rather than fetched as a separate page; callers should not assume access to the host application's privileges.")
-model HtmlContent {
-  @summary("Raw HTML markup string to render directly inside the embedded frame.")
-  @doc("HTML source rendered as the frame document. The TypeSpec contract treats it as an opaque string and does not validate markup or grant access to the host application's privileges.")
-  html: string;
-}
-
-@summary("Union of supported embedded frame content formats — URL or inline HTML.")
-@doc("Selects exactly one source for frame contents. The URL and inline HTML variants are alternative transport forms, not fields to combine in one value.")
-union FrameContent {
-  @summary("Frame content loaded from a URL.")
-  url: UrlContent,
-
-  @summary("Frame content provided as inline HTML markup.")
-  html: HtmlContent
-}
-
 @summary("Complete specification for embedding a custom extension user interface within the front-end.")
-@doc("The front-end uses id to identify the view, integration to choose its host surface, and frameContent to load its contents. dialogContent supplies optional header metadata where the selected integration supports it.")
+@doc("The front-end uses id to identify the view, and integration to choose its host surface and contents. headerContent supplies optional header metadata where the selected integration supports it.")
 model Ui {
   @summary("Unique identifier for the UI instance or transient panel.")
   @doc("Identifier for this view instance. Supply a stable identifier when the front-end should recognize the same registered view across invocations; otherwise use an identifier appropriate to the transient view lifecycle.")
   id: string;
 
-  @summary("Placement strategy defining where and how the UI is mounted.")
-  @doc("Discriminated integration configuration. The anchor selects a supported host surface, while fields on that specific variant refine its presentation.")
+  @summary("Placement strategy defining where and how the UI is mounted, including its content.")
+  @doc("Discriminated integration configuration. The anchor selects a supported host surface, while fields on that specific variant refine its presentation and contents.")
   integration: UIIntegration;
-
-  @summary("Web content to render inside the frame — either a URL or raw HTML.")
-  @doc("Content source for the embedded frame. Supply one supported variant; use a URL for hosted application content or inline HTML for a self-contained document.")
-  frameContent: FrameContent;
 
   @summary("Optional header title, description, and icon metadata for the view.")
   @doc("Optional display metadata associated with the embedded view. It does not control the integration anchor or the content rendered within the frame.")
-  dialogContent?: DialogIconContent;
+  headerContent?: HeaderContent;
 }
 
-@summary("An intent that opens a dedicated UI frame — modal, sidebar, window or tab — rendering a URL or raw inline HTML.")
-@doc("Requests that the front-end mount the content in the selected integration surface, supplying the frame source and optional header metadata.")
+@summary("An intent that opens a dedicated UI view — modal, sidebar, window, or tab — rendering a URL, inline HTML markup, or Markdown document.")
+@doc("Requests that the front-end mount the content in the selected integration surface, supplying the document source and optional header metadata.")
 @intent
 @frontEndIntent
 model UiIntent extends WithContextIntent {
@@ -340,25 +373,14 @@ enum DialogType {
   @summary("Error notice dialog indicating a failure or critical condition.")
   error: "error",
 
+  @summary("Alert dialog displaying an important message which should be acknowledged.")
+  warning: "warning",
+
   @summary("Informational dialog displaying status, instructions, or notices.")
   info: "info",
 
   @summary("Question or confirmation prompt requiring explicit user decision.")
   question: "question"
-}
-
-@summary("Embedded frame configuration rendered within a dialog modal.")
-@doc("The frame embeds URL- or HTML-based content in a dialog body. Its height is expressed as a percentage of the available dialog height so that the front-end can adapt the frame to the dialog's rendered dimensions.")
-model Frame {
-  @summary("Embedded web content to render inside the dialog frame.")
-  @doc("Source for the embedded content. The selected FrameContent variant determines whether the front-end loads a URL or renders supplied markup.")
-  content: FrameContent;
-
-  @summary("Frame height expressed as a percentage of available dialog height (0 to 100).")
-  @doc("Relative height request, bounded from 0 through 100. A value of 100 requests the full available dialog height; the final rendered dimensions remain controlled by the front-end.")
-  @minValue(0)
-  @maxValue(100)
-  height: int32;
 }
 
 @summary("Button label configuration for interactive dialog actions.")
@@ -373,16 +395,20 @@ model DialogButtons {
   no?: string;
 }
 
-@summary("Configuration for interactive modal dialogs displaying notices, confirmation questions, or embedded frames.")
-@doc("Defines the dialog's semantic type and user-facing content, with optional embedded content and button labels. Use question for a decision that requires an explicit response; other types communicate status or errors.")
+@summary("Configuration for interactive modal dialogs displaying notices, confirmation questions, or embedded documents.")
+@doc("Defines the dialog's semantic type and user-facing content, with optional embedded content and button labels. Use question for a decision that requires an explicit response; alert, error, and info communicate messages without a question response.")
 model Dialog extends DialogIconSizeContent {
-  @summary("Semantic dialog type — error, info, or question.")
-  @doc("Selects the dialog's interaction and visual treatment. Use question when the caller needs a yes/no choice, and error or info for non-question messages.")
+  @summary("Semantic dialog type — error, warning, info, or question.")
+  @doc("Selects the dialog's interaction and visual treatment. Use question when the caller needs a yes/no choice, and error, alert, or info for non-question messages.")
   type: DialogType;
 
-  @summary("Optional embedded HTML or URL frame rendered inside the dialog body.")
+  @summary("Whether the dialog may be dismissed via the escape key or a close button.")
+  @doc("When true, allows the user to dismiss the dialog by pressing the escape key or clicking the window close button. Defaults to true.")
+  isClosable?: boolean = true;
+
+  @summary("Optional embedded document rendered inside the dialog body — either a URL or raw HTML.")
   @doc("Optional embedded content displayed within the dialog. Omit it for text-only dialogs; when present, content should be suitable for the dialog's available space.")
-  frame?: Frame;
+  document?: DocumentContent;
 
   @summary("Button label definitions for user response choices.")
   @doc("Labels for the affirmative action and optional secondary cancellation action. The front-end determines the button behavior and returns the user's choice to the intent caller.")
@@ -394,8 +420,8 @@ model Dialog extends DialogIconSizeContent {
 @intent
 @frontEndIntent
 model DialogIntent extends WithContextIntent {
-  @summary("Modal dialog configuration including type, title, buttons, and optional frame content.")
-  @doc("Required modal content and interaction configuration. Its type, buttons, and optional frame determine what the user sees and which response can be returned.")
+  @summary("Modal dialog configuration including type, title, buttons, and optional document content.")
+  @doc("Required modal content and interaction configuration. Its type, buttons, and optional document determine what the user sees and which response can be returned.")
   dialog: Dialog;
 }
 

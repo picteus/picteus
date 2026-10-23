@@ -2,17 +2,17 @@ import React, { type ReactElement, type ReactNode, useCallback } from "react";
 import { Alert, Box, Button, Flex, Text } from "@mantine/core";
 import { IconCircleX, IconInfoCircle, IconQuestionMark } from "@tabler/icons-react";
 
+import { IntentDialog } from "@picteus/shared-core";
 import { SearchOriginNature } from "@picteus/ws-client";
 
-import { DialogType } from "types";
 import { useModalContext } from "app/context";
 import { useKey } from "app/hooks";
-import { CopyText, Iframe, ImagesCollection, Markdown, ModalActions } from "app/components";
+import { Iframe, ImagesCollection, Markdown, ModalActions } from "app/components";
 
 
 export type DialogFormPropsType =
   {
-    readonly dialog: DialogType;
+    readonly dialog: IntentDialog;
     readonly imageIds?: string[];
     readonly onSend: (isYes: boolean) => void;
   };
@@ -23,13 +23,11 @@ type AlertPropsType =
     readonly icon: ReactNode;
   };
 
-export default function DialogForm(props: DialogFormPropsType): ReactElement
+export default function DialogForm({ dialog, imageIds, onSend }: DialogFormPropsType): ReactElement
 {
-  const { dialog, imageIds, onSend } = props;
   const modalContext = useModalContext();
 
-  const handleSend = useCallback(
-    (isYes: boolean): void =>
+  const handleSend = useCallback((isYes: boolean): void =>
     {
       onSend(isYes);
       if (modalContext !== null)
@@ -56,6 +54,13 @@ export default function DialogForm(props: DialogFormPropsType): ReactElement
           icon: <IconCircleX/>
         };
       }
+      case "warning":
+      {
+        return {
+          color: "orange",
+          icon: <IconCircleX/>
+        };
+      }
       case "question":
       {
         return {
@@ -75,21 +80,19 @@ export default function DialogForm(props: DialogFormPropsType): ReactElement
   }
 
   const alertProps = computeAlertProps();
-  const frame = dialog.frame;
+  const document = dialog.document;
   const buttons = dialog.buttons;
 
   return (
-    <Flex direction="column" gap="sm">
+    <Flex direction="column" gap="sm" h="100%">
       <Alert color={alertProps.color} icon={alertProps.icon}>
         <Markdown content={dialog.description}/>
       </Alert>
 
       {dialog.details !== undefined && (
-        <CopyText value={dialog.details}>
-          <Text size="sm" mt="xs" c="dimmed">
-            <Markdown content={dialog.details}/>
-          </Text>
-        </CopyText>
+        <Text size="sm" mt="xs" c="dimmed">
+          <Markdown content={dialog.details}/>
+        </Text>
       )}
 
       {imageIds !== undefined && imageIds.length > 0 && (
@@ -105,13 +108,13 @@ export default function DialogForm(props: DialogFormPropsType): ReactElement
         />
       )}
 
-      {frame !== undefined && (
-        <Box h={`${frame.height}vh`} w="100%">
-          <Iframe content={frame.content}/>
+      {document !== undefined && (
+        <Box flex={1} mih={0} w="100%">
+          <Iframe content={document}/>
         </Box>
       )}
 
-      <ModalActions>
+      <ModalActions withCancelButton={false}>
         {buttons.no !== undefined && (
           <Button
             variant="default"

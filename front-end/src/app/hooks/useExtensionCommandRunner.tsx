@@ -107,18 +107,18 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
     const modalId = randomId();
     addModal({
       id: modalId,
-      title: command.label,
-      subtitle: (<Flex>
-        <Text size="sm" c="dimmed" mr="xs">{t("commands.providedBy")}</Text>
-        <ExtensionBadge idOrExtension={extensionId} color="gray"/>
-      </Flex>),
+      // TODO: make this customizable in the definition of a command
+      size: "m",
       icon: form?.dialogContent?.icon ?? {
         url: command.iconUri
           ? ExtensionsService.getCommandIconURL(extensionId, command.iconUri)
           : ExtensionsService.getIconURL(extensionId)
       },
-      // TODO: make this customizable in the definition of a command
-      size: "m",
+      title: command.label,
+      subtitle: (<Flex>
+        <Text size="sm" c="dimmed" mr="xs">{t("commands.providedBy")}</Text>
+        <ExtensionBadge idOrExtension={extensionId} color="gray"/>
+      </Flex>),
       body: (
         <CommandForm
           extensionId={extensionId}
