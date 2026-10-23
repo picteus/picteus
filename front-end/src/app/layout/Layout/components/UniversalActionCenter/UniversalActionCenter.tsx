@@ -330,6 +330,10 @@ export default function UniversalActionCenter(): ReactElement
         content: style.content,
         body: style.body,
         actionsList: style.actionsList,
+        actionBody: style.actionBody,
+        actionLabel: style.actionLabel,
+        actionDescription: style.actionDescription,
+        actionSection: style.actionSection,
         footer: style.footer
       }}
     >
@@ -395,7 +399,7 @@ export default function UniversalActionCenter(): ReactElement
         )}
       </Spotlight.ActionsList>
 
-      <Spotlight.Footer className={style.footer}>
+      <Spotlight.Footer>
         <Group gap="xs">
           <Group gap={2}>
             <Kbd size="xs">↑</Kbd>

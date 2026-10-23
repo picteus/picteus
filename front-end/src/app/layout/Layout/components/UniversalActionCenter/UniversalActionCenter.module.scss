@@ -12,18 +12,38 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+
+  .actionsList
+  {
+    flex: 1;
+    min-height: 0;
+    margin-inline-end: 0;
+
+    :global(.mantine-ScrollArea-content)
+    {
+      min-width: 0;
+      max-width: 100%;
+    }
+  }
 }
 
-.actionsList
+.actionSection
 {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  flex-shrink: 0;
+}
 
-  & > div
-  {
-    min-height: 0;
-  }
+.actionBody
+{
+  min-width: 0;
+  overflow: hidden;
+}
+
+.actionLabel,
+.actionDescription
+{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .footer
@@ -32,7 +52,5 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 14px;
-  border-top: 1px solid var(--mantine-color-default-border);
-  background-color: var(--mantine-color-body);
   flex-shrink: 0;
 }
