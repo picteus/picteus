@@ -17,7 +17,7 @@ import {
   useOpenExplorer,
   useRunCapabilities
 } from "app/hooks";
-import { EventService, ImageService, NotificationService } from "app/services";
+import { ImageService, NotificationService } from "app/services";
 import { ClosestEmbeddingsImages, CommandIcon, Common, computeIcon, ImageItemWrapper } from "app/components";
 
 
@@ -185,7 +185,7 @@ export default function useImageCommands({
             imageId: image.id
           }
         }, false);
-        const illustrationUri = await EventService.computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
+        const illustrationUri = await ImageService.computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
         void NotificationService.storeNotification({
           id: tabId,
           milliseconds: Date.now(),

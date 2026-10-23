@@ -92,6 +92,36 @@ async function getClosestImages(
   return imageApi.imageClosestImages(requestParameters);
 }
 
+async function computeImageIllustrationUri(imageUrl: string, edge: number): Promise<string>
+{
+  const resizedImageUrl = getImageSrc(imageUrl, edge, edge);
+  let illustrationUri = resizedImageUrl;
+  try
+  {
+    const response = await fetch(resizedImageUrl);
+    const blob = await response.blob();
+    illustrationUri = await new Promise<string>((resolve) =>
+      {
+        const reader = new FileReader();
+        reader.onloadend = () =>
+        {
+          resolve(reader.result as string);
+        };
+        reader.onerror = () =>
+        {
+          resolve(illustrationUri);
+        };
+        reader.readAsDataURL(blob);
+      }
+    );
+  }
+  catch (error)
+  {
+    console.warn(`Failed to convert the image with URL '${resizedImageUrl}' into a data URI`, error);
+  }
+  return illustrationUri;
+}
+
 async function runCapabilities(requestParameters: ImageApiImageRunCapabilitiesRequest): Promise<void>
 {
   await imageApi.imageRunCapabilities(requestParameters);
@@ -153,5 +183,6 @@ export default {
   destroy,
   getAllTags,
   textToImages,
-  computeImageDimensions
+  computeImageDimensions,
+  computeImageIllustrationUri
 };

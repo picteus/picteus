@@ -224,36 +224,6 @@ function computeLog(event: SocketEventType): LogType
   return { type, id, milliseconds, text: i18n.t(i18nMnemonic, { id: entityId }), level, entityId, extensionId, entity };
 }
 
-async function computeImageIllustrationUri(imageUrl: string, edge): Promise<string>
-{
-  const resizedImageUrl = ImageService.getImageSrc(imageUrl, edge, edge);
-  let illustrationUri = resizedImageUrl;
-  try
-  {
-    const response = await fetch(resizedImageUrl);
-    const blob = await response.blob();
-    illustrationUri = await new Promise<string>((resolve) =>
-      {
-        const reader = new FileReader();
-        reader.onloadend = () =>
-        {
-          resolve(reader.result as string);
-        };
-        reader.onerror = () =>
-        {
-          resolve(illustrationUri);
-        };
-        reader.readAsDataURL(blob);
-      }
-    );
-  }
-  catch (error)
-  {
-    console.warn(`Failed to convert the image with URL '${resizedImageUrl}' into a data URI`, error);
-  }
-  return illustrationUri;
-}
-
 async function generateImageCreatedOrUpdatedNotification(event: SocketEventType): Promise<ImageNotificationType>
 {
   const imageId = event?.value?.id;
@@ -261,7 +231,7 @@ async function generateImageCreatedOrUpdatedNotification(event: SocketEventType)
   const suffix = event.channel === ChannelEnum.IMAGE_CREATED ? "imageCreated" : "imageUpdated";
   const title = i18n.t(`notifications.${suffix}`);
   const subtitle = i18n.t(`notifications.${suffix}Description`, { imageName: image.name });
-  const illustrationUri = await computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
+  const illustrationUri = await ImageService.computeImageIllustrationUri(image.url, Common.NotificationIllustrationEdge);
   return {
     id: event.id,
     milliseconds: event.milliseconds,
@@ -312,6 +282,5 @@ export default {
   computeEventEntityId,
   computeEventExtensionId,
   computeLog,
-  computeLogLevelColor,
-  computeImageIllustrationUri
+  computeLogLevelColor
 };
