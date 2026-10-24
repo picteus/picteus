@@ -31,43 +31,43 @@ const METADATA_SOURCES_CONFIGURATION: Record<keyof PicteusImageMetadata, Metadat
     all:
       {
         labelKey: "imageDetail.metadataSources.all",
-        icon: <IconInfoCircle size={Common.IconSmallSize}/>,
+        icon: <IconInfoCircle size={Common.IconXSmallSize}/>,
         color: "gray"
       },
     exif:
       {
         labelKey: "imageDetail.metadataSources.exif",
-        icon: <IconCamera size={Common.IconSmallSize}/>,
+        icon: <IconCamera size={Common.IconXSmallSize}/>,
         color: "blue"
       },
     iptc:
       {
         labelKey: "imageDetail.metadataSources.iptc",
-        icon: <IconFileDescription size={Common.IconSmallSize}/>,
+        icon: <IconFileDescription size={Common.IconXSmallSize}/>,
         color: "cyan"
       },
     xmp:
       {
         labelKey: "imageDetail.metadataSources.xmp",
-        icon: <IconFileCode size={Common.IconSmallSize}/>,
+        icon: <IconFileCode size={Common.IconXSmallSize}/>,
         color: "violet"
       },
     icc:
       {
         labelKey: "imageDetail.metadataSources.icc",
-        icon: <IconColorSwatch size={Common.IconSmallSize}/>,
+        icon: <IconColorSwatch size={Common.IconXSmallSize}/>,
         color: "teal"
       },
     tiffTagPhotoshop:
       {
         labelKey: "imageDetail.metadataSources.tiffTagPhotoshop",
-        icon: <IconPhoto size={Common.IconSmallSize}/>,
+        icon: <IconPhoto size={Common.IconXSmallSize}/>,
         color: "indigo"
       },
     others:
       {
         labelKey: "imageDetail.metadataSources.others",
-        icon: <IconTag size={Common.IconSmallSize}/>,
+        icon: <IconTag size={Common.IconXSmallSize}/>,
         color: "gray"
       }
   };

@@ -35,7 +35,7 @@ export default function ExtensionBadge({
       color={color}
       radius="sm"
       tt="none"
-      leftSection={<ExtensionIcon idOrExtension={extensionId} size="sm"/>}
+      leftSection={<ExtensionIcon idOrExtension={extensionId} size="xs"/>}
     >
       {extensionName}
     </Badge>

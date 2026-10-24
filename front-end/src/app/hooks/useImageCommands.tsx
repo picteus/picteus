@@ -5,7 +5,7 @@ import { IconTopologyRing3 } from "@tabler/icons-react";
 
 import { CommandEntity, ExtensionImageTag, Image, ManifestCapabilityId, SearchOriginNature } from "@picteus/ws-client";
 
-import { CommandIconSizeType, ImageCommandIdType, ImageCommandType, ImageOrSummary, ViewMode } from "types";
+import { IconSizeType, ImageCommandIdType, ImageCommandType, ImageOrSummary, ViewMode } from "types";
 import { removeFilePrefixFromUrl, ToastService } from "utils";
 import { useActionModalContext, useCommandSocket, useDeskTabsContext } from "app/context";
 import {
@@ -115,10 +115,10 @@ export default function useImageCommands({
         subLabel: t("commands.allExtensionsDetails"),
         isAvailable: true,
         isLoading: runningCommandId === "closestImages",
-        icon: (size?: CommandIconSizeType) =>
+        icon: (size?: IconSizeType) =>
         {
-          const iconDimension = typeof size === "number" ? size : (size === "md" ? Common.IconLargeSize : Common.IconSmallSize);
-          return <IconTopologyRing3 style={{ width: iconDimension, height: iconDimension }}/>;
+          const edge = typeof size === "number" ? size : Common.IconFromStringToNumberSize(size);
+          return <IconTopologyRing3 style={{ width: edge, height: edge }}/>;
         },
         execute: () =>
         {
@@ -145,7 +145,7 @@ export default function useImageCommands({
       subLabel: t("commands.allExtensionsDetails"),
       isAvailable: true,
       isLoading: runningCommandId === "synchronize",
-      icon: (size?: CommandIconSizeType) =>
+      icon: (size?: IconSizeType) =>
       {
         return computeIcon("synchronize", size);
       },
@@ -171,7 +171,7 @@ export default function useImageCommands({
       subLabel: t("commands.allExtensionsDetails"),
       isAvailable: true,
       isLoading: runningCommandId === "synchronize",
-      icon: (size?: CommandIconSizeType) =>
+      icon: (size?: IconSizeType) =>
       {
         return computeIcon("pin", size);
       },
@@ -207,7 +207,7 @@ export default function useImageCommands({
       subLabel: t("commands.allExtensionsDetails"),
       isAvailable: true,
       isLoading: runningCommandId === "delete",
-      icon: (size?: CommandIconSizeType) =>
+      icon: (size?: IconSizeType) =>
       {
         return computeIcon("open", size);
       },
@@ -233,7 +233,7 @@ export default function useImageCommands({
       subLabel: t("commands.allExtensionsDetails"),
       isAvailable: true,
       isLoading: runningCommandId === "delete",
-      icon: (size?: CommandIconSizeType) =>
+      icon: (size?: IconSizeType) =>
       {
         return computeIcon("download", size);
       },
@@ -262,7 +262,7 @@ export default function useImageCommands({
       subLabel: t("commands.noExtensionDetails"),
       isAvailable: true,
       isLoading: runningCommandId === "delete",
-      icon: (size?: CommandIconSizeType) =>
+      icon: (size?: IconSizeType) =>
       {
         return computeIcon("delete", size);
       },
@@ -325,10 +325,9 @@ export default function useImageCommands({
         isAvailable: true,
         isLoading: runningCommandId === compositeId,
         rawExtensionCommand: extensionCommand,
-        icon: (size?: CommandIconSizeType) =>
+        icon: (size?: IconSizeType) =>
         {
-          const iconSize = size === "md" ? "md" : "sm";
-          return <CommandIcon extensionId={manifest.id} command={command} size={iconSize}/>;
+          return <CommandIcon extensionId={manifest.id} command={command} size={size}/>;
         },
         execute: async () =>
         {

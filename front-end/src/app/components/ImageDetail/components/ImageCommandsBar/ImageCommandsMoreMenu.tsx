@@ -133,7 +133,7 @@ export default function ImageCommandsMoreMenu({ commands }: ImageCommandsMoreMen
             radius="md"
             onClick={handleToggleOpened}
           >
-            <IconDots size={Common.IconSmallSize} stroke={Common.IconStrokeSize}/>
+            <IconDots size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
           </ActionIcon>
         </Tooltip>
       </Popover.Target>
@@ -174,7 +174,7 @@ export default function ImageCommandsMoreMenu({ commands }: ImageCommandsMoreMen
                               justify="flex-start"
                               size="xs"
                               radius="sm"
-                              leftSection={command.icon("sm")}
+                              leftSection={command.icon("xs")}
                               onClick={() => handleExecuteCommand(command)}
                               disabled={command.disabled || !command.isAvailable}
                               loading={command.isLoading}

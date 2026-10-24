@@ -3,7 +3,7 @@ import { ActionIconProps, ButtonProps, ElementProps, MenuItemProps } from "@mant
 
 import { ImageSummary } from "@picteus/ws-client";
 
-import { ImageCommandIdType, ImageCommandType, ViewMode } from "types";
+import { IconSizeType, ImageCommandIdType, ImageCommandType, ViewMode } from "types";
 
 
 export type ImageCommandTargetType = ImageCommandType | ImageCommandIdType;
@@ -20,20 +20,26 @@ export type ImageCommandRootPropsType = ImageCommandBasePropsType & {
 };
 
 export type ImageCommandButtonPropsType = ImageCommandBasePropsType &
-  ButtonProps &
-  ElementProps<"button", keyof ButtonProps> & {
-  iconOnly?: boolean;
-  withTooltip?: boolean;
-};
+  Omit<ButtonProps, "size"> &
+  Omit<ElementProps<"button", keyof ButtonProps>, "size"> &
+  {
+    size?: IconSizeType;
+    iconOnly?: boolean;
+    withTooltip?: boolean;
+  };
 
 export type ImageCommandActionIconPropsType = ImageCommandBasePropsType &
-  ActionIconProps &
-  ElementProps<"button", keyof ActionIconProps> & {
-  withTooltip?: boolean;
-};
+  Omit<ActionIconProps, "size"> &
+  Omit<ElementProps<"button", keyof ActionIconProps>, "size"> &
+  {
+    size?: IconSizeType;
+    withTooltip?: boolean;
+  };
 
 export type ImageCommandMenuItemPropsType = ImageCommandBasePropsType &
   MenuItemProps &
-  ElementProps<"button", keyof MenuItemProps> & {
-  showSubLabel?: boolean;
-};
+  Omit<ElementProps<"button", keyof MenuItemProps>, "size"> &
+  {
+    size?: IconSizeType;
+    showSubLabel?: boolean;
+  };

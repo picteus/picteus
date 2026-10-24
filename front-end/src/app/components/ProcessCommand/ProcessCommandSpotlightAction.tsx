@@ -41,7 +41,7 @@ export default function ProcessCommandSpotlightAction({
   return (
     <Spotlight.Action
       onClick={handleClick}
-      leftSection={resolvedCommand.icon("sm")}
+      leftSection={resolvedCommand.icon("xs")}
       rightSection={shortcutDisplay}
       disabled={disabled ?? !isAvailable}
       label={resolvedCommand.label}

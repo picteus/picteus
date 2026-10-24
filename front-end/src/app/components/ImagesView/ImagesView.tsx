@@ -26,12 +26,20 @@ import style from "./ImagesView.module.scss";
 type ImagesViewType = {
   viewData: ViewTabDataType | { viewMode: ViewMode, images: ImageWithCaption[] };
   isDefault: boolean;
+  withRefreshButton?: boolean;
   controlBarChildren?: ReactNode;
   loader?: ReactNode;
   onEmptyResults: () => ReactElement<typeof EmptyResults>;
 };
 
-export default function ImagesView({ viewData, isDefault, controlBarChildren, loader, onEmptyResults }: ImagesViewType)
+export default function ImagesView({
+  viewData,
+  isDefault,
+  withRefreshButton,
+  controlBarChildren,
+  loader,
+  onEmptyResults
+}: ImagesViewType)
 {
   const imagesContentRef = useRef<ImagesContentRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -196,7 +204,7 @@ export default function ImagesView({ viewData, isDefault, controlBarChildren, lo
       withFilter={isDefault}
       initialFilterOrCollectionId={filterOrCollectionId}
       onFilterOrCollectionId={handleOnFilterOrCollectionId}
-      withRefreshButton={hasFilterOrCollectionId}
+      withRefreshButton={withRefreshButton === undefined ? hasFilterOrCollectionId : withRefreshButton}
       displayRefreshAlert={displayRefreshAlert}
       onRefresh={handleOnRefresh}
       viewMode={viewMode}

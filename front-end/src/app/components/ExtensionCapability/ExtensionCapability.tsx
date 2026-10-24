@@ -61,7 +61,7 @@ export default function ExtensionCapability({
         variant="outline"
         color="grape"
         tt="none"
-        leftSection={<IconComponent size={Common.IconSmallSize}/>}
+        leftSection={<IconComponent size={Common.IconXSmallSize}/>}
       >
         {label}
       </Badge>

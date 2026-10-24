@@ -175,6 +175,8 @@ export interface WithNavigationType
 
 export type SizeType = IntentDialogIconSizeContent["size"];
 
+export type IconSizeType = "xs" | "sm" | "md" | "lg" | "xl";
+
 export type UiCommandType = {
   context?: IntentContext;
   id?: string;
@@ -207,8 +209,6 @@ export type CoreImageCommandIdType = "synchronize" | "pin" | "delete" | "closest
 
 export type ImageCommandIdType = CoreImageCommandIdType | ExtensionCommandIdType;
 
-export type CommandIconSizeType = "sm" | "md" | number;
-
 export type ImageCommandType = {
   id: string;
   kind: CommandKindType;
@@ -216,7 +216,7 @@ export type ImageCommandType = {
   extensionId?: string;
   label: string;
   subLabel?: string;
-  icon: (size?: CommandIconSizeType) => ReactElement;
+  icon: (size?: IconSizeType) => ReactElement;
   execute: () => Promise<void> | void;
   isAvailable: boolean;
   isLoading?: boolean;
@@ -241,7 +241,7 @@ export type ProcessCommandType = {
   label: string;
   subLabel?: string;
   shortcut?: ProcessCommandShortcutType;
-  icon: (size?: CommandIconSizeType) => ReactElement;
+  icon: (size?: IconSizeType) => ReactElement;
   execute: () => Promise<void> | void;
   isAvailable: boolean;
   isLoading?: boolean;

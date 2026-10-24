@@ -42,7 +42,7 @@ export default function ImageCommandMenuItem({
   return (
     <Menu.Item
       onClick={handleClick}
-      leftSection={leftSection ?? resolvedCommand.icon("sm")}
+      leftSection={leftSection ?? resolvedCommand.icon("xs")}
       rightSection={rightSection}
       disabled={disabled ?? !isAvailable}
       {...others}

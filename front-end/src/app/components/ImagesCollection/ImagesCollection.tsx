@@ -36,7 +36,7 @@ function IndicatorCard({
       flex={`0 0 ${edge}px`}
     >
       <Stack align="center" justify="center" gap={2} h="100%">
-        <IconComponent size={Common.IconLargeSize} opacity={0.7}/>
+        <IconComponent size={Common.IconMediumSize} opacity={0.7}/>
         {content}
         <Text size="xs" c="dimmed">{label}</Text>
       </Stack>

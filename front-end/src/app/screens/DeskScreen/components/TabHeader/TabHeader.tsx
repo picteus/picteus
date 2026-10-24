@@ -1,91 +1,66 @@
-import { ReactElement, useEffect, useState } from "react";
-import { ActionIcon, Box, Collapse, Group, Paper, ScrollArea, Text, Title } from "@mantine/core";
-import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import { ReactElement } from "react";
+import { Box, Button, Group, Stack, Text, Title, Tooltip } from "@mantine/core";
+import { IconInfoCircle } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
-import { Common, ExtensionBadge, FormatedDate, Markdown } from "app/components";
+import { Common, ExtensionBadge, ShortcutBadge } from "app/components";
+import { TabSubtitle } from "../index";
 
 
 export interface TabHeaderPropsType
 {
-  tab: DeskTabType;
+
+  readonly tab: DeskTabType;
+  readonly isDetailsOpen: boolean;
+  readonly onToggleDetails: () => void;
+
 }
 
-export default function TabHeader({ tab }: TabHeaderPropsType): ReactElement | null
+export default function TabHeader({
+  tab,
+  isDetailsOpen,
+  onToggleDetails
+}: TabHeaderPropsType): ReactElement | null
 {
-  const [ isHeaderExpanded, setIsHeaderExpanded ] = useState<boolean>(true);
-
-  useEffect(() =>
-  {
-    setIsHeaderExpanded(true);
-  }, [ tab.id ]);
-
+  const [ t ] = useTranslation();
   if (tab.header === undefined)
   {
     return null;
   }
 
-  const isCollapsible = Boolean(tab.header.details && tab.header.details.length > 0);
-
   return (
-    <Box
-      p="xs"
-      px="md"
-      bg="var(--mantine-color-body)"
-    >
-      <Group justify="space-between" align="center" gap="md" wrap="nowrap">
-        <Group gap="xs" align="center" wrap="nowrap" style={{ minWidth: 0 }}>
-          <Title order={1} lineClamp={1}>
-            {tab.header.title}
-          </Title>
-          {tab.extensionId && (
-            <ExtensionBadge idOrExtension={tab.extensionId} size="lg" color="gray"/>
-          )}
-        </Group>
-
-        {isCollapsible === true && (
-          <ActionIcon
-            variant="subtle"
-            size="sm"
-            onClick={() =>
-            {
-              setIsHeaderExpanded((previousState) => !previousState);
-            }}
-          >
-            {isHeaderExpanded === true ? <IconChevronUp size={Common.IconSmallSize}/> :
-              <IconChevronDown size={Common.IconSmallSize}/>}
-          </ActionIcon>
-        )}
-      </Group>
-
-      <Text size="sm" c="dimmed" lh={1.4} pt="xs">
-        {tab.header.subtitle.length > 0 && (
-          <span>{tab.header.subtitle} • </span>
-        )}
-        <FormatedDate timestamp={tab.timestampInMilliseconds}/>
-      </Text>
-
-      <Text size="sm" lh={1.4} pt="xs">
-        {tab.header.description}
-      </Text>
-
-      {isCollapsible === true && tab.header.details && (
-        <Collapse expanded={isHeaderExpanded === true}>
-          <Box pt="xs">
-            <Paper
-              p="xs"
-              px="sm"
-              withBorder
-              radius="sm"
-              fz="xs"
+    <>
+      <Box p="xs" px="md">
+        <Group justify="space-between" align="center" gap="md" wrap="nowrap">
+          <Stack gap="xs" style={{ minWidth: 0, flex: 1 }}>
+            <Group gap="xs" align="center" wrap="nowrap" style={{ minWidth: 0 }}>
+              <Title order={1} size="h3" lineClamp={1}>
+                {tab.header.title}
+              </Title>
+              {tab.extensionId && (
+                <ExtensionBadge idOrExtension={tab.extensionId} size="lg" color="gray"/>
+              )}
+            </Group>
+            <TabSubtitle tab={tab} location="header"/>
+            {tab.header.description && (
+              <Text size="sm" lineClamp={1}>
+                {tab.header.description}
+              </Text>
+            )}
+          </Stack>
+          <Tooltip label={<ShortcutBadge combo="mod + i" size="xs"/>} position="bottom" withArrow>
+            <Button
+              variant={isDetailsOpen === true ? "filled" : "light"}
+              size="sm"
+              leftSection={<IconInfoCircle size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+              onClick={onToggleDetails}
             >
-              <ScrollArea.Autosize mah={160}>
-                <Markdown content={tab.header.details} size="xs"/>
-              </ScrollArea.Autosize>
-            </Paper>
-          </Box>
-        </Collapse>
-      )}
-    </Box>
+              {t("deskTabHeader.tabDetails")}
+            </Button>
+          </Tooltip>
+        </Group>
+      </Box>
+    </>
   );
 }

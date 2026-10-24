@@ -1,0 +1,58 @@
+.navLink
+{
+  cursor: pointer;
+}
+
+.rightSection
+{
+  display: grid;
+  align-items: center;
+  justify-items: end;
+  min-width: 22px;
+  min-height: 22px;
+}
+
+.enterHint,
+.closeButton
+{
+  grid-area: 1 / 1;
+}
+
+.enterHint
+{
+  opacity: 1;
+  pointer-events: none;
+}
+
+.closeButton
+{
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+
+.navLink:hover,
+.navLink:focus-within
+{
+  .enterHint
+  {
+    opacity: 0;
+  }
+
+  .closeButton
+  {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.closeButton:focus-visible
+{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.emptyStateTitle
+{
+  word-break: break-all;
+}

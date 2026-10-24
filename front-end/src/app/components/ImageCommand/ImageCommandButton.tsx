@@ -41,8 +41,6 @@ export default function ImageCommandButton({
     }
   }
 
-  const iconDimension = size === "lg" || size === "xl" ? "md" : "sm";
-
   if (iconOnly)
   {
     const buttonElement = (
@@ -55,7 +53,7 @@ export default function ImageCommandButton({
         aria-label={resolvedCommand.label}
         {...others}
       >
-        {resolvedCommand.icon(iconDimension)}
+        {resolvedCommand.icon(size)}
       </Button>
     );
 
@@ -76,7 +74,7 @@ export default function ImageCommandButton({
       onClick={handleClick}
       loading={loading ?? isLoading}
       disabled={disabled ?? !isAvailable}
-      leftSection={leftSection ?? resolvedCommand.icon(iconDimension)}
+      leftSection={leftSection ?? resolvedCommand.icon(size)}
       size={size}
       px={px}
       {...others}

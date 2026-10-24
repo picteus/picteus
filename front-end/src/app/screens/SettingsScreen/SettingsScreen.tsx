@@ -139,7 +139,7 @@ export default function SettingsScreen()
                 <Button
                   variant="default"
                   size="xs"
-                  leftSection={<IconRotate size={Common.IconSmallSize}/>}
+                  leftSection={<IconRotate size={Common.IconXSmallSize}/>}
                   disabled={skippedCommandsCount === 0}
                   onClick={handleResetSkippedCommands}
                 >

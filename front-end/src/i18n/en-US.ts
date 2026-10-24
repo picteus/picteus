@@ -1,4 +1,3 @@
-
 export default {
   errorBoundary: {
     message: "Something went wrong!!!",
@@ -46,10 +45,7 @@ export default {
     select: "select",
     resultsCount_zero: "0 results",
     resultsCount_one: "1 result",
-    resultsCount_other: "{{count}} results",
-    keys: {
-      esc: "ESC"
-    }
+    resultsCount_other: "{{count}} results"
   },
   titles: {
     warning: "Warning",
@@ -70,6 +66,9 @@ export default {
     imageDetail: "An error occurred: could not load the image visual.",
     imageCondensed: "Could not load the visual",
     imageNotAvailable: "Image not available anymore"
+  },
+  keyShortcuts: {
+    escape: "ESC"
   },
   field: {
     noValue: "—",
@@ -226,8 +225,24 @@ export default {
   deskTabsMenu: {
     allTabs: "All tabs",
     searchPlaceholder: "Search open tabs",
-    newBadge: "New",
-    noTabsFound: "No matching tabs found"
+    current: "Current",
+    noTabsFound: "No matching tabs found",
+    noTabMatches: "No tab matches \"{{criterion}}\"",
+    searchDescription: "Search looks at tab titles and subtitles.",
+    tabCount: "{{count}} tabs",
+    tabCountSingle: "1 tab",
+    filteredTabCount: "{{filteredCount}} of {{totalCount}} tabs",
+    navigate: "navigate",
+    open: "open"
+  },
+  deskTabHeader: {
+    tabDetails: "Details"
+  },
+  deskTabDetails: {
+    title: "Details",
+    description: "Description",
+    details: "Details",
+    openedBy: "Opened by"
   },
   emptySelectedImages: {
     title: "No selected image",

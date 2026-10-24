@@ -131,7 +131,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
       return computeIcon("delete");
     }
     const [ , extensionId ] = selectedAction.split(commandSeparator);
-    return <ExtensionIcon idOrExtension={extensionId} size="sm"/>;
+    return <ExtensionIcon idOrExtension={extensionId} size="xs"/>;
   }
 
   function handleOnApplyAction()
@@ -233,7 +233,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
                 size="sm"
                 color="gray"
               >
-                <IconLibrary size={Common.IconSmallSize}/>
+                <IconLibrary size={Common.IconXSmallSize}/>
               </ActionIcon>
               <ActionIcon
                 onClick={handleAddToCollection}
@@ -242,7 +242,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
                 size="sm"
                 color="gray"
               >
-                <IconLibraryPlus size={Common.IconSmallSize}/>
+                <IconLibraryPlus size={Common.IconXSmallSize}/>
               </ActionIcon>
             </Flex>
           )}

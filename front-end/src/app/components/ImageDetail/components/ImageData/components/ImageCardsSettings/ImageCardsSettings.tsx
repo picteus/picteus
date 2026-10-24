@@ -117,7 +117,7 @@ export default function ImageCardsSettings(): ReactElement
             size="lg"
             onClick={openDrawer}
           >
-            <IconAdjustmentsHorizontal size={Common.IconMediumSize}/>
+            <IconAdjustmentsHorizontal size={Common.IconSmallSize}/>
           </ActionIcon>
         </Tooltip>
       )}

@@ -26,7 +26,7 @@ export default function ImageTag({
 }: ImageTagPropsType): ReactNode
 {
   const tagValue = tag.value.startsWith(`${tag.id}:`) ? tag.value.slice(tag.id.length + 1) : tag.value;
-  const extensionIcon = withExtensionPrefix ? <ExtensionIcon idOrExtension={tag.id} size="sm"/> : undefined;
+  const extensionIcon = withExtensionPrefix ? <ExtensionIcon idOrExtension={tag.id} size="xs"/> : undefined;
 
   if (kind === "badge")
   {

@@ -16,7 +16,7 @@ export default function ContentTitle(props: ContentTitleType): ReactElement
   const { text, icon, details } = props;
   const titleContent = (
     <Flex gap="sm">
-      <ResourceIcon icon={icon} isCompact={false}/>
+      <ResourceIcon icon={icon} size="md"/>
       {(icon !== undefined && "icon" in icon) && icon.icon}
       <Title order={3}>{text}</Title>
     </Flex>

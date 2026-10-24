@@ -114,7 +114,7 @@ export default function ExtensionsScreen()
         style={{ cursor: "pointer" }}
       >
         <Table.Td w={40}>
-          <ExtensionIcon idOrExtension={extension} size="sm"/>
+          <ExtensionIcon idOrExtension={extension} size="xs"/>
         </Table.Td>
         <Table.Td>
           <Text size="md">{extension.manifest.id}</Text>

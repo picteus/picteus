@@ -170,7 +170,7 @@ export function SearchFilters({
       <Group gap="sm">
         <Group gap={4}>
           {extensionTags.map(extensionTag => <ExtensionIcon key={extensionTag.id} idOrExtension={extensionTag.id}
-                                                            size="sm"/>)}
+                                                            size="xs"/>)}
         </Group>
         <span>{option.label}</span>
       </Group>
@@ -200,19 +200,19 @@ export function SearchFilters({
                 {searchText || filters ? (
                   <ActionIcon size="sm" variant="transparent" c="dimmed"
                               onClick={onClearAll}>
-                    <IconX stroke={1.5} size={Common.IconSmallSize}/>
+                    <IconX stroke={1.5} size={Common.IconXSmallSize}/>
                   </ActionIcon>
                 ) : null}
                 <Tooltip label={t("filters.title")}>
                   <ActionIcon size="md" variant="light">
-                    <IconFilter stroke={1.5} size={Common.IconSmallSize}/>
+                    <IconFilter stroke={1.5} size={Common.IconXSmallSize}/>
                   </ActionIcon>
                 </Tooltip>
               </Flex>
             }
           >
             <Flex wrap="wrap" gap={6} align="center" className={style.wrapper}>
-              <IconSearch stroke={1.5} size={Common.IconSmallSize} color="gray"/>
+              <IconSearch stroke={1.5} size={Common.IconXSmallSize} color="gray"/>
               {renderActiveFiltersPills()}
               <input
                 placeholder={renderActiveFiltersPills()?.length ? "" : t("field.search")}
@@ -230,26 +230,26 @@ export function SearchFilters({
             <Tabs.List flex={1}>
               <Tabs.Tab
                 value="general"
-                leftSection={<IconAdjustmentsHorizontal size={Common.IconSmallSize}
+                leftSection={<IconAdjustmentsHorizontal size={Common.IconXSmallSize}
                                                         color="var(--mantine-color-blue-filled)"/>}
               >
                 {t("field.essentials")}
               </Tabs.Tab>
               <Tabs.Tab
                 value="tags"
-                leftSection={<IconTags size={Common.IconSmallSize} color="var(--mantine-color-orange-filled)"/>}
+                leftSection={<IconTags size={Common.IconXSmallSize} color="var(--mantine-color-orange-filled)"/>}
               >
                 {t("field.tags")}
               </Tabs.Tab>
               <Tabs.Tab
                 value="features"
-                leftSection={<IconBulb size={Common.IconSmallSize} color="var(--mantine-color-violet-filled)"/>}
+                leftSection={<IconBulb size={Common.IconXSmallSize} color="var(--mantine-color-violet-filled)"/>}
               >
                 {t("field.features")}
               </Tabs.Tab>
               <Tabs.Tab
                 value="properties"
-                leftSection={<IconListDetails size={Common.IconSmallSize}
+                leftSection={<IconListDetails size={Common.IconXSmallSize}
                                               color="var(--mantine-color-green-filled)"/>}
               >
                 {t("field.properties")}

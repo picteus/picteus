@@ -112,7 +112,7 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
                 return (
                   <Table.Tr key={index}>
                     <Table.Td>
-                      <CommandIcon extensionId={extension.manifest.id} command={command} size="sm"/>
+                      <CommandIcon extensionId={extension.manifest.id} command={command} size="xs"/>
                     </Table.Td>
                     <Table.Td>
                       <Text size="sm" fw={500}>{command.id}</Text>

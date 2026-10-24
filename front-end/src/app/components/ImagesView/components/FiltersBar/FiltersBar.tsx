@@ -35,14 +35,14 @@ type FiltersBarType = {
 };
 
 const SORT_ICONS: Record<string, React.ReactNode> = {
-  [SearchSortingProperty.Name]: <IconLetterCase size={Common.IconSmallSize}/>,
-  [SearchSortingProperty.CreationDate]: <IconCalendarPlus size={Common.IconSmallSize}/>,
-  [SearchSortingProperty.ModificationDate]: <IconCalendarTime size={Common.IconSmallSize}/>,
-  [SearchSortingProperty.ImportDate]: <IconCalendarPlus size={Common.IconSmallSize}/>,
-  [SearchSortingProperty.UpdateDate]: <IconCalendarTime size={Common.IconSmallSize}/>,
-  [SearchSortingProperty.BinarySize]: <IconWeight size={Common.IconSmallSize}/>,
-  [SearchSortingProperty.Width]: <IconArrowsHorizontal size={Common.IconSmallSize}/>,
-  [SearchSortingProperty.Height]: <IconArrowsVertical size={Common.IconSmallSize}/>
+  [SearchSortingProperty.Name]: <IconLetterCase size={Common.IconXSmallSize}/>,
+  [SearchSortingProperty.CreationDate]: <IconCalendarPlus size={Common.IconXSmallSize}/>,
+  [SearchSortingProperty.ModificationDate]: <IconCalendarTime size={Common.IconXSmallSize}/>,
+  [SearchSortingProperty.ImportDate]: <IconCalendarPlus size={Common.IconXSmallSize}/>,
+  [SearchSortingProperty.UpdateDate]: <IconCalendarTime size={Common.IconXSmallSize}/>,
+  [SearchSortingProperty.BinarySize]: <IconWeight size={Common.IconXSmallSize}/>,
+  [SearchSortingProperty.Width]: <IconArrowsHorizontal size={Common.IconXSmallSize}/>,
+  [SearchSortingProperty.Height]: <IconArrowsVertical size={Common.IconXSmallSize}/>
 };
 
 export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({

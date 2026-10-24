@@ -4,25 +4,25 @@ import { IconDownload, IconExternalLink, IconPin, IconRefresh, IconTrash } from 
 
 import { Manifest } from "@picteus/ws-client";
 
-import { UiCommandType } from "types";
+import { IconSizeType, UiCommandType } from "types";
 import { CommandIcon, Common, ExtensionIcon } from "app/components";
 
 
-export function computeIcon(action: "synchronize" | "pin" | "open" | "download" | "delete", size?: "sm" | "md" | number): ReactElement
+export function computeIcon(action: "synchronize" | "pin" | "open" | "download" | "delete", size?: IconSizeType): ReactElement
 {
-  const iconDimension = typeof size === "number" ? size : (size === "md" ? Common.IconLargeSize : Common.IconSmallSize);
+  const edge = typeof size === "number" ? size : Common.IconFromStringToNumberSize(size);
   switch (action)
   {
     case "synchronize":
-      return <IconRefresh style={{ width: iconDimension, height: iconDimension }}/>;
+      return <IconRefresh style={{ width: edge, height: edge }}/>;
     case "pin":
-      return <IconPin style={{ width: iconDimension, height: iconDimension }}/>;
+      return <IconPin style={{ width: edge, height: edge }}/>;
     case "open":
-      return <IconExternalLink style={{ width: iconDimension, height: iconDimension }}/>;
+      return <IconExternalLink style={{ width: edge, height: edge }}/>;
     case "download":
-      return <IconDownload style={{ width: iconDimension, height: iconDimension }}/>;
+      return <IconDownload style={{ width: edge, height: edge }}/>;
     case "delete":
-      return <IconTrash color="red" style={{ width: iconDimension, height: iconDimension }}/>;
+      return <IconTrash color="red" style={{ width: edge, height: edge }}/>;
   }
 }
 
@@ -39,7 +39,7 @@ export function MenuItemEntry({ extensionId, icon, label, subLabel, keyShortcut,
 {
   return (<Menu.Item
     onClick={onClick}
-    leftSection={icon ?? <ExtensionIcon idOrExtension={extensionId} size="sm"/>}
+    leftSection={icon ?? <ExtensionIcon idOrExtension={extensionId} size="xs"/>}
     rightSection={keyShortcut}
   >
     <Text size="sm">{label}</Text>
@@ -73,7 +73,7 @@ type ImageMenuSelectCommandEntryType = {
 
 export function ImageMenuSelectCommandEntry({ manifest, command }: ImageMenuSelectCommandEntryType)
 {
-  return (<ImageMenuSelectEntry icon={<CommandIcon extensionId={manifest.id} command={command} size="sm"/>}
+  return (<ImageMenuSelectEntry icon={<CommandIcon extensionId={manifest.id} command={command} size="xs"/>}
                                 label={command.label}
                                 subLabel={manifest.name}/>);
 }

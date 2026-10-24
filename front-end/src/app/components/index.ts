@@ -58,6 +58,7 @@ export { default as ContentTitle } from "./ContentTitle/ContentTitle.tsx";
 export { default as TopPanel } from "./TopPanel/TopPanel.tsx";
 export { default as StandardTable } from "./StandardTable/StandardTable.tsx";
 export { default as Drawer } from "./Drawer/Drawer.tsx";
+export { default as OverlayPanel } from "./OverlayPanel/OverlayPanel.tsx";
 export { default as StackNavigator, useStackNavigator } from "./StackNavigator/StackNavigator.tsx";
 export { default as StackableScreen } from "./StackableScreen/StackableScreen.tsx";
 export { CaptionDistance } from "./ImageMasonry/components";

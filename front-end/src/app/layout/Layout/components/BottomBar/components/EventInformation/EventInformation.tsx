@@ -86,7 +86,7 @@ function PopActivity({ context }: { context: Context })
     <Accordion.Control>
       <Flex direction="row" gap={size} align="center">
         <Loader size={size}/>
-        <ExtensionIcon idOrExtension={context.extensionId} size="sm"/>
+        <ExtensionIcon idOrExtension={context.extensionId} size="xs"/>
         <LogLevelBadge log={firstLog} isShort={false}/>
         <LogDate timestampInMilliseconds={context.timestamp}/>
         <LogText log={firstLog} maxLines={1} isBold={true}/>
@@ -161,7 +161,7 @@ function Status({ log }: StatusType)
 
   return (<Flex align="center" gap={size}>
     {log && <>
-      {log.extensionId && <ExtensionIcon idOrExtension={log.extensionId} size="sm"/>}
+      {log.extensionId && <ExtensionIcon idOrExtension={log.extensionId} size="xs"/>}
       <LogLevelBadge log={log} isShort={false}/>
       <LogText log={log} maxLines={2}/>
       <LogDate timestampInMilliseconds={log.milliseconds}/>

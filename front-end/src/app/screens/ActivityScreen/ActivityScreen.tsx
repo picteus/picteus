@@ -197,7 +197,7 @@ export default function ActivityScreen(): ReactElement
       </Table.Td>
       <Table.Td w={60}>
         {row.log.extensionId ?
-          <ExtensionIcon idOrExtension={row.log.extensionId} size="sm" withTooltip={true}/>
+          <ExtensionIcon idOrExtension={row.log.extensionId} size="xs" withTooltip/>
           :
           (<Text size="md">
             {row.log.extensionId ?? t("field.noValue")}

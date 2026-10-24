@@ -4,7 +4,7 @@ import { type HotkeyItem, useHotkeys } from "@mantine/hooks";
 
 import { CommandEntity, ManifestCapabilityId } from "@picteus/ws-client";
 
-import { CommandIconSizeType, ProcessCommandIdType, ProcessCommandType } from "types";
+import { IconSizeType, ProcessCommandIdType, ProcessCommandType } from "types";
 import { useActionModalContext } from "app/context";
 import { useExtensionCommandRunner, useExtensionCommands, useExtensionsWithCapability } from "app/hooks";
 import { CommandIcon, ExtensionIcon, TextToImages } from "app/components";
@@ -59,10 +59,9 @@ export default function useProcessCommands(
         } : undefined,
         isAvailable: true,
         isLoading: runningCommandId === compositeId,
-        icon: (size?: CommandIconSizeType): ReactElement =>
+        icon: (size?: IconSizeType): ReactElement =>
         {
-          const iconSize = size === "md" ? "md" : "sm";
-          return <ExtensionIcon idOrExtension={extension.manifest.id} size={iconSize}/>;
+          return <ExtensionIcon idOrExtension={extension.manifest.id} size={size}/>;
         },
         execute: (): void =>
         {
@@ -100,10 +99,9 @@ export default function useProcessCommands(
         isAvailable: true,
         isLoading: runningCommandId === compositeId,
         rawExtensionCommand: extensionCommand,
-        icon: (size?: CommandIconSizeType): ReactElement =>
+        icon: (size?: IconSizeType): ReactElement =>
         {
-          const iconSize = size === "md" ? "md" : "sm";
-          return <CommandIcon extensionId={manifest.id} command={command} size={iconSize}/>;
+          return <CommandIcon extensionId={manifest.id} command={command} size={size}/>;
         },
         execute: async (): Promise<void> =>
         {

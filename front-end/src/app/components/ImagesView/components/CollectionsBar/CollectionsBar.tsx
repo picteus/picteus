@@ -194,8 +194,8 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
           <Button
             variant="default"
             w={width}
-            leftSection={<IconLibraryPhoto size={Common.IconSmallSize}/>}
-            rightSection={<IconChevronDown size={Common.IconSmallSize}/>}
+            leftSection={<IconLibraryPhoto size={Common.IconXSmallSize}/>}
+            rightSection={<IconChevronDown size={Common.IconXSmallSize}/>}
             disabled={!hasCollections}
           >
             {selectedCollection ? truncateName(selectedCollection.name) : t("field.collections")}
@@ -221,7 +221,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
             px="xs"
             disabled={!searchFilter || !extensionsImageCommands}
           >
-            <IconPlayerPlayFilled size={Common.IconSmallSize}/>
+            <IconPlayerPlayFilled size={Common.IconXSmallSize}/>
           </Button>
         </Menu.Target>
         <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
@@ -243,7 +243,7 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
                 <MenuItemEntry
                   key={`${manifest.id}-${command.id}`}
                   extensionId={manifest.id}
-                  icon={<CommandIcon extensionId={manifest.id} command={command} size="sm"/>}
+                  icon={<CommandIcon extensionId={manifest.id} command={command} size="xs"/>}
                   label={command.label}
                   subLabel={manifest.name}
                   onClick={() => commandRunner(manifest.id, command, searchFilter)}
@@ -262,13 +262,13 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
             loading={updateCollectionMutation.isPending}
             onClick={handleOnUpdateCurrent}
           >
-            <IconDeviceFloppy size={Common.IconSmallSize}/>
+            <IconDeviceFloppy size={Common.IconXSmallSize}/>
           </Button>
         </Tooltip>
       )}
       <Tooltip label={t("button.add")}>
         <Button variant="default" px="xs" disabled={!searchFilter} onClick={handleOnSaveCurrent}>
-          <IconPlus size={Common.IconSmallSize}/>
+          <IconPlus size={Common.IconXSmallSize}/>
         </Button>
       </Tooltip>
     </Button.Group>

@@ -27,21 +27,27 @@ export function useRepositories(): UseQueryResult<Repository[], Error>
   );
 }
 
-export function useRepository(repositoryId: string): UseQueryResult<Repository, Error>
+export interface UseRepositoryOptionsType
+{
+
+  readonly enabled?: boolean;
+
+}
+
+export function useRepository(
+  repositoryId?: string,
+  options?: UseRepositoryOptionsType
+): UseQueryResult<Repository, Error>
 {
   const queryClient = useQueryClient();
+  const isEnabled = options?.enabled ?? true;
 
   return useQuery(
     {
-      queryKey: queryKeys.repositories.detail(repositoryId),
-      queryFn: (): Promise<Repository> =>
-      {
-        return RepositoriesService.get({ id: repositoryId });
-      },
-      initialData: (): Repository | undefined =>
-      {
-        return queryClient.getQueryData<Repository[]>(queryKeys.repositories.all)?.find(repository => repository.id === repositoryId);
-      }
+      queryKey: queryKeys.repositories.detail(repositoryId ?? ""),
+      queryFn: (): Promise<Repository> => RepositoriesService.get({ id: repositoryId! }),
+      enabled: isEnabled,
+      initialData: (): Repository | undefined => repositoryId ? queryClient.getQueryData<Repository[]>(queryKeys.repositories.all)?.find(repository => repository.id === repositoryId) : undefined
     }
   );
 }

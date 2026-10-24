@@ -48,7 +48,7 @@ export default function TagsWidget(props: WidgetProps)
         {
           return (
             <Group gap="sm">
-              <ExtensionIcon idOrExtension={extension} size="sm"/>
+              <ExtensionIcon idOrExtension={extension} size="xs"/>
               <Stack gap={2}>
                 <Text size="sm">{tag.value}</Text>
                 <Text size="xs" opacity={0.65}>

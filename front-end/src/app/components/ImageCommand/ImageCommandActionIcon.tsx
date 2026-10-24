@@ -37,8 +37,6 @@ export default function ImageCommandActionIcon({
     }
   }
 
-  const iconDimension = size === "lg" || size === "xl" ? "md" : "sm";
-
   const actionIconElement = (
     <ActionIcon
       onClick={handleClick}
@@ -47,7 +45,7 @@ export default function ImageCommandActionIcon({
       size={size}
       {...others}
     >
-      {children ?? resolvedCommand.icon(iconDimension)}
+      {children ?? resolvedCommand.icon(size)}
     </ActionIcon>
   );
 

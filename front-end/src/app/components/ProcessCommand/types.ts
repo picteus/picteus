@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { ActionIconProps, ButtonProps, ElementProps, MenuItemProps } from "@mantine/core";
 import { SpotlightActionProps } from "@mantine/spotlight";
 
-import { ProcessCommandIdType, ProcessCommandType } from "types";
+import { IconSizeType, ProcessCommandIdType, ProcessCommandType } from "types";
 
 
 export type ProcessCommandTargetType = ProcessCommandType | ProcessCommandIdType;
@@ -17,23 +17,29 @@ export type ProcessCommandRootPropsType = ProcessCommandBasePropsType & {
 };
 
 export type ProcessCommandButtonPropsType = ProcessCommandBasePropsType &
-  ButtonProps &
-  ElementProps<"button", keyof ButtonProps> & {
-  iconOnly?: boolean;
-  withTooltip?: boolean;
-};
+  Omit<ButtonProps, "size"> &
+  Omit<ElementProps<"button", keyof ButtonProps>, "size"> &
+  {
+    size?: IconSizeType;
+    iconOnly?: boolean;
+    withTooltip?: boolean;
+  };
 
 export type ProcessCommandActionIconPropsType = ProcessCommandBasePropsType &
-  ActionIconProps &
-  ElementProps<"button", keyof ActionIconProps> & {
-  withTooltip?: boolean;
-};
+  Omit<ActionIconProps, "size"> &
+  Omit<ElementProps<"button", keyof ActionIconProps>, "size"> &
+  {
+    size?: IconSizeType;
+    withTooltip?: boolean;
+  };
 
 export type ProcessCommandMenuItemPropsType = ProcessCommandBasePropsType &
   MenuItemProps &
-  ElementProps<"button", keyof MenuItemProps> & {
-  showSubLabel?: boolean;
-};
+  Omit<ElementProps<"button", keyof MenuItemProps>, "size"> &
+  {
+    size?: IconSizeType;
+    showSubLabel?: boolean;
+  };
 
 export type ProcessCommandSpotlightActionPropsType = ProcessCommandBasePropsType &
   SpotlightActionProps &

@@ -4,7 +4,7 @@ import { Box, Stack } from "@mantine/core";
 import { DeskTabType } from "types";
 import { StackableScreen } from "app/components";
 import DeskTabContent from "../DeskTabContent/DeskTabContent.tsx";
-import TabHeader from "../TabHeader/TabHeader.tsx";
+import { TabDetailsOverlay, TabHeader } from "../index.ts";
 
 
 export interface DeskTabPanelPropsType
@@ -18,6 +18,12 @@ export interface DeskTabPanelPropsType
 function DeskTabPanel({ tab, isActive }: DeskTabPanelPropsType): ReactElement
 {
   const [ hasBeenActive, setHasBeenActive ] = useState<boolean>(isActive);
+  const [ isDetailsOpen, setIsDetailsOpen ] = useState<boolean>(false);
+
+  useEffect(() =>
+  {
+    setIsDetailsOpen(false);
+  }, [ tab.id ]);
 
   useEffect(() =>
   {
@@ -38,9 +44,24 @@ function DeskTabPanel({ tab, isActive }: DeskTabPanelPropsType): ReactElement
     >
       <StackableScreen>
         <Stack h="100%" w="100%" gap={0} style={{ overflow: "hidden" }}>
-          <TabHeader tab={tab}/>
+          <TabHeader
+            tab={tab}
+            isDetailsOpen={isDetailsOpen}
+            onToggleDetails={() =>
+            {
+              setIsDetailsOpen((previousState) => !previousState);
+            }}
+          />
           <Box flex={1} pos="relative" style={{ overflow: "hidden" }}>
             {shouldRenderContent === true && <DeskTabContent tab={tab}/>}
+            <TabDetailsOverlay
+              tab={tab}
+              isOpened={isDetailsOpen}
+              onClose={() =>
+              {
+                setIsDetailsOpen(false);
+              }}
+            />
           </Box>
         </Stack>
       </StackableScreen>

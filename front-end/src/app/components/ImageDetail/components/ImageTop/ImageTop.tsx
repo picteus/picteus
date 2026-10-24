@@ -66,7 +66,7 @@ export default function ImageTop({
               size="md"
               radius="sm"
               tt="none"
-              leftSection={<IconSparkles size={Common.IconSmallSize}/>}
+              leftSection={<IconSparkles size={Common.IconXSmallSize}/>}
             >
               {t("imageDetail.aiGenerated")}
             </Badge>

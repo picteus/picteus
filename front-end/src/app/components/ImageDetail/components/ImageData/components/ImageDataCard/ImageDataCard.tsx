@@ -67,7 +67,7 @@ export default function ImageDataCard({
                     onHide();
                   }}
                 >
-                  <IconEyeOff size={Common.IconSmallSize}/>
+                  <IconEyeOff size={Common.IconXSmallSize}/>
                 </ActionIcon>
               </Tooltip>
             )}
@@ -82,7 +82,7 @@ export default function ImageDataCard({
               }}
             >
               <IconChevronDown
-                size={Common.IconSmallSize}
+                size={Common.IconXSmallSize}
                 style={{
                   transform: isOpened ? "rotate(180deg)" : "rotate(0deg)",
                   transition: "transform 200ms ease"

@@ -79,22 +79,17 @@ function DeskTabMultipleImagesContent({ content }: DeskTabMultipleImagesContentP
 
   const imageIdentifiers = content.images.map(imageItem => imageItem.imageId).join(",");
 
-  const viewData = useMemo<ViewTabDataType>(() =>
-  {
-    const ids = content.images.map(imageItem => imageItem.imageId);
-
-    return {
-      mode: "masonry",
-      filterOrCollectionId: {
-        filter: {
-          origin: {
-            kind: SearchOriginNature.Images,
-            ids
-          }
+  const viewData = useMemo<ViewTabDataType>(() => ({
+    mode: "masonry",
+    filterOrCollectionId: {
+      filter: {
+        origin: {
+          kind: SearchOriginNature.Images,
+          ids: content.images.map(imageItem => imageItem.imageId)
         }
       }
-    };
-  }, [ imageIdentifiers ]);
+    }
+  }), [ imageIdentifiers ]);
 
   const handleEmptyResults = useCallback((): ReactElement<typeof EmptyResults> =>
   {
@@ -111,6 +106,7 @@ function DeskTabMultipleImagesContent({ content }: DeskTabMultipleImagesContentP
     <ImagesView
       viewData={viewData}
       isDefault={false}
+      withRefreshButton={false}
       onEmptyResults={handleEmptyResults}
     />
   );

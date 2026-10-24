@@ -85,14 +85,14 @@ export default function Notifications()
     arrowSize={Common.ArrowSize}
     offset={Common.RightSideBarOffset}
     closeDelay={Common.HoverCloseDelayInMilliseconds}
-    width={350}
+    width={460}
   >
     <HoverCard.Target>
       <Indicator
         inline
         color="orange"
         label={notifications.length}
-        size={Common.IconSmallSize}
+        size={Common.IconXSmallSize}
         processing={isAnimating}
         disabled={notifications.length === 0}
       >

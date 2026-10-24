@@ -8,6 +8,7 @@ import { DeskTabType } from "types";
 import { DESK_TAB_QUERY_PARAMETER_NAME, ROUTES } from "utils";
 import { useDeskTabsContext } from "app/context";
 import { Common, EmptyResults } from "app/components";
+import { useKey } from "app/hooks";
 import { DeskTabIcon, DeskTabPanel, DeskTabsMenu } from "./components";
 
 import style from "./DeskScreen.module.scss";
@@ -32,6 +33,7 @@ export default function DeskScreen(): ReactElement
 
   const [ draggedTabId, setDraggedTabId ] = useState<string | null>(null);
   const [ dropTargetTabId, setDropTargetTabId ] = useState<string | null>(null);
+  const [ isTabsMenuOpened, setIsTabsMenuOpened ] = useState<boolean>(false);
   const scrollViewportReference = useRef<HTMLDivElement>(null);
   const tabElementsReference = useRef<Map<string, HTMLDivElement>>(new Map());
   const imageIdQueryParameterName = "imageId";
@@ -42,6 +44,19 @@ export default function DeskScreen(): ReactElement
   const mostRecentTab = findMostRecentTab(tabs);
   const selectedTab = (queryTabIdentifier ? (tabMatchingQuery ?? mostRecentTab) : undefined) ?? tabMatchingActive ??
     mostRecentTab ?? tabs[0];
+
+  useKey("w", () =>
+    {
+      if (selectedTab)
+      {
+        removeTab(selectedTab.id);
+      }
+    },
+    {
+      modifier: "metaOrCtrl",
+      isEnabled: location.pathname === ROUTES.desk && selectedTab !== undefined && selectedTab.isClosable !== false
+    }
+  );
 
   function scrollTabIntoView(tabIdentifier: string): void
   {
@@ -88,11 +103,59 @@ export default function DeskScreen(): ReactElement
     scrollTabIntoView(tabIdentifier);
   }
 
+  function switchToAdjacentTab(direction: 1 | -1): void
+  {
+    if (selectedTab === undefined || tabs.length < 2)
+    {
+      return;
+    }
+    const currentIndex = tabs.findIndex((tabItem) => tabItem.id === selectedTab.id);
+    if (currentIndex === -1)
+    {
+      return;
+    }
+    const nextIndex = (currentIndex + direction + tabs.length) % tabs.length;
+    handleSelectTab(tabs[nextIndex].id);
+  }
+
+  useKey("Tab", () =>
+    {
+      switchToAdjacentTab(1);
+    },
+    {
+      modifier: "metaOrCtrl",
+      shouldIgnoreRepeat: false,
+      isEnabled: location.pathname === ROUTES.desk && selectedTab !== undefined
+    }
+  );
+
+  useKey("Tab", () =>
+    {
+      switchToAdjacentTab(-1);
+    },
+    {
+      modifier: "metaOrCtrl",
+      withShift: true,
+      shouldIgnoreRepeat: false
+    }
+  );
+
+  useKey("d", () =>
+    {
+      setIsTabsMenuOpened(true);
+    },
+    {
+      modifier: "metaOrCtrl",
+      isEnabled: location.pathname === ROUTES.desk && tabs.length > 0
+    }
+  );
+
   useEffect(() =>
   {
     const tabQueryParameterName = "tab";
     if (tabs.length === 0)
     {
+      setIsTabsMenuOpened(false);
       if (queryTabIdentifier)
       {
         setSearchParameters((previousParameters) =>
@@ -168,6 +231,7 @@ export default function DeskScreen(): ReactElement
     tabs.length,
     activeTab,
     setActiveTab,
+    setIsTabsMenuOpened,
     setSearchParameters
   ]);
 
@@ -299,7 +363,7 @@ export default function DeskScreen(): ReactElement
           size="sm"
           onClick={() => handleScroll("left")}
         >
-          <IconChevronLeft size={Common.IconSmallSize}/>
+          <IconChevronLeft size={Common.IconXSmallSize}/>
         </ActionIcon>
         <ScrollArea
           flex={1}
@@ -348,10 +412,12 @@ export default function DeskScreen(): ReactElement
                   onDragEnd={handleDragEnd}
                   onClick={() => handleSelectTab(tab.id)}
                 >
-                  <DeskTabIcon tab={tab} isCompact={true}/>
+                  <DeskTabIcon tab={tab} location="header"/>
 
                   <Tooltip
                     label={tooltipLabel}
+                    position="bottom"
+                    withArrow
                     withinPortal
                   >
                     <Text size="sm" maw={140} truncate>
@@ -382,11 +448,13 @@ export default function DeskScreen(): ReactElement
           size="sm"
           onClick={() => handleScroll("right")}
         >
-          <IconChevronRight size={Common.IconSmallSize}/>
+          <IconChevronRight size={Common.IconXSmallSize}/>
         </ActionIcon>
         <DeskTabsMenu
           tabs={tabs}
           activeTabId={selectedTab?.id ?? null}
+          isOpened={isTabsMenuOpened}
+          onOpenedChange={setIsTabsMenuOpened}
           onSelectTab={handleSelectTab}
           onCloseTab={removeTab}
         />

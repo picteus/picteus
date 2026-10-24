@@ -1,17 +1,31 @@
 import { useEffect } from "react";
 
 
-export default function useKey(key: "Enter" | "Escape", callback: () => void)
+type UseKeyOptionsType = {
+  modifier?: "metaOrCtrl";
+  withShift?: boolean;
+  isEnabled?: boolean;
+  shouldIgnoreRepeat?: boolean;
+};
+
+export default function useKey(key: string, callback: () => void, options?: UseKeyOptionsType): void
 {
   useEffect(() =>
   {
-    function handleKeyDown(event: KeyboardEvent)
+    function handleKeyDown(event: KeyboardEvent): void
     {
-      if (event.key === key)
+      if (
+        event.key.toLowerCase() !== key.toLowerCase() ||
+        options?.isEnabled === false ||
+        (options?.shouldIgnoreRepeat === true && event.repeat) ||
+        (options?.modifier === "metaOrCtrl" && (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey !== (options?.withShift === true)))
+      )
       {
-        event.preventDefault();
-        callback();
+        return;
       }
+
+      event.preventDefault();
+      callback();
     }
 
     document.addEventListener("keydown", handleKeyDown);
@@ -19,5 +33,5 @@ export default function useKey(key: "Enter" | "Escape", callback: () => void)
     {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [callback]);
+  }, [ callback, key, options ]);
 }

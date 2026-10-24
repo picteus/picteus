@@ -216,13 +216,13 @@ const perTypeIconMap = {
   [ImageFeatureType.Other]: IconDots
 };
 
-const iconProperties = { size: Common.IconSmallSize, stroke: 1, radius: "sm" };
+const iconProperties = { size: Common.IconXSmallSize, stroke: 1, radius: "sm" };
 
 function computeFeatureIcon(extensionId?: string, type?: ImageFeatureType): React.ReactNode
 {
   if (extensionId)
   {
-    return <ExtensionIcon idOrExtension={extensionId} size="sm"/>;
+    return <ExtensionIcon idOrExtension={extensionId} size="xs"/>;
   }
   const iconComponent = (type && perTypeIconMap[type]) || IconDots;
   return React.createElement(iconComponent, iconProperties);

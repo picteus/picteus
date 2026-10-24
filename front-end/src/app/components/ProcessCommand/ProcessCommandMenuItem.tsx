@@ -45,7 +45,7 @@ export default function ProcessCommandMenuItem({
   return (
     <Menu.Item
       onClick={handleClick}
-      leftSection={leftSection ?? resolvedCommand.icon("sm")}
+      leftSection={leftSection ?? resolvedCommand.icon("xs")}
       rightSection={rightSection ?? shortcutDisplay}
       disabled={disabled ?? !isAvailable}
       {...others}

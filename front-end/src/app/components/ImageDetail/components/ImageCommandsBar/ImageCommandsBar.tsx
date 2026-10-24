@@ -17,7 +17,8 @@ type ImageCommandsBarPropsType = {
   viewMode?: ViewMode;
 };
 
-const COMMAND_BUTTON_SIZE = Common.IconXLargeSize;
+const COMMAND_BUTTON_SIZE = "md";
+const COMMAND_BUTTON_EDGE = Common.IconFromStringToNumberSize(COMMAND_BUTTON_SIZE);
 const COMMAND_BUTTON_GAP = 6;
 const MAX_VISIBLE_COMMANDS = 6;
 
@@ -42,7 +43,7 @@ export default function ImageCommandsBar({ image, viewMode }: ImageCommandsBarPr
         };
       }
 
-      const totalWidthWithoutMore = extensionCommands.length * COMMAND_BUTTON_SIZE + (extensionCommands.length - 1) * COMMAND_BUTTON_GAP;
+      const totalWidthWithoutMore = extensionCommands.length * COMMAND_BUTTON_EDGE + (extensionCommands.length - 1) * COMMAND_BUTTON_GAP;
       if (extensionCommands.length <= MAX_VISIBLE_COMMANDS && totalWidthWithoutMore <= width)
       {
         return {
@@ -51,8 +52,8 @@ export default function ImageCommandsBar({ image, viewMode }: ImageCommandsBarPr
         };
       }
 
-      const availableWidthForVisible = width - COMMAND_BUTTON_SIZE - COMMAND_BUTTON_GAP;
-      const fitCount = Math.floor((availableWidthForVisible + COMMAND_BUTTON_GAP) / (COMMAND_BUTTON_SIZE + COMMAND_BUTTON_GAP));
+      const availableWidthForVisible = width - COMMAND_BUTTON_EDGE - COMMAND_BUTTON_GAP;
+      const fitCount = Math.floor((availableWidthForVisible + COMMAND_BUTTON_GAP) / (COMMAND_BUTTON_EDGE + COMMAND_BUTTON_GAP));
       const visibleCount = Math.min(MAX_VISIBLE_COMMANDS, Math.max(0, fitCount));
       return {
         visibleCommands: extensionCommands.slice(0, visibleCount),
@@ -76,20 +77,17 @@ export default function ImageCommandsBar({ image, viewMode }: ImageCommandsBarPr
         <Group justify="space-between" align="center" wrap="nowrap" w="100%">
           <Group gap={COMMAND_BUTTON_GAP} align="center" wrap="nowrap">
             {visibleCommands.map(
-              (command: ImageCommandType) =>
-              {
-                return (
-                  <ImageCommand.ActionIcon
-                    key={command.id}
-                    image={image}
-                    command={command}
-                    viewMode={viewMode}
-                    size={COMMAND_BUTTON_SIZE}
-                    radius="md"
-                    variant="default"
-                  />
-                );
-              }
+              (command: ImageCommandType) => (
+                <ImageCommand.ActionIcon
+                  key={command.id}
+                  image={image}
+                  command={command}
+                  viewMode={viewMode}
+                  size={COMMAND_BUTTON_SIZE}
+                  radius="xs"
+                  variant="default"
+                />
+              )
             )}
           </Group>
           {overflowCommands.length > 0 && (

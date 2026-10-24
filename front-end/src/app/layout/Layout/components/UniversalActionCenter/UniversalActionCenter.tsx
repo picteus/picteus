@@ -340,7 +340,7 @@ export default function UniversalActionCenter(): ReactElement
       <Spotlight.Search
         placeholder={t("actionsCenter.placeholder")}
         leftSection={<IconSearch size={iconSize} style={{ opacity: 0.6 }}/>}
-        rightSection={<Kbd size="xs">{t("actionsCenter.keys.esc")}</Kbd>}
+        rightSection={<Kbd size="xs">{t("keyShortcuts.escape")}</Kbd>}
       />
 
       <Spotlight.ActionsList>

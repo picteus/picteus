@@ -72,7 +72,7 @@ export default function ExtensionGroupedCard<T>({
       {hasSingleExtension && singleExtensionId && (
         <Tooltip label={singleExtension?.manifest.name} position="top" withArrow>
           <Box style={{ display: "inline-flex" }}>
-            <ExtensionIcon idOrExtension={singleExtensionId} size="sm"/>
+            <ExtensionIcon idOrExtension={singleExtensionId} size="xs"/>
           </Box>
         </Tooltip>
       )}

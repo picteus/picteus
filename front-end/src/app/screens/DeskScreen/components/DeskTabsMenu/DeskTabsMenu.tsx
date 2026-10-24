@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo, useState } from "react";
+import React, { ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -6,9 +6,11 @@ import {
   CloseButton,
   Divider,
   Group,
+  Kbd,
   NavLink,
   Popover,
   ScrollArea,
+  Stack,
   Text,
   TextInput
 } from "@mantine/core";
@@ -16,19 +18,11 @@ import { IconChevronDown, IconSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
-import { FormatedDate } from "app/components";
-import { DeskTabIcon } from "../index";
+import { ShortcutBadge } from "app/components";
+import { DeskTabIcon, TabSubtitle } from "../index";
 
+import classes from "./DeskTabsMenu.module.scss";
 
-export interface DeskTabsMenuPropsType
-{
-
-  tabs: DeskTabType[];
-  activeTabId: string | null;
-  onSelectTab: (tabIdentifier: string) => void;
-  onCloseTab: (tabIdentifier: string) => void;
-
-}
 
 function matchesTabSearch(tab: DeskTabType, searchCriterion: string): boolean
 {
@@ -46,45 +40,43 @@ function matchesTabSearch(tab: DeskTabType, searchCriterion: string): boolean
     tab.header?.details ?? ""
   ];
 
-  return searchableValues.some((searchableValue) =>
+  return searchableValues.some(searchableValue =>
   {
     return searchableValue.toLowerCase().includes(normalizedCriterion);
   });
 }
 
-function findNewestTabId(availableTabs: DeskTabType[]): string | undefined
+export interface DeskTabsMenuPropsType
 {
-  if (availableTabs.length === 0)
-  {
-    return undefined;
-  }
 
-  return availableTabs.reduce((mostRecentTab, currentTab) =>
-  {
-    return currentTab.timestampInMilliseconds >= mostRecentTab.timestampInMilliseconds ? currentTab : mostRecentTab;
-  }, availableTabs[0]).id;
+  tabs: DeskTabType[];
+  activeTabId: string | null;
+  isOpened: boolean;
+  onOpenedChange: (isOpened: boolean) => void;
+  onSelectTab: (tabIdentifier: string) => void;
+  onCloseTab: (tabIdentifier: string) => void;
+
 }
 
 export default function DeskTabsMenu({
   tabs,
   activeTabId,
+  isOpened,
+  onOpenedChange,
   onSelectTab,
   onCloseTab
 }: DeskTabsMenuPropsType): ReactElement
 {
   const [ t ] = useTranslation();
-  const [ isOpened, setIsOpened ] = useState<boolean>(false);
   const [ searchCriterion, setSearchCriterion ] = useState<string>("");
-
-  const newestTabId = useMemo(() =>
-  {
-    return findNewestTabId(tabs);
-  }, [ tabs ]);
+  const [ highlightedIndex, setHighlightedIndex ] = useState<number>(0);
+  const tabElementsReference = useRef<Map<string, HTMLDivElement>>(new Map());
+  const viewportReference = useRef<HTMLDivElement>(null);
 
   const filteredTabs = useMemo(() =>
   {
     return tabs
-      .filter((tabItem) =>
+      .filter(tabItem =>
       {
         return matchesTabSearch(tabItem, searchCriterion);
       })
@@ -94,9 +86,57 @@ export default function DeskTabsMenu({
       });
   }, [ tabs, searchCriterion ]);
 
+  const safeHighlightedIndex = filteredTabs.length > 0
+    ? Math.max(0, Math.min(highlightedIndex, filteredTabs.length - 1))
+    : 0;
+
+  useEffect(() =>
+  {
+    if (isOpened === true)
+    {
+      const initialIndex = filteredTabs.findIndex(tabItem => tabItem.id === activeTabId);
+      setHighlightedIndex(initialIndex >= 0 ? initialIndex : 0);
+    }
+  }, [ isOpened ]);
+
+  useEffect(() =>
+  {
+    setHighlightedIndex(0);
+  }, [ searchCriterion ]);
+
+  useEffect(() =>
+  {
+    if (isOpened === false || filteredTabs.length === 0)
+    {
+      return;
+    }
+    const highlightedTab = filteredTabs[safeHighlightedIndex];
+    if (highlightedTab)
+    {
+      const element = tabElementsReference.current.get(highlightedTab.id);
+      const viewport = viewportReference.current;
+      if (element && viewport)
+      {
+        const elementTop = element.offsetTop;
+        const elementBottom = elementTop + element.offsetHeight;
+        const viewportTop = viewport.scrollTop;
+        const viewportBottom = viewportTop + viewport.clientHeight;
+
+        if (elementTop < viewportTop)
+        {
+          viewport.scrollTop = elementTop;
+        }
+        else if (elementBottom > viewportBottom)
+        {
+          viewport.scrollTop = elementBottom - viewport.clientHeight;
+        }
+      }
+    }
+  }, [ safeHighlightedIndex, filteredTabs, isOpened ]);
+
   function handleOpenChange(nextOpened: boolean): void
   {
-    setIsOpened(nextOpened);
+    onOpenedChange(nextOpened);
     if (nextOpened === false)
     {
       setSearchCriterion("");
@@ -106,7 +146,7 @@ export default function DeskTabsMenu({
   function handleSelect(tabIdentifier: string): void
   {
     onSelectTab(tabIdentifier);
-    setIsOpened(false);
+    onOpenedChange(false);
     setSearchCriterion("");
   }
 
@@ -115,6 +155,42 @@ export default function DeskTabsMenu({
     event.stopPropagation();
     onCloseTab(tabIdentifier);
   }
+
+  function handleInputKeyDown(event: React.KeyboardEvent<HTMLInputElement>): void
+  {
+    if (filteredTabs.length === 0)
+    {
+      return;
+    }
+
+    if (event.key === "ArrowDown")
+    {
+      event.preventDefault();
+      setHighlightedIndex(previousIndex => (previousIndex + 1) % filteredTabs.length);
+    }
+    else if (event.key === "ArrowUp")
+    {
+      event.preventDefault();
+      setHighlightedIndex(previousIndex => (previousIndex - 1 + filteredTabs.length) % filteredTabs.length);
+    }
+    else if (event.key === "Enter")
+    {
+      event.preventDefault();
+      const targetTab = filteredTabs[safeHighlightedIndex];
+      if (targetTab)
+      {
+        handleSelect(targetTab.id);
+      }
+    }
+  }
+
+  const isSearching = searchCriterion.length > 0;
+  const trimmedSearchCriterion = searchCriterion.trim();
+  const hasSearchCriterion = trimmedSearchCriterion.length > 0;
+  const tabCountLabel = isSearching === true ? t("deskTabsMenu.filteredTabCount", {
+    filteredCount: filteredTabs.length,
+    totalCount: tabs.length
+  }) : tabs.length === 1 ? t("deskTabsMenu.tabCountSingle") : t("deskTabsMenu.tabCount", { count: tabs.length });
 
   return (
     <Popover
@@ -143,20 +219,21 @@ export default function DeskTabsMenu({
 
       <Popover.Dropdown
         p={0}
-        w={360}
+        w={460}
         maw="calc(100vw - 32px)"
       >
         <Box p="xs">
           <TextInput
             placeholder={t("deskTabsMenu.searchPlaceholder", "Search open tabs")}
             value={searchCriterion}
-            onChange={(event) =>
+            onChange={event =>
             {
               setSearchCriterion(event.currentTarget.value);
             }}
+            onKeyDown={handleInputKeyDown}
             leftSection={<IconSearch size={14} stroke={1.5}/>}
             rightSection={
-              searchCriterion.length > 0 ? (
+              isSearching ? (
                 <CloseButton
                   size="xs"
                   onClick={() =>
@@ -164,8 +241,12 @@ export default function DeskTabsMenu({
                     setSearchCriterion("");
                   }}
                 />
-              ) : undefined
+              ) : (
+                <ShortcutBadge combo="mod + d" size="xs"/>
+              )
             }
+            rightSectionWidth={isSearching ? undefined : 70}
+            rightSectionPointerEvents={isSearching ? "all" : "none"}
             size="xs"
             variant="filled"
             autoFocus
@@ -174,79 +255,137 @@ export default function DeskTabsMenu({
 
         <Divider/>
 
-        <ScrollArea.Autosize
-          mah="calc(75vh - 85px)"
-          scrollbars="y"
-          type="hover"
-        >
-          {filteredTabs.length === 0 ? (
-            <Text size="xs" c="dimmed" ta="center" py="lg" px="md">
-              {t("deskTabsMenu.noTabsFound", "No matching tabs found")}
-            </Text>
-          ) : (
-            filteredTabs.map((tab) =>
-            {
-              const isTabActive = tab.id === activeTabId;
-              const isNewestTab = tab.id === newestTabId;
-              const tabTitle = tab.header?.title || tab.label;
+        <Box mah="calc(90vh - 85px)" display="flex">
+          <ScrollArea scrollbars="y" type="hover" flex={1} viewportRef={viewportReference}>
+            {filteredTabs.length === 0 ? (
+              hasSearchCriterion === true ? (
+                <Stack align="center" justify="center" gap={4} py={32} px="md">
+                  <Text size="sm" fw={500} ta="center" className={classes.emptyStateTitle}>
+                    {t("deskTabsMenu.noTabMatches", { criterion: trimmedSearchCriterion })}
+                  </Text>
+                  <Text size="sm" c="dimmed" ta="center">
+                    {t("deskTabsMenu.searchDescription")}
+                  </Text>
+                </Stack>
+              ) : (
+                <Text size="xs" c="dimmed" ta="center" py="lg" px="md">
+                  {t("deskTabsMenu.noTabsFound")}
+                </Text>
+              )
+            ) : (
+              filteredTabs.map((tab, index) =>
+              {
+                const isTabActive = tab.id === activeTabId;
+                const isHighlighted = index === safeHighlightedIndex;
+                const tabTitle = tab.label;
 
-              return (
-                <NavLink
-                  key={tab.id}
-                  component="button"
-                  active={isTabActive}
-                  variant="light"
-                  color="blue"
-                  w="100%"
-                  noWrap
-                  leftSection={<DeskTabIcon tab={tab} isCompact={false}/>}
-                  label={
-                    <Group gap="xs" wrap="nowrap" miw={0} w="100%">
-                      <Text
-                        size="xs"
-                        fw={isTabActive ? 600 : 500}
-                        truncate
-                        title={tabTitle}
-                        flex={1}
-                        miw={0}
-                      >
-                        {tabTitle}
-                      </Text>
-                      {isNewestTab === true && (
-                        <Badge size="xs" variant="light" color="blue" flex="none">
-                          {t("deskTabsMenu.newBadge", "New")}
-                        </Badge>
-                      )}
-                    </Group>
-                  }
-                  description={
-                    <Text size="xs" c="dimmed" truncate miw={0}>
-                      {Boolean(tab.header?.subtitle && tab.header.subtitle.trim().length > 0) && (
-                        <span>{tab.header.subtitle.trim()} · </span>
-                      )}
-                      <FormatedDate timestamp={tab.timestampInMilliseconds}/>
-                    </Text>
-                  }
-                  rightSection={
-                    tab.isClosable !== false ? (
-                      <CloseButton
-                        size="xs"
-                        onClick={(event) =>
-                        {
-                          handleClose(event, tab.id);
-                        }}
-                      />
-                    ) : undefined
-                  }
-                  onClick={() =>
-                  {
-                    handleSelect(tab.id);
-                  }}
-                />
-              );
-            })
-          )}
-        </ScrollArea.Autosize>
+                return (
+                  <NavLink
+                    key={tab.id}
+                    ref={element =>
+                    {
+                      if (element)
+                      {
+                        tabElementsReference.current.set(tab.id, element);
+                      }
+                      else
+                      {
+                        tabElementsReference.current.delete(tab.id);
+                      }
+                    }}
+                    component="div"
+                    active={isHighlighted}
+                    variant="light"
+                    color="gray"
+                    w="100%"
+                    noWrap
+                    tabIndex={-1}
+                    className={classes.navLink}
+                    onMouseMove={() =>
+                    {
+                      if (highlightedIndex !== index)
+                      {
+                        setHighlightedIndex(index);
+                      }
+                    }}
+                    leftSection={<DeskTabIcon tab={tab} location="menu"/>}
+                    label={
+                      <Group gap="xs" wrap="nowrap" miw={0} w="100%">
+                        <Text
+                          size="sm"
+                          fw={500}
+                          truncate
+                          title={tabTitle}
+                          flex={1}
+                          miw={0}
+                        >
+                          {tabTitle}
+                        </Text>
+                        {isTabActive === true && (
+                          <Badge
+                            size="xs"
+                            variant="white"
+                            color="gray"
+                            flex="none"
+                          >
+                            {t("deskTabsMenu.current")}
+                          </Badge>
+                        )}
+                      </Group>
+                    }
+                    description={<TabSubtitle tab={tab} location="menu"/>}
+                    rightSection={
+                      (isHighlighted === true || tab.isClosable !== false) ? (
+                        <div className={classes.rightSection}>
+                          {isHighlighted === true && (
+                            <Kbd size="xs" className={classes.enterHint}>↵</Kbd>
+                          )}
+                          {tab.isClosable !== false && (
+                            <CloseButton
+                              size="xs"
+                              className={classes.closeButton}
+                              onClick={event =>
+                              {
+                                handleClose(event, tab.id);
+                              }}
+                            />
+                          )}
+                        </div>
+                      ) : undefined
+                    }
+                    onClick={() =>
+                    {
+                      handleSelect(tab.id);
+                    }}
+                  />
+                );
+              })
+            )}
+          </ScrollArea>
+        </Box>
+
+        <Divider/>
+
+        <Group justify="space-between" px="sm" py={8} wrap="nowrap">
+          <Text size="xs" c="dimmed">
+            {tabCountLabel}
+          </Text>
+          <Group gap="md" wrap="nowrap" align="center">
+            <Group gap={4} wrap="nowrap" align="center">
+              <Kbd size="xs">↑</Kbd>
+              <Kbd size="xs">↓</Kbd>
+              <Text size="xs" c="dimmed">
+                {t("deskTabsMenu.navigate")}
+              </Text>
+            </Group>
+            <Group gap={4} wrap="nowrap" align="center">
+              <Kbd size="xs">↵</Kbd>
+              <Text size="xs" c="dimmed">
+                {t("deskTabsMenu.open")}
+              </Text>
+            </Group>
+          </Group>
+        </Group>
       </Popover.Dropdown>
     </Popover>
   );

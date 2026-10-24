@@ -68,7 +68,7 @@ export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
     <StandardMenu
       targetChildren={
         <>
-          {selectedItem && <ExtensionIcon idOrExtension={selectedItem.extensionId} size="sm"/>}
+          {selectedItem && <ExtensionIcon idOrExtension={selectedItem.extensionId} size="xs"/>}
           <Text size="sm">{name}</Text>
         </>
       }

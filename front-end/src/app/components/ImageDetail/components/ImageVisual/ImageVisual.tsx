@@ -29,6 +29,7 @@ function TopBar({ image, zoom, onZoomChange }: TopBarPropsType): ReactNode
   const downloadCommand = getCommand("download");
   const synchronizeCommand = getCommand("synchronize");
   const deleteCommand = getCommand("delete");
+  const size = "xs";
 
   return (
     <Group justify="space-between" align="center" pt="xs" pb="xs" pl="md" pr="xs">
@@ -55,35 +56,35 @@ function TopBar({ image, zoom, onZoomChange }: TopBarPropsType): ReactNode
           command={closestImagesCommand}
           variant="subtle"
           color="gray"
-          size="md"
+          size={size}
         />
         <ImageCommand.ActionIcon
           image={image}
           command={pinCommand}
           variant="subtle"
           color="gray"
-          size="md"
+          size={size}
         />
         <ImageCommand.ActionIcon
           image={image}
           command={openCommand}
           variant="subtle"
           color="gray"
-          size="md"
+          size={size}
         />
         <ImageCommand.ActionIcon
           image={image}
           command={downloadCommand}
           variant="subtle"
           color="gray"
-          size="md"
+          size={size}
         />
         <ImageCommand.ActionIcon
           image={image}
           command={synchronizeCommand}
           variant="subtle"
           color="gray"
-          size="md"
+          size={size}
         />
         <Divider orientation="vertical" h={18} my="auto"/>
         <ImageCommand.ActionIcon
@@ -91,7 +92,7 @@ function TopBar({ image, zoom, onZoomChange }: TopBarPropsType): ReactNode
           command={deleteCommand}
           variant="subtle"
           color="red"
-          size="md"
+          size={size}
         />
       </Group>
     </Group>
