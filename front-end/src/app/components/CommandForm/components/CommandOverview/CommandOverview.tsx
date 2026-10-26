@@ -10,10 +10,9 @@ import {
 
 import { ImageItemMode, ImageOrSummary, ManualSection } from "types";
 import { extractMarkdownParagraph, ToastService } from "utils";
-import { useActionModalContext } from "app/context";
-import { useExtension } from "app/hooks";
+import { useExtension, useImageDetailModal } from "app/hooks";
 import { ImageService } from "app/services";
-import { ImageDetail, ImageItem, ImagesCollection, Manual, Markdown } from "app/components";
+import { ImageItem, ImagesCollection, Manual, Markdown } from "app/components";
 
 
 type InstructionsType = { summary?: string, details?: string };
@@ -225,27 +224,15 @@ export default function CommandOverview({
   const { i18n } = useTranslation();
   const { data: extensionAndManual } = useExtension(extensionId);
   const { images, totalCount } = useCommandOverviewImages(searchFilter);
-  const { addModal, removeModal } = useActionModalContext();
+  const openImageDetailModal = useImageDetailModal();
 
   const handleOpenImageDetail = useCallback((image: ImageOrSummary): void =>
   {
-    const modalId = addModal({
-      body: (
-        <ImageDetail
-          image={image}
-          images={[ image ]}
-          viewMode="gallery"
-          onClose={() =>
-          {
-            removeModal(modalId);
-          }}
-        />
-      ),
-      isStackable: true,
-      withCloseButton: false,
-      fullScreen: true
+    openImageDetailModal({
+      image,
+      viewMode: "gallery"
     });
-  }, [ addModal, removeModal ]);
+  }, [ openImageDetailModal ]);
 
   const instructions = useMemo((): InstructionsType => extractCommandInstructions(commandId, extensionAndManual),
     [ commandId, extensionAndManual ]

@@ -3,9 +3,8 @@ import { useResizeObserver } from "@mantine/hooks";
 import { FastMasonry as MasonryLayout, MasonrySizing } from "react-fast-masonry";
 
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
-import { useActionModalContext } from "app/context";
-import { useContainerDimensions } from "app/hooks";
-import { ImageDetail, ImageItem } from "app/components";
+import { useContainerDimensions, useImageDetailModal } from "app/hooks";
+import { ImageItem } from "app/components";
 
 import style from "./ImageMasonry.module.scss";
 
@@ -30,7 +29,7 @@ export default function ImageMasonry({
 {
   const [ hostRef, hostRefRectangle ] = useResizeObserver();
   const { height: containerHeight } = useContainerDimensions(containerRef);
-  const { addModal, removeModal } = useActionModalContext();
+  const openImageDetailModal = useImageDetailModal();
 
   const imagesRef = useRef<ImageOrSummary[]>(images);
   imagesRef.current = images;
@@ -40,23 +39,12 @@ export default function ImageMasonry({
 
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
-    const id = addModal({
-      body: (
-        <ImageDetail
-          image={image}
-          images={imagesRef.current}
-          viewMode="masonry"
-          onClose={() =>
-          {
-            removeModal(id);
-          }}
-        />
-      ),
-      isStackable: true,
-      withCloseButton: false,
-      fullScreen: true
+    openImageDetailModal({
+      image,
+      images: imagesRef.current,
+      viewMode: "masonry"
     });
-  }, [ addModal, removeModal ]);
+  }, [ openImageDetailModal ]);
 
   useEffect(() =>
   {

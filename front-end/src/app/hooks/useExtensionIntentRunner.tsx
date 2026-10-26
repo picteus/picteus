@@ -157,7 +157,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
           )
           : <Iframe content={documentContent}/>;
         addModal({
-          fullScreen: true,
+          isFullScreen: true,
           body,
           icon: ui.headerContent?.icon,
           title: ui.headerContent?.title

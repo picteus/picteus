@@ -14,7 +14,7 @@ export type ActionModalContextType = {
   subscribeToModals: (listener: ListenerType) => (() => void);
 };
 
-const ActionModalContext = createHmrStableContext<ActionModalContextType>(import.meta.hot, "actionModalContext", undefined);
+export const ActionModalContext = createHmrStableContext<ActionModalContextType>(import.meta.hot, "actionModalContext", undefined);
 
 export function useActionModalContext()
 {

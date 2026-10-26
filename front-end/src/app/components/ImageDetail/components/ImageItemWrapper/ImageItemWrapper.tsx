@@ -4,9 +4,8 @@ import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { ImageItemMode, ImageOrSummary, ViewMode } from "types";
-import { useActionModalContext } from "app/context";
-import { useImage } from "app/hooks";
-import { ImageDetail, ImageItem } from "app/components";
+import { useImage, useImageDetailModal } from "app/hooks";
+import { ImageItem } from "app/components";
 
 import style from "./ImageItemWrapper.module.scss";
 
@@ -22,26 +21,15 @@ export default function ImageItemWrapper({ imageId, edge = 100, viewMode }: Imag
 {
   const [ t ] = useTranslation();
   const { data: image, isError, isLoading } = useImage(imageId);
-  const { addModal, removeModal } = useActionModalContext();
+  const openImageDetailModal = useImageDetailModal();
 
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
-    const id = addModal({
-      body: (
-        <ImageDetail
-          image={image}
-          images={[ image ]}
-          viewMode={viewMode}
-          onClose={() =>
-          {
-            removeModal(id);
-          }}
-        />),
-      isStackable: true,
-      withCloseButton: false,
-      fullScreen: true
+    openImageDetailModal({
+      image,
+      viewMode
     });
-  }, [ addModal, removeModal, viewMode ]);
+  }, [ openImageDetailModal, viewMode ]);
 
   if (isError)
   {

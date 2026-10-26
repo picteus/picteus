@@ -420,14 +420,14 @@ export type ModalAction = {
 export type ActionModalValue = {
   id?: string;
   isStackable?: boolean;
-  title?: ReactNode;
-  subtitle?: ReactNode;
+  isFullScreen?: boolean;
+  isFullHeight?: boolean;
   withCloseButton?: boolean;
   closeOnEscape?: boolean;
-  icon?: ContentIconType;
-  fullScreen?: boolean;
-  isFullHeight?: boolean;
   size?: SizeType;
+  icon?: ContentIconType;
+  title: ReactNode;
+  subtitle?: ReactNode;
   body: ReactElement;
   actions?: ModalAction[];
   onBeforeClose?: (viaOnSuccess: boolean) => void;

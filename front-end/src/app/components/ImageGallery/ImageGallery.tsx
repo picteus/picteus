@@ -3,9 +3,8 @@ import { Grid } from "@mantine/core";
 import { useResizeObserver } from "@mantine/hooks";
 
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
-import { useActionModalContext } from "app/context";
-import { useContainerDimensions } from "app/hooks";
-import { ImageDetail, ImageItem } from "app/components";
+import { useContainerDimensions, useImageDetailModal } from "app/hooks";
+import { ImageItem } from "app/components";
 
 import style from "./ImageGallery.module.scss";
 
@@ -34,25 +33,15 @@ export default function ImageGallery({
   const [ sentinel, setSentinel ] = useState<HTMLHeadingElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<() => void>(loadMore);
-  const { addModal, removeModal } = useActionModalContext();
-  const handleOnClick = useCallback((image: ImageOrSummary) =>
+  const openImageDetailModal = useImageDetailModal();
+  const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
-    const id = addModal({
-      body: (
-        <ImageDetail
-          image={image}
-          images={images}
-          viewMode="gallery"
-          onClose={() =>
-          {
-            removeModal(id);
-          }}
-        />),
-      isStackable: true,
-      withCloseButton: false,
-      fullScreen: true
+    openImageDetailModal({
+      image,
+      images,
+      viewMode: "gallery"
     });
-  }, [ images ]);
+  }, [ openImageDetailModal, images ]);
 
   useEffect(() =>
   {

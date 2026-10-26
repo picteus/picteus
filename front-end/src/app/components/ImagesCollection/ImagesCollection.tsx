@@ -6,9 +6,9 @@ import { ImageSummary, SearchParameters } from "@picteus/ws-client";
 
 import { ImageItemMode, ImageOrSummary } from "types";
 import { ToastService } from "utils";
-import { useActionModalContext } from "app/context";
+import { useImageDetailModal } from "app/hooks";
 import { ImageService } from "app/services";
-import { Common, ImageDetail, ImageItem } from "app/components";
+import { Common, ImageItem } from "app/components";
 
 import style from "./ImagesCollection.module.scss";
 
@@ -77,7 +77,7 @@ export default function ImagesCollection({
   const containerRef = useRef<HTMLDivElement>(null);
   const [ images, setImages ] = useState<ImageSummary[]>(initialImages ?? []);
   const [ totalCount, setTotalCount ] = useState<number | undefined>(initialTotalCount);
-  const { addModal, removeModal } = useActionModalContext();
+  const openImageDetailModal = useImageDetailModal();
   const edge = 100;
 
   useEffect(() =>
@@ -119,23 +119,12 @@ export default function ImagesCollection({
 
   const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
-    const id = addModal({
-      body: (
-        <ImageDetail
-          image={image}
-          images={images}
-          viewMode="gallery"
-          onClose={() =>
-          {
-            removeModal(id);
-          }}
-        />
-      ),
-      isStackable: true,
-      withCloseButton: false,
-      fullScreen: true
+    openImageDetailModal({
+      image,
+      images,
+      viewMode: "gallery"
     });
-  }, [ addModal, removeModal, images ]);
+  }, [ openImageDetailModal, images ]);
 
   return (
     <div ref={containerRef} className={style.container}>

@@ -42,7 +42,7 @@ function DeskTabPanel({ tab, isActive }: DeskTabPanelPropsType): ReactElement
       display={isActive === true ? "block" : "none"}
       style={{ overflow: "hidden" }}
     >
-      <StackableScreen>
+      <StackableScreen title={tab.label}>
         <Stack h="100%" w="100%" gap={0} style={{ overflow: "hidden" }}>
           <TabHeader
             tab={tab}

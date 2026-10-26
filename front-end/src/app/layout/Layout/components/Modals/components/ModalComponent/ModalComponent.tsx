@@ -1,7 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { randomId, useDisclosure } from "@mantine/hooks";
-import { ActionIcon, Box, Button, Flex, Modal, ScrollArea } from "@mantine/core";
-import { IconChevronLeft } from "@tabler/icons-react";
+import { Box, Button, Flex, Modal, ScrollArea } from "@mantine/core";
 
 import { ActionModalValue } from "types";
 import { ModalContext, ModalContextType } from "app/context";
@@ -134,30 +133,18 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
     }
   });
 
-  const fullScreen = modal.fullScreen;
-  const isFullHeight = !fullScreen && (modal.isFullHeight ?? false);
+  const isFullScreen = modal.isFullScreen;
+  const isFullHeight = !isFullScreen && (modal.isFullHeight ?? false);
 
   function computeTitle(): ReactNode
   {
-    const title = typeof modal.title === "string" ? (
+    return typeof modal.title === "string" ? (
       <ContentTitle
         text={modal.title}
         icon={modal.icon}
         details={modal.subtitle}
       />
     ) : modal.title;
-    if (fullScreen)
-    {
-      return (
-        <Flex align="center" gap="md">
-          <ActionIcon onClick={handleOnCloseCancel} variant="default">
-            <IconChevronLeft/>
-          </ActionIcon>
-          {title}
-        </Flex>
-      );
-    }
-    return title;
   }
 
   const modalContextValue = useMemo<ModalContextType>(() => ({
@@ -207,11 +194,11 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
   }
 
   const classNames = {
-    content: `${style.content}${fullScreen ? ` ${style.contentFullScreen}` : ""}${isFullHeight ? ` ${style.contentFullHeight}` : ""}`,
-    body: `${style.body}${fullScreen ? ` ${style.bodyFullScreen}` : ""}`,
+    content: `${style.content}${isFullScreen ? ` ${style.contentFullScreen}` : ""}${isFullHeight ? ` ${style.contentFullHeight}` : ""}`,
+    body: `${style.body}${isFullScreen ? ` ${style.bodyFullScreen}` : ""}`,
     header: style.header
   };
-  const size = fullScreen === true ? undefined : ((modal.size === undefined || modal.size === "auto") ? "auto" : ((modal.size === "xs" ? 30 : (modal.size === "s" ? 40 : (modal.size === "m" ? 50 : (modal.size === "l" ? 80 : 100)))) + "%"));
+  const size = isFullScreen === true ? undefined : ((modal.size === undefined || modal.size === "auto") ? "auto" : ((modal.size === "xs" ? 30 : (modal.size === "s" ? 40 : (modal.size === "m" ? 50 : (modal.size === "l" ? 80 : 100)))) + "%"));
 
   return (
     <Modal
@@ -225,7 +212,7 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
       trapFocus={true}
       returnFocus={false}
       opened={opened}
-      fullScreen={fullScreen}
+      fullScreen={isFullScreen}
       withCloseButton={modal.withCloseButton ?? true}
       size={size}
       title={modal.title === undefined ? undefined : computeTitle()}
@@ -238,11 +225,11 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
           mih={0}
           h="100%"
           type="auto"
-          p={fullScreen ? 0 : "md"}
+          p={isFullScreen ? 0 : "md"}
           offsetScrollbars
           scrollbars="y"
         >
-          <ModalChild component={modal.body} fullScreen={fullScreen || isFullHeight}/>
+          <ModalChild component={modal.body} fullScreen={isFullScreen || isFullHeight}/>
         </ScrollArea>
         <Box
           ref={setFooterElement}

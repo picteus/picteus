@@ -4,9 +4,8 @@ import { useIntersection } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 
 import { ImageItemMode, ImageOrSummary, ImageWithCaption } from "types";
-import { useActionModalContext } from "app/context";
-import { useContainerDimensions } from "app/hooks";
-import { FormatedDate, ImageDetail, ImageItem } from "app/components";
+import { useContainerDimensions, useImageDetailModal } from "app/hooks";
+import { FormatedDate, ImageItem } from "app/components";
 import { ImageDimensions, ImageWeight } from "../ImageDetail/components";
 
 
@@ -26,25 +25,15 @@ export default function ImageTable({
 {
   const edge = 160;
   const { width: containerWidth } = useContainerDimensions(containerRef);
-  const { addModal, removeModal } = useActionModalContext();
-  const handleOnClick = useCallback((image: ImageOrSummary) =>
+  const openImageDetailModal = useImageDetailModal();
+  const handleOnClick = useCallback((image: ImageOrSummary): void =>
   {
-    const id = addModal({
-      body: (
-        <ImageDetail
-          image={image}
-          images={images}
-          viewMode="table"
-          onClose={() =>
-          {
-            removeModal(id);
-          }}
-        />),
-      isStackable: true,
-      withCloseButton: false,
-      fullScreen: true
+    openImageDetailModal({
+      image,
+      images,
+      viewMode: "table"
     });
-  }, [ images ]);
+  }, [ openImageDetailModal, images ]);
   const [ t ] = useTranslation();
   const { ref, entry } = useIntersection({ root: null, threshold: 0.1 });
 

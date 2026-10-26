@@ -9,8 +9,6 @@ import { useRepositories } from "app/hooks";
 import { FiltersService, StorageService } from "app/services";
 import { EmptyResults, ImagesView, StackableScreen } from "app/components";
 
-import style from "./ExplorerScreen.module.scss";
-
 
 export default function ExplorerScreen(): ReactElement
 {
@@ -33,7 +31,7 @@ export default function ExplorerScreen(): ReactElement
   }, [ navigate, repositories.length, t ]);
 
   return (
-    <StackableScreen className={style.mainContainer}>
+    <StackableScreen title={t("menu.explorer")}>
       <TitleBarPortal>
         {null}
       </TitleBarPortal>

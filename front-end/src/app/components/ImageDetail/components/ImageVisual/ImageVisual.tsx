@@ -50,7 +50,7 @@ function TopBar({ image, zoom, onZoomChange }: TopBarPropsType): ReactNode
           }}
         />
       </Group>
-      <Group gap={4} align="center">
+      <Group gap="xs" align="center">
         <ImageCommand.ActionIcon
           image={image}
           command={closestImagesCommand}

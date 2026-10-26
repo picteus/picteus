@@ -11,20 +11,15 @@ type ContentTitleType = {
   details?: ReactNode;
 };
 
-export default function ContentTitle(props: ContentTitleType): ReactElement
+export default function ContentTitle({ text, icon, details }: ContentTitleType): ReactElement
 {
-  const { text, icon, details } = props;
-  const titleContent = (
-    <Flex gap="sm">
-      <ResourceIcon icon={icon} size="md"/>
-      {(icon !== undefined && "icon" in icon) && icon.icon}
-      <Title order={3}>{text}</Title>
-    </Flex>
-  );
-
   return (
     <Stack gap="xs" w="100%">
-      {titleContent}
+      <Flex gap="sm">
+        <ResourceIcon icon={icon} size="md"/>
+        {(icon !== undefined && "icon" in icon) && icon.icon}
+        <Title order={3}>{text}</Title>
+      </Flex>
       {(details !== undefined && details !== null) && details}
       <Divider pos="absolute" left={0} right={0} bottom={0}/>
     </Stack>

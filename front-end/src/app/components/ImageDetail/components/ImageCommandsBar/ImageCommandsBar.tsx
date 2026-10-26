@@ -19,7 +19,7 @@ type ImageCommandsBarPropsType = {
 
 const COMMAND_BUTTON_SIZE = "md";
 const COMMAND_BUTTON_EDGE = Common.IconFromStringToNumberSize(COMMAND_BUTTON_SIZE);
-const COMMAND_BUTTON_GAP = 6;
+const COMMAND_BUTTON_GAP = 8;
 const MAX_VISIBLE_COMMANDS = 6;
 
 export default function ImageCommandsBar({ image, viewMode }: ImageCommandsBarPropsType): ReactElement

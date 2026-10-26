@@ -7,8 +7,8 @@ import { Image } from "@picteus/ws-client";
 
 import { LogType, SocketEventType } from "types";
 import { ToastService } from "utils";
-import { useActionModalContext, useEventSocket } from "app/context";
-import { useConfirmAction } from "app/hooks";
+import { useEventSocket } from "app/context";
+import { useConfirmAction, useImageDetailModal } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
 import {
   Common,
@@ -17,7 +17,6 @@ import {
   EntityVisual,
   ExtensionIcon,
   FormatedDate,
-  ImageDetail,
   StandardTable
 } from "app/components";
 
@@ -26,7 +25,7 @@ export default function ActivityScreen(): ReactElement
 {
   const [ t ] = useTranslation();
   const { eventStore } = useEventSocket();
-  const { addModal, removeModal } = useActionModalContext();
+  const openImageDetailModal = useImageDetailModal();
   const confirmAction = useConfirmAction();
   type TableRowDisplayType = { log: LogType; };
   const [ rows, setRows ] = useState<TableRowDisplayType[]>([]);
@@ -170,21 +169,11 @@ export default function ActivityScreen(): ReactElement
       return ToastService.apiCallError(error);
     }
 
-    const modalId = addModal({
-      body: (
-        <ImageDetail
-          image={image}
-          images={[ image ]}
-          viewMode="masonry"
-          onClose={() =>
-          {
-            removeModal(modalId);
-          }}
-        />),
-      withCloseButton: false,
-      fullScreen: true
+    openImageDetailModal({
+      image,
+      viewMode: "masonry"
     });
-  }, [ addModal, removeModal ]);
+  }, [ openImageDetailModal ]);
 
   const renderedRows = useMemo(() => paginatedRows?.map((row) =>
   {
