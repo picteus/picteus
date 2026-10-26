@@ -10,6 +10,12 @@ $bottom-bar-clearance: 8px;
   overflow: auto;
 }
 
+.contentHidden
+{
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .componentWrapper
 {
   overflow-y: auto;

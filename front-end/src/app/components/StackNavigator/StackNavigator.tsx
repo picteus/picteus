@@ -419,6 +419,7 @@ function StackedElement({
       inset={0}
       w="100%"
       h="100%"
+      bg="var(--mantine-color-body)"
       display={isVisible ? "flex" : "none"}
       direction="column"
     >
@@ -585,16 +586,12 @@ export default function StackNavigator({
     setStack(newStack);
   }, [ parentModalContext ]);
 
-  const subscribeToModals = useCallback(() => () =>
-  {
-  }, []);
-
   const actionModalContextValue = useMemo<ActionModalContextType>(() => ({
-    modals: stack,
+    modals: parentModalContext.modals,
     addModal,
     removeModal,
-    subscribeToModals
-  }), [ stack, addModal, removeModal, subscribeToModals ]);
+    subscribeToModals: parentModalContext.subscribeToModals
+  }), [ parentModalContext.modals, parentModalContext.subscribeToModals, addModal, removeModal ]);
 
   const stackContextValue = useMemo<StackContextType>(() => ({
     push,
@@ -623,6 +620,8 @@ export default function StackNavigator({
     );
   })), [ stack, pop, popToIndex, popToRoot, title ]);
 
+  const contentClassName = `${style.content}${stack.length > 0 ? ` ${style.contentHidden}` : ""}`;
+
   return (
     <ActionModalContext.Provider value={actionModalContextValue}>
       <StackContext.Provider value={stackContextValue}>
@@ -632,8 +631,7 @@ export default function StackNavigator({
             inset={0}
             w="100%"
             h="100%"
-            display={stack.length === 0 ? undefined : "none"}
-            className={style.content}
+            className={contentClassName}
           >
             {children}
           </Box>
