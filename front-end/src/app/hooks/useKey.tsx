@@ -12,9 +12,13 @@ export default function useKey(key: string, callback: () => void, options?: UseK
 {
   useEffect(() =>
   {
+    const mountTime = performance.now();
+
     function handleKeyDown(event: KeyboardEvent): void
     {
+      // We ignore events that originated prior to or at the moment the hook mounted.
       if (
+        event.timeStamp <= mountTime ||
         event.key.toLowerCase() !== key.toLowerCase() ||
         options?.isEnabled === false ||
         (options?.shouldIgnoreRepeat === true && event.repeat) ||
