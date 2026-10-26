@@ -1,14 +1,11 @@
-import { type ReactElement, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import { Flex, NumberFormatter, Paper, Stack, Text } from "@mantine/core";
 import { IconDots, IconPhoto } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { ImageSummary, SearchParameters } from "@picteus/ws-client";
-
-import { ImageItemMode, ImageOrSummary } from "types";
 import { ToastService } from "utils";
-import { useImageDetailModal } from "app/hooks";
 import { ImageService } from "app/services";
-import { Common, ImageItem } from "app/components";
+import { Common, ImageThumbnail } from "app/components";
 
 import style from "./ImagesCollection.module.scss";
 
@@ -77,7 +74,6 @@ export default function ImagesCollection({
   const containerRef = useRef<HTMLDivElement>(null);
   const [ images, setImages ] = useState<ImageSummary[]>(initialImages ?? []);
   const [ totalCount, setTotalCount ] = useState<number | undefined>(initialTotalCount);
-  const openImageDetailModal = useImageDetailModal();
   const edge = 100;
 
   useEffect(() =>
@@ -117,15 +113,6 @@ export default function ImagesCollection({
     void load();
   }, [ searchParameters, initialImages, initialTotalCount, count ]);
 
-  const handleOnClick = useCallback((image: ImageOrSummary): void =>
-  {
-    openImageDetailModal({
-      image,
-      images,
-      viewMode: "gallery"
-    });
-  }, [ openImageDetailModal, images ]);
-
   return (
     <div ref={containerRef} className={style.container}>
       {explanation && (<Text size="md" mb="sm">{explanation}</Text>)}
@@ -143,15 +130,7 @@ export default function ImagesCollection({
           />
         )}
         {images.map((image) => (
-          <ImageItem
-            key={image.id}
-            image={image}
-            height={edge}
-            width={edge}
-            mode={ImageItemMode.PASSIVE}
-            viewMode="gallery"
-            onClick={handleOnClick}
-          />
+          <ImageThumbnail key={image.id} imageOrUrl={image} width={edge} height={edge}/>
         ))}
         {totalCount !== undefined && totalCount > images.length && (
           <IndicatorCard

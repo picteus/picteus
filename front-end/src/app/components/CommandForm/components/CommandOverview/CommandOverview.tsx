@@ -1,4 +1,4 @@
-import { type ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactElement, useEffect, useMemo, useState } from "react";
 import { Alert, Box, Flex, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import {
@@ -8,11 +8,11 @@ import {
   SearchFilter
 } from "@picteus/ws-client";
 
-import { ImageItemMode, ImageOrSummary, ManualSection } from "types";
+import { ManualSection } from "types";
 import { extractMarkdownParagraph, ToastService } from "utils";
-import { useExtension, useImageDetailModal } from "app/hooks";
+import { useExtension } from "app/hooks";
 import { ImageService } from "app/services";
-import { ImageItem, ImagesCollection, Manual, Markdown } from "app/components";
+import { ImagesCollection, ImageThumbnail, Manual, Markdown } from "app/components";
 
 
 type InstructionsType = { summary?: string, details?: string };
@@ -140,14 +140,12 @@ type SingleImageOverviewPropsType = {
   specification: ManifestExtensionCommandSpecification;
   instructions?: InstructionsType;
   image: ImageSummary;
-  onImageClick: (image: ImageOrSummary) => void;
 };
 
 function SingleImageOverview({
   specification,
   instructions,
-  image,
-  onImageClick
+  image
 }: SingleImageOverviewPropsType): ReactElement
 {
   const [ t ] = useTranslation();
@@ -162,14 +160,7 @@ function SingleImageOverview({
           </Stack>
         </Alert>
         <Box style={{ flexShrink: 0 }}>
-          <ImageItem
-            image={image}
-            width={edge}
-            height={edge}
-            mode={ImageItemMode.PASSIVE}
-            viewMode="gallery"
-            onClick={onImageClick}
-          />
+          <ImageThumbnail imageOrUrl={image} width={edge} height={edge}/>
         </Box>
       </Flex>
       {instructions?.details && <Manual content={instructions.details} title={t("commands.about")}/>}
@@ -224,15 +215,6 @@ export default function CommandOverview({
   const { i18n } = useTranslation();
   const { data: extensionAndManual } = useExtension(extensionId);
   const { images, totalCount } = useCommandOverviewImages(searchFilter);
-  const openImageDetailModal = useImageDetailModal();
-
-  const handleOpenImageDetail = useCallback((image: ImageOrSummary): void =>
-  {
-    openImageDetailModal({
-      image,
-      viewMode: "gallery"
-    });
-  }, [ openImageDetailModal ]);
 
   const instructions = useMemo((): InstructionsType => extractCommandInstructions(commandId, extensionAndManual),
     [ commandId, extensionAndManual ]
@@ -258,7 +240,6 @@ export default function CommandOverview({
         specification={specification}
         instructions={instructions}
         image={singleImage}
-        onImageClick={handleOpenImageDetail}
       />
     );
   }
