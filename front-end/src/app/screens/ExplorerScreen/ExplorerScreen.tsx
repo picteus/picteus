@@ -1,4 +1,4 @@
-import { ReactElement, useCallback } from "react";
+import { ReactElement, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,11 @@ export default function ExplorerScreen(): ReactElement
   const [ t ] = useTranslation();
   const navigate = useNavigate();
   const { data: repositories = [] } = useRepositories();
+
+  const viewData = useMemo(() =>
+  {
+    return StorageService.getMainViewTabData(FiltersService.defaultFilter);
+  }, []);
 
   const computeEmptyResults = useCallback(() =>
   {
@@ -36,7 +41,7 @@ export default function ExplorerScreen(): ReactElement
         {null}
       </TitleBarPortal>
       <ImagesView
-        viewData={StorageService.getMainViewTabData(FiltersService.defaultFilter)}
+        viewData={viewData}
         isDefault={true}
         onEmptyResults={computeEmptyResults}
       />

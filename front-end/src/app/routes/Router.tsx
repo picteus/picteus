@@ -1,7 +1,8 @@
 import * as React from "react";
-import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
+import { FunctionComponent, ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { HashRouter, useLocation, useNavigate } from "react-router-dom";
 import { Bounce, ToastContainer } from "react-toastify";
+import { Box } from "@mantine/core";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
@@ -21,12 +22,14 @@ import {
 } from "app/screens";
 import { Layout } from "app/layout";
 
+import style from "./Router.module.scss";
+
 
 interface Route
 {
   key: string;
   path: string;
-  layout: JSX.Element;
+  layout: ReactElement;
   alwaysRender: boolean;
 }
 
@@ -34,7 +37,7 @@ interface RouterContentType
 {
 }
 
-function RouterContent({}: RouterContentType)
+function RouterContent({}: RouterContentType): ReactElement
 {
   const [ additionalUi ] = useAdditionalUiContext();
   const location = useLocation();
@@ -42,27 +45,7 @@ function RouterContent({}: RouterContentType)
   const [ routes, setRoutes ] = useState<Route[]>([]);
 
   const hasBeenRendered = useRef<{ [key: string]: boolean }>({});
-  const scrollPositions = useRef<{ [key: string]: number }>({});
 
-  useEffect(() =>
-  {
-    const handleScroll = () =>
-    {
-      scrollPositions.current[location.pathname] = window.scrollY;
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [ location.pathname ]);
-
-  useEffect(() =>
-  {
-    const savedScrollPosition = scrollPositions.current[location.pathname] || 0;
-    const rootElement = document.documentElement;
-    const originalScrollBehavior = rootElement.style.scrollBehavior;
-    rootElement.style.scrollBehavior = "auto";
-    window.scrollTo(0, savedScrollPosition);
-    rootElement.style.scrollBehavior = originalScrollBehavior;
-  }, [ location.pathname ]);
 
   useEffect(() =>
   {
@@ -75,7 +58,7 @@ function RouterContent({}: RouterContentType)
     return <Component {...props} />;
   }
 
-  const mainRoutes = useMemo<Route []>(() =>
+  const mainRoutes = useMemo<Route[]>(() =>
   {
     return Object.entries(ROUTES).map(([ key, path ]) =>
     {
@@ -91,16 +74,16 @@ function RouterContent({}: RouterContentType)
       };
       return { key, path, layout: renderLayout(ComponentMap[key]), alwaysRender: false };
     });
-  }, [ additionalUi, location.pathname ]);
+  }, [ additionalUi ]);
 
-  const additionalRoutes = useMemo<Route []>(() =>
+  const additionalRoutes = useMemo<Route[]>(() =>
   {
     return additionalUi.sidebar?.filter(element => element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === false).map((element: AdditionalUi) =>
     {
       const path = computeExtensionSidebarRoute(element.uuid);
       return { key: element.uuid, path, layout: renderLayout(SidebarAnchorScreen, { element }), alwaysRender: true };
     });
-  }, [ additionalUi, location.pathname ]);
+  }, [ additionalUi ]);
 
   useEffect(() =>
   {
@@ -116,15 +99,21 @@ function RouterContent({}: RouterContentType)
   return (
     <Layout>
       <>
-        {routes.map((route) =>
+        {routes.map(route =>
         {
           const isActive = location.pathname === route.path;
-          return (<div
-            key={route.key}
-            style={{ display: isActive === true ? "block" : "none", height: "100%" }}
-          >
-            {(route.alwaysRender === true || isActive === true || hasBeenRendered.current[route.path]) ? route.layout : null}
-          </div>);
+          return (
+            <Box
+              key={route.key}
+              pos="absolute"
+              inset={0}
+              w="100%"
+              h="100%"
+              className={isActive ? undefined : style.routeHidden}
+            >
+              {(route.alwaysRender === true || isActive === true || hasBeenRendered.current[route.path]) ? route.layout : null}
+            </Box>
+          );
         })}
       </>
     </Layout>
@@ -135,7 +124,7 @@ interface AppRouterType
 {
 }
 
-export default function AppRouter({}: AppRouterType)
+export default function AppRouter({}: AppRouterType): ReactElement
 {
   return (
     <HashRouter>
