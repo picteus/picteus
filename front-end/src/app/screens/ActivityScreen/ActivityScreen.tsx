@@ -17,11 +17,12 @@ import {
   EntityVisual,
   ExtensionIcon,
   FormatedDate,
+  StackableScreen,
   StandardTable
 } from "app/components";
 
 
-export default function ActivityScreen(): ReactElement
+function ActivityContent(): ReactElement
 {
   const [ t ] = useTranslation();
   const { eventStore } = useEventSocket();
@@ -40,7 +41,7 @@ export default function ActivityScreen(): ReactElement
   const load = useCallback(async (): Promise<void> =>
   {
     const events: SocketEventType[] = await EventService.getSocketEvents();
-    setRows(events.map((event) => ({ log: EventService.computeLog(event) })));
+    setRows(events.map(event => ({ log: EventService.computeLog(event) })));
   }, []);
 
   useEffect(() =>
@@ -49,7 +50,7 @@ export default function ActivityScreen(): ReactElement
 
     async function loadImageIllustrationUrls(): Promise<void>
     {
-      const illustrationUrlEntries = await Promise.all(rows.slice(startIndex, endIndex).flatMap((row) =>
+      const illustrationUrlEntries = await Promise.all(rows.slice(startIndex, endIndex).flatMap(row =>
       {
         if (row.log.entity?.type !== "image")
         {
@@ -61,7 +62,7 @@ export default function ActivityScreen(): ReactElement
         if (imageIllustrationUrlPromise === undefined)
         {
           imageIllustrationUrlPromise = ImageService.get({ id: imageId })
-            .then((image) => ImageService.getImageSrc(image.url, Common.ToastIconEdge, Common.ToastIconEdge))
+            .then(image => ImageService.getImageSrc(image.url, Common.ToastIconEdge, Common.ToastIconEdge))
             .catch((error: unknown) =>
             {
               console.warn(`Failed to load the thumbnail for the image with id '${imageId}'`, error);
@@ -70,12 +71,12 @@ export default function ActivityScreen(): ReactElement
           imageIllustrationUrlPromises.current.set(imageId, imageIllustrationUrlPromise);
         }
 
-        return [ imageIllustrationUrlPromise.then((illustrationUrl) => ({ imageId, illustrationUrl })) ];
+        return [ imageIllustrationUrlPromise.then(illustrationUrl => ({ imageId, illustrationUrl })) ];
       }));
 
       if (isCurrentPage === true)
       {
-        setImageIllustrationUrls((previousIllustrationUrls) =>
+        setImageIllustrationUrls(previousIllustrationUrls =>
         {
           const nextIllustrationUrls = { ...previousIllustrationUrls };
           for (const illustrationUrlEntry of illustrationUrlEntries)
@@ -113,7 +114,7 @@ export default function ActivityScreen(): ReactElement
     try
     {
       await EventService.deleteAllSocketEvents();
-      setPagination((previousPagination) =>
+      setPagination(previousPagination =>
       {
         return { ...previousPagination, currentPage: 1 };
       });
@@ -146,7 +147,7 @@ export default function ActivityScreen(): ReactElement
 
   function handleOnPaginationChange(newPage: number): void
   {
-    setPagination((previousPagination) =>
+    setPagination(previousPagination =>
     {
       return { ...previousPagination, currentPage: newPage };
     });
@@ -175,67 +176,74 @@ export default function ActivityScreen(): ReactElement
     });
   }, [ openImageDetailModal ]);
 
-  const renderedRows = useMemo(() => paginatedRows?.map((row) =>
+  const renderedRows = useMemo(() => paginatedRows?.map(row =>
   {
     const entity = row.log.entity;
     const imageId = entity?.type === "image" ? String(entity.id) : undefined;
     const illustrationUrl = imageId === undefined ? undefined : imageIllustrationUrls[imageId];
-    return (<Table.Tr key={row.log.id}>
-      <Table.Td w={160}>
-        <Text size="sm"><FormatedDate timestamp={row.log.milliseconds}/></Text>
-      </Table.Td>
-      <Table.Td w={60}>
-        {row.log.extensionId ?
-          <ExtensionIcon idOrExtension={row.log.extensionId} size="xs" withTooltip/>
-          :
-          (<Text size="md">
-            {row.log.extensionId ?? t("field.noValue")}
-          </Text>)}
-      </Table.Td>
-      <Table.Td w={80}>
-        <Badge
-          style={{ flexShrink: 0 }}
-          size="sm"
-          color={EventService.computeLogLevelColor(row.log.level)}
-        >
-          {row.log.level}
-        </Badge>
-      </Table.Td>
-      <Table.Td w={Common.ToastIconEdge}>
-        {imageId !== undefined && illustrationUrl !== undefined &&
-          <EntityVisual
-            illustrationUri={illustrationUrl}
-            isCompact={true}
-            onClick={() =>
-            {
-              void handleEntityVisualClick(imageId);
-            }}
-          />}
-      </Table.Td>
-      <Table.Td>
-        <Text size="md">{row.log.text}</Text>
-      </Table.Td>
-    </Table.Tr>);
-  }), [ handleEntityVisualClick, imageIllustrationUrls, paginatedRows ]);
+    return (
+      <Table.Tr key={row.log.id}>
+        <Table.Td w={160}>
+          <Text size="sm"><FormatedDate timestamp={row.log.milliseconds}/></Text>
+        </Table.Td>
+        <Table.Td w={60}>
+          {row.log.extensionId ?
+            <ExtensionIcon idOrExtension={row.log.extensionId} size="xs" withTooltip/>
+            :
+            (<Text size="md">
+              {row.log.extensionId ?? t("field.noValue")}
+            </Text>)}
+        </Table.Td>
+        <Table.Td w={80}>
+          <Badge
+            style={{ flexShrink: 0 }}
+            size="sm"
+            color={EventService.computeLogLevelColor(row.log.level)}
+          >
+            {row.log.level}
+          </Badge>
+        </Table.Td>
+        <Table.Td w={Common.ToastIconEdge}>
+          {imageId !== undefined && illustrationUrl !== undefined &&
+            <EntityVisual
+              illustrationUri={illustrationUrl}
+              isCompact={true}
+              onClick={() =>
+              {
+                void handleEntityVisualClick(imageId);
+              }}
+            />}
+        </Table.Td>
+        <Table.Td>
+          <Text size="md">{row.log.text}</Text>
+        </Table.Td>
+      </Table.Tr>
+    );
+  }), [ handleEntityVisualClick, imageIllustrationUrls, paginatedRows, t ]);
 
   function renderTable(): ReactElement
   {
-    return <StandardTable
-      head={[ "field.date", "field.extension", "field.logLevel", "", "field.message" ]}
-      withPagination={{
-        value: pagination,
-        setValue: setPagination,
-        totalCount: rows.length,
-        onPaginationChange: handleOnPaginationChange,
-        onTake: handleOnTakeChange
-      }}
-      emptyResults={<EmptyResults
-        icon={IconActivity}
-        description={t("activityScreen.emptyActivity.description")}
-        title={t("activityScreen.emptyActivity.title")}
-      />}>
-      {renderedRows}
-    </StandardTable>;
+    return (
+      <StandardTable
+        head={[ "field.date", "field.extension", "field.logLevel", "", "field.message" ]}
+        withPagination={{
+          value: pagination,
+          setValue: setPagination,
+          totalCount: rows.length,
+          onPaginationChange: handleOnPaginationChange,
+          onTake: handleOnTakeChange
+        }}
+        emptyResults={
+          <EmptyResults
+            icon={IconActivity}
+            description={t("activityScreen.emptyActivity.description")}
+            title={t("activityScreen.emptyActivity.title")}
+          />
+        }
+      >
+        {renderedRows}
+      </StandardTable>
+    );
   }
 
   return (
@@ -257,5 +265,16 @@ export default function ActivityScreen(): ReactElement
         {renderTable()}
       </Stack>
     </Container>
+  );
+}
+
+export default function ActivityScreen(): ReactElement
+{
+  const [ t ] = useTranslation();
+
+  return (
+    <StackableScreen title={t("menu.activity")}>
+      <ActivityContent/>
+    </StackableScreen>
   );
 }
