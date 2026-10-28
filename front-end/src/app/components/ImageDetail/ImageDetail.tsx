@@ -101,7 +101,7 @@ export default function ImageDetail({
       <Separator className={style.paneSeparator}>
         <div className={style.paneSeparatorHandle}/>
       </Separator>
-      <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="20%" className={style.right}>
+      <Panel id="right" defaultSize={`${panelSizes[1]}%`} minSize="25%" className={style.right}>
         {imageData && (
           <ImageDataSectionsProvider image={imageData}>
             <div className={style.rightTop}>

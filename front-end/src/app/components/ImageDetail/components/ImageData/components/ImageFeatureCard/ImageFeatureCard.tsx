@@ -1,9 +1,10 @@
 import React, { ReactElement } from "react";
-import { Box, Flex, Text } from "@mantine/core";
+import { Box, Flex } from "@mantine/core";
 
-import { ExtensionBadge, UiContainerView } from "app/components";
+import { UiContainerView } from "app/components";
 import { ImageFeatureContainerType } from "../../ImageDataComputer.ts";
 import ExtensionGroupedCard from "../ExtensionGroupedCard/ExtensionGroupedCard.tsx";
+import ExtensionItemHeader from "../ExtensionItemHeader/ExtensionItemHeader.tsx";
 
 
 export type ImageFeatureCardType =
@@ -41,15 +42,11 @@ export default function ImageFeatureCard({
             {extensionFeatures.map((feature, featureIndex) =>
               (
                 <Box key={featureIndex}>
-                  <Flex align="center" gap="xs" mb="xs">
-                    {hasSingleExtension === false &&
-                      <ExtensionBadge idOrExtension={extensionId} size="lg" color="gray"/>}
-                    {feature.name && (
-                      <Text size="xs" fw={500} c="dimmed">
-                        {hasSingleExtension === false && <span>•</span>} {feature.name}
-                      </Text>
-                    )}
-                  </Flex>
+                  <ExtensionItemHeader
+                    extensionId={extensionId}
+                    name={feature.name}
+                    hasSingleExtension={hasSingleExtension}
+                  />
                   <UiContainerView uiContainer={feature.uiContainer}/>
                 </Box>
               )

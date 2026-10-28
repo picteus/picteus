@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback } from "react";
+import React, { type ReactElement, useCallback } from "react";
 import { Alert, Box, Loader, Text } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -10,37 +10,54 @@ import { ImageItem } from "app/components";
 import style from "./ImageItemWrapper.module.scss";
 
 
-type ImageItemWrapperType =
+export type ImageItemWrapperPropsType =
   {
-    readonly imageId: string;
+    readonly idOrImage: string | ImageOrSummary;
     readonly edge?: number;
     readonly viewMode: ViewMode;
   };
 
-export default function ImageItemWrapper({ imageId, edge = 100, viewMode }: ImageItemWrapperType): ReactElement
+export default function ImageItemWrapper({
+  idOrImage,
+  edge = 100,
+  viewMode
+}: ImageItemWrapperPropsType): ReactElement
 {
   const [ t ] = useTranslation();
-  const { data: image, isError, isLoading } = useImage(imageId);
+  const isImageId = typeof idOrImage === "string";
+  const {
+    data: fetchedImage,
+    isError,
+    isLoading
+  } = useImage(isImageId ? idOrImage : undefined, { enabled: isImageId });
   const openImageDetailModal = useImageDetailModal();
+  const image = isImageId ? fetchedImage : idOrImage;
 
-  const handleOnClick = useCallback((image: ImageOrSummary): void =>
+  const handleOnClick = useCallback((selectedImage: ImageOrSummary): void =>
   {
     openImageDetailModal({
-      image,
+      image: selectedImage,
       viewMode
     });
   }, [ openImageDetailModal, viewMode ]);
 
-  if (isError)
+  if (isImageId && isError)
   {
-    return <Box w={edge} h={edge}>
-      <Alert variant="outline" color="red" title={<Text size="xs">{t("errors.imageNotAvailable")}</Text>}
-             icon={<IconInfoCircle/>} classNames={{ root: style.root, wrapper: style.root }}
-             style={{ width: edge, height: edge }}/>
-    </Box>;
+    return (
+      <Box w={edge} h={edge}>
+        <Alert
+          variant="outline"
+          color="red"
+          title={<Text size="xs">{t("errors.imageNotAvailable")}</Text>}
+          icon={<IconInfoCircle/>}
+          classNames={{ root: style.root, wrapper: style.root }}
+          style={{ width: edge, height: edge }}
+        />
+      </Box>
+    );
   }
 
-  return isLoading || !image ? <Loader size={edge}/> :
-    <ImageItem image={image} width={edge} height={edge} mode={ImageItemMode.PASSIVE} viewMode={viewMode}
-               onClick={handleOnClick}/>;
+  return (isImageId && isLoading) || !image
+    ? <Loader size={edge}/>
+    : <ImageItem image={image} width={edge} height={edge} mode={ImageItemMode.PASSIVE} viewMode={viewMode} onClick={handleOnClick}/>;
 }

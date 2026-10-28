@@ -1,5 +1,5 @@
 import React, { ReactElement, ReactNode } from "react";
-import { ActionIcon, Card, Collapse, Flex, Tooltip } from "@mantine/core";
+import { ActionIcon, Badge, Card, Collapse, Flex, Text, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconChevronDown, IconEyeOff } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -9,7 +9,10 @@ import { Common } from "app/components";
 
 export type ImageDataCardPropsType =
   {
-    readonly header: ReactNode;
+    readonly title?: string;
+    readonly icon?: ReactNode;
+    readonly count?: number;
+    readonly subtitle?: string;
     readonly children: ReactNode;
     readonly defaultExpanded?: boolean;
     readonly isOpened: boolean;
@@ -18,7 +21,10 @@ export type ImageDataCardPropsType =
   };
 
 export default function ImageDataCard({
-  header,
+  title,
+  icon,
+  count,
+  subtitle,
   children,
   defaultExpanded = true,
   isOpened: controlledIsOpened,
@@ -42,6 +48,20 @@ export default function ImageDataCard({
     }
   }
 
+  const renderedHeader = (
+    <>
+      {icon}
+      <Text fw={600} size="sm">
+        {title}
+      </Text>
+      {count !== undefined && count > 1 && (
+        <Badge size="xs" variant="light" color="gray">
+          {count}
+        </Badge>
+      )}
+    </>
+  );
+
   return (
     <Card shadow="xs" padding="sm" radius="md" withBorder style={{ width: "100%" }}>
       <Card.Section inheritPadding px="sm" py="xs">
@@ -52,7 +72,7 @@ export default function ImageDataCard({
           onClick={handleToggle}
         >
           <Flex align="center" gap="xs">
-            {header}
+            {renderedHeader}
           </Flex>
           <Flex align="center" gap="xs">
             {onHide !== undefined && (
@@ -99,6 +119,11 @@ export default function ImageDataCard({
           py="xs"
           style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}
         >
+          {subtitle !== undefined && (
+            <Text size="xs" c="dimmed" mb="sm">
+              {subtitle}
+            </Text>
+          )}
           {children}
         </Card.Section>
       </Collapse>

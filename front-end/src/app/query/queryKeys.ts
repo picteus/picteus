@@ -20,6 +20,9 @@ export const queryKeys =
   images: {
     all: [ "images" ] as const,
     detail: (imageId: string) => [ "images", imageId ] as const,
+    allEmbeddings: (imageId: string) => [ "images", imageId, "allEmbeddings" ] as const,
+    closestImages: (imageId: string, extensionId: string, name: string, count: number) =>
+      [ "images", imageId, "closestImages", extensionId, name, count ] as const,
     recentSummaries: (imageIds: readonly string[]) => [ "images", "recentSummaries", imageIds ] as const
   }
 } as const;

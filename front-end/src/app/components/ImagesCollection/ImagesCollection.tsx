@@ -74,7 +74,6 @@ export default function ImagesCollection({
   const containerRef = useRef<HTMLDivElement>(null);
   const [ images, setImages ] = useState<ImageSummary[]>(initialImages ?? []);
   const [ totalCount, setTotalCount ] = useState<number | undefined>(initialTotalCount);
-  const edge = 100;
 
   useEffect(() =>
   {
@@ -126,18 +125,18 @@ export default function ImagesCollection({
               </Text>
             }
             label={t("imagesCollection.images")}
-            edge={edge}
+            edge={Common.ImageThumbnailEdge}
           />
         )}
         {images.map((image) => (
-          <ImageThumbnail key={image.id} imageOrUrl={image} width={edge} height={edge}/>
+          <ImageThumbnail key={image.id} imageOrUrl={image} width={Common.ImageThumbnailEdge} height={Common.ImageThumbnailEdge}/>
         ))}
         {totalCount !== undefined && totalCount > images.length && (
           <IndicatorCard
             icon={IconDots}
             content={<Text size="sm" fw={600} c="dimmed">+{totalCount - images.length}</Text>}
             label={t("imagesCollection.more")}
-            edge={edge}
+            edge={Common.ImageThumbnailEdge}
           />
         )}
       </Flex>

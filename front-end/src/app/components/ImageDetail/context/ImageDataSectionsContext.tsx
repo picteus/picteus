@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Image } from "@picteus/ws-client";
 
 import createHmrStableContext from "app/context/createHmrStableContext.ts";
+import { useImageAllEmbeddings } from "app/hooks";
 import { StorageService } from "app/services";
 
 import {
@@ -57,6 +58,7 @@ export function ImageDataSectionsProvider({
 }: ImageDataSectionsProviderPropsType): ReactNode
 {
   const [ t ] = useTranslation();
+  const { data: embeddings = [] } = useImageAllEmbeddings(image.id);
 
   const [ hiddenSectionIds, setHiddenSectionIds ] = useState<string[]>(
     () => StorageService.getImageDetailHiddenSections([])
@@ -75,9 +77,9 @@ export function ImageDataSectionsProvider({
     StorageService.setImageDetailSectionsOrder(sectionsOrder);
   }, [ sectionsOrder ]);
 
-  const availableSections = useMemo(
-    () => computeAvailableSectionDescriptors(image, t),
-    [ image, t ]
+  const availableSections = useMemo(() =>
+      computeAvailableSectionDescriptors(image, t, embeddings),
+    [ image, embeddings ]
   );
 
   const effectiveSectionsOrder = useMemo<string[]>(() =>

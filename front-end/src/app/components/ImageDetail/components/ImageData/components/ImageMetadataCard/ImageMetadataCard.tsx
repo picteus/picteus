@@ -158,18 +158,8 @@ export default function ImageMetadataCard({
 
   return (
     <ImageDataCard
-      header={(
-        <>
-          <Text fw={600} size="sm">
-            {t("imageDetail.metadata")}
-          </Text>
-          {totalEntriesCount > 1 && (
-            <Badge size="xs" variant="light" color="gray">
-              {totalEntriesCount}
-            </Badge>
-          )}
-        </>
-      )}
+      title={t("imageDetail.metadata")}
+      count={totalEntriesCount}
       isOpened={isOpened}
       onToggle={onToggle}
       onHide={onHide}

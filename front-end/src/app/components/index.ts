@@ -15,7 +15,7 @@ export {
 } from "./ActionEntry/ActionEntry.tsx";
 export { default as ImageDetail } from "./ImageDetail/ImageDetail.tsx";
 export { default as ImageItem } from "./ImageItem/ImageItem.tsx";
-export { ImageItemWrapper } from "./ImageDetail/components";
+export { ImageItemWrapper, ImageItemsGallery } from "./ImageDetail/components";
 export {
   default as ImageSelectCheckbox,
   useImageSelection,

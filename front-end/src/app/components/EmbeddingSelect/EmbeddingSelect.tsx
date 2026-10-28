@@ -9,10 +9,11 @@ import { ExtensionIcon, MenuItemEntry, StandardMenu } from "app/components";
 
 
 type EmbeddingSelectType = {
+  initialEmbeddingName?: ExtensionIdImageEmbeddingName;
   onSelected: ({ extensionId, name }: ExtensionIdImageEmbeddingName) => void;
 };
 
-export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
+export default function EmbeddingSelect({ initialEmbeddingName, onSelected }: EmbeddingSelectType)
 {
   const { data: embeddingsNames = [] } = useEmbeddingsNames();
   const { data: extensions = [] } = useExtensions();
@@ -33,7 +34,7 @@ export default function EmbeddingSelect({ onSelected }: EmbeddingSelectType)
 
   useEffect(() =>
   {
-    let selected = StorageService.getClosestImagesEmbeddingName();
+    let selected = initialEmbeddingName ? mergeExtensionIdEmbeddingName(initialEmbeddingName) : StorageService.getClosestImagesEmbeddingName();
     if (!selected || !embeddingsNames.find(embeddingName => mergeExtensionIdEmbeddingName(embeddingName) === selected))
     {
       if (embeddingsNames.length > 0)

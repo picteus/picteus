@@ -12,7 +12,7 @@ import { ManualSection } from "types";
 import { extractMarkdownParagraph, ToastService } from "utils";
 import { useExtension } from "app/hooks";
 import { ImageService } from "app/services";
-import { ImagesCollection, ImageThumbnail, Manual, Markdown } from "app/components";
+import { Common, ImagesCollection, ImageThumbnail, Manual, Markdown } from "app/components";
 
 
 type InstructionsType = { summary?: string, details?: string };
@@ -150,7 +150,6 @@ function SingleImageOverview({
 {
   const [ t ] = useTranslation();
 
-  const edge = 100;
   return (
     <Stack gap="md" my="sm">
       <Flex align="start" justify="space-between" gap="md">
@@ -160,7 +159,7 @@ function SingleImageOverview({
           </Stack>
         </Alert>
         <Box style={{ flexShrink: 0 }}>
-          <ImageThumbnail imageOrUrl={image} width={edge} height={edge}/>
+          <ImageThumbnail imageOrUrl={image} width={Common.ImageThumbnailEdge} height={Common.ImageThumbnailEdge}/>
         </Box>
       </Flex>
       {instructions?.details && <Manual content={instructions.details} title={t("commands.about")}/>}

@@ -104,9 +104,8 @@ function StackBreadcrumbs({
         fw={500}
         underline="hover"
         truncate="end"
-        maw={220}
         miw={40}
-        display="inline-flex"
+        display="block"
         onClick={popToRoot}
       >
         {title}
@@ -148,9 +147,8 @@ function StackBreadcrumbs({
           fw={500}
           underline="hover"
           truncate="end"
-          maw={220}
           miw={40}
-          display="inline-flex"
+          display="block"
           onClick={() => popToIndex(itemIndex)}
         >
           {itemTitle}
@@ -181,9 +179,8 @@ function StackBreadcrumbs({
         size="sm"
         fw={600}
         truncate="end"
-        maw={320}
         miw={60}
-        display="inline-flex"
+        display="block"
       >
         {itemTitle}
       </Text>

@@ -1,3 +1,4 @@
+import React from "react";
 import i18n, { TFunction } from "i18next";
 
 import {
@@ -30,6 +31,7 @@ import {
   xml
 } from "@picteus/shared-core";
 import {
+  ExtensionImageEmbeddings,
   ExtensionImageFeature,
   GenerationRecipe,
   GenerationRecipeFromJSON,
@@ -39,7 +41,12 @@ import {
   ImageMetadata as PicteusImageMetadata
 } from "@picteus/ws-client";
 
+import { freeForm } from "generated/ViewKit.tsx";
+
+import { ImageOrSummary, ViewMode } from "types";
 import { capitalizeText } from "utils";
+
+import { Common, ImageItemsGallery } from "app/components";
 
 
 const sortedFeatureTypes: readonly ImageFeatureType[] =
@@ -60,7 +67,8 @@ export const builtInSectionIds =
     tags: "tags",
     recipe: "recipe",
     rawFeatures: "rawFeatures",
-    metadata: "metadata"
+    metadata: "metadata",
+    embeddings: "embeddings"
   } as const;
 
 export const defaultOrderSectionIds: readonly string[] =
@@ -68,6 +76,7 @@ export const defaultOrderSectionIds: readonly string[] =
     builtInSectionIds.recipe,
     builtInSectionIds.tags,
     builtInSectionIds.information,
+    builtInSectionIds.embeddings,
     ...sortedFeatureTypes.map((type) => `feature:${type}`),
     builtInSectionIds.rawFeatures,
     builtInSectionIds.metadata
@@ -660,9 +669,33 @@ export function inferMetadataUiContainer(value: string): UiContainer
   });
 }
 
+export function computeEmbeddingModelUiContainer(
+  closestImages: readonly (string | ImageOrSummary)[],
+  viewMode: ViewMode
+): UiContainer
+{
+  const elements: UiElement[] = [];
+
+  if (closestImages.length > 0)
+  {
+    elements.push(
+      freeForm(
+        React.createElement(ImageItemsGallery, {
+          idsOrImages: closestImages,
+          edge: Common.ImageThumbnailEdge,
+          viewMode
+        })
+      )
+    );
+  }
+
+  return createUiContainer({ elements });
+}
+
 export function computeAvailableSectionDescriptors(
   image: Image,
-  t: TFunction = i18n.t
+  t: TFunction = i18n.t,
+  embeddings?: readonly ExtensionImageEmbeddings[]
 ): ImageDataSectionDescriptorType[]
 {
   const sections: ImageDataSectionDescriptorType[] = [
@@ -688,6 +721,19 @@ export function computeAvailableSectionDescriptors(
     sections.push({
       id: builtInSectionIds.recipe,
       label: t("imageDetail.recipe")
+    });
+  }
+
+  const totalEmbeddingsCount = embeddings?.reduce(
+    (accumulated, extensionEmbeddings) => accumulated + extensionEmbeddings.embeddings.length,
+    0
+  ) ?? 0;
+  if (totalEmbeddingsCount > 0)
+  {
+    sections.push({
+      id: builtInSectionIds.embeddings,
+      label: t("imageDetail.embeddings"),
+      badge: totalEmbeddingsCount
     });
   }
 

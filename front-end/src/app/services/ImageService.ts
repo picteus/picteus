@@ -1,4 +1,5 @@
 import {
+  ExtensionImageEmbeddings,
   ExtensionImageFeature,
   ExtensionImageTag,
   type Image,
@@ -76,6 +77,11 @@ async function getAllFeatures(
 ): Promise<Array<ExtensionImageFeature>>
 {
   return imageApi.imageGetAllFeatures(parameters);
+}
+
+async function getAllEmbeddings(id: string): Promise<ExtensionImageEmbeddings[]>
+{
+  return await imageApi.imageGetAllEmbeddings({ id });
 }
 
 async function textToImages(
@@ -320,6 +326,7 @@ export default {
   download,
   getImageSrc,
   getAllFeatures,
+  getAllEmbeddings,
   getClosestImages,
   runCapabilities,
   searchRunCapabilities,

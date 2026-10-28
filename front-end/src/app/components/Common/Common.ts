@@ -10,6 +10,7 @@ const Common = {
   IconFromStringToNumberSize: (size: IconSizeType) => size === "xs" ? Common.IconXSmallSize : (size === "sm" ? Common.IconSmallSize : (size === "md" ? Common.IconMediumSize : (size === "lg" ? Common.IconLargeSize : (size === "xl" ? Common.IconXLargeSize : undefined)))),
   ToastIconEdge: 32,
   NotificationIllustrationEdge: 64,
+  ImageThumbnailEdge: 105,
   IconStrokeSize: 1.5,
   ArrowSize: 15,
   RightSideBarOffset: 15,

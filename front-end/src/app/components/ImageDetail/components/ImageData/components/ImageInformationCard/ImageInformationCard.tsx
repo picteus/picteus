@@ -1,5 +1,5 @@
 import React, { ReactElement, useMemo } from "react";
-import { ActionIcon, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Tooltip } from "@mantine/core";
 import { IconEye } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -65,7 +65,7 @@ export default function ImageInformationCard({
       {
         rows.push(tableRow([
             string(t("field.parent"), labelOptions),
-            freeForm(<ImageItemWrapper imageId={image.parentId} viewMode={viewMode}/>)
+            freeForm(<ImageItemWrapper idOrImage={image.parentId} viewMode={viewMode}/>)
           ])
         );
       }
@@ -153,11 +153,7 @@ export default function ImageInformationCard({
 
   return (
     <ImageDataCard
-      header={(
-        <Text fw={600} size="sm">
-          {t("imageDetail.information")}
-        </Text>
-      )}
+      title={t("imageDetail.information")}
       isOpened={isOpened}
       onToggle={onToggle}
       onHide={onHide}

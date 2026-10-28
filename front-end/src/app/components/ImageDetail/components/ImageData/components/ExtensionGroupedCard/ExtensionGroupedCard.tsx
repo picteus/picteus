@@ -1,5 +1,5 @@
 import React, { ReactElement, useMemo } from "react";
-import { Badge, Box, Divider, Flex, Stack, Text, Tooltip } from "@mantine/core";
+import { Box, Divider, Flex, Stack, Tooltip } from "@mantine/core";
 
 import { useExtensions } from "app/hooks";
 import { ExtensionBadge, ExtensionIcon } from "app/components";
@@ -67,29 +67,17 @@ export default function ExtensionGroupedCard<T>({
   const singleExtensionId = hasSingleExtension ? resolvedEntries[0][0] : undefined;
   const singleExtension = singleExtensionId ? extensions.find((anExtension) => anExtension.manifest.id === singleExtensionId) : undefined;
 
-  const headerNode = (
-    <>
-      {hasSingleExtension && singleExtensionId && (
+  return (
+    <ImageDataCard
+      icon={hasSingleExtension && singleExtensionId ? (
         <Tooltip label={singleExtension?.manifest.name} position="top" withArrow>
           <Box style={{ display: "inline-flex" }}>
             <ExtensionIcon idOrExtension={singleExtensionId} size="xs"/>
           </Box>
         </Tooltip>
-      )}
-      <Text fw={600} size="sm">
-        {title}
-      </Text>
-      {hasSingleExtension === false && (
-        <Badge size="xs" variant="light" color="gray">
-          {resolvedEntries.length}
-        </Badge>
-      )}
-    </>
-  );
-
-  return (
-    <ImageDataCard
-      header={headerNode}
+      ) : undefined}
+      title={title}
+      count={hasSingleExtension === false ? resolvedEntries.length : undefined}
       defaultExpanded={defaultExpanded}
       isOpened={isOpened}
       onToggle={onToggle}
@@ -103,9 +91,9 @@ export default function ExtensionGroupedCard<T>({
                 {hasSingleExtension === false && (
                   <>
                     {index > 0 && <Divider mb="sm"/>}
-                      {showExtensionBadge && <Flex align="center" gap="xs" mb="xs">
-                        <ExtensionBadge idOrExtension={extensionId} size="lg" color="gray"/>
-                      </Flex>}
+                    {showExtensionBadge && <Flex align="center" gap="xs" mb="xs">
+                      <ExtensionBadge idOrExtension={extensionId} size="lg" color="gray"/>
+                    </Flex>}
                   </>
                 )}
                 {renderSection(hasSingleExtension, extensionId, extensionItems, index)}

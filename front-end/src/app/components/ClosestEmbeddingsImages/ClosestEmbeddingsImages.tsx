@@ -1,22 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { ReactElement, useEffect, useMemo, useState } from "react";
 import { Alert, Button, Flex, Group, Input, NumberInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useFocusTrap } from "@mantine/hooks";
 import { IconInfoCircle, IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import {
-  ExtensionIdImageEmbeddingName,
-  ImageApiImageClosestImagesRequest,
-  ImageDistance,
-  ImageSummary
-} from "@picteus/ws-client";
+import { ExtensionIdImageEmbeddingName, ImageSummary } from "@picteus/ws-client";
 
 import { ImageWithCaption, ViewMode } from "types";
-import { ToastService, Validators } from "utils";
-import { ImageService, StorageService } from "app/services";
+import { ApiCallError, ToastService, Validators } from "utils";
+import { StorageService } from "app/services";
+import { useClosestImages } from "app/hooks";
 import {
   CaptionDistance,
+  Common,
   EmbeddingSelect,
   EmptyResults,
   ImagesView,
@@ -25,158 +22,136 @@ import {
 } from "app/components";
 
 
-type ClosestEmbeddingsImagesFormPayload = {
-  count: number;
-};
+type ClosestEmbeddingsImagesFormPayload =
+  {
+    count: number;
+  };
 
-type ClosestEmbeddingsImagesType = {
-  image: ImageSummary;
-  viewMode: ViewMode;
-};
+type ClosestEmbeddingsImagesType =
+  {
+    image: ImageSummary;
+    viewMode: ViewMode;
+    initialEmbeddingName?: ExtensionIdImageEmbeddingName;
+  };
 
-export default function ClosestEmbeddingsImages({ image, viewMode }: ClosestEmbeddingsImagesType)
+export default function ClosestEmbeddingsImages({
+  image,
+  viewMode,
+  initialEmbeddingName
+}: ClosestEmbeddingsImagesType): ReactElement
 {
   const [ t ] = useTranslation();
-  const [ loading, setLoading ] = useState<boolean>(false);
-  const [ emptyResult, setEmptyResult ] = useState<boolean>(false);
-  const [ images, setImages ] = useState<ImageWithCaption[]>([]);
-  const [ embeddingName, setEmbeddingName ] = useState<ExtensionIdImageEmbeddingName | undefined>();
+  const [ embeddingName, setEmbeddingName ] = useState<ExtensionIdImageEmbeddingName | undefined>(initialEmbeddingName);
+  const initialResultsCount = StorageService.getClosestImagesResultsCount();
+  const [ searchCount, setSearchCount ] = useState<number>(initialResultsCount);
   const focusTrapRef = useFocusTrap();
 
-  const initialResultsCount = StorageService.getClosestImagesResultsCount();
+  const isQueryEnabled = Boolean(embeddingName?.extensionId && embeddingName?.name && searchCount > 0);
+  const {
+    data: imageDistances = [],
+    isFetching,
+    error
+  } = useClosestImages(image.id, embeddingName?.extensionId ?? "", embeddingName?.name ?? "", searchCount, isQueryEnabled);
 
-  const initialValues: ClosestEmbeddingsImagesFormPayload = { count: initialResultsCount };
+  useEffect(() =>
+  {
+    if (error)
+    {
+      ToastService.apiCallError(error as unknown as ApiCallError);
+    }
+  }, [ error ]);
 
   const form = useForm({
     mode: "uncontrolled",
-    initialValues,
+    initialValues: { count: initialResultsCount },
     validate: {
       count: Validators.isNotEmpty
     }
   });
 
-  useEffect(() =>
-  {
-    if (embeddingName)
-    {
-      void search({
-        count: form.getValues().count,
-        extensionId: embeddingName.extensionId,
-        name: embeddingName.name,
-        id: image.id
-      });
-    }
-  }, [ embeddingName?.extensionId, embeddingName?.name, image.id ]);
+  const images = useMemo<ImageWithCaption[]>(() =>
+      imageDistances.slice().sort((firstDistance, secondDistance) => firstDistance.distance - secondDistance.distance).map((imageDistance) => ({
+        ...imageDistance.image, caption: <CaptionDistance distance={imageDistance.distance}/>
+      })),
+    [ imageDistances ]
+  );
 
-  async function handleSubmit(values: ClosestEmbeddingsImagesFormPayload)
+  function handleSubmit(values: ClosestEmbeddingsImagesFormPayload): void
   {
     if (!embeddingName)
     {
       return;
     }
     StorageService.setClosestImagesResultsCount(values.count);
-    const { extensionId, name } = embeddingName;
-    const parameters: ImageApiImageClosestImagesRequest = {
-      count: values.count,
-      extensionId,
-      name,
-      id: image.id
-    };
-    void search(parameters);
+    setSearchCount(values.count);
   }
 
-  async function search(parameters: ImageApiImageClosestImagesRequest)
+  function renderForm(): ReactElement
   {
-    setLoading(true);
-    setEmptyResult(false);
+    return (
+      <Group>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Flex align="end" gap={20}>
+            <Input.Wrapper label={t("field.source")}>
+              <ImageThumbnail imageOrUrl={image} width={Common.ImageThumbnailEdge} height={Common.ImageThumbnailEdge}/>
+            </Input.Wrapper>
+            <Input.Wrapper label={t("field.name")}>
+              <EmbeddingSelect initialEmbeddingName={initialEmbeddingName} onSelected={setEmbeddingName}/>
+            </Input.Wrapper>
+            <NumberInput
+              ref={focusTrapRef}
+              min={1}
+              withAsterisk
+              label={t("field.imageCount")}
+              placeholder={t("closestEmbeddingsImagesModal.countPlaceholder")}
+              {...form.getInputProps("count")}
+            />
 
-    try
-    {
-      let imageDistances: ImageDistance[];
-      try
-      {
-        imageDistances = await ImageService.getClosestImages(parameters);
-      }
-      catch (error)
-      {
-        return ToastService.apiCallError(error, "An error occurred while trying to find closest images");
-      }
-      const computedImages = imageDistances
-        .sort((distance1, distance2) => distance1.distance - distance2.distance)
-        .map((imageDistance) => ({
-          ...imageDistance.image,
-          caption: <CaptionDistance distance={imageDistance.distance}/>
-        }));
-      setEmptyResult(computedImages.length === 0);
-      setImages(computedImages);
-    }
-    finally
-    {
-      setLoading(false);
-    }
+            <Button loading={isFetching} disabled={isFetching || embeddingName === undefined} type="submit">
+              {t("button.find")}
+            </Button>
+          </Flex>
+        </form>
+      </Group>
+    );
   }
 
-  function renderForm()
-  {
-    const edge = 100;
-    return (<Group>
-      <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Flex align="end" gap={20}>
-          <Input.Wrapper label={t("field.source")}>
-            <ImageThumbnail imageOrUrl={image} width={edge} height={edge}/>
-          </Input.Wrapper>
-          <Input.Wrapper label={t("field.name")}>
-            <EmbeddingSelect onSelected={setEmbeddingName}/>
-          </Input.Wrapper>
-          <NumberInput
-            ref={focusTrapRef}
-            min={1}
-            withAsterisk
-            label={t("field.imageCount")}
-            placeholder={t("closestEmbeddingsImagesModal.countPlaceholder")}
-            {...form.getInputProps("count")}
-          />
-
-          <Button loading={loading} disabled={loading || embeddingName === undefined} type="submit">
-            {t("button.find")}
-          </Button>
-        </Flex>
-      </form>
-    </Group>);
-  }
-
-  function renderEmptyResult()
+  function renderEmptyResult(): ReactElement<typeof EmptyResults>
   {
     if (embeddingName === undefined)
     {
-      return (<EmptyResults
-        icon={IconPhotoSearch}
-        title={t("emptyImages.titleNoEmbedding")}
-        description={t("emptyImages.descriptionNoEmbedding")}
-      />);
+      return (
+        <EmptyResults
+          icon={IconPhotoSearch}
+          title={t("emptyImages.titleNoEmbedding")}
+          description={t("emptyImages.descriptionNoEmbedding")}
+        />
+      );
     }
-    if (emptyResult)
-    {
-      return (<EmptyResults
+
+    return (
+      <EmptyResults
         icon={IconPhotoSearch}
         title={t("emptyImages.title")}
         description={t("emptyImages.description")}
-      />);
-    }
+      />
+    );
   }
 
-  function renderContent()
+  function renderContent(): ReactElement
   {
-    return (<ImagesView
-      viewData={{ viewMode, images }}
-      isDefault={false}
-      loader={loading && <LoadingView visible={true}/>}
-      onEmptyResults={() =>
-      {
-        return renderEmptyResult();
-      }}
-      controlBarChildren={renderForm()}
-    />);
+    return (
+      <ImagesView
+        viewData={{ viewMode, images }}
+        isDefault={false}
+        loader={isFetching && <LoadingView visible={true}/>}
+        onEmptyResults={() =>
+        {
+          return renderEmptyResult();
+        }}
+        controlBarChildren={renderForm()}
+      />
+    );
   }
 
   return (

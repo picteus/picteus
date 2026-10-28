@@ -6,7 +6,7 @@ import { ExtensionImageFeature, Image, ImageFeatureType } from "@picteus/ws-clie
 
 import { ViewMode } from "types";
 import { formatDate } from "utils";
-import { useOpenBrowser } from "app/hooks";
+import { useImageAllEmbeddings, useOpenBrowser } from "app/hooks";
 import { StorageService } from "app/services";
 import { CodeViewer, CopyText, Markdown, UiElementViewProvider } from "app/components";
 
@@ -25,6 +25,7 @@ import ImageRecipeCard from "./components/ImageRecipeCard/ImageRecipeCard.tsx";
 import ImageFeatureTypeCard from "./components/ImageFeatureTypeCard/ImageFeatureTypeCard.tsx";
 import ImageRawFeaturesCard from "./components/ImageRawFeaturesCard/ImageRawFeaturesCard.tsx";
 import ImageMetadataCard, { getMetadataEntriesCount } from "./components/ImageMetadataCard/ImageMetadataCard.tsx";
+import ImageEmbeddingsCard from "./components/ImageEmbeddingsCard/ImageEmbeddingsCard.tsx";
 
 import style from "./ImageData.module.scss";
 
@@ -39,6 +40,7 @@ export default function ImageData({ image, viewMode }: ImageDataType): ReactElem
 {
   const [ t ] = useTranslation();
   const openBrowser = useOpenBrowser();
+  const { data: embeddings = [] } = useImageAllEmbeddings(image.id);
   const { sections, hideSection } = useImageDataSectionsContext();
   const [ accordionValue, setAccordionValue ] = useState<string[]>(StorageService.getImageDetailTraits(Object.values(defaultOrderSectionIds)));
 
@@ -140,6 +142,26 @@ export default function ImageData({ image, viewMode }: ImageDataType): ReactElem
         );
       }
 
+      if (embeddings.length > 0)
+      {
+        map[builtInSectionIds.embeddings] = (
+          <ImageEmbeddingsCard
+            image={image}
+            embeddings={embeddings}
+            viewMode={viewMode}
+            isOpened={accordionValue.includes(builtInSectionIds.embeddings)}
+            onToggle={() =>
+            {
+              toggleSection(builtInSectionIds.embeddings);
+            }}
+            onHide={() =>
+            {
+              hideSection(builtInSectionIds.embeddings);
+            }}
+          />
+        );
+      }
+
       for (const featureType of availableFeatureTypes)
       {
         const sectionId = `feature:${featureType}`;
@@ -208,6 +230,7 @@ export default function ImageData({ image, viewMode }: ImageDataType): ReactElem
       availableFeatureTypes,
       rawFeatures,
       metadataEntriesCount,
+      embeddings,
       hideSection
     ]
   );

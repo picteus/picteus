@@ -277,7 +277,7 @@ export default function useImageCommands({
             title: t("commands.confirmImageDeleteTitle"),
             message: t("commands.confirmImageDeleteMessage"),
             content: (
-              <ImageItemWrapper imageId={image.id} viewMode={viewMode}/>
+              <ImageItemWrapper idOrImage={image} viewMode={viewMode}/>
             )
           }
         });
