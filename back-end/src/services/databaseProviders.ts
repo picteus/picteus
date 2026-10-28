@@ -533,11 +533,17 @@ export class VectorDatabaseAccessor extends ChromaProvider implements OnModuleIn
     logger.debug("Getting all the extension identifiers registered to the vector database");
     if (this.useVectorDatabase === true)
     {
-      const collection: Collection[] = await (await this.getClient()).listCollections({});
-      return collection.map((collectionType) =>
+      const collections: Collection[] = await (await this.getClient()).listCollections({});
+      const extensionIds = new Set<string>();
+      for (const collection of collections)
       {
-        return collectionType.metadata!.id as string;
-      });
+        const extensionId = collection.metadata?.id as string | undefined;
+        if (extensionId !== undefined)
+        {
+          extensionIds.add(extensionId);
+        }
+      }
+      return Array.from(extensionIds);
     }
     else
     {

@@ -1646,6 +1646,20 @@ describe("Image with module", () =>
     const imageId = image.id;
     const imageEmbeddings = [ new ImageEmbedding("default", [ 1, 2, 3, 4, 5 ]) ];
 
+    function expectEmbedding(embeddings: ImageEmbedding[], expectedEmbeddings: ImageEmbedding[]): void
+    {
+      expect(embeddings.length).toEqual(expectedEmbeddings.length);
+      for (const expectedEmbedding of expectedEmbeddings)
+      {
+        const matchingEmbedding = embeddings.find(embedding => embedding.name === expectedEmbedding.name);
+        expect(matchingEmbedding).toBeDefined();
+        for (let innerIndex = 0; innerIndex < expectedEmbedding.values.length; innerIndex++)
+        {
+          expect(Math.abs(matchingEmbedding!.values[innerIndex] - expectedEmbedding.values[innerIndex])).toBeLessThanOrEqual(1e-5);
+        }
+      }
+    }
+
     {
       // We assess with a non-existing extension
       const nonExistingId = "non-existing-id";
@@ -1668,20 +1682,6 @@ describe("Image with module", () =>
       expect(emptyEmbeddings.embeddings).toEqual([]);
     }
     {
-
-      function expectEmbedding(embeddings: ImageEmbedding[], expectedEmbeddings: ImageEmbedding[]): void
-      {
-        for (let index = 0; index < embeddings.length; index++)
-        {
-          const embedding = embeddings[index];
-          const expectedEmbedding = expectedEmbeddings[index];
-          for (let innerIndex = 0; innerIndex < embeddings.values.length; innerIndex++)
-          {
-            expect(Math.abs(embedding.values[innerIndex] - expectedEmbedding.values[innerIndex])).toBeLessThanOrEqual(1e-5);
-          }
-        }
-      }
-
       await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, imageEmbeddings);
       const updatedImageEmbeddings = await base.getImageController().getEmbeddings(imageId, extensionId);
       expect(updatedImageEmbeddings.id).toEqual(extensionId);
@@ -1692,7 +1692,7 @@ describe("Image with module", () =>
       const allImageEmbeddings = await base.getImageController().getAllEmbeddings(imageId);
       expect(allImageEmbeddings.length).toEqual(1);
       expect(allImageEmbeddings[0].id).toEqual(extensionId);
-      expectEmbedding([ allImageEmbeddings[0].embeddings[0] ], [ imageEmbeddings[0] ]);
+      expectEmbedding(allImageEmbeddings[0].embeddings, imageEmbeddings);
     }
     {
       // We assess with non-homogeneous embeddings
@@ -1700,6 +1700,18 @@ describe("Image with module", () =>
       {
         await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, [ new ImageEmbedding("default", [ 1 ]) ]);
       }).rejects.toThrow(new ServiceError(`The embeddings length 1 is not the expected one 5`, BAD_REQUEST, base.badParameterCode));
+    }
+    {
+      // We assess with multiple embeddings for the same extension
+      const multipleImageEmbeddings = [ new ImageEmbedding("first", [ 1, 2, 3, 4, 5 ]), new ImageEmbedding("second", [ 5, 4, 3, 2, 1 ]) ];
+      await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, multipleImageEmbeddings);
+      const extensionIds = await base.getVectorDatabaseAccessor().getExtensionIds();
+      expect(extensionIds.filter(extensionIdItem => extensionIdItem === extensionId).length).toEqual(1);
+      const multipleAllImageEmbeddings = await base.getImageController().getAllEmbeddings(imageId);
+      expect(multipleAllImageEmbeddings.length).toEqual(1);
+      expect(multipleAllImageEmbeddings[0].id).toEqual(extensionId);
+      expect(multipleAllImageEmbeddings[0].embeddings.length).toEqual(2);
+      expectEmbedding(multipleAllImageEmbeddings[0].embeddings, multipleImageEmbeddings);
     }
     {
       // We delete the image and check that the embeddings are deleted
