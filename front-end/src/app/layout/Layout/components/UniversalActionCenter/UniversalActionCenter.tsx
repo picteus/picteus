@@ -25,7 +25,7 @@ import { queryKeys } from "app/query";
 import { ImageService, StorageService } from "app/services";
 import { useDeskTabsContext } from "app/context";
 import { useProcessCommands } from "app/hooks";
-import { ImageThumbnail, ProcessCommand } from "app/components";
+import { Common, ImageThumbnail, ProcessCommand } from "app/components";
 
 import style from "./UniversalActionCenter.module.scss";
 
@@ -33,7 +33,7 @@ import style from "./UniversalActionCenter.module.scss";
 type RecentImageSpotlightActionPropsType = {
   readonly imageId: string;
   readonly image?: ImageSummary;
-  readonly onSelect: (imageId: string, imageName?: string) => void;
+  readonly onSelect: (imageId: string, image?: ImageSummary) => void;
 };
 
 function RecentImageSpotlightAction({
@@ -60,7 +60,7 @@ function RecentImageSpotlightAction({
     <Spotlight.Action
       onClick={(): void =>
       {
-        onSelect(imageId, image?.name);
+        onSelect(imageId, image);
       }}
       leftSection={<ImageThumbnail imageOrUrl={image ?? imageId} width={edge} height={edge}/>}
       label={image?.name ?? imageId}
@@ -225,11 +225,9 @@ export default function UniversalActionCenter(): ReactElement
     });
   }, [ toggleActions, query ]);
 
-  const uniqueRecentImageIds = useMemo<string[]>(() => Array.from(new Set(recentImageIds)), [ recentImageIds ]);
-
   const { data: recentImagesResult, isLoading: isRecentImagesLoading } = useQuery(
     {
-      queryKey: queryKeys.images.recentSummaries(uniqueRecentImageIds),
+      queryKey: queryKeys.images.recentSummaries(recentImageIds),
       queryFn: (): Promise<SearchImageSummaryResult> =>
       {
         return ImageService.searchSummaries(
@@ -237,27 +235,21 @@ export default function UniversalActionCenter(): ReactElement
             filter: {
               origin: {
                 kind: SearchOriginNature.Images,
-                ids: uniqueRecentImageIds
+                ids: recentImageIds
               }
             },
-            range: { take: uniqueRecentImageIds.length }
+            range: { take: recentImageIds.length }
           }
         );
       },
-      enabled: uniqueRecentImageIds.length > 0
+      enabled: recentImageIds.length > 0
     }
   );
 
   const recentImages = useMemo<RecentImageItemType[]>(() =>
     {
       const summaryItems = recentImagesResult?.items ?? [];
-      const summariesById = new Map<string, ImageSummary>(
-        summaryItems.map(
-          (summary): [ string, ImageSummary ] =>
-          {
-            return [ summary.id, summary ];
-          }
-        )
+      const summariesById = new Map<string, ImageSummary>(summaryItems.map((summary): [ string, ImageSummary ] => ([ summary.id, summary ]))
       );
 
       return recentImageIds.map((imageId): RecentImageItemType =>
@@ -297,11 +289,16 @@ export default function UniversalActionCenter(): ReactElement
 
   const totalResults = filteredScreenActions.length + filteredCommands.length + filteredToggleActions.length + filteredRecentImages.length;
 
-  function handleSelectRecentImage(imageId: string, imageName?: string): void
+  async function handleSelectRecentImage(imageId: string, image?: ImageSummary): Promise<void>
   {
+    const targetImage = image ?? recentImages.find((item) => item.imageId === imageId)?.image;
+    const iconUrl = targetImage?.url ? await ImageService.computeImageUriFromUrls([ targetImage.url ], Common.NotificationIllustrationEdge) : await ImageService.computeImageUriFromIds([ imageId ], Common.NotificationIllustrationEdge);
+    const icon = { url: iconUrl };
+
     const tabId = addTab({
       id: randomId(),
-      label: imageName ?? t("actionsCenter.imageTab"),
+      label: targetImage?.name ?? t("actionsCenter.imageTab"),
+      icon,
       content: {
         kind: "image",
         imageId

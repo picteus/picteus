@@ -418,7 +418,7 @@ function setRecentImageIds(imageIds: string[]): void
 function addRecentImageId(imageId: string): void
 {
   const otherImageIds = getRecentImageIds().filter((id) => id !== imageId);
-  setRecentImageIds([ imageId, ...otherImageIds ].slice(0, 20));
+  setRecentImageIds([ imageId, ...[ ...new Set(otherImageIds) ] ].slice(0, 40));
 }
 
 export default {

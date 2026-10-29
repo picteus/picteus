@@ -91,6 +91,23 @@ export default function ImageDetail({
   ]);
 
   const imageData = navigation.selectedImage as Image;
+  const currentImageId = imageData?.id;
+
+  useEffect(() =>
+  {
+    if (currentImageId)
+    {
+      const timeoutHandler = setTimeout(() =>
+      {
+        StorageService.addRecentImageId(currentImageId);
+      }, 1_000);
+
+      return () =>
+      {
+        clearTimeout(timeoutHandler);
+      };
+    }
+  }, [ currentImageId ]);
 
   return (
     <ResizableGroup elementRef={ref} orientation="horizontal" onLayoutChanged={handleOnLayoutChanged}
