@@ -53,6 +53,17 @@ const config: Config =
           } satisfies Preset.Options
         ]
       ],
+    plugins:
+      [
+        [
+          "docusaurus-plugin-llms",
+          {
+            generateMarkdownFiles: true,
+            excludeImports: true,
+            rewriteImageUrls: true
+          }
+        ]
+      ],
     themes:
       [
         [
