@@ -1,7 +1,52 @@
 import OpenAI, { APIError, AuthenticationError, RateLimitError } from "openai";
-import type { ChatCompletion, ChatCompletionMessage } from "openai/resources/chat/completions";
+import type {
+  ChatCompletion,
+  ChatCompletionCreateParamsNonStreaming,
+  ChatCompletionMessage
+} from "openai/resources/chat/completions";
 
 import { Helper } from "@picteus/extension-sdk";
+
+
+type ExtraCompletionParams = Omit<ChatCompletionCreateParamsNonStreaming, "model" | "messages" | "max_tokens" | "max_completion_tokens">;
+
+interface TagExtractionStrategy
+{
+
+  readonly prompt: string;
+  readonly extraParams: ExtraCompletionParams;
+  readonly parseTags: (message: ChatCompletionMessage | undefined) => string[] | undefined;
+
+}
+
+const SELECT_TAGS_NAME = "select_tags";
+
+// Shared regexes matching o-series, GPT-5 / GPT-6+ unified reasoning models, and ChatGPT Instant aliases
+const REASONING_VISION_PATTERNS: readonly RegExp[] = [
+  /^o\d+(?:[-.]|$)/,
+  /^gpt-(?:[5-9]|\d{2,})(?:[-.]|$)/,
+  /^(?:chatgpt-(?:[5-9]|\d{2,})|chat-latest)(?:[-.]|$)/
+];
+
+const EXTRA_REASONING_PREFIXES: readonly string[] = [
+  "codex", "gpt-oss", "computer-use", "gpt-daybreak", "gpt-rosalind"
+];
+
+const VISION_EXCLUDED_SUBSTRINGS: readonly string[] = [
+  "text-embedding", "embedding", "whisper", "tts", "audio", "realtime", "transcribe",
+  "moderation", "dall-e", "gpt-image", "chatgpt-image", "gpt-live", "gpt-oss",
+  "babbage", "davinci", "instruct", "search-preview", "computer-use", "codex",
+  // Responses-API-only variants (unsupported in v1/chat/completions)
+  "deep-research", "-pro", "-cyber", "gpt-daybreak", "gpt-rosalind",
+  // Text-only snapshots within otherwise multimodal families
+  "o1-mini", "o1-preview", "o3-mini"
+];
+
+// Starting with GPT-5.4 and GPT-6, Chat Completions does not support tool calling with default reasoning effort
+const UNSUPPORTED_CHAT_TOOL_PATTERNS: readonly RegExp[] = [
+  /^gpt-5\.(?:[4-9]|\d{2,})(?:[-.]|$)/,
+  /^gpt-(?:[6-9]|\d{2,})(?:[-.]|$)/
+];
 
 
 export interface BaseRequestOptions
@@ -99,20 +144,19 @@ export class OpenAiClient
 
   constructor(apiKey: string)
   {
-    this.openai = new OpenAI({ apiKey: apiKey });
+    this.openai = new OpenAI({ apiKey });
   }
 
   public async getAvailableModelDetails(): Promise<OpenAiModelDetail[]>
   {
     try
     {
-      const modelsPage = await this.openai.models.list();
       const retrievedModels: OpenAiModelDetail[] = [];
       const seenModelIdentifiers: Set<string> = new Set<string>();
 
-      for await (const modelInfo of modelsPage)
+      for await (const modelInfo of await this.openai.models.list())
       {
-        if (this.isVisionCapableModel(modelInfo.id) === true && seenModelIdentifiers.has(modelInfo.id) === false)
+        if (this.isVisionCapableModel(modelInfo.id) && !seenModelIdentifiers.has(modelInfo.id))
         {
           seenModelIdentifiers.add(modelInfo.id);
           retrievedModels.push(
@@ -136,49 +180,16 @@ export class OpenAiClient
   public async generateChatCompletion(options: ChatRequestOptions): Promise<ChatResponseResult>
   {
     const startTimestamp: number = Date.now();
-    const tokenParameters = this.computeTokenParameters(options.model, options.maxTokens);
-    let response: ChatCompletion;
-
-    try
-    {
-      response = await this.openai.chat.completions.create(
-        {
-          model: options.model,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image_url",
-                  image_url:
-                    {
-                      url: `data:image/jpeg;base64,${options.imageBase64}`,
-                      detail: "auto"
-                    }
-                },
-                {
-                  type: "text",
-                  text: options.prompt
-                }
-              ]
-            }
-          ],
-          ...tokenParameters
-        }
-      );
-    }
-    catch (error: unknown)
-    {
-      throw this.createOpenAiError(error, "The request to the OpenAI API failed");
-    }
-
-    const durationInMilliseconds: number = Date.now() - startTimestamp;
-    const choice = response.choices !== undefined && response.choices.length > 0 ? response.choices[0] : undefined;
-    const captionText: string = this.extractTextFromMessage(choice?.message);
+    const response: ChatCompletion = await this.createVisionCompletion(
+      options,
+      options.prompt,
+      undefined,
+      "The request to the OpenAI API failed"
+    );
 
     return {
-      content: captionText,
-      durationInMilliseconds: durationInMilliseconds,
+      content: this.extractTextFromMessage(response.choices?.[0]?.message),
+      durationInMilliseconds: Date.now() - startTimestamp,
       model: response.model ?? options.model,
       inputTokens: response.usage?.prompt_tokens,
       outputTokens: response.usage?.completion_tokens
@@ -190,324 +201,264 @@ export class OpenAiClient
     const startTimestamp: number = Date.now();
     const promptText: string = options.promptTemplate.replace(Helper.TAGS_PLACEHOLDER, options.tags.join(", "));
     const candidateTagsSet: Set<string> = new Set<string>(options.tags);
-    const tokenParameters = this.computeTokenParameters(options.model, options.maxTokens);
-
-    // We attempt tool-based structured tag extraction first
-    try
-    {
-      // noinspection SqlResolve
-      const description: string = "Select the tags from the candidate list that accurately apply to the image.";
-      const response: ChatCompletion = await this.openai.chat.completions.create(
-        {
-          model: options.model,
-          tools: [
-            {
-              type: "function",
-              function:
-                {
-                  name: "select_tags",
-                  description: description,
-                  strict: true,
-                  parameters:
-                    {
-                      type: "object",
-                      properties:
-                        {
-                          tags:
-                            {
-                              type: "array",
-                              description: "The list of selected tags that apply to the image.",
-                              items:
-                                {
-                                  type: "string",
-                                  enum: options.tags
-                                }
-                            }
-                        },
-                      required: [ "tags" ],
-                      additionalProperties: false
-                    }
-                }
-            }
-          ],
-          tool_choice:
-            {
-              type: "function",
-              function:
-                {
-                  name: "select_tags"
-                }
-            },
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image_url",
-                  image_url:
-                    {
-                      url: `data:image/jpeg;base64,${options.imageBase64}`,
-                      detail: "auto"
-                    }
-                },
-                {
-                  type: "text",
-                  text: promptText
-                }
-              ]
-            }
-          ],
-          ...tokenParameters
-        }
-      );
-
-      const choice = response.choices !== undefined && response.choices.length > 0 ? response.choices[0] : undefined;
-      if (choice?.message?.tool_calls !== undefined)
+    // noinspection SqlResolve
+    const description: string = "Select the tags from the candidate list that accurately apply to the image.";
+    const tagSelectionSchema: Record<string, unknown> =
       {
-        for (const toolCall of choice.message.tool_calls)
-        {
-          if (toolCall.type === "function" && toolCall.function.name === "select_tags")
+        type: "object",
+        properties:
           {
-            const parsedArguments = JSON.parse(toolCall.function.arguments) as { readonly tags?: unknown };
-            if (Array.isArray(parsedArguments?.tags) === true)
-            {
-              const matchedTags: string[] = parsedArguments.tags.filter(
-                (tag): tag is string =>
-                {
-                  return typeof tag === "string" && candidateTagsSet.has(tag) === true;
-                }
-              );
+            tags:
+              {
+                type: "array",
+                description: "The list of selected tags that apply to the image.",
+                items: { type: "string", enum: options.tags }
+              }
+          },
+        required: [ "tags" ],
+        additionalProperties: false
+      };
 
-              return {
-                tags: matchedTags,
-                durationInMilliseconds: Date.now() - startTimestamp,
-                model: response.model ?? options.model
-              };
-            }
-          }
-        }
-      }
-    }
-    catch (error: unknown)
+    const strategies: TagExtractionStrategy[] = [];
+    if (this.supportsChatCompletionsToolCalling(options.model))
     {
-      const openAiError: OpenAiError = this.createOpenAiError(error);
-      if (openAiError.isApiKeyInvalid === true || openAiError.isQuotaExceeded === true)
-      {
-        throw openAiError;
-      }
-      // We fall back to prompt-based extraction below
-    }
-
-    const fallbackPrompt: string = `${promptText}\n\nReturn ONLY a JSON object in the exact format: {"tags": ["tag1", "tag2"]} containing only matching tags from the candidate list.`;
-    let fallbackResponse: ChatCompletion;
-
-    try
-    {
-      fallbackResponse = await this.openai.chat.completions.create(
+      strategies.push(
         {
-          model: options.model,
-          response_format:
+          prompt: promptText,
+          extraParams:
             {
-              type: "json_object"
-            },
-          messages: [
-            {
-              role: "user",
-              content: [
+              tools: [
                 {
-                  type: "image_url",
-                  image_url:
-                    {
-                      url: `data:image/jpeg;base64,${options.imageBase64}`,
-                      detail: "auto"
-                    }
-                },
-                {
-                  type: "text",
-                  text: fallbackPrompt
+                  type: "function",
+                  function: { name: SELECT_TAGS_NAME, description, strict: true, parameters: tagSelectionSchema }
                 }
-              ]
-            }
-          ],
-          ...tokenParameters
+              ],
+              tool_choice: { type: "function", function: { name: SELECT_TAGS_NAME } }
+            },
+          parseTags: (message) => this.extractTagsFromToolCalls(message, candidateTagsSet)
         }
       );
     }
-    catch (error: unknown)
-    {
-      throw this.createOpenAiError(error, "The tag extraction request to the OpenAI API failed");
-    }
 
-    const fallbackChoice = fallbackResponse.choices !== undefined && fallbackResponse.choices.length > 0 ? fallbackResponse.choices[0] : undefined;
-    const rawText: string = this.extractTextFromMessage(fallbackChoice?.message);
-    const matchedTags: string[] = this.parseCandidateTagsFromText(rawText, options.tags);
-
-    return {
-      tags: matchedTags,
-      durationInMilliseconds: Date.now() - startTimestamp,
-      model: fallbackResponse.model ?? options.model
-    };
-  }
-
-  private computeTokenParameters(model: string, maxTokens?: number): Record<string, number>
-  {
-    if (maxTokens === undefined)
-    {
-      return {};
-    }
-
-    if (this.isReasoningModel(model) === true)
-    {
-      return {
-        max_completion_tokens: maxTokens
-      };
-    }
-
-    return {
-      max_tokens: maxTokens
-    };
-  }
-
-  private isReasoningModel(modelId: string): boolean
-  {
-    const lowerCaseModelId: string = modelId.toLowerCase();
-    const reasoningPrefixes: readonly string[] = [ "o1", "o3", "o4" ];
-    return reasoningPrefixes.some(
-      (prefix) =>
+    strategies.push(
       {
-        return lowerCaseModelId.startsWith(prefix) === true;
+        prompt: promptText,
+        extraParams:
+          {
+            response_format:
+              {
+                type: "json_schema",
+                json_schema: { name: SELECT_TAGS_NAME, description, strict: true, schema: tagSelectionSchema }
+              }
+          },
+        parseTags: (message) =>
+        {
+          const rawText: string = this.extractTextFromMessage(message);
+          return rawText.length > 0 ? this.parseCandidateTagsFromText(rawText, options.tags, candidateTagsSet) : undefined;
+        }
+      },
+      {
+        prompt: `${promptText}\n\nReturn ONLY a JSON object in the exact format: {"tags": ["tag1", "tag2"]} containing only matching tags from the candidate list.`,
+        extraParams: { response_format: { type: "json_object" } },
+        parseTags: (message) => this.parseCandidateTagsFromText(this.extractTextFromMessage(message), options.tags, candidateTagsSet)
       }
     );
+
+    for (let index = 0; index < strategies.length; index++)
+    {
+      const strategy: TagExtractionStrategy = strategies[index];
+      const isLastStrategy: boolean = index === strategies.length - 1;
+
+      try
+      {
+        const response: ChatCompletion = await this.createVisionCompletion(
+          options,
+          strategy.prompt,
+          strategy.extraParams,
+          isLastStrategy ? "The tag extraction request to the OpenAI API failed" : undefined
+        );
+        const matchedTags: string[] | undefined = strategy.parseTags(response.choices?.[0]?.message);
+        if (matchedTags !== undefined || isLastStrategy)
+        {
+          return {
+            tags: matchedTags ?? [],
+            durationInMilliseconds: Date.now() - startTimestamp,
+            model: response.model ?? options.model
+          };
+        }
+      }
+      catch (error: unknown)
+      {
+        const openAiError: OpenAiError = this.createOpenAiError(error);
+        if (isLastStrategy || openAiError.isApiKeyInvalid || openAiError.isQuotaExceeded)
+        {
+          throw openAiError;
+        }
+      }
+    }
+
+    return { tags: [], durationInMilliseconds: Date.now() - startTimestamp, model: options.model };
   }
 
-  private parseCandidateTagsFromText(text: string, candidateTags: string[]): string[]
+  public isReasoningModel(modelId: string): boolean
   {
-    const candidateTagsSet: Set<string> = new Set<string>(candidateTags);
+    const baseModelId: string = this.normalizeBaseModelId(modelId);
+    return REASONING_VISION_PATTERNS.some((pattern) => pattern.test(baseModelId)) || EXTRA_REASONING_PREFIXES.some((prefix) => baseModelId.startsWith(prefix));
+  }
+
+  public isVisionCapableModel(modelId: string): boolean
+  {
+    const baseModelId: string = this.normalizeBaseModelId(modelId);
+    return !VISION_EXCLUDED_SUBSTRINGS.some((excluded) => baseModelId.includes(excluded)) && REASONING_VISION_PATTERNS.some((pattern) => pattern.test(baseModelId));
+  }
+
+  private async createVisionCompletion(
+    options: BaseRequestOptions,
+    prompt: string,
+    extraParams?: ExtraCompletionParams,
+    errorPrefix?: string
+  ): Promise<ChatCompletion>
+  {
+    const isReasoning: boolean = this.isReasoningModel(options.model);
+    const supportsReasoningEffort: boolean = isReasoning && !this.normalizeBaseModelId(options.model).includes("chat-latest");
+    const tokenParameters: { max_completion_tokens?: number; max_tokens?: number } =
+      options.maxTokens === undefined
+        ? {}
+        : isReasoning
+          ? { max_completion_tokens: options.maxTokens }
+          : { max_tokens: options.maxTokens };
+
     try
     {
-      const jsonMatch: RegExpMatchArray | null = text.match(/\{[\s\S]*}/);
-      if (jsonMatch !== null)
-      {
-        const parsedJson = JSON.parse(jsonMatch[0]) as { readonly tags?: unknown };
-        if (Array.isArray(parsedJson?.tags) === true)
+      return await this.openai.chat.completions.create(
         {
-          return parsedJson.tags.filter(
-            (tag): tag is string =>
+          model: options.model,
+          messages: [
             {
-              return typeof tag === "string" && candidateTagsSet.has(tag) === true;
+              role: "user",
+              content: [
+                {
+                  type: "image_url",
+                  image_url: { url: `data:image/jpeg;base64,${options.imageBase64}`, detail: "auto" }
+                },
+                {
+                  type: "text",
+                  text: prompt
+                }
+              ]
             }
-          );
+          ],
+          ...(supportsReasoningEffort ? { reasoning_effort: "low" } : {}),
+          ...extraParams,
+          ...tokenParameters
         }
+      );
+    }
+    catch (error: unknown)
+    {
+      throw this.createOpenAiError(error, errorPrefix);
+    }
+  }
+
+  private normalizeBaseModelId(modelId: string): string
+  {
+    const withoutFineTunePrefix: string = modelId.trim().toLowerCase().replace(/^ft[:-]/, "");
+    const colonIndex: number = withoutFineTunePrefix.indexOf(":");
+    return colonIndex === -1 ? withoutFineTunePrefix : withoutFineTunePrefix.slice(0, colonIndex);
+  }
+
+  private supportsChatCompletionsToolCalling(modelId: string): boolean
+  {
+    const baseModelId: string = this.normalizeBaseModelId(modelId);
+    return !UNSUPPORTED_CHAT_TOOL_PATTERNS.some((pattern) => pattern.test(baseModelId));
+  }
+
+  private extractTagsFromToolCalls(
+    message: ChatCompletionMessage | undefined,
+    candidateTagsSet: ReadonlySet<string>
+  ): string[] | undefined
+  {
+    for (const toolCall of message?.tool_calls ?? [])
+    {
+      if (toolCall.type === "function" && toolCall.function.name === SELECT_TAGS_NAME)
+      {
+        const parsedTags: string[] | undefined = this.parseTagsJson(toolCall.function.arguments, candidateTagsSet);
+        if (parsedTags !== undefined)
+        {
+          return parsedTags;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  private parseTagsJson(jsonText: string, candidateTagsSet: ReadonlySet<string>): string[] | undefined
+  {
+    try
+    {
+      const parsed = JSON.parse(jsonText) as { readonly tags?: unknown };
+      if (Array.isArray(parsed?.tags))
+      {
+        return parsed.tags.filter((tag): tag is string => typeof tag === "string" && candidateTagsSet.has(tag));
       }
     }
     catch
     {
-      // We fall back to token pattern matching below
+      // Ignored: caller falls back to alternative parsing
     }
+    return undefined;
+  }
 
-    const matchedTags: string[] = [];
-    for (const candidateTag of candidateTags)
+  private parseCandidateTagsFromText(
+    text: string,
+    candidateTags: readonly string[],
+    candidateTagsSet: ReadonlySet<string>
+  ): string[]
+  {
+    const jsonMatch: RegExpMatchArray | null = text.match(/\{[\s\S]*}/);
+    if (jsonMatch !== null)
     {
-      const escapedTag: string = candidateTag.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-      const pattern: RegExp = new RegExp(`\\b${escapedTag}\\b`, "i");
-      if (pattern.test(text) === true && candidateTagsSet.has(candidateTag) === true)
+      const parsedTags: string[] | undefined = this.parseTagsJson(jsonMatch[0], candidateTagsSet);
+      if (parsedTags !== undefined)
       {
-        matchedTags.push(candidateTag);
+        return parsedTags;
       }
     }
-    return matchedTags;
+
+    return candidateTags.filter(
+      (candidateTag) =>
+      {
+        const escapedTag: string = candidateTag.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+        return new RegExp(`\\b${escapedTag}\\b`, "i").test(text);
+      }
+    );
   }
 
   private extractTextFromMessage(message: ChatCompletionMessage | undefined): string
   {
-    if (message === undefined || message.content === null || message.content === undefined)
+    const content: unknown = message?.content;
+    if (typeof content === "string")
     {
-      return "";
+      return content.trim();
     }
-    if (typeof message.content === "string")
+    if (Array.isArray(content))
     {
-      return message.content.trim();
-    }
-    const rawContent: unknown = message.content;
-    if (Array.isArray(rawContent) === true)
-    {
-      const textParts: string[] = [];
-      for (const part of rawContent)
-      {
-        if (typeof part === "object" && part !== null && "text" in part && typeof (part as {
-          text?: unknown
-        }).text === "string")
-        {
-          textParts.push((part as { text: string }).text);
-        }
-      }
-      return textParts.join("\n").trim();
+      return content
+        .filter((part): part is {
+          readonly text: string
+        } => typeof part === "object" && part !== null && typeof (part as { text?: unknown }).text === "string")
+        .map((part) => part.text)
+        .join("\n")
+        .trim();
     }
     return "";
-  }
-
-  private isVisionCapableModel(modelId: string): boolean
-  {
-    const lowerCaseModelId: string = modelId.toLowerCase();
-
-    const excludedSubstrings: readonly string[] = [
-      "text-embedding",
-      "embedding",
-      "whisper",
-      "tts",
-      "audio",
-      "realtime",
-      "transcribe",
-      "moderation",
-      "dall-e",
-      "gpt-image",
-      "babbage",
-      "davinci",
-      "instruct",
-      "search-preview",
-      "computer-use",
-      "codex",
-      "o1-mini"
-    ];
-
-    const hasExcludedSubstring: boolean = excludedSubstrings.some(
-      (excluded) =>
-      {
-        return lowerCaseModelId.includes(excluded) === true;
-      }
-    );
-
-    if (hasExcludedSubstring === true)
-    {
-      return false;
-    }
-
-    const visionPrefixes: readonly string[] = [
-      "gpt-4o",
-      "gpt-4.1",
-      "gpt-4-turbo",
-      "gpt-4-vision",
-      "gpt-5",
-      "gpt-6",
-      "chatgpt-4o",
-      "o1",
-      "o3",
-      "o4"
-    ];
-
-    return visionPrefixes.some(
-      (prefix) =>
-      {
-        return lowerCaseModelId.startsWith(prefix) === true;
-      }
-    );
   }
 
   private createOpenAiError(error: unknown, prefix?: string): OpenAiError
   {
     if (error instanceof OpenAiError)
     {
-      return error;
+      return prefix !== undefined ? new OpenAiError(`${prefix}: ${error.message}`, error) : error;
     }
 
     let status: number | undefined;
@@ -519,54 +470,33 @@ export class OpenAiClient
     {
       const apiError = error as APIError;
       status = apiError.status;
-      isApiKeyInvalid = apiError.status === 401 || error instanceof AuthenticationError;
-      isQuotaExceeded = apiError.status === 429 || error instanceof RateLimitError;
+      isApiKeyInvalid = status === 401 || error instanceof AuthenticationError;
+      isQuotaExceeded = status === 429 || error instanceof RateLimitError;
+      const apiErrorMessage: string | undefined = (apiError.error as {
+        readonly message?: string
+      } | undefined)?.message;
 
-      const rawError = apiError.error as {
-        readonly message?: string;
-        readonly type?: string;
-      } | undefined;
-      const apiErrorMessage = rawError?.message;
-
-      let subtitle: string;
-      if (isApiKeyInvalid === true)
+      if (isApiKeyInvalid)
       {
-        subtitle = "The OpenAI API key is invalid";
+        message = "The OpenAI API key is invalid";
       }
-      else if (isQuotaExceeded === true)
+      else if (isQuotaExceeded)
       {
-        subtitle = "The OpenAI API quota or rate limit has been exceeded";
-      }
-      else if (typeof apiErrorMessage === "string" && apiErrorMessage.length > 0)
-      {
-        subtitle = apiErrorMessage;
+        message = "The OpenAI API quota or rate limit has been exceeded";
       }
       else
       {
-        subtitle = apiError.message;
+        message = typeof apiErrorMessage === "string" && apiErrorMessage.length > 0 ? apiErrorMessage : apiError.message;
       }
-
-      message = subtitle;
-    }
-    else if (error instanceof Error)
-    {
-      message = error.message;
     }
     else
     {
-      message = String(error);
+      message = error instanceof Error ? error.message : String(error);
     }
 
-    const fullMessage = prefix !== undefined ? `${prefix}: ${message}` : message;
-
     return new OpenAiError(
-      fullMessage,
-      {
-        status: status,
-        isApiKeyInvalid: isApiKeyInvalid,
-        isQuotaExceeded: isQuotaExceeded,
-        cause: error
-      }
+      prefix !== undefined ? `${prefix}: ${message}` : message,
+      { status, isApiKeyInvalid, isQuotaExceeded, cause: error }
     );
   }
 
