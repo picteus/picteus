@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { IconPhoto } from "@tabler/icons-react";
 
 import { ImageOrSummary, ViewMode } from "types";
@@ -13,25 +13,20 @@ export interface OpenImageDetailModalParameters
   readonly viewMode?: ViewMode;
 }
 
-export type OpenImageDetailModalFunctionType = (parameters: OpenImageDetailModalParameters) => string;
+export type OpenImageDetailModalFunctionType = (parameters: OpenImageDetailModalParameters) => void;
 
-export interface UseImageDetailModalResultType extends OpenImageDetailModalFunctionType
-{
-  openImageDetailModal: OpenImageDetailModalFunctionType;
-}
-
-export default function useImageDetailModal(): UseImageDetailModalResultType
+export default function useImageDetailModal(): OpenImageDetailModalFunctionType
 {
   const { addModal, removeModal } = useActionModalContext();
 
-  const openImageDetailModal = useCallback(
+  return useCallback(
     ({
       image,
       images,
       viewMode = "gallery"
-    }: OpenImageDetailModalParameters): string =>
+    }: OpenImageDetailModalParameters): void =>
     {
-      const modalId = addModal({
+      addModal({
         isStackable: true,
         icon: {
           icon: <IconPhoto size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
@@ -42,21 +37,10 @@ export default function useImageDetailModal(): UseImageDetailModalResultType
             image={image}
             images={images ?? [ image ]}
             viewMode={viewMode}
-            onClose={() =>
-            {
-              removeModal(modalId);
-            }}
           />
         )
       });
-
-      return modalId;
     },
     [ addModal, removeModal ]
   );
-
-  return useMemo((): UseImageDetailModalResultType =>
-  {
-    return Object.assign(openImageDetailModal, { openImageDetailModal });
-  }, [ openImageDetailModal ]);
 }

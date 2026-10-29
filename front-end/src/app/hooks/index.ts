@@ -25,10 +25,5 @@ export {
   default as useProcessCommands, type UseProcessCommandsResultType, type UseProcessCommandsOptionsType
 } from "./useProcessCommands.tsx";
 export { default as useProcessCommand, type UseProcessCommandResultType } from "./useProcessCommand.tsx";
-export {
-  default as useImageDetailModal,
-  type OpenImageDetailModalParameters,
-  type OpenImageDetailModalFunctionType,
-  type UseImageDetailModalResultType
-} from "./useImageDetailModal.tsx";
+export { default as useImageDetailModal } from "./useImageDetailModal.tsx";
 export * from "./queries";

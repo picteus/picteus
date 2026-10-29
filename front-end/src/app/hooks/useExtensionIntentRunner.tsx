@@ -41,7 +41,7 @@ import {
   useOpenWindow,
   useRepositories
 } from "app/hooks";
-import { Iframe, Markdown } from "app/components";
+import { Common, Iframe, Markdown } from "app/components";
 import { ExtensionConfiguration } from "app/screens/ExtensionsScreen/components";
 import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
 
@@ -297,14 +297,16 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
             {
               return ToastService.apiCallError(error);
             }
-            addTab({
+            const tabId = addTab({
               extensionId,
+              icon: { url: await ImageService.computeImageUriFromUrls([ image.url ], Common.NotificationIllustrationEdge) },
               label: image.name,
               content: {
                 kind: "image",
                 imageId: show.id
               }
             }, true);
+            navigate(computeDeskRoute(tabId));
             listener.onSuccess();
           },
           {
