@@ -47,11 +47,12 @@
     "cross-var": "1.1.0",
     "typescript": "5.9.2",
     "@types/node": "22.17.1",
-    "@types/adm-zip": "0.5.8"
+    "@types/adm-zip": "0.5.8",
+    "tsx": "4.23.13"
   },
   "dependencies": {
     "@google/genai": "1.25.0",
-    "adm-zip": "0.5.17",
+    "adm-zip": "0.6.1",
     "@picteus/internal-extension-sdk": "0.20.2"
   }
 }

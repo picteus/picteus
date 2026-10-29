@@ -11,6 +11,7 @@ import {
   type ComputeImageCaption,
   type ComputeImageEligibleTags,
   type GenerationRecipe,
+  GenerationRecipeFromJSON,
   Helper,
   ImageFeatureFormat,
   ImageFeatureType,
@@ -185,7 +186,7 @@ class GeminiExtension extends PicteusExtension
 
     if (generatedFeatures.length > 0)
     {
-      await this.getImageApi().imageSetFeatures(
+      await this.getImageApi().imageEnsureFeatures(
         {
           id: imageId,
           extensionId: this.extensionId,
@@ -211,6 +212,10 @@ class GeminiExtension extends PicteusExtension
     if (commandId === "modify")
     {
       await this.generateImage(communicator, parameters, imageIds);
+    }
+    else if (commandId === "reindexFromApplicationMetadata")
+    {
+      await this.reindexFromApplicationMetadata(communicator, imageIds);
     }
   }
 
@@ -310,11 +315,6 @@ class GeminiExtension extends PicteusExtension
 
     communicator.sendLog(`Gemini responded in ${result.durationInMilliseconds} ms with ${result.totalPartsCount} part(s)`, "debug");
 
-    for (const textPart of result.textParts)
-    {
-      this.logger.debug(textPart);
-    }
-
     for (const generatedImage of result.images)
     {
       const buffer = Buffer.from(generatedImage.data, "base64");
@@ -359,7 +359,7 @@ class GeminiExtension extends PicteusExtension
         }
       );
 
-      await this.getImageApi().imageSetTags(
+      await this.getImageApi().imageEnsureTags(
         {
           id: image.id,
           extensionId: this.extensionId,
@@ -367,7 +367,7 @@ class GeminiExtension extends PicteusExtension
         }
       );
 
-      await this.getImageApi().imageSetFeatures(
+      await this.getImageApi().imageEnsureFeatures(
         {
           id: image.id,
           extensionId: this.extensionId,
@@ -400,11 +400,73 @@ class GeminiExtension extends PicteusExtension
                   title: "Generated Images",
                   subtitle: "1 generated image",
                   description: "This is the generated image.",
-                  details: `It was generated through the '${model}' model with the ${aspectRatio} aspect ratio.`
+                  details: `It was generated through the \`${model}\` model with the ${aspectRatio} aspect ratio, from the following prompt:\n*${prompt.split("\n").map(line => `> ${line}`).join("\n")}`
                 }
             }
         }
       );
+    }
+  }
+
+  private async reindexFromApplicationMetadata(communicator: Communicator, imageIds: string[]): Promise<void>
+  {
+    for (const imageId of imageIds)
+    {
+      const imageMetadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+      const targetPrinterMetadataRaw = JSON.parse(imageMetadata.all)["TargetPrinter"];
+      if (targetPrinterMetadataRaw !== undefined)
+      {
+        const targetPrinterMetadata = JSON.parse(targetPrinterMetadataRaw);
+        const picteusMetadataItems = targetPrinterMetadata["picteus"];
+        if (picteusMetadataItems !== undefined)
+        {
+          const picteusMetadata: Array<{
+            extensionId: string,
+            value: GenerationRecipe
+          }> = picteusMetadataItems["items"];
+          for (const picteusMetadatum of picteusMetadata)
+          {
+            if (picteusMetadatum.extensionId === this.extensionId)
+            {
+              const tags = await this.getImageApi().imageGetTags({ extensionId: this.extensionId, id: imageId });
+              if (tags.filter(tag => tag === this.extensionId).length === 0)
+              {
+                const features = await this.getImageApi().imageGetFeatures({
+                  extensionId: this.extensionId,
+                  id: imageId
+                });
+                const recipe = features.find(feature => feature.type === ImageFeatureType.Recipe);
+                if (recipe === undefined)
+                {
+                  communicator.forEntity({ type: "image", id: imageId });
+                  communicator.sendLog(`Reverting the recipe`, "debug");
+                  const metadataRecipe = GenerationRecipeFromJSON(picteusMetadatum.value);
+                  await this.getImageApi().imageEnsureFeatures(
+                    {
+                      id: imageId,
+                      extensionId: this.extensionId,
+                      imageFeature: [
+                        {
+                          type: ImageFeatureType.Recipe,
+                          format: ImageFeatureFormat.Json,
+                          value: JSON.stringify(metadataRecipe)
+                        }
+                      ]
+                    }
+                  );
+                  await this.getImageApi().imageEnsureTags(
+                    {
+                      id: imageId,
+                      extensionId: this.extensionId,
+                      requestBody: [ this.extensionId ]
+                    }
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 
