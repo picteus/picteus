@@ -847,6 +847,7 @@ export class ImageService
       }
     }
     await this.vectorDatabaseAccessor.setEmbeddings(id, extensionId, embeddingsArray);
+    this.notifierService.emit(EventEntity.Image, ImageEventAction.EmbeddingsUpdated, undefined, { id });
   }
 
   async closestImages(id: string, extensionId: string, name: string, count: number): Promise<ImageDistances>

@@ -357,7 +357,8 @@ export enum ChannelEnum
   IMAGE_UPDATED = "image.updated",
   IMAGE_TAGS_UPDATED = "image.tags.updated",
   IMAGE_FEATURES_UPDATED = "image.features.updated",
-  IMAGE_DELETED = "image.deleted",
+  IMAGE_EMBEDDINGS_UPDATED = "image.embeddings.updated",
+  IMAGE_DELETED = "image.deleted"
 }
 
 

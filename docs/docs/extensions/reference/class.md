@@ -112,6 +112,7 @@ The base class implements `onEvent` / `on_event`, which automatically dispatches
 | `onImageDeleted(communicator, imageId)` | `on_image_deleted(self, communicator, image_id)` | Fired when an image is deleted from the repository. |
 | `onImageTagsUpdated(communicator, imageId)` | `on_image_tags_updated(self, communicator, image_id)` | Fired when user or system tags on an image change. |
 | `onImageFeaturesUpdated(communicator, imageId)` | `on_image_features_updated(self, communicator, image_id)` | Fired when extracted image features are modified. |
+| `onImageEmbeddingsUpdated(communicator, imageId)` | `on_image_embeddings_updated(self, communicator, image_id)` | Fired when vector embeddings for an image are modified. |
 
 ### Computation & AI capabilities
 

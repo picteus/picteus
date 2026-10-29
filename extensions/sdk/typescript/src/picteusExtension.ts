@@ -82,6 +82,7 @@ export const EventName =
     ImageUpdated: "image.updated",
     ImageTagsUpdated: "image.tags.updated",
     ImageFeaturesUpdated: "image.features.updated",
+    ImageEmbeddingsUpdated: "image.embeddings.updated",
     ImageDeleted: "image.deleted",
     ImageComputeFeatures: "image.computeFeatures",
     ImageComputeEmbeddings: "image.computeEmbeddings",
@@ -489,6 +490,10 @@ export class PicteusExtension
     {
       return await this.onImageFeaturesUpdated(communicator, this.extractEventValueId(value));
     }
+    else if (event === EventName.ImageEmbeddingsUpdated)
+    {
+      return await this.onImageEmbeddingsUpdated(communicator, this.extractEventValueId(value));
+    }
     else if (event === EventName.ImageComputeTags)
     {
       const eligibleTags: ComputeImageEligibleTags[] | undefined = value["eligibleTags"];
@@ -546,6 +551,10 @@ export class PicteusExtension
   }
 
   protected async onImageFeaturesUpdated(_communicator: Communicator, _imageId: string): Promise<void>
+  {
+  }
+
+  protected async onImageEmbeddingsUpdated(_communicator: Communicator, _imageId: string): Promise<void>
   {
   }
 
@@ -823,6 +832,7 @@ export class PicteusExtension
       EventName.ImageUpdated,
       EventName.ImageTagsUpdated,
       EventName.ImageFeaturesUpdated,
+      EventName.ImageEmbeddingsUpdated,
       EventName.ImageDeleted,
       EventName.ImageComputeTags,
       EventName.ImageComputeFeatures,

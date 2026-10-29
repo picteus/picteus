@@ -1682,7 +1682,13 @@ describe("Image with module", () =>
       expect(emptyEmbeddings.embeddings).toEqual([]);
     }
     {
+      const listener = base.computeEventListener();
+      base.getNotifierService().once(EventEntity.Image, ImageEventAction.EmbeddingsUpdated, undefined, listener);
       await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, extensionId, imageEmbeddings);
+      await waitForExpect(() =>
+      {
+        expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.EmbeddingsUpdated, { id: imageId });
+      });
       const updatedImageEmbeddings = await base.getImageController().getEmbeddings(imageId, extensionId);
       expect(updatedImageEmbeddings.id).toEqual(extensionId);
       expectEmbedding(updatedImageEmbeddings.embeddings, imageEmbeddings);

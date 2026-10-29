@@ -46,6 +46,7 @@ export default function ImageDetail({
       ChannelEnum.IMAGE_UPDATED,
       ChannelEnum.IMAGE_TAGS_UPDATED,
       ChannelEnum.IMAGE_FEATURES_UPDATED,
+      ChannelEnum.IMAGE_EMBEDDINGS_UPDATED,
       ChannelEnum.IMAGE_DELETED
     ] as const;
   }, []);

@@ -27,6 +27,15 @@ export function SocketCacheSync(): null
         }
         void queryClient.invalidateQueries({ queryKey: queryKeys.images.all });
       }
+      else if (channel === ChannelEnum.IMAGE_EMBEDDINGS_UPDATED)
+      {
+        const imageId = EventService.computeEventEntityId<string>(event);
+        if (imageId)
+        {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.images.allEmbeddings(imageId) });
+        }
+        void queryClient.invalidateQueries({ queryKey: queryKeys.repositories.embeddings });
+      }
 
       if (channel.startsWith(ChannelEnum.COLLECTION_PREFIX) || channel === ChannelEnum.IMAGE_DELETED)
       {

@@ -62,6 +62,7 @@ class EventName(StrEnum):
     IMAGE_UPDATED = "image.updated"
     IMAGE_TAGS_UPDATED = "image.tags.updated"
     IMAGE_FEATURES_UPDATED = "image.features.updated"
+    IMAGE_EMBEDDINGS_UPDATED = "image.embeddings.updated"
     IMAGE_DELETED = "image.deleted"
     IMAGE_COMPUTE_FEATURES = "image.computeFeatures"
     IMAGE_COMPUTE_EMBEDDINGS = "image.computeEmbeddings"
@@ -439,6 +440,8 @@ class PicteusExtension:
             return await self.on_image_tags_updated(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_FEATURES_UPDATED:
             return await self.on_image_features_updated(communicator, self._extract_event_value_id(value))
+        elif event == EventName.IMAGE_EMBEDDINGS_UPDATED:
+            return await self.on_image_embeddings_updated(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_COMPUTE_TAGS:
             eligible_tags: Optional[List[ComputeImageEligibleTags]] = value.get("eligibleTags")
             if eligible_tags is not None:
@@ -478,6 +481,9 @@ class PicteusExtension:
         pass
 
     async def on_image_features_updated(self, communicator: Communicator, image_id: str) -> None:
+        pass
+
+    async def on_image_embeddings_updated(self, communicator: Communicator, image_id: str) -> None:
         pass
 
     async def on_compute_image_tags(self, communicator: Communicator, image_id: str) -> None:
@@ -687,6 +693,7 @@ class PicteusExtension:
             EventName.IMAGE_UPDATED,
             EventName.IMAGE_TAGS_UPDATED,
             EventName.IMAGE_FEATURES_UPDATED,
+            EventName.IMAGE_EMBEDDINGS_UPDATED,
             EventName.IMAGE_DELETED,
             EventName.IMAGE_COMPUTE_TAGS,
             EventName.IMAGE_COMPUTE_FEATURES,

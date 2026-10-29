@@ -61,10 +61,13 @@ class PythonExtension(PicteusExtension):
         self._on_image_touched(communicator, image_id)
 
     async def on_image_tags_updated(self, communicator: Communicator, image_id: str) -> None:
-        await self._on_tags_or_features_updated(communicator, image_id)
+        await self._on_tags_or_features_or_embeddings_updated(communicator, image_id)
 
     async def on_image_features_updated(self, communicator: Communicator, image_id: str) -> None:
-        await self._on_tags_or_features_updated(communicator, image_id)
+        await self._on_tags_or_features_or_embeddings_updated(communicator, image_id)
+
+    async def on_image_embeddings_updated(self, communicator: Communicator, image_id: str) -> None:
+        await self._on_tags_or_features_or_embeddings_updated(communicator, image_id)
 
     async def on_compute_image_tags(self, communicator: Communicator, image_id: str) -> None:
         await self._compute_image_tags(communicator, image_id)
@@ -149,8 +152,8 @@ class PythonExtension(PicteusExtension):
     def _on_image_touched(self, communicator: Communicator, image_id: str) -> None:
         communicator.send_log(f"The image was touched", "info")
 
-    async def _on_tags_or_features_updated(self, communicator: Communicator, image_id: str) -> None:
-        communicator.send_log(f"The tags or features of the image were updated", "info")
+    async def _on_tags_or_features_or_embeddings_updated(self, communicator: Communicator, image_id: str) -> None:
+        communicator.send_log(f"The tags, features or embeddings of the image were updated", "info")
 
     async def _compute_image_tags(self, communicator: Communicator, image_id: str) -> None:
         communicator.send_log(f"Setting the tags for the image", "debug")

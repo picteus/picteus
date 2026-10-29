@@ -28,6 +28,7 @@
         "image.updated",
         "image.tags.updated",
         "image.features.updated",
+        "image.embeddings.updated",
         "image.deleted",
         "image.computeTags",
         "image.computeFeatures",
@@ -40,6 +41,7 @@
             "image.updated",
             "image.tags.updated",
             "image.features.updated",
+            "image.embeddings.updated",
             "image.deleted",
             "image.computeTags",
             "image.computeFeatures"

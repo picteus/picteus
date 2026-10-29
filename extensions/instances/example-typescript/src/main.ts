@@ -81,12 +81,17 @@ class TypeScriptExtension extends PicteusExtension
 
   protected async onImageTagsUpdated(communicator: Communicator, imageId: string): Promise<void>
   {
-    this.onTagsOrFeaturesUpdated(communicator, imageId);
+    this.onTagsOrFeaturesOrEmbeddingsUpdated(communicator, imageId);
   }
 
   protected async onImageFeaturesUpdated(communicator: Communicator, imageId: string): Promise<void>
   {
-    this.onTagsOrFeaturesUpdated(communicator, imageId);
+    this.onTagsOrFeaturesOrEmbeddingsUpdated(communicator, imageId);
+  }
+
+  protected async onImageEmbeddingsUpdated(communicator: Communicator, imageId: string): Promise<void>
+  {
+    this.onTagsOrFeaturesOrEmbeddingsUpdated(communicator, imageId);
   }
 
   protected async onComputeImageTags(_communicator: Communicator, imageId: string): Promise<void>
@@ -221,9 +226,9 @@ class TypeScriptExtension extends PicteusExtension
     communicator.sendLog(`The image was touched`, "info");
   }
 
-  private onTagsOrFeaturesUpdated(communicator: Communicator, _imageId: string): void
+  private onTagsOrFeaturesOrEmbeddingsUpdated(communicator: Communicator, _imageId: string): void
   {
-    communicator.sendLog(`The tags or features of the image were updated`, "info");
+    communicator.sendLog(`The tags, features or embeddings of the image were updated`, "info");
   }
 
   private async computeImageTags(imageId: string): Promise<void>

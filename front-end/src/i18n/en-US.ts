@@ -540,6 +540,7 @@ export default {
       updated: "The image has been updated",
       tags: { updated: "The image tags have been updated" },
       features: { updated: "The image features have been updated" },
+      embeddings: { updated: "The image embeddings have been updated" },
       deleted: "The image '{{id}}' has been deleted"
     }
   },

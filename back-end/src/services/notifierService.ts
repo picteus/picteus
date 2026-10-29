@@ -69,6 +69,7 @@ export enum ImageEventAction
   Updated = "updated",
   TagsUpdated = "tags.updated",
   FeaturesUpdated = "features.updated",
+  EmbeddingsUpdated = "embeddings.updated",
   Deleted = "deleted",
   Renamed = "renamed",
   ComputeFeatures = "computeFeatures",

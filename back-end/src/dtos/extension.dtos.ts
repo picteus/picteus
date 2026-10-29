@@ -52,6 +52,7 @@ export enum ManifestEvent
   ImageUpdated = "image.updated",
   ImageTagsUpdated = "image.tags.updated",
   ImageFeaturesUpdated = "image.features.updated",
+  ImageEmbeddingsUpdated = "image.embeddings.updated",
   ImageDeleted = "image.deleted",
   ImageComputeFeatures = "image.computeFeatures",
   ImageComputeEmbeddings = "image.computeEmbeddings",

@@ -88,6 +88,8 @@ export function fromImageEventActionToManifestEvent(action: ImageEventAction): M
       return ManifestEvent.ImageTagsUpdated;
     case ImageEventAction.FeaturesUpdated:
       return ManifestEvent.ImageFeaturesUpdated;
+    case ImageEventAction.EmbeddingsUpdated:
+      return ManifestEvent.ImageEmbeddingsUpdated;
     case ImageEventAction.Renamed:
       return null;
     case ImageEventAction.Deleted:

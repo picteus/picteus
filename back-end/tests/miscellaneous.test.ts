@@ -1612,6 +1612,12 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
       expect(event.action).toBe(action);
     }
     {
+      const action = ImageEventAction.EmbeddingsUpdated;
+      const event = NotifierService.parseEvent(NotifierService.buildEvent(entityName, action));
+      expect(event.eventEntity).toBe(entityName);
+      expect(event.action).toBe(action);
+    }
+    {
       const state = "state";
       const event = NotifierService.parseEvent(NotifierService.buildEvent(entityName, action, state));
       expect(event.eventEntity).toBe(entityName);
