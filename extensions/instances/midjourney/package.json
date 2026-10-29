@@ -50,8 +50,8 @@
     "@types/adm-zip": "0.5.8"
   },
   "dependencies": {
-    "fast-xml-parser": "5.9.3",
-    "adm-zip": "0.5.17",
+    "fast-xml-parser": "5.11.2",
+    "adm-zip": "0.6.1",
     "@picteus/internal-extension-sdk": "0.20.2"
   }
 }
