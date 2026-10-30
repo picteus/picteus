@@ -25,14 +25,14 @@ import { queryKeys } from "app/query";
 import { ImageService, StorageService } from "app/services";
 import { useDeskTabsContext } from "app/context";
 import { useProcessCommands } from "app/hooks";
-import { Common, ImageThumbnail, ProcessCommand } from "app/components";
+import { Common, ImageSubtitle, ImageThumbnail, ProcessCommand } from "app/components";
 
 import style from "./UniversalActionCenter.module.scss";
 
 
 type RecentImageSpotlightActionPropsType = {
   readonly imageId: string;
-  readonly image?: ImageSummary;
+  readonly image: ImageSummary;
   readonly onSelect: (imageId: string, image?: ImageSummary) => void;
 };
 
@@ -42,29 +42,15 @@ function RecentImageSpotlightAction({
   onSelect
 }: RecentImageSpotlightActionPropsType): ReactElement
 {
-  const subLabel = useMemo<string | undefined>(() =>
-  {
-    if (!image)
-    {
-      return undefined;
-    }
-    if (image.dimensions)
-    {
-      return `${image.dimensions.width} × ${image.dimensions.height}`;
-    }
-    return image.format;
-  }, [ image ]);
-
-  const edge = 28;
   return (
     <Spotlight.Action
       onClick={(): void =>
       {
         onSelect(imageId, image);
       }}
-      leftSection={<ImageThumbnail imageOrUrl={image ?? imageId} width={edge} height={edge}/>}
-      label={image?.name ?? imageId}
-      description={subLabel}
+      leftSection={image && <ImageThumbnail imageOrUrl={image} edge={28}/>}
+      label={image && image.name}
+      description={image && <ImageSubtitle image={image}/> as unknown as string}
       keywords={[ image?.name ?? "" ]}
     />
   );
@@ -72,7 +58,7 @@ function RecentImageSpotlightAction({
 
 type RecentImageItemType = {
   readonly imageId: string;
-  readonly image?: ImageSummary;
+  readonly image: ImageSummary;
   readonly isLoading: boolean;
 };
 
@@ -249,8 +235,7 @@ export default function UniversalActionCenter(): ReactElement
   const recentImages = useMemo<RecentImageItemType[]>(() =>
     {
       const summaryItems = recentImagesResult?.items ?? [];
-      const summariesById = new Map<string, ImageSummary>(summaryItems.map((summary): [ string, ImageSummary ] => ([ summary.id, summary ]))
-      );
+      const summariesById = new Map<string, ImageSummary>(summaryItems.map((summary): [ string, ImageSummary ] => ([ summary.id, summary ])));
 
       return recentImageIds.map((imageId): RecentImageItemType =>
         {

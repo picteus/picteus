@@ -129,7 +129,7 @@ export default function ImagesCollection({
           />
         )}
         {images.map((image) => (
-          <ImageThumbnail key={image.id} imageOrUrl={image} width={Common.ImageThumbnailEdge} height={Common.ImageThumbnailEdge}/>
+          <ImageThumbnail key={image.id} imageOrUrl={image} edge={Common.ImageThumbnailEdge}/>
         ))}
         {totalCount !== undefined && totalCount > images.length && (
           <IndicatorCard

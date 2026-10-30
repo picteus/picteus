@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Collection } from "@picteus/ws-client";
 
-import { Common, ContentTitle, CopyText, FieldValue, NoValue } from "app/components";
+import { ContentTitle, CopyText, FieldValue, NoValue } from "app/components";
 import { CollectionActions } from "../index.ts";
 
 
@@ -20,7 +20,7 @@ export default function CollectionTop({ collection, onEdit, onDeleted }: Collect
   const { t } = useTranslation();
 
   return (<>
-      <ContentTitle text={collection.name} icon={{ icon: <IconLibrary stroke={Common.IconStrokeSize}/> }}/>
+      <ContentTitle text={collection.name} icon={{ icon: IconLibrary }}/>
       <Stack gap="md" pos="relative">
         <FieldValue name={t("field.id")} value={<CopyText value={collection.id.toString()} inline={true}>
           <Text size="xs" c="dimmed">{collection.id}</Text>

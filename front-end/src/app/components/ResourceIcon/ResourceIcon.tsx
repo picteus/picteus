@@ -1,28 +1,23 @@
 import { type ReactElement } from "react";
-import { Image } from "@mantine/core";
 
-import { computeResourceTypeUrl, ContentIconType, IconSizeType } from "types";
-import { Common } from "app/components";
+import { computeResourceTypeUrl, IconSizeType, ResourceType } from "types";
+import { Common, ImageThumbnail } from "app/components";
 
 
 export type ResourceIconType = {
-  icon?: ContentIconType;
-  size?: IconSizeType;
+  icon?: ResourceType;
+  size?: IconSizeType | number;
+  withBorder?: boolean;
 };
 
-export default function ResourceIcon({ icon, size }: ResourceIconType): ReactElement | null
+export default function ResourceIcon({ icon, size, withBorder }: ResourceIconType): ReactElement | null
 {
-  if (icon === undefined || !("url" in icon || "content" in icon))
+  if (icon === undefined)
   {
     return null;
   }
-  const edge = Common.IconFromStringToNumberSize(size);
+  const edge = typeof size === "number" ? size : Common.IconFromStringToNumberSize(size);
   return (
-    <Image
-      src={computeResourceTypeUrl(icon)}
-      fallbackSrc={Common.FallbackImageUrl}
-      h={edge}
-      w={edge}
-    />
+    <ImageThumbnail imageOrUrl={computeResourceTypeUrl(icon)} edge={edge} withBorder={withBorder}/>
   );
 }

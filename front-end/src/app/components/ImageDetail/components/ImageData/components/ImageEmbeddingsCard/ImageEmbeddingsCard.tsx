@@ -70,9 +70,10 @@ export default function ImageEmbeddingsCard({
   const handleExploreSimilar = useCallback((extensionId: string, modelName: string): void =>
   {
     addModal({
+      isStackable: true,
+      icon: { icon: <IconTopologyRing3 stroke={Common.IconStrokeSize}/> },
       title: t("closestEmbeddingsImagesModal.title"),
       size: "l",
-      isStackable: true,
       body: (
         <ClosestEmbeddingsImages
           image={image}

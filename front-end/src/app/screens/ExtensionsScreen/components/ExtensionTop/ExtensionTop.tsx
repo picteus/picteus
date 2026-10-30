@@ -6,7 +6,7 @@ import { IconBox } from "@tabler/icons-react";
 import { Extension, ExtensionActivity as ApiExtensionActivity } from "@picteus/ws-client";
 
 import { ExtensionsService } from "app/services";
-import { Common, ContentTitle, CopyText, EntityState, FieldValue, NoValue } from "app/components";
+import { ContentTitle, CopyText, EntityState, FieldValue, NoValue } from "app/components";
 import { ExtensionActions, ExtensionActivity } from "../index.ts";
 
 
@@ -30,7 +30,7 @@ export default function ExtensionTop({
   const iconEdge = 32;
 
   return (<>
-      <ContentTitle text={extension.manifest.name} icon={{ icon: <IconBox stroke={Common.IconStrokeSize}/> }}/>
+      <ContentTitle text={extension.manifest.name} icon={{ icon: IconBox }}/>
       <Stack gap="md" pos="relative">
         <FieldValue name={t("field.id")} value={<CopyText value={extension.manifest.id} inline={true}>
           <Text size="xs" c="dimmed">{extension.manifest.id}</Text>

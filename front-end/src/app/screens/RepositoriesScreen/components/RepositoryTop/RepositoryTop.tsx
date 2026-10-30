@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Repository } from "@picteus/ws-client";
 
 import { removeFilePrefixFromUrl } from "utils";
-import { Common, ContentTitle, CopyText, EntityState, FieldValue, NoValue } from "app/components";
+import { ContentTitle, CopyText, EntityState, FieldValue, NoValue } from "app/components";
 import { RepositoryActions } from "../index.ts";
 
 
@@ -21,7 +21,7 @@ export default function RepositoryTop({ repository, onEdit, onDeleted }: Reposit
   const { t } = useTranslation();
 
   return (<>
-      <ContentTitle text={repository.name} icon={{ icon: <IconFolderOpen stroke={Common.IconStrokeSize}/> }}/>
+      <ContentTitle text={repository.name} icon={{ icon: IconFolderOpen }}/>
       <Stack gap="md" pos="relative">
         <FieldValue name={t("field.id")} value={<CopyText value={repository.id} inline={true}>
           <Text size="xs" c="dimmed">{repository.id}</Text>

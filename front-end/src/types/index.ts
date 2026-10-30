@@ -1,5 +1,6 @@
 import { ReactElement, ReactNode } from "react";
 import { RJSFSchema } from "@rjsf/utils";
+import { Icon } from "@tabler/icons-react";
 
 import {
   FrontIntent,
@@ -410,7 +411,7 @@ export type LocalFiltersType = {
   sortOrder?: string;
 };
 
-export type ContentIconType = ResourceType | { icon: ReactNode };
+export type ContentIconType = ResourceType | { icon: ReactNode | Icon };
 
 export type ModalAction = {
   label: string;

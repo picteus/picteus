@@ -273,7 +273,7 @@ export default function ActivityScreen(): ReactElement
   const [ t ] = useTranslation();
 
   return (
-    <StackableScreen title={t("menu.activity")}>
+    <StackableScreen title={t("menu.activity")} icon={IconActivity}>
       <ActivityContent/>
     </StackableScreen>
   );

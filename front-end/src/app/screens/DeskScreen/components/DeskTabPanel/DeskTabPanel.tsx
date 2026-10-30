@@ -1,5 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react";
 import { Box, Stack } from "@mantine/core";
+import { IconStack2 } from "@tabler/icons-react";
 
 import { DeskTabType } from "types";
 import { StackableScreen } from "app/components";
@@ -42,7 +43,7 @@ function DeskTabPanel({ tab, isActive }: DeskTabPanelPropsType): ReactElement
       display={isActive === true ? "block" : "none"}
       style={{ overflow: "hidden" }}
     >
-      <StackableScreen title={tab.label}>
+      <StackableScreen title={tab.label} icon={IconStack2}>
         <Stack h="100%" w="100%" gap={0} style={{ overflow: "hidden" }}>
           <TabHeader
             tab={tab}

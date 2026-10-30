@@ -1,5 +1,3 @@
-$bottom-bar-clearance: 8px;
-
 .container
 {
   overflow: hidden;
@@ -19,46 +17,4 @@ $bottom-bar-clearance: 8px;
 .componentWrapper
 {
   overflow-y: auto;
-}
-
-.breadcrumbsWrapper
-{
-  overflow: hidden;
-}
-
-.breadcrumbsRoot
-{
-  flex-wrap: nowrap;
-}
-
-.probeContainer
-{
-  visibility: hidden;
-  pointer-events: none;
-  z-index: -1000;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.menuDropdown
-{
-  max-width: 460px;
-  max-height: calc(100vh - #{$bottom-bar-width + $bottom-bar-clearance});
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-.menuItem
-{
-  min-width: 0;
-  max-width: 100%;
-}
-
-.menuItemLabel
-{
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }

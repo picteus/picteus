@@ -123,15 +123,16 @@ export default function useImageCommands({
         execute: () =>
         {
           addModal({
+            isStackable: true,
+            icon: { icon: <IconTopologyRing3 stroke={Common.IconStrokeSize}/> },
+            title: t("closestEmbeddingsImagesModal.title"),
+            size: "l",
             body: (
               <ClosestEmbeddingsImages
                 image={image}
                 viewMode={viewMode}
               />
-            ),
-            isStackable: true,
-            title: t("closestEmbeddingsImagesModal.title"),
-            size: "l"
+            )
           });
         }
       });

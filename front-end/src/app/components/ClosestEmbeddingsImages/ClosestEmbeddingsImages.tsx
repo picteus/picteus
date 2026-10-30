@@ -93,7 +93,7 @@ export default function ClosestEmbeddingsImages({
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Flex align="end" gap={20}>
             <Input.Wrapper label={t("field.source")}>
-              <ImageThumbnail imageOrUrl={image} width={Common.ImageThumbnailEdge} height={Common.ImageThumbnailEdge}/>
+              <ImageThumbnail imageOrUrl={image} edge={Common.ImageThumbnailEdge}/>
             </Input.Wrapper>
             <Input.Wrapper label={t("field.name")}>
               <EmbeddingSelect initialEmbeddingName={initialEmbeddingName} onSelected={setEmbeddingName}/>

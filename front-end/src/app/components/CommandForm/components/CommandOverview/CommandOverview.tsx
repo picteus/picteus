@@ -159,7 +159,7 @@ function SingleImageOverview({
           </Stack>
         </Alert>
         <Box style={{ flexShrink: 0 }}>
-          <ImageThumbnail imageOrUrl={image} width={Common.ImageThumbnailEdge} height={Common.ImageThumbnailEdge}/>
+          <ImageThumbnail imageOrUrl={image} edge={Common.ImageThumbnailEdge}/>
         </Box>
       </Flex>
       {instructions?.details && <Manual content={instructions.details} title={t("commands.about")}/>}

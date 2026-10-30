@@ -2,7 +2,7 @@ import { type ReactElement, type ReactNode } from "react";
 import { Divider, Flex, Stack, Title } from "@mantine/core";
 
 import { ContentIconType } from "types";
-import { ResourceIcon } from "app/components";
+import { ContentIcon } from "app/components";
 
 
 type ContentTitleType = {
@@ -16,8 +16,7 @@ export default function ContentTitle({ text, icon, details }: ContentTitleType):
   return (
     <Stack gap="xs" w="100%">
       <Flex gap="sm">
-        <ResourceIcon icon={icon} size="md"/>
-        {(icon !== undefined && "icon" in icon) && icon.icon}
+        <ContentIcon icon={icon} size="md"/>
         <Title order={3}>{text}</Title>
       </Flex>
       {(details !== undefined && details !== null) && details}

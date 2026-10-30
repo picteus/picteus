@@ -3,7 +3,8 @@ import { IconPhoto } from "@tabler/icons-react";
 
 import { ImageOrSummary, ViewMode } from "types";
 import { useActionModalContext } from "app/context";
-import { Common, ImageDetail } from "app/components";
+import { ImageService } from "app/services";
+import { Common, ImageDetail, ImageSubtitle } from "app/components";
 
 
 export interface OpenImageDetailModalParameters
@@ -26,11 +27,14 @@ export default function useImageDetailModal(): OpenImageDetailModalFunctionType
       viewMode = "gallery"
     }: OpenImageDetailModalParameters): void =>
     {
+      const imageUrl = image.url ? ImageService.getImageSrc(image.url, Common.BreadcrumbEdge, Common.BreadcrumbEdge) : undefined;
+
       addModal({
         isStackable: true,
-        icon: {
-          icon: <IconPhoto size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
-        },
+        icon: imageUrl
+          ? { url: imageUrl }
+          : { icon: <IconPhoto size={Common.BreadcrumbEdge} stroke={Common.IconStrokeSize}/> },
+        subtitle: <ImageSubtitle image={image}/>,
         title: image.name,
         body: (
           <ImageDetail
