@@ -17,13 +17,14 @@ import {
 } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
 import { SwaggerCustomOptions } from "@nestjs/swagger/dist/interfaces";
 import { WinstonModule } from "nest-winston";
-import { types } from "http-constants";
+import { headers, methods, types } from "http-constants";
 import { HttpLlm, IHttpLlmApplication, OpenApi, OpenApiV3, OpenApiV3_1, SwaggerV2 } from "@samchon/openapi";
 
 import {
   addFileTransport,
   CliOptions,
   computeParseCommandLineAndRun,
+  defaultCliOptions,
   defaultCommand,
   HostCommandType,
   WebServer
@@ -35,6 +36,7 @@ import { paths } from "./paths";
 import { environmentVariableChecker, StringLengths, StringNature } from "./services/utils/parametersChecker";
 import { ConstantsRegistry, ExtensionCategory, ManifestRuntimeEnvironment } from "./dtos/app.dtos";
 import { deepCopy, stringify } from "./utils";
+import { networkSecurity } from "./services/utils/networkSecurity";
 import { apiKeyHeaderName, AuthenticationGuard } from "./app.guards";
 import { computeMainModule, fineTuneApplication } from "./app.module";
 import { HostService } from "./services/hostService";
@@ -74,7 +76,7 @@ class InternalServer
   {
     const baseUrl = paths.webServicesBaseUrl;
     const swaggerUiPrefix = "swaggerui";
-    logger.info(`Starting the HTTP server${secretsDirectoryPath !== undefined ? " with SSL " : ""}${useThrottling === true ? " with throttling" : ""} available at '${baseUrl}'${enableSwaggerUi === false ? "" : ` and Swagger UI available at '${baseUrl}/${swaggerUiPrefix}'`}`);
+    logger.info(`Starting the HTTP server on host '${paths.host}'${secretsDirectoryPath !== undefined ? " with SSL " : ""}${useThrottling === true ? " with throttling" : ""} available at '${baseUrl}'${enableSwaggerUi === false ? "" : ` and Swagger UI available at '${baseUrl}/${swaggerUiPrefix}'`}`);
     this.checkEnvironmentVariables();
     const application = await this.createApplication(secretsDirectoryPath, useThrottling, portNumber);
 
@@ -107,7 +109,7 @@ class InternalServer
         };
       SwaggerModule.setup(swaggerUiPrefix, application, document, options);
     }
-    await application.listen(portNumber);
+    await application.listen(portNumber, paths.host);
   }
 
   async stop(): Promise<void>
@@ -153,8 +155,6 @@ class InternalServer
     }
     const options: NestApplicationOptions =
       {
-        // We allow CORS requests
-        cors: true,
         // We do not want to abort the server on errors
         abortOnError: false,
         // We use the same logger as for the rest of the application
@@ -176,12 +176,24 @@ class InternalServer
       constructor()
       {
         super();
-        this.use((_request: Request, response: Response, next: () => void) =>
+        this.use((request: Request, response: Response, next: () => void) =>
         {
-          // We need to support CORS requests: we use a verbose strategy, there must cleaner alternatives through the "ExpressAdapter.useCors()" method…
-          response.setHeader("Access-Control-Allow-Origin", "*");
-          response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE");
-          response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+          const hostHeader = request.headers.host;
+          if (networkSecurity.isAllowedHost(hostHeader) === false)
+          {
+            const hostHeaderName = headers.request.HOST;
+            logger.warn(`Rejects the request with untrusted ${hostHeaderName} header with value '${hostHeader}'`);
+            response.status(HttpStatus.FORBIDDEN).contentType(types.txt).send(`Invalid '${hostHeaderName}' header`);
+            return;
+          }
+          const origin = request.headers.origin;
+          if (origin !== undefined && networkSecurity.isAllowedOrigin(origin) === true)
+          {
+            response.setHeader(headers.response.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+            response.setHeader(headers.response.VARY, headers.request.ORIGIN);
+          }
+          response.setHeader("Access-Control-Allow-Methods", `${methods.GET}, ${methods.POST}, ${methods.PUT}, ${methods.PATCH}, ${methods.DELETE}`);
+          response.setHeader("Access-Control-Allow-Headers", `${headers.request.CONTENT_TYPE}, ${headers.request.AUTHORIZATION}`);
           next();
         });
       }
@@ -194,7 +206,7 @@ class InternalServer
           stopBootstrapLogs();
         }
         this.listenCount++;
-        return this.httpServer.listen(port, ...args);
+        return this.httpServer.listen(port, paths.host, ...args);
       }
 
       bootstrap()
@@ -221,7 +233,7 @@ class InternalServer
     {
       logger.debug("Starting the HTTP server to provide bootstrap information");
       httpAdapter.bootstrap();
-      httpAdapter.listen(portNumber);
+      httpAdapter.listen(portNumber, paths.host);
     }
 
     return this._application;
@@ -537,9 +549,21 @@ async function run(): Promise<void>
     async (actionParameters: ActionParameters, cliOptions: CliOptions): Promise<void> =>
     {
       const secretsDirectoryPath = path.join(paths.serverDirectoryPath, "secrets");
+      if (cliOptions.host !== undefined)
+      {
+        paths.host = cliOptions.host;
+      }
+      if (cliOptions.allowedOrigins !== undefined)
+      {
+        paths.allowedOrigins = cliOptions.allowedOrigins;
+      }
       if (cliOptions.apiServerPortNumber !== undefined)
       {
         paths.setSecureAndPortNumber(undefined, cliOptions.apiServerPortNumber);
+      }
+      if (cliOptions.webServerPortNumber !== undefined)
+      {
+        paths.webServerPortNumber = cliOptions.webServerPortNumber;
       }
       if (cliOptions.useSsl !== undefined)
       {
@@ -606,14 +630,14 @@ async function run(): Promise<void>
         if (webDirectoryPath !== undefined)
         {
           webServer = new WebServer(logger);
-          await webServer.start(cliOptions.webServerPortNumber, cliOptions.useSsl, webDirectoryPath, secretsDirectoryPath);
+          await webServer.start(cliOptions.webServerPortNumber ?? defaultCliOptions.webServerPortNumber, cliOptions.useSsl ?? defaultCliOptions.useSsl, webDirectoryPath, secretsDirectoryPath, paths.host);
         }
       }
 
       const server = new InternalServer();
       try
       {
-        await server.start(paths.webServicesPortNumber, cliOptions.useThrottling, paths.isSecure === true ? secretsDirectoryPath : undefined, true);
+        await server.start(paths.webServicesPortNumber, cliOptions.useThrottling ?? defaultCliOptions.useThrottling, paths.isSecure === true ? secretsDirectoryPath : undefined, true);
         logger.info("The server is started");
       }
       catch (error)

@@ -13,6 +13,7 @@ import {
   FactoryProvider,
   ForbiddenException,
   HttpException,
+  HttpStatus,
   Injectable,
   MiddlewareConsumer,
   Module,
@@ -75,6 +76,7 @@ import {
   VectorDatabaseAccessor,
   VectorDatabaseProvider
 } from "./services/app.service";
+import { networkSecurity } from "./services/utils/networkSecurity";
 import { ControllerError, ServiceError } from "./app.exceptions";
 import { Resizer } from "./resizer";
 
@@ -131,7 +133,7 @@ class DiscardNullTransformerPackage implements TransformerPackage
   plainToInstance<T>(aClass: Type<T>, plain: unknown, options?: ClassTransformOptions): T[] | T
   {
     const instance = plainToInstance<T, unknown>(aClass, plain, options);
-    return this.cleanEmpty(instance, [null]);
+    return this.cleanEmpty(instance, [ null ]);
   }
 
   classToPlain(object: unknown, options?: ClassTransformOptions): Record<string, any> | Record<string, any>[]
@@ -147,11 +149,11 @@ class DiscardNullTransformerPackage implements TransformerPackage
       return object;
     }
     const plain = instanceToPlain(object, options);
-    return this.cleanEmpty(plain, [null]);
+    return this.cleanEmpty(plain, [ null ]);
   }
 
   // Inspired from https://gist.github.com/emmanuelnk/92ea809113ef47447b945d1948760221
-  cleanEmpty(object: any, defaults = [undefined, null, NaN, ""]): any
+  cleanEmpty(object: any, defaults = [ undefined, null, NaN, "" ]): any
   {
     if (defaults.includes(object) === true)
     {
@@ -166,8 +168,8 @@ class DiscardNullTransformerPackage implements TransformerPackage
     }
     return Object.entries(object).length
       ? Object.entries(object)
-        .map(([key, value]) => ([key, value && typeof value === "object" ? this.cleanEmpty(value, defaults) : value]))
-        .reduce((newObject, [key, value]) =>
+        .map(([ key, value ]) => ([ key, value && typeof value === "object" ? this.cleanEmpty(value, defaults) : value ]))
+        .reduce((newObject, [ key, value ]) =>
         {
           return (defaults.includes(value) ? newObject : { ...newObject, [key]: value });
         }, {})
@@ -253,12 +255,12 @@ class ExtensionsUserInterfaceMiddleware implements NestMiddleware, OnModuleInit,
 
 }
 
-const controllers = [MiscellaneousController, AdministrationController, SettingsController, ApiSecretController, ExtensionController, RepositoryController, CollectionController, ImageController, ImageAttachmentController, SearchController];
+const controllers = [ MiscellaneousController, AdministrationController, SettingsController, ApiSecretController, ExtensionController, RepositoryController, CollectionController, ImageController, ImageAttachmentController, SearchController ];
 
 // This module is defined in order to initialize its providers first
 @Module({
-  providers: [EntitiesProvider, VectorDatabaseProvider],
-  exports: [EntitiesProvider, VectorDatabaseProvider]
+  providers: [ EntitiesProvider, VectorDatabaseProvider ],
+  exports: [ EntitiesProvider, VectorDatabaseProvider ]
 })
 class PrerequisitesModule implements OnModuleInit, OnModuleDestroy
 {
@@ -287,8 +289,8 @@ class PrerequisitesModule implements OnModuleInit, OnModuleDestroy
     [
       PrerequisitesModule
     ],
-  providers: [AdministrationService],
-  exports: [AdministrationService]
+  providers: [ AdministrationService ],
+  exports: [ AdministrationService ]
 })
 class MigrationModule implements OnModuleInit, OnModuleDestroy
 {
@@ -308,6 +310,33 @@ class MigrationModule implements OnModuleInit, OnModuleDestroy
 
 export function fineTuneApplication(application: NestExpressApplication): void
 {
+  // We reject requests with untrusted Host header to prevent DNS rebinding attacks
+  application.use((request: ExpressRequest, response: ExpressResponse, next: () => void) =>
+  {
+    const hostHeader = request.headers.host;
+    if (networkSecurity.isAllowedHost(hostHeader) === false)
+    {
+      const hostHeaderName = headers.request.HOST;
+      logger.warn(`Rejects the request with untrusted ${hostHeaderName} header with value '${hostHeader}'`);
+      response.status(HttpStatus.FORBIDDEN).contentType(types.txt).send("Forbidden: Invalid Host header");
+      return;
+    }
+    next();
+  });
+  // We configure strict CORS verification based on allowed origins
+  application.enableCors({
+    origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) =>
+    {
+      if (networkSecurity.isAllowedOrigin(origin) === true)
+      {
+        callback(null, true);
+        return;
+      }
+      logger.warn(`Rejects the request from unauthorized CORS origin '${origin}'`);
+      callback(null, false);
+    },
+    credentials: true
+  });
   // We do not use the "setGlobalPrefix()" function on purpose, by prefixing every controller, instead
   // application.setGlobalPrefix("prefix");
   // We want to compress the network output
@@ -378,13 +407,13 @@ export function computeMainModule(withThrotlling: boolean): Type<NestModule>
   }
 
   // The orders in which the providers matter, because we want their "onModuleInit()" method invoked in the following order: "AdministrationService" => "RepositoryService"
-  const providers = [unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, ...(withThrotlling === false ? [] : [throttlerGuardProvider]), VectorDatabaseAccessor, HostService, NotifierService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService];
+  const providers = [ unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, ...(withThrotlling === false ? [] : [ throttlerGuardProvider ]), VectorDatabaseAccessor, HostService, NotifierService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService ];
 
   @Module({
     imports:
       [
         EventEmitterModule.forRoot({ wildcard: true, delimiter: NotifierService.delimiter }),
-        ...(withThrotlling === false ? [] : [ThrottlerModule.forRoot({
+        ...(withThrotlling === false ? [] : [ ThrottlerModule.forRoot({
           throttlers:
             [
               {
@@ -392,7 +421,7 @@ export function computeMainModule(withThrotlling: boolean): Type<NestModule>
                 limit: 100
               }
             ]
-        })]),
+        }) ]),
         PrerequisitesModule,
         MigrationModule
       ],

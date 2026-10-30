@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { randomUUID } from "node:crypto";
+import http from "node:http";
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, jest, test } from "@jest/globals";
 import * as IO from "socket.io-client";
@@ -70,6 +71,7 @@ import {
 import { Resizer } from "../src/resizer";
 import { pickPort } from "pick-port";
 import { VectorDatabaseProvider } from "../src/services/app.service";
+import { networkSecurity } from "../src/services/utils/networkSecurity";
 
 
 const { io } = IO;
@@ -702,7 +704,7 @@ setTimeout(() => {}, 1_000_000);
 
   test("kill shell process", async () =>
   {
-    const getPs = async (processIds: number []): Promise<Map<number, string>> =>
+    const getPs = async (processIds: number[]): Promise<Map<number, string>> =>
     {
       const psProcess = spawn("ps", [ "-aef", "|", "cat" ], core.getWorkingDirectoryPath(), undefined, true, "pipe");
       let psStdout = "";
@@ -1070,7 +1072,7 @@ setTimeout(() => {}, 1_000_000);
             }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it corresponds to a broken symbolic link`, BAD_REQUEST, errorCode));
           }
         }
-        for (const nature of Object.keys(StringNature) as StringNature [])
+        for (const nature of Object.keys(StringNature) as StringNature[])
         {
           const value = "a".repeat(256 + 1);
           await expect(async () =>
@@ -1480,6 +1482,85 @@ setTimeout(() => {}, 1_000_000);
     }
   });
 
+  test("networkSecurity", async () =>
+  {
+    networkSecurity.update("127.0.0.1", [ "http://my-domain.local:8080", "https://another-domain.com/" ], 2999);
+
+    const expectedOrigins = [
+      "http://localhost:2999",
+      "https://localhost:2999",
+      "http://127.0.0.1:2999",
+      "https://127.0.0.1:2999",
+      "http://my-domain.local:8080",
+      "https://another-domain.com"
+    ];
+    for (const expectedOrigin of expectedOrigins)
+    {
+      expect(networkSecurity.computeAllowedOrigins()).toContain(expectedOrigin);
+    }
+
+    // We assess that computeAllowedHosts returns the expected hostnames
+    const expectedHosts = [ "localhost", "127.0.0.1", "::1", "my-domain.local", "another-domain.com" ];
+    for (const expectedHost of expectedHosts)
+    {
+      expect(networkSecurity.computeAllowedHosts()).toContain(expectedHost);
+    }
+
+    // We assess that computeAllowedOrigins and computeAllowedHosts cache their values
+    const cachedOrigins = networkSecurity.computeAllowedOrigins();
+    expect(networkSecurity.computeAllowedOrigins()).toBe(cachedOrigins);
+
+    const cachedHosts = networkSecurity.computeAllowedHosts();
+    expect(networkSecurity.computeAllowedHosts()).toEqual(cachedHosts);
+
+    // We assess that update invalidates the cache
+    networkSecurity.update("192.168.1.100", [ "http://extra-domain.org" ], 8080);
+    expect(networkSecurity.computeAllowedOrigins()).not.toBe(cachedOrigins);
+    expect(networkSecurity.computeAllowedOrigins()).toContain("http://192.168.1.100:8080");
+    expect(networkSecurity.computeAllowedHosts()).not.toBe(cachedHosts);
+    expect(networkSecurity.computeAllowedHosts()).toContain("extra-domain.org");
+
+    // We reset to initial configuration for remaining checks
+    networkSecurity.update("127.0.0.1", [ "http://my-domain.local:8080", "https://another-domain.com/" ], 2999);
+
+    // We assess origin checks
+    const originTestCases: [ string | undefined, boolean ][] = [
+      [ undefined, true ],
+      [ "http://localhost:2999", true ],
+      [ "http://127.0.0.1:2999", true ],
+      [ "http://my-domain.local:8080", true ],
+      [ "https://another-domain.com", true ],
+      [ "file:///index.html", true ],
+      [ "app://picteus", true ],
+      [ "vscode-webview://webview", false ],
+      [ "http://malicious-website.com", false ],
+      [ "http://localhost:4000", false ]
+    ];
+    for (const [ origin, isAllowed ] of originTestCases)
+    {
+      expect(networkSecurity.isAllowedOrigin(origin)).toEqual(isAllowed);
+    }
+
+    // We assess host checks
+    const hostTestCases: [ string | undefined, boolean ][] = [
+      [ undefined, false ],
+      [ "localhost", true ],
+      [ "localhost:3001", true ],
+      [ "127.0.0.1", true ],
+      [ "127.0.0.1:3001", true ],
+      [ "[::1]:3001", true ],
+      [ "::1", true ],
+      [ "my-domain.local:8080", true ],
+      [ "another-domain.com", true ],
+      [ "attacker.com", false ],
+      [ "attacker.com:3001", false ]
+    ];
+    for (const [ host, isAllowed ] of hostTestCases)
+    {
+      expect(networkSecurity.isAllowedHost(host)).toEqual(isAllowed);
+    }
+  });
+
 });
 
 describe("Miscellaneous via module", () =>
@@ -1817,6 +1898,67 @@ describe("Miscellaneous via application", () =>
       expect(response.status).toEqual(OK);
       const blob = await response.blob();
       expect(blob.type).toEqual(toMimeType(image.format));
+    }
+  });
+
+  test("Host header", async () =>
+  {
+    const sendHttpRequest = async (hostHeader: string): Promise<{ statusCode: number, body: string }> =>
+    {
+      return new Promise((resolve, reject) =>
+      {
+        const request = http.request({
+          hostname: "127.0.0.1",
+          port: paths.webServicesPortNumber,
+          path: "/miscellaneous/ping",
+          method: "GET",
+          headers: {
+            host: hostHeader
+          }
+        }, (response) =>
+        {
+          let data = "";
+          response.on("data", (chunk: Buffer) =>
+          {
+            data += chunk.toString();
+          });
+          response.on("end", () =>
+          {
+            resolve({ statusCode: response.statusCode || 0, body: data });
+          });
+        });
+        request.on("error", reject);
+        request.end();
+      });
+    };
+
+    {
+      // We assess that an untrusted Host header is rejected with 403 Forbidden
+      const result = await sendHttpRequest("untrusted-attacker.com");
+      expect(result.statusCode).toEqual(FORBIDDEN);
+      expect(result.body).toContain("Forbidden: Invalid Host header");
+    }
+    {
+      // We assess that a trusted Host header succeeds
+      const result = await sendHttpRequest(`localhost:${paths.webServicesPortNumber}`);
+      expect(result.statusCode).toEqual(OK);
+      expect(result.body).toEqual("pong");
+    }
+  });
+
+  test("CORS origin", async () =>
+  {
+    const url = `${paths.webServicesBaseUrl}/miscellaneous/ping`;
+    {
+      // We assess that an unauthorized CORS origin does not receive Access-Control-Allow-Origin
+      const response = await fetch(url, { headers: { Origin: "http://untrusted-site.com" } });
+      expect(response.headers.get("access-control-allow-origin")).toBeNull();
+    }
+    {
+      // We assess that an authorized CORS origin receives Access-Control-Allow-Origin
+      const origin = `http://localhost:${paths.webServerPortNumber}`;
+      const response = await fetch(url, { headers: { Origin: origin } });
+      expect(response.headers.get("access-control-allow-origin")).toEqual(origin);
     }
   });
 

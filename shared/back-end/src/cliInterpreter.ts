@@ -3,24 +3,47 @@ import { Logger } from "winston";
 
 export interface CliOptions
 {
-  readonly useSsl: boolean;
-  readonly useThrottling: boolean;
-  readonly apiServerPortNumber: number;
-  readonly webServerPortNumber: number;
-  readonly vectorDatabasePortNumber: number;
+  readonly useSsl?: boolean;
+  readonly useThrottling?: boolean;
+  readonly host?: string;
+  readonly allowedOrigins?: string[];
+  readonly apiServerPortNumber?: number;
+  readonly webServerPortNumber?: number;
+  readonly vectorDatabasePortNumber?: number;
   readonly requiresApiKeys?: boolean;
   readonly unpackedExtensionsDirectoryPath?: string;
 }
 
-export const defaultCliOptions: CliOptions =
+type UndefinedableCliOptionsKeys = "allowedOrigins" | "requiresApiKeys" | "unpackedExtensionsDirectoryPath";
+
+type DefaultCliOptions = &
+  { [K in UndefinedableCliOptionsKeys]: CliOptions[K] }
+  & { [K in Exclude<keyof CliOptions, UndefinedableCliOptionsKeys>]: Exclude<CliOptions[K], undefined> };
+
+export const defaultCliOptions: DefaultCliOptions =
   {
     useSsl: false,
     useThrottling: false,
+    host: "127.0.0.1",
+    allowedOrigins: undefined,
     apiServerPortNumber: 3001,
     webServerPortNumber: 2999,
     vectorDatabasePortNumber: 3002,
     requiresApiKeys: undefined,
     unpackedExtensionsDirectoryPath: undefined
+  };
+
+export const cliOptionsArguments =
+  {
+    useSsl: "useSsl",
+    useThrottling: "useThrottling",
+    host: "host",
+    allowedOrigins: "allowedOrigins",
+    apiServerPort: "apiServerPort",
+    webServerPort: "webServerPort",
+    vectorDatabasePort: "vectorDatabasePort",
+    requiresApiKeys: "requiresApiKeys",
+    unpackedExtensionsDirectoryPath: "unpackedExtensionsDirectoryPath"
   };
 
 export const defaultCommand = "run";
@@ -64,6 +87,14 @@ export async function computeParseCommandLineAndRun(): Promise<parseCommandLineA
         validator: CaporalValidator.BOOLEAN,
         default: defaultCliOptions.useThrottling
       })
+      .option("--host <host>", "Indicates the network interface address the internal servers should bind to", {
+        validator: CaporalValidator.STRING,
+        default: defaultCliOptions.host
+      })
+      .option("--allowedOrigins <origins>", "Indicates the comma-separated list of extra allowed origins for CORS and WebSockets", {
+        validator: CaporalValidator.STRING,
+        default: undefined
+      })
       .option("--apiServerPort <portNumber>", "Indicates the internal API server port number", {
         validator: CaporalValidator.NUMBER,
         default: defaultCliOptions.apiServerPortNumber
@@ -87,13 +118,15 @@ export async function computeParseCommandLineAndRun(): Promise<parseCommandLineA
       .action((actionParameters: ActionParameters) =>
       {
         exit = false;
-        const useSsl: boolean = actionParameters.options["useSsl"] as boolean;
-        const useThrottling: boolean = actionParameters.options["useThrottling"] as boolean;
-        const apiServerPort: number = actionParameters.options["apiServerPort"] as number;
-        const webServerPort: number = actionParameters.options["webServerPort"] as number;
-        const vectorDatabasePort: number = actionParameters.options["vectorDatabasePortNumber"] as number;
-        const requiresApiKeys: boolean = actionParameters.options["requiresApiKeys"] as boolean;
-        const unpackedExtensionsDirectoryPath: string = actionParameters.options["unpackedExtensionsDirectoryPath"] as string;
+        const useSsl: boolean | undefined = actionParameters.options["useSsl"] as boolean;
+        const useThrottling: boolean | undefined = actionParameters.options["useThrottling"] as boolean;
+        const host: string | undefined = (actionParameters.options["host"] as string);
+        const apiServerPort: number | undefined = actionParameters.options["apiServerPort"] as number;
+        const webServerPort: number | undefined = actionParameters.options["webServerPort"] as number;
+        const vectorDatabasePort: number | undefined = actionParameters.options["vectorDatabasePortNumber"] as number;
+        const requiresApiKeys: boolean | undefined = actionParameters.options["requiresApiKeys"] as boolean;
+        const unpackedExtensionsDirectoryPath: string | undefined = actionParameters.options["unpackedExtensionsDirectoryPath"] as string;
+        const allowedOrigins: string[] | undefined = actionParameters.options["allowedOrigins"] === undefined ? undefined : (actionParameters.options["allowedOrigins"] as string).split(",").map(origin => origin.trim()).filter(origin => origin.length > 0);
 
         if (apiServerPort === webServerPort)
         {
@@ -103,6 +136,8 @@ export async function computeParseCommandLineAndRun(): Promise<parseCommandLineA
         return starter(actionParameters, {
           useSsl,
           useThrottling,
+          host,
+          allowedOrigins,
           apiServerPortNumber: apiServerPort,
           webServerPortNumber: webServerPort,
           vectorDatabasePortNumber: vectorDatabasePort,

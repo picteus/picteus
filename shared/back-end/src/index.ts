@@ -1,5 +1,11 @@
 import { addFileTransport, createLogger } from "./logger";
-import { CliOptions, computeParseCommandLineAndRun, defaultCliOptions, defaultCommand } from "./cliInterpreter";
+import {
+  CliOptions,
+  cliOptionsArguments,
+  computeParseCommandLineAndRun,
+  defaultCliOptions,
+  defaultCommand
+} from "./cliInterpreter";
 import { WebCoordinates, WebServer } from "./webServer";
 import {
   ApiKeyHostCommand,
@@ -16,7 +22,7 @@ import {
 
 
 export { createLogger, addFileTransport };
-export { CliOptions, defaultCliOptions, defaultCommand, computeParseCommandLineAndRun };
+export { CliOptions, defaultCliOptions, cliOptionsArguments, defaultCommand, computeParseCommandLineAndRun };
 export { WebCoordinates, WebServer };
 export {
   HostCommandType,

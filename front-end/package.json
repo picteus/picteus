@@ -38,7 +38,7 @@
     "updateVersion": "tsx scripts/updateVersion.ts",
     "build": "tsc -b && vite build",
     "profile": "vite build --mode profiling",
-    "start": "vite dev --port 5174",
+    "start": "vite dev --host 127.0.0.1 --port 5174",
     "preview": "vite preview",
     "lint": "eslint ."
   },

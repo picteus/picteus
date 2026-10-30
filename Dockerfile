@@ -44,6 +44,10 @@ COPY electron/${buildDirectoryName}/sdk ./sdk
 COPY electron/${buildDirectoryName}/extensions ./extensions
 COPY electron/${buildDirectoryName}/${frontendDirectoryName} ./${frontendDirectoryName}
 
+ARG host=0.0.0.0
+ARG allowedOrigins=""
+ENV host=${host}
+ENV allowedOrigins=${allowedOrigins}
 ENV apiServerPort=3001
 ENV webServerPort=2999
 ENV vectorDatabasePort=3002
@@ -64,4 +68,4 @@ ENV FILES_DIRECTORY_PATH=/app/files
 
 # Starts the server
 WORKDIR /app
-CMD ["sh", "-c", "if [ -z \"${filesMountPath}\" ]; then echo \"Error: The 'filesMountPath' environment variable must be set.\" 1>&2; exit 1; fi ; NODE_OPTIONS=\"--max-http-header-size=131072\" REPOSITORY_MAPPING_PATHS=\"${FILES_DIRECTORY_PATH}=${filesMountPath}\" REFERENCE_DATABASE_FILE_PATH=\"/app/${buildDirectoryName}/${backendDirectoryName}/database.db\" REGULAR_DATABASE_FILE_PATH=\"${EXTERNAL_DIRECTORY_PATH}/database.db\" VECTOR_DATABASE_DIRECTORY_PATH=\"${EXTERNAL_DIRECTORY_PATH}/chroma\" REPOSITORIES_DIRECTORY_PATH=\"${EXTERNAL_DIRECTORY_PATH}/repositories\" SDK_DIRECTORY_PATH=\"./${buildDirectoryName}/sdk\" INSTALLED_EXTENSIONS_DIRECTORY_PATH=\"${INTERNAL_DIRECTORY_PATH}/extensions\" MODELS_CACHE_DIRECTORY_PATH=\"${INTERNAL_DIRECTORY_PATH}/models\" RUNTIMES_DIRECTORY_PATH=\"${INTERNAL_DIRECTORY_PATH}/runtimes\" node ./${buildDirectoryName}/${backendDirectoryName}/src/main.js run --useSsl ${useSsl} --apiServerPort ${apiServerPort} --requiresApiKeys ${requiresApiKeys} --webServerPort ${webServerPort} --webDirectoryPath /app/${buildDirectoryName}/${frontendDirectoryName} --vectorDatabasePort ${vectorDatabasePort}"]
+CMD ["sh", "-c", "if [ -z \"${filesMountPath}\" ]; then echo \"Error: The 'filesMountPath' environment variable must be set.\" 1>&2; exit 1; fi ; EXTRA_ALLOWED_ORIGINS_ARG=\"\" ; if [ -n \"${allowedOrigins}\" ]; then EXTRA_ALLOWED_ORIGINS_ARG=\"--allowedOrigins ${allowedOrigins}\"; fi ; NODE_OPTIONS=\"--max-http-header-size=131072\" REPOSITORY_MAPPING_PATHS=\"${FILES_DIRECTORY_PATH}=${filesMountPath}\" REFERENCE_DATABASE_FILE_PATH=\"/app/${buildDirectoryName}/${backendDirectoryName}/database.db\" REGULAR_DATABASE_FILE_PATH=\"${EXTERNAL_DIRECTORY_PATH}/database.db\" VECTOR_DATABASE_DIRECTORY_PATH=\"${EXTERNAL_DIRECTORY_PATH}/chroma\" REPOSITORIES_DIRECTORY_PATH=\"${EXTERNAL_DIRECTORY_PATH}/repositories\" SDK_DIRECTORY_PATH=\"./${buildDirectoryName}/sdk\" INSTALLED_EXTENSIONS_DIRECTORY_PATH=\"${INTERNAL_DIRECTORY_PATH}/extensions\" MODELS_CACHE_DIRECTORY_PATH=\"${INTERNAL_DIRECTORY_PATH}/models\" RUNTIMES_DIRECTORY_PATH=\"${INTERNAL_DIRECTORY_PATH}/runtimes\" node ./${buildDirectoryName}/${backendDirectoryName}/src/main.js run --host ${host} --useSsl ${useSsl} --apiServerPort ${apiServerPort} --requiresApiKeys ${requiresApiKeys} --webServerPort ${webServerPort} --webDirectoryPath /app/${buildDirectoryName}/${frontendDirectoryName} --vectorDatabasePort ${vectorDatabasePort} ${EXTRA_ALLOWED_ORIGINS_ARG}"]

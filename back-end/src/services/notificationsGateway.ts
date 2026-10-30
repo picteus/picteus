@@ -42,6 +42,7 @@ import { HostCommandType } from "@picteus/shared-back-end";
 
 import { logger } from "../logger";
 import { paths } from "../paths";
+import { networkSecurity } from "./utils/networkSecurity";
 import { Manifest, ManifestEvent, ManifestRuntimeEnvironment } from "../dtos/app.dtos";
 import {
   fromExtensionEventActionToManifestEvent,
@@ -158,6 +159,13 @@ export class NotificationsGateway
 
   handleConnection(socket: Socket): void
   {
+    const origin = socket.handshake.headers.origin;
+    if (networkSecurity.isAllowedOrigin(origin) === false)
+    {
+      logger.warn(`Rejecting socket connection from unauthorized origin '${origin}'`);
+      socket.disconnect(true);
+      return;
+    }
     const sockets = this.sockets;
     logger.info(`A new socket client with id '${socket.id}' has connected${sockets === undefined ? "" : ` (the number of connected client is now ${sockets.size})`}`);
   }

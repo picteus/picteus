@@ -553,7 +553,7 @@ export class Base extends Core
     const portNumber = await pickPort({ type: "tcp", minPort: 7000, maxPort: 8000 });
     paths.setSecureAndPortNumber(undefined, portNumber);
     logger.debug(`The Nest application is listening incoming requests on port ${portNumber}`);
-    await this.application.listen(paths.webServicesPortNumber);
+    await this.application.listen(paths.webServicesPortNumber, paths.host);
   }
 
   private async destroyNestApplication(): Promise<void>

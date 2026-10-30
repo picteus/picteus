@@ -2,6 +2,8 @@ import process, { env } from "node:process";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { networkSecurity } from "./services/utils/networkSecurity";
+
 
 let directoryName: string;
 try
@@ -58,9 +60,15 @@ export class Paths
 
   private readonly repositoryMappingPathsEnvironmentVariableName = "REPOSITORY_MAPPING_PATHS";
 
+  private _host: string = "127.0.0.1";
+
   private _webServicesPortNumber: number = 3001;
 
+  private _webServerPortNumber: number = 2999;
+
   private _vectorDatabasePortNumber: number = 3002;
+
+  private _allowedOrigins: string[] = [];
 
   private _isSecure: boolean = false;
 
@@ -82,6 +90,7 @@ export class Paths
 
   private constructor()
   {
+    networkSecurity.update(this._host, this._allowedOrigins, this._webServicesPortNumber);
   }
 
   describeEnvironmentVariables(): { name: string, description: string }[]
@@ -265,9 +274,47 @@ export class Paths
     }
   }
 
+  get host(): string
+  {
+    return this._host;
+  }
+
+  private notifyNetworkConfigurationChange(): void
+  {
+    networkSecurity.update(this.host, this.allowedOrigins, this.webServerPortNumber);
+  }
+
+  set host(value: string)
+  {
+    this._host = value;
+    this.notifyNetworkConfigurationChange();
+  }
+
+  get webServerPortNumber(): number
+  {
+    return this._webServerPortNumber;
+  }
+
+  set webServerPortNumber(value: number)
+  {
+    this._webServerPortNumber = value;
+    this.notifyNetworkConfigurationChange();
+  }
+
+  get allowedOrigins(): string[]
+  {
+    return this._allowedOrigins;
+  }
+
+  set allowedOrigins(value: string[])
+  {
+    this._allowedOrigins = value;
+    this.notifyNetworkConfigurationChange();
+  }
+
   get webServicesBaseUrl()
   {
-    return `http${this._isSecure === true ? "s" : ""}://localhost:${this._webServicesPortNumber}`;
+    return `http${this._isSecure === true ? "s" : ""}://${this._host === networkSecurity.allInterfacesIpAddress ? networkSecurity.localhost : this._host}:${this._webServicesPortNumber}`;
   }
 
   get vectorDatabasePortNumber(): number

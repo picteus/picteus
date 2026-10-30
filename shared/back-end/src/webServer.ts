@@ -19,10 +19,10 @@ export class WebServer
   {
   }
 
-  async start(portNumber: number, useSsl: boolean, directoryPath: string, secretsDirectoryPath: string): Promise<WebCoordinates>
+  async start(portNumber: number, useSsl: boolean, directoryPath: string, secretsDirectoryPath: string, host: string = "127.0.0.1"): Promise<WebCoordinates>
   {
-    const baseUrl = `http${useSsl === false ? "" : "s"}://localhost:${portNumber}`;
-    this.logger.info(`Starting the internal web server on port ${portNumber} server the local files located under '${directoryPath}', available under '${baseUrl}'`);
+    const baseUrl = `http${useSsl === false ? "" : "s"}://${host === "0.0.0.0" ? "localhost" : host}:${portNumber}`;
+    this.logger.info(`Starting the internal web server on host '${host}' and port ${portNumber} serving the local files located under '${directoryPath}', available under '${baseUrl}'`);
     const key = useSsl === false ? undefined : await readFile(path.join(secretsDirectoryPath, "key.pem"));
     const cert = useSsl === false ? undefined : await readFile(path.join(secretsDirectoryPath, "cert.pem"));
 
@@ -79,7 +79,7 @@ export class WebServer
         this.logger.debug("The internal web server is listening");
         resolve({ baseUrl, httpServer });
       });
-      httpServer.listen(portNumber, () =>
+      httpServer.listen(portNumber, host, () =>
       {
         this.logger.debug("The internal web server is started");
       });

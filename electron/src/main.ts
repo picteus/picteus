@@ -29,6 +29,7 @@ import {
 
 import {
   CliOptions,
+  cliOptionsArguments,
   computeParseCommandLineAndRun,
   defaultCliOptions,
   defaultCommand,
@@ -105,7 +106,7 @@ class BackendServer
   {
   }
 
-  async start(backendDirectoryPath: string, emptyDatabaseFilePath: string, portNumber: number, useSsl: boolean | undefined, useThrottling: boolean | undefined, requiresApiKeys: boolean | undefined, unpackedExtensionsDirectoryPath: string | undefined, coordinator: BackendServerApplicationCoordinator, execArgv: string[] | undefined): Promise<string>
+  async start(backendDirectoryPath: string, emptyDatabaseFilePath: string, portNumber: number, useSsl: boolean | undefined, host: string | undefined, allowedOrigins: string [] | undefined, useThrottling: boolean | undefined, requiresApiKeys: boolean | undefined, unpackedExtensionsDirectoryPath: string | undefined, coordinator: BackendServerApplicationCoordinator, execArgv: string[] | undefined): Promise<string>
   {
     const backendSourceDirectoryPath = path.join(backendDirectoryPath, "src");
     const filePath = path.join(backendSourceDirectoryPath, "main.js");
@@ -130,18 +131,26 @@ class BackendServer
       logger.debug(`The SDK directory path is set to '${sdkDirectoryPath}'`);
       environmentVariables.SDK_DIRECTORY_PATH = sdkDirectoryPath;
     }
-    const forkArguments = [ "--logsDirectoryPath", logsDirectoryPath, "--storageDirectoryPath", applicationDirectoryPath, "--apiServerPort", portNumber.toString() ];
+    const forkArguments = [ "--logsDirectoryPath", logsDirectoryPath, "--storageDirectoryPath", applicationDirectoryPath, `--${cliOptionsArguments.apiServerPort}`, portNumber.toString() ];
     if (useSsl !== undefined)
     {
-      forkArguments.push("--useSsl", useSsl.toString());
+      forkArguments.push(`--${cliOptionsArguments.useSsl}`, useSsl.toString());
+    }
+    if (host !== undefined)
+    {
+      forkArguments.push(`--${cliOptionsArguments.host}`, host);
+    }
+    if (allowedOrigins !== undefined)
+    {
+      forkArguments.push(`--${cliOptionsArguments.allowedOrigins}`, allowedOrigins.join(","));
     }
     if (useThrottling !== undefined)
     {
-      forkArguments.push("--useThrottling", useThrottling.toString());
+      forkArguments.push(`--${cliOptionsArguments.useThrottling}`, useThrottling.toString());
     }
     if (requiresApiKeys !== undefined)
     {
-      forkArguments.push("--requiresApiKeys", requiresApiKeys.toString());
+      forkArguments.push(`--${cliOptionsArguments.requiresApiKeys}`, requiresApiKeys.toString());
     }
     {
       let actualUnpackedExtensionsDirectoryPath: string;
@@ -155,7 +164,7 @@ class BackendServer
       {
         actualUnpackedExtensionsDirectoryPath = unpackedExtensionsDirectoryPath;
       }
-      forkArguments.push("--unpackedExtensionsDirectoryPath", actualUnpackedExtensionsDirectoryPath);
+      forkArguments.push(`--${cliOptionsArguments.unpackedExtensionsDirectoryPath}`, actualUnpackedExtensionsDirectoryPath);
     }
     const backendProcess = fork(filePath, [ ...forkArguments ], {
       execArgv,
@@ -452,7 +461,7 @@ export class ApplicationWrapper
   {
   }
 
-  start(useSsl: boolean = defaultCliOptions.useSsl, useThrottling: boolean = defaultCliOptions.useThrottling, apiServerPortNumber: number = defaultCliOptions.apiServerPortNumber, webServerPortNumber: number = defaultCliOptions.webServerPortNumber, requiresApiKeys: boolean | undefined = defaultCliOptions.requiresApiKeys, unpackedExtensionsDirectoryPath: string | undefined = defaultCliOptions.unpackedExtensionsDirectoryPath, webApplicationUrl: string | undefined, logBrowser: boolean = false, execArg: string[] | undefined): void
+  start(useSsl: boolean = defaultCliOptions.useSsl, useThrottling: boolean = defaultCliOptions.useThrottling, host: string = defaultCliOptions.host, allowedOrigins: string [] | undefined = defaultCliOptions.allowedOrigins, apiServerPortNumber: number = defaultCliOptions.apiServerPortNumber, webServerPortNumber: number = defaultCliOptions.webServerPortNumber, requiresApiKeys: boolean | undefined = defaultCliOptions.requiresApiKeys, unpackedExtensionsDirectoryPath: string | undefined = defaultCliOptions.unpackedExtensionsDirectoryPath, webApplicationUrl: string | undefined, logBrowser: boolean = false, execArg: string[] | undefined): void
   {
     const gotTheLock = app.requestSingleInstanceLock({});
     if (gotTheLock === false)
@@ -537,7 +546,7 @@ export class ApplicationWrapper
                 app.exit(1);
               }
             };
-          const apiKey = await BackendServer.instance.start(backendDirectoryPath, path.join(backendDirectoryPath, "database.db"), apiServerPortNumber, useSsl, useThrottling, requiresApiKeys, unpackedExtensionsDirectoryPath, coordinator, execArg);
+          const apiKey = await BackendServer.instance.start(backendDirectoryPath, path.join(backendDirectoryPath, "database.db"), apiServerPortNumber, useSsl, host, allowedOrigins, useThrottling, requiresApiKeys, unpackedExtensionsDirectoryPath, coordinator, execArg);
 
           await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, webApplicationUrl, apiKey);
         }
@@ -1130,7 +1139,7 @@ async function main(): Promise<void>
     const logBrowser = actionParameters.options[logBrowserOption] as boolean;
     const execArgv = actionParameters.options[execArgvOption] as string;
     const execArg = execArgv === undefined ? undefined : execArgv.replace(/^[“”"]+|[“”"]+$/g, "").split(" ");
-    applicationWrapper.start(cliOptions.useSsl, cliOptions.useThrottling, cliOptions.apiServerPortNumber, cliOptions.webServerPortNumber, cliOptions.requiresApiKeys, cliOptions.unpackedExtensionsDirectoryPath, webApplicationUrl, logBrowser, execArg);
+    applicationWrapper.start(cliOptions.useSsl, cliOptions.useThrottling, cliOptions.host, cliOptions.allowedOrigins, cliOptions.apiServerPortNumber, cliOptions.webServerPortNumber, cliOptions.requiresApiKeys, cliOptions.unpackedExtensionsDirectoryPath, webApplicationUrl, logBrowser, execArg);
   }, (code: number): void =>
   {
     app.exit(code);
