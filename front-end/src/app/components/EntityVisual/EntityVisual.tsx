@@ -4,7 +4,7 @@ import { IconInfoCircle } from "@tabler/icons-react";
 
 import { Common } from "app/components";
 
-import variables from "../../../assets/style/variablesExport.module.scss";
+import variables from "assets/style/variablesExport.module.scss";
 
 
 type EntityVisualType = {

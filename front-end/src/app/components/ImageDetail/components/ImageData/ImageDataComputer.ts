@@ -47,7 +47,7 @@ import { freeForm } from "generated/ViewKit.tsx";
 import { ImageOrSummary, ViewMode } from "types";
 import { capitalizeText } from "utils";
 
-import { Common, ImageItemsGallery } from "app/components";
+import { Common, ImageItemsGallery, ImageItemWrapper } from "app/components";
 
 
 const sortedFeatureTypes: readonly ImageFeatureType[] =
@@ -238,7 +238,11 @@ export function inferNonUiElement(imageFeature: ExtensionImageFeature): UiElemen
   return element;
 }
 
-export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: TFunction = i18n.t): TableRow[]
+export function computeRecipeCommonRows(
+  generationRecipe: GenerationRecipe,
+  t: TFunction = i18n.t,
+  viewMode: ViewMode = "gallery"
+): TableRow[]
 {
   const rows: TableRow[] = [];
   const options = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
@@ -303,12 +307,14 @@ export function computeRecipeCommonRows(generationRecipe: GenerationRecipe, t: T
     rows.push(tableRow([
         string(t("field.assetIds"), options),
         flowing(
-          generationRecipe.inputAssets.map((asset) => identifier(asset, {
-            modifiers: {
-              monospace: true,
-              copyable: true
-            }
-          }))
+          generationRecipe.inputAssets.map((asset, index) => freeForm(
+            React.createElement(ImageItemWrapper, {
+              key: `${asset}-${index}`,
+              idOrImage: asset,
+              viewMode,
+              edge: Common.ImageThumbnailSmallEdge
+            })
+          ))
         )
       ])
     );
@@ -358,14 +364,18 @@ export function extractRecipe(feature: ExtensionImageFeature): GenerationRecipe 
   return attempt(() => GenerationRecipeFromJSON(parsed));
 }
 
-export function convertRecipeToContainer(generationRecipe: GenerationRecipe | undefined, t: TFunction = i18n.t): UiContainer
+export function convertRecipeToContainer(
+  generationRecipe: GenerationRecipe | undefined,
+  t: TFunction = i18n.t,
+  viewMode: ViewMode = "gallery"
+): UiContainer
 {
   if (generationRecipe === undefined)
   {
     return createSchemaComplianceUiContainer(t);
   }
 
-  const rows = computeRecipeCommonRows(generationRecipe, t);
+  const rows = computeRecipeCommonRows(generationRecipe, t, viewMode);
   if (generationRecipe.prompt && typeof generationRecipe.prompt === "object")
   {
     const options = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
@@ -397,7 +407,8 @@ export function augmentRecipeUiContainer(
   feature: ExtensionImageFeature,
   container: UiContainer,
   recipeFeatures: readonly ExtensionImageFeature[],
-  t: TFunction = i18n.t
+  t: TFunction = i18n.t,
+  viewMode: ViewMode = "gallery"
 ): UiContainer
 {
   const vectorialFeature = recipeFeatures.find((candidateFeature) => candidateFeature.id === feature.id && candidateFeature.format === ImageFeatureFormat.Json);
@@ -406,7 +417,7 @@ export function augmentRecipeUiContainer(
     const generationRecipe = extractRecipe(vectorialFeature);
     if (generationRecipe !== undefined)
     {
-      const rows = computeRecipeCommonRows(generationRecipe, t);
+      const rows = computeRecipeCommonRows(generationRecipe, t, viewMode);
       if (rows.length > 0)
       {
         container.elements.splice(0, 0, table(rows, {
@@ -430,7 +441,11 @@ export type ImageFeatureContainerType =
     readonly uiContainer: UiContainer;
   };
 
-export function computeRecipeFeatureContainers(recipeFeatures: readonly ExtensionImageFeature[], t: TFunction = i18n.t): ImageFeatureContainerType[]
+export function computeRecipeFeatureContainers(
+  recipeFeatures: readonly ExtensionImageFeature[],
+  t: TFunction = i18n.t,
+  viewMode: ViewMode = "gallery"
+): ImageFeatureContainerType[]
 {
   const hasUiRecipeFeature = recipeFeatures.some((feature) => feature.type === ImageFeatureType.Recipe && feature.format === ImageFeatureFormat.Ui);
 
@@ -480,7 +495,7 @@ export function computeRecipeFeatureContainers(recipeFeatures: readonly Extensio
     {
       for (const [ featureIndex, feature ] of uiFeatures.entries())
       {
-        const container = augmentRecipeUiContainer(feature, parseFeatureUiContainer(feature, t), recipeFeatures, t);
+        const container = augmentRecipeUiContainer(feature, parseFeatureUiContainer(feature, t), recipeFeatures, t, viewMode);
         if (featureIndex === 0)
         {
           appendInstructionsDetails(container, extensionFeatures);
@@ -498,7 +513,7 @@ export function computeRecipeFeatureContainers(recipeFeatures: readonly Extensio
       for (const feature of extensionFeatures)
       {
         const container = feature.format === ImageFeatureFormat.Json
-          ? convertRecipeToContainer(extractRecipe(feature), t)
+          ? convertRecipeToContainer(extractRecipe(feature), t, viewMode)
           : UiContainer.builder().add(inferNonUiElement(feature)).build();
         appendInstructionsDetails(container, [ feature ]);
         featureContainers.push({

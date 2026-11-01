@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { ExtensionImageFeature } from "@picteus/ws-client";
 
+import { ViewMode } from "types";
 import { computeRecipeFeatureContainers } from "../../ImageDataComputer.ts";
 import ImageFeatureCard from "../ImageFeatureCard/ImageFeatureCard.tsx";
 
@@ -10,6 +11,7 @@ import ImageFeatureCard from "../ImageFeatureCard/ImageFeatureCard.tsx";
 export type ImageRecipeCardPropsType =
   {
     readonly recipeFeatures: readonly ExtensionImageFeature[];
+    readonly viewMode: ViewMode;
     readonly isOpened: boolean;
     readonly onToggle: () => void;
     readonly onHide: () => void;
@@ -17,6 +19,7 @@ export type ImageRecipeCardPropsType =
 
 export default function ImageRecipeCard({
   recipeFeatures,
+  viewMode,
   isOpened,
   onToggle,
   onHide
@@ -24,8 +27,8 @@ export default function ImageRecipeCard({
 {
   const [ t ] = useTranslation();
 
-  const featureContainers = useMemo(() => computeRecipeFeatureContainers(recipeFeatures, t),
-    [ recipeFeatures, t ]
+  const featureContainers = useMemo(() => computeRecipeFeatureContainers(recipeFeatures, t, viewMode),
+    [ recipeFeatures, t, viewMode ]
   );
 
   if (featureContainers.length === 0)

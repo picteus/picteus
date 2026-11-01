@@ -11,6 +11,7 @@ const Common = {
   ToastIconEdge: 32,
   NotificationIllustrationEdge: 64,
   BreadcrumbEdge: 64,
+  ImageThumbnailSmallEdge: 75,
   ImageThumbnailEdge: 105,
   IconStrokeSize: 1.5,
   IconBorder: "1.5px solid light-dark(#FFFFFF, var(--mantine-color-dark-5))",

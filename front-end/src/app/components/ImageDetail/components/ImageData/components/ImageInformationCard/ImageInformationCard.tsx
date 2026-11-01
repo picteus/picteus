@@ -24,7 +24,7 @@ import { Image } from "@picteus/ws-client";
 import { ViewMode } from "types";
 import { useRepository } from "app/hooks";
 import { useActionModalContext } from "app/context";
-import { freeForm, ImageItemWrapper, UiContainerView } from "app/components";
+import { Common, freeForm, ImageItemWrapper, UiContainerView } from "app/components";
 import ImageDataCard from "../ImageDataCard/ImageDataCard.tsx";
 import { RepositoryDetail, RepositoryTop } from "../../../../../../screens/RepositoriesScreen/components";
 
@@ -65,7 +65,9 @@ export default function ImageInformationCard({
       {
         rows.push(tableRow([
             string(t("field.parent"), labelOptions),
-            freeForm(<ImageItemWrapper idOrImage={image.parentId} viewMode={viewMode}/>)
+            freeForm((
+              <ImageItemWrapper idOrImage={image.parentId} viewMode={viewMode} edge={Common.ImageThumbnailSmallEdge}/>
+            ))
           ])
         );
       }

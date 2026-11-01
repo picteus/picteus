@@ -65,8 +65,8 @@ export default function ImageData({ image, viewMode }: ImageDataType): ReactElem
   );
 
   const recipeFeatureContainers = useMemo(
-    () => computeRecipeFeatureContainers(recipeFeatures, t),
-    [ recipeFeatures, t ]
+    () => computeRecipeFeatureContainers(recipeFeatures, t, viewMode),
+    [ recipeFeatures, t, viewMode ]
   );
 
   const rawFeatures = useMemo<ExtensionImageFeature[]>(
@@ -129,6 +129,7 @@ export default function ImageData({ image, viewMode }: ImageDataType): ReactElem
         map[builtInSectionIds.recipe] = (
           <ImageRecipeCard
             recipeFeatures={recipeFeatures}
+            viewMode={viewMode}
             isOpened={accordionValue.includes(builtInSectionIds.recipe)}
             onToggle={() =>
             {
@@ -243,6 +244,11 @@ export default function ImageData({ image, viewMode }: ImageDataType): ReactElem
   return useMemo<ReactElement>(() => (
     <UiElementViewProvider
       onAnchorClick={(event: React.MouseEvent<HTMLAnchorElement>, url: string) =>
+      {
+        event.preventDefault();
+        void openBrowser(url);
+      }}
+      onImageClick={(event: React.MouseEvent<HTMLImageElement>, url: string) =>
       {
         event.preventDefault();
         void openBrowser(url);

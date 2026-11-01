@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { ImageItemMode, ImageOrSummary, ViewMode } from "types";
 import { useImage, useImageDetailModal } from "app/hooks";
-import { ImageItem } from "app/components";
+import { Common, ImageItem } from "app/components";
 
 import style from "./ImageItemWrapper.module.scss";
 
@@ -19,7 +19,7 @@ export type ImageItemWrapperPropsType =
 
 export default function ImageItemWrapper({
   idOrImage,
-  edge = 100,
+  edge = Common.ImageThumbnailEdge,
   viewMode
 }: ImageItemWrapperPropsType): ReactElement
 {
