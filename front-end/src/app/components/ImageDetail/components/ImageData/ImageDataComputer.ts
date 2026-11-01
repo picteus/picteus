@@ -4,6 +4,7 @@ import i18n, { TFunction } from "i18next";
 import {
   boolean,
   CodeLanguage,
+  collapsibleGroup,
   createUiContainer,
   divider,
   flowing,
@@ -100,6 +101,8 @@ export const METADATA_SOURCES_KEYS: readonly (keyof PicteusImageMetadata)[] =
     "others"
   ] as const;
 
+const copyableOptions = { modifiers: { copyable: true } };
+
 export function isMetadataValuePresent(value: string | undefined): boolean
 {
   return value !== undefined && value !== "{}" && value.trim().length > 0;
@@ -176,7 +179,6 @@ export function parseFeatureUiContainer(feature: ExtensionImageFeature, t: TFunc
 
 export function inferNonUiElement(imageFeature: ExtensionImageFeature): UiElement
 {
-  const copyableOptions = { modifiers: { copyable: true } };
   const value = imageFeature.value;
   if (imageFeature.type === ImageFeatureType.Caption)
   {
@@ -376,19 +378,6 @@ export function convertRecipeToContainer(generationRecipe: GenerationRecipe | un
         ])
       );
     }
-    else if ("value" in prompt && prompt.value)
-    {
-      if (Object.keys(prompt.value).length > 0)
-      {
-        // We ignore the instructions when empty
-        rows.push(
-          tableRow([
-            string(t("field.instructions"), options),
-            json(JSON.stringify(prompt.value, undefined, 2), { modifiers: { copyable: true } })
-          ])
-        );
-      }
-    }
   }
 
   return createUiContainer({
@@ -443,6 +432,33 @@ export type ImageFeatureContainerType =
 
 export function computeRecipeFeatureContainers(recipeFeatures: readonly ExtensionImageFeature[], t: TFunction = i18n.t): ImageFeatureContainerType[]
 {
+  const hasUiRecipeFeature = recipeFeatures.some((feature) => feature.type === ImageFeatureType.Recipe && feature.format === ImageFeatureFormat.Ui);
+
+  function appendInstructionsDetails(container: UiContainer, features: readonly ExtensionImageFeature[]): void
+  {
+    if (hasUiRecipeFeature)
+    {
+      return;
+    }
+
+    const instructionsElements = features.flatMap((feature) =>
+      {
+        if (feature.format !== ImageFeatureFormat.Json)
+        {
+          return [];
+        }
+
+        const recipe = extractRecipe(feature);
+        return recipe?.prompt.kind === "instructions" ? [ json(JSON.stringify(recipe.prompt.value, undefined, 2), copyableOptions) ] : [];
+      }
+    );
+
+    if (instructionsElements.length > 0)
+    {
+      container.elements.push(collapsibleGroup(t("deskTabHeader.tabDetails"), instructionsElements));
+    }
+  }
+
   // We group recipe features by extension identifier
   const featuresByExtensionMap = new Map<string, ExtensionImageFeature[]>();
   for (const feature of recipeFeatures)
@@ -462,9 +478,13 @@ export function computeRecipeFeatureContainers(recipeFeatures: readonly Extensio
     const uiFeatures = extensionFeatures.filter((feature) => feature.format === ImageFeatureFormat.Ui);
     if (uiFeatures.length > 0)
     {
-      for (const feature of uiFeatures)
+      for (const [ featureIndex, feature ] of uiFeatures.entries())
       {
         const container = augmentRecipeUiContainer(feature, parseFeatureUiContainer(feature, t), recipeFeatures, t);
+        if (featureIndex === 0)
+        {
+          appendInstructionsDetails(container, extensionFeatures);
+        }
         featureContainers.push({
           extensionId: feature.id,
           type: feature.type,
@@ -480,6 +500,7 @@ export function computeRecipeFeatureContainers(recipeFeatures: readonly Extensio
         const container = feature.format === ImageFeatureFormat.Json
           ? convertRecipeToContainer(extractRecipe(feature), t)
           : UiContainer.builder().add(inferNonUiElement(feature)).build();
+        appendInstructionsDetails(container, [ feature ]);
         featureContainers.push({
           extensionId: feature.id,
           type: feature.type,
@@ -559,7 +580,6 @@ export function computeRawFeatureContainers(
 
 export function inferMetadataUiContainer(value: string): UiContainer
 {
-  const copyableOptions = { modifiers: { copyable: true } };
   const labelOptions = { modifiers: { weight: TextWeight.heavy, intensity: TextIntensity.low } };
 
   function convertValueToUiElement(propertyValue: unknown): UiElement
