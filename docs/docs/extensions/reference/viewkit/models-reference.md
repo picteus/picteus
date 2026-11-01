@@ -328,9 +328,9 @@ Extends [UiElement](#uielement).
 
 ### ImageReferenceElement
 
-Thumbnail image reference with placeholder fallback handling.
+Image reference with configurable fit, dimensions, and URL actions.
 
-References an image source for thumbnail rendering and provides accessible text and a fallback source. The client determines loading, sizing, and placeholder behavior.
+References an image source for rendering at the supplied pixel dimensions. The client displays a loading state while the image loads and can optionally expose URL copy and click actions.
 
 Extends [UiElement](#uielement).
 
@@ -341,9 +341,12 @@ Extends [UiElement](#uielement).
 | --- | --- | --- | --- | --- |
 | `type` | "image-ref" | Yes |  | Discriminator type |
 | `src` | string | Yes |  | Image source URI (HTTPS URL, base64 data URI, or asset path) Source URI understood by the client renderer. Supported forms include HTTPS locations, base64 data URIs, and client asset paths; this field is not raw image bytes. |
-| `alt` | string | No |  | Accessible alternative description Alternative text describing the image for assistive technology. Provide meaningful text when the image conveys information; omit it only when it is decorative. |
-| `aspectRatio` | string | No | `1:1` | Aspect ratio of the thumbnail container Preferred ratio of the rendered thumbnail container, expressed as a ratio string such as 1:1. It controls presentation rather than modifying the source image. |
-| `placeholder` | string | No |  | Fallback placeholder image URI Optional source to display when the primary image cannot be loaded. It follows the same URI conventions as src. |
+| `fit` | [ImageFit](#imagefit) | No | `cover` | How the image fits within its container |
+| `width` | int | Yes |  | Image width in pixels |
+| `height` | int | Yes |  | Image height in pixels |
+| `radius` | int | No |  | Image corner radius in pixels |
+| `openable` | boolean | No | `false` | Whether clicking the image invokes the provider image click handler |
+| `modifiers` | [BaseModifiers](#basemodifiers) | No |  | Optional visual modifiers (copyable) — UI modifiers |
 
 
 ### MarkdownBlockElement
@@ -790,6 +793,16 @@ Presentation format styles for timestamp elements.
 | `time` | `time` | Time-only display |
 | `relative` | `relative` | Relative time expression (e.g. "5 minutes ago") |
 
+### ImageFit
+
+Image rendering fit mode
+
+| Member | Value | Description |
+| --- | --- | --- |
+| `contain` | `contain` | Scale the image to fit entirely within the container |
+| `cover` | `cover` | Scale the image to cover the container, cropping as needed |
+| `fill` | `fill` | Stretch the image to fill the container |
+
 ### ButtonVariant
 
 Visual style variants for interactive button actions.
@@ -878,7 +891,7 @@ Discriminator property: `type`.
 
 | [TimestampElement](#timestampelement) | `timestamp` | Formatted date and time representation. Displays an epoch timestamp using a selected date/time format. The input is a count of milliseconds, not seconds; relative formatting is interpreted by the consumer. |
 
-| [ImageReferenceElement](#imagereferenceelement) | `image-ref` | Thumbnail image reference with placeholder fallback handling. References an image source for thumbnail rendering and provides accessible text and a fallback source. The client determines loading, sizing, and placeholder behavior. |
+| [ImageReferenceElement](#imagereferenceelement) | `image-ref` | Image reference with configurable fit, dimensions, and URL actions. References an image source for rendering at the supplied pixel dimensions. The client displays a loading state while the image loads and can optionally expose URL copy and click actions. |
 
 | [MarkdownBlockElement](#markdownblockelement) | `markdown` | Full Markdown fallback block rendered with core typographic hierarchy, spacing, and styling. Use this custom-renderer escape hatch when the structured ViewKit elements cannot express the required rich text. Markdown rendering is a presentation fallback; prefer typed elements when consumers need to inspect individual values. |
 

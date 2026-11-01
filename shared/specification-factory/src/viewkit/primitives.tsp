@@ -425,8 +425,20 @@ model TimestampElement extends UiElement {
   modifiers?: PrimitiveModifiers;
 }
 
-@summary("Thumbnail image reference with placeholder fallback handling.")
-@doc("References an image source for thumbnail rendering and provides accessible text and a fallback source. The client determines loading, sizing, and placeholder behavior.")
+@summary("Image rendering fit mode")
+enum ImageFit {
+  @summary("Scale the image to fit entirely within the container")
+  contain: "contain",
+
+  @summary("Scale the image to cover the container, cropping as needed")
+  cover: "cover",
+
+  @summary("Stretch the image to fill the container")
+  fill: "fill"
+}
+
+@summary("Image reference with configurable fit, dimensions, and URL actions.")
+@doc("References an image source for rendering at the supplied pixel dimensions. The client displays a loading state while the image loads and can optionally expose URL copy and click actions.")
 @uiWidget("image-ref")
 @dslAlias("imageRef")
 model ImageReferenceElement extends UiElement {
@@ -437,15 +449,25 @@ model ImageReferenceElement extends UiElement {
   @doc("Source URI understood by the client renderer. Supported forms include HTTPS locations, base64 data URIs, and client asset paths; this field is not raw image bytes.")
   src: string;
 
-  @summary("Accessible alternative description")
-  @doc("Alternative text describing the image for assistive technology. Provide meaningful text when the image conveys information; omit it only when it is decorative.")
-  alt?: string;
+  @summary("How the image fits within its container")
+  fit?: ImageFit = ImageFit.cover;
 
-  @summary("Aspect ratio of the thumbnail container")
-  @doc("Preferred ratio of the rendered thumbnail container, expressed as a ratio string such as 1:1. It controls presentation rather than modifying the source image.")
-  aspectRatio?: string = "1:1";
+  @summary("Image width in pixels")
+  @minValue(1)
+  width: integer;
 
-  @summary("Fallback placeholder image URI")
-  @doc("Optional source to display when the primary image cannot be loaded. It follows the same URI conventions as src.")
-  placeholder?: string;
+  @summary("Image height in pixels")
+  @minValue(1)
+  height: integer;
+
+  @summary("Image corner radius in pixels")
+  @minValue(0)
+  radius?: integer;
+
+  @summary("Whether clicking the image invokes the provider image click handler")
+  openable?: boolean = false;
+
+  @summary("Optional visual modifiers (copyable)")
+  @uiModifiers
+  modifiers?: BaseModifiers;
 }
