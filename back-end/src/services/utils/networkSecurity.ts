@@ -12,7 +12,7 @@ export class NetworkSecurity
 
   private readonly loopbackIpAddress = "127.0.0.1";
 
-  private readonly desktopSchemes: string[] = [ "file://", "app://" ];
+  private readonly desktopSchemes: string[] = [ "file://", "app://", "chrome-extension://" ];
 
   private host?: string;
 
