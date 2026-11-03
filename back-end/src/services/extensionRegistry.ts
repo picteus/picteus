@@ -34,35 +34,39 @@ import { parametersChecker } from "./utils/parametersChecker";
 import { ImageEventAction } from "./notifierService";
 
 
-export type ExtendedManifest = Manifest & { directoryPath: string };
+export type ExtendedManifest = Manifest & { readonly directoryPath: string };
 
-export type SdkInfo = { filePath: string, version: string };
+export type ManifestPathArchive = { readonly manifest: Manifest, readonly filePath: string, readonly archive: Buffer };
 
-export type ImageEvent = { imageId: string, action: ImageEventAction };
+export type SdkInfo = { readonly filePath: string, readonly version: string };
+
+export type ImageEvent = { readonly imageId: string, readonly action: ImageEventAction };
 
 export type ExtensionMessage =
   {
-    extensionId: string,
-    eventKind: ManifestEvent,
-    type: "started" | "stopped" | "error" | "fatal",
-    value: string
+    readonly extensionId: string,
+    readonly eventKind: ManifestEvent,
+    readonly type: "started" | "stopped" | "error" | "fatal",
+    readonly value: string
   };
 
 @Injectable()
 export class ExtensionRegistry
 {
 
-  public static readonly manifestFileName = "manifest.json";
+  static readonly manifestFileName = "manifest.json";
 
-  public static readonly manualFileName = "MANUAL.md";
+  static readonly manualFileName = "MANUAL.md";
 
-  public static shellVariableName = "shell";
+  static shellVariableName = "shell";
 
-  public static nodeVariableName = "node";
+  static nodeVariableName = "node";
 
-  public static venvPythonVariableName = "venvPython";
+  static venvPythonVariableName = "venvPython";
 
   private static readonly pausedFileName = ".paused";
+
+  private static readonly preInstalledExtensionIds = new Set<string>([ "image-commons", "color-embeddings", "embeddings" ]);
 
   static async getSdkInfo(environment: ManifestRuntimeEnvironment): Promise<SdkInfo>
   {
@@ -107,17 +111,17 @@ export class ExtensionRegistry
     return { filePath, version: version };
   }
 
-  public static computeVariablePlaceholder(key: string): string
+  static computeVariablePlaceholder(key: string): string
   {
     return `$\{${key}}`;
   }
 
-  public static from(manifest: Manifest, directoryPath: string): ExtendedManifest
+  static from(manifest: Manifest, directoryPath: string): ExtendedManifest
   {
     return { ...manifest, directoryPath };
   }
 
-  public static async inflateExtensionArchive(isGzippedTarball: boolean, archiveFilePath: string, targetDirectoryPath: string, directoryName: string): Promise<string>
+  static async inflateExtensionArchive(isGzippedTarball: boolean, archiveFilePath: string, targetDirectoryPath: string, directoryName: string): Promise<string>
   {
     let newDirectoryPath: string;
     let toRenameDirectoryPath: string;
@@ -138,7 +142,6 @@ export class ExtensionRegistry
     return newDirectoryPath;
   }
 
-
   constructor()
   {
     logger.debug("Instantiating an ExtensionsRegistry");
@@ -151,6 +154,28 @@ export class ExtensionRegistry
     const manifest: Manifest = plainToInstanceViaJSON(Manifest, manifestJson);
     const directoryPath = path.resolve(filePath, "..");
     return ExtensionRegistry.from(manifest, directoryPath);
+  }
+
+  async listPrebuiltExtensionArchivePaths(withPreinstalled: boolean): Promise<ManifestPathArchive[]>
+  {
+    if (fs.existsSync(paths.builtInExtensionsDirectoryPath) === false)
+    {
+      return [];
+    }
+    const archiveFilePaths = new fdir().withFullPaths().withMaxDepth(0).glob("**/*.zip", "**/*.tgz", "**/*.tar.gz").crawl(paths.builtInExtensionsDirectoryPath).sync().sort();
+    const manifestArchives: ManifestPathArchive[] = [];
+    for (const archiveFilePath of archiveFilePaths)
+    {
+      const archive = fs.readFileSync(archiveFilePath);
+      const manifest = await new ExtensionArchiveReader(archive).extractManifest();
+      const shouldBePreinstalled = ExtensionRegistry.preInstalledExtensionIds.has(manifest.id);
+      if ((withPreinstalled === true && shouldBePreinstalled === false) || (withPreinstalled === true && shouldBePreinstalled === false))
+      {
+        continue;
+      }
+      manifestArchives.push({ manifest, filePath: archiveFilePath, archive });
+    }
+    return manifestArchives;
   }
 
   async list(includePaused: boolean, sortResult: boolean = false): Promise<ExtendedManifest[]>

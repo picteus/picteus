@@ -17,6 +17,7 @@ import {
   ExtensionsUiServer,
   StateChangeOptions as ExtensionStateChangeOptions
 } from "./extensionServices";
+import { MarketplaceService } from "./marketplaceService";
 import { ExtensionTaskExecutor } from "./extensionTaskExecutor";
 import { ImageService, SearchFileStats, SearchService } from "./imageServices";
 import { ImageAttachmentService } from "./imageAttachmentService";
@@ -50,6 +51,7 @@ export {
   NotificationsGateway,
   NotifierService,
   MiscellaneousService,
+  MarketplaceService,
   RepositoryService,
   SearchFileStats,
   SearchService,
@@ -59,4 +61,3 @@ export {
   VectorDatabaseAccessor,
   VectorDatabaseProvider
 };
-

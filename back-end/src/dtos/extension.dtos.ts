@@ -1462,6 +1462,46 @@ export class ExtensionAndManual extends Extension
 }
 
 /**
+ * The manifest and manual of an extension which is not installed.
+ */
+@ApiSchema({ description: "The manifest and manual of a marketplace extension" })
+export class ManifestAndManual
+{
+
+  constructor(manifest: Manifest, manual?: ExtensionManual)
+  {
+    this.manifest = manifest;
+    this.manual = manual;
+  }
+
+  @ApiProperty(
+    {
+      description: "The extension manifest",
+      type: Manifest,
+      required: true
+    }
+  )
+  @Type(() => Manifest)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly manifest: Manifest;
+
+  @ApiProperty(
+    {
+      description: "The extension manual",
+      type: ExtensionManual,
+      required: false
+    }
+  )
+  @Type(() => ExtensionManual)
+  @IsOptional()
+  @Expose()
+  readonly manual?: ExtensionManual;
+
+}
+
+/**
  * The settings of an extension.
  */
 @ApiSchema({ description: "The settings of an extension" })

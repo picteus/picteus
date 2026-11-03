@@ -324,12 +324,38 @@
     },
     "/extension/list": {
       "get": {
-        "description": "Returns all installed extensions.",
+        "description": "Returns all installed extensions matching the search criteria.",
         "operationId": "extension_list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A case-insensitive search applied to the extension identifier, name, and description",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "The categories the extension should belong to",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 6,
+              "items": {
+                "$ref": "#/components/schemas/ExtensionCategory"
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "The extensions",
+            "description": "The extensions matching the search criteria",
             "content": {
               "application/json": {
                 "schema": {
@@ -342,7 +368,7 @@
             }
           }
         },
-        "summary": "Lists all extensions",
+        "summary": "Lists extensions",
         "tags": [
           "extension"
         ]
@@ -421,7 +447,7 @@
             "name": "state",
             "required": true,
             "in": "query",
-            "description": "Whether the extension should be started if the installation is successful",
+            "description": "Whether the extension should be started",
             "schema": {
               "$ref": "#/components/schemas/ExtensionState"
             }
@@ -504,7 +530,7 @@
             "name": "state",
             "required": false,
             "in": "query",
-            "description": "The new state of the extension if it was successfully updated",
+            "description": "The state to apply to the extension after updating",
             "schema": {
               "$ref": "#/components/schemas/ExtensionState"
             }
@@ -539,7 +565,7 @@
         },
         "responses": {
           "200": {
-            "description": "The extension",
+            "description": "The updated extension",
             "content": {
               "application/json": {
                 "schema": {
@@ -1343,6 +1369,190 @@
         "summary": "Builds an extension",
         "tags": [
           "extension"
+        ]
+      }
+    },
+    "/marketplace/list": {
+      "get": {
+        "description": "Returns the extensions matching the search criteria.",
+        "operationId": "marketplace_list",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "A case-insensitive search applied to the extension identifier, name, and description",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "The categories the extension should belong to",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 6,
+              "items": {
+                "$ref": "#/components/schemas/ExtensionCategory"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The extensions matching the search criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Manifest"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists extensions",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/{id}/get": {
+      "get": {
+        "description": "Returns the manifest and manual of an extension.",
+        "operationId": "marketplace_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The extension manifest and manual",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManifestAndManual"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets a marketplace extension",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/{id}/install": {
+      "post": {
+        "description": "Installs an extension and optionally starts it.",
+        "operationId": "marketplace_install",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "description": "Whether the extension should be started",
+            "schema": {
+              "$ref": "#/components/schemas/ExtensionState"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The installed extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Extension"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Installs an extension",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/{id}/update": {
+      "put": {
+        "description": "Updates an already installed extension.",
+        "operationId": "marketplace_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "description": "The state to apply to the extension after updating",
+            "schema": {
+              "$ref": "#/components/schemas/ExtensionState"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The updated extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Extension"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Updates an extension",
+        "tags": [
+          "marketplace"
         ]
       }
     },
@@ -4458,6 +4668,9 @@
       "name": "extension"
     },
     {
+      "name": "marketplace"
+    },
+    {
       "name": "repository"
     },
     {
@@ -4472,7 +4685,7 @@
   ],
   "servers": [
     {
-      "url": "https://localhost:3001",
+      "url": "https://127.0.0.1:3001",
       "description": "The Picteus local HTTP server"
     }
   ],
@@ -6339,6 +6552,31 @@
           "categories",
           "author",
           "environment"
+        ]
+      },
+      "ManifestAndManual": {
+        "type": "object",
+        "properties": {
+          "manifest": {
+            "description": "The extension manifest",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Manifest"
+              }
+            ]
+          },
+          "manual": {
+            "description": "The extension manual",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExtensionManual"
+              }
+            ]
+          }
+        },
+        "description": "The manifest and manual of a marketplace extension",
+        "required": [
+          "manifest"
         ]
       },
       "RepositoryLocationType": {

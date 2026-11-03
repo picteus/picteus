@@ -1,6 +1,5 @@
 import path from "node:path";
 import fs from "node:fs";
-import os from "node:os";
 import process from "node:process";
 import { Stream } from "node:stream";
 import { buffer } from "node:stream/consumers";
@@ -20,7 +19,7 @@ import HttpCodes from "http-codes";
 import { paths } from "../src/paths";
 import { stringify } from "../src/utils";
 import { computeAttachmentDisposition, copyDirectoryRecursively } from "../src/services/utils/downloader";
-import { Base, Core, ExtensionBasisBuilder, ListenerMock } from "./base";
+import { Base, Core, ExtensionBuilder } from "./base";
 import {
   AiModel,
   applicationXGzipMimeType,
@@ -36,37 +35,31 @@ import {
   ImageFeatureFormat,
   ImageFeatureType,
   ImageFormat,
-  ImageSummary,
   Manifest,
   ManifestCapability,
   ManifestCapabilityCaptionsDetails,
   ManifestCapabilityEligibleTagsDetails,
   ManifestCapabilityId,
   ManifestEvent,
-  ManifestExecution,
   ManifestExtensionCommand,
   ManifestImageFeaturesCapability,
   ManifestImageTagsCapability,
-  ManifestInstructions,
   ManifestRuntimeEnvironment,
-  ManifestUserInterface,
-  Repository,
   SearchOriginKind,
   SearchParameters,
   toMimeType,
   UserInterfaceAnchor
 } from "../src/dtos/app.dtos";
 import { ServiceError } from "../src/app.exceptions";
-import { apiKeyHeaderName, AuthenticationGuard } from "../src/app.guards";
+import { AuthenticationGuard } from "../src/app.guards";
 import { ExtensionRegistry, ImageAttachmentService } from "../src/services/app.service";
 import { ActionState, EventEntity, ExtensionEventAction, NotifierService } from "../src/services/notifierService";
-import { readMetadata } from "../src/services/utils/images";
 import { ExtensionGenerator } from "../src/services/extensionGenerator";
 
 
 const { io } = IO;
 
-const { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK } = HttpCodes;
+const { BAD_REQUEST, INTERNAL_SERVER_ERROR } = HttpCodes;
 
 
 describe("Extensions", () =>
@@ -108,368 +101,6 @@ describe("Extensions", () =>
     await Base.afterAll();
   });
 
-  class ExtensionChecker
-  {
-
-    static checkCacheControl(response: Response): void
-    {
-      expect(response.headers.get("Cache-Control")).toEqual("private, max-age=10");
-    }
-
-    constructor(readonly extensionId: string)
-    {
-    }
-
-    async checkExtensionState(expectedState: ExtensionState): Promise<void>
-    {
-      const state = (await base.getExtensionController().get(this.extensionId)).state;
-      expect(expectedState).toBe(state);
-    }
-
-    async checkExtensionNotExisting(): Promise<void>
-    {
-      await expect(async () =>
-      {
-        await base.getExtensionController().get(this.extensionId);
-      }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${this.extensionId}' is invalid because there is no extension with that identifier`, BAD_REQUEST, base.badParameterCode));
-    }
-
-    async checkIcon(shouldBePng: boolean = false): Promise<void>
-    {
-      const response = await fetch(`${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${this.extensionId}/icon`);
-      ExtensionChecker.checkCacheControl(response);
-      const blob = await response.blob();
-      expect(blob.type).toEqual(`image/${shouldBePng === true ? "png" : "svg+xml"}`);
-      if (blob.type === "image/png")
-      {
-        const buffer = Buffer.from((await blob.arrayBuffer()));
-        const metadata = await readMetadata(buffer);
-        expect(metadata.width).toEqual(24);
-        expect(metadata.height).toEqual(24);
-        expect(metadata.format).toEqual("PNG");
-      }
-    }
-
-  }
-
-  class ExtensionBuilder extends ExtensionBasisBuilder
-  {
-
-    static computeGenerateOptions(environment: ManifestRuntimeEnvironment, id?: string, version?: string): ExtensionGenerationOptions
-    {
-      return {
-        id: id ?? `id-${environment}`,
-        name: "name",
-        version: version ?? "1.0.0",
-        author: "author",
-        description: "description",
-        categories: [ ExtensionCategory.Other ],
-        environment
-      };
-
-    }
-
-    static readonly dummyExecution: ManifestExecution =
-      {
-        executable: ExtensionBuilder.nodeExecutable,
-        arguments: [ "--eval", "console.info('Started'); setTimeout(() => {}, 1_000_000);" ]
-      };
-
-    static readonly javaScriptFileName = "main.js";
-
-    readonly checker: ExtensionChecker;
-
-    readonly extensionId: string;
-
-    readonly extensionName: string;
-
-    readonly extensionVersion: string;
-
-    readonly extensionDirectoryPath: string;
-
-    private readonly touchedFileName = "touched.txt";
-
-    readonly touchedFilePath: string;
-
-    private readonly startedFileName: string;
-
-    readonly startedFilePath: string;
-
-    readonly installedListener: ListenerMock;
-
-    readonly processStartedListener: ListenerMock;
-
-    readonly errorListener: ListenerMock;
-
-    constructor(isPrepareDirectory?: boolean, startedFileName?: string, extensionId?: string, extensionName?: string, extensionVersion?: string)
-    {
-      super();
-      this.extensionId = extensionId ?? (`id-${Math.round(Math.random() * 1_000_000)}`);
-      this.checker = new ExtensionChecker(this.extensionId);
-      this.extensionName = extensionName ?? "Test";
-      this.extensionVersion = extensionVersion ?? `1.${Math.round(Math.random() * 10)}.0`;
-      this.extensionDirectoryPath = path.join(paths.installedExtensionsDirectoryPath, this.extensionId);
-      this.touchedFilePath = path.join(this.extensionDirectoryPath, this.touchedFileName);
-      this.startedFileName = startedFileName === undefined ? "started.txt" : startedFileName;
-      this.startedFilePath = path.join(this.extensionDirectoryPath, this.startedFileName);
-      if (isPrepareDirectory === true)
-      {
-        base.prepareEmptyDirectory(this.extensionId, path.join(this.extensionDirectoryPath, ".."));
-      }
-      this.installedListener = base.computeEventListener();
-      base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Installed, undefined, this.installedListener);
-      this.processStartedListener = base.computeEventListener();
-      base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Process, ActionState.Started, this.processStartedListener);
-      this.errorListener = base.computeEventListener();
-      base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Error, undefined, this.errorListener);
-    }
-
-    computeSimpleManifest(javascriptFilePath?: string, viaNode?: boolean, willNotRespondToTermination?: boolean, processStartedExecutable ?: string, javaScriptCode?: string, settings?: Record<string, any>, ui?: ManifestUserInterface, environmentVariable?: string): Manifest
-    {
-      const nodeScriptCode = javaScriptCode ?? base.computeExtensionJavaScriptCode(this.startedFileName, willNotRespondToTermination === true, environmentVariable);
-      if (javascriptFilePath !== undefined)
-      {
-        fs.writeFileSync(javascriptFilePath, nodeScriptCode);
-      }
-      return this.computeWithInstructionsManifest([
-        {
-          events: [ ManifestEvent.ProcessStarted ],
-          execution:
-            {
-              // In case of the "--eval" CLI option, we need to run Node.js go through a shell intermediate process, otherwise the spawn Node.js process exits immediately
-              executable: processStartedExecutable ?? (viaNode === true ? "${node}" : (javascriptFilePath !== undefined ? ExtensionBuilder.nodeExecutable : "${shell}")),
-              arguments: javascriptFilePath !== undefined ? [ javascriptFilePath ] : [ ExtensionBuilder.nodeExecutable, "--eval", `"${nodeScriptCode}"` ]
-            }
-        },
-        {
-          events: [ ManifestEvent.ImageCreated ],
-          execution:
-            {
-              executable: "${shell}",
-              arguments: os.platform() === "win32" ? [ "echo", ".>", `"${this.touchedFileName}"` ] : [ "touch", `"${this.touchedFileName}"` ]
-            }
-        }
-      ], this.extensionVersion, this.extensionName, "A test extension.", settings, ui);
-    }
-
-    computeStartedManifest(entity: CommandEntity = CommandEntity.Image, commands?: ManifestExtensionCommand[], throttlingDurationInMilliseconds?: number): Manifest
-    {
-      const throttableEvents = [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeTags, ManifestEvent.TextComputeEmbeddings, entity == CommandEntity.Image ? ManifestEvent.ImageRunCommand : ManifestEvent.ProcessRunCommand ];
-      return this.computeWithInstructionsManifest([
-          {
-            events: [ ManifestEvent.ProcessStarted, ...throttableEvents ],
-            throttlingPolicies:
-              [
-                {
-                  events: throttableEvents,
-                  maximumCount: 1,
-                  durationInMilliseconds: Math.round(throttlingDurationInMilliseconds ?? Core.fastestIntervalInMilliseconds)
-                }
-              ],
-            capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageTags), new ManifestCapability(ManifestCapabilityId.ImageFeatures), new ManifestCapability(ManifestCapabilityId.TextEmbeddings) ],
-            execution:
-              {
-                executable: ExtensionBuilder.nodeExecutable,
-                arguments: [ ExtensionBuilder.startedJsFileName ]
-              },
-            commands: commands ?? [
-              {
-                id: entity == CommandEntity.Image ? "logDimensions" : "askForSomething",
-                on: { entity },
-                parameters: entity == CommandEntity.Image ? undefined : [
-                  {
-                    id: "age",
-                    definition: {
-                      type: "integer",
-                      title: "Age",
-                      description: "What is your age?",
-                      minimum: 1,
-                      maximum: 128,
-                      default: 35
-                    }
-                  }
-                ],
-                specifications: [
-                  {
-                    locale: "en",
-                    label: entity == CommandEntity.Image ? "Logs dimensions" : "Asks the user",
-                    description: entity == CommandEntity.Image ? "Logs the image dimensions" : "Asks for something from the user"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      );
-    }
-
-    computeWithInstructionsManifest(instructions: ManifestInstructions[], extensionVersion: string = this.extensionVersion, extensionName: string = this.extensionName, extensionDescription: string = "An extension for testing.", settings: Record<string, any> = {
-      type: "object",
-      properties: {}
-    }, ui: ManifestUserInterface | undefined = undefined): Manifest
-    {
-      return {
-        id: this.extensionId,
-        version: extensionVersion,
-        name: extensionName,
-        description: extensionDescription,
-        categories: [ ExtensionCategory.Other ],
-        runtimes: [ { environment: ManifestRuntimeEnvironment.Node } ],
-        instructions,
-        settings,
-        ui
-      };
-    }
-
-    async createRepository(watch: boolean | undefined = undefined): Promise<Repository>
-    {
-      const directoryPath = base.prepareEmptyDirectory("images", base.getWorkingDirectoryPath());
-      base.imageFeeder.copyImage(directoryPath, base.imageFeeder.pngImageFileName);
-      base.imageFeeder.copyImage(directoryPath, base.imageFeeder.jpegImageFileName);
-      const repository = await base.createRepository(fileWithProtocol + directoryPath, undefined, undefined, watch);
-      await base.waitUntilRepositoryReady(repository.id);
-      return repository;
-    }
-
-    async createRepositoryAndGetImages(watch: boolean | undefined = undefined): Promise<{
-      repository: Repository,
-      images: ImageSummary[]
-    }>
-    {
-      const repository = await this.createRepository(watch);
-      const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
-      return { repository, images: result.items };
-    }
-
-    async waitUntilExtensionInstalled(): Promise<void>
-    {
-      await waitForExpect(() =>
-      {
-        expect(this.installedListener).toHaveBeenCalledTimes(1);
-      });
-      expect(this.installedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Installed, { id: this.extensionId });
-    }
-
-    checkExtensionProcessStarted(): void
-    {
-      expect(this.processStartedListener).toHaveBeenCalledTimes(1);
-      expect(this.processStartedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ActionState.Started, { id: this.extensionId });
-    }
-
-    async checkExtensionRunning(checkStartedFile: boolean = true, checkImageTouchedFile: boolean = true, environment: {
-      name: string,
-      value: string
-    } | undefined = undefined): Promise<void>
-    {
-      expect(fs.existsSync(this.extensionDirectoryPath)).toEqual(true);
-      expect(fs.existsSync(path.join(this.extensionDirectoryPath, "manifest.json"))).toEqual(true);
-      const parametersFilePath = path.join(this.extensionDirectoryPath, Base.extensionParametersFileName);
-      expect(fs.existsSync(parametersFilePath)).toEqual(true);
-      const cacheDirectoryPath = path.join(this.extensionDirectoryPath, ".cache");
-      expect(fs.existsSync(cacheDirectoryPath)).toEqual(true);
-      expect(fs.lstatSync(cacheDirectoryPath).isSymbolicLink()).toEqual(true);
-      const parameters = JSON.parse(fs.readFileSync(parametersFilePath, { encoding: "utf8" }));
-      expect(parameters.webServicesBaseUrl).toEqual(paths.webServicesBaseUrl);
-      expect(parameters.extensionId).toEqual(this.extensionId);
-      const apiKey = parameters.apiKey;
-      expect(apiKey).toBeDefined();
-      if (checkStartedFile === true)
-      {
-        expect(fs.existsSync(this.startedFilePath)).toEqual(true);
-      }
-      if (checkImageTouchedFile === true)
-      {
-        expect(fs.existsSync(this.touchedFilePath)).toEqual(true);
-      }
-      if (environment !== undefined)
-      {
-        const filePath = path.join(this.extensionDirectoryPath, `${environment.name}.txt`);
-        expect(fs.existsSync(filePath)).toEqual(true);
-        const value = fs.readFileSync(filePath, { encoding: "utf8" });
-        expect(value).toEqual(environment.value);
-      }
-
-      // We make sure that we can invoke the web services via the dedicated API key
-      const webServiceRoute = `extension/${this.extensionId}/getSettings`;
-      const response = await fetch(`${parameters.webServicesBaseUrl}/${webServiceRoute}`, { headers: { [apiKeyHeaderName]: apiKey } });
-      if (response.status !== OK)
-      {
-        throw new Error(`The '${webServiceRoute}' web service response status is equal to '${response.status}'`);
-      }
-    }
-
-    async checkExtensionOver(): Promise<void>
-    {
-      this.deleteStartedFile();
-      await base.wait();
-      this.checkStartedFileNotFound();
-    }
-
-    deleteStartedFile(): void
-    {
-      fs.rmSync(this.startedFilePath);
-    }
-
-    checkStartedFileNotFound(): void
-    {
-      expect(fs.existsSync(this.startedFilePath)).toEqual(false);
-    }
-
-    async checkExtensionState(expectedState: ExtensionState): Promise<void>
-    {
-      await this.checker.checkExtensionState(expectedState);
-      expect(fs.existsSync(path.join(this.extensionDirectoryPath, ".paused"))).toEqual(expectedState === ExtensionState.Paused);
-    }
-
-    async checkExtensionNotExisting(): Promise<void>
-    {
-      await this.checker.checkExtensionNotExisting();
-    }
-
-    async assessUnpackedExtension(checkStartedFile: boolean): Promise<void>
-    {
-      // We make sure that it properly started
-      await waitForExpect(async () =>
-      {
-        await this.checkExtensionRunning(checkStartedFile, false);
-      });
-
-      await this.checkExtensionState(ExtensionState.Enabled);
-      if (checkStartedFile === true)
-      {
-        this.deleteStartedFile();
-        this.checkStartedFileNotFound();
-      }
-      // We touch the extension manifest file
-      const now = new Date();
-      const extensionDirectoryPath = path.join(paths.unpackedExtensionsDirectoryPath!, this.extensionId);
-      fs.utimesSync(path.join(extensionDirectoryPath, ExtensionRegistry.manifestFileName), now, now);
-      // And we make sure that the extension process has been restarted
-      await waitForExpect(async () =>
-      {
-        await this.checkExtensionRunning(checkStartedFile, false);
-      });
-
-      await this.checkExtensionState(ExtensionState.Enabled);
-      if (checkStartedFile === true)
-      {
-        this.deleteStartedFile();
-        this.checkStartedFileNotFound();
-      }
-      // We uninstall the extension
-      await base.getExtensionController().uninstall(this.extensionId);
-      // And we make sure that the extension process does not restart
-      await this.checkExtensionNotExisting();
-      if (checkStartedFile === true)
-      {
-        await base.wait();
-        this.checkStartedFileNotFound();
-      }
-      expect(fs.existsSync(this.extensionDirectoryPath)).toBe(false);
-    }
-
-  }
-
   const testEnvironments = [ ManifestRuntimeEnvironment.Node, ManifestRuntimeEnvironment.Python ];
 
   const testEnabledStates = [ ExtensionState.Enabled, ExtensionState.Paused ];
@@ -480,7 +111,7 @@ describe("Extensions", () =>
 
   test("install via filesystem", async () =>
   {
-    const builder = new ExtensionBuilder(true);
+    const builder = new ExtensionBuilder(base, true);
     const javaScriptFilePath = path.join(builder.extensionDirectoryPath, ExtensionBuilder.javaScriptFileName);
     const environmentVariableName = "name";
     const environmentVariableValue = "value";
@@ -533,7 +164,7 @@ describe("Extensions", () =>
     }
     {
       // We assess with an invalid capability
-      const manifest = new ExtensionBuilder(false).computeWithInstructionsManifest([
+      const manifest = new ExtensionBuilder(base, false).computeWithInstructionsManifest([
         {
           events: [ ManifestEvent.ProcessStarted, ManifestEvent.ImageComputeFeatures ],
           capabilities: [ {
@@ -631,7 +262,7 @@ describe("Extensions", () =>
 
   test("install with '${node}'", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const manifest = builder.computeSimpleManifest(javaScriptFilePath, true);
     const zip = new AdmZip();
@@ -642,7 +273,7 @@ describe("Extensions", () =>
 
   test("install with --eval", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const manifest = builder.computeSimpleManifest(undefined, false);
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -651,7 +282,7 @@ describe("Extensions", () =>
 
   test("install zip via API under root", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const manifest = builder.computeSimpleManifest(javaScriptFilePath);
     const zip = new AdmZip();
@@ -662,7 +293,7 @@ describe("Extensions", () =>
 
   test("install zip via API under sub-directory", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const manifest = builder.computeSimpleManifest(javaScriptFilePath);
     const zip = new AdmZip();
@@ -674,7 +305,7 @@ describe("Extensions", () =>
 
   test("install compressed tarball via API under root", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const manifest = builder.computeSimpleManifest(javaScriptFilePath);
     const entries =
@@ -695,7 +326,7 @@ describe("Extensions", () =>
   test.each([ false, true ])("install with faulty manifest with asUnpacked=%p", async (asUnpacked: boolean) =>
   {
     const extensionId = "id";
-    const builder = new ExtensionBuilder(undefined, undefined, extensionId);
+    const builder = new ExtensionBuilder(base, undefined, undefined, extensionId);
     {
       const capabilityId = ManifestCapabilityId.TextEmbeddings;
       const manifest = builder.computeWithInstructionsManifest([
@@ -990,7 +621,7 @@ describe("Extensions", () =>
 
   test("install compressed tarball via API under sub-directory", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const manifest = builder.computeSimpleManifest(javaScriptFilePath);
     const entries =
@@ -1010,7 +641,7 @@ describe("Extensions", () =>
 
   test("install with UI", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const elementBasePath = "sidebar/";
     const manifest = builder.computeSimpleManifest(javaScriptFilePath, undefined, undefined, undefined, undefined, undefined, {
@@ -1064,7 +695,7 @@ describe("Extensions", () =>
       {
         {
           const response = await fetch(urlPrefix);
-          ExtensionChecker.checkCacheControl(response);
+          builder.checker.checkCacheControl(response);
           expect(response.status).toEqual(401);
           expect(await response.text()).toEqual("Invalid 'Referer' HTTP header");
         }
@@ -1082,7 +713,7 @@ describe("Extensions", () =>
 
   test("install with non-existent binary file", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const manifest = builder.computeSimpleManifest(undefined, false, true, "/dummyFilePath");
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -1097,7 +728,7 @@ describe("Extensions", () =>
 
   test.each([ 0, 50 ])("install with failing binary file with timeout=%p", async (timeoutInMilliseconds) =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const manifest = builder.computeSimpleManifest(undefined, false, true, undefined, `const process = require('process'); setTimeout(() => { console.info('Exiting process with id \\'' + process.pid + '\\''); process.exit(1); }, ${timeoutInMilliseconds});`);
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -1125,7 +756,7 @@ describe("Extensions", () =>
   {
     const listener = base.computeEventListener();
     base.getNotifierService().once(EventEntity.Extension, ExtensionEventAction.Installed, undefined, listener);
-    const builder = new ExtensionBuilder(false, "../started.txt");
+    const builder = new ExtensionBuilder(base, false, "../started.txt");
     const manifest = builder.computeSimpleManifest();
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -1141,7 +772,7 @@ describe("Extensions", () =>
         await expect(async () =>
         {
           await base.getExtensionController().install(state, asUnpacked, archive);
-        }).rejects.toThrow(new ServiceError(`An extension with the same id '${builder.extensionId}' already exists`, BAD_REQUEST, base.badParameterCode));
+        }).rejects.toThrow(new ServiceError(`An extension with the same id '${builder.extensionId}' is already installed`, BAD_REQUEST, base.badParameterCode));
       }
 
       await assess(false);
@@ -1156,7 +787,7 @@ describe("Extensions", () =>
     const archive = await buffer(streamableFile.getStream());
     const extensionId = (await base.getExtensionController().install(state, true, archive)).manifest.id;
 
-    const builder = new ExtensionBuilder(false, undefined, extensionId);
+    const builder = new ExtensionBuilder(base, false, undefined, extensionId);
     await builder.checkExtensionState(state);
     if (state === ExtensionState.Paused)
     {
@@ -1173,7 +804,7 @@ describe("Extensions", () =>
         await expect(async () =>
         {
           await base.getExtensionController().install(state, asUnpacked, archive);
-        }).rejects.toThrow(new ServiceError(`An ${asUnpacked === true ? "unpacked " : ""}extension with the same id '${extensionId}' already exists`, BAD_REQUEST, base.badParameterCode));
+        }).rejects.toThrow(new ServiceError(`An ${asUnpacked === true ? "unpacked " : ""}extension with the same id '${extensionId}' is already installed`, BAD_REQUEST, base.badParameterCode));
       }
     }
 
@@ -1200,7 +831,7 @@ describe("Extensions", () =>
 
   test("connection", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const manifest = builder.computeStartedManifest();
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -1216,7 +847,7 @@ describe("Extensions", () =>
 
   test("ignores SIGTERM signal", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const manifest = builder.computeSimpleManifest(undefined, false, true);
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -1236,7 +867,7 @@ describe("Extensions", () =>
 
     {
       // We assess with valid parameters
-      const builder = new ExtensionBuilder();
+      const builder = new ExtensionBuilder(base);
       const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
       const manifest = builder.computeSimpleManifest(javaScriptFilePath);
       const zip = new AdmZip();
@@ -1256,7 +887,7 @@ describe("Extensions", () =>
 
   test("extension icon", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const manifest = builder.computeSimpleManifest(javaScriptFilePath);
     const zip = new AdmZip();
@@ -1269,7 +900,7 @@ describe("Extensions", () =>
 
   test("command icon", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const iconUri = "/path/file.svg";
     const manifest = builder.computeWithInstructionsManifest([
       {
@@ -1292,7 +923,7 @@ describe("Extensions", () =>
     const extension = await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
 
     const response = await fetch(`${paths.webServicesBaseUrl}/${uiExtensionPathFragment}/${extension.manifest.id}${iconUri}`);
-    ExtensionChecker.checkCacheControl(response);
+    builder.checker.checkCacheControl(response);
     const blob = await response.blob();
     expect(blob.type).toEqual("image/svg+xml");
     const buffer = Buffer.from((await blob.arrayBuffer()));
@@ -1304,7 +935,7 @@ describe("Extensions", () =>
     const listener = base.computeEventListener();
     base.getNotifierService().once(EventEntity.Extension, ExtensionEventAction.Updated, undefined, listener);
     const extensionId = "id";
-    const firstBuilder = new ExtensionBuilder(false, "../started-1.txt", extensionId);
+    const firstBuilder = new ExtensionBuilder(base, false, "../started-1.txt", extensionId);
     const firstJavaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const manifest = firstBuilder.computeSimpleManifest(firstJavaScriptFilePath);
     {
@@ -1340,7 +971,7 @@ describe("Extensions", () =>
       });
     }
 
-    const secondBuilder = new ExtensionBuilder(false, "../started-2.txt", extensionId);
+    const secondBuilder = new ExtensionBuilder(base, false, "../started-2.txt", extensionId);
     let secondArchive: Buffer;
     {
       const secondJavaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
@@ -1411,7 +1042,7 @@ describe("Extensions", () =>
   {
     const listener = base.computeEventListener();
     base.getNotifierService().once(EventEntity.Extension, ExtensionEventAction.Uninstalled, undefined, listener);
-    const builder = new ExtensionBuilder(false, "../started.txt");
+    const builder = new ExtensionBuilder(base, false, "../started.txt");
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const key = "key";
     const manifest = builder.computeSimpleManifest(javaScriptFilePath, undefined, undefined, undefined, undefined, {
@@ -1486,7 +1117,7 @@ describe("Extensions", () =>
 
   test("synchronize", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const repository = await builder.createRepository();
     const manifest = builder.computeStartedManifest();
     const zip = new AdmZip();
@@ -1549,7 +1180,7 @@ describe("Extensions", () =>
 
   test("runCapability", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const manifest = builder.computeStartedManifest();
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -1817,7 +1448,7 @@ describe("Extensions", () =>
         AuthenticationGuard.masterApiKey = apiKey;
         ioClient.emit(connectionChannelName, { apiKey, isOpen: true });
 
-        const builder = new ExtensionBuilder(undefined, undefined, randomUUID().substring(0, 32));
+        const builder = new ExtensionBuilder(base, undefined, undefined, randomUUID().substring(0, 32));
         const manifest = builder.computeStartedManifest(CommandEntity.Process, [ aCase.command ]);
         const zip = new AdmZip();
         zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -1886,7 +1517,7 @@ describe("Extensions", () =>
 
   test("runImageCommand", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const manifest = builder.computeStartedManifest();
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -1958,7 +1589,7 @@ describe("Extensions", () =>
 
   test("throttling", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const durationInMilliseconds = Core.fastestIntervalInMilliseconds * 20;
     const manifest = builder.computeStartedManifest(CommandEntity.Image, undefined, durationInMilliseconds);
     const zip = new AdmZip();
@@ -2019,25 +1650,32 @@ describe("Extensions", () =>
 
   test("list", async () =>
   {
-    const extension1Name = "B";
-    const extension2Name = "A";
+    const manifest1Category = ExtensionCategory.Generation;
+    const manifest2Category = ExtensionCategory.Other;
+    let manifest1: Manifest;
+    let manifest2: Manifest;
     {
-      const manifest = new ExtensionBuilder(false, undefined, "id2", extension1Name).computeSimpleManifest();
+      const manifest = new ExtensionBuilder(base, false, undefined, "id2", "B", undefined, [ manifest1Category ]).computeSimpleManifest();
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
+      manifest1 = manifest;
     }
     {
-      const manifest = new ExtensionBuilder(false, undefined, "id1", extension2Name).computeSimpleManifest();
+      const manifest = new ExtensionBuilder(base, false, undefined, "id1", "A", undefined, [ manifest2Category ]).computeSimpleManifest();
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
+      manifest2 = manifest;
     }
     const extensions = await base.getExtensionController().list();
-    expect(extensions[0].manifest.name).toEqual(extension2Name);
+    expect(extensions[0].manifest.name).toEqual(manifest2.name);
     expect(extensions[0].state).toEqual(ExtensionState.Enabled);
-    expect(extensions[1].manifest.name).toEqual(extension1Name);
+    expect(extensions[1].manifest.name).toEqual(manifest1.name);
     expect(extensions[1].state).toEqual(ExtensionState.Enabled);
+    expect((await base.getExtensionController().list(undefined, [ manifest1Category ])).map(extension => extension.manifest.id)).toEqual([ manifest1.id ]);
+    expect((await base.getExtensionController().list(undefined, [ manifest2Category ])).map(extension => extension.manifest.id)).toEqual([ manifest2.id ]);
+    expect((await base.getExtensionController().list(undefined, [ manifest1Category, manifest2Category ])).map(extension => extension.manifest.id)).toEqual([ manifest2.id, manifest1.id ]);
     expect((await base.getExtensionController().get(extensions[0].manifest.id)).manifest).toEqual(extensions[0].manifest);
     expect((await base.getExtensionController().get(extensions[1].manifest.id)).manifest).toEqual(extensions[1].manifest);
   });
@@ -2045,7 +1683,7 @@ describe("Extensions", () =>
   test("getConfiguration", async () =>
   {
     const command2Id = "command2";
-    const manifest2 = new ExtensionBuilder(false, undefined, "id2", "B").computeWithInstructionsManifest([
+    const manifest2 = new ExtensionBuilder(base, false, undefined, "id2", "B").computeWithInstructionsManifest([
       {
         events: [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings, ManifestEvent.ImageRunCommand ],
         capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageEmbeddings), new ManifestCapability(ManifestCapabilityId.ImageFeatures) ],
@@ -2065,7 +1703,7 @@ describe("Extensions", () =>
       await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
     }
     const command1Id = "command1";
-    const manifest1 = new ExtensionBuilder(false, undefined, "id1", "A").computeWithInstructionsManifest([
+    const manifest1 = new ExtensionBuilder(base, false, undefined, "id1", "A").computeWithInstructionsManifest([
       {
         events: [ ManifestEvent.ProcessStarted, ManifestEvent.ProcessRunCommand, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings, ManifestEvent.TextComputeEmbeddings ],
         capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageEmbeddings), new ManifestCapability(ManifestCapabilityId.TextEmbeddings) ],
@@ -2103,7 +1741,7 @@ describe("Extensions", () =>
 
   test("changeState", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const manifest = builder.computeSimpleManifest();
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -2133,7 +1771,7 @@ describe("Extensions", () =>
 
   test("simple unpacked inflated before server started", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const manifest = builder.computeSimpleManifest(javaScriptFilePath, true);
     const zip = new AdmZip();
@@ -2151,7 +1789,7 @@ describe("Extensions", () =>
 
   test("simple unpacked inflated while server already started", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const javaScriptFilePath = path.join(base.getWorkingDirectoryPath(), ExtensionBuilder.javaScriptFileName);
     const manifest = builder.computeSimpleManifest(javaScriptFilePath, true);
     const zip = new AdmZip();
@@ -2170,7 +1808,7 @@ describe("Extensions", () =>
     const extensionId = "id";
     let firstBuilder: ExtensionBuilder;
     {
-      firstBuilder = new ExtensionBuilder(false, "regular.txt", extensionId);
+      firstBuilder = new ExtensionBuilder(base, false, "regular.txt", extensionId);
       const buildDirectoryPath = base.prepareEmptyDirectory("regular");
       const javaScriptFilePath = path.join(buildDirectoryPath, ExtensionBuilder.javaScriptFileName);
       const manifest = firstBuilder.computeSimpleManifest(javaScriptFilePath, true);
@@ -2189,7 +1827,7 @@ describe("Extensions", () =>
       // We restart the server and inflates the same extension in the "paths.unpackedExtensionsDirectoryPath"
       const directoryPath = path.join(paths.unpackedExtensionsDirectoryPath!, extensionId);
       let builder: ExtensionBuilder;
-      builder = new ExtensionBuilder(false, "unpacked.txt", extensionId);
+      builder = new ExtensionBuilder(base, false, "unpacked.txt", extensionId);
       await base.restart(async () =>
       {
         firstBuilder.deleteStartedFile();
@@ -2217,7 +1855,7 @@ describe("Extensions", () =>
     const options = ExtensionBuilder.computeGenerateOptions(environment);
     const generatedStreamableFile = await base.getExtensionController().generate(withPublicSdk, options);
     const builtStreamableFile = await base.getExtensionController().build(await buffer(generatedStreamableFile.getStream()));
-    const builder = new ExtensionBuilder(false, undefined, options.id, options.name, options.version);
+    const builder = new ExtensionBuilder(base, false, undefined, options.id, options.name, options.version);
     const extension = await base.getExtensionController().install(ExtensionState.Enabled, false, await buffer(builtStreamableFile.getStream()));
     await builder.waitUntilExtensionInstalled();
     builder.checkExtensionProcessStarted();
@@ -2249,7 +1887,7 @@ describe("Extensions", () =>
         }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${inexistentId}' is invalid because there is no extension with that identifier`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const builder = new ExtensionBuilder();
+        const builder = new ExtensionBuilder(base);
         const manifest = builder.computeStartedManifest();
         const zip = new AdmZip();
         zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -2303,7 +1941,7 @@ describe("Extensions", () =>
 
   test("settings", async () =>
   {
-    const builder = new ExtensionBuilder();
+    const builder = new ExtensionBuilder(base);
     const key1 = "key1";
     const key2 = "key2";
     const key2SubKey = "subKey";
@@ -2398,7 +2036,7 @@ describe("Extensions", () =>
     const extension2Id = "id2";
     for (const extensionId of [ extension1Id, extension2Id ])
     {
-      const manifest = new ExtensionBuilder(false, undefined, extensionId, extensionId).computeSimpleManifest();
+      const manifest = new ExtensionBuilder(base, false, undefined, extensionId, extensionId).computeSimpleManifest();
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
@@ -2570,10 +2208,10 @@ describe("Extensions", () =>
     const builtInExtensionsDirectoryPath = path.join(base.getWorkingDirectoryPath(), "built-in");
     fs.mkdirSync(builtInExtensionsDirectoryPath);
 
-    const extensionId = "built-in";
+    const extensionId = "image-commons";
     const upgradeBuiltInExtension = async (version: string, expectedStartedFilePath?: string): Promise<string> =>
     {
-      const builder = new ExtensionBuilder(undefined, version, extensionId, undefined, version);
+      const builder = new ExtensionBuilder(base, undefined, version, extensionId, undefined, version);
       const manifest = builder.computeSimpleManifest();
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -2675,7 +2313,7 @@ describe("Extensions", () =>
       }
         break;
     }
-    const builder = new ExtensionBuilder(false, undefined, options.id, options.name, options.version);
+    const builder = new ExtensionBuilder(base, false, undefined, options.id, options.name, options.version);
     const extension = await base.getExtensionController().install(ExtensionState.Enabled, false, zipBuffer);
     expect(extension.manifest.id).toEqual(options.id);
     await builder.waitUntilExtensionInstalled();
@@ -2699,7 +2337,7 @@ describe("Extensions", () =>
     expect(builtStreamableFile.getHeaders().type).toEqual(environment === ManifestRuntimeEnvironment.Node ? applicationXGzipMimeType : types.zip);
     expect(builtStreamableFile.getHeaders().disposition).toEqual(computeAttachmentDisposition(`${options.id}-${options.version}.${environment === ManifestRuntimeEnvironment.Node ? "tgz" : "zip"}`));
 
-    const builder = new ExtensionBuilder(false, undefined, options.id, options.name, options.version);
+    const builder = new ExtensionBuilder(base, false, undefined, options.id, options.name, options.version);
     const builtBuffer = await buffer(builtStreamableFile.getStream());
     const extension = await base.getExtensionController().install(ExtensionState.Enabled, false, builtBuffer);
     expect(extension.manifest.id).toEqual(options.id);
@@ -2757,7 +2395,7 @@ describe("Extensions", () =>
     {
       const extension = await base.getExtensionController().install(ExtensionState.Enabled, false, builtArchive);
       const manifest = extension.manifest;
-      const builder = new ExtensionBuilder(false, undefined, extensionId, manifest.name, manifest.version);
+      const builder = new ExtensionBuilder(base, false, undefined, extensionId, manifest.name, manifest.version);
       await builder.checkExtensionRunning(false, false);
       await waitForEvent("initialize");
       {
@@ -2867,7 +2505,7 @@ describe("Extensions", () =>
 
     try
     {
-      const builder = new ExtensionBuilder();
+      const builder = new ExtensionBuilder(base);
       const manifest = builder.computeStartedManifest();
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));

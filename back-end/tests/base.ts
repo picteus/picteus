@@ -1,5 +1,6 @@
 import path, { dirname } from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
@@ -8,11 +9,12 @@ import Timers from "node:timers";
 import { expect, jest } from "@jest/globals";
 import { pickPort } from "pick-port";
 import AdmZip from "adm-zip";
+import waitForExpect from "wait-for-expect";
 import { Type } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Test, TestingModule } from "@nestjs/testing";
-
+import HttpCodes from "http-codes";
 import { logger } from "../src/logger";
 import { paths } from "../src/paths";
 import { stringify } from "../src/utils";
@@ -23,6 +25,7 @@ import {
   ExtensionController,
   ImageAttachmentController,
   ImageController,
+  MarketplaceController,
   RepositoryController
 } from "../src/controllers/app.controllers";
 import {
@@ -33,8 +36,10 @@ import {
 } from "../src/services/app.service";
 import { computeMainModule, fineTuneApplication } from "../src/app.module";
 import {
+  CommandEntity,
   Extension,
   ExtensionCategory,
+  ExtensionGenerationOptions,
   ExtensionState,
   fileWithProtocol,
   GenerationRecipe,
@@ -44,9 +49,13 @@ import {
   InstructionsPrompt,
   Manifest,
   ManifestCapability,
+  ManifestCapabilityId,
   ManifestEvent,
+  ManifestExecution,
   ManifestExtensionCommand,
+  ManifestInstructions,
   ManifestRuntimeEnvironment,
+  ManifestUserInterface,
   PromptKind,
   Repository,
   RepositoryActivityKind,
@@ -56,11 +65,21 @@ import {
   SearchParameters,
   TextualPrompt
 } from "../src/dtos/app.dtos";
-import { ActionState, EventEntity, NotifierService, RepositoryEventAction } from "../src/services/notifierService";
+import {
+  ActionState,
+  EventEntity,
+  ExtensionEventAction,
+  NotifierService,
+  RepositoryEventAction
+} from "../src/services/notifierService";
 import { ExtensionService } from "../src/services/extensionServices";
-import { writeMetadata } from "../src/services/utils/images";
-import { ApiScope } from "../src/app.guards";
+import { readMetadata, writeMetadata } from "../src/services/utils/images";
+import { apiKeyHeaderName, ApiScope } from "../src/app.guards";
+import { ServiceError } from "../src/app.exceptions";
 import { ControllerProxy } from "./controllerProxy";
+
+
+const { BAD_REQUEST, OK } = HttpCodes;
 
 
 const backendDirectoryName = "back-end";
@@ -626,6 +645,11 @@ export class Base extends Core
     return this.getModuleProvider(ExtensionController);
   }
 
+  getMarketplaceController(): MarketplaceController
+  {
+    return this.getModuleProvider(MarketplaceController);
+  }
+
   getRepositoryController(): RepositoryController
   {
     return this.getModuleProvider(RepositoryController);
@@ -839,6 +863,369 @@ export class Base extends Core
       logger.debug(`Mock listener called with command '${JSON.stringify(command)}'`);
       return Promise.resolve();
     });
+  }
+
+}
+
+class ExtensionChecker
+{
+
+  constructor(private readonly base: Base, readonly extensionId: string)
+  {
+  }
+
+  checkCacheControl(response: Response): void
+  {
+    expect(response.headers.get("Cache-Control")).toEqual("private, max-age=10");
+  }
+
+  async checkExtensionState(expectedState: ExtensionState): Promise<void>
+  {
+    const state = (await this.base.getExtensionController().get(this.extensionId)).state;
+    expect(expectedState).toBe(state);
+  }
+
+  async checkExtensionNotExisting(): Promise<void>
+  {
+    await expect(async () =>
+    {
+      await this.base.getExtensionController().get(this.extensionId);
+    }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${this.extensionId}' is invalid because there is no extension with that identifier`, BAD_REQUEST, this.base.badParameterCode));
+  }
+
+  async checkIcon(shouldBePng: boolean = false): Promise<void>
+  {
+    const response = await fetch(`${paths.webServicesBaseUrl}/ui/extension/${this.extensionId}/icon`);
+    this.checkCacheControl(response);
+    const blob = await response.blob();
+    expect(blob.type).toEqual(`image/${shouldBePng === true ? "png" : "svg+xml"}`);
+    if (blob.type === "image/png")
+    {
+      const buffer = Buffer.from((await blob.arrayBuffer()));
+      const metadata = await readMetadata(buffer);
+      expect(metadata.width).toEqual(24);
+      expect(metadata.height).toEqual(24);
+      expect(metadata.format).toEqual("PNG");
+    }
+  }
+
+}
+
+export class ExtensionBuilder extends ExtensionBasisBuilder
+{
+
+  static computeGenerateOptions(environment: ManifestRuntimeEnvironment, id?: string, version?: string): ExtensionGenerationOptions
+  {
+    return {
+      id: id ?? `id-${environment}`,
+      name: "name",
+      version: version ?? "1.0.0",
+      author: "author",
+      description: "description",
+      categories: [ ExtensionCategory.Other ],
+      environment
+    };
+  }
+
+  static readonly dummyExecution: ManifestExecution =
+    {
+      executable: ExtensionBuilder.nodeExecutable,
+      arguments: [ "--eval", "console.info('Started'); setTimeout(() => {}, 1_000_000);" ]
+    };
+
+  static readonly javaScriptFileName = "main.js";
+
+  readonly checker: ExtensionChecker;
+
+  readonly extensionId: string;
+
+  readonly extensionName: string;
+
+  readonly extensionVersion: string;
+
+  readonly categories: ExtensionCategory[];
+
+  readonly extensionDirectoryPath: string;
+
+  private readonly touchedFileName = "touched.txt";
+
+  readonly touchedFilePath: string;
+
+  private readonly startedFileName: string;
+
+  readonly startedFilePath: string;
+
+  readonly installedListener: ListenerMock;
+
+  readonly processStartedListener: ListenerMock;
+
+  readonly errorListener: ListenerMock;
+
+  constructor(private readonly base: Base, isPrepareDirectory?: boolean, startedFileName?: string, extensionId?: string, extensionName?: string, extensionVersion?: string, categories: ExtensionCategory[] = [ ExtensionCategory.Other ])
+  {
+    super();
+    this.extensionId = extensionId ?? (`id-${Math.round(Math.random() * 1_000_000)}`);
+    this.checker = new ExtensionChecker(this.base, this.extensionId);
+    this.extensionName = extensionName ?? "Test";
+    this.extensionVersion = extensionVersion ?? `1.${Math.round(Math.random() * 10)}.0`;
+    this.categories = categories;
+    this.extensionDirectoryPath = path.join(paths.installedExtensionsDirectoryPath, this.extensionId);
+    this.touchedFilePath = path.join(this.extensionDirectoryPath, this.touchedFileName);
+    this.startedFileName = startedFileName === undefined ? "started.txt" : startedFileName;
+    this.startedFilePath = path.join(this.extensionDirectoryPath, this.startedFileName);
+    if (isPrepareDirectory === true)
+    {
+      this.base.prepareEmptyDirectory(this.extensionId, path.join(this.extensionDirectoryPath, ".."));
+    }
+    this.installedListener = this.base.computeEventListener();
+    this.base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Installed, undefined, this.installedListener);
+    this.processStartedListener = this.base.computeEventListener();
+    this.base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Process, ActionState.Started, this.processStartedListener);
+    this.errorListener = this.base.computeEventListener();
+    this.base.getNotifierService().on(EventEntity.Extension, ExtensionEventAction.Error, undefined, this.errorListener);
+  }
+
+  computeSimpleManifest(javascriptFilePath?: string, viaNode?: boolean, willNotRespondToTermination?: boolean, processStartedExecutable ?: string, javaScriptCode?: string, settings?: Record<string, any>, ui?: ManifestUserInterface, environmentVariable?: string): Manifest
+  {
+    const nodeScriptCode = javaScriptCode ?? this.base.computeExtensionJavaScriptCode(this.startedFileName, willNotRespondToTermination === true, environmentVariable);
+    if (javascriptFilePath !== undefined)
+    {
+      fs.writeFileSync(javascriptFilePath, nodeScriptCode);
+    }
+    return this.computeWithInstructionsManifest([
+      {
+        events: [ ManifestEvent.ProcessStarted ],
+        execution:
+          {
+            // In case of the "--eval" CLI option, we need to run Node.js go through a shell intermediate process, otherwise the spawn Node.js process exits immediately
+            executable: processStartedExecutable ?? (viaNode === true ? "${node}" : (javascriptFilePath !== undefined ? ExtensionBuilder.nodeExecutable : "${shell}")),
+            arguments: javascriptFilePath !== undefined ? [ javascriptFilePath ] : [ ExtensionBuilder.nodeExecutable, "--eval", `"${nodeScriptCode}"` ]
+          }
+      },
+      {
+        events: [ ManifestEvent.ImageCreated ],
+        execution:
+          {
+            executable: "${shell}",
+            arguments: os.platform() === "win32" ? [ "echo", ".>", `"${this.touchedFileName}"` ] : [ "touch", `"${this.touchedFileName}"` ]
+          }
+      }
+    ], this.extensionVersion, this.extensionName, "A test extension.", settings, ui);
+  }
+
+  computeStartedManifest(entity: CommandEntity = CommandEntity.Image, commands?: ManifestExtensionCommand[], throttlingDurationInMilliseconds?: number): Manifest
+  {
+    const throttableEvents = [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeTags, ManifestEvent.TextComputeEmbeddings, entity == CommandEntity.Image ? ManifestEvent.ImageRunCommand : ManifestEvent.ProcessRunCommand ];
+    return this.computeWithInstructionsManifest([
+      {
+        events: [ ManifestEvent.ProcessStarted, ...throttableEvents ],
+        throttlingPolicies:
+          [
+            {
+              events: throttableEvents,
+              maximumCount: 1,
+              durationInMilliseconds: Math.round(throttlingDurationInMilliseconds ?? Core.fastestIntervalInMilliseconds)
+            }
+          ],
+        capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageTags), new ManifestCapability(ManifestCapabilityId.ImageFeatures), new ManifestCapability(ManifestCapabilityId.TextEmbeddings) ],
+        execution:
+          {
+            executable: ExtensionBuilder.nodeExecutable,
+            arguments: [ ExtensionBuilder.startedJsFileName ]
+          },
+        commands: commands ?? [
+          {
+            id: entity == CommandEntity.Image ? "logDimensions" : "askForSomething",
+            on: { entity },
+            parameters: entity == CommandEntity.Image ? undefined : [
+              {
+                id: "age",
+                definition: {
+                  type: "integer",
+                  title: "Age",
+                  description: "What is your age?",
+                  minimum: 1,
+                  maximum: 128,
+                  default: 35
+                }
+              }
+            ],
+            specifications: [
+              {
+                locale: "en",
+                label: entity == CommandEntity.Image ? "Logs dimensions" : "Asks the user",
+                description: entity == CommandEntity.Image ? "Logs the image dimensions" : "Asks for something from the user"
+              }
+            ]
+          }
+        ]
+      }
+    ]);
+  }
+
+  computeWithInstructionsManifest(instructions: ManifestInstructions[], extensionVersion: string = this.extensionVersion, extensionName: string = this.extensionName, extensionDescription: string = "An extension for testing.", settings: Record<string, any> = {
+    type: "object",
+    properties: {}
+  }, ui: ManifestUserInterface | undefined = undefined): Manifest
+  {
+    return {
+      id: this.extensionId,
+      version: extensionVersion,
+      name: extensionName,
+      description: extensionDescription,
+      categories: this.categories,
+      runtimes: [ { environment: ManifestRuntimeEnvironment.Node } ],
+      instructions,
+      settings,
+      ui
+    };
+  }
+
+  async createRepository(watch: boolean | undefined = undefined): Promise<Repository>
+  {
+    const directoryPath = this.base.prepareEmptyDirectory("images", this.base.getWorkingDirectoryPath());
+    this.base.imageFeeder.copyImage(directoryPath, this.base.imageFeeder.pngImageFileName);
+    this.base.imageFeeder.copyImage(directoryPath, this.base.imageFeeder.jpegImageFileName);
+    const repository = await this.base.createRepository(fileWithProtocol + directoryPath, undefined, undefined, watch);
+    await this.base.waitUntilRepositoryReady(repository.id);
+    return repository;
+  }
+
+  async createRepositoryAndGetImages(watch: boolean | undefined = undefined): Promise<{
+    repository: Repository,
+    images: ImageSummary[]
+  }>
+  {
+    const repository = await this.createRepository(watch);
+    const result = await this.base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
+    return { repository, images: result.items };
+  }
+
+  async waitUntilExtensionInstalled(): Promise<void>
+  {
+    await waitForExpect(() =>
+    {
+      expect(this.installedListener).toHaveBeenCalledTimes(1);
+    });
+    expect(this.installedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Installed, { id: this.extensionId });
+  }
+
+  checkExtensionProcessStarted(): void
+  {
+    expect(this.processStartedListener).toHaveBeenCalledTimes(1);
+    expect(this.processStartedListener).toHaveBeenCalledWith(EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Process + NotifierService.stateDelimiter + ActionState.Started, { id: this.extensionId });
+  }
+
+  async checkExtensionRunning(checkStartedFile: boolean = true, checkImageTouchedFile: boolean = true, environment: {
+    name: string,
+    value: string
+  } | undefined = undefined): Promise<void>
+  {
+    expect(fs.existsSync(this.extensionDirectoryPath)).toEqual(true);
+    expect(fs.existsSync(path.join(this.extensionDirectoryPath, "manifest.json"))).toEqual(true);
+    const parametersFilePath = path.join(this.extensionDirectoryPath, Base.extensionParametersFileName);
+    expect(fs.existsSync(parametersFilePath)).toEqual(true);
+    const cacheDirectoryPath = path.join(this.extensionDirectoryPath, ".cache");
+    expect(fs.existsSync(cacheDirectoryPath)).toEqual(true);
+    expect(fs.lstatSync(cacheDirectoryPath).isSymbolicLink()).toEqual(true);
+    const parameters = JSON.parse(fs.readFileSync(parametersFilePath, { encoding: "utf8" }));
+    expect(parameters.webServicesBaseUrl).toEqual(paths.webServicesBaseUrl);
+    expect(parameters.extensionId).toEqual(this.extensionId);
+    const apiKey = parameters.apiKey;
+    expect(apiKey).toBeDefined();
+    if (checkStartedFile === true)
+    {
+      expect(fs.existsSync(this.startedFilePath)).toEqual(true);
+    }
+    if (checkImageTouchedFile === true)
+    {
+      expect(fs.existsSync(this.touchedFilePath)).toEqual(true);
+    }
+    if (environment !== undefined)
+    {
+      const filePath = path.join(this.extensionDirectoryPath, `${environment.name}.txt`);
+      expect(fs.existsSync(filePath)).toEqual(true);
+      const value = fs.readFileSync(filePath, { encoding: "utf8" });
+      expect(value).toEqual(environment.value);
+    }
+
+    // We make sure that we can invoke the web services via the dedicated API key
+    const webServiceRoute = `extension/${this.extensionId}/getSettings`;
+    const response = await fetch(`${parameters.webServicesBaseUrl}/${webServiceRoute}`, { headers: { [apiKeyHeaderName]: apiKey } });
+    if (response.status !== OK)
+    {
+      throw new Error(`The '${webServiceRoute}' web service response status is equal to '${response.status}'`);
+    }
+  }
+
+  async checkExtensionOver(): Promise<void>
+  {
+    this.deleteStartedFile();
+    await this.base.wait();
+    this.checkStartedFileNotFound();
+  }
+
+  deleteStartedFile(): void
+  {
+    fs.rmSync(this.startedFilePath);
+  }
+
+  checkStartedFileNotFound(): void
+  {
+    expect(fs.existsSync(this.startedFilePath)).toEqual(false);
+  }
+
+  async checkExtensionState(expectedState: ExtensionState): Promise<void>
+  {
+    await this.checker.checkExtensionState(expectedState);
+    expect(fs.existsSync(path.join(this.extensionDirectoryPath, ".paused"))).toEqual(expectedState === ExtensionState.Paused);
+  }
+
+  async checkExtensionNotExisting(): Promise<void>
+  {
+    await this.checker.checkExtensionNotExisting();
+  }
+
+  async assessUnpackedExtension(checkStartedFile: boolean): Promise<void>
+  {
+    // We make sure that it properly started
+    await waitForExpect(async () =>
+    {
+      await this.checkExtensionRunning(checkStartedFile, false);
+    });
+
+    await this.checkExtensionState(ExtensionState.Enabled);
+    if (checkStartedFile === true)
+    {
+      this.deleteStartedFile();
+      this.checkStartedFileNotFound();
+    }
+    // We touch the extension manifest file
+    const now = new Date();
+    const extensionDirectoryPath = path.join(paths.unpackedExtensionsDirectoryPath!, this.extensionId);
+    fs.utimesSync(path.join(extensionDirectoryPath, ExtensionRegistry.manifestFileName), now, now);
+    // And we make sure that the extension process has been restarted
+    await waitForExpect(async () =>
+    {
+      await this.checkExtensionRunning(checkStartedFile, false);
+    });
+
+    await this.checkExtensionState(ExtensionState.Enabled);
+    if (checkStartedFile === true)
+    {
+      this.deleteStartedFile();
+      this.checkStartedFileNotFound();
+    }
+    // We uninstall the extension
+    await this.base.getExtensionController().uninstall(this.extensionId);
+    // And we make sure that the extension process does not restart
+    await this.checkExtensionNotExisting();
+    if (checkStartedFile === true)
+    {
+      await this.base.wait();
+      this.checkStartedFileNotFound();
+    }
+    expect(fs.existsSync(this.extensionDirectoryPath)).toBe(false);
   }
 
 }

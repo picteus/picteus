@@ -57,6 +57,7 @@ import {
   ExtensionActivityState,
   ExtensionAiModel,
   ExtensionAndManual,
+  ExtensionCategory,
   ExtensionGenerationOptions,
   ExtensionsConfiguration,
   ExtensionSettings,
@@ -73,7 +74,7 @@ import {
   SearchParameters,
   UserInterfaceAnchor
 } from "../dtos/app.dtos";
-import { parametersChecker, StringNature } from "./utils/parametersChecker";
+import { parametersChecker, StringLengths, StringNature } from "./utils/parametersChecker";
 import { spawn, waitFor } from "./utils/processWrapper";
 import {
   ensureNpm,
@@ -510,7 +511,7 @@ export class ExtensionService
 
   private readonly perExtensionIdChromeExtensionNameMap: Map<string, string[]> = new Map<string, string[]>();
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionsRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
+  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating an ExtensionService");
   }
@@ -555,7 +556,7 @@ export class ExtensionService
     await this.installOrUpdateBuiltInExtensions();
 
     // We start all the extensions
-    const manifests = await this.extensionsRegistry.list(false);
+    const manifests = await this.extensionRegistry.list(false);
     const extensionIds = manifests.map((manifest) => manifest.id);
     this.extensionsManager = new ExtensionsManager();
     await this.extensionsManager.start(paths.webServicesBaseUrl, AuthenticationGuard.registerExtensionsApiKeys(extensionIds), async (message: ExtensionMessage) =>
@@ -568,7 +569,7 @@ export class ExtensionService
       if (message.type === "started" || message.type === "stopped")
       {
         const hasExtensionStarted = message.type === "started";
-        const manifest = this.extensionsRegistry.get(extensionId);
+        const manifest = this.extensionRegistry.get(extensionId);
         if (manifest === undefined)
         {
           logger.error(`Received a '${message.type}' message for the unknown extension with id '${extensionId}'`);
@@ -629,7 +630,7 @@ export class ExtensionService
 
   async getConfiguration(): Promise<ExtensionsConfiguration>
   {
-    const extensions = await this.extensionsRegistry.list(false);
+    const extensions = await this.extensionRegistry.list(false);
     const perCapabilityExtensionIds = new Map<ManifestCapability, string[]>();
     for (const extension of extensions)
     {
@@ -688,16 +689,22 @@ export class ExtensionService
     }));
   }
 
-  async list(): Promise<Extension[]>
+  async list(search?: string, categories?: ExtensionCategory[]): Promise<Extension[]>
   {
-    logger.info("Listing all extensions");
-    return (await this.extensionsRegistry.list(true, true)).map((extendedManifest =>
+    logger.info("Listing extensions" + (search === undefined ? "" : (`with the '${search}' search string`)) + (categories === undefined ? "" : (` with the [${categories.join(", ")}] categories`)));
+    parametersChecker.checkString("search", search, StringLengths.Length64, StringNature.Free, true);
+    if (categories !== undefined && categories.length === 0)
+    {
+      parametersChecker.throwBadParameter("category", undefined, "it should contain at least one item");
+    }
+    const normalizedSearch = search?.trim().toLocaleLowerCase();
+    return (await this.extensionRegistry.list(true, true)).filter(manifest => (normalizedSearch === undefined || normalizedSearch.length === 0 || [ manifest.id, manifest.name, manifest.description ].some(value => value.toLocaleLowerCase().includes(normalizedSearch))) && (categories === undefined || manifest.categories.some(category => categories.includes(category)))).map((extendedManifest =>
     {
       // We need to remove the "directoryPath" property from the extended manifest
       const { directoryPath, ...manifest } = extendedManifest;
       return plainToInstanceViaJSON(Extension, {
         manifest,
-        state: this.extensionsRegistry.getState(extendedManifest.id)
+        state: this.extensionRegistry.getState(extendedManifest.id)
       });
     }));
   }
@@ -705,7 +712,7 @@ export class ExtensionService
   async activities(): Promise<ExtensionActivities>
   {
     logger.info("Getting the extensions activities");
-    return (await this.extensionsRegistry.list(false, true)).map((manifest =>
+    return (await this.extensionRegistry.list(false, true)).map((manifest =>
     {
       return plainToInstanceViaJSON(ExtensionActivity, {
         id: manifest.id,
@@ -721,13 +728,13 @@ export class ExtensionService
   {
     logger.info(`Getting the extension with id '${id}'`);
     this.checkExtensionExists(id);
-    const extendedManifest = this.extensionsRegistry.get(id)!;
-    const manual = this.extensionsRegistry.getManual(extendedManifest);
+    const extendedManifest = this.extensionRegistry.get(id)!;
+    const manual = this.extensionRegistry.getManual(extendedManifest);
     // We need to remove the "directoryPath" property from the extended manifest
     const { directoryPath, ...manifest } = extendedManifest;
     return plainToInstanceViaJSON(ExtensionAndManual, {
       manifest,
-      state: this.extensionsRegistry.getState(extendedManifest.id),
+      state: this.extensionRegistry.getState(extendedManifest.id),
       manual
     });
   }
@@ -755,7 +762,7 @@ export class ExtensionService
       const extensionDirectoryPath = path.join(paths.unpackedExtensionsDirectoryPath, manifest.id);
       if (fs.existsSync(extensionDirectoryPath) === true)
       {
-        parametersChecker.throwBadParameterError(`An unpacked extension with the same id '${manifest.id}' already exists`);
+        parametersChecker.throwBadParameterError(`An unpacked extension with the same id '${manifest.id}' is already installed`);
       }
       const inflationDirectoryPath = getTemporaryDirectoryPath();
       await reader.extractFunction!(inflationDirectoryPath);
@@ -765,7 +772,7 @@ export class ExtensionService
       {
         if (options.state === ExtensionState.Paused)
         {
-          this.extensionsRegistry.writeExtensionState(inflationDirectoryPath, ExtensionState.Paused);
+          this.extensionRegistry.writeExtensionState(inflationDirectoryPath, ExtensionState.Paused);
         }
         await move(inflationDirectoryPath, extensionDirectoryPath);
         await this.prepareRuntimes(manifest.id, extensionDirectoryPath, manifest.runtimes, true, false);
@@ -795,7 +802,7 @@ export class ExtensionService
       }
       if (status === "exists")
       {
-        parametersChecker.throwBadParameterError(`An extension with the same id '${manifest.id}' already exists`);
+        parametersChecker.throwBadParameterError(`An extension with the same id '${manifest.id}' is already installed`);
       }
       else if (status === "noManifest")
       {
@@ -808,7 +815,7 @@ export class ExtensionService
     }
     return plainToInstanceViaJSON(Extension, {
       manifest,
-      state: this.extensionsRegistry.getState(manifest.id)
+      state: this.extensionRegistry.getState(manifest.id)
     });
   }
 
@@ -820,7 +827,7 @@ export class ExtensionService
     {
       this.checkExtensionExists(id);
     }
-    const manifest = this.extensionsRegistry.get(id);
+    const manifest = this.extensionRegistry.get(id);
     // The directory of the extension may have been deleted
     if (manifest !== undefined)
     {
@@ -868,13 +875,13 @@ export class ExtensionService
     {
       this.checkExtensionExists(id);
     }
-    const manifest = this.extensionsRegistry.get(id)!;
+    const manifest = this.extensionRegistry.get(id)!;
     if (this.detectedUnpackedExtensionIds.has(manifest.id) === false)
     {
       parametersChecker.throwBadParameter("id", id, "that extension is non unpacked");
     }
 
-    const extensionDirectoryPath = this.extensionsRegistry.computeExtensionDirectoryPath(manifest.id);
+    const extensionDirectoryPath = this.extensionRegistry.computeExtensionDirectoryPath(manifest.id);
     for (const runtime of [ ...new Map(manifest.runtimes.map(runtime => [ runtime.environment, runtime ])).values() ])
     {
       try
@@ -892,11 +899,11 @@ export class ExtensionService
   {
     logger.info(`Changes the extension with id '${id}' into state '${state}'`);
     const extensionAndManual = await this.get(id);
-    if (this.extensionsRegistry.getState(id) === state)
+    if (this.extensionRegistry.getState(id) === state)
     {
       parametersChecker.throwBadParameter("state", state, `the extension with id '${id}' is already ${state === ExtensionState.Paused ? "paused" : "enabled"}`);
     }
-    this.extensionsRegistry.changeState(id, state);
+    this.extensionRegistry.changeState(id, state);
     await this.startOrStopProcesses(extensionAndManual.manifest, state === ExtensionState.Paused, true);
   }
 
@@ -926,7 +933,7 @@ export class ExtensionService
   {
     logger.info(`Setting the settings of the extension with id '${id}'`);
     this.checkExtensionExists(id);
-    const extension = this.extensionsRegistry.get(id)!;
+    const extension = this.extensionRegistry.get(id)!;
     const value = settings.value;
     const withStrippedUiPropertiesExtensionSettings = deepCopy(extension.settings);
     const uiProperties = stripAndExtractParametersUiProperties(withStrippedUiPropertiesExtensionSettings);
@@ -954,7 +961,7 @@ export class ExtensionService
   {
     logger.info(`Resets the settings of the extension with id '${id}'`);
     this.checkExtensionExists(id);
-    const extension = this.extensionsRegistry.get(id)!;
+    const extension = this.extensionRegistry.get(id)!;
     const withStrippedUiPropertiesExtensionSettings = extension.settings;
     stripAndExtractParametersUiProperties(withStrippedUiPropertiesExtensionSettings);
     const value = computeDefaultValueFromSchema(withStrippedUiPropertiesExtensionSettings);
@@ -1065,12 +1072,12 @@ export class ExtensionService
   {
     // TODO: add a start and a stop event, and for that, we need an acknowledgment from the extension for every action
     logger.info(`Synchronizing the images through the extension with id '${id}'`);
-    const manifest: ExtendedManifest | undefined = this.extensionsRegistry.get(id);
+    const manifest: ExtendedManifest | undefined = this.extensionRegistry.get(id);
     if (manifest === undefined)
     {
       this.throwBadParameterId(id);
     }
-    if (this.extensionsRegistry.isPaused(id) === true)
+    if (this.extensionRegistry.isPaused(id) === true)
     {
       parametersChecker.throwBadParameter("id", id, "the extension is paused");
     }
@@ -1128,7 +1135,7 @@ export class ExtensionService
         state = undefined;
         break;
     }
-    const extensions: ExtendedManifest[] = await this.extensionsRegistry.getExtensionsWithCapability(capability, false);
+    const extensions: ExtendedManifest[] = await this.extensionRegistry.getExtensionsWithCapability(capability, false);
     if (extensions.length === 0)
     {
       parametersChecker.throwInternalError(`Cannot operate because no extension with the capability id '${capability.id}' is installed and enabled`);
@@ -1172,12 +1179,12 @@ export class ExtensionService
   {
     logger.info(`Running on the extension with id '${id}' the command with id '${commandId}' attached to the entity '${entity}'`);
     this.checkExtensionExists(id);
-    if (this.extensionsRegistry.getState(id) === ExtensionState.Paused)
+    if (this.extensionRegistry.getState(id) === ExtensionState.Paused)
     {
       parametersChecker.throwBadParameterError(`Cannot run the command with id '${commandId}' on the extension with id '${id}' because the latter is paused`);
     }
-    const extension = this.extensionsRegistry.get(id)!;
-    const command = this.extensionsRegistry.getCommand(extension, commandId);
+    const extension = this.extensionRegistry.get(id)!;
+    const command = this.extensionRegistry.getCommand(extension, commandId);
     if (command === undefined)
     {
       parametersChecker.throwBadParameter("commandId", commandId, `the extension with id '${id}' has no command with id '${commandId}'`);
@@ -1511,10 +1518,10 @@ export class ExtensionService
     logger.info(`Analyzing the unpacked extension under directory '${sourceDirectoryPath}'`);
     if (fs.existsSync(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName)) === true)
     {
-      const manifest = this.extensionsRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName));
+      const manifest = this.extensionRegistry.parseManifest(path.join(sourceDirectoryPath, ExtensionRegistry.manifestFileName));
       this.detectedUnpackedExtensionIds.add(manifest.id);
       logger.info(`Registering the unpacked extension with id '${manifest.id}' in directory '${sourceDirectoryPath}'`);
-      const targetDirectoryPath = this.extensionsRegistry.computeExtensionDirectoryPath(manifest.id);
+      const targetDirectoryPath = this.extensionRegistry.computeExtensionDirectoryPath(manifest.id);
       if (fs.existsSync(targetDirectoryPath) === false)
       {
         fs.symlinkSync(sourceDirectoryPath, targetDirectoryPath, symlinkType);
@@ -1523,7 +1530,7 @@ export class ExtensionService
       if (fs.lstatSync(targetDirectoryPath).isSymbolicLink() === true && fs.realpathSync(targetDirectoryPath) === fs.realpathSync(sourceDirectoryPath))
       {
         // We do nothing for the extensions in "paused" state
-        if (this.extensionsRegistry.getExtensionWriteState(sourceDirectoryPath) === ExtensionState.Paused)
+        if (this.extensionRegistry.getExtensionWriteState(sourceDirectoryPath) === ExtensionState.Paused)
         {
           return "paused";
         }
@@ -1607,18 +1614,16 @@ export class ExtensionService
 
   private async installOrUpdateBuiltInExtensions(): Promise<void>
   {
-    const builtInExtensionsDirectoryPath = paths.builtInExtensionsDirectoryPath;
-    if (fs.existsSync(builtInExtensionsDirectoryPath) === false)
+    logger.info(`Installing or updating the built-in extensions'`);
+    const manifestPathArchives = await this.extensionRegistry.listPrebuiltExtensionArchivePaths(true);
+    if (manifestPathArchives.length === 0)
     {
       return;
     }
-    logger.info(`Installing or updating the built-in extensions available under directory '${builtInExtensionsDirectoryPath}'`);
-    const extensions = await this.extensionsRegistry.list(true);
-    const filePaths = new fdir().withFullPaths().withMaxDepth(0).glob("**/*.zip", "**/*.tgz", "**/*.tar.gz").crawl(builtInExtensionsDirectoryPath).sync();
-    for (const filePath of filePaths)
+    const extensions = await this.extensionRegistry.list(true);
+    for (const manifestPathArchive of manifestPathArchives)
     {
-      const archive = fs.readFileSync(filePath);
-      const manifest = await new ExtensionArchiveReader(archive).extractManifest();
+      const manifest = manifestPathArchive.manifest;
       // We only install the extension if it is not already installed or if its version is greater than the installed one
       const alreadyInstalledExtension = extensions.find((extension) =>
       {
@@ -1631,7 +1636,7 @@ export class ExtensionService
         try
         {
           // TODO: check whether it can be mutualise with the one created above
-          const duplicatedReader = new ExtensionArchiveReader(archive);
+          const duplicatedReader = new ExtensionArchiveReader(manifestPathArchive.archive);
           await this.register(shouldExtensionBeUpdated === true ? new UpdateInstructions(duplicatedReader, manifest.id) : new InstallInstructions(duplicatedReader), true, StateChangeOptions.withState(ExtensionState.Enabled), false, true);
         }
         catch (error)
@@ -1649,7 +1654,7 @@ export class ExtensionService
 
   private checkExtensionExists(id: string): void
   {
-    if (this.extensionsRegistry.exists(id) === false)
+    if (this.extensionRegistry.exists(id) === false)
     {
       this.throwBadParameterId(id);
     }
@@ -1679,10 +1684,10 @@ export class ExtensionService
         parametersChecker.throwBadParameter("id", idWhenUpdating, `the identifier '${manifest.id}' of the manifest '${ExtensionRegistry.manifestFileName}' does not match`);
       }
 
-      const exists = this.extensionsRegistry.exists(manifest.id);
+      const exists = this.extensionRegistry.exists(manifest.id);
       if (idWhenUpdating === undefined && exists === true)
       {
-        parametersChecker.throwBadParameterError(`An extension with the same id '${manifest.id}' already exists`);
+        parametersChecker.throwBadParameterError(`An extension with the same id '${manifest.id}' is already installed`);
       }
       else if (idWhenUpdating !== undefined && exists === false)
       {
@@ -1697,7 +1702,7 @@ export class ExtensionService
     await this.checkManifest(manifest, undefined);
 
     logger.debug(`Proceeding to the installation of the extension with id '${manifest.id}', name '${manifest.name}' and version '${manifest.version}'`);
-    const extendedManifest = ExtensionRegistry.from(manifest, this.extensionsRegistry.computeExtensionDirectoryPath(manifest.id));
+    const extendedManifest = ExtensionRegistry.from(manifest, this.extensionRegistry.computeExtensionDirectoryPath(manifest.id));
     const directoryPath = extendedManifest.directoryPath;
     if (idWhenUpdating !== undefined)
     {
@@ -1791,7 +1796,7 @@ export class ExtensionService
       throw error;
     }
 
-    const isCurrentlyPaused = this.extensionsRegistry.isPaused(manifest.id);
+    const isCurrentlyPaused = this.extensionRegistry.isPaused(manifest.id);
     if (isCurrentlyPaused === false)
     {
       const extensionSettings = await this.getPersistedSettings(manifest.id);
@@ -1841,7 +1846,7 @@ export class ExtensionService
     {
       if (isCurrentlyPaused === false)
       {
-        this.extensionsRegistry.changeState(manifest.id, ExtensionState.Paused);
+        this.extensionRegistry.changeState(manifest.id, ExtensionState.Paused);
       }
     }
     else
@@ -1850,7 +1855,7 @@ export class ExtensionService
       {
         if (isCurrentlyPaused === true)
         {
-          this.extensionsRegistry.changeState(manifest.id, ExtensionState.Enabled);
+          this.extensionRegistry.changeState(manifest.id, ExtensionState.Enabled);
         }
         // We automatically synchronize the images via this extension, once it is installed
         await this.startOrStopProcesses(manifest, false, idWhenUpdating === undefined && options.withSynchronisation === true);
@@ -2199,7 +2204,7 @@ export class ExtensionService
 
   private deleteExtensionFolder(id: string): void
   {
-    const directoryPath = this.extensionsRegistry.computeExtensionDirectoryPath(id);
+    const directoryPath = this.extensionRegistry.computeExtensionDirectoryPath(id);
     logger.debug(`Deleting extension folder '${directoryPath}' related to extension the with id '${id}'`);
     fs.rmSync(directoryPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 2_000 });
   }
@@ -2373,7 +2378,7 @@ export class ExtensionService
 
   private async triggerCapabilitiesOnImage(imageId: string): Promise<void>
   {
-    const manifests = await this.extensionsRegistry.list(false);
+    const manifests = await this.extensionRegistry.list(false);
     for (const manifest of manifests)
     {
       for (const instructions of manifest.instructions)

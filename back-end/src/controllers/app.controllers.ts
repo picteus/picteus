@@ -70,6 +70,7 @@ import {
   ExtensionActivity,
   ExtensionAiModel,
   ExtensionAndManual,
+  ExtensionCategory,
   ExtensionGenerationOptions,
   ExtensionIdImageEmbeddingName,
   extensionIdSchema,
@@ -97,6 +98,8 @@ import {
   imageUrlSchema,
   integerIdSchema,
   IntegerIdType,
+  Manifest,
+  ManifestAndManual,
   ManifestCapabilityId,
   NumericRange,
   Repository,
@@ -124,6 +127,7 @@ import {
   ExtensionStateChangeOptions,
   ImageAttachmentService,
   ImageService,
+  MarketplaceService,
   MiscellaneousService,
   RepositoryService,
   SettingsService
@@ -525,22 +529,49 @@ export class ExtensionController
   @Get("list")
   @ApiOperation(
     {
-      summary: "Lists all extensions",
-      description: "Returns all installed extensions."
+      summary: "Lists extensions",
+      description: "Returns all installed extensions matching the search criteria."
     }
   )
   @ApiResponse(
     {
       status: OK,
-      description: "The extensions",
+      description: "The extensions matching the search criteria",
       type: Extension,
       isArray: true
     }
   )
+  @ApiQuery({
+    name: "search",
+    description: "A case-insensitive search applied to the extension identifier, name, and description",
+    type: String,
+    minLength: 1,
+    maxLength: FieldLengths.name,
+    required: false
+  })
+  @ApiQuery({
+    name: "category",
+    description: "The categories the extension should belong to",
+    schema: {
+      type: "array",
+      minItems: 1,
+      maxItems: Object.keys(ExtensionCategory).length,
+      items: {
+        $ref: getSchemaPath("ExtensionCategory")
+      }
+    },
+    required: false
+  })
   @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
-  async list(): Promise<Extension[]>
+  async list(
+    @Query("search") search?: string,
+    @Query("category", new ParseArrayPipe({
+      items: String,
+      optional: true
+    })) categories?: ExtensionCategory | ExtensionCategory[]
+  ): Promise<Extension[]>
   {
-    return await this.extensionService.list();
+    return await this.extensionService.list(search, categories === undefined ? undefined : Array.isArray(categories) ? categories : [ categories ]);
   }
 
   @Get("activities")
@@ -595,7 +626,7 @@ export class ExtensionController
   @ApiConsumes(types.zip, applicationGzipMimeType, applicationXGzipMimeType)
   @ApiQuery({
     name: "state",
-    description: "Whether the extension should be started if the installation is successful",
+    description: "Whether the extension should be started",
     enum: ExtensionState,
     enumName: "ExtensionState",
     required: true
@@ -634,7 +665,7 @@ export class ExtensionController
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
   @ApiQuery({
     name: "state",
-    description: "The new state of the extension if it was successfully updated",
+    description: "The state to apply to the extension after updating",
     enum: ExtensionState,
     enumName: "ExtensionState",
     required: false
@@ -648,7 +679,7 @@ export class ExtensionController
   @ApiResponse(
     {
       status: OK,
-      description: "The extension",
+      description: "The updated extension",
       type: Extension
     }
   )
@@ -1149,6 +1180,150 @@ export class ExtensionController
   }
 
 }
+
+const marketplaceResourceName: string = "marketplace";
+
+/**
+ * Manages the marketplace.
+ */
+@ApiTags(marketplaceResourceName)
+@Controller(computeControllerPath(marketplaceResourceName))
+@CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite, ApiScope.ExtensionRead ]))
+@ApiConsumes(types.json)
+@ApiProduces(types.json)
+export class MarketplaceController
+{
+
+  constructor(private readonly marketplaceService: MarketplaceService)
+  {
+    logger.debug("Instantiating a MarketplaceController");
+  }
+
+  @Get("list")
+  @ApiOperation(
+    {
+      summary: "Lists extensions",
+      description: "Returns the extensions matching the search criteria."
+    }
+  )
+  @ApiQuery({
+    name: "search",
+    description: "A case-insensitive search applied to the extension identifier, name, and description",
+    type: String,
+    minLength: 1,
+    maxLength: FieldLengths.name,
+    required: false
+  })
+  @ApiQuery({
+    name: "category",
+    description: "The categories the extension should belong to",
+    schema: {
+      type: "array",
+      minItems: 1,
+      maxItems: Object.keys(ExtensionCategory).length,
+      items: {
+        $ref: getSchemaPath("ExtensionCategory")
+      }
+    },
+    required: false
+  })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The extensions matching the search criteria",
+      type: Manifest,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
+  async list(@Query("search") search?: string, @Query("category", new ParseArrayPipe({
+      items: String,
+      optional: true
+    })) categories?: ExtensionCategory | ExtensionCategory[]
+  ): Promise<Manifest[]>
+  {
+    return await this.marketplaceService.list(search, categories === undefined ? undefined : Array.isArray(categories) ? categories : [ categories ]);
+  }
+
+  @Get(":id/get")
+  @ApiOperation(
+    {
+      summary: "Gets a marketplace extension",
+      description: "Returns the manifest and manual of an extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The extension manifest and manual",
+      type: ManifestAndManual
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
+  async get(@Param("id") id: ExtensionIdType): Promise<ManifestAndManual>
+  {
+    return await this.marketplaceService.get(id);
+  }
+
+  @Post(":id/install")
+  @ApiOperation(
+    {
+      summary: "Installs an extension",
+      description: "Installs an extension and optionally starts it."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiQuery({
+    name: "state",
+    description: "Whether the extension should be started",
+    enum: ExtensionState,
+    enumName: "ExtensionState",
+    required: true
+  })
+  @ApiResponse(
+    {
+      status: CREATED,
+      description: "The installed extension",
+      type: Extension
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
+  async install(@Param("id") id: ExtensionIdType, @Query("state") state: ExtensionState): Promise<Extension>
+  {
+    return await this.marketplaceService.install(id, state);
+  }
+
+  @Put(":id/update")
+  @ApiOperation(
+    {
+      summary: "Updates an extension",
+      description: "Updates an already installed extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiQuery({
+    name: "state",
+    description: "The state to apply to the extension after updating",
+    enum: ExtensionState,
+    enumName: "ExtensionState",
+    required: false
+  })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The updated extension",
+      type: Extension
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
+  async update(@Param("id") id: ExtensionIdType, @Query("state") state: ExtensionState | undefined): Promise<Extension>
+  {
+    return await this.marketplaceService.update(id, state);
+  }
+
+}
+
 
 const repositoryResourceName: string = "repository";
 
@@ -2923,4 +3098,3 @@ export class SearchController
   // }
 
 }
-
