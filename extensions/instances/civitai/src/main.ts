@@ -32,9 +32,13 @@ class CivitaiExtension extends PicteusExtension
 
   protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], _parameters: CommandParameters): Promise<void>
   {
-    if (commandId === "reindexFromMetadata")
+    if (commandId === "reindexFromFileMetadata")
     {
-      await this.reindexFromMetadata(communicator, imageIds);
+      await this.reindexFromFileMetadata(communicator, imageIds);
+    }
+    else if (commandId === "reindexFromApplicationMetadata")
+    {
+      await this.reindexFromApplicationMetadata(communicator, imageIds);
     }
     else if (commandId === "reindexFromCivitai")
     {
@@ -137,6 +141,7 @@ class CivitaiExtension extends PicteusExtension
         }
       }
     }
+    const contentUrl = isFromPost === true ? `https://civitai.com/posts/${userNameOrPostId}` : `https://civitai.com/user/${userNameOrPostId}`;
     await communicator.launchIntent<void>({
       images:
         {
@@ -145,13 +150,14 @@ class CivitaiExtension extends PicteusExtension
             {
               title: "Retrieved Images",
               subtitle: `${newImages.length} retrieved image${newImages.length >= 2 ? "s" : ""}`,
-              description: "These are the retrieved images"
+              description: "Here are the retrieved images.",
+              details: `The images where retrieved from the ${isFromPost === true ? "post" : "user"} with identifier \`${userNameOrPostId}\`, which are accessible from [${contentUrl}](${contentUrl}).`
             }
         }
     });
   }
 
-  private async reindexFromMetadata(communicator: Communicator, imageIds: string[]): Promise<void>
+  private async reindexFromFileMetadata(communicator: Communicator, imageIds: string[]): Promise<void>
   {
     const retriever = new CivitaiAnalyzer();
     for (const imageId of imageIds)
@@ -173,6 +179,30 @@ class CivitaiExtension extends PicteusExtension
     }
   }
 
+  private async reindexFromApplicationMetadata(communicator: Communicator, imageIds: string[]): Promise<void>
+  {
+    const retriever = new CivitaiAnalyzer();
+    const client = new CivitaiClient();
+    for (const imageId of imageIds)
+    {
+      const imageMetadata = await this.getImageApi().imageGetMetadata({ id: imageId });
+      const targetPrinterMetadataRaw = JSON.parse(imageMetadata.all)["TargetPrinter"];
+      if (targetPrinterMetadataRaw !== undefined)
+      {
+        const targetPrinterMetadata = JSON.parse(targetPrinterMetadataRaw);
+        const picteusMetadataItems = targetPrinterMetadata["picteus"];
+        if (picteusMetadataItems !== undefined)
+        {
+          const picteusMetadata: { id: number } = picteusMetadataItems["civitai"];
+          if (picteusMetadata !== undefined)
+          {
+            await this.reindexCivitaiImage(communicator, client, retriever, picteusMetadata.id, imageId);
+          }
+        }
+      }
+    }
+  }
+
   private async reindexFromCivitai(communicator: Communicator, imageIds: string[]): Promise<void>
   {
     const retriever = new CivitaiAnalyzer();
@@ -180,22 +210,28 @@ class CivitaiExtension extends PicteusExtension
     for (const imageId of imageIds)
     {
       const features = await this.getImageApi().imageGetFeatures({ extensionId: this.extensionId, id: imageId });
-      const identity = features.find(feature => feature.type === ImageFeatureType.Identity && feature.name === CivitaiExtension.IDENTITY_FEATURE_NAME && feature.type === ImageFeatureType.Identity);
-      if (identity !== undefined)
+      const identityFeature = features.find(feature => feature.type === ImageFeatureType.Identity && feature.name === CivitaiExtension.IDENTITY_FEATURE_NAME && feature.type === ImageFeatureType.Identity);
+      if (identityFeature !== undefined)
       {
-        const civitaiImage = await client.getImage(Number.parseInt(identity.value as string));
-        if (civitaiImage !== undefined)
-        {
-          communicator.forEntity({ type: "image", id: imageId });
-          communicator.sendLog(`Reindexing the Civitai image with id '${identity.value}'`, "info");
-          const data: CitivaiImageData = retriever.computeData(civitaiImage);
-          await this.getImageApi().imageSetFeatures({
-            id: imageId,
-            extensionId: this.extensionId,
-            imageFeature: this.computeFeatures(data)
-          });
-        }
+        const civitaiIdentity = Number.parseInt(identityFeature.value as string);
+        await this.reindexCivitaiImage(communicator, client, retriever, civitaiIdentity, imageId);
       }
+    }
+  }
+
+  private async reindexCivitaiImage(communicator: Communicator, client: CivitaiClient, retriever: CivitaiAnalyzer, civitaiIdentity: number, imageId: string): Promise<void>
+  {
+    const civitaiImage = await client.getImage(civitaiIdentity);
+    if (civitaiImage !== undefined)
+    {
+      communicator.forEntity({ type: "image", id: imageId });
+      communicator.sendLog(`Reindexing the image with id '${civitaiIdentity}'`, "info");
+      const data: CitivaiImageData = retriever.computeData(civitaiImage);
+      await this.getImageApi().imageEnsureFeatures({
+        id: imageId,
+        extensionId: this.extensionId,
+        imageFeature: this.computeFeatures(data)
+      });
     }
   }
 
