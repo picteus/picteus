@@ -18,13 +18,15 @@ The ComfyUI / Comfy Desktop application must be up and running.
 ## ComfyUI
 Inspect the 2 following ComfyUI CLI command options:
 1. `--port <portNumber>`: this specifies the internet back-end HTTP port number listens to, where `<portNumber>` is the value of that port number, implicitly defaulted to `8188` ;
-2. `--enable-cors-header [origin]`: this enables Cross-Origin Resource Sharing (CORS), where `[origin]` is the authorized domain — a `*` value means all origins are allowed.
+2. `--enable-cors-header <origin>`: this enables Cross-Origin Resource Sharing (CORS), where `<origin>` is the authorized domain — a `*` value means all origins are allowed — ; specify `127.0.0.1` as a value, so that the Picteus back-end server is authorized to perform HTTP requests against ComfyUI.
 
 ## Comfy Desktop
 1. In the Comfy Desktop application, once started, open the top bar "Comfy Desktop" button.
 2. Select the "ComfyUI" entry in the "Instances" left panel.
 3. Open the "Startup Args" tab.
-4. In the "StartUp Arguments" control, type `--port <portNumber> --enable-cors-header * --enable-manager` where `<portNumber>` is the port number you wish the internal Comfy Desktop back-end HTTP to listen to, by default `8188`.
+4. In the "StartUp Arguments" control, type `--port <portNumber> --enable-cors-header <origin> --enable-manager` where:
+   - `<portNumber>` is the port number you wish the internal Comfy Desktop back-end HTTP to listen to, by default `8188` ;
+   - `<origin>` is the origin from where HTTP requests are allowed and should be set to `127.0.0.1` — `*` value means all origins are allowed —, so that the Picteus back-end server is authorized to perform HTTP requests against Comfy Desktop — this option enables Cross-Origin Resource Sharing (CORS).
 5. Press the "Start" or "Restart to apply changes" button.
 
 From here you can start using the Picteus "ComfyUI" extension.
