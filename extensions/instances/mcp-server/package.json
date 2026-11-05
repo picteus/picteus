@@ -37,24 +37,25 @@
     "MANUAL.md"
   ],
   "scripts": {
-    "mcp:generate": "openapi-mcp-generator --input ../../../back-end/openapi.json --output ./generated --server-name \"picteus-mcp-server\" --transport web --force  --generate-lib",
-    "compile": "tsc",
-    "build": "npm run compile"
+    "clean:generated": "shx rm -rf ./generated",
+    "clean:dist": "shx rm -rf ./dist",
+    "clean": "npm run clean:generated && npm run clean:dist",
+    "mcp:generate": "npm run clean:generated && openapi-mcp-generator --input ../../../back-end/openapi.json --output ./generated --server-name \"picteus-mcp-server\" --transport streamable-http --custom-auth --force --generate-lib && shx cp ./src/auth.ts ./generated/src/auth.ts",
+    "compile": "npm run clean:dist && tsc && shx cp -r ./generated/public ./dist/generated/public",
+    "build": "npm run mcp:generate && npm run compile"
   },
   "devDependencies": {
     "typescript": "5.9.2",
     "@types/node": "22.17.1",
-    "openapi-mcp-generator": "4.0.1"
+    "shx": "0.4.0",
+    "openapi-mcp-generator": "5.0.1"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.29.0",
-    "axios": "1.18.1",
-    "dotenv": "17.4.2",
-    "zod": "3.25.76",
-    "json-schema-to-zod": "2.8.1",
-    "hono": "4.12.27",
-    "@hono/node-server": "2.0.8",
-    "uuid": "13.0.0",
+    "@modelcontextprotocol/server": "2.4.0",
+    "@cfworker/json-schema": "4.1.6",
+    "axios": "1.21.0",
+    "hono": "4.13.16",
+    "@hono/node-server": "2.1.5",
     "@picteus/internal-extension-sdk": "0.20.2"
   }
 }
