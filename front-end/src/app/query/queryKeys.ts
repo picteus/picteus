@@ -17,6 +17,9 @@ export const queryKeys =
     configuration: [ "extensions", "configuration" ] as const,
     activities: [ "extensions", "activities" ] as const
   },
+  marketplace: {
+    all: [ "marketplace" ] as const
+  },
   images: {
     all: [ "images" ] as const,
     detail: (imageId: string) => [ "images", imageId ] as const,

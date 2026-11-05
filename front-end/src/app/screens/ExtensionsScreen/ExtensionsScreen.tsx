@@ -1,13 +1,19 @@
-import React, { useMemo, useState } from "react";
-import { ActionIcon, Button, Card, Flex, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
-import { IconBox, IconLayoutGrid, IconList, IconPlus, IconPuzzle } from "@tabler/icons-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { ActionIcon, Badge, Button, Card, Flex, SimpleGrid, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
+import { IconBox, IconCirclePlus, IconLayoutGrid, IconList, IconPlus, IconPuzzle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Extension, ExtensionActivity as ApiExtensionActivity } from "@picteus/ws-client";
+import { Extension, ExtensionActivity as ApiExtensionActivity, ExtensionState, Manifest } from "@picteus/ws-client";
 
 import { useActionModalContext } from "app/context";
-import { useExtensionActivities, useExtensions } from "app/hooks";
+import {
+  useExtensionActivities,
+  useExtensions,
+  useInstallMarketplaceExtensionMutation,
+  useMarketplaceExtensions
+} from "app/hooks";
 import { ExtensionsService } from "app/services";
+import { ToastService } from "utils";
 import {
   Common,
   Container,
@@ -33,10 +39,27 @@ export default function ExtensionsScreen()
 {
   const [ t ] = useTranslation();
   const { data: extensions = [], isLoading, isFetching, refetch: refetchExtensions } = useExtensions();
+  const {
+    data: marketplaceExtensions = [],
+    isLoading: isMarketplaceLoading,
+    isFetching: isMarketplaceFetching,
+    isError: isMarketplaceError,
+    error: marketplaceError,
+    refetch: refetchMarketplace
+  } = useMarketplaceExtensions();
   const { data: activities = [], refetch: refetchActivities } = useExtensionActivities();
+  const installMarketplaceExtensionMutation = useInstallMarketplaceExtensionMutation();
   const { addModal } = useActionModalContext();
   const [ selectedExtension, setSelectedExtension ] = useState<Extension>();
   const [ viewMode, setViewMode ] = useState<"table" | "card">("table");
+
+  useEffect(() =>
+  {
+    if (marketplaceError)
+    {
+      ToastService.failureAndMessage(marketplaceError, t("extensionsScreen.errorLoading"));
+    }
+  }, [ marketplaceError, t ]);
 
   const perExtensionIdActivities = useMemo<Record<string, ApiExtensionActivity>>(() =>
   {
@@ -50,7 +73,21 @@ export default function ExtensionsScreen()
   function refetchAll(): void
   {
     void refetchExtensions();
+    void refetchMarketplace();
     void refetchActivities();
+  }
+
+  async function installMarketplaceExtension(manifest: Manifest): Promise<void>
+  {
+    try
+    {
+      await installMarketplaceExtensionMutation.mutateAsync({ id: manifest.id, state: ExtensionState.Enabled });
+      ToastService.success(t("extensionsScreen.successInstall"));
+    }
+    catch (error)
+    {
+      ToastService.apiCallI18nError(error, "extensionsScreen.errorInstall");
+    }
   }
 
   function openExtensionConfiguration(extension: Extension)
@@ -107,51 +144,95 @@ export default function ExtensionsScreen()
   }
 
   const rows = useMemo(() =>
-    (Array.isArray(extensions) ? extensions : []).map((extension: Extension) => (
-      <Table.Tr
-        key={`extension-${extension.manifest.id}`}
-        onClick={() => setSelectedExtension(extension)}
-        style={{ cursor: "pointer" }}
-      >
-        <Table.Td w={40}>
-          <ExtensionIcon idOrExtension={extension} size="xs"/>
-        </Table.Td>
-        <Table.Td>
-          <Text size="md">{extension.manifest.id}</Text>
-        </Table.Td>
-        <Table.Td>
-          <Text size="md">{extension.manifest.version}</Text>
-        </Table.Td>
-        <Table.Td>
-          <Text size="md">{extension.manifest.name}</Text>
-        </Table.Td>
-        <Table.Td>
-          <Text size="md">{extension.manifest.description}</Text>
-        </Table.Td>
-        <Table.Td>
-          <Flex align="center" gap="xs">
-            <EntityState type="extension" state={extension.state} size="md"/>
-            {perExtensionIdActivities[extension.manifest.id] &&
-              <ExtensionActivity activity={perExtensionIdActivities[extension.manifest.id]}/>}
-          </Flex>
-        </Table.Td>
-        <Table.Td>
-          <ExtensionActions
-            extension={extension}
-            onUpdate={openInstallOrUpdateExtensionModal}
-            onConfiguration={openExtensionConfiguration}
-            onUninstalled={refetchAll}
-          />
-        </Table.Td>
-      </Table.Tr>
-    )), [ extensions, perExtensionIdActivities ]);
+  {
+    const installedExtensionsById = new Map(extensions.map(extension => [ extension.manifest.id, extension ]));
+    const manifestsById = new Map(extensions.map(extension => [ extension.manifest.id, extension.manifest ]));
+    for (const manifest of isMarketplaceError ? [] : marketplaceExtensions)
+    {
+      if (!installedExtensionsById.has(manifest.id))
+      {
+        manifestsById.set(manifest.id, manifest);
+      }
+    }
+
+    const manifests = [ ...manifestsById.values() ].sort((firstManifest, secondManifest) => firstManifest.name.localeCompare(secondManifest.name));
+
+    return manifests.map(manifest =>
+    {
+      const extension = installedExtensionsById.get(manifest.id);
+      const isInstalled = extension !== undefined;
+
+      return (
+        <Table.Tr
+          key={`${isInstalled ? "extension" : "marketplace-extension"}-${manifest.id}`}
+          onClick={extension ? () => setSelectedExtension(extension) : undefined}
+          style={isInstalled ? { cursor: "pointer" } : undefined}
+        >
+          <Table.Td w={40}>
+            <ExtensionIcon idOrExtension={extension ?? manifest.id} size="xs"/>
+          </Table.Td>
+          <Table.Td><Text size="md">{manifest.id}</Text></Table.Td>
+          <Table.Td><Text size="md">{manifest.version}</Text></Table.Td>
+          <Table.Td><Text size="md">{manifest.name}</Text></Table.Td>
+          <Table.Td><Text size="md">{manifest.description}</Text></Table.Td>
+          <Table.Td>
+            {extension ? (
+              <Flex align="center" gap="xs">
+                <EntityState type="extension" state={extension.state} size="md"/>
+                {perExtensionIdActivities[manifest.id] &&
+                  <ExtensionActivity activity={perExtensionIdActivities[manifest.id]}/>}
+              </Flex>
+            ) : (
+              <Badge variant="light" color="blue">
+                {t("extensionsScreen.notInstalled")}
+              </Badge>
+            )}
+          </Table.Td>
+          <Table.Td>
+            {extension ? (
+              <ExtensionActions
+                extension={extension}
+                onUpdate={openInstallOrUpdateExtensionModal}
+                onConfiguration={openExtensionConfiguration}
+                onUninstalled={refetchAll}
+              />
+            ) : (
+              <Flex justify="flex-end">
+                <Flex w={180} justify="flex-start">
+                  <Tooltip label={t("button.install")} position="top" withArrow>
+                    <ActionIcon
+                      size="md"
+                      variant="default"
+                      disabled={installMarketplaceExtensionMutation.isPending}
+                      loading={installMarketplaceExtensionMutation.isPending && installMarketplaceExtensionMutation.variables?.id === manifest.id}
+                      onClick={() => void installMarketplaceExtension(manifest)}
+                    >
+                      <IconCirclePlus size={20} stroke={1}/>
+                    </ActionIcon>
+                  </Tooltip>
+                </Flex>
+              </Flex>
+            )}
+          </Table.Td>
+        </Table.Tr>
+      );
+    });
+  }, [
+    extensions,
+    installMarketplaceExtensionMutation.isPending,
+    installMarketplaceExtensionMutation.variables,
+    isMarketplaceError,
+    marketplaceExtensions,
+    perExtensionIdActivities,
+    t
+  ]);
 
   function renderTable()
   {
     return (
       <StandardTable
         head={[ "", "field.id", "field.version", "field.name", "field.description", "field.state", "" ]}
-        loading={isLoading || isFetching}
+        loading={isLoading || isFetching || isMarketplaceLoading || isMarketplaceFetching}
         emptyResults={
           <EmptyResults
             icon={IconPuzzle}

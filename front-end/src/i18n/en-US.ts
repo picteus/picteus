@@ -481,7 +481,11 @@ export default {
   },
   extensionsScreen: {
     title: "Extensions",
+    notInstalled: "Not installed",
+    successInstall: "The extension has been installed.",
     successUninstall: "The extension has been successfully uninstalled",
+    errorLoading: "The marketplace extensions could not be loaded.",
+    errorInstall: "The extension could not be installed.",
     errorUninstall: "An error occurred while uninstalling the extension",
     confirmDeleteTitle: "Uninstall extension",
     confirmDeleteMessage: "Are you sure you want to uninstall the extension '{{name}}'?",

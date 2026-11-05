@@ -3,6 +3,7 @@ export { default as RepositoriesService } from "./RepositoriesService.ts";
 export { default as StorageService } from "./StorageService.ts";
 export { default as ApplicationService } from "./ApplicationService.ts";
 export { default as ExtensionsService, type EligibleExtensionType } from "./ExtensionsService.ts";
+export { default as MarketplaceService } from "./MarketplaceService.ts";
 export { default as EventService } from "./EventService.ts";
 export { default as NotificationService } from "./NotificationService.ts";
 export { default as FiltersService, type WithValueAndLabel } from "./FiltersService.ts";
