@@ -6,7 +6,9 @@ import {
   BooleanRepresentation,
   collapsibleGroup,
   createUiContainer,
+  flowing,
   identifier,
+  imageRef,
   numberUnbounded,
   string,
   StringRepresentation,
@@ -78,7 +80,6 @@ export class MidjourneyInstructions
     return Number.NaN;
   }
 
-
   static parseMetadata(metadata: Record<string, any>): MidjourneyInstructions | undefined
   {
     const creationTime = metadata[MidjourneyConstants.CreationTime];
@@ -108,6 +109,8 @@ export class MidjourneyInstructions
     const instructions = description.substring(0, description.indexOf(" Job ID:"));
     const space = " ";
     const tokens = instructions.split(space);
+    const referenceAssetPattern = /https:\/\/s\.mj\.run\/[^\s]+/g;
+    const referenceAssets = instructions.match(referenceAssetPattern) ?? undefined;
     let modelVersion: string | undefined;
     let dref: string | undefined;
     let profile: string | undefined;
@@ -206,7 +209,11 @@ export class MidjourneyInstructions
       }
       else
       {
-        promptTokens.push(instruction);
+        const promptToken = instruction.replace(referenceAssetPattern, "");
+        if (promptToken.length > 0)
+        {
+          promptTokens.push(promptToken);
+        }
       }
     }
     const prompt = promptTokens.join(space);
@@ -224,7 +231,7 @@ export class MidjourneyInstructions
         url = `${urlPrefix}${tokens[0]}`;
       }
     }
-    return new MidjourneyInstructions(Date.parse(creationTime), guid, author, source, instructions, prompt, url, modelVersion, dref, profile, quality, repeat, weird, imageWeight, stylize, styleWeight, chaos, tile, aspectRatio, raw, seed);
+    return new MidjourneyInstructions(Date.parse(creationTime), guid, author, source, instructions, prompt, url, modelVersion, dref, profile, quality, repeat, weird, imageWeight, stylize, styleWeight, chaos, tile, aspectRatio, raw, seed, [ ...new Set<string>(referenceAssets) ]);
   }
 
   readonly creationDate: number;
@@ -269,7 +276,9 @@ export class MidjourneyInstructions
 
   readonly seed?: number;
 
-  constructor(creationDate: number, guid: string, author: string, source: string, command: string, prompt: string, url?: string, modelVersion?: string, dref?: string, profile?: string, quality?: number, repeat?: number, weird?: number, imageWeight?: number, stylize?: number, styleWeight?: number, chaos?: number, tile?: boolean, aspectRatio?: number, raw?: boolean, seed?: number)
+  readonly referenceAssets?: string[];
+
+  constructor(creationDate: number, guid: string, author: string, source: string, command: string, prompt: string, url?: string, modelVersion?: string, dref?: string, profile?: string, quality?: number, repeat?: number, weird?: number, imageWeight?: number, stylize?: number, styleWeight?: number, chaos?: number, tile?: boolean, aspectRatio?: number, raw?: boolean, seed?: number, referenceAssets?: string[])
   {
     this.creationDate = creationDate;
     this.guid = guid;
@@ -292,6 +301,7 @@ export class MidjourneyInstructions
     this.aspectRatio = aspectRatio;
     this.raw = raw;
     this.seed = seed;
+    this.referenceAssets = referenceAssets;
   }
 
   toUiContainer(): UiContainerClass
@@ -305,6 +315,18 @@ export class MidjourneyInstructions
     if (this.prompt !== undefined && this.prompt.length > 0)
     {
       primaryRows.push(tableRow([ string("Prompt", firstColumnOptions), string(this.prompt, copiableAndMultilineOptions) ]));
+    }
+
+    if (this.referenceAssets !== undefined && this.referenceAssets.length > 0)
+    {
+      const edge = 75;
+      primaryRows.push(tableRow([
+        string("Reference Assets", firstColumnOptions),
+        flowing(this.referenceAssets.map(referenceAsset => imageRef(referenceAsset, edge, edge, {
+          radius: 5,
+          openable: true
+        })))
+      ]));
     }
 
     // The command is shifted to the second section
@@ -383,7 +405,7 @@ export class MidjourneyInstructions
       secondaryRows.push(tableRow([ string("Repeat", firstColumnOptions), numberUnbounded(this.repeat, copiableOptions) ]));
     }
 
-    if (this.source !== undefined)
+    if (Math.random() > 1 && this.source !== undefined)
     {
       const isUrl = this.source.startsWith("http://") === true || this.source.startsWith("https://") === true;
       secondaryRows.push(tableRow([ string("Digital Source", firstColumnOptions), isUrl === true ? stringUrl(this.source) : string(this.source) ]));
