@@ -1,0 +1,252 @@
+# Picteus
+
+> Extensible local-first framework for indexing and orchestrating AI image assets
+
+This file contains links to documentation sections following the llmstxt.org standard.
+
+## Table of Contents
+
+- [Architecture](https://picteus.github.io/picteus/docs/developer/architecture.md): This document specifies what are the components of the application.
+- [Build](https://picteus.github.io/picteus/docs/developer/build.md): This document explains how to build and run the application from the source code, but also how to package and distribute it.
+- [Continuous integration (CI) & deployment (CD)](https://picteus.github.io/picteus/docs/developer/ci-cd.md): This document provides information about the automated CI / CD pipelines and scripts used for managing, building, testing, packaging, and releasing...
+- [Developer documentation](https://picteus.github.io/picteus/docs/developer.md): The developer documentation explains how Picteus is structured, built, tested, and delivered. Use it when working on the Picteus source code, its b...
+- [Guide](https://picteus.github.io/picteus/docs/extensions/guide.md): This documentation walks you through the development of a Picteus extension.
+- [API](https://picteus.github.io/picteus/docs/extensions/reference/api.md): Picteus extension SDKs embed the entirety of the back-end REST web services API, completely generated from OpenAPI specifications. Extensions can i...
+- [Class](https://picteus.github.io/picteus/docs/extensions/reference/class.md): Every Picteus extension must define an implementation class that inherits from the `PicteusExtension` base class provided by the official SDK. This...
+- [Intents overview](https://picteus.github.io/picteus/docs/extensions/reference/intents.md): Intents are at the core of Picteus extensibility: they let extensions request user interactions through Picteus-managed interfaces, without having ...
+- [Intent models](https://picteus.github.io/picteus/docs/extensions/reference/intents/models-reference.md): Intent models describe the payloads sent from an extension to the back-end. An intent always travels through the back-end first, which checks that ...
+- [Manifest](https://picteus.github.io/picteus/docs/extensions/reference/manifest.md): Every extension must include a `manifest.json` file in its root directory. This manifest acts as the formal contract between the application and th...
+- [Manual](https://picteus.github.io/picteus/docs/extensions/reference/manual.md): The `MANUAL.md` file is an optional Markdown document located at the root of an extension directory. It acts as the user manual and contextual in-a...
+- [Overview](https://picteus.github.io/picteus/docs/extensions/reference/overview.md): This documentation is a reference documentation for developers creating extensions for **Picteus**. Picteus extensions enable you to extend the app...
+- [ViewKit overview](https://picteus.github.io/picteus/docs/extensions/reference/viewkit.md): **ViewKit** is a visual grammar for describing how the UI features of an image should be displayed and laid out in the Picteus front-end applicatio...
+- [ViewKit model reference](https://picteus.github.io/picteus/docs/extensions/reference/viewkit/models-reference.md): Declarative UI specification and visual component kit for representing structured entity data, metrics, layouts, and interactive actions.
+- [Unpacked extensions](https://picteus.github.io/picteus/docs/extensions/unpacked.md): This document explains what an "unpacked" extension is and how to leverage unpacked directories during development.
+- [Extensions documentation](https://picteus.github.io/picteus/docs/extensions.md): Extensions are a central part of Picteus because they allow the application to evolve without requiring changes to its core. An extension can add o...
+- [Container image](https://picteus.github.io/picteus/docs/manual/container.md): Picteus can run inside containerized environments — such as Docker, Podman, or LXC / LXD. The container image bundles the back-end REST server, the...
+- [Databases](https://picteus.github.io/picteus/docs/manual/databases.md): The Picteus back-end embeds two distinct, complementary database systems to manage and persist all application data: a relational SQL database for ...
+- [Embeddings](https://picteus.github.io/picteus/docs/manual/embedding.md): In Picteus, a **vector embedding** is a high-dimensional numerical representation of an image, computed by a machine learning encoder model and sto...
+- [Facets](https://picteus.github.io/picteus/docs/manual/facets.md): In Picteus, **facets** represent the distinct dimensions of data and metadata that qualify an image beyond its raw binary file. Picteus distinguish...
+- [Features](https://picteus.github.io/picteus/docs/manual/features.md): In Picteus, an image **feature** is a structured, typed, and attributed metadata entity attached to an image, generated programmatically by extensi...
+- [Image generation recipes](https://picteus.github.io/picteus/docs/manual/recipe.md): An image generation recipe is a specialized image feature that records the instructions and context used to create an AI-generated image. The share...
+- [Schemas](https://picteus.github.io/picteus/docs/manual/schemas.md): Important Picteus concepts are captured through formal contracts embodied in schemas. These schemas define the shape, required properties, allowed ...
+- [Tags](https://picteus.github.io/picteus/docs/manual/tags.md): In Picteus, an image **tag** is a lightweight, flat, categorical textual label attached to an image and attributed to a specific extension namespac...
+- [Administration](https://picteus.github.io/picteus/docs/manual/webservicesapi/administration.md): Administrative operations are intentionally limited:
+- [API secrets](https://picteus.github.io/picteus/docs/manual/webservicesapi/api-secrets.md): API secrets provide scoped credentials for programmatic access.
+- [Collections](https://picteus.github.io/picteus/docs/manual/webservicesapi/collections.md): Collections store reusable image search definitions and expose the following endpoints:
+- [Extensions](https://picteus.github.io/picteus/docs/manual/webservicesapi/extensions.md): Extension endpoints install, build, compile, configure, run, and remove Picteus extensions:
+- [Image attachments](https://picteus.github.io/picteus/docs/manual/webservicesapi/image-attachments.md): Image attachments associate arbitrary binary files with images.
+- [Images](https://picteus.github.io/picteus/docs/manual/webservicesapi/images.md): The image service provides access to image records, binary representations, metadata, searches, and extension-computed enrichment. All image endpoi...
+- [Web services API](https://picteus.github.io/picteus/docs/manual/webservicesapi.md): The Picteus back-end exposes an embedded HTTP server hosting a comprehensive REST web services API. Every action and capability available in the gr...
+- [Marketplace](https://picteus.github.io/picteus/docs/manual/webservicesapi/marketplace.md): The marketplace endpoints let clients discover, inspect, install, and update prebuilt extensions available to the Picteus installation. They are se...
+- [Miscellaneous](https://picteus.github.io/picteus/docs/manual/webservicesapi/miscellaneous.md): Miscellaneous endpoints provide service health and runtime configuration information:
+- [Migrates the database](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/administration-migrate-database.md): Runs the migration scripts on the database.
+- [Creates an API secret](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/apisecret-create.md): Declares a new API secret with the provided metadata.
+- [Deletes an API secret](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/apisecret-delete.md): Once deleted, it cannot be used anymore.
+- [Gets an API secret](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/apisecret-get.md): Returns the details about an API secret.
+- [Lists all API secrets](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/apisecret-list.md): Returns all available API secrets without their values.
+- [Creates a collection](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/collection-create.md): Declares a new collection.
+- [Deletes collection](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/collection-delete.md): Once deleted, it cannot be used anymore.
+- [Gets a collection](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/collection-get.md): Returns the details about a collection.
+- [Lists all collections](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/collection-list.md): Returns all the collections.
+- [Updates a collection](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/collection-update.md): Enables to modify its name, comment and parameters.
+- [Indicates the extension activities](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-activities.md): Returns all the installed and active extensions activities.
+- [Builds an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-build.md): Compiles and packages an extension from its source code.
+- [Changes the state of an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-change-state.md): Depending on the state, the extension will be stopped or started.
+- [Compiles an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-compile.md): Compiles an unpacked extension.
+- [Generates an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-generate.md): Scaffolds an extension respecting a set of specifications.
+- [Gets the caption instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get-caption-instructions.md): Returns the caption instructions declared for an extension.
+- [Provides the extensions configuration](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get-configuration.md): Returns the details in terms of all installed extensions capabilities, i.e. what they can offer, and the command they offer.
+- [Gets the eligible tags instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get-eligible-tags-instructions.md): Returns the eligible tags instructions declared for an extension.
+- [Gets an extension settings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get-settings.md): Returns the settings of an extension.
+- [Gets an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get.md): Returns the details about an extension.
+- [Installs a Chrome extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-install-chrome-extension.md): It will only work provided the server is hosted by an Electron application.
+- [Installs an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-install.md): Analyzes the extension and installs it.
+- [Lists the AI models declared by all extensions](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-list-ai-models.md): Returns the AI models declared by all installed extensions.
+- [Lists extensions](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-list.md): Returns all installed extensions matching the search criteria.
+- [Resets the settings of an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-reset-settings.md): Reverts the settings of an extension to its default value.
+- [Runs a command exposed by an extension, on images](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-run-image-command.md): Runs the command specified for images, by triggering the relevant event to the extension to images matching search parameters.
+- [Runs a command exposed by an extension, on the process](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-run-process-command.md): Runs the command defined for the process, by triggering the relevant event to the extension.
+- [Sets the AI models declared for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-set-ai-models.md): Overwrites the AI models previously declared for an extension and returns them. An empty array clears them.
+- [Sets the caption instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-set-caption-instructions.md): Overwrites the caption instructions declared for an extension.
+- [Sets the eligible tags instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-set-eligible-tags-instructions.md): Overwrites the eligible tags instructions declared for an extension.
+- [Sets an extension settings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-set-settings.md): Defines the settings of an extension.
+- [Synchronizes the images via an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-synchronize.md): Iterates over all images available in the repositories and asks the extension to operate its work if the image is not indexed by it.
+- [Uninstalls an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-uninstall.md): Stops the extension and uninstalls it.
+- [Updates an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-update.md): Analyzes the extension and updates it.
+- [Gets the closest images to some embeddings attached to an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-closest-embeddings-images.md): Returns the closest images given some embeddings and for a given extension.
+- [Gets the image closest images](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-closest-images.md): Returns the image closest images following its specific embedding computed by an extension.
+- [Computes the format of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-compute-format.md): Analyzes the provided image, computes its format and returns it.
+- [Converts an image into a format](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-convert.md): Converts the provided image into the requested format and returns it.
+- [Deletes an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-delete.md): Deletes the image from the back-end and from the databases.
+- [Downloads an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-download.md): Returns the binary form of an image.
+- [Ensures that features are set on an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-ensure-features.md): Ensures that the provided features are set on an image for a given extension, potentially overwriting existing ones with the same type, format and ...
+- [Ensures that tags are set on an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-ensure-tags.md): Ensures that some tags are set on an image for a given extension.
+- [Gets all the embeddings of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-all-embeddings.md): Returns the computed embeddings of an image for all extensions.
+- [Gets all the features of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-all-features.md): Returns the features of an image for all extensions.
+- [Gets all the recipes of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-all-recipes.md): Returns the recipes of an image for all extensions.
+- [Gets all the tags of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-all-tags.md): Returns the tags of an image for all extensions.
+- [Gets the identifiers of the image collections](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-collection-ids.md): Returns the identifiers of the collections the image belongs to.
+- [Gets the embeddings of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-embeddings.md): Returns the computed embeddings of an image for a given extension.
+- [Gets all the features of an image for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-features.md): Returns the features of an image given an extension.
+- [Gets the metadata of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-metadata.md): Returns all the metadata of an image available in its representation file.
+- [Gets the tags of an image for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-tags.md): Returns the tags of an image given an extension.
+- [Gets an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get.md): Returns the details about an image.
+- [Gets an URL of the image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-media-url.md): Returns the URL of the image, given some given dimensions and format, which may used to display it.
+- [Modifies an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-modify.md): Updates the content of an image via a file.
+- [Runs capabilities on an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-run-capabilities.md): Runs all extensions capabilities against the image.
+- [Retrieves image features](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-search-features.md): Retrieves image features following search parameters.
+- [Retrieves image ids](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-search-ids.md): Retrieves image ids following search parameters.
+- [Retrieves image details](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-search-images.md): Retrieves image details following search parameters.
+- [Retrieves image media URLs](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-search-media-url.md): Retrieves image media URLs following search parameters.
+- [Run capabilities on images](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-search-run-capabilities.md): Runs all extensions capabilities against the images following search parameters.
+- [Retrieves image summaries](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-search-summaries.md): Retrieves image summaries following search parameters.
+- [Retrieves image tags](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-search-tags.md): Retrieves image tags following search parameters.
+- [Sets the embeddings of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-set-embeddings.md): Sets the computed embeddings of an image for a given extension.
+- [Sets the features of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-set-features.md): Stores the provided features of an image for a given extension.
+- [Sets the tags of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-set-tags.md): Sets the tags of an image for a given extension.
+- [Gets the closest images to a text following the embeddings of an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-text-to-images.md): Returns the closest images for a given text which will be turned into embeddings, following the embeddings of a given extension.
+- [Declares an image binary attachment](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/imageattachment-create.md): Stores a binary attachment related to an image for a given extension.
+- [Downloads an image binary attachment](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/imageattachment-download.md): Retrieves the payload of a binary attachment related to an image for a given extension.
+- [Gets a marketplace extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/marketplace-get.md): Returns the manifest, icon and manual of an extension.
+- [Installs an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/marketplace-install.md): Installs an extension and optionally starts it.
+- [Lists extensions](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/marketplace-list.md): Returns the extensions matching the search criteria.
+- [Updates an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/marketplace-update.md): Updates an already installed extension.
+- [Gets the application configuration](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/miscellaneous-get-configuration.md): Returns all the application configuration details.
+- [Pings the service](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/miscellaneous-ping.md): Enables to check that the service is accessible.
+- [Picteus](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/picteus.md): The Picteus API
+- [Indicates the repositories activities](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-activities.md): Returns all the declared repositories activities.
+- [Creates a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-create.md): Declares a new repository.
+- [Deletes a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-delete.md): Deletes a repository along with all the images attached to it.
+- [Ensures a repository exists](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-ensure.md): Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it.
+- [Gets all the embeddings identifiers and names](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-get-embeddings-names.md): Returns all the existing pairs of extension identifier and embedding name, restricted to the extensions with the 'image.embeddings' capability.
+- [Gets all the feature names](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-get-feature-names.md): Returns the feature names of all images extensions.
+- [Gets an image from its URL](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-get-image-by-url.md): Returns the details about an image.
+- [Gets all the tags](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-get-tags.md): Returns the tags of all images extensions.
+- [Gets a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-get.md): Returns a single repository.
+- [Lists repositories](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-list.md): Lists all the declared repositories.
+- [Renames an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-rename-image.md): Renames the file of an image in a repository.
+- [Starts or stop the repositories](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-start-or-stop.md): Starts all the repositories, resumes synchronization if necessary and starts watching them, or stops them.
+- [Creates an image in the repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-store-image.md): Declares an image in the repository and returns it.
+- [Synchronizes a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-synchronize.md): Synchronizes a repository against its back-end.
+- [Updates a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-update.md): Updates the name and comment of a repository.
+- [Starts or stops watching a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-watch.md): Starts or stops listening to the repository back-end images changes.
+- [AiModel](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/aimodel.md): An AI model declared by an extension
+- [ApiSecret](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/apisecret.md): Detailed information about an API secret, including its secret and its scope
+- [ApiSecretSummary](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/apisecretsummary.md): Basic information about an API secret, i.e. the API secret summary
+- [ApiSecretType](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/apisecrettype.md): The secret type
+- [ApplicationConfiguration](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/applicationconfiguration.md): The application configuration
+- [ApplicationMetadata](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/applicationmetadata.md): The application metadata
+- [ApplicationMetadataItem](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/applicationmetadataitem.md): The application metadata item specific to an extension
+- [ApplicationSettings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/applicationsettings.md): The application overall settings
+- [CaptionInstruction](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/captioninstruction.md): An instruction for computing captions with an AI model
+- [Collection](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/collection.md): The specifications for defining a collection of images
+- [CommandEntity](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/commandentity.md): The entity the command applies to
+- [ComputedImageFormat](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/computedimageformat.md): The computed format of an image
+- [ConfigurationCapability](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/configurationcapability.md): The supporting extensions of a capability
+- [ConfigurationExtensionCommand](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/configurationextensioncommand.md): The definition of an extension command
+- [ConstantsRegistry](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/constantsregistry.md): Contains the definition of all the application constants
+- [Dates](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/dates.md): A pair of creation and modification dates
+- [EligibleTagsInstruction](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/eligibletagsinstruction.md): An instruction for computing eligible tags with an AI model
+- [Extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extension.md): The full definition of an extension
+- [ExtensionActivity](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionactivity.md): The activity of an extension
+- [ExtensionActivityState](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionactivitystate.md): The state of the extension
+- [ExtensionAiModel](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionaimodel.md): An AI model declared by an extension, with its owner and declaration date
+- [ExtensionAndManual](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionandmanual.md): The manual and instructions of an extension
+- [ExtensionCategory](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensioncategory.md): The categories the extension belongs to
+- [ExtensionGenerationOptions](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensiongenerationoptions.md): The options for generating an extension
+- [ExtensionIdImageEmbeddingName](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionidimageembeddingname.md): An extension identifier, plus an embedding name
+- [ExtensionImageEmbeddings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionimageembeddings.md): The image embeddings vectors computed by an extension
+- [ExtensionImageFeature](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionimagefeature.md): An image feature, along with its extension identifier
+- [ExtensionImageFeatureName](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionimagefeaturename.md): A feature name set on an image for a given extension
+- [ExtensionImageFeaturesAttribute](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionimagefeaturesattribute.md): Per image extension image features
+- [ExtensionImageTag](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionimagetag.md): A tag set on an image for a given extension
+- [ExtensionImageTagsAttribute](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionimagetagsattribute.md): Per image extension image tags
+- [ExtensionManual](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionmanual.md): The instructions of an extension
+- [ExtensionsConfiguration](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionsconfiguration.md): The extensions' configuration in respect of their capabilities and commands
+- [ExtensionSettings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionsettings.md): The settings of an extension
+- [ExtensionState](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionstate.md): The state of the extension
+- [GenerationRecipe](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/generationrecipe.md): The image generation recipe
+- [GenerationRecipeVersion](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/generationrecipeversion.md): The generation recipe schema version
+- [Image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/image.md): Comprehensive information about an image, i.e. all the information about an image
+- [ImageDimensions](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagedimensions.md): The dimensions of an image
+- [ImageDistance](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagedistance.md): The vectorial distance with a reference image, or given an embedding
+- [ImageEmbedding](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imageembedding.md): A vectorial representation of an image, i.e. an image embedding vector, plus a name for that representation
+- [ImageFeature](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagefeature.md): An image feature
+- [ImageFeatureFormat](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagefeatureformat.md): All the possible formats for an image feature.
+- [ImageFeatureNullValue](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagefeaturenullvalue.md): The value to pass to the image search web services to designate a 'non-null' feature value
+- [ImageFeatureType](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagefeaturetype.md): All the possible types for an image feature.
+- [ImageFormat](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imageformat.md): A filter used by the search which will limit the result entities to those having one of the provided image formats
+- [ImageMediaUrl](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagemediaurl.md): The medial URL of an image
+- [ImageMetadata](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagemetadata.md): The image metadata
+- [ImageResizeRender](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imageresizerender.md)
+- [ImageSummary](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagesummary.md): Basic information about an image, i.e. a summary information about an image
+- [InstructionsPrompt](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/instructionsprompt.md): The instructions of an AI-based generated image
+- [Manifest](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifest.md): The manifest of an extension
+- [ManifestCapability](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestcapability.md): The expression of an extension's capability
+- [ManifestCapabilityCaptionsDetails](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestcapabilitycaptionsdetails.md): A marker to indicate the capability to compute captions
+- [ManifestCapabilityEligibleTagsDetails](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestcapabilityeligibletagsdetails.md): A marker to indicate the capability to compute eligible tags
+- [ManifestCapabilityId](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestcapabilityid.md): The identifier of the extension capability
+- [ManifestEvent](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestevent.md): The events which will trigger the instructions
+- [ManifestExecution](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestexecution.md): The specifications regarding the execution of an extension
+- [ManifestExtensionCommand](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestextensioncommand.md): The definition of an extension's command
+- [ManifestExtensionCommandOn](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestextensioncommandon.md): The information on what entity an extension command applies on
+- [ManifestExtensionCommandSpecification](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestextensioncommandspecification.md): The specifications of an extension's command
+- [ManifestExtensionCommandUi](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestextensioncommandui.md): The User Interface (UI) specifications of an extension command
+- [ManifestImageFeaturesCapability](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestimagefeaturescapability.md): A capability to compute features, optionally captions
+- [ManifestImageTagsCapability](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestimagetagscapability.md): A capability to compute tags, optionally eligible tags
+- [ManifestInstructions](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestinstructions.md): The full specifications of an extension, including the events it handles, its capabilities, its execution and its commands
+- [ManifestInterfaceElement](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestinterfaceelement.md): The definition of an extension's User Interface (UI) fragment
+- [ManifestRuntime](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestruntime.md): The expression of an extension's runtime environment
+- [ManifestRuntimeEnvironment](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestruntimeenvironment.md): The unique identifier of the runtime environment
+- [ManifestThrottlingPolicy](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestthrottlingpolicy.md): The definition on how events should be throttled
+- [ManifestUserInterface](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestuserinterface.md): The definition of all extension's User Interface (UI) fragments
+- [MarketplaceExtension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/marketplaceextension.md): The marketplace extension
+- [MarketplaceExtensionDetails](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/marketplaceextensiondetails.md): The details of a marketplace extension
+- [PromptKind](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/promptkind.md): The kind of prompt
+- [Repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repository.md): A warehouse of images located in the same unit
+- [RepositoryActivity](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repositoryactivity.md): The activity of a repository
+- [RepositoryActivityKind](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repositoryactivitykind.md): The kind of activity of the repository
+- [RepositoryLocationType](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repositorylocationtype.md): The possible types of repositories
+- [RepositoryState](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repositorystate.md): The state of the repository
+- [RunCommandParameters](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/runcommandparameters.md): A pair of command parameters and search parameters
+- [SearchCriteria](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchcriteria.md): Criteria when searching for images
+- [SearchFeatureComparisonOperator](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchfeaturecomparisonoperator.md): The image feature comparison operator
+- [SearchFeatureCondition](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchfeaturecondition.md): A condition expression for filtering image features
+- [SearchFeatureLogicalOperator](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchfeaturelogicaloperator.md): The logical operator
+- [SearchFeatures](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchfeatures.md): The expression for filtering image features
+- [SearchFeaturesResult](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchfeaturesresult.md): The result of an image features search
+- [SearchFilter](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchfilter.md): A search criteria combined to sorting specifications
+- [SearchImageIdResult](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchimageidresult.md): The result of an image ids search
+- [SearchImageResult](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchimageresult.md): The result of an images search
+- [SearchImagesOrigin](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchimagesorigin.md): A images-based search origin, involving that the images should be part of the designed image identifiers
+- [SearchImageSummaryResult](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchimagesummaryresult.md): The result of an image summaries search
+- [SearchKeyword](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchkeyword.md): The textual specifications to match when searching for images, i.e. how an image search should operate regarding the images multiple texts
+- [SearchMediaUrlResult](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchmediaurlresult.md): The result of an image media URLs search
+- [SearchOriginNature](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchoriginnature.md): Indicates how the search result entities should be filtered
+- [SearchParameters](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchparameters.md): Filtering and range parameters when searching for images
+- [SearchProperties](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchproperties.md): Technical properties to match when searching for images, i.e. how an image search should operate regarding the image technical properties
+- [SearchPropertyRange](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchpropertyrange.md): The minimal and maximal value of a technical property when searching for images
+- [SearchRange](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchrange.md): A range of images to return when searching for images, i.e. how to restrict the number of entities following a search
+- [SearchRepositoriesOrigin](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchrepositoriesorigin.md): A repositories-based search origin, involving that the images should belong to the designed repositories
+- [SearchSorting](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchsorting.md): Sorting instructions when searching for images
+- [SearchSortingProperty](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchsortingproperty.md): Indicates how the search result entities should be sorted
+- [SearchTags](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchtags.md): The matching values of tags to match when searching for images, i.e. how an image search should operate regarding the image tags
+- [SearchTagsResult](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchtagsresult.md): The result of an image tags search
+- [Software](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/software.md): The application name
+- [TagsPlaceholder](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/tagsplaceholder.md): The tags placeholder to be used in questions for eligible tags
+- [TextualPrompt](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/textualprompt.md): The textual prompt of an AI-based generated image
+- [UserInterfaceAnchor](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/userinterfaceanchor.md): The location where an UI fragment is anchored
+- [UserInterfaceSidebarIntegration](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/userinterfacesidebarintegration.md): Specifies how a sidebar UI element integrates
+- [UserInterfaceWindowIntegration](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/userinterfacewindowintegration.md): Specifies how a window UI element integrates
+- [Gets all the settings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/settings-get.md): Returns all the application settings.
+- [Sets all the settings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/settings-set.md): This enables to tune the application settings.
+- [Repositories](https://picteus.github.io/picteus/docs/manual/webservicesapi/repositories.md): Repository endpoints manage image storage locations, synchronization, monitoring, and repository-wide facet discovery. The complete schemas and sec...
+- [Settings](https://picteus.github.io/picteus/docs/manual/webservicesapi/settings.md): Global application settings can be read and updated through these endpoints:
+- [User manual](https://picteus.github.io/picteus/docs/manual.md): The user manual explains the conceptual entities that make up Picteus and how to operate and configure the application after installation. Understa...
+- [Files](https://picteus.github.io/picteus/docs/setup/files.md): The application takes great care not to pollute the computer it is installed. To that extent, it isolates and places all the files it downloads, in...
+- [Installation](https://picteus.github.io/picteus/docs/setup/install.md): Let's see how to download and install the application.
+- [Start](https://picteus.github.io/picteus/docs/setup/start.md): Once the application is installed, you can launch it: - Windows: from the "Start Menu" or from `C:\Program Files\Picteus\Picteus.exe` ; - macOS: fr...
+- [Traces](https://picteus.github.io/picteus/docs/setup/traces.md): Picteus provides two complementary forms of traces that report on what the application is doing: **activities**, a user-friendly real-time feed exp...
+- [Troubleshooting](https://picteus.github.io/picteus/docs/setup/troubleshooting.md): When encountering an unexpected behavior, processing failure, or extension issue in Picteus, a structured diagnostic workflow enables you to rapidl...
+- [Setup documentation](https://picteus.github.io/picteus/docs/setup.md): The setup documentation covers the steps required to install Picteus, start it, prepare its file system, inspect traces, and resolve common install...
+- [Vision](https://picteus.github.io/picteus/docs/vision.md): Picteus is best understood as an extensible, local-first platform for managing, transforming, and understanding image assets at scale. It is not me...

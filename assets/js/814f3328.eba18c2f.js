@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_picteus_docs=self.webpackChunk_picteus_docs||[]).push([["1833"],{55513(s){s.exports=JSON.parse('{"title":"Recent posts","items":[]}')}}]);

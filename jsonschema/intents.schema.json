@@ -64,7 +64,7 @@
       "properties": {
         "title": {
           "type": "string",
-          "description": "Short heading intended for a title position in the associated UI. Keep this concise; place explanatory prose in description, subtitle, or details fields.",
+          "description": "Short heading intended for a title position in the associated UI. Keep this concise; place explanatory prose in description, subtitle, or details fields. The title should be pure text.",
           "title": "Optional headline or primary title text."
         }
       },
@@ -76,7 +76,7 @@
       "properties": {
         "subtitle": {
           "type": "string",
-          "description": "Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content.",
+          "description": "Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content. The subtitle should be pure text.",
           "title": "Descriptive subtitle or message text."
         }
       },
@@ -91,7 +91,7 @@
       "properties": {
         "subtitle": {
           "type": "string",
-          "description": "Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content.",
+          "description": "Short supporting message displayed below a title or as the main text of a compact notification. Use details or body fields for longer content. The subtitle should be pure text.",
           "title": "Descriptive subtitle or message text."
         }
       },
@@ -111,14 +111,14 @@
       "properties": {
         "description": {
           "type": "string",
-          "description": "Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field.",
+          "description": "Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field. The description may contain Markdown.",
           "title": "Descriptive subtitle or explanatory message text."
         }
       },
       "required": [
         "description"
       ],
-      "description": "Reusable explanatory text for content that needs a description independent of its heading. The value is plain text and is not interpreted as markup.",
+      "description": "Reusable explanatory text for content that needs a description independent of its heading. The value may contain Markdown.",
       "title": "Base content structure providing a description."
     },
     "WithDetails": {
@@ -126,7 +126,7 @@
       "properties": {
         "details": {
           "type": "string",
-          "description": "Optional longer-form supporting content. Consumers may present it as secondary or expandable text; it remains plain text rather than a markup document.",
+          "description": "Optional longer-form supporting content. Consumers may present it as secondary or expandable text; the details may contain Markdown.",
           "title": "Optional supplementary details or extended body text."
         }
       },
@@ -138,7 +138,7 @@
       "properties": {
         "details": {
           "type": "string",
-          "description": "Optional longer-form supporting content. Consumers may present it as secondary or expandable text; it remains plain text rather than a markup document.",
+          "description": "Optional longer-form supporting content. Consumers may present it as secondary or expandable text; the details may contain Markdown.",
           "title": "Optional supplementary details or extended body text."
         }
       },
@@ -200,7 +200,33 @@
       "description": "Use this representation to transfer a resource as bytes in the intent payload instead of requiring the consumer to resolve a separate URL.",
       "title": "Resource payload containing raw binary data."
     },
-    "TitleDescriptionDetailsIcon": {
+    "WithIcon": {
+      "type": "object",
+      "properties": {
+        "icon": {
+          "$ref": "#/$defs/Resource",
+          "description": "Decorative or identifying image for the content header. Choose a URL for separately hosted assets or inline bytes when the asset must travel with the payload.",
+          "title": "Optional visual icon resource — supplied as a URL or binary bytes."
+        }
+      },
+      "description": "Reusable icon metadata for content headers, dialogs, and notifications. The icon can be supplied as a URL or inline binary bytes.",
+      "title": "Base content structure providing an optional icon resource."
+    },
+    "Resource": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResourceUrl",
+          "title": "Resource located by URL."
+        },
+        {
+          "$ref": "#/$defs/ResourceContent",
+          "title": "Resource provided as raw binary bytes."
+        }
+      ],
+      "description": "Exactly one resource representation is selected by the union variant: a resolvable location or inline binary data. Prefer URL references for reusable hosted assets and byte content when the payload must be self-contained.",
+      "title": "Resource descriptor providing content either via URL or raw binary bytes."
+    },
+    "HeaderContent": {
       "type": "object",
       "properties": {
         "icon": {
@@ -217,20 +243,6 @@
       "description": "Combines a title and explanatory text with an optional icon for headers and notification cards. The icon can be supplied by URL or as bytes through Resource.",
       "title": "Base content structure extending TitleDescriptionDetails with an optional icon resource."
     },
-    "Resource": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/ResourceUrl",
-          "title": "Resource located by URL."
-        },
-        {
-          "$ref": "#/$defs/ResourceContent",
-          "title": "Resource provided as raw binary bytes."
-        }
-      ],
-      "description": "Exactly one resource representation is selected by the union variant: a resolvable location or inline binary data. Prefer URL references for reusable hosted assets and byte content when the payload must be self-contained.",
-      "title": "Resource descriptor providing content either via URL or raw binary bytes."
-    },
     "TitleSubtitleDescriptionDetailsIcon": {
       "type": "object",
       "properties": {
@@ -241,17 +253,17 @@
         },
         "details": {
           "type": "string",
-          "description": "Optional longer-form supporting content. Consumers may present it as secondary or expandable text; it remains plain text rather than a markup document.",
+          "description": "Optional longer-form supporting content. Consumers may present it as secondary or expandable text; the details may contain Markdown.",
           "title": "Optional supplementary details or extended body text."
         },
         "description": {
           "type": "string",
-          "description": "Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field.",
+          "description": "Explanatory text associated with the content. Use this for a short overview; additional or more detailed text can be supplied through a details field. The description may contain Markdown.",
           "title": "Descriptive subtitle or explanatory message text."
         },
         "icon": {
           "$ref": "#/$defs/Resource",
-          "description": "Optional image accompanying the content heading. Its resource can be inline or externally located, as described by Resource.",
+          "description": "Decorative or identifying image for the content header. Choose a URL for separately hosted assets or inline bytes when the asset must travel with the payload.",
           "title": "Optional visual icon resource — supplied as a URL or binary bytes."
         }
       },
@@ -283,11 +295,11 @@
       "properties": {},
       "allOf": [
         {
-          "$ref": "#/$defs/TitleDescriptionDetailsIcon"
+          "$ref": "#/$defs/HeaderContent"
         }
       ],
       "description": "Adds the optional resource icon to standard title and description content for dialogs.",
-      "title": "Dialog content structure extending TitleDescriptionDetailsIcon with an optional icon resource."
+      "title": "Dialog content structure extending HeaderContent with an optional icon resource."
     },
     "DialogIconSizeContent": {
       "type": "object",
@@ -376,76 +388,6 @@
       "description": "The front-end renders the form associated to the schema, collects values, and returns them through the intent interaction flow. Use this for capturing structured input rather than embedding a hand-built form in a custom UI frame.",
       "title": "An intent that displays a JSON Schema-based form in a modal dialog to collect user input."
     },
-    "UISidebarIntegration": {
-      "type": "object",
-      "properties": {
-        "anchor": {
-          "type": "string",
-          "const": "sidebar",
-          "description": "Literal integration discriminator for the sidebar variant. Keep it set to sidebar so consumers can distinguish this payload from other integration modes.",
-          "title": "Layout anchor discriminator specifying sidebar placement."
-        },
-        "isExternal": {
-          "type": "boolean",
-          "description": "When true, asks the front-end to open the sidebar-backed view in a separate window. When false, the view is embedded in the sidebar; this flag does not change the integration anchor.",
-          "title": "Whether the sidebar view should open in an external window rather than docked directly in the sidebar."
-        }
-      },
-      "required": [
-        "anchor",
-        "isExternal"
-      ],
-      "description": "Selects the front-end's sidebar host as the integration point. The external flag allows the view to be presented in an independent window instead of occupying the docked sidebar surface.",
-      "title": "UI integration configuration for mounting an extension view inside the collateral sidebar."
-    },
-    "UIWindowIntegration": {
-      "type": "object",
-      "properties": {
-        "anchor": {
-          "type": "string",
-          "const": "window",
-          "description": "Literal integration discriminator for the independent-window variant.",
-          "title": "Layout anchor discriminator specifying window placement."
-        }
-      },
-      "required": [
-        "anchor"
-      ],
-      "description": "Selects a standalone host window without additional window-specific options in this contract.",
-      "title": "UI integration configuration for rendering an extension view inside an independent window."
-    },
-    "UIModalIntegration": {
-      "type": "object",
-      "properties": {
-        "anchor": {
-          "type": "string",
-          "const": "modal",
-          "description": "Literal integration discriminator for the modal variant.",
-          "title": "Layout anchor discriminator specifying modal placement."
-        }
-      },
-      "required": [
-        "anchor"
-      ],
-      "description": "Selects a front-end-managed modal as the host surface for the embedded extension view.",
-      "title": "UI integration configuration for rendering an extension view inside a modal dialog."
-    },
-    "UITabIntegration": {
-      "type": "object",
-      "properties": {
-        "anchor": {
-          "type": "string",
-          "const": "tab",
-          "description": "Literal integration discriminator for the tab variant.",
-          "title": "Layout anchor discriminator specifying tab placement."
-        }
-      },
-      "required": [
-        "anchor"
-      ],
-      "description": "Selects a dedicated front-end tab as the host surface for the embedded extension view.",
-      "title": "UI integration configuration for rendering an extension view inside a tab."
-    },
     "UrlContent": {
       "type": "object",
       "properties": {
@@ -461,20 +403,149 @@
       "description": "URL-backed frame content is loaded by the front-end. The target must be reachable from that front-end's environment and should use an appropriate secure scheme.",
       "title": "Embedded frame content specified by a web URL."
     },
-    "HtmlContent": {
+    "InlineContent": {
       "type": "object",
       "properties": {
-        "html": {
+        "inline": {
           "type": "string",
-          "description": "HTML source rendered as the frame document. The TypeSpec contract treats it as an opaque string and does not validate markup or grant access to the host application's privileges.",
-          "title": "Raw HTML markup string to render directly inside the embedded frame."
+          "description": "Source rendered as the view document. The TypeSpec contract treats it as an opaque string interpreted as HTML markup or Markdown text depending on the container's nature; callers should not assume access to the host application's privileges.",
+          "title": "Raw inline string — HTML markup or Markdown text — to render directly inside the embedded view."
         }
       },
       "required": [
-        "html"
+        "inline"
       ],
-      "description": "Inline document content supplied as a string. It is rendered by the host frame rather than fetched as a separate page; callers should not assume access to the host application's privileges.",
-      "title": "Embedded frame content specified by raw inline HTML markup."
+      "description": "Inline document content supplied as a string. Depending on the integration nature, it is interpreted as HTML markup or Markdown text rendered by the front-end; callers should not assume access to the host application's privileges.",
+      "title": "Embedded document content specified by a raw inline string — HTML markup or Markdown text."
+    },
+    "UISidebarIntegration": {
+      "type": "object",
+      "properties": {
+        "anchor": {
+          "type": "string",
+          "const": "sidebar",
+          "description": "Literal integration discriminator for the sidebar variant. Keep it set to sidebar so consumers can distinguish this payload from other integration modes.",
+          "title": "Layout anchor discriminator specifying sidebar placement."
+        },
+        "isExternal": {
+          "type": "boolean",
+          "description": "When true, asks the front-end to open the sidebar-backed view in a separate window. When false, the view is embedded in the sidebar; this flag does not change the integration anchor.",
+          "title": "Whether the sidebar view should open in an external window rather than docked directly in the sidebar."
+        },
+        "content": {
+          "$ref": "#/$defs/DocumentContent",
+          "description": "Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline HTML for a self-contained document.",
+          "title": "Web content to render inside the view — either a URL or raw HTML."
+        }
+      },
+      "required": [
+        "anchor",
+        "isExternal",
+        "content"
+      ],
+      "description": "Selects the front-end's sidebar host as the integration point. The external flag allows the view to be presented in an independent window instead of occupying the docked sidebar surface.",
+      "title": "UI integration configuration for mounting an extension view inside the collateral sidebar."
+    },
+    "DocumentContent": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/UrlContent",
+          "title": "Document content loaded from a URL."
+        },
+        {
+          "$ref": "#/$defs/InlineContent",
+          "title": "Document content provided as an inline string — HTML markup or Markdown text."
+        }
+      ],
+      "description": "Selects exactly one source for document contents. Depending on the integration's declared nature, inline content may represent HTML markup or Markdown text. The URL and inline variants are alternative transport forms, not fields to combine in one value.",
+      "title": "Union of supported document content formats — URL or raw inline string."
+    },
+    "UIWindowIntegration": {
+      "type": "object",
+      "properties": {
+        "anchor": {
+          "type": "string",
+          "const": "window",
+          "description": "Literal integration discriminator for the independent-window variant.",
+          "title": "Layout anchor discriminator specifying window placement."
+        },
+        "content": {
+          "$ref": "#/$defs/DocumentContent",
+          "description": "Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline HTML for a self-contained document.",
+          "title": "Web content to render inside the view — either a URL or raw HTML."
+        }
+      },
+      "required": [
+        "anchor",
+        "content"
+      ],
+      "description": "Selects a standalone host window without additional window-specific options in this contract.",
+      "title": "UI integration configuration for rendering an extension view inside an independent window."
+    },
+    "UIModalIntegration": {
+      "type": "object",
+      "properties": {
+        "anchor": {
+          "type": "string",
+          "const": "modal",
+          "description": "Literal integration discriminator for the modal variant.",
+          "title": "Layout anchor discriminator specifying modal placement."
+        },
+        "nature": {
+          "$ref": "#/$defs/DocumentNature",
+          "description": "Format of the document content, specifying whether to render as HTML or Markdown.",
+          "title": "Nature classification of the modal content — HTML or Markdown."
+        },
+        "content": {
+          "$ref": "#/$defs/DocumentContent",
+          "description": "Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline markup/text for a self-contained document.",
+          "title": "Document content to render inside the view — either a URL or raw HTML/Markdown."
+        }
+      },
+      "required": [
+        "anchor",
+        "nature",
+        "content"
+      ],
+      "description": "Selects a front-end-managed modal as the host surface for the embedded extension view.",
+      "title": "UI integration configuration for rendering an extension view inside a modal dialog."
+    },
+    "DocumentNature": {
+      "type": "string",
+      "enum": [
+        "html",
+        "markdown"
+      ],
+      "description": "Format of the document content. Controls how the front-end renders the document.",
+      "title": "Nature classification of document or frame content."
+    },
+    "UITabIntegration": {
+      "type": "object",
+      "properties": {
+        "anchor": {
+          "type": "string",
+          "const": "tab",
+          "description": "Literal integration discriminator for the tab variant.",
+          "title": "Layout anchor discriminator specifying tab placement."
+        },
+        "nature": {
+          "$ref": "#/$defs/DocumentNature",
+          "description": "Format of the document content, specifying whether to render as HTML or Markdown.",
+          "title": "Nature classification of the tab content — HTML or Markdown."
+        },
+        "content": {
+          "$ref": "#/$defs/DocumentContent",
+          "description": "Content source for the embedded view. Supply one supported variant; use a URL for hosted application content or inline markup/text for a self-contained document.",
+          "title": "Document content to render inside the view — either a URL or raw HTML/Markdown."
+        }
+      },
+      "required": [
+        "anchor",
+        "nature",
+        "content"
+      ],
+      "description": "Selects a dedicated front-end tab as the host surface for the embedded extension view.",
+      "title": "UI integration configuration for rendering an extension view inside a tab."
     },
     "Ui": {
       "type": "object",
@@ -486,26 +557,20 @@
         },
         "integration": {
           "$ref": "#/$defs/UIIntegration",
-          "description": "Discriminated integration configuration. The anchor selects a supported host surface, while fields on that specific variant refine its presentation.",
-          "title": "Placement strategy defining where and how the UI is mounted."
+          "description": "Discriminated integration configuration. The anchor selects a supported host surface, while fields on that specific variant refine its presentation and contents.",
+          "title": "Placement strategy defining where and how the UI is mounted, including its content."
         },
-        "frameContent": {
-          "$ref": "#/$defs/FrameContent",
-          "description": "Content source for the embedded frame. Supply one supported variant; use a URL for hosted application content or inline HTML for a self-contained document.",
-          "title": "Web content to render inside the frame — either a URL or raw HTML."
-        },
-        "dialogContent": {
-          "$ref": "#/$defs/DialogIconContent",
+        "headerContent": {
+          "$ref": "#/$defs/HeaderContent",
           "description": "Optional display metadata associated with the embedded view. It does not control the integration anchor or the content rendered within the frame.",
           "title": "Optional header title, description, and icon metadata for the view."
         }
       },
       "required": [
         "id",
-        "integration",
-        "frameContent"
+        "integration"
       ],
-      "description": "The front-end uses id to identify the view, integration to choose its host surface, and frameContent to load its contents. dialogContent supplies optional header metadata where the selected integration supports it.",
+      "description": "The front-end uses id to identify the view, and integration to choose its host surface and contents. headerContent supplies optional header metadata where the selected integration supports it.",
       "title": "Complete specification for embedding a custom extension user interface within the front-end."
     },
     "UIIntegration": {
@@ -530,20 +595,6 @@
       "description": "Discriminated by each integration model's anchor field. Use the matching variant model so the anchor and any surface-specific settings remain consistent.",
       "title": "Union of supported UI integration placement strategies."
     },
-    "FrameContent": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/UrlContent",
-          "title": "Frame content loaded from a URL."
-        },
-        {
-          "$ref": "#/$defs/HtmlContent",
-          "title": "Frame content provided as inline HTML markup."
-        }
-      ],
-      "description": "Selects exactly one source for frame contents. The URL and inline HTML variants are alternative transport forms, not fields to combine in one value.",
-      "title": "Union of supported embedded frame content formats — URL or inline HTML."
-    },
     "UiIntent": {
       "type": "object",
       "properties": {
@@ -561,8 +612,8 @@
           "$ref": "#/$defs/WithContextIntent"
         }
       ],
-      "description": "Requests that the front-end mount the content in the selected integration surface, supplying the frame source and optional header metadata.",
-      "title": "An intent that opens a dedicated UI frame — modal, sidebar, window or tab — rendering a URL or raw inline HTML."
+      "description": "Requests that the front-end mount the content in the selected integration surface, supplying the document source and optional header metadata.",
+      "title": "An intent that opens a dedicated UI view — modal, sidebar, window, or tab — rendering a URL, inline HTML markup, or Markdown document."
     },
     "OpenBrowser": {
       "type": "object",
@@ -599,29 +650,6 @@
       ],
       "title": "An intent that prompts the user for confirmation and opens an external URL in the default web browser."
     },
-    "Frame": {
-      "type": "object",
-      "properties": {
-        "content": {
-          "$ref": "#/$defs/FrameContent",
-          "description": "Source for the embedded content. The selected FrameContent variant determines whether the front-end loads a URL or renders supplied markup.",
-          "title": "Embedded web content to render inside the dialog frame."
-        },
-        "height": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Relative height request, bounded from 0 through 100. A value of 100 requests the full available dialog height; the final rendered dimensions remain controlled by the front-end.",
-          "title": "Frame height expressed as a percentage of available dialog height (0 to 100)."
-        }
-      },
-      "required": [
-        "content",
-        "height"
-      ],
-      "description": "The frame embeds URL- or HTML-based content in a dialog body. Its height is expressed as a percentage of the available dialog height so that the front-end can adapt the frame to the dialog's rendered dimensions.",
-      "title": "Embedded frame configuration rendered within a dialog modal."
-    },
     "DialogButtons": {
       "type": "object",
       "properties": {
@@ -647,13 +675,19 @@
       "properties": {
         "type": {
           "$ref": "#/$defs/DialogType",
-          "description": "Selects the dialog's interaction and visual treatment. Use question when the caller needs a yes/no choice, and error or info for non-question messages.",
-          "title": "Semantic dialog type — error, info, or question."
+          "description": "Selects the dialog's interaction and visual treatment. Use question when the caller needs a yes/no choice, and error, alert, or info for non-question messages.",
+          "title": "Semantic dialog type — error, warning, info, or question."
         },
-        "frame": {
-          "$ref": "#/$defs/Frame",
+        "isClosable": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, allows the user to dismiss the dialog by pressing the escape key or clicking the window close button. Defaults to true.",
+          "title": "Whether the dialog may be dismissed via the escape key or a close button."
+        },
+        "document": {
+          "$ref": "#/$defs/DocumentContent",
           "description": "Optional embedded content displayed within the dialog. Omit it for text-only dialogs; when present, content should be suitable for the dialog's available space.",
-          "title": "Optional embedded HTML or URL frame rendered inside the dialog body."
+          "title": "Optional embedded document rendered inside the dialog body — either a URL or raw HTML."
         },
         "buttons": {
           "$ref": "#/$defs/DialogButtons",
@@ -670,13 +704,14 @@
           "$ref": "#/$defs/DialogIconSizeContent"
         }
       ],
-      "description": "Defines the dialog's semantic type and user-facing content, with optional embedded content and button labels. Use question for a decision that requires an explicit response; other types communicate status or errors.",
-      "title": "Configuration for interactive modal dialogs displaying notices, confirmation questions, or embedded frames."
+      "description": "Defines the dialog's semantic type and user-facing content, with optional embedded content and button labels. Use question for a decision that requires an explicit response; alert, error, and info communicate messages without a question response.",
+      "title": "Configuration for interactive modal dialogs displaying notices, confirmation questions, or embedded documents."
     },
     "DialogType": {
       "type": "string",
       "enum": [
         "error",
+        "warning",
         "info",
         "question"
       ],
@@ -687,8 +722,8 @@
       "properties": {
         "dialog": {
           "$ref": "#/$defs/Dialog",
-          "description": "Required modal content and interaction configuration. Its type, buttons, and optional frame determine what the user sees and which response can be returned.",
-          "title": "Modal dialog configuration including type, title, buttons, and optional frame content."
+          "description": "Required modal content and interaction configuration. Its type, buttons, and optional document determine what the user sees and which response can be returned.",
+          "title": "Modal dialog configuration including type, title, buttons, and optional document content."
         }
       },
       "required": [

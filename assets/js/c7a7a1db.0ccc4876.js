@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_picteus_docs=self.webpackChunk_picteus_docs||[]).push([["4478"],{12367(e){e.exports=JSON.parse('{"metadata":{"permalink":"/picteus/blog","page":1,"postsPerPage":10,"totalPages":1,"totalCount":0,"blogDescription":"Blog","blogTitle":"Blog"}}')}}]);
