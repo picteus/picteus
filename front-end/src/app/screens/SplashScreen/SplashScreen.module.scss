@@ -1,0 +1,476 @@
+@keyframes ambientDriftPrimary
+{
+  0%,
+  100%
+  {
+    transform: translate3d(-4%, -3%, 0) scale(1);
+  }
+  50%
+  {
+    transform: translate3d(4%, 4%, 0) scale(1.08);
+  }
+}
+
+@keyframes ambientDriftSecondary
+{
+  0%,
+  100%
+  {
+    transform: translate3d(4%, 3%, 0) scale(1.04);
+  }
+  50%
+  {
+    transform: translate3d(-5%, -4%, 0) scale(0.96);
+  }
+}
+
+@keyframes quadrantTopRightFocus
+{
+  0%,
+  100%
+  {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  38%
+  {
+    transform: translate(3.5px, -3.5px);
+    opacity: 0.78;
+  }
+  62%
+  {
+    transform: translate(-0.6px, 0.6px);
+    opacity: 1;
+  }
+}
+
+@keyframes quadrantTopLeftFocus
+{
+  0%,
+  100%
+  {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  38%
+  {
+    transform: translate(-3.5px, -3.5px);
+    opacity: 0.78;
+  }
+  62%
+  {
+    transform: translate(0.6px, 0.6px);
+    opacity: 1;
+  }
+}
+
+@keyframes quadrantBottomLeftFocus
+{
+  0%,
+  100%
+  {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  38%
+  {
+    transform: translate(-3.5px, 3.5px);
+    opacity: 0.78;
+  }
+  62%
+  {
+    transform: translate(0.6px, -0.6px);
+    opacity: 1;
+  }
+}
+
+@keyframes quadrantBottomRightFocus
+{
+  0%,
+  100%
+  {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  38%
+  {
+    transform: translate(3.5px, 3.5px);
+    opacity: 0.78;
+  }
+  62%
+  {
+    transform: translate(-0.6px, -0.6px);
+    opacity: 1;
+  }
+}
+
+@keyframes focalCorePulse
+{
+  0%,
+  100%
+  {
+    transform: scale(0.85);
+    opacity: 0.35;
+  }
+  38%
+  {
+    transform: scale(1.35);
+    opacity: 0.9;
+  }
+  62%
+  {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+}
+
+@keyframes logoHaloPulse
+{
+  0%,
+  100%
+  {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  50%
+  {
+    transform: scale(1.06);
+    opacity: 0.85;
+  }
+}
+
+@keyframes shimmerSweep
+{
+  0%
+  {
+    transform: translateX(-100%);
+  }
+  100%
+  {
+    transform: translateX(250%);
+  }
+}
+
+@keyframes statusPulse
+{
+  0%,
+  100%
+  {
+    box-shadow: 0 0 0 0 rgba(34, 139, 230, 0.45);
+  }
+  50%
+  {
+    box-shadow: 0 0 0 5px rgba(34, 139, 230, 0);
+  }
+}
+
+@keyframes logEntryReveal
+{
+  from
+  {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to
+  {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes checkPop
+{
+  0%
+  {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  70%
+  {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100%
+  {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes featureSlideFade
+{
+  from
+  {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to
+  {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes stageEntrance
+{
+  from
+  {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to
+  {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.root
+{
+  overflow-x: hidden;
+  overflow-y: auto;
+  isolation: isolate;
+}
+
+.dotGrid
+{
+  pointer-events: none;
+  z-index: -2;
+  background-image: radial-gradient(
+    light-dark(rgba(15, 23, 42, 0.11), rgba(255, 255, 255, 0.09)) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 72% 68% at 50% 46%, #000 28%, transparent 82%);
+  -webkit-mask-image: radial-gradient(ellipse 72% 68% at 50% 46%, #000 28%, transparent 82%);
+}
+
+.ambientGlowPrimary,
+.ambientGlowSecondary
+{
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(72px);
+}
+
+.ambientGlowPrimary
+{
+  background: radial-gradient(
+    circle,
+    light-dark(rgba(34, 139, 230, 0.13), rgba(34, 139, 230, 0.18)) 0%,
+    light-dark(rgba(121, 80, 242, 0.06), rgba(121, 80, 242, 0.1)) 60%,
+    transparent 100%
+  );
+  animation: ambientDriftPrimary 14s ease-in-out infinite;
+}
+
+.ambientGlowSecondary
+{
+  background: radial-gradient(
+    circle,
+    light-dark(rgba(18, 184, 134, 0.1), rgba(18, 184, 134, 0.13)) 0%,
+    light-dark(rgba(34, 139, 230, 0.05), rgba(34, 139, 230, 0.08)) 60%,
+    transparent 100%
+  );
+  animation: ambientDriftSecondary 17s ease-in-out infinite;
+}
+
+.hubContainer
+{
+  animation: stageEntrance 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.logoFrame
+{
+  box-shadow: 0 10px 30px light-dark(rgba(15, 23, 42, 0.06), rgba(0, 0, 0, 0.36));
+  backdrop-filter: blur(10px);
+
+  &::before
+  {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: 26px;
+    border: 1px solid light-dark(rgba(34, 139, 230, 0.22), rgba(77, 171, 247, 0.24));
+    pointer-events: none;
+    animation: logoHaloPulse 3.2s ease-in-out infinite;
+  }
+}
+
+.logoSvg
+{
+  width: 52px;
+  height: 52px;
+  overflow: visible;
+  color: light-dark(var(--mantine-color-gray-9), var(--mantine-color-gray-0));
+}
+
+.quadrantTopRight
+{
+  animation: quadrantTopRightFocus 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.quadrantTopLeft
+{
+  animation: quadrantTopLeftFocus 3.2s cubic-bezier(0.4, 0, 0.2, 1) 0.08s infinite;
+}
+
+.quadrantBottomLeft
+{
+  animation: quadrantBottomLeftFocus 3.2s cubic-bezier(0.4, 0, 0.2, 1) 0.16s infinite;
+}
+
+.quadrantBottomRight
+{
+  animation: quadrantBottomRightFocus 3.2s cubic-bezier(0.4, 0, 0.2, 1) 0.24s infinite;
+}
+
+.focalCore
+{
+  transform-origin: 38px 38px;
+  fill: var(--mantine-color-blue-5);
+  animation: focalCorePulse 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.terminalCard
+{
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px light-dark(rgba(15, 23, 42, 0.04), rgba(0, 0, 0, 0.28));
+}
+
+.shimmerTrack
+{
+  overflow: hidden;
+}
+
+.shimmerBar
+{
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--mantine-color-blue-5) 50%,
+    transparent 100%
+  );
+  animation: shimmerSweep 2.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.terminalHeader
+{
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+}
+
+.statusDot
+{
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+.logsViewport
+{
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 32%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 32%);
+}
+
+.completedLogLine
+{
+  animation: logEntryReveal 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.checkIcon
+{
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--mantine-color-teal-5);
+  animation: checkPop 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.activeLogLine
+{
+  animation: logEntryReveal 200ms ease-out both;
+}
+
+.featureCard
+{
+  backdrop-filter: blur(10px);
+}
+
+.featureBody
+{
+  animation: featureSlideFade 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dotIndicator
+{
+  transition: width 200ms ease, background-color 200ms ease;
+
+  &:hover
+  {
+    background-color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
+  }
+}
+
+.linkCard
+{
+  backdrop-filter: blur(10px);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+
+  &:hover
+  {
+    transform: translateY(-2px);
+    border-color: light-dark(var(--mantine-color-blue-4), var(--mantine-color-blue-6));
+    background: light-dark(
+      rgba(255, 255, 255, 0.98),
+      rgba(34, 36, 41, 0.92)
+    );
+    box-shadow: 0 8px 20px light-dark(rgba(34, 139, 230, 0.09), rgba(0, 0, 0, 0.35));
+
+    .linkArrow
+    {
+      transform: translate(2px, -2px);
+      color: var(--mantine-color-blue-5);
+    }
+  }
+
+  &:focus-visible
+  {
+    outline: 2px solid var(--mantine-color-blue-5);
+    outline-offset: 2px;
+  }
+}
+
+.linkArrow
+{
+  color: var(--mantine-color-dimmed);
+  transition: transform 180ms ease, color 180ms ease;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce)
+{
+  .ambientGlowPrimary,
+  .ambientGlowSecondary,
+  .logoFrame::before,
+  .quadrantTopRight,
+  .quadrantTopLeft,
+  .quadrantBottomLeft,
+  .quadrantBottomRight,
+  .focalCore,
+  .shimmerBar,
+  .statusDot,
+  .completedLogLine,
+  .checkIcon,
+  .activeLogLine,
+  .featureBody,
+  .hubContainer
+  {
+    animation: none !important;
+  }
+
+  .linkCard,
+  .linkArrow,
+  .dotIndicator
+  {
+    transition: none !important;
+  }
+}

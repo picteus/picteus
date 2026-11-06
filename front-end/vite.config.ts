@@ -1,7 +1,30 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { defineConfig, type Plugin, TerserOptions } from "vite";
 import react from "@vitejs/plugin-react";
 
 import { version } from "./package.json";
+
+
+function resolvePackageMetadata(): { applicationVersion: string; homepage: string }
+{
+  interface RootPackageMetadata
+  {
+    readonly version: string;
+    readonly homepage: string;
+    readonly config: { readonly applicationVersion: string; };
+  }
+
+  const rootPackagePath = path.resolve(import.meta.dirname, "..", "package.json");
+  const rootPackage = JSON.parse(fs.readFileSync(rootPackagePath, "utf8")) as RootPackageMetadata;
+  return {
+    applicationVersion: rootPackage.config.applicationVersion,
+    homepage: rootPackage.homepage
+  };
+}
+
+const { applicationVersion, homepage: packageHomepage } = resolvePackageMetadata();
 
 
 /**
@@ -41,7 +64,9 @@ export default defineConfig(({ mode }) =>
     },
     base: "",
     define: {
-      "import.meta.env.PACKAGE_VERSION": JSON.stringify(version)
+      "import.meta.env.PACKAGE_VERSION": JSON.stringify(version),
+      "import.meta.env.APPLICATION_VERSION": JSON.stringify(applicationVersion),
+      "import.meta.env.PACKAGE_HOMEPAGE": JSON.stringify(packageHomepage)
     },
     css: {
       preprocessorOptions: {

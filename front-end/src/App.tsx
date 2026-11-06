@@ -15,7 +15,7 @@ import { Configuration, DefaultConfig } from "@picteus/ws-client";
 
 import { API_KEY, BASE_PATH } from "utils";
 import { WindowContainer } from "app/layout";
-import { BootstrapScreen } from "app/screens";
+import { SplashScreen } from "app/screens";
 import { EventService, NotificationService, StorageService } from "./app/services";
 import Initializer from "./Initializer.tsx";
 import "i18n/i18n.ts";
@@ -110,8 +110,11 @@ function App()
   return (
     <MantineProvider colorSchemeManager={colorSchemeManager} theme={theme}>
       <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
-        <WindowContainer titleBarContent={<Text size="md" c="dimmed" fw={500}>Picteus</Text>}>
-          {bootstrapping ? (<BootstrapScreen logs={bootstrapLogs}/>) : (<Initializer/>)}
+        <WindowContainer
+          showTitleBar={!bootstrapping}
+          titleBarContent={<Text size="md" c="dimmed" fw={500}>Picteus</Text>}
+        >
+          {bootstrapping ? (<SplashScreen logs={bootstrapLogs}/>) : (<Initializer/>)}
         </WindowContainer>
       </ErrorBoundary>
     </MantineProvider>

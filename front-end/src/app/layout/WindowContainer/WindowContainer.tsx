@@ -9,16 +9,23 @@ export interface WindowContainerPropsType
 {
   readonly children: ReactNode;
   readonly titleBarContent?: ReactNode;
+  readonly showTitleBar: boolean;
 }
 
-export default function WindowContainer({ children, titleBarContent }: WindowContainerPropsType): ReactElement
+export default function WindowContainer({
+  children,
+  titleBarContent,
+  showTitleBar
+}: WindowContainerPropsType): ReactElement
 {
   return (
     <TitleBarProvider>
       <Flex direction="column" w="100vw" h="100vh" style={{ overflow: "hidden" }}>
-        <TitleBar>
-          {titleBarContent}
-        </TitleBar>
+        {showTitleBar && (
+          <TitleBar>
+            {titleBarContent}
+          </TitleBar>
+        )}
         <Box
           flex={1}
           w="100%"

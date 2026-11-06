@@ -3,10 +3,53 @@ export default {
     message: "Something went wrong!!!",
     button: "Try again"
   },
-  bootstrap: {
+  splashscreen: {
     applicationName: "Picteus",
+    tagline: "Local-First Image Intelligence",
     loading: "Loading application…",
-    firstStartNotice: "The first time the application starts, it may take between 2 and 5 minutes to initialize."
+    statusInitializing: "Initializing local runtime",
+    stepsCompleted_one: "{{count}} step completed",
+    stepsCompleted_other: "{{count}} steps completed",
+    firstStartNotice: "The first time the application starts, it may take between 2 and 5 minutes to initialize.",
+    previousTip: "Previous tip",
+    nextTip: "Next tip",
+    features: {
+      spotlight: {
+        badge: "Quick Actions",
+        title: "Jump anywhere with the Universal Action Center",
+        description: "Once loaded, press ⌘K (or Ctrl+K) to navigate screens, search recent assets, toggle themes, or trigger commands."
+      },
+      localFirst: {
+        badge: "Local-First",
+        title: "Structured metadata & vector similarity search",
+        description: "Picteus combines local SQLite persistence with ChromaDB embeddings for instant faceted filtering and visual discovery."
+      },
+      integrations: {
+        badge: "AI Ecosystem",
+        title: "Orchestrate local & cloud creative runtimes",
+        description: "Connect ComfyUI, Automatic1111, Ollama, Claude, Gemini, Replicate, and C2PA content credentials through isolated extensions."
+      },
+      extensions: {
+        badge: "Extensible & MCP",
+        title: "Build custom plugins & connect AI agents",
+        description: "Author Python or TypeScript extensions with the Picteus SDK and expose your image catalog to AI agents via MCP."
+      }
+    },
+    links: {
+      documentation: {
+        title: "Documentation",
+        description: "Guides, manuals & extension SDK"
+      },
+      github: {
+        title: "GitHub",
+        description: "Source code, releases & issues"
+      },
+      discord: {
+        title: "Discord",
+        description: "Join the community & get support",
+        onlineCount: "{{count}} online"
+      }
+    }
   },
   menu: {
     explorer: "Explorer",
