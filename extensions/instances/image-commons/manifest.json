@@ -114,7 +114,10 @@
               "name": "Convert images",
               "description": "Given a format, converts the provided images into the desired format and stores them in the same repository."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/convert.svg"
+          }
         },
         {
           "id": "rateAndComment",
@@ -128,7 +131,10 @@
               "name": "Rate and comment images",
               "description": "Enables to rate and comment the selected images and stores them into the image features."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/rateAndComment.svg"
+          }
         },
         {
           "id": "tag",
@@ -142,7 +148,10 @@
               "name": "Tag images",
               "description": "Enables to set the tags the selected images and stores them into the image tags."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/tag.svg"
+          }
         },
         {
           "id": "analytics",
@@ -185,7 +194,10 @@
               "name": "Compute analytics",
               "description": "Asks to select an images collection and some tags, computes and exposes an analytics breakdown of images by tags."
             }
-          ]
+          ],
+          "ui": {
+            "iconUri": "/ui/icons/analytics.svg"
+          }
         }
       ]
     }
