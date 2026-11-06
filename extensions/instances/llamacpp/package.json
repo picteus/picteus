@@ -1,6 +1,6 @@
 {
   "name": "@picteus/llamacpp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "productName": "llama.cpp",
   "description": "Computes caption and tag features of an image through Vision-Language Models using llama.cpp.",
   "keywords": [

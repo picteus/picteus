@@ -1,6 +1,6 @@
 {
   "name": "@picteus/openai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "productName": "Picteus OpenAI extension",
   "description": "Integrates OpenAI vision models into Picteus.",
   "keywords": [

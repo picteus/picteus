@@ -1,5 +1,5 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json",
   "id": "c2pa",
   "version": "1.7.0",
   "name": "C2PA",

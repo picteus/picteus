@@ -1,7 +1,7 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json",
   "id": "llamacpp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "llama.cpp",
   "description": "Computes image facets through Vision Languages (VL) exposed by llama.cpp.",
   "categories": [
