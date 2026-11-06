@@ -1,6 +1,6 @@
 {
   "name": "@picteus/main",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "productName": "Picteus",
   "description": "Extensible local-first framework for indexing, generating and orchestrating AI image assets.",
   "keywords": [
@@ -31,11 +31,11 @@
     "url": "https://github.com/picteus/Picteus/issues"
   },
   "config": {
-    "applicationVersion": "0.16.0",
-    "backendVersion": "0.16.0",
-    "frontEndVersion": "0.12.0",
-    "apiVersion": "0.24.0",
-    "sdkVersion": "0.20.2",
+    "applicationVersion": "0.17.0",
+    "backendVersion": "0.17.0",
+    "frontEndVersion": "0.13.0",
+    "apiVersion": "0.25.0",
+    "sdkVersion": "0.21.0",
     "dockerImageName": "koppasoft/picteus"
   },
   "scripts": {
