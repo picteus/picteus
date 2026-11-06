@@ -55,7 +55,6 @@ import {
   ExtensionSettings,
   ExtensionState,
   Manifest,
-  ManifestAndManual,
   ManifestCapability,
   ManifestCapabilityCaptionsDetails,
   ManifestCapabilityEligibleTagsDetails,
@@ -75,6 +74,7 @@ import {
   UserInterfaceSidebarIntegration,
   UserInterfaceWindowIntegration
 } from "./extension.dtos";
+import { MarketplaceExtension, MarketplaceExtensionDetails } from "./marketplace.dtos";
 import {
   SearchCriteria,
   SearchFeatureComparisonOperator,
@@ -308,7 +308,6 @@ export {
   integerIdSchema,
   type IntegerIdType,
   Manifest,
-  ManifestAndManual,
   ManifestCapability,
   ManifestCapabilityCaptionsDetails,
   ManifestCapabilityEligibleTagsDetails,
@@ -322,6 +321,8 @@ export {
   ManifestRuntime,
   ManifestRuntimeEnvironment,
   ManifestUserInterface,
+  MarketplaceExtension,
+  MarketplaceExtensionDetails,
   type NumericRange,
   PromptKind,
   Repository,

@@ -1411,7 +1411,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Manifest"
+                    "$ref": "#/components/schemas/MarketplaceExtension"
                   }
                 }
               }
@@ -1426,7 +1426,7 @@
     },
     "/marketplace/{id}/get": {
       "get": {
-        "description": "Returns the manifest and manual of an extension.",
+        "description": "Returns the manifest, icon and manual of an extension.",
         "operationId": "marketplace_get",
         "parameters": [
           {
@@ -1446,11 +1446,11 @@
         ],
         "responses": {
           "200": {
-            "description": "The extension manifest and manual",
+            "description": "The extension manifest, icon and manual",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ManifestAndManual"
+                  "$ref": "#/components/schemas/MarketplaceExtensionDetails"
                 }
               }
             }
@@ -6554,7 +6554,7 @@
           "environment"
         ]
       },
-      "ManifestAndManual": {
+      "MarketplaceExtension": {
         "type": "object",
         "properties": {
           "manifest": {
@@ -6565,8 +6565,35 @@
               }
             ]
           },
+          "icon": {
+            "type": "string",
+            "description": "The base64 data URI of the icon in SVG or PNG",
+            "example": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-52%20-53%20100%20100%22%20stroke-width%3D%222%22%3E%0A%20%3Cg%20fill%3D%22none%22%3E%0A%20%20%3Cellipse%20stroke%3D%22%2366899a%22%20rx%3D%226%22%20ry%3D%2244%22%2F%3E%0A%20%20%3Cellipse%20stroke%3D%22%23e1d85d%22%20rx%3D%226%22%20ry%3D%2244%22%20transform%3D%22rotate(-66)%22%2F%3E%0A%20%20%3Cellipse%20stroke%3D%22%2380a3cf%22%20rx%3D%226%22%20ry%3D%2244%22%20transform%3D%22rotate(66)%22%2F%3E%0A%20%20%3Ccircle%20%20stroke%3D%22%234b541f%22%20r%3D%2244%22%2F%3E%0A%20%3C%2Fg%3E%0A%20%3Cg%20fill%3D%22%2366899a%22%20stroke%3D%22white%22%3E%0A%20%20%3Ccircle%20fill%3D%22%2380a3cf%22%20r%3D%2213%22%2F%3E%0A%20%20%3Ccircle%20cy%3D%22-44%22%20r%3D%229%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22-40%22%20cy%3D%2218%22%20r%3D%229%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2240%22%20cy%3D%2218%22%20r%3D%229%22%2F%3E%0A%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A"
+          }
+        },
+        "description": "The marketplace extension",
+        "required": [
+          "manifest"
+        ]
+      },
+      "MarketplaceExtensionDetails": {
+        "type": "object",
+        "properties": {
+          "manifest": {
+            "description": "The extension manifest",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Manifest"
+              }
+            ]
+          },
+          "icon": {
+            "type": "string",
+            "description": "The base64 data URI of the icon in SVG or PNG",
+            "example": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%22-52%20-53%20100%20100%22%20stroke-width%3D%222%22%3E%0A%20%3Cg%20fill%3D%22none%22%3E%0A%20%20%3Cellipse%20stroke%3D%22%2366899a%22%20rx%3D%226%22%20ry%3D%2244%22%2F%3E%0A%20%20%3Cellipse%20stroke%3D%22%23e1d85d%22%20rx%3D%226%22%20ry%3D%2244%22%20transform%3D%22rotate(-66)%22%2F%3E%0A%20%20%3Cellipse%20stroke%3D%22%2380a3cf%22%20rx%3D%226%22%20ry%3D%2244%22%20transform%3D%22rotate(66)%22%2F%3E%0A%20%20%3Ccircle%20%20stroke%3D%22%234b541f%22%20r%3D%2244%22%2F%3E%0A%20%3C%2Fg%3E%0A%20%3Cg%20fill%3D%22%2366899a%22%20stroke%3D%22white%22%3E%0A%20%20%3Ccircle%20fill%3D%22%2380a3cf%22%20r%3D%2213%22%2F%3E%0A%20%20%3Ccircle%20cy%3D%22-44%22%20r%3D%229%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22-40%22%20cy%3D%2218%22%20r%3D%229%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2240%22%20cy%3D%2218%22%20r%3D%229%22%2F%3E%0A%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A"
+          },
           "manual": {
-            "description": "The extension manual",
+            "description": "The extension manual instructions",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ExtensionManual"
@@ -6574,7 +6601,7 @@
             ]
           }
         },
-        "description": "The manifest and manual of a marketplace extension",
+        "description": "The details of a marketplace extension",
         "required": [
           "manifest"
         ]

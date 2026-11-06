@@ -61,9 +61,6 @@ export enum ManifestEvent
   TextComputeEmbeddings = "text.computeEmbeddings"
 }
 
-/**
- * An extension's manifest command specification.
- */
 @ApiSchema({ description: "The specifications of an extension's command" })
 export class ManifestExtensionCommandSpecification
 {
@@ -167,9 +164,6 @@ export enum CommandEntity
   Image = "Image"
 }
 
-/**
- * An extension manifest expression which indicates on what it applies.
- */
 @ApiSchema({ description: "The information on what entity an extension command applies on" })
 export class ManifestExtensionCommandOn
 {
@@ -243,9 +237,6 @@ export class ManifestExtensionCommandUi
 
 }
 
-/**
- * An extension manifest extension command.
- */
 @ApiSchema({ description: "The definition of an extension's command" })
 export class ManifestExtensionCommand
 {
@@ -348,9 +339,6 @@ export enum ManifestCapabilityId
   TextEmbeddings = "text.embeddings"
 }
 
-/**
- * The expression of an extension's capability.
- */
 @ApiSchema({ description: "The expression of an extension's capability" })
 export class ManifestCapability
 {
@@ -566,9 +554,6 @@ export class ManifestThrottlingPolicy
 
 }
 
-/**
- * The execution associated with an extension instruction.
- */
 @ApiSchema({ description: "The specifications regarding the execution of an extension" })
 export class ManifestExecution
 {
@@ -619,9 +604,6 @@ export class ManifestExecution
 
 }
 
-/**
- * The instructions of an extension depending on events.
- */
 @ApiSchema({ description: "The full specifications of an extension, including the events it handles, its capabilities, its execution and its commands" })
 @ApiExtraModels(ManifestImageFeaturesCapability, ManifestImageTagsCapability)
 export class ManifestInstructions
@@ -752,9 +734,6 @@ export enum ManifestRuntimeEnvironment
   Node = "node"
 }
 
-/**
- * The expression of an extension's runtime environment.
- */
 @ApiSchema({ description: "The expression of an extension's runtime environment" })
 export class ManifestRuntime
 {
@@ -989,9 +968,6 @@ export enum ExtensionCategory
   Other = "other"
 }
 
-/**
- * The basis information about an extension.
- */
 @ApiSchema({ description: "The basis information about an extension" })
 class ExtensionBasis
 {
@@ -1099,9 +1075,6 @@ class ExtensionBasis
 
 }
 
-/**
- * The manifest of an extension.
- */
 @ApiSchema({ description: "The manifest of an extension" })
 export class Manifest extends ExtensionBasis
 {
@@ -1183,9 +1156,6 @@ export class Manifest extends ExtensionBasis
 
 }
 
-/**
- * The options for generating an extension.
- */
 @ApiSchema({ description: "The options for generating an extension" })
 export class ExtensionGenerationOptions extends ExtensionBasis
 {
@@ -1270,9 +1240,6 @@ export enum ExtensionActivityState
   Stopped = "stopped"
 }
 
-/**
- * The activity of an extension.
- */
 @ApiSchema({ description: "The activity of an extension" })
 export class ExtensionActivity
 {
@@ -1355,9 +1322,6 @@ export class ExtensionActivity
  */
 export type ExtensionActivities = ExtensionActivity[];
 
-/**
- * The full definition of an extension.
- */
 @ApiSchema({ description: "The full definition of an extension" })
 export class Extension
 {
@@ -1402,9 +1366,6 @@ export class Extension
 
 }
 
-/**
- * The instructions of an extension.
- */
 @ApiSchema({ description: "The instructions of an extension" })
 export class ExtensionManual
 {
@@ -1434,9 +1395,6 @@ export class ExtensionManual
 
 }
 
-/**
- * The manual and instructions of an extension.
- */
 @ApiSchema({ description: "The manual and instructions of an extension" })
 export class ExtensionAndManual extends Extension
 {
@@ -1461,49 +1419,6 @@ export class ExtensionAndManual extends Extension
 
 }
 
-/**
- * The manifest and manual of an extension which is not installed.
- */
-@ApiSchema({ description: "The manifest and manual of a marketplace extension" })
-export class ManifestAndManual
-{
-
-  constructor(manifest: Manifest, manual?: ExtensionManual)
-  {
-    this.manifest = manifest;
-    this.manual = manual;
-  }
-
-  @ApiProperty(
-    {
-      description: "The extension manifest",
-      type: Manifest,
-      required: true
-    }
-  )
-  @Type(() => Manifest)
-  @IsDefined()
-  @NotEquals(null)
-  @Expose()
-  readonly manifest: Manifest;
-
-  @ApiProperty(
-    {
-      description: "The extension manual",
-      type: ExtensionManual,
-      required: false
-    }
-  )
-  @Type(() => ExtensionManual)
-  @IsOptional()
-  @Expose()
-  readonly manual?: ExtensionManual;
-
-}
-
-/**
- * The settings of an extension.
- */
 @ApiSchema({ description: "The settings of an extension" })
 export class ExtensionSettings
 {
@@ -1774,9 +1689,6 @@ export class EligibleTagsInstruction extends BasisInstruction
 
 }
 
-/**
- * The supporting extensions of a capability.
- */
 @ApiSchema({ description: "The supporting extensions of a capability" })
 export class ConfigurationCapability
 {
@@ -1814,9 +1726,6 @@ export class ConfigurationCapability
 
 }
 
-/**
- * The definition of an extension command.
- */
 @ApiSchema({ description: "The definition of an extension command" })
 export class ConfigurationExtensionCommand
 {
@@ -1859,9 +1768,6 @@ export class ConfigurationExtensionCommand
 
 }
 
-/**
- * The extensions' configuration in respect of their capabilities and commands.
- */
 @ApiSchema({ description: "The extensions' configuration in respect of their capabilities and commands" })
 export class ExtensionsConfiguration
 {
@@ -1902,9 +1808,6 @@ export class ExtensionsConfiguration
 
 }
 
-/**
- * A pair of command parameters and search parameters.
- */
 @ApiSchema({ description: "A pair of command parameters and search parameters" })
 export class RunCommandParameters
 {

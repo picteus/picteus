@@ -1,19 +1,38 @@
 import { useMutation, UseMutationResult, useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query";
-import { Extension, Manifest, MarketplaceApiMarketplaceInstallRequest } from "@picteus/ws-client";
+import {
+  Extension,
+  MarketplaceApiMarketplaceInstallRequest,
+  MarketplaceExtension,
+  MarketplaceExtensionDetails
+} from "@picteus/ws-client";
 
 import { MarketplaceService } from "app/services";
 import { queryKeys } from "app/query";
 
 
-export function useMarketplaceExtensions(): UseQueryResult<Manifest[], Error>
+export function useMarketplaceExtensions(): UseQueryResult<MarketplaceExtension[], Error>
 {
   return useQuery(
     {
       queryKey: queryKeys.marketplace.all,
-      queryFn: (): Promise<Manifest[]> =>
+      queryFn: (): Promise<MarketplaceExtension[]> =>
       {
         return MarketplaceService.list();
       }
+    }
+  );
+}
+
+export function useMarketplaceExtensionDetails(id: string): UseQueryResult<MarketplaceExtensionDetails, Error>
+{
+  return useQuery(
+    {
+      queryKey: [ ...queryKeys.marketplace.all, id ],
+      queryFn: (): Promise<MarketplaceExtensionDetails> =>
+      {
+        return MarketplaceService.get({ id });
+      },
+      enabled: id.length > 0
     }
   );
 }

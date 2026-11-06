@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react";
 import { Box, Group, Image, Tooltip } from "@mantine/core";
 
-import { Extension } from "@picteus/ws-client";
+import { Extension, MarketplaceExtension } from "@picteus/ws-client";
 
 import { IconSizeType } from "types";
 import { Common } from "app/components";
@@ -12,7 +12,7 @@ import { ExtensionsService } from "app/services";
 export interface ExtensionIconPropsType
 {
 
-  readonly idOrExtension: string | Extension;
+  readonly idOrExtension: string | Extension | MarketplaceExtension;
   readonly size: IconSizeType;
   readonly url?: string;
   readonly withTooltip?: boolean;
@@ -20,9 +20,19 @@ export interface ExtensionIconPropsType
 
 }
 
+function computeExtensionId(idOrExtension: string | Extension | MarketplaceExtension): string
+{
+  if (typeof idOrExtension === "string")
+  {
+    return idOrExtension;
+  }
+  return idOrExtension.manifest.id;
+}
+
 function ExtensionIconVisual({ idOrExtension, size, url }: ExtensionIconPropsType): ReactElement
 {
-  const imageSrc = url ?? ExtensionsService.getIconURL(typeof idOrExtension === "string" ? idOrExtension : idOrExtension.manifest.id);
+  const iconFromMarketplace = typeof idOrExtension === "object" && "icon" in idOrExtension ? idOrExtension.icon : undefined;
+  const imageSrc = url ?? iconFromMarketplace ?? ExtensionsService.getIconURL(computeExtensionId(idOrExtension));
   const edge = Common.IconFromStringToNumberSize(size);
   return <Image src={imageSrc} w={edge} h={edge} fit="contain" radius="sm"/>;
 }
@@ -36,9 +46,10 @@ function ExtensionIconWithContent({
 }: ExtensionIconPropsType): ReactElement
 {
   const { data: extensions = [] } = useExtensions();
-  const extensionId = typeof idOrExtension === "string" ? idOrExtension : idOrExtension.manifest.id;
-  const extension = typeof idOrExtension === "string" ? extensions.find((candidate) => candidate.manifest.id === extensionId) : idOrExtension;
-  const extensionName = extension?.manifest.name ?? extensionId;
+  const extensionId = computeExtensionId(idOrExtension);
+  const extensionName = typeof idOrExtension === "object" && "manifest" in idOrExtension
+    ? idOrExtension.manifest.name
+    : (extensions.find((candidate) => candidate.manifest.id === extensionId)?.manifest.name ?? extensionId);
 
   const visualElement = <ExtensionIconVisual idOrExtension={idOrExtension} size={size} url={url}/>;
 

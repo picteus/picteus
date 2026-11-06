@@ -146,20 +146,26 @@ export default function ExtensionsScreen()
   const rows = useMemo(() =>
   {
     const installedExtensionsById = new Map(extensions.map(extension => [ extension.manifest.id, extension ]));
-    const manifestsById = new Map(extensions.map(extension => [ extension.manifest.id, extension.manifest ]));
-    for (const manifest of isMarketplaceError ? [] : marketplaceExtensions)
+    const marketplaceExtensionsById = new Map((isMarketplaceError ? [] : marketplaceExtensions).map(marketplaceExtension => [ marketplaceExtension.manifest.id, marketplaceExtension ]));
+    const allManifestsById = new Map<string, Manifest>();
+    for (const extension of extensions)
     {
-      if (!installedExtensionsById.has(manifest.id))
+      allManifestsById.set(extension.manifest.id, extension.manifest);
+    }
+    for (const marketplaceExtension of isMarketplaceError ? [] : marketplaceExtensions)
+    {
+      if (!allManifestsById.has(marketplaceExtension.manifest.id))
       {
-        manifestsById.set(manifest.id, manifest);
+        allManifestsById.set(marketplaceExtension.manifest.id, marketplaceExtension.manifest);
       }
     }
 
-    const manifests = [ ...manifestsById.values() ].sort((firstManifest, secondManifest) => firstManifest.name.localeCompare(secondManifest.name));
+    const manifests = [ ...allManifestsById.values() ].sort((firstManifest, secondManifest) => firstManifest.name.localeCompare(secondManifest.name));
 
     return manifests.map(manifest =>
     {
       const extension = installedExtensionsById.get(manifest.id);
+      const marketplaceExtension = marketplaceExtensionsById.get(manifest.id);
       const isInstalled = extension !== undefined;
 
       return (
@@ -169,7 +175,7 @@ export default function ExtensionsScreen()
           style={isInstalled ? { cursor: "pointer" } : undefined}
         >
           <Table.Td w={40}>
-            <ExtensionIcon idOrExtension={extension ?? manifest.id} size="xs"/>
+            <ExtensionIcon idOrExtension={extension ?? marketplaceExtension ?? manifest.id} size="xs"/>
           </Table.Td>
           <Table.Td><Text size="md">{manifest.id}</Text></Table.Td>
           <Table.Td><Text size="md">{manifest.version}</Text></Table.Td>

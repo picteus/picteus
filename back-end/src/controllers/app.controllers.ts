@@ -98,9 +98,9 @@ import {
   imageUrlSchema,
   integerIdSchema,
   IntegerIdType,
-  Manifest,
-  ManifestAndManual,
   ManifestCapabilityId,
+  MarketplaceExtension,
+  MarketplaceExtensionDetails,
   NumericRange,
   Repository,
   RepositoryActivities,
@@ -1231,7 +1231,7 @@ export class MarketplaceController
     {
       status: OK,
       description: "The extensions matching the search criteria",
-      type: Manifest,
+      type: MarketplaceExtension,
       isArray: true
     }
   )
@@ -1240,7 +1240,7 @@ export class MarketplaceController
       items: String,
       optional: true
     })) categories?: ExtensionCategory | ExtensionCategory[]
-  ): Promise<Manifest[]>
+  ): Promise<MarketplaceExtension[]>
   {
     return await this.marketplaceService.list(search, categories === undefined ? undefined : Array.isArray(categories) ? categories : [ categories ]);
   }
@@ -1249,19 +1249,19 @@ export class MarketplaceController
   @ApiOperation(
     {
       summary: "Gets a marketplace extension",
-      description: "Returns the manifest and manual of an extension."
+      description: "Returns the manifest, icon and manual of an extension."
     }
   )
   @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
   @ApiResponse(
     {
       status: OK,
-      description: "The extension manifest and manual",
-      type: ManifestAndManual
+      description: "The extension manifest, icon and manual",
+      type: MarketplaceExtensionDetails
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
-  async get(@Param("id") id: ExtensionIdType): Promise<ManifestAndManual>
+  async get(@Param("id") id: ExtensionIdType): Promise<MarketplaceExtensionDetails>
   {
     return await this.marketplaceService.get(id);
   }

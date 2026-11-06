@@ -46,6 +46,7 @@ describe("Marketplace", () =>
     version: string;
     category: ExtensionCategory;
     manual?: string;
+    icon?: { name: string; buffer: Buffer };
   }): Manifest
   {
     const builder = new ExtensionBuilder(base, false, undefined, options.id, options.name, options.version, [ options.category ]);
@@ -56,6 +57,10 @@ describe("Marketplace", () =>
     {
       zip.addFile(ExtensionRegistry.manualFileName, Buffer.from(options.manual, "utf8"));
     }
+    if (options.icon !== undefined)
+    {
+      zip.addFile(options.icon.name, options.icon.buffer);
+    }
     fs.mkdirSync(paths.builtInExtensionsDirectoryPath, { recursive: true });
     fs.writeFileSync(path.join(paths.builtInExtensionsDirectoryPath, `${options.id}.zip`), zip.toBuffer());
     return manifest;
@@ -65,12 +70,14 @@ describe("Marketplace", () =>
   {
     const searchToken1 = "Generation";
     const searchToken2 = `Marketplace test manual`;
+    const iconContent = `<svg><circle r="10"/></svg>`;
     const generationManifest = writeMarketplaceExtension(base, {
       id: "marketplace-generation",
       name: `${searchToken1} extension`,
       version: "1.0.0",
       category: ExtensionCategory.Generation,
-      manual: `# ${searchToken1} extension\n${searchToken2}.`
+      manual: `# ${searchToken1} extension\n${searchToken2}.`,
+      icon: { name: "icon.svg", buffer: Buffer.from(iconContent, "utf8") }
     });
     const utilityManifest = writeMarketplaceExtension(base, {
       id: "marketplace-utility",
@@ -80,18 +87,22 @@ describe("Marketplace", () =>
     });
     await base.restart();
 
-    const manifests = await base.getMarketplaceController().list(undefined, undefined);
-    expect(manifests.map(manifest => manifest.id)).toEqual([ generationManifest.id, utilityManifest.id ]);
-    expect((await base.getMarketplaceController().list(searchToken1.toUpperCase(), undefined)).map(manifest => manifest.id)).toEqual([ generationManifest.id ]);
-    expect((await base.getMarketplaceController().list(undefined, [ ExtensionCategory.Other ])).map(manifest => manifest.id)).toEqual([ utilityManifest.id ]);
-    expect((await base.getMarketplaceController().list(undefined, [ ExtensionCategory.Generation, ExtensionCategory.Other ])).map(manifest => manifest.id)).toEqual([ generationManifest.id, utilityManifest.id ]);
+    const marketplaceExtensions = await base.getMarketplaceController().list(undefined, undefined);
+    expect(marketplaceExtensions.map(extension => extension.manifest.id)).toEqual([ generationManifest.id, utilityManifest.id ]);
+    expect(marketplaceExtensions[0].icon).toEqual(`data:image/svg+xml;base64,${Buffer.from(iconContent, "utf8").toString("base64")}`);
+    expect(marketplaceExtensions[1].icon?.startsWith("data:image/svg+xml;base64,")).toBe(true);
+    expect((await base.getMarketplaceController().list(searchToken1.toUpperCase(), undefined)).map(extension => extension.manifest.id)).toEqual([ generationManifest.id ]);
+    expect((await base.getMarketplaceController().list(undefined, [ ExtensionCategory.Other ])).map(extension => extension.manifest.id)).toEqual([ utilityManifest.id ]);
+    expect((await base.getMarketplaceController().list(undefined, [ ExtensionCategory.Generation, ExtensionCategory.Other ])).map(extension => extension.manifest.id)).toEqual([ generationManifest.id, utilityManifest.id ]);
 
     const details = await base.getMarketplaceController().get(generationManifest.id);
-    expect(details.manifest).toEqual(generationManifest);
+    expect(details.manifest.id).toEqual(generationManifest.id);
+    expect(details.manifest.name).toEqual(generationManifest.name);
+    expect(details.icon).toEqual(`data:image/svg+xml;base64,${Buffer.from(iconContent, "utf8").toString("base64")}`);
     expect(details.manual?.instructions).toContain(searchToken2);
 
     await base.getMarketplaceController().install(generationManifest.id, ExtensionState.Paused);
-    expect((await base.getMarketplaceController().list(undefined, undefined)).map(manifest => manifest.id)).toEqual([ generationManifest.id, utilityManifest.id ]);
+    expect((await base.getMarketplaceController().list(undefined, undefined)).map(extension => extension.manifest.id)).toEqual([ generationManifest.id, utilityManifest.id ]);
   });
 
   test("install", async () =>
@@ -106,8 +117,8 @@ describe("Marketplace", () =>
 
     const extension = await base.getMarketplaceController().install(manifest.id, ExtensionState.Paused);
     expect(extension.state).toEqual(ExtensionState.Paused);
-    expect((await base.getMarketplaceController().list(undefined, undefined)).map(manifest => manifest.id)).toEqual([ manifest.id ]);
-    expect((await base.getMarketplaceController().get(manifest.id)).manifest).toEqual(manifest);
+    expect((await base.getMarketplaceController().list(undefined, undefined)).map(extension => extension.manifest.id)).toEqual([ manifest.id ]);
+    expect((await base.getMarketplaceController().get(manifest.id)).manifest.id).toEqual(manifest.id);
     await expect(base.getMarketplaceController().install(manifest.id, ExtensionState.Enabled)).rejects.toThrow(new ServiceError("An extension with the same id 'id' is already installed", BAD_REQUEST, base.badParameterCode));
   });
 

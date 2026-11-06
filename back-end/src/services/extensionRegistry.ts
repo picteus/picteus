@@ -3,7 +3,6 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { unzip } from "node:zlib";
 import { Readable } from "node:stream";
-import { text } from "node:stream/consumers";
 
 import { fdir } from "fdir";
 import tar from "tar-fs";
@@ -366,6 +365,12 @@ export class ExtensionArchiveReader
 
   async extractFile(fileName: string): Promise<string | undefined>
   {
+    const buffer = await this.extractFileBuffer(fileName);
+    return buffer === undefined ? undefined : buffer.toString("utf8");
+  }
+
+  async extractFileBuffer(fileName: string): Promise<Buffer | undefined>
+  {
     const isExpectedEntry = (file: string) =>
     {
       if (file === fileName)
@@ -381,7 +386,7 @@ export class ExtensionArchiveReader
         return undefined;
       }
     };
-    let fileRawString: string | undefined;
+    let fileBuffer: Buffer | undefined;
     if (this.type === "tar.gz")
     {
       // This is not a zip content but might be a compressed tarball
@@ -399,7 +404,12 @@ export class ExtensionArchiveReader
           if (possibleDirectoryPrefix !== undefined)
           {
             this.directoryPrefix = possibleDirectoryPrefix;
-            fileRawString = await text(entry);
+            const chunks: Buffer[] = [];
+            for await (const chunk of entry)
+            {
+              chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            }
+            fileBuffer = Buffer.concat(chunks);
             this.extractFunction = async (directoryPath: string) =>
             {
               return new Promise<void>((resolve, reject) =>
@@ -433,8 +443,7 @@ export class ExtensionArchiveReader
           if (possibleDirectoryPrefix !== undefined)
           {
             this.directoryPrefix = possibleDirectoryPrefix;
-            const data: Buffer = zipEntry.getData();
-            fileRawString = data.toString();
+            fileBuffer = zipEntry.getData();
             this.extractFunction = async (directoryPath: string) =>
             {
               zip.extractAllTo(directoryPath, true);
@@ -444,7 +453,7 @@ export class ExtensionArchiveReader
         }
       }
     }
-    return fileRawString;
+    return fileBuffer;
   }
 
   async extractManifest(): Promise<Manifest>
