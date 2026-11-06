@@ -2,3 +2,4 @@
 .docusaurus
 .cache-loader
 static/feed
+docs/manual/webservicesapi/reference

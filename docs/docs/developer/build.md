@@ -62,6 +62,7 @@ You may access to the SwaggerUI relative the OpenAPI specifications, captured th
   - and then run the `npm run prisma:seed` script to update the `settings` table value startup database file `database.db` with its settings set to the latest version of the migration.
 
 - When changing the OpenAPI contract, run the `openApi:generateOpenApi` script to regenerate the `openapi.json` file.
+  - Run `npm --prefix docs run gen-api-docs` from the repository root to regenerate the Docusaurus API reference from that file.
   - Think of updating the `config.apiVersion` property.
   - The `npm run openApi:typeScript:generateAndPackage` script generates the TypeScript OpenAPI client library into the directory `../generated/openapi/typescript-fetch`.
   - The `npm run openApi:python:generateAndPackage` script generates the Python OpenAPI client library into the directory `../generated/openapi/python`.

@@ -25,25 +25,6 @@ Extension endpoints install, build, compile, configure, run, and remove Picteus 
 
 See the [extensions documentation](../../extensions/guide.md) for extension authoring concepts. Endpoint contracts are defined in [`back-end/openapi.json`](https://github.com/picteus/picteus/blob/main/back-end/openapi.json).
 
-## Extension marketplace
-
-The `/marketplace` resource exposes prebuilt extensions available to the Picteus installation. It is separate from the
-installed-extension endpoints above.
-
-| Method | Endpoint | Purpose |
-|:---|:---|:---|
-| `GET` | `/marketplace/list` | Lists available extensions; optionally filter with `search` and `category` query parameters. |
-| `GET` | `/marketplace/{id}/get` | Gets an extension's manifest, icon, and manual. |
-| `POST` | `/marketplace/{id}/install?state={state}` | Installs an available extension, with the requested state. |
-| `PUT` | `/marketplace/{id}/update?state={state}` | Updates an installed extension from the marketplace; `state` is optional. |
-
-Listing and retrieving marketplace items require the `extension:read` scope. Installing and updating require
-`extension:write`. An update is accepted only when the marketplace version is newer than the installed version.
-
-The application also lists available prebuilt extensions in its Extensions screen, where an uninstalled item can be
-installed directly. For interactive API details, including the accepted query values and response schemas, see the
-[OpenAPI specification](https://github.com/picteus/picteus/blob/main/back-end/openapi.json).
-
 ## Extension synchronization
 
 `PUT /extension/{id}/synchronize` asks the enabled extension to process library images for its declared image

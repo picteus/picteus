@@ -32,7 +32,8 @@ const config: Config =
           {
             docs:
               {
-                sidebarPath: "./sidebars.ts"
+                sidebarPath: "./sidebars.ts",
+                docItemComponent: "@theme/ApiItem"
               },
             blog:
               {
@@ -55,6 +56,7 @@ const config: Config =
       ],
     plugins:
       [
+        "docusaurus-plugin-sass",
         [
           "docusaurus-plugin-llms",
           {
@@ -62,10 +64,32 @@ const config: Config =
             excludeImports: true,
             rewriteImageUrls: true
           }
+        ],
+        [
+          "docusaurus-plugin-openapi-docs",
+          {
+            id: "openapi",
+            docsPluginId: "classic",
+            config:
+              {
+                picteus:
+                  {
+                    specPath: "../back-end/openapi.json",
+                    outputDir: "docs/manual/webservicesapi/reference",
+                    hideSendButton: true,
+                    showSchemas: true,
+                    sidebarOptions:
+                      {
+                        groupPathsBy: "tag"
+                      }
+                  }
+              }
+          }
         ]
       ],
     themes:
       [
+        "docusaurus-theme-openapi-docs",
         [
           require.resolve("@easyops-cn/docusaurus-search-local"),
           {

@@ -26,6 +26,8 @@ Because the API conforms to standard HTTP and JSON conventions, any third-party 
 
 The back-end web services are formally specified using the OpenAPI 3.1 standard.
 
+Browse the generated [API reference](./webservicesapi/reference/picteus) for endpoint details, request and response schemas, and examples.
+
 ### Specification file location
 
 The OpenAPI JSON specification file is maintained in the Picteus source repository:
@@ -54,7 +56,7 @@ The API routes are organized into functional resource controllers:
 | `/collection` | `CollectionController` | User-defined collection management. See [Collections](collections.md). |
 | `/imageAttachment` | `ImageAttachmentController` | Binary attachment creation and download. See [Image attachments](image-attachments.md). |
 | `/extension` | `ExtensionController` | Extension installation, lifecycle, configuration, and command execution. See [Extensions](extensions.md). |
-| `/marketplace` | `MarketplaceController` | Lists, inspects, installs, and updates prebuilt extensions. See [Extensions](extensions.md#extension-marketplace). |
+| `/marketplace` | `MarketplaceController` | Lists, inspects, installs, and updates prebuilt extensions. See [Marketplace](marketplace.md). |
 | `/apiSecret` | `ApiSecretController` | Scoped API secret management. See [API secrets](api-secrets.md). |
 | `/settings` | `SettingsController` | Global application settings. See [Settings](settings.md). |
 | `/administration` | `AdministrationController` | Administrative database operations. See [Administration](administration.md). |

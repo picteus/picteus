@@ -1,5 +1,7 @@
 import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
+import apiReferenceSidebar from "./docs/manual/webservicesapi/reference/sidebar";
+
 
 const sidebars: SidebarsConfig =
   {
@@ -28,11 +30,21 @@ const sidebars: SidebarsConfig =
           "manual/webservicesapi/repositories",
           "manual/webservicesapi/collections",
           "manual/webservicesapi/extensions",
+          "manual/webservicesapi/marketplace",
           "manual/webservicesapi/image-attachments",
           "manual/webservicesapi/api-secrets",
           "manual/webservicesapi/settings",
           "manual/webservicesapi/administration",
-          "manual/webservicesapi/miscellaneous"
+          "manual/webservicesapi/miscellaneous",
+          {
+            type: "category",
+            label: "API reference",
+            link: {
+              type: "doc",
+              id: "manual/webservicesapi/reference/picteus"
+            },
+            items: apiReferenceSidebar.slice(1)
+          }
         ]
       },
       "manual/databases",
