@@ -1188,7 +1188,7 @@ const marketplaceResourceName: string = "marketplace";
  */
 @ApiTags(marketplaceResourceName)
 @Controller(computeControllerPath(marketplaceResourceName))
-@CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite, ApiScope.ExtensionRead ]))
+@CheckPolicies(withOneOfPolicies([ ApiScope.MarketplaceWrite, ApiScope.MarketplaceRead ]))
 @ApiConsumes(types.json)
 @ApiProduces(types.json)
 export class MarketplaceController
@@ -1235,7 +1235,7 @@ export class MarketplaceController
       isArray: true
     }
   )
-  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.MarketplaceRead ]))
   async list(@Query("search") search?: string, @Query("category", new ParseArrayPipe({
       items: String,
       optional: true
@@ -1260,7 +1260,7 @@ export class MarketplaceController
       type: MarketplaceExtensionDetails
     }
   )
-  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionRead ]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.MarketplaceRead ]))
   async get(@Param("id") id: ExtensionIdType): Promise<MarketplaceExtensionDetails>
   {
     return await this.marketplaceService.get(id);
@@ -1288,7 +1288,7 @@ export class MarketplaceController
       type: Extension
     }
   )
-  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.MarketplaceWrite ]))
   async install(@Param("id") id: ExtensionIdType, @Query("state") state: ExtensionState): Promise<Extension>
   {
     return await this.marketplaceService.install(id, state);
@@ -1316,7 +1316,7 @@ export class MarketplaceController
       type: Extension
     }
   )
-  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionWrite ]))
+  @CheckPolicies(withOneOfPolicies([ ApiScope.MarketplaceWrite ]))
   async update(@Param("id") id: ExtensionIdType, @Query("state") state: ExtensionState | undefined): Promise<Extension>
   {
     return await this.marketplaceService.update(id, state);

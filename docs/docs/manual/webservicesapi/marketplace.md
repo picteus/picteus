@@ -24,4 +24,4 @@ To install an extension, call `POST /marketplace/{id}/install` with the required
 
 To update an extension, call `PUT /marketplace/{id}/update`. The extension must already be installed, and the marketplace version must be newer than the installed version. The optional `state` parameter sets the extension's state after the update; if omitted, the current state is preserved.
 
-Listing and inspecting marketplace items require the `extension:read` API scope. Installing and updating require `extension:write`.
+Listing and inspecting marketplace items require the `marketplace:read` API scope. Installing and updating require `marketplace:write`.
