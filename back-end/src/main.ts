@@ -18,7 +18,6 @@ import {
 import { SwaggerCustomOptions } from "@nestjs/swagger/dist/interfaces";
 import { WinstonModule } from "nest-winston";
 import { headers, methods, types } from "http-constants";
-import { HttpLlm, IHttpLlmApplication, OpenApi, OpenApiV3, OpenApiV3_1, SwaggerV2 } from "@samchon/openapi";
 
 import {
   addFileTransport,
@@ -35,7 +34,7 @@ import { product } from "./constants";
 import { paths } from "./paths";
 import { environmentVariableChecker, StringLengths, StringNature } from "./services/utils/parametersChecker";
 import { ConstantsRegistry, ExtensionCategory, ManifestRuntimeEnvironment } from "./dtos/app.dtos";
-import { deepCopy, stringify } from "./utils";
+import { stringify } from "./utils";
 import { networkSecurity } from "./services/utils/networkSecurity";
 import { apiKeyHeaderName, AuthenticationGuard } from "./app.guards";
 import { computeMainModule, fineTuneApplication } from "./app.module";
@@ -57,19 +56,6 @@ class InternalServer
     const directoryPath = path.dirname(filePath);
     fs.mkdirSync(directoryPath, { recursive: true });
     fs.writeFileSync(filePath, stringify(document));
-  }
-
-  async writeFunctionCalling(filePath: string): Promise<void>
-  {
-    logger.info(`Generating the function calling into file '${filePath}'`);
-    const openApiDocument = await this.createOpenApiDocument();
-    const originalOpenApiDocument: SwaggerV2.IDocument | OpenApiV3.IDocument | OpenApiV3_1.IDocument = deepCopy(openApiDocument);
-    const document: OpenApi.IDocument = OpenApi.convert(originalOpenApiDocument);
-    const application: IHttpLlmApplication = HttpLlm.application({ document });
-
-    const directoryPath = path.dirname(filePath);
-    fs.mkdirSync(directoryPath, { recursive: true });
-    fs.writeFileSync(filePath, stringify(application.functions));
   }
 
   async start(portNumber: number, useThrottling: boolean, secretsDirectoryPath: string | undefined, enableSwaggerUi: boolean): Promise<void>
@@ -506,17 +492,6 @@ async function run(): Promise<void>
         const server = new InternalServer();
         const filePath: string = actionParameters.options["filePath"] as string;
         return server.writeOpenApi(filePath);
-      });
-
-      // noinspection RequiredAttributes
-      program.command("generateFunctionCalling", "Generates the function calling specifications file").option("--filePath <path>", "Indicates the path of the JSON file to produce", {
-        validator: CaporalValidator.STRING,
-        default: undefined
-      }).action((actionParameters: ActionParameters): Promise<void> =>
-      {
-        const server = new InternalServer();
-        const filePath: string = actionParameters.options["filePath"] as string;
-        return server.writeFunctionCalling(filePath);
       });
 
       // noinspection RequiredAttributes
