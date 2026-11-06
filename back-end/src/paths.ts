@@ -90,7 +90,7 @@ export class Paths
 
   private constructor()
   {
-    networkSecurity.update(this._host, this._allowedOrigins, this._webServicesPortNumber);
+    this.notifyNetworkConfigurationChange();
   }
 
   describeEnvironmentVariables(): { name: string, description: string }[]
@@ -281,7 +281,7 @@ export class Paths
 
   private notifyNetworkConfigurationChange(): void
   {
-    networkSecurity.update(this.host, this.allowedOrigins, this.webServerPortNumber);
+    networkSecurity.update(this._host, this._allowedOrigins, this._webServerPortNumber, this._webServicesPortNumber);
   }
 
   set host(value: string)

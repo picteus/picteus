@@ -62,28 +62,28 @@ interface BackendServerApplicationCoordinator
 
 }
 
-class LocalhostComputer
+class NetworkComputer
 {
 
-  private static _instance: LocalhostComputer = new LocalhostComputer();
+  private static _instance: NetworkComputer = new NetworkComputer();
 
-  static get instance(): LocalhostComputer
+  static get instance(): NetworkComputer
   {
-    return LocalhostComputer._instance;
+    return NetworkComputer._instance;
   }
 
   public readonly localhost = "localhost";
 
   public readonly loopBackIpAddress = "127.0.0.1";
 
-  computeHostAndPort(portNumber: number): string
+  computeHostAndPort(host: string | undefined, portNumber: number): string
   {
-    return `${this.localhost}:${portNumber}`;
+    return `${host === undefined ? defaultCliOptions.host : host}:${portNumber}`;
   }
 
-  computeUrl(portNumber: number, useSsl: boolean, relativePath?: string): string
+  computeUrl(host: string | undefined, portNumber: number, useSsl: boolean, relativePath?: string): string
   {
-    return `http${useSsl === true ? "s" : ""}://${this.computeHostAndPort(portNumber)}${relativePath === undefined ? "" : `/${relativePath}`}`;
+    return `http${useSsl === true ? "s" : ""}://${this.computeHostAndPort(host, portNumber)}${relativePath === undefined ? "" : `/${relativePath}`}`;
   }
 
 }
@@ -112,7 +112,7 @@ class BackendServer
     const filePath = path.join(backendSourceDirectoryPath, "main.js");
     logger.info(`Starting the process back-end from the main file '${filePath}'${execArgv === undefined ? "" : (` with the --execArgv parameter set to '${execArgv}'`)}`);
 
-    this._swaggerUiUrl = LocalhostComputer.instance.computeUrl(portNumber, useSsl === undefined ? false : useSsl, "swaggerui");
+    this._swaggerUiUrl = NetworkComputer.instance.computeUrl(host, portNumber, useSsl === undefined ? false : useSsl, "swaggerui");
     const environmentVariables: Record<string, string> =
       {
         NODE_ENV: environment,
@@ -498,7 +498,7 @@ export class ApplicationWrapper
 
       try
       {
-        this.mainWindow = this.createMainWindow(useSsl, apiServerPortNumber, webServerPortNumber);
+        this.mainWindow = this.createMainWindow(useSsl, host, apiServerPortNumber, webServerPortNumber);
         await this.listenToChromeExtensionInstructions();
         new TrayGenerator(this.mainWindow);
         await this.handleAutoUpdate(this.mainWindow);
@@ -525,7 +525,7 @@ export class ApplicationWrapper
         if (useBootstrap === true)
         {
           // We load the web application in bootstrap mode
-          await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, webApplicationUrl);
+          await this.loadWebApplication(this.mainWindow, host, useSsl, apiServerPortNumber, socketCoordinates, webApplicationUrl);
         }
         else
         {
@@ -548,7 +548,7 @@ export class ApplicationWrapper
             };
           const apiKey = await BackendServer.instance.start(backendDirectoryPath, path.join(backendDirectoryPath, "database.db"), apiServerPortNumber, useSsl, host, allowedOrigins, useThrottling, requiresApiKeys, unpackedExtensionsDirectoryPath, coordinator, execArg);
 
-          await this.loadWebApplication(this.mainWindow, useSsl, apiServerPortNumber, socketCoordinates, webApplicationUrl, apiKey);
+          await this.loadWebApplication(this.mainWindow, host, useSsl, apiServerPortNumber, socketCoordinates, webApplicationUrl, apiKey);
         }
 
         // We restore the windows previous states
@@ -722,7 +722,7 @@ export class ApplicationWrapper
     };
   }
 
-  private createMainWindow(useSsl: boolean, apiServerPortNumber: number, webServerPortNumber: number): Electron.BrowserWindow
+  private createMainWindow(useSsl: boolean, host: string | undefined, apiServerPortNumber: number, webServerPortNumber: number): Electron.BrowserWindow
   {
     const store: Store = new Store("windows");
     const commonOptions: Electron.BrowserWindowConstructorOptions =
@@ -755,11 +755,11 @@ export class ApplicationWrapper
     if (applyContentSecurityPolicy === true)
     {
       // We augment the "Content-Security-Policy", which addresses the Electron Security Warning
-      const apiServerHostAndPortNumber = LocalhostComputer.instance.computeHostAndPort(apiServerPortNumber);
+      const apiServerHostAndPortNumber = NetworkComputer.instance.computeHostAndPort(host, apiServerPortNumber);
       const httpPrefix = `http${useSsl === true ? "s" : ""}://`;
       const wsPrefix = `ws${useSsl === true ? "s" : ""}://`;
       const apiServerBaseUrl = `${httpPrefix}${apiServerHostAndPortNumber}`;
-      const webServerHostAndPortNumber = LocalhostComputer.instance.computeHostAndPort(webServerPortNumber);
+      const webServerHostAndPortNumber = NetworkComputer.instance.computeHostAndPort(host, webServerPortNumber);
       const webServerBaseUrl = `${httpPrefix}${webServerHostAndPortNumber}`;
       const styleSrcSha256s = [ "sha256-AkGc/9SiOd74zk72UnCdLs+k10sM4iy2uKmgoXkaHe0=" ];
       const contentSecurityPolicy = `default-src 'none'; connect-src ${apiServerBaseUrl} ${wsPrefix}${apiServerHostAndPortNumber} ${wsPrefix}${webServerHostAndPortNumber}; script-src 'self' 'unsafe-eval'; script-src-elem 'self'; frame-src ${apiServerBaseUrl}; style-src 'self' ${styleSrcSha256s.map(string => `'${string}'`).join(" ")}; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.googleapis.com https://fonts.gstatic.com; img-src ${apiServerHostAndPortNumber};`;
@@ -786,7 +786,7 @@ export class ApplicationWrapper
 
       const issuer = certificate.issuer;
       let result: number;
-      if (errorCode !== -202 || verificationResult !== "net::ERR_CERT_AUTHORITY_INVALID" || (hostname !== LocalhostComputer.instance.localhost && hostname !== LocalhostComputer.instance.loopBackIpAddress) || (issuer.commonName !== LocalhostComputer.instance.localhost && issuer.commonName !== LocalhostComputer.instance.loopBackIpAddress) || issuer.organizations.length !== 1 || issuer.organizations[0] !== "KoppaSoft")
+      if (errorCode !== -202 || verificationResult !== "net::ERR_CERT_AUTHORITY_INVALID" || (hostname !== NetworkComputer.instance.localhost && hostname !== NetworkComputer.instance.loopBackIpAddress) || (issuer.commonName !== NetworkComputer.instance.localhost && issuer.commonName !== NetworkComputer.instance.loopBackIpAddress) || issuer.organizations.length !== 1 || issuer.organizations[0] !== "KoppaSoft")
       {
         result = errorCode;
       }
@@ -1011,10 +1011,10 @@ export class ApplicationWrapper
     Menu.setApplicationMenu(menu);
   }
 
-  private async loadWebApplication(window: BrowserWindow, useSsl: boolean, processServerPortNumber: number, socketCoordinates: SocketCoordinates, webApplicationUrl?: string, apiKey?: string): Promise<URL>
+  private async loadWebApplication(window: BrowserWindow, host: string | undefined, useSsl: boolean, processServerPortNumber: number, socketCoordinates: SocketCoordinates, webApplicationUrl?: string, apiKey?: string): Promise<URL>
   {
     // We load the web application
-    const webServicesBaseUrl = LocalhostComputer.instance.computeUrl(processServerPortNumber, useSsl);
+    const webServicesBaseUrl = NetworkComputer.instance.computeUrl(host, processServerPortNumber, useSsl);
     const rawUrl = webApplicationUrl ?? `${socketCoordinates.webCoordinates.baseUrl}/index.html`;
     const url = new URL(rawUrl);
     url.searchParams.set("webServicesBaseUrl", webServicesBaseUrl);

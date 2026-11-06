@@ -20,6 +20,8 @@ export class NetworkSecurity
 
   private webServerPortNumber?: number;
 
+  private webServicesPortNumber?: number;
+
   private _computedAllowedOrigins?: string[];
 
   private _computedAllowedHosts?: Set<string>;
@@ -28,11 +30,12 @@ export class NetworkSecurity
   {
   }
 
-  update(host: string, allowedOrigins: string[], webServerPortNumber: number): void
+  update(host: string, allowedOrigins: string[], webServerPortNumber: number, webServicesPortNumber: number): void
   {
     this.host = host;
     this.allowedOrigins = allowedOrigins;
     this.webServerPortNumber = webServerPortNumber;
+    this.webServicesPortNumber = webServicesPortNumber;
     this._computedAllowedOrigins = undefined;
     this._computedAllowedHosts = undefined;
   }
@@ -57,24 +60,32 @@ export class NetworkSecurity
 
   computeAllowedOriginsAndHosts(): void
   {
-    const portNumber = this.webServerPortNumber;
     const origins: Set<string> = new Set<string>();
     const hosts: Set<string> = new Set<string>([ this.localhost, this.loopbackIpAddress, "::1" ]);
-    const http = "http";
-    const https = "https";
-    origins.add(`${http}://${this.localhost}:${portNumber}`);
-    origins.add(`${https}://${this.localhost}:${portNumber}`);
-    origins.add(`${http}://${this.loopbackIpAddress}:${portNumber}`);
-    origins.add(`${https}://${this.loopbackIpAddress}:${portNumber}`);
-    if (this.host !== this.loopbackIpAddress && this.host !== this.allInterfacesIpAddress)
+    const addForPortNumber = (portNumber: number): void =>
     {
-      origins.add(`${http}://${this.host}:${portNumber}`);
-      origins.add(`${https}://${this.host}:${portNumber}`);
-      if (this.host !== undefined)
+      const http = "http";
+      const https = "https";
+      origins.add(`${http}://${this.localhost}:${portNumber}`);
+      origins.add(`${https}://${this.localhost}:${portNumber}`);
+      origins.add(`${http}://${this.loopbackIpAddress}:${portNumber}`);
+      origins.add(`${https}://${this.loopbackIpAddress}:${portNumber}`);
+      if (this.host !== undefined && this.host !== this.loopbackIpAddress && this.host !== this.allInterfacesIpAddress)
       {
+        origins.add(`${http}://${this.host}:${portNumber}`);
+        origins.add(`${https}://${this.host}:${portNumber}`);
         hosts.add(this.host.toLowerCase());
       }
+    };
+    if (this.webServerPortNumber !== undefined)
+    {
+      addForPortNumber(this.webServerPortNumber);
     }
+    if (this.webServicesPortNumber !== undefined)
+    {
+      addForPortNumber(this.webServicesPortNumber);
+    }
+
     if (this.allowedOrigins !== undefined)
     {
       for (const origin of this.allowedOrigins)
