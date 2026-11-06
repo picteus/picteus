@@ -797,9 +797,23 @@ export class ApplicationWrapper
       callback(result);
     });
 
-    // We allow any window to be opened
-    webContents.setWindowOpenHandler((_details: Electron.HandlerDetails) =>
+    // We open external HTTP(S) links in the OS default browser, while allowing local / internal windows
+    webContents.setWindowOpenHandler((details: Electron.HandlerDetails) =>
     {
+      try
+      {
+        const parsedUrl = new URL(details.url);
+        const isLocalHost = parsedUrl.hostname === NetworkComputer.instance.localhost || parsedUrl.hostname === NetworkComputer.instance.loopBackIpAddress || (host !== undefined && parsedUrl.hostname === host);
+        if ((parsedUrl.protocol === "https:" || parsedUrl.protocol === "http:") && isLocalHost === false)
+        {
+          void shell.openExternal(details.url);
+          return { action: "deny" };
+        }
+      }
+      catch
+      {
+        // Fall through to default window behavior for non-standard URLs
+      }
       return {
         action: "allow",
         createWindow: (options: Electron.BrowserWindowConstructorOptions): Electron.WebContents =>
