@@ -53,7 +53,15 @@ import {
 import { ServiceError } from "../src/app.exceptions";
 import { AuthenticationGuard } from "../src/app.guards";
 import { ExtensionRegistry, ImageAttachmentService } from "../src/services/app.service";
-import { ActionState, EventEntity, ExtensionEventAction, NotifierService } from "../src/services/notifierService";
+import {
+  ActionState,
+  EventAction,
+  EventEntity,
+  ExtensionEventAction,
+  ImageEventAction,
+  NotifierService,
+  RepositoryEventAction
+} from "../src/services/notifierService";
 import { ExtensionGenerator } from "../src/services/extensionGenerator";
 
 
@@ -2479,14 +2487,16 @@ describe("Extensions", () =>
   {
     const ioClient = io(paths.webServicesBaseUrl, { autoConnect: true, transports: [ "websocket" ] });
 
-    type TypeOfMessage =
+    type EventMessage =
       {
         channel: string,
         contextId: string,
         milliseconds: number,
         value: object
       };
-    const listener = jest.fn((_message: TypeOfMessage): Promise<void> =>
+    type ExpectedEvent = { channel: string; value: Record<string, any> };
+
+    const listener = jest.fn((_message: EventMessage): Promise<void> =>
     {
       return Promise.resolve();
     });
@@ -2501,8 +2511,6 @@ describe("Extensions", () =>
     const apiKey = AuthenticationGuard.generateApiKey();
     AuthenticationGuard.masterApiKey = apiKey;
     ioClient.emit(connectionChannelName, { apiKey, isOpen: true });
-    const initialEventsCount = 16;
-
     try
     {
       const builder = new ExtensionBuilder(base);
@@ -2520,7 +2528,8 @@ describe("Extensions", () =>
         expect(fs.existsSync(path.join(builder.extensionDirectoryPath, "image.created"))).toEqual(true);
       });
 
-      const summary = (await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items[0];
+      const summaries = (await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).items;
+      const summary = summaries[0];
 
       const now = new Date();
       const filePath = summary.url.substring(fileWithProtocol.length);
@@ -2531,29 +2540,95 @@ describe("Extensions", () =>
         expect(fs.existsSync(path.join(builder.extensionDirectoryPath, "image.updated"))).toEqual(true);
       });
 
-      const expectEvent = (callTimes: number, channel: string, value: Record<string, any>) =>
+      const buildEvent = (eventEntity: EventEntity, action: EventAction, state?: ActionState): string =>
       {
-        expect(listener).toHaveBeenCalledTimes(callTimes);
-        for (let index = 0; index < listener.mock.calls.length; index++)
-        {
-          const call = listener.mock.calls[index];
-          const mockArguments: TypeOfMessage = call[0];
-          if (mockArguments.channel === channel)
-          {
-            expect(mockArguments.value).toEqual(value);
-            expect(mockArguments.contextId).toBeDefined();
-            return;
-          }
-        }
-        throw new Error(`The '${channel}' event did not occur`);
+        return NotifierService.buildEvent(eventEntity, action, state, true);
       };
 
+      const createExtensionEvent = (action: ExtensionEventAction, state?: ActionState): ExpectedEvent =>
       {
-        expectEvent(initialEventsCount, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.Log, {
-          id: manifest.id,
-          message: { message: "message", level: "info" }
+        return {
+          channel: buildEvent(EventEntity.Extension, action, state),
+          value: { id: manifest.id }
+        };
+      };
+
+      const createRepositoryEvent = (action: RepositoryEventAction, state?: ActionState): ExpectedEvent =>
+      {
+        return {
+          channel: buildEvent(EventEntity.Repository, action, state),
+          value: { id: repository.id }
+        };
+      };
+
+      const logEvent: ExpectedEvent =
+        {
+          channel: buildEvent(EventEntity.Extension, ExtensionEventAction.Log),
+          value: {
+            id: manifest.id,
+            message: { message: "message", level: "info" }
+          }
+        };
+      const createLogEvents = (count: number): ExpectedEvent[] => Array(count).fill(logEvent);
+
+      let checkedEventsCount = 0;
+
+      const expectEvents = async (expectedEvents: ExpectedEvent[]): Promise<void> =>
+      {
+        const expectedTotalCount = checkedEventsCount + expectedEvents.length;
+        await waitForExpect(() =>
+        {
+          expect(listener).toHaveBeenCalledTimes(expectedTotalCount);
         });
-      }
+        const actualEvents = listener.mock.calls.slice(checkedEventsCount, expectedTotalCount).map((call) => call[0] as EventMessage);
+        const sortEvents = <T extends ExpectedEvent>(events: T[]): T[] =>
+        {
+          return [ ...events ].sort((event1, event2) =>
+          {
+            const channelComparison = event1.channel.localeCompare(event2.channel);
+            if (channelComparison !== 0)
+            {
+              return channelComparison;
+            }
+            return stringify(event1.value).localeCompare(stringify(event2.value));
+          });
+        };
+
+        const sortedActual = sortEvents(actualEvents);
+        const sortedExpected = sortEvents(expectedEvents);
+
+        expect(sortedActual).toHaveLength(sortedExpected.length);
+        for (let index = 0; index < sortedExpected.length; index++)
+        {
+          const actual = sortedActual[index];
+          const expected = sortedExpected[index];
+          expect(actual.channel).toEqual(expected.channel);
+          expect(actual.value).toEqual(expected.value);
+          expect(actual.contextId).toBeDefined();
+          expect(actual.milliseconds).toBeDefined();
+        }
+        checkedEventsCount = expectedTotalCount;
+      };
+
+      await expectEvents([
+        createExtensionEvent(ExtensionEventAction.Installed),
+        createExtensionEvent(ExtensionEventAction.State, ActionState.Started),
+        createExtensionEvent(ExtensionEventAction.Process, ActionState.Started),
+        createExtensionEvent(ExtensionEventAction.Connection, ActionState.Started),
+        createRepositoryEvent(RepositoryEventAction.Created),
+        createRepositoryEvent(RepositoryEventAction.Synchronize, ActionState.Started),
+        createRepositoryEvent(RepositoryEventAction.Synchronize, ActionState.Stopped),
+        createRepositoryEvent(RepositoryEventAction.Watch, ActionState.Started),
+        ...summaries.map((item) => ({
+          channel: buildEvent(EventEntity.Image, ImageEventAction.Created),
+          value: { id: item.id }
+        })),
+        {
+          channel: buildEvent(EventEntity.Image, ImageEventAction.Updated),
+          value: { id: summary.id }
+        },
+        ...createLogEvents(5)
+      ]);
 
       fs.rmSync(filePath);
       await waitForExpect(() =>
@@ -2562,16 +2637,23 @@ describe("Extensions", () =>
       });
 
       await base.getExtensionController().changeState(manifest.id, ExtensionState.Paused);
-      await waitForExpect(() =>
-      {
-        expectEvent(initialEventsCount + 4, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.State + NotifierService.delimiter + ActionState.Stopped, { id: manifest.id });
-      });
+      await expectEvents([
+        {
+          channel: buildEvent(EventEntity.Image, ImageEventAction.Deleted),
+          value: { id: summary.id }
+        },
+        ...createLogEvents(1),
+        createExtensionEvent(ExtensionEventAction.Connection, ActionState.Stopped),
+        createExtensionEvent(ExtensionEventAction.State, ActionState.Stopped)
+      ]);
 
       await base.getExtensionController().changeState(manifest.id, ExtensionState.Enabled);
-      await waitForExpect(() =>
-      {
-        expectEvent(initialEventsCount + 4 + 6, EventEntity.Extension + NotifierService.delimiter + ExtensionEventAction.State + NotifierService.delimiter + ActionState.Started, { id: manifest.id });
-      });
+      await expectEvents([
+        createExtensionEvent(ExtensionEventAction.Process, ActionState.Started),
+        createExtensionEvent(ExtensionEventAction.State, ActionState.Started),
+        createExtensionEvent(ExtensionEventAction.Connection, ActionState.Started),
+        ...createLogEvents(4)
+      ]);
     }
     finally
     {
