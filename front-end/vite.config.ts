@@ -104,6 +104,10 @@ export default defineConfig(({ mode }) =>
                 test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/
               },
               {
+                name: "ws-client",
+                test: /[\\/]node_modules[\\/]@picteus[\\/]ws-client[\\/]/
+              },
+              {
                 name: "vendor",
                 test: /[\\/]node_modules[\\/]/
               }
