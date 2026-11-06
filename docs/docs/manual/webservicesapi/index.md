@@ -15,6 +15,7 @@ The web services API provides a rich programmatic interface for interacting with
 - **Repository & collection management**: creating, scanning, and organizing storage repositories and user-defined collections ;
 - **Attachment management**: linking and retrieving arbitrary binary files associated with images ;
 - **Extension lifecycle & execution**: serving as the foundational backbone for Picteus extensions to run commands, subscribe to events, and manage persistent settings ;
+- **Extension marketplace**: listing, inspecting, installing, and updating prebuilt extensions available to the Picteus installation ;
 - **Security & access control**: issuing and managing scoped API keys with fine-grained permissions.
 
 Because the API conforms to standard HTTP and JSON conventions, any third-party software written in any programming language — such as Python, JavaScript/TypeScript, Go, Rust, Java, C#, or shell scripts — can seamlessly interact with the application.
@@ -53,6 +54,7 @@ The API routes are organized into functional resource controllers:
 | `/collection` | `CollectionController` | User-defined collection management. See [Collections](collections.md). |
 | `/imageAttachment` | `ImageAttachmentController` | Binary attachment creation and download. See [Image attachments](image-attachments.md). |
 | `/extension` | `ExtensionController` | Extension installation, lifecycle, configuration, and command execution. See [Extensions](extensions.md). |
+| `/marketplace` | `MarketplaceController` | Lists, inspects, installs, and updates prebuilt extensions. See [Extensions](extensions.md#extension-marketplace). |
 | `/apiSecret` | `ApiSecretController` | Scoped API secret management. See [API secrets](api-secrets.md). |
 | `/settings` | `SettingsController` | Global application settings. See [Settings](settings.md). |
 | `/administration` | `AdministrationController` | Administrative database operations. See [Administration](administration.md). |

@@ -57,3 +57,20 @@ Start-Process "C:\Program Files\Picteus\Picteus.exe" -Wait
 ```
 
 Starting the application from the command line enables you to access its log output directly in the terminal. For a full description of the traces available in Picteus — including the front-end activities feed, the log stream configuration, and log file locations — refer to the [Traces](traces.md) documentation.
+
+### Network access
+
+By default, the application servers bind to `127.0.0.1` and are available only from the same machine. The `--host`
+option changes the network interface address used by the internal servers. For example, `--host 0.0.0.0` binds to
+all network interfaces, allowing other devices that can reach the machine to connect.
+
+When the web interface is accessed from an additional origin, use `--allowedOrigins` to add its full origin to the
+CORS and WebSocket allowlist. Specify the scheme, host, and port, with no path; separate multiple origins with commas:
+
+```bash
+Picteus run --host 0.0.0.0 --allowedOrigins http://192.168.1.20:2999
+```
+
+Replace the example address with the origin from which the web interface is served. Add only origins you trust.
+Binding to a non-loopback interface can expose the application to other devices on the network; use it only on a
+trusted network and configure appropriate transport security and API access controls for your deployment.

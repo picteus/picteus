@@ -194,13 +194,13 @@ communication, and a way for other software to integrate. Picteus aims to do som
 AI-driven workflows: provide a reliable substrate for data, processing, and interaction while allowing specialized
 software to plug in and extend it.
 
-The next obvious step in this direction is a marketplace of extensions. Such a marketplace would let users discover,
-install, and update a wide range of capabilities: filters, AI models, tagging pipelines, generation tools, connectors to
-external services, feature evaluators, and visual tooling. It would also enable a community model where individual users
-can publish their own extensions for others to reuse.
+The extensions marketplace is an initial step in this direction: users can discover and install prebuilt extensions
+available to their Picteus installation, and the back-end API supports listing, installing, and updating those
+extensions. A broader, community-published catalog would extend this foundation, allowing users to share filters, AI
+models, tagging pipelines, generation tools, connectors to external services, feature evaluators, and visual tooling.
 
-This would turn Picteus from a single application into an ecosystem for image operations. The result would be a richer
-and more durable platform, where the software does not just serve one workflow but supports an open set of complementary
+The longer-term vision is to turn Picteus from a single application into an ecosystem for image operations: a richer and
+more durable platform, where the software does not just serve one workflow but supports an open set of complementary
 workflows.
 
 ---
