@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import stream, { Duplex } from "node:stream";
 
-import sharp from "sharp";
+import sharp, { FitEnum, FormatEnum, Metadata, ResizeOptions, Sharp, SharpOptions } from "sharp";
 import EXIF from "exif-js";
 import exif from "exif-reader";
 import { parse as parseIcc } from "icc";
@@ -20,14 +20,15 @@ import { parametersChecker } from "./parametersChecker";
 import * as PngMetadata from "../../libs/png-metadata/index";
 import { stripIccMetadata, stripIptcMetadata, stripJpegJfifMetadata, stripXmpMetadata } from "./metadataStrippers";
 
+
 const { parse: parseExifr } = Exifr;
 const { addMetadata } = AddMetaPng;
 const { encodeChunks, extractChunks, writeMetadata: pngWriteMetadata } = PngMetadata.default;
 
 
-type DefinedBitmapFormat = keyof sharp.FormatEnum;
+type DefinedBitmapFormat = keyof FormatEnum;
 export type BitmapFormat = undefined | DefinedBitmapFormat;
-type BasisBitmapMetadata = Pick<sharp.Metadata, "format" | "compression" | "exif" | "icc" | "iptc" | "xmp" | "width" | "height" | "tifftagPhotoshop">
+type BasisBitmapMetadata = Pick<Metadata, "format" | "compression" | "exif" | "icc" | "iptc" | "xmp" | "width" | "height" | "tifftagPhotoshop">
 export type BitmapMetadata = BasisBitmapMetadata & {
   format: BitmapFormat
 }
@@ -101,7 +102,7 @@ export const applicationMetadataPropertyName = "picteus";
 
 const pngMetadataText = "tEXt";
 
-function computeSharpOptions(): sharp.SharpOptions
+function computeSharpOptions(): SharpOptions
 {
   return { failOn: "none" };
 }
@@ -188,7 +189,7 @@ function cleanExifProperties(properties: Record<string, any> | undefined | null)
     };
     if (Array.isArray(property) === true || Buffer.isBuffer(property) === true || ArrayBuffer.isView(property) === true)
     {
-      const arrayObject = Buffer.isBuffer(property) === true ? [...property] : (ArrayBuffer.isView(property) === true ? Array.from(property as Uint8Array | Uint16Array | Uint32Array) : property);
+      const arrayObject = Buffer.isBuffer(property) === true ? [ ...property ] : (ArrayBuffer.isView(property) === true ? Array.from(property as Uint8Array | Uint16Array | Uint32Array) : property);
       const containsNoNumber = arrayObject.find((item) =>
       {
         return typeof item !== "number";
@@ -305,7 +306,7 @@ export async function readMetadata(filePathOrBuffer: string | Buffer): Promise<I
 
 async function stripMetadataWithSharp(image: Buffer): Promise<Buffer>
 {
-  const theSharp: sharp.Sharp = sharp(image, computeSharpOptions());
+  const theSharp: Sharp = sharp(image, computeSharpOptions());
   return await theSharp.toBuffer();
 }
 
@@ -344,7 +345,7 @@ async function stripMetadataWithExifBeGone(image: Buffer): Promise<Buffer>
   });
 }
 
-export async function stripMetadata(image: Buffer, imageFormat: ImageFormat, algorithm: ImageMetadataAlgorithm = ImageMetadataAlgorithm.internal, types: ImageMetadataType[] = [ImageMetadataType.ALL]): Promise<Buffer>
+export async function stripMetadata(image: Buffer, imageFormat: ImageFormat, algorithm: ImageMetadataAlgorithm = ImageMetadataAlgorithm.internal, types: ImageMetadataType[] = [ ImageMetadataType.ALL ]): Promise<Buffer>
 {
   switch (imageFormat)
   {
@@ -361,7 +362,7 @@ export async function stripMetadata(image: Buffer, imageFormat: ImageFormat, alg
       }
       // An insightful article about the structure of a PNG file is available at https://medium.com/@0xwan/png-structure-for-beginner-8363ce2a9f73
       const chunks: { name: string, data: Uint8Array }[] = extractChunks(image);
-      const toBeStrippedChunkNames: string [] = [pngMetadataText];
+      const toBeStrippedChunkNames: string [] = [ pngMetadataText ];
       const filteredChunks: { name: string, data: Uint8Array }[] = chunks.filter((chunk) =>
       {
         return toBeStrippedChunkNames.indexOf(chunk.name) === -1;
@@ -583,7 +584,7 @@ export type FormatAndBuffer =
 
 export async function guessFormat(entity: string, input: string | Buffer): Promise<DefinedResizeFormat>
 {
-  let metadata: sharp.Metadata;
+  let metadata: Metadata;
   try
   {
     metadata = await sharp(input, computeSharpOptions()).metadata();
@@ -606,14 +607,14 @@ export async function resize(entity: string, input: string | Buffer, format: Res
 {
   // The documentation about "sharp" is available at https://sharp.pixelplumbing.com
   // It is important to set the "failOnError" flag to "false", otherwise a popup dialog box occurs when the image seems to be corrupted (discussion at https://github.com/lovell/sharp/issues/793, documentation at http://sharp.pixelplumbing.com/en/stable/api-constructor/)
-  const sharpOptions: sharp.SharpOptions = computeSharpOptions();
-  const options: sharp.ResizeOptions =
+  const sharpOptions: SharpOptions = computeSharpOptions();
+  const options: ResizeOptions =
     {
       withoutEnlargement: enlargeable === false
     };
   if (render !== undefined)
   {
-    let fit: keyof sharp.FitEnum;
+    let fit: keyof FitEnum;
     switch (render)
     {
       case "inbox":
@@ -660,10 +661,10 @@ export async function resize(entity: string, input: string | Buffer, format: Res
     format = originalFormat;
   }
 
-  const theSharp: sharp.Sharp = sharp(currentBuffer, sharpOptions);
-  const resized: sharp.Sharp = theSharp.resize(width, height, options);
+  const theSharp: Sharp = sharp(currentBuffer, sharpOptions);
+  const resized: Sharp = theSharp.resize(width, height, options);
 
-  let formatted: sharp.Sharp;
+  let formatted: Sharp;
   switch (format)
   {
     default:
@@ -690,7 +691,7 @@ export async function resize(entity: string, input: string | Buffer, format: Res
   }
   try
   {
-    const sharpMetadata: sharp.Sharp = keepMetadata !== true ? formatted : formatted.keepMetadata();
+    const sharpMetadata: Sharp = keepMetadata !== true ? formatted : formatted.keepMetadata();
     const buffer: Buffer = await sharpMetadata.toBuffer();
     return { format: format as DefinedResizeFormat, buffer };
   }

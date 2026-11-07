@@ -10,7 +10,7 @@ import { Prisma, PrismaClient } from ".prisma/client";
 import { paths } from "../paths";
 import { logger } from "../logger";
 import { killProcess } from "./utils/processWrapper";
-import { ApplicationSettings } from "../dtos/app.dtos";
+import { type ApplicationSettings } from "../dtos/app.dtos";
 import { Persistence, PersistenceProvider } from "../persistence";
 import {
   computeVirtualEnvironmentBinaryDirectoryPath,

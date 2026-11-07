@@ -1484,7 +1484,7 @@ setTimeout(() => {}, 1_000_000);
 
   test("networkSecurity", async () =>
   {
-    networkSecurity.update("127.0.0.1", [ "http://my-domain.local:8080", "https://another-domain.com/" ], 2999);
+    networkSecurity.update("127.0.0.1", [ "http://my-domain.local:8080", "https://another-domain.com/" ], 2999, 3001);
 
     const expectedOrigins = [
       "http://localhost:2999",
@@ -1514,14 +1514,14 @@ setTimeout(() => {}, 1_000_000);
     expect(networkSecurity.computeAllowedHosts()).toEqual(cachedHosts);
 
     // We assess that update invalidates the cache
-    networkSecurity.update("192.168.1.100", [ "http://extra-domain.org" ], 8080);
+    networkSecurity.update("192.168.1.100", [ "http://extra-domain.org" ], 8080, 8081);
     expect(networkSecurity.computeAllowedOrigins()).not.toBe(cachedOrigins);
     expect(networkSecurity.computeAllowedOrigins()).toContain("http://192.168.1.100:8080");
     expect(networkSecurity.computeAllowedHosts()).not.toBe(cachedHosts);
     expect(networkSecurity.computeAllowedHosts()).toContain("extra-domain.org");
 
     // We reset to initial configuration for remaining checks
-    networkSecurity.update("127.0.0.1", [ "http://my-domain.local:8080", "https://another-domain.com/" ], 2999);
+    networkSecurity.update("127.0.0.1", [ "http://my-domain.local:8080", "https://another-domain.com/" ], 2999, 3001);
 
     // We assess origin checks
     const originTestCases: [ string | undefined, boolean ][] = [
@@ -1609,16 +1609,14 @@ describe("Miscellaneous via module", () =>
     const value2 = "value2";
     const thirdMigrationDirectoryName = "2";
     writeMigration(migrationsDirectoryPath, thirdMigrationDirectoryName, `-- InsertValue
-INSERT INTO Test (type, value) VALUES ("${type2}","${value2}");
-`);
+INSERT INTO Test (type, value) VALUES ('${type2}','${value2}');`);
     const type1 = "type1";
     const value1 = "value1";
     const secondMigrationDirectoryName = "1";
     writeMigration(migrationsDirectoryPath, secondMigrationDirectoryName, `-- CreateTable
 CREATE TABLE "Test" ("type" TEXT NOT NULL, "value" TEXT NOT NULL);
 -- InsertValue
-INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
-`);
+INSERT INTO Test (type, value) VALUES ('${type1}','${value1}');`);
 
     const persistence = base.getEntitiesProvider().persistence;
     await persistence.setMigration(firstMigrationDirectoryName);
@@ -1626,13 +1624,9 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
     await base.getAdministrationController().migrateDatabase();
 
     // noinspection SqlResolve
-    expect(await persistence.prisma.$queryRaw(Prisma.sql([ `SELECT value
-                                                            from Test
-                                                            WHERE type = "${type1}";` ]))).toEqual([ { value: value1 } ]);
+    expect(await persistence.prisma.$queryRaw(Prisma.sql([ `SELECT value from Test WHERE type = '${type1}';` ]))).toEqual([ { value: value1 } ]);
     // noinspection SqlResolve
-    expect(await persistence.prisma.$queryRaw(Prisma.sql([ `SELECT value
-                                                            from Test
-                                                            WHERE type = "${type2}";` ]))).toEqual([ { value: value2 } ]);
+    expect(await persistence.prisma.$queryRaw(Prisma.sql([ `SELECT value from Test WHERE type = '${type2}';` ]))).toEqual([ { value: value2 } ]);
     expect(await persistence.getMigration()).toEqual(thirdMigrationDirectoryName);
   });
 
@@ -1646,8 +1640,7 @@ INSERT INTO Test (type, value) VALUES ("${type1}","${value1}");
     writeMigration(migrationsDirectoryPath, secondMigrationDirectoryName, `CREATE ${TABLE} "Dummy" ("type" TEXT NOT NULL, "value" TEXT NOT NULL);`);
     const thirdMigrationDirectoryName = "2";
     const nonexistentTableName = "Test";
-    const fileName = writeMigration(migrationsDirectoryPath, thirdMigrationDirectoryName, `INSERT INTO ${nonexistentTableName} (type, value)
-                                                                                           VALUES ("type", "value");`);
+    const fileName = writeMigration(migrationsDirectoryPath, thirdMigrationDirectoryName, `INSERT INTO ${nonexistentTableName} (type, value) VALUES ('type', 'value');`);
 
     const persistence = base.getEntitiesProvider().persistence;
     await persistence.setMigration(firstMigrationDirectoryName);
@@ -1848,7 +1841,13 @@ describe("Miscellaneous via application", () =>
     });
     const apiKey = AuthenticationGuard.generateApiKey();
     AuthenticationGuard.masterApiKey = apiKey;
-    ioClient.emit(paths.connection, { apiKey, isOpen: true });
+    await new Promise<void>((resolve) =>
+    {
+      ioClient.emit(paths.connection, { apiKey, isOpen: true }, () =>
+      {
+        resolve();
+      });
+    });
 
     const repository = await base.prepareEmptyRepository(undefined, false);
 

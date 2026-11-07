@@ -4,7 +4,6 @@ import fs from "node:fs";
 import { Injectable, OnModuleInit } from "@nestjs/common";
 import { fdir } from "fdir";
 
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/binary";
 import { Prisma } from ".prisma/client";
 
 import { logger } from "../logger";
@@ -78,7 +77,10 @@ export class AdministrationService implements OnModuleInit
             }
             catch (error)
             {
-              parametersChecker.throwInternalError(`The migration script '${fileFragment}' was a failure. Reason: '${(error as PrismaClientKnownRequestError).meta!.message}'`);
+              const message = (error as any)?.message;
+              const messageMatch = message?.match(/Message:\s*`([^`]+)`/);
+              const reason = messageMatch?.[1] ?? message ?? String(error);
+              parametersChecker.throwInternalError(`The migration script '${fileFragment}' was a failure. Reason: '${reason}'`);
             }
           }
           // We remember the latest migration point

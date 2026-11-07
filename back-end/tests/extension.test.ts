@@ -2510,7 +2510,13 @@ describe("Extensions", () =>
     });
     const apiKey = AuthenticationGuard.generateApiKey();
     AuthenticationGuard.masterApiKey = apiKey;
-    ioClient.emit(connectionChannelName, { apiKey, isOpen: true });
+    await new Promise<void>((resolve) =>
+    {
+      ioClient.emit(connectionChannelName, { apiKey, isOpen: true }, () =>
+      {
+        resolve();
+      });
+    });
     try
     {
       const builder = new ExtensionBuilder(base);

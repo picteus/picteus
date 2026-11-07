@@ -6,7 +6,6 @@ import { randomUUID } from "node:crypto";
 import { ModuleRef } from "@nestjs/core";
 import { ClassConstructor, instanceToPlain } from "class-transformer";
 import { Prisma } from ".prisma/client";
-import { JsonArray } from "@prisma/client/runtime/library";
 import { fdir } from "fdir";
 import AdmZip from "adm-zip";
 import semver from "semver";
@@ -36,6 +35,7 @@ import {
   ExtensionEventAction,
   ImageEventAction,
   NotifierService,
+  OffListener,
   ProcessEventAction,
   TextEventAction
 } from "./notifierService";
@@ -511,6 +511,10 @@ export class ExtensionService
 
   private readonly perExtensionIdChromeExtensionNameMap: Map<string, string[]> = new Map<string, string[]>();
 
+  private imageEventsOffListener?: OffListener;
+
+  private readonly pendingImageEventPromises: Set<Promise<unknown>> = new Set<Promise<unknown>>();
+
   constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating an ExtensionService");
@@ -524,30 +528,6 @@ export class ExtensionService
     const modelsCacheDirectoryPath = paths.modelsCacheDirectoryPath;
     logger.debug(`Ensuring that the models cache directory '${modelsCacheDirectoryPath}' exists'`);
     ensureDirectory(modelsCacheDirectoryPath);
-
-    // We listen to all the image events and propagate them to the extensions
-    this.notifierService.onAll(async (event: string, value: object) =>
-    {
-      const parsedEvent = NotifierService.parseEvent(event);
-      const action: ImageEventAction = parsedEvent.action as ImageEventAction;
-      if (parsedEvent.eventEntity === EventEntity.Image && action !== ImageEventAction.RunCommand)
-      {
-        const { id } = value as { id: string };
-        await this.extensionsManager.onImageEvent({ imageId: id, action });
-        if (action === ImageEventAction.Created || action === ImageEventAction.Updated)
-        {
-          try
-          {
-            await this.triggerCapabilitiesOnImage(id);
-          }
-          catch (error)
-          {
-            logger.error(`Could not automatically trigger capabilities on the image with id '${id}'`, error);
-          }
-        }
-      }
-      return Promise.resolve();
-    });
 
     // We manage the unpacked extensions
     await this.registerUnpackedExtensions();
@@ -591,12 +571,60 @@ export class ExtensionService
         });
       }
     });
+
+    // We listen to all the image events and propagate them to the extensions
+    this.imageEventsOffListener = this.notifierService.onAll((event: string, value: object) =>
+    {
+      if (this.imageEventsOffListener === undefined)
+      {
+        // The instance has been destroyed, but lingering events may still flow: we ignore them
+        return Promise.resolve();
+      }
+      const parsedEvent = NotifierService.parseEvent(event);
+      const action: ImageEventAction = parsedEvent.action as ImageEventAction;
+      if (parsedEvent.eventEntity === EventEntity.Image && action !== ImageEventAction.RunCommand)
+      {
+        const { id } = value as { id: string };
+        const promise = (async () =>
+        {
+          await this.extensionsManager.onImageEvent({ imageId: id, action });
+          if (action === ImageEventAction.Created || action === ImageEventAction.Updated)
+          {
+            try
+            {
+              await this.triggerCapabilitiesOnImage(id);
+            }
+            catch (error)
+            {
+              logger.error(`Could not automatically trigger capabilities on the image with id '${id}'`, error);
+            }
+          }
+        })();
+        this.pendingImageEventPromises.add(promise);
+        promise.finally(() =>
+        {
+          this.pendingImageEventPromises.delete(promise);
+        });
+      }
+      return Promise.resolve();
+    });
+
     logger.debug("The initializing of an ExtensionService is over");
   }
 
   async onModuleDestroy(): Promise<void>
   {
     logger.debug("Destroying an ExtensionService");
+    if (this.imageEventsOffListener !== undefined)
+    {
+      this.imageEventsOffListener.off();
+      this.imageEventsOffListener = undefined;
+    }
+    if (this.pendingImageEventPromises.size > 0)
+    {
+      await Promise.allSettled(this.pendingImageEventPromises);
+      this.pendingImageEventPromises.clear();
+    }
     await this.extensionsManager.destroy();
     AuthenticationGuard.resetExtensionsApiKeys();
     await this.unregisterUnpackedExtensions();
@@ -2455,7 +2483,7 @@ export class ExtensionService
     {
       return [];
     }
-    const values: JsonArray = (isForCaptions ? result.captions : result.eligibleTags) as JsonArray;
+    const values: Prisma.JsonArray = (isForCaptions ? result.captions : result.eligibleTags) as Prisma.JsonArray;
     return values === null ? [] : values.map(value => plainToInstanceViaJSON(theClass, value as unknown as T));
   }
 

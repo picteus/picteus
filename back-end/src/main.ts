@@ -6,16 +6,18 @@ import type { Server } from "node:http";
 
 import { Express, Request, Response } from "express";
 import { NestFactory } from "@nestjs/core";
-import { DocumentBuilder, OpenAPIObject, SwaggerModule } from "@nestjs/swagger";
+import {
+  DocumentBuilder,
+  OpenAPIObject,
+  OperationObject,
+  PathItemObject,
+  SecuritySchemeObject,
+  SwaggerCustomOptions,
+  SwaggerModule
+} from "@nestjs/swagger";
 import { ExpressAdapter, NestExpressApplication } from "@nestjs/platform-express";
 import { HttpStatus, NestApplicationOptions } from "@nestjs/common";
 import { HttpsOptions } from "@nestjs/common/interfaces/external/https-options.interface";
-import {
-  OperationObject,
-  PathItemObject,
-  SecuritySchemeObject
-} from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
-import { SwaggerCustomOptions } from "@nestjs/swagger/dist/interfaces";
 import { WinstonModule } from "nest-winston";
 import { headers, methods, types } from "http-constants";
 

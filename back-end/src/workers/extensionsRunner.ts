@@ -99,7 +99,7 @@ class ExtensionsRunner
   {
     if (ExtensionsRunner.instance === undefined)
     {
-      const log = "Cannot get the ExtensionsRunner because it is currently already instantiated";
+      const log = "Cannot get the ExtensionsRunner because it is currently not instantiated";
       logger.error(log);
       throw new Error(log);
     }

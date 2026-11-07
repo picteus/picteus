@@ -1,8 +1,15 @@
 import { types } from "http-constants";
 import { applyDecorators, Type } from "@nestjs/common";
-import { ApiExtraModels, ApiQuery, ApiQueryMetadata, ApiQueryOptions, getSchemaPath } from "@nestjs/swagger";
-import { DECORATORS } from "@nestjs/swagger/dist/constants.js";
-import { ContentObject, SchemaObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
+import {
+  ApiExtraModels,
+  ApiQuery,
+  ApiQueryMetadata,
+  ApiQueryOptions,
+  ContentObject,
+  DECORATORS,
+  getSchemaPath,
+  SchemaObject
+} from "@nestjs/swagger";
 
 import { ImageFormats, toMimeType } from "../dtos/common.dtos";
 
@@ -26,8 +33,8 @@ export function DeepObjectApiQuery(query: Type, withDeepObject: boolean = true):
     // @ts-ignore
     const { type } = childQueryOptions;
     const propertyType = Reflect.getMetadata("design:type", constructor, property);
-    const isPrimitive = [Number, Boolean, String, "string", "number", "integer", "boolean"].includes(type) ||
-      [Number, Boolean, String].includes(propertyType) ||
+    const isPrimitive = [ Number, Boolean, String, "string", "number", "integer", "boolean" ].includes(type) ||
+      [ Number, Boolean, String ].includes(propertyType) ||
       ("enum" in childQueryOptions && childQueryOptions.enum !== undefined);
     if (withDeepObject === true && isPrimitive === false)
     {
@@ -57,7 +64,7 @@ function ApiNestedQuery(query: Type): MethodDecorator
     // @ts-ignore
     const { type, schema, ...otherQueryOptions } = childQueryOptions;
     let newOptions: ApiQueryOptions;
-    if ([Number, Boolean, String].includes(type) === false)
+    if ([ Number, Boolean, String ].includes(type) === false)
     {
       newOptions = childQueryOptions;
     }

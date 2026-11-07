@@ -2,11 +2,10 @@ import path from "node:path";
 import fs from "node:fs";
 import Timers from "node:timers";
 
-import { FSWatcher, watch } from "chokidar";
+import { ChokidarOptions, FSWatcher, watch } from "chokidar";
 
 import { logger } from "../../logger";
 import { Stats } from "fs";
-import { ChokidarOptions } from "chokidar/esm";
 
 
 export enum WatcherEvent

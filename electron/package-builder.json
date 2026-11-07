@@ -9,7 +9,7 @@
     "**/node_modules/sharp/**/*",
     "**/node_modules/@img/**/*",
     "**/node_modules/onnxruntime-node/**/*",
-    "**/prisma-client/libquery_engine-*.node",
+    "**/node_modules/better-sqlite3/**/*",
     "build/sdk/**/*"
   ],
   "files": [

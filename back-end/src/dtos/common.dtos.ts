@@ -1,8 +1,7 @@
 import { IsDefined, IsInt, IsOptional, IsString, MaxLength, MinLength, NotEquals } from "class-validator";
 import { Expose, Type } from "class-transformer";
 import { Type as NestType } from "@nestjs/common";
-import { ApiProperty, ApiSchema } from "@nestjs/swagger";
-import { SchemaObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
+import { ApiProperty, ApiSchema, SchemaObject } from "@nestjs/swagger";
 
 
 export const alphaNumericPlusPattern = "a-z0-9A-Z-_.";

@@ -29,7 +29,7 @@ COPY ${backendDirectoryName}/prisma ./prisma
 COPY ${backendDirectoryName}/src ./src
 
 # Installs the "back-end" dependencies
-RUN npm install --no-save --install-link \
+RUN npm install --no-save --install-links \
     # Generates and compiles the back-end files \
     && npm run build:copy && npm run prisma:generate && npm run prisma:fix && npm run compile && cp src/generated/prisma-client/libquery_engine-linux-arm64-openssl-3.0.x.so.node ../${buildDirectoryName}/${backendDirectoryName}/src/generated/prisma-client/ && npm run obfuscate \
     # Installs the back-end runtime "node_modules" \

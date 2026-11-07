@@ -79,11 +79,27 @@ abstract class Manager
     });
   }
 
+  protected async runIgnoringAbort(action: () => Promise<void>): Promise<void>
+  {
+    try
+    {
+      await action();
+    }
+    catch (error: any)
+    {
+      if (error?.name === "AbortError" || error?.message?.includes("closed") || error?.message?.includes("aborted"))
+      {
+        return;
+      }
+      throw error;
+    }
+  }
+
   protected async destroy(): Promise<void>
   {
     checkIsMainThread();
     logger.debug(`Stopping a pool of ${this.piscina.maxThreads} worker thread(s) for the manager '${this.toString()}'`);
-    await this.piscina.close({ force: true });
+    await this.runIgnoringAbort(() => this.piscina.close({ force: true }));
     logger.debug(`The pool of threads of the manager '${this.toString()}' is now closed`);
     await this.piscina.destroy();
     logger.debug(`The pool of threads of the manager '${this.toString()}' is now destroyed`);
@@ -168,7 +184,7 @@ export class ImageDeclarationManager extends Manager
       },
       {
         name: functionName,
-        transferList: [port1, imageClassifierPort]
+        transferList: [ port1, imageClassifierPort ]
       });
   }
 
@@ -247,20 +263,21 @@ export class ExtensionsManager extends Manager
 
   async stopProcesses(extensionIds: string[]): Promise<void>
   {
-    return await this.piscina.run({ extensionIds },
+    await this.runIgnoringAbort(() => this.piscina.run({ extensionIds },
       {
         name: "stopProcesses",
         transferList: []
-      });
+      }));
   }
 
   async onImageEvent(event: ImageEvent): Promise<void>
   {
-    return await this.piscina.run({ event },
+    await this.runIgnoringAbort(() => this.piscina.run({ event },
       {
         name: "onImageEvent",
         transferList: []
-      });
+      })
+    );
   }
 
 }

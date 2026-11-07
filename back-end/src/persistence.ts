@@ -2,9 +2,10 @@ import fs from "node:fs";
 import { isMainThread } from "node:worker_threads";
 
 import { Prisma, PrismaClient } from ".prisma/client";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { logger } from "./logger";
 import { paths } from "./paths";
-import { ApplicationSettings } from "./dtos/app.dtos";
+import type { ApplicationSettings } from "./dtos/app.dtos";
 
 
 const defaultSettingsType = "default";
@@ -86,7 +87,7 @@ export class Persistence implements PersistenceProvider
             level: "error"
           }
         ];
-      const log: Prisma.LogDefinition[] = paths.isProductionEnvironment === true ? [...commonLog] :
+      const log: Prisma.LogDefinition[] = paths.isProductionEnvironment === true ? [ ...commonLog ] :
         [
           {
             emit: "event",
@@ -98,15 +99,26 @@ export class Persistence implements PersistenceProvider
           },
           ...commonLog
         ];
+      const timeoutInMilliseconds = 10_000;
+      const adapter = new PrismaBetterSqlite3({ url: databaseCoordinates.url, timeout: timeoutInMilliseconds });
       // We increase the default timeout duration to 10 seconds
-      const options = { log, transactionOptions: { timeout: 10_000 } };
+      const options = { adapter, log, transactionOptions: { timeout: timeoutInMilliseconds } };
       this.prismaClient = new PrismaClient(options);
       // @ts-ignore
       this.prismaClient.$on<Prisma.QueryEvent>("query", (event: Prisma.QueryEvent) =>
       {
         logger.debug(`Ran the SQL query '${event.query}' with parameters '${event.params}' in ${event.duration} ms`);
       });
-      this.prismaClient.$connect();
+      await this.prismaClient.$connect();
+      try
+      {
+        // WAL (Write-Ahead Logging) mode allows concurrent reads while writes are in progress, preventing database lock contention across worker threads
+        await this.prismaClient.$executeRawUnsafe("PRAGMA journal_mode = WAL;");
+      }
+      catch (error)
+      {
+        logger.error(`Could not set PRAGMA on database. Reason: '${(error as Error).message}'`);
+      }
       if (isMainThread === true)
       {
         // We make sure that the settings are defined

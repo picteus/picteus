@@ -2,15 +2,20 @@
 import { promisify } from "node:util";
 import childProcess from "node:child_process";
 
-import plist from "plist";
+import { parse as parsePlist } from "plist";
 
 
 const parse = (data: string): Record<string, any> =>
 {
-  const object = plist.parse(data);
+  const object = parsePlist(data);
   const returnValue: Record<string, any> = {};
 
-  for (let [key, value] of Object.entries(object))
+  if (object === null || typeof object !== "object" || Array.isArray(object) || object instanceof Date || object instanceof Uint8Array)
+  {
+    return returnValue;
+  }
+
+  for (let [ key, value ] of Object.entries(object))
   {
     key = key.replace(/^kMDItem/, "").replace(/_/g, "");
     key = key.startsWith("FS") ? key.replace(/^FS/, "fs") : key[0].toLowerCase() + key.slice(1);
@@ -22,6 +27,6 @@ const parse = (data: string): Record<string, any> =>
 
 export async function fileMetadata(filePath: string): Promise<Record<string, any>>
 {
-  const { stdout } = await promisify(childProcess.execFile)("mdls", ["-plist", "-", filePath]);
+  const { stdout } = await promisify(childProcess.execFile)("mdls", [ "-plist", "-", filePath ]);
   return parse(stdout.trim());
 }

@@ -109,8 +109,8 @@ const npmInstallOptions = `--include=optional --os=${process.env["OPERATING_SYST
 
 const installNpmPackages = (directoryPath) =>
 {
-  // We use the "--install-link" option so that the linked "@picteus/shared-back-end" module is installed like a regular one, implying that its dependencies are installed directly in the "node_module" folder, which is described at https://docs.npmjs.com/cli/v8/commands/npm-install#install-links
-  const command = `npm install --omit=dev --no-package-lock ${npmInstallOptions} --install-link`;
+  // We use the "--install-links" option so that the linked "@picteus/shared-back-end" module is installed like a regular one, implying that its dependencies are installed directly in the "node_module" folder, which is described at https://docs.npmjs.com/cli/v8/commands/npm-install#install-links
+  const command = `npm install --omit=dev --no-package-lock ${npmInstallOptions} --install-links`;
   console.info(`Installing the npm packages via the command '${command}' with working directory '${directoryPath}'`);
   return runGulpRun(
     command,

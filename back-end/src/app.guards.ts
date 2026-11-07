@@ -212,7 +212,11 @@ export class AuthenticationGuard implements CanActivate
 
   static extractExtensionIdFromRefererHeader(request: IncomingMessage): string | undefined
   {
-    const headers: Request.IncomingHttpHeaders = request.headers;
+    const headers: Request.IncomingHttpHeaders | undefined = request?.headers;
+    if (headers === undefined)
+    {
+      return undefined;
+    }
     const values = headers["referer"];
     if (values === undefined)
     {
@@ -247,6 +251,11 @@ export class AuthenticationGuard implements CanActivate
 
   async canActivate(context: ExecutionContext): Promise<boolean>
   {
+    // Nest.js global APP_GUARD applies across all execution contexts; we bypass HTTP authentication for non-HTTP contexts, e.g. WebSockets, which manage their own connection authentication
+    if (context.getType() !== "http")
+    {
+      return true;
+    }
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [ context.getHandler(), context.getClass() ]);
     if (isPublic === true)
     {
@@ -311,7 +320,12 @@ export class AuthenticationGuard implements CanActivate
 
   private extractApiKeyFromHeader(request: IncomingMessage): string | undefined
   {
-    const headers: Request.IncomingHttpHeaders = request.headers;
+    const headers: Request.IncomingHttpHeaders | undefined = request?.headers;
+    if (headers === undefined)
+    {
+      // This is defensive check in case of a malformed or synthetic request without headers
+      return undefined;
+    }
     const values = headers[apiKeyHeaderName.toLowerCase()];
     return values === undefined ? undefined : (Array.isArray(values) === true ? values[0] : values);
   }
