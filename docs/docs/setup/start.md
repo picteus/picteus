@@ -1,57 +1,57 @@
 # Start
 
-Once the application is installed, you can launch it:
-- Windows: from the "Start Menu" or from `C:\Program Files\Picteus\Picteus.exe` ;
-- macOS: from the "Applications" folder or from `/Applications/Picteus.app`.
+Once installed, launch Picteus from the Windows Start menu or the macOS Applications folder. To start it from a terminal, see the CLI instructions below.
 
-Only one instance of the application is authorized to be running at the same time, and if you attempt to start another instance, you will get an error.
+Only one instance can run at a time. Starting another instance while Picteus is running returns an error.
 
 ## First launch
 
-During the first start-up of the application:
-1. because the application relies on Python and Node.js runtimes, it will download those runtimes ;
-2. because the application is extensible and ships built-in extensions, it will install them along with their dependencies ;
-3. because some extensions rely on Machine Learning libraries, some large tensor files will be downloaded.
+During its first launch, Picteus downloads the Python and Node.js runtimes and installs only the core extensions shipped with the application, along with their dependencies. It also downloads large tensor files required by some extensions. An internet connection is required for these downloads.
 
-This is the reason why the first launch takes time, about 2 minutes, provided you have a descent Internet connection.
+The first launch usually takes about 3 minutes with a decent internet connection. The actual time depends on the connection and the downloads required.
+
+## Installing extensions
+
+Only the core extensions shipped with Picteus are installed automatically. Install other extensions to add capabilities and integrations that expand the application's functional scope; deferring these installs keeps the initial setup shorter. Some tasks and workflows require a specific extension.
+
+To add extensions, open **Extensions** from the application's main navigation. Install an available marketplace extension from the list, or use **Install** to add an extension package. Review an extension's description and requirements before installing it; some extensions may need additional downloads, credentials, or external services. For extension development and unpacked extensions, see the [Extensions documentation](../extensions.md).
 
 ## CLI
 
-You can start the application from the command line in your favorite terminal and fine-tune its configuration and behavior via options and commands. To discover what those options are, run the following command:
-- Windows:
-```batch title="Windows Command Prompt"
-start /wait "" "C:\Program Files\Picteus\Picteus.exe" --help
-```
+The CLI starts Picteus and lets you set options. The `run` command is the default, so it can be omitted when starting the application without options.
+
+### Help
+
+Use `--help` to display the available commands and general usage. Use `run --help` to display the options for the `run` command.
+
+**General help — Windows**:
 ```powershell title="Windows PowerShell"
-Start-Process "C:\Program Files\Picteus\Picteus.exe" "--help" -Wait
+& "C:\Program Files\Picteus\Picteus.exe" --help
 ```
-- macOS:
+
+**General help — macOS**:
 ```bash title="macOS shell"
 /Applications/Picteus.app/Contents/MacOS/Picteus --help
 ```
 
-For now, there is only one `run` command, which starts the application and to get the documentation of its options, run the following command:
-- Windows:
-```batch title="Windows Command Prompt"
-start /wait "" "C:\Program Files\Picteus\Picteus.exe" run --help
-```
+**`run` command help — Windows**:
 ```powershell title="Windows PowerShell"
-Start-Process "C:\Program Files\Picteus\Picteus.exe" "run --help" -Wait
+& "C:\Program Files\Picteus\Picteus.exe" run --help
 ```
-- macOS:
+
+**`run` command help — macOS**:
 ```bash title="macOS shell"
 /Applications/Picteus.app/Contents/MacOS/Picteus run --help
 ```
 
-Simply use the following command if you do not need to set options:
-- Windows:
-```batch title="Windows Command Prompt"
-start /wait "" "C:\Program Files\Picteus\Picteus.exe"
-```
+To start Picteus without setting options:
+
+**Windows**:
 ```powershell title="Windows PowerShell"
-Start-Process "C:\Program Files\Picteus\Picteus.exe" -Wait
+& "C:\Program Files\Picteus\Picteus.exe"
 ```
-- macOS:
+
+**macOS**:
 ```bash title="macOS shell"
 /Applications/Picteus.app/Contents/MacOS/Picteus
 ```
@@ -60,17 +60,18 @@ Starting the application from the command line enables you to access its log out
 
 ### Network access
 
-By default, the application servers bind to `127.0.0.1` and are available only from the same machine. The `--host`
-option changes the network interface address used by the internal servers. For example, `--host 0.0.0.0` binds to
-all network interfaces, allowing other devices that can reach the machine to connect.
+By default, the application servers bind to `127.0.0.1` and are available only from the same machine. The web interface is served at `http://127.0.0.1:2999`, and the API server uses port `3001`. The `--host` option changes the network interface address used by the internal servers. For example, `--host 0.0.0.0` binds to all network interfaces. Other devices can then access the application using the host machine's network address, provided the required ports are allowed by its firewall. The address `0.0.0.0` is a bind address, not an address to enter in a browser.
 
-When the web interface is accessed from an additional origin, use `--allowedOrigins` to add its full origin to the
-CORS and WebSocket allowlist. Specify the scheme, host, and port, with no path; separate multiple origins with commas:
+When accessing the web interface from an additional origin, use `--allowedOrigins` to add its full origin to the CORS and WebSocket allowlist. Specify the scheme, host, and port, with no path. Separate multiple origins with commas. Replace the example address with the origin from which the web interface is served:
 
-```bash
-Picteus run --host 0.0.0.0 --allowedOrigins http://192.168.1.20:2999
+**Windows**:
+```powershell title="Windows PowerShell"
+& "C:\Program Files\Picteus\Picteus.exe" run --host 0.0.0.0 --allowedOrigins http://192.168.1.20:2999
 ```
 
-Replace the example address with the origin from which the web interface is served. Add only origins you trust.
-Binding to a non-loopback interface can expose the application to other devices on the network; use it only on a
-trusted network and configure appropriate transport security and API access controls for your deployment.
+**macOS**:
+```bash title="macOS shell"
+/Applications/Picteus.app/Contents/MacOS/Picteus run --host 0.0.0.0 --allowedOrigins http://192.168.1.20:2999
+```
+
+Add only origins you trust. The allowlist does not authenticate users or prevent non-browser clients from connecting. Binding to a non-loopback interface can expose the application to other devices on the network; use it only on a trusted network and configure appropriate transport security and API access controls for your deployment.

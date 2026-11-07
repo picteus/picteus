@@ -175,11 +175,11 @@ For TypeScript extensions, the `package.json` file is **mandatory**. It must:
     "build": "tsc"
   },
   "dependencies": {
-    "@picteus/extension-sdk": "0.15.0"
+    "@picteus/extension-sdk": "0.21.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^22.0.0"
+    "typescript": "5.9.2",
+    "@types/node": "22.17.1"
   }
 }
 ```
@@ -187,17 +187,19 @@ For TypeScript extensions, the `package.json` file is **mandatory**. It must:
 #### 3. `tsconfig.json`
 ```json
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "esnext",
+    "moduleResolution": "Node",
+    "target": "es2022",
     "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    "declaration": false,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": false,
+    "noImplicitAny": true,
+    "sourceMap": false
   },
-  "include": ["src/**/*"]
+  "include": ["./src"]
 }
 ```
 
@@ -271,7 +273,7 @@ my-py-extension/
 For Python extensions, the `requirements.txt` file is **mandatory**. It lists all Python package dependencies required by the extension (including `picteus-extension-sdk`):
 
 ```text
-picteus-extension-sdk == 0.15.0
+picteus-extension-sdk == 0.21.0
 ```
 
 #### 3. `main.py`

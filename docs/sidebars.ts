@@ -11,7 +11,8 @@ const sidebars: SidebarsConfig =
       "setup/start",
       "setup/files",
       "setup/traces",
-      "setup/troubleshooting"
+      "setup/troubleshooting",
+      "setup/uninstall"
     ],
     visionSidebar: [
       "vision"

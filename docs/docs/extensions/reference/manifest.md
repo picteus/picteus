@@ -11,7 +11,7 @@ The extension identifier declared through the `id` property must be unique with 
 > [!CAUTION]
 > **Strict JSON Schema compliance required**
 > : the `manifest.json` file is strictly validated against the Picteus manifest schema, accessible online
-at https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json, which should be specified through the `$schema`
+at https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json, which should be specified through the `$schema`
 property. If any property fails validation — invalid types, missing required fields, illegal characters, or incorrect
 regex patterns —, **the server will reject the manifest and the extension will not start.**
 
@@ -23,7 +23,7 @@ Here is an overview of the manifest structure:
 
 ```json
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json",
   "id": "my-extension",
   "version": "1.0.0",
   "name": "My Extension Name",
@@ -41,6 +41,7 @@ Here is an overview of the manifest structure:
         "arguments": ["./dist/main.js"]
       },
       "events": [
+        "process.started",
         "process.runCommand",
         "image.created",
         "image.runCommand"
@@ -123,12 +124,10 @@ Here is an overview of the manifest structure:
 - **`categories`** *(required, array)*: categorization (`capture`, `generation`, `enrichment`, `integration`, `utility`, `other`) ;
 - **`runtimes`** *(required, array)*: execution environments (`"node"` or `"python"`) ;
 - **`instructions`** *(required, array)*: execution directives:
-  - **`execution`**: defines how the back-end starts the extension process (`executable` with `${node}` / `${python}` macros, and `arguments`) ;
-  - **`events`**: subscribed event topics (e.g. `image.created`, `image.updated`, `image.deleted`, `image.runCommand`, `process.runCommand`, `text.computeEmbeddings`) ;
+  - **`execution`**: defines how the back-end starts the extension process (`executable` with `${node}` for Node.js or `${venvPython}` for Python virtual environments, and `arguments` such as `["./dist/main.js"]` or `["./main.py"]`) ;
+  - **`events`**: subscribed event topics (`process.started`, `process.runCommand`, `extension.settings`, `image.created`, `image.updated`, `image.tags.updated`, `image.features.updated`, `image.embeddings.updated`, `image.deleted`, `image.computeFeatures`, `image.computeEmbeddings`, `image.computeTags`, `image.runCommand`, `text.computeEmbeddings`) ;
   - **`capabilities`**: declared feature capabilities (`image.features`, `image.embeddings`, `image.tags`,
-    `text.embeddings`). An `image.features` or `image.tags` capability may carry an optional `details` marker object —
-    `{ "details": {} }` — which tells Picteus that the capability also computes captions, respectively eligible tags, on
-    top of its default computation ;
+    `text.embeddings`). An `image.features` capability may carry `{ "details": { "caption": true } }` to indicate it supports AI caption computation (`onComputeImageCaptions`), and an `image.tags` capability may carry `{ "details": { "eligibleTags": true } }` to indicate it supports AI eligible-tags computation (`onComputeImageEligibleTags`) ;
   - **`throttlingPolicies`**: rate limits defining `durationInMilliseconds` and `maximumCount` for specified events ;
   - **`commands`**: action commands registered in the UI:
     - `id`: identifier sent to `onImagesCommand` or `onProcessCommand` ;

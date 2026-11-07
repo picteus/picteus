@@ -9,9 +9,9 @@ represent extracted or computed values that can be indexed, compared, searched, 
 ViewKit does not replace those values and is not an image embedding. It is a structured view of feature information for
 people.
 
-> See its ["ViewKit" v2 JSON Schema](https://picteus.github.io/picteus/jsonschema/viewkit-v2.schema.json), which may be
+> See its ["ViewKit" v4 JSON Schema](https://picteus.github.io/picteus/jsonschema/viewkit-v4.schema.json), which may be
 > used to validate ViewKit documents — its source file being located at [
-`docs/static/jsonschema/viewkit-v2.schema.json`](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/static/jsonschema/viewkit-v2.schema.json).
+`docs/static/jsonschema/viewkit-v4.schema.json`](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/static/jsonschema/viewkit-v4.schema.json).
 >
 > See its generated ["ViewKit" model reference](./models-reference.md) for the TypeSpec models and UI metadata.
 

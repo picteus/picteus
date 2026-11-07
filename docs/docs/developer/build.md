@@ -14,7 +14,7 @@ This document explains how to build and run the application from the source code
 The following commands will install dependencies and build the components. They should be run from the root `package.json` file.
 
 - Run the traditional `npm run install` script for resolving the hereby package dependencies.
-- Run the `npm run prerequisites` script for resolving all submodules' dependencies: do not run individually the `npm install` script on every module, because it will not properly install the "back-end" and "electron" components since the  `prerequisites` npm script resorts to the `--install-link` option, which installed the "shared/back-end" module dependencies.
+- Run the `npm run prerequisites` script for resolving all submodules' dependencies: do not run individually the `npm install` script on every module, because it will not properly install the "back-end" and "electron" components since the  `prerequisites` npm script resorts to the `--install-links` option, which installed the "shared/back-end" module dependencies.
 - Run the `npm run build` script for building all artifacts.
 
 Most of the artifact files are located under the `build` directory, which is a symbolic link pointing to the `electron/build` directory.

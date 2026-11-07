@@ -77,14 +77,7 @@ log. Supported entity values have a `type` of `"image"`, `"repository"`, or `"co
 `id`. Logs sent without an entity context retain the existing payload format.
 
 ```typescript
-protected async
-onImageCreated(communicator
-:
-Communicator, imageId
-:
-string
-):
-Promise<void>
+protected async onImageCreated(communicator: Communicator, imageId: string): Promise<void>
 {
   communicator.forEntity({ type: "image", id: imageId });
   communicator.sendLog("Processing the image", "info");
@@ -101,7 +94,7 @@ async def on_image_created(self, communicator: Communicator, image_id: str) -> N
 
 ## Event routing & domain handlers
 
-The base class implements `onEvent` / `on_event`, which automatically dispatches incoming events to specialized domain handler methods. You can override individual hook methods directly without needing to write manual event dispatching logic:
+The base class implements `onEvent` / `on_event`, which automatically dispatches incoming events to specialized domain handler methods. You should override these individual hook methods directly rather than overriding `onEvent` / `on_event`:
 
 ### Image lifecycle events
 
@@ -118,17 +111,19 @@ The base class implements `onEvent` / `on_event`, which automatically dispatches
 
 | Method (TypeScript) | Method (Python) | Description |
 |:---|:---|:---|
-| `onComputeImageTags(communicator, imageId)` | `on_compute_image_tags(self, communicator, image_id)` | Triggered to generate tags for an image. |
-| `onComputeImageFeatures(communicator, imageId)` | `on_compute_image_features(self, communicator, image_id)` | Triggered to extract structured features or metadata for an image. |
-| `onComputeImageEmbeddings(communicator, imageId)` | `on_compute_image_embeddings(self, communicator, image_id)` | Triggered to compute vector embeddings for similarity search. |
-| `onComputeTextEmbeddings(communicator, text)` | `on_compute_text_embeddings(self, communicator, text)` | Triggered to compute text embeddings — returns `number[]` / `list[float]`. |
+| `onComputeImageTags(communicator, imageId)` | `on_compute_image_tags(self, communicator, image_id)` | Triggered on `image.computeTags` to generate tags for an image. |
+| `onComputeImageEligibleTags(communicator, imageId, eligibleTags)` | `on_compute_image_eligible_tags(self, communicator, image_id, eligible_tags)` | Triggered on `image.computeTags` when the `image.tags` capability declares `details: { eligibleTags: true }`, passing candidate tags and AI model prompts (`ComputeImageEligibleTags[]`). |
+| `onComputeImageFeatures(communicator, imageId)` | `on_compute_image_features(self, communicator, image_id)` | Triggered on `image.computeFeatures` to extract structured features or metadata for an image. |
+| `onComputeImageCaptions(communicator, imageId, captions)` | `on_compute_image_captions(self, communicator, image_id, captions)` | Triggered on `image.computeFeatures` when the `image.features` capability declares `details: { caption: true }`, passing AI model prompts (`ComputeImageCaption[]`). |
+| `onComputeImageEmbeddings(communicator, imageId)` | `on_compute_image_embeddings(self, communicator, image_id)` | Triggered on `image.computeEmbeddings` to compute vector embeddings for similarity search. |
+| `onComputeTextEmbeddings(communicator, text)` | `on_compute_text_embeddings(self, communicator, text)` | Triggered on `text.computeEmbeddings` to compute text embeddings — returns `number[]` / `list[float]`. |
 
 ### Command execution handlers
 
 | Method (TypeScript) | Method (Python) | Description |
 |:---|:---|:---|
-| `onImagesCommand(communicator, commandId, imageIds, parameters)` | `on_images_command(self, communicator, command_id, image_ids, parameters)` | Triggered when a user executes a command on one or more selected images. |
-| `onProcessCommand(communicator, commandId, parameters)` | `on_process_command(self, communicator, command_id, parameters)` | Triggered when a user executes a global process-level command. |
+| `onImagesCommand(communicator, commandId, imageIds, parameters)` | `on_images_command(self, communicator, command_id, image_ids, parameters)` | Triggered when a user executes a command on one or more selected images (`image.runCommand`). |
+| `onProcessCommand(communicator, commandId, parameters)` | `on_process_command(self, communicator, command_id, parameters)` | Triggered when a user executes a global process-level command (`process.runCommand`). |
 
 ---
 
@@ -140,8 +135,9 @@ The base class provides several static and instance helper methods to simplify c
 - `PicteusExtension.getSdkVersion()` / `PicteusExtension.get_sdk_version()`: returns the SDK version string ;
 - `PicteusExtension.getExtensionHomeDirectoryPath()` / `PicteusExtension.get_extension_home_directory_path()`: returns the extension's working root path ;
 - `PicteusExtension.getCacheDirectoryPath()` / `PicteusExtension.get_cache_directory_path()`: returns the path to the `.cache` directory ;
-- `this.getSettings()` / `self.get_settings()`: retrieves the current persistent user settings for this extension ;
-- `this.logger` / `self.logger`: process logger with leveled logging (`debug`, `info`, `warn`, `error`).
+- `await this.getSettings()` (TypeScript, async) / `self.get_settings()` (Python, synchronous): retrieves the current persistent user settings for this extension ;
+- `await self.run_in_executor(fn)` *(Python only)*: runs a synchronous or CPU-bound callable in the extension's thread pool executor so it does not block the `asyncio` event loop ;
+- `this.logger` / `self.logger`: process logger with leveled logging (`debug`, `info`, `warn`, `error` in TypeScript; standard `logging.Logger` in Python with `debug`, `info`, `warning`, `error`).
 
 ---
 
