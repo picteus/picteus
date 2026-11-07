@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { Extension, ExtensionActivity, ExtensionState, UserInterfaceAnchor } from "@picteus/ws-client";
 
@@ -33,7 +33,7 @@ export function useAdditionalUiContext(): AdditionalUiContextType
   return context;
 }
 
-export function AdditionalUiProvider({ children }: { children?: React.ReactNode }): JSX.Element
+export function AdditionalUiProvider({ children }: { children?: React.ReactNode }): ReactElement
 {
   const { data: extensions = [] } = useExtensions();
   const { data: activities = [] } = useExtensionActivities();

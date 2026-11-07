@@ -4,7 +4,10 @@ import path from "node:path";
 import { defineConfig, type Plugin, TerserOptions } from "vite";
 import react from "@vitejs/plugin-react";
 
-import { version } from "./package.json";
+import packageJson from "./package.json" with { type: "json" };
+
+
+const { version } = packageJson;
 
 
 function resolvePackageMetadata(): { applicationVersion: string; homepage: string }
@@ -71,7 +74,7 @@ export default defineConfig(({ mode }) =>
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: `@import "/src/assets/style/variables.scss";`
+          additionalData: `@use "/src/assets/style/variables.scss" as *;`
         }
       }
     },
@@ -80,6 +83,14 @@ export default defineConfig(({ mode }) =>
       emptyOutDir: true,
       chunkSizeWarningLimit: 700,
       rolldownOptions: {
+        onwarn(warning, defaultHandler)
+        {
+          if (warning.code === "SOURCEMAP_BROKEN")
+          {
+            return;
+          }
+          defaultHandler(warning);
+        },
         output: {
           codeSplitting: {
             groups: [

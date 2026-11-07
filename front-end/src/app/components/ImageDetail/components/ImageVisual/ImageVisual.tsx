@@ -111,7 +111,7 @@ export default function ImageVisual({ image, withNavigation }: ImageVisualPropsT
   const leftArrowRef = useRef<HTMLButtonElement>(null);
   const rightArrowRef = useRef<HTMLButtonElement>(null);
   const [ imageWrapperRef, imageWrapperRectangle ] = useResizeObserver();
-  const imageRef = useRef<HTMLImageElement>();
+  const imageRef = useRef<HTMLImageElement>(null);
   const [ placeholder, setPlaceholder ] = useState<boolean>(true);
   const [ imageWrapperDimensions, setImageWrapperDimensions ] = useState<PicteusImageDimensions | undefined>();
   const [ imageExpectedDimensions, setImageExpectedDimensions ] = useState<PicteusImageDimensions | undefined>();
