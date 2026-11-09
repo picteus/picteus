@@ -1,0 +1,43 @@
+{
+  "name": "@picteus/skills",
+  "version": "0.1.0",
+  "productName": "Picteus Skills",
+  "description": "Manages the AI coding agent skills for Picteus.",
+  "keywords": [
+    "picteus",
+    "skills",
+    "ai",
+    "agent",
+    "extension"
+  ],
+  "author": {
+    "name": "Édouard Mercier",
+    "email": "edouard@koppasoft.com",
+    "url": "https://github.com/edouardmercier"
+  },
+  "license": "GNU Affero General Public License",
+  "private": true,
+  "engines": {
+    "node": ">=22.17.1"
+  },
+  "homepage": "https://github.com/picteus/picteus",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/picteus/picteus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/picteus/Picteus/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "reset": "npm run clean && shx rm -rf ./node_modules",
+    "clean": "shx rm -rf picteus-extension-builder/references",
+    "build": "node build.mjs",
+    "check": "npx --yes skills add .. --list",
+    "install:local": "npm run build && npx --yes skills add .. --skill picteus-extension-builder -g -y",
+    "publish:skills.sh": "npx --yes skills add picteus/picteus --skill picteus-extension-builder -g -y"
+  },
+  "devDependencies": {
+    "shx": "0.4.0"
+  }
+}
