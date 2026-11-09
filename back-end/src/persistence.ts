@@ -3,13 +3,44 @@ import { isMainThread } from "node:worker_threads";
 
 import { Prisma, PrismaClient } from ".prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { type SqlDriverAdapter } from "@prisma/driver-adapter-utils";
 import { logger } from "./logger";
 import { paths } from "./paths";
-import type { ApplicationSettings } from "./dtos/app.dtos";
+import { type  ApplicationSettings } from "./dtos/app.dtos";
 
 
 const defaultSettingsType = "default";
 const migrationSettingsType = "migration";
+
+// This has been introduced, awaiting the https://github.com/prisma/orm/pull/30867 PR to be merged
+class ConfiguredBetterSqlite3Adapter extends PrismaBetterSqlite3
+{
+
+  async connect(): Promise<SqlDriverAdapter>
+  {
+    return this.configureAdapter(await super.connect());
+  }
+
+  async connectToShadowDb(): Promise<SqlDriverAdapter>
+  {
+    return this.configureAdapter(await super.connectToShadowDb());
+  }
+
+  private configureAdapter(adapter: SqlDriverAdapter): SqlDriverAdapter
+  {
+    // We report SQLite 3.32+ parameter limit — i.e. 32,766 — to Prisma Client Query Engine
+    const SQLITE_MAX_VARIABLE_NUMBER = 32_766;
+    adapter.getConnectionInfo = () =>
+    {
+      return {
+        supportsRelationJoins: false,
+        maxBindValues: SQLITE_MAX_VARIABLE_NUMBER
+      };
+    };
+    return adapter;
+  }
+
+}
 
 export interface PersistenceProvider
 {
@@ -100,7 +131,10 @@ export class Persistence implements PersistenceProvider
           ...commonLog
         ];
       const timeoutInMilliseconds = 10_000;
-      const adapter = new PrismaBetterSqlite3({ url: databaseCoordinates.url, timeout: timeoutInMilliseconds });
+      const adapter = new ConfiguredBetterSqlite3Adapter({
+        url: databaseCoordinates.url,
+        timeout: timeoutInMilliseconds
+      });
       // We increase the default timeout duration to 10 seconds
       const options = { adapter, log, transactionOptions: { timeout: timeoutInMilliseconds } };
       this.prismaClient = new PrismaClient(options);
