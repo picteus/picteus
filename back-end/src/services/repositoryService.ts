@@ -13,6 +13,7 @@ import {
   ExtensionIdImageEmbeddingName,
   ExtensionImageFeatureName,
   ExtensionImageTag,
+  FieldLengths,
   fileWithProtocol,
   Image,
   ImageFeatureFormat,
@@ -31,7 +32,7 @@ import { Json } from "../bos";
 import { EntitiesProvider, VectorDatabaseAccessor } from "./databaseProviders";
 import { ImageDeclarationManager } from "../threads/managers";
 import { EventEntity, ImageEventAction, NotifierService, RepositoryEventAction } from "./notifierService";
-import { parametersChecker, StringLengths, StringNature } from "./utils/parametersChecker";
+import { parametersChecker, StringNature } from "./utils/parametersChecker";
 import { RepositoryWatcher } from "./utils/repositoryWatcher";
 import {
   computeFormat,
@@ -99,10 +100,10 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   {
     const doNotWatch = watch !== true;
     logger.info(`Creating the repository with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}, of type '${type}', URL '${url}' ${doNotWatch === true ? "but does not watch it" : "and starts watching it"}`);
-    parametersChecker.checkString("technicalId", technicalId, StringLengths.Length32, StringNature.Technical, true);
-    parametersChecker.checkFileUrl("url", url);
-    parametersChecker.checkString("name", name, StringLengths.Length64, StringNature.Name);
-    parametersChecker.checkString("comment", comment, StringLengths.Length256, StringNature.Free, true);
+    parametersChecker.checkString("technicalId", technicalId, FieldLengths.l32, StringNature.Technical, true);
+    parametersChecker.checkString("url", url, FieldLengths.l4k, StringNature.FileUrl);
+    parametersChecker.checkString("name", name, FieldLengths.l128, StringNature.Name);
+    parametersChecker.checkString("comment", comment, FieldLengths.l1k, StringNature.Free, true);
     if ((await this.entitiesProvider.repositories.findUnique({ where: { name } })) !== null)
     {
       parametersChecker.throwBadParameter("name", name, "a repository with the same name already exists");
@@ -202,8 +203,8 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   {
     logger.info(`Updating that the repository with id '${id}''${name === undefined ? "" : `, with name '${name}'`}'${comment === undefined ? "" : `, with comment '${comment}'`}`);
     const repository = await this.getRepository(id);
-    parametersChecker.checkString("name", name, StringLengths.Length64, StringNature.Free, true);
-    parametersChecker.checkString("comment", comment, StringLengths.Length256, StringNature.Free, true);
+    parametersChecker.checkString("name", name, FieldLengths.l64, StringNature.Free, true);
+    parametersChecker.checkString("comment", comment, FieldLengths.l1k, StringNature.Free, true);
     if (name !== undefined)
     {
       const withSameNameEntity = await this.entitiesProvider.repositories.findUnique({ where: { name } });
@@ -469,8 +470,8 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   async renameImage(id: string, imageId: string, nameWithoutExtension: string, relativeDirectoryPath: string | undefined): Promise<Image>
   {
     logger.info(`Renaming the image with id '${id}' to '${nameWithoutExtension}'${relativeDirectoryPath === undefined ? "" : ` with the relative directory path '${relativeDirectoryPath}'`}`);
-    parametersChecker.checkString("nameWithoutExtension", nameWithoutExtension, StringLengths.Length256, StringNature.FileSystemFileName);
-    parametersChecker.checkString("relativeDirectoryPath", relativeDirectoryPath, StringLengths.Length256, StringNature.FileSystemRelativeDirectoryPath, true, true);
+    parametersChecker.checkString("nameWithoutExtension", nameWithoutExtension, FieldLengths.l512, StringNature.FileSystemFileName);
+    parametersChecker.checkString("relativeDirectoryPath", relativeDirectoryPath, FieldLengths.l4k, StringNature.FileSystemRelativeDirectoryPath, true, true);
 
     const repository = await this.getRepository(id);
     if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
@@ -534,13 +535,13 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       parametersChecker.throwBadParameterError(`The provided image exceeds the maximum allowed binary weight of ${Image.IMAGE_MAXIMUM_BINARY_WEIGHT_IN_BYTES} bytes`);
     }
-    parametersChecker.checkString("nameWithoutExtension", nameWithoutExtension, StringLengths.Length256, StringNature.FileSystemFileName, true);
-    parametersChecker.checkString("relativeDirectoryPath", relativeDirectoryPath, StringLengths.Length256, StringNature.FileSystemRelativeDirectoryPath, true, true);
+    parametersChecker.checkString("nameWithoutExtension", nameWithoutExtension, FieldLengths.l512, StringNature.FileSystemFileName, true);
+    parametersChecker.checkString("relativeDirectoryPath", relativeDirectoryPath, FieldLengths.l4k, StringNature.FileSystemRelativeDirectoryPath, true, true);
     if (parentId !== undefined && (await this.entitiesProvider.images.findUnique({ where: { id: parentId } })) === null)
     {
       parametersChecker.throwBadParameter("parentImageId", parentId, "it does not correspond to an existing image");
     }
-    parametersChecker.checkString("sourceUrl", sourceUrl, StringLengths.Length4096, StringNature.Url, true);
+    parametersChecker.checkString("sourceUrl", sourceUrl, FieldLengths.l4k, StringNature.Url, true);
     let imageFormat;
     try
     {

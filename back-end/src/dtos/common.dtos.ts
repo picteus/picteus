@@ -22,21 +22,19 @@ const computeIdPattern = (maximumLength: number): string =>
   return computePattern(alphaNumericPlusPattern, maximumLength);
 };
 
-export const FieldLengths =
-  {
-    eight: 8,
-    uid: 36,
-    shortTechnical: 32,
-    longTechnical: 64,
-    name: 128,
-    command: 512,
-    fileName: 512,
-    comment: 1_024,
-    filePath: 4 * 1_024,
-    url: 4 * 1_024,
-    content: 128 * 1_024,
-    value: 512 * 1_024
-  };
+export enum FieldLengths
+{
+  l8 = 8,
+  l32 = 32,
+  l36 = 36,
+  l64 = 64,
+  l128 = 128,
+  l512 = 512,
+  l1k = 1_024,
+  l4k = 4 * 1_024,
+  l128k = 128 * 1_024,
+  l512k = 512 * 1_024
+}
 
 export type Json = Record<string, any>;
 
@@ -58,15 +56,15 @@ const alphaNumericPattern = "0-9a-f";
 
 export const uniqueIdPattern = `[${alphaNumericPattern}]{8}-[${alphaNumericPattern}]{4}-[${alphaNumericPattern}]{4}-[${alphaNumericPattern}]{4}-[${alphaNumericPattern}]{12}`;
 
-export const namePattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern, FieldLengths.name);
+export const namePattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern, FieldLengths.l128);
 
-export const shortTechnicalIdPattern = computeIdPattern(FieldLengths.shortTechnical);
+export const shortTechnicalIdPattern = computeIdPattern(FieldLengths.l32);
 
 export const extensionIdPattern = shortTechnicalIdPattern;
 
-export const technicalShortRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.shortTechnical);
+export const technicalShortRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.l32);
 
-export const technicalLongRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.longTechnical);
+export const technicalLongRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.l64);
 
 const noProtocolUriPathPattern = "[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
@@ -85,7 +83,7 @@ export const urlSchema: SchemaObject =
     format: "uri",
     pattern: urlPattern,
     minLength: 8,
-    maxLength: FieldLengths.url,
+    maxLength: FieldLengths.l4k,
     example: "https://static1.smartbear.co/swagger/media/assets/images/swagger_logo.svg"
   };
 
@@ -95,7 +93,7 @@ export const uriPathSchema: SchemaObject =
     type: "string",
     pattern: uriPathPattern,
     minLength: 1,
-    maxLength: FieldLengths.url,
+    maxLength: FieldLengths.l4k,
     example: "/assets/path/file.ext"
   };
 
@@ -104,8 +102,8 @@ export const imageIdSchema: SchemaObject =
     description: "An image identifier",
     type: "string",
     pattern: uniqueIdPattern,
-    minLength: FieldLengths.uid,
-    maxLength: FieldLengths.uid,
+    minLength: FieldLengths.l36,
+    maxLength: FieldLengths.l36,
     example: "fb6af249-1061-48a0-9e47-026d7428d709"
   };
 
@@ -114,8 +112,8 @@ export const repositoryIdSchema: SchemaObject =
     description: "A repository identifier",
     type: "string",
     pattern: uniqueIdPattern,
-    minLength: FieldLengths.uid,
-    maxLength: FieldLengths.uid,
+    minLength: FieldLengths.l36,
+    maxLength: FieldLengths.l36,
     example: "9aa0820f-6405-4b54-a01a-a6b56489a77f"
   };
 
@@ -125,19 +123,19 @@ export const extensionIdSchema: SchemaObject =
     type: "string",
     pattern: extensionIdPattern,
     minLength: 1,
-    maxLength: FieldLengths.shortTechnical,
+    maxLength: FieldLengths.l32,
     example: "extension-id"
   };
 
-export const imageUrlSchema: SchemaObject =
+export const fileUrlSchema: SchemaObject =
   {
-    description: "An image URL",
+    description: "A file resource URL",
     type: "string",
     format: "uri",
     pattern: fileUrlPattern,
     minLength: 8,
-    maxLength: FieldLengths.url,
-    example: "file:///Users/me/image//path/fileName.png"
+    maxLength: FieldLengths.l4k,
+    example: "file:///Users/me/image/path/fileName.png"
   };
 
 export const shortTechnicalSchema: SchemaObject =
@@ -146,7 +144,7 @@ export const shortTechnicalSchema: SchemaObject =
     type: "string",
     pattern: shortTechnicalIdPattern,
     minLength: 1,
-    maxLength: FieldLengths.shortTechnical,
+    maxLength: FieldLengths.l32,
     example: "technical-id"
   };
 
@@ -156,7 +154,7 @@ export const technicalShortRelaxedSchema: SchemaObject =
     type: "string",
     pattern: technicalShortRelaxedPattern,
     minLength: 1,
-    maxLength: FieldLengths.shortTechnical,
+    maxLength: FieldLengths.l32,
     example: "a:relaxed/id"
   };
 
@@ -166,7 +164,7 @@ export const technicalLongRelaxedSchema: SchemaObject =
     type: "string",
     pattern: technicalLongRelaxedPattern,
     minLength: 1,
-    maxLength: FieldLengths.longTechnical,
+    maxLength: FieldLengths.l64,
     example: "a:relaxed/id"
   };
 
@@ -174,9 +172,9 @@ export const technicalSchema: SchemaObject =
   {
     description: "A technical identifier",
     type: "string",
-    pattern: computeIdPattern(FieldLengths.longTechnical),
+    pattern: computeIdPattern(FieldLengths.l64),
     minLength: 1,
-    maxLength: FieldLengths.longTechnical,
+    maxLength: FieldLengths.l64,
     example: "technical-id"
   };
 
@@ -196,7 +194,7 @@ export const attachmentUriSchema: SchemaObject =
     format: "uri",
     pattern: `^(${attachmentUriPrefix}${noProtocolUriPathPattern}`,
     minLength: 8,
-    maxLength: FieldLengths.url,
+    maxLength: FieldLengths.l4k,
     example: `${attachmentUriPrefix}1`
   };
 
@@ -290,14 +288,14 @@ export class WithIdCreationDateNameComment
       description: "The entity name",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.name,
+      maxLength: FieldLengths.l128,
       required: true,
       example: "My entity name"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.name)
+  @MaxLength(FieldLengths.l128)
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -308,14 +306,14 @@ export class WithIdCreationDateNameComment
       description: "The entity comment",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.comment,
+      maxLength: FieldLengths.l1k,
       required: false,
       example: "My comment on the entity"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.comment)
+  @MaxLength(FieldLengths.l1k)
   @IsOptional()
   @Expose()
   readonly comment?: string;

@@ -86,14 +86,14 @@ describe("Collections", () =>
         }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const name = "a".repeat(FieldLengths.name + 1);
+        const name = "a".repeat(FieldLengths.l128 + 1);
         await expect(async () =>
         {
           await base.getCollectionController().create(name, comment, filter);
         }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it exceeds 128 characters`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const comment = "a".repeat(FieldLengths.comment + 1);
+        const comment = "a".repeat(FieldLengths.l1k + 1);
         await expect(async () =>
         {
           await base.getCollectionController().create(name, comment, filter);
@@ -152,14 +152,14 @@ describe("Collections", () =>
         }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${nonExistingId}' is invalid because there is no collection with that identifier`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const name = "a".repeat(FieldLengths.name + 1);
+        const name = "a".repeat(FieldLengths.l128 + 1);
         await expect(async () =>
         {
           await base.getCollectionController().update(collection.id, name, comment, filter);
         }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it exceeds 128 characters`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const comment = "a".repeat(FieldLengths.comment + 1);
+        const comment = "a".repeat(FieldLengths.l1k + 1);
         await expect(async () =>
         {
           await base.getCollectionController().update(collection.id, name, comment, filter);

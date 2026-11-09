@@ -10,6 +10,7 @@ import {
   alphaNumericPlusAdditionalAuthorizedCharactersPattern,
   alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern,
   alphaNumericPlusPattern,
+  FieldLengths,
   fileWithProtocol
 } from "../../dtos/app.dtos";
 
@@ -24,15 +25,6 @@ export enum ErrorCodes
   NOT_IMPLEMENTED = 5
 }
 
-export enum StringLengths
-{
-  Length32 = 32,
-  Length64 = 64,
-  Length256 = 256,
-  Length1024 = 1_024,
-  Length4096 = 4 * 1_024
-}
-
 export enum StringNature
 {
   Free = "free",
@@ -45,6 +37,7 @@ export enum StringNature
   FileSystemDirectoryPath = "fileSystemDirectoryPath",
   FileSystemFilePath = "fileSystemFilePath",
   Url = "url",
+  FileUrl = "fileUrl"
 }
 
 export class ParametersChecker
@@ -70,7 +63,7 @@ export class ParametersChecker
     return result.success;
   }
 
-  checkString(name: string, value: string | undefined, maximumLength: StringLengths, nature: StringNature = StringNature.Free, isOptional: boolean = false, mayBeEmpty: boolean = false): void
+  checkString(name: string, value: string | undefined, maximumLength: FieldLengths, nature: StringNature = StringNature.Free, isOptional: boolean = false, mayBeEmpty: boolean = false): void
   {
     if (value === undefined && isOptional === false)
     {
@@ -214,6 +207,14 @@ export class ParametersChecker
           this.throwBadParameter(name, value, "is not a valid URL");
         }
       }
+      else if (nature === StringNature.FileUrl)
+      {
+        const returnType = z.string().startsWith(fileWithProtocol).safeParse(value);
+        if (returnType.success === false)
+        {
+          this.throwBadParameter(name, value, `it should start with '${fileWithProtocol}`);
+        }
+      }
     }
   }
 
@@ -236,15 +237,6 @@ export class ParametersChecker
         const reason = returnType.error.issues[0].message;
         this.throwBadParameter(name, value.toString(), reason);
       }
-    }
-  }
-
-  checkFileUrl(name: string, value: string): void
-  {
-    const returnType = z.string().startsWith(fileWithProtocol).safeParse(value);
-    if (returnType.success === false)
-    {
-      this.throwBadParameter(name, value, `it should start with '${fileWithProtocol}`);
     }
   }
 

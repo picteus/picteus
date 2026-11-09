@@ -161,7 +161,7 @@ export class SearchFeatureCondition
   @IsOptional()
   @Matches(extensionIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly extensionId?: ExtensionIdType;
 
@@ -198,14 +198,14 @@ export class SearchFeatureCondition
       description: "The image feature name",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.longTechnical,
+      maxLength: FieldLengths.l64,
       required: false,
       example: "field"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.longTechnical)
+  @MaxLength(FieldLengths.l64)
   @IsOptional()
   @Expose()
   readonly name?: string;
@@ -229,7 +229,7 @@ export class SearchFeatureCondition
       description: "The image feature value",
       anyOf:
         [
-          { type: "string", maxLength: FieldLengths.value },
+          { type: "string", maxLength: FieldLengths.l512k },
           { type: "integer", format: "int64" },
           { type: "number", format: "double" },
           { type: "boolean" }
@@ -239,7 +239,7 @@ export class SearchFeatureCondition
     }
   )
   @TypeBasedValidation({
-    "string": [ MaxLength(FieldLengths.value) ],
+    "string": [ MaxLength(FieldLengths.l512k) ],
     "number": [],
     "boolean": []
   })

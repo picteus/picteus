@@ -34,8 +34,8 @@ import {
 import { getBootstrapLogs, logger, stopBootstrapLogs } from "./logger";
 import { product } from "./constants";
 import { paths } from "./paths";
-import { environmentVariableChecker, StringLengths, StringNature } from "./services/utils/parametersChecker";
-import { ConstantsRegistry, ExtensionCategory, ManifestRuntimeEnvironment } from "./dtos/app.dtos";
+import { environmentVariableChecker, StringNature } from "./services/utils/parametersChecker";
+import { ConstantsRegistry, ExtensionCategory, FieldLengths, ManifestRuntimeEnvironment } from "./dtos/app.dtos";
 import { stringify } from "./utils";
 import { networkSecurity } from "./services/utils/networkSecurity";
 import { apiKeyHeaderName, AuthenticationGuard } from "./app.guards";
@@ -420,7 +420,7 @@ class InternalServer
     const entries = paths.check();
     for (const entry of entries)
     {
-      environmentVariableChecker.checkString(entry.name, entry.path, StringLengths.Length4096, entry.isFile === true ? StringNature.FileSystemFilePath : StringNature.FileSystemDirectoryPath);
+      environmentVariableChecker.checkString(entry.name, entry.path, FieldLengths.l4k, entry.isFile === true ? StringNature.FileSystemFilePath : StringNature.FileSystemDirectoryPath);
     }
   }
 

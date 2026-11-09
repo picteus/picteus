@@ -78,7 +78,7 @@ export class ManifestExtensionCommandSpecification
       description: "The locale the specification applies on",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.eight,
+      maxLength: FieldLengths.l8,
       required: true,
       default: "en",
       example: "fr"
@@ -86,7 +86,7 @@ export class ManifestExtensionCommandSpecification
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.eight)
+  @MaxLength(FieldLengths.l8)
   @Expose()
   readonly locale: string;
 
@@ -95,7 +95,7 @@ export class ManifestExtensionCommandSpecification
       description: "The command label displayed on buttons",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
+      maxLength: FieldLengths.l32,
       required: true,
       example: "Resize"
     }
@@ -104,7 +104,7 @@ export class ManifestExtensionCommandSpecification
   @MinLength(1)
   @IsDefined()
   @NotEquals(null)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly label: string;
 
@@ -113,14 +113,14 @@ export class ManifestExtensionCommandSpecification
       description: "The command name displayed on dialog boxes",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.name,
+      maxLength: FieldLengths.l128,
       required: false,
       example: "Resize an image"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.name)
+  @MaxLength(FieldLengths.l128)
   @IsOptional()
   @Expose()
   readonly name?: string;
@@ -130,14 +130,14 @@ export class ManifestExtensionCommandSpecification
       description: "The command description",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.comment,
+      maxLength: FieldLengths.l1k,
       required: false,
       example: "Resizes an image given a format asked to the user."
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.comment)
+  @MaxLength(FieldLengths.l1k)
   @IsOptional()
   @Expose()
   readonly description?: string;
@@ -194,7 +194,7 @@ export class ManifestExtensionCommandOn
       type: String,
       isArray: true,
       minLength: 1,
-      maxLength: FieldLengths.longTechnical,
+      maxLength: FieldLengths.l64,
       required: false
     }
   )
@@ -202,7 +202,7 @@ export class ManifestExtensionCommandOn
   @IsString({ each: true })
   @ValidateNested({ each: true })
   @MinLength(1, { each: true })
-  @MaxLength(FieldLengths.longTechnical, { each: true })
+  @MaxLength(FieldLengths.l64, { each: true })
   @IsOptional()
   @Expose()
   readonly withTags?: ImageTag[];
@@ -229,7 +229,7 @@ export class ManifestExtensionCommandUi
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.url)
+  @MaxLength(FieldLengths.l4k)
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -261,7 +261,7 @@ export class ManifestExtensionCommand
   )
   @Matches(shortTechnicalIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -569,14 +569,14 @@ export class ManifestExecution
       description: "The executable to run",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.command,
+      maxLength: FieldLengths.l512,
       example: "python",
       required: true
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.command)
+  @MaxLength(FieldLengths.l512)
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -588,7 +588,7 @@ export class ManifestExecution
       type: String,
       isArray: true,
       minLength: 1,
-      maxLength: FieldLengths.command,
+      maxLength: FieldLengths.l512,
       maxItems: 64,
       required: true
     }
@@ -596,7 +596,7 @@ export class ManifestExecution
   @IsString({ each: true })
   @IsArray()
   @MinLength(1, { each: true })
-  @MaxLength(FieldLengths.command, { each: true })
+  @MaxLength(FieldLengths.l512, { each: true })
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -856,7 +856,7 @@ export class ManifestInterfaceElement
   )
   @Matches(shortTechnicalIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -918,7 +918,7 @@ export class ManifestInterfaceElement
   @IsString()
   @Matches(uriPathPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.url)
+  @MaxLength(FieldLengths.l4k)
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -991,7 +991,7 @@ class ExtensionBasis
   )
   @Matches(extensionIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -1004,14 +1004,14 @@ class ExtensionBasis
       type: String,
       pattern: semverPattern,
       minLength: 5,
-      maxLength: FieldLengths.shortTechnical,
+      maxLength: FieldLengths.l32,
       required: true,
       example: "1.0.0"
     }
   )
   @Matches(semverPattern)
   @MinLength(5)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -1024,14 +1024,14 @@ class ExtensionBasis
       type: String,
       pattern: namePattern,
       minLength: 1,
-      maxLength: FieldLengths.name,
+      maxLength: FieldLengths.l128,
       required: true,
       example: "My extension"
     }
   )
   @Matches(namePattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.name)
+  @MaxLength(FieldLengths.l128)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -1043,13 +1043,13 @@ class ExtensionBasis
       description: "The description of the extension's purpose",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.comment,
+      maxLength: FieldLengths.l1k,
       required: true,
       example: "Computes the embeddings of images."
     }
   )
   @MinLength(1)
-  @MaxLength(FieldLengths.comment)
+  @MaxLength(FieldLengths.l1k)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -1173,13 +1173,13 @@ export class ExtensionGenerationOptions extends ExtensionBasis
       description: "The author of the extension",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.name,
+      maxLength: FieldLengths.l128,
       required: true,
       example: "John Doe"
     }
   )
   @MinLength(1)
-  @MaxLength(FieldLengths.name)
+  @MaxLength(FieldLengths.l128)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -1207,14 +1207,14 @@ export class ExtensionGenerationOptions extends ExtensionBasis
       type: String,
       pattern: semverPattern,
       minLength: 5,
-      maxLength: FieldLengths.shortTechnical,
+      maxLength: FieldLengths.l32,
       required: false,
       example: "1.0.0"
     }
   )
   @Matches(semverPattern)
   @MinLength(5)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @IsOptional()
   @IsString()
   @Expose()
@@ -1380,13 +1380,13 @@ export class ExtensionManual
       description: "The instructions",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.content,
+      maxLength: FieldLengths.l128k,
       required: true,
       example: "To use the extension, you need to install…"
     }
   )
   @MinLength(1)
-  @MaxLength(FieldLengths.content)
+  @MaxLength(FieldLengths.l128k)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -1466,7 +1466,7 @@ export class AiModel
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.longTechnical)
+  @MaxLength(FieldLengths.l64)
   @Matches(technicalLongRelaxedPattern)
   @IsDefined()
   @NotEquals(null)
@@ -1479,7 +1479,7 @@ export class AiModel
       type: String,
       pattern: namePattern,
       minLength: 1,
-      maxLength: FieldLengths.name,
+      maxLength: FieldLengths.l128,
       required: true,
       example: "Gemma 4 E2B"
     }
@@ -1487,7 +1487,7 @@ export class AiModel
   @IsString()
   @Matches(namePattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.name)
+  @MaxLength(FieldLengths.l128)
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -1498,14 +1498,14 @@ export class AiModel
       description: "The model comment",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.comment,
+      maxLength: FieldLengths.l1k,
       required: false,
       example: "Vision model used for captioning"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.comment)
+  @MaxLength(FieldLengths.l1k)
   @IsOptional()
   @Expose()
   readonly comment?: string;
@@ -1581,7 +1581,7 @@ export class BasisInstruction
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.longTechnical)
+  @MaxLength(FieldLengths.l64)
   @Matches(technicalLongRelaxedPattern)
   @IsDefined()
   @NotEquals(null)
@@ -1593,14 +1593,14 @@ export class BasisInstruction
       description: "The question submitted to the AI model to produce the caption or the eligible tags",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.comment,
+      maxLength: FieldLengths.l1k,
       required: true,
       example: "Describe this image in one sentence"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.comment)
+  @MaxLength(FieldLengths.l1k)
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -1680,7 +1680,7 @@ export class EligibleTagsInstruction extends BasisInstruction
   @IsArray()
   @IsString({ each: true })
   @MinLength(1, { each: true })
-  @MaxLength(FieldLengths.longTechnical, { each: true })
+  @MaxLength(FieldLengths.l64, { each: true })
   @Matches(technicalShortRelaxedPattern, undefined, { each: true })
   @IsDefined()
   @NotEquals(null)
@@ -1746,7 +1746,7 @@ export class ConfigurationExtensionCommand
   )
   @Matches(extensionIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @IsDefined()
   @NotEquals(null)
   @IsString()

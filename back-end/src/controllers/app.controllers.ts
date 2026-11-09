@@ -83,6 +83,7 @@ import {
   ExtensionSettings,
   ExtensionState,
   FieldLengths,
+  fileUrlSchema,
   GenerationRecipe,
   Image,
   ImageDistance,
@@ -95,7 +96,6 @@ import {
   ImageMetadata,
   ImageResizeRender,
   ImageTag,
-  imageUrlSchema,
   integerIdSchema,
   IntegerIdType,
   ManifestCapabilityId,
@@ -385,7 +385,7 @@ export class ApiSecretController
     description: "The API secret name",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.name,
+    maxLength: FieldLengths.l128,
     required: true,
     example: "My key"
   })
@@ -411,7 +411,7 @@ export class ApiSecretController
     description: "A comment about the API secret",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.comment,
+    maxLength: FieldLengths.l1k,
     required: false,
     example: "For the xxx application"
   })
@@ -420,7 +420,7 @@ export class ApiSecretController
     description: "The API secret scope",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.longTechnical,
+    maxLength: FieldLengths.l64,
     required: false,
     example: "image:read,repository:read"
   })
@@ -546,7 +546,7 @@ export class ExtensionController
     description: "A case-insensitive search applied to the extension identifier, name, and description",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.name,
+    maxLength: FieldLengths.l128,
     required: false
   })
   @ApiQuery({
@@ -1211,7 +1211,7 @@ export class MarketplaceController
     description: "A case-insensitive search applied to the extension identifier, name, and description",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.name,
+    maxLength: FieldLengths.l128,
     required: false
   })
   @ApiQuery({
@@ -1392,10 +1392,37 @@ export class RepositoryController
     }
   )
   @ApiQuery({ name: "type", description: "The repository type", enum: RepositoryLocationType, required: true })
-  @ApiQuery({ name: "url", description: "The repository URL", type: String, required: true })
-  @ApiQuery({ name: "technicalId", description: "The technical identifier", type: String, required: false })
-  @ApiQuery({ name: "name", description: "The repository name", type: String, required: true })
-  @ApiQuery({ name: "comment", description: "The repository comment", type: String, required: false })
+  @ApiQuery({
+    name: "url",
+    description: "The repository URL",
+    schema: fileUrlSchema,
+    required: true,
+    example: "file:///Users/me/image/directory"
+  })
+  @ApiQuery({
+    name: "technicalId",
+    description: "The technical identifier",
+    type: String,
+    minLength: 1,
+    maxLength: FieldLengths.l32,
+    required: false
+  })
+  @ApiQuery({
+    name: "name",
+    description: "The repository name",
+    type: String,
+    minLength: 1,
+    maxLength: FieldLengths.l128,
+    required: true
+  })
+  @ApiQuery({
+    name: "comment",
+    description: "The repository comment",
+    type: String,
+    minLength: 1,
+    maxLength: FieldLengths.l1k,
+    required: false
+  })
   @ApiQuery({
     name: "watch",
     description: "Whether the repository should be watched immediately ; when not defined, this parameter has the implicit 'false' value",
@@ -1423,8 +1450,22 @@ export class RepositoryController
     }
   )
   @ApiParam({ name: "id", description: "The repository identifier", schema: repositoryIdSchema, required: true })
-  @ApiQuery({ name: "name", description: "The repository name", type: String, required: false })
-  @ApiQuery({ name: "comment", description: "The repository comment", type: String, required: false })
+  @ApiQuery({
+    name: "name",
+    description: "The repository name",
+    type: String,
+    minLength: 1,
+    maxLength: FieldLengths.l128,
+    required: false
+  })
+  @ApiQuery({
+    name: "comment",
+    description: "The repository comment",
+    type: String,
+    minLength: 1,
+    maxLength: FieldLengths.l1k,
+    required: false
+  })
   @ApiResponse(
     {
       status: OK,
@@ -1445,9 +1486,29 @@ export class RepositoryController
       description: "Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it."
     }
   )
-  @ApiQuery({ name: "technicalId", description: "The repository technical identifier", type: String, required: true })
-  @ApiQuery({ name: "name", description: "The repository name", type: String, required: true })
-  @ApiQuery({ name: "comment", description: "The repository comment", type: String, required: false })
+  @ApiQuery({
+    name: "technicalId",
+    description: "The repository technical identifier",
+    type: String,
+    minLength: 1,
+    maxLength: FieldLengths.l32,
+    required: true
+  })
+  @ApiQuery({
+    name: "name",
+    description: "The repository name",
+    type: String, minLength: 1,
+    maxLength: FieldLengths.l128,
+    required: true
+  })
+  @ApiQuery({
+    name: "comment",
+    description: "The repository comment",
+    type: String,
+    minLength: 1,
+    maxLength: FieldLengths.l1k,
+    required: false
+  })
   @ApiQuery({
     name: "watch",
     description: "Whether the repository should be watched immediately ; when not defined, this parameter has the implicit 'false' value",
@@ -1642,7 +1703,7 @@ export class RepositoryController
   )
   @ApiQuery({
     name: "url", description: "The image URL",
-    schema: imageUrlSchema,
+    schema: fileUrlSchema,
     required: true
   })
   @ApiResponse(
@@ -1744,7 +1805,7 @@ export class RepositoryController
       type: "string",
       format: "uri",
       minLength: 8,
-      maxLength: FieldLengths.url,
+      maxLength: FieldLengths.l4k,
       example: "https://i.pinimg.com/736x/ff/6e/fc/ff6efca1dbea44c34bc18614a3cc5320.jpg"
     },
     required: false
@@ -1830,7 +1891,7 @@ export class CollectionController
     description: "The collection name",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.name,
+    maxLength: FieldLengths.l128,
     required: true,
     example: "My filter"
   })
@@ -1839,7 +1900,7 @@ export class CollectionController
     description: "A comment about the collection",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.comment,
+    maxLength: FieldLengths.l1k,
     required: false,
     example: "All images generated by Midjourney"
   })
@@ -1905,7 +1966,7 @@ export class CollectionController
     description: "The collection name",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.name,
+    maxLength: FieldLengths.l128,
     required: false,
     example: "My filter"
   })
@@ -1914,7 +1975,7 @@ export class CollectionController
     description: "A comment about the collection",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.comment,
+    maxLength: FieldLengths.l1k,
     required: false,
     example: "All images generated by Midjourney"
   })
@@ -2602,7 +2663,7 @@ export class ImageController
           type: "string",
           pattern: alphaNumericPlusPattern,
           minLength: 1,
-          maxLength: FieldLengths.longTechnical
+          maxLength: FieldLengths.l64
         },
         minItems: 0,
         maxItems: ExtensionImageTag.PER_EXTENSION_TAGS_MAXIMUM
@@ -3005,7 +3066,7 @@ export class ImageAttachmentController
     description: "The MIME type of the attachment payload",
     type: String,
     minLength: 1,
-    maxLength: FieldLengths.shortTechnical,
+    maxLength: FieldLengths.l32,
     required: true,
     example: "image/png"
   })

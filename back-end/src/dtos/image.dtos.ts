@@ -260,14 +260,14 @@ export class TextualPrompt extends BasisPrompt
       description: "The textual prompt",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.content,
+      maxLength: FieldLengths.l128k,
       required: true,
       example: "A white sign with a black background"
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.content)
+  @MaxLength(FieldLengths.l128k)
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -346,7 +346,7 @@ export class GenerationRecipe
       description: "The identifier of the recipe instance",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.longTechnical,
+      maxLength: FieldLengths.l64,
       required: false,
       example: "820hh5e0w5rmc0ctgw38b1t4pr"
     }
@@ -354,7 +354,7 @@ export class GenerationRecipe
   @IsString()
   @IsOptional()
   @MinLength(1)
-  @MaxLength(FieldLengths.longTechnical)
+  @MaxLength(FieldLengths.l64)
   @Expose()
   readonly id?: string;
 
@@ -365,7 +365,7 @@ export class GenerationRecipe
       format: "uri",
       pattern: uriPathPattern,
       minLength: 1,
-      maxLength: FieldLengths.url,
+      maxLength: FieldLengths.l4k,
       required: false,
       example: "https://api.replicate.com/v1/predictions/820hh5e0w5rmc0ctgw38b1t4pr"
     }
@@ -373,7 +373,7 @@ export class GenerationRecipe
   @IsString()
   @Matches(uriPathPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.url)
+  @MaxLength(FieldLengths.l4k)
   @IsOptional()
   @Expose()
   readonly url?: string;
@@ -400,7 +400,7 @@ export class GenerationRecipe
       type: String,
       pattern: namePattern,
       minLength: 1,
-      maxLength: FieldLengths.name,
+      maxLength: FieldLengths.l128,
       required: false,
       example: "John Doe"
     }
@@ -408,7 +408,7 @@ export class GenerationRecipe
   @IsString()
   @Matches(namePattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.name)
+  @MaxLength(FieldLengths.l128)
   @IsOptional()
   @Expose()
   readonly author?: string;
@@ -420,7 +420,7 @@ export class GenerationRecipe
       isArray: true,
       pattern: modelAndSoftwareTagPattern,
       minLength: 1,
-      maxLength: FieldLengths.url,
+      maxLength: FieldLengths.l4k,
       required: true,
       example: "google/gemini-2.5-flash-image:2.5"
     }
@@ -432,7 +432,7 @@ export class GenerationRecipe
   @IsDefined({ each: true })
   @NotEquals(null)
   @MinLength(1, { each: true })
-  @MaxLength(FieldLengths.url, { each: true })
+  @MaxLength(FieldLengths.l4k, { each: true })
   @Expose()
   readonly modelTags: string[];
 
@@ -442,7 +442,7 @@ export class GenerationRecipe
       type: String,
       pattern: modelAndSoftwareTagPattern,
       minLength: 1,
-      maxLength: FieldLengths.name,
+      maxLength: FieldLengths.l128,
       required: false,
       example: "comfyui"
     }
@@ -451,7 +451,7 @@ export class GenerationRecipe
   @Matches(modelAndSoftwareTagPattern)
   @IsOptional()
   @MinLength(1)
-  @MaxLength(FieldLengths.name)
+  @MaxLength(FieldLengths.l128)
   @Expose()
   readonly software?: string;
 
@@ -461,7 +461,7 @@ export class GenerationRecipe
       type: String,
       isArray: true,
       minLength: 1,
-      maxLength: FieldLengths.url,
+      maxLength: FieldLengths.l4k,
       required: false,
       example: [ imageIdSchema.example ]
     }
@@ -469,7 +469,7 @@ export class GenerationRecipe
   @IsString({ each: true })
   @IsArray()
   @MinLength(1, { each: true })
-  @MaxLength(FieldLengths.url, { each: true })
+  @MaxLength(FieldLengths.l4k, { each: true })
   @IsOptional()
   @Expose()
   readonly inputAssets?: string[];
@@ -564,7 +564,7 @@ export class ApplicationMetadataItem
   )
   @Matches(extensionIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -698,7 +698,7 @@ export class ImageFeature
   @IsString()
   @Matches(technicalLongRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.longTechnical)
+  @MaxLength(FieldLengths.l64)
   @IsOptional()
   @Expose()
   readonly name?: string;
@@ -708,7 +708,7 @@ export class ImageFeature
       description: "The image feature value",
       oneOf:
         [
-          { type: "string", minLength: 1, maxLength: FieldLengths.value },
+          { type: "string", minLength: 1, maxLength: FieldLengths.l512k },
           { type: "integer", format: "int64" },
           { type: "number", format: "double" },
           { type: "boolean" }
@@ -718,7 +718,7 @@ export class ImageFeature
     }
   )
   @TypeBasedValidation({
-    "string": [ MinLength(1), MaxLength(FieldLengths.value) ],
+    "string": [ MinLength(1), MaxLength(FieldLengths.l512k) ],
     "number": [],
     "boolean": []
   })
@@ -767,7 +767,7 @@ export class ExtensionImageFeature extends ImageFeature
   )
   @Matches(extensionIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly id: ExtensionIdType;
 
@@ -796,7 +796,7 @@ export class ExtensionImageFeatureName
   @IsString()
   @Matches(extensionIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly id: ExtensionIdType;
 
@@ -836,7 +836,7 @@ export class ExtensionImageFeatureName
   @IsString()
   @Matches(technicalLongRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.longTechnical)
+  @MaxLength(FieldLengths.l64)
   @Expose()
   readonly name: string;
 
@@ -869,7 +869,7 @@ export class ExtensionImageTag
   @IsString()
   @Matches(extensionIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly id: ExtensionIdType;
 
@@ -884,7 +884,7 @@ export class ExtensionImageTag
   @IsString()
   @Matches(technicalShortRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.longTechnical)
+  @MaxLength(FieldLengths.l64)
   @Expose()
   readonly value: ImageTag;
 
@@ -919,7 +919,7 @@ export class ImageEmbedding
   @IsString()
   @Matches(technicalShortRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly name: string;
 
@@ -963,7 +963,7 @@ export class ExtensionImageEmbeddings
   )
   @Matches(extensionIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly id: string;
 
@@ -1003,7 +1003,7 @@ export class ExtensionIdImageEmbeddingName
   )
   @Matches(extensionIdPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly extensionId: ExtensionIdType;
 
@@ -1018,7 +1018,7 @@ export class ExtensionIdImageEmbeddingName
   @IsString()
   @Matches(technicalShortRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly name: string;
 
@@ -1060,8 +1060,8 @@ export class ImageSummary extends Dates
       description: "The unique identifier of the repository it belongs to",
       type: String,
       pattern: uniqueIdPattern,
-      minLength: FieldLengths.uid,
-      maxLength: FieldLengths.uid,
+      minLength: FieldLengths.l36,
+      maxLength: FieldLengths.l36,
       required: true,
       example: repositoryIdSchema.example
     }
@@ -1074,8 +1074,8 @@ export class ImageSummary extends Dates
       description: "The unique identifier of the image parent",
       type: String,
       pattern: uniqueIdPattern,
-      minLength: FieldLengths.uid,
-      maxLength: FieldLengths.uid,
+      minLength: FieldLengths.l36,
+      maxLength: FieldLengths.l36,
       required: false
     }
   )
@@ -1087,7 +1087,7 @@ export class ImageSummary extends Dates
       description: "The image name",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.fileName,
+      maxLength: FieldLengths.l512,
       required: true,
       example: "fileName.png"
     }
@@ -1112,7 +1112,7 @@ export class ImageSummary extends Dates
       description: "The image MIME type",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
+      maxLength: FieldLengths.l32,
       required: true,
       example: "image/jpeg"
     }
@@ -1129,7 +1129,7 @@ export class ImageSummary extends Dates
       type: String,
       pattern: fileUrlPattern,
       minLength: 8,
-      maxLength: FieldLengths.filePath,
+      maxLength: FieldLengths.l4k,
       required: true,
       example: "file:///Users/me/image//path/fileName.png"
     }
@@ -1143,7 +1143,7 @@ export class ImageSummary extends Dates
       type: String,
       pattern: fileUrlPattern,
       minLength: 8,
-      maxLength: FieldLengths.filePath,
+      maxLength: FieldLengths.l4k,
       required: true,
       example: "file:///Users/me/image//path/fileName.png"
     }
@@ -1158,7 +1158,7 @@ export class ImageSummary extends Dates
       format: "uri",
       pattern: urlPattern,
       minLength: 8,
-      maxLength: FieldLengths.url,
+      maxLength: FieldLengths.l4k,
       required: false,
       example: "https://static1.smartbear.co/swagger/media/assets/images/swagger_logo.svg"
     }
@@ -1245,8 +1245,8 @@ export class ImageMediaUrl
   )
   @IsString()
   @Matches(uniqueIdPattern)
-  @MinLength(FieldLengths.uid)
-  @MaxLength(FieldLengths.uid)
+  @MinLength(FieldLengths.l36)
+  @MaxLength(FieldLengths.l36)
   @Expose()
   readonly id: string;
 

@@ -74,7 +74,7 @@ import {
   SearchParameters,
   UserInterfaceAnchor
 } from "../dtos/app.dtos";
-import { parametersChecker, StringLengths, StringNature } from "./utils/parametersChecker";
+import { parametersChecker, StringNature } from "./utils/parametersChecker";
 import { spawn, waitFor } from "./utils/processWrapper";
 import {
   ensureNpm,
@@ -720,7 +720,7 @@ export class ExtensionService
   async list(search?: string, categories?: ExtensionCategory[]): Promise<Extension[]>
   {
     logger.info("Listing extensions" + (search === undefined ? "" : (`with the '${search}' search string`)) + (categories === undefined ? "" : (` with the [${categories.join(", ")}] categories`)));
-    parametersChecker.checkString("search", search, StringLengths.Length64, StringNature.Free, true);
+    parametersChecker.checkString("search", search, FieldLengths.l64, StringNature.Free, true);
     if (categories !== undefined && categories.length === 0)
     {
       parametersChecker.throwBadParameter("category", undefined, "it should contain at least one item");
@@ -1018,9 +1018,9 @@ export class ExtensionService
     for (let index = 0; index < models.length; index++)
     {
       const model = models[index];
-      parametersChecker.checkString(`[${index}].technicalId`, model.technicalId, FieldLengths.longTechnical, StringNature.TechnicalRelaxed);
-      parametersChecker.checkString(`[${index}].name`, model.name, FieldLengths.name, StringNature.Name);
-      parametersChecker.checkString(`[${index}].comment`, model.comment, FieldLengths.comment, StringNature.Free, true);
+      parametersChecker.checkString(`[${index}].technicalId`, model.technicalId, FieldLengths.l64, StringNature.TechnicalRelaxed);
+      parametersChecker.checkString(`[${index}].name`, model.name, FieldLengths.l128, StringNature.Name);
+      parametersChecker.checkString(`[${index}].comment`, model.comment, FieldLengths.l1k, StringNature.Free, true);
     }
 
     const operations: Prisma.PrismaPromise<Prisma.BatchPayload>[] = [ this.entitiesProvider.aiModel.deleteMany({ where: { extensionId: id } }) ];

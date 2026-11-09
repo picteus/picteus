@@ -41,9 +41,9 @@ export class ApiSecretService
     {
       parametersChecker.throwBadParameter("expirationDate", expirationDate.toString(), "it is set in the past");
     }
-    parametersChecker.checkString("name", name, FieldLengths.name);
-    parametersChecker.checkString("comment", comment, FieldLengths.comment, undefined, true);
-    parametersChecker.checkString("scope", scope, FieldLengths.longTechnical, undefined, true);
+    parametersChecker.checkString("name", name, FieldLengths.l128);
+    parametersChecker.checkString("comment", comment, FieldLengths.l1k, undefined, true);
+    parametersChecker.checkString("scope", scope, FieldLengths.l64, undefined, true);
     if (scope !== undefined)
     {
       const tokens = scope.split(apiScopesSeparator);

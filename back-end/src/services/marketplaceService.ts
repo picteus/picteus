@@ -10,11 +10,12 @@ import {
   Extension,
   ExtensionManual,
   ExtensionState,
+  FieldLengths,
   MarketplaceExtension,
   MarketplaceExtensionDetails
 } from "../dtos/app.dtos";
 import { plainToInstanceViaJSON } from "../utils";
-import { parametersChecker, StringLengths, StringNature } from "./utils/parametersChecker";
+import { parametersChecker, StringNature } from "./utils/parametersChecker";
 import { ExtensionArchiveReader, ExtensionRegistry, ManifestPathArchive } from "./extensionRegistry";
 import { ExtensionService, StateChangeOptions } from "./extensionServices";
 
@@ -66,7 +67,7 @@ export class MarketplaceService implements OnModuleInit
   async list(search: string | undefined, categories: string[] | undefined): Promise<MarketplaceExtension[]>
   {
     logger.info("Listing extensions" + (search === undefined ? "" : (`, with the '${search}' search string`)) + (categories === undefined ? "" : (`, with the [${categories.join(", ")}] search categories`)));
-    parametersChecker.checkString("search", search, StringLengths.Length64, StringNature.Free, true);
+    parametersChecker.checkString("search", search, FieldLengths.l64, StringNature.Free, true);
     if (categories !== undefined && categories.length === 0)
     {
       parametersChecker.throwBadParameter("category", undefined, "it should contain at least one item");

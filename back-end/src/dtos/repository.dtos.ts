@@ -56,14 +56,14 @@ export class RepositoryLocation
       format: "uri",
       pattern: fileUrlPattern,
       minLength: 8,
-      maxLength: FieldLengths.url,
+      maxLength: FieldLengths.l4k,
       required: true
     }
   )
   @IsString()
   @Matches(fileUrlPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.url)
+  @MaxLength(FieldLengths.l4k)
   @Expose()
   readonly url: string;
 
@@ -114,8 +114,8 @@ export class Repository extends Dates
   )
   @IsString()
   @Matches(uniqueIdPattern)
-  @MinLength(FieldLengths.uid)
-  @MaxLength(FieldLengths.uid)
+  @MinLength(FieldLengths.l36)
+  @MaxLength(FieldLengths.l36)
   @Expose()
   readonly id: string;
 
@@ -141,7 +141,7 @@ export class Repository extends Dates
       format: "uri",
       pattern: fileUrlPattern,
       minLength: 1,
-      maxLength: FieldLengths.url,
+      maxLength: FieldLengths.l4k,
       required: true,
       example: "file:///Users/me/folder/path"
     }
@@ -149,7 +149,7 @@ export class Repository extends Dates
   @IsString()
   @Matches(fileUrlPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.url)
+  @MaxLength(FieldLengths.l4k)
   @Expose()
   readonly url: string;
 
@@ -159,7 +159,7 @@ export class Repository extends Dates
       type: String,
       pattern: shortTechnicalIdPattern,
       minLength: 1,
-      maxLength: FieldLengths.shortTechnical,
+      maxLength: FieldLengths.l32,
       required: false,
       example: "technical-id"
     }
@@ -167,7 +167,7 @@ export class Repository extends Dates
   @IsString()
   @Matches(fileUrlPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.shortTechnical)
+  @MaxLength(FieldLengths.l32)
   @IsOptional()
   @Expose()
   readonly technicalId?: string;
@@ -178,7 +178,7 @@ export class Repository extends Dates
       type: String,
       pattern: namePattern,
       minLength: 1,
-      maxLength: FieldLengths.name,
+      maxLength: FieldLengths.l128,
       required: true,
       example: "myRepository"
     }
@@ -186,7 +186,7 @@ export class Repository extends Dates
   @IsString()
   @Matches(namePattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.name)
+  @MaxLength(FieldLengths.l128)
   @Expose()
   readonly name: string;
 
@@ -195,14 +195,14 @@ export class Repository extends Dates
       description: "The comment about the repository",
       type: String,
       minLength: 1,
-      maxLength: FieldLengths.comment,
+      maxLength: FieldLengths.l1k,
       required: false,
       example: "A very interesting series of photos."
     }
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.comment)
+  @MaxLength(FieldLengths.l1k)
   @IsOptional()
   @Expose()
   readonly comment?: string;
@@ -265,8 +265,8 @@ export class RepositoryActivity
   )
   @IsString()
   @Matches(uniqueIdPattern)
-  @MinLength(FieldLengths.uid)
-  @MaxLength(FieldLengths.uid)
+  @MinLength(FieldLengths.l36)
+  @MaxLength(FieldLengths.l36)
   @Expose()
   readonly id: string;
 

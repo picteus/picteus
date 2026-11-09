@@ -17,6 +17,7 @@ import { paths } from "../src/paths";
 import { logger } from "../src/logger";
 import { Base, Core } from "./base";
 import {
+  FieldLengths,
   GenerationRecipe,
   InstructionsPrompt,
   Manifest,
@@ -52,12 +53,7 @@ import {
   which
 } from "../src/services/utils/processWrapper";
 import { ensureDirectory, fixUtimesSync, getTemporaryDirectoryPath, move } from "../src/services/utils/downloader";
-import {
-  environmentVariableChecker,
-  parametersChecker,
-  StringLengths,
-  StringNature
-} from "../src/services/utils/parametersChecker";
+import { environmentVariableChecker, parametersChecker, StringNature } from "../src/services/utils/parametersChecker";
 import { computeAjv, validateJsonSchema, validateSchema } from "../src/services/utils/ajvWrapper";
 import { DeepObjectPipeTransform } from "../src/controllers/app.pipes";
 import { WatcherEvent, watchPath } from "../src/services/utils/pathWatcher";
@@ -1012,7 +1008,7 @@ setTimeout(() => {}, 1_000_000);
         {
           await expect(async () =>
           {
-            parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemFileName);
+            parametersChecker.checkString(name, value, FieldLengths.l128, StringNature.FileSystemFileName);
           }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it contains illegal characters`, BAD_REQUEST, errorCode));
         }
       }
@@ -1021,7 +1017,7 @@ setTimeout(() => {}, 1_000_000);
         const values = [ `a-file-path`, `a file path` ];
         for (const value of values)
         {
-          parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemFileName);
+          parametersChecker.checkString(name, value, FieldLengths.l128, StringNature.FileSystemFileName);
         }
       }
     }
@@ -1045,21 +1041,21 @@ setTimeout(() => {}, 1_000_000);
         {
           await expect(async () =>
           {
-            parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemFileName);
+            parametersChecker.checkString(name, value, FieldLengths.l128, StringNature.FileSystemFileName);
           }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it contains illegal characters`, BAD_REQUEST, errorCode));
         }
         for (const value of [ filePath, validSymbolicLinkFilePath ])
         {
           await expect(async () =>
           {
-            parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemDirectoryPath);
+            parametersChecker.checkString(name, value, FieldLengths.l128, StringNature.FileSystemDirectoryPath);
           }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it does corresponds to a directory`, BAD_REQUEST, errorCode));
         }
         for (const value of [ directoryPath, validSymbolicLinkDirectoryPath ])
         {
           await expect(async () =>
           {
-            parametersChecker.checkString(name, value, StringLengths.Length256, StringNature.FileSystemFilePath);
+            parametersChecker.checkString(name, value, FieldLengths.l128, StringNature.FileSystemFilePath);
           }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it does corresponds to a file`, BAD_REQUEST, errorCode));
         }
         for (const value of [ brokenSymbolicLinkDirectoryPath, brokenSymbolicLinkFilePath ])
@@ -1068,26 +1064,26 @@ setTimeout(() => {}, 1_000_000);
           {
             await expect(async () =>
             {
-              parametersChecker.checkString(name, value, StringLengths.Length256, nature);
+              parametersChecker.checkString(name, value, FieldLengths.l128, nature);
             }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it corresponds to a broken symbolic link`, BAD_REQUEST, errorCode));
           }
         }
         for (const nature of Object.keys(StringNature) as StringNature[])
         {
-          const value = "a".repeat(256 + 1);
+          const value = "a".repeat(128 + 1);
           await expect(async () =>
           {
-            parametersChecker.checkString(name, value, StringLengths.Length256, nature);
-          }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it exceeds 256 characters`, BAD_REQUEST, errorCode));
+            parametersChecker.checkString(name, value, FieldLengths.l128, nature);
+          }).rejects.toThrow(new ServiceError(`The parameter '${name}' with value '${value}' is invalid because it exceeds 128 characters`, BAD_REQUEST, errorCode));
         }
       }
       {
         // We assess with valid values
-        parametersChecker.checkString(name, directoryPath, StringLengths.Length256, StringNature.FileSystemDirectoryPath);
-        parametersChecker.checkString(name, validSymbolicLinkDirectoryPath, StringLengths.Length256, StringNature.FileSystemDirectoryPath);
-        parametersChecker.checkString(name, filePath, StringLengths.Length256, StringNature.FileSystemFilePath);
-        parametersChecker.checkString(name, validSymbolicLinkFilePath, StringLengths.Length256, StringNature.FileSystemFilePath);
-        parametersChecker.checkString(name, "", StringLengths.Length256, StringNature.FileSystemRelativeDirectoryPath, false, true);
+        parametersChecker.checkString(name, directoryPath, FieldLengths.l128, StringNature.FileSystemDirectoryPath);
+        parametersChecker.checkString(name, validSymbolicLinkDirectoryPath, FieldLengths.l128, StringNature.FileSystemDirectoryPath);
+        parametersChecker.checkString(name, filePath, FieldLengths.l128, StringNature.FileSystemFilePath);
+        parametersChecker.checkString(name, validSymbolicLinkFilePath, FieldLengths.l128, StringNature.FileSystemFilePath);
+        parametersChecker.checkString(name, "", FieldLengths.l128, StringNature.FileSystemRelativeDirectoryPath, false, true);
       }
     }
     {
@@ -1095,7 +1091,7 @@ setTimeout(() => {}, 1_000_000);
       const environmentVariableName = randomUUID();
       await expect(async () =>
       {
-        environmentVariableChecker.checkString(environmentVariableName, undefined, StringLengths.Length32, StringNature.Free);
+        environmentVariableChecker.checkString(environmentVariableName, undefined, FieldLengths.l32, StringNature.Free);
       }).rejects.toThrow(new ServiceError(`The '${environmentVariableName}' environment variable is missing`, BAD_REQUEST, errorCode));
     }
   });

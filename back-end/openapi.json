@@ -162,7 +162,12 @@
             "in": "query",
             "description": "The API secret type",
             "schema": {
-              "$ref": "#/components/schemas/ApiSecretType"
+              "example": "key",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ApiSecretType"
+                }
+              ]
             }
           },
           {
@@ -1643,7 +1648,13 @@
             "in": "query",
             "description": "The repository URL",
             "schema": {
-              "type": "string"
+              "description": "A file resource URL",
+              "type": "string",
+              "format": "uri",
+              "pattern": "file://.*",
+              "minLength": 8,
+              "maxLength": 4096,
+              "example": "file:///Users/me/image/path/fileName.png"
             }
           },
           {
@@ -1652,6 +1663,8 @@
             "in": "query",
             "description": "The repository name",
             "schema": {
+              "minLength": 1,
+              "maxLength": 128,
               "type": "string"
             }
           },
@@ -1661,6 +1674,8 @@
             "in": "query",
             "description": "The repository comment",
             "schema": {
+              "minLength": 1,
+              "maxLength": 1024,
               "type": "string"
             }
           },
@@ -1679,6 +1694,8 @@
             "in": "query",
             "description": "The technical identifier",
             "schema": {
+              "minLength": 1,
+              "maxLength": 32,
               "type": "string"
             }
           }
@@ -1726,6 +1743,8 @@
             "in": "query",
             "description": "The repository name",
             "schema": {
+              "minLength": 1,
+              "maxLength": 128,
               "type": "string"
             }
           },
@@ -1735,6 +1754,8 @@
             "in": "query",
             "description": "The repository comment",
             "schema": {
+              "minLength": 1,
+              "maxLength": 1024,
               "type": "string"
             }
           }
@@ -1768,6 +1789,8 @@
             "in": "query",
             "description": "The repository technical identifier",
             "schema": {
+              "minLength": 1,
+              "maxLength": 32,
               "type": "string"
             }
           },
@@ -1777,6 +1800,8 @@
             "in": "query",
             "description": "The repository name",
             "schema": {
+              "minLength": 1,
+              "maxLength": 128,
               "type": "string"
             }
           },
@@ -1786,6 +1811,8 @@
             "in": "query",
             "description": "The repository comment",
             "schema": {
+              "minLength": 1,
+              "maxLength": 1024,
               "type": "string"
             }
           },
@@ -2060,13 +2087,13 @@
             "in": "query",
             "description": "The image URL",
             "schema": {
-              "description": "An image URL",
+              "description": "A file resource URL",
               "type": "string",
               "format": "uri",
               "pattern": "file://.*",
               "minLength": 8,
               "maxLength": 4096,
-              "example": "file:///Users/me/image//path/fileName.png"
+              "example": "file:///Users/me/image/path/fileName.png"
             }
           }
         ],
@@ -5244,16 +5271,14 @@
             "type": "integer",
             "description": "The duration during which a maximal number of events can be handled",
             "format": "int32",
-            "minimum": 0,
-            "exclusiveMinimum": true,
+            "exclusiveMinimum": 0,
             "example": 1000
           },
           "maximumCount": {
             "type": "integer",
             "description": "The maximal number of events that be handled during the duration",
             "format": "int32",
-            "minimum": 0,
-            "exclusiveMinimum": true,
+            "exclusiveMinimum": 0,
             "example": 10
           }
         },
@@ -7056,8 +7081,7 @@
             "type": "number",
             "description": "The required image aspect ratio, i.e. the result of its width by its height",
             "format": "double",
-            "minimum": 0,
-            "exclusiveMinimum": true,
+            "exclusiveMinimum": 0,
             "example": 1.7777
           },
           "prompt": {
@@ -7301,8 +7325,7 @@
             "type": "integer",
             "description": "The image size in bytes",
             "format": "int64",
-            "minimum": 0,
-            "exclusiveMinimum": true
+            "exclusiveMinimum": 0
           },
           "dimensions": {
             "description": "The image dimensions",
@@ -7577,8 +7600,7 @@
             "type": "integer",
             "description": "The image size in bytes",
             "format": "int64",
-            "minimum": 0,
-            "exclusiveMinimum": true
+            "exclusiveMinimum": 0
           },
           "dimensions": {
             "description": "The image dimensions",

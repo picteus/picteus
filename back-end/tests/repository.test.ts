@@ -14,6 +14,7 @@ import {
   ApplicationMetadata,
   ApplicationMetadataItem,
   ExtensionIdImageEmbeddingName,
+  FieldLengths,
   fileWithProtocol,
   GenerationRecipe,
   Image,
@@ -229,11 +230,11 @@ describe("Repository", () =>
       }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
     }
     {
-      const name = "0".repeat(65);
+      const name = "0".repeat(FieldLengths.l128 + 1);
       await expect(async () =>
       {
         await base.getRepositoryController().create(Defaults.locationType, url, undefined, name);
-      }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it exceeds 64 characters`, BAD_REQUEST, base.badParameterCode));
+      }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it exceeds 128 characters`, BAD_REQUEST, base.badParameterCode));
     }
 
     {
@@ -244,11 +245,11 @@ describe("Repository", () =>
       }).rejects.toThrow(new ServiceError(`The parameter 'comment' with value '${comment}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
     }
     {
-      const comment = "0".repeat(257);
+      const comment = "0".repeat(FieldLengths.l1k + 1);
       await expect(async () =>
       {
         await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName, comment);
-      }).rejects.toThrow(new ServiceError(`The parameter 'comment' with value '${comment}' is invalid because it exceeds 256 characters`, BAD_REQUEST, base.badParameterCode));
+      }).rejects.toThrow(new ServiceError(`The parameter 'comment' with value '${comment}' is invalid because it exceeds 1024 characters`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const directoryPath = nonExistentPath;

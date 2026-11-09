@@ -50,14 +50,14 @@ describe("API Secret with module", () =>
         }).rejects.toThrow(new ServiceError(`The parameter 'expirationDate' with value '${expirationDate}' is invalid because it is set in the past`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const name = "a".repeat(FieldLengths.name + 1);
+        const name = "a".repeat(FieldLengths.l128 + 1);
         await expect(async () =>
         {
           await base.getApiSecretController().create(keyType, name);
         }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it exceeds 128 characters`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const comment = "a".repeat(FieldLengths.comment + 1);
+        const comment = "a".repeat(FieldLengths.l1k + 1);
         await expect(async () =>
         {
           await base.getApiSecretController().create(keyType, validName, undefined, comment);
@@ -71,7 +71,7 @@ describe("API Secret with module", () =>
         }).rejects.toThrow(new ServiceError(`The parameter 'scope' with value '${scope}' is invalid because it contains the invalid scope '${scope}'`, BAD_REQUEST, base.badParameterCode));
       }
       {
-        const scope = "a".repeat(FieldLengths.longTechnical + 1);
+        const scope = "a".repeat(FieldLengths.l64 + 1);
         await expect(async () =>
         {
           await base.getApiSecretController().create(keyType, validName, undefined, undefined, scope);

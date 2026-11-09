@@ -45,8 +45,8 @@ export class CollectionService
   {
     logger.debug(`Creating a collection with name '${name}${comment === undefined ? "" : (` and comment '${comment}'`)}'`);
 
-    parametersChecker.checkString("name", name, FieldLengths.name);
-    parametersChecker.checkString("comment", comment, FieldLengths.comment, undefined, true);
+    parametersChecker.checkString("name", name, FieldLengths.l128);
+    parametersChecker.checkString("comment", comment, FieldLengths.l1k, undefined, true);
 
     if (await this.entitiesProvider.collections.findFirst({ where: { name } }) !== null)
     {
@@ -72,8 +72,8 @@ export class CollectionService
     logger.debug(`Updating the collection with id '${id}'`);
     const entity = await this.getPersistedCollection(id);
 
-    parametersChecker.checkString("name", name, FieldLengths.name, undefined, true);
-    parametersChecker.checkString("comment", comment, FieldLengths.comment, undefined, true);
+    parametersChecker.checkString("name", name, FieldLengths.l128, undefined, true);
+    parametersChecker.checkString("comment", comment, FieldLengths.l1k, undefined, true);
     if (name !== undefined)
     {
       if (name !== entity.name && await this.entitiesProvider.collections.findFirst({ where: { name } }) !== null)
