@@ -1,4 +1,9 @@
-import { EntitiesProvider, VectorDatabaseAccessor, VectorDatabaseProvider } from "./databaseProviders";
+import {
+  EntitiesProvider,
+  VectorDatabaseAccessor,
+  vectorDatabaseAccessorProvider,
+  VectorDatabaseProvider
+} from "./databaseProviders";
 import { NotificationsGateway } from "./notificationsGateway";
 import { MiscellaneousService } from "./miscellaneousService";
 import { HostService } from "./hostService";
@@ -59,5 +64,6 @@ export {
   TextEmbedding,
   TextEmbeddings,
   VectorDatabaseAccessor,
+  vectorDatabaseAccessorProvider,
   VectorDatabaseProvider
 };

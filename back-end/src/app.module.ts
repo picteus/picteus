@@ -75,7 +75,7 @@ import {
   RepositoryService,
   SearchService,
   SettingsService,
-  VectorDatabaseAccessor,
+  vectorDatabaseAccessorProvider,
   VectorDatabaseProvider
 } from "./services/app.service";
 import { networkSecurity } from "./services/utils/networkSecurity";
@@ -409,7 +409,7 @@ export function computeMainModule(withThrotlling: boolean): Type<NestModule>
   }
 
   // The orders in which the providers matter, because we want their "onModuleInit()" method invoked in the following order: "AdministrationService" => "RepositoryService"
-  const providers = [ unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, ...(withThrotlling === false ? [] : [ throttlerGuardProvider ]), VectorDatabaseAccessor, HostService, NotifierService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, MarketplaceService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService ];
+  const providers = [ unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, ...(withThrotlling === false ? [] : [ throttlerGuardProvider ]), vectorDatabaseAccessorProvider, HostService, NotifierService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, MarketplaceService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService ];
 
   @Module({
     imports:
