@@ -314,21 +314,71 @@ export abstract class VectorDatabaseAccessor implements OnModuleInit, OnModuleDe
     logger.debug("Destroyed a VectorDatabaseAccessor");
   }
 
-  abstract getExtensionIds(): Promise<string[]>;
+  async getExtensionIds(): Promise<string[]>
+  {
+    logger.debug("Getting all the extension identifiers registered to the vector database");
+    return this.doGetExtensionIds();
+  }
 
-  abstract getExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>;
+  async getExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>
+  {
+    logger.debug("Getting all the extension identifiers and embeddings names registered to the vector database");
+    return this.doGetExtensionEmbeddingsNames();
+  }
 
-  abstract getImageIds(extensionId: string): Promise<string[]>;
+  async getImageIds(extensionId: string): Promise<string[]>
+  {
+    logger.debug(`Getting the image ids computed by the extension with id '${extensionId}'`);
+    return this.doGetImageIds(extensionId);
+  }
 
-  abstract getEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>;
+  async getEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>
+  {
+    logger.debug(`Getting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
+    return this.doGetEmbeddings(imageId, extensionId);
+  }
 
-  abstract setEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>;
+  async setEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>
+  {
+    logger.debug(`Setting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
+    return this.doSetEmbeddings(imageId, extensionId, nameAndValues);
+  }
 
-  abstract queryEmbeddings(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>;
+  async queryEmbeddings(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>
+  {
+    const { id: extensionId, name } = extensionIdAndEmbeddingName;
+    logger.debug(`Querying the closest ${count} embedding(s) relative to some given embeddings, computed by the extension with id '${extensionId}' and name '${name}'`);
+    return this.doQueryEmbeddings(extensionIdAndEmbeddingName, embeddings, count);
+  }
 
-  abstract deleteImagesEmbeddings(imageIds: string[], extensionId?: string): Promise<void>;
+  async deleteImagesEmbeddings(imageIds: string[], extensionId?: string): Promise<void>
+  {
+    const imageIdsLogFragment = `${imageIds.join(", ")}`;
+    logger.debug(`Deleting the embeddings for the image with id '${imageIdsLogFragment}'${extensionId !== undefined ? ` for the extension with id '${extensionId}'` : ""}`);
+    return this.doDeleteImagesEmbeddings(imageIds, extensionId);
+  }
 
-  abstract deleteExtensionEmbeddings(extensionId: string): Promise<void>;
+  async deleteExtensionEmbeddings(extensionId: string): Promise<void>
+  {
+    logger.debug(`Deleting the collection for the extension with id '${extensionId}'`);
+    return this.doDeleteExtensionEmbeddings(extensionId);
+  }
+
+  protected abstract doGetExtensionIds(): Promise<string[]>;
+
+  protected abstract doGetExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>;
+
+  protected abstract doGetImageIds(extensionId: string): Promise<string[]>;
+
+  protected abstract doGetEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>;
+
+  protected abstract doSetEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>;
+
+  protected abstract doQueryEmbeddings(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>;
+
+  protected abstract doDeleteImagesEmbeddings(imageIds: string[], extensionId?: string): Promise<void>;
+
+  protected abstract doDeleteExtensionEmbeddings(extensionId: string): Promise<void>;
 
   protected async initialize(): Promise<void>
   {
@@ -346,15 +396,13 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
 
   private readonly perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap: Map<string, Map<string, Map<string, number[]>>> = new Map();
 
-  async getExtensionIds(): Promise<string[]>
+  protected async doGetExtensionIds(): Promise<string[]>
   {
-    logger.debug("Getting all the extension identifiers registered to the vector database");
     return Array.from(this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.keys());
   }
 
-  async getExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>
+  protected async doGetExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>
   {
-    logger.debug("Getting all the extension identifiers and embeddings names registered to the vector database");
     const extensionIds = Array.from(this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.keys());
     const embeddingNames: ExtensionIdAndEmbeddingName[] = [];
     for (const extensionId of extensionIds)
@@ -371,9 +419,8 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
     return embeddingNames;
   }
 
-  async getImageIds(extensionId: string): Promise<string[]>
+  protected async doGetImageIds(extensionId: string): Promise<string[]>
   {
-    logger.debug(`Getting the image ids computed by the extension with id '${extensionId}'`);
     const perEmbeddingNameMap = this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.get(extensionId);
     if (perEmbeddingNameMap === undefined)
     {
@@ -390,9 +437,8 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
     return Array.from(imageIds);
   }
 
-  async getEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>
+  protected async doGetEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>
   {
-    logger.debug(`Getting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
     const perEmbeddingNameMap = this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.get(extensionId);
     if (perEmbeddingNameMap === undefined)
     {
@@ -410,9 +456,8 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
     return result;
   }
 
-  async setEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>
+  protected async doSetEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>
   {
-    logger.debug(`Setting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
     let perEmbeddingNameMap = this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.get(extensionId);
     if (perEmbeddingNameMap === undefined)
     {
@@ -449,10 +494,9 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
     }
   }
 
-  async queryEmbeddings(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>
+  protected async doQueryEmbeddings(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>
   {
     const { id: extensionId, name } = extensionIdAndEmbeddingName;
-    logger.debug(`Querying the closest ${count} embedding(s) relative to some given embeddings, computed by the extension with id '${extensionId}' and name '${name}'`);
     const perEmbeddingNameMap = this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.get(extensionId);
     if (perEmbeddingNameMap === undefined)
     {
@@ -478,10 +522,8 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
     return results.slice(0, count);
   }
 
-  async deleteImagesEmbeddings(imageIds: string[], extensionId?: string): Promise<void>
+  protected async doDeleteImagesEmbeddings(imageIds: string[], extensionId?: string): Promise<void>
   {
-    const imageIdsLogFragment = `${imageIds.join(", ")}`;
-    logger.debug(`Deleting the embeddings for the image with id '${imageIdsLogFragment}'${extensionId !== undefined ? ` for the extension with id '${extensionId}'` : ""}`);
     for (const [ _extensionId, perEmbeddingNameMap ] of this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap)
     {
       if (extensionId !== undefined && extensionId !== _extensionId)
@@ -498,9 +540,8 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
     }
   }
 
-  async deleteExtensionEmbeddings(extensionId: string): Promise<void>
+  protected async doDeleteExtensionEmbeddings(extensionId: string): Promise<void>
   {
-    logger.debug(`Deleting the collection for the extension with id '${extensionId}'`);
     this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.delete(extensionId);
   }
 
@@ -566,9 +607,8 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
     logger.debug("The Chroma client is now ready");
   }
 
-  async getExtensionIds(): Promise<string[]>
+  protected async doGetExtensionIds(): Promise<string[]>
   {
-    logger.debug("Getting all the extension identifiers registered to the vector database");
     const collections: Collection[] = await (await this.getClient()).listCollections({});
     const extensionIds = new Set<string>();
     for (const collection of collections)
@@ -582,9 +622,8 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
     return Array.from(extensionIds);
   }
 
-  async getExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>
+  protected async doGetExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>
   {
-    logger.debug("Getting all the extension identifiers and embeddings names registered to the vector database");
     const collections: Collection[] = await (await this.getClient()).listCollections({});
     // TODO: remove this filter once the migration is over
     const filteredCollections = collections.filter(collection => collection.metadata?.name !== undefined);
@@ -595,9 +634,8 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
     });
   }
 
-  async getImageIds(extensionId: string): Promise<string[]>
+  protected async doGetImageIds(extensionId: string): Promise<string[]>
   {
-    logger.debug(`Getting the image ids computed by the extension with id '${extensionId}'`);
     const collections = await this.getExtensionCollections(extensionId);
     const imageIds = new Set<string>();
     for (const collection of collections)
@@ -611,9 +649,8 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
     return Array.from(imageIds);
   }
 
-  async getEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>
+  protected async doGetEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>
   {
-    logger.debug(`Getting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
     const collections = await this.getExtensionCollections(extensionId);
     const result: EmbeddingNameAndValues[] = [];
     for (const collection of collections)
@@ -628,9 +665,8 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
     return result;
   }
 
-  async setEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>
+  protected async doSetEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>
   {
-    logger.debug(`Setting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
     // We first delete the image from all perExtensionIdEmbeddingNameCollectionsMap of this extension
     const collections = await this.getExtensionCollections(extensionId);
     const imageIds = [ imageId ];
@@ -669,10 +705,8 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
     }
   }
 
-  async queryEmbeddings(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>
+  protected async doQueryEmbeddings(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>
   {
-    const { id: extensionId, name } = extensionIdAndEmbeddingName;
-    logger.debug(`Querying the closest ${count} embedding(s) relative to some given embeddings, computed by the extension with id '${extensionId}' and name '${name}'`);
     const collection = await this.getCollection(extensionIdAndEmbeddingName);
     if (collection === undefined)
     {
@@ -691,10 +725,9 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
     });
   }
 
-  async deleteImagesEmbeddings(imageIds: string[], extensionId?: string): Promise<void>
+  protected async doDeleteImagesEmbeddings(imageIds: string[], extensionId?: string): Promise<void>
   {
     const imageIdsLogFragment = `${imageIds.join(", ")}`;
-    logger.debug(`Deleting the embeddings for the image with id '${imageIdsLogFragment}'${extensionId !== undefined ? ` for the extension with id '${extensionId}'` : ""}`);
     const extensionIds = extensionId !== undefined ? [ extensionId ] : await this.getExtensionIds();
     for (const extId of extensionIds)
     {
@@ -725,9 +758,8 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
     }
   }
 
-  async deleteExtensionEmbeddings(extensionId: string): Promise<void>
+  protected async doDeleteExtensionEmbeddings(extensionId: string): Promise<void>
   {
-    logger.debug(`Deleting the collection for the extension with id '${extensionId}'`);
     const collections = await this.getExtensionCollections(extensionId);
     const client = await this.getClient();
     for (const collection of collections)
