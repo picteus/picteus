@@ -98,7 +98,7 @@
     "remark-gfm": "4.0.1",
     "@picteus/shared-core": "file:../shared/core",
     "@picteus/shared-front-end": "file:../shared/front-end",
-    "@picteus/ws-client": "file:../generated/openapi/typescript-fetch/picteus-ws-client-0.25.0.tgz"
+    "@picteus/ws-client": "file:../generated/openapi/typescript-fetch/picteus-ws-client-0.26.0.tgz"
   },
   "prettier": {
     "singleQuote": false

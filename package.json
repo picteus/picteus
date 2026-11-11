@@ -34,7 +34,7 @@
     "applicationVersion": "0.17.0",
     "backendVersion": "0.17.0",
     "frontEndVersion": "0.13.0",
-    "apiVersion": "0.25.0",
+    "apiVersion": "0.26.0",
     "sdkVersion": "0.21.0",
     "dockerImageName": "koppasoft/picteus"
   },
