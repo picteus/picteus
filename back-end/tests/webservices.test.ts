@@ -162,7 +162,7 @@ describe("WebServices", () =>
     const webServicesWrapper = new WebServicesWrapper(extensionParametersJson["apiKey"]);
     const repositoryApi = await webServicesWrapper.computeController<RepositoryApi>(RepositoryApi);
     const newRepository = await repositoryApi.repositoryEnsure({
-      technicalId: extension.manifest.id,
+      extensionId: extension.manifest.id,
       name: "name"
     });
     const imageApi = await webServicesWrapper.computeController<ImageApi>(ImageApi);

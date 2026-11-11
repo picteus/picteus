@@ -5,7 +5,7 @@ import { Collection as PersistedCollection } from ".prisma/client";
 
 import { logger } from "../logger";
 import { Collection, FieldLengths, SearchFilter, SearchOriginKind } from "../dtos/app.dtos";
-import { EntitiesProvider } from "./databaseProviders";
+import { RegularDatabaseService } from "./regularDatabaseService";
 import { parametersChecker } from "./utils/parametersChecker";
 import { plainToInstanceViaJSON } from "../utils";
 import { CollectionEventAction, EventEntity, NotifierService } from "./notifierService";
@@ -16,7 +16,7 @@ export class CollectionService
   implements OnModuleInit, OnModuleDestroy
 {
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly notifierService: NotifierService)
+  constructor(private readonly regularDatabaseService: RegularDatabaseService, private readonly notifierService: NotifierService)
   {
     logger.debug("Instantiating a CollectionService");
   }
@@ -35,7 +35,7 @@ export class CollectionService
   async list(): Promise<Collection[]>
   {
     logger.debug("Listing all the collections");
-    const entities = await this.entitiesProvider.collections.findMany({
+    const entities = await this.regularDatabaseService.collections.findMany({
       orderBy: { name: "asc" }
     });
     return entities.map(entity => this.toDto(entity));
@@ -48,12 +48,12 @@ export class CollectionService
     parametersChecker.checkString("name", name, FieldLengths.l128);
     parametersChecker.checkString("comment", comment, FieldLengths.l1k, undefined, true);
 
-    if (await this.entitiesProvider.collections.findFirst({ where: { name } }) !== null)
+    if (await this.regularDatabaseService.collections.findFirst({ where: { name } }) !== null)
     {
       parametersChecker.throwBadParameter("name", name, "a collection with the same name already exists");
     }
 
-    const entity = await this.entitiesProvider.collections.create({
+    const entity = await this.regularDatabaseService.collections.create({
       data: { name, comment, filter: instanceToPlain(filter) }
     });
     this.notifierService.emit(EventEntity.Collection, CollectionEventAction.Created, undefined, { id: entity.id });
@@ -76,13 +76,13 @@ export class CollectionService
     parametersChecker.checkString("comment", comment, FieldLengths.l1k, undefined, true);
     if (name !== undefined)
     {
-      if (name !== entity.name && await this.entitiesProvider.collections.findFirst({ where: { name } }) !== null)
+      if (name !== entity.name && await this.regularDatabaseService.collections.findFirst({ where: { name } }) !== null)
       {
         parametersChecker.throwBadParameter("name", name, "a collection with the same name already exists");
       }
     }
 
-    const updatedEntity = await this.entitiesProvider.collections.update({
+    const updatedEntity = await this.regularDatabaseService.collections.update({
       where: { id: entity.id },
       data: {
         name: name,
@@ -98,13 +98,13 @@ export class CollectionService
   {
     logger.debug(`Deleting the collection with id '${id}'`);
     const entity = await this.getPersistedCollection(id);
-    await this.entitiesProvider.collections.delete({ where: { id: entity.id } });
+    await this.regularDatabaseService.collections.delete({ where: { id: entity.id } });
     this.notifierService.emit(EventEntity.Collection, CollectionEventAction.Deleted, undefined, { id });
   }
 
   async clearFromOrigin(type: SearchOriginKind, id: string): Promise<void>
   {
-    await Promise.all((await this.entitiesProvider.collections.findMany()).map(persistedCollection =>
+    await Promise.all((await this.regularDatabaseService.collections.findMany()).map(persistedCollection =>
     {
       const collection = plainToInstanceViaJSON(Collection, persistedCollection);
       const kind = collection.filter.origin?.kind;
@@ -115,7 +115,7 @@ export class CollectionService
         if (index !== -1)
         {
           origin.ids.splice(index, 1);
-          return this.entitiesProvider.collections.update({
+          return this.regularDatabaseService.collections.update({
             where: { id: persistedCollection.id },
             data: { filter: instanceToPlain(collection.filter) }
           });
@@ -130,7 +130,7 @@ export class CollectionService
 
   private async getPersistedCollection(id: number): Promise<PersistedCollection>
   {
-    const entity = await this.entitiesProvider.collections.findUnique({ where: { id } });
+    const entity = await this.regularDatabaseService.collections.findUnique({ where: { id } });
     if (entity === null)
     {
       parametersChecker.throwBadParameter("id", id.toString(), "there is no collection with that identifier");

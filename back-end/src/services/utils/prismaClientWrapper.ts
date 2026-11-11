@@ -4,9 +4,10 @@ import { isMainThread } from "node:worker_threads";
 import { Prisma, PrismaClient } from ".prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { type SqlDriverAdapter } from "@prisma/driver-adapter-utils";
-import { logger } from "./logger";
-import { paths } from "./paths";
-import { type  ApplicationSettings } from "./dtos/app.dtos";
+
+import { logger } from "../../logger";
+import { paths } from "../../paths";
+import { type  ApplicationSettings } from "../../dtos/app.dtos";
 
 
 const defaultSettingsType = "default";
@@ -42,42 +43,7 @@ class ConfiguredBetterSqlite3Adapter extends PrismaBetterSqlite3
 
 }
 
-export interface PersistenceProvider
-{
-
-  initialize(): Promise<void>;
-
-  terminate(): Promise<void>;
-
-  get prisma(): PrismaClient;
-
-  get applicationSettings(): Promise<ApplicationSettings>;
-
-  setApplicationSettings(settings: ApplicationSettings): Promise<void>;
-
-  get apiSecrets(): Prisma.ApiSecretDelegate;
-
-  get extensionSettings(): Prisma.ExtensionSettingsDelegate;
-
-  get repositories(): Prisma.RepositoryDelegate;
-
-  get collections(): Prisma.CollectionDelegate;
-
-  get images(): Prisma.ImageDelegate;
-
-  get imageMetadata(): Prisma.ImageMetadataDelegate;
-
-  get imageFeature(): Prisma.ImageFeatureDelegate;
-
-  get imageTag(): Prisma.ImageTagDelegate;
-
-  get imageAttachment(): Prisma.ImageAttachmentDelegate;
-
-  get aiModel(): Prisma.AiModelDelegate;
-
-}
-
-export class Persistence implements PersistenceProvider
+export class PrismaClientWrapper
 {
 
   private prismaClient?: PrismaClient;
@@ -131,13 +97,25 @@ export class Persistence implements PersistenceProvider
           ...commonLog
         ];
       const timeoutInMilliseconds = 10_000;
-      const adapter = new ConfiguredBetterSqlite3Adapter({
-        url: databaseCoordinates.url,
-        timeout: timeoutInMilliseconds
-      });
+      const sqliteConfig =
+        {
+          url: databaseCoordinates.url,
+          timeout: timeoutInMilliseconds
+        };
+      type PrismaBetterSqlite3Options =
+        {
+          shadowDatabaseUrl?: string;
+          timestampFormat?: "iso8601" | "unixepoch-ms";
+        };
+      const sqliteOptions: PrismaBetterSqlite3Options =
+        {
+          // We keep a numeric representation for the epoch millisecond storage
+          timestampFormat: "unixepoch-ms"
+        };
+      const adapter = new ConfiguredBetterSqlite3Adapter(sqliteConfig, sqliteOptions);
       // We increase the default timeout duration to 10 seconds
-      const options = { adapter, log, transactionOptions: { timeout: timeoutInMilliseconds } };
-      this.prismaClient = new PrismaClient(options);
+      const prismaOptions = { adapter, log, transactionOptions: { timeout: timeoutInMilliseconds } };
+      this.prismaClient = new PrismaClient(prismaOptions);
       // @ts-ignore
       this.prismaClient.$on<Prisma.QueryEvent>("query", (event: Prisma.QueryEvent) =>
       {

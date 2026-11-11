@@ -622,7 +622,7 @@ class GeminiExtension extends PicteusExtension
     const name = PicteusExtension.getManifest().name;
     this.repository = await this.getRepositoryApi().repositoryEnsure(
       {
-        technicalId: this.extensionId,
+        extensionId: this.extensionId,
         name: name,
         comment: `The ${name} repository`,
         watch: true

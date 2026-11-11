@@ -1,9 +1,6 @@
-import {
-  EntitiesProvider,
-  VectorDatabaseAccessor,
-  vectorDatabaseAccessorProvider,
-  VectorDatabaseProvider
-} from "./databaseProviders";
+import { RegularDatabaseService } from "./regularDatabaseService";
+import { VectorDatabaseService } from "./vectorDatabaseService";
+import { VectorDatabaseAccessor, vectorDatabaseAccessorProvider } from "./vectorDatabaseAccessor";
 import { NotificationsGateway } from "./notificationsGateway";
 import { MiscellaneousService } from "./miscellaneousService";
 import { HostService } from "./hostService";
@@ -38,7 +35,7 @@ export {
   ApiSecretService,
   CapabilityResult,
   CollectionService,
-  EntitiesProvider,
+  RegularDatabaseService,
   ExtendedManifest,
   ExtensionArchiveReader,
   ExtensionMessage,
@@ -65,5 +62,5 @@ export {
   TextEmbeddings,
   VectorDatabaseAccessor,
   vectorDatabaseAccessorProvider,
-  VectorDatabaseProvider
+  VectorDatabaseService
 };

@@ -66,7 +66,7 @@ import {
 } from "../src/services/utils/pythonWrapper";
 import { Resizer } from "../src/resizer";
 import { pickPort } from "pick-port";
-import { VectorDatabaseProvider } from "../src/services/app.service";
+import { VectorDatabaseService } from "../src/services/app.service";
 import { networkSecurity } from "../src/services/utils/networkSecurity";
 
 
@@ -585,11 +585,11 @@ setTimeout(() => {}, 1_000_000);
     {
       // We assess the watch dog with Chroma
       const persistPath = core.prepareEmptyDirectory("chroma", directoryPath);
-      await VectorDatabaseProvider.installChroma(persistPath);
+      await VectorDatabaseService.installChroma(persistPath);
 
       const childPidFilePath = path.join(directoryPath, "chroma_pid.txt");
       const childStdoutAndErrFilePath = path.join(directoryPath, "chroma_stdout_stderr.txt");
-      const databaseProvidersSourcePath = path.join(paths.serverDirectoryPath, "src", "services", "databaseProviders.ts");
+      const vectorDatabaseServiceSourcePath = path.join(paths.serverDirectoryPath, "src", "services", "vectorDatabaseService.ts");
       const portNumber = await pickPort({ type: "tcp", minPort: 7000, maxPort: 8000 });
       const intermediateParentJavaScript = `
 const fs = require("node:fs");
@@ -599,14 +599,14 @@ const persistPath = ${JSON.stringify(persistPath)};
 const childPidPath = ${JSON.stringify(childPidFilePath)};
 const childStdoutAndErrFilePath = ${JSON.stringify(childStdoutAndErrFilePath)};
 const portNumber = ${portNumber};
-const targetModulePath = ${JSON.stringify(databaseProvidersSourcePath)};
+const targetModulePath = ${JSON.stringify(vectorDatabaseServiceSourcePath)};
 
 (async () =>
 {
   try
   {
-    const { VectorDatabaseProvider } = await import(pathToFileURL(targetModulePath).href);
-    const childProcess = await VectorDatabaseProvider.startChroma(persistPath, portNumber, "localhost", false);
+    const { VectorDatabaseService } = await import(pathToFileURL(targetModulePath).href);
+    const childProcess = await VectorDatabaseService.startChroma(persistPath, portNumber, "localhost", false);
     let output = "";
     childProcess.stdout.on("data", (chunk) =>
     {
@@ -635,37 +635,69 @@ setTimeout(() => {}, 1_000_000);
       const parentProcess = spawn(process.execPath, [ ...nodeArguments, intermediateParentJavaScript ], paths.serverDirectoryPath, nodeEnvironment, false, "pipe");
       const parentProcessId = parentProcess.pid!;
       expect(isProcessAlive(parentProcessId)).toBe(true);
+      let parentStderr = "";
       parentProcess.stdout!.on("data", (data: any) =>
       {
         logger.info(data.toString());
       });
       parentProcess.stderr!.on("data", (data: any) =>
       {
-        logger.error(data.toString());
+        const message = data.toString();
+        parentStderr += message;
+        logger.error(message);
       });
 
-      // We wait until the Chroma PID is known
-      await core.waitUntil(async () =>
+      try
       {
-        return fs.existsSync(childPidFilePath);
-      });
-      const childProcessId = Number.parseInt(fs.readFileSync(childPidFilePath, "utf8"));
-      expect(isProcessAlive(childProcessId)).toBe(true);
+        // We wait until the Chroma PID is known
+        await core.waitUntil(async () =>
+        {
+          if (isProcessAlive(parentProcessId) === false && fs.existsSync(childPidFilePath) === false)
+          {
+            throw new Error(`The parent process exited unexpectedly: ${parentStderr}`);
+          }
+          return fs.existsSync(childPidFilePath);
+        });
+        const childProcessId = Number.parseInt(fs.readFileSync(childPidFilePath, "utf8"));
+        expect(isProcessAlive(childProcessId)).toBe(true);
 
-      // We kill the parent process
-      killProcessViaId(parentProcessId, "SIGKILL");
+        // We kill the parent process
+        killProcessViaId(parentProcessId, "SIGKILL");
 
-      // We verify the parent process is dead
-      await core.waitUntil(async () =>
+        // We verify the parent process is dead
+        await core.waitUntil(async () =>
+        {
+          return isProcessAlive(parentProcessId) === false;
+        });
+
+        // Chroma process should be dead too
+        await core.waitUntil(async () =>
+        {
+          return isProcessAlive(childProcessId) === false;
+        });
+      }
+      finally
       {
-        return isProcessAlive(parentProcessId) === false;
-      });
-
-      // Chroma process should be dead too
-      await core.waitUntil(async () =>
-      {
-        return isProcessAlive(childProcessId) === false;
-      });
+        if (fs.existsSync(childPidFilePath) === true)
+        {
+          try
+          {
+            const childProcessId = Number.parseInt(fs.readFileSync(childPidFilePath, "utf8"));
+            if (Number.isNaN(childProcessId) === false && isProcessAlive(childProcessId) === true)
+            {
+              killProcessViaId(childProcessId, "SIGKILL");
+            }
+          }
+          catch
+          {
+            // We ignore cleanup errors
+          }
+        }
+        if (isProcessAlive(parentProcessId) === true)
+        {
+          killProcessViaId(parentProcessId, "SIGKILL");
+        }
+      }
     }
   }, core.xxLargeTimeoutInMilliseconds);
 
@@ -1614,16 +1646,16 @@ CREATE TABLE "Test" ("type" TEXT NOT NULL, "value" TEXT NOT NULL);
 -- InsertValue
 INSERT INTO Test (type, value) VALUES ('${type1}','${value1}');`);
 
-    const persistence = base.getEntitiesProvider().persistence;
-    await persistence.setMigration(firstMigrationDirectoryName);
+    const prismaClientWrapper = base.getRegularDatabaseProvider().prismaClientWrapper;
+    await prismaClientWrapper.setMigration(firstMigrationDirectoryName);
     paths.migrationDirectoryPath = migrationsDirectoryPath;
     await base.getAdministrationController().migrateDatabase();
 
     // noinspection SqlResolve
-    expect(await persistence.prisma.$queryRaw(Prisma.sql([ `SELECT value from Test WHERE type = '${type1}';` ]))).toEqual([ { value: value1 } ]);
+    expect(await prismaClientWrapper.prisma.$queryRaw(Prisma.sql([ `SELECT value from Test WHERE type = '${type1}';` ]))).toEqual([ { value: value1 } ]);
     // noinspection SqlResolve
-    expect(await persistence.prisma.$queryRaw(Prisma.sql([ `SELECT value from Test WHERE type = '${type2}';` ]))).toEqual([ { value: value2 } ]);
-    expect(await persistence.getMigration()).toEqual(thirdMigrationDirectoryName);
+    expect(await prismaClientWrapper.prisma.$queryRaw(Prisma.sql([ `SELECT value from Test WHERE type = '${type2}';` ]))).toEqual([ { value: value2 } ]);
+    expect(await prismaClientWrapper.getMigration()).toEqual(thirdMigrationDirectoryName);
   });
 
   test("migrateDatabaseWithFailure", async () =>
@@ -1638,15 +1670,15 @@ INSERT INTO Test (type, value) VALUES ('${type1}','${value1}');`);
     const nonexistentTableName = "Test";
     const fileName = writeMigration(migrationsDirectoryPath, thirdMigrationDirectoryName, `INSERT INTO ${nonexistentTableName} (type, value) VALUES ('type', 'value');`);
 
-    const persistence = base.getEntitiesProvider().persistence;
-    await persistence.setMigration(firstMigrationDirectoryName);
+    const prismaClientWrapper = base.getRegularDatabaseProvider().prismaClientWrapper;
+    await prismaClientWrapper.setMigration(firstMigrationDirectoryName);
     paths.migrationDirectoryPath = migrationsDirectoryPath;
     await expect(async () =>
     {
       await base.getAdministrationController().migrateDatabase();
     }).rejects.toThrow(new ServiceError(`The migration script '${thirdMigrationDirectoryName}/${fileName}' was a failure. Reason: 'no such table: ${nonexistentTableName}'`, INTERNAL_SERVER_ERROR, -1));
 
-    expect(await persistence.getMigration()).toEqual(secondMigrationDirectoryName);
+    expect(await prismaClientWrapper.getMigration()).toEqual(secondMigrationDirectoryName);
   });
 
   test("EventEmitter", async () =>

@@ -82,7 +82,8 @@ import {
 } from "../dtos/app.dtos";
 import { Json, toImageFormat } from "../bos";
 import { toInstanceAndValidate } from "./utils/classValidatorWrapper";
-import { EntitiesProvider, ImageIdAndDistance, VectorDatabaseAccessor } from "./databaseProviders";
+import { RegularDatabaseService } from "./regularDatabaseService";
+import { ImageIdAndDistance, VectorDatabaseAccessor } from "./vectorDatabaseAccessor";
 import { EventEntity, ImageEventAction, NotifierService } from "./notifierService";
 import { ExtendedManifest, ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionService } from "./extensionServices";
@@ -159,7 +160,7 @@ export class ImageService
 
   private static readonly emptyImageFeatureValue = "";
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly notifierService: NotifierService, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly moduleRef: ModuleRef)
+  constructor(private readonly regularDatabaseService: RegularDatabaseService, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly notifierService: NotifierService, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating an ImageService");
   }
@@ -172,9 +173,9 @@ export class ImageService
       take,
       skip
     } = await this.computeRequestParameters("Retrieving the image ids", parameters);
-    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({ where, orderBy, take, skip, select: { id: true } }),
-      this.entitiesProvider.images.count({ where })
+    const [ entities, totalCount ] = await this.regularDatabaseService.prisma.$transaction([
+      this.regularDatabaseService.images.findMany({ where, orderBy, take, skip, select: { id: true } }),
+      this.regularDatabaseService.images.count({ where })
     ]);
     return new SearchImageIdResult(entities.map(entity => entity.id), totalCount);
   }
@@ -187,9 +188,9 @@ export class ImageService
       take,
       skip
     } = await this.computeRequestParameters("Retrieving the image summaries", parameters);
-    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({ where, orderBy, take, skip }),
-      this.entitiesProvider.images.count({ where })
+    const [ entities, totalCount ] = await this.regularDatabaseService.prisma.$transaction([
+      this.regularDatabaseService.images.findMany({ where, orderBy, take, skip }),
+      this.regularDatabaseService.images.count({ where })
     ]);
     return new SearchImageSummaryResult(entities.map((entity) =>
       this.toDto(ImageSummary, entity, undefined, undefined, undefined)), totalCount);
@@ -203,12 +204,12 @@ export class ImageService
       take,
       skip
     } = await this.computeRequestParameters("Retrieving the images", parameters);
-    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({
+    const [ entities, totalCount ] = await this.regularDatabaseService.prisma.$transaction([
+      this.regularDatabaseService.images.findMany({
         where, orderBy, take, skip,
         include: { metadata: true, features: true, tags: true }
       }),
-      this.entitiesProvider.images.count({ where })
+      this.regularDatabaseService.images.count({ where })
     ]);
     return new SearchImageResult(entities.map((entity) => this.toDto(Image, entity, entity.metadata as PersistedImageMetadata, entity.features, entity.tags)), totalCount);
   }
@@ -222,11 +223,11 @@ export class ImageService
       skip
     } = await this.computeRequestParameters("Retrieving the image features", parameters);
     extensionIds = this.checkExtensions(extensionIds, false);
-    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({
+    const [ entities, totalCount ] = await this.regularDatabaseService.prisma.$transaction([
+      this.regularDatabaseService.images.findMany({
         where, orderBy, take, skip, select: { id: true, features: true }
       }),
-      this.entitiesProvider.images.count({ where })
+      this.regularDatabaseService.images.count({ where })
     ]);
     return new SearchFeaturesResult(entities.map(entity => new ExtensionImageFeaturesAttribute(entity.id, entity.features.filter(feature => extensionIds === undefined || extensionIds.indexOf(feature.extensionId) !== -1).map(entity => this.extensionFeatureToDto(entity)))), totalCount);
   }
@@ -240,11 +241,11 @@ export class ImageService
       skip
     } = await this.computeRequestParameters("Retrieving the image tags", parameters);
     extensionIds = this.checkExtensions(extensionIds, false);
-    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({
+    const [ entities, totalCount ] = await this.regularDatabaseService.prisma.$transaction([
+      this.regularDatabaseService.images.findMany({
         where, orderBy, take, skip, select: { id: true, tags: true }
       }),
-      this.entitiesProvider.images.count({ where })
+      this.regularDatabaseService.images.count({ where })
     ]);
     return new SearchTagsResult(entities.map(entity => new ExtensionImageTagsAttribute(entity.id, entity.tags.filter(tag => extensionIds === undefined || extensionIds.indexOf(tag.extensionId) !== -1).map(entity => this.extensionTagToDto(entity)))), totalCount);
   }
@@ -258,9 +259,9 @@ export class ImageService
       take,
       skip
     } = await this.computeRequestParameters(`Getting the media URLs of the images${computer.log()}`, parameters);
-    const [ entities, totalCount ] = await this.entitiesProvider.prisma.$transaction([
-      this.entitiesProvider.images.findMany({ where, orderBy, take, skip }),
-      this.entitiesProvider.images.count({ where })
+    const [ entities, totalCount ] = await this.regularDatabaseService.prisma.$transaction([
+      this.regularDatabaseService.images.findMany({ where, orderBy, take, skip }),
+      this.regularDatabaseService.images.count({ where })
     ]);
     return new SearchMediaUrlResult(entities.map(entity => new ImageMediaUrl(entity.id, computer.computeUrl(entity.url))), totalCount);
   }
@@ -288,7 +289,7 @@ export class ImageService
   async getImageByUrl(url: string): Promise<Image>
   {
     logger.info(`Getting the image with URL '${url}'`);
-    const entity = await this.entitiesProvider.images.findFirst({
+    const entity = await this.regularDatabaseService.images.findFirst({
       where: { url },
       include: { metadata: true, features: true, tags: true }
     });
@@ -438,7 +439,7 @@ export class ImageService
     logger.info(`Getting the features for the image with id '${id}' and the extension with id '${extensionId}'`);
     this.checkExtension(extensionId);
     await this.getPersistedImage(id, false, false, false);
-    const entities = await this.entitiesProvider.imageFeature.findMany({
+    const entities = await this.regularDatabaseService.imageFeature.findMany({
       where: {
         extensionId,
         imageId: id,
@@ -453,7 +454,7 @@ export class ImageService
   {
     logger.info(`Getting the features for the image with id '${id}' for all extensions`);
     await this.getPersistedImage(id, false, false, false);
-    const entities = await this.entitiesProvider.imageFeature.findMany({
+    const entities = await this.regularDatabaseService.imageFeature.findMany({
       where: { imageId: id, NOT: { AND: { stringValue: ImageService.emptyImageFeatureValue, numericValue: null } } },
       orderBy: { id: "asc" }
     });
@@ -641,7 +642,12 @@ export class ImageService
     }
 
     // We remember the existing features, before the modification
-    const existingFeatures = await this.entitiesProvider.imageFeature.findMany({ where: { imageId: id, extensionId } });
+    const existingFeatures = await this.regularDatabaseService.imageFeature.findMany({
+      where: {
+        imageId: id,
+        extensionId
+      }
+    });
 
     // We need to delete all attachments related to the extension
     const deleteAttachments = this.moduleRef.get(ImageAttachmentService).delete(id, extensionId, toKeepAttachmentIds);
@@ -653,7 +659,7 @@ export class ImageService
         value: ImageService.emptyImageFeatureValue
       }
     ] : features;
-    const createFeatures = this.entitiesProvider.imageFeature.createMany({
+    const createFeatures = this.regularDatabaseService.imageFeature.createMany({
       data: actualFeatures.map((feature) =>
       {
         const value: string | number = typeof feature.value !== "boolean" ? feature.value : (feature.value === true ? 1 : 0);
@@ -672,7 +678,7 @@ export class ImageService
     let deleteFeatures: Prisma.PrismaPromise<Prisma.BatchPayload> | undefined;
     if (isEnsure === true)
     {
-      deleteFeatures = this.entitiesProvider.imageFeature.deleteMany({
+      deleteFeatures = this.regularDatabaseService.imageFeature.deleteMany({
         where: {
           imageId: id,
           extensionId,
@@ -682,10 +688,10 @@ export class ImageService
     }
     else
     {
-      deleteFeatures = this.entitiesProvider.imageFeature.deleteMany({ where: { imageId: id, extensionId } });
+      deleteFeatures = this.regularDatabaseService.imageFeature.deleteMany({ where: { imageId: id, extensionId } });
     }
 
-    await this.entitiesProvider.prisma.$transaction([ deleteAttachments, deleteFeatures, createFeatures ]);
+    await this.regularDatabaseService.prisma.$transaction([ deleteAttachments, deleteFeatures, createFeatures ]);
     this.notifierService.emit(EventEntity.Image, ImageEventAction.FeaturesUpdated, undefined, { id });
   }
 
@@ -694,7 +700,7 @@ export class ImageService
     logger.info(`Getting the tags for the image with id '${id}' and for the extension with id ${extensionId}`);
     this.checkExtension(extensionId);
     await this.getPersistedImage(id, false, false, false);
-    const entities = await this.entitiesProvider.imageTag.findMany({
+    const entities = await this.regularDatabaseService.imageTag.findMany({
       where: { AND: [ { extensionId, imageId: id }, { value: { not: ImageService.emptyImageTag } } ] },
       orderBy: { value: "asc" }
     });
@@ -708,7 +714,7 @@ export class ImageService
   {
     logger.info(`Getting the tags for the image with id '${id}' for all extensions`);
     await this.getPersistedImage(id, false, false, false);
-    const entities = await this.entitiesProvider.imageTag.findMany({
+    const entities = await this.regularDatabaseService.imageTag.findMany({
       where: { AND: [ { imageId: id }, { value: { not: ImageService.emptyImageTag } } ] },
       orderBy: { value: "asc" }
     });
@@ -738,7 +744,7 @@ export class ImageService
     }
 
     // We remember the existing tags, before the modification
-    const existingEntities = await this.entitiesProvider.imageTag.findMany({
+    const existingEntities = await this.regularDatabaseService.imageTag.findMany({
       where: { imageId: id, extensionId }
     });
     const existingTags = existingEntities.map((entity) =>
@@ -750,7 +756,7 @@ export class ImageService
     {
       return existingTags.indexOf(tag) === -1;
     });
-    await this.entitiesProvider.imageTag.createMany({
+    await this.regularDatabaseService.imageTag.createMany({
       data: newTags.map((tag) =>
       {
         return {
@@ -782,7 +788,7 @@ export class ImageService
     if (extraneousEntitiesIds.length > 0)
     {
       // We remove the extraneous tags
-      await this.entitiesProvider.imageTag.deleteMany({ where: { id: { in: extraneousEntitiesIds } } });
+      await this.regularDatabaseService.imageTag.deleteMany({ where: { id: { in: extraneousEntitiesIds } } });
     }
     this.notifierService.emit(EventEntity.Image, ImageEventAction.TagsUpdated, undefined, { id });
   }
@@ -791,7 +797,7 @@ export class ImageService
   {
     logger.info(`Getting the recipes for the image with id '${id}' for all extensions`);
     await this.getPersistedImage(id, false, false, false);
-    const entities = await this.entitiesProvider.imageFeature.findMany({
+    const entities = await this.regularDatabaseService.imageFeature.findMany({
       where: { imageId: id, type: ImageFeatureType.RECIPE },
       orderBy: { id: "asc" }
     });
@@ -868,7 +874,7 @@ export class ImageService
   {
     logger.info(`Getting the identifiers of the collections the image with id '${id}' belongs to`);
     await this.getPersistedImage(id, false, false, false);
-    const entities = await this.entitiesProvider.collections.findMany({
+    const entities = await this.regularDatabaseService.collections.findMany({
       where: {
         AND: [
           {
@@ -902,7 +908,7 @@ export class ImageService
     {
       return imageIdAndDistance.imageId;
     });
-    const entities = await this.entitiesProvider.images.findMany({
+    const entities = await this.regularDatabaseService.images.findMany({
       where: { id: { in: imageIds } },
       include: { metadata: false, features: false }
     });
@@ -989,7 +995,7 @@ export class ImageService
     }
     else if (parameters?.collectionId !== undefined)
     {
-      const collection = await this.entitiesProvider.collections.findUnique({ where: { id: parameters?.collectionId } });
+      const collection = await this.regularDatabaseService.collections.findUnique({ where: { id: parameters?.collectionId } });
       if (collection === null)
       {
         parametersChecker.throwBadParameter("collectionId", parameters?.collectionId.toString(), "there is no collection with that id");
@@ -1219,14 +1225,14 @@ export class ImageService
       skip,
       take
     } = await this.computeRequestParameters(logPrefix, parameters);
-    return (await this.entitiesProvider.images.findMany({
+    return (await this.regularDatabaseService.images.findMany({
       where, orderBy, skip, take, select: { id: true }
     })).map(entity => entity.id);
   }
 
   private async getPersistedImage(id: string, withMetadata: boolean = true, withFeatures: boolean = true, withTags: boolean = true): Promise<ImageWithIncludes>
   {
-    const entity: ImageWithIncludes | null = await this.entitiesProvider.images.findUnique({
+    const entity: ImageWithIncludes | null = await this.regularDatabaseService.images.findUnique({
       where: { id },
       include: { metadata: withMetadata, features: withFeatures, tags: withTags }
     });

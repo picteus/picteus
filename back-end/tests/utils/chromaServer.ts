@@ -5,7 +5,7 @@ import { ChromaDBContainer, StartedChromaDBContainer } from "@testcontainers/chr
 
 import { logger } from "../../src/logger";
 import { killProcess } from "../../src/services/utils/processWrapper";
-import { VectorDatabaseProvider } from "../../src/services/app.service";
+import { VectorDatabaseService } from "../../src/services/app.service";
 
 
 export interface StartChromaTestcontainersOptions
@@ -154,8 +154,8 @@ async function startChromaServerViaProcess(
     fs.mkdirSync(persistPath, { recursive: true });
   }
 
-  await VectorDatabaseProvider.installChroma(persistPath);
-  const childProcess: ChildProcess = await VectorDatabaseProvider.startChroma(persistPath, portNumber, host, shouldAllowReset);
+  await VectorDatabaseService.installChroma(persistPath);
+  const childProcess: ChildProcess = await VectorDatabaseService.startChroma(persistPath, portNumber, host, shouldAllowReset);
 
   // We ensure the HTTP heartbeat responds before declaring the server ready
   await waitForChromaServerReadiness(host, portNumber, readinessTimeoutMilliseconds);

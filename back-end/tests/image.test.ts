@@ -960,9 +960,9 @@ describe("Image with module", () =>
       });
       expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Deleted, { id: image.id });
       expect((await base.getImageController().searchSummaries({})).items.length).toBe(0);
-      expect((await base.getEntitiesProvider().imageMetadata.findMany()).length).toBe(0);
-      expect((await base.getEntitiesProvider().imageTag.findMany()).length).toBe(0);
-      expect((await base.getEntitiesProvider().imageFeature.findMany()).length).toBe(0);
+      expect((await base.getRegularDatabaseProvider().imageMetadata.findMany()).length).toBe(0);
+      expect((await base.getRegularDatabaseProvider().imageTag.findMany()).length).toBe(0);
+      expect((await base.getRegularDatabaseProvider().imageFeature.findMany()).length).toBe(0);
       expect((await base.getVectorDatabaseAccessor().getEmbeddings(image.id, extension.manifest.id)).length).toBe(0);
       {
         // We check that the image has been removed from the collection, leaving the rest of the filter intact
@@ -1287,7 +1287,7 @@ describe("Image with module", () =>
         await base.getImageController().setFeatures(Base.allPolicyContext, imageId, extensionId, []);
         expect((await base.getImageController().getAllFeatures(imageId)).length).toEqual(0);
         expect((await base.getImageController().get(imageId)).features.length).toEqual(0);
-        const persistedFeatures = await base.getEntitiesProvider().imageFeature.findMany({ where: { imageId } });
+        const persistedFeatures = await base.getRegularDatabaseProvider().imageFeature.findMany({ where: { imageId } });
         expect(persistedFeatures.length).toEqual(1);
         expect(persistedFeatures[0].stringValue).toEqual("");
         expect(persistedFeatures[0].name).toEqual(null);
@@ -1501,7 +1501,7 @@ describe("Image with module", () =>
         expect(extensionImageTags[index].id).toEqual(extensionId);
         expect(extensionImageTags[index].value).toEqual(expectedTag);
       });
-      const persistedImage = await base.getEntitiesProvider().images.findUnique({
+      const persistedImage = await base.getRegularDatabaseProvider().images.findUnique({
         where: { id: imageId },
         include: { tags: true }
       });
@@ -1619,7 +1619,7 @@ describe("Image with module", () =>
       {
         fs.rmSync(filePath);
       });
-      expect((await base.getEntitiesProvider().imageTag.findMany({ where: { extensionId: extensionId } })).length).toEqual(0);
+      expect((await base.getRegularDatabaseProvider().imageTag.findMany({ where: { extensionId: extensionId } })).length).toEqual(0);
     }
   });
 

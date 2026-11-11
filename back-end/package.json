@@ -35,7 +35,7 @@
     "backendBuildDirectoryPath": "../build/back-end",
     "storageDirectoryPath": "../storage",
     "databaseFileName": "database.db",
-    "referenceDatabaseUrl": "file:../database.db"
+    "referenceDatabaseUrl": "file:./database.db"
   },
   "type": "module",
   "scripts": {
@@ -53,10 +53,10 @@
     "prisma:studio": "dotenv -- npm run prisma:studio:dotenv",
     "prisma:generate": "prisma generate --",
     "prisma:fix": "gulp fixPrisma",
-    "prisma:migrate:dotenv": "cross-var cross-env DATABASE_URL=\"$LOCAL_DATABASE_URL\" prisma migrate dev --skip-generate",
+    "prisma:migrate:dotenv": "cross-var cross-env DATABASE_URL=\"$LOCAL_DATABASE_URL\" prisma migrate dev --create-only",
     "preprisma:migrate": "npm run .env",
     "prisma:migrate": "dotenv -- npm run prisma:migrate:dotenv",
-    "prisma:update": "cross-var cross-env DATABASE_URL=\"$npm_package_config_referenceDatabaseUrl\" prisma migrate dev --skip-generate --name ' '",
+    "prisma:update": "cross-var cross-env DATABASE_URL=\"$npm_package_config_referenceDatabaseUrl\" prisma migrate dev --name ' '",
     "prisma:seed": "cross-var cross-env DATABASE_URL=\"$npm_package_config_referenceDatabaseUrl\" prisma db seed",
     "prisma:copyMigrations": "gulp copyPrismaMigrations",
     "build:copy": "gulp copySecrets && gulp copyDatabase && gulp copyAssets && npm run prisma:copyMigrations",

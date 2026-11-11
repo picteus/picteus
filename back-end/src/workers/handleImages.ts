@@ -11,11 +11,12 @@ import {
 } from "../dtos/app.dtos";
 import { DualPorts, ImageIdAndFormat, RepositoryIdAndFilePath, toImageFormat } from "../bos";
 import { ImageEventAction } from "../services/notifierService";
-import { EntitiesProvider } from "../services/databaseProviders";
+import { RegularDatabaseService } from "../services/regularDatabaseService";
 import { SearchService } from "../services/imageServices";
 import { ImageDeclarationManagerEvent } from "../threads/managers";
 import { ServiceError } from "../app.exceptions";
 import { ErrorCodes } from "../services/utils/parametersChecker";
+
 
 const { INTERNAL_SERVER_ERROR } = HttpCodes;
 
@@ -68,9 +69,9 @@ export async function declareImage({ ports, repositoryIdAndFilePath }: {
   const imageEntities = await computeImageEntities(ports, repositoryIdAndFilePath);
   const { image, metadata, features } = imageEntities;
   logger.info(`Inserting the image in file '${repositoryIdAndFilePath.filePath}' in the repository with id '${repositoryIdAndFilePath.repositoryId}' and in the location with URL '${image.url}'`);
-  const entitiesProvider = new EntitiesProvider();
-  await entitiesProvider.initialize();
-  const persistedImage = await entitiesProvider.images.create({
+  const regularDatabaseService = new RegularDatabaseService();
+  await regularDatabaseService.initialize();
+  const persistedImage = await regularDatabaseService.images.create({
     data:
       {
         ...image,
@@ -81,7 +82,7 @@ export async function declareImage({ ports, repositoryIdAndFilePath }: {
   {
     // We are declaring the recipes related to the application metadata
     logger.info(`Inserting the features extracted from the application metadata for the image in the location with URL '${image.url}'`);
-    await entitiesProvider.imageFeature.createMany({
+    await regularDatabaseService.imageFeature.createMany({
       data: features.map(feature =>
       {
         return { imageId: persistedImage.id, ...feature };
@@ -99,9 +100,9 @@ export async function synchronizeImage({ ports, repositoryIdAndFilePath }: {
 {
   logger.info(`Synchronizing the image in file '${repositoryIdAndFilePath.filePath}' in the repository with id '${repositoryIdAndFilePath.repositoryId}'`);
 
-  const entitiesProvider = new EntitiesProvider();
-  await entitiesProvider.initialize();
-  const imageDelegate = entitiesProvider.images;
+  const regularDatabaseService = new RegularDatabaseService();
+  await regularDatabaseService.initialize();
+  const imageDelegate = regularDatabaseService.images;
   const image = await imageDelegate.findFirst({ where: { url: fileWithProtocol + repositoryIdAndFilePath.filePath } });
   if (image === null)
   {
@@ -128,9 +129,9 @@ export async function updateImage({ ports, repositoryIdAndFilePath }: {
 {
   logger.info(`Updating the image in file '${repositoryIdAndFilePath.filePath}' in the repository with id '${repositoryIdAndFilePath.repositoryId}'`);
 
-  const entitiesProvider = new EntitiesProvider();
-  await entitiesProvider.initialize();
-  const imageDelegate = entitiesProvider.images;
+  const regularDatabaseService = new RegularDatabaseService();
+  await regularDatabaseService.initialize();
+  const imageDelegate = regularDatabaseService.images;
   const url = fileWithProtocol + repositoryIdAndFilePath.filePath;
   const image: PersistedImage | null = await imageDelegate.findFirst({ where: { url: url } });
   if (image === null)

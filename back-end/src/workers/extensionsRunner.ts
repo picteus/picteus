@@ -15,13 +15,14 @@ import { fromImageEventActionToManifestEvent } from "../bos";
 import { ensureDirectory } from "../services/utils/downloader";
 import { forkWithWatchdog, spawn, stopProcessGracefully } from "../services/utils/processWrapper";
 import { computeVirtualEnvironmentPythonFilePath, spawnPythonWithWatchdog } from "../services/utils/pythonWrapper";
-import { ChromaVectorDatabaseAccessor, EntitiesProvider } from "../services/databaseProviders";
+import { RegularDatabaseService } from "../services/regularDatabaseService";
+import { ChromaVectorDatabaseAccessor } from "../services/vectorDatabaseAccessor";
 import { ExtensionsApiKeys } from "../app.guards";
 import { ExtendedManifest, ExtensionMessage, ExtensionRegistry, ImageEvent } from "../services/extensionRegistry";
 
 
 @Module({
-  providers: [ EntitiesProvider, ChromaVectorDatabaseAccessor, ExtensionRegistry ]
+  providers: [ RegularDatabaseService, ChromaVectorDatabaseAccessor, ExtensionRegistry ]
 })
 class ExtensionsRunnerModule implements OnModuleInit, OnModuleDestroy
 {

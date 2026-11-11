@@ -160,8 +160,6 @@ export class SearchFeatureCondition
   )
   @IsOptional()
   @Matches(extensionIdPattern)
-  @MinLength(1)
-  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly extensionId?: ExtensionIdType;
 

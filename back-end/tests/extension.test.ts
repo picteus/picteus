@@ -1085,7 +1085,7 @@ describe("Extensions", () =>
       expect(storedFeatures[0]).toEqual({ id, ...stringFeature });
       expect(storedFeatures[1]).toEqual({ id, ...binaryFeature });
       expect((await base.getModuleProvider(ImageAttachmentService).list(imageId)).length).toEqual(1);
-      expect((await base.getEntitiesProvider().imageFeature.findMany({ where: { extensionId: id } })).length).toEqual(features.length);
+      expect((await base.getRegularDatabaseProvider().imageFeature.findMany({ where: { extensionId: id } })).length).toEqual(features.length);
       const values = [ 0, 1, 2, 3, 4 ];
       const embeddingsName = "default";
       const embeddings = [ { name: embeddingsName, values } ];
@@ -1103,15 +1103,15 @@ describe("Extensions", () =>
     });
     {
       // We check that the features, their attachments, and the embeddings, the settings and the AI models attached to the extension are deleted
-      expect(await base.getEntitiesProvider().imageFeature.findMany({ where: { extensionId: id } })).toEqual([]);
+      expect(await base.getRegularDatabaseProvider().imageFeature.findMany({ where: { extensionId: id } })).toEqual([]);
       expect(await base.getModuleProvider(ImageAttachmentService).list(imageId)).toEqual([]);
       expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageId, id)).toEqual([]);
-      expect(await base.getEntitiesProvider().aiModel.findMany({ where: { extensionId: id } })).toEqual([]);
+      expect(await base.getRegularDatabaseProvider().aiModel.findMany({ where: { extensionId: id } })).toEqual([]);
       await expect(async () =>
       {
         await base.getExtensionController().getSettings(Base.allPolicyContext, manifest.id);
       }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${id}' is invalid because there is no extension with that identifier`, BAD_REQUEST, base.badParameterCode));
-      expect(await base.getEntitiesProvider().extensionSettings.findUnique({ where: { extensionId: id } })).toBeNull();
+      expect(await base.getRegularDatabaseProvider().extensionSettings.findUnique({ where: { extensionId: id } })).toBeNull();
     }
     // We make sure that the extension process is now over
     await builder.checkExtensionOver();

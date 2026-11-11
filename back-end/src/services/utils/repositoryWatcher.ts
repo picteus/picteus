@@ -12,8 +12,8 @@ import {
 import { logger } from "../../logger";
 import { parametersChecker } from "./parametersChecker";
 import { ImageDeclarationManager } from "../../threads/managers";
-import { VectorDatabaseAccessor } from "../databaseProviders";
-import { PersistenceProvider } from "../../persistence";
+import { RegularDatabaseService } from "../regularDatabaseService";
+import { VectorDatabaseAccessor } from "../vectorDatabaseAccessor";
 import { SearchFileStats, SearchService } from "../imageServices";
 import { ActionState, EventEntity, ImageEventAction, NotifierService, RepositoryEventAction } from "../notifierService";
 import { WatcherEvent, WatcherTerminator, watchPath } from "./pathWatcher";
@@ -36,7 +36,7 @@ export class RepositoryWatcher
     return RepositoryWatcher.instances[repositoryId];
   }
 
-  static async start(repository: Repository, persistenceProvider: PersistenceProvider, vectorDatabaseAccessor: VectorDatabaseAccessor, notifierService: NotifierService, collectionService: CollectionService): Promise<void>
+  static async start(repository: Repository, regularDatabaseService: RegularDatabaseService, vectorDatabaseAccessor: VectorDatabaseAccessor, notifierService: NotifierService, collectionService: CollectionService): Promise<void>
   {
     const id = repository.id;
     if (RepositoryWatcher.get(id) !== undefined)
@@ -47,7 +47,7 @@ export class RepositoryWatcher
     const watcher = new RepositoryWatcher(id, repository.getLocation().toFilePath(), ImageFormats, vectorDatabaseAccessor, collectionService);
     RepositoryWatcher.instances[id] = watcher;
     RepositoryWatcher.startedRepositories.push(repository);
-    await watcher.start(persistenceProvider, notifierService);
+    await watcher.start(regularDatabaseService, notifierService);
     notifierService.emit(EventEntity.Repository, RepositoryEventAction.Watch, ActionState.Started, { id });
   }
 
@@ -94,7 +94,7 @@ export class RepositoryWatcher
   {
   }
 
-  private async start(persistenceProvider: PersistenceProvider, notifierService: NotifierService): Promise<void>
+  private async start(regularDatabaseService: RegularDatabaseService, notifierService: NotifierService): Promise<void>
   {
     const extensions = computeImageFormatsExtensions(this.imageFormats).map((extension) =>
     {
@@ -136,7 +136,7 @@ export class RepositoryWatcher
         this.isRunningCycle = true;
         try
         {
-          const imageDelegate = persistenceProvider.images;
+          const imageDelegate = regularDatabaseService.images;
           const searchService = new SearchService();
           const toBeUpdatedFilePaths = [];
           const unlinkedImages = [];

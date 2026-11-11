@@ -110,7 +110,8 @@ import {
 import { fromCapacityToImageEventAction, Json } from "../bos";
 import { resize } from "./utils/images";
 import { WatcherEvent, WatcherTerminator, watchPath } from "./utils/pathWatcher";
-import { EntitiesProvider, VectorDatabaseAccessor } from "./databaseProviders";
+import { RegularDatabaseService } from "./regularDatabaseService";
+import { VectorDatabaseAccessor } from "./vectorDatabaseAccessor";
 import { ExtendedManifest, ExtensionArchiveReader, ExtensionMessage, ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionGenerator } from "./extensionGenerator";
 import { ImageAttachmentService } from "./imageAttachmentService";
@@ -515,7 +516,7 @@ export class ExtensionService
 
   private readonly pendingImageEventPromises: Set<Promise<unknown>> = new Set<Promise<unknown>>();
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
+  constructor(private readonly regularDatabaseService: RegularDatabaseService, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly extensionRegistry: ExtensionRegistry, private readonly extensionTaskExecutor: ExtensionTaskExecutor, @Inject(forwardRef(() => ImageAttachmentService)) private readonly imageAttachmentService: ImageAttachmentService, private readonly hostService: HostService, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating an ExtensionService");
   }
@@ -869,19 +870,19 @@ export class ExtensionService
     }
     AuthenticationGuard.unregisterExtensionApiKeys(id);
     // We delete all the features computed by the extension
-    await this.entitiesProvider.imageFeature.deleteMany({ where: { extensionId: id } });
+    await this.regularDatabaseService.imageFeature.deleteMany({ where: { extensionId: id } });
     // We delete all the embeddings computed by the extension
     await this.vectorDatabaseAccessor.deleteExtensionEmbeddings(id);
     // We delete all the tags set by the extension
-    await this.entitiesProvider.imageTag.deleteMany({ where: { extensionId: id } });
+    await this.regularDatabaseService.imageTag.deleteMany({ where: { extensionId: id } });
     // We delete the AI models declared by the extension
-    await this.entitiesProvider.aiModel.deleteMany({ where: { extensionId: id } });
+    await this.regularDatabaseService.aiModel.deleteMany({ where: { extensionId: id } });
     // We delete all the attachments set by the extension
     await this.imageAttachmentService.deleteForExtension(id);
     if ((await this.getPersistedSettings(id)) !== null)
     {
       // We delete the extension settings
-      await this.entitiesProvider.extensionSettings.delete({ where: { extensionId: id } });
+      await this.regularDatabaseService.extensionSettings.delete({ where: { extensionId: id } });
     }
     if (isUnpackedExtension === false)
     {
@@ -937,12 +938,12 @@ export class ExtensionService
 
   async getPersistedSettings(id: string): Promise<Prisma.ExtensionSettingsGetPayload<true> | null>
   {
-    return await this.entitiesProvider.extensionSettings.findUnique({ where: { extensionId: id } });
+    return await this.regularDatabaseService.extensionSettings.findUnique({ where: { extensionId: id } });
   }
 
   async updatedPersistedSettings(id: string, versions: ExtensionSettingsVersions): Promise<void>
   {
-    await this.entitiesProvider.extensionSettings.update({
+    await this.regularDatabaseService.extensionSettings.update({
       where: { extensionId: id },
       data: { versions: stringify(versions, false) }
     });
@@ -976,7 +977,7 @@ export class ExtensionService
       parametersChecker.throwBadParameter("settings", stringify(settings, false), `it does not comply with the settings JSON schema. Reason: '${(error as Error).message}'`);
     }
     const objectValue = { extensionId: id, value: value as Prisma.InputJsonValue };
-    await this.entitiesProvider.extensionSettings.upsert({
+    await this.regularDatabaseService.extensionSettings.upsert({
       where: { extensionId: id },
       create: objectValue,
       update: objectValue
@@ -994,7 +995,7 @@ export class ExtensionService
     stripAndExtractParametersUiProperties(withStrippedUiPropertiesExtensionSettings);
     const value = computeDefaultValueFromSchema(withStrippedUiPropertiesExtensionSettings);
     const objectValue = { extensionId: id, value: value as Prisma.InputJsonValue };
-    await this.entitiesProvider.extensionSettings.upsert({
+    await this.regularDatabaseService.extensionSettings.upsert({
       where: { extensionId: id },
       create: objectValue,
       update: objectValue
@@ -1023,15 +1024,15 @@ export class ExtensionService
       parametersChecker.checkString(`[${index}].comment`, model.comment, FieldLengths.l1k, StringNature.Free, true);
     }
 
-    const operations: Prisma.PrismaPromise<Prisma.BatchPayload>[] = [ this.entitiesProvider.aiModel.deleteMany({ where: { extensionId: id } }) ];
+    const operations: Prisma.PrismaPromise<Prisma.BatchPayload>[] = [ this.regularDatabaseService.aiModel.deleteMany({ where: { extensionId: id } }) ];
     if (models.length > 0)
     {
-      operations.push(this.entitiesProvider.aiModel.createMany({
+      operations.push(this.regularDatabaseService.aiModel.createMany({
         data: models.map((model: AiModel) => ({ extensionId: id, ...model }))
       }));
     }
     // We overwrite the previous models atomically
-    await this.entitiesProvider.prisma.$transaction(operations);
+    await this.regularDatabaseService.prisma.$transaction(operations);
 
     // We delete the "CaptionInstruction" and "EligibleTagsInstruction" items which do not have a matching "technicalId" with the latest AI models
     for (const instructionClass of [ CaptionInstruction, EligibleTagsInstruction ])
@@ -1256,7 +1257,7 @@ export class ExtensionService
       {
         parametersChecker.throwBadParameter("imageIds", imageIds, `the command with id '${commandId}' can only be run on a single image`);
       }
-      const entities = await this.entitiesProvider.images.findMany({
+      const entities = await this.regularDatabaseService.images.findMany({
         where: { id: { in: imageIds } },
         select: { id: true, tags: command.on.withTags !== undefined }
       });
@@ -1854,7 +1855,7 @@ export class ExtensionService
       }
       else
       {
-        await this.entitiesProvider.extensionSettings.create({
+        await this.regularDatabaseService.extensionSettings.create({
           data: {
             extensionId: manifest.id,
             versions: stringify({ current: manifest.version, upgraded: false })
@@ -2243,7 +2244,7 @@ export class ExtensionService
     {
       const getAllImageIds = async (): Promise<string[]> =>
       {
-        const imageSummaries = await this.entitiesProvider.images.findMany({
+        const imageSummaries = await this.regularDatabaseService.images.findMany({
           select: { id: true }
         });
         return imageSummaries.map((imageSummary) =>
@@ -2273,7 +2274,7 @@ export class ExtensionService
           return;
         case ManifestCapabilityId.ImageFeatures:
         {
-          const featuresImageIds = (await this.entitiesProvider.imageFeature.findMany({
+          const featuresImageIds = (await this.regularDatabaseService.imageFeature.findMany({
             select: { imageId: true },
             where: { extensionId: id }
           })).map((imageFeature) =>
@@ -2288,7 +2289,7 @@ export class ExtensionService
           await cleanUpDirtyImageTagOrFeatures(allImageIds, featuresImageIds, async (unexpectedImageIds: string[]) =>
           {
             logger.warn(`Deleting ${unexpectedImageIds} unexpected image feature(s) related to the extension with id '${id}'`);
-            await this.entitiesProvider.imageFeature.deleteMany({
+            await this.regularDatabaseService.imageFeature.deleteMany({
               where:
                 {
                   extensionId: id,
@@ -2300,7 +2301,7 @@ export class ExtensionService
           break;
         case ManifestCapabilityId.ImageTags:
         {
-          const tagsImageIds = (await this.entitiesProvider.imageTag.findMany({
+          const tagsImageIds = (await this.regularDatabaseService.imageTag.findMany({
             select: { imageId: true },
             where: { extensionId: id }
           })).map((imageTag) =>
@@ -2315,7 +2316,7 @@ export class ExtensionService
           await cleanUpDirtyImageTagOrFeatures(allImageIds, tagsImageIds, async (unexpectedImageIds: string[]) =>
           {
             logger.warn(`Deleting ${unexpectedImageIds} unexpected image tag(s) related to the extension with id '${id}'`);
-            await this.entitiesProvider.imageTag.deleteMany({
+            await this.regularDatabaseService.imageTag.deleteMany({
               where:
                 {
                   extensionId: id,
@@ -2475,7 +2476,7 @@ export class ExtensionService
     const captionInstructionClass: ClassConstructor<CaptionInstruction> = CaptionInstruction;
     const isForCaptions = theClass === captionInstructionClass;
     const select = isForCaptions ? { captions: true } : { eligibleTags: true };
-    const result = await this.entitiesProvider.extensionSettings.findUnique({
+    const result = await this.regularDatabaseService.extensionSettings.findUnique({
       select: select,
       where: { extensionId: id }
     });
@@ -2493,7 +2494,7 @@ export class ExtensionService
     const isForCaptions = theClass === captionInstructionClass;
     const value = instanceToPlain<T>(instructions);
     const update = isForCaptions ? { captions: value } : { eligibleTags: value };
-    await this.entitiesProvider.extensionSettings.upsert({
+    await this.regularDatabaseService.extensionSettings.upsert({
       where: { extensionId: id },
       create: { extensionId: id, ...update },
       update
@@ -2574,7 +2575,7 @@ export class ExtensionService
 
   private async findAiModels(extensionId?: string): Promise<ExtensionAiModel[]>
   {
-    const entities = await this.entitiesProvider.aiModel.findMany({
+    const entities = await this.regularDatabaseService.aiModel.findMany({
       where: extensionId === undefined ? undefined : { extensionId },
       orderBy: [ { extensionId: "asc" }, { technicalId: "asc" } ]
     });

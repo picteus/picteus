@@ -487,7 +487,7 @@ class ReplicateExtension extends PicteusExtension
   {
     const name = PicteusExtension.getManifest().name;
     this.repository = await this.getRepositoryApi().repositoryEnsure({
-      technicalId: this.extensionId,
+      extensionId: this.extensionId,
       name,
       comment: `The ${name} repository`,
       watch: true

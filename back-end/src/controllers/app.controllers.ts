@@ -1400,14 +1400,6 @@ export class RepositoryController
     example: "file:///Users/me/image/directory"
   })
   @ApiQuery({
-    name: "technicalId",
-    description: "The technical identifier",
-    type: String,
-    minLength: 1,
-    maxLength: FieldLengths.l32,
-    required: false
-  })
-  @ApiQuery({
     name: "name",
     description: "The repository name",
     type: String,
@@ -1437,9 +1429,9 @@ export class RepositoryController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryWrite ]))
-  async create(@Query("type") type: RepositoryLocationType, @Query("url") url: string, @Query("technicalId") technicalId: string | undefined, @Query("name") name: string, @Query("comment") comment?: string, @Query("watch", new ParseBoolPipe({ optional: true })) watch?: boolean): Promise<Repository>
+  async create(@Query("type") type: RepositoryLocationType, @Query("url") url: string, @Query("name") name: string, @Query("comment") comment?: string, @Query("watch", new ParseBoolPipe({ optional: true })) watch?: boolean): Promise<Repository>
   {
-    return await this.repositoryService.create(type, url, technicalId, name, comment, watch);
+    return await this.repositoryService.create(type, url, name, comment, watch, undefined);
   }
 
   @Put(":id/update")
@@ -1482,16 +1474,14 @@ export class RepositoryController
   @Put("ensure")
   @ApiOperation(
     {
-      summary: "Ensures a repository exists",
-      description: "Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it."
+      summary: "Ensures a repository attached to an extension exists",
+      description: "Ensures that a repository with type 'file' attached to the provided extension exists, and if not, creates it."
     }
   )
   @ApiQuery({
-    name: "technicalId",
-    description: "The repository technical identifier",
-    type: String,
-    minLength: 1,
-    maxLength: FieldLengths.l32,
+    name: "extensionId",
+    description: "The identifier of the extension the repository is attached to",
+    schema: extensionIdSchema,
     required: true
   })
   @ApiQuery({
@@ -1523,9 +1513,13 @@ export class RepositoryController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryEnsure ]))
-  async ensure(@Query("technicalId") technicalId: string, @Query("name") name: string, @Query("comment") comment?: string, @Query("watch", new ParseBoolPipe({ optional: true })) watch?: boolean): Promise<Repository>
+  async ensure(@RequestPolicyContext() policyContext: PolicyContext, @Query("extensionId") extensionId: string, @Query("name") name: string, @Query("comment") comment?: string, @Query("watch", new ParseBoolPipe({ optional: true })) watch?: boolean): Promise<Repository>
   {
-    return await this.repositoryService.ensure(technicalId, name, comment, watch);
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.repositoryService.ensure(extensionId, name, comment, watch);
   }
 
   @Put("startOrStop")

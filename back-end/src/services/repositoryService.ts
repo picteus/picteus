@@ -29,7 +29,8 @@ import {
   toFileExtension
 } from "../dtos/app.dtos";
 import { Json } from "../bos";
-import { EntitiesProvider, VectorDatabaseAccessor } from "./databaseProviders";
+import { RegularDatabaseService } from "./regularDatabaseService";
+import { VectorDatabaseAccessor } from "./vectorDatabaseAccessor";
 import { ImageDeclarationManager } from "../threads/managers";
 import { EventEntity, ImageEventAction, NotifierService, RepositoryEventAction } from "./notifierService";
 import { parametersChecker, StringNature } from "./utils/parametersChecker";
@@ -56,7 +57,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
 
   private readonly perPathFileRepositories: Map<string, Repository> = new Map<string, Repository>();
 
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly collectionService: CollectionService, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
+  constructor(private readonly regularDatabaseService: RegularDatabaseService, private readonly collectionService: CollectionService, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating a RepositoryService");
   }
@@ -96,21 +97,24 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     return plainToInstanceViaJSON(Repository, repository);
   }
 
-  async create(type: RepositoryLocationType, url: string, technicalId: string | undefined, name: string, comment: string | undefined, watch: boolean | undefined): Promise<Repository>
+  async create(type: RepositoryLocationType, url: string, name: string, comment: string | undefined, watch: boolean | undefined, extensionId: string | undefined): Promise<Repository>
   {
     const doNotWatch = watch !== true;
-    logger.info(`Creating the repository with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}, of type '${type}', URL '${url}' ${doNotWatch === true ? "but does not watch it" : "and starts watching it"}`);
-    parametersChecker.checkString("technicalId", technicalId, FieldLengths.l32, StringNature.Technical, true);
+    logger.info(`Creating the repository with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}, of type '${type}', URL '${url}'${extensionId === undefined ? "" : `, attached to the extension with id '${extensionId}'`} ${doNotWatch === true ? "but does not watch it" : "and starts watching it"}`);
+    parametersChecker.checkString("extensionId", extensionId, FieldLengths.l32, StringNature.Technical, true);
     parametersChecker.checkString("url", url, FieldLengths.l4k, StringNature.FileUrl);
     parametersChecker.checkString("name", name, FieldLengths.l128, StringNature.Name);
     parametersChecker.checkString("comment", comment, FieldLengths.l1k, StringNature.Free, true);
-    if ((await this.entitiesProvider.repositories.findUnique({ where: { name } })) !== null)
+    if (extensionId !== undefined)
     {
-      parametersChecker.throwBadParameter("name", name, "a repository with the same name already exists");
-    }
-    if (technicalId != undefined && (await this.entitiesProvider.repositories.findUnique({ where: { technicalId } })) !== null)
-    {
-      parametersChecker.throwBadParameter("technicalId", technicalId, "a repository with the same technical identifier already exists");
+      if (this.extensionsRegistry.exists(extensionId) === false)
+      {
+        parametersChecker.throwBadParameter("extensionId", extensionId, "that extension is not installed");
+      }
+      if ((await this.regularDatabaseService.repositories.findUnique({ where: { extensionId } })) !== null)
+      {
+        parametersChecker.throwBadParameter("extensionId", extensionId, "the repository attached to the extension with that identifier already exists");
+      }
     }
     let directoryPath = path.resolve(url.substring(fileWithProtocol.length));
     {
@@ -158,7 +162,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
         }
       }
     }
-    const repositories = await this.entitiesProvider.repositories.findMany();
+    const repositories = await this.regularDatabaseService.repositories.findMany();
 
     function isParentDirectory(directoryPath: string, toAssessDirectoryPath: string): boolean
     {
@@ -181,8 +185,8 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       }
     }
 
-    const repositoryObject = { technicalId, name, type, url: effectiveUrl, comment, state: RepositoryState.INDEXING };
-    const persistedRepository = await this.entitiesProvider.repositories.create({ data: repositoryObject });
+    const repositoryObject = { extensionId, name, type, url: effectiveUrl, comment, state: RepositoryState.INDEXING };
+    const persistedRepository = await this.regularDatabaseService.repositories.create({ data: repositoryObject });
 
     const repository = plainToInstanceViaJSON(Repository, persistedRepository);
     if (type === RepositoryLocationType.File)
@@ -207,13 +211,13 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     parametersChecker.checkString("comment", comment, FieldLengths.l1k, StringNature.Free, true);
     if (name !== undefined)
     {
-      const withSameNameEntity = await this.entitiesProvider.repositories.findUnique({ where: { name } });
+      const withSameNameEntity = await this.regularDatabaseService.repositories.findUnique({ where: { name } });
       if (withSameNameEntity !== null && withSameNameEntity.id !== repository.id)
       {
         parametersChecker.throwBadParameter("name", name, "a repository with the same name already exists");
       }
     }
-    const updatedRepository = await this.entitiesProvider.repositories.update({
+    const updatedRepository = await this.regularDatabaseService.repositories.update({
       where: { id },
       data: { name, comment }
     });
@@ -221,21 +225,26 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     return plainToInstanceViaJSON(Repository, updatedRepository);
   }
 
-  async ensure(technicalId: string, name: string, comment: string | undefined, watch: boolean = true): Promise<Repository>
+  async ensure(extensionId: string, name: string, comment: string | undefined, watch: boolean = true): Promise<Repository>
   {
-    logger.info(`Ensuring that the repository with technical identifier '${technicalId}' exists, with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}`);
-    const entity = await this.entitiesProvider.repositories.findUnique({ where: { technicalId } });
+    logger.info(`Ensuring that the repository attached to the extension with id '${extensionId}' exists, with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}`);
+    parametersChecker.checkString("extensionId", extensionId, FieldLengths.l32, StringNature.Technical);
+    if (this.extensionsRegistry.exists(extensionId) === false)
+    {
+      parametersChecker.throwBadParameter("extensionId", extensionId, "that extension is not installed");
+    }
+    const entity = await this.regularDatabaseService.repositories.findUnique({ where: { extensionId } });
     if (entity !== null)
     {
       return plainToInstanceViaJSON(Repository, entity);
     }
     else
     {
-      const directoryPath = path.join(paths.repositoriesDirectoryPath, technicalId);
+      const directoryPath = path.join(paths.repositoriesDirectoryPath, extensionId!);
       fs.mkdirSync(directoryPath, { recursive: true });
       try
       {
-        return await this.create(RepositoryLocationType.File, fileWithProtocol + directoryPath, technicalId, name, comment, watch);
+        return await this.create(RepositoryLocationType.File, fileWithProtocol + directoryPath, name, comment, watch, extensionId);
       }
       catch (error)
       {
@@ -266,7 +275,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       if (fs.existsSync(repository.getLocation().toFilePath()) === false)
       {
         // The repository is not accessible
-        await this.entitiesProvider.repositories.update({
+        await this.regularDatabaseService.repositories.update({
           where: { id },
           data:
             {
@@ -278,7 +287,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
     {
-      await this.entitiesProvider.repositories.update({
+      await this.regularDatabaseService.repositories.update({
         where: { id },
         data:
           {
@@ -325,7 +334,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       if (wasWatching === true)
       {
         // We resume the watching, in case the synchronization was successful
-        await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifierService, this.collectionService);
+        await RepositoryWatcher.start(repository, this.regularDatabaseService, this.vectorDatabaseAccessor, this.notifierService, this.collectionService);
       }
       const updatedRepository = await updateStatus();
       if (onSuccess !== undefined)
@@ -354,7 +363,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     if (isStart === true)
     {
-      await RepositoryWatcher.start(repository, this.entitiesProvider, this.vectorDatabaseAccessor, this.notifierService, this.collectionService);
+      await RepositoryWatcher.start(repository, this.regularDatabaseService, this.vectorDatabaseAccessor, this.notifierService, this.collectionService);
     }
     else
     {
@@ -384,7 +393,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     // We remove the repository from the collections
     await this.collectionService.clearFromOrigin(SearchOriginKind.Repositories, id);
-    const imageIds: string[] = (await this.entitiesProvider.images.findMany({
+    const imageIds: string[] = (await this.regularDatabaseService.images.findMany({
       where: { repositoryId: id },
       select: { id: true }
     })).map((imageSummary) =>
@@ -394,8 +403,8 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     // We delete the images' embeddings
     await this.vectorDatabaseAccessor.deleteImagesEmbeddings(imageIds);
     // Thanks to the cascading effect, we do not need to delete the "metadata" nor the "feature" entities
-    const deleteRepository = this.entitiesProvider.repositories.delete({ where: { id } });
-    await this.entitiesProvider.prisma.$transaction([ deleteRepository ]);
+    const deleteRepository = this.regularDatabaseService.repositories.delete({ where: { id } });
+    await this.regularDatabaseService.prisma.$transaction([ deleteRepository ]);
     for (const imageId of imageIds)
     {
       this.notifierService.emit(EventEntity.Image, RepositoryEventAction.Deleted, undefined, { id: imageId });
@@ -411,7 +420,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       parametersChecker.throwBadParameter("ids", ids, "a repository identifier is repeated");
     }
     const where: Prisma.RepositoryWhereInput | undefined = ids === undefined ? undefined : { id: { in: ids } };
-    const entities = await this.entitiesProvider.repositories.findMany({ where, orderBy: { name: "asc" } });
+    const entities = await this.regularDatabaseService.repositories.findMany({ where, orderBy: { name: "asc" } });
     if (ids !== undefined && entities.length !== ids.length)
     {
       parametersChecker.throwBadParameter("ids", ids, "some of those identifiers do not correspond to an existing repository");
@@ -422,7 +431,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   async activities(): Promise<RepositoryActivities>
   {
     logger.info("Getting the repositories activities");
-    const repositories = await this.entitiesProvider.repositories.findMany();
+    const repositories = await this.regularDatabaseService.repositories.findMany();
     return repositories.map((repository) =>
     {
       return new RepositoryActivity(repository.id, repository.state === RepositoryState.INDEXING ? RepositoryActivityKind.Synchronizing : (RepositoryWatcher.get(repository.id) !== undefined ? RepositoryActivityKind.Watching : RepositoryActivityKind.None));
@@ -432,7 +441,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   async getFeatureNames(): Promise<ExtensionImageFeatureName []>
   {
     logger.info("Getting all the extensions image feature names");
-    const features = await this.entitiesProvider.imageFeature.findMany({
+    const features = await this.regularDatabaseService.imageFeature.findMany({
       distinct: [ "extensionId", "format", "type", "name" ],
       where: { name: { not: null } },
       orderBy: [ { extensionId: "asc" }, { name: "asc" } ]
@@ -446,7 +455,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   async getTags(): Promise<ExtensionImageTag []>
   {
     logger.info("Getting all the extensions image tags");
-    const tags = await this.entitiesProvider.imageTag.findMany({
+    const tags = await this.regularDatabaseService.imageTag.findMany({
       distinct: [ "extensionId", "value" ],
       where: { value: { not: ImageService.emptyImageTag } },
       orderBy: { extensionId: "asc" }
@@ -478,7 +487,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       parametersChecker.throwBadParameterError(`The repository with id '${id}' is not available`);
     }
-    const imageEntity = await this.entitiesProvider.images.findUnique({ where: { id: imageId } });
+    const imageEntity = await this.regularDatabaseService.images.findUnique({ where: { id: imageId } });
     if (imageEntity === null)
     {
       parametersChecker.throwBadParameter("imageId", imageId, "there is no image with that identifier");
@@ -537,7 +546,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     parametersChecker.checkString("nameWithoutExtension", nameWithoutExtension, FieldLengths.l512, StringNature.FileSystemFileName, true);
     parametersChecker.checkString("relativeDirectoryPath", relativeDirectoryPath, FieldLengths.l4k, StringNature.FileSystemRelativeDirectoryPath, true, true);
-    if (parentId !== undefined && (await this.entitiesProvider.images.findUnique({ where: { id: parentId } })) === null)
+    if (parentId !== undefined && (await this.regularDatabaseService.images.findUnique({ where: { id: parentId } })) === null)
     {
       parametersChecker.throwBadParameter("parentImageId", parentId, "it does not correspond to an existing image");
     }
@@ -647,7 +656,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
 
   async getRepository(id: string): Promise<PersistedRepository>
   {
-    const entity = await this.entitiesProvider.repositories.findUnique({ where: { id } });
+    const entity = await this.regularDatabaseService.repositories.findUnique({ where: { id } });
     if (entity === null)
     {
       parametersChecker.throwBadParameter("id", id, `there is no repository with that identifier`);
@@ -678,7 +687,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       if (wasAlreadyIndexing === false)
       {
-        await this.entitiesProvider.repositories.update({
+        await this.regularDatabaseService.repositories.update({
           where: { id: repositoryId },
           data: { state: RepositoryState.INDEXING }
         });
@@ -723,7 +732,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
           {
             logger.warn(`Could not synchronize properly ${errors.length} image(s)`);
           }
-          return this.entitiesProvider.images.findMany({ where: { repositoryId } });
+          return this.regularDatabaseService.images.findMany({ where: { repositoryId } });
         }).then((images): void =>
         {
           const toDeletedImageIds: string[] = [];
@@ -742,7 +751,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
             logger.info(`Deleting ${toDeletedImageIds.length} image(s) from the repository with id '${repositoryId}'`);
             this.vectorDatabaseAccessor.deleteImagesEmbeddings(toDeletedImageIds).then(() =>
             {
-              this.entitiesProvider.images.deleteMany({ where: { id: { in: toDeletedImageIds } } }).then(() =>
+              this.regularDatabaseService.images.deleteMany({ where: { id: { in: toDeletedImageIds } } }).then(() =>
               {
                 for (const imageId of toDeletedImageIds)
                 {
@@ -766,7 +775,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
           const updateStatus = async (): Promise<Repository> =>
           {
             logger.debug(`Setting the repository with id '${repositoryId}' to the '${RepositoryState.READY}' status`);
-            await service.entitiesProvider.repositories.update({
+            await service.regularDatabaseService.repositories.update({
               where: { id: repositoryId },
               data:
                 {

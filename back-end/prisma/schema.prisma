@@ -48,10 +48,10 @@ model AiModel {
 
 model Repository {
   id               String   @id @default(uuid())
-  technicalId      String?  @unique
+  extensionId      String?  @unique
   type             String
   url              String   @unique
-  name             String   @unique
+  name             String
   comment          String?
   state            String
   creationDate     DateTime @default(now())

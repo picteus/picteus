@@ -990,8 +990,6 @@ class ExtensionBasis
     }
   )
   @Matches(extensionIdPattern)
-  @MinLength(1)
-  @MaxLength(FieldLengths.l32)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -1745,8 +1743,6 @@ export class ConfigurationExtensionCommand
     }
   )
   @Matches(extensionIdPattern)
-  @MinLength(1)
-  @MaxLength(FieldLengths.l32)
   @IsDefined()
   @NotEquals(null)
   @IsString()

@@ -5,17 +5,18 @@ import { ImageAttachment, Prisma } from ".prisma/client";
 
 import { logger } from "../logger";
 import { computeAttachmentDisposition } from "./utils/downloader";
-import { EntitiesProvider } from "./databaseProviders";
+import { RegularDatabaseService } from "./regularDatabaseService";
 import { ExtensionRegistry } from "./extensionRegistry";
 import { parametersChecker } from "./utils/parametersChecker";
 import { attachmentUriPrefix, fromMimeType, Image, toFileExtension } from "../dtos/app.dtos";
+
 
 @Injectable()
 export class ImageAttachmentService
 {
 
   // We do not use the "@Inject(forwardRef(() => ExtensionsRegistry))", because this causes the https://github.com/microsoft/TypeScript/issues/43981 bug, in terms of metadata JavaScript transpiled code
-  constructor(private readonly entitiesProvider: EntitiesProvider, private readonly moduleRef: ModuleRef)
+  constructor(private readonly regularDatabaseService: RegularDatabaseService, private readonly moduleRef: ModuleRef)
   {
     logger.debug("Instantiating an ImageAttachmentService");
   }
@@ -43,7 +44,7 @@ export class ImageAttachmentService
       parametersChecker.throwBadParameter("mimeType", mimeType, "the payload MIME type does not match");
     }
 
-    const imageAttachment = await this.entitiesProvider.imageAttachment.create({
+    const imageAttachment = await this.regularDatabaseService.imageAttachment.create({
       data: {
         imageId,
         extensionId,
@@ -56,7 +57,7 @@ export class ImageAttachmentService
 
   async list(imageId: string): Promise<ImageAttachment[]>
   {
-    return this.entitiesProvider.imageAttachment.findMany({ where: { imageId } });
+    return this.regularDatabaseService.imageAttachment.findMany({ where: { imageId } });
   }
 
   async download(uri: string): Promise<StreamableFile>
@@ -96,14 +97,14 @@ export class ImageAttachmentService
 
   delete(imageId: string, extensionId: string, toKeepIds: number[]): Prisma.PrismaPromise<Prisma.BatchPayload>
   {
-    return this.entitiesProvider.imageAttachment.deleteMany({
+    return this.regularDatabaseService.imageAttachment.deleteMany({
       where: { imageId, extensionId, id: { notIn: toKeepIds } }
     });
   }
 
   async deleteForExtension(extensionId: string): Promise<void>
   {
-    await this.entitiesProvider.imageAttachment.deleteMany({
+    await this.regularDatabaseService.imageAttachment.deleteMany({
       where: { extensionId }
     });
   }
@@ -123,7 +124,7 @@ export class ImageAttachmentService
     {
       throw new Error("its suffix is not an integer");
     }
-    const entity = await this.entitiesProvider.imageAttachment.findUnique({
+    const entity = await this.regularDatabaseService.imageAttachment.findUnique({
       select: doNotRetrieveValue ? {
         id: true,
         imageId: true,

@@ -10,7 +10,7 @@ import { expect, jest } from "@jest/globals";
 import { pickPort } from "pick-port";
 import AdmZip from "adm-zip";
 import waitForExpect from "wait-for-expect";
-import { Type } from "@nestjs/common";
+import { Abstract, Type } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Test, TestingModule } from "@nestjs/testing";
@@ -29,8 +29,8 @@ import {
   RepositoryController
 } from "../src/controllers/app.controllers";
 import {
-  EntitiesProvider,
   ExtensionRegistry,
+  RegularDatabaseService,
   SearchService,
   VectorDatabaseAccessor
 } from "../src/services/app.service";
@@ -612,7 +612,7 @@ export class Base extends Core
     return this.moduleRef !== undefined;
   }
 
-  getModuleProvider<Provider extends object>(type: Type<Provider>, notViaProxy: boolean = false): Provider
+  getModuleProvider<Provider extends object>(type: Type<Provider> | Abstract<Provider>, notViaProxy: boolean = false): Provider
   {
     if (this.resortToProxy === false || notViaProxy === true)
     {
@@ -622,12 +622,13 @@ export class Base extends Core
       }
       return this.moduleRef.get<Provider, Provider>(type);
     }
-    return this.controllerProxy!.createProxy(type);
+    // The proxy is only used for controllers, which are always concrete classes
+    return this.controllerProxy!.createProxy(type as Type<Provider>);
   }
 
-  getEntitiesProvider(): EntitiesProvider
+  getRegularDatabaseProvider(): RegularDatabaseService
   {
-    return this.getModuleProvider(EntitiesProvider);
+    return this.getModuleProvider(RegularDatabaseService);
   }
 
   getAdministrationController(): AdministrationController
@@ -697,7 +698,7 @@ export class Base extends Core
 
   async createRepository(url: string, name: string = Defaults.repositoryName, comment: string | undefined = undefined, watch: boolean | undefined = undefined): Promise<Repository>
   {
-    return await this.getRepositoryController().create(Defaults.locationType, url, undefined, name, comment, watch);
+    return await this.getRepositoryController().create(Defaults.locationType, url, name, comment, watch);
   }
 
   async prepareEmptyRepository(directoryPath: string | undefined = undefined, watch: boolean = true): Promise<Repository>

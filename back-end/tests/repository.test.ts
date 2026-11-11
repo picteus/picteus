@@ -42,6 +42,7 @@ import {
   toFileExtension
 } from "../src/dtos/app.dtos";
 import { ServiceError } from "../src/app.exceptions";
+import { ApiScope, type PolicyContext } from "../src/app.guards";
 import { Base, Core, Defaults } from "./base";
 import { RepositoryWatcher } from "../src/services/utils/repositoryWatcher";
 import { getTemporaryDirectoryPath } from "../src/services/utils/downloader";
@@ -102,7 +103,8 @@ describe("Repository", () =>
     const url = fileWithProtocol + directoryPath + "/";
     const name = "name-" + randomUUID();
     const comment = "An interesting repository";
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, undefined, name, comment, watch);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, name, comment, watch);
+    expect(repository.extensionId).toBeNull();
     await checkActivity(repository.id, RepositoryActivityKind.Synchronizing);
     await waitForExpect(() =>
     {
@@ -152,7 +154,7 @@ describe("Repository", () =>
       // We check that this is not possible to declare another repository with the same URL
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, undefined, name + "-new");
+        await base.getRepositoryController().create(Defaults.locationType, url, name + "-new");
       }).rejects.toThrow(new ServiceError(`The parameter 'url' with value '${url}' is invalid because a repository with the same URL already exists`, BAD_REQUEST, base.badParameterCode));
     }
     else
@@ -173,7 +175,7 @@ describe("Repository", () =>
       fs.symlinkSync(nonExistentPath, directoryPath, "dir");
       await expect(async () =>
       {
-        await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName, undefined, false);
+        await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, false);
       }).rejects.toThrow(new ServiceError(`The directory with path '${directoryPath}' is a broken symbolic link`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -184,7 +186,7 @@ describe("Repository", () =>
       fs.symlinkSync(filePath, directoryPath, "file");
       await expect(async () =>
       {
-        await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName, undefined, false);
+        await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, false);
       }).rejects.toThrow(new ServiceError(`The directory with path '${directoryPath}' is a symbolic link pointing to the path '${filePath}' which is not a directory`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -193,7 +195,7 @@ describe("Repository", () =>
       const symbolicDirectoryPath = path.join(base.getWorkingDirectoryPath(), "symbolic-link3");
       fs.symlinkSync(declaredDirectoryPath, symbolicDirectoryPath, "dir");
 
-      await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + symbolicDirectoryPath, undefined, Defaults.repositoryName, undefined, false);
+      await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + symbolicDirectoryPath, Defaults.repositoryName, undefined, false);
     }
   });
 
@@ -208,7 +210,7 @@ describe("Repository", () =>
     map.set(declaredDirectoryPath, symbolicDirectoryPath);
     paths.repositoryMappingPaths = map;
 
-    const repository = await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + symbolicDirectoryPath, undefined, Defaults.repositoryName, undefined, true);
+    const repository = await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + symbolicDirectoryPath, Defaults.repositoryName, undefined, true);
     expect(repository.url).toBe(fileWithProtocol + declaredDirectoryPath);
     await base.waitUntilRepositoryReady(repository.id);
     const list = await base.getImageController().searchSummaries({});
@@ -226,14 +228,14 @@ describe("Repository", () =>
       const name = "";
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, undefined, name);
+        await base.getRepositoryController().create(Defaults.locationType, url, name);
       }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const name = "0".repeat(FieldLengths.l128 + 1);
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, undefined, name);
+        await base.getRepositoryController().create(Defaults.locationType, url, name);
       }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it exceeds 128 characters`, BAD_REQUEST, base.badParameterCode));
     }
 
@@ -241,21 +243,21 @@ describe("Repository", () =>
       const comment = "";
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName, comment);
+        await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, comment);
       }).rejects.toThrow(new ServiceError(`The parameter 'comment' with value '${comment}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const comment = "0".repeat(FieldLengths.l1k + 1);
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName, comment);
+        await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, comment);
       }).rejects.toThrow(new ServiceError(`The parameter 'comment' with value '${comment}' is invalid because it exceeds 1024 characters`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const directoryPath = nonExistentPath;
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName);
+        await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
       }).rejects.toThrow(new ServiceError(`The directory with path '${directoryPath}' does not exist`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -263,7 +265,7 @@ describe("Repository", () =>
       fs.writeFileSync(filePath, "");
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + filePath, undefined, Defaults.repositoryName);
+        await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + filePath, Defaults.repositoryName);
       }).rejects.toThrow(new ServiceError(`The node with path '${filePath}' is not a directory`, BAD_REQUEST, base.badParameterCode));
     }
   });
@@ -271,13 +273,10 @@ describe("Repository", () =>
   test("Create with same name", async () =>
   {
     const emptyDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
-    const url = fileWithProtocol + emptyDirectoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + base.prepareEmptyDirectory("first", emptyDirectoryPath), Defaults.repositoryName);
     await base.waitUntilRepositoryReady(repository.id);
-    await expect(async () =>
-    {
-      await base.getRepositoryController().create(Defaults.locationType, url, undefined, repository.name);
-    }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${repository.name}' is invalid because a repository with the same name already exists`, BAD_REQUEST, base.badParameterCode));
+    const newRepository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + base.prepareEmptyDirectory("second", emptyDirectoryPath), repository.name);
+    expect(newRepository.id).not.toBe(repository.id);
   });
 
   test("Create with same directory prefix", async () =>
@@ -289,8 +288,8 @@ describe("Repository", () =>
     const secondDirectoryName = `${prefix}Long`;
     const secondSubDirectoryName = "Second";
     const secondDirectoryPath = base.prepareEmptyDirectory(secondSubDirectoryName, base.prepareEmptyDirectory(secondDirectoryName, emptyDirectoryPath));
-    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + firstDirectoryPath, undefined, firstDirectoryName)).id);
-    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + secondDirectoryPath, undefined, secondSubDirectoryName)).id);
+    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + firstDirectoryPath, firstDirectoryName)).id);
+    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + secondDirectoryPath, secondSubDirectoryName)).id);
   });
 
   test("Create with nested URL", async () =>
@@ -299,16 +298,16 @@ describe("Repository", () =>
     const subDirectoryName = "sub";
     const subDirectoryPath = base.prepareEmptyDirectory(subDirectoryName, emptyDirectoryPath);
     const url = fileWithProtocol + emptyDirectoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName + randomUUID());
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName + randomUUID());
     await base.waitUntilRepositoryReady(repository.id);
     const subUrl = fileWithProtocol + subDirectoryPath;
     await expect(async () =>
     {
-      await base.getRepositoryController().create(Defaults.locationType, subUrl, undefined, Defaults.repositoryName + randomUUID());
+      await base.getRepositoryController().create(Defaults.locationType, subUrl, Defaults.repositoryName + randomUUID());
     }).rejects.toThrow(new ServiceError(`The parameter 'url' with value '${subUrl}' is invalid because the already existing repository with id '${repository.id}' and URL '${repository.url}' is in conflict with it`, BAD_REQUEST, base.badParameterCode));
     {
       const otherDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName + "-bis", base.getWorkingDirectoryPath());
-      const otherRepository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + otherDirectoryPath, undefined, Defaults.repositoryName + randomUUID());
+      const otherRepository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + otherDirectoryPath, Defaults.repositoryName + randomUUID());
       await base.waitUntilRepositoryReady(otherRepository.id);
     }
   });
@@ -353,23 +352,37 @@ describe("Repository", () =>
   test("Ensure", async () =>
   {
     paths.repositoriesDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName);
-    const technicalId = randomUUID().substring(0, 32);
+    const extension1 = await base.prepareExtension("extension1");
+    const extension2 = await base.prepareExtension("extension2");
+    const extension1PolicyContext: PolicyContext = {
+      extensionId: extension1.manifest.id,
+      scopes: [ ApiScope.RepositoryEnsure ]
+    };
 
-    const repository1 = await base.getRepositoryController().ensure(technicalId, "name1", "comment1", false);
-    expect(repository1.technicalId).toBe(technicalId);
-    const repository2 = await base.getRepositoryController().ensure(technicalId, "name2", "comment2", false);
-    expect(repository2.id).toBe(repository1.id);
-    expect(repository2.name).toBe(repository1.name);
-    expect(repository2.comment).toBe(repository1.comment);
+    // When an extension ensures a repository without explicit extension id, the repository gets attached to that extension at creation time
+    const repository = await base.getRepositoryController().ensure(extension1PolicyContext, extension1.manifest.id, "name", "comment", false);
+    expect(repository.extensionId).toBe(extension1.manifest.id);
+
+    // Another call should cause no change
+    const updatedRepository = await base.getRepositoryController().ensure(Base.allPolicyContext, extension1.manifest.id, "updatedName", "updatedComment", false);
+    expect(updatedRepository.id).toBe(repository.id);
+    expect(updatedRepository.name).toBe(repository.name);
+    expect(updatedRepository.comment).toBe(repository.comment);
+
+    // An extension cannot ensure a repository attached to another extension
+    await expect(base.getRepositoryController().ensure({
+      extensionId: extension2.manifest.id,
+      scopes: [ ApiScope.RepositoryEnsure ]
+    }, extension1.manifest.id, "name3", undefined, false)).rejects.toThrow("Mismatching API secret and extension identifiers");
   });
 
   test("List repositories", async () =>
   {
     const directory1Path = base.prepareEmptyDirectory("repo1", base.getWorkingDirectoryPath());
-    const repository1 = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directory1Path, undefined, "b", undefined, false);
+    const repository1 = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directory1Path, "b", undefined, false);
     await base.waitUntilRepositoryReady(repository1.id);
     const directory2Path = base.prepareEmptyDirectory("repo2", base.getWorkingDirectoryPath());
-    const repository2 = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directory2Path, undefined, "a", undefined, false);
+    const repository2 = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directory2Path, "a", undefined, false);
     await base.waitUntilRepositoryReady(repository2.id);
     const repositories = await base.getRepositoryController().list();
     expect(repositories[0].id).toBe(repository2.id);
@@ -400,7 +413,7 @@ describe("Repository", () =>
       fs.copyFileSync(filePath, imageFilePath);
     }
     await base.imageFeeder.prepareComfyUiImage(specialImageFilePath);
-    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
     await base.waitUntilRepositoryReady(repository.id);
 
     {
@@ -625,7 +638,7 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory("images", base.getWorkingDirectoryPath());
     const imageFilePath = base.imageFeeder.copyImage(directoryPath, base.imageFeeder.pngImageFileName);
-    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName, undefined, true);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, true);
     await base.waitUntilRepositoryReady(repository.id);
     await base.waitUntilRepositoryWatching(repository.id);
     const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
@@ -652,7 +665,7 @@ describe("Repository", () =>
     await base.imageFeeder.prepareComfyUiImage(preexistingFilePath);
 
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
     await checkActivity(repository.id, RepositoryActivityKind.Synchronizing);
 
     const id = repository.id;
@@ -765,7 +778,7 @@ describe("Repository", () =>
     const newlyAddedFilePath = path.join(directoryPath, "a.file.with.dots.jpeg");
 
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
 
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
@@ -837,7 +850,7 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
 
@@ -856,7 +869,7 @@ describe("Repository", () =>
     // We stop the repositories
     await base.getRepositoryController().startOrStop(false);
     // We indicate that it is indexing
-    await base.getEntitiesProvider().repositories.update({
+    await base.getRegularDatabaseProvider().repositories.update({
       where: { id: repository.id },
       data:
         {
@@ -873,7 +886,7 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
 
@@ -916,7 +929,7 @@ describe("Repository", () =>
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
 
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
 
@@ -938,7 +951,7 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
 
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
@@ -955,7 +968,7 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
     base.imageFeeder.copyImage(directoryPath, base.imageFeeder.pngImageFileName);
-    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
     const repositoryId = repository.id;
     await expect(async () =>
     {
@@ -987,9 +1000,9 @@ describe("Repository", () =>
     await base.getRepositoryController().delete(repositoryId);
 
     expect((await base.getImageController().searchSummaries({})).items.length).toBe(0);
-    expect((await base.getEntitiesProvider().imageMetadata.findMany()).length).toBe(0);
-    expect((await base.getEntitiesProvider().imageTag.findMany()).length).toBe(0);
-    expect((await base.getEntitiesProvider().imageFeature.findMany()).length).toBe(0);
+    expect((await base.getRegularDatabaseProvider().imageMetadata.findMany()).length).toBe(0);
+    expect((await base.getRegularDatabaseProvider().imageTag.findMany()).length).toBe(0);
+    expect((await base.getRegularDatabaseProvider().imageFeature.findMany()).length).toBe(0);
     expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageSummary.id, extension.manifest.id)).toEqual([]);
     {
       // We check that the repository has been removed from the collection, leaving the rest of the filter intact
@@ -1016,7 +1029,7 @@ describe("Repository", () =>
     const directoryPath = nonExistentPath;
     await expect(async () =>
     {
-      await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName);
+      await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
     }).rejects.toThrow(new ServiceError(`The directory with path '${directoryPath}' does not exist`, BAD_REQUEST, base.badParameterCode));
   });
 
@@ -1038,7 +1051,7 @@ describe("Repository", () =>
     notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, stopped, commonListener);
 
     const directoryPath = base.getWorkingDirectoryPath();
-    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, undefined, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
     const repositoryId = repository.id;
     await base.waitUntilRepositoryReady(repositoryId);
     listener.off();

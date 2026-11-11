@@ -18,7 +18,7 @@ import { ApiSecret } from ".prisma/client";
 import { logger } from "./logger";
 import { paths } from "./paths";
 import { apiScopesSeparator } from "./dtos/app.dtos";
-import { EntitiesProvider } from "./services/databaseProviders";
+import { RegularDatabaseService } from "./services/regularDatabaseService";
 import { ExtensionsUiServer } from "./services/extensionServices";
 
 
@@ -244,7 +244,7 @@ export class AuthenticationGuard implements CanActivate
     return AuthenticationGuard.extensionsApiPermissions.find(permission => permission.key === apiKey && (extensionId === undefined || permission.id === extensionId));
   }
 
-  constructor(private readonly reflector: Reflector, private readonly entitiesProvider: EntitiesProvider)
+  constructor(private readonly reflector: Reflector, private readonly regularDatabaseService: RegularDatabaseService)
   {
     logger.debug("Instantiating an AuthenticationGuard");
   }
@@ -354,7 +354,7 @@ export class AuthenticationGuard implements CanActivate
         return undefined;
       }
     }
-    const apiSecret: ApiSecret | null = await this.entitiesProvider.apiSecrets.findFirst({ where: { value: apiKey } });
+    const apiSecret: ApiSecret | null = await this.regularDatabaseService.apiSecrets.findFirst({ where: { value: apiKey } });
     if (apiSecret === null)
     {
       return undefined;

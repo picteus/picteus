@@ -58,7 +58,6 @@ import {
   AdministrationService,
   ApiSecretService,
   CollectionService,
-  EntitiesProvider,
   ExtensionRegistry,
   ExtensionService,
   ExtensionsUiServer,
@@ -72,11 +71,12 @@ import {
   MiscellaneousService,
   NotificationsGateway,
   NotifierService,
+  RegularDatabaseService,
   RepositoryService,
   SearchService,
   SettingsService,
   vectorDatabaseAccessorProvider,
-  VectorDatabaseProvider
+  VectorDatabaseService
 } from "./services/app.service";
 import { networkSecurity } from "./services/utils/networkSecurity";
 import { ControllerError, ServiceError } from "./app.exceptions";
@@ -261,8 +261,8 @@ const controllers = [ MiscellaneousController, AdministrationController, Setting
 
 // This module is defined in order to initialize its providers first
 @Module({
-  providers: [ EntitiesProvider, VectorDatabaseProvider ],
-  exports: [ EntitiesProvider, VectorDatabaseProvider ]
+  providers: [ RegularDatabaseService, VectorDatabaseService ],
+  exports: [ RegularDatabaseService, VectorDatabaseService ]
 })
 class PrerequisitesModule implements OnModuleInit, OnModuleDestroy
 {

@@ -4,12 +4,13 @@ import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 
 import {
   Dates,
+  extensionIdPattern,
+  extensionIdSchema,
   FieldLengths,
   fileUrlPattern,
   fileWithProtocol,
   namePattern,
   repositoryIdSchema,
-  shortTechnicalIdPattern,
   uniqueIdPattern
 } from "./common.dtos";
 
@@ -92,13 +93,13 @@ export enum RepositoryState
 export class Repository extends Dates
 {
 
-  constructor(creationDate: number, modificationDate: number, id: string, type: RepositoryLocationType, url: string, technicalId: string | undefined, name: string, comment: string | undefined, state: RepositoryState)
+  constructor(creationDate: number, modificationDate: number, id: string, extensionId: string | undefined, type: RepositoryLocationType, url: string, name: string, comment: string | undefined, state: RepositoryState)
   {
     super(creationDate, modificationDate);
     this.id = id;
+    this.extensionId = extensionId;
     this.type = type;
     this.url = url;
-    this.technicalId = technicalId;
     this.name = name;
     this.comment = comment;
     this.state = state;
@@ -118,6 +119,21 @@ export class Repository extends Dates
   @MaxLength(FieldLengths.l36)
   @Expose()
   readonly id: string;
+
+  @ApiProperty(
+    {
+      ...extensionIdSchema,
+      description: "The identifier of the extension the repository is attached to",
+      type: String,
+      required: false,
+      example: "midjourney"
+    }
+  )
+  @IsString()
+  @Matches(extensionIdPattern)
+  @IsOptional()
+  @Expose()
+  readonly extensionId?: string;
 
   @ApiProperty(
     {
@@ -152,25 +168,6 @@ export class Repository extends Dates
   @MaxLength(FieldLengths.l4k)
   @Expose()
   readonly url: string;
-
-  @ApiProperty(
-    {
-      description: "The technical identifier of the repository",
-      type: String,
-      pattern: shortTechnicalIdPattern,
-      minLength: 1,
-      maxLength: FieldLengths.l32,
-      required: false,
-      example: "technical-id"
-    }
-  )
-  @IsString()
-  @Matches(fileUrlPattern)
-  @MinLength(1)
-  @MaxLength(FieldLengths.l32)
-  @IsOptional()
-  @Expose()
-  readonly technicalId?: string;
 
   @ApiProperty(
     {

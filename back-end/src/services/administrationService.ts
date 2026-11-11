@@ -8,7 +8,7 @@ import { Prisma } from ".prisma/client";
 
 import { logger } from "../logger";
 import { paths } from "../paths";
-import { Persistence } from "../persistence";
+import { PrismaClientWrapper } from "./utils/prismaClientWrapper";
 import { parametersChecker } from "./utils/parametersChecker";
 
 
@@ -41,13 +41,13 @@ export class AdministrationService implements OnModuleInit
     // We make sure that the migration scripts are sorted chronologically
     filePaths.sort();
 
-    const persistence = new Persistence();
-    await persistence.initialize();
+    const prismaClientWrapper = new PrismaClientWrapper();
+    await prismaClientWrapper.initialize();
     try
     {
-      const currentMigration = await persistence.getMigration();
+      const currentMigration = await prismaClientWrapper.getMigration();
       logger.debug(`The latest applied migration is '${currentMigration}'`);
-      const prismaClient = persistence.prisma;
+      const prismaClient = prismaClientWrapper.prisma;
       let shouldRunRequest = false;
       for (const filePath of filePaths)
       {
@@ -84,7 +84,7 @@ export class AdministrationService implements OnModuleInit
             }
           }
           // We remember the latest migration point
-          await persistence.setMigration(directoryName);
+          await prismaClientWrapper.setMigration(directoryName);
         }
         else
         {
@@ -99,7 +99,7 @@ export class AdministrationService implements OnModuleInit
     }
     finally
     {
-      await persistence.terminate();
+      await prismaClientWrapper.terminate();
     }
     logger.debug("Migration assessment over");
   }

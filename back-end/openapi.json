@@ -1687,17 +1687,6 @@
             "schema": {
               "type": "boolean"
             }
-          },
-          {
-            "name": "technicalId",
-            "required": false,
-            "in": "query",
-            "description": "The technical identifier",
-            "schema": {
-              "minLength": 1,
-              "maxLength": 32,
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -1780,18 +1769,21 @@
     },
     "/repository/ensure": {
       "put": {
-        "description": "Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it.",
+        "description": "Ensures that a repository with type 'file' attached to the provided extension exists, and if not, creates it.",
         "operationId": "repository_ensure",
         "parameters": [
           {
-            "name": "technicalId",
+            "name": "extensionId",
             "required": true,
             "in": "query",
-            "description": "The repository technical identifier",
+            "description": "The identifier of the extension the repository is attached to",
             "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
               "minLength": 1,
               "maxLength": 32,
-              "type": "string"
+              "example": "extension-id"
             }
           },
           {
@@ -1838,7 +1830,7 @@
             }
           }
         },
-        "summary": "Ensures a repository exists",
+        "summary": "Ensures a repository attached to an extension exists",
         "tags": [
           "repository"
         ]
@@ -6671,6 +6663,14 @@
             "maxLength": 36,
             "example": "9aa0820f-6405-4b54-a01a-a6b56489a77f"
           },
+          "extensionId": {
+            "type": "string",
+            "description": "The identifier of the extension the repository is attached to",
+            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "midjourney"
+          },
           "type": {
             "description": "The type of the repository back-end location",
             "default": "file",
@@ -6689,14 +6689,6 @@
             "minLength": 1,
             "maxLength": 4096,
             "example": "file:///Users/me/folder/path"
-          },
-          "technicalId": {
-            "type": "string",
-            "description": "The technical identifier of the repository",
-            "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
-            "minLength": 1,
-            "maxLength": 32,
-            "example": "technical-id"
           },
           "name": {
             "type": "string",

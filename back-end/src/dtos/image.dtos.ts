@@ -563,8 +563,6 @@ export class ApplicationMetadataItem
     }
   )
   @Matches(extensionIdPattern)
-  @MinLength(1)
-  @MaxLength(FieldLengths.l32)
   @IsDefined()
   @NotEquals(null)
   @IsString()
@@ -766,8 +764,6 @@ export class ExtensionImageFeature extends ImageFeature
     }
   )
   @Matches(extensionIdPattern)
-  @MinLength(1)
-  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly id: ExtensionIdType;
 
@@ -795,8 +791,6 @@ export class ExtensionImageFeatureName
   )
   @IsString()
   @Matches(extensionIdPattern)
-  @MinLength(1)
-  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly id: ExtensionIdType;
 
@@ -868,8 +862,6 @@ export class ExtensionImageTag
   )
   @IsString()
   @Matches(extensionIdPattern)
-  @MinLength(1)
-  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly id: ExtensionIdType;
 
@@ -962,8 +954,6 @@ export class ExtensionImageEmbeddings
     }
   )
   @Matches(extensionIdPattern)
-  @MinLength(1)
-  @MaxLength(FieldLengths.l32)
   @Expose()
   readonly id: string;
 
