@@ -207,16 +207,8 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   {
     logger.info(`Updating that the repository with id '${id}''${name === undefined ? "" : `, with name '${name}'`}'${comment === undefined ? "" : `, with comment '${comment}'`}`);
     const repository = await this.getRepository(id);
-    parametersChecker.checkString("name", name, FieldLengths.l64, StringNature.Free, true);
+    parametersChecker.checkString("name", name, FieldLengths.l128, StringNature.Free, true);
     parametersChecker.checkString("comment", comment, FieldLengths.l1k, StringNature.Free, true);
-    if (name !== undefined)
-    {
-      const withSameNameEntity = await this.regularDatabaseService.repositories.findUnique({ where: { name } });
-      if (withSameNameEntity !== null && withSameNameEntity.id !== repository.id)
-      {
-        parametersChecker.throwBadParameter("name", name, "a repository with the same name already exists");
-      }
-    }
     const updatedRepository = await this.regularDatabaseService.repositories.update({
       where: { id },
       data: { name, comment }

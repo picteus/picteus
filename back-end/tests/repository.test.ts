@@ -315,14 +315,14 @@ describe("Repository", () =>
   test("Update", async () =>
   {
     let repository = await base.prepareEmptyRepository();
-    const otherRepository = await base.prepareEmptyRepository(base.prepareEmptyDirectory("other"));
 
     {
       // We assess with invalid parameters
+      const invalidName = "a".repeat(FieldLengths.l128 + 1);
       await expect(async () =>
       {
-        await base.getRepositoryController().update(repository.id, otherRepository.name);
-      }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${otherRepository.name}' is invalid because a repository with the same name already exists`, BAD_REQUEST, base.badParameterCode));
+        await base.getRepositoryController().update(repository.id, invalidName);
+      }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${invalidName}' is invalid because it exceeds 128 characters`, BAD_REQUEST, base.badParameterCode));
     }
 
     {

@@ -79,8 +79,8 @@ model Image {
   creationDate         DateTime          @default(now())
   modificationDate     DateTime          @updatedAt
   format               String
-  url                  String
-  internalId           String
+  url                  String            @unique
+  internalId           String            @unique
   sourceUrl            String?
   sizeInBytes          Int
   width                Int

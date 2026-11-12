@@ -19,3 +19,9 @@ CREATE UNIQUE INDEX "Repository_extensionId_key" ON "Repository"("extensionId");
 CREATE UNIQUE INDEX "Repository_url_key" ON "Repository"("url");
 PRAGMA foreign_keys=ON;
 PRAGMA defer_foreign_keys=OFF;
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Image_url_key" ON "Image"("url");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Image_internalId_key" ON "Image"("internalId");
