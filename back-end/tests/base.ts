@@ -207,7 +207,7 @@ export class ImageFeeder
     fs.writeFileSync(filePath, buffer);
   }
 
-  computeRecipe(kind: PromptKind, modelTag: string = "google/gemini"): GenerationRecipe
+  computeRecipe(kind: PromptKind, modelTag: string = "google/gemini(high):3.5[dev]"): GenerationRecipe
   {
     const textualPrompt = new TextualPrompt("a beautiful photo");
     const instructionsPrompt = new InstructionsPrompt({ key1: "value1" });

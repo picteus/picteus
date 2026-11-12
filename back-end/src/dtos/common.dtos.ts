@@ -12,14 +12,14 @@ export const alphaNumericPlusAdditionalAuthorizedCharactersPattern = alphaNumeri
 
 export const alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern = alphaNumericPlusAdditionalAuthorizedCharactersPattern + " ";
 
-const computePattern = (pattern: string, maximumLength: number): string =>
+export const computeRegexPattern = (pattern: string, maximumLength?: number, withStartAndEnd: boolean = true): string =>
 {
-  return `^[${pattern}]{1,${maximumLength}}$`;
+  return `${withStartAndEnd === false ? "" : "^"}[${pattern}]{1,${maximumLength === undefined ? "" : maximumLength}}${withStartAndEnd === false ? "" : "$"}`;
 };
 
 const computeIdPattern = (maximumLength: number): string =>
 {
-  return computePattern(alphaNumericPlusPattern, maximumLength);
+  return computeRegexPattern(alphaNumericPlusPattern, maximumLength);
 };
 
 export enum FieldLengths
@@ -56,15 +56,15 @@ const alphaNumericPattern = "0-9a-f";
 
 export const uniqueIdPattern = `[${alphaNumericPattern}]{8}-[${alphaNumericPattern}]{4}-[${alphaNumericPattern}]{4}-[${alphaNumericPattern}]{4}-[${alphaNumericPattern}]{12}`;
 
-export const namePattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern, FieldLengths.l128);
+export const namePattern = computeRegexPattern(alphaNumericPlusAdditionalAuthorizedCharactersPlusSpacePattern, FieldLengths.l128);
 
 export const shortTechnicalIdPattern = computeIdPattern(FieldLengths.l32);
 
 export const extensionIdPattern = shortTechnicalIdPattern;
 
-export const technicalShortRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.l32);
+export const technicalShortRelaxedPattern = computeRegexPattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.l32);
 
-export const technicalLongRelaxedPattern = computePattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.l64);
+export const technicalLongRelaxedPattern = computeRegexPattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.l64);
 
 const noProtocolUriPathPattern = "[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 

@@ -27,6 +27,7 @@ import { TypeBasedValidation } from "./validators.dtos";
 import { forceInteger, jsonTransform } from "./transformers.dtos";
 import {
   alphaNumericPlusPattern,
+  computeRegexPattern,
   Dates,
   extensionIdPattern,
   extensionIdSchema,
@@ -302,7 +303,8 @@ export class InstructionsPrompt extends BasisPrompt
 
 }
 
-const modelAndSoftwareTagPattern = `^(([${alphaNumericPlusPattern}]{1,})/)?([${alphaNumericPlusPattern}]{1,})(:([${alphaNumericPlusPattern}]{1,}))?$`;
+const modalAndSoftwarePatternToken = computeRegexPattern(`${alphaNumericPlusPattern}()\[\\]`, undefined, false);
+const modelAndSoftwareTagPattern = `^((${modalAndSoftwarePatternToken})/)?(${modalAndSoftwarePatternToken})(:(${modalAndSoftwarePatternToken}))?$`;
 
 export const generationRecipeSchemaVersion = 2;
 
