@@ -24,6 +24,7 @@ import {
   ImageFeatureType,
   ImageFormat,
   ImageSummary,
+  Repository,
   RepositoryActivityKind,
   RepositoryLocationType,
   RepositoryState,
@@ -49,6 +50,7 @@ import { getTemporaryDirectoryPath } from "../src/services/utils/downloader";
 import { EventEntity, ImageEventAction, NotifierService, RepositoryEventAction } from "../src/services/notifierService";
 import { computeFormat, readApplicationMetadata, writeMetadata } from "../src/services/utils/images";
 import { deepCopy } from "../src/utils";
+import { ImageDeclarationManager } from "../src/threads/managers";
 
 
 const { BAD_REQUEST } = HttpCodes;
@@ -58,6 +60,29 @@ describe("Repository", () =>
 {
 
   const base = new Base(false);
+
+  // Synchronizing a repository runs asynchronously in the background and can complete in milliseconds when handling few images. This latch temporarily pauses the background file discovery, allowing tests to deterministically verify that the repository is in the 'Synchronizing' state or that concurrent operations (such as synchronize or delete) are properly rejected while synchronization is ongoing.
+  function holdSynchronization()
+  {
+    let releaseLatch: () => void;
+    const latch = new Promise<void>((resolve) =>
+    {
+      releaseLatch = resolve;
+    });
+    const originalListFiles = ImageDeclarationManager.prototype.listFiles;
+    ImageDeclarationManager.prototype.listFiles = async function (this: ImageDeclarationManager, type: RepositoryLocationType, url: string): Promise<string[]>
+    {
+      await latch;
+      return originalListFiles.call(this, type, url);
+    };
+    return {
+      release: () =>
+      {
+        releaseLatch();
+        ImageDeclarationManager.prototype.listFiles = originalListFiles;
+      }
+    };
+  }
 
   const includedFileNames = [ base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName, "Apparition of the town of Delft.jpg", base.imageFeeder.webpImageFileName, base.imageFeeder.gifImageFileName, base.imageFeeder.avifFileName, base.imageFeeder.heifFileName ];
 
@@ -103,9 +128,18 @@ describe("Repository", () =>
     const url = fileWithProtocol + directoryPath + "/";
     const name = "name-" + randomUUID();
     const comment = "An interesting repository";
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, name, comment, watch);
-    expect(repository.extensionId).toBeNull();
-    await checkActivity(repository.id, RepositoryActivityKind.Synchronizing);
+    const synchronizationHolder = holdSynchronization();
+    let repository: Repository;
+    try
+    {
+      repository = await base.getRepositoryController().create(Defaults.locationType, url, name, comment, watch);
+      expect(repository.extensionId).toBeNull();
+      await checkActivity(repository.id, RepositoryActivityKind.Synchronizing);
+    }
+    finally
+    {
+      synchronizationHolder.release();
+    }
     await waitForExpect(() =>
     {
       expect(listener).toHaveBeenCalledTimes(1);
@@ -665,15 +699,25 @@ describe("Repository", () =>
     await base.imageFeeder.prepareComfyUiImage(preexistingFilePath);
 
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
-    await checkActivity(repository.id, RepositoryActivityKind.Synchronizing);
+    const synchronizationHolder = holdSynchronization();
+    let repository: Repository;
+    try
+    {
+      repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
+      await checkActivity(repository.id, RepositoryActivityKind.Synchronizing);
+
+      const id = repository.id;
+      await expect(async () =>
+      {
+        await base.getRepositoryController().synchronize(id);
+      }).rejects.toThrow(new ServiceError(`The repository with id '${id}' is already synchronizing`, BAD_REQUEST, base.badParameterCode));
+    }
+    finally
+    {
+      synchronizationHolder.release();
+    }
 
     const id = repository.id;
-    await expect(async () =>
-    {
-      await base.getRepositoryController().synchronize(id);
-    }).rejects.toThrow(new ServiceError(`The repository with id '${id}' is already synchronizing`, BAD_REQUEST, base.badParameterCode));
-
     let preexistingImage: Image | undefined;
     {
       await base.waitUntilRepositoryReady(id);
@@ -686,8 +730,16 @@ describe("Repository", () =>
       const listener = base.computeEventListener();
       notifier.once(EventEntity.Image, ImageEventAction.Created, undefined, listener);
       fs.copyFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName), newlyAddedFilePath);
-      await base.getRepositoryController().synchronize(id);
-      await checkActivity(id, RepositoryActivityKind.Synchronizing);
+      const secondSynchronizationHolder = holdSynchronization();
+      try
+      {
+        await base.getRepositoryController().synchronize(id);
+        await checkActivity(id, RepositoryActivityKind.Synchronizing);
+      }
+      finally
+      {
+        secondSynchronizationHolder.release();
+      }
       await base.waitUntilRepositoryReady(id);
       await checkActivity(id, RepositoryActivityKind.None);
 
@@ -825,8 +877,13 @@ describe("Repository", () =>
       // We update a file
       const listener = base.computeEventListener();
       notifierService.once(EventEntity.Image, ImageEventAction.Updated, undefined, listener);
-      const now = new Date();
-      fs.utimesSync(newlyAddedFilePath, now, now);
+      // We ensure the timestamp is strictly in the future to avoid sub-second or filesystem resolution collisions
+      const futureDate = new Date(Math.max(Date.now(), newlyAddedImageSummary.fileDates.modificationDate) + 2_000);
+      if (process.platform === "linux")
+      {
+        futureDate.setMilliseconds(0);
+      }
+      fs.utimesSync(newlyAddedFilePath, futureDate, futureDate);
 
       await base.waitUntil(async () =>
       {
@@ -968,12 +1025,21 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
     base.imageFeeder.copyImage(directoryPath, base.imageFeeder.pngImageFileName);
-    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
-    const repositoryId = repository.id;
-    await expect(async () =>
+    const synchronizationHolder = holdSynchronization();
+    let repositoryId: string;
+    try
     {
-      await base.getRepositoryController().delete(repositoryId);
-    }).rejects.toThrow(new ServiceError(`Cannot delete a repository which is synchronizing`, BAD_REQUEST, base.badParameterCode));
+      const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
+      repositoryId = repository.id;
+      await expect(async () =>
+      {
+        await base.getRepositoryController().delete(repositoryId);
+      }).rejects.toThrow(new ServiceError(`Cannot delete a repository which is synchronizing`, BAD_REQUEST, base.badParameterCode));
+    }
+    finally
+    {
+      synchronizationHolder.release();
+    }
     await base.waitUntilRepositoryReady(repositoryId);
     const imageSummary = (await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repositoryId))).items[0];
 
@@ -1046,15 +1112,28 @@ describe("Repository", () =>
       return Promise.resolve();
     };
     const notifierService = base.getNotifierService();
-    const listener = notifierService.on(EventEntity.Repository, RepositoryEventAction.Created, undefined, commonListener);
-    notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, started, commonListener);
-    notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, stopped, commonListener);
+    const listeners =
+      [
+        notifierService.on(EventEntity.Repository, RepositoryEventAction.Created, undefined, commonListener),
+        notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, started, commonListener),
+        notifierService.on(EventEntity.Repository, RepositoryEventAction.Synchronize, stopped, commonListener)
+      ];
 
-    const directoryPath = base.getWorkingDirectoryPath();
-    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
-    const repositoryId = repository.id;
-    await base.waitUntilRepositoryReady(repositoryId);
-    listener.off();
+    const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
+    let repositoryId: string;
+    try
+    {
+      const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
+      repositoryId = repository.id;
+      await base.waitUntilRepositoryReady(repositoryId);
+    }
+    finally
+    {
+      for (const listener of listeners)
+      {
+        listener.off();
+      }
+    }
 
     await waitForExpect(() =>
     {
@@ -1283,7 +1362,7 @@ describe("Repository", () =>
         }).rejects.toThrow(new ServiceError("The provided file is not a supported image. Reason: 'Unable to parse the image metadata. Reason: 'Input buffer contains unsupported image format''", BAD_REQUEST, base.badParameterCode));
       }
     }
-  }, 4 * Base.defaultTimeoutInMilliseconds);
+  }, base.xxLargeTimeoutInMilliseconds);
 
   test("Application metadata", async () =>
   {
@@ -1303,13 +1382,16 @@ describe("Repository", () =>
 
   async function checkActivity(repositoryId: string, kind: RepositoryActivityKind)
   {
-    const activities = await base.getRepositoryController().activities();
-    const repositoryActivity = activities.find((activity) =>
+    await waitForExpect(async () =>
     {
-      return activity.id === repositoryId;
+      const activities = await base.getRepositoryController().activities();
+      const repositoryActivity = activities.find((activity) =>
+      {
+        return activity.id === repositoryId;
+      });
+      expect(repositoryActivity).toBeDefined();
+      expect(repositoryActivity!.kind).toEqual(kind);
     });
-    expect(repositoryActivity).toBeDefined();
-    expect(repositoryActivity!.kind).toEqual(kind);
   }
 
 });

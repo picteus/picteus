@@ -131,6 +131,9 @@ export class RepositoryWatcher
       {
         logger.debug(`Running for the watcher attached to the repository with id '${repositoryId}' time-out function with id ${timeout} for the watcher following the '${event}' on file '${relativeFilePath}'`);
         this.isRunningCycle = true;
+        // We operate via a double-buffering: we snapshot the pending events into a cycle batch and clear the shared ledger, so that if new filesystem events arrive while this asynchronous cycle is executing, they are queued into "ledgerEvents" for the subsequent cycle instead of being overwritten or wiped out in finally
+        const snapshotLedgerEvents = new Map<string, string[]>(ledgerEvents);
+        ledgerEvents.clear();
         try
         {
           const imageDelegate = regularDatabaseService.images;
@@ -142,7 +145,7 @@ export class RepositoryWatcher
             const addedStatss: Record<string, SearchFileStats> = {};
             const unlinkedFilePaths = [];
             // We inspect the added and deleted files
-            for (const [ relativeFilePath, events ] of ledgerEvents.entries())
+            for (const [ relativeFilePath, events ] of snapshotLedgerEvents.entries())
             {
               const addedIndex = events.indexOf(WatcherEvent.Added);
               const unlinkedIndex = events.indexOf(WatcherEvent.Deleted);
@@ -153,7 +156,7 @@ export class RepositoryWatcher
               if (addedIndex !== -1 && unlinkedIndex !== -1 && unlinkedIndex > addedIndex)
               {
                 // The file has been added and then destroyed, hence we discard it
-                ledgerEvents.delete(relativeFilePath);
+                snapshotLedgerEvents.delete(relativeFilePath);
                 continue;
               }
               const filePath = path.join(repositoryDirectoryPath, relativeFilePath);
@@ -199,13 +202,13 @@ export class RepositoryWatcher
                   logger.debug(`The file '${previousFilePath}' has been changed and renamed as '${filePath}'`);
                   toBeUpdatedFilePaths.push(filePath);
                 }
-                ledgerEvents.delete(path.relative(this.directoryPath, previousFilePath));
-                ledgerEvents.delete(path.relative(this.directoryPath, filePath));
+                snapshotLedgerEvents.delete(path.relative(this.directoryPath, previousFilePath));
+                snapshotLedgerEvents.delete(path.relative(this.directoryPath, filePath));
               }
             }
           }
           const toBeDeclaredFilePaths = [];
-          for (const [ relativeFilePath, events ] of ledgerEvents.entries())
+          for (const [ relativeFilePath, events ] of snapshotLedgerEvents.entries())
           {
             const filePath = path.join(repositoryDirectoryPath, relativeFilePath);
             if (events.length === 1 && events[0] === WatcherEvent.Added)
@@ -282,9 +285,11 @@ export class RepositoryWatcher
         }
         finally
         {
-          // We eventually empty the events ledger
-          ledgerEvents.clear();
-          this.timeout = undefined;
+          snapshotLedgerEvents.clear();
+          if (this.timeout === timeout)
+          {
+            this.timeout = undefined;
+          }
           if (this.onCycleComplete !== undefined)
           {
             this.onCycleComplete(undefined);

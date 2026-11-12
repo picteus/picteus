@@ -126,6 +126,10 @@ export class PrismaClientWrapper
       {
         // WAL (Write-Ahead Logging) mode allows concurrent reads while writes are in progress, preventing database lock contention across worker threads
         await this.prismaClient.$executeRawUnsafe("PRAGMA journal_mode = WAL;");
+        // "busy_timeout" specifies the time in milliseconds SQLite will wait for locks to be released before failing with SQLITE_BUSY
+        await this.prismaClient.$executeRawUnsafe(`PRAGMA busy_timeout = ${timeoutInMilliseconds};`);
+        // "synchronous = NORMAL" is safe with WAL mode and reduces lock contention by avoiding fsync on every transaction commit
+        await this.prismaClient.$executeRawUnsafe("PRAGMA synchronous = NORMAL;");
       }
       catch (error)
       {
