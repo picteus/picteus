@@ -240,8 +240,12 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     else
     {
-      const directoryPath = path.join(paths.repositoriesDirectoryPath, extensionId!);
-      fs.mkdirSync(directoryPath, { recursive: true });
+      const directoryPath = path.join(paths.repositoriesDirectoryPath, extensionId);
+      const wasDirectoryExisting = fs.existsSync(directoryPath);
+      if (wasDirectoryExisting === false)
+      {
+        fs.mkdirSync(directoryPath, { recursive: true });
+      }
       try
       {
         return await this.create(RepositoryLocationType.File, fileWithProtocol + directoryPath, name, comment, watch, extensionId);
@@ -249,7 +253,10 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       catch (error)
       {
         // In case of error, we want to make sure that the repository directory is deleted
-        fs.rmSync(directoryPath, { recursive: true });
+        if (wasDirectoryExisting === false)
+        {
+          fs.rmSync(directoryPath, { recursive: true });
+        }
         throw error;
       }
     }
