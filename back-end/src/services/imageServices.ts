@@ -88,6 +88,7 @@ import { EventEntity, ImageEventAction, NotifierService } from "./notifierServic
 import { ExtendedManifest, ExtensionRegistry } from "./extensionRegistry";
 import { ExtensionService } from "./extensionServices";
 import { RepositoryService } from "./repositoryService";
+import { CollectionService } from "./collectionService";
 import { GenerativeAIService } from "./aiServices";
 import { ImageDeclarationManager } from "../threads/managers";
 import { RepositoryWatcher } from "./utils/repositoryWatcher";
@@ -352,17 +353,39 @@ export class ImageService
     });
   }
 
-  async delete(id: string): Promise<void>
+  async delete(id: string, shouldDeleteFile: boolean): Promise<void>
   {
-    logger.info(`Deleting the image with id '${id}'"}`);
+    logger.info(`Deleting the image with id '${id}'${shouldDeleteFile === true ? " and its back-end file" : ""}`);
     const entity = await this.getPersistedImage(id, false, false, false);
     const repositoryEntity = await this.moduleRef.get(RepositoryService).getRepository(entity.repositoryId);
-    if (repositoryEntity.type !== RepositoryLocationType.File)
+    if (shouldDeleteFile === true)
     {
-      parametersChecker.throwBadParameterError(`Cannot delete an image belonging to a repository with a type different from '${RepositoryLocationType.File}'`);
+      if (repositoryEntity.type !== RepositoryLocationType.File)
+      {
+        parametersChecker.throwBadParameterError(`Cannot delete an image belonging to a repository with a type different from '${RepositoryLocationType.File}'`);
+      }
+      const filePath = entity.url.substring(fileWithProtocol.length);
+      if (fs.existsSync(filePath) === true)
+      {
+        const repositoryDirectoryPath = repositoryEntity.url.substring(fileWithProtocol.length);
+        return await RepositoryWatcher.ignore<void>(entity.repositoryId, path.relative(repositoryDirectoryPath, filePath), async () =>
+        {
+          fs.rmSync(filePath);
+          await this.deletePersistedImage(id);
+        });
+      }
     }
-    const filePath = entity.url.substring(fileWithProtocol.length);
-    fs.rmSync(filePath);
+    await this.deletePersistedImage(id);
+  }
+
+  async deletePersistedImage(id: string): Promise<void>
+  {
+    // We delete the image embeddings
+    await this.vectorDatabaseAccessor.deleteImagesEmbeddings([ id ]);
+    // We remove the image from collections
+    await this.moduleRef.get(CollectionService).clearFromOrigin(SearchOriginKind.Images, id);
+    await this.regularDatabaseService.images.delete({ where: { id } });
+    this.notifierService.emit(EventEntity.Image, ImageEventAction.Deleted, undefined, { id });
   }
 
   async download(id: string, format: ImageFormat | undefined = undefined, width: number | undefined = undefined, height: number | undefined = undefined, resizeRender: ImageResizeRender | undefined = ImageResizeRender.Inbox, stripMetadata: boolean = false): Promise<StreamableFile>

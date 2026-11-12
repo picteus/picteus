@@ -2347,12 +2347,13 @@ export class ImageController
     }
   )
   @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
+  @ApiQuery({ name: "shouldDeleteFile", description: "Indicates whether the image back-end file should be also deleted", type: Boolean, required: false })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageDelete ]))
-  async delete(@Param("id") id: string): Promise<void>
+  async delete(@Param("id") id: string, @Query("shouldDeleteFile", new ParseBoolPipe({ optional: true })) shouldDeleteFile?: boolean): Promise<void>
   {
-    await this.imageService.delete(id);
+    await this.imageService.delete(id, shouldDeleteFile ?? false);
   }
 
   @Get(":id/download")

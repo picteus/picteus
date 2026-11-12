@@ -341,7 +341,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       if (wasWatching === true)
       {
         // We resume the watching, in case the synchronization was successful
-        await RepositoryWatcher.start(repository, this.regularDatabaseService, this.vectorDatabaseAccessor, this.notifierService, this.collectionService);
+        await RepositoryWatcher.start(repository, this.regularDatabaseService, this.notifierService, this.moduleRef.get(ImageService));
       }
       const updatedRepository = await updateStatus();
       if (onSuccess !== undefined)
@@ -370,7 +370,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     if (isStart === true)
     {
-      await RepositoryWatcher.start(repository, this.regularDatabaseService, this.vectorDatabaseAccessor, this.notifierService, this.collectionService);
+      await RepositoryWatcher.start(repository, this.regularDatabaseService, this.notifierService, this.moduleRef.get(ImageService));
     }
     else
     {

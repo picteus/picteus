@@ -3117,6 +3117,15 @@
               "maxLength": 36,
               "example": "fb6af249-1061-48a0-9e47-026d7428d709"
             }
+          },
+          {
+            "name": "shouldDeleteFile",
+            "required": false,
+            "in": "query",
+            "description": "Indicates whether the image back-end file should be also deleted",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -7046,13 +7055,13 @@
               "type": "string",
               "maxLength": 4096,
               "minLength": 1,
-              "pattern": "^(([a-z0-9A-Z-_.]{1,})/)?([a-z0-9A-Z-_.]{1,})(:([a-z0-9A-Z-_.]{1,}))?$"
+              "pattern": "^(([a-z0-9A-Z-_.()[\\]]{1,})/)?([a-z0-9A-Z-_.()[\\]]{1,})(:([a-z0-9A-Z-_.()[\\]]{1,}))?$"
             }
           },
           "software": {
             "type": "string",
             "description": "The software that ran the generation",
-            "pattern": "^(([a-z0-9A-Z-_.]{1,})/)?([a-z0-9A-Z-_.]{1,})(:([a-z0-9A-Z-_.]{1,}))?$",
+            "pattern": "^(([a-z0-9A-Z-_.()[\\]]{1,})/)?([a-z0-9A-Z-_.()[\\]]{1,})(:([a-z0-9A-Z-_.()[\\]]{1,}))?$",
             "minLength": 1,
             "maxLength": 128,
             "example": "comfyui"

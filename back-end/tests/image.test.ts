@@ -948,12 +948,12 @@ describe("Image with module", () =>
       }).rejects.toThrow(new ServiceError(`The parameter 'id' with value '${inexistentImageId}' is invalid because there is no image with that identifier`, BAD_REQUEST, base.badParameterCode));
     }
     {
-      // We assess with an existing image
+      // We assess with an existing image, omitting shouldDeleteFile (defaults to false)
       const notifier = base.getNotifierService();
       const listener = base.computeEventListener();
       notifier.once(EventEntity.Image, ImageEventAction.Deleted, undefined, listener);
       await base.getImageController().delete(image.id);
-      expect(fs.existsSync(image.url.substring(fileWithProtocol.length))).toEqual(false);
+      expect(fs.existsSync(image.url.substring(fileWithProtocol.length))).toEqual(true);
       await base.waitUntil(async () =>
       {
         return listener.mock.calls.length === 1;
@@ -970,6 +970,13 @@ describe("Image with module", () =>
         expect(updatedCollection.filter.origin?.ids).toEqual([]);
         expect(updatedCollection.filter.criteria).toEqual(filter.criteria);
       }
+    }
+    {
+      // We assess with an existing image with shouldDeleteFile set to true
+      const { image: otherImage } = await base.prepareRepositoryWithImage(base.imageFeeder.pngImageFileName, "other");
+      await base.getImageController().delete(otherImage.id, true);
+      expect(fs.existsSync(otherImage.url.substring(fileWithProtocol.length))).toEqual(false);
+      expect((await base.getImageController().searchSummaries({})).items.length).toBe(0);
     }
   });
 
