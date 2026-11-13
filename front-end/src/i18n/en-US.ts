@@ -436,6 +436,8 @@ export default {
       eligibleTagsQuestionPlaceholder: "Which of the candidate following tags best describe this image: {{tags}}?",
       eligibleTags: "Candidate tags",
       eligibleTagsPlaceholder: "Type a tag and press Enter…",
+      enableEmbeddings: "Enable embeddings",
+      isAutoEmbeddings: "Run automatically on image indexing",
       noModels: "No AI models have been declared by this extension yet.",
       configuredModelsTitle: "Configured models",
       availableModelsTitle: "Available models",

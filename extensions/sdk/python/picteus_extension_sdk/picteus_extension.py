@@ -19,7 +19,7 @@ from typing_extensions import NotRequired
 
 import picteus_ws_client
 from picteus_extension_sdk import get_version, ToastIntent, IntentToastType, FrontIntent, BackIntent, IntentToast
-from picteus_ws_client import Manifest, GenerationRecipeVersion, TagsPlaceholder, Software
+from picteus_ws_client import Manifest, GenerationRecipeVersion, TagsPlaceholder, Software, ImageEmbedding
 
 Intent = Union[FrontIntent, BackIntent]
 
@@ -80,6 +80,11 @@ class AiModel(TypedDict):
     technicalId: str
     name: str
     comment: NotRequired[str]
+    modalities: NotRequired[List[str]]
+
+
+class ComputeImageEmbedding(TypedDict):
+    aiModel: AiModel
 
 
 class ComputeImageCaption(TypedDict):
@@ -454,7 +459,8 @@ class PicteusExtension:
                 return await self.on_compute_image_captions(communicator, self._extract_event_value_id(value), captions)
             return await self.on_compute_image_features(communicator, self._extract_event_value_id(value))
         elif event == EventName.IMAGE_COMPUTE_EMBEDDINGS:
-            return await self.on_compute_image_embeddings(communicator, self._extract_event_value_id(value))
+            embeddings: List[ComputeImageEmbedding] = value.get("embeddings", [])
+            return await self.on_compute_image_embeddings(communicator, self._extract_event_value_id(value), embeddings)
         elif event == EventName.IMAGE_RUN_COMMAND:
             image_ids: List[str] = value["imageIds"]
             parameters: CommandParameters = value.get("parameters", {})
@@ -465,7 +471,8 @@ class PicteusExtension:
             return await self.on_process_command(communicator, self._extract_event_command_id(value), parameters)
         elif event == EventName.TEXT_COMPUTE_EMBEDDINGS:
             text: str = value["text"]
-            return await self.on_compute_text_embeddings(communicator, text)
+            ai_model: Optional[AiModel] = value.get("aiModel")
+            return await self.on_compute_text_embeddings(communicator, text, ai_model)
         return None
 
     async def on_image_created(self, communicator: Communicator, image_id: str) -> None:
@@ -500,7 +507,8 @@ class PicteusExtension:
                                         captions: List[ComputeImageCaption]) -> None:
         pass
 
-    async def on_compute_image_embeddings(self, communicator: Communicator, image_id: str) -> None:
+    async def on_compute_image_embeddings(self, communicator: Communicator, image_id: str,
+                                          embeddings: List[ComputeImageEmbedding]) -> None:
         pass
 
     async def on_images_command(self, communicator: Communicator, command_id: str, image_ids: List[str],
@@ -512,7 +520,8 @@ class PicteusExtension:
         pass
 
     # noinspection PyMethodMayBeStatic,unused-parameter
-    async def on_compute_text_embeddings(self, communicator: Communicator, text: str) -> list[float]:
+    async def on_compute_text_embeddings(self, communicator: Communicator, text: str,
+                                         ai_model: Optional[AiModel] = None) -> list[float]:
         return []
 
     async def run_in_executor(self, function: Callable) -> Any | None:

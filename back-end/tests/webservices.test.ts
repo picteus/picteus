@@ -165,6 +165,8 @@ describe("WebServices", () =>
       extensionId: extension.manifest.id,
       name: "name"
     });
+    await base.waitUntilRepositoryReady(newRepository.id);
+    await base.waitUntilRepositoryWatching(newRepository.id);
     const imageApi = await webServicesWrapper.computeController<ImageApi>(ImageApi);
     await imageApi.imageSetTags({ id: image.id, extensionId: extension.manifest.id, requestBody: [ "tag1" ] });
     await imageApi.imageSetFeatures({

@@ -1,6 +1,7 @@
 import {
   CaptionInstruction,
   EligibleTagsInstruction,
+  EmbeddingInstruction,
   Extension,
   ExtensionActivity,
   ExtensionAiModel,
@@ -11,6 +12,7 @@ import {
   ExtensionApiExtensionGenerateRequest,
   ExtensionApiExtensionGetCaptionInstructionsRequest,
   ExtensionApiExtensionGetEligibleTagsInstructionsRequest,
+  ExtensionApiExtensionGetEmbeddingInstructionsRequest,
   ExtensionApiExtensionGetRequest,
   ExtensionApiExtensionGetSettingsRequest,
   ExtensionApiExtensionInstallRequest,
@@ -19,6 +21,7 @@ import {
   ExtensionApiExtensionRunProcessCommandRequest,
   ExtensionApiExtensionSetCaptionInstructionsRequest,
   ExtensionApiExtensionSetEligibleTagsInstructionsRequest,
+  ExtensionApiExtensionSetEmbeddingInstructionsRequest,
   ExtensionApiExtensionSetSettingsRequest,
   ExtensionApiExtensionSynchronizeRequest,
   ExtensionApiExtensionUninstallRequest,
@@ -142,6 +145,16 @@ async function setEligibleTagsInstructions(parameters: ExtensionApiExtensionSetE
   return extensionApi.extensionSetEligibleTagsInstructions(parameters);
 }
 
+async function getEmbeddingInstructions(parameters: ExtensionApiExtensionGetEmbeddingInstructionsRequest): Promise<EmbeddingInstruction[]>
+{
+  return extensionApi.extensionGetEmbeddingInstructions(parameters);
+}
+
+async function setEmbeddingInstructions(parameters: ExtensionApiExtensionSetEmbeddingInstructionsRequest): Promise<EmbeddingInstruction[]>
+{
+  return extensionApi.extensionSetEmbeddingInstructions(parameters);
+}
+
 function buildUiURL(extensionId: string, url: string): string
 {
   return `${BASE_PATH}/ui/extension/${extensionId}${url}`;
@@ -239,6 +252,7 @@ export type ExtensionInstructionCapabilitiesType =
   {
     readonly hasCaptionCapability: boolean;
     readonly hasEligibleTagsCapability: boolean;
+    readonly hasEmbeddingsCapability: boolean;
     readonly hasAnyInstructionCapability: boolean;
   };
 
@@ -246,6 +260,7 @@ function computeInstructionCapabilities(extension: Extension): ExtensionInstruct
 {
   let hasCaptionCapability = false;
   let hasEligibleTagsCapability = false;
+  let hasEmbeddingsCapability = false;
   for (const instructions of extension.manifest.instructions)
   {
     if (instructions.capabilities !== undefined)
@@ -268,13 +283,18 @@ function computeInstructionCapabilities(extension: Extension): ExtensionInstruct
             hasEligibleTagsCapability = true;
           }
         }
+        else if (capability.id === ManifestCapabilityId.ImageEmbeddings)
+        {
+          hasEmbeddingsCapability = true;
+        }
       }
     }
   }
   return {
     hasCaptionCapability,
     hasEligibleTagsCapability,
-    hasAnyInstructionCapability: hasCaptionCapability || hasEligibleTagsCapability
+    hasEmbeddingsCapability,
+    hasAnyInstructionCapability: hasCaptionCapability || hasEligibleTagsCapability || hasEmbeddingsCapability
   };
 }
 
@@ -303,6 +323,8 @@ export default {
   setCaptionInstructions,
   getEligibleTagsInstructions,
   setEligibleTagsInstructions,
+  getEmbeddingInstructions,
+  setEmbeddingInstructions,
   runImageCommand,
   runProcessCommand,
   activities

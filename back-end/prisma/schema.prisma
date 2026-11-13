@@ -31,6 +31,7 @@ model ExtensionSettings {
   value        Json?
   captions     Json?
   eligibleTags Json?
+  embeddings   Json?
   versions     String?
 }
 
@@ -40,6 +41,7 @@ model AiModel {
   technicalId  String
   name         String
   comment      String?
+  modalities   Json     @default("[]")
   creationDate DateTime @default(now())
 
   @@unique([extensionId, technicalId])

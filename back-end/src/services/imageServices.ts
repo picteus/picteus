@@ -26,6 +26,7 @@ import { parametersChecker, StringNature } from "./utils/parametersChecker";
 import { fileMetadata } from "./utils/fileMetadata";
 import { Resizer } from "../resizer";
 import {
+  AiModelModality,
   ApplicationMetadata,
   Collection,
   computeImageFormatsExtensions,
@@ -489,21 +490,21 @@ export class ImageService
     logger.info(`${isEnsure === true ? "Ensuring" : "Setting"} the features for the image with id '${id}', the extension with id '${extensionId}'`);
     await this.getPersistedImage(id, false, false, false);
     this.checkExtension(extensionId);
-    if (features.length > ExtensionImageTag.PER_EXTENSION_FEATURES_MAXIMUM)
-    {
-      parametersChecker.throwBadParameter("features", undefined, `it exceeds the maximum amount of items, which is ${ExtensionImageTag.PER_EXTENSION_FEATURES_MAXIMUM}`);
-    }
     if (isEnsure === true && features.length === 0)
     {
-      parametersChecker.throwBadParameter("features", undefined, `it must contain at least one feature when the 'isEnsure' parameter is set to 'true'`);
+      parametersChecker.throwBadParameterError("The features must contain at least one tag when the 'isEnsure' parameter is set to 'true'");
+    }
+    if (features.length > ExtensionImageTag.PER_EXTENSION_FEATURES_MAXIMUM)
+    {
+      parametersChecker.throwBadParameterError(`The features exceeds the maximum amount of items, which is ${ExtensionImageTag.PER_EXTENSION_FEATURES_MAXIMUM}`);
     }
     for (let index = 0; index < features.length; index++)
     {
       const imageFeature = features[index];
-      parametersChecker.checkString(`features[${index}].name`, imageFeature.name, FieldLengths.l64, StringNature.TechnicalRelaxed, true);
+      parametersChecker.checkString(`[${index}].name`, imageFeature.name, FieldLengths.l128, StringNature.TechnicalRelaxed, true);
       if (typeof imageFeature.value === "string")
       {
-        parametersChecker.checkString(`features[${index}].value`, imageFeature.value, FieldLengths.l512k, StringNature.Free);
+        parametersChecker.checkString(`[${index}].value`, imageFeature.value, FieldLengths.l512k, StringNature.Free);
       }
     }
 
@@ -749,17 +750,17 @@ export class ImageService
     logger.info(`${isEnsure === true ? "Ensuring" : "Setting"} the tags for the image with id '${id}' and the extension with id '${extensionId}'`);
     await this.getPersistedImage(id, false, false, true);
     this.checkExtension(extensionId);
-    if (tags.length > ExtensionImageTag.PER_EXTENSION_TAGS_MAXIMUM)
-    {
-      parametersChecker.throwBadParameter("tags", undefined, `it exceeds the maximum amount of items, which is ${ExtensionImageTag.PER_EXTENSION_TAGS_MAXIMUM}`);
-    }
     if (isEnsure === true && tags.length === 0)
     {
-      parametersChecker.throwBadParameter("tags", undefined, `it must contain at least one tag when the 'isEnsure' parameter is set to 'true'`);
+      parametersChecker.throwBadParameterError("The tags must contain at least one tag when the 'isEnsure' parameter is set to 'true'");
     }
     if (new Set<string>(tags).size !== tags.length)
     {
-      parametersChecker.throwBadParameter("tags", undefined, "it contains duplicate values");
+      parametersChecker.throwBadParameterError("The tags contain duplicate values");
+    }
+    if (tags.length > ExtensionImageTag.PER_EXTENSION_TAGS_MAXIMUM)
+    {
+      parametersChecker.throwBadParameterError(`The tags exceeds the maximum amount of items, which is ${ExtensionImageTag.PER_EXTENSION_TAGS_MAXIMUM}`);
     }
     for (let index = 0; index < tags.length; index++)
     {
@@ -856,38 +857,51 @@ export class ImageService
     return plainToInstanceViaJSON(ExtensionImageEmbeddings, { id: extensionId, embeddings: embeddingsArray });
   }
 
-  async setEmbeddings(id: string, extensionId: string, embeddingsArray: ImageEmbedding[]): Promise<void>
+  async setEmbeddings(id: string, extensionId: string, embeddings: ImageEmbedding[], isEnsure: boolean = false): Promise<void>
   {
     logger.info(`Setting the embeddings for the image with id '${id}' and the extension with id '${extensionId}'`);
     this.checkExtension(extensionId);
     await this.getPersistedImage(id, false, false, false);
-    const existingEmbeddingsArray = await this.vectorDatabaseAccessor.getEmbeddings(id, extensionId);
-    for (const embeddings of embeddingsArray)
+    if (isEnsure === true && embeddings.length === 0)
     {
-      if (embeddings.values.length > ImageEmbedding.DIMENSION_MAXIMUM)
+      parametersChecker.throwBadParameterError("It must contain at least one embedding when the 'isEnsure' parameter is set to 'true'");
+    }
+    if (new Set(embeddings.map(embedding => embedding.id)).size !== embeddings.length)
+    {
+      parametersChecker.throwBadParameterError("The embeddings contains duplicate identifiers");
+    }
+    if (embeddings.length > ImageEmbedding.PER_EXTENSION_EMBEDDINGS_MAXIMUM)
+    {
+      parametersChecker.throwBadParameterError(`The embeddings exceeds the maximum amount of items, which is ${ImageEmbedding.PER_EXTENSION_EMBEDDINGS_MAXIMUM}`);
+    }
+    const existingEmbeddingsArray = await this.vectorDatabaseAccessor.getEmbeddings(id, extensionId);
+    for (const embedding of embeddings)
+    {
+      const embeddingIdentifier = embedding.id;
+      if (embedding.values.length > ImageEmbedding.DIMENSION_MAXIMUM)
       {
         // We limit the number of dimensions to avoid performance issues with the vector database
         parametersChecker.throwBadParameterError("The embeddings vector cannot have a dimension larger than " + ImageEmbedding.DIMENSION_MAXIMUM);
       }
-      const existingEmbeddings = existingEmbeddingsArray.find(nameAndValues => nameAndValues.name === embeddings.name);
-      if (existingEmbeddings !== undefined && embeddings.values.length !== existingEmbeddings.values.length)
+      const existingEmbeddings = existingEmbeddingsArray.find(nameAndValues => nameAndValues.id === embeddingIdentifier);
+      if (existingEmbeddings !== undefined && embedding.values.length !== existingEmbeddings.values.length)
       {
-        parametersChecker.throwBadParameterError(`The embeddings length ${embeddings.values.length} is not the expected one ${existingEmbeddings.values.length}`);
+        parametersChecker.throwBadParameterError(`The embeddings length ${embedding.values.length} is not the expected one ${existingEmbeddings.values.length}`);
       }
     }
-    await this.vectorDatabaseAccessor.setEmbeddings(id, extensionId, embeddingsArray);
+    await this.vectorDatabaseAccessor.setEmbeddings(id, extensionId, embeddings, isEnsure);
     this.notifierService.emit(EventEntity.Image, ImageEventAction.EmbeddingsUpdated, undefined, { id });
   }
 
-  async closestImages(id: string, extensionId: string, name: string, count: number): Promise<ImageDistances>
+  async closestImages(id: string, extensionId: string, aiModelTechnicalId: string, count: number): Promise<ImageDistances>
   {
-    logger.info(`Getting the ${count} closest image(s) to the image with id '${id}' related to the extension with id '${extensionId}' and name '${name}'`);
+    logger.info(`Getting the ${count} closest image(s) to the image with id '${id}' related to the extension with id '${extensionId}' via the AI model '${aiModelTechnicalId}'`);
     const imageEmbeddings = await this.getEmbeddings(id, extensionId);
     parametersChecker.checkNumber("count", count, 1);
-    const targetEmbeddings = imageEmbeddings.embeddings.find(imageEmbedding => imageEmbedding.name === name);
+    const targetEmbeddings = imageEmbeddings.embeddings.find(imageEmbedding => imageEmbedding.id === aiModelTechnicalId);
     if (targetEmbeddings === undefined)
     {
-      parametersChecker.throwBadParameterError(`There are no embeddings for the image with id '${id}' and the extension with id '${extensionId}' and name '${name}'`);
+      parametersChecker.throwBadParameterError(`There are no embeddings for the image with id '${id}' and the extension with id '${extensionId}' and AI model '${aiModelTechnicalId}'`);
     }
     const imageDistances = await this.closestEmbeddingsImages(extensionId, targetEmbeddings, count + 1);
     return imageDistances.length <= 1 ? [] : imageDistances.slice(1);
@@ -925,7 +939,7 @@ export class ImageService
     parametersChecker.checkNumber("count", count, 1);
     const imageIdAndDistances: ImageIdAndDistance[] = await this.vectorDatabaseAccessor.queryEmbeddings({
       id: extensionId,
-      name: embeddings.name
+      name: embeddings.id
     }, embeddings.values, count);
     const imageIds: string[] = imageIdAndDistances.map((imageIdAndDistance) =>
     {
@@ -958,13 +972,24 @@ export class ImageService
     }));
   }
 
-  async textToImages(text: string, extensionId: string, name: string, count: number): Promise<ImageDistances>
+  async textToImages(text: string, extensionId: string, aiModelTechnicalId: string, count: number): Promise<ImageDistances>
   {
-    logger.info(`Getting the ${count} closest image(s) to the text '${text}' related to the extension with id '${extensionId}'`);
+    logger.info(`Getting the ${count} closest image(s) to the text '${text}' related to the extension with id '${extensionId} via the AI model ${aiModelTechnicalId}'`);
     this.checkExtension(extensionId);
+    const extensionService: ExtensionService = this.moduleRef.get(ExtensionService);
+    const models = await extensionService.findAiModels(extensionId);
+    const aiModel = models.find((model) => model.technicalId === aiModelTechnicalId);
+    if (aiModel === undefined)
+    {
+      parametersChecker.throwBadParameter("aiModelTechnicalId", aiModelTechnicalId, `there is no AI model with that technical identifier for the extension with id '${extensionId}'`);
+    }
+    if (aiModel.modalities.includes(AiModelModality.ImageEmbeddings) === false || aiModel.modalities.includes(AiModelModality.TextEmbeddings) === false)
+    {
+      parametersChecker.throwBadParameter("aiModelTechnicalId", aiModelTechnicalId, `the AI model with that technical identifier must declare both the '${AiModelModality.ImageEmbeddings}' and '${AiModelModality.TextEmbeddings}' modalities`);
+    }
     const generativeAIService: GenerativeAIService = this.moduleRef.get(GenerativeAIService);
-    const embeddings = await generativeAIService.computeTextEmbeddings(text);
-    return await this.closestEmbeddingsImages(extensionId, new ImageEmbedding(name, embeddings), count);
+    const embeddings = await generativeAIService.computeTextEmbeddings(text, extensionId, aiModel);
+    return await this.closestEmbeddingsImages(extensionId, new ImageEmbedding(aiModelTechnicalId, embeddings), count);
   }
 
   async computeFormat(buffer: Buffer): Promise<ImageFormat>

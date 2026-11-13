@@ -2,7 +2,7 @@ import { ModuleRef } from "@nestjs/core";
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 
 import { logger } from "../logger";
-import { ManifestCapability, ManifestCapabilityId } from "../dtos/app.dtos";
+import { AiModel, ManifestCapability, ManifestCapabilityId } from "../dtos/app.dtos";
 import { CapabilityResult, ExtensionService } from "./extensionServices";
 import { parametersChecker } from "./utils/parametersChecker";
 
@@ -61,15 +61,16 @@ export class GenerativeAIService
     logger.debug("Destroyed a GenerativeAIService");
   }
 
-  async computeTextEmbeddings(text: string): Promise<TextEmbeddings>
+  async computeTextEmbeddings(text: string, extensionId: string, aiModel: AiModel): Promise<TextEmbeddings>
   {
+    const valuePayload: Record<string, any> = { text, aiModel };
     const {
-      extensionId,
+      extensionId: resolvedExtensionId,
       value
-    }: CapabilityResult<TextEmbeddings> = await this.moduleRef.get(ExtensionService).runCapability<TextEmbeddings>(new ManifestCapability(ManifestCapabilityId.TextEmbeddings), { text });
+    }: CapabilityResult<TextEmbeddings> = await this.moduleRef.get(ExtensionService).runCapability<TextEmbeddings>(new ManifestCapability(ManifestCapabilityId.TextEmbeddings), valuePayload, extensionId);
     if (value === undefined)
     {
-      parametersChecker.throwBadParameterError(`The extension with id '${extensionId}' returned no embeddings for the text '${text}'`);
+      parametersChecker.throwBadParameterError(`The extension with id '${resolvedExtensionId}' returned no embeddings for the text '${text}'`);
     }
     return value;
   }

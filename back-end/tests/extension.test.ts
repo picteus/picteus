@@ -22,6 +22,7 @@ import { computeAttachmentDisposition, copyDirectoryRecursively } from "../src/s
 import { Base, Core, ExtensionBuilder } from "./base";
 import {
   AiModel,
+  AiModelModality,
   applicationXGzipMimeType,
   CommandEntity,
   ExtensionActivityState,
@@ -31,6 +32,7 @@ import {
   ExtensionSettings,
   ExtensionState,
   fileWithProtocol,
+  ImageEmbedding,
   ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
@@ -1064,7 +1066,8 @@ describe("Extensions", () =>
     await base.getExtensionController().setSettings(Base.allPolicyContext, manifest.id, new ExtensionSettings({ [key]: "value" }));
     await base.getExtensionController().setAiModels(Base.allPolicyContext, manifest.id, [ {
       technicalId: "gemma4",
-      name: "Gemma 4 E2B"
+      name: "Gemma 4 E2B",
+      modalities: [ AiModelModality.ImageCaptions ]
     } ]);
 
     const { images } = await builder.createRepositoryAndGetImages();
@@ -1087,12 +1090,12 @@ describe("Extensions", () =>
       expect((await base.getModuleProvider(ImageAttachmentService).list(imageId)).length).toEqual(1);
       expect((await base.getRegularDatabaseProvider().imageFeature.findMany({ where: { extensionId: id } })).length).toEqual(features.length);
       const values = [ 0, 1, 2, 3, 4 ];
-      const embeddingsName = "default";
-      const embeddings = [ { name: embeddingsName, values } ];
+      const embeddingsId = "default";
+      const embeddings: ImageEmbedding[] = [ { id: embeddingsId, values } ];
       await base.getImageController().setEmbeddings(Base.allPolicyContext, imageId, id, embeddings);
       const extensionImageEmbeddings = await base.getImageController().getEmbeddings(imageId, id);
       expect(extensionImageEmbeddings.embeddings.length).toEqual(1);
-      expect(extensionImageEmbeddings.embeddings[0].name).toEqual(embeddingsName);
+      expect(extensionImageEmbeddings.embeddings[0].id).toEqual(embeddingsId);
       expect(extensionImageEmbeddings.embeddings[0].values).toEqual(values);
       expect(await base.getVectorDatabaseAccessor().getEmbeddings(imageId, id)).toEqual(embeddings);
     }
@@ -2067,8 +2070,8 @@ describe("Extensions", () =>
         {
           const technicalId = "gemma4";
           await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1Id, [
-            { technicalId, name: "A" },
-            { technicalId, name: "B" }
+            { technicalId, name: "A", modalities: [ AiModelModality.ImageCaptions ] },
+            { technicalId, name: "B", modalities: [ AiModelModality.ImageCaptions ] }
           ]);
         }).rejects.toThrow(new ServiceError("The models contain duplicate technical identifiers", BAD_REQUEST, base.badParameterCode));
       }
@@ -2086,7 +2089,7 @@ describe("Extensions", () =>
         const validTechnicalId = "id";
         const validName = "Name";
         const withSpaceTechnicalId = "id with space";
-        const tooLongTechnicalId = "a".repeat(64 + 1);
+        const tooLongTechnicalId = "a".repeat(128 + 1);
         const tooLongName = "a".repeat(128 + 1);
         const tooLongComment = "a".repeat(1_024 + 1);
         const cases: Case[] =
@@ -2099,7 +2102,7 @@ describe("Extensions", () =>
             {
               technicalId: tooLongTechnicalId,
               name: validName,
-              errorMessage: `The parameter '[0].technicalId' with value '${tooLongTechnicalId}' is invalid because it exceeds 64 characters`
+              errorMessage: `The parameter '[0].technicalId' with value '${tooLongTechnicalId}' is invalid because it exceeds 128 characters`
             },
             {
               technicalId: "",
@@ -2141,6 +2144,7 @@ describe("Extensions", () =>
             await base.getExtensionController().setAiModels(Base.allPolicyContext, extension1Id, [ {
               technicalId: aCase.technicalId,
               name: aCase.name,
+              modalities: [ AiModelModality.ImageCaptions ],
               comment: aCase.comment
             } ]);
           }).rejects.toThrow(new ServiceError(aCase.errorMessage, BAD_REQUEST, base.badParameterCode));
@@ -2165,20 +2169,22 @@ describe("Extensions", () =>
         return models.sort((item1, item2) =>
         {
           const result = item1.extensionId.localeCompare(item2.extensionId);
-          return result !== 0 ? result : item1.technicalId.localeCompare(item2.technicalId);
+          return result !== 0 ? result : (item1.technicalId < item2.technicalId ? -1 : (item1.technicalId > item2.technicalId ? 1 : 0));
         });
       }
 
-      const extension1Models =
+      const extension1Models: AiModel[] =
         [
           {
             technicalId: "ggml-org/Qwen3.8-27B-GGUF:Q8_0",
             name: "Qwen 3.8 27B",
-            comment: "Alibaba's latest multimodal reasoning models"
+            comment: "Alibaba's latest multimodal reasoning models",
+            modalities: [ AiModelModality.ImageCaptions ]
           },
           {
             technicalId: "ggml-org/gemma-4-E2B-it-GGUF:Q8_0",
-            name: "Gemma 4 E2B Q8"
+            name: "Gemma 4 E2B Q8",
+            modalities: [ AiModelModality.ImageCaptions ]
           }
         ];
       {
@@ -2187,11 +2193,12 @@ describe("Extensions", () =>
         expect(models).toEqual(sortItems(extension1Models.map(model => generateAiModel(model, extension1Id))));
       }
 
-      const extension2Models =
+      const extension2Models: AiModel[] =
         [
           {
             technicalId: "ggml-org/Ministral-3-3B-Instruct-2512-GGUF:Q8_0",
-            name: "Ministral 3 3B"
+            name: "Ministral 3 3B",
+            modalities: [ AiModelModality.ImageCaptions ]
           }
         ];
 

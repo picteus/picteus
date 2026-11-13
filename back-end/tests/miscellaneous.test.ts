@@ -17,6 +17,8 @@ import { paths } from "../src/paths";
 import { logger } from "../src/logger";
 import { Base, Core } from "./base";
 import {
+  AiModel,
+  AiModelModality,
   FieldLengths,
   GenerationRecipe,
   InstructionsPrompt,
@@ -68,6 +70,7 @@ import { Resizer } from "../src/resizer";
 import { pickPort } from "pick-port";
 import { VectorDatabaseService } from "../src/services/app.service";
 import { networkSecurity } from "../src/services/utils/networkSecurity";
+import { toInstanceAndValidate } from "../src/services/utils/classValidatorWrapper.ts";
 
 
 const { io } = IO;
@@ -1344,6 +1347,33 @@ setTimeout(() => {}, 1_000_000);
     }
   });
 
+  test("AiModel", async () =>
+  {
+    const valid128Id = "a".repeat(128);
+    const invalid129Id = "a".repeat(128 + 1);
+
+    const valid = await toInstanceAndValidate(AiModel, {
+      technicalId: valid128Id,
+      name: "model",
+      modalities: [ AiModelModality.ImageEmbeddings, AiModelModality.TextEmbeddings ]
+    }, false, true);
+    expect("success" in valid).toBe(true);
+
+    const invalidLength = await toInstanceAndValidate(AiModel, {
+      technicalId: invalid129Id,
+      name: "model",
+      modalities: [ AiModelModality.ImageEmbeddings ]
+    }, false, true);
+    expect("error" in invalidLength).toBe(true);
+
+    const missingModalities = await toInstanceAndValidate(AiModel, {
+      technicalId: "valid-id",
+      name: "model",
+      modalities: []
+    }, false, true);
+    expect("error" in missingModalities).toBe(true);
+  });
+
   test.each([ [ false, false ], [ true, false ], [ true, true ] ])("watchPath with file preexisting=%p and with path as file=%p", async (isFilePreexisting: boolean, isNodeFile: boolean) =>
   {
     const directoryPath = core.prepareEmptyDirectory("watch");
@@ -1652,9 +1682,13 @@ INSERT INTO Test (type, value) VALUES ('${type1}','${value1}');`);
     await base.getAdministrationController().migrateDatabase();
 
     // noinspection SqlResolve
-    expect(await prismaClientWrapper.prisma.$queryRaw(Prisma.sql([ `SELECT value from Test WHERE type = '${type1}';` ]))).toEqual([ { value: value1 } ]);
+    expect(await prismaClientWrapper.prisma.$queryRaw(Prisma.sql([ `SELECT value
+                                                                    from Test
+                                                                    WHERE type = '${type1}';` ]))).toEqual([ { value: value1 } ]);
     // noinspection SqlResolve
-    expect(await prismaClientWrapper.prisma.$queryRaw(Prisma.sql([ `SELECT value from Test WHERE type = '${type2}';` ]))).toEqual([ { value: value2 } ]);
+    expect(await prismaClientWrapper.prisma.$queryRaw(Prisma.sql([ `SELECT value
+                                                                    from Test
+                                                                    WHERE type = '${type2}';` ]))).toEqual([ { value: value2 } ]);
     expect(await prismaClientWrapper.getMigration()).toEqual(thirdMigrationDirectoryName);
   });
 
@@ -1668,7 +1702,8 @@ INSERT INTO Test (type, value) VALUES ('${type1}','${value1}');`);
     writeMigration(migrationsDirectoryPath, secondMigrationDirectoryName, `CREATE ${TABLE} "Dummy" ("type" TEXT NOT NULL, "value" TEXT NOT NULL);`);
     const thirdMigrationDirectoryName = "2";
     const nonexistentTableName = "Test";
-    const fileName = writeMigration(migrationsDirectoryPath, thirdMigrationDirectoryName, `INSERT INTO ${nonexistentTableName} (type, value) VALUES ('type', 'value');`);
+    const fileName = writeMigration(migrationsDirectoryPath, thirdMigrationDirectoryName, `INSERT INTO ${nonexistentTableName} (type, value)
+                                                                                           VALUES ('type', 'value');`);
 
     const prismaClientWrapper = base.getRegularDatabaseProvider().prismaClientWrapper;
     await prismaClientWrapper.setMigration(firstMigrationDirectoryName);

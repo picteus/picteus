@@ -30,10 +30,10 @@ import {
   semverPattern,
   shortTechnicalIdPattern,
   shortTechnicalSchema,
-  technicalLongRelaxedPattern,
-  technicalLongRelaxedSchema,
   technicalShortRelaxedPattern,
   technicalShortRelaxedSchema,
+  technicalVeryLongRelaxedPattern,
+  technicalVeryLongRelaxedSchema,
   uriPathPattern,
   uriPathSchema
 } from "./common.dtos";
@@ -1442,20 +1442,32 @@ export class ExtensionSettings
 
 }
 
+/**
+ * All the task modalities an AI model can support.
+ */
+export enum AiModelModality
+{
+  ImageCaptions = "image.captions",
+  ImageEligibleTags = "image.eligibleTags",
+  ImageEmbeddings = "image.embeddings",
+  TextEmbeddings = "text.embeddings"
+}
+
 @ApiSchema({ description: "An AI model declared by an extension" })
 export class AiModel
 {
 
-  constructor(technicalId: string, name: string, comment?: string)
+  constructor(technicalId: string, name: string, comment: string | undefined, modalities: AiModelModality[])
   {
     this.technicalId = technicalId;
     this.name = name;
     this.comment = comment;
+    this.modalities = modalities;
   }
 
   @ApiProperty(
     {
-      ...technicalLongRelaxedSchema,
+      ...technicalVeryLongRelaxedSchema,
       description: "The model technical identifier, unique within the extension",
       type: "string",
       required: true,
@@ -1464,8 +1476,8 @@ export class AiModel
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.l64)
-  @Matches(technicalLongRelaxedPattern)
+  @MaxLength(FieldLengths.l128)
+  @Matches(technicalVeryLongRelaxedPattern)
   @IsDefined()
   @NotEquals(null)
   @Expose()
@@ -1508,6 +1520,25 @@ export class AiModel
   @Expose()
   readonly comment?: string;
 
+  @ApiProperty(
+    {
+      description: "The task modalities the AI model is compatible with",
+      enum: AiModelModality,
+      enumName: "AiModelModality",
+      isArray: true,
+      minItems: 1,
+      required: true,
+      example: [ AiModelModality.ImageEmbeddings, AiModelModality.TextEmbeddings ]
+    }
+  )
+  @IsArray()
+  @IsEnum(AiModelModality, { each: true })
+  @ArrayMinSize(1)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly modalities: AiModelModality[];
+
 }
 
 @ApiSchema({ description: "An AI model declared by an extension, with its owner and declaration date" })
@@ -1518,9 +1549,9 @@ export class ExtensionAiModel extends AiModel
   // The maximum number of AI models an extension can declare
   static readonly PER_EXTENSION_AI_MODEL_MAXIMUM = 256;
 
-  constructor(extensionId: ExtensionIdType, technicalId: string, name: string, creationDate: number, comment?: string)
+  constructor(extensionId: ExtensionIdType, technicalId: string, name: string, comment: string | undefined, modalities: AiModelModality[], creationDate: number)
   {
-    super(technicalId, name, comment);
+    super(technicalId, name, comment, modalities);
     this.extensionId = extensionId;
     this.creationDate = creationDate;
   }
@@ -1560,17 +1591,16 @@ export class ExtensionAiModel extends AiModel
 export class BasisInstruction
 {
 
-  constructor(aiModelTechnicalId: string, question: string, isAuto: boolean, enabled: boolean)
+  constructor(aiModelTechnicalId: string, isAuto: boolean, enabled: boolean)
   {
     this.aiModelTechnicalId = aiModelTechnicalId;
-    this.question = question;
     this.isAuto = isAuto;
     this.enabled = enabled;
   }
 
   @ApiProperty(
     {
-      ...technicalLongRelaxedSchema,
+      ...technicalVeryLongRelaxedSchema,
       description: "The technical identifier of the AI model to use",
       type: "string",
       required: true,
@@ -1579,30 +1609,12 @@ export class BasisInstruction
   )
   @IsString()
   @MinLength(1)
-  @MaxLength(FieldLengths.l64)
-  @Matches(technicalLongRelaxedPattern)
+  @MaxLength(FieldLengths.l128)
+  @Matches(technicalVeryLongRelaxedPattern)
   @IsDefined()
   @NotEquals(null)
   @Expose()
   readonly aiModelTechnicalId: string;
-
-  @ApiProperty(
-    {
-      description: "The question submitted to the AI model to produce the caption or the eligible tags",
-      type: String,
-      minLength: 1,
-      maxLength: FieldLengths.l1k,
-      required: true,
-      example: "Describe this image in one sentence"
-    }
-  )
-  @IsString()
-  @MinLength(1)
-  @MaxLength(FieldLengths.l1k)
-  @IsDefined()
-  @NotEquals(null)
-  @Expose()
-  readonly question: string;
 
   @ApiProperty(
     {
@@ -1634,8 +1646,38 @@ export class BasisInstruction
 
 }
 
+@ApiSchema({ description: "An instruction based on a natural language question submitted to an AI model" })
+export class QuestionInstruction extends BasisInstruction
+{
+
+  constructor(aiModelTechnicalId: string, question: string, isAuto: boolean, enabled: boolean)
+  {
+    super(aiModelTechnicalId, isAuto, enabled);
+    this.question = question;
+  }
+
+  @ApiProperty(
+    {
+      description: "The question submitted to the AI model to produce the caption or the eligible tags",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.l1k,
+      required: true,
+      example: "Describe this image in one sentence"
+    }
+  )
+  @IsString()
+  @MinLength(1)
+  @MaxLength(FieldLengths.l1k)
+  @IsDefined()
+  @NotEquals(null)
+  @Expose()
+  readonly question: string;
+
+}
+
 @ApiSchema({ description: "An instruction for computing captions with an AI model" })
-export class CaptionInstruction extends BasisInstruction
+export class CaptionInstruction extends QuestionInstruction
 {
 
   // The maximum number of captions an extension can declare
@@ -1649,7 +1691,7 @@ export class CaptionInstruction extends BasisInstruction
 }
 
 @ApiSchema({ description: "An instruction for computing eligible tags with an AI model" })
-export class EligibleTagsInstruction extends BasisInstruction
+export class EligibleTagsInstruction extends QuestionInstruction
 {
 
   // The maximum number of eligible tags an extension can declare
@@ -1684,6 +1726,20 @@ export class EligibleTagsInstruction extends BasisInstruction
   @NotEquals(null)
   @Expose()
   readonly tags: ImageTag[];
+
+}
+
+@ApiSchema({ description: "An instruction for computing embeddings with an AI model" })
+export class EmbeddingInstruction extends BasisInstruction
+{
+
+  // The maximum number of embedding instructions an extension can declare
+  static readonly PER_EXTENSION_EMBEDDING_INSTRUCTIONS_MAXIMUM = 256;
+
+  constructor(aiModelTechnicalId: string, enabled: boolean, isAuto: boolean)
+  {
+    super(aiModelTechnicalId, isAuto, enabled);
+  }
 
 }
 

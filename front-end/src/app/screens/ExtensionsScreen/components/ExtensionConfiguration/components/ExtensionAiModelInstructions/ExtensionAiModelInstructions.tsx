@@ -27,8 +27,10 @@ import {
 import { IconCopy, IconInfoCircle, IconPlus, IconSearch } from "@tabler/icons-react";
 
 import {
+  AiModelModality,
   CaptionInstruction,
   EligibleTagsInstruction,
+  EmbeddingInstruction,
   Extension,
   ExtensionAiModel,
   TagsPlaceholder
@@ -74,6 +76,7 @@ export type ExtensionAiModelInstructionsPropsType =
     readonly extension: Extension;
     readonly hasCaptionCapability: boolean;
     readonly hasEligibleTagsCapability: boolean;
+    readonly hasEmbeddingsCapability: boolean;
     readonly onValidityChange: (isValid: boolean) => void;
     readonly onDirtyChange: (isDirty: boolean) => void;
     readonly onLoadingChange: (isLoading: boolean) => void;
@@ -84,6 +87,7 @@ function ExtensionAiModelInstructions(
     extension,
     hasCaptionCapability,
     hasEligibleTagsCapability,
+    hasEmbeddingsCapability,
     onValidityChange,
     onDirtyChange,
     onLoadingChange
@@ -98,7 +102,6 @@ function ExtensionAiModelInstructions(
   const [ models, setModels ] = useState<ExtensionAiModel[]>([]);
   const [ entries, setEntries ] = useState<AiModelInstructionFormEntryType[]>([]);
   const initialEntriesRef = useRef<AiModelInstructionFormEntryType[]>([]);
-
   const [ searchQuery, setSearchQuery ] = useState<string>("");
   const [ batchCaptionQuestion, setBatchCaptionQuestion ] = useState<string>("");
   const [ batchEligibleTagsQuestion, setBatchEligibleTagsQuestion ] = useState<string>("");
@@ -109,34 +112,47 @@ function ExtensionAiModelInstructions(
     setLoading(true);
     try
     {
-      const [ allModels, captionInstructions, eligibleTagsInstructions ] = await Promise.all([
+      const [ allModels, captionInstructions, eligibleTagsInstructions, embeddingInstructions ] = await Promise.all([
         ExtensionsService.listAiModels(),
         hasCaptionCapability ? ExtensionsService.getCaptionInstructions({ id: extension.manifest.id }) : Promise.resolve([]),
-        hasEligibleTagsCapability ? ExtensionsService.getEligibleTagsInstructions({ id: extension.manifest.id }) : Promise.resolve([])
+        hasEligibleTagsCapability ? ExtensionsService.getEligibleTagsInstructions({ id: extension.manifest.id }) : Promise.resolve([]),
+        hasEmbeddingsCapability ? ExtensionsService.getEmbeddingInstructions({ id: extension.manifest.id }) : Promise.resolve([])
       ]);
       const extensionModels = allModels.filter((model) => model.extensionId === extension.manifest.id);
       setModels(extensionModels);
       const captionMap = new Map<string, CaptionInstruction>(captionInstructions.map((instruction) => [ instruction.aiModelTechnicalId, instruction ]));
       const tagsMap = new Map<string, EligibleTagsInstruction>(eligibleTagsInstructions.map((instruction) => [ instruction.aiModelTechnicalId, instruction ]));
+      const embeddingMap = new Map<string, EmbeddingInstruction>(embeddingInstructions.map((instruction) => [ instruction.aiModelTechnicalId, instruction ]));
 
-      // We treat a model as configured if an instruction was previously persisted for it
-      const configuredModels = extensionModels.filter((model) => captionMap.has(model.technicalId) || tagsMap.has(model.technicalId));
+      const hasAnyPersistedInstruction = captionInstructions.length > 0 || eligibleTagsInstructions.length > 0 || embeddingInstructions.length > 0;
+
+      // If instructions were previously persisted, we only show configured models.
+      // Otherwise, propose the extension's declared models (if up to 6 models) so the user can directly activate them.
+      const configuredModels = hasAnyPersistedInstruction
+        ? extensionModels.filter((model) =>
+          captionMap.has(model.technicalId) || tagsMap.has(model.technicalId) || embeddingMap.has(model.technicalId)
+        )
+        : (extensionModels.length <= 6 ? extensionModels : []);
 
       const initialEntries: AiModelInstructionFormEntryType[] = configuredModels.map((model) =>
       {
         const captionInstruction = captionMap.get(model.technicalId);
         const tagsInstruction = tagsMap.get(model.technicalId);
+        const embeddingInstruction = embeddingMap.get(model.technicalId);
         return {
           technicalId: model.technicalId,
           name: model.name,
           comment: model.comment,
+          modalities: model.modalities,
           captionEnabled: captionInstruction?.enabled ?? false,
           captionIsAuto: captionInstruction?.isAuto ?? false,
           captionQuestion: captionInstruction?.question ?? defaultCaptionQuestion,
           eligibleTagsEnabled: tagsInstruction?.enabled ?? false,
           eligibleTagsIsAuto: tagsInstruction?.isAuto ?? false,
           eligibleTagsQuestion: tagsInstruction?.question ?? `Pick the tags that best fit the image from this list: ${tagsPlaceholder}.`,
-          eligibleTags: tagsInstruction?.tags ? [ ...tagsInstruction.tags ] : defaultEligibleTags
+          eligibleTags: tagsInstruction?.tags ? [ ...tagsInstruction.tags ] : defaultEligibleTags,
+          embeddingEnabled: embeddingInstruction?.enabled ?? false,
+          embeddingIsAuto: embeddingInstruction?.isAuto ?? false
         };
       });
 
@@ -180,18 +196,25 @@ function ExtensionAiModelInstructions(
 
   function handleConfigureModel(model: ExtensionAiModel): void
   {
+    const supportsCaptions = hasCaptionCapability && (!model.modalities || model.modalities.includes(AiModelModality.ImageCaptions));
+    const supportsEligibleTags = hasEligibleTagsCapability && (!model.modalities || model.modalities.includes(AiModelModality.ImageEligibleTags));
+    const supportsEmbeddings = hasEmbeddingsCapability && (!model.modalities || model.modalities.includes(AiModelModality.ImageEmbeddings));
+
     const newEntry: AiModelInstructionFormEntryType =
       {
         technicalId: model.technicalId,
         name: model.name,
         comment: model.comment,
-        captionEnabled: hasCaptionCapability,
+        modalities: model.modalities,
+        captionEnabled: supportsCaptions,
         captionIsAuto: false,
         captionQuestion: batchCaptionQuestion.trim().length > 0 ? batchCaptionQuestion.trim() : defaultCaptionQuestion,
-        eligibleTagsEnabled: hasEligibleTagsCapability,
+        eligibleTagsEnabled: supportsEligibleTags,
         eligibleTagsIsAuto: false,
         eligibleTagsQuestion: batchEligibleTagsQuestion.trim().length > 0 ? batchEligibleTagsQuestion.trim() : `Pick the tags that best fit the image from this list: ${tagsPlaceholder}.`,
-        eligibleTags: batchEligibleTags.length > 0 ? [ ...batchEligibleTags ] : [ ...defaultEligibleTags ]
+        eligibleTags: batchEligibleTags.length > 0 ? [ ...batchEligibleTags ] : [ ...defaultEligibleTags ],
+        embeddingEnabled: supportsEmbeddings,
+        embeddingIsAuto: false
       };
     setEntries((previousEntries) => [ ...previousEntries, newEntry ]);
   }
@@ -234,8 +257,18 @@ function ExtensionAiModelInstructions(
   const unconfiguredModels = useMemo((): ExtensionAiModel[] =>
   {
     const configuredTechnicalIds = new Set<string>(entries.map((entry) => entry.technicalId));
-    return models.filter((model) => configuredTechnicalIds.has(model.technicalId) === false);
-  }, [ models, entries ]);
+    return models.filter((model) =>
+    {
+      if (configuredTechnicalIds.has(model.technicalId))
+      {
+        return false;
+      }
+      const supportsCaptions = hasCaptionCapability && (!model.modalities || model.modalities.includes(AiModelModality.ImageCaptions));
+      const supportsEligibleTags = hasEligibleTagsCapability && (!model.modalities || model.modalities.includes(AiModelModality.ImageEligibleTags));
+      const supportsEmbeddings = hasEmbeddingsCapability && (!model.modalities || model.modalities.includes(AiModelModality.ImageEmbeddings));
+      return supportsCaptions || supportsEligibleTags || supportsEmbeddings;
+    });
+  }, [ models, entries, hasCaptionCapability, hasEligibleTagsCapability, hasEmbeddingsCapability ]);
 
   const filteredUnconfiguredModels = useMemo((): ExtensionAiModel[] =>
   {
@@ -312,6 +345,17 @@ function ExtensionAiModelInstructions(
           }
         }
       }
+      if (hasEmbeddingsCapability)
+      {
+        if (current.embeddingEnabled !== initial.embeddingEnabled)
+        {
+          return true;
+        }
+        if (current.embeddingIsAuto !== initial.embeddingIsAuto)
+        {
+          return true;
+        }
+      }
     }
     return false;
   }
@@ -336,7 +380,7 @@ function ExtensionAiModelInstructions(
     return true;
   }, [ entries, hasEligibleTagsCapability ]);
 
-  const isDirty = useMemo((): boolean => computeIsDirty(entries), [ entries, hasCaptionCapability, hasEligibleTagsCapability ]);
+  const isDirty = useMemo((): boolean => computeIsDirty(entries), [ entries, hasCaptionCapability, hasEligibleTagsCapability, hasEmbeddingsCapability ]);
 
   useEffect(() => onValidityChange(isValid), [ isValid, onValidityChange ]);
 
@@ -357,7 +401,7 @@ function ExtensionAiModelInstructions(
       const calls: Promise<unknown>[] = [];
       if (hasCaptionCapability)
       {
-        const captionPayload: CaptionInstruction[] = entries.map((entry) => (
+        const captionPayload: CaptionInstruction[] = entries.filter((entry) => !entry.modalities || entry.modalities.includes(AiModelModality.ImageCaptions)).map((entry) => (
           {
             aiModelTechnicalId: entry.technicalId,
             enabled: entry.captionEnabled,
@@ -374,7 +418,7 @@ function ExtensionAiModelInstructions(
 
       if (hasEligibleTagsCapability)
       {
-        const tagsPayload: EligibleTagsInstruction[] = entries.map((entry) => (
+        const tagsPayload: EligibleTagsInstruction[] = entries.filter((entry) => !entry.modalities || entry.modalities.includes(AiModelModality.ImageEligibleTags)).map((entry) => (
           {
             aiModelTechnicalId: entry.technicalId,
             question: entry.eligibleTagsQuestion.trim(),
@@ -387,6 +431,23 @@ function ExtensionAiModelInstructions(
           ExtensionsService.setEligibleTagsInstructions({
             id: extension.manifest.id,
             eligibleTagsInstruction: tagsPayload
+          })
+        );
+      }
+
+      if (hasEmbeddingsCapability)
+      {
+        const embeddingPayload: EmbeddingInstruction[] = entries.filter((entry) => !entry.modalities || entry.modalities.includes(AiModelModality.ImageEmbeddings)).map((entry) => (
+          {
+            aiModelTechnicalId: entry.technicalId,
+            enabled: entry.embeddingEnabled,
+            isAuto: entry.embeddingIsAuto
+          }
+        ));
+        calls.push(
+          ExtensionsService.setEmbeddingInstructions({
+            id: extension.manifest.id,
+            embeddingInstruction: embeddingPayload
           })
         );
       }
@@ -433,73 +494,75 @@ function ExtensionAiModelInstructions(
 
   return (
     <Stack gap="md">
-      <Accordion variant="separated" radius="md">
-        <Accordion.Item value="batch">
-          <Accordion.Control icon={<IconCopy size={16}/>}>
-            <Text fw={500} size="sm">
-              {t("extensionConfiguration.instructions.batchTitle")}
-            </Text>
-          </Accordion.Control>
-          <Accordion.Panel>
-            <Stack gap="xs">
-              <Text size="xs" c="dimmed">
-                {t("extensionConfiguration.instructions.batchDescription")}
+      {(hasCaptionCapability || hasEligibleTagsCapability) && (
+        <Accordion variant="separated" radius="md">
+          <Accordion.Item value="batch">
+            <Accordion.Control icon={<IconCopy size={16}/>}>
+              <Text fw={500} size="sm">
+                {t("extensionConfiguration.instructions.batchTitle")}
               </Text>
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Stack gap="xs">
+                <Text size="xs" c="dimmed">
+                  {t("extensionConfiguration.instructions.batchDescription")}
+                </Text>
 
-              {hasCaptionCapability && (
-                <Textarea
-                  label={t("extensionConfiguration.instructions.commonCaptionQuestion")}
-                  placeholder={t("extensionConfiguration.instructions.captionQuestionPlaceholder")}
-                  value={batchCaptionQuestion}
-                  onChange={(event) =>
-                  {
-                    setBatchCaptionQuestion(event.currentTarget.value);
-                  }}
-                  autosize
-                  minRows={2}
-                  maxRows={4}
-                />
-              )}
-
-              {hasEligibleTagsCapability && (
-                <>
+                {hasCaptionCapability && (
                   <Textarea
-                    label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion", { tags: tagsPlaceholder })}
-                    placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder", { tags: tagsPlaceholder })}
-                    value={batchEligibleTagsQuestion}
+                    label={t("extensionConfiguration.instructions.commonCaptionQuestion")}
+                    placeholder={t("extensionConfiguration.instructions.captionQuestionPlaceholder")}
+                    value={batchCaptionQuestion}
                     onChange={(event) =>
                     {
-                      setBatchEligibleTagsQuestion(event.currentTarget.value);
+                      setBatchCaptionQuestion(event.currentTarget.value);
                     }}
                     autosize
                     minRows={2}
                     maxRows={4}
                   />
-                  <TagsInput
-                    label={t("extensionConfiguration.instructions.commonEligibleTags")}
-                    placeholder={t("extensionConfiguration.instructions.eligibleTagsPlaceholder")}
-                    value={batchEligibleTags}
-                    onChange={setBatchEligibleTags}
-                    clearable
-                  />
-                </>
-              )}
+                )}
 
-              <Group justify="flex-end" mt="xs">
-                <Button
-                  size="xs"
-                  variant="light"
-                  leftSection={<IconCopy size={16}/>}
-                  onClick={handleApplyBatch}
-                  disabled={!hasBatchContent || entries.length === 0}
-                >
-                  {t("extensionConfiguration.instructions.applyToAll")}
-                </Button>
-              </Group>
-            </Stack>
-          </Accordion.Panel>
-        </Accordion.Item>
-      </Accordion>
+                {hasEligibleTagsCapability && (
+                  <>
+                    <Textarea
+                      label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion", { tags: tagsPlaceholder })}
+                      placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder", { tags: tagsPlaceholder })}
+                      value={batchEligibleTagsQuestion}
+                      onChange={(event) =>
+                      {
+                        setBatchEligibleTagsQuestion(event.currentTarget.value);
+                      }}
+                      autosize
+                      minRows={2}
+                      maxRows={4}
+                    />
+                    <TagsInput
+                      label={t("extensionConfiguration.instructions.commonEligibleTags")}
+                      placeholder={t("extensionConfiguration.instructions.eligibleTagsPlaceholder")}
+                      value={batchEligibleTags}
+                      onChange={setBatchEligibleTags}
+                      clearable
+                    />
+                  </>
+                )}
+
+                <Group justify="flex-end" mt="xs">
+                  <Button
+                    size="xs"
+                    variant="light"
+                    leftSection={<IconCopy size={16}/>}
+                    onClick={handleApplyBatch}
+                    disabled={!hasBatchContent || entries.length === 0}
+                  >
+                    {t("extensionConfiguration.instructions.applyToAll")}
+                  </Button>
+                </Group>
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
+      )}
 
       <Stack gap="xs">
         <Group justify="space-between" align="center">
@@ -525,6 +588,7 @@ function ExtensionAiModelInstructions(
                 modelEntry={entry}
                 hasCaptionCapability={hasCaptionCapability}
                 hasEligibleTagsCapability={hasEligibleTagsCapability}
+                hasEmbeddingsCapability={hasEmbeddingsCapability}
                 onChange={handleEntryChange}
                 onDelete={handleDeleteModel}
               />

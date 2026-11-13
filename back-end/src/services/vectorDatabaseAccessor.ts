@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import Timers from "node:timers";
 
 import { ChromaClient, ChromaValueError, Collection, EmbeddingFunction, GetResult, IncludeEnum } from "chromadb";
@@ -13,7 +14,7 @@ export type ImageIdAndDistance =
     distance: number
   };
 
-type EmbeddingNameAndValues = { name: string, values: number[] };
+export type EmbeddingIdAndValues = { id: string, values: number[] };
 
 export type ExtensionIdAndEmbeddingName = { id: string, name: string };
 
@@ -48,22 +49,22 @@ export abstract class VectorDatabaseAccessor implements OnModuleInit, OnModuleDe
     return this.doGetExtensionEmbeddingsNames();
   }
 
-  async getImageIds(extensionId: string): Promise<string[]>
+  async getImageIds(extensionId: string, embeddingId?: string): Promise<string[]>
   {
-    logger.debug(`Getting the image ids computed by the extension with id '${extensionId}'`);
-    return this.doGetImageIds(extensionId);
+    logger.debug(`Getting the image ids computed by the extension with id '${extensionId}'${embeddingId === undefined ? "" : ` and embedding id '${embeddingId}'`}`);
+    return this.doGetImageIds(extensionId, embeddingId);
   }
 
-  async getEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>
+  async getEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingIdAndValues[]>
   {
     logger.debug(`Getting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
     return this.doGetEmbeddings(imageId, extensionId);
   }
 
-  async setEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>
+  async setEmbeddings(imageId: string, extensionId: string, idAndValues: EmbeddingIdAndValues[], isEnsure: boolean = false): Promise<void>
   {
     logger.debug(`Setting the embeddings for the image with id '${imageId}' computed by the extension with id '${extensionId}'`);
-    return this.doSetEmbeddings(imageId, extensionId, nameAndValues);
+    return this.doSetEmbeddings(imageId, extensionId, idAndValues, isEnsure);
   }
 
   async queryEmbeddings(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>
@@ -86,21 +87,29 @@ export abstract class VectorDatabaseAccessor implements OnModuleInit, OnModuleDe
     return this.doDeleteExtensionEmbeddings(extensionId);
   }
 
+  async migrate(previousVersion: string): Promise<void>
+  {
+    logger.debug("Migrating the vector database if needed");
+    return this.doMigrate(previousVersion);
+  }
+
   protected abstract doGetExtensionIds(): Promise<string[]>;
 
   protected abstract doGetExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>;
 
-  protected abstract doGetImageIds(extensionId: string): Promise<string[]>;
+  protected abstract doGetImageIds(extensionId: string, embeddingId?: string): Promise<string[]>;
 
-  protected abstract doGetEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>;
+  protected abstract doGetEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingIdAndValues[]>;
 
-  protected abstract doSetEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>;
+  protected abstract doSetEmbeddings(imageId: string, extensionId: string, idAndValues: EmbeddingIdAndValues[], isEnsure?: boolean): Promise<void>;
 
   protected abstract doQueryEmbeddings(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName, embeddings: number[], count: number): Promise<ImageIdAndDistance[]>;
 
   protected abstract doDeleteImagesEmbeddings(imageIds: string[], extensionId?: string): Promise<void>;
 
   protected abstract doDeleteExtensionEmbeddings(extensionId: string): Promise<void>;
+
+  protected abstract doMigrate(previousVersion: string): Promise<void>;
 
   protected async initialize(): Promise<void>
   {
@@ -141,12 +150,21 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
     return embeddingNames;
   }
 
-  protected async doGetImageIds(extensionId: string): Promise<string[]>
+  protected async doGetImageIds(extensionId: string, embeddingId?: string): Promise<string[]>
   {
     const perEmbeddingNameMap = this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.get(extensionId);
     if (perEmbeddingNameMap === undefined)
     {
       return [];
+    }
+    if (embeddingId !== undefined)
+    {
+      const perImageIdEmbeddingMap = perEmbeddingNameMap.get(embeddingId);
+      if (perImageIdEmbeddingMap === undefined)
+      {
+        return [];
+      }
+      return Array.from(perImageIdEmbeddingMap.keys());
     }
     const imageIds = new Set<string>();
     for (const perImageIdEmbeddingMap of perEmbeddingNameMap.values())
@@ -159,26 +177,26 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
     return Array.from(imageIds);
   }
 
-  protected async doGetEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>
+  protected async doGetEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingIdAndValues[]>
   {
     const perEmbeddingNameMap = this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.get(extensionId);
     if (perEmbeddingNameMap === undefined)
     {
       return [];
     }
-    const result: EmbeddingNameAndValues[] = [];
+    const result: EmbeddingIdAndValues[] = [];
     for (const [ name, perImageIdEmbeddingMap ] of perEmbeddingNameMap.entries())
     {
       const values = perImageIdEmbeddingMap.get(imageId);
       if (values !== undefined)
       {
-        result.push({ name, values });
+        result.push({ id: name, values });
       }
     }
     return result;
   }
 
-  protected async doSetEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>
+  protected async doSetEmbeddings(imageId: string, extensionId: string, idAndValues: EmbeddingIdAndValues[], isEnsure: boolean = false): Promise<void>
   {
     let perEmbeddingNameMap = this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.get(extensionId);
     if (perEmbeddingNameMap === undefined)
@@ -187,18 +205,22 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
       this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.set(extensionId, perEmbeddingNameMap);
     }
 
-    for (const perImageIdEmbeddingMap of perEmbeddingNameMap.values())
+    if (isEnsure === false)
     {
-      perImageIdEmbeddingMap.delete(imageId);
+      for (const perImageIdEmbeddingMap of perEmbeddingNameMap.values())
+      {
+        perImageIdEmbeddingMap.delete(imageId);
+      }
     }
 
-    for (const embedding of nameAndValues)
+    for (const embedding of idAndValues)
     {
-      let perImageIdEmbeddingMap = perEmbeddingNameMap.get(embedding.name);
+      const embeddingName = embedding.id;
+      let perImageIdEmbeddingMap = perEmbeddingNameMap.get(embeddingName);
       if (perImageIdEmbeddingMap === undefined)
       {
         perImageIdEmbeddingMap = new Map();
-        perEmbeddingNameMap.set(embedding.name, perImageIdEmbeddingMap);
+        perEmbeddingNameMap.set(embeddingName, perImageIdEmbeddingMap);
       }
       else
       {
@@ -267,6 +289,10 @@ export class MemoryVectorDatabaseAccessor extends VectorDatabaseAccessor
     this.perExtensionIdPerEmbeddingNameMapPerImageIdEmbeddingMap.delete(extensionId);
   }
 
+  protected async doMigrate(previousVersion: string): Promise<void>
+  {
+  }
+
 }
 
 interface NopeEmbeddingConfig
@@ -309,6 +335,8 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
 
   private client: ChromaClient | undefined;
 
+  private readonly perKeyCollectionNamesMap: Map<string, string> = new Map();
+
   private readonly perExtensionIdEmbeddingNameCollectionsMap: Map<string, Collection> = new Map();
 
   protected override async initialize(): Promise<void>
@@ -331,7 +359,7 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
 
   protected async doGetExtensionIds(): Promise<string[]>
   {
-    const collections: Collection[] = await (await this.getClient()).listCollections({});
+    const collections = await this.getCollections();
     const extensionIds = new Set<string>();
     for (const collection of collections)
     {
@@ -346,23 +374,31 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
 
   protected async doGetExtensionEmbeddingsNames(): Promise<ExtensionIdAndEmbeddingName[]>
   {
-    const collections: Collection[] = await (await this.getClient()).listCollections({});
-    // TODO: remove this filter once the migration is over
-    const filteredCollections = collections.filter(collection => collection.metadata?.name !== undefined);
-    return filteredCollections.map((collection) =>
+    const collections = await this.getCollections();
+    return collections.map((collection) =>
     {
       const metadata = collection.metadata!;
       return { id: metadata.id as string, name: metadata.name as string };
     });
   }
 
-  protected async doGetImageIds(extensionId: string): Promise<string[]>
+  protected async doGetImageIds(extensionId: string, embeddingId?: string): Promise<string[]>
   {
+    if (embeddingId !== undefined)
+    {
+      const collection = await this.getCollection({ id: extensionId, name: embeddingId });
+      if (collection === undefined)
+      {
+        return [];
+      }
+      const response: GetResult = await collection.get({ include: [] });
+      return response.ids;
+    }
     const collections = await this.getExtensionCollections(extensionId);
     const imageIds = new Set<string>();
     for (const collection of collections)
     {
-      const response: GetResult = await collection.get({});
+      const response: GetResult = await collection.get({ include: [] });
       for (const id of response.ids)
       {
         imageIds.add(id);
@@ -371,43 +407,48 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
     return Array.from(imageIds);
   }
 
-  protected async doGetEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingNameAndValues[]>
+  protected async doGetEmbeddings(imageId: string, extensionId: string): Promise<EmbeddingIdAndValues[]>
   {
     const collections = await this.getExtensionCollections(extensionId);
-    const result: EmbeddingNameAndValues[] = [];
+    const result: EmbeddingIdAndValues[] = [];
     for (const collection of collections)
     {
       const response: GetResult = await collection.get({ ids: [ imageId ], include: [ IncludeEnum.embeddings ] });
       const embeddingsArray = response.embeddings;
       if (embeddingsArray !== null && embeddingsArray.length > 0)
       {
-        result.push({ name: collection.metadata!.name as string, values: embeddingsArray[0] });
+        const embeddingName = collection.metadata!.name as string;
+        result.push({ id: embeddingName, values: embeddingsArray[0] });
       }
     }
     return result;
   }
 
-  protected async doSetEmbeddings(imageId: string, extensionId: string, nameAndValues: EmbeddingNameAndValues[]): Promise<void>
+  protected async doSetEmbeddings(imageId: string, extensionId: string, idAndValues: EmbeddingIdAndValues[], isEnsure: boolean = false): Promise<void>
   {
-    // We first delete the image from all perExtensionIdEmbeddingNameCollectionsMap of this extension
-    const collections = await this.getExtensionCollections(extensionId);
     const imageIds = [ imageId ];
-    for (const collection of collections)
+    if (isEnsure === false)
     {
-      try
+      // We first delete the image from all perExtensionIdEmbeddingNameCollectionsMap of this extension
+      const collections = await this.getExtensionCollections(extensionId);
+      for (const collection of collections)
       {
-        await collection.delete({ ids: imageIds });
-      }
-      catch (error)
-      {
-        // We ignore this error if the image does not exist
+        try
+        {
+          await collection.delete({ ids: imageIds });
+        }
+        catch (error)
+        {
+          // We ignore this error if the image does not exist
+        }
       }
     }
 
     // Then, we upsert the new embeddings
-    for (const embedding of nameAndValues)
+    for (const embedding of idAndValues)
     {
-      const extensionIdAndEmbeddingName = { id: extensionId, name: embedding.name };
+      const embeddingName = embedding.id;
+      const extensionIdAndEmbeddingName = { id: extensionId, name: embeddingName };
       const collection = await this.ensureCollection(extensionIdAndEmbeddingName);
       try
       {
@@ -489,11 +530,44 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
       await client.deleteCollection({ name: collection.name });
       this.perExtensionIdEmbeddingNameCollectionsMap.delete(collection.name);
     }
+    for (const [ key ] of this.perKeyCollectionNamesMap)
+    {
+      if (key.startsWith(`${extensionId}:`))
+      {
+        this.perKeyCollectionNamesMap.delete(key);
+      }
+    }
+  }
+
+  protected async doMigrate(previousVersion: string): Promise<void>
+  {
+    if (previousVersion === "0.17.0")
+    {
+      logger.info("Migrating the Chroma DB collections from legacy naming scheme");
+      const collections = await this.getCollections();
+      for (const collection of collections)
+      {
+        const metadata: ExtensionIdAndEmbeddingName = collection.metadata as ExtensionIdAndEmbeddingName;
+        const extensionId = metadata.id;
+        const embeddingName = metadata.name;
+        const newCollectionName = this.computeExtensionCollectionName({ id: extensionId, name: embeddingName });
+        if (collection.name !== newCollectionName)
+        {
+          logger.debug(`Migrating the Chroma collection from '${collection.name}' to '${newCollectionName}'`);
+          await collection.modify({
+            name: newCollectionName,
+            metadata: { ...collection.metadata, name: embeddingName }
+          });
+          this.perExtensionIdEmbeddingNameCollectionsMap.delete(collection.name);
+          this.perExtensionIdEmbeddingNameCollectionsMap.set(newCollectionName, collection);
+        }
+      }
+    }
   }
 
   private async getExtensionCollections(extensionId: string): Promise<Collection[]>
   {
-    const collections = await (await this.getClient()).listCollections({});
+    const collections = await this.getCollections();
     return collections.filter(collection => collection.metadata?.id === extensionId);
   }
 
@@ -550,7 +624,25 @@ export class ChromaVectorDatabaseAccessor extends VectorDatabaseAccessor
 
   private computeExtensionCollectionName(extensionIdAndEmbeddingName: ExtensionIdAndEmbeddingName): string
   {
-    return `images.${extensionIdAndEmbeddingName.id}.${extensionIdAndEmbeddingName.name}`;
+    const key = `${extensionIdAndEmbeddingName.id}:${extensionIdAndEmbeddingName.name}`;
+    let collectionName = this.perKeyCollectionNamesMap.get(key);
+    if (collectionName === undefined)
+    {
+      const hash = crypto.createHash("sha256").update(key).digest("hex").substring(0, 20);
+      collectionName = `images.${extensionIdAndEmbeddingName.id}.${hash}`;
+      this.perKeyCollectionNamesMap.set(key, collectionName);
+    }
+    return collectionName;
+  }
+
+  private async getCollections(): Promise<Collection[]>
+  {
+    const collections = await (await this.getClient()).listCollections({});
+    for (const collection of collections)
+    {
+      this.perExtensionIdEmbeddingNameCollectionsMap.set(collection.name, collection);
+    }
+    return collections;
   }
 
   private async getClient(): Promise<ChromaClient>

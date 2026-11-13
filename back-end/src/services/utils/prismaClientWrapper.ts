@@ -12,6 +12,7 @@ import { type  ApplicationSettings } from "../../dtos/app.dtos";
 
 const defaultSettingsType = "default";
 const migrationSettingsType = "migration";
+const versionSettingsType = "version";
 
 // This has been introduced, awaiting the https://github.com/prisma/orm/pull/30867 PR to be merged
 class ConfiguredBetterSqlite3Adapter extends PrismaBetterSqlite3
@@ -138,12 +139,9 @@ export class PrismaClientWrapper
       if (isMainThread === true)
       {
         // We make sure that the settings are defined
-        if (await this.settingsDelegate().findUnique({
-          where: { type: defaultSettingsType },
-          select: { value: true }
-        }) === null)
+        if (await this.getSettingsValue(defaultSettingsType) === null)
         {
-          await this.settingsDelegate().create({ data: { type: defaultSettingsType, value: JSON.stringify({}) } });
+          await this.setSettingsValue(defaultSettingsType, {});
         }
       }
     }
@@ -172,8 +170,7 @@ export class PrismaClientWrapper
 
   async setApplicationSettings(settings: ApplicationSettings): Promise<void>
   {
-    const data = JSON.stringify(settings);
-    await this.settingsDelegate().update({ where: { type: defaultSettingsType }, data: { value: data } });
+    await this.setSettingsValue(defaultSettingsType, settings);
   }
 
   get apiSecrets(): Prisma.ApiSecretDelegate
@@ -228,26 +225,52 @@ export class PrismaClientWrapper
 
   async getMigration(): Promise<string>
   {
-    const data = await this.settingsDelegate().findUnique({
-      where: { type: migrationSettingsType },
-      select: { value: true }
-    });
-    return data!.value;
+    return (await this.getSettingsValue(migrationSettingsType))!;
   }
 
   async setMigration(migration: string): Promise<void>
   {
     logger.info(`Remembering the latest database migration '${migration}'`);
-    await this.settingsDelegate().update({ where: { type: migrationSettingsType }, data: { value: migration } });
+    await this.setSettingsValue(migrationSettingsType, migration);
+  }
+
+  async getVersion(): Promise<string | null>
+  {
+    return this.getSettingsValue(versionSettingsType);
+  }
+
+  async setVersion(version: string): Promise<void>
+  {
+    logger.info(`Remembering the application version '${version}'`);
+    await this.setSettingsValue(versionSettingsType, version);
   }
 
   private async getSettings(): Promise<ApplicationSettings>
   {
-    const settings = await this.settingsDelegate().findUnique({
-      where: { type: defaultSettingsType },
+    return await this.getSettingsValue<ApplicationSettings>(defaultSettingsType, (value) => JSON.parse(value)) ?? {};
+  }
+
+  private async getSettingsValue<T = string>(type: string, parser?: (value: string) => T): Promise<T | null>
+  {
+    const record = await this.settingsDelegate().findUnique({
+      where: { type },
       select: { value: true }
     });
-    return JSON.parse(settings!.value);
+    if (record === null)
+    {
+      return null;
+    }
+    return parser !== undefined ? parser(record.value) : (record.value as unknown as T);
+  }
+
+  private async setSettingsValue(type: string, value: string | object): Promise<void>
+  {
+    const stringValue = typeof value === "string" ? value : JSON.stringify(value);
+    await this.settingsDelegate().upsert({
+      where: { type },
+      create: { type, value: stringValue },
+      update: { value: stringValue }
+    });
   }
 
   private settingsDelegate(): Prisma.SettingsDelegate

@@ -3,12 +3,15 @@ import { useTranslation } from "react-i18next";
 import { ActionIcon, Badge, Card, Group, Stack, Switch, TagsInput, Text, Textarea, Tooltip } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
 
+import { AiModelModality } from "@picteus/ws-client";
+
 
 export type AiModelInstructionFormEntryType =
   {
     readonly technicalId: string;
     readonly name: string;
     readonly comment?: string;
+    readonly modalities?: AiModelModality[];
     captionEnabled: boolean;
     captionIsAuto: boolean;
     captionQuestion: string;
@@ -16,6 +19,8 @@ export type AiModelInstructionFormEntryType =
     eligibleTagsIsAuto: boolean;
     eligibleTagsQuestion: string;
     eligibleTags: string[];
+    embeddingEnabled: boolean;
+    embeddingIsAuto: boolean;
   };
 
 export type ModelInstructionCardPropsType =
@@ -23,6 +28,7 @@ export type ModelInstructionCardPropsType =
     readonly modelEntry: AiModelInstructionFormEntryType;
     readonly hasCaptionCapability: boolean;
     readonly hasEligibleTagsCapability: boolean;
+    readonly hasEmbeddingsCapability: boolean;
     readonly onChange: (updatedEntry: AiModelInstructionFormEntryType) => void;
     readonly onDelete: (technicalId: string) => void;
   };
@@ -31,6 +37,7 @@ export default function ModelInstructionCard({
   modelEntry,
   hasCaptionCapability,
   hasEligibleTagsCapability,
+  hasEmbeddingsCapability,
   onChange,
   onDelete
 }: ModelInstructionCardPropsType): ReactElement
@@ -38,6 +45,18 @@ export default function ModelInstructionCard({
   const [ t ] = useTranslation();
 
   const questionCharactersMaximum = 1_024;
+
+  const supportsCaptions =
+    hasCaptionCapability &&
+    (!modelEntry.modalities || modelEntry.modalities.includes(AiModelModality.ImageCaptions));
+
+  const supportsEligibleTags =
+    hasEligibleTagsCapability &&
+    (!modelEntry.modalities || modelEntry.modalities.includes(AiModelModality.ImageEligibleTags));
+
+  const supportsEmbeddings =
+    hasEmbeddingsCapability &&
+    (!modelEntry.modalities || modelEntry.modalities.includes(AiModelModality.ImageEmbeddings));
   return (
     <Card withBorder padding="md" radius="md">
       <Stack gap="sm">
@@ -71,7 +90,7 @@ export default function ModelInstructionCard({
           </Text>
         )}
 
-        {hasCaptionCapability && (
+        {supportsCaptions && (
           <Stack gap="xs" mt="xs">
             <Group gap="lg" align="center" wrap="wrap">
               <Switch
@@ -113,7 +132,7 @@ export default function ModelInstructionCard({
           </Stack>
         )}
 
-        {hasEligibleTagsCapability && (
+        {supportsEligibleTags && (
           <Stack gap="xs" mt="xs">
             <Group gap="lg" align="center" wrap="wrap">
               <Switch
@@ -170,6 +189,37 @@ export default function ModelInstructionCard({
                 />
               </>
             )}
+          </Stack>
+        )}
+
+        {supportsEmbeddings && (
+          <Stack gap="xs" mt="xs">
+            <Group gap="lg" align="center" wrap="wrap">
+              <Switch
+                checked={modelEntry.embeddingEnabled}
+                onChange={(event) =>
+                {
+                  onChange({
+                    ...modelEntry,
+                    embeddingEnabled: event.currentTarget.checked
+                  });
+                }}
+                label={t("extensionConfiguration.instructions.enableEmbeddings")}
+              />
+              {modelEntry.embeddingEnabled && (
+                <Switch
+                  checked={modelEntry.embeddingIsAuto}
+                  onChange={(event) =>
+                  {
+                    onChange({
+                      ...modelEntry,
+                      embeddingIsAuto: event.currentTarget.checked
+                    });
+                  }}
+                  label={t("extensionConfiguration.instructions.isAutoEmbeddings")}
+                />
+              )}
+            </Group>
           </Stack>
         )}
       </Stack>

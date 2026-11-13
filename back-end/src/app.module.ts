@@ -37,6 +37,7 @@ import { headers, types } from "http-constants";
 import compression from "compression";
 
 
+import packageJson from "../package.json" with { type: "json" };
 import { logger } from "./logger";
 import { AuthenticationGuard } from "./app.guards";
 import { RepositoryState } from "./dtos/repository.dtos";
@@ -75,6 +76,7 @@ import {
   RepositoryService,
   SearchService,
   SettingsService,
+  VectorDatabaseAccessor,
   vectorDatabaseAccessorProvider,
   VectorDatabaseService
 } from "./services/app.service";
@@ -261,8 +263,8 @@ const controllers = [ MiscellaneousController, AdministrationController, Setting
 
 // This module is defined in order to initialize its providers first
 @Module({
-  providers: [ RegularDatabaseService, VectorDatabaseService ],
-  exports: [ RegularDatabaseService, VectorDatabaseService ]
+  providers: [ RegularDatabaseService, VectorDatabaseService, vectorDatabaseAccessorProvider ],
+  exports: [ RegularDatabaseService, VectorDatabaseService, vectorDatabaseAccessorProvider ]
 })
 class PrerequisitesModule implements OnModuleInit, OnModuleDestroy
 {
@@ -285,27 +287,104 @@ class PrerequisitesModule implements OnModuleInit, OnModuleDestroy
 
 }
 
-// This module is defined in order to handle any potential database migration
+// This module is defined in order to handle any potential database migration and upgrades
 @Module({
   imports:
     [
       PrerequisitesModule
     ],
   providers: [ AdministrationService ],
-  exports: [ AdministrationService ]
+  exports: [ PrerequisitesModule, AdministrationService ]
 })
-class MigrationModule implements OnModuleInit, OnModuleDestroy
+class UpgradeModule implements OnModuleInit, OnModuleDestroy
 {
+
+  constructor(private readonly regularDatabaseService: RegularDatabaseService,
+    private readonly vectorDatabaseAccessor: VectorDatabaseAccessor)
+  {
+    logger.debug("Instantiating an UpgradeModule");
+  }
 
   async onModuleInit(): Promise<void>
   {
-    logger.info("The initializing of the MigrationModule is over");
+    await this.upgrade();
+    logger.info("The initializing of the UpgradeModule is over");
   }
 
   async onModuleDestroy(): Promise<void>
   {
-    logger.info("Destroying the MigrationModule");
-    logger.info("Destroyed the MigrationModule");
+    logger.info("Destroying the UpgradeModule");
+    logger.info("Destroyed the UpgradeModule");
+  }
+
+  private async upgrade()
+  {
+    const currentVersion: string = packageJson.version;
+    const previousVersion = await this.regularDatabaseService.prismaClientWrapper.getVersion();
+    try
+    {
+      const actualPreviousVersion = previousVersion ?? "0.17.0";
+      if (currentVersion !== previousVersion)
+      {
+        logger.info(`Migrating from v${actualPreviousVersion} to v${currentVersion}`);
+        await this.vectorDatabaseAccessor.migrate(actualPreviousVersion);
+      }
+    }
+    finally
+    {
+      await this.regularDatabaseService.prismaClientWrapper.setVersion(currentVersion);
+    }
+  }
+
+}
+
+const applicativeProviders = [
+  HostService,
+  NotifierService,
+  NotificationsGateway,
+  SettingsService,
+  ApiSecretService,
+  MiscellaneousService,
+  ExtensionRegistry,
+  ExtensionsUiServer,
+  ExtensionService,
+  MarketplaceService,
+  ExtensionTaskExecutor,
+  RepositoryService,
+  CollectionService,
+  SearchService,
+  ImageService,
+  ImageAnalyzerService,
+  ImageAttachmentService,
+  GenerativeAIService
+];
+
+// This module is defined in order to encapsulate all applicative domain services
+@Module({
+  imports:
+    [
+      UpgradeModule
+    ],
+  providers: applicativeProviders,
+  exports: [ UpgradeModule, ...applicativeProviders ]
+})
+class ApplicativeModule implements OnModuleInit, OnModuleDestroy
+{
+
+  constructor()
+  {
+    logger.debug("Instantiating an ApplicativeModule");
+  }
+
+  async onModuleInit(): Promise<void>
+  {
+    logger.info("The initializing of the ApplicativeModule is over");
+  }
+
+  async onModuleDestroy(): Promise<void>
+  {
+    logger.info("Destroying the ApplicativeModule");
+    logger.info("Destroyed the ApplicativeModule");
   }
 
 }
@@ -409,7 +488,7 @@ export function computeMainModule(withThrotlling: boolean): Type<NestModule>
   }
 
   // The orders in which the providers matter, because we want their "onModuleInit()" method invoked in the following order: "AdministrationService" => "RepositoryService"
-  const providers = [ unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, ...(withThrotlling === false ? [] : [ throttlerGuardProvider ]), vectorDatabaseAccessorProvider, HostService, NotifierService, NotificationsGateway, SettingsService, ApiSecretService, MiscellaneousService, ExtensionRegistry, ExtensionsUiServer, ExtensionService, MarketplaceService, ExtensionTaskExecutor, RepositoryService, CollectionService, SearchService, ImageService, ImageAnalyzerService, ImageAttachmentService, GenerativeAIService ];
+  const mainProviders = [ unexpectedExceptionFilterProvider, classSerializerInterceptorProvider, controllerExceptionFilterProvider, serviceExceptionFilterProvider, validationPipeProvider, authenticationProvider, ...(withThrotlling === false ? [] : [ throttlerGuardProvider ]) ];
 
   @Module({
     imports:
@@ -424,11 +503,10 @@ export function computeMainModule(withThrotlling: boolean): Type<NestModule>
               }
             ]
         }) ]),
-        PrerequisitesModule,
-        MigrationModule
+        ApplicativeModule
       ],
     controllers,
-    providers
+    providers: mainProviders
   })
   class MainModule implements OnModuleInit, OnApplicationBootstrap, OnModuleDestroy, OnApplicationShutdown, NestModule
   {

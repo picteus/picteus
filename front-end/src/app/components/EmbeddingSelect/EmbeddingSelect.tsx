@@ -1,89 +1,126 @@
-import React, { useEffect, useState } from "react";
+import React, { ReactElement, useEffect, useMemo, useState } from "react";
 import { Text } from "@mantine/core";
 
-import { ExtensionIdImageEmbeddingName } from "@picteus/ws-client";
+import { AiModelModality, ExtensionIdImageEmbeddingName } from "@picteus/ws-client";
 
-import { useEmbeddingsNames, useExtensions } from "app/hooks";
+import { useAiModels, useEmbeddingsNames, useExtensions } from "app/hooks";
 import { StorageService } from "app/services";
 import { ExtensionIcon, MenuItemEntry, StandardMenu } from "app/components";
 
 
-type EmbeddingSelectType = {
-  initialEmbeddingName?: ExtensionIdImageEmbeddingName;
-  onSelected: ({ extensionId, name }: ExtensionIdImageEmbeddingName) => void;
-};
+export type EmbeddingSelectPropsType =
+  {
+    readonly initialEmbeddingName?: ExtensionIdImageEmbeddingName;
+    readonly extensionId?: string;
+    readonly requireTextModality?: boolean;
+    readonly onSelected: (selected?: ExtensionIdImageEmbeddingName) => void;
+  };
 
-export default function EmbeddingSelect({ initialEmbeddingName, onSelected }: EmbeddingSelectType)
+export default function EmbeddingSelect(
+  {
+    initialEmbeddingName,
+    extensionId,
+    requireTextModality,
+    onSelected
+  }: EmbeddingSelectPropsType
+): ReactElement
 {
   const { data: embeddingsNames = [] } = useEmbeddingsNames();
   const { data: extensions = [] } = useExtensions();
-  const [ selectedEmbedding, setSelectedEmbedding ] = useState<string | undefined>();
+  const { data: aiModels = [] } = useAiModels();
+  const [ selectedEmbeddingKey, setSelectedEmbeddingKey ] = useState<string | undefined>();
 
-  const extensionIdAndEmbeddingNameSeparator = "|";
+  const separator = "/";
 
-  function splitExtensionIdAndEmbeddingName(string: string): { extensionId: string; name: string }
+  function computeEmbeddingKey(item: ExtensionIdImageEmbeddingName): string
   {
-    const [ extensionId, name ] = string.split(extensionIdAndEmbeddingNameSeparator);
-    return { extensionId, name };
+    return `${item.extensionId}${separator}${item.name}`;
   }
 
-  function mergeExtensionIdEmbeddingName(embeddingName: ExtensionIdImageEmbeddingName): string
+  function getModelDisplayName(item: ExtensionIdImageEmbeddingName): string
   {
-    return `${embeddingName.extensionId}${extensionIdAndEmbeddingNameSeparator}${embeddingName.name}`;
+    const model = aiModels.find(
+      (entry) => entry.extensionId === item.extensionId && entry.technicalId === item.name
+    );
+    return model?.name ?? item.name;
   }
+
+  const filteredEmbeddingsNames = useMemo((): ExtensionIdImageEmbeddingName[] =>
+  {
+    return embeddingsNames.filter((item) =>
+    {
+      if (extensionId && item.extensionId !== extensionId)
+      {
+        return false;
+      }
+      if (requireTextModality)
+      {
+        const model = aiModels.find(
+          (entry) => entry.extensionId === item.extensionId && entry.technicalId === item.name
+        );
+        if (!model?.modalities || model.modalities.includes(AiModelModality.TextEmbeddings) === false)
+        {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [ embeddingsNames, extensionId, requireTextModality, aiModels ]);
 
   useEffect(() =>
   {
-    let selected = initialEmbeddingName ? mergeExtensionIdEmbeddingName(initialEmbeddingName) : StorageService.getClosestImagesEmbeddingName();
-    if (!selected || !embeddingsNames.find(embeddingName => mergeExtensionIdEmbeddingName(embeddingName) === selected))
+    let selected: string | undefined = initialEmbeddingName
+      ? computeEmbeddingKey(initialEmbeddingName)
+      : StorageService.getClosestImagesEmbeddingName();
+
+    if (!selected || !filteredEmbeddingsNames.some((item) => computeEmbeddingKey(item) === selected))
     {
-      if (embeddingsNames.length > 0)
+      if (filteredEmbeddingsNames.length > 0)
       {
-        const firstEmbeddingName = embeddingsNames[0];
-        selected = mergeExtensionIdEmbeddingName(firstEmbeddingName);
+        selected = computeEmbeddingKey(filteredEmbeddingsNames[0]);
       }
       else
       {
         selected = undefined;
       }
     }
-    setSelectedEmbedding(selected);
-    onSelected(selected === undefined ? undefined : splitExtensionIdAndEmbeddingName(selected));
-  }, [ embeddingsNames ]);
 
-  const {
-    extensionId,
-    name
-  } = selectedEmbedding === undefined ? {} : splitExtensionIdAndEmbeddingName(selectedEmbedding);
-  const selectedItem = embeddingsNames.find(embeddingName => embeddingName.extensionId === extensionId && embeddingName.name === name);
+    setSelectedEmbeddingKey(selected);
+    const selectedItem = filteredEmbeddingsNames.find((item) => computeEmbeddingKey(item) === selected);
+    onSelected(selectedItem);
+  }, [ filteredEmbeddingsNames ]);
 
-  function handleSelectEmbedding(extensionId: string, name: string): void
+  function handleSelectEmbedding(item: ExtensionIdImageEmbeddingName): void
   {
-    const selected = mergeExtensionIdEmbeddingName({ extensionId, name });
-    setSelectedEmbedding(selected);
-    onSelected(splitExtensionIdAndEmbeddingName(selected));
-    StorageService.setClosestImagesEmbeddingName(selected);
+    const key = computeEmbeddingKey(item);
+    setSelectedEmbeddingKey(key);
+    onSelected(item);
+    StorageService.setClosestImagesEmbeddingName(key);
   }
+
+  const selectedItem = filteredEmbeddingsNames.find((item) => computeEmbeddingKey(item) === selectedEmbeddingKey);
+  const selectedLabel = selectedItem ? getModelDisplayName(selectedItem) : undefined;
 
   return (
     <StandardMenu
       targetChildren={
         <>
           {selectedItem && <ExtensionIcon idOrExtension={selectedItem.extensionId} size="xs"/>}
-          <Text size="sm">{name}</Text>
+          <Text size="sm">{selectedLabel}</Text>
         </>
       }
       dropdownChildren={
-        embeddingsNames.map((embeddingName) =>
+        filteredEmbeddingsNames.map((embeddingName) =>
         {
-          const extension = extensions.find(anExtension => anExtension.manifest.id === embeddingName.extensionId);
+          const extension = extensions.find((anExtension) => anExtension.manifest.id === embeddingName.extensionId);
+          const label = getModelDisplayName(embeddingName);
           return (
             <MenuItemEntry
-              key={mergeExtensionIdEmbeddingName(embeddingName)}
+              key={computeEmbeddingKey(embeddingName)}
               extensionId={embeddingName.extensionId}
-              label={embeddingName.name}
+              label={label}
               subLabel={extension?.manifest.name || embeddingName.extensionId}
-              onClick={() => handleSelectEmbedding(embeddingName.extensionId, embeddingName.name)}
+              onClick={() => handleSelectEmbedding(embeddingName)}
             />
           );
         })

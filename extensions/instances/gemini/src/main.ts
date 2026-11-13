@@ -5,6 +5,7 @@ import AdmZip from "adm-zip";
 
 import {
   type AiModel,
+  AiModelModality,
   type ApplicationMetadata,
   type CommandParameters,
   Communicator,
@@ -529,7 +530,8 @@ class GeminiExtension extends PicteusExtension
           return {
             technicalId: detail.id,
             name: detail.name ?? detail.id,
-            comment: detail.comment
+            comment: detail.comment,
+            modalities: [ AiModelModality.ImageCaptions, AiModelModality.ImageEligibleTags ]
           };
         }
       );

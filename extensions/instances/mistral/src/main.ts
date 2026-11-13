@@ -1,6 +1,7 @@
 import { Blob, Buffer } from "node:buffer";
 
 import {
+  AiModelModality,
   Communicator,
   type ComputeImageCaption,
   type ComputeImageEligibleTags,
@@ -172,7 +173,8 @@ class MistralExtension extends PicteusExtension
             ({
               technicalId: detail.id,
               name: detail.name,
-              comment: detail.comment
+              comment: detail.comment,
+              modalities: [ AiModelModality.ImageCaptions, AiModelModality.ImageEligibleTags ]
             }))
         }
       );

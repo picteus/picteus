@@ -761,7 +761,7 @@ describe("Repository", () =>
       const extensionId = "extensionId";
       // We introduce fake embeddings for a supposedly existing extension
       await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, extensionId, [ {
-        name: "default",
+        id: "default",
         values: [ 1, 2, 3 ]
       } ]);
       const listener = base.computeEventListener();
@@ -857,7 +857,7 @@ describe("Repository", () =>
       const extensionId = "extensionId";
       // We introduce fake embeddings for a supposedly existing extension
       await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, extensionId, [ {
-        name: "default",
+        id: "default",
         values: [ 1, 2, 3 ]
       } ]);
       const listener = base.computeEventListener();
@@ -990,11 +990,15 @@ describe("Repository", () =>
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
 
-    // We try to watch a repository while it is synchronizing
+    // We try to watch or store an image into a repository while it is synchronizing
     await base.getRepositoryController().synchronize(id);
     await expect(async () =>
     {
       await base.getRepositoryController().watch(id, true);
+    }).rejects.toThrow(new ServiceError(`The repository with id '${id}' is synchronizing`, BAD_REQUEST, base.badParameterCode));
+    await expect(async () =>
+    {
+      await base.getRepositoryController().storeImage(id, "name", undefined, undefined, undefined, undefined, undefined, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
     }).rejects.toThrow(new ServiceError(`The repository with id '${id}' is synchronizing`, BAD_REQUEST, base.badParameterCode));
 
     await base.waitUntilRepositoryReady(id);

@@ -188,6 +188,7 @@ export default function ExtensionConfiguration({
       extension={extension}
       hasCaptionCapability={instructionCapabilities.hasCaptionCapability}
       hasEligibleTagsCapability={instructionCapabilities.hasEligibleTagsCapability}
+      hasEmbeddingsCapability={instructionCapabilities.hasEmbeddingsCapability}
       onValidityChange={setIsInstructionsValid}
       onDirtyChange={setIsInstructionsDirty}
       onLoadingChange={setIsInstructionsLoading}

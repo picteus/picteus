@@ -5,6 +5,7 @@ import {
   Extension,
   ExtensionActivity,
   ExtensionActivityState,
+  ExtensionAiModel,
   ExtensionAndManual,
   ExtensionApiExtensionChangeStateRequest,
   ExtensionApiExtensionInstallRequest,
@@ -341,6 +342,19 @@ export function useResetExtensionSettingsMutation(): UseMutationResult<Extension
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.detail(parameters.id) });
+      }
+    }
+  );
+}
+
+export function useAiModels(): UseQueryResult<ExtensionAiModel[], Error>
+{
+  return useQuery(
+    {
+      queryKey: queryKeys.extensions.aiModels,
+      queryFn: (): Promise<ExtensionAiModel[]> =>
+      {
+        return ExtensionsService.listAiModels();
       }
     }
   );

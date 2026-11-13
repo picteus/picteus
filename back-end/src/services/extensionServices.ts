@@ -43,6 +43,7 @@ import { ExtensionsManager } from "../threads/managers";
 import { AuthenticationGuard, ExtensionApiKey } from "../app.guards";
 import {
   AiModel,
+  AiModelModality,
   applicationXGzipMimeType,
   CaptionInstruction,
   CommandEntity,
@@ -51,6 +52,7 @@ import {
   ConfigurationExtensionCommand,
   ConstantsRegistry,
   EligibleTagsInstruction,
+  EmbeddingInstruction,
   Extension,
   ExtensionActivities,
   ExtensionActivity,
@@ -378,9 +380,12 @@ type CapabilityAdditionalCaptions = WithAiModel & { question: string };
 
 type CapabilityAdditionalEligibleTags = CapabilityAdditionalCaptions & { tags: ImageTag[] };
 
+type CapabilityAdditionalEmbeddings = WithAiModel;
+
 type CapabilityAdditionalParameters =
   { captions: CapabilityAdditionalCaptions[] } |
-  { eligibleTags: CapabilityAdditionalEligibleTags[] };
+  { eligibleTags: CapabilityAdditionalEligibleTags[] } |
+  { embeddings: CapabilityAdditionalEmbeddings[] };
 
 export interface ExtensionSettingsVersions
 {
@@ -484,8 +489,7 @@ export class ExtensionService
   implements OnModuleInit, OnModuleDestroy
 {
 
-  // @ts-ignore
-  private extensionsManager: ExtensionsManager;
+  private extensionsManager?: ExtensionsManager;
 
   private readonly perExtensionIdStates: Map<string, boolean> = new Map<string, boolean>();
 
@@ -588,7 +592,7 @@ export class ExtensionService
         const { id } = value as { id: string };
         const promise = (async () =>
         {
-          await this.extensionsManager.onImageEvent({ imageId: id, action });
+          await this.extensionsManager?.onImageEvent({ imageId: id, action });
           if (action === ImageEventAction.Created || action === ImageEventAction.Updated)
           {
             try
@@ -626,7 +630,11 @@ export class ExtensionService
       await Promise.allSettled(this.pendingImageEventPromises);
       this.pendingImageEventPromises.clear();
     }
-    await this.extensionsManager.destroy();
+    if (this.extensionsManager !== undefined)
+    {
+      await this.extensionsManager.destroy();
+      this.extensionsManager = undefined;
+    }
     AuthenticationGuard.resetExtensionsApiKeys();
     await this.unregisterUnpackedExtensions();
     this.perExtensionIdStates.clear();
@@ -1019,9 +1027,13 @@ export class ExtensionService
     for (let index = 0; index < models.length; index++)
     {
       const model = models[index];
-      parametersChecker.checkString(`[${index}].technicalId`, model.technicalId, FieldLengths.l64, StringNature.TechnicalRelaxed);
+      parametersChecker.checkString(`[${index}].technicalId`, model.technicalId, FieldLengths.l128, StringNature.TechnicalRelaxed);
       parametersChecker.checkString(`[${index}].name`, model.name, FieldLengths.l128, StringNature.Name);
       parametersChecker.checkString(`[${index}].comment`, model.comment, FieldLengths.l1k, StringNature.Free, true);
+      if (model.modalities.length === 0)
+      {
+        parametersChecker.throwBadParameter(`[${index}].modalities`, model.modalities, "it must be a non-empty array");
+      }
     }
 
     const operations: Prisma.PrismaPromise<Prisma.BatchPayload>[] = [ this.regularDatabaseService.aiModel.deleteMany({ where: { extensionId: id } }) ];
@@ -1034,12 +1046,18 @@ export class ExtensionService
     // We overwrite the previous models atomically
     await this.regularDatabaseService.prisma.$transaction(operations);
 
-    // We delete the "CaptionInstruction" and "EligibleTagsInstruction" items which do not have a matching "technicalId" with the latest AI models
-    for (const instructionClass of [ CaptionInstruction, EligibleTagsInstruction ])
+    // We delete the instruction items which do not have a matching "technicalId" with the latest AI models or whose model no longer supports that modality
+    const perTechnicalIdModelsMap = new Map(models.map(model => [ model.technicalId, model ]));
+    for (const instructionClass of [ CaptionInstruction, EligibleTagsInstruction, EmbeddingInstruction ])
     {
-      const constructorClass: ClassConstructor<CaptionInstruction | EligibleTagsInstruction> = instructionClass;
+      const constructorClass: ClassConstructor<CaptionInstruction | EligibleTagsInstruction | EmbeddingInstruction> = instructionClass;
       const instructions = await this.getPersistedSettingsInstructions(id, constructorClass);
-      const filteredInstructions = instructions.filter(instruction => technicalIdsSet.has(instruction.aiModelTechnicalId) === true);
+      const targetModality = instructionClass === CaptionInstruction ? AiModelModality.ImageCaptions : (instructionClass === EligibleTagsInstruction ? AiModelModality.ImageEligibleTags : AiModelModality.ImageEmbeddings);
+      const filteredInstructions = instructions.filter(instruction =>
+      {
+        const model = perTechnicalIdModelsMap.get(instruction.aiModelTechnicalId);
+        return model !== undefined && model.modalities.includes(targetModality);
+      });
       if (filteredInstructions.length !== instructions.length)
       {
         await this.setPersistedSettingsInstructions(id, filteredInstructions, constructorClass);
@@ -1097,6 +1115,22 @@ export class ExtensionService
     return instructions;
   }
 
+  async getEmbeddingInstructions(id: string): Promise<EmbeddingInstruction[]>
+  {
+    logger.info(`Getting the embedding instructions of the extension with id '${id}'`);
+    this.checkExtensionExists(id);
+    return await this.getPersistedSettingsInstructions<EmbeddingInstruction>(id, EmbeddingInstruction);
+  }
+
+  async setEmbeddingInstructions(id: string, embeddingInstructions: EmbeddingInstruction[]): Promise<EmbeddingInstruction[]>
+  {
+    logger.info(`Setting the embedding instructions of the extension with id '${id}'`);
+    this.checkExtensionExists(id);
+    const instructions = await this.checkSettingsInstructions<EmbeddingInstruction>(id, embeddingInstructions, EmbeddingInstruction);
+    await this.setPersistedSettingsInstructions<EmbeddingInstruction>(id, instructions, EmbeddingInstruction);
+    return instructions;
+  }
+
   async synchronize(id: string): Promise<void>
   {
     // TODO: add a start and a stop event, and for that, we need an acknowledgment from the extension for every action
@@ -1147,9 +1181,9 @@ export class ExtensionService
     }
   }
 
-  async runCapability<T>(capability: ManifestCapability, value: object): Promise<CapabilityResult<T>>
+  async runCapability<T>(capability: ManifestCapability, value: object, extensionId?: string): Promise<CapabilityResult<T>>
   {
-    logger.info(`Running the capability with id '${capability.id}'`);
+    logger.info(`Running the capability with id '${capability.id}'${extensionId === undefined ? "" : ` on extension with id '${extensionId}'`}`);
     let eventEntity: EventEntity;
     let action: EventAction;
     let state: string | undefined;
@@ -1169,9 +1203,22 @@ export class ExtensionService
     {
       parametersChecker.throwInternalError(`Cannot operate because no extension with the capability id '${capability.id}' is installed and enabled`);
     }
-    const extension = extensions[0];
-    const extensionId = extension.id;
-    if (this.perExtensionIdConnections.get(extensionId) !== true)
+    let actualExtension: ExtendedManifest;
+    if (extensionId !== undefined)
+    {
+      const target = extensions.find(extension => extension.id === extensionId);
+      if (target === undefined)
+      {
+        parametersChecker.throwBadParameter("extensionId", extensionId, `the extension is not enabled or does not support the '${capability.id}' capability`);
+      }
+      actualExtension = target;
+    }
+    else
+    {
+      actualExtension = extensions[0];
+    }
+    const actualExtensionId = actualExtension.id;
+    if (this.perExtensionIdConnections.get(actualExtensionId) !== true)
     {
       await new Promise<void>((resolve, reject) =>
       {
@@ -1181,10 +1228,10 @@ export class ExtensionService
           if (invoked === false)
           {
             invoked = true;
-            reject(new Error(`The extension with id '${extensionId}' is not connected`));
+            reject(new Error(`The extension with id '${actualExtensionId}' is not connected`));
           }
         }, 10_000);
-        this.runWhenConnected(extensionId, async () =>
+        this.runWhenConnected(actualExtensionId, async () =>
         {
           if (invoked === false)
           {
@@ -1197,9 +1244,9 @@ export class ExtensionService
     }
     return await new Promise<CapabilityResult<T>>((resolve) =>
     {
-      this.notifierService.emit<T>(eventEntity, action, state, value, extensionId, (value: T) =>
+      this.notifierService.emit<T>(eventEntity, action, state, value, actualExtensionId, (value: T) =>
       {
-        resolve({ extensionId, value });
+        resolve({ extensionId: actualExtensionId, value });
       });
     });
   }
@@ -2134,12 +2181,12 @@ export class ExtensionService
     await this.notifyTaskExecutor(manifest, shouldStop === false);
     if (shouldStop === true)
     {
-      await this.extensionsManager.stopProcesses([ id ]);
+      await this.extensionsManager?.stopProcesses([ id ]);
       AuthenticationGuard.unregisterExtensionApiKeys(id);
     }
     else
     {
-      await this.extensionsManager.startProcesses([ AuthenticationGuard.registerExtensionApiKey(id) ]);
+      await this.extensionsManager?.startProcesses([ AuthenticationGuard.registerExtensionApiKey(id) ]);
       if (withSynchronisation === true)
       {
         // We synchronize the images via this extension, once it is resumed
@@ -2277,15 +2324,9 @@ export class ExtensionService
           const featuresImageIds = (await this.regularDatabaseService.imageFeature.findMany({
             select: { imageId: true },
             where: { extensionId: id }
-          })).map((imageFeature) =>
-          {
-            return imageFeature.imageId;
-          });
+          })).map((imageFeature) => imageFeature.imageId);
           const allImageIds = await getAllImageIds();
-          imageIds = allImageIds.filter((id) =>
-          {
-            return featuresImageIds.indexOf(id) === -1;
-          });
+          imageIds = allImageIds.filter((id) => featuresImageIds.indexOf(id) === -1);
           await cleanUpDirtyImageTagOrFeatures(allImageIds, featuresImageIds, async (unexpectedImageIds: string[]) =>
           {
             logger.warn(`Deleting ${unexpectedImageIds} unexpected image feature(s) related to the extension with id '${id}'`);
@@ -2304,15 +2345,9 @@ export class ExtensionService
           const tagsImageIds = (await this.regularDatabaseService.imageTag.findMany({
             select: { imageId: true },
             where: { extensionId: id }
-          })).map((imageTag) =>
-          {
-            return imageTag.imageId;
-          });
+          })).map((imageTag) => imageTag.imageId);
           const allImageIds = await getAllImageIds();
-          imageIds = allImageIds.filter((id) =>
-          {
-            return tagsImageIds.indexOf(id) === -1;
-          });
+          imageIds = allImageIds.filter((id) => tagsImageIds.indexOf(id) === -1);
           await cleanUpDirtyImageTagOrFeatures(allImageIds, tagsImageIds, async (unexpectedImageIds: string[]) =>
           {
             logger.warn(`Deleting ${unexpectedImageIds} unexpected image tag(s) related to the extension with id '${id}'`);
@@ -2330,22 +2365,38 @@ export class ExtensionService
         {
           const withEmbeddingsImageIds = await this.vectorDatabaseAccessor.getImageIds(id);
           const allImageIds = await getAllImageIds();
-          imageIds = allImageIds.filter((id) =>
-          {
-            return withEmbeddingsImageIds.indexOf(id) === -1;
-          });
-          const unexpectedImageIds: string[] = withEmbeddingsImageIds.filter((id) =>
-          {
-            return allImageIds.indexOf(id) === -1;
-          });
+          const unexpectedImageIds: string[] = withEmbeddingsImageIds.filter((imageId) => allImageIds.indexOf(imageId) === -1);
           if (unexpectedImageIds.length > 0)
           {
             // This happens when an image was deleted while its repository was not watching
             logger.warn(`Deleting ${unexpectedImageIds} unexpected image embedding(s) related to the extension with id '${id}'`);
             await this.vectorDatabaseAccessor.deleteImagesEmbeddings(unexpectedImageIds, id);
           }
+          const additionalParameters = await this.computeCapabilityAdditionalParameters(id, capability, false);
+          if (additionalParameters === undefined || !("embeddings" in additionalParameters) || additionalParameters.embeddings.length === 0)
+          {
+            return;
+          }
+          const coveredIdsByModel = new Map<string, Set<string>>();
+          for (const entry of additionalParameters.embeddings)
+          {
+            const coveredIds = new Set(await this.vectorDatabaseAccessor.getImageIds(id, entry.aiModel.technicalId));
+            coveredIdsByModel.set(entry.aiModel.technicalId, coveredIds);
+          }
+          const action: ImageEventAction = fromCapacityToImageEventAction(capability)!;
+          let syncCount = 0;
+          for (const imageId of allImageIds)
+          {
+            const missingEmbeddings = additionalParameters.embeddings.filter(entry => coveredIdsByModel.get(entry.aiModel.technicalId)!.has(imageId) === false);
+            if (missingEmbeddings.length > 0)
+            {
+              syncCount++;
+              await this.synchronizeCapabilityForImage(id, imageId, { embeddings: missingEmbeddings }, action, viaSocket, false);
+            }
+          }
+          logger.info(`Synchronizing ${syncCount} image(s) through the extension with id '${id}' for the capability with id '${capability.id}'`);
+          return;
         }
-          break;
       }
       logger.info(`Synchronizing ${imageIds.length} image(s) through the extension with id '${id}' for the capability with id '${capability.id}'`);
       const action: ImageEventAction = fromCapacityToImageEventAction(capability)!;
@@ -2379,6 +2430,10 @@ export class ExtensionService
       {
         return;
       }
+      if ("embeddings" in additionalParameters && additionalParameters.embeddings.length === 0)
+      {
+        return;
+      }
     }
     logger.debug(`Synchronizing the image with id '${imageId}' for the extension with id '${id}' via the '${action}' action`);
     if (viaSocket === true)
@@ -2401,7 +2456,7 @@ export class ExtensionService
     }
     else
     {
-      await this.extensionsManager.onImageEvent({ imageId, action });
+      await this.extensionsManager?.onImageEvent({ imageId, action });
     }
   }
 
@@ -2471,11 +2526,11 @@ export class ExtensionService
     }
   }
 
-  async getPersistedSettingsInstructions<T extends CaptionInstruction | EligibleTagsInstruction>(id: string, theClass: ClassConstructor<T>): Promise<T[]>
+  async getPersistedSettingsInstructions<T extends CaptionInstruction | EligibleTagsInstruction | EmbeddingInstruction>(id: string, theClass: ClassConstructor<T>): Promise<T[]>
   {
-    const captionInstructionClass: ClassConstructor<CaptionInstruction> = CaptionInstruction;
-    const isForCaptions = theClass === captionInstructionClass;
-    const select = isForCaptions ? { captions: true } : { eligibleTags: true };
+    const isForCaptions = theClass === (CaptionInstruction as any);
+    const isForEligibleTags = theClass === (EligibleTagsInstruction as any);
+    const select = isForCaptions ? { captions: true } : (isForEligibleTags ? { eligibleTags: true } : { embeddings: true });
     const result = await this.regularDatabaseService.extensionSettings.findUnique({
       select: select,
       where: { extensionId: id }
@@ -2484,16 +2539,16 @@ export class ExtensionService
     {
       return [];
     }
-    const values: Prisma.JsonArray = (isForCaptions ? result.captions : result.eligibleTags) as Prisma.JsonArray;
+    const values: Prisma.JsonArray = (isForCaptions ? result.captions : (isForEligibleTags ? result.eligibleTags : (result as any).embeddings)) as Prisma.JsonArray;
     return values === null ? [] : values.map(value => plainToInstanceViaJSON(theClass, value as unknown as T));
   }
 
-  async setPersistedSettingsInstructions<T extends CaptionInstruction | EligibleTagsInstruction>(id: string, instructions: T[], theClass: ClassConstructor<T>): Promise<void>
+  async setPersistedSettingsInstructions<T extends CaptionInstruction | EligibleTagsInstruction | EmbeddingInstruction>(id: string, instructions: T[], theClass: ClassConstructor<T>): Promise<void>
   {
-    const captionInstructionClass: ClassConstructor<CaptionInstruction> = CaptionInstruction;
-    const isForCaptions = theClass === captionInstructionClass;
+    const isForCaptions = theClass === (CaptionInstruction as any);
+    const isForEligibleTags = theClass === (EligibleTagsInstruction as any);
     const value = instanceToPlain<T>(instructions);
-    const update = isForCaptions ? { captions: value } : { eligibleTags: value };
+    const update = isForCaptions ? { captions: value } : (isForEligibleTags ? { eligibleTags: value } : { embeddings: value });
     await this.regularDatabaseService.extensionSettings.upsert({
       where: { extensionId: id },
       create: { extensionId: id, ...update },
@@ -2501,7 +2556,7 @@ export class ExtensionService
     });
   }
 
-  private async checkSettingsInstructions<T extends CaptionInstruction | EligibleTagsInstruction>(id: string, instructions: T[], theClass: ClassConstructor<T>): Promise<T[]>
+  private async checkSettingsInstructions<T extends CaptionInstruction | EligibleTagsInstruction | EmbeddingInstruction>(id: string, instructions: T[], theClass: ClassConstructor<T>): Promise<T[]>
   {
     const technicalIds = instructions.map((entry) => entry.aiModelTechnicalId);
     if (new Set<string>(technicalIds).size !== technicalIds.length)
@@ -2517,9 +2572,31 @@ export class ExtensionService
     for (let index = 0; index < instructions.length; index++)
     {
       const instruction = instructions[index];
-      if (models.find((model) => model.technicalId === instruction.aiModelTechnicalId) === undefined)
+      const model = models.find((m) => m.technicalId === instruction.aiModelTechnicalId);
+      if (model === undefined)
       {
         parametersChecker.throwBadParameter(`[${index}].aiModelTechnicalId`, instruction.aiModelTechnicalId, "there is no AI model with that technical identifier");
+      }
+      if (theClass === (CaptionInstruction as any))
+      {
+        if (model.modalities.includes(AiModelModality.ImageCaptions) === false)
+        {
+          parametersChecker.throwBadParameter(`[${index}].aiModelTechnicalId`, instruction.aiModelTechnicalId, `the AI model does not have the '${AiModelModality.ImageCaptions}' modality`);
+        }
+      }
+      else if (theClass === (EligibleTagsInstruction as any))
+      {
+        if (model.modalities.includes(AiModelModality.ImageEligibleTags) === false)
+        {
+          parametersChecker.throwBadParameter(`[${index}].aiModelTechnicalId`, instruction.aiModelTechnicalId, `the AI model does not have the '${AiModelModality.ImageEligibleTags}' modality`);
+        }
+      }
+      else if (theClass === (EmbeddingInstruction as any))
+      {
+        if (model.modalities.includes(AiModelModality.ImageEmbeddings) === false)
+        {
+          parametersChecker.throwBadParameter(`[${index}].aiModelTechnicalId`, instruction.aiModelTechnicalId, `the AI model does not have the '${AiModelModality.ImageEmbeddings}' modality`);
+        }
       }
     }
     return checkedInstructions.sort((instruction1, instruction2) => instruction1.aiModelTechnicalId.localeCompare(instruction2.aiModelTechnicalId));
@@ -2527,7 +2604,7 @@ export class ExtensionService
 
   private async computeCapabilityAdditionalParameters(id: string, capability: ManifestCapability, appliesOnlyIfIsAuto: boolean): Promise<CapabilityAdditionalParameters | undefined>
   {
-    if (capability.isCaptions() === false && capability.isEligibleTags() === false)
+    if (capability.isCaptions() === false && capability.isEligibleTags() === false && capability.id !== ManifestCapabilityId.ImageEmbeddings)
     {
       return undefined;
     }
@@ -2570,10 +2647,25 @@ export class ExtensionService
       }
       return { eligibleTags };
     }
+    else if (capability.id === ManifestCapabilityId.ImageEmbeddings)
+    {
+      const instructions = await this.getEmbeddingInstructions(id);
+      let embeddings: CapabilityAdditionalEmbeddings[] = [];
+      if (instructions.length > 0)
+      {
+        const models = await this.findAiModels(id);
+        embeddings = instructions.filter(instruction => instruction.enabled === true && (appliesOnlyIfIsAuto === false || instruction.isAuto === true)).map(instruction =>
+        {
+          const aiModel = findAiModel(instruction, models);
+          return { aiModel };
+        });
+      }
+      return { embeddings };
+    }
     return undefined;
   }
 
-  private async findAiModels(extensionId?: string): Promise<ExtensionAiModel[]>
+  async findAiModels(extensionId?: string): Promise<ExtensionAiModel[]>
   {
     const entities = await this.regularDatabaseService.aiModel.findMany({
       where: extensionId === undefined ? undefined : { extensionId },
@@ -2581,7 +2673,7 @@ export class ExtensionService
     });
     return entities.map((entity) =>
     {
-      return new ExtensionAiModel(entity.extensionId, entity.technicalId, entity.name, entity.creationDate.getTime(), entity.comment === null ? undefined : entity.comment);
+      return new ExtensionAiModel(entity.extensionId, entity.technicalId, entity.name, entity.comment === null ? undefined : entity.comment, entity.modalities as unknown as AiModelModality[], entity.creationDate.getTime());
     });
   }
 

@@ -1,6 +1,7 @@
 import { Blob, Buffer } from "node:buffer";
 
 import {
+  AiModelModality,
   Communicator,
   type ComputeImageCaption,
   type ComputeImageEligibleTags,
@@ -182,7 +183,8 @@ class LlamaCppExtension extends PicteusExtension
       aiModel: details.map((detail) => ({
         technicalId: detail.id,
         name: detail.name,
-        comment: detail.comment
+        comment: detail.comment,
+        modalities: [ AiModelModality.ImageCaptions, AiModelModality.ImageEligibleTags ]
       }))
     });
   }

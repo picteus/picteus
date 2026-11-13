@@ -1,8 +1,9 @@
 import {
+  AiModelModality,
   color,
   CommandParameters,
   Communicator,
-  type ImageEmbedding,
+  type ComputeImageEmbedding,
   type ImageFeature,
   ImageFeatureFormat,
   ImageFeatureType,
@@ -24,6 +25,8 @@ const DOMINANT_COLOR_FEATURE_NAME_PREFIX = "dominant-colors";
 
 class ColorEmbeddingsExtension extends PicteusExtension
 {
+
+  private static readonly colorTechnicalId = "color";
 
   private colorLibrary: ColorLibrary;
 
@@ -54,9 +57,12 @@ class ColorEmbeddingsExtension extends PicteusExtension
     await this.storeFeatures(imageId, await this.extractColors(imageId));
   }
 
-  protected async onComputeImageEmbeddings(_communicator: Communicator, imageId: string): Promise<void>
+  protected async onComputeImageEmbeddings(_communicator: Communicator, imageId: string, embeddings: ComputeImageEmbedding[]): Promise<void>
   {
-    await this.storeEmbeddings(imageId, await this.extractColors(imageId));
+    if (embeddings.some((embedding) => embedding.aiModel.technicalId === ColorEmbeddingsExtension.colorTechnicalId))
+    {
+      await this.storeEmbeddings(imageId, await this.extractColors(imageId));
+    }
   }
 
   protected async onImagesCommand(communicator: Communicator, commandId: string, imageIds: string[], _parameters: CommandParameters): Promise<void>
@@ -73,17 +79,10 @@ class ColorEmbeddingsExtension extends PicteusExtension
   private async storeEmbeddings(imageId: string, colors: RGBColor[]): Promise<void>
   {
     const embeddingValues = generateColorEmbedding(colors, this.colorCount);
-    const existingEmbeddings: ImageEmbedding[] = (await this.getImageApi().imageGetEmbeddings({
-      id: imageId,
-      extensionId: this.extensionId
-    })).embeddings;
-    const embeddingsByName = new Map(existingEmbeddings.map((embedding) => [ embedding.name, embedding ]));
-    const embeddingName = "color";
-    embeddingsByName.set(embeddingName, { name: embeddingName, values: embeddingValues });
-    await this.getImageApi().imageSetEmbeddings({
+    await this.getImageApi().imageEnsureEmbeddings({
       id: imageId,
       extensionId: this.extensionId,
-      imageEmbedding: Array.from(embeddingsByName.values())
+      imageEmbedding: [ { id: ColorEmbeddingsExtension.colorTechnicalId, values: embeddingValues } ]
     });
   }
 
@@ -142,6 +141,22 @@ class ColorEmbeddingsExtension extends PicteusExtension
   {
     this.colorLibrary = value["colorLibrary"] as ColorLibrary ?? "color-thief";
     this.colorCount = value["colorCount"] ?? 8;
+    await this.sendAvailableAiModels();
+  }
+
+  private async sendAvailableAiModels(): Promise<void>
+  {
+    await this.getExtensionApi().extensionSetAiModels({
+      id: this.extensionId,
+      aiModel: [
+        {
+          technicalId: ColorEmbeddingsExtension.colorTechnicalId,
+          name: "Color",
+          comment: "Color embedding based on dominant RGB palette",
+          modalities: [ AiModelModality.ImageEmbeddings ]
+        }
+      ]
+    });
   }
 
 }

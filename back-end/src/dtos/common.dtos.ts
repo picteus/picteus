@@ -66,6 +66,8 @@ export const technicalShortRelaxedPattern = computeRegexPattern(alphaNumericPlus
 
 export const technicalLongRelaxedPattern = computeRegexPattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.l64);
 
+export const technicalVeryLongRelaxedPattern = computeRegexPattern(alphaNumericPlusAdditionalAuthorizedCharactersPattern, FieldLengths.l128);
+
 const noProtocolUriPathPattern = "[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
 export const uriPathPattern = `^(https?://|/?)${noProtocolUriPathPattern}+$`;
@@ -166,6 +168,16 @@ export const technicalLongRelaxedSchema: SchemaObject =
     minLength: 1,
     maxLength: FieldLengths.l64,
     example: "a:relaxed/id"
+  };
+
+export const technicalVeryLongRelaxedSchema: SchemaObject =
+  {
+    description: "A relaxed very long technical identifier",
+    type: "string",
+    pattern: technicalVeryLongRelaxedPattern,
+    minLength: 1,
+    maxLength: FieldLengths.l128,
+    example: "a:relaxed/very/long/id"
   };
 
 export const technicalSchema: SchemaObject =

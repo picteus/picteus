@@ -73,24 +73,24 @@ export function useImageAllEmbeddings(
 export function useClosestImages(
   imageId: string,
   extensionId: string,
-  name: string,
+  aiModelTechnicalId: string,
   count: number,
   enabled = true
 ): UseQueryResult<ImageDistance[], Error>
 {
   return useQuery(
     {
-      queryKey: queryKeys.images.closestImages(imageId, extensionId, name, count),
+      queryKey: queryKeys.images.closestImages(imageId, extensionId, aiModelTechnicalId, count),
       queryFn: (): Promise<ImageDistance[]> =>
       {
         return ImageService.getClosestImages({
           id: imageId,
           extensionId,
-          name,
+          aiModelTechnicalId,
           count
         });
       },
-      enabled: Boolean(enabled && imageId && extensionId && name)
+      enabled: Boolean(enabled && imageId && extensionId && aiModelTechnicalId)
     }
   );
 }

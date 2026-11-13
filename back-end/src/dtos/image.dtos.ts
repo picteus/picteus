@@ -45,10 +45,10 @@ import {
   type Json,
   namePattern,
   repositoryIdSchema,
-  technicalLongRelaxedPattern,
-  technicalLongRelaxedSchema,
   technicalShortRelaxedPattern,
   technicalShortRelaxedSchema,
+  technicalVeryLongRelaxedPattern,
+  technicalVeryLongRelaxedSchema,
   toMimeType,
   uniqueIdPattern,
   uriPathPattern,
@@ -688,7 +688,7 @@ export class ImageFeature
 
   @ApiProperty(
     {
-      ...technicalLongRelaxedSchema,
+      ...technicalVeryLongRelaxedSchema,
       description: "The image feature name",
       type: String,
       required: false,
@@ -696,9 +696,9 @@ export class ImageFeature
     }
   )
   @IsString()
-  @Matches(technicalLongRelaxedPattern)
+  @Matches(technicalVeryLongRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.l64)
+  @MaxLength(FieldLengths.l128)
   @IsOptional()
   @Expose()
   readonly name?: string;
@@ -822,7 +822,7 @@ export class ExtensionImageFeatureName
 
   @ApiProperty(
     {
-      ...technicalLongRelaxedSchema,
+      ...technicalVeryLongRelaxedSchema,
       description: "The image feature name",
       type: String,
       required: true,
@@ -830,9 +830,9 @@ export class ExtensionImageFeatureName
     }
   )
   @IsString()
-  @Matches(technicalLongRelaxedPattern)
+  @Matches(technicalVeryLongRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.l64)
+  @MaxLength(FieldLengths.l128)
   @Expose()
   readonly name: string;
 
@@ -889,33 +889,37 @@ export class ExtensionImageTag
  */
 export type ImageEmbeddingValue = number;
 
-@ApiSchema({ description: "A vectorial representation of an image, i.e. an image embedding vector, plus a name for that representation" })
+@ApiSchema({ description: "A vectorial representation of an image, i.e. an image embedding vector, plus an identifier for that representation" })
 export class ImageEmbedding
 {
+
+  // The maximum number of embeddings an image can have for a single extension
+  static readonly PER_EXTENSION_EMBEDDINGS_MAXIMUM = 16;
 
   // The value for the "VGG-16 / VGG-19" models, https://en.wikipedia.org/wiki/VGGNet, which is known to be the second largest commonly used image embeddings dimension, after the "ViT-22B" with a dimension of 6144, https://arxiv.org/abs/2302.05442
   static readonly DIMENSION_MAXIMUM = 4_096;
 
-  constructor(name: string, values: ImageEmbeddingValue[])
+  constructor(id: string, values: ImageEmbeddingValue[])
   {
-    this.name = name;
+    this.id = id;
     this.values = values;
   }
 
   @ApiProperty(
     {
-      ...technicalShortRelaxedSchema,
-      description: "The image embedding name",
+      ...technicalVeryLongRelaxedSchema,
+      description: "The image embedding identifier",
       type: String,
       required: true
     }
   )
   @IsString()
-  @Matches(technicalShortRelaxedPattern)
+  @Matches(technicalVeryLongRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.l32)
+  @MaxLength(FieldLengths.l128)
+  @Transform(({ obj, value }) => value ?? obj?.name)
   @Expose()
-  readonly name: string;
+  readonly id: string;
 
   @ApiProperty(
     {
@@ -1001,16 +1005,16 @@ export class ExtensionIdImageEmbeddingName
 
   @ApiProperty(
     {
-      ...technicalShortRelaxedSchema,
+      ...technicalVeryLongRelaxedSchema,
       description: "The embedding name",
       type: String,
       required: true
     }
   )
   @IsString()
-  @Matches(technicalShortRelaxedPattern)
+  @Matches(technicalVeryLongRelaxedPattern)
   @MinLength(1)
-  @MaxLength(FieldLengths.l32)
+  @MaxLength(FieldLengths.l128)
   @Expose()
   readonly name: string;
 

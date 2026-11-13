@@ -20,6 +20,7 @@ import {
   useSynchronizeExtension,
   useUninstallExtensionMutation
 } from "app/hooks";
+import { hasExtensionSettings } from "../ExtensionConfiguration/components";
 
 
 export type ExtensionActionsType = {
@@ -27,7 +28,7 @@ export type ExtensionActionsType = {
   onUpdate: (extension: Extension) => void;
   onConfiguration: (extension: Extension) => void;
   onUninstalled: () => void;
-}
+};
 
 export default function ExtensionActions({
   extension,
@@ -45,6 +46,13 @@ export default function ExtensionActions({
   const hasEligibleCapabilities = useMemo<boolean>(() =>
   {
     return ExtensionsService.computeCapabilities(extension).length > 0;
+  }, [ extension ]);
+
+  const isConfigurationAvailable = useMemo<boolean>(() =>
+  {
+    const hasSchemaSettings = hasExtensionSettings(extension);
+    const instructionCapabilities = ExtensionsService.computeInstructionCapabilities(extension);
+    return hasSchemaSettings || instructionCapabilities.hasAnyInstructionCapability;
   }, [ extension ]);
 
   const iconSizeAndStroke = { size: 20, stroke: 1 };
@@ -110,7 +118,7 @@ export default function ExtensionActions({
           size="md"
           variant="default"
           onClick={() => onConfiguration(extension)}
-          disabled={extension.state === ExtensionState.Paused || extension.manifest.settings === undefined || extension.manifest.settings["properties"] === undefined}
+          disabled={extension.state === ExtensionState.Paused || isConfigurationAvailable === false}
         >
           <IconAdjustmentsHorizontal {...iconSizeAndStroke} />
         </ActionIcon>

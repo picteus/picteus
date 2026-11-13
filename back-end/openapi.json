@@ -1085,6 +1085,104 @@
         ]
       }
     },
+    "/extension/{id}/getEmbeddingInstructions": {
+      "get": {
+        "description": "Returns the embedding instructions declared for an extension.",
+        "operationId": "extension_getEmbeddingInstructions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The embedding instructions for the extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmbeddingInstruction"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the embedding instructions for an extension",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
+    "/extension/{id}/setEmbeddingInstructions": {
+      "put": {
+        "description": "Overwrites the embedding instructions declared for an extension.",
+        "operationId": "extension_setEmbeddingInstructions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The embedding instructions for the extension",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EmbeddingInstruction"
+                },
+                "minItems": 0,
+                "maxItems": 256
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The embedding instructions for the extension",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmbeddingInstruction"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sets the embedding instructions for an extension",
+        "tags": [
+          "extension"
+        ]
+      }
+    },
     "/extension/{id}/synchronize": {
       "put": {
         "description": "Iterates over all images available in the repositories and asks the extension to operate its work if the image is not indexed by it.",
@@ -3996,7 +4094,9 @@
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/ImageEmbedding"
-                }
+                },
+                "minItems": 0,
+                "maxItems": 16
               }
             }
           }
@@ -4007,6 +4107,67 @@
           }
         },
         "summary": "Sets the embeddings of an image",
+        "tags": [
+          "image"
+        ]
+      }
+    },
+    "/image/{id}/ensureEmbeddings": {
+      "put": {
+        "description": "Ensures the given embeddings for an image and an extension without removing existing embeddings of other collections.",
+        "operationId": "image_ensureEmbeddings",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The image identifier",
+            "schema": {
+              "description": "An image identifier",
+              "type": "string",
+              "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+              "minLength": 36,
+              "maxLength": 36,
+              "example": "fb6af249-1061-48a0-9e47-026d7428d709"
+            }
+          },
+          {
+            "name": "extensionId",
+            "required": true,
+            "in": "query",
+            "description": "The extension identifier",
+            "schema": {
+              "description": "An extension identifier",
+              "type": "string",
+              "pattern": "^[a-z0-9A-Z-_.]{1,32}$",
+              "minLength": 1,
+              "maxLength": 32,
+              "example": "extension-id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The image embeddings",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ImageEmbedding"
+                },
+                "minItems": 1,
+                "maxItems": 16
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No content"
+          }
+        },
+        "summary": "Ensures the image embeddings",
         "tags": [
           "image"
         ]
@@ -4046,10 +4207,10 @@
             }
           },
           {
-            "name": "name",
+            "name": "aiModelTechnicalId",
             "required": true,
             "in": "query",
-            "description": "The name of the embeddings",
+            "description": "The AI model technical identifier",
             "schema": {
               "type": "string"
             }
@@ -4222,10 +4383,10 @@
             }
           },
           {
-            "name": "name",
+            "name": "aiModelTechnicalId",
             "required": true,
             "in": "query",
-            "description": "The name of the embeddings",
+            "description": "The AI model technical identifier",
             "schema": {
               "type": "string"
             }
@@ -5754,15 +5915,25 @@
           "value"
         ]
       },
+      "AiModelModality": {
+        "type": "string",
+        "enum": [
+          "image.captions",
+          "image.eligibleTags",
+          "image.embeddings",
+          "text.embeddings"
+        ],
+        "description": "The task modalities the AI model is compatible with"
+      },
       "AiModel": {
         "type": "object",
         "properties": {
           "technicalId": {
             "type": "string",
             "description": "The model technical identifier, unique within the extension",
-            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
             "minLength": 1,
-            "maxLength": 64,
+            "maxLength": 128,
             "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
           },
           "name": {
@@ -5779,12 +5950,25 @@
             "minLength": 1,
             "maxLength": 1024,
             "example": "Vision model used for captioning"
+          },
+          "modalities": {
+            "type": "array",
+            "description": "The task modalities the AI model is compatible with",
+            "minItems": 1,
+            "example": [
+              "image.embeddings",
+              "text.embeddings"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AiModelModality"
+            }
           }
         },
         "description": "An AI model declared by an extension",
         "required": [
           "technicalId",
-          "name"
+          "name",
+          "modalities"
         ]
       },
       "ExtensionAiModel": {
@@ -5793,9 +5977,9 @@
           "technicalId": {
             "type": "string",
             "description": "The model technical identifier, unique within the extension",
-            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
             "minLength": 1,
-            "maxLength": 64,
+            "maxLength": 128,
             "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
           },
           "name": {
@@ -5812,6 +5996,18 @@
             "minLength": 1,
             "maxLength": 1024,
             "example": "Vision model used for captioning"
+          },
+          "modalities": {
+            "type": "array",
+            "description": "The task modalities the AI model is compatible with",
+            "minItems": 1,
+            "example": [
+              "image.embeddings",
+              "text.embeddings"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AiModelModality"
+            }
           },
           "extensionId": {
             "type": "string",
@@ -5832,6 +6028,7 @@
         "required": [
           "technicalId",
           "name",
+          "modalities",
           "extensionId",
           "creationDate"
         ]
@@ -5842,17 +6039,10 @@
           "aiModelTechnicalId": {
             "type": "string",
             "description": "The technical identifier of the AI model to use",
-            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
             "minLength": 1,
-            "maxLength": 64,
+            "maxLength": 128,
             "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
-          },
-          "question": {
-            "type": "string",
-            "description": "The question submitted to the AI model to produce the caption or the eligible tags",
-            "minLength": 1,
-            "maxLength": 1024,
-            "example": "Describe this image in one sentence"
           },
           "isAuto": {
             "type": "boolean",
@@ -5863,14 +6053,21 @@
             "type": "boolean",
             "description": "Whether this instruction is active",
             "example": true
+          },
+          "question": {
+            "type": "string",
+            "description": "The question submitted to the AI model to produce the caption or the eligible tags",
+            "minLength": 1,
+            "maxLength": 1024,
+            "example": "Describe this image in one sentence"
           }
         },
         "description": "An instruction for computing captions with an AI model",
         "required": [
           "aiModelTechnicalId",
-          "question",
           "isAuto",
-          "enabled"
+          "enabled",
+          "question"
         ]
       },
       "EligibleTagsInstruction": {
@@ -5879,17 +6076,10 @@
           "aiModelTechnicalId": {
             "type": "string",
             "description": "The technical identifier of the AI model to use",
-            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
             "minLength": 1,
-            "maxLength": 64,
+            "maxLength": 128,
             "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
-          },
-          "question": {
-            "type": "string",
-            "description": "The question submitted to the AI model to produce the caption or the eligible tags",
-            "minLength": 1,
-            "maxLength": 1024,
-            "example": "Describe this image in one sentence"
           },
           "isAuto": {
             "type": "boolean",
@@ -5900,6 +6090,13 @@
             "type": "boolean",
             "description": "Whether this instruction is active",
             "example": true
+          },
+          "question": {
+            "type": "string",
+            "description": "The question submitted to the AI model to produce the caption or the eligible tags",
+            "minLength": 1,
+            "maxLength": 1024,
+            "example": "Describe this image in one sentence"
           },
           "tags": {
             "description": "The candidate tags the AI model picks from",
@@ -5922,10 +6119,39 @@
         "description": "An instruction for computing eligible tags with an AI model",
         "required": [
           "aiModelTechnicalId",
-          "question",
           "isAuto",
           "enabled",
+          "question",
           "tags"
+        ]
+      },
+      "EmbeddingInstruction": {
+        "type": "object",
+        "properties": {
+          "aiModelTechnicalId": {
+            "type": "string",
+            "description": "The technical identifier of the AI model to use",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
+            "minLength": 1,
+            "maxLength": 128,
+            "example": "ggml-org/gemma-4-E2B-it-GGUF:Q8_0"
+          },
+          "isAuto": {
+            "type": "boolean",
+            "description": "Whether the instruction should run automatically on image indexing",
+            "example": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether this instruction is active",
+            "example": true
+          }
+        },
+        "description": "An instruction for computing embeddings with an AI model",
+        "required": [
+          "aiModelTechnicalId",
+          "isAuto",
+          "enabled"
         ]
       },
       "SearchOriginNature": {
@@ -6802,9 +7028,9 @@
           "name": {
             "type": "string",
             "description": "The image feature name",
-            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
             "minLength": 1,
-            "maxLength": 64,
+            "maxLength": 128,
             "example": "field"
           }
         },
@@ -6856,10 +7082,10 @@
           "name": {
             "type": "string",
             "description": "The embedding name",
-            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,32}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
             "minLength": 1,
-            "maxLength": 32,
-            "example": "a:relaxed/id"
+            "maxLength": 128,
+            "example": "a:relaxed/very/long/id"
           }
         },
         "description": "An extension identifier, plus an embedding name",
@@ -7135,9 +7361,9 @@
           "name": {
             "type": "string",
             "description": "The image feature name",
-            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
             "minLength": 1,
-            "maxLength": 64,
+            "maxLength": 128,
             "example": "field"
           },
           "value": {
@@ -7192,9 +7418,9 @@
           "name": {
             "type": "string",
             "description": "The image feature name",
-            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,64}$",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
             "minLength": 1,
-            "maxLength": 64,
+            "maxLength": 128,
             "example": "field"
           },
           "value": {
@@ -7835,13 +8061,13 @@
       "ImageEmbedding": {
         "type": "object",
         "properties": {
-          "name": {
+          "id": {
             "type": "string",
-            "description": "The image embedding name",
-            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,32}$",
+            "description": "The image embedding identifier",
+            "pattern": "^[a-z0-9A-Z-_.:;|/]{1,128}$",
             "minLength": 1,
-            "maxLength": 32,
-            "example": "a:relaxed/id"
+            "maxLength": 128,
+            "example": "a:relaxed/very/long/id"
           },
           "values": {
             "description": "The image embeddings vector",
@@ -7854,9 +8080,9 @@
             }
           }
         },
-        "description": "A vectorial representation of an image, i.e. an image embedding vector, plus a name for that representation",
+        "description": "A vectorial representation of an image, i.e. an image embedding vector, plus an identifier for that representation",
         "required": [
-          "name",
+          "id",
           "values"
         ]
       },

@@ -19,10 +19,10 @@ type TextToImagesFormPayload = {
 };
 
 type TextToImageType = {
-  extensionId: string;
+  readonly extensionId?: string;
 };
 
-export default function TextToImages({ extensionId: _extensionId }: TextToImageType)
+export default function TextToImages({ extensionId }: TextToImageType)
 {
   const [ t ] = useTranslation();
   const [ images, setImages ] = useState<ImageWithCaption[]>([]);
@@ -56,7 +56,7 @@ export default function TextToImages({ extensionId: _extensionId }: TextToImageT
     }
     const parameters: ImageApiImageTextToImagesRequest = {
       ...values,
-      name: embeddingName.name,
+      aiModelTechnicalId: embeddingName.name,
       extensionId: embeddingName.extensionId
     };
     void load(parameters);
@@ -123,7 +123,11 @@ export default function TextToImages({ extensionId: _extensionId }: TextToImageT
               }}
             />
             <Input.Wrapper label={t("field.name")}>
-              <EmbeddingSelect onSelected={setEmbeddingName}/>
+              <EmbeddingSelect
+                extensionId={extensionId}
+                requireTextModality={true}
+                onSelected={setEmbeddingName}
+              />
             </Input.Wrapper>
             <NumberInput
               min={1}

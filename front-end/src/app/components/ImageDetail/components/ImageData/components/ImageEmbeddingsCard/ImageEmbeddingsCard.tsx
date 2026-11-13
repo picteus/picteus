@@ -7,7 +7,7 @@ import { ExtensionImageEmbeddings, Image } from "@picteus/ws-client";
 
 import { ViewMode } from "types";
 import { useActionModalContext } from "app/context";
-import { useClosestImages } from "app/hooks";
+import { useAiModels, useClosestImages } from "app/hooks";
 import { ClosestEmbeddingsImages, Common, UiContainerView } from "app/components";
 
 import ImageDataCard from "../ImageDataCard/ImageDataCard.tsx";
@@ -66,8 +66,9 @@ export default function ImageEmbeddingsCard({
 {
   const [ t ] = useTranslation();
   const { addModal } = useActionModalContext();
+  const { data: aiModels = [] } = useAiModels();
 
-  const handleExploreSimilar = useCallback((extensionId: string, modelName: string): void =>
+  const handleExploreSimilar = useCallback((extensionId: string, modelId: string): void =>
   {
     addModal({
       isStackable: true,
@@ -78,7 +79,7 @@ export default function ImageEmbeddingsCard({
         <ClosestEmbeddingsImages
           image={image}
           viewMode={viewMode}
-          initialEmbeddingName={{ extensionId, name: modelName }}
+          initialEmbeddingName={{ extensionId, name: modelId }}
         />
       )
     });
@@ -112,11 +113,12 @@ export default function ImageEmbeddingsCard({
               <Stack gap="sm">
                 {extensionEmbeddings.embeddings.map((embedding) =>
                 {
+                  const modelDisplayName = aiModels.find((model) => model.extensionId === embedding.id && model.technicalId === extensionEmbeddings.id);
                   return (
-                    <Box key={`${extensionEmbeddings.id}-${embedding.name}`}>
+                    <Box key={`${extensionEmbeddings.id}-${embedding.id}`}>
                       <ExtensionItemHeader
                         extensionId={extensionEmbeddings.id}
-                        name={embedding.name}
+                        name={modelDisplayName?.name}
                         hasSingleExtension={embeddings.length === 1}
                         rightSection={(
                           <Anchor
@@ -124,7 +126,7 @@ export default function ImageEmbeddingsCard({
                             c="blue"
                             onClick={() =>
                             {
-                              handleExploreSimilar(extensionEmbeddings.id, embedding.name);
+                              handleExploreSimilar(extensionEmbeddings.id, embedding.id);
                             }}
                             style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}
                           >
@@ -136,7 +138,7 @@ export default function ImageEmbeddingsCard({
                       <EmbeddingModelSection
                         image={image}
                         extensionId={extensionEmbeddings.id}
-                        modelName={embedding.name}
+                        modelName={embedding.id}
                         viewMode={viewMode}
                         isOpened={isOpened}
                       />

@@ -65,6 +65,7 @@ import {
   CommandEntity,
   ComputedImageFormat,
   EligibleTagsInstruction,
+  EmbeddingInstruction,
   Extension,
   ExtensionActivities,
   ExtensionActivity,
@@ -1015,6 +1016,71 @@ export class ExtensionController
       throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
     }
     return await this.extensionService.setEligibleTagsInstructions(id, eligibleTagsInstructions);
+  }
+
+  @Get(":id/getEmbeddingInstructions")
+  @ApiOperation(
+    {
+      summary: "Gets the embedding instructions for an extension",
+      description: "Returns the embedding instructions declared for an extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The embedding instructions for the extension",
+      type: EmbeddingInstruction,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionSettingsRead ]))
+  async getEmbeddingInstructions(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType): Promise<EmbeddingInstruction[]>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.extensionService.getEmbeddingInstructions(id);
+  }
+
+  @Put(":id/setEmbeddingInstructions")
+  @ApiOperation(
+    {
+      summary: "Sets the embedding instructions for an extension",
+      description: "Overwrites the embedding instructions declared for an extension."
+    }
+  )
+  @ApiParam({ name: "id", description: "The extension identifier", schema: extensionIdSchema, required: true })
+  @ApiBody({
+    description: "The embedding instructions for the extension",
+    schema:
+      {
+        type: "array",
+        items: { $ref: getSchemaPath(EmbeddingInstruction) },
+        minItems: 0,
+        maxItems: EmbeddingInstruction.PER_EXTENSION_EMBEDDING_INSTRUCTIONS_MAXIMUM
+      },
+    required: true
+  })
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The embedding instructions for the extension",
+      type: EmbeddingInstruction,
+      isArray: true
+    }
+  )
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ExtensionSettingsWrite ]))
+  async setEmbeddingInstructions(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: ExtensionIdType, @Body(new ParseArrayPipe({
+    items: EmbeddingInstruction, exceptionFactory
+  })) embeddingInstructions: EmbeddingInstruction[]): Promise<EmbeddingInstruction[]>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== id)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.extensionService.setEmbeddingInstructions(id, embeddingInstructions);
   }
 
   @Put(":id/synchronize")
@@ -2347,7 +2413,12 @@ export class ImageController
     }
   )
   @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
-  @ApiQuery({ name: "shouldDeleteFile", description: "Indicates whether the image back-end file should be also deleted", type: Boolean, required: false })
+  @ApiQuery({
+    name: "shouldDeleteFile",
+    description: "Indicates whether the image back-end file should be also deleted",
+    type: Boolean,
+    required: false
+  })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageDelete ]))
@@ -2809,11 +2880,19 @@ export class ImageController
     schema: extensionIdSchema,
     required: true
   })
-  @ApiBody({ description: "The image embeddings", type: [ ImageEmbedding ], required: true })
+  @ApiBody({
+    description: "The image embeddings", schema:
+      {
+        type: "array",
+        items: { $ref: getSchemaPath(ImageEmbedding) },
+        minItems: 0,
+        maxItems: ImageEmbedding.PER_EXTENSION_EMBEDDINGS_MAXIMUM
+      },
+    required: true
+  })
   @HttpCode(NO_CONTENT)
   @ApiResponse(noContentApiResponseOptions)
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageEmbeddingWrite ]))
-  @Throttle({ default: { ttl: 1_000, limit: 10 } })
   async setEmbeddings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body(new ParseArrayPipe({ items: ImageEmbedding })) embeddings: ImageEmbedding[]): Promise<void>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
@@ -2821,6 +2900,46 @@ export class ImageController
       throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
     }
     return await this.imageService.setEmbeddings(id, extensionId, embeddings);
+  }
+
+  @Put(":id/ensureEmbeddings")
+  @ApiOperation(
+    {
+      summary: "Ensures the image embeddings",
+      description: "Ensures the given embeddings for an image and an extension without removing existing embeddings of other collections."
+    }
+  )
+  @ApiParam({ name: "id", description: "The image identifier", schema: imageIdSchema, required: true })
+  @ApiQuery({
+    name: "extensionId",
+    description: "The extension identifier",
+    schema: extensionIdSchema,
+    required: true
+  })
+  @ApiBody({
+    description: "The image embeddings",
+    schema:
+      {
+        type: "array",
+        items: { $ref: getSchemaPath(ImageEmbedding) },
+        minItems: 1,
+        maxItems: ImageEmbedding.PER_EXTENSION_EMBEDDINGS_MAXIMUM
+      },
+    required: true
+  })
+  @HttpCode(NO_CONTENT)
+  @ApiResponse(noContentApiResponseOptions)
+  @CheckPolicies(withOneOfPolicies([ ApiScope.ImageEmbeddingWrite ]))
+  async ensureEmbeddings(@RequestPolicyContext() policyContext: PolicyContext, @Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Body(new ParseArrayPipe({
+    items: ImageEmbedding,
+    exceptionFactory
+  })) embeddings: ImageEmbedding[]): Promise<void>
+  {
+    if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
+    {
+      throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
+    }
+    return await this.imageService.setEmbeddings(id, extensionId, embeddings, true);
   }
 
   @Get(":id/closestImages")
@@ -2838,8 +2957,8 @@ export class ImageController
     required: true
   })
   @ApiQuery({
-    name: "name",
-    description: "The name of the embeddings",
+    name: "aiModelTechnicalId",
+    description: "The AI model technical identifier",
     type: String,
     required: true
   })
@@ -2860,9 +2979,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async closestImages(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("name") name: string, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
+  async closestImages(@Param("id") id: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("aiModelTechnicalId") aiModelTechnicalId: string, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
   {
-    return await this.imageService.closestImages(id, extensionId, name, count);
+    return await this.imageService.closestImages(id, extensionId, aiModelTechnicalId, count);
   }
 
   @Get(":id/collectionIds")
@@ -2930,8 +3049,8 @@ export class ImageController
     required: true
   })
   @ApiQuery({
-    name: "name",
-    description: "The name of the embeddings",
+    name: "aiModelTechnicalId",
+    description: "The AI model technical identifier",
     type: String,
     required: true
   })
@@ -2945,9 +3064,9 @@ export class ImageController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.ImageRead ]))
-  async textToImages(@Query("text") text: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("name") name: string, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
+  async textToImages(@Query("text") text: string, @Query("extensionId") extensionId: ExtensionIdType, @Query("aiModelTechnicalId") aiModelTechnicalId: string, @Query("count", ParseIntPipe) count: number): Promise<ImageDistances>
   {
-    return await this.imageService.textToImages(text, extensionId, name, count);
+    return await this.imageService.textToImages(text, extensionId, aiModelTechnicalId, count);
   }
 
   @Put("format")

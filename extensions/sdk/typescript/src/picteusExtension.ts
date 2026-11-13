@@ -60,6 +60,11 @@ export type ComputeImageEligibleTags =
     tags: string[];
   };
 
+export type ComputeImageEmbedding =
+  {
+    aiModel: AiModel;
+  };
+
 export class CommandError extends Error
 {
 
@@ -514,7 +519,8 @@ export class PicteusExtension
     }
     else if (event === EventName.ImageComputeEmbeddings)
     {
-      return await this.onComputeImageEmbeddings(communicator, this.extractEventValueId(value));
+      const embeddings: ComputeImageEmbedding[] = value["embeddings"] ?? [];
+      return await this.onComputeImageEmbeddings(communicator, this.extractEventValueId(value), embeddings);
     }
     else if (event === EventName.ImageRunCommand)
     {
@@ -530,7 +536,8 @@ export class PicteusExtension
     else if (event === EventName.TextComputeEmbeddings)
     {
       const text: string = value["text"];
-      return await this.onComputeTextEmbeddings(communicator, text);
+      const aiModel: AiModel = value["aiModel"];
+      return await this.onComputeTextEmbeddings(communicator, text, aiModel);
     }
   }
 
@@ -574,7 +581,7 @@ export class PicteusExtension
   {
   }
 
-  protected async onComputeImageEmbeddings(_communicator: Communicator, _imageId: string): Promise<void>
+  protected async onComputeImageEmbeddings(_communicator: Communicator, _imageId: string, _embeddings: ComputeImageEmbedding[]): Promise<void>
   {
   }
 
@@ -586,7 +593,7 @@ export class PicteusExtension
   {
   }
 
-  protected async onComputeTextEmbeddings(_communicator: Communicator, _text: string): Promise<number []>
+  protected async onComputeTextEmbeddings(_communicator: Communicator, _text: string, _aiModel?: AiModel): Promise<number []>
   {
     return [];
   }

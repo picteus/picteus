@@ -569,6 +569,10 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       parametersChecker.throwBadParameterError(`The repository with id '${id}' is not available`);
     }
+    else if (repository.state === RepositoryState.INDEXING || RepositoryService.synchronizingRepositoryIds.has(id) === true)
+    {
+      parametersChecker.throwBadParameterError(`The repository with id '${id}' is synchronizing`);
+    }
     const repositoryDirectoryPath = repository.url.substring(fileWithProtocol.length);
     const fileDirectoryPath = relativeDirectoryPath === undefined ? repositoryDirectoryPath : path.resolve(repositoryDirectoryPath, relativeDirectoryPath);
     const fileName = `${actualNameWithoutExtension}.${fileExtension}`;
