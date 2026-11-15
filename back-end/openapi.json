@@ -5060,8 +5060,7 @@
               {
                 "$ref": "#/components/schemas/ManifestCapabilityId"
               }
-            ],
-            "type": "string"
+            ]
           }
         },
         "description": "The expression of an extension's capability",
@@ -5338,7 +5337,7 @@
         "properties": {
           "id": {
             "description": "The identifier of the extension capability",
-            "example": "image.embeddings",
+            "example": "image.features",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ManifestCapabilityId"
@@ -5376,7 +5375,7 @@
         "properties": {
           "id": {
             "description": "The identifier of the extension capability",
-            "example": "image.embeddings",
+            "example": "image.tags",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ManifestCapabilityId"
@@ -5394,6 +5393,25 @@
           }
         },
         "description": "A capability to compute tags, optionally eligible tags",
+        "required": [
+          "id"
+        ]
+      },
+      "ManifestEmbeddingsCapability": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The identifier of the extension capability",
+            "example": "image.embeddings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ManifestCapabilityId"
+              }
+            ],
+            "type": "string"
+          }
+        },
+        "description": "A capability to compute image or text embeddings",
         "required": [
           "id"
         ]
@@ -5499,7 +5517,7 @@
                   "$ref": "#/components/schemas/ManifestImageTagsCapability"
                 },
                 {
-                  "$ref": "#/components/schemas/ManifestCapability"
+                  "$ref": "#/components/schemas/ManifestEmbeddingsCapability"
                 }
               ],
               "discriminator": {
@@ -5507,8 +5525,8 @@
                 "mapping": {
                   "image.features": "#/components/schemas/ManifestImageFeaturesCapability",
                   "image.tags": "#/components/schemas/ManifestImageTagsCapability",
-                  "image.embeddings": "#/components/schemas/ManifestCapability",
-                  "text.embeddings": "#/components/schemas/ManifestCapability"
+                  "image.embeddings": "#/components/schemas/ManifestEmbeddingsCapability",
+                  "text.embeddings": "#/components/schemas/ManifestEmbeddingsCapability"
                 }
               }
             }

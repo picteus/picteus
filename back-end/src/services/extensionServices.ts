@@ -1980,7 +1980,7 @@ export class ExtensionService
               switch (capability.id)
               {
                 default:
-                  parametersChecker.throwInternalError(`The capability with id '${capability.id}' is not handled`);
+                  parametersChecker.throwInternalError(`The capability with id '${(capability as ManifestCapability).id}' is not handled`);
                 case ManifestCapabilityId.ImageFeatures:
                   requiredEvents = capability.isCaptions() === true ? [ ManifestEvent.ImageComputeFeatures ] : [ ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeFeatures ];
                   break;

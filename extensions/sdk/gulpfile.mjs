@@ -130,67 +130,266 @@ export const tweakForPublicSdk = gulp.series(
   }
 );
 
-function restoreCustomBounds(openapiSchema, jsonSchema)
-{
-  if (!openapiSchema || typeof openapiSchema !== "object" || !jsonSchema || typeof jsonSchema !== "object")
-  {
-    return;
-  }
-  if ("minimum" in openapiSchema)
-  {
-    jsonSchema.minimum = openapiSchema.minimum;
-  }
-  if ("maximum" in openapiSchema)
-  {
-    jsonSchema.maximum = openapiSchema.maximum;
-  }
-  if ("exclusiveMinimum" in openapiSchema)
-  {
-    jsonSchema.exclusiveMinimum = openapiSchema.exclusiveMinimum;
-  }
-  if ("exclusiveMaximum" in openapiSchema)
-  {
-    jsonSchema.exclusiveMaximum = openapiSchema.exclusiveMaximum;
-  }
-  if (openapiSchema.properties && jsonSchema.properties)
-  {
-    for (const key in openapiSchema.properties)
-    {
-      if (jsonSchema.properties[key])
-      {
-        restoreCustomBounds(openapiSchema.properties[key], jsonSchema.properties[key]);
-      }
-    }
-  }
-
-  if (openapiSchema.items && jsonSchema.items)
-  {
-    restoreCustomBounds(openapiSchema.items, jsonSchema.items);
-  }
-
-  if (openapiSchema.additionalProperties && typeof openapiSchema.additionalProperties === "object" &&
-    jsonSchema.additionalProperties && typeof jsonSchema.additionalProperties === "object")
-  {
-    restoreCustomBounds(openapiSchema.additionalProperties, jsonSchema.additionalProperties);
-  }
-
-  const combinators = [ "allOf", "anyOf", "oneOf" ];
-  for (const combinator of combinators)
-  {
-    if (Array.isArray(openapiSchema[combinator]) === true && Array.isArray(jsonSchema[combinator]) === true)
-    {
-      const length = Math.min(openapiSchema[combinator].length, jsonSchema[combinator].length);
-      for (let index = 0; index < length; index++)
-      {
-        restoreCustomBounds(openapiSchema[combinator][index], jsonSchema[combinator][index]);
-      }
-    }
-  }
-}
-
 // noinspection JSUnusedGlobalSymbols
 export const generateSchema = async () =>
 {
+  function restoreCustomBounds(openapiSchema, jsonSchema)
+  {
+    if (!openapiSchema || typeof openapiSchema !== "object" || !jsonSchema || typeof jsonSchema !== "object" || Array.isArray(openapiSchema) !== Array.isArray(jsonSchema))
+    {
+      return;
+    }
+
+    if (Array.isArray(openapiSchema) === true)
+    {
+      const length = Math.min(openapiSchema.length, jsonSchema.length);
+      for (let index = 0; index < length; index++)
+      {
+        restoreCustomBounds(openapiSchema[index], jsonSchema[index]);
+      }
+      return;
+    }
+
+    function restoreBound(boundKey, exclusiveKey, isStricterInclusive)
+    {
+      const bound = openapiSchema[boundKey];
+      const exclusive = openapiSchema[exclusiveKey];
+      if (typeof exclusive === "number")
+      {
+        if (typeof bound === "number" && isStricterInclusive(bound, exclusive) === true)
+        {
+          jsonSchema[boundKey] = bound;
+          delete jsonSchema[exclusiveKey];
+        }
+        else
+        {
+          jsonSchema[boundKey] = exclusive;
+          jsonSchema[exclusiveKey] = true;
+        }
+      }
+      else if (typeof bound === "number")
+      {
+        jsonSchema[boundKey] = bound;
+        if (exclusive === true)
+        {
+          jsonSchema[exclusiveKey] = true;
+        }
+        else
+        {
+          delete jsonSchema[exclusiveKey];
+        }
+      }
+      else
+      {
+        delete jsonSchema[exclusiveKey];
+      }
+    }
+
+    function restoreMap(openapiMap, jsonMap)
+    {
+      if (openapiMap && typeof openapiMap === "object" && jsonMap && typeof jsonMap === "object")
+      {
+        for (const key in openapiMap)
+        {
+          restoreCustomBounds(openapiMap[key], jsonMap[key]);
+        }
+      }
+    }
+
+    restoreBound("minimum", "exclusiveMinimum", (bound, exclusive) => bound > exclusive);
+    restoreBound("maximum", "exclusiveMaximum", (bound, exclusive) => bound < exclusive);
+
+    restoreMap(openapiSchema.properties, jsonSchema.properties);
+    restoreMap(openapiSchema.patternProperties ?? openapiSchema["x-patternProperties"], jsonSchema.patternProperties);
+
+    for (const key of [ "items", "additionalProperties", "not", "allOf", "anyOf", "oneOf" ])
+    {
+      restoreCustomBounds(openapiSchema[key], jsonSchema[key]);
+    }
+  }
+
+  const discriminatorBranchValuesKey = "__discriminatorBranchValues";
+
+  function resolveDiscriminatorBranchValues(openApiDocument)
+  {
+    function normalizeReference(reference)
+    {
+      if (typeof reference !== "string")
+      {
+        return undefined;
+      }
+      return reference.includes("/") === false && reference.startsWith("#") === false
+        ? `#/components/schemas/${reference}`
+        : reference;
+    }
+
+    function walk(node)
+    {
+      if (!node || typeof node !== "object")
+      {
+        return;
+      }
+      if (Array.isArray(node) === true)
+      {
+        for (const item of node)
+        {
+          walk(item);
+        }
+        return;
+      }
+
+      if (node.discriminator && typeof node.discriminator === "object" &&
+        typeof node.discriminator.propertyName === "string")
+      {
+        const branches = node.oneOf ?? node.anyOf;
+        if (Array.isArray(branches) === true)
+        {
+          const mapping = node.discriminator.mapping;
+          const referenceToValues = new Map();
+          if (mapping && typeof mapping === "object")
+          {
+            for (const [ discriminatorValue, targetReference ] of Object.entries(mapping))
+            {
+              const normalizedReference = normalizeReference(targetReference);
+              if (normalizedReference !== undefined)
+              {
+                if (referenceToValues.has(normalizedReference) === false)
+                {
+                  referenceToValues.set(normalizedReference, []);
+                }
+                referenceToValues.get(normalizedReference).push(discriminatorValue);
+              }
+            }
+          }
+
+          node[discriminatorBranchValuesKey] = branches.map(branch =>
+          {
+            if (!branch || typeof branch !== "object" || typeof branch.$ref !== "string")
+            {
+              return undefined;
+            }
+            if (mapping && typeof mapping === "object")
+            {
+              return referenceToValues.get(normalizeReference(branch.$ref));
+            }
+            const segments = branch.$ref.split("/");
+            return [ segments[segments.length - 1] ];
+          });
+        }
+      }
+
+      for (const value of Object.values(node))
+      {
+        walk(value);
+      }
+    }
+
+    walk(openApiDocument);
+  }
+
+  function applyDiscriminatorConstraints(schema)
+  {
+    const visited = new Set();
+
+    function constrainBranch(branch, propertyName, allowedValues)
+    {
+      if (!branch || typeof branch !== "object")
+      {
+        return branch;
+      }
+      const clonedBranch = { ...branch };
+      const clonedProperties = { ...(clonedBranch.properties ?? {}) };
+      const existingProperty = clonedProperties[propertyName];
+      let constrainedProperty;
+
+      if (existingProperty && typeof existingProperty === "object")
+      {
+        constrainedProperty = { ...existingProperty };
+        let hasNarrowedNestedEnum = false;
+        if (Array.isArray(constrainedProperty.allOf) === true)
+        {
+          constrainedProperty.allOf = constrainedProperty.allOf.map(entry =>
+          {
+            if (entry && typeof entry === "object" && Array.isArray(entry.enum) === true)
+            {
+              hasNarrowedNestedEnum = true;
+              return { ...entry, enum: [ ...allowedValues ] };
+            }
+            return entry;
+          });
+        }
+        if (Array.isArray(constrainedProperty.enum) === true || hasNarrowedNestedEnum === false)
+        {
+          constrainedProperty.enum = [ ...allowedValues ];
+        }
+      }
+      else
+      {
+        constrainedProperty = { type: "string", enum: [ ...allowedValues ] };
+      }
+
+      clonedProperties[propertyName] = constrainedProperty;
+      clonedBranch.properties = clonedProperties;
+      if (Array.isArray(clonedBranch.required) === true)
+      {
+        if (clonedBranch.required.includes(propertyName) === false)
+        {
+          clonedBranch.required = [ ...clonedBranch.required, propertyName ];
+        }
+      }
+      else
+      {
+        clonedBranch.required = [ propertyName ];
+      }
+      return clonedBranch;
+    }
+
+    function walk(node)
+    {
+      if (!node || typeof node !== "object" || visited.has(node) === true)
+      {
+        return;
+      }
+      visited.add(node);
+
+      if (Array.isArray(node) === true)
+      {
+        for (const item of node)
+        {
+          walk(item);
+        }
+        return;
+      }
+
+      const branchValues = node[discriminatorBranchValuesKey];
+      delete node[discriminatorBranchValuesKey];
+      if (Array.isArray(branchValues) === true && node.discriminator && typeof node.discriminator.propertyName === "string")
+      {
+        const propertyName = node.discriminator.propertyName;
+        for (const unionKey of [ "oneOf", "anyOf" ])
+        {
+          if (Array.isArray(node[unionKey]) === true)
+          {
+            node[unionKey] = node[unionKey].map((branch, index) =>
+            {
+              const allowedValues = branchValues[index];
+              return Array.isArray(allowedValues) === true && allowedValues.length > 0
+                ? constrainBranch(branch, propertyName, allowedValues)
+                : branch;
+            });
+          }
+        }
+      }
+
+      for (const value of Object.values(node))
+      {
+        walk(value);
+      }
+    }
+
+    walk(schema);
+  }
+
   const cliArguments = process.argv;
   const inputFilePathOption = "--inputFilePath";
   const outputFilePathOption = "--outputFilePath";
@@ -234,18 +433,24 @@ export const generateSchema = async () =>
     schemaId = cliArguments[index + 1];
   }
 
-  // We dereference the entire openapi.json file
-  const dereferencedOpenApi = await $RefParser.dereference(inputFilePath);
+  // We parse first so we can capture discriminator branch $refs before dereferencing replaces them
+  const referenceParser = new $RefParser();
+  const openApiDocument = await referenceParser.parse(inputFilePath);
+  resolveDiscriminatorBranchValues(openApiDocument);
 
-  // We extract the "Manifest" schema
+  // We dereference the entire openapi.json file
+  const dereferencedOpenApi = await referenceParser.dereference(openApiDocument);
+
+  // We extract the target entity schema
   const manifestOpenApiSchema = dereferencedOpenApi.components.schemas[entity];
 
-  // We convert the OpenAPI schema to JSON schema
-  const jsonSchema = toJSONSchema(manifestOpenApiSchema, {
-    supportPatternProperties: true
-  });
+  // We enforce OpenAPI discriminator mappings onto each oneOf/anyOf branch before stripping discriminator
+  applyDiscriminatorConstraints(manifestOpenApiSchema);
 
-  // Restore overwritten custom numerical bounds (minimum, maximum, etc.)
+  // We convert the OpenAPI schema to JSON schema
+  const jsonSchema = toJSONSchema(manifestOpenApiSchema, { supportPatternProperties: true });
+
+  // We restore overwritten custom numerical bounds (minimum, maximum, etc.)
   restoreCustomBounds(manifestOpenApiSchema, jsonSchema);
 
   const finalSchema =
@@ -256,7 +461,7 @@ export const generateSchema = async () =>
       ...jsonSchema
     };
 
-  fs.writeFileSync(outputFilePath, JSON.stringify(finalSchema, null, 2) + '\n');
+  fs.writeFileSync(outputFilePath, JSON.stringify(finalSchema, null, 2) + "\n");
   console.log(`Successfully generated the JSON Schema for 'Manifest' into file '${outputFilePath}'`);
   return Promise.resolve();
 };

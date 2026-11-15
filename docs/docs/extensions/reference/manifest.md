@@ -134,6 +134,6 @@ Here is an overview of the manifest structure:
     - `on`: scope where the command appears (`entity`: `"Process"`, `"Images"`, or `"Image"`, optional `withTags` filter) ;
     - `parameters`: JSON Schema defining the form presented to the user when triggering the command ;
     - `specifications`: localized labels, titles, and descriptions ;
-    - `ui`: command labels and icon URI.
+    - `ui`: command icon URI.
 - **`settings`** *(required, object)*: JSON Schema for global extension configuration ;
 - **`ui`** *(optional, object)*: pre-registered UI fragments (`sidebar`, `window`, `imageDetail`).

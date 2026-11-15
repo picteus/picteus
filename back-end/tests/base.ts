@@ -50,6 +50,7 @@ import {
   Manifest,
   ManifestCapability,
   ManifestCapabilityId,
+  ManifestEmbeddingsCapability,
   ManifestEvent,
   ManifestExecution,
   ManifestExtensionCommand,
@@ -1028,7 +1029,7 @@ export class ExtensionBuilder extends ExtensionBasisBuilder
               durationInMilliseconds: Math.round(throttlingDurationInMilliseconds ?? Core.fastestIntervalInMilliseconds)
             }
           ],
-        capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageTags), new ManifestCapability(ManifestCapabilityId.ImageFeatures), new ManifestCapability(ManifestCapabilityId.TextEmbeddings) ],
+        capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageTags), new ManifestCapability(ManifestCapabilityId.ImageFeatures), new ManifestEmbeddingsCapability(ManifestCapabilityId.TextEmbeddings) ],
         execution:
           {
             executable: ExtensionBuilder.nodeExecutable,

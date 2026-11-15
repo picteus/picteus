@@ -76,7 +76,7 @@ Do **not** override `onEvent` / `on_event` manually. The `PicteusExtension` base
 5. **Error handling**:
    - Throw `new CommandError("...")` / `raise CommandError("...")` inside `onImagesCommand` or `onProcessCommand` when validation or command execution fails — Picteus automatically displays an error toast in the UI ;
    - Catch `InstructionReturnedError` when calling `communicator.launchIntent(...)` if you need to handle user cancellation (`error.reason === InstructionReturnedErrorCause.Cancel`).
-6. **AI model registration**: if the extension implements `onComputeImageCaptions` or `onComputeImageEligibleTags`, publish the available AI models to Picteus in `onReady` and `onSettings` via `this.getExtensionApi().extensionSetAiModels({ id: this.extensionId, aiModel: [{ technicalId, name, comment }] })` — or `self.get_extension_api().extension_set_ai_models(...)` in Python ;
+6. **AI model registration**: if the extension implements `onComputeImageCaptions`, `onComputeImageEligibleTags`, or `onComputeImageEmbeddings`, publish the available AI models to Picteus in `onReady` and `onSettings` via `this.getExtensionApi().extensionSetAiModels({ id: this.extensionId, aiModel: [{ technicalId, name, comment, modalities: [AiModelModality.ImageCaptions, ...] }] })` — or `self.get_extension_api().extension_set_ai_models(...)` in Python ;
 7. **Storing generated images and recipes**:
    - Ensure or obtain a target repository via `getRepositoryApi().repositoryEnsure(...)` or `repositoryGet(...)` ;
    - Store the image bytes via `getRepositoryApi().repositoryStoreImage({ id: repositoryId, parentId: sourceImageId, body })` ;

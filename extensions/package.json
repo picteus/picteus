@@ -77,7 +77,7 @@
     "preinstances:build": "npm run .env",
     "instances:build": "dotenv -- npm run instances:build:dotenv --",
     "build": "npm run sdk:build && npm run instances:build",
-    "schema:manifest": "cross-var gulp -f sdk/gulpfile.mjs generateSchema --inputFilePath $npm_config_local_prefix/../back-end/openapi.json --outputFilePath $npm_config_local_prefix/../docs/static/jsonschema/manifest-v5.schema.json --entity Manifest --schemaId https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json",
+    "schema:manifest": "cross-var gulp -f sdk/gulpfile.mjs generateSchema --inputFilePath $npm_config_local_prefix/../back-end/openapi.json --outputFilePath $npm_config_local_prefix/../docs/static/jsonschema/manifest-v6.schema.json --entity Manifest --schemaId https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
     "schema:recipe": "cross-var gulp -f sdk/gulpfile.mjs generateSchema --inputFilePath $npm_config_local_prefix/../back-end/openapi.json --outputFilePath $npm_config_local_prefix/../docs/static/jsonschema/recipe-v2.schema.json --entity GenerationRecipe --schemaId https://picteus.github.io/picteus/jsonschema/recipe-v2.schema.json",
     "schemas": "npm run schema:manifest && npm run schema:recipe"
   },
@@ -91,7 +91,7 @@
     "symlink-dir": "6.0.5",
     "mkdirp": "3.0.1",
     "openapi-schema-to-json-schema": "2.2.0",
-    "@apidevtools/json-schema-ref-parser": "15.5.0"
+    "@apidevtools/json-schema-ref-parser": "16.0.8"
   },
   "dependencies": {
   }

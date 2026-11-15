@@ -32,6 +32,7 @@ import {
   ManifestCapabilityCaptionsDetails,
   ManifestCapabilityEligibleTagsDetails,
   ManifestCapabilityId,
+  ManifestEmbeddingsCapability,
   ManifestEvent,
   ManifestImageFeaturesCapability,
   ManifestImageTagsCapability,
@@ -2149,7 +2150,7 @@ describe("Image with application", () =>
     const { image } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName);
     const imageId = image.id;
     // extension1 is configured with captions, eligible tags and embeddings
-    const extension1 = await base.prepareExtension("extension1", [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings ], [], [ new ManifestImageFeaturesCapability(new ManifestCapabilityCaptionsDetails()), new ManifestImageTagsCapability(new ManifestCapabilityEligibleTagsDetails()), new ManifestCapability(ManifestCapabilityId.ImageEmbeddings) ]);
+    const extension1 = await base.prepareExtension("extension1", [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings ], [], [ new ManifestImageFeaturesCapability(new ManifestCapabilityCaptionsDetails()), new ManifestImageTagsCapability(new ManifestCapabilityEligibleTagsDetails()), new ManifestEmbeddingsCapability(ManifestCapabilityId.ImageEmbeddings) ]);
     // extension2 is configured with tags
     const extension2 = await base.prepareExtension("extension2", [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageComputeTags ], [], [ new ManifestCapability(ManifestCapabilityId.ImageTags) ]);
 

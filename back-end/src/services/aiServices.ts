@@ -2,7 +2,7 @@ import { ModuleRef } from "@nestjs/core";
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 
 import { logger } from "../logger";
-import { AiModel, ManifestCapability, ManifestCapabilityId } from "../dtos/app.dtos";
+import { AiModel, ManifestCapabilityId, ManifestEmbeddingsCapability } from "../dtos/app.dtos";
 import { CapabilityResult, ExtensionService } from "./extensionServices";
 import { parametersChecker } from "./utils/parametersChecker";
 
@@ -67,7 +67,7 @@ export class GenerativeAIService
     const {
       extensionId: resolvedExtensionId,
       value
-    }: CapabilityResult<TextEmbeddings> = await this.moduleRef.get(ExtensionService).runCapability<TextEmbeddings>(new ManifestCapability(ManifestCapabilityId.TextEmbeddings), valuePayload, extensionId);
+    }: CapabilityResult<TextEmbeddings> = await this.moduleRef.get(ExtensionService).runCapability<TextEmbeddings>(new ManifestEmbeddingsCapability(ManifestCapabilityId.TextEmbeddings), valuePayload, extensionId);
     if (value === undefined)
     {
       parametersChecker.throwBadParameterError(`The extension with id '${resolvedExtensionId}' returned no embeddings for the text '${text}'`);

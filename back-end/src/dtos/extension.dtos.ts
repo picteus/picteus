@@ -1,10 +1,12 @@
 import { Expose, Transform, Type } from "class-transformer";
 import {
   ArrayMinSize,
+  Equals,
   IsArray,
   IsBoolean,
   IsDefined,
   IsEnum,
+  IsIn,
   IsInt,
   IsObject,
   IsOptional,
@@ -445,8 +447,21 @@ export class ManifestImageFeaturesCapability extends ManifestCapability
   constructor(details?: ManifestCapabilityCaptionsDetails)
   {
     super(ManifestCapabilityId.ImageFeatures);
+    this.id = ManifestCapabilityId.ImageFeatures;
     this.details = details;
   }
+
+  @ApiProperty(
+    {
+      description: "The identifier of the extension capability",
+      enum: [ ManifestCapabilityId.ImageFeatures ],
+      required: true,
+      example: ManifestCapabilityId.ImageFeatures
+    }
+  )
+  @Equals(ManifestCapabilityId.ImageFeatures)
+  @Expose()
+  override readonly id: ManifestCapabilityId.ImageFeatures;
 
   @ApiProperty(
     {
@@ -471,8 +486,21 @@ export class ManifestImageTagsCapability extends ManifestCapability
   constructor(details?: ManifestCapabilityEligibleTagsDetails)
   {
     super(ManifestCapabilityId.ImageTags);
+    this.id = ManifestCapabilityId.ImageTags;
     this.details = details;
   }
+
+  @ApiProperty(
+    {
+      description: "The identifier of the extension capability",
+      enum: [ ManifestCapabilityId.ImageTags ],
+      required: true,
+      example: ManifestCapabilityId.ImageTags
+    }
+  )
+  @Equals(ManifestCapabilityId.ImageTags)
+  @Expose()
+  override readonly id: ManifestCapabilityId.ImageTags;
 
   @ApiProperty(
     {
@@ -487,6 +515,30 @@ export class ManifestImageTagsCapability extends ManifestCapability
   @IsOptional()
   @Expose()
   readonly details?: ManifestCapabilityEligibleTagsDetails;
+
+}
+
+@ApiSchema({ description: "A capability to compute image or text embeddings" })
+export class ManifestEmbeddingsCapability extends ManifestCapability
+{
+
+  constructor(id: ManifestCapabilityId.ImageEmbeddings | ManifestCapabilityId.TextEmbeddings = ManifestCapabilityId.ImageEmbeddings)
+  {
+    super(id);
+    this.id = id;
+  }
+
+  @ApiProperty(
+    {
+      description: "The identifier of the extension capability",
+      enum: [ ManifestCapabilityId.ImageEmbeddings, ManifestCapabilityId.TextEmbeddings ],
+      required: true,
+      example: ManifestCapabilityId.ImageEmbeddings
+    }
+  )
+  @IsIn([ ManifestCapabilityId.ImageEmbeddings, ManifestCapabilityId.TextEmbeddings ])
+  @Expose()
+  override readonly id: ManifestCapabilityId.ImageEmbeddings | ManifestCapabilityId.TextEmbeddings;
 
 }
 
@@ -605,11 +657,11 @@ export class ManifestExecution
 }
 
 @ApiSchema({ description: "The full specifications of an extension, including the events it handles, its capabilities, its execution and its commands" })
-@ApiExtraModels(ManifestImageFeaturesCapability, ManifestImageTagsCapability)
+@ApiExtraModels(ManifestImageFeaturesCapability, ManifestImageTagsCapability, ManifestEmbeddingsCapability)
 export class ManifestInstructions
 {
 
-  constructor(events: ManifestEvent[], capabilities: (ManifestImageFeaturesCapability | ManifestImageTagsCapability | ManifestCapability)[], execution: ManifestExecution, commands: ManifestExtensionCommand[])
+  constructor(events: ManifestEvent[], capabilities: (ManifestImageFeaturesCapability | ManifestImageTagsCapability | ManifestEmbeddingsCapability | ManifestCapability)[], execution: ManifestExecution, commands: ManifestExtensionCommand[])
   {
     this.events = events;
     this.capabilities = capabilities;
@@ -643,7 +695,7 @@ export class ManifestInstructions
         [
           { $ref: getSchemaPath(ManifestImageFeaturesCapability) },
           { $ref: getSchemaPath(ManifestImageTagsCapability) },
-          { $ref: getSchemaPath(ManifestCapability) }
+          { $ref: getSchemaPath(ManifestEmbeddingsCapability) }
         ],
       discriminator:
         {
@@ -652,8 +704,8 @@ export class ManifestInstructions
             {
               [ManifestCapabilityId.ImageFeatures]: getSchemaPath(ManifestImageFeaturesCapability),
               [ManifestCapabilityId.ImageTags]: getSchemaPath(ManifestImageTagsCapability),
-              [ManifestCapabilityId.ImageEmbeddings]: getSchemaPath(ManifestCapability),
-              [ManifestCapabilityId.TextEmbeddings]: getSchemaPath(ManifestCapability)
+              [ManifestCapabilityId.ImageEmbeddings]: getSchemaPath(ManifestEmbeddingsCapability),
+              [ManifestCapabilityId.TextEmbeddings]: getSchemaPath(ManifestEmbeddingsCapability)
             }
         },
       required: false
@@ -668,8 +720,8 @@ export class ManifestInstructions
             [
               { value: ManifestImageFeaturesCapability, name: ManifestCapabilityId.ImageFeatures },
               { value: ManifestImageTagsCapability, name: ManifestCapabilityId.ImageTags },
-              { value: ManifestCapability, name: ManifestCapabilityId.ImageEmbeddings },
-              { value: ManifestCapability, name: ManifestCapabilityId.TextEmbeddings }
+              { value: ManifestEmbeddingsCapability, name: ManifestCapabilityId.ImageEmbeddings },
+              { value: ManifestEmbeddingsCapability, name: ManifestCapabilityId.TextEmbeddings }
             ]
         },
       keepDiscriminatorProperty: true
@@ -678,7 +730,7 @@ export class ManifestInstructions
   @ValidateNested({ each: true })
   @IsOptional()
   @Expose()
-  readonly capabilities?: (ManifestImageFeaturesCapability | ManifestImageTagsCapability | ManifestCapability)[];
+  readonly capabilities?: (ManifestImageFeaturesCapability | ManifestImageTagsCapability | ManifestEmbeddingsCapability | ManifestCapability)[];
 
   @ApiProperty(
     {

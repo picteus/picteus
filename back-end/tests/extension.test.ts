@@ -42,6 +42,7 @@ import {
   ManifestCapabilityCaptionsDetails,
   ManifestCapabilityEligibleTagsDetails,
   ManifestCapabilityId,
+  ManifestEmbeddingsCapability,
   ManifestEvent,
   ManifestExtensionCommand,
   ManifestImageFeaturesCapability,
@@ -342,7 +343,7 @@ describe("Extensions", () =>
       const manifest = builder.computeWithInstructionsManifest([
         {
           events: [ ManifestEvent.ImageCreated ],
-          capabilities: [ new ManifestCapability(capabilityId) ],
+          capabilities: [ new ManifestEmbeddingsCapability(capabilityId) ],
           execution: ExtensionBuilder.dummyExecution
         }
       ]);
@@ -404,7 +405,7 @@ describe("Extensions", () =>
       const manifest = builder.computeWithInstructionsManifest([
         {
           events: [ ManifestEvent.ProcessStarted ],
-          capabilities: [ new ManifestCapability(capabilityId) ],
+          capabilities: [ new ManifestEmbeddingsCapability(capabilityId) ],
           execution: ExtensionBuilder.dummyExecution
         }
       ]);
@@ -1200,12 +1201,13 @@ describe("Extensions", () =>
     const capabilities = extension.manifest.instructions[0].capabilities;
     expect(capabilities![0]).toBeInstanceOf(ManifestImageTagsCapability);
     expect(capabilities![1]).toBeInstanceOf(ManifestImageFeaturesCapability);
+    expect(capabilities![2]).toBeInstanceOf(ManifestEmbeddingsCapability);
 
     {
       const {
         extensionId,
         value: embeddings
-      } = await base.getExtensionService().runCapability<number[]>(new ManifestCapability(ManifestCapabilityId.TextEmbeddings), { text: "some text" });
+      } = await base.getExtensionService().runCapability<number[]>(new ManifestEmbeddingsCapability(ManifestCapabilityId.TextEmbeddings), { text: "some text" });
       expect(extensionId).toEqual(manifest.id);
       expect(embeddings.length).toEqual(512);
     }
@@ -1214,14 +1216,14 @@ describe("Extensions", () =>
       const capabilityId = ManifestCapabilityId.TextEmbeddings;
       await expect(async () =>
       {
-        await base.getExtensionService().runCapability<number[]>(new ManifestCapability(capabilityId), { text: "some text" });
+        await base.getExtensionService().runCapability<number[]>(new ManifestEmbeddingsCapability(capabilityId), { text: "some text" });
       }).rejects.toThrow(new ServiceError(`Cannot operate because no extension with the capability id '${capabilityId}' is installed and enabled`, INTERNAL_SERVER_ERROR, base.internalErrorCode));
     }
     {
       const capabilityId = ManifestCapabilityId.ImageEmbeddings;
       await expect(async () =>
       {
-        await base.getExtensionService().runCapability<number[]>(new ManifestCapability(capabilityId), { image: "dummy" });
+        await base.getExtensionService().runCapability<number[]>(new ManifestEmbeddingsCapability(capabilityId), { image: "dummy" });
       }).rejects.toThrow(new ServiceError(`The capability with id '${capabilityId}' is not supported`, INTERNAL_SERVER_ERROR, base.internalErrorCode));
     }
   });
@@ -1697,7 +1699,7 @@ describe("Extensions", () =>
     const manifest2 = new ExtensionBuilder(base, false, undefined, "id2", "B").computeWithInstructionsManifest([
       {
         events: [ ManifestEvent.ProcessStarted, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings, ManifestEvent.ImageRunCommand ],
-        capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageEmbeddings), new ManifestCapability(ManifestCapabilityId.ImageFeatures) ],
+        capabilities: [ new ManifestEmbeddingsCapability(ManifestCapabilityId.ImageEmbeddings), new ManifestCapability(ManifestCapabilityId.ImageFeatures) ],
         execution: ExtensionBuilder.dummyExecution,
         commands: [
           {
@@ -1717,7 +1719,7 @@ describe("Extensions", () =>
     const manifest1 = new ExtensionBuilder(base, false, undefined, "id1", "A").computeWithInstructionsManifest([
       {
         events: [ ManifestEvent.ProcessStarted, ManifestEvent.ProcessRunCommand, ManifestEvent.ImageCreated, ManifestEvent.ImageUpdated, ManifestEvent.ImageDeleted, ManifestEvent.ImageComputeFeatures, ManifestEvent.ImageComputeEmbeddings, ManifestEvent.TextComputeEmbeddings ],
-        capabilities: [ new ManifestCapability(ManifestCapabilityId.ImageEmbeddings), new ManifestCapability(ManifestCapabilityId.TextEmbeddings) ],
+        capabilities: [ new ManifestEmbeddingsCapability(ManifestCapabilityId.ImageEmbeddings), new ManifestEmbeddingsCapability(ManifestCapabilityId.TextEmbeddings) ],
         execution: ExtensionBuilder.dummyExecution,
         commands: [
           {
