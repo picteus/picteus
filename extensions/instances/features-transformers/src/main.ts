@@ -4,7 +4,9 @@ import { Log } from "ts-tiny-log";
 import { LogLevel } from "ts-tiny-log/levels";
 
 import {
+  AiModelModality,
   Communicator,
+  type ComputeImageCaption,
   ImageFeatureFormat,
   ImageFeatureType,
   ImageResizeRender,
@@ -17,23 +19,20 @@ import { Classifiers } from "./classifiers";
 class FeaturesTransformersExtension extends PicteusExtension
 {
 
+  private static readonly modelTechnicalId = "vit-gpt2-image-captioning";
+
   private readonly classifiers: Classifiers = new Classifiers(new Log({
     level: LogLevel.debug,
     shouldWriteTimestamp: true
   }), path.join(PicteusExtension.getCacheDirectoryPath()));
 
 
-  protected async onImageCreated(communicator: Communicator, imageId: string): Promise<void>
+  protected async onReady(_communicator?: Communicator): Promise<void>
   {
-    await this.computeFeatures(communicator, imageId);
+    await this.sendAvailableAiModels();
   }
 
-  protected async onImageUpdated(communicator: Communicator, imageId: string): Promise<void>
-  {
-    await this.computeFeatures(communicator, imageId);
-  }
-
-  protected async onComputeImageFeatures(communicator: Communicator, imageId: string): Promise<void>
+  protected async onComputeImageCaptions(communicator: Communicator, imageId: string, captions: ComputeImageCaption[]): Promise<void>
   {
     await this.computeFeatures(communicator, imageId);
   }
@@ -43,7 +42,7 @@ class FeaturesTransformersExtension extends PicteusExtension
     const filePath = await this.getImageBuffer(communicator, imageId);
     try
     {
-      const caption = await this.computeCaption(communicator, imageId, filePath);
+      const caption = await this.computeCaption(communicator, filePath);
       await this.getImageApi().imageSetFeatures({
         id: imageId,
         extensionId: this.extensionId,
@@ -78,12 +77,27 @@ class FeaturesTransformersExtension extends PicteusExtension
     return filePath;
   }
 
-  private async computeCaption(communicator: Communicator, imageId: string, filePath: string): Promise<string>
+  private async computeCaption(communicator: Communicator, filePath: string): Promise<string>
   {
     communicator.sendLog(`Computing the caption for the image`, "info");
     const caption = await this.classifiers.computeCaption(filePath);
     communicator.sendLog(`The image caption is '${caption}'`, "debug");
     return caption;
+  }
+
+  private async sendAvailableAiModels(): Promise<void>
+  {
+    await this.getExtensionApi().extensionSetAiModels({
+      id: this.extensionId,
+      aiModel: [
+        {
+          technicalId: FeaturesTransformersExtension.modelTechnicalId,
+          name: "ViT-GPT2",
+          comment: "Image captioning via ViT-GPT2 transformer model",
+          modalities: [ AiModelModality.ImageCaptions ]
+        }
+      ]
+    });
   }
 
 }
