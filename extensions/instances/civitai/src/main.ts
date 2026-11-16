@@ -1,3 +1,7 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import {
   ApiCallError,
   type ApplicationMetadata,
@@ -8,10 +12,12 @@ import {
   ImageFeatureFormat,
   ImageFeatureType,
   type IntentImage,
+  IntentToastType,
   PicteusExtension,
   type Repository,
   SearchFeatureComparisonOperator,
-  SearchFeatureLogicalOperator
+  SearchFeatureLogicalOperator,
+  SearchOriginNature
 } from "@picteus/extension-sdk";
 
 import { CivitaiClient, CivitaiImage, CivitaiRetrieveImageOptions } from "./civitaiClient.js";
@@ -53,27 +59,59 @@ class CivitaiExtension extends PicteusExtension
       const source = parameters["source"];
       const userName: string | undefined = source["userName"];
       const postId: string | undefined = source["postId"];
+      const imageId: number | undefined = source["imageId"];
       const count: number = parameters["count"];
       const onlyWithMetadata: boolean = parameters["onlyWithMetadata"] ?? true;
-      const isFromPost: boolean = postId !== undefined;
-      await this.fetchImages(communicator, isFromPost, isFromPost ? postId : userName, count, onlyWithMetadata);
+      const sourceType: "image" | "post" | "user" = imageId !== undefined ? "image" : postId !== undefined ? "post" : "user";
+      const sourceIdentifier: string = imageId !== undefined ? imageId.toString(10) : postId ?? userName;
+      await this.fetchImages(communicator, sourceType, sourceIdentifier, count, onlyWithMetadata);
+    }
+    else if (commandId === "redownloadMissingImages")
+    {
+      await this.redownloadMissingImages(communicator);
     }
   }
 
-  private async fetchImages(communicator: Communicator, isFromPost: boolean, userNameOrPostId: string, count: number, onlyWithMetadata: boolean): Promise<void>
+  private async fetchImages(communicator: Communicator, sourceType: "image" | "post" | "user", sourceIdentifier: string, count: number, onlyWithMetadata: boolean): Promise<void>
   {
-    communicator.sendLog(`Fetching ${count} image(s)${onlyWithMetadata === true ? " with metadata" : ""} from Civitai ${isFromPost === true ? `related to the post with id '${userNameOrPostId}'` : `for the user '${userNameOrPostId}'`}`, "info");
+    const isFromImage = sourceType === "image";
+    const isFromPost = sourceType === "post";
+    const requestedCount = isFromImage === true ? 1 : count;
+    communicator.sendLog(`Fetching ${requestedCount} image(s)${onlyWithMetadata === true ? " with metadata" : ""} from Civitai ${isFromImage === true ? `with id '${sourceIdentifier}'` : isFromPost === true ? `related to the post with id '${sourceIdentifier}'` : `for the user '${sourceIdentifier}'`}`, "info");
     const options: CivitaiRetrieveImageOptions =
       {
-        limit: count,
+        limit: requestedCount,
         withMeta: true,
         type: "image",
         sort: "Newest",
-        postId: isFromPost === true ? Number.parseInt(userNameOrPostId, 10) : undefined,
-        username: isFromPost === false ? userNameOrPostId : undefined,
+        postId: isFromPost === true ? Number.parseInt(sourceIdentifier, 10) : undefined,
+        username: sourceType === "user" ? sourceIdentifier : undefined,
         onlyWithMetadata
       };
-    const civitaiImages = await new CivitaiClient().retrieveImages(options);
+    const client = new CivitaiClient();
+    let civitaiImages: CivitaiImage[];
+    if (isFromImage === true)
+    {
+      const civitaiImage = await client.getImage(Number.parseInt(sourceIdentifier, 10));
+      if (civitaiImage === undefined)
+      {
+        communicator.sendLog(`The Civitai image with id '${sourceIdentifier}' was not found`, "warn");
+        civitaiImages = [];
+      }
+      else if (onlyWithMetadata === true && (civitaiImage.meta === null || civitaiImage.meta === undefined))
+      {
+        communicator.sendLog(`The Civitai image with id '${sourceIdentifier}' does not include metadata and was skipped`, "warn");
+        civitaiImages = [];
+      }
+      else
+      {
+        civitaiImages = [ civitaiImage ];
+      }
+    }
+    else
+    {
+      civitaiImages = await client.retrieveImages(options);
+    }
     const newImages: IntentImage[] = [];
     if (civitaiImages.length > 0)
     {
@@ -141,7 +179,9 @@ class CivitaiExtension extends PicteusExtension
         }
       }
     }
-    const contentUrl = isFromPost === true ? `https://civitai.com/posts/${userNameOrPostId}` : `https://civitai.com/user/${userNameOrPostId}`;
+    const civitaiUrlPrefix = `https://civitai.com/`;
+    const contentUrl = isFromImage === true ? `${civitaiUrlPrefix}images/${sourceIdentifier}` : (isFromPost === true ? `${civitaiUrlPrefix}posts/${sourceIdentifier}` : `${civitaiUrlPrefix}user/${sourceIdentifier}`);
+    const sourceDescription = isFromImage === true ? "image" : isFromPost === true ? "post" : "user";
     await communicator.launchIntent<void>({
       images:
         {
@@ -151,7 +191,7 @@ class CivitaiExtension extends PicteusExtension
               title: "Retrieved Images",
               subtitle: `${newImages.length} retrieved image${newImages.length >= 2 ? "s" : ""}`,
               description: "Here are the retrieved images.",
-              details: `The images where retrieved from the ${isFromPost === true ? "post" : "user"} with identifier \`${userNameOrPostId}\`, which are accessible from [${contentUrl}](${contentUrl}).`
+              details: `The images were retrieved from the ${sourceDescription} with identifier \`${sourceIdentifier}\`, which are accessible from [${contentUrl}](${contentUrl}).`
             }
         }
     });
@@ -308,6 +348,207 @@ class CivitaiExtension extends PicteusExtension
         }
       }
     })).items;
+  }
+
+  private async redownloadMissingImages(communicator: Communicator): Promise<void>
+  {
+    const repository = this.repository;
+    if (repository === undefined)
+    {
+      communicator.sendLog("The Civitai repository could not be found", "error");
+      return;
+    }
+
+    communicator.sendLog(`Requesting all images located in the '${repository.name}' repository...`, "info");
+    const images = await this.getAllImagesInRepository(repository.id);
+    communicator.sendLog(`Found ${images.length} image(s) in the '${repository.name}' repository. Checking bitmap availability...`, "info");
+
+    const retriever = new CivitaiAnalyzer();
+    const client = new CivitaiClient();
+    const restoredImages: IntentImage[] = [];
+
+    for (const image of images)
+    {
+      const isAvailable = await this.isBitmapAvailable(image);
+
+      communicator.forEntity({ type: "image", id: image.id });
+      communicator.sendLog(`The bitmap for image '${image.name}' (ID: ${image.id}) is not available anymore. Finding Civitai image ID...`, "warn");
+
+      const civitaiImageId = await this.resolveCivitaiImageId(image);
+      if (civitaiImageId === undefined)
+      {
+        communicator.sendLog(`Could not determine the Civitai ID for image '${image.name}' (ID: ${image.id}). Skipping redownload.`, "warn");
+        continue;
+      }
+
+      if (isAvailable === true)
+      {
+        await this.getImageApi().imageEnsureTags({
+          id: image.id,
+          extensionId: this.extensionId,
+          requestBody: [ this.extensionId ]
+        });
+        await this.reindexCivitaiImage(communicator, client, retriever, civitaiImageId, image.id);
+        continue;
+      }
+
+      try
+      {
+        communicator.sendLog(`Fetching Civitai metadata for image with ID '${civitaiImageId}'...`, "debug");
+        const civitaiImage = await client.getImage(civitaiImageId);
+        if (civitaiImage === undefined || !civitaiImage.url)
+        {
+          communicator.sendLog(`Image with ID '${civitaiImageId}' was not found on Civitai or has no URL`, "warn");
+          continue;
+        }
+
+        communicator.sendLog(`Redownloading bitmap from Civitai (${civitaiImage.url})...`, "info");
+        const response = await fetch(civitaiImage.url);
+        if (!response.ok)
+        {
+          throw new Error(`Failed to download image from '${civitaiImage.url}' (status ${response.status} ${response.statusText})`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const blob = new Blob([ arrayBuffer ]);
+
+        try
+        {
+          await this.getImageApi().imageModify({
+            id: image.id,
+            body: blob
+          });
+        }
+        catch (modifyError)
+        {
+          this.logger.warn(`API imageModify failed for image '${image.id}': ${(modifyError as Error).message}. Attempting direct file write fallback.`);
+          if (image.url.startsWith("file://"))
+          {
+            const filePath = fileURLToPath(image.url);
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
+            fs.writeFileSync(filePath, Buffer.from(arrayBuffer));
+          }
+          else
+          {
+            throw modifyError;
+          }
+        }
+
+        communicator.sendLog(`Successfully redownloaded bitmap for Civitai image '${civitaiImageId}'`, "info");
+        restoredImages.push({
+          imageId: image.id,
+          details: {
+            title: `Image '${image.name}'`,
+            description: `Bitmap redownloaded from Civitai (ID: ${civitaiImageId})`
+          }
+        });
+      }
+      catch (error)
+      {
+        this.logger.error(`Error redownloading bitmap for image '${image.id}' (Civitai ID: ${civitaiImageId})`, error);
+        communicator.sendLog(`Failed to redownload bitmap for Civitai image '${civitaiImageId}': ${(error as Error).message}`, "warn");
+      }
+    }
+
+    if (restoredImages.length > 0)
+    {
+      communicator.sendLog(`Completed scanning repository. Redownloaded ${restoredImages.length} missing bitmap(s) out of ${images.length} image(s).`, "info");
+      await communicator.launchIntent<void>({
+        images: {
+          images: restoredImages,
+          content: {
+            title: "Redownloaded Images",
+            subtitle: `${restoredImages.length} image bitmap${restoredImages.length > 1 ? "s" : ""} redownloaded`,
+            description: "The bitmaps for these Civitai images were no longer available and have been redownloaded from Civitai.",
+            details: `Scanned ${images.length} image(s) in repository \`${repository.name}\`.`
+          }
+        }
+      });
+    }
+    else
+    {
+      communicator.sendLog(`Completed scanning repository '${repository.name}'. All ${images.length} bitmap(s) are available.`, "info");
+      await communicator.launchIntent<void>({
+        toast: {
+          title: "Bitmap Verification",
+          subtitle: `All ${images.length} image bitmap(s) in the '${repository.name}' repository are already available.`,
+          type: IntentToastType.Info
+        }
+      });
+    }
+  }
+
+  private async getAllImagesInRepository(repositoryId: string): Promise<Image[]>
+  {
+    const images: Image[] = [];
+    const pageSize = 100;
+    let skip = 0;
+    let totalCount = 0;
+
+    do
+    {
+      const result = await this.getImageApi().imageSearchImages({
+        searchParameters: {
+          filter: {
+            origin: {
+              kind: SearchOriginNature.Repositories,
+              ids: [ repositoryId ]
+            }
+          },
+          range: {
+            take: pageSize,
+            skip
+          }
+        }
+      });
+
+      images.push(...result.items);
+      totalCount = result.totalCount;
+      skip += result.items.length;
+
+      if (result.items.length === 0)
+      {
+        break;
+      }
+    }
+    while (images.length < totalCount);
+
+    return images;
+  }
+
+  private async isBitmapAvailable(image: Image): Promise<boolean>
+  {
+    try
+    {
+      await this.getImageApi().imageDownload({ id: image.id });
+      return true;
+    }
+    catch
+    {
+      return false;
+    }
+  }
+
+  private async resolveCivitaiImageId(image: Image): Promise<number | undefined>
+  {
+    const identityFeature = image.features?.find(feature => feature.id === this.extensionId && feature.type === ImageFeatureType.Identity && feature.name === CivitaiExtension.IDENTITY_FEATURE_NAME);
+    if (identityFeature !== undefined && typeof identityFeature.value === "string")
+    {
+      const parsedId = Number.parseInt(identityFeature.value, 10);
+      if (!Number.isNaN(parsedId))
+      {
+        return parsedId;
+      }
+    }
+
+    const nameWithoutExtension = image.name.replace(/\.[^/.]+$/, "");
+    const parsedFromName = Number.parseInt(nameWithoutExtension, 10);
+    if (!Number.isNaN(parsedFromName))
+    {
+      return parsedFromName;
+    }
+
+    return undefined;
   }
 
 }

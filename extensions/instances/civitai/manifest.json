@@ -36,7 +36,7 @@
             "properties": {
               "source": {
                 "type": "object",
-                "description": "The source of data.",
+                "description": "The source of data: a user, post, or single image.",
                 "oneOf": [
                   {
                     "title": "User",
@@ -69,13 +69,27 @@
                     "required": [
                       "postId"
                     ]
+                  },
+                  {
+                    "title": "Image",
+                    "properties": {
+                      "imageId": {
+                        "type": "integer",
+                        "title": "Image id",
+                        "description": "The identifier of the Civitai image",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "imageId"
+                    ]
                   }
                 ]
               },
               "count": {
                 "type": "integer",
                 "title": "Count",
-                "description": "The number of images to fetch",
+                "description": "The number of images to fetch for a user or post source. This is ignored for a single image source.",
                 "minimum": 1,
                 "maximum": 100,
                 "default": 10
@@ -83,7 +97,7 @@
               "onlyWithMetadata": {
                 "type": "boolean",
                 "title": "Only with metadata",
-                "description": "Whether to fetch only images that include generation metadata",
+                "description": "Whether to fetch only images that include generation metadata. When enabled for a single image source, the image is skipped if it has no metadata.",
                 "default": true
               }
             },
@@ -98,7 +112,7 @@
               "locale": "en",
               "label": "Fetch",
               "name": "Fetch images",
-              "description": "Asks the user the identifier of the Civitai user or of a post, a number of images, whether to keep only images with metadata, and then fetches the corresponding count of latest images and stores them with their metadata and sources in the extension's repository."
+              "description": "Fetches images for a Civitai user or post, or fetches one image by its Civitai image identifier, and stores them with their metadata and source in the extension's repository."
             }
           ]
         }
