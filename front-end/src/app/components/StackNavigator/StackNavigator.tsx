@@ -1,14 +1,4 @@
-import React, {
-  createContext,
-  ReactElement,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActionIcon, Box, CloseButton, Divider, Flex } from "@mantine/core";
 import { randomId, useFocusTrap } from "@mantine/hooks";
 import { Icon, IconArrowLeft } from "@tabler/icons-react";
@@ -19,26 +9,12 @@ import { ActionModalContext, ActionModalContextType, useActionModalContext } fro
 import { useKey } from "app/hooks";
 import { Common } from "app/components";
 import { StackBreadcrumbs } from "./components";
+import { StackContext, StackContextType } from "./StackContext.ts";
 
 import style from "./StackNavigator.module.scss";
 
 
 type StackedComponentType = ActionModalValue;
-
-interface StackContextType
-{
-  push: (stackedComponent: StackedComponentType) => void;
-
-  pop: () => void;
-
-  popToIndex: (targetIndex: number) => void;
-
-  popToRoot: () => void;
-
-  set: (stackedComponents: StackedComponentType[]) => void;
-}
-
-const StackContext = createContext<StackContextType | null>(null);
 
 export const useStackNavigator = (): StackContextType =>
 {

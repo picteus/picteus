@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Box, Button, Flex, Menu, Text, Tooltip } from "@mantine/core";
 import {
   IconArrowsHorizontal,
@@ -28,6 +28,7 @@ export interface FiltersBarRef
 }
 
 type FiltersBarType = {
+  lockedRepositoryId?: string;
   initialFilterOrCollectionId: FilterOrCollectionId;
   onFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId) => void;
   onClearAll: () => void;
@@ -46,6 +47,7 @@ const SORT_ICONS: Record<string, React.ReactNode> = {
 };
 
 export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
+  lockedRepositoryId,
   initialFilterOrCollectionId,
   onFilterOrCollectionId,
   onClearAll,
@@ -56,6 +58,11 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
   const [ filters, setFilters ] = useInterceptedState<LocalFiltersType | undefined>("filter" in initialFilterOrCollectionId ? FiltersService.searchFilterToLocalFilters(initialFilterOrCollectionId.filter) : undefined);
   const [ sortingMenuOpened, setSortingMenuOpened ] = useState<boolean>(false);
   const isProgrammaticUpdateRef = useRef<boolean>(true);
+
+  const effectiveFilters = useMemo<LocalFiltersType | undefined>(
+    () => lockedRepositoryId !== undefined && filters !== undefined ? { ...filters, repositories: [ lockedRepositoryId ] } : filters,
+    [ filters, lockedRepositoryId ]
+  );
 
   useImperativeHandle(ref, (): FiltersBarRef => ({
     setFilter: (filter: SearchFilter): void =>
@@ -90,16 +97,17 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
       return;
     }
 
-    const updatedSearchFilter = filters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(filters);
+    const updatedSearchFilter = effectiveFilters === undefined ? undefined : FiltersService.localFiltersToSearchFilter(effectiveFilters);
     if (updatedSearchFilter !== undefined)
     {
       onFilterOrCollectionId({ filter: updatedSearchFilter });
     }
-  }, [ filters, onFilterOrCollectionId ]);
+  }, [ effectiveFilters, onFilterOrCollectionId ]);
 
   function handleOnClearAll()
   {
-    setFilters(FiltersService.searchFilterToLocalFilters(FiltersService.defaultFilter));
+    const clearedFilters = FiltersService.searchFilterToLocalFilters(FiltersService.defaultFilter);
+    setFilters(lockedRepositoryId !== undefined ? { ...clearedFilters, repositories: [ lockedRepositoryId ] } : clearedFilters);
     onClearAll();
   }
 
@@ -132,7 +140,7 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
             ))}
           </Menu.Dropdown>
         </Menu>
-        <Tooltip label={filters?.sortOrder === "1" ? t("sort.asc") : t("sort.desc")}>
+        <Tooltip label={filters?.sortOrder === "1" ? t("sort.ascending") : t("sort.descending")}>
           <Button variant="default" px="xs" onClick={toggleSortOrder}>
             {filters?.sortOrder === "1" ? <IconSortAscending size={16}/> : <IconSortDescending size={16}/>}
           </Button>
@@ -140,7 +148,8 @@ export const FiltersBar = forwardRef<FiltersBarRef, FiltersBarType>(({
       </Button.Group>
       {filters?.images === undefined && <Box flex={1} miw={0}>
         <SearchFilters
-          filters={filters}
+          filters={effectiveFilters}
+          lockedRepositoryId={lockedRepositoryId}
           setFilters={setFilters}
           onFilterChange={onFilterChangeWrapper}
           onClearAll={handleOnClearAll}

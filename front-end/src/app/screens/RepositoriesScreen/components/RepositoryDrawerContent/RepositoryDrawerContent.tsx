@@ -1,0 +1,126 @@
+import { ReactElement, ReactNode } from "react";
+import { Button, CopyButton, Divider, Flex, Stack, Text, UnstyledButton } from "@mantine/core";
+import { IconAppWindow, IconPhoto } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
+
+import { Repository, RepositoryActivity } from "@picteus/ws-client";
+
+import { removeFilePrefixFromUrl, REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED } from "utils";
+import { useOpenExplorer } from "app/hooks";
+import { Common, CopyText, FormatedDate, NoValue } from "app/components";
+import { RepositoryPreviews, RepositoryStatusPill } from "../index.ts";
+
+
+const DRAWER_PREVIEWS_COUNT = 6;
+const DRAWER_PREVIEW_EDGE = 138;
+const DETAIL_LABEL_WIDTH = 96;
+
+
+type RepositoryDrawerContentType = {
+  repository: Repository;
+  activity?: RepositoryActivity;
+  imageCount?: number;
+  onViewImages?: () => void;
+  onOpenInNewWindow?: () => void;
+};
+
+export default function RepositoryDrawerContent({
+  repository,
+  activity,
+  imageCount,
+  onViewImages,
+  onOpenInNewWindow
+}: RepositoryDrawerContentType): ReactElement
+{
+  const [ t ] = useTranslation();
+  const openExplorer = useOpenExplorer();
+
+  const path = removeFilePrefixFromUrl(repository.url) ?? repository.url;
+  const hasActions = onViewImages !== undefined || (REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED && onOpenInNewWindow !== undefined);
+
+  function renderDetailRow(label: string, value: ReactNode): ReactElement
+  {
+    return (
+      <Flex gap="xs" align="center">
+        <Text size="xs" c="dimmed" w={DETAIL_LABEL_WIDTH} flex="0 0 auto">{label}</Text>
+        {value}
+      </Flex>
+    );
+  }
+
+  return (
+    <Stack gap="md">
+      <Flex gap="xs" align="center">
+        <RepositoryStatusPill repository={repository} activity={activity}/>
+        {imageCount !== undefined && (
+          <Text size="sm" c="dimmed">{t("repositoryScreen.imagesCount", { count: imageCount })}</Text>
+        )}
+      </Flex>
+      {hasActions === true && (
+        <Stack gap="xs">
+          {onViewImages !== undefined && (
+            <Button
+              leftSection={<IconPhoto size={16} stroke={Common.IconStrokeSize}/>}
+              onClick={onViewImages}
+            >
+              {t("repositoryScreen.drawer.viewImages")}
+            </Button>
+          )}
+          {REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED && onOpenInNewWindow !== undefined && (
+            <Button
+              variant="default"
+              leftSection={<IconAppWindow size={16} stroke={Common.IconStrokeSize}/>}
+              onClick={onOpenInNewWindow}
+            >
+              {t("repositoryScreen.drawer.openInNewWindow")}
+            </Button>
+          )}
+        </Stack>
+      )}
+      <Flex justify="space-between" align="center">
+        <Text size="sm" fw={600}>{t("repositoryScreen.drawer.recentImages")}</Text>
+        {onViewImages !== undefined && imageCount !== undefined && (
+          <UnstyledButton onClick={onViewImages}>
+            <Text size="xs" c="blue">{t("repositoryScreen.drawer.viewAll", { number: imageCount })}</Text>
+          </UnstyledButton>
+        )}
+      </Flex>
+      <RepositoryPreviews repositoryId={repository.id} count={DRAWER_PREVIEWS_COUNT} edge={DRAWER_PREVIEW_EDGE}/>
+      <Divider/>
+      <Stack gap={6}>
+        <Text size="xs" fw={500} c="dimmed">{t("repositoryScreen.drawer.folder")}</Text>
+        <Text size="sm">{path}</Text>
+        <Flex gap="md" align="center">
+          <UnstyledButton onClick={() => void openExplorer(path)}>
+            <Text size="sm" c="blue">{t("repositoryScreen.drawer.showInFinder")}</Text>
+          </UnstyledButton>
+          <CopyButton value={path} timeout={1200}>
+            {({ copy }) => (
+              <UnstyledButton onClick={copy}>
+                <Text size="sm" c="blue">{t("repositoryScreen.drawer.copyPath")}</Text>
+              </UnstyledButton>
+            )}
+          </CopyButton>
+        </Flex>
+      </Stack>
+      <Stack gap={6}>
+        <Text size="xs" fw={500} c="dimmed">{t("field.comment")}</Text>
+        {repository.comment ? <Text size="sm">{repository.comment}</Text> : <NoValue/>}
+      </Stack>
+      <Stack gap="xs">
+        {renderDetailRow(
+          t("field.id"),
+          <CopyText value={repository.id} inline={true}><Text size="sm">{repository.id}</Text></CopyText>
+        )}
+        {renderDetailRow(
+          t("field.createdOn"),
+          <Text size="sm"><FormatedDate timestamp={repository.creationDate}/></Text>
+        )}
+        {renderDetailRow(
+          t("field.modifiedOn"),
+          <Text size="sm"><FormatedDate timestamp={repository.modificationDate}/></Text>
+        )}
+      </Stack>
+    </Stack>
+  );
+}

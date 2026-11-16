@@ -26,7 +26,11 @@ import { useRepository } from "app/hooks";
 import { useActionModalContext } from "app/context";
 import { Common, freeForm, ImageItemWrapper, UiContainerView } from "app/components";
 import ImageDataCard from "../ImageDataCard/ImageDataCard.tsx";
-import { RepositoryDetail, RepositoryTop } from "../../../../../../screens/RepositoriesScreen/components";
+import {
+  RepositoryDrawerContent,
+  RepositoryIdentity,
+  RepositoryMenu
+} from "../../../../../../screens/RepositoriesScreen/components";
 
 
 export type ImageInformationCardPropsType =
@@ -47,7 +51,7 @@ export default function ImageInformationCard({
 }: ImageInformationCardPropsType): ReactElement
 {
   const [ t ] = useTranslation();
-  const { addModal } = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
   const { data: repository } = useRepository(image.repositoryId);
 
   const uiContainer = useMemo(() =>
@@ -87,12 +91,16 @@ export default function ImageInformationCard({
                   variant="default"
                   onClick={() =>
                   {
-                    addModal({
-                      title: <RepositoryTop repository={repository} onDeleted={() =>
-                      {
-                      }}/>,
+                    let modalId = "";
+                    modalId = addModal({
+                      title: (
+                        <RepositoryIdentity
+                          repository={repository}
+                          menu={<RepositoryMenu repository={repository} onDeleted={() => removeModal(modalId)}/>}
+                        />
+                      ),
                       size: "m",
-                      body: <RepositoryDetail repository={repository}/>
+                      body: <RepositoryDrawerContent repository={repository}/>
                     });
                   }}
                 >
@@ -150,7 +158,7 @@ export default function ImageInformationCard({
         ]
       });
     },
-    [ image, repository, viewMode, t, addModal ]
+    [ image, repository, viewMode, t, addModal, removeModal ]
   );
 
   return (

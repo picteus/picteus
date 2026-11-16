@@ -3,12 +3,14 @@ import {
   ExtensionImageFeatureName,
   ExtensionImageTag,
   Repository,
+  RepositoryActivity,
   RepositoryApi,
   RepositoryApiRepositoryCreateRequest,
   RepositoryApiRepositoryDeleteRequest,
   RepositoryApiRepositoryGetRequest,
   RepositoryApiRepositorySynchronizeRequest,
-  RepositoryApiRepositoryUpdateRequest
+  RepositoryApiRepositoryUpdateRequest,
+  RepositoryApiRepositoryWatchRequest
 } from "@picteus/ws-client";
 
 
@@ -44,6 +46,16 @@ async function synchronize(parameters: RepositoryApiRepositorySynchronizeRequest
   return repositoryApi.repositorySynchronize(parameters);
 }
 
+async function watch(parameters: RepositoryApiRepositoryWatchRequest): Promise<void>
+{
+  return repositoryApi.repositoryWatch(parameters);
+}
+
+async function getActivities(): Promise<RepositoryActivity[]>
+{
+  return repositoryApi.repositoryActivities();
+}
+
 async function getFeatureNames(): Promise<ExtensionImageFeatureName[]>
 {
   return repositoryApi.repositoryGetFeatureNames();
@@ -59,6 +71,11 @@ async function getEmbeddingsNames(): Promise<ExtensionIdImageEmbeddingName[]>
   return repositoryApi.repositoryGetEmbeddingsNames();
 }
 
+function isFromExtension(repository: Repository): boolean
+{
+  return repository.extensionId !== undefined;
+}
+
 export default {
   fetchAll,
   get,
@@ -66,7 +83,10 @@ export default {
   update,
   delete: deleteRepository,
   synchronize,
+  watch,
+  getActivities,
   getFeatureNames,
   getTags,
-  getEmbeddingsNames
+  getEmbeddingsNames,
+  isFromExtension
 };

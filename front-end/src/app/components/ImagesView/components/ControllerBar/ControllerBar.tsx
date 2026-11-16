@@ -15,6 +15,8 @@ import style from "./ControllerBar.module.scss";
 type ControllerBarType = {
   children?: ReactNode;
   withFilter: boolean;
+  lockedRepositoryId?: string;
+  withCollectionsBar: boolean;
   initialFilterOrCollectionId: FilterOrCollectionId;
   onFilterOrCollectionId: (filterOrCollectionId: FilterOrCollectionId) => void;
   withRefreshButton: boolean;
@@ -27,6 +29,8 @@ type ControllerBarType = {
 export default function ControllerBar({
   children,
   withFilter,
+  lockedRepositoryId,
+  withCollectionsBar,
   initialFilterOrCollectionId,
   onFilterOrCollectionId,
   withRefreshButton,
@@ -97,16 +101,19 @@ export default function ControllerBar({
       {withFilter && <Box flex={1} miw={0}>
         <FiltersBar
           ref={filtersBarRef}
+          lockedRepositoryId={lockedRepositoryId}
           initialFilterOrCollectionId={initialFilterOrCollectionId}
           onFilterOrCollectionId={handleOnFilterOrCollectionId}
           onClearAll={handleOnClearAll}
         >
-          <CollectionsBar
-            ref={collectionsBarRef}
-            searchFilter={"filter" in initialFilterOrCollectionId ? initialFilterOrCollectionId.filter : currentCollection?.filter}
-            initialCollectionId={initialCollectionId}
-            onCollection={handleOnCollection}
-          />
+          {withCollectionsBar === true && (
+            <CollectionsBar
+              ref={collectionsBarRef}
+              searchFilter={"filter" in initialFilterOrCollectionId ? initialFilterOrCollectionId.filter : currentCollection?.filter}
+              initialCollectionId={initialCollectionId}
+              onCollection={handleOnCollection}
+            />
+          )}
         </FiltersBar>
       </Box>}
     </Flex>;

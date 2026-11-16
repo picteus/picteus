@@ -80,6 +80,35 @@ export function computeFilePath(directoryPath: string, fileName: string): string
   return `${directoryPath}${separator}${fileName}`;
 }
 
+export function shortenPath(filePath: string, homeDirectory?: string): string
+{
+  const rawPath = removeFilePrefixFromUrl(filePath) ?? filePath;
+  const homePath = homeDirectory === undefined ? undefined : (removeFilePrefixFromUrl(homeDirectory) ?? homeDirectory);
+  let path = rawPath;
+  if (homePath !== undefined && homePath !== "" && path.startsWith(homePath))
+  {
+    path = `~${path.slice(homePath.length)}`;
+  }
+  const separator = computePathSeparator(path);
+  const segments = path.split(separator).filter((segment) => segment !== "");
+  const isAbsolute = path.startsWith(separator);
+  const hasHomePrefix = segments[0] === "~";
+  const leadingSeparator = isAbsolute ? separator : "";
+  const headSegment = hasHomePrefix ? "~" : (isAbsolute ? "" : segments[0]);
+  const headWithSeparator = `${leadingSeparator}${headSegment}${headSegment === "" ? "" : separator}`;
+  const contentSegments = segments.slice(1);
+  if (contentSegments.length === 0)
+  {
+    return `${leadingSeparator}${headSegment}`;
+  }
+  if (contentSegments.length <= 2)
+  {
+    return `${headWithSeparator}${contentSegments.join(separator)}`;
+  }
+  const tailSegments = contentSegments.slice(-2);
+  return `${headWithSeparator}…${separator}${tailSegments.join(separator)}`;
+}
+
 export function recursivelyIncludes(value: unknown, search: string): boolean
 {
   if (value === null || value === undefined)

@@ -53,8 +53,8 @@ const formatsOptions: WithValueAndLabel[] = Object.keys(ImageFormat).map((key) =
 
 
 const sortOrderOptions: WithValueAndLabel[] = [
-  { value: "1", label: i18n.t("sort.asc") },
-  { value: "-1", label: i18n.t("sort.desc") }
+  { value: "1", label: i18n.t("sort.ascending") },
+  { value: "-1", label: i18n.t("sort.descending") }
 ];
 
 const searchInOptions: WithValueAndLabel[] = [

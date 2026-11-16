@@ -19,6 +19,7 @@ import {
   IconBulb,
   IconFilter,
   IconListDetails,
+  IconLock,
   IconSearch,
   IconTags,
   IconX
@@ -39,6 +40,7 @@ import style from "./SearchFilters.module.scss";
 
 type SearchFiltersType = {
   filters?: LocalFiltersType;
+  lockedRepositoryId?: string;
   setFilters: React.Dispatch<React.SetStateAction<LocalFiltersType | undefined>>;
   onFilterChange: (key: string, value?: string[] | SearchProperties | SearchFeatures | SearchSortingProperty | ("-1" | "1")) => void;
   onClearAll: () => void;
@@ -46,6 +48,7 @@ type SearchFiltersType = {
 
 export function SearchFilters({
   filters,
+  lockedRepositoryId,
   setFilters,
   onFilterChange,
   onClearAll
@@ -112,9 +115,17 @@ export function SearchFilters({
     }
     if (filters.repositories?.length > 0)
     {
+      const isLocked = lockedRepositoryId !== undefined && filters.repositories.includes(lockedRepositoryId);
       pills.push(
-        <Pill key="repositories" withRemoveButton onRemove={() => onFilterChange("repositories")}>
-          {`${t("field.repositories")}: ${repositories.filter((repository) => filters.repositories?.includes(repository.id)).map((repository) => repository.name).join(", ")}`}
+        <Pill
+          key="repositories"
+          withRemoveButton={isLocked === false}
+          onRemove={isLocked === false ? () => onFilterChange("repositories") : undefined}
+        >
+          <Group gap={4} wrap="nowrap">
+            {isLocked === true && <IconLock size={12} stroke={Common.IconStrokeSize}/>}
+            <span>{`${t("field.repositories")}: ${repositories.filter((repository) => filters.repositories?.includes(repository.id)).map((repository) => repository.name).join(", ")}`}</span>
+          </Group>
         </Pill>
       );
     }
@@ -262,6 +273,7 @@ export function SearchFilters({
                 <GeneralFilters
                   repositories={repositories}
                   filters={filters}
+                  lockedRepositoryId={lockedRepositoryId}
                   onChangeFilter={onFilterChange}
                 />
               )}

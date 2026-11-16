@@ -1,4 +1,12 @@
 export { default as AddOrUpdateRepository } from "./AddOrUpdateRepository/AddOrUpdateRepository.tsx";
-export { default as RepositoryActions } from "./RepositoryActions/RepositoryActions.tsx";
-export { default as RepositoryDetail } from "./RepositoryDetail/RepositoryDetail.tsx";
-export { default as RepositoryTop } from "./RepositoryTop/RepositoryTop.tsx";
+export { default as FirstLaunchSlot } from "./FirstLaunchSlot/FirstLaunchSlot.tsx";
+export { default as RepositoriesGrid } from "./RepositoriesGrid/RepositoriesGrid.tsx";
+export { default as RepositoriesHeader } from "./RepositoriesHeader/RepositoriesHeader.tsx";
+export { default as RepositoriesTable } from "./RepositoriesTable/RepositoriesTable.tsx";
+export { default as RepositoriesToolbar } from "./RepositoriesToolbar/RepositoriesToolbar.tsx";
+export { default as RepositoryCard } from "./RepositoryCard/RepositoryCard.tsx";
+export { default as RepositoryDrawerContent } from "./RepositoryDrawerContent/RepositoryDrawerContent.tsx";
+export { default as RepositoryIdentity } from "./RepositoryIdentity/RepositoryIdentity.tsx";
+export { default as RepositoryMenu } from "./RepositoryMenu/RepositoryMenu.tsx";
+export { default as RepositoryPreviews } from "./RepositoryPreviews/RepositoryPreviews.tsx";
+export { default as RepositoryStatusPill } from "./RepositoryStatusPill/RepositoryStatusPill.tsx";

@@ -203,8 +203,8 @@ export default {
     addCondition: "Add condition"
   },
   sort: {
-    asc: "Ascending",
-    desc: "Descending",
+    ascending: "Ascending",
+    descending: "Descending",
     sortBy: "Sort by",
     sortedBy: "Sorted by",
     sortOrder: "Sort order",
@@ -504,8 +504,62 @@ export default {
   },
   repositoryScreen: {
     title: "Repositories",
+    repositoriesCount_one: "{{count}} repository",
+    repositoriesCount_other: "{{count}} repositories",
+    subtitle: "Folders you add, and the ones your extensions fill.",
+    addRepository: "Add repository",
+    view: {
+      cards: "Cards",
+      list: "List"
+    },
+    searchPlaceholder: "Search names and comments",
+    origin: {
+      all: "All  {{number}}",
+      user: "Added by you  {{number}}",
+      extensions: "From extensions  {{number}}"
+    },
+    imagesCount_one: "{{count}} image",
+    imagesCount_other: "{{count}} images",
+    table: {
+      recent: "Recent"
+    },
+    noImagesIndexed: "No images indexed yet",
+    addedBy: "Added by {{name}}",
+    drawer: {
+      viewImages: "View images",
+      openInNewWindow: "Open in new window",
+      recentImages: "Recent images",
+      viewAll: "View all {{number}}",
+      folder: "Folder",
+      showInFinder: "Show in Finder",
+      copyPath: "Copy path"
+    },
+    imagesScreen: {
+      subtitle: "Repository • {{path}} • {{number}} images",
+      lockedRepositoryHint: "Locked on this screen. To search every repository, use Explore."
+    },
+    status: {
+      ready: "Ready",
+      indexing: "Indexing…",
+      unavailable: "Unavailable"
+    },
+    firstLaunch: {
+      caption: "NEW TO PICTEUS? START HERE",
+      title: "Add your own folders",
+      description: "Add the folders where you save your generations, like your ComfyUI outputs. Picteus indexes them and watches for new images. Your files stay where they are.",
+      chooseFolder: "Choose a folder",
+      readManual: "Read the manual",
+      watchOnYoutube: "Watch on YouTube"
+    },
+    menu: {
+      watch: "Watch",
+      stopWatching: "Stop watching"
+    },
     successRemove: "The repository has been successfully removed",
     errorRemove: "An error occured while removing the repository",
+    successWatch: "The repository is now watched for new images",
+    successStopWatching: "The repository is no longer watched for new images",
+    errorWatch: "An error occured while updating the watch state of the repository",
     confirmDeleteTitle: "Delete repository",
     confirmDeleteMessage:
       "Are you sure you want to delete the repository '{{name}}' ?"

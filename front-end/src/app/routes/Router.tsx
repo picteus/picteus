@@ -1,6 +1,6 @@
 import * as React from "react";
 import { FunctionComponent, ReactElement, useEffect, useMemo, useRef, useState } from "react";
-import { HashRouter, useLocation, useNavigate } from "react-router-dom";
+import { HashRouter, matchPath, useLocation, useNavigate } from "react-router-dom";
 import { Bounce, ToastContainer } from "react-toastify";
 import { Box } from "@mantine/core";
 
@@ -16,11 +16,13 @@ import {
   ExplorerScreen,
   ExtensionsScreen,
   RepositoriesScreen,
+  RepositoryImagesScreen,
   SettingsScreen,
   SidebarAnchorScreen,
   TestsScreen
 } from "app/screens";
 import { Layout } from "app/layout";
+import { Modals } from "app/layout/Layout/components";
 
 import style from "./Router.module.scss";
 
@@ -60,7 +62,7 @@ function RouterContent({}: RouterContentType): ReactElement
 
   const mainRoutes = useMemo<Route[]>(() =>
   {
-    return Object.entries(ROUTES).map(([ key, path ]) =>
+    return Object.entries(ROUTES).filter(([ key ]) => key !== "repository").map(([ key, path ]) =>
     {
       const ComponentMap: Record<string, FunctionComponent> = {
         home: ExplorerScreen,
@@ -76,6 +78,9 @@ function RouterContent({}: RouterContentType): ReactElement
     });
   }, [ additionalUi ]);
 
+  // The "/repository/:id" route renders standalone, without the Layout rails (dedicated window)
+  const repositoryRouteMatch = useMemo(() => matchPath({ path: ROUTES.repository, end: true }, location.pathname), [ location.pathname ]);
+
   const additionalRoutes = useMemo<Route[]>(() =>
   {
     return additionalUi.sidebar?.filter(element => element.integration.anchor === UserInterfaceAnchor.Sidebar && element.integration.isExternal === false).map((element: AdditionalUi) =>
@@ -89,12 +94,24 @@ function RouterContent({}: RouterContentType): ReactElement
   {
     const newRoutes = mainRoutes.concat(additionalRoutes);
     setRoutes(newRoutes);
-    if (newRoutes.find(route => route.path === location.pathname) === undefined)
+    if (repositoryRouteMatch === null && newRoutes.find(route => route.path === location.pathname) === undefined)
     {
       // In case the current navigation path does not match any route, we fall back to the "home" route
       navigate(ROUTES.home);
     }
-  }, [ location.pathname, mainRoutes, additionalRoutes ]);
+  }, [ location.pathname, mainRoutes, additionalRoutes, repositoryRouteMatch ]);
+
+  if (repositoryRouteMatch !== null)
+  {
+    return (
+      <>
+        <Modals/>
+        <Box pos="absolute" inset={0} w="100%" h="100%">
+          <RepositoryImagesScreen repositoryId={repositoryRouteMatch.params.id ?? ""}/>
+        </Box>
+      </>
+    );
+  }
 
   return (
     <Layout>

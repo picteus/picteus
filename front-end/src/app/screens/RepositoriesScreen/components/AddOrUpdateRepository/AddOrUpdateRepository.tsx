@@ -24,10 +24,11 @@ const initialValues: RepositoryApiRepositoryCreateRequest = {
 export type AddOrUpdateRepositoryPropsType =
   {
     readonly repository?: Repository;
+    readonly initialUrl?: string;
   };
 
 export default function AddOrUpdateRepository(
-  { repository }: AddOrUpdateRepositoryPropsType
+  { repository, initialUrl }: AddOrUpdateRepositoryPropsType
 ): ReactElement
 {
   const [ t ] = useTranslation();
@@ -46,7 +47,7 @@ export default function AddOrUpdateRepository(
         comment: repository.comment ?? undefined,
         watch: undefined
       }
-      : initialValues,
+      : { ...initialValues, url: initialUrl ?? "" },
     validate: { name: Validators.isNotEmpty, url: Validators.isNotEmpty }
   });
   const [ loading, setLoading ] = useState<boolean>(false);

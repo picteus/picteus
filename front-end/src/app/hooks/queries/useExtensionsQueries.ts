@@ -1,4 +1,5 @@
 import { useMutation, UseMutationResult, useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query";
+import { useMemo } from "react";
 import i18n from "i18next";
 import {
   CommandEntity,
@@ -112,6 +113,22 @@ export function useExtension(id: string): UseQueryResult<ExtensionAndManual, Err
       },
       enabled: Boolean(id)
     }
+  );
+}
+
+export function useExtensionDisplayName(extensionId: string | undefined): string | undefined
+{
+  const { data: extensions = [] } = useExtensions();
+  return useMemo(
+    () =>
+    {
+      if (extensionId === undefined)
+      {
+        return undefined;
+      }
+      return extensions.find((extension) => extension.manifest.id === extensionId)?.manifest.name ?? extensionId;
+    },
+    [ extensions, extensionId ]
   );
 }
 

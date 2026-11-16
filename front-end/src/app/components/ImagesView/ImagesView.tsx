@@ -27,6 +27,8 @@ type ImagesViewType = {
   viewData: ViewTabDataType | { viewMode: ViewMode, images: ImageWithCaption[] };
   isDefault: boolean;
   withRefreshButton?: boolean;
+  lockedRepositoryId?: string;
+  withCollectionsBar?: boolean;
   controlBarChildren?: ReactNode;
   loader?: ReactNode;
   onEmptyResults: () => ReactElement<typeof EmptyResults>;
@@ -36,6 +38,8 @@ export default function ImagesView({
   viewData,
   isDefault,
   withRefreshButton,
+  lockedRepositoryId,
+  withCollectionsBar,
   controlBarChildren,
   loader,
   onEmptyResults
@@ -201,7 +205,9 @@ export default function ImagesView({
   return (<Flex ref={containerRef} direction="column" className={style.container}>
     <ControllerBar
       children={controlBarChildren}
-      withFilter={isDefault}
+      withFilter={isDefault || lockedRepositoryId !== undefined}
+      lockedRepositoryId={lockedRepositoryId}
+      withCollectionsBar={withCollectionsBar ?? true}
       initialFilterOrCollectionId={filterOrCollectionId}
       onFilterOrCollectionId={handleOnFilterOrCollectionId}
       withRefreshButton={withRefreshButton === undefined ? hasFilterOrCollectionId : withRefreshButton}

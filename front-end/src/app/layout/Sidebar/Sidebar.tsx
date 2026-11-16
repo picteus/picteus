@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Divider, ScrollArea, Stack } from "@mantine/core";
-import { IconBooks, IconBox, IconFolderOpen, IconPhotoMinus, IconSettings, IconStack2 } from "@tabler/icons-react";
+import { IconBooks, IconBox, IconFolders, IconPhotoMinus, IconSettings, IconStack2 } from "@tabler/icons-react";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
@@ -41,7 +41,7 @@ export default function Sidebar()
     {
       route: ROUTES.repositories,
       label: "repositories",
-      icon: <IconFolderOpen {...commonIconStyle} />
+      icon: <IconFolders {...commonIconStyle} />
     },
     {
       route: ROUTES.collections,

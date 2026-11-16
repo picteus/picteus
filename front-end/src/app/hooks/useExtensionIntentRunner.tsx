@@ -43,7 +43,7 @@ import {
 } from "app/hooks";
 import { Common, Iframe, Markdown } from "app/components";
 import { ExtensionConfiguration } from "app/screens/ExtensionsScreen/components";
-import { RepositoryDetail, RepositoryTop } from "app/screens/RepositoriesScreen/components";
+import { RepositoryDrawerContent, RepositoryIdentity, RepositoryMenu } from "app/screens/RepositoriesScreen/components";
 
 
 const commandEntities = [ CommandEntity.Process ];
@@ -59,7 +59,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
 {
   const [ t ] = useTranslation();
   const navigate = useNavigate();
-  const { addModal } = useActionModalContext();
+  const { addModal, removeModal } = useActionModalContext();
   const { addTab } = useDeskTabsContext();
   const [ additionalUiContextValue, , addTransient ] = useAdditionalUiContext();
   const commandRunner = useExtensionCommandRunner();
@@ -264,12 +264,16 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
               return listener.onFailure(`The repository with id '${show.id}' does not exist`);
             }
 
-            addModal({
-              title: <RepositoryTop repository={repository} onDeleted={() =>
-              {
-              }}/>,
+            let modalId = "";
+            modalId = addModal({
+              title: (
+                <RepositoryIdentity
+                  repository={repository}
+                  menu={<RepositoryMenu repository={repository} onDeleted={() => removeModal(modalId)}/>}
+                />
+              ),
               size: "m",
-              body: <RepositoryDetail repository={repository}/>,
+              body: <RepositoryDrawerContent repository={repository}/>,
               onBeforeClose: (viaOnSuccess: boolean) =>
               {
                 if (viaOnSuccess === false)

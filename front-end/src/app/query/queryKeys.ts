@@ -3,9 +3,11 @@ export const queryKeys =
   repositories: {
     all: [ "repositories" ] as const,
     detail: (repositoryId: string) => [ "repositories", repositoryId ] as const,
+    summaries: (repositoryId: string, count: number) => [ "repositories", repositoryId, "summaries", count ] as const,
     tags: [ "repositories", "tags" ] as const,
     features: [ "repositories", "features" ] as const,
-    embeddings: [ "repositories", "embeddings" ] as const
+    embeddings: [ "repositories", "embeddings" ] as const,
+    activities: [ "repositories", "activities" ] as const
   },
   collections: {
     all: [ "collections" ] as const,

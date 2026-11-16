@@ -1,6 +1,6 @@
 import { ManifestCapabilityId, SearchFilter } from "@picteus/ws-client";
 
-import { DeskTabType, FolderTypes, ViewTabDataType } from "types";
+import { DeskTabType, FolderTypes, RepositoriesViewSettingsType, ViewTabDataType } from "types";
 
 
 export const prefix = "picteus_";
@@ -23,6 +23,7 @@ export const StorageKeys =
     IMAGE_DETAIL_TRAITS: "imageDetailTraits",
     MAIN_TAB: "mainTab",
     RECENT_IMAGE_IDS: "recentImageIds",
+    REPOSITORIES_VIEW_SETTINGS: "repositoriesViewSettings",
     RUN_CAPABILITIES_EXCLUDED_CAPABILITY_IDS: "runCapabilitiesExcludedCapabilityIds",
     RUN_CAPABILITIES_EXCLUDED_EXTENSION_IDS: "runCapabilitiesExcludedExtensionIds",
     SELECTED_IMAGE_IDS: "selectedImagesIds",
@@ -225,6 +226,25 @@ function getMainViewTabData(defaultFilter: SearchFilter): ViewTabDataType
 function setMainViewTabData(viewTabData: ViewTabDataType): void
 {
   setJson(StorageKeys.MAIN_TAB, viewTabData);
+}
+
+const DEFAULT_REPOSITORIES_VIEW_SETTINGS: RepositoriesViewSettingsType = {
+  viewMode: "cards",
+  sortCriterion: "name",
+  isSortAscending: true,
+  originFilter: "all",
+  searchText: ""
+};
+
+function getRepositoriesViewSettings(): RepositoriesViewSettingsType
+{
+  const storedSettings = getJson<Partial<RepositoriesViewSettingsType>>(StorageKeys.REPOSITORIES_VIEW_SETTINGS);
+  return { ...DEFAULT_REPOSITORIES_VIEW_SETTINGS, ...storedSettings };
+}
+
+function setRepositoriesViewSettings(viewSettings: RepositoriesViewSettingsType): void
+{
+  setJson(StorageKeys.REPOSITORIES_VIEW_SETTINGS, viewSettings);
 }
 
 function getDeskTabs(): DeskTabType[]
@@ -444,6 +464,8 @@ export default {
   setExtensionIntentShowShouldConfirm,
   getMainViewTabData,
   setMainViewTabData,
+  getRepositoriesViewSettings,
+  setRepositoriesViewSettings,
   getDeskTabs,
   setDeskTabs,
   getDeskActiveTab,

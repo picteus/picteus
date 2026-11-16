@@ -264,6 +264,20 @@ export type ViewTabDataType = {
   filterOrCollectionId: FilterOrCollectionId;
 };
 
+export type RepositoriesViewModeType = "cards" | "list";
+
+export type RepositoriesSortCriterionType = "name" | "imageCount" | "createdOn";
+
+export type RepositoriesOriginFilterType = "all" | "user" | "extensions";
+
+export type RepositoriesViewSettingsType = {
+  viewMode: RepositoriesViewModeType;
+  sortCriterion: RepositoriesSortCriterionType;
+  isSortAscending: boolean;
+  originFilter: RepositoriesOriginFilterType;
+  searchText: string;
+};
+
 export type TabsType = {
   id?: string;
   extensionId?: string;

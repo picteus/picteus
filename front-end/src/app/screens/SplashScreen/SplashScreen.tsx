@@ -30,6 +30,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
+import { APPLICATION_MANUAL_URL } from "utils";
 import { Spinner } from "app/components";
 
 import style from "./SplashScreen.module.scss";
@@ -37,7 +38,6 @@ import style from "./SplashScreen.module.scss";
 
 const GITHUB_URL = import.meta.env.PACKAGE_HOMEPAGE;
 const APPLICATION_VERSION = import.meta.env.APPLICATION_VERSION || import.meta.env.PACKAGE_VERSION;
-const DOCUMENTATION_URL = "https://picteus.github.io/picteus";
 const DISCORD_SERVER_ID = "1549384585920385034";
 const DISCORD_INVITE_URL = "https://discord.gg/ej35tuzsy";
 const DISCORD_WIDGET_API_URL = `https://discord.com/api/guilds/${DISCORD_SERVER_ID}/widget.json`;
@@ -528,7 +528,7 @@ export default function SplashScreen({ logs }: SplashScreenPropsType): ReactNode
           <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
             <Paper
               component="a"
-              href={DOCUMENTATION_URL}
+              href={APPLICATION_MANUAL_URL}
               target="_blank"
               rel="noopener noreferrer"
               withBorder
