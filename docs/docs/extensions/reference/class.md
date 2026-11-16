@@ -115,8 +115,8 @@ The base class implements `onEvent` / `on_event`, which automatically dispatches
 | `onComputeImageEligibleTags(communicator, imageId, eligibleTags)` | `on_compute_image_eligible_tags(self, communicator, image_id, eligible_tags)` | Triggered on `image.computeTags` when the `image.tags` capability declares `details: { eligibleTags: true }`, passing candidate tags and AI model prompts (`ComputeImageEligibleTags[]`). |
 | `onComputeImageFeatures(communicator, imageId)` | `on_compute_image_features(self, communicator, image_id)` | Triggered on `image.computeFeatures` to extract structured features or metadata for an image. |
 | `onComputeImageCaptions(communicator, imageId, captions)` | `on_compute_image_captions(self, communicator, image_id, captions)` | Triggered on `image.computeFeatures` when the `image.features` capability declares `details: { caption: true }`, passing AI model prompts (`ComputeImageCaption[]`). |
-| `onComputeImageEmbeddings(communicator, imageId)` | `on_compute_image_embeddings(self, communicator, image_id)` | Triggered on `image.computeEmbeddings` to compute vector embeddings for similarity search. |
-| `onComputeTextEmbeddings(communicator, text)` | `on_compute_text_embeddings(self, communicator, text)` | Triggered on `text.computeEmbeddings` to compute text embeddings — returns `number[]` / `list[float]`. |
+| `onComputeImageEmbeddings(communicator, imageId, embeddings)` | `on_compute_image_embeddings(self, communicator, image_id, embeddings)` | Triggered on `image.computeEmbeddings` to compute image vectors for the requested AI models. `embeddings` contains `ComputeImageEmbedding` entries with an `aiModel`. |
+| `onComputeTextEmbeddings(communicator, text, aiModel?)` | `on_compute_text_embeddings(self, communicator, text, ai_model=None)` | Triggered on `text.computeEmbeddings` to compute text embeddings for the selected AI model — returns `number[]` / `list[float]`. |
 
 ### Command execution handlers
 

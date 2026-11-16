@@ -82,7 +82,7 @@ An extension capable of computing tags declares the `image.tags` capability in i
 
 ```json title="manifest.json"
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "my-tagger-extension",
   "name": "Vision AI Tagger",
   "instructions": [
