@@ -17,6 +17,7 @@ import TagsWidget from "./widgets/TagsWidget";
 import FilePickerWidget from "./widgets/FilePickerWidget";
 import DirectoryPickerWidget from "./widgets/DirectoryPickerWidget";
 import RangeWidget from "./widgets/RangeWidget";
+import SelectWidget from "./widgets/SelectWidget";
 
 
 type RsfjFormType = {
@@ -289,7 +290,9 @@ export default function RjsfForm({
       directory: DirectoryPickerWidget,
       directoryPicker: DirectoryPickerWidget,
       range: RangeWidget,
-      RangeWidget
+      RangeWidget,
+      Select: SelectWidget,
+      SelectWidget
     };
 
   return (
