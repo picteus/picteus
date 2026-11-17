@@ -1,4 +1,4 @@
-import { ReactElement, useCallback } from "react";
+import { type ChangeEvent, type FocusEvent, type ReactElement, useCallback } from "react";
 import { NativeSelect } from "@mantine/core";
 import {
   ariaDescribedByIds,
@@ -10,6 +10,7 @@ import {
 
 // Import the built-in SelectWidget from the theme library to reuse its multi-select branch
 import SelectWidget from "@aokiapp/rjsf-mantine-theme/lib/widgets/SelectWidget";
+import { useFieldContext } from "@aokiapp/rjsf-mantine-theme/lib/templates/FieldTemplate";
 
 
 export default function SelectWidgetWrapper(props: WidgetProps): ReactElement
@@ -33,21 +34,23 @@ export default function SelectWidgetWrapper(props: WidgetProps): ReactElement
 
   const { enumOptions, enumDisabled, emptyValue: optEmptyVal } = options;
   const selectedIndices = enumOptionsIndexForValue(value, enumOptions, false);
+  const selectedIndex = Array.isArray(selectedIndices) ? selectedIndices[0] : selectedIndices;
+  const { description } = useFieldContext();
 
-  const handleFocus = useCallback(() =>
+  const handleFocus = useCallback((event: FocusEvent<HTMLSelectElement>) =>
   {
-    return onFocus(id, enumOptionsValueForIndex(selectedIndices, enumOptions, optEmptyVal));
-  }, [ onFocus, id, selectedIndices, enumOptions, optEmptyVal ]);
+    return onFocus(id, enumOptionsValueForIndex(event.currentTarget.value, enumOptions, optEmptyVal));
+  }, [ onFocus, id, enumOptions, optEmptyVal ]);
 
-  const handleBlur = useCallback(() =>
+  const handleBlur = useCallback((event: FocusEvent<HTMLSelectElement>) =>
   {
-    return onBlur(id, enumOptionsValueForIndex(selectedIndices, enumOptions, optEmptyVal));
-  }, [ onBlur, id, selectedIndices, enumOptions, optEmptyVal ]);
+    return onBlur(id, enumOptionsValueForIndex(event.currentTarget.value, enumOptions, optEmptyVal));
+  }, [ onBlur, id, enumOptions, optEmptyVal ]);
 
   const handleChange = useCallback(
-    (updatedValue: string | string[] | null) =>
+    (event: ChangeEvent<HTMLSelectElement>) =>
     {
-      return onChange(enumOptionsValueForIndex(updatedValue, enumOptions, optEmptyVal));
+      return onChange(enumOptionsValueForIndex(event.currentTarget.value, enumOptions, optEmptyVal));
     },
     [ onChange, enumOptions, optEmptyVal ]
   );
@@ -74,13 +77,16 @@ export default function SelectWidgetWrapper(props: WidgetProps): ReactElement
   return (
     <NativeSelect
       data={data}
+      description={description}
       disabled={disabled || readonly}
       error={error}
+      id={id}
       label={fieldLabel}
+      name={id}
       autoFocus={autofocus}
       required={required}
-      value={selectedIndices?.[0] !== undefined ? String(selectedIndices[0]) : undefined}
-      onChange={(event) => handleChange(event.currentTarget.value)}
+      value={selectedIndex === undefined ? "" : String(selectedIndex)}
+      onChange={handleChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
       aria-describedby={ariaDescribedByIds(id)}

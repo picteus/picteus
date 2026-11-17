@@ -84,13 +84,69 @@ function stripAndExtractParametersUiProperties(parameters: JsonType): UIProperty
   return uis;
 }
 
+// We recursively flatten "allOf" schemas by merging inner schema properties into the outer schema. The json-schema-merge-allof library used by RJSF drops "enum" when the outer schema lacks an "enum" property because it computes the intersection of enum values across all schemas. We perform a shallow merge so that "enum" (and other properties) are preserved, then recursively walk the schema tree (properties, items, oneOf, anyOf).
+export function flattenAllofRecursive(schema: JsonType): JsonType
+{
+  if (typeof schema !== "object" || schema === null)
+  {
+    return schema;
+  }
+
+  // We flatten "allOf" by merging inner schemas into the outer one
+  let node: Record<string, JsonType> = { ...schema };
+  if (Array.isArray(node.allOf))
+  {
+    const allOf = node.allOf;
+    delete node.allOf;
+    for (const innerSchema of allOf)
+    {
+      if (typeof innerSchema === "object" && innerSchema !== null)
+      {
+        const flattenedInner = flattenAllofRecursive(innerSchema);
+        const { $ref: _ref, allOf: _allOf, ...rest } = flattenedInner;
+        // We merge inner properties, but let "enum" always overwrite
+        node = { ...node, ...rest };
+        if (Array.isArray(rest.enum))
+        {
+          node.enum = rest.enum;
+        }
+      }
+    }
+  }
+
+  // We recursively walk child schemas
+  if (typeof node.properties === "object" && node.properties !== null)
+  {
+    for (const propertyKey in node.properties)
+    {
+      node.properties[propertyKey] = flattenAllofRecursive(node.properties[propertyKey]);
+    }
+  }
+
+  if (typeof node.items === "object" && node.items !== null)
+  {
+    node.items = flattenAllofRecursive(node.items);
+  }
+
+  for (const unionKey of [ "oneOf", "anyOf" ])
+  {
+    if (Array.isArray(node[unionKey]))
+    {
+      node[unionKey] = node[unionKey].map(flattenAllofRecursive);
+    }
+  }
+
+  return node;
+}
+
 export function extractSchemaAndUiSchema(parameters: object): {
   schema: RJSFSchema,
   uiSchema: UiSchema
 }
 {
   const deepCopiedParameters: RJSFSchema = JSON.parse(JSON.stringify(parameters));
-  const uiProperties = stripAndExtractParametersUiProperties(deepCopiedParameters);
+  const flattenedSchema = flattenAllofRecursive(deepCopiedParameters) as RJSFSchema;
+  const uiProperties = stripAndExtractParametersUiProperties(flattenedSchema);
   const uiSchema: UiSchema = {};
   uiProperties.forEach((uiProperty: UIProperty) =>
   {
@@ -103,7 +159,7 @@ export function extractSchemaAndUiSchema(parameters: object): {
       ...(widgetName ? { "ui:widget": widgetName as string } : {})
     };
   });
-  return { schema: deepCopiedParameters, uiSchema };
+  return { schema: flattenedSchema, uiSchema };
 }
 
 function ErrorFallback({ error })
