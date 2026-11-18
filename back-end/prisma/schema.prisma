@@ -55,6 +55,8 @@ model Repository {
   url              String   @unique
   name             String
   comment          String?
+  mode             String   @default("enabled")
+  available        Boolean  @default(true)
   state            String
   creationDate     DateTime @default(now())
   modificationDate DateTime @updatedAt
@@ -73,7 +75,7 @@ model Collection {
 model Image {
   id                   String            @id @default(uuid())
   name                 String
-  repository           Repository?       @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  repository           Repository        @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
   repositoryId         String
   parentId             String?
   parent               Image?            @relation("precedence", fields: [parentId], references: [id])

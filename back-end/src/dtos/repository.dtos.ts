@@ -1,5 +1,5 @@
 import { Expose } from "class-transformer";
-import { IsEnum, IsOptional, IsString, Matches, MaxLength, MinLength } from "class-validator";
+import { IsBoolean, IsEnum, IsOptional, IsString, Matches, MaxLength, MinLength } from "class-validator";
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 
 import {
@@ -76,14 +76,23 @@ export class RepositoryLocation
 }
 
 /**
+ * All the repository operating modes.
+ */
+export enum RepositoryMode
+{
+  Disabled = "disabled",
+  Enabled = "enabled",
+  Watching = "watching"
+}
+
+/**
  * All the repository states.
  */
 export enum RepositoryState
 {
-  UNAVAILABLE = "UNAVAILABLE",
-  READY = "READY",
-  INDEXING = "INDEXING",
-  UNAVAILABLE_INDEXING = "UNAVAILABLE_INDEXING"
+  Unindexed = "unindexed",
+  Indexing = "indexing",
+  Ready = "ready"
 }
 
 /**
@@ -93,7 +102,7 @@ export enum RepositoryState
 export class Repository extends Dates
 {
 
-  constructor(creationDate: number, modificationDate: number, id: string, extensionId: string | undefined, type: RepositoryLocationType, url: string, name: string, comment: string | undefined, state: RepositoryState)
+  constructor(creationDate: number, modificationDate: number, id: string, extensionId: string | undefined, type: RepositoryLocationType, url: string, name: string, comment: string | undefined, mode: RepositoryMode, available: boolean, state: RepositoryState)
   {
     super(creationDate, modificationDate);
     this.id = id;
@@ -102,6 +111,8 @@ export class Repository extends Dates
     this.url = url;
     this.name = name;
     this.comment = comment;
+    this.mode = mode;
+    this.available = available;
     this.state = state;
   }
 
@@ -206,11 +217,36 @@ export class Repository extends Dates
 
   @ApiProperty(
     {
+      description: "The operating mode of the repository",
+      enum: RepositoryMode,
+      enumName: "RepositoryMode",
+      required: true,
+      example: RepositoryMode.Enabled
+    }
+  )
+  @IsEnum(RepositoryMode)
+  @Expose()
+  readonly mode: RepositoryMode;
+
+  @ApiProperty(
+    {
+      description: "Indicates whether the repository back-end storage is available",
+      type: Boolean,
+      required: true,
+      example: true
+    }
+  )
+  @IsBoolean()
+  @Expose()
+  readonly available: boolean;
+
+  @ApiProperty(
+    {
       description: "The state of the repository",
       enum: RepositoryState,
       enumName: "RepositoryState",
       required: true,
-      example: RepositoryState.READY
+      example: RepositoryState.Ready
     }
   )
   @IsEnum(RepositoryState)

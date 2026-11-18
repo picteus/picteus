@@ -147,6 +147,15 @@ export default function ImagesView({
     return [ ChannelEnum.IMAGE_CREATED, ChannelEnum.IMAGE_UPDATED, ChannelEnum.IMAGE_DELETED ] as const;
   }, []);
 
+  const repositoryChannels = useMemo(() =>
+  {
+    return [
+      ChannelEnum.REPOSITORY_MODE_DISABLED,
+      ChannelEnum.REPOSITORY_MODE_ENABLED,
+      ChannelEnum.REPOSITORY_MODE_WATCHING
+    ] as const;
+  }, []);
+
   useSocketEvents(imageChannels, (event: EventInformationType): void =>
   {
     if (autoReloadImagesViews)
@@ -175,6 +184,11 @@ export default function ImagesView({
     {
       setDisplayRefreshAlert(true);
     }
+  });
+
+  useSocketEvents(repositoryChannels, (): void =>
+  {
+    handleOnRefresh();
   });
 
   const handleOnFilterOrCollectionId = useCallback((updatedFilterOrCollectionId: FilterOrCollectionId): void =>

@@ -38,6 +38,7 @@ import {
   ManifestImageTagsCapability,
   NumericRange,
   PromptKind,
+  RepositoryMode,
   SearchFeatureComparisonOperator,
   SearchFeatureCondition,
   SearchFeatureLogicalOperator,
@@ -1438,7 +1439,7 @@ describe("Image with module", () =>
     const {
       repository,
       image
-    } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName, Defaults.emptyDirectoryName, false);
+    } = await base.prepareRepositoryWithImage(base.imageFeeder.jpegImageFileName, Defaults.emptyDirectoryName, RepositoryMode.Enabled);
     const extension = await base.prepareExtension();
     const extensionId = extension.manifest.id;
 
@@ -1621,7 +1622,7 @@ describe("Image with module", () =>
     }
     {
       // We delete the image and make sure that the tags are deleted along with it
-      await base.getRepositoryController().watch(repository.id, true);
+      await base.getRepositoryController().setMode(repository.id, RepositoryMode.Watching);
       await base.waitUntilRepositoryWatching(repository.id);
       const filePath = image.url.substring(fileWithProtocol.length);
       await base.waitUntilImage(repository.id, filePath, false, () =>
@@ -1814,6 +1815,23 @@ describe("Image with module", () =>
       expect(closestImages[1].image.id).toEqual(image3Id);
       expect(closestImages[2].image.id).toEqual(image2Id);
     }
+    {
+      // We assess that images in a disabled repository are excluded from closestImages and closestEmbeddingsImages
+      const { repository: repository2, image: image4 } = await base.prepareRepositoryWithImage(base.imageFeeder.gifImageFileName, "repo2", RepositoryMode.Enabled);
+      await base.getImageController().setEmbeddings(Base.allPolicyContext, image4.id, extensionId, [ new ImageEmbedding(name, [ 1, 2, 3, 4, 5 ]) ]);
+      expect((await base.getImageController().closestEmbeddingsImages(extensionId, 10, imageEmbedding1)).length).toEqual(4);
+      await base.getRepositoryController().setMode(repository2.id, RepositoryMode.Disabled);
+      await expect(async () =>
+      {
+        await base.getImageController().closestImages(image4.id, extensionId, name, 1);
+      }).rejects.toThrow(new ServiceError(`The repository with id '${repository2.id}' is disabled`, BAD_REQUEST, base.badParameterCode));
+      const closestToImage1WhileDisabled = await base.getImageController().closestImages(image1Id, extensionId, name, 10);
+      expect(closestToImage1WhileDisabled.map(item => item.image.id)).toEqual([ image3Id, image2Id ]);
+      const closestEmbeddingsWhileDisabled = await base.getImageController().closestEmbeddingsImages(extensionId, 10, imageEmbedding1);
+      expect(closestEmbeddingsWhileDisabled.map(item => item.image.id)).toEqual([ image1Id, image3Id, image2Id ]);
+      await base.getRepositoryController().setMode(repository2.id, RepositoryMode.Enabled);
+      expect((await base.getImageController().closestEmbeddingsImages(extensionId, 10, imageEmbedding1)).length).toEqual(4);
+    }
   });
 
   test.each(imageCases)("image with format=$format", async ({ format, fileName, caption }: ImageCase) =>
@@ -1872,7 +1890,8 @@ describe("Image with module", () =>
 
   test("attachment", async () =>
   {
-    const imageId = (await base.prepareRepositoryWithImage(base.imageFeeder.pngImageFileName, "directory")).image.id;
+    const { repository, image } = await base.prepareRepositoryWithImage(base.imageFeeder.pngImageFileName, "directory");
+    const imageId = image.id;
     const format = ImageFormat.JPEG;
     const mimeType = toMimeType(format);
 
@@ -1949,7 +1968,7 @@ describe("Image with module", () =>
         await base.getImageAttachmentController().download(uri);
       }).rejects.toThrow(new ServiceError(`The parameter 'uri' with value '${uri}' is invalid because it does not start with '${attachmentPrefix}'`, BAD_REQUEST, base.badParameterCode));
     }
-    const otherImage = (await base.prepareRepositoryWithImage(base.imageFeeder.pngImageFileName, "other", false)).image;
+    const { repository: otherRepository, image: otherImage } = await base.prepareRepositoryWithImage(base.imageFeeder.pngImageFileName, "other", RepositoryMode.Enabled);
     const otherImageAttachmentUri = await base.getImageAttachmentController().create(Base.allPolicyContext, otherImage.id, extensionId, mimeType, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
     const otherExtensionId = (await base.prepareExtension("other")).manifest.id;
     const otherExtensionAttachmentUri = await base.getImageAttachmentController().create(Base.allPolicyContext, imageId, otherExtensionId, mimeType, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
@@ -1994,6 +2013,21 @@ describe("Image with module", () =>
       const entities = await base.getModuleProvider(ImageAttachmentService).list(imageId);
       expect(entities.length).toEqual(1);
       expect(attachmentPrefix + entities[0].id).toEqual(attachmentUri);
+    }
+    {
+      // We assess that attachment operations on a disabled repository are rejected
+      await base.getRepositoryController().setMode(otherRepository.id, RepositoryMode.Disabled);
+      await expect(async () =>
+      {
+        await base.getImageAttachmentController().create(Base.allPolicyContext, otherImage.id, extensionId, mimeType, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
+      }).rejects.toThrow(new ServiceError(`The repository with id '${otherRepository.id}' is disabled`, BAD_REQUEST, base.badParameterCode));
+      await expect(async () =>
+      {
+        await base.getImageAttachmentController().download(otherImageAttachmentUri);
+      }).rejects.toThrow(new ServiceError(`The repository with id '${otherRepository.id}' is disabled`, BAD_REQUEST, base.badParameterCode));
+      await base.getRepositoryController().setMode(otherRepository.id, RepositoryMode.Enabled);
+      expect(await base.getImageAttachmentController().download(otherImageAttachmentUri)).toBeDefined();
+      expect(repository.id).toBeDefined();
     }
   });
 
@@ -2468,6 +2502,20 @@ describe("Image with application", () =>
       // We verify that an empty identifier list behaves like an unrestricted synchronization
       await base.getImageController().runCapabilities(imageId, [], undefined);
       checkAllFilePaths();
+      deleteAllFilePaths();
+    }
+
+    {
+      // We verify that when the repository is disabled, "runCapabilities()" throws and "searchRunCapabilities()" skips the image
+      await base.getRepositoryController().setMode(image.repositoryId, RepositoryMode.Disabled);
+      await expect(async () =>
+      {
+        await base.getImageController().runCapabilities(imageId, undefined, undefined);
+      }).rejects.toThrow(new ServiceError(`The repository with id '${image.repositoryId}' is disabled`, BAD_REQUEST, base.badParameterCode));
+      await base.getImageController().searchRunCapabilities(undefined, searchParameters, undefined);
+      checkFilePaths(allFilePaths, false);
+      await base.getRepositoryController().setMode(image.repositoryId, RepositoryMode.Watching);
+      await base.waitUntilRepositoryWatching(image.repositoryId);
       deleteAllFilePaths();
     }
 

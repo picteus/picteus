@@ -3,11 +3,11 @@ import { Box, Flex } from "@mantine/core";
 import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
+import { RepositoryMode, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
 
 import { ViewTabDataType } from "types";
-import { shortenPath } from "utils";
-import { useRepository, useRepositorySummaries } from "app/hooks";
+import { shortenPath, ToastService } from "utils";
+import { useRepository, useRepositorySummaries, useSetRepositoryModeMutation } from "app/hooks";
 import { EmptyResults, ImagesView, LoadingView } from "app/components";
 import { RepositoryIdentity } from "../RepositoriesScreen/components";
 
@@ -22,7 +22,9 @@ export default function RepositoryImagesScreen({ repositoryId }: RepositoryImage
 {
   const [ t ] = useTranslation();
   const { data: repository, isLoading } = useRepository(repositoryId);
-  const { data: summaries } = useRepositorySummaries(repositoryId, 1);
+  const isDisabled = repository?.mode === RepositoryMode.Disabled;
+  const { data: summaries } = useRepositorySummaries(repositoryId, 1, !isDisabled);
+  const setRepositoryModeMutation = useSetRepositoryModeMutation();
 
   const viewData = useMemo<ViewTabDataType>(() => ({
     mode: "masonry",
@@ -34,8 +36,34 @@ export default function RepositoryImagesScreen({ repositoryId }: RepositoryImage
     }
   }), [ repositoryId ]);
 
+  const handleEnableRepository = useCallback(async (): Promise<void> =>
+  {
+    try
+    {
+      await setRepositoryModeMutation.mutateAsync({ id: repositoryId, mode: RepositoryMode.Enabled });
+      ToastService.success(t("repositoryScreen.successEnable"));
+    }
+    catch (error)
+    {
+      ToastService.apiCallI18nError(error, "repositoryScreen.errorMode");
+    }
+  }, [ repositoryId, setRepositoryModeMutation, t ]);
+
   const computeEmptyResults = useCallback((): ReactElement<typeof EmptyResults> =>
   {
+    if (isDisabled)
+    {
+      return (
+        <EmptyResults
+          icon={IconPhotoSearch}
+          title={t("emptyImages.titleRepositoryDisabled")}
+          description={t("emptyImages.descriptionRepositoryDisabled")}
+          buttonText={t("emptyImages.buttonTextEnableRepository")}
+          buttonAction={() => void handleEnableRepository()}
+        />
+      );
+    }
+
     return (
       <EmptyResults
         icon={IconPhotoSearch}
@@ -43,11 +71,12 @@ export default function RepositoryImagesScreen({ repositoryId }: RepositoryImage
         description={t("emptyImages.description")}
       />
     );
-  }, [ t ]);
+  }, [ handleEnableRepository, isDisabled, t ]);
 
-  const subtitle = repository !== undefined
-    ? t("repositoryScreen.imagesScreen.subtitle", { path: shortenPath(repository.url), number: summaries?.totalCount ?? 0 })
-    : undefined;
+  const subtitle = repository !== undefined ? t("repositoryScreen.imagesScreen.subtitle", {
+    path: shortenPath(repository.url),
+    number: isDisabled ? 0 : (summaries?.totalCount ?? 0)
+  }) : undefined;
 
   return (
     <Flex direction="column" h="100%">
@@ -59,13 +88,17 @@ export default function RepositoryImagesScreen({ repositoryId }: RepositoryImage
         </LoadingView>
       </Box>
       <Box flex={1} mih={0}>
-        <ImagesView
-          viewData={viewData}
-          isDefault={false}
-          lockedRepositoryId={repositoryId}
-          withCollectionsBar={false}
-          onEmptyResults={computeEmptyResults}
-        />
+        {isDisabled ? (
+          computeEmptyResults()
+        ) : (
+          <ImagesView
+            viewData={viewData}
+            isDefault={false}
+            lockedRepositoryId={repositoryId}
+            withCollectionsBar={false}
+            onEmptyResults={computeEmptyResults}
+          />
+        )}
       </Box>
     </Flex>
   );

@@ -2,7 +2,13 @@ import { ReactElement } from "react";
 import { Badge, Box } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
-import { Repository, RepositoryActivity, RepositoryActivityKind, RepositoryState } from "@picteus/ws-client";
+import {
+  Repository,
+  RepositoryActivity,
+  RepositoryActivityKind,
+  RepositoryMode,
+  RepositoryState
+} from "@picteus/ws-client";
 
 
 type RepositoryStatusPillType = {
@@ -14,13 +20,34 @@ export default function RepositoryStatusPill({ repository, activity }: Repositor
 {
   const [ t ] = useTranslation();
 
-  const isIndexing = repository.state === RepositoryState.Indexing ||
-    repository.state === RepositoryState.UnavailableIndexing ||
-    activity?.kind === RepositoryActivityKind.Synchronizing;
-  const isUnavailable = isIndexing === false && repository.state === RepositoryState.Unavailable;
+  let color: string;
+  let i18nLabel: string;
 
-  const color = isIndexing === true ? "yellow" : (isUnavailable === true ? "gray" : "green");
-  const label = isIndexing === true ? t("repositoryScreen.status.indexing") : (isUnavailable === true ? t("repositoryScreen.status.unavailable") : t("repositoryScreen.status.ready"));
+  if (repository.available === false)
+  {
+    color = "gray";
+    i18nLabel = "repositoryScreen.status.unavailable";
+  }
+  else if (repository.mode === RepositoryMode.Disabled)
+  {
+    color = "gray";
+    i18nLabel = "repositoryScreen.status.disabled";
+  }
+  else if (repository.state === RepositoryState.Indexing || activity?.kind === RepositoryActivityKind.Synchronizing)
+  {
+    color = "yellow";
+    i18nLabel = "repositoryScreen.status.indexing";
+  }
+  else if (repository.mode === RepositoryMode.Watching || activity?.kind === RepositoryActivityKind.Watching)
+  {
+    color = "blue";
+    i18nLabel = "repositoryScreen.status.watching";
+  }
+  else
+  {
+    color = "green";
+    i18nLabel = "repositoryScreen.status.ready";
+  }
 
   return (
     <Badge
@@ -29,7 +56,7 @@ export default function RepositoryStatusPill({ repository, activity }: Repositor
       size="sm"
       leftSection={<Box w={6} h={6} bg={`var(--mantine-color-${color}-filled)`} bdrs={6}/>}
     >
-      {label}
+      {t(i18nLabel)}
     </Badge>
   );
 }

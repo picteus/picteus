@@ -15,7 +15,9 @@ import {
   Repository,
   RepositoryActivity,
   RepositoryApiRepositoryCreateRequest,
+  RepositoryApiRepositorySetModeRequest,
   RepositoryApiRepositoryUpdateRequest,
+  RepositoryMode,
   SearchImageSummaryResult,
   SearchOriginNature,
   SearchSortingProperty
@@ -78,12 +80,16 @@ function fetchRepositorySummaries(repositoryId: string, count: number): Promise<
   );
 }
 
-export function useRepositorySummaries(repositoryId: string, count: number): UseQueryResult<SearchImageSummaryResult, Error>
+export function useRepositorySummaries(repositoryId: string, count: number, isEnabled = true): UseQueryResult<SearchImageSummaryResult, Error>
 {
+  const queryClient = useQueryClient();
+  const cachedRepository = queryClient.getQueryData<Repository[]>(queryKeys.repositories.all)?.find(repository => repository.id === repositoryId) ?? queryClient.getQueryData<Repository>(queryKeys.repositories.detail(repositoryId));
+
   return useQuery(
     {
       queryKey: queryKeys.repositories.summaries(repositoryId, count),
-      queryFn: (): Promise<SearchImageSummaryResult> => fetchRepositorySummaries(repositoryId, count)
+      queryFn: (): Promise<SearchImageSummaryResult> => fetchRepositorySummaries(repositoryId, count),
+      enabled: isEnabled && cachedRepository?.mode !== RepositoryMode.Disabled
     }
   );
 }
@@ -95,7 +101,8 @@ export function useRepositoriesImageCounts(repositories: Repository[]): Record<s
     {
       queries: repositories.map((repository) => ({
         queryKey: queryKeys.repositories.summaries(repository.id, take),
-        queryFn: (): Promise<SearchImageSummaryResult> => fetchRepositorySummaries(repository.id, take)
+        queryFn: (): Promise<SearchImageSummaryResult> => fetchRepositorySummaries(repository.id, take),
+        enabled: repository.mode !== RepositoryMode.Disabled
       }))
     }
   );
@@ -106,6 +113,10 @@ export function useRepositoriesImageCounts(repositories: Repository[]): Record<s
       const counts: Record<string, number> = {};
       repositories.forEach((repository, index) =>
       {
+        if (repository.mode === RepositoryMode.Disabled)
+        {
+          return;
+        }
         const totalCount = results[index]?.data?.totalCount;
         if (totalCount !== undefined)
         {
@@ -234,21 +245,22 @@ export function useDeleteRepositoryMutation(): UseMutationResult<void, Error, st
   );
 }
 
-export function useWatchRepositoryMutation(): UseMutationResult<void, Error, { id: string; isStart: boolean }>
+export function useSetRepositoryModeMutation(): UseMutationResult<Repository, Error, RepositoryApiRepositorySetModeRequest>
 {
   const queryClient = useQueryClient();
 
   return useMutation(
     {
-      mutationFn: (parameters: { id: string; isStart: boolean }): Promise<void> =>
+      mutationFn: (parameters: RepositoryApiRepositorySetModeRequest): Promise<Repository> =>
       {
-        return RepositoriesService.watch(parameters);
+        return RepositoriesService.setMode(parameters);
       },
       onSuccess: (_data, parameters): void =>
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.repositories.all });
         void queryClient.invalidateQueries({ queryKey: queryKeys.repositories.detail(parameters.id) });
         void queryClient.invalidateQueries({ queryKey: queryKeys.repositories.activities });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.images.all });
       }
     }
   );

@@ -2,7 +2,9 @@ import { ReactElement } from "react";
 import { Flex, Skeleton, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
-import { useRepositorySummaries } from "app/hooks";
+import { RepositoryMode } from "@picteus/ws-client";
+
+import { useRepository, useRepositorySummaries } from "app/hooks";
 import { ImageThumbnail } from "app/components";
 
 
@@ -15,7 +17,18 @@ type RepositoryPreviewsType = {
 export default function RepositoryPreviews({ repositoryId, count, edge }: RepositoryPreviewsType): ReactElement
 {
   const [ t ] = useTranslation();
-  const { data: summaries, isLoading } = useRepositorySummaries(repositoryId, count);
+  const { data: repository } = useRepository(repositoryId);
+  const isDisabled = repository?.mode === RepositoryMode.Disabled;
+  const { data: summaries, isLoading } = useRepositorySummaries(repositoryId, count, !isDisabled);
+
+  if (isDisabled === true)
+  {
+    return (
+      <Flex h={edge} align="center" justify="center" bg="gray.1" bdrs="sm" ta="center">
+        <Text size="xs" c="dimmed">{t("repositoryScreen.disabledPreview")}</Text>
+      </Flex>
+    );
+  }
 
   const previews = summaries?.items ?? [];
 

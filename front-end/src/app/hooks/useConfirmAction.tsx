@@ -23,7 +23,6 @@ interface ConfirmActionType
   onConfirm: () => void;
   onCancel?: () => void;
   options: ConfirmOptions;
-  content?: ReactNode;
   icon?: ContentIconType | ReactNode;
   extensionId?: string;
 }
@@ -49,9 +48,8 @@ export default function useConfirmAction(): (confirmActionType: ConfirmActionTyp
 {
   const { addModal } = useActionModalContext();
 
-  return useCallback(({ onConfirm, onCancel, options, content, icon, extensionId }: ConfirmActionType): void =>
+  return useCallback(({ onConfirm, onCancel, options, icon, extensionId }: ConfirmActionType): void =>
   {
-    const contentNode = content ?? options.content;
     const computedIcon = computeIcon(icon ?? options.icon, extensionId);
 
     addModal({
@@ -63,9 +61,9 @@ export default function useConfirmAction(): (confirmActionType: ConfirmActionTyp
           <Alert icon={<IconAlertTriangle/>} color="orange">
             {options.message}
           </Alert>
-          {contentNode !== undefined && (
+          {options.content !== undefined && (
             <Flex mt="md">
-              {contentNode}
+              {typeof options.content === "string" ? <Text size="sm">{options.content}</Text> : options.content}
             </Flex>
           )}
           {options.question && (

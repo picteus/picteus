@@ -61,6 +61,7 @@ import {
   Repository,
   RepositoryActivityKind,
   RepositoryLocationType,
+  RepositoryMode,
   RepositoryState,
   SearchImageSummaryResult,
   SearchParameters,
@@ -697,29 +698,32 @@ export class Base extends Core
     return this.getModuleProvider(NotifierService, true);
   }
 
-  async createRepository(url: string, name: string = Defaults.repositoryName, comment: string | undefined = undefined, watch: boolean | undefined = undefined): Promise<Repository>
+  async createRepository(url: string, name: string = Defaults.repositoryName, comment: string | undefined = undefined, mode: RepositoryMode = RepositoryMode.Enabled): Promise<Repository>
   {
-    return await this.getRepositoryController().create(Defaults.locationType, url, name, comment, watch);
+    return await this.getRepositoryController().create(Defaults.locationType, url, name, comment, mode);
   }
 
-  async prepareEmptyRepository(directoryPath: string | undefined = undefined, watch: boolean = true): Promise<Repository>
+  async prepareEmptyRepository(directoryPath: string | undefined = undefined, mode: RepositoryMode = RepositoryMode.Watching): Promise<Repository>
   {
     const actualDirectoryPath = directoryPath !== undefined ? directoryPath : this.prepareEmptyDirectory(Defaults.emptyDirectoryName, this.getWorkingDirectoryPath());
-    const repository = await this.createRepository(fileWithProtocol + actualDirectoryPath, path.basename(actualDirectoryPath), undefined, watch);
-    await this.waitUntilRepositoryReady(repository.id);
+    const repository = await this.createRepository(fileWithProtocol + actualDirectoryPath, path.basename(actualDirectoryPath), undefined, mode);
+    if (mode !== RepositoryMode.Disabled)
+    {
+      await this.waitUntilRepositoryReady(repository.id);
+    }
     return repository;
   }
 
-  async prepareRepositoryWithImage(fileName: string, directoryName: string = Defaults.emptyDirectoryName, watch: boolean = true): Promise<{
+  async prepareRepositoryWithImage(fileName: string, directoryName: string = Defaults.emptyDirectoryName, mode: RepositoryMode = RepositoryMode.Watching): Promise<{
     repository: Repository;
     image: Image
   }>
   {
-    const { repository, images } = await this.prepareRepositoryWithImages([ fileName ], directoryName, watch);
+    const { repository, images } = await this.prepareRepositoryWithImages([ fileName ], directoryName, mode);
     return { repository, image: images[0] };
   }
 
-  async prepareRepositoryWithImages(fileNames: string[], directoryName: string = Defaults.emptyDirectoryName, watch: boolean = true): Promise<{
+  async prepareRepositoryWithImages(fileNames: string[], directoryName: string = Defaults.emptyDirectoryName, mode: RepositoryMode = RepositoryMode.Watching): Promise<{
     repository: Repository;
     images: Image[]
   }>
@@ -729,13 +733,16 @@ export class Base extends Core
     {
       fs.copyFileSync(path.join(this.imageFeeder.imagesDirectoryPath, fileName), path.join(directoryPath, fileName));
     }
-    const repository = await this.createRepository(fileWithProtocol + directoryPath, directoryName, undefined, watch);
-    await this.waitUntilRepositoryReady(repository.id);
+    const repository = await this.createRepository(fileWithProtocol + directoryPath, directoryName, undefined, mode);
     const images: Image [] = [];
-    for (const fileName of fileNames)
+    if (mode !== RepositoryMode.Disabled)
     {
-      const image = await this.getRepositoryController().getImageByUrl(fileWithProtocol + path.join(directoryPath, fileName));
-      images.push(image);
+      await this.waitUntilRepositoryReady(repository.id);
+      for (const fileName of fileNames)
+      {
+        const image = await this.getRepositoryController().getImageByUrl(fileWithProtocol + path.join(directoryPath, fileName));
+        images.push(image);
+      }
     }
     return { repository, images };
   }
@@ -793,7 +800,7 @@ export class Base extends Core
       });
       const repository = await this.getRepositoryController().get(repositoryId);
       logger.debug(`The repository with id '${repositoryId}' has the '${repository.state}' state`);
-      if (repository.state === RepositoryState.READY)
+      if (repository.state === RepositoryState.Ready)
       {
         resolve(undefined);
         offListener.off();
@@ -1083,22 +1090,25 @@ export class ExtensionBuilder extends ExtensionBasisBuilder
     };
   }
 
-  async createRepository(watch: boolean | undefined = undefined): Promise<Repository>
+  async createRepository(mode: RepositoryMode | undefined = undefined): Promise<Repository>
   {
     const directoryPath = this.base.prepareEmptyDirectory("images", this.base.getWorkingDirectoryPath());
     this.base.imageFeeder.copyImage(directoryPath, this.base.imageFeeder.pngImageFileName);
     this.base.imageFeeder.copyImage(directoryPath, this.base.imageFeeder.jpegImageFileName);
-    const repository = await this.base.createRepository(fileWithProtocol + directoryPath, undefined, undefined, watch);
-    await this.base.waitUntilRepositoryReady(repository.id);
+    const repository = await this.base.createRepository(fileWithProtocol + directoryPath, undefined, undefined, mode);
+    if (mode !== RepositoryMode.Disabled)
+    {
+      await this.base.waitUntilRepositoryReady(repository.id);
+    }
     return repository;
   }
 
-  async createRepositoryAndGetImages(watch: boolean | undefined = undefined): Promise<{
+  async createRepositoryAndGetImages(mode: RepositoryMode | undefined = undefined): Promise<{
     repository: Repository,
     images: ImageSummary[]
   }>
   {
-    const repository = await this.createRepository(watch);
+    const repository = await this.createRepository(mode);
     const result = await this.base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
     return { repository, images: result.items };
   }

@@ -27,6 +27,7 @@ import {
   Repository,
   RepositoryActivityKind,
   RepositoryLocationType,
+  RepositoryMode,
   RepositoryState,
   SearchCriteria,
   SearchFilter,
@@ -62,10 +63,10 @@ describe("Repository", () =>
   const base = new Base(false);
 
   // Synchronizing a repository runs asynchronously in the background and can complete in milliseconds when handling few images. This latch temporarily pauses the background file discovery, allowing tests to deterministically verify that the repository is in the 'Synchronizing' state or that concurrent operations (such as synchronize or delete) are properly rejected while synchronization is ongoing.
-  function holdSynchronization()
+  function holdSynchronization(): { release: () => void }
   {
     let releaseLatch: () => void;
-    const latch = new Promise<void>((resolve) =>
+    const latch = new Promise<void>(resolve =>
     {
       releaseLatch = resolve;
     });
@@ -76,7 +77,7 @@ describe("Repository", () =>
       return originalListFiles.call(this, type, url);
     };
     return {
-      release: () =>
+      release: (): void =>
       {
         releaseLatch();
         ImageDeclarationManager.prototype.listFiles = originalListFiles;
@@ -108,11 +109,11 @@ describe("Repository", () =>
     await Base.afterAll();
   });
 
-  test.each([ false, true ])("Create with watch=%p", async (watch) =>
+  test.each([ RepositoryMode.Disabled, RepositoryMode.Enabled, RepositoryMode.Watching ])("Create with mode=%p", async mode =>
   {
     const newImageFileName = base.imageFeeder.pngImageFileName;
     const directoryPath = base.prepareEmptyDirectory("images", base.getWorkingDirectoryPath());
-    const filePaths = (await new fdir().withFullPaths().glob("**/*").crawl(base.imageFeeder.imagesDirectoryPath).withPromise()).filter((nodePath) =>
+    const filePaths = (await new fdir().withFullPaths().glob("**/*").crawl(base.imageFeeder.imagesDirectoryPath).withPromise()).filter(nodePath =>
     {
       const fileName = path.basename(nodePath);
       return includedFileNames.indexOf(fileName) !== -1 && fileName !== newImageFileName;
@@ -132,9 +133,11 @@ describe("Repository", () =>
     let repository: Repository;
     try
     {
-      repository = await base.getRepositoryController().create(Defaults.locationType, url, name, comment, watch);
+      repository = await base.getRepositoryController().create(Defaults.locationType, url, name, comment, mode);
       expect(repository.extensionId).toBeNull();
-      await checkActivity(repository.id, RepositoryActivityKind.Synchronizing);
+      expect(repository.mode).toBe(mode);
+      expect(repository.available).toBe(true);
+      await checkActivity(repository.id, mode === RepositoryMode.Disabled ? RepositoryActivityKind.None : RepositoryActivityKind.Synchronizing);
     }
     finally
     {
@@ -151,12 +154,22 @@ describe("Repository", () =>
     expect(repository.name).toBe(name);
     expect(repository.comment).toBe(comment);
     const id = repository.id;
+    if (mode === RepositoryMode.Disabled)
+    {
+      expect((await base.getRepositoryController().get(id)).state).toBe(RepositoryState.Unindexed);
+      await checkActivity(repository.id, RepositoryActivityKind.None);
+      const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
+      expect(result.items.length).toBe(0);
+      expect(result.totalCount).toBe(0);
+      return;
+    }
+
     await base.waitUntilRepositoryReady(id);
-    if (watch === true)
+    if (mode === RepositoryMode.Watching)
     {
       await base.waitUntilRepositoryWatching(id);
     }
-    await checkActivity(repository.id, watch === true ? RepositoryActivityKind.Watching : RepositoryActivityKind.None);
+    await checkActivity(repository.id, mode === RepositoryMode.Watching ? RepositoryActivityKind.Watching : RepositoryActivityKind.None);
 
     const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
     const expectedTotalCount = includedFileNames.length - 1;
@@ -170,7 +183,7 @@ describe("Repository", () =>
     // We check that the repository is being watched
     const newImageFilePath = base.imageFeeder.copyImage(directoryPath, newImageFileName);
     const imageUrl = fileWithProtocol + newImageFilePath;
-    if (watch === true)
+    if (mode === RepositoryMode.Watching)
     {
       await base.waitUntil(async () =>
       {
@@ -188,7 +201,7 @@ describe("Repository", () =>
       // We check that this is not possible to declare another repository with the same URL
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, name + "-new");
+        await base.getRepositoryController().create(Defaults.locationType, url, name + "-new", undefined, RepositoryMode.Enabled);
       }).rejects.toThrow(new ServiceError(`The parameter 'url' with value '${url}' is invalid because a repository with the same URL already exists`, BAD_REQUEST, base.badParameterCode));
     }
     else
@@ -209,7 +222,7 @@ describe("Repository", () =>
       fs.symlinkSync(nonExistentPath, directoryPath, "dir");
       await expect(async () =>
       {
-        await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, false);
+        await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
       }).rejects.toThrow(new ServiceError(`The directory with path '${directoryPath}' is a broken symbolic link`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -220,7 +233,7 @@ describe("Repository", () =>
       fs.symlinkSync(filePath, directoryPath, "file");
       await expect(async () =>
       {
-        await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, false);
+        await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
       }).rejects.toThrow(new ServiceError(`The directory with path '${directoryPath}' is a symbolic link pointing to the path '${filePath}' which is not a directory`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -229,7 +242,7 @@ describe("Repository", () =>
       const symbolicDirectoryPath = path.join(base.getWorkingDirectoryPath(), "symbolic-link3");
       fs.symlinkSync(declaredDirectoryPath, symbolicDirectoryPath, "dir");
 
-      await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + symbolicDirectoryPath, Defaults.repositoryName, undefined, false);
+      await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + symbolicDirectoryPath, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
     }
   });
 
@@ -244,7 +257,7 @@ describe("Repository", () =>
     map.set(declaredDirectoryPath, symbolicDirectoryPath);
     paths.repositoryMappingPaths = map;
 
-    const repository = await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + symbolicDirectoryPath, Defaults.repositoryName, undefined, true);
+    const repository = await base.getRepositoryController().create(RepositoryLocationType.File, fileWithProtocol + symbolicDirectoryPath, Defaults.repositoryName, undefined, RepositoryMode.Watching);
     expect(repository.url).toBe(fileWithProtocol + declaredDirectoryPath);
     await base.waitUntilRepositoryReady(repository.id);
     const list = await base.getImageController().searchSummaries({});
@@ -262,14 +275,14 @@ describe("Repository", () =>
       const name = "";
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, name);
+        await base.getRepositoryController().create(Defaults.locationType, url, name, undefined, RepositoryMode.Enabled);
       }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const name = "0".repeat(FieldLengths.l128 + 1);
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, name);
+        await base.getRepositoryController().create(Defaults.locationType, url, name, undefined, RepositoryMode.Enabled);
       }).rejects.toThrow(new ServiceError(`The parameter 'name' with value '${name}' is invalid because it exceeds 128 characters`, BAD_REQUEST, base.badParameterCode));
     }
 
@@ -277,21 +290,27 @@ describe("Repository", () =>
       const comment = "";
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, comment);
+        await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, comment, RepositoryMode.Enabled);
       }).rejects.toThrow(new ServiceError(`The parameter 'comment' with value '${comment}' is invalid because it is empty`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const comment = "0".repeat(FieldLengths.l1k + 1);
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, comment);
+        await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, comment, RepositoryMode.Enabled);
       }).rejects.toThrow(new ServiceError(`The parameter 'comment' with value '${comment}' is invalid because it exceeds 1024 characters`, BAD_REQUEST, base.badParameterCode));
+    }
+    {
+      await expect(async () =>
+      {
+        await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, undefined, undefined as unknown as RepositoryMode);
+      }).rejects.toThrow(new ServiceError(`The 'mode' parameter is missing`, BAD_REQUEST, base.badParameterCode));
     }
     {
       const directoryPath = nonExistentPath;
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
+        await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
       }).rejects.toThrow(new ServiceError(`The directory with path '${directoryPath}' does not exist`, BAD_REQUEST, base.badParameterCode));
     }
     {
@@ -299,7 +318,7 @@ describe("Repository", () =>
       fs.writeFileSync(filePath, "");
       await expect(async () =>
       {
-        await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + filePath, Defaults.repositoryName);
+        await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + filePath, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
       }).rejects.toThrow(new ServiceError(`The node with path '${filePath}' is not a directory`, BAD_REQUEST, base.badParameterCode));
     }
   });
@@ -307,9 +326,9 @@ describe("Repository", () =>
   test("Create with same name", async () =>
   {
     const emptyDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
-    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + base.prepareEmptyDirectory("first", emptyDirectoryPath), Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + base.prepareEmptyDirectory("first", emptyDirectoryPath), Defaults.repositoryName, undefined, RepositoryMode.Enabled);
     await base.waitUntilRepositoryReady(repository.id);
-    const newRepository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + base.prepareEmptyDirectory("second", emptyDirectoryPath), repository.name);
+    const newRepository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + base.prepareEmptyDirectory("second", emptyDirectoryPath), repository.name, undefined, RepositoryMode.Enabled);
     expect(newRepository.id).not.toBe(repository.id);
   });
 
@@ -322,8 +341,8 @@ describe("Repository", () =>
     const secondDirectoryName = `${prefix}Long`;
     const secondSubDirectoryName = "Second";
     const secondDirectoryPath = base.prepareEmptyDirectory(secondSubDirectoryName, base.prepareEmptyDirectory(secondDirectoryName, emptyDirectoryPath));
-    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + firstDirectoryPath, firstDirectoryName)).id);
-    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + secondDirectoryPath, secondSubDirectoryName)).id);
+    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + firstDirectoryPath, firstDirectoryName, undefined, RepositoryMode.Enabled)).id);
+    await base.waitUntilRepositoryReady((await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + secondDirectoryPath, secondSubDirectoryName, undefined, RepositoryMode.Enabled)).id);
   });
 
   test("Create with nested URL", async () =>
@@ -332,16 +351,16 @@ describe("Repository", () =>
     const subDirectoryName = "sub";
     const subDirectoryPath = base.prepareEmptyDirectory(subDirectoryName, emptyDirectoryPath);
     const url = fileWithProtocol + emptyDirectoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName + randomUUID());
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName + randomUUID(), undefined, RepositoryMode.Enabled);
     await base.waitUntilRepositoryReady(repository.id);
     const subUrl = fileWithProtocol + subDirectoryPath;
     await expect(async () =>
     {
-      await base.getRepositoryController().create(Defaults.locationType, subUrl, Defaults.repositoryName + randomUUID());
+      await base.getRepositoryController().create(Defaults.locationType, subUrl, Defaults.repositoryName + randomUUID(), undefined, RepositoryMode.Enabled);
     }).rejects.toThrow(new ServiceError(`The parameter 'url' with value '${subUrl}' is invalid because the already existing repository with id '${repository.id}' and URL '${repository.url}' is in conflict with it`, BAD_REQUEST, base.badParameterCode));
     {
       const otherDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName + "-bis", base.getWorkingDirectoryPath());
-      const otherRepository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + otherDirectoryPath, Defaults.repositoryName + randomUUID());
+      const otherRepository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + otherDirectoryPath, Defaults.repositoryName + randomUUID(), undefined, RepositoryMode.Enabled);
       await base.waitUntilRepositoryReady(otherRepository.id);
     }
   });
@@ -388,35 +407,43 @@ describe("Repository", () =>
     paths.repositoriesDirectoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName);
     const extension1 = await base.prepareExtension("extension1");
     const extension2 = await base.prepareExtension("extension2");
-    const extension1PolicyContext: PolicyContext = {
-      extensionId: extension1.manifest.id,
-      scopes: [ ApiScope.RepositoryEnsure ]
-    };
+    const extension1PolicyContext: PolicyContext =
+      {
+        extensionId: extension1.manifest.id,
+        scopes: [ ApiScope.RepositoryEnsure ]
+      };
 
-    // When an extension ensures a repository without explicit extension id, the repository gets attached to that extension at creation time
-    const repository = await base.getRepositoryController().ensure(extension1PolicyContext, extension1.manifest.id, "name", "comment", false);
+    // We verify that when an extension ensures a repository, the repository gets attached to that extension at creation time
+    const repository = await base.getRepositoryController().ensure(extension1PolicyContext, extension1.manifest.id, "name", "comment");
     expect(repository.extensionId).toBe(extension1.manifest.id);
+    expect(repository.mode).toBe(RepositoryMode.Watching);
+    await base.waitUntilRepositoryReady(repository.id);
+    await base.waitUntilRepositoryWatching(repository.id);
 
-    // Another call should cause no change
-    const updatedRepository = await base.getRepositoryController().ensure(Base.allPolicyContext, extension1.manifest.id, "updatedName", "updatedComment", false);
+    // We verify that another call causes no change
+    const updatedRepository = await base.getRepositoryController().ensure(Base.allPolicyContext, extension1.manifest.id, "updatedName", "updatedComment");
     expect(updatedRepository.id).toBe(repository.id);
     expect(updatedRepository.name).toBe(repository.name);
     expect(updatedRepository.comment).toBe(repository.comment);
 
-    // An extension cannot ensure a repository attached to another extension
+    // We verify that an extension cannot ensure a repository attached to another extension
     await expect(base.getRepositoryController().ensure({
-      extensionId: extension2.manifest.id,
-      scopes: [ ApiScope.RepositoryEnsure ]
-    }, extension1.manifest.id, "name3", undefined, false)).rejects.toThrow("Mismatching API secret and extension identifiers");
+        extensionId: extension2.manifest.id,
+        scopes: [ ApiScope.RepositoryEnsure ]
+      },
+      extension1.manifest.id,
+      "name3",
+      undefined
+    )).rejects.toThrow("Mismatching API secret and extension identifiers");
   });
 
   test("List repositories", async () =>
   {
     const directory1Path = base.prepareEmptyDirectory("repo1", base.getWorkingDirectoryPath());
-    const repository1 = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directory1Path, "b", undefined, false);
+    const repository1 = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directory1Path, "b", undefined, RepositoryMode.Enabled);
     await base.waitUntilRepositoryReady(repository1.id);
     const directory2Path = base.prepareEmptyDirectory("repo2", base.getWorkingDirectoryPath());
-    const repository2 = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directory2Path, "a", undefined, false);
+    const repository2 = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directory2Path, "a", undefined, RepositoryMode.Enabled);
     await base.waitUntilRepositoryReady(repository2.id);
     const repositories = await base.getRepositoryController().list();
     expect(repositories[0].id).toBe(repository2.id);
@@ -427,8 +454,8 @@ describe("Repository", () =>
   {
     const name1 = "repo1";
     const name2 = "repo2";
-    await base.prepareRepositoryWithImage(base.imageFeeder.pngImageFileName, name1, true);
-    await base.prepareRepositoryWithImage(base.imageFeeder.pngImageFileName, name2, true);
+    await base.prepareRepositoryWithImage(base.imageFeeder.pngImageFileName, name1, RepositoryMode.Watching);
+    await base.prepareRepositoryWithImage(base.imageFeeder.pngImageFileName, name2, RepositoryMode.Watching);
     // There was a suspicion that when 2 repositories were created in watch mode, the test fixture was dangling
   });
 
@@ -436,7 +463,7 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory("images", base.getWorkingDirectoryPath());
     const specialImageFilePath = path.join(directoryPath, base.imageFeeder.pngImageFileName);
-    const filePaths = (await new fdir().withFullPaths().glob("**/*").filter((nodePath) =>
+    const filePaths = (await new fdir().withFullPaths().glob("**/*").filter(nodePath =>
     {
       const fileName = path.basename(nodePath);
       return fileName !== path.basename(specialImageFilePath) && includedFileNames.indexOf(fileName) !== -1;
@@ -447,7 +474,7 @@ describe("Repository", () =>
       fs.copyFileSync(filePath, imageFilePath);
     }
     await base.imageFeeder.prepareComfyUiImage(specialImageFilePath);
-    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
     await base.waitUntilRepositoryReady(repository.id);
 
     {
@@ -457,10 +484,7 @@ describe("Repository", () =>
       expect(list.totalCount).toBe(count);
     }
     {
-      const mapFunction = (summary: ImageSummary) =>
-      {
-        return summary.name;
-      };
+      const mapFunction = (summary: ImageSummary): string => summary.name;
       {
         const result = await base.getImageController().searchSummaries(new SearchParameters(
           new SearchFilter(new SearchCriteria([ ImageFormat.JPEG ]), new SearchRepositoriesOrigin([ repository.id ]), new SearchSorting(SearchSortingProperty.Name))));
@@ -532,9 +556,9 @@ describe("Repository", () =>
 
       interface Case
       {
-        property: string;
-        groupBy: (summary: ImageSummary) => number;
-        factory: (minimum: number | undefined, maximum: number | undefined) => SearchProperties;
+        readonly property: string;
+        readonly groupBy: (summary: ImageSummary) => number;
+        readonly factory: (minimum: number | undefined, maximum: number | undefined) => SearchProperties;
       }
 
       const cases: Case[] =
@@ -569,20 +593,14 @@ describe("Repository", () =>
       {
         const perFacetSummariesMap = Object.groupBy(list.items, summary => aCase.groupBy(summary).toString());
         const increasingFacets = Object.keys(perFacetSummariesMap).sort();
-        const sum = increasingFacets.reduce((previousValue, facet) =>
-        {
-          return previousValue + perFacetSummariesMap[facet]!.length;
-        }, 0);
+        const sum = increasingFacets.reduce((previousValue, facet) => previousValue + perFacetSummariesMap[facet]!.length, 0);
         for (const facet of increasingFacets)
         {
           const facetAsNumber = Number.parseInt(facet);
           const withFacetNumber = perFacetSummariesMap[facet]!.length;
           expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(facetAsNumber, facetAsNumber))))).items.length).toBe(withFacetNumber);
           const lowerFacets = increasingFacets.filter(facet => Number.parseInt(facet) <= facetAsNumber);
-          const lessThanOrEqualToSum = lowerFacets.reduce((previousValue, facet) =>
-          {
-            return previousValue + perFacetSummariesMap[facet]!.length;
-          }, 0);
+          const lessThanOrEqualToSum = lowerFacets.reduce((previousValue, facet) => previousValue + perFacetSummariesMap[facet]!.length, 0);
           expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(undefined, facetAsNumber))))).items.length).toBe(lessThanOrEqualToSum);
           expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id, new SearchCriteria(undefined, undefined, undefined, undefined, aCase.factory(facetAsNumber, undefined))))).items.length).toBe(sum - lessThanOrEqualToSum + withFacetNumber);
         }
@@ -606,8 +624,8 @@ describe("Repository", () =>
 
     const featureNames = await base.getRepositoryController().getFeatureNames();
     expect(featureNames.length).toEqual(4);
-    const sortedTags = featureNames.sort((object1, object2) => object1.id.localeCompare(object2.id));
-    expect(sortedTags).toEqual(featureNames);
+    const sortedFeatureNames = featureNames.sort((featureName1, featureName2) => featureName1.id.localeCompare(featureName2.id));
+    expect(sortedFeatureNames).toEqual(featureNames);
   });
 
   test("getTags", async () =>
@@ -625,7 +643,7 @@ describe("Repository", () =>
 
     const tags = await base.getRepositoryController().getTags();
     expect(tags.length).toEqual(commonImages.length * 2 + 2);
-    const sortedTags = tags.sort((object1, object2) => object1.id.localeCompare(object2.id));
+    const sortedTags = tags.sort((tag1, tag2) => tag1.id.localeCompare(tag2.id));
     expect(sortedTags).toEqual(tags);
   });
 
@@ -654,7 +672,7 @@ describe("Repository", () =>
       ];
     expect(embeddingsNames.length).toEqual(expectedNames.length);
 
-    const sorter = (embeddingName1: ExtensionIdImageEmbeddingName, embeddingName2: ExtensionIdImageEmbeddingName) =>
+    const sorter = (embeddingName1: ExtensionIdImageEmbeddingName, embeddingName2: ExtensionIdImageEmbeddingName): number =>
     {
       const result = embeddingName1.extensionId.localeCompare(embeddingName2.extensionId);
       if (result !== 0)
@@ -672,7 +690,7 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory("images", base.getWorkingDirectoryPath());
     const imageFilePath = base.imageFeeder.copyImage(directoryPath, base.imageFeeder.pngImageFileName);
-    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, true);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, RepositoryMode.Watching);
     await base.waitUntilRepositoryReady(repository.id);
     await base.waitUntilRepositoryWatching(repository.id);
     const result = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id));
@@ -703,7 +721,7 @@ describe("Repository", () =>
     let repository: Repository;
     try
     {
-      repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
+      repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
       await checkActivity(repository.id, RepositoryActivityKind.Synchronizing);
 
       const id = repository.id;
@@ -749,18 +767,13 @@ describe("Repository", () =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
       });
-      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Created, {
-        id: (result.items.find((imageSummary) =>
-        {
-          return imageSummary.url === fileWithProtocol + newlyAddedFilePath;
-        }))!.id
-      });
+      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Created, { id: (result.items.find(imageSummary => imageSummary.url === fileWithProtocol + newlyAddedFilePath))!.id });
     }
     {
       // We delete a file
       const extensionId = "extensionId";
       // We introduce fake embeddings for a supposedly existing extension
-      await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, extensionId, [ {
+      await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, id, extensionId, [ {
         id: "default",
         values: [ 1, 2, 3 ]
       } ]);
@@ -775,9 +788,7 @@ describe("Repository", () =>
       {
         expect(listener).toHaveBeenCalledTimes(1);
       });
-      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Deleted, {
-        id: preexistingImage.id
-      });
+      expect(listener).toHaveBeenCalledWith(EventEntity.Image + NotifierService.delimiter + ImageEventAction.Deleted, { id: preexistingImage.id });
       expect(await base.getVectorDatabaseAccessor().getEmbeddings(preexistingImage.id, extensionId)).toEqual([]);
     }
     {
@@ -830,14 +841,22 @@ describe("Repository", () =>
     const newlyAddedFilePath = path.join(directoryPath, "a.file.with.dots.jpeg");
 
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
 
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
-    await base.getRepositoryController().watch(id, true);
+    const notifierService = base.getNotifierService();
+    const modeListener = base.computeEventListener();
+    notifierService.once(EventEntity.Repository, RepositoryEventAction.Mode, RepositoryMode.Watching, modeListener);
+    const updatedRepository = await base.getRepositoryController().setMode(id, RepositoryMode.Watching);
+    expect(updatedRepository.mode).toBe(RepositoryMode.Watching);
+    await waitForExpect(() =>
+    {
+      expect(modeListener).toHaveBeenCalledTimes(1);
+    });
+    expect(modeListener).toHaveBeenCalledWith(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Mode + NotifierService.stateDelimiter + RepositoryMode.Watching, { id });
     await checkActivity(id, RepositoryActivityKind.Watching);
 
-    const notifierService = base.getNotifierService();
     let newlyAddedImageSummary: ImageSummary;
     {
       // We add a file
@@ -856,7 +875,7 @@ describe("Repository", () =>
       const preexistingImage = await base.getRepositoryController().getImageByUrl(fileWithProtocol + preexistingFilePath);
       const extensionId = "extensionId";
       // We introduce fake embeddings for a supposedly existing extension
-      await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, extensionId, [ {
+      await base.getVectorDatabaseAccessor().setEmbeddings(preexistingImage.id, id, extensionId, [ {
         id: "default",
         values: [ 1, 2, 3 ]
       } ]);
@@ -885,10 +904,7 @@ describe("Repository", () =>
       }
       fs.utimesSync(newlyAddedFilePath, futureDate, futureDate);
 
-      await base.waitUntil(async () =>
-      {
-        return (await base.getImageController().get(newlyAddedImageSummary.id)).fileDates.modificationDate !== newlyAddedImageSummary.fileDates.modificationDate;
-      });
+      await base.waitUntil(async () => (await base.getImageController().get(newlyAddedImageSummary.id)).fileDates.modificationDate !== newlyAddedImageSummary.fileDates.modificationDate);
 
       const image = await base.getImageController().get(newlyAddedImageSummary.id);
       expect(image.modificationDate).toBeGreaterThan(newlyAddedImageSummary.modificationDate);
@@ -907,9 +923,10 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, undefined, RepositoryMode.Watching);
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
+    await base.waitUntilRepositoryWatching(id);
 
     await base.getRepositoryController().startOrStop(true);
 
@@ -930,7 +947,7 @@ describe("Repository", () =>
       where: { id: repository.id },
       data:
         {
-          state: RepositoryState.INDEXING
+          state: RepositoryState.Indexing
         }
     });
     // We resume them
@@ -943,7 +960,7 @@ describe("Repository", () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
 
@@ -953,7 +970,9 @@ describe("Repository", () =>
       {
         fs.renameSync(directoryPath, newDirectoryPath);
       });
-      expect((await base.getRepositoryController().get(repository.id)).state).toEqual(RepositoryState.UNAVAILABLE);
+      const reloadedRepository = await base.getRepositoryController().get(repository.id);
+      expect(reloadedRepository.available).toEqual(false);
+      expect(reloadedRepository.state).toEqual(RepositoryState.Ready);
       const activities = await base.getRepositoryController().activities();
       expect(activities.length).toEqual(1);
       expect(activities[0].id).toEqual(id);
@@ -969,7 +988,22 @@ describe("Repository", () =>
       }).rejects.toThrow(serviceError);
       await expect(async () =>
       {
-        await base.getRepositoryController().watch(repository.id, true);
+        await base.getRepositoryController().setMode(repository.id, RepositoryMode.Watching);
+      }).rejects.toThrow(serviceError);
+      // We verify that disabling an unavailable repository succeeds
+      const disabledListener = base.computeEventListener();
+      base.getNotifierService().once(EventEntity.Repository, RepositoryEventAction.Mode, RepositoryMode.Disabled, disabledListener);
+      const disabledRepository = await base.getRepositoryController().setMode(repository.id, RepositoryMode.Disabled);
+      expect(disabledRepository.mode).toEqual(RepositoryMode.Disabled);
+      expect(disabledRepository.available).toEqual(false);
+      await waitForExpect(() =>
+      {
+        expect(disabledListener).toHaveBeenCalledTimes(1);
+      });
+      // We verify that re-enabling an unavailable repository while its directory is still missing fails
+      await expect(async () =>
+      {
+        await base.getRepositoryController().setMode(repository.id, RepositoryMode.Enabled);
       }).rejects.toThrow(serviceError);
     }
     {
@@ -977,53 +1011,149 @@ describe("Repository", () =>
       {
         fs.renameSync(newDirectoryPath, directoryPath);
       });
-      expect((await base.getRepositoryController().get(repository.id)).state).toEqual(RepositoryState.READY);
+      const reloadedRepository = await base.getRepositoryController().get(repository.id);
+      expect(reloadedRepository.available).toEqual(true);
+      expect(reloadedRepository.state).toEqual(RepositoryState.Ready);
+      expect(reloadedRepository.mode).toEqual(RepositoryMode.Disabled);
+      const enabledRepository = await base.getRepositoryController().setMode(repository.id, RepositoryMode.Enabled);
+      expect(enabledRepository.mode).toEqual(RepositoryMode.Enabled);
     }
   });
 
-  test("Watch with wrong conditions", async () =>
+  test("setMode with wrong conditions", async () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
 
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
 
-    // We try to watch or store an image into a repository while it is synchronizing
-    await base.getRepositoryController().synchronize(id);
-    await expect(async () =>
+    // We try to change mode or store an image into a repository while it is synchronizing
+    const synchronizationHolder = holdSynchronization();
+    try
     {
-      await base.getRepositoryController().watch(id, true);
-    }).rejects.toThrow(new ServiceError(`The repository with id '${id}' is synchronizing`, BAD_REQUEST, base.badParameterCode));
-    await expect(async () =>
+      await base.getRepositoryController().synchronize(id);
+      await expect(async () =>
+      {
+        await base.getRepositoryController().setMode(id, RepositoryMode.Watching);
+      }).rejects.toThrow(new ServiceError(`The repository with id '${id}' is synchronizing`, BAD_REQUEST, base.badParameterCode));
+      await expect(async () =>
+      {
+        await base.getRepositoryController().storeImage(id, "name", undefined, undefined, undefined, undefined, undefined, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
+      }).rejects.toThrow(new ServiceError(`The repository with id '${id}' is synchronizing`, BAD_REQUEST, base.badParameterCode));
+    }
+    finally
     {
-      await base.getRepositoryController().storeImage(id, "name", undefined, undefined, undefined, undefined, undefined, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.jpegImageFileName)));
-    }).rejects.toThrow(new ServiceError(`The repository with id '${id}' is synchronizing`, BAD_REQUEST, base.badParameterCode));
+      synchronizationHolder.release();
+    }
 
     await base.waitUntilRepositoryReady(id);
+    // We verify that setting the same mode throws a bad parameter error
+    const modeListener = base.computeEventListener();
+    base.getNotifierService().once(EventEntity.Repository, RepositoryEventAction.Mode, undefined, modeListener);
     await expect(async () =>
     {
-      await base.getRepositoryController().watch(id, false);
-    }).rejects.toThrow(new ServiceError(`There is no watcher for the repository with id '${id}'`, BAD_REQUEST, base.badParameterCode));
+      await base.getRepositoryController().setMode(id, RepositoryMode.Enabled);
+    }).rejects.toThrow(new ServiceError(`The parameter 'mode' with value '${RepositoryMode.Enabled}' is invalid because the repository with id '${id}' is already in this mode`, BAD_REQUEST, base.badParameterCode));
+    expect(modeListener).toHaveBeenCalledTimes(0);
   });
 
   test("Watch and synchronize", async () =>
   {
     const directoryPath = base.prepareEmptyDirectory(Defaults.emptyDirectoryName, base.getWorkingDirectoryPath());
     const url = fileWithProtocol + directoryPath;
-    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName);
+    const repository = await base.getRepositoryController().create(Defaults.locationType, url, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
 
     const id = repository.id;
     await base.waitUntilRepositoryReady(id);
-    await base.getRepositoryController().watch(id, true);
+    await base.getRepositoryController().setMode(id, RepositoryMode.Watching);
 
-    // The synchronization should work…
+    // We verify that synchronization succeeds while watching...
     await base.getRepositoryController().synchronize(id);
     await base.waitUntilRepositoryReady(id);
-    // … and since the repository was being watched, it should resume and should be stoppable
-    await base.getRepositoryController().watch(id, false);
+    // We verify that watching resumes after synchronization and can be stopped
+    await base.getRepositoryController().setMode(id, RepositoryMode.Enabled);
   });
+
+  test("Disabled repository lifecycle and filtering", async () =>
+  {
+    const {
+      repository: repository1,
+      images: images1
+    } = await base.prepareRepositoryWithImages([ base.imageFeeder.pngImageFileName, base.imageFeeder.jpegImageFileName ], "repository1", RepositoryMode.Watching);
+    const { images: images2 } = await base.prepareRepositoryWithImages([ base.imageFeeder.webpImageFileName ], "repository2", RepositoryMode.Enabled);
+    const extension = await base.prepareExtension("extension1");
+    const image1 = images1[0];
+    const image2 = images2[0];
+
+    await base.getImageController().setTags(Base.allPolicyContext, image1.id, extension.manifest.id, [ "repo1Tag" ]);
+    await base.getImageController().setTags(Base.allPolicyContext, image2.id, extension.manifest.id, [ "repo2Tag" ]);
+    await base.getImageController().setFeatures(Base.allPolicyContext, image1.id, extension.manifest.id, [ new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "repo1Feature", "value1") ]);
+    await base.getImageController().setFeatures(Base.allPolicyContext, image2.id, extension.manifest.id, [ new ImageFeature(ImageFeatureType.CAPTION, ImageFeatureFormat.STRING, "repo2Feature", "value2") ]);
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image1.id, extension.manifest.id, [ new ImageEmbedding("repo1Embedding", [ 1, 0, 0 ]) ]);
+    await base.getImageController().setEmbeddings(Base.allPolicyContext, image2.id, extension.manifest.id, [ new ImageEmbedding("repo2Embedding", [ 0, 1, 0 ]) ]);
+
+    // We disable repository1
+    const disabledListener = base.computeEventListener();
+    base.getNotifierService().once(EventEntity.Repository, RepositoryEventAction.Mode, RepositoryMode.Disabled, disabledListener);
+    const disabledRepository1 = await base.getRepositoryController().setMode(repository1.id, RepositoryMode.Disabled);
+    expect(disabledRepository1.mode).toBe(RepositoryMode.Disabled);
+    expect(RepositoryWatcher.get(repository1.id)).toBeUndefined();
+    await waitForExpect(() =>
+    {
+      expect(disabledListener).toHaveBeenCalledTimes(1);
+    });
+    expect(disabledListener).toHaveBeenCalledWith(EventEntity.Repository + NotifierService.delimiter + RepositoryEventAction.Mode + NotifierService.stateDelimiter + RepositoryMode.Disabled, { id: repository1.id });
+    await checkActivity(repository1.id, RepositoryActivityKind.None);
+
+    const disabledError = new ServiceError(`The repository with id '${repository1.id}' is disabled`, BAD_REQUEST, base.badParameterCode);
+
+    // We verify that repository write operations on disabled repository1 fail
+    await expect(base.getRepositoryController().synchronize(repository1.id)).rejects.toThrow(disabledError);
+    await expect(base.getRepositoryController().renameImage(repository1.id, image1.id, "newName", undefined)).rejects.toThrow(disabledError);
+    await expect(base.getRepositoryController().storeImage(repository1.id, "newImage", undefined, undefined, undefined, undefined, undefined, fs.readFileSync(path.join(base.imageFeeder.imagesDirectoryPath, base.imageFeeder.gifImageFileName)))).rejects.toThrow(disabledError);
+    await expect(base.getRepositoryController().getImageByUrl(image1.url)).rejects.toThrow(disabledError);
+
+    // We verify that single-image operations on image1 fail
+    await expect(base.getImageController().get(image1.id)).rejects.toThrow(disabledError);
+    await expect(base.getImageController().getMetadata(image1.id)).rejects.toThrow(disabledError);
+    await expect(base.getImageController().getAllTags(image1.id)).rejects.toThrow(disabledError);
+    await expect(base.getImageController().getAllFeatures(image1.id)).rejects.toThrow(disabledError);
+    await expect(base.getImageController().getAllEmbeddings(image1.id)).rejects.toThrow(disabledError);
+    await expect(base.getImageController().setTags(Base.allPolicyContext, image1.id, extension.manifest.id, [ "otherTag" ])).rejects.toThrow(disabledError);
+
+    // We verify that search operations exclude disabled repository1
+    const allSearchResult = await base.getImageController().searchSummaries({});
+    expect(allSearchResult.totalCount).toBe(1);
+    expect(allSearchResult.items.map(item => item.id)).toEqual([ image2.id ]);
+    const repository1SearchResult = await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository1.id));
+    expect(repository1SearchResult.totalCount).toBe(0);
+
+    // We verify that aggregations exclude disabled repository1
+    const tags = await base.getRepositoryController().getTags();
+    expect(tags.map(tag => tag.value)).toEqual([ "repo2Tag" ]);
+    const features = await base.getRepositoryController().getFeatureNames();
+    expect(features.map(feature => feature.name)).toEqual([ "repo2Feature" ]);
+    const embeddingsNames = await base.getRepositoryController().getEmbeddingsNames();
+    expect(embeddingsNames).toEqual([ { extensionId: extension.manifest.id, name: "repo2Embedding" } ]);
+
+    // We re-enable repository1 and verify that visibility is restored immediately since it is already Ready
+    const enabledListener = base.computeEventListener();
+    base.getNotifierService().once(EventEntity.Repository, RepositoryEventAction.Mode, RepositoryMode.Enabled, enabledListener);
+    const reenabledRepository1 = await base.getRepositoryController().setMode(repository1.id, RepositoryMode.Enabled);
+    expect(reenabledRepository1.mode).toBe(RepositoryMode.Enabled);
+    expect(reenabledRepository1.state).toBe(RepositoryState.Ready);
+    await waitForExpect(() =>
+    {
+      expect(enabledListener).toHaveBeenCalledTimes(1);
+    });
+
+    const restoredSearchResult = await base.getImageController().searchSummaries({});
+    expect(restoredSearchResult.totalCount).toBe(3);
+    const restoredImage1 = await base.getImageController().get(image1.id);
+    expect(restoredImage1.id).toBe(image1.id);
+  }, base.largeTimeoutInMilliseconds);
 
   test("Delete", async () =>
   {
@@ -1033,7 +1163,7 @@ describe("Repository", () =>
     let repositoryId: string;
     try
     {
-      const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
+      const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
       repositoryId = repository.id;
       await expect(async () =>
       {
@@ -1099,7 +1229,7 @@ describe("Repository", () =>
     const directoryPath = nonExistentPath;
     await expect(async () =>
     {
-      await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
+      await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
     }).rejects.toThrow(new ServiceError(`The directory with path '${directoryPath}' does not exist`, BAD_REQUEST, base.badParameterCode));
   });
 
@@ -1109,7 +1239,7 @@ describe("Repository", () =>
     const stopped = "stopped";
     const events: string[] = [];
     const values: object[] = [];
-    const commonListener = (event: string, value: object) =>
+    const commonListener = (event: string, value: object): Promise<void> =>
     {
       events.push(event);
       values.push(value);
@@ -1127,7 +1257,7 @@ describe("Repository", () =>
     let repositoryId: string;
     try
     {
-      const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName);
+      const repository = await base.getRepositoryController().create(Defaults.locationType, fileWithProtocol + directoryPath, Defaults.repositoryName, undefined, RepositoryMode.Enabled);
       repositoryId = repository.id;
       await base.waitUntilRepositoryReady(repositoryId);
     }
@@ -1310,16 +1440,16 @@ describe("Repository", () =>
           expect(image.parentId).toBe(parentImageId);
           expect((await base.getImageController().searchSummaries(SearchParameters.withRepositoryIdAndSearchCriteria(repository.id))).totalCount).toBe(imagesCount);
           const storedImageFilePath = image.url.substring(fileWithProtocol.length);
-          const fd = fs.openSync(storedImageFilePath, "r");
+          const fileDescriptor = fs.openSync(storedImageFilePath, "r");
           try
           {
-            const stats = fs.fstatSync(fd);
+            const stats = fs.fstatSync(fileDescriptor);
             expect(stats.mtime).toEqual(inceptionDate);
             expect(stats.birthtime).toEqual(inceptionDate);
           }
           finally
           {
-            fs.close(fd);
+            fs.close(fileDescriptor);
           }
           const newApplicationMetadata = await readApplicationMetadata(fs.readFileSync(storedImageFilePath), imageFormat);
           expect(newApplicationMetadata).toEqual(metadata);
@@ -1384,15 +1514,12 @@ describe("Repository", () =>
     expect(applicationMetadata).toEqual(new ApplicationMetadata([ item1, item2 ]));
   });
 
-  async function checkActivity(repositoryId: string, kind: RepositoryActivityKind)
+  async function checkActivity(repositoryId: string, kind: RepositoryActivityKind): Promise<void>
   {
     await waitForExpect(async () =>
     {
       const activities = await base.getRepositoryController().activities();
-      const repositoryActivity = activities.find((activity) =>
-      {
-        return activity.id === repositoryId;
-      });
+      const repositoryActivity = activities.find(activity => activity.id === repositoryId);
       expect(repositoryActivity).toBeDefined();
       expect(repositoryActivity!.kind).toEqual(kind);
     });

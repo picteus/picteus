@@ -109,6 +109,7 @@ import {
   repositoryIdSchema,
   RepositoryList,
   RepositoryLocationType,
+  RepositoryMode,
   RunCommandParameters,
   SearchFeaturesResult,
   SearchFilter,
@@ -1482,10 +1483,11 @@ export class RepositoryController
     required: false
   })
   @ApiQuery({
-    name: "watch",
-    description: "Whether the repository should be watched immediately ; when not defined, this parameter has the implicit 'false' value",
-    type: Boolean,
-    required: false
+    name: "mode",
+    description: "The operating mode of the repository",
+    enum: RepositoryMode,
+    enumName: "RepositoryMode",
+    required: true
   })
   @ApiResponse(
     {
@@ -1495,9 +1497,9 @@ export class RepositoryController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryWrite ]))
-  async create(@Query("type") type: RepositoryLocationType, @Query("url") url: string, @Query("name") name: string, @Query("comment") comment?: string, @Query("watch", new ParseBoolPipe({ optional: true })) watch?: boolean): Promise<Repository>
+  async create(@Query("type") type: RepositoryLocationType, @Query("url") url: string, @Query("name") name: string, @Query("comment") comment: string | undefined, @Query("mode") mode: RepositoryMode): Promise<Repository>
   {
-    return await this.repositoryService.create(type, url, name, comment, watch, undefined);
+    return await this.repositoryService.create(type, url, name, comment, mode, undefined);
   }
 
   @Put(":id/update")
@@ -1565,12 +1567,6 @@ export class RepositoryController
     maxLength: FieldLengths.l1k,
     required: false
   })
-  @ApiQuery({
-    name: "watch",
-    description: "Whether the repository should be watched immediately ; when not defined, this parameter has the implicit 'false' value",
-    type: Boolean,
-    required: false
-  })
   @ApiResponse(
     {
       status: OK,
@@ -1579,13 +1575,13 @@ export class RepositoryController
     }
   )
   @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryEnsure ]))
-  async ensure(@RequestPolicyContext() policyContext: PolicyContext, @Query("extensionId") extensionId: string, @Query("name") name: string, @Query("comment") comment?: string, @Query("watch", new ParseBoolPipe({ optional: true })) watch?: boolean): Promise<Repository>
+  async ensure(@RequestPolicyContext() policyContext: PolicyContext, @Query("extensionId") extensionId: string, @Query("name") name: string, @Query("comment") comment?: string): Promise<Repository>
   {
     if (policyContext.extensionId !== undefined && policyContext.extensionId !== extensionId)
     {
       throw new ForbiddenException(mismatchingAPISecretAndExtensionIdentifiers);
     }
-    return await this.repositoryService.ensure(extensionId, name, comment, watch);
+    return await this.repositoryService.ensure(extensionId, name, comment);
   }
 
   @Put("startOrStop")
@@ -1628,27 +1624,32 @@ export class RepositoryController
     return await this.repositoryService.synchronize(id);
   }
 
-  @Put(":id/watch")
+  @Put(":id/setMode")
   @ApiOperation(
     {
-      summary: "Starts or stops watching a repository",
-      description: "Starts or stops listening to the repository back-end images changes."
+      summary: "Sets the operating mode of a repository",
+      description: "Changes the operating mode of a repository."
     }
   )
   @ApiParam({ name: "id", description: "The repository identifier", schema: repositoryIdSchema, required: true })
   @ApiQuery({
-    name: "isStart",
-    description: "Whether the repository should start or stop watching",
-    type: Boolean
+    name: "mode",
+    description: "The operating mode to apply to the repository",
+    enum: RepositoryMode,
+    enumName: "RepositoryMode",
+    required: true
   })
-  @ApiProduces(types.txt)
-  @Header(headers.response.CONTENT_TYPE, types.txt)
-  @HttpCode(NO_CONTENT)
-  @ApiResponse(noContentApiResponseOptions)
+  @ApiResponse(
+    {
+      status: OK,
+      description: "The updated repository",
+      type: Repository
+    }
+  )
   @CheckPolicies(withOneOfPolicies([ ApiScope.RepositoryManage ]))
-  async watch(@Param("id") id: string, @Query("isStart", ParseBoolPipe) isStart: boolean): Promise<void>
+  async setMode(@Param("id") id: string, @Query("mode") mode: RepositoryMode): Promise<Repository>
   {
-    return await this.repositoryService.watch(id, isStart, true);
+    return await this.repositoryService.setMode(id, mode);
   }
 
   @Delete(":id/delete")

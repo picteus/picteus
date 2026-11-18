@@ -161,7 +161,7 @@ function RepositoriesScreenContent(): ReactElement
     addModal({
       title: t(`addOrUpdateRepositoryModal.${repository ? "updateTitle" : "addTitle"}`),
       icon: { icon: <IconFolderOpen stroke={Common.IconStrokeSize}/> },
-      size: "s",
+      size: "m",
       body: <AddOrUpdateRepository repository={repository} initialUrl={initialUrl}/>
     });
   }
@@ -304,7 +304,7 @@ function RepositoriesScreenContent(): ReactElement
           selectedRepository && (
             <RepositoryIdentity
               repository={selectedRepository}
-              menu={
+              footer={
                 <RepositoryMenu
                   repository={selectedRepository}
                   onEdit={openAddOrUpdateRepositoryModal}

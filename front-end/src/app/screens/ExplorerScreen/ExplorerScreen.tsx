@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { IconPhotoMinus, IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
+import { RepositoryMode } from "@picteus/ws-client";
+
 import { ROUTES } from "utils";
 import { TitleBarPortal } from "app/layout";
 import { useRepositories } from "app/hooks";
@@ -24,6 +26,21 @@ export default function ExplorerScreen(): ReactElement
   const computeEmptyResults = useCallback(() =>
   {
     const repositoriesExists = repositories.length > 0;
+    const areAllRepositoriesDisabled = repositoriesExists && repositories.every((repository) => repository.mode === RepositoryMode.Disabled);
+
+    if (areAllRepositoriesDisabled)
+    {
+      return (
+        <EmptyResults
+          icon={IconPhotoSearch}
+          title={t("emptyImages.titleAllRepositoriesDisabled")}
+          description={t("emptyImages.descriptionAllRepositoriesDisabled")}
+          buttonText={t("emptyImages.buttonTextNoRepository")}
+          buttonAction={() => navigate(ROUTES.repositories)}
+        />
+      );
+    }
+
     return (
       <EmptyResults
         icon={IconPhotoSearch}
@@ -33,7 +50,7 @@ export default function ExplorerScreen(): ReactElement
         buttonAction={repositoriesExists ? undefined : () => navigate(ROUTES.repositories)}
       />
     );
-  }, [ navigate, repositories.length, t ]);
+  }, [ navigate, repositories, t ]);
 
   return (
     <StackableScreen title={t("menu.explorer")} icon={IconPhotoMinus}>

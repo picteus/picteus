@@ -22,8 +22,6 @@ export class RepositoryWatcher
 
   private static readonly instances: Record<string, RepositoryWatcher> = {};
 
-  private static readonly startedRepositories: Repository[] = [];
-
   private static readonly pollIntervalInMilliseconds = 100;
 
   private static readonly stabilityThresholdInMilliseconds = 500;
@@ -43,7 +41,6 @@ export class RepositoryWatcher
     logger.info(`Starting a watcher for the repository with id '${id}'`);
     const watcher = new RepositoryWatcher(id, repository.getLocation().toFilePath(), ImageFormats, imageService);
     RepositoryWatcher.instances[id] = watcher;
-    RepositoryWatcher.startedRepositories.push(repository);
     await watcher.start(regularDatabaseService, notifierService);
     notifierService.emit(EventEntity.Repository, RepositoryEventAction.Watch, ActionState.Started, { id });
   }
@@ -59,11 +56,10 @@ export class RepositoryWatcher
     logger.info(`Stopping the watcher for the repository with id '${id}'`);
     await watcher.stop();
     delete RepositoryWatcher.instances[id];
-    RepositoryWatcher.startedRepositories.splice(RepositoryWatcher.startedRepositories.indexOf(repository), 1);
     notifierService.emit(EventEntity.Repository, RepositoryEventAction.Watch, ActionState.Stopped, { id });
   }
 
-  static async ignore<T>(id: string, relativeFilePath: string, callback: () => Promise<T>): Promise<T>
+  static async ignore<T>(id: string, relativeFilePaths: string[], callback: () => Promise<T>): Promise<T>
   {
     const watcher = RepositoryWatcher.get(id);
     if (watcher === undefined)
@@ -72,7 +68,7 @@ export class RepositoryWatcher
     }
     else
     {
-      return await watcher.ignore<T>(relativeFilePath, callback);
+      return await watcher.ignore<T>(relativeFilePaths, callback);
     }
   }
 
@@ -191,11 +187,7 @@ export class RepositoryWatcher
                 if (unlinkedImage.fileModificationDate.getTime() === addedStats.fileDates.modificationDate)
                 {
                   logger.debug(`The file '${previousFilePath}' has been renamed as '${filePath}'`);
-                  await imageDelegate.update({
-                    where: { id: unlinkedImage.id },
-                    data: { name: path.basename(filePath), url: fileWithProtocol + filePath }
-                  });
-                  notifierService.emit(EventEntity.Image, ImageEventAction.Renamed, undefined, { id: unlinkedImage.id });
+                  await this.imageService.renamePersistedImage(unlinkedImage.id, filePath);
                 }
                 else
                 {
@@ -318,10 +310,10 @@ export class RepositoryWatcher
     await this.clearTimeout();
   }
 
-  private async ignore<T>(relativeFilePath: string, callback: () => Promise<T>): Promise<T>
+  private async ignore<T>(relativeFilePaths: string[], callback: () => Promise<T>): Promise<T>
   {
-    logger.debug(`The watcher attached to the repository with id '${this.repositoryId}' will temporarily ignore the events on the file '${relativeFilePath}'`);
-    this.ignoredRelativeFilePaths.push(relativeFilePath);
+    logger.debug(`The watcher attached to the repository with id '${this.repositoryId}' will temporarily ignore the events on the file(s) ${parametersChecker.stringify(relativeFilePaths)}`);
+    this.ignoredRelativeFilePaths.push(...relativeFilePaths);
     try
     {
       const result = await callback();
@@ -334,7 +326,14 @@ export class RepositoryWatcher
     }
     finally
     {
-      this.ignoredRelativeFilePaths.splice(this.ignoredRelativeFilePaths.indexOf(relativeFilePath), 1);
+      for (const relativeFilePath of relativeFilePaths)
+      {
+        const index = this.ignoredRelativeFilePaths.indexOf(relativeFilePath);
+        if (index !== -1)
+        {
+          this.ignoredRelativeFilePaths.splice(index, 1);
+        }
+      }
     }
   }
 

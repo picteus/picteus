@@ -22,7 +22,7 @@ export default {
       localFirst: {
         badge: "Local-First",
         title: "Structured metadata & vector similarity search",
-        description: "Picteus combines local SQLite persistence with ChromaDB embeddings for instant faceted filtering and visual discovery."
+        description: "The application combines local SQLite persistence with ChromaDB embeddings for instant faceted filtering and visual discovery."
       },
       integrations: {
         badge: "AI Ecosystem",
@@ -32,7 +32,7 @@ export default {
       extensions: {
         badge: "Extensible & MCP",
         title: "Build custom plugins & connect AI agents",
-        description: "Author Python or TypeScript extensions with the Picteus SDK and expose your image catalog to AI agents via MCP."
+        description: "Author Python or TypeScript extensions with the SDK and expose your image catalog to AI agents via MCP."
       }
     },
     links: {
@@ -121,6 +121,7 @@ export default {
     url: "URL",
     search: "Search",
     file: "File",
+    folder: "Folder",
     comment: "Comment",
     name: "Name",
     sourceUrl: "Source",
@@ -252,14 +253,24 @@ export default {
   emptyImages: {
     title: "No available image",
     titleNoEmbedding: "No image",
+    titleAllRepositoriesDisabled: "All repositories are disabled",
+    titleRepositoryDisabled: "This repository is disabled",
+    titleImageRepositoryDisabled: "Repository is disabled",
     description:
       "There are currently no images corresponding to your search criteria. Please try again with different criteria.",
     descriptionNoRepository:
       "There are currently no images stored in your repositories. Please upload or add images to your repositories to see them listed here.",
+    descriptionAllRepositoriesDisabled:
+      "All your configured repositories are currently disabled. Enable at least one repository to see its images here.",
+    descriptionRepositoryDisabled:
+      "Images in this repository are hidden while it is disabled. Enable the repository to browse its images.",
+    descriptionImageRepositoryDisabled:
+      "This image belongs to a disabled repository. Enable the repository to view it again.",
     descriptionNoData:
       "There is no more image in the collection or in the initial set.",
     descriptionNoEmbedding: "There is no image displayed, because no embedding was computed so far: install or enable an extension which compute embeddings.",
-    buttonTextNoRepository: "Manage repositories"
+    buttonTextNoRepository: "Manage repositories",
+    buttonTextEnableRepository: "Enable repository"
   },
   emptyDesk: {
     title: "Desk is empty",
@@ -326,9 +337,17 @@ export default {
     errorUpdate: "An error occurred while updating the repository",
     addTitle: "Add repository",
     updateTitle: "Edit repository",
-    namePlaceholder: "AI generated images",
-    urlPlaceholder: "/Users/john/ai-images/",
-    commentPlaceholder: "Contains every AI generated images"
+    addButton: "Add repository",
+    noFolderSelected: "No folder selected",
+    chooseFolder: "Choose",
+    changeFolder: "Change",
+    folderHint: "Includes images in subfolders.",
+    sameFolderConflict: "A repository named \"{{name}}\" already uses this folder.",
+    namePlaceholder: "ComfyUI",
+    nameAddHint: "This is how it appears in the application. Pick a name you'll recognise, like \"ComfyUI\". You can rename it any time.",
+    nameEditHint: "This is how it appears in the application. The folder name on disk does not change.",
+    commentPlaceholder: "What is in this repository?",
+    whatHappensNext: "The application indexes the images in this folder and keeps watching it for new ones. Your files stay where they are. Supported: PNG, JPEG, WEBP, GIF, AVIF and HEIF."
   },
   addOrUpdateCollectionModal: {
     successAdd: "The collection has been successfully added",
@@ -524,6 +543,7 @@ export default {
       recent: "Recent"
     },
     noImagesIndexed: "No images indexed yet",
+    disabledPreview: "Repository is disabled",
     addedBy: "Added by {{name}}",
     drawer: {
       viewImages: "View images",
@@ -540,29 +560,53 @@ export default {
     },
     status: {
       ready: "Ready",
+      watching: "Watching",
       indexing: "Indexing…",
+      disabled: "Disabled",
       unavailable: "Unavailable"
     },
     firstLaunch: {
-      caption: "NEW TO PICTEUS? START HERE",
+      caption: "NEW TO APPLICATION? START HERE",
       title: "Add your own folders",
-      description: "Add the folders where you save your generations, like your ComfyUI outputs. Picteus indexes them and watches for new images. Your files stay where they are.",
+      description: "Add the folders where you save your generations, like your ComfyUI outputs. The application indexes them and watches for new images. Your files stay where they are.",
       chooseFolder: "Choose a folder",
       readManual: "Read the manual",
       watchOnYoutube: "Watch on YouTube"
     },
     menu: {
+      enable: "Enable",
+      disable: "Disable",
       watch: "Watch",
       stopWatching: "Stop watching"
     },
     successRemove: "The repository has been successfully removed",
     errorRemove: "An error occured while removing the repository",
+    successEnable: "The repository has been enabled",
+    successDisable: "The repository has been disabled",
     successWatch: "The repository is now watched for new images",
     successStopWatching: "The repository is no longer watched for new images",
     errorWatch: "An error occured while updating the watch state of the repository",
+    errorMode: "An error occurred while updating the mode of the repository",
+    confirmSynchronizeTitle: "Synchronize repository",
+    confirmSynchronizeMessage: "Are you sure you want to synchronize the repository '{{name}}'?",
+    confirmSynchronizeConsequences:
+      "The application will scan its folder to index new or updated images and remove any missing ones from its index, which may take some time.",
+    confirmDisableTitle: "Disable repository",
+    confirmDisableMessage: "Are you sure you want to disable the repository '{{name}}'?",
+    confirmDisableConsequences:
+      "Folder watching will stop and its images will be hidden from browsing, search, and extensions until re-enabled (your files on disk and indexed data will be preserved).",
+    confirmWatchTitle: "Watch repository",
+    confirmWatchMessage: "Are you sure you want to watch the repository '{{name}}'?",
+    confirmWatchConsequences:
+      "The application will continuously monitor its folder to automatically index new, updated, or deleted images, and will synchronize it first if it has not been indexed yet.",
+    confirmStopWatchingTitle: "Stop watching repository",
+    confirmStopWatchingMessage: "Are you sure you want to stop watching the repository '{{name}}'?",
+    confirmStopWatchingConsequences:
+      "The application will no longer monitor its folder for file system changes, so new, updated, or deleted images will not be indexed automatically until you synchronize manually or re-enable watching.",
     confirmDeleteTitle: "Delete repository",
-    confirmDeleteMessage:
-      "Are you sure you want to delete the repository '{{name}}' ?"
+    confirmDeleteMessage: "Are you sure you want to delete the repository '{{name}}'?",
+    confirmDeleteConsequences:
+      "Any active watching will stop and the repository, along with all its indexed images, metadata, embeddings, and collection entries, will be permanently removed from the application. Your image files on disk will not be deleted."
   },
   repositoryDetail: {
     latestImages: "Latest images",
@@ -621,6 +665,15 @@ export default {
     repository: {
       created: "The repository '{{id}}' has been created",
       updated: "The repository '{{id}}' has been updated",
+      mode: {
+        disabled: "The repository '{{id}}' has been disabled",
+        enabled: "The repository '{{id}}' has been enabled",
+        watching: "The repository '{{id}}' is now watched"
+      },
+      available: {
+        true: "The repository '{{id}}' is now available",
+        false: "The repository '{{id}}' is no longer available"
+      },
       synchronize: {
         started:
           "The synchronization for the repository with ID '{{id}}' has been initiated",
@@ -757,7 +810,9 @@ export default {
     extensionCommandFailed:
       "The command '{{command}}' of extension '{{extension}}' failed to trigger",
     confirmImageDeleteTitle: "Image deletion",
-    confirmImageDeleteMessage: "Are you sure you want to delete this image? It will be deleted from your file system and cannot be recovered.",
+    confirmImageDeleteMessage: "Are you sure you want to delete this image?",
+    confirmImageDeleteConsequences: "The image, along with its metadata, embeddings, and collection entries, will be removed from the application.",
+    confirmImageDeleteShouldDeleteFile: "Also delete the corresponding file from the file system, which cannot be recovered",
     confirmImagesDeleteTitle: "Images deletion",
     confirmImagesDeleteMessage: "Are you sure you want to delete those image? They will be deleted from your file system and cannot be recovered."
   },

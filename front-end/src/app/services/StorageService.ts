@@ -18,6 +18,7 @@ export const StorageKeys =
     DESK_TABS: "deskTabs",
     EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION: "extensionIntentShowShouldConfirmRedirection",
     FOLDER_PICKER_LAST_LOCATION: "extensionPickerLastLocation",
+    IMAGE_DELETE_SHOULD_DELETE_FILE: "imageDeleteShouldDeleteFile",
     IMAGE_DETAIL_HIDDEN_SECTIONS: "imageDetailHiddenSections",
     IMAGE_DETAIL_SECTIONS_ORDER: "imageDetailSectionsOrder",
     IMAGE_DETAIL_TRAITS: "imageDetailTraits",
@@ -441,6 +442,16 @@ function addRecentImageId(imageId: string): void
   setRecentImageIds([ imageId, ...[ ...new Set(otherImageIds) ] ].slice(0, 40));
 }
 
+function getImageDeleteShouldDeleteFile(): boolean
+{
+  return getBoolean(StorageKeys.IMAGE_DELETE_SHOULD_DELETE_FILE, true);
+}
+
+function setImageDeleteShouldDeleteFile(shouldDeleteFile: boolean): void
+{
+  setBoolean(StorageKeys.IMAGE_DELETE_SHOULD_DELETE_FILE, shouldDeleteFile);
+}
+
 export default {
   COLOR_SCHEME: `${prefix}${StorageKeys.COLOR_SCHEME}`,
   upgrade,
@@ -491,5 +502,7 @@ export default {
   getCommandParameters,
   setCommandParameters,
   getRecentImageIds,
-  addRecentImageId
+  addRecentImageId,
+  getImageDeleteShouldDeleteFile,
+  setImageDeleteShouldDeleteFile
 };

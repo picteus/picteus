@@ -34,6 +34,15 @@ export function ImagesSelectedProvider({ children })
     }
   });
 
+  useSocketEvent(ChannelEnum.REPOSITORY_MODE_DISABLED, (event) =>
+  {
+    const repositoryId = EventService.computeEventEntityId<string>(event);
+    if (repositoryId !== undefined)
+    {
+      setSelectedImages((previousImages) => previousImages.filter((image) => image.repositoryId !== repositoryId));
+    }
+  });
+
   useEffect(() =>
   {
     const imagesIds = StorageService.getSelectedImagesIds();

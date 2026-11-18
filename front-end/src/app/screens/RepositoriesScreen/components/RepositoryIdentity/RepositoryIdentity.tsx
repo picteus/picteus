@@ -11,20 +11,39 @@ import { RepositoriesService } from "app/services";
 import { Common, ExtensionIcon } from "app/components";
 
 
-type RepositoryIdentityType = {
-  repository: Repository;
-  menu?: ReactNode;
-  subtitle?: string;
-};
+type RepositoryIdentityBaseType =
+  {
+    readonly footer?: ReactNode;
+    readonly subtitle?: string;
+  };
 
-export default function RepositoryIdentity({ repository, menu, subtitle }: RepositoryIdentityType): ReactElement
+type RepositoryIdentityType =
+  RepositoryIdentityBaseType &
+  (
+    | {
+      readonly repository: Repository;
+      readonly name?: never;
+      readonly url?: never;
+    }
+    | {
+      readonly repository?: never;
+      readonly name: string;
+      readonly url: string;
+    }
+  );
+
+export default function RepositoryIdentity(props: RepositoryIdentityType): ReactElement
 {
+  const { footer, subtitle } = props;
   const [ t ] = useTranslation();
-  const extensionDisplayName = useExtensionDisplayName(repository.extensionId);
+  const extensionDisplayName = useExtensionDisplayName(props.repository?.extensionId);
 
-  const source = subtitle ?? (RepositoriesService.isFromExtension(repository) === true
-    ? t("repositoryScreen.addedBy", { name: extensionDisplayName ?? repository.extensionId })
-    : shortenPath(repository.url));
+  const isFromExtension = props.repository !== undefined && RepositoriesService.isFromExtension(props.repository) === true;
+  const name = props.repository !== undefined ? props.repository.name : props.name;
+  const url = props.repository !== undefined ? props.repository.url : props.url;
+  const source = subtitle ?? (isFromExtension === true && props.repository?.extensionId !== undefined
+    ? t("repositoryScreen.addedBy", { name: extensionDisplayName ?? props.repository.extensionId })
+    : shortenPath(url));
 
   return (
     <Flex gap="sm" align="center" wrap="nowrap">
@@ -37,15 +56,15 @@ export default function RepositoryIdentity({ repository, menu, subtitle }: Repos
         bdrs="sm"
         flex="0 0 auto"
       >
-        {RepositoriesService.isFromExtension(repository) === true
-          ? <ExtensionIcon idOrExtension={repository.extensionId!} size="md"/>
+        {isFromExtension === true && props.repository?.extensionId !== undefined
+          ? <ExtensionIcon idOrExtension={props.repository.extensionId} size="md"/>
           : <IconFolder size={Common.IconMediumSize} stroke={Common.IconStrokeSize}/>}
       </Flex>
       <Box flex={1} miw={0}>
-        <Text size="sm" fw={500} truncate>{repository.name}</Text>
+        <Text size="sm" fw={500} truncate>{name}</Text>
         <Text size="xs" c="dimmed" truncate>{source}</Text>
       </Box>
-      {menu}
+      {footer}
     </Flex>
   );
 }

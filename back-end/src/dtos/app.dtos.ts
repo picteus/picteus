@@ -107,6 +107,7 @@ import {
   RepositoryList,
   RepositoryLocation,
   RepositoryLocationType,
+  RepositoryMode,
   RepositoryState
 } from "./repository.dtos";
 import { Collection } from "./collection.dtos";
@@ -345,6 +346,7 @@ export {
   type RepositoryList,
   RepositoryLocation,
   RepositoryLocationType,
+  RepositoryMode,
   RepositoryState,
   RunCommandParameters,
   SearchCriteria,

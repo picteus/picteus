@@ -6,6 +6,10 @@ import { IconCancel, IconCheck, IconProgress, IconX } from "@tabler/icons-react"
 import i18n from "i18next";
 
 import { Common, CopyText } from "app/components";
+import { type ApiCallError, ErrorService } from "app/services";
+
+
+export type { ApiCallError };
 
 
 function withTitleAndSubtitle(type: "info" | "progress" | "cancel" | "warn" | "error", title: string, subtitle?: ReactNode): void
@@ -108,33 +112,14 @@ function renderErrorBody(message?: string, reason?: string): ReactNode
   );
 }
 
-async function extractErrorReason(error: ApiCallError): Promise<string>
-{
-  try
-  {
-    const clonedResponse = error.response.clone();
-    const jsonError = await clonedResponse.json();
-    return jsonError?.message ?? error.response.statusText ?? "";
-  }
-  catch
-  {
-    return error.response.statusText || "";
-  }
-}
-
 function failureAndMessage(error: Error, message?: string): void
 {
   internalFailure(renderErrorBody(message, error.message));
 }
 
-export interface ApiCallError
-{
-  response: Response;
-}
-
 function apiCallError(error: ApiCallError, message?: string): void
 {
-  extractErrorReason(error).then((reason) =>
+  ErrorService.extractErrorReason(error).then((reason) =>
     {
       internalFailure(renderErrorBody(message, reason));
     }
@@ -143,7 +128,7 @@ function apiCallError(error: ApiCallError, message?: string): void
 
 function apiCallI18nError(error: ApiCallError, mnemonic: string, i18nArguments?: Record<string, string>): void
 {
-  extractErrorReason(error).then((reason) =>
+  ErrorService.extractErrorReason(error).then((reason) =>
     {
       // We extract the localized message and clean up any trailing colon or whitespace
       internalFailure(renderErrorBody(i18n.t(mnemonic, i18nArguments), reason));

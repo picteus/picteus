@@ -44,7 +44,7 @@ export default function RepositoryCard({
       <Flex direction="column" gap={10}>
         <RepositoryIdentity
           repository={repository}
-          menu={
+          footer={
             <RepositoryMenu
               repository={repository}
               onViewImages={onViewImages !== undefined ? () => onViewImages(repository) : undefined}

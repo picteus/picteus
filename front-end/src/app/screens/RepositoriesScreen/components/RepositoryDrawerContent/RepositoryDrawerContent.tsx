@@ -3,7 +3,7 @@ import { Button, CopyButton, Divider, Flex, Stack, Text, UnstyledButton } from "
 import { IconAppWindow, IconPhoto } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Repository, RepositoryActivity } from "@picteus/ws-client";
+import { Repository, RepositoryActivity, RepositoryMode } from "@picteus/ws-client";
 
 import { removeFilePrefixFromUrl, REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED } from "utils";
 import { useOpenExplorer } from "app/hooks";
@@ -35,6 +35,7 @@ export default function RepositoryDrawerContent({
   const [ t ] = useTranslation();
   const openExplorer = useOpenExplorer();
 
+  const isDisabled = repository.mode === RepositoryMode.Disabled;
   const path = removeFilePrefixFromUrl(repository.url) ?? repository.url;
   const hasActions = onViewImages !== undefined || (REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED && onOpenInNewWindow !== undefined);
 
@@ -52,7 +53,7 @@ export default function RepositoryDrawerContent({
     <Stack gap="md">
       <Flex gap="xs" align="center">
         <RepositoryStatusPill repository={repository} activity={activity}/>
-        {imageCount !== undefined && (
+        {!isDisabled && imageCount !== undefined && (
           <Text size="sm" c="dimmed">{t("repositoryScreen.imagesCount", { count: imageCount })}</Text>
         )}
       </Flex>
@@ -60,6 +61,7 @@ export default function RepositoryDrawerContent({
         <Stack gap="xs">
           {onViewImages !== undefined && (
             <Button
+              disabled={isDisabled}
               leftSection={<IconPhoto size={16} stroke={Common.IconStrokeSize}/>}
               onClick={onViewImages}
             >
@@ -68,6 +70,7 @@ export default function RepositoryDrawerContent({
           )}
           {REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED && onOpenInNewWindow !== undefined && (
             <Button
+              disabled={isDisabled}
               variant="default"
               leftSection={<IconAppWindow size={16} stroke={Common.IconStrokeSize}/>}
               onClick={onOpenInNewWindow}
@@ -79,7 +82,7 @@ export default function RepositoryDrawerContent({
       )}
       <Flex justify="space-between" align="center">
         <Text size="sm" fw={600}>{t("repositoryScreen.drawer.recentImages")}</Text>
-        {onViewImages !== undefined && imageCount !== undefined && (
+        {!isDisabled && onViewImages !== undefined && imageCount !== undefined && (
           <UnstyledButton onClick={onViewImages}>
             <Text size="xs" c="blue">{t("repositoryScreen.drawer.viewAll", { number: imageCount })}</Text>
           </UnstyledButton>

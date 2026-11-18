@@ -4,7 +4,7 @@ import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 
-import { SearchOriginNature } from "@picteus/ws-client";
+import { RepositoryMode, SearchOriginNature } from "@picteus/ws-client";
 
 import {
   DeskTabHtmlInlineContentType,
@@ -18,7 +18,7 @@ import {
 import { ToastService } from "utils";
 import { NotificationService } from "app/services";
 import { useDeskTabsContext } from "app/context";
-import { useImage } from "app/hooks";
+import { useImage, useRepositories, useSetRepositoryModeMutation } from "app/hooks";
 import { EmptyResults, Iframe, ImageDetail, ImagesView, LoadingView, Markdown } from "app/components";
 
 
@@ -39,15 +39,80 @@ function DeskTabImageContent({
 {
   const [ t ] = useTranslation();
   const { removeTab } = useDeskTabsContext();
+  const { data: repositories = [] } = useRepositories();
+  const setRepositoryModeMutation = useSetRepositoryModeMutation();
+  const lastKnownRepositoryIdRef = useRef<string | undefined>(undefined);
+
+  const knownRepository = useMemo(
+    () => lastKnownRepositoryIdRef.current !== undefined
+      ? repositories.find((repository) => repository.id === lastKnownRepositoryIdRef.current)
+      : undefined,
+    [ repositories ]
+  );
+  const isKnownRepositoryDisabled = knownRepository?.mode === RepositoryMode.Disabled;
+  const hasAnyDisabledRepository = useMemo(
+    () => repositories.some((repository) => repository.mode === RepositoryMode.Disabled),
+    [ repositories ]
+  );
 
   const handleImageError = useCallback((): void =>
   {
+    const currentKnownRepository = lastKnownRepositoryIdRef.current !== undefined ? repositories.find((repository) => repository.id === lastKnownRepositoryIdRef.current) : undefined;
+    if (currentKnownRepository?.mode === RepositoryMode.Disabled || (currentKnownRepository === undefined && hasAnyDisabledRepository))
+    {
+      return;
+    }
     removeTab(tab.id);
     void NotificationService.deleteNotificationsForImage(imageId, new Set<string>([ tab.id ]));
     ToastService.warning(t("message.notFoundImage"));
-  }, [ imageId, tab.id, removeTab, t ]);
+  }, [ hasAnyDisabledRepository, imageId, repositories, removeTab, tab.id ]);
 
-  const { data: image } = useImage(imageId, { onError: handleImageError });
+  const { data: image, isError } = useImage(imageId, {
+    enabled: !isKnownRepositoryDisabled,
+    onError: handleImageError
+  });
+
+  if (image?.repositoryId !== undefined)
+  {
+    lastKnownRepositoryIdRef.current = image.repositoryId;
+  }
+
+  const imageRepository = image?.repositoryId !== undefined ? repositories.find((repository) => repository.id === image.repositoryId) : knownRepository;
+  const isRepositoryDisabled = imageRepository?.mode === RepositoryMode.Disabled || (isError && hasAnyDisabledRepository);
+
+  const handleEnableRepository = useCallback(async (): Promise<void> =>
+  {
+    const targetRepositoryId = imageRepository?.id;
+    if (!targetRepositoryId)
+    {
+      return;
+    }
+    try
+    {
+      await setRepositoryModeMutation.mutateAsync({ id: targetRepositoryId, mode: RepositoryMode.Enabled });
+      ToastService.success(t("repositoryScreen.successEnable"));
+    }
+    catch (error)
+    {
+      ToastService.apiCallI18nError(error, "repositoryScreen.errorMode");
+    }
+  }, [ imageRepository?.id, setRepositoryModeMutation ]);
+
+  if (isRepositoryDisabled)
+  {
+    return (
+      <>
+        {withDivider === true && <Divider/>}
+        <EmptyResults
+          icon={IconPhotoSearch}
+          title={t("emptyImages.titleImageRepositoryDisabled")}
+          description={t("emptyImages.descriptionImageRepositoryDisabled")}
+          buttonText={imageRepository !== undefined ? t("emptyImages.buttonTextEnableRepository") : undefined}
+          buttonAction={imageRepository !== undefined ? () => void handleEnableRepository() : undefined}
+        />
+      </>
+    );
+  }
 
   if (image === undefined)
   {

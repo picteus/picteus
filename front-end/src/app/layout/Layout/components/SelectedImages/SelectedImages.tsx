@@ -152,7 +152,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
       confirmAction({
         onConfirm: () =>
         {
-          imageIds.forEach(imageId => ImageService.destroy(imageId).catch(ToastService.apiCallError));
+          imageIds.forEach(imageId => ImageService.destroy(imageId, false).catch(ToastService.apiCallError));
           clearSelectedImages();
         },
         options: {

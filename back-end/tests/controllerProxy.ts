@@ -79,7 +79,7 @@ export class ControllerProxy
       result = await pipeInstance.transform(result, metadata);
     }
     // If there is no pipe but that we should validate, apply default validation
-    if (pipes.length === 0 && this.shouldValidate(metatype) === true)
+    if (pipes.length === 0 && value !== undefined && this.shouldValidate(metatype) === true)
     {
       const metadata: ArgumentMetadata = { type: "body", metatype, data: "" };
       result = await this.validationPipe.transform(result, metadata);
@@ -93,7 +93,7 @@ export class ControllerProxy
     {
       return false;
     }
-    const types: Function[] = [String, Boolean, Number, Array, Object];
+    const types: Function[] = [ String, Boolean, Number, Array, Object ];
     return types.includes(metatype) === false;
   }
 

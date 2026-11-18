@@ -9,6 +9,7 @@ import { ExtensionIdImageEmbeddingName, ImageApiImageTextToImagesRequest } from 
 
 import { ImageWithCaption } from "types";
 import { ToastService, Validators } from "utils";
+import { useRepositoryUnavailableEvent } from "app/hooks";
 import { ImageService, StorageService } from "app/services";
 import { CaptionDistance, EmbeddingSelect, EmptyResults, ImagesView } from "app/components";
 
@@ -31,6 +32,19 @@ export default function TextToImages({ extensionId }: TextToImageType)
   const [ embeddingName, setEmbeddingName ] = useState<ExtensionIdImageEmbeddingName | undefined>();
   const [ hasText, setHasText ] = useState<boolean>(false);
   const focusTrapRef = useFocusTrap();
+
+  useRepositoryUnavailableEvent((repositoryId) =>
+  {
+    setImages((previousImages) =>
+    {
+      const nextImages = previousImages.filter((image) => image.repositoryId !== repositoryId);
+      if (previousImages.length > 0 && nextImages.length === 0)
+      {
+        setEmptyResult(true);
+      }
+      return nextImages;
+    });
+  });
 
   const initialValues: TextToImagesFormPayload =
     {

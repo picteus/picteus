@@ -281,9 +281,9 @@ async function searchRunCapabilities(requestParameters: ImageApiImageSearchRunCa
   await imageApi.imageSearchRunCapabilities(requestParameters);
 }
 
-async function destroy(id: string): Promise<void>
+async function destroy(id: string, shouldDeleteFile): Promise<void>
 {
-  await imageApi.imageDelete({ id });
+  await imageApi.imageDelete({ id, shouldDeleteFile });
 }
 
 async function getAllTags(imageId: string): Promise<ExtensionImageTag[]>

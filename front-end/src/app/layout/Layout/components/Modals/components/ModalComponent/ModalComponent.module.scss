@@ -68,8 +68,29 @@
   align-items: flex-start;
 }
 
+.error
+{
+  padding: var(--mantine-spacing-md);
+  border-top: 1px solid var(--mantine-color-default-border);
+  flex-shrink: 0;
+
+  &:empty
+  {
+    display: none;
+    padding: 0;
+    border-top: none;
+  }
+
+  &:not(:empty) + .footer
+  {
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
 .footer
 {
+  padding: var(--mantine-spacing-md);
   border-top: 1px solid var(--mantine-color-default-border);
   flex-shrink: 0;
 
@@ -80,4 +101,3 @@
     border-top: none;
   }
 }
-

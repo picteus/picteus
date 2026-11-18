@@ -43,7 +43,20 @@ export function SocketCacheSync(): null
       }
       else if (channel.startsWith(ChannelEnum.REPOSITORY_PREFIX))
       {
+        const repositoryId = EventService.computeEventEntityId<string>(event);
+        if (repositoryId)
+        {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.repositories.detail(repositoryId) });
+        }
         void queryClient.invalidateQueries({ queryKey: queryKeys.repositories.all });
+        if (channel.startsWith(ChannelEnum.REPOSITORY_MODE_PREFIX) || channel === ChannelEnum.REPOSITORY_DELETED)
+        {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.repositories.activities });
+        }
+        if (channel.startsWith(ChannelEnum.REPOSITORY_MODE_PREFIX))
+        {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.images.all });
+        }
       }
       else if (channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_STATE_STARTED || channel === ChannelEnum.EXTENSION_STATE_STOPPED)
       {

@@ -2,6 +2,7 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 
 import { Prisma, PrismaClient } from ".prisma/client";
 import { logger } from "../logger";
+import { checkIsWorkerThread } from "../utils";
 import { type ApplicationSettings } from "../dtos/app.dtos";
 import { PrismaClientWrapper } from "./utils/prismaClientWrapper";
 
@@ -9,6 +10,27 @@ import { PrismaClientWrapper } from "./utils/prismaClientWrapper";
 @Injectable()
 export class RegularDatabaseService implements OnModuleInit, OnModuleDestroy
 {
+
+  private static workerInstancePromise?: Promise<RegularDatabaseService>;
+
+  static async getWorkerInstance(): Promise<RegularDatabaseService>
+  {
+    checkIsWorkerThread();
+    if (RegularDatabaseService.workerInstancePromise === undefined)
+    {
+      RegularDatabaseService.workerInstancePromise = (async () =>
+      {
+        const service = new RegularDatabaseService();
+        await service.initialize();
+        return service;
+      })().catch((error) =>
+      {
+        RegularDatabaseService.workerInstancePromise = undefined;
+        throw error;
+      });
+    }
+    return RegularDatabaseService.workerInstancePromise;
+  }
 
   private _prismaClientWrapper?: PrismaClientWrapper;
 

@@ -1,7 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
-import Timers from "node:timers";
 import { ModuleRef } from "@nestjs/core";
 import { forwardRef, Inject, Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 
@@ -24,6 +23,7 @@ import {
   RepositoryActivityKind,
   RepositoryList,
   RepositoryLocationType,
+  RepositoryMode,
   RepositoryState,
   SearchOriginKind,
   toFileExtension
@@ -55,6 +55,45 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   // The identifiers of the currently synchronizing repositories
   private static synchronizingRepositoryIds: Set<string> = new Set<string>();
 
+  static checkNotDisabled(id: string, mode: RepositoryMode): void
+  {
+    if (mode === RepositoryMode.Disabled)
+    {
+      parametersChecker.throwBadParameterError(`The repository with id '${id}' is disabled`);
+    }
+  }
+
+  static checkAvailable(id: string, available: boolean): void
+  {
+    if (available === false)
+    {
+      parametersChecker.throwBadParameterError(`The repository with id '${id}' is not available`);
+    }
+  }
+
+  static checkNotSynchronizing(id: string, state: RepositoryState): void
+  {
+    if (state === RepositoryState.Indexing || RepositoryService.synchronizingRepositoryIds.has(id) === true)
+    {
+      parametersChecker.throwBadParameterError(`The repository with id '${id}' is synchronizing`);
+    }
+  }
+
+  static checkNotAlreadySynchronizing(id: string): void
+  {
+    if (RepositoryService.synchronizingRepositoryIds.has(id) === true)
+    {
+      parametersChecker.throwBadParameterError(`The repository with id '${id}' is already synchronizing`);
+    }
+  }
+
+  static checkOperable(repository: PersistedRepository): void
+  {
+    RepositoryService.checkNotDisabled(repository.id, repository.mode as RepositoryMode);
+    RepositoryService.checkAvailable(repository.id, repository.available);
+    RepositoryService.checkNotSynchronizing(repository.id, repository.state as RepositoryState);
+  }
+
   private readonly perPathFileRepositories: Map<string, Repository> = new Map<string, Repository>();
 
   constructor(private readonly regularDatabaseService: RegularDatabaseService, private readonly collectionService: CollectionService, @Inject(forwardRef(() => ExtensionRegistry)) private readonly extensionsRegistry: ExtensionRegistry, private readonly vectorDatabaseAccessor: VectorDatabaseAccessor, private readonly notifierService: NotifierService, private readonly moduleRef: ModuleRef)
@@ -78,13 +117,13 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     logger.debug("Destroyed a RepositoryService");
   }
 
-  getImageRepositoryState(nodePath: string): undefined | RepositoryState
+  getImageRepository(nodePath: string): undefined | Repository
   {
     for (const [ path, repository ] of this.perPathFileRepositories.entries())
     {
       if (nodePath.startsWith(path) === true)
       {
-        return repository.state;
+        return repository;
       }
     }
     return undefined;
@@ -97,14 +136,14 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     return plainToInstanceViaJSON(Repository, repository);
   }
 
-  async create(type: RepositoryLocationType, url: string, name: string, comment: string | undefined, watch: boolean | undefined, extensionId: string | undefined): Promise<Repository>
+  async create(type: RepositoryLocationType, url: string, name: string, comment: string | undefined, mode: RepositoryMode, extensionId: string | undefined): Promise<Repository>
   {
-    const doNotWatch = watch !== true;
-    logger.info(`Creating the repository with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}, of type '${type}', URL '${url}'${extensionId === undefined ? "" : `, attached to the extension with id '${extensionId}'`} ${doNotWatch === true ? "but does not watch it" : "and starts watching it"}`);
+    logger.info(`Creating the repository with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}, of type '${type}', URL '${url}'${extensionId === undefined ? "" : `, attached to the extension with id '${extensionId}'`} in mode '${mode}'`);
     parametersChecker.checkString("extensionId", extensionId, FieldLengths.l32, StringNature.Technical, true);
     parametersChecker.checkString("url", url, FieldLengths.l4k, StringNature.FileUrl);
     parametersChecker.checkString("name", name, FieldLengths.l128, StringNature.Name);
     parametersChecker.checkString("comment", comment, FieldLengths.l1k, StringNature.Free, true);
+    parametersChecker.checkEnum("mode", mode, RepositoryMode);
     if (extensionId !== undefined)
     {
       if (this.extensionsRegistry.exists(extensionId) === false)
@@ -185,8 +224,19 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       }
     }
 
-    const repositoryObject = { extensionId, name, type, url: effectiveUrl, comment, state: RepositoryState.INDEXING };
-    const persistedRepository = await this.regularDatabaseService.repositories.create({ data: repositoryObject });
+    const state = mode === RepositoryMode.Disabled ? RepositoryState.Unindexed : RepositoryState.Indexing;
+    const persistedRepository = await this.regularDatabaseService.repositories.create({
+      data: {
+        extensionId,
+        name,
+        type,
+        url: effectiveUrl,
+        comment,
+        mode,
+        available: true,
+        state
+      }
+    });
 
     const repository = plainToInstanceViaJSON(Repository, persistedRepository);
     if (type === RepositoryLocationType.File)
@@ -194,12 +244,15 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       this.perPathFileRepositories.set(repository.getLocation().toFilePath(), repository);
     }
     this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Created, undefined, { id: repository.id });
-    await this.internalSynchronize(repository, undefined, doNotWatch === true ? undefined : async (repository: Repository, updateStatus: () => Promise<Repository>): Promise<void> =>
+    if (mode !== RepositoryMode.Disabled)
     {
-      repository = await updateStatus();
-      await this.startOrStop(repository, true);
-      return Promise.resolve();
-    });
+      await this.internalSynchronize(repository, undefined, mode !== RepositoryMode.Watching ? undefined : async (repository: Repository, updateStatus: () => Promise<Repository>): Promise<void> =>
+      {
+        repository = await updateStatus();
+        await this.startOrStop(repository, true);
+        return Promise.resolve();
+      });
+    }
     return repository;
   }
 
@@ -209,15 +262,20 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     const repository = await this.getRepository(id);
     parametersChecker.checkString("name", name, FieldLengths.l128, StringNature.Free, true);
     parametersChecker.checkString("comment", comment, FieldLengths.l1k, StringNature.Free, true);
-    const updatedRepository = await this.regularDatabaseService.repositories.update({
+    const updatedPersistedRepository = await this.regularDatabaseService.repositories.update({
       where: { id },
       data: { name, comment }
     });
+    const updatedRepository = plainToInstanceViaJSON(Repository, updatedPersistedRepository);
+    if (updatedRepository.type === RepositoryLocationType.File)
+    {
+      this.perPathFileRepositories.set(updatedRepository.getLocation().toFilePath(), updatedRepository);
+    }
     this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Updated, undefined, { id: repository.id });
-    return plainToInstanceViaJSON(Repository, updatedRepository);
+    return updatedRepository;
   }
 
-  async ensure(extensionId: string, name: string, comment: string | undefined, watch: boolean = true): Promise<Repository>
+  async ensure(extensionId: string, name: string, comment: string | undefined): Promise<Repository>
   {
     logger.info(`Ensuring that the repository attached to the extension with id '${extensionId}' exists, with name '${name}'${comment === undefined ? "" : `, with comment '${comment}'`}`);
     parametersChecker.checkString("extensionId", extensionId, FieldLengths.l32, StringNature.Technical);
@@ -240,7 +298,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       }
       try
       {
-        return await this.create(RepositoryLocationType.File, fileWithProtocol + directoryPath, name, comment, watch, extensionId);
+        return await this.create(RepositoryLocationType.File, fileWithProtocol + directoryPath, name, comment, RepositoryMode.Watching, extensionId);
       }
       catch (error)
       {
@@ -270,50 +328,46 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     logger.info(`${isStart === true ? "Starts" : "Stops"} the repository with id '${id}'`);
     if (type === RepositoryLocationType.File)
     {
-      this.perPathFileRepositories.set(repository.getLocation().toFilePath(), repository);
-      if (fs.existsSync(repository.getLocation().toFilePath()) === false)
+      const available = fs.existsSync(repository.getLocation().toFilePath());
+      if (available !== repository.available)
       {
-        // The repository is not accessible
-        await this.regularDatabaseService.repositories.update({
+        const updatedEntity = await this.regularDatabaseService.repositories.update({
           where: { id },
-          data:
-            {
-              state: repository.state === RepositoryState.INDEXING ? RepositoryState.UNAVAILABLE_INDEXING : RepositoryState.UNAVAILABLE
-            }
+          data: { available }
         });
-        return;
+        repository = plainToInstanceViaJSON(Repository, updatedEntity);
+        this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Available, String(available), { id });
       }
+      this.perPathFileRepositories.set(repository.getLocation().toFilePath(), repository);
     }
-    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
+    if (isStart === false)
     {
-      await this.regularDatabaseService.repositories.update({
-        where: { id },
-        data:
-          {
-            state: repository.state === RepositoryState.UNAVAILABLE_INDEXING ? RepositoryState.INDEXING : RepositoryState.READY
-          }
-      });
-      repository = await this.get(id);
-    }
-    if (repository.state !== RepositoryState.READY)
-    {
-      // We do nothing if the repository is synchronizing, and it is asked to stop
-      if (isStart === true)
+      if (RepositoryWatcher.get(id) !== undefined)
       {
-        if (RepositoryService.synchronizingRepositoryIds.has(id) === true)
-        {
-          parametersChecker.throwBadParameterError(`The repository with id '${id}' is already synchronizing`);
-        }
-        // We resume the synchronization
-        await this.synchronize(repository, async (updatedRepository) =>
-        {
-          await this.watch(updatedRepository, isStart);
-        });
+        await RepositoryWatcher.stop(repository, this.notifierService);
       }
+      return;
+    }
+    if (repository.mode === RepositoryMode.Disabled || repository.available === false)
+    {
+      return;
+    }
+    const startWatching = async (targetRepository: Repository): Promise<void> =>
+    {
+      if (targetRepository.mode === RepositoryMode.Watching && RepositoryWatcher.get(id) === undefined)
+      {
+        await RepositoryWatcher.start(targetRepository, this.regularDatabaseService, this.notifierService, this.moduleRef.get(ImageService));
+      }
+    };
+    if (repository.state !== RepositoryState.Ready)
+    {
+      RepositoryService.checkNotAlreadySynchronizing(id);
+      // We resume the synchronization
+      await this.synchronize(repository, startWatching);
     }
     else
     {
-      await this.watch(repository, isStart);
+      await startWatching(repository);
     }
   }
 
@@ -343,41 +397,85 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     });
   }
 
-  async watch(repositoryOrId: string | Repository, isStart: boolean, checkState: boolean = false): Promise<void>
+  async setMode(repositoryOrId: string | Repository, mode: RepositoryMode): Promise<Repository>
   {
-    logger.info(`${isStart === true ? "Starts" : "Stops"} watching for the repository with id '${repositoryOrId instanceof Repository ? repositoryOrId.id : repositoryOrId}'`);
-    const repository = repositoryOrId instanceof Repository ? repositoryOrId : await this.get(repositoryOrId);
-    const repositoryId = repository.id;
-    if (repository.type !== RepositoryLocationType.File)
+    logger.info(`Setting the mode to '${mode}' for the repository with id '${repositoryOrId instanceof Repository ? repositoryOrId.id : repositoryOrId}'`);
+    let repository = repositoryOrId instanceof Repository ? repositoryOrId : await this.get(repositoryOrId);
+    const id = repository.id;
+    if (repository.mode === mode)
     {
-      parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is not based on the file system`);
+      parametersChecker.throwBadParameter("mode", mode, `the repository with id '${id}' is already in this mode`);
     }
-    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
+    parametersChecker.checkEnum("mode", mode, RepositoryMode);
+    RepositoryService.checkNotSynchronizing(id, repository.state);
+    const available = repository.type === RepositoryLocationType.File ? fs.existsSync(repository.getLocation().toFilePath()) : repository.available;
+    const availableChanged = available !== repository.available;
+    const updateRepository = async (data: Prisma.RepositoryUpdateInput): Promise<Repository> =>
     {
-      parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is not available`);
-    }
-    else if (repository.state === RepositoryState.INDEXING)
-    {
-      parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is synchronizing`);
-    }
-    if (isStart === true)
-    {
-      await RepositoryWatcher.start(repository, this.regularDatabaseService, this.notifierService, this.moduleRef.get(ImageService));
-    }
-    else
-    {
-      if (checkState === true || RepositoryWatcher.get(repository.id) !== undefined)
+      const updatedEntity = await this.regularDatabaseService.repositories.update({
+        where: { id },
+        data
+      });
+      const updatedRepository = plainToInstanceViaJSON(Repository, updatedEntity);
+      if (updatedRepository.type === RepositoryLocationType.File)
       {
-        await RepositoryWatcher.stop(repository, this.notifierService);
+        this.perPathFileRepositories.set(updatedRepository.getLocation().toFilePath(), updatedRepository);
+      }
+      if (availableChanged === true)
+      {
+        this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Available, String(available), { id });
+      }
+      return updatedRepository;
+    };
+    if (mode !== RepositoryMode.Disabled)
+    {
+      if (available === false)
+      {
+        if (availableChanged === true)
+        {
+          repository = await updateRepository({ available: false });
+        }
+        RepositoryService.checkAvailable(id, available);
+      }
+      if (mode === RepositoryMode.Watching && repository.type !== RepositoryLocationType.File)
+      {
+        parametersChecker.throwBadParameterError(`The repository with id '${id}' is not based on the file system`);
       }
     }
+    if (mode !== RepositoryMode.Watching && RepositoryWatcher.get(id) !== undefined)
+    {
+      await RepositoryWatcher.stop(repository, this.notifierService);
+    }
+    repository = await updateRepository({ mode, available });
+    this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Mode, mode, { id });
+    if (mode !== RepositoryMode.Disabled)
+    {
+      const startWatching = async (targetRepository: Repository): Promise<void> =>
+      {
+        await RepositoryWatcher.start(targetRepository, this.regularDatabaseService, this.notifierService, this.moduleRef.get(ImageService));
+      };
+      if (repository.state === RepositoryState.Unindexed)
+      {
+        await this.internalSynchronize(repository, undefined, mode !== RepositoryMode.Watching ? undefined : async (_synchronizedRepository: Repository, updateStatus: () => Promise<Repository>): Promise<void> =>
+        {
+          const updatedRepository = await updateStatus();
+          await startWatching(updatedRepository);
+        });
+        repository = await this.get(id);
+      }
+      else if (mode === RepositoryMode.Watching)
+      {
+        await startWatching(repository);
+      }
+    }
+    return repository;
   }
 
   async delete(repository: Repository): Promise<void>
   {
     const id = repository.id;
     logger.info(`Deleting the repository with id '${id}'`);
-    if (repository.state === RepositoryState.INDEXING && RepositoryService.synchronizingRepositoryIds.has(id) === true)
+    if (repository.state === RepositoryState.Indexing && RepositoryService.synchronizingRepositoryIds.has(id) === true)
     {
       parametersChecker.throwBadParameterError("Cannot delete a repository which is synchronizing");
     }
@@ -433,7 +531,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     const repositories = await this.regularDatabaseService.repositories.findMany();
     return repositories.map((repository) =>
     {
-      return new RepositoryActivity(repository.id, repository.state === RepositoryState.INDEXING ? RepositoryActivityKind.Synchronizing : (RepositoryWatcher.get(repository.id) !== undefined ? RepositoryActivityKind.Watching : RepositoryActivityKind.None));
+      return new RepositoryActivity(repository.id, repository.state === RepositoryState.Indexing ? RepositoryActivityKind.Synchronizing : (RepositoryWatcher.get(repository.id) !== undefined ? RepositoryActivityKind.Watching : RepositoryActivityKind.None));
     });
   }
 
@@ -442,7 +540,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     logger.info("Getting all the extensions image feature names");
     const features = await this.regularDatabaseService.imageFeature.findMany({
       distinct: [ "extensionId", "format", "type", "name" ],
-      where: { name: { not: null } },
+      where: { name: { not: null }, image: { repository: { mode: { not: RepositoryMode.Disabled } } } },
       orderBy: [ { extensionId: "asc" }, { name: "asc" } ]
     });
     return features.map((feature) =>
@@ -456,7 +554,10 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     logger.info("Getting all the extensions image tags");
     const tags = await this.regularDatabaseService.imageTag.findMany({
       distinct: [ "extensionId", "value" ],
-      where: { value: { not: ImageService.emptyImageTag } },
+      where: {
+        value: { not: ImageService.emptyImageTag },
+        image: { repository: { mode: { not: RepositoryMode.Disabled } } }
+      },
       orderBy: { extensionId: "asc" }
     });
     return tags.map((tag) =>
@@ -468,7 +569,18 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
   async getEmbeddingsNames(): Promise<ExtensionIdImageEmbeddingName []>
   {
     logger.info("Getting all the embeddings identifiers and names");
-    const embeddingsNames = await this.vectorDatabaseAccessor.getExtensionEmbeddingsNames();
+    const allRepositories = await this.regularDatabaseService.repositories.findMany({
+      select: {
+        id: true,
+        mode: true
+      }
+    });
+    const enabledRepositoryIds = allRepositories.filter(repository => repository.mode !== RepositoryMode.Disabled).map(repository => repository.id);
+    if (enabledRepositoryIds.length === 0)
+    {
+      return [];
+    }
+    const embeddingsNames = await this.vectorDatabaseAccessor.getExtensionEmbeddingsNames(enabledRepositoryIds.length === allRepositories.length ? undefined : enabledRepositoryIds);
     return embeddingsNames.map(embeddingsName => plainToInstanceViaJSON(ExtensionIdImageEmbeddingName, {
       extensionId: embeddingsName.id,
       name: embeddingsName.name
@@ -482,14 +594,15 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     parametersChecker.checkString("relativeDirectoryPath", relativeDirectoryPath, FieldLengths.l4k, StringNature.FileSystemRelativeDirectoryPath, true, true);
 
     const repository = await this.getRepository(id);
-    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
-    {
-      parametersChecker.throwBadParameterError(`The repository with id '${id}' is not available`);
-    }
+    RepositoryService.checkOperable(repository);
     const imageEntity = await this.regularDatabaseService.images.findUnique({ where: { id: imageId } });
     if (imageEntity === null)
     {
       parametersChecker.throwBadParameter("imageId", imageId, "there is no image with that identifier");
+    }
+    if (imageEntity.repositoryId !== id)
+    {
+      parametersChecker.throwBadParameter("imageId", imageId, `it does not belong to the repository with id '${id}'`);
     }
 
     const currentFilePath = imageEntity.url.substring(fileWithProtocol.length);
@@ -506,32 +619,18 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       parametersChecker.throwBadParameterError("There is already a file with the same name in the repository");
     }
 
-    // We now rename the file
-    if (fs.existsSync(futureDirectoryPath) === false)
+    const imageService = this.moduleRef.get(ImageService);
+    await RepositoryWatcher.ignore(repository.id, [ path.relative(repositoryDirectoryPath, currentFilePath), path.relative(repositoryDirectoryPath, futureFilePath) ], async () =>
     {
-      fs.mkdirSync(futureDirectoryPath, { recursive: true });
-    }
-    fs.renameSync(currentFilePath, futureFilePath);
-
-    // We wait for the image "renamed" event, with a time-out in order to prevent the method from hanging indefinitely
-    await new Promise<void>((resolve, reject) =>
-    {
-      const timeoutInMilliseconds = 5_000;
-      const timeout = Timers.setTimeout(() =>
+      // We now rename the file
+      if (fs.existsSync(futureDirectoryPath) === false)
       {
-        reject(new Error(`The image rename event did not occur after a time-out of ${timeoutInMilliseconds} ms`));
-      }, timeoutInMilliseconds);
-      this.notifierService.once(EventEntity.Image, ImageEventAction.Renamed, undefined, async (_event: string, value: Record<string, any>) =>
-      {
-        if (value.id === imageId)
-        {
-          Timers.clearInterval(timeout);
-          // If the reject happened earlier, this will be ignored
-          resolve();
-        }
-      });
+        fs.mkdirSync(futureDirectoryPath, { recursive: true });
+      }
+      fs.renameSync(currentFilePath, futureFilePath);
+      await imageService.renamePersistedImage(imageId, futureFilePath);
     });
-    return await this.moduleRef.get(ImageService).get(imageId);
+    return await imageService.get(imageId);
   }
 
   async storeImage(id: string, buffer: Buffer, nameWithoutExtension?: string, relativeDirectoryPath?: string, applicationMetadata?: string, parentId?: string, sourceUrl?: string, inceptionDate?: number): Promise<Image>
@@ -545,9 +644,17 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     }
     parametersChecker.checkString("nameWithoutExtension", nameWithoutExtension, FieldLengths.l512, StringNature.FileSystemFileName, true);
     parametersChecker.checkString("relativeDirectoryPath", relativeDirectoryPath, FieldLengths.l4k, StringNature.FileSystemRelativeDirectoryPath, true, true);
-    if (parentId !== undefined && (await this.regularDatabaseService.images.findUnique({ where: { id: parentId } })) === null)
+    if (parentId !== undefined)
     {
-      parametersChecker.throwBadParameter("parentImageId", parentId, "it does not correspond to an existing image");
+      const parentImage = await this.regularDatabaseService.images.findUnique({
+        where: { id: parentId },
+        select: { id: true, repositoryId: true, repository: { select: { mode: true } } }
+      });
+      if (parentImage === null)
+      {
+        parametersChecker.throwBadParameter("parentImageId", parentId, "it does not correspond to an existing image");
+      }
+      RepositoryService.checkNotDisabled(parentImage.repositoryId, parentImage.repository.mode as RepositoryMode);
     }
     parametersChecker.checkString("sourceUrl", sourceUrl, FieldLengths.l4k, StringNature.Url, true);
     let imageFormat;
@@ -565,14 +672,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       parametersChecker.throwBadParameter("nameWithoutExtension", nameWithoutExtension, "it contains a file extension");
     }
     const repository = await this.getRepository(id);
-    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
-    {
-      parametersChecker.throwBadParameterError(`The repository with id '${id}' is not available`);
-    }
-    else if (repository.state === RepositoryState.INDEXING || RepositoryService.synchronizingRepositoryIds.has(id) === true)
-    {
-      parametersChecker.throwBadParameterError(`The repository with id '${id}' is synchronizing`);
-    }
+    RepositoryService.checkOperable(repository);
     const repositoryDirectoryPath = repository.url.substring(fileWithProtocol.length);
     const fileDirectoryPath = relativeDirectoryPath === undefined ? repositoryDirectoryPath : path.resolve(repositoryDirectoryPath, relativeDirectoryPath);
     const fileName = `${actualNameWithoutExtension}.${fileExtension}`;
@@ -618,7 +718,7 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
       }
     }
 
-    return RepositoryWatcher.ignore<Image>(repository.id, path.relative(repositoryDirectoryPath, filePath), async () =>
+    return RepositoryWatcher.ignore<Image>(repository.id, [ path.relative(repositoryDirectoryPath, filePath) ], async () =>
     {
       if (parsedApplicationMetadata !== undefined)
       {
@@ -672,14 +772,12 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     logger.info(`Synchronizing the repository with id '${repositoryOrId instanceof Repository ? repositoryOrId.id : repositoryOrId}'`);
     const repository = repositoryOrId instanceof Repository ? repositoryOrId : await this.get(repositoryOrId);
     const repositoryId = repository.id;
-    if (repository.state === RepositoryState.UNAVAILABLE || repository.state === RepositoryState.UNAVAILABLE_INDEXING)
+    RepositoryService.checkNotDisabled(repositoryId, repository.mode);
+    RepositoryService.checkAvailable(repositoryId, repository.available);
+    const wasAlreadyIndexing = repository.state === RepositoryState.Indexing;
+    if (wasAlreadyIndexing === true)
     {
-      parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is not available`);
-    }
-    const wasAlreadyIndexing = repository.state === RepositoryState.INDEXING;
-    if (wasAlreadyIndexing === true && RepositoryService.synchronizingRepositoryIds.has(repositoryId) === true)
-    {
-      parametersChecker.throwBadParameterError(`The repository with id '${repositoryId}' is already synchronizing`);
+      RepositoryService.checkNotAlreadySynchronizing(repositoryId);
     }
     this.notifierService.emit(EventEntity.Repository, RepositoryEventAction.Synchronize, "started", { id: repositoryId });
     if (onRepository !== undefined)
@@ -690,10 +788,15 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
     {
       if (wasAlreadyIndexing === false)
       {
-        await this.regularDatabaseService.repositories.update({
+        const updatedPersistedRepository = await this.regularDatabaseService.repositories.update({
           where: { id: repositoryId },
-          data: { state: RepositoryState.INDEXING }
+          data: { state: RepositoryState.Indexing }
         });
+        const updatedRepository = plainToInstanceViaJSON(Repository, updatedPersistedRepository);
+        if (updatedRepository.type === RepositoryLocationType.File)
+        {
+          this.perPathFileRepositories.set(updatedRepository.getLocation().toFilePath(), updatedRepository);
+        }
       }
       RepositoryService.synchronizingRepositoryIds.add(repositoryId);
       const imageDeclarationManager = new ImageDeclarationManager();
@@ -777,15 +880,20 @@ export class RepositoryService implements OnModuleInit, OnModuleDestroy
           // We let the caller update the repository status at the right moment
           const updateStatus = async (): Promise<Repository> =>
           {
-            logger.debug(`Setting the repository with id '${repositoryId}' to the '${RepositoryState.READY}' status`);
+            logger.debug(`Setting the repository with id '${repositoryId}' to the '${RepositoryState.Ready}' status`);
             await service.regularDatabaseService.repositories.update({
               where: { id: repositoryId },
               data:
                 {
-                  state: RepositoryState.READY
+                  state: RepositoryState.Ready
                 }
             });
-            return await service.get(repository.id);
+            const updatedRepository = await service.get(repository.id);
+            if (updatedRepository.type === RepositoryLocationType.File)
+            {
+              service.perPathFileRepositories.set(updatedRepository.getLocation().toFilePath(), updatedRepository);
+            }
+            return updatedRepository;
           };
           if (onSuccess === undefined || caughtError !== undefined)
           {

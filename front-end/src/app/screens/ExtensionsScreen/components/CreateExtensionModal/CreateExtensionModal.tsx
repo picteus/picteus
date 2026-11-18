@@ -2,7 +2,7 @@ import React, { type ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, MultiSelect, Select, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconAlertTriangle, IconX } from "@tabler/icons-react";
+import { IconAlertTriangle } from "@tabler/icons-react";
 import {
   Extension,
   ExtensionCategory,
@@ -14,9 +14,15 @@ import {
 
 import { computeFilePath, ToastService } from "utils";
 import { useModalContext } from "app/context";
-import { useExtensions, useFolderPicker, useInstallExtensionMutation, useOpenExplorer } from "app/hooks";
+import {
+  useExtensions,
+  useFolderPicker,
+  useInstallExtensionMutation,
+  useModalSubmit,
+  useOpenExplorer
+} from "app/hooks";
 import { ExtensionsService } from "app/services";
-import { ModalActions } from "app/components";
+import { ModalActions, ModalError } from "app/components";
 import { FolderTypes } from "types";
 
 
@@ -35,8 +41,6 @@ export default function CreateExtensionModal(
   const openExplorer = useOpenExplorer();
   const { data: extensions = [] } = useExtensions();
   const installExtensionMutation = useInstallExtensionMutation();
-  const [ loading, setLoading ] = useState(false);
-  const [ submitError, setSubmitError ] = useState<string | undefined>();
   const [ unpackedExtensionsDirectoryPath, setUnpackedExtensionsDirectoryPath ] = useState<string | undefined>();
   const [ unpackedPathNotDefined, setUnpackedPathNotDefined ] = useState(false);
 
@@ -101,10 +105,12 @@ export default function CreateExtensionModal(
     }
   });
 
-  async function handleSubmit(values: ExtensionGenerationOptions): Promise<void>
-  {
-    setSubmitError(undefined);
-    try
+  const {
+    isSubmitting,
+    submitError,
+    clearSubmitError,
+    handleSubmit
+  } = useModalSubmit<[ ExtensionGenerationOptions ]>(async (values: ExtensionGenerationOptions): Promise<void> =>
     {
       let directoryPath = unpackedExtensionsDirectoryPath;
       if (directoryPath === undefined)
@@ -116,7 +122,6 @@ export default function CreateExtensionModal(
         return;
       }
 
-      setLoading(true);
       const extensionId = values.id;
       if (extensions.some((extensionItem) => extensionItem.manifest.id === extensionId) === true)
       {
@@ -135,15 +140,7 @@ export default function CreateExtensionModal(
       onSuccess(extension);
       modalContext?.closeModal(true);
     }
-    catch (error)
-    {
-      setSubmitError((error as Error).message);
-    }
-    finally
-    {
-      setLoading(false);
-    }
-  }
+  );
 
   const formId = "create-extension-form";
 
@@ -219,18 +216,18 @@ export default function CreateExtensionModal(
         ]}
         {...form.getInputProps("environment")}
       />
-      {submitError && (
-        <Alert mb="md" color="red" title={t("titles.error")} icon={<IconX/>}>
-          {t("createExtensionModal.error", { error: submitError })}
-        </Alert>
-      )}
+      <ModalError
+        error={submitError}
+        title={t("createExtensionModal.error")}
+        onClose={clearSubmitError}
+      />
 
-      <ModalActions isBusy={loading}>
+      <ModalActions isBusy={isSubmitting}>
         <Button
           type="submit"
           form={formId}
-          loading={loading}
-          disabled={loading}
+          loading={isSubmitting}
+          disabled={isSubmitting}
         >
           {t("button.create")}
         </Button>

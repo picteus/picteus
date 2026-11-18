@@ -8,20 +8,21 @@ import {
   IconEye,
   IconEyeOff,
   IconPhoto,
+  IconPlayerPause,
+  IconPlayerPlay,
   IconReload,
   IconTrash
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Repository, RepositoryActivityKind } from "@picteus/ws-client";
+import { Repository, RepositoryMode, RepositoryState } from "@picteus/ws-client";
 
 import { removeFilePrefixFromUrl, REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED, ToastService } from "utils";
 import {
   useConfirmAction,
   useDeleteRepositoryMutation,
   useOpenExplorer,
-  useRepositoryActivities,
-  useWatchRepositoryMutation
+  useSetRepositoryModeMutation
 } from "app/hooks";
 import { RepositoriesService } from "app/services";
 import { Common } from "app/components";
@@ -51,27 +52,29 @@ export default function RepositoryMenu({
   const [ t ] = useTranslation();
   const confirmAction = useConfirmAction();
   const deleteRepositoryMutation = useDeleteRepositoryMutation();
-  const watchRepositoryMutation = useWatchRepositoryMutation();
+  const setRepositoryModeMutation = useSetRepositoryModeMutation();
   const openExplorer = useOpenExplorer();
-  const { data: activities = [] } = useRepositoryActivities();
 
-  const isWatching = activities.some((activity) => activity.id === repository.id && activity.kind === RepositoryActivityKind.Watching);
+  const isDisabled = repository.mode === RepositoryMode.Disabled;
+  const isWatching = repository.mode === RepositoryMode.Watching;
+  const isIndexing = repository.state === RepositoryState.Indexing;
+  const canSynchronize = !isDisabled && repository.available === true && !isIndexing;
 
   async function handleOnSynchronizeRepository(repositoryId: string): Promise<void>
   {
     await RepositoriesService.synchronize({ id: repositoryId });
   }
 
-  async function handleOnWatchRepository(repositoryId: string, isStart: boolean): Promise<void>
+  async function handleOnSetRepositoryMode(repositoryId: string, mode: RepositoryMode, successKey: string): Promise<void>
   {
     try
     {
-      await watchRepositoryMutation.mutateAsync({ id: repositoryId, isStart });
-      ToastService.success(t(isStart === true ? "repositoryScreen.successWatch" : "repositoryScreen.successStopWatching"));
+      await setRepositoryModeMutation.mutateAsync({ id: repositoryId, mode });
+      ToastService.success(t(successKey));
     }
     catch (error)
     {
-      ToastService.apiCallI18nError(error, "repositoryScreen.errorWatch");
+      ToastService.apiCallI18nError(error, "repositoryScreen.errorMode");
     }
   }
 
@@ -102,6 +105,7 @@ export default function RepositoryMenu({
         <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
           {onViewImages !== undefined && (
             <Menu.Item
+              disabled={isDisabled}
               leftSection={<IconPhoto size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
               onClick={onViewImages}
             >
@@ -110,6 +114,7 @@ export default function RepositoryMenu({
           )}
           {REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED && onOpenInNewWindow !== undefined && (
             <Menu.Item
+              disabled={isDisabled}
               leftSection={<IconAppWindow size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
               onClick={onOpenInNewWindow}
             >
@@ -131,16 +136,69 @@ export default function RepositoryMenu({
             </Menu.Item>
           )}
           <Menu.Item
+            disabled={!canSynchronize}
             leftSection={<IconReload size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-            onClick={() => void handleOnSynchronizeRepository(repository.id)}
+            onClick={() =>
+              confirmAction({
+                onConfirm: () => void handleOnSynchronizeRepository(repository.id),
+                options: {
+                  title: t("repositoryScreen.confirmSynchronizeTitle"),
+                  message: t("repositoryScreen.confirmSynchronizeMessage", {
+                    name: repository.name
+                  }),
+                  content: t("repositoryScreen.confirmSynchronizeConsequences")
+                }
+              })
+            }
           >
             {t("button.synchronize")}
           </Menu.Item>
+          {isDisabled ? (
+            <Menu.Item
+              leftSection={<IconPlayerPlay size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+              onClick={() => void handleOnSetRepositoryMode(repository.id, RepositoryMode.Enabled, "repositoryScreen.successEnable")}
+            >
+              {t("repositoryScreen.menu.enable")}
+            </Menu.Item>
+          ) : (
+            <Menu.Item
+              leftSection={<IconPlayerPause size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+              onClick={() =>
+                confirmAction({
+                  onConfirm: () => void handleOnSetRepositoryMode(repository.id, RepositoryMode.Disabled, "repositoryScreen.successDisable"),
+                  options: {
+                    title: t("repositoryScreen.confirmDisableTitle"),
+                    message: t("repositoryScreen.confirmDisableMessage", {
+                      name: repository.name
+                    }),
+                    content: t("repositoryScreen.confirmDisableConsequences")
+                  }
+                })
+              }
+            >
+              {t("repositoryScreen.menu.disable")}
+            </Menu.Item>
+          )}
           <Menu.Item
             leftSection={isWatching === true ?
               <IconEyeOff size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/> :
               <IconEye size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-            onClick={() => void handleOnWatchRepository(repository.id, !isWatching)}
+            onClick={() =>
+              confirmAction({
+                onConfirm: () => void handleOnSetRepositoryMode(
+                  repository.id,
+                  isWatching === true ? RepositoryMode.Enabled : RepositoryMode.Watching,
+                  isWatching === true ? "repositoryScreen.successStopWatching" : "repositoryScreen.successWatch"
+                ),
+                options: {
+                  title: t(isWatching === true ? "repositoryScreen.confirmStopWatchingTitle" : "repositoryScreen.confirmWatchTitle"),
+                  message: t(isWatching === true ? "repositoryScreen.confirmStopWatchingMessage" : "repositoryScreen.confirmWatchMessage", {
+                    name: repository.name
+                  }),
+                  content: t(isWatching === true ? "repositoryScreen.confirmStopWatchingConsequences" : "repositoryScreen.confirmWatchConsequences")
+                }
+              })
+            }
           >
             {isWatching === true ? t("repositoryScreen.menu.stopWatching") : t("repositoryScreen.menu.watch")}
           </Menu.Item>
@@ -154,7 +212,8 @@ export default function RepositoryMenu({
                   title: t("repositoryScreen.confirmDeleteTitle"),
                   message: t("repositoryScreen.confirmDeleteMessage", {
                     name: repository.name
-                  })
+                  }),
+                  content: t("repositoryScreen.confirmDeleteConsequences")
                 }
               })
             }

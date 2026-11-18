@@ -8,3 +8,4 @@ export { default as EventService } from "./EventService.ts";
 export { default as NotificationService } from "./NotificationService.ts";
 export { default as FiltersService, type WithValueAndLabel } from "./FiltersService.ts";
 export { default as CollectionService } from "./CollectionService.ts";
+export { default as ErrorService, type ApiCallError } from "./ErrorService.ts";

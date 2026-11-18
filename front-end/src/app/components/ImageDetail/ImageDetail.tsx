@@ -7,7 +7,7 @@ import { Image } from "@picteus/ws-client";
 
 import { ChannelEnum, ImageOrSummary, ViewMode } from "types";
 import { ToastService } from "utils";
-import { useSocketEvents } from "app/context";
+import { useSocketEvent, useSocketEvents } from "app/context";
 import { useImageNavigation } from "app/hooks";
 import { EventService, ImageService, StorageService } from "app/services";
 import { ImageData, ImageTop, ImageVisual } from "./components";
@@ -64,6 +64,26 @@ export default function ImageDetail({
     else if (navigation.containsImage(imageId))
     {
       ImageService.get({ id: imageId }).then((anImage) => navigation.updateImage(anImage)).catch(ToastService.apiCallError);
+    }
+  });
+
+  useSocketEvent(ChannelEnum.REPOSITORY_MODE_DISABLED, (event) =>
+  {
+    const repositoryId = EventService.computeEventEntityId<string>(event);
+    if (repositoryId !== undefined)
+    {
+      const remainingCount = navigation.removeImagesByRepositoryId(repositoryId);
+      if (remainingCount === 0)
+      {
+        onClose?.();
+      }
+      else if (navigation.selectedImage !== undefined && !("metadata" in navigation.selectedImage))
+      {
+        ImageService.get({ id: navigation.selectedImage.id }).then(navigation.setSelectedImage).catch(() =>
+        {
+          onClose?.();
+        });
+      }
     }
   });
 

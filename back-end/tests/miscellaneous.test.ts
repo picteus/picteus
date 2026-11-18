@@ -24,6 +24,7 @@ import {
   InstructionsPrompt,
   Manifest,
   PromptKind,
+  RepositoryMode,
   SearchParameters,
   TextualPrompt,
   toMimeType
@@ -1912,7 +1913,7 @@ describe("Miscellaneous via application", () =>
       });
     });
 
-    const repository = await base.prepareEmptyRepository(undefined, false);
+    const repository = await base.prepareEmptyRepository(undefined, RepositoryMode.Enabled);
 
     // We wait for the 3 notifications to be received, instead of assuming that the "repository.synchronize.stopped" has already been received
     await waitForExpect(async () =>
@@ -1960,6 +1961,19 @@ describe("Miscellaneous via application", () =>
       expect(response.status).toEqual(OK);
       const blob = await response.blob();
       expect(blob.type).toEqual(toMimeType(image.format));
+    }
+    {
+      // We assess when the repository is disabled
+      await base.getRepositoryController().setMode(image.repositoryId, RepositoryMode.Disabled);
+      const response = await fetch(`${baseUrl}?u=${image.uri}`);
+      expect(response.status).toEqual(FORBIDDEN);
+      expect(await response.json()).toEqual({
+        code: 8,
+        message: `Could not resize the image with URL '${image.uri}'. Reason: 'it belongs to a disabled repository'`
+      });
+      await base.getRepositoryController().setMode(image.repositoryId, RepositoryMode.Enabled);
+      const reEnabledResponse = await fetch(`${baseUrl}?u=${image.uri}`);
+      expect(reEnabledResponse.status).toEqual(OK);
     }
   });
 

@@ -51,6 +51,8 @@ export enum RepositoryEventAction
 {
   Created = "created",
   Updated = "updated",
+  Mode = "mode",
+  Available = "available",
   Synchronize = "synchronize",
   Watch = "watch",
   Deleted = "deleted"

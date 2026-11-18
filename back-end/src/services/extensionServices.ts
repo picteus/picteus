@@ -73,6 +73,7 @@ import {
   ManifestEvent,
   ManifestRuntime,
   ManifestRuntimeEnvironment,
+  RepositoryMode,
   SearchParameters,
   UserInterfaceAnchor
 } from "../dtos/app.dtos";
@@ -2289,15 +2290,14 @@ export class ExtensionService
   {
     const runnable = async () =>
     {
-      const getAllImageIds = async (): Promise<string[]> =>
+      const getImageIdsByStatus = async (): Promise<{ allImageIds: string[], enabledImageIds: string[] }> =>
       {
         const imageSummaries = await this.regularDatabaseService.images.findMany({
-          select: { id: true }
+          select: { id: true, repository: { select: { mode: true } } }
         });
-        return imageSummaries.map((imageSummary) =>
-        {
-          return imageSummary.id;
-        });
+        const allImageIds = imageSummaries.map(imageSummary => imageSummary.id);
+        const enabledImageIds = imageSummaries.filter(imageSummary => imageSummary.repository.mode !== RepositoryMode.Disabled).map(imageSummary => imageSummary.id);
+        return { allImageIds, enabledImageIds };
       };
       const cleanUpDirtyImageTagOrFeatures = async (allImageIds: string[], eligibleImageIds: string [], callback: (unexpectedImageIds: string []) => Promise<void>): Promise<void> =>
       {
@@ -2325,8 +2325,8 @@ export class ExtensionService
             select: { imageId: true },
             where: { extensionId: id }
           })).map((imageFeature) => imageFeature.imageId);
-          const allImageIds = await getAllImageIds();
-          imageIds = allImageIds.filter((id) => featuresImageIds.indexOf(id) === -1);
+          const { allImageIds, enabledImageIds } = await getImageIdsByStatus();
+          imageIds = enabledImageIds.filter((id) => featuresImageIds.indexOf(id) === -1);
           await cleanUpDirtyImageTagOrFeatures(allImageIds, featuresImageIds, async (unexpectedImageIds: string[]) =>
           {
             logger.warn(`Deleting ${unexpectedImageIds} unexpected image feature(s) related to the extension with id '${id}'`);
@@ -2346,8 +2346,8 @@ export class ExtensionService
             select: { imageId: true },
             where: { extensionId: id }
           })).map((imageTag) => imageTag.imageId);
-          const allImageIds = await getAllImageIds();
-          imageIds = allImageIds.filter((id) => tagsImageIds.indexOf(id) === -1);
+          const { allImageIds, enabledImageIds } = await getImageIdsByStatus();
+          imageIds = enabledImageIds.filter((id) => tagsImageIds.indexOf(id) === -1);
           await cleanUpDirtyImageTagOrFeatures(allImageIds, tagsImageIds, async (unexpectedImageIds: string[]) =>
           {
             logger.warn(`Deleting ${unexpectedImageIds} unexpected image tag(s) related to the extension with id '${id}'`);
@@ -2364,7 +2364,7 @@ export class ExtensionService
         case ManifestCapabilityId.ImageEmbeddings:
         {
           const withEmbeddingsImageIds = await this.vectorDatabaseAccessor.getImageIds(id);
-          const allImageIds = await getAllImageIds();
+          const { allImageIds, enabledImageIds } = await getImageIdsByStatus();
           const unexpectedImageIds: string[] = withEmbeddingsImageIds.filter((imageId) => allImageIds.indexOf(imageId) === -1);
           if (unexpectedImageIds.length > 0)
           {
@@ -2385,7 +2385,7 @@ export class ExtensionService
           }
           const action: ImageEventAction = fromCapacityToImageEventAction(capability)!;
           let syncCount = 0;
-          for (const imageId of allImageIds)
+          for (const imageId of enabledImageIds)
           {
             const missingEmbeddings = additionalParameters.embeddings.filter(entry => coveredIdsByModel.get(entry.aiModel.technicalId)!.has(imageId) === false);
             if (missingEmbeddings.length > 0)

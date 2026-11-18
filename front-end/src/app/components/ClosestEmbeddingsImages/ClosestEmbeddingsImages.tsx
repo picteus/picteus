@@ -9,8 +9,9 @@ import { ExtensionIdImageEmbeddingName, ImageSummary } from "@picteus/ws-client"
 
 import { ImageWithCaption, ViewMode } from "types";
 import { ApiCallError, ToastService, Validators } from "utils";
+import { useModalContext } from "app/context";
 import { StorageService } from "app/services";
-import { useClosestImages } from "app/hooks";
+import { useClosestImages, useRepositoryUnavailableEvent } from "app/hooks";
 import {
   CaptionDistance,
   Common,
@@ -41,10 +42,19 @@ export default function ClosestEmbeddingsImages({
 }: ClosestEmbeddingsImagesType): ReactElement
 {
   const [ t ] = useTranslation();
+  const modalContext = useModalContext();
   const [ embeddingName, setEmbeddingName ] = useState<ExtensionIdImageEmbeddingName | undefined>(initialEmbeddingName);
   const initialResultsCount = StorageService.getClosestImagesResultsCount();
   const [ searchCount, setSearchCount ] = useState<number>(initialResultsCount);
   const focusTrapRef = useFocusTrap();
+
+  useRepositoryUnavailableEvent((repositoryId) =>
+  {
+    if (image.repositoryId === repositoryId)
+    {
+      modalContext?.closeModal(false);
+    }
+  });
 
   const isQueryEnabled = Boolean(embeddingName?.extensionId && embeddingName?.name && searchCount > 0);
   const {

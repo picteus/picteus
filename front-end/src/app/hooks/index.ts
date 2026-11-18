@@ -26,4 +26,6 @@ export {
 } from "./useProcessCommands.tsx";
 export { default as useProcessCommand, type UseProcessCommandResultType } from "./useProcessCommand.tsx";
 export { default as useImageDetailModal } from "./useImageDetailModal.tsx";
+export { default as useModalSubmit, type UseModalSubmitResultType } from "./useModalSubmit.tsx";
+export { default as useRepositoryUnavailableEvent } from "./useRepositoryUnavailableEvent.tsx";
 export * from "./queries";

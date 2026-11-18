@@ -96,7 +96,7 @@ export default function ImageInformationCard({
                       title: (
                         <RepositoryIdentity
                           repository={repository}
-                          menu={<RepositoryMenu repository={repository} onDeleted={() => removeModal(modalId)}/>}
+                          footer={<RepositoryMenu repository={repository} onDeleted={() => removeModal(modalId)}/>}
                         />
                       ),
                       size: "m",

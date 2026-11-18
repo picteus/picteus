@@ -3,11 +3,11 @@ import { isMainThread } from "node:worker_threads";
 
 import { Prisma, PrismaClient } from ".prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { type SqlDriverAdapter } from "@prisma/driver-adapter-utils";
+import { type IsolationLevel, type SqlDriverAdapter, type Transaction } from "@prisma/driver-adapter-utils";
 
 import { logger } from "../../logger";
 import { paths } from "../../paths";
-import { type  ApplicationSettings } from "../../dtos/app.dtos";
+import { type ApplicationSettings } from "../../dtos/app.dtos";
 
 
 const defaultSettingsType = "default";
@@ -33,11 +33,35 @@ class ConfiguredBetterSqlite3Adapter extends PrismaBetterSqlite3
     // We report SQLite 3.32+ parameter limit — i.e. 32,766 — to Prisma Client Query Engine
     const SQLITE_MAX_VARIABLE_NUMBER = 32_766;
     adapter.getConnectionInfo = () =>
-    {
-      return {
+      ({
         supportsRelationJoins: false,
         maxBindValues: SQLITE_MAX_VARIABLE_NUMBER
-      };
+      });
+    // @prisma/adapter-better-sqlite3 hardcodes a deferred `BEGIN` transaction, which acquires a shared read snapshot
+    // on the first SELECT and only upgrades to a write lock on the first write. Under concurrent writers — e.g.,
+    // worker threads running Prisma nested writes —, if another connection commits in between, upgrading a stale snapshot
+    // fails immediately with SQLITE_BUSY_SNAPSHOT ("Operation has timed out"), bypassing PRAGMA busy_timeout.
+    // We still call `originalStartTransaction()` first so the adapter acquires its internal `#mutex` and returns a
+    // `Transaction` whose `rollback()` releases it (an empty deferred BEGIN + ROLLBACK is purely in-memory in SQLite
+    // with zero disk I/O or file locks). We then issue `BEGIN IMMEDIATE` to acquire the write lock up front so
+    // concurrent writers queue cleanly via `busy_timeout`, while ensuring `transaction.rollback()` in `catch` releases
+    // `#mutex` on error — avoiding the prisma/orm#30881 mutex leak that occurs if `prepare("BEGIN")` itself is patched
+    // to `BEGIN IMMEDIATE` and throws.
+    const originalStartTransaction = adapter.startTransaction.bind(adapter);
+    adapter.startTransaction = async (isolationLevel?: IsolationLevel): Promise<Transaction> =>
+    {
+      const transaction = await originalStartTransaction(isolationLevel);
+      try
+      {
+        await transaction.executeRaw({ sql: "ROLLBACK", args: [], argTypes: [] });
+        await transaction.executeRaw({ sql: "BEGIN IMMEDIATE", args: [], argTypes: [] });
+        return transaction;
+      }
+      catch (error)
+      {
+        await transaction.rollback();
+        throw error;
+      }
     };
     return adapter;
   }
@@ -125,8 +149,11 @@ export class PrismaClientWrapper
       await this.prismaClient.$connect();
       try
       {
-        // WAL (Write-Ahead Logging) mode allows concurrent reads while writes are in progress, preventing database lock contention across worker threads
-        await this.prismaClient.$executeRawUnsafe("PRAGMA journal_mode = WAL;");
+        if (isMainThread === true)
+        {
+          // WAL (Write-Ahead Logging) mode allows concurrent reads while writes are in progress, preventing database lock contention across worker threads
+          await this.prismaClient.$executeRawUnsafe("PRAGMA journal_mode = WAL;");
+        }
         // "busy_timeout" specifies the time in milliseconds SQLite will wait for locks to be released before failing with SQLITE_BUSY
         await this.prismaClient.$executeRawUnsafe(`PRAGMA busy_timeout = ${timeoutInMilliseconds};`);
         // "synchronous = NORMAL" is safe with WAL mode and reduces lock contention by avoiding fsync on every transaction commit

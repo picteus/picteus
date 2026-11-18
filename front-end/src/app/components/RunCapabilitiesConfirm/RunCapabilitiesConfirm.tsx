@@ -236,7 +236,7 @@ export default function RunCapabilitiesConfirm({
             onChange={(event) => toggleAll(event.currentTarget.checked)}
           />
           <ScrollArea.Autosize mah="clamp(160px, 40dvh, 480px)">
-            <Stack gap="xs">
+            <Stack gap="xs" p={4}>
               {eligibleExtensions.map((eligibleExtension) => (
                 <Checkbox
                   key={eligibleExtension.extension.manifest.id}

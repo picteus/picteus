@@ -40,7 +40,7 @@ import compression from "compression";
 import packageJson from "../package.json" with { type: "json" };
 import { logger } from "./logger";
 import { AuthenticationGuard } from "./app.guards";
-import { RepositoryState } from "./dtos/repository.dtos";
+import { RepositoryMode } from "./dtos/app.dtos";
 import {
   AdministrationController,
   ApiSecretController,
@@ -467,8 +467,8 @@ export function computeMainModule(withThrotlling: boolean): Type<NestModule>
         await this.limiter?.consume("", 1);
         await this.resizer.handle(request, response, (nodePath: string) =>
         {
-          const state: RepositoryState | undefined = this.repositoryService.getImageRepositoryState(nodePath);
-          return state === undefined ? "it does not belong to any repository" : ((state === RepositoryState.READY || state === RepositoryState.INDEXING) ? undefined : "it belongs to a not-available repository");
+          const repository = this.repositoryService.getImageRepository(nodePath);
+          return repository === undefined ? "it does not belong to any repository" : (repository.mode === RepositoryMode.Disabled ? "it belongs to a disabled repository" : (repository.available === false ? "it belongs to a not-available repository" : undefined));
         });
       }
       catch (error)

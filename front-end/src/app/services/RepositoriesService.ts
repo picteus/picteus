@@ -8,9 +8,9 @@ import {
   RepositoryApiRepositoryCreateRequest,
   RepositoryApiRepositoryDeleteRequest,
   RepositoryApiRepositoryGetRequest,
+  RepositoryApiRepositorySetModeRequest,
   RepositoryApiRepositorySynchronizeRequest,
-  RepositoryApiRepositoryUpdateRequest,
-  RepositoryApiRepositoryWatchRequest
+  RepositoryApiRepositoryUpdateRequest
 } from "@picteus/ws-client";
 
 
@@ -28,7 +28,7 @@ async function get(parameters: RepositoryApiRepositoryGetRequest): Promise<Repos
 
 async function add(parameters: RepositoryApiRepositoryCreateRequest): Promise<Repository>
 {
-  return repositoryApi.repositoryCreate({ ...parameters, watch: true });
+  return repositoryApi.repositoryCreate(parameters);
 }
 
 async function update(parameters: RepositoryApiRepositoryUpdateRequest): Promise<Repository>
@@ -46,9 +46,9 @@ async function synchronize(parameters: RepositoryApiRepositorySynchronizeRequest
   return repositoryApi.repositorySynchronize(parameters);
 }
 
-async function watch(parameters: RepositoryApiRepositoryWatchRequest): Promise<void>
+async function setMode(parameters: RepositoryApiRepositorySetModeRequest): Promise<Repository>
 {
-  return repositoryApi.repositoryWatch(parameters);
+  return repositoryApi.repositorySetMode(parameters);
 }
 
 async function getActivities(): Promise<RepositoryActivity[]>
@@ -83,7 +83,7 @@ export default {
   update,
   delete: deleteRepository,
   synchronize,
-  watch,
+  setMode,
   getActivities,
   getFeatureNames,
   getTags,

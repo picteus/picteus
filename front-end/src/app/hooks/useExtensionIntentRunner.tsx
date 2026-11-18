@@ -269,7 +269,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
               title: (
                 <RepositoryIdentity
                   repository={repository}
-                  menu={<RepositoryMenu repository={repository} onDeleted={() => removeModal(modalId)}/>}
+                  footer={<RepositoryMenu repository={repository} onDeleted={() => removeModal(modalId)}/>}
                 />
               ),
               size: "m",

@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Badge, Box, Flex, Stack, Text } from "@mantine/core";
 import { IconLock } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { Repository } from "@picteus/ws-client";
+import { Repository, RepositoryMode } from "@picteus/ws-client";
 
 import { LocalFiltersType } from "types";
 import { FiltersService } from "app/services";
@@ -18,11 +18,19 @@ type GeneralFiltersType = {
   onChangeFilter: (key: string, value?: string []) => void;
 };
 
-export default function GeneralFilters({ repositories, filters, lockedRepositoryId, onChangeFilter }: GeneralFiltersType)
+export default function GeneralFilters({
+  repositories,
+  filters,
+  lockedRepositoryId,
+  onChangeFilter
+}: GeneralFiltersType)
 {
   const [ t ] = useTranslation();
 
   const lockedRepository = lockedRepositoryId !== undefined ? repositories.find((repository) => repository.id === lockedRepositoryId) : undefined;
+  const disabledRepositoryIds = useMemo(() => new Set(repositories.filter((repository) => repository.mode === RepositoryMode.Disabled).map((repository) => repository.id)),
+    [ repositories ]
+  );
 
   return (
     <Stack gap="md">
@@ -43,7 +51,10 @@ export default function GeneralFilters({ repositories, filters, lockedRepository
             </Flex>
             <Box bd="1px solid gray.3" bdrs="sm" p={4}>
               <Flex align="center" justify="space-between" gap="xs">
-                <Badge variant="light" color="blue" radius="sm">{lockedRepository.name}</Badge>
+                <Badge variant="light" color={lockedRepository.mode === RepositoryMode.Disabled ? "gray" : "blue"}
+                       radius="sm">
+                  {lockedRepository.name}
+                </Badge>
                 <IconLock size={14} stroke={Common.IconStrokeSize} color="var(--mantine-color-dimmed)"/>
               </Flex>
             </Box>
@@ -55,8 +66,15 @@ export default function GeneralFilters({ repositories, filters, lockedRepository
             selectedValues={filters.repositories ?? []}
             options={repositories.map((repository) => ({
               value: repository.id,
-              label: repository.name
+              label: repository.mode === RepositoryMode.Disabled
+                ? `${repository.name} (${t("repositoryScreen.status.disabled")})`
+                : repository.name
             }))}
+            renderOption={({ option }) => (
+              <Text size="sm" c={disabledRepositoryIds.has(option.value) ? "dimmed" : undefined}>
+                {option.label}
+              </Text>
+            )}
             onChange={(values: string[]) => onChangeFilter("repositories", values)}
           />
         )}

@@ -1767,6 +1767,15 @@
             }
           },
           {
+            "name": "mode",
+            "required": true,
+            "in": "query",
+            "description": "The operating mode of the repository",
+            "schema": {
+              "$ref": "#/components/schemas/RepositoryMode"
+            }
+          },
+          {
             "name": "comment",
             "required": false,
             "in": "query",
@@ -1775,15 +1784,6 @@
               "minLength": 1,
               "maxLength": 1024,
               "type": "string"
-            }
-          },
-          {
-            "name": "watch",
-            "required": false,
-            "in": "query",
-            "description": "Whether the repository should be watched immediately ; when not defined, this parameter has the implicit 'false' value",
-            "schema": {
-              "type": "boolean"
             }
           }
         ],
@@ -1905,15 +1905,6 @@
               "maxLength": 1024,
               "type": "string"
             }
-          },
-          {
-            "name": "watch",
-            "required": false,
-            "in": "query",
-            "description": "Whether the repository should be watched immediately ; when not defined, this parameter has the implicit 'false' value",
-            "schema": {
-              "type": "boolean"
-            }
           }
         ],
         "responses": {
@@ -1991,10 +1982,10 @@
         ]
       }
     },
-    "/repository/{id}/watch": {
+    "/repository/{id}/setMode": {
       "put": {
-        "description": "Starts or stops listening to the repository back-end images changes.",
-        "operationId": "repository_watch",
+        "description": "Changes the operating mode of a repository.",
+        "operationId": "repository_setMode",
         "parameters": [
           {
             "name": "id",
@@ -2011,21 +2002,28 @@
             }
           },
           {
-            "name": "isStart",
+            "name": "mode",
             "required": true,
             "in": "query",
-            "description": "Whether the repository should start or stop watching",
+            "description": "The operating mode to apply to the repository",
             "schema": {
-              "type": "boolean"
+              "$ref": "#/components/schemas/RepositoryMode"
             }
           }
         ],
         "responses": {
-          "204": {
-            "description": "No content"
+          "200": {
+            "description": "The updated repository",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repository"
+                }
+              }
+            }
           }
         },
-        "summary": "Starts or stops watching a repository",
+        "summary": "Sets the operating mode of a repository",
         "tags": [
           "repository"
         ]
@@ -6883,13 +6881,21 @@
           "file"
         ]
       },
+      "RepositoryMode": {
+        "type": "string",
+        "enum": [
+          "disabled",
+          "enabled",
+          "watching"
+        ],
+        "description": "The operating mode of the repository"
+      },
       "RepositoryState": {
         "type": "string",
         "enum": [
-          "UNAVAILABLE",
-          "READY",
-          "INDEXING",
-          "UNAVAILABLE_INDEXING"
+          "unindexed",
+          "indexing",
+          "ready"
         ],
         "description": "The state of the repository"
       },
@@ -6958,9 +6964,23 @@
             "maxLength": 1024,
             "example": "A very interesting series of photos."
           },
+          "mode": {
+            "description": "The operating mode of the repository",
+            "example": "enabled",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RepositoryMode"
+              }
+            ]
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Indicates whether the repository back-end storage is available",
+            "example": true
+          },
           "state": {
             "description": "The state of the repository",
-            "example": "READY",
+            "example": "ready",
             "allOf": [
               {
                 "$ref": "#/components/schemas/RepositoryState"
@@ -6976,6 +6996,8 @@
           "type",
           "url",
           "name",
+          "mode",
+          "available",
           "state"
         ]
       },

@@ -4,11 +4,13 @@ import { ModuleRef } from "@nestjs/core";
 import { ImageAttachment, Prisma } from ".prisma/client";
 
 import { logger } from "../logger";
+import { ServiceError } from "../app.exceptions";
+import { attachmentUriPrefix, fromMimeType, Image, RepositoryMode, toFileExtension } from "../dtos/app.dtos";
 import { computeAttachmentDisposition } from "./utils/downloader";
 import { RegularDatabaseService } from "./regularDatabaseService";
 import { ExtensionRegistry } from "./extensionRegistry";
 import { parametersChecker } from "./utils/parametersChecker";
-import { attachmentUriPrefix, fromMimeType, Image, toFileExtension } from "../dtos/app.dtos";
+import { RepositoryService } from "./repositoryService";
 
 
 @Injectable()
@@ -31,6 +33,15 @@ export class ImageAttachmentService
     {
       parametersChecker.throwBadParameter("extensionId", extensionId, "that extension is not installed");
     }
+    const image = await this.regularDatabaseService.images.findUnique({
+      where: { id: imageId },
+      select: { id: true, repositoryId: true, repository: { select: { mode: true } } }
+    });
+    if (image === null)
+    {
+      parametersChecker.throwBadParameter("imageId", imageId, "it does not match any existing image");
+    }
+    RepositoryService.checkNotDisabled(image.repositoryId, image.repository.mode as RepositoryMode);
 
     // We check the MIME type as much as possible
     const { parse } = await import("file-type-mime");
@@ -72,6 +83,10 @@ export class ImageAttachmentService
     }
     catch (error)
     {
+      if (error instanceof ServiceError)
+      {
+        throw error;
+      }
       parametersChecker.throwBadParameter("uri", uri, (error as Error).message);
     }
     let fileExtension: string = "";
@@ -125,16 +140,20 @@ export class ImageAttachmentService
       throw new Error("its suffix is not an integer");
     }
     const entity = await this.regularDatabaseService.imageAttachment.findUnique({
-      select: doNotRetrieveValue ? {
+      select: {
         id: true,
         imageId: true,
-        extensionId: true
-      } : undefined, where: { id }
+        extensionId: true,
+        ...(doNotRetrieveValue === true ? {} : { mimeType: true, value: true }),
+        image: { select: { repositoryId: true, repository: { select: { mode: true } } } }
+      },
+      where: { id }
     });
     if (entity === null)
     {
       throw new Error("there is no attachment with that URI");
     }
+    RepositoryService.checkNotDisabled(entity.image.repositoryId, entity.image.repository.mode as RepositoryMode);
     return { id, entity };
   }
 

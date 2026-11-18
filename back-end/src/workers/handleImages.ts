@@ -69,8 +69,7 @@ export async function declareImage({ ports, repositoryIdAndFilePath }: {
   const imageEntities = await computeImageEntities(ports, repositoryIdAndFilePath);
   const { image, metadata, features } = imageEntities;
   logger.info(`Inserting the image in file '${repositoryIdAndFilePath.filePath}' in the repository with id '${repositoryIdAndFilePath.repositoryId}' and in the location with URL '${image.url}'`);
-  const regularDatabaseService = new RegularDatabaseService();
-  await regularDatabaseService.initialize();
+  const regularDatabaseService = await RegularDatabaseService.getWorkerInstance();
   const persistedImage = await regularDatabaseService.images.create({
     data:
       {
@@ -100,8 +99,7 @@ export async function synchronizeImage({ ports, repositoryIdAndFilePath }: {
 {
   logger.info(`Synchronizing the image in file '${repositoryIdAndFilePath.filePath}' in the repository with id '${repositoryIdAndFilePath.repositoryId}'`);
 
-  const regularDatabaseService = new RegularDatabaseService();
-  await regularDatabaseService.initialize();
+  const regularDatabaseService = await RegularDatabaseService.getWorkerInstance();
   const imageDelegate = regularDatabaseService.images;
   const image = await imageDelegate.findFirst({ where: { url: fileWithProtocol + repositoryIdAndFilePath.filePath } });
   if (image === null)
@@ -129,8 +127,7 @@ export async function updateImage({ ports, repositoryIdAndFilePath }: {
 {
   logger.info(`Updating the image in file '${repositoryIdAndFilePath.filePath}' in the repository with id '${repositoryIdAndFilePath.repositoryId}'`);
 
-  const regularDatabaseService = new RegularDatabaseService();
-  await regularDatabaseService.initialize();
+  const regularDatabaseService = await RegularDatabaseService.getWorkerInstance();
   const imageDelegate = regularDatabaseService.images;
   const url = fileWithProtocol + repositoryIdAndFilePath.filePath;
   const image: PersistedImage | null = await imageDelegate.findFirst({ where: { url: url } });

@@ -15,9 +15,10 @@ import style from "./ModalComponent.module.scss";
 type ModalChildType = {
   component: ReactNode;
   fullScreen: boolean;
+  isPadded: boolean;
 };
 
-function ModalChild({ component, fullScreen }: ModalChildType)
+function ModalChild({ component, fullScreen, isPadded }: ModalChildType)
 {
   const focusRef = useRef<HTMLDivElement>(null);
 
@@ -65,7 +66,7 @@ function ModalChild({ component, fullScreen }: ModalChildType)
   }, [ focusRef ]);
 
   return (
-    <Box ref={focusRef} h={fullScreen ? "100%" : undefined}>
+    <Box ref={focusRef} h={fullScreen ? "100%" : undefined} p={isPadded ? "md" : undefined}>
       {component}
     </Box>
   );
@@ -101,6 +102,7 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
 {
   const [ opened, disclosureHandlers ] = useDisclosure(true);
   const ref = useRef<HTMLDivElement>(null);
+  const [ errorElement, setErrorElement ] = useState<HTMLDivElement | null>(null);
   const [ footerElement, setFooterElement ] = useState<HTMLDivElement | null>(null);
   const [ hasPortaledActions, setHasPortaledActions ] = useState<boolean>(false);
   const modalId = modal.id ?? randomId();
@@ -150,11 +152,12 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
   const modalContextValue = useMemo<ModalContextType>(() => ({
       modalId,
       closeModal: (viaOnSuccess = false) => handleOnClose(viaOnSuccess),
+      errorElement,
       footerElement,
       hasPortaledActions,
       setHasPortaledActions
     }),
-    [ modalId, handleOnClose, footerElement, hasPortaledActions ]
+    [ modalId, handleOnClose, errorElement, footerElement, hasPortaledActions ]
   );
 
   function renderStaticActions(): ReactNode
@@ -225,15 +228,22 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType)
           mih={0}
           h="100%"
           type="auto"
-          p={isFullScreen ? 0 : "md"}
           offsetScrollbars
           scrollbars="y"
         >
-          <ModalChild component={modal.body} fullScreen={isFullScreen || isFullHeight}/>
+          <ModalChild
+            component={modal.body}
+            fullScreen={isFullScreen || isFullHeight}
+            isPadded={!isFullScreen}
+          />
         </ScrollArea>
         <Box
+          ref={setErrorElement}
+          bg="var(--mantine-color-body)"
+          className={style.error}
+        />
+        <Box
           ref={setFooterElement}
-          p="md"
           bg="var(--mantine-color-body)"
           className={style.footer}
         >

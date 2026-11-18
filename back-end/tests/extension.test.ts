@@ -48,6 +48,7 @@ import {
   ManifestImageFeaturesCapability,
   ManifestImageTagsCapability,
   ManifestRuntimeEnvironment,
+  RepositoryMode,
   SearchOriginKind,
   SearchParameters,
   toMimeType,
@@ -1158,7 +1159,7 @@ describe("Extensions", () =>
 
     {
       // We make sure that no tags nor features' computation event is processed when the extension is paused
-      await base.getRepositoryController().watch(repository.id, true);
+      await base.getRepositoryController().setMode(repository.id, RepositoryMode.Watching);
       await base.addImage(repository.id, base.imageFeeder.jpegImageFileName);
       expect(fs.existsSync(tagsEventFilePath)).toEqual(false);
       expect(fs.existsSync(featuresEventFilePath)).toEqual(false);
@@ -1616,7 +1617,7 @@ describe("Extensions", () =>
         return activity.id === builder.extensionId;
       })?.connection).toEqual(ExtensionActivityState.Started);
     });
-    const { repository, images } = await builder.createRepositoryAndGetImages(true);
+    const { repository, images } = await builder.createRepositoryAndGetImages(RepositoryMode.Watching);
     const image = images[0];
     const commandId = manifest.instructions[0].commands![0].id;
 
@@ -2536,7 +2537,7 @@ describe("Extensions", () =>
       await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
 
       const repository = await builder.createRepository();
-      await base.getRepositoryController().watch(repository.id, true);
+      await base.getRepositoryController().setMode(repository.id, RepositoryMode.Watching);
       await base.waitUntilRepositoryWatching(repository.id);
       await waitForExpect(() =>
       {
@@ -2555,26 +2556,17 @@ describe("Extensions", () =>
         expect(fs.existsSync(path.join(builder.extensionDirectoryPath, "image.updated"))).toEqual(true);
       });
 
-      const buildEvent = (eventEntity: EventEntity, action: EventAction, state?: ActionState): string =>
-      {
-        return NotifierService.buildEvent(eventEntity, action, state, true);
-      };
+      const buildEvent = (eventEntity: EventEntity, action: EventAction, state?: ActionState | RepositoryMode): string => NotifierService.buildEvent(eventEntity, action, state, true);
 
-      const createExtensionEvent = (action: ExtensionEventAction, state?: ActionState): ExpectedEvent =>
-      {
-        return {
-          channel: buildEvent(EventEntity.Extension, action, state),
-          value: { id: manifest.id }
-        };
-      };
+      const createExtensionEvent = (action: ExtensionEventAction, state?: ActionState): ExpectedEvent => ({
+        channel: buildEvent(EventEntity.Extension, action, state),
+        value: { id: manifest.id }
+      });
 
-      const createRepositoryEvent = (action: RepositoryEventAction, state?: ActionState): ExpectedEvent =>
-      {
-        return {
-          channel: buildEvent(EventEntity.Repository, action, state),
-          value: { id: repository.id }
-        };
-      };
+      const createRepositoryEvent = (action: RepositoryEventAction, state?: ActionState | RepositoryMode): ExpectedEvent => ({
+        channel: buildEvent(EventEntity.Repository, action, state),
+        value: { id: repository.id }
+      });
 
       const logEvent: ExpectedEvent =
         {
@@ -2595,7 +2587,7 @@ describe("Extensions", () =>
         {
           expect(listener).toHaveBeenCalledTimes(expectedTotalCount);
         });
-        const actualEvents = listener.mock.calls.slice(checkedEventsCount, expectedTotalCount).map((call) => call[0] as EventMessage);
+        const actualEvents = listener.mock.calls.slice(checkedEventsCount, expectedTotalCount).map(call => call[0] as EventMessage);
         const sortEvents = <T extends ExpectedEvent>(events: T[]): T[] =>
         {
           return [ ...events ].sort((event1, event2) =>
@@ -2633,8 +2625,9 @@ describe("Extensions", () =>
         createRepositoryEvent(RepositoryEventAction.Created),
         createRepositoryEvent(RepositoryEventAction.Synchronize, ActionState.Started),
         createRepositoryEvent(RepositoryEventAction.Synchronize, ActionState.Stopped),
+        createRepositoryEvent(RepositoryEventAction.Mode, RepositoryMode.Watching),
         createRepositoryEvent(RepositoryEventAction.Watch, ActionState.Started),
-        ...summaries.map((item) => ({
+        ...summaries.map(item => ({
           channel: buildEvent(EventEntity.Image, ImageEventAction.Created),
           value: { id: item.id }
         })),

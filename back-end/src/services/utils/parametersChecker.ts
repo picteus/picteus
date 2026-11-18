@@ -240,6 +240,18 @@ export class ParametersChecker
     }
   }
 
+  checkEnum<T extends Record<string, string>>(name: string, value: unknown, enumObject: T, isOptional: boolean = false): void
+  {
+    if (value === undefined && isOptional === false)
+    {
+      this.throwMissingParameter(name);
+    }
+    if (value !== undefined && Object.values(enumObject).includes(value as string) === false)
+    {
+      this.throwBadParameter(name, String(value), "it is not a valid enum value");
+    }
+  }
+
   throwMissingParameter(name: string): never
   {
     this.throwBadParameterError(`The '${name}' ${this.entityName} is missing`);

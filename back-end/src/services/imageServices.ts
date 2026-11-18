@@ -25,6 +25,7 @@ import { computeAttachmentDisposition } from "./utils/downloader";
 import { parametersChecker, StringNature } from "./utils/parametersChecker";
 import { fileMetadata } from "./utils/fileMetadata";
 import { Resizer } from "../resizer";
+import { ServiceError } from "../app.exceptions";
 import {
   AiModelModality,
   ApplicationMetadata,
@@ -61,6 +62,7 @@ import {
   NumericRange,
   RepositoryLocation,
   RepositoryLocationType,
+  RepositoryMode,
   SearchCriteria,
   SearchFeatureComparisonOperator,
   SearchFeatureCondition,
@@ -106,7 +108,14 @@ import {
 import { ImageAttachmentService } from "./imageAttachmentService";
 
 
-const imageWithIncludes = { include: { metadata: true, features: true, tags: true } } satisfies Prisma.ImageDefaultArgs;
+const imageWithIncludes = {
+  include: {
+    metadata: true,
+    features: true,
+    tags: true,
+    repository: { select: { mode: true } }
+  }
+} satisfies Prisma.ImageDefaultArgs;
 
 type ImageWithIncludes = Prisma.ImageGetPayload<typeof imageWithIncludes>
 
@@ -293,12 +302,13 @@ export class ImageService
     logger.info(`Getting the image with URL '${url}'`);
     const entity = await this.regularDatabaseService.images.findFirst({
       where: { url },
-      include: { metadata: true, features: true, tags: true }
+      include: { metadata: true, features: true, tags: true, repository: { select: { mode: true } } }
     });
     if (entity === null)
     {
       parametersChecker.throwBadParameter("url", url, `there is no image with id '${url}'`);
     }
+    RepositoryService.checkNotDisabled(entity.repositoryId, entity.repository.mode as RepositoryMode);
     return this.toDto(Image, entity as PersistedImage, entity.metadata as PersistedImageMetadata, entity.features, entity.tags);
   }
 
@@ -338,7 +348,7 @@ export class ImageService
     const filePath = entity.url.substring(fileWithProtocol.length);
     const repositoryDirectoryPath = repositoryEntity.url.substring(fileWithProtocol.length);
     const relativeFilePath = filePath.substring(repositoryDirectoryPath.length + 1);
-    return RepositoryWatcher.ignore<Image>(entity.repositoryId, relativeFilePath, async () =>
+    return RepositoryWatcher.ignore<Image>(entity.repositoryId, [ relativeFilePath ], async () =>
     {
       fs.writeFileSync(filePath, buffer);
       const imageDeclarationManager = new ImageDeclarationManager(1);
@@ -369,7 +379,7 @@ export class ImageService
       if (fs.existsSync(filePath) === true)
       {
         const repositoryDirectoryPath = repositoryEntity.url.substring(fileWithProtocol.length);
-        return await RepositoryWatcher.ignore<void>(entity.repositoryId, path.relative(repositoryDirectoryPath, filePath), async () =>
+        return await RepositoryWatcher.ignore<void>(entity.repositoryId, [ path.relative(repositoryDirectoryPath, filePath) ], async () =>
         {
           fs.rmSync(filePath);
           await this.deletePersistedImage(id);
@@ -387,6 +397,15 @@ export class ImageService
     await this.moduleRef.get(CollectionService).clearFromOrigin(SearchOriginKind.Images, id);
     await this.regularDatabaseService.images.delete({ where: { id } });
     this.notifierService.emit(EventEntity.Image, ImageEventAction.Deleted, undefined, { id });
+  }
+
+  async renamePersistedImage(id: string, filePath: string): Promise<void>
+  {
+    await this.regularDatabaseService.images.update({
+      where: { id },
+      data: { name: path.basename(filePath), url: fileWithProtocol + filePath }
+    });
+    this.notifierService.emit(EventEntity.Image, ImageEventAction.Renamed, undefined, { id });
   }
 
   async download(id: string, format: ImageFormat | undefined = undefined, width: number | undefined = undefined, height: number | undefined = undefined, resizeRender: ImageResizeRender | undefined = ImageResizeRender.Inbox, stripMetadata: boolean = false): Promise<StreamableFile>
@@ -639,6 +658,10 @@ export class ImageService
         }
         catch (error)
         {
+          if (error instanceof ServiceError)
+          {
+            throw error;
+          }
           parametersChecker.throwBadParameter(parameterName, string, (error as Error).message);
         }
         if (entity.imageId !== id)
@@ -861,7 +884,7 @@ export class ImageService
   {
     logger.info(`Setting the embeddings for the image with id '${id}' and the extension with id '${extensionId}'`);
     this.checkExtension(extensionId);
-    await this.getPersistedImage(id, false, false, false);
+    const entity = await this.getPersistedImage(id, false, false, false);
     if (isEnsure === true && embeddings.length === 0)
     {
       parametersChecker.throwBadParameterError("It must contain at least one embedding when the 'isEnsure' parameter is set to 'true'");
@@ -889,7 +912,7 @@ export class ImageService
         parametersChecker.throwBadParameterError(`The embeddings length ${embedding.values.length} is not the expected one ${existingEmbeddings.values.length}`);
       }
     }
-    await this.vectorDatabaseAccessor.setEmbeddings(id, extensionId, embeddings, isEnsure);
+    await this.vectorDatabaseAccessor.setEmbeddings(id, entity.repositoryId, extensionId, embeddings, isEnsure);
     this.notifierService.emit(EventEntity.Image, ImageEventAction.EmbeddingsUpdated, undefined, { id });
   }
 
@@ -937,16 +960,27 @@ export class ImageService
     logger.info(`Getting the ${count} closest image(s) to some embeddings related to the extension with id '${extensionId}'`);
     this.checkExtension(extensionId);
     parametersChecker.checkNumber("count", count, 1);
+    const allRepositories = await this.regularDatabaseService.repositories.findMany({
+      select: {
+        id: true,
+        mode: true
+      }
+    });
+    const enabledRepositoryIds = allRepositories.filter(repository => repository.mode !== RepositoryMode.Disabled).map(repository => repository.id);
+    if (enabledRepositoryIds.length === 0)
+    {
+      return [];
+    }
     const imageIdAndDistances: ImageIdAndDistance[] = await this.vectorDatabaseAccessor.queryEmbeddings({
       id: extensionId,
       name: embeddings.id
-    }, embeddings.values, count);
+    }, embeddings.values, count, enabledRepositoryIds.length === allRepositories.length ? undefined : enabledRepositoryIds);
     const imageIds: string[] = imageIdAndDistances.map((imageIdAndDistance) =>
     {
       return imageIdAndDistance.imageId;
     });
     const entities = await this.regularDatabaseService.images.findMany({
-      where: { id: { in: imageIds } },
+      where: { id: { in: imageIds }, repository: { mode: { not: RepositoryMode.Disabled } } },
       include: { metadata: false, features: false }
     });
     if (imageIds.length !== entities.length)
@@ -966,8 +1000,8 @@ export class ImageService
     return entities.sort((entity1, entity2) =>
     {
       return imageIds.indexOf(entity1.id) - imageIds.indexOf(entity2.id);
-    }).map((entity, index) => plainToInstanceViaJSON(ImageDistance, {
-      distance: imageIdAndDistances[index].distance,
+    }).map((entity) => plainToInstanceViaJSON(ImageDistance, {
+      distance: imageIdAndDistances.find(item => item.imageId === entity.id)!.distance,
       image: this.toDto(ImageSummary, entity, undefined, undefined, undefined)
     }));
   }
@@ -1252,6 +1286,7 @@ export class ImageService
       {
         id: imageIds === undefined ? undefined : { in: imageIds },
         repositoryId: repositoryIds === undefined ? undefined : { in: repositoryIds },
+        repository: { mode: { not: RepositoryMode.Disabled } },
         format: criteria?.formats === undefined ? undefined : { in: criteria?.formats },
         tags: tagsFilter,
         features: featuresFilter,
@@ -1282,12 +1317,18 @@ export class ImageService
   {
     const entity: ImageWithIncludes | null = await this.regularDatabaseService.images.findUnique({
       where: { id },
-      include: { metadata: withMetadata, features: withFeatures, tags: withTags }
+      include: {
+        metadata: withMetadata,
+        features: withFeatures,
+        tags: withTags,
+        repository: { select: { mode: true } }
+      }
     });
     if (entity === null)
     {
       parametersChecker.throwBadParameter("id", id, `there is no image with that identifier`);
     }
+    RepositoryService.checkNotDisabled(entity.repositoryId, entity.repository.mode as RepositoryMode);
     return entity;
   }
 

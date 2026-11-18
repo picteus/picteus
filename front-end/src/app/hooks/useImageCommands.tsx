@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import { Box, Checkbox, Flex, Stack, Text } from "@mantine/core";
 import { randomId } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { IconTopologyRing3 } from "@tabler/icons-react";
@@ -17,9 +18,48 @@ import {
   useOpenExplorer,
   useRunCapabilities
 } from "app/hooks";
-import { ImageService, NotificationService } from "app/services";
-import { ClosestEmbeddingsImages, CommandIcon, Common, computeIcon, ImageItemWrapper } from "app/components";
+import { ImageService, NotificationService, StorageService } from "app/services";
+import { ClosestEmbeddingsImages, CommandIcon, Common, computeIcon, ImageThumbnail } from "app/components";
 
+
+type DeleteImageConfirmationContentPropsType = {
+  image: ImageOrSummary;
+  initialShouldDeleteFile: boolean;
+  onChangeShouldDeleteFile: (shouldDeleteFile: boolean) => void;
+};
+
+function DeleteImageConfirmationContent({
+  image,
+  initialShouldDeleteFile,
+  onChangeShouldDeleteFile
+}: DeleteImageConfirmationContentPropsType): ReactElement
+{
+  const [ t ] = useTranslation();
+  const [ shouldDeleteFile, setShouldDeleteFile ] = useState<boolean>(initialShouldDeleteFile);
+
+  return (
+    <Stack gap="sm">
+      <Flex align="center" gap="md">
+        <Box style={{ flexShrink: 0 }}>
+          <ImageThumbnail imageOrUrl={image} edge={Common.ImageThumbnailEdge}/>
+        </Box>
+        <Text size="sm">
+          {t("commands.confirmImageDeleteConsequences")}
+        </Text>
+      </Flex>
+      <Checkbox
+        label={t("commands.confirmImageDeleteShouldDeleteFile")}
+        checked={shouldDeleteFile}
+        onChange={(event) =>
+        {
+          const isChecked = event.currentTarget.checked;
+          setShouldDeleteFile(isChecked);
+          onChangeShouldDeleteFile(isChecked);
+        }}
+      />
+    </Stack>
+  );
+}
 
 type UseImageCommandsOptionsType = {
   image: ImageOrSummary;
@@ -269,16 +309,27 @@ export default function useImageCommands({
       },
       execute: () =>
       {
+        const initialShouldDeleteFile = StorageService.getImageDeleteShouldDeleteFile();
+        let shouldDeleteFile = initialShouldDeleteFile;
+
         confirmAction({
           onConfirm: () =>
           {
-            return ImageService.destroy(image.id).then(() => ToastService.success()).catch(ToastService.apiCallError);
+            StorageService.setImageDeleteShouldDeleteFile(shouldDeleteFile);
+            return ImageService.destroy(image.id, shouldDeleteFile).then(() => ToastService.success()).catch(ToastService.apiCallError);
           },
           options: {
             title: t("commands.confirmImageDeleteTitle"),
             message: t("commands.confirmImageDeleteMessage"),
             content: (
-              <ImageItemWrapper idOrImage={image} viewMode={viewMode}/>
+              <DeleteImageConfirmationContent
+                image={image}
+                initialShouldDeleteFile={initialShouldDeleteFile}
+                onChangeShouldDeleteFile={(isChecked) =>
+                {
+                  shouldDeleteFile = isChecked;
+                }}
+              />
             )
           }
         });

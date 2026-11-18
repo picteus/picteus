@@ -16,9 +16,10 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
   setImages: (images: ImageOrSummary[]) => void,
   containsImage: (imageId: string) => boolean,
   setSelectedImage: (selectedImage: ImageOrSummary) => void,
-  selectedImage: ImageOrSummary | undefined
+  selectedImage: ImageOrSummary | undefined,
   updateImage: (image: Image) => void,
-  removeImage: (imageId: string) => number
+  removeImage: (imageId: string) => number,
+  removeImagesByRepositoryId: (repositoryId: string) => number
 }
 {
   const [state, setState] = useState<ImageVisualizerContextValue>(initialValue ?? {
@@ -77,6 +78,40 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
         images.splice(index, 1);
       }
       const selectedImage = previousState.selectedImage?.id === imageId ? (index >= 1 ? images[index - 1] : (images.length === 0 ? undefined : images[index])) : previousState.selectedImage;
+      return { ...previousState, images, selectedImage };
+    });
+
+    return newLength;
+  }, []);
+
+  const removeImagesByRepositoryId = useCallback((repositoryId: string) =>
+  {
+    const remainingImages = stateRef.current.images.filter(anImage => anImage.repositoryId !== repositoryId);
+    const newLength = remainingImages.length;
+
+    setState((previousState) =>
+    {
+      const previousImages = previousState.images;
+      const selectedIndex = previousImages.findIndex(anImage => anImage.id === previousState.selectedImage?.id);
+      const images = previousImages.filter(anImage => anImage.repositoryId !== repositoryId);
+      let selectedImage = previousState.selectedImage;
+
+      if (selectedImage?.repositoryId === repositoryId)
+      {
+        if (images.length === 0)
+        {
+          selectedImage = undefined;
+        }
+        else
+        {
+          const nextCandidate = previousImages.slice(selectedIndex + 1).find(anImage => anImage.repositoryId !== repositoryId);
+          const previousCandidate = selectedIndex > 0
+            ? previousImages.slice(0, selectedIndex).reverse().find(anImage => anImage.repositoryId !== repositoryId)
+            : undefined;
+          selectedImage = nextCandidate ?? previousCandidate ?? images[0];
+        }
+      }
+
       return { ...previousState, images, selectedImage };
     });
 
@@ -143,6 +178,7 @@ export default function useImageNavigation(initialValue?: ImageVisualizerContext
     selectedImage: state.selectedImage,
     updateImage,
     removeImage,
+    removeImagesByRepositoryId,
     hasPrevious,
     hasNext,
     onPrevious,
