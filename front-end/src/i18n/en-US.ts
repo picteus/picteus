@@ -800,6 +800,8 @@ export default {
     allExtensionsDetails: "All extensions",
     noExtensionDetails: " ",
     open: "Open",
+    copy: "Copy",
+    copySuccess: "The image has been copied to your clipboard",
     download: "Download",
     delete: "Delete",
     noCommandsAvailable: "No commands available",

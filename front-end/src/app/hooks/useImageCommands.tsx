@@ -4,7 +4,14 @@ import { randomId } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { IconTopologyRing3 } from "@tabler/icons-react";
 
-import { CommandEntity, ExtensionImageTag, Image, ManifestCapabilityId, SearchOriginNature } from "@picteus/ws-client";
+import {
+  CommandEntity,
+  ExtensionImageTag,
+  Image,
+  ImageFormat,
+  ManifestCapabilityId,
+  SearchOriginNature
+} from "@picteus/ws-client";
 
 import { IconSizeType, ImageCommandIdType, ImageCommandType, ImageOrSummary, ViewMode } from "types";
 import { removeFilePrefixFromUrl, ToastService } from "utils";
@@ -59,6 +66,17 @@ function DeleteImageConfirmationContent({
       />
     </Stack>
   );
+}
+
+function computeBase64Content(blob: Blob): Promise<string>
+{
+  return new Promise<string>((resolve, reject) =>
+  {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }
 
 type UseImageCommandsOptionsType = {
@@ -267,6 +285,43 @@ export default function useImageCommands({
     });
 
     list.push({
+      id: "copy",
+      kind: "core",
+      commandId: "copy",
+      label: t("commands.copy"),
+      subLabel: t("commands.allExtensionsDetails"),
+      isAvailable: true,
+      isLoading: runningCommandId === "copy",
+      icon: (size?: IconSizeType) =>
+      {
+        return computeIcon("copy", size);
+      },
+      execute: async (): Promise<void> =>
+      {
+        setRunningCommandId("copy");
+        try
+        {
+          const mimeType = "image/png";
+          // The PNG blob is provided as a promise, so that the clipboard write is initiated while the user activation is still valid
+          const blobPromise = ImageService.download(image.id, ImageFormat.Png, true).then((blob) =>
+          {
+            return blob.type === mimeType ? blob : new Blob([ blob ], { type: mimeType });
+          });
+          await navigator.clipboard.write([ new ClipboardItem({ [mimeType]: blobPromise }) ]);
+          ToastService.success(t("commands.copySuccess"));
+        }
+        catch (error)
+        {
+          ToastService.apiCallError(error);
+        }
+        finally
+        {
+          setRunningCommandId(null);
+        }
+      }
+    });
+
+    list.push({
       id: "download",
       kind: "core",
       commandId: "download",
@@ -283,13 +338,7 @@ export default function useImageCommands({
         ImageService.download(image.id).then(async blob =>
         {
           const filePath = await pickFileOrDirectory("file", "save", image.name);
-          const base64Content = await new Promise<string>((resolve) =>
-          {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve((reader.result as string).split(",")[1]);
-            reader.readAsDataURL(blob);
-          });
-          await sendCommand("saveFile", { filePath, content: base64Content });
+          await sendCommand("saveFile", { filePath, content: await computeBase64Content(blob) });
           void openExplorer(filePath);
         }).catch(ToastService.apiCallError);
       }
@@ -337,7 +386,7 @@ export default function useImageCommands({
     });
 
     return list;
-  }, [ image, viewMode, hasImageEmbeddingsCapability, runningCommandId, addModal, runCapabilities, confirmAction ]);
+  }, [ image, viewMode, hasImageEmbeddingsCapability, runningCommandId, addModal, runCapabilities, confirmAction, sendCommand ]);
 
   const extensionCommands = useMemo<ImageCommandType[]>(() =>
   {

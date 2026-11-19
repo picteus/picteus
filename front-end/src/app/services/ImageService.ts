@@ -59,9 +59,9 @@ async function get(parameters: ImageApiImageGetRequest): Promise<Image>
   return imageApi.imageGet(parameters);
 }
 
-async function download(id: string): Promise<Blob>
+async function download(id: string, format?: ImageFormat, stripMetadata?: boolean): Promise<Blob>
 {
-  return imageApi.imageDownload({ id });
+  return imageApi.imageDownload({ id, format, stripMetadata });
 }
 
 function getImageSrc(url: string, width?: number, height?: number, render?: ImageResizeRender)

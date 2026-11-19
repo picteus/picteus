@@ -206,7 +206,7 @@ export type ExtensionCommandIdType = {
   commandId: string;
 };
 
-export type CoreImageCommandIdType = "synchronize" | "pin" | "delete" | "closestImages" | "open" | "download";
+export type CoreImageCommandIdType = "synchronize" | "pin" | "delete" | "closestImages" | "open" | "copy" | "download";
 
 export type ImageCommandIdType = CoreImageCommandIdType | ExtensionCommandIdType;
 
