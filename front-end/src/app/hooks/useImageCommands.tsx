@@ -229,7 +229,7 @@ export default function useImageCommands({
       label: t("commands.pin"),
       subLabel: t("commands.allExtensionsDetails"),
       isAvailable: true,
-      isLoading: runningCommandId === "synchronize",
+      isLoading: runningCommandId === "pin",
       icon: (size?: IconSizeType) =>
       {
         return computeIcon("pin", size);
@@ -265,7 +265,7 @@ export default function useImageCommands({
       label: t("commands.open"),
       subLabel: t("commands.allExtensionsDetails"),
       isAvailable: true,
-      isLoading: runningCommandId === "delete",
+      isLoading: runningCommandId === "open",
       icon: (size?: IconSizeType) =>
       {
         return computeIcon("open", size);
@@ -328,7 +328,7 @@ export default function useImageCommands({
       label: t("commands.download"),
       subLabel: t("commands.allExtensionsDetails"),
       isAvailable: true,
-      isLoading: runningCommandId === "delete",
+      isLoading: runningCommandId === "download",
       icon: (size?: IconSizeType) =>
       {
         return computeIcon("download", size);

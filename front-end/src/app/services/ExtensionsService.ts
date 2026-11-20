@@ -31,6 +31,7 @@ import {
   ExtensionState,
   ManifestCapability,
   ManifestCapabilityId,
+  ManifestExtensionCommandSpecification,
   ManifestImageFeaturesCapability,
   ManifestImageTagsCapability
 } from "@picteus/ws-client";
@@ -298,11 +299,26 @@ function computeInstructionCapabilities(extension: Extension): ExtensionInstruct
   };
 }
 
+function findCommandSpecification(
+  specifications: ManifestExtensionCommandSpecification[],
+  language: string
+): ManifestExtensionCommandSpecification | undefined
+{
+  const baseLocale = language.split("-")[0];
+  return (
+    specifications.find(specification => specification.locale === language) ??
+    specifications.find(specification => specification.locale === baseLocale) ??
+    specifications.find(specification => specification.locale === "en") ??
+    specifications[0]
+  );
+}
+
 export default {
   synchronizationCapabilityIds,
   computeCapabilities,
   computeEligibleExtensions,
   computeInstructionCapabilities,
+  findCommandSpecification,
   fetchAll,
   get,
   install,

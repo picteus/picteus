@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ActionIcon, Badge, Card, Group, Stack, Switch, TagsInput, Text, Textarea, Tooltip } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
 
-import { AiModelModality } from "@picteus/ws-client";
+import { AiModelModality, TagsPlaceholder } from "@picteus/ws-client";
 
 
 export type AiModelInstructionFormEntryType =
@@ -163,8 +163,8 @@ export default function ModelInstructionCard({
             {modelEntry.eligibleTagsEnabled && (
               <>
                 <Textarea
-                  label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion")}
-                  placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder")}
+                  label={t("extensionConfiguration.instructions.commonEligibleTagsQuestion", { tags: TagsPlaceholder.Tags })}
+                  placeholder={t("extensionConfiguration.instructions.eligibleTagsQuestionPlaceholder", { tags: TagsPlaceholder.Tags })}
                   value={modelEntry.eligibleTagsQuestion}
                   onChange={(event) =>
                   {

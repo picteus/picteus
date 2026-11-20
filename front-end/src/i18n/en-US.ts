@@ -630,6 +630,7 @@ export default {
     errorLoading: "The marketplace extensions could not be loaded.",
     errorInstall: "The extension could not be installed.",
     errorUninstall: "An error occurred while uninstalling the extension",
+    errorToggleStatus: "An error occurred while changing the extension state.",
     confirmDeleteTitle: "Uninstall extension",
     confirmDeleteMessage: "Are you sure you want to uninstall the extension '{{name}}'?",
     synchronizing: "The extension '{{name}}' is now synchronizing…"

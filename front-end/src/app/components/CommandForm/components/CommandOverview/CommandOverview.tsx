@@ -11,7 +11,7 @@ import {
 import { ManualSection } from "types";
 import { extractMarkdownParagraph, ToastService } from "utils";
 import { useExtension } from "app/hooks";
-import { ImageService } from "app/services";
+import { ExtensionsService, ImageService } from "app/services";
 import { Common, ImagesCollection, ImageThumbnail, Manual, Markdown } from "app/components";
 
 
@@ -38,7 +38,7 @@ function findCommandSpecification(
   extensionAndManual: ExtensionAndManual,
   commandId: string,
   language: string
-): ManifestExtensionCommandSpecification
+): ManifestExtensionCommandSpecification | undefined
 {
   const manifestCommands = extensionAndManual.manifest.instructions.flatMap(
     (instructionGroup) => instructionGroup.commands || []
@@ -50,16 +50,7 @@ function findCommandSpecification(
   {
     return undefined;
   }
-  const locale = language.split("-")[0];
-  return (
-    manifestCommand.specifications.find(
-      (candidateSpecification) => candidateSpecification.locale === locale
-    ) ||
-    manifestCommand.specifications.find(
-      (candidateSpecification) => candidateSpecification.locale === "en"
-    ) ||
-    manifestCommand.specifications[0]
-  );
+  return ExtensionsService.findCommandSpecification(manifestCommand.specifications, language);
 }
 
 type CommandOverviewImagesResultType = {

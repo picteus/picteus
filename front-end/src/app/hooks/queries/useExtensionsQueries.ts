@@ -186,9 +186,7 @@ export function useExtensionCommands(commandEntities: CommandEntity[]): UiExtens
       command: {
         id: entity.command.id,
         withTags: entity.command.on?.withTags,
-        label: entity.command.specifications.find(
-          (specification) => specification.locale === i18n.language
-        )?.label ?? entity.command.id,
+        label: ExtensionsService.findCommandSpecification(entity.command.specifications, i18n.language)?.label ?? entity.command.id,
         form: { parameters: entity.command.parameters },
         iconUri: entity.command.ui?.iconUri
       }

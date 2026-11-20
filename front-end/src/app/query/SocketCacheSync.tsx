@@ -58,14 +58,26 @@ export function SocketCacheSync(): null
           void queryClient.invalidateQueries({ queryKey: queryKeys.images.all });
         }
       }
-      else if (channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_STATE_STARTED || channel === ChannelEnum.EXTENSION_STATE_STOPPED)
+      else if (channel.startsWith(ChannelEnum.EXTENSION_PREFIX))
       {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.configuration });
-      }
-      else if (channel === ChannelEnum.EXTENSION_STATE_STARTED || channel === ChannelEnum.EXTENSION_STATE_STOPPED || channel === ChannelEnum.EXTENSION_PROCESS_STARTED || channel === ChannelEnum.EXTENSION_PROCESS_STOPPED || channel === ChannelEnum.EXTENSION_CONNECTION_STARTED || channel === ChannelEnum.EXTENSION_CONNECTION_STOPPED || channel === ChannelEnum.EXTENSION_ERROR)
-      {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.activities });
+        const isLifecycleEvent = channel === ChannelEnum.EXTENSION_INSTALLED || channel === ChannelEnum.EXTENSION_UPDATED || channel === ChannelEnum.EXTENSION_UNINSTALLED || channel === ChannelEnum.EXTENSION_STATE_STARTED || channel === ChannelEnum.EXTENSION_STATE_STOPPED;
+        const isActivityEvent = channel === ChannelEnum.EXTENSION_STATE_STARTED || channel === ChannelEnum.EXTENSION_STATE_STOPPED || channel === ChannelEnum.EXTENSION_PROCESS_STARTED || channel === ChannelEnum.EXTENSION_PROCESS_STOPPED || channel === ChannelEnum.EXTENSION_CONNECTION_STARTED || channel === ChannelEnum.EXTENSION_CONNECTION_STOPPED || channel === ChannelEnum.EXTENSION_ERROR;
+
+        if (isLifecycleEvent === true)
+        {
+          const extensionId = EventService.computeEventEntityId<string>(event);
+          if (extensionId)
+          {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.detail(extensionId) });
+          }
+          void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.configuration });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.aiModels });
+        }
+        if (isActivityEvent === true)
+        {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.activities });
+        }
       }
     });
 

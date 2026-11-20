@@ -113,7 +113,7 @@ export default function ImageEmbeddingsCard({
               <Stack gap="sm">
                 {extensionEmbeddings.embeddings.map((embedding) =>
                 {
-                  const modelDisplayName = aiModels.find((model) => model.extensionId === embedding.id && model.technicalId === extensionEmbeddings.id);
+                  const modelDisplayName = aiModels.find(model => model.extensionId === extensionEmbeddings.id && model.technicalId === embedding.id);
                   return (
                     <Box key={`${extensionEmbeddings.id}-${embedding.id}`}>
                       <ExtensionItemHeader

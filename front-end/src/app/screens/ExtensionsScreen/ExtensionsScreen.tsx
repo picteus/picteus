@@ -53,6 +53,15 @@ export default function ExtensionsScreen()
   const [ selectedExtension, setSelectedExtension ] = useState<Extension>();
   const [ viewMode, setViewMode ] = useState<"table" | "card">("table");
 
+  const activeSelectedExtension = useMemo<Extension | undefined>(() =>
+  {
+    if (selectedExtension === undefined)
+    {
+      return undefined;
+    }
+    return extensions.find(extension => extension.manifest.id === selectedExtension.manifest.id) ?? selectedExtension;
+  }, [ extensions, selectedExtension ]);
+
   useEffect(() =>
   {
     if (marketplaceError)
@@ -330,13 +339,13 @@ export default function ExtensionsScreen()
         {viewMode === "table" ? renderTable() : renderCard()}
       </Stack>
       <Drawer
-        opened={selectedExtension !== undefined}
+        opened={activeSelectedExtension !== undefined}
         onClose={() => setSelectedExtension(undefined)}
         title={
-          selectedExtension && (
+          activeSelectedExtension && (
             <ExtensionTop
-              extension={selectedExtension}
-              activity={perExtensionIdActivities[selectedExtension.manifest.id]}
+              extension={activeSelectedExtension}
+              activity={perExtensionIdActivities[activeSelectedExtension.manifest.id]}
               openAddOrUpdateExtensionModal={openInstallOrUpdateExtensionModal}
               openExtensionConfiguration={openExtensionConfiguration}
               onUninstalled={() =>
@@ -349,7 +358,7 @@ export default function ExtensionsScreen()
         }
         size="xl"
       >
-        {selectedExtension && <ExtensionDetail extension={selectedExtension}/>}
+        {activeSelectedExtension && <ExtensionDetail extension={activeSelectedExtension}/>}
       </Drawer>
     </Container>
   );

@@ -13,6 +13,7 @@ import { IconLibraryPhoto, IconPhoto, IconServer } from "@tabler/icons-react";
 import { ManualSection } from "types";
 import { extractMarkdownParagraph } from "utils";
 import { useExtension } from "app/hooks";
+import { ExtensionsService } from "app/services";
 import { CommandIcon, ExtensionCapability, FieldValue, Manual, Markdown, NoValue } from "app/components";
 
 
@@ -33,15 +34,7 @@ export default function ExtensionDetail({ extension }: ExtensionDetailProps)
 
   function getCommandSpecification(command: ManifestExtensionCommand): Omit<ManifestExtensionCommandSpecification, "locale">
   {
-    const locale = i18n.language.split("-")[0];
-    const specification =
-      command.specifications.find(
-        (candidateSpecification: ManifestExtensionCommandSpecification) => candidateSpecification.locale === locale
-      ) ||
-      command.specifications.find(
-        (candidateSpecification: ManifestExtensionCommandSpecification) => candidateSpecification.locale === "en"
-      );
-    return specification || { label: command.id, description: "" };
+    return ExtensionsService.findCommandSpecification(command.specifications, i18n.language) ?? { label: command.id, description: "" };
   }
 
   function getEntityIcon(entity: CommandEntity | undefined): ReactNode
