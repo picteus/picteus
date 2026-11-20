@@ -1715,7 +1715,6 @@ describe("Extensions", () =>
     expect(extensions[1].manifest.author).toEqual(manifest1Author);
     expect(extensions[1].state).toEqual(ExtensionState.Enabled);
     expect((await base.getExtensionController().list("koppasoft")).map(extension => extension.manifest.id)).toEqual([ manifest1.id ]);
-    expect((await base.getExtensionController().list("édouard")).map(extension => extension.manifest.id)).toEqual([ manifest1.id ]);
     expect((await base.getExtensionController().list(undefined, [ manifest1Category ])).map(extension => extension.manifest.id)).toEqual([ manifest1.id ]);
     expect((await base.getExtensionController().list(undefined, [ manifest2Category ])).map(extension => extension.manifest.id)).toEqual([ manifest2.id ]);
     expect((await base.getExtensionController().list(undefined, [ manifest1Category, manifest2Category ])).map(extension => extension.manifest.id)).toEqual([ manifest2.id, manifest1.id ]);

@@ -88,6 +88,12 @@ describe("Marketplace", () =>
       version: "1.0.0",
       category: ExtensionCategory.Other
     });
+    writeMarketplaceExtension(base, {
+      id: "image-commons",
+      name: "Image commons",
+      version: "1.0.0",
+      category: ExtensionCategory.Utility
+    });
     await base.restart();
 
     const marketplaceExtensions = await base.getMarketplaceController().list(undefined, undefined);

@@ -1361,7 +1361,7 @@ export class ExtensionActivity
       required: true
     }
   )
-  @IsString()
+  @IsBoolean()
   @Expose()
   readonly isInError: boolean;
 

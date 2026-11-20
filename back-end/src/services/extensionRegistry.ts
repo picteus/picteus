@@ -168,7 +168,7 @@ export class ExtensionRegistry
       const archive = fs.readFileSync(archiveFilePath);
       const manifest = await new ExtensionArchiveReader(archive).extractManifest();
       const shouldBePreinstalled = ExtensionRegistry.preInstalledExtensionIds.has(manifest.id);
-      if ((withPreinstalled === true && shouldBePreinstalled === false) || (withPreinstalled === true && shouldBePreinstalled === false))
+      if (withPreinstalled !== shouldBePreinstalled)
       {
         continue;
       }
