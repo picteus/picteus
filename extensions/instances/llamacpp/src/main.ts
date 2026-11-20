@@ -165,7 +165,14 @@ class LlamaCppExtension extends PicteusExtension
       const isServerReady = await this.verifyLlamaServer(communicator, true);
       if (isServerReady === true)
       {
-        await this.sendAvailableAiModels(communicator);
+        try
+        {
+          await this.sendAvailableAiModels(communicator);
+        }
+        catch (error: unknown)
+        {
+          communicator.sendLog(`Could not fetch the models dynamically from the llama.cpp server. Reason: '${error instanceof Error ? error.message : String(error)}'`, "warn");
+        }
       }
     }
   }

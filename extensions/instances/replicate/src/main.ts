@@ -483,16 +483,15 @@ class ReplicateExtension extends PicteusExtension
     this.apiToken = value["apiToken"]!;
   }
 
-  private async ensureRepository(communicator: Communicator): Promise<void>
+  private async ensureRepository(communicator?: Communicator): Promise<void>
   {
     const name = PicteusExtension.getManifest().name;
     this.repository = await this.getRepositoryApi().repositoryEnsure({
       extensionId: this.extensionId,
       name,
-      comment: `The ${name} repository`,
-      watch: true
+      comment: `The ${name} repository`
     });
-    communicator.sendLog(`The repository '${name}' is available`, "info");
+    communicator?.sendLog(`The repository '${name}' is available`, "info");
   }
 
 }

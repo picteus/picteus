@@ -519,33 +519,27 @@ class GeminiExtension extends PicteusExtension
     }
   }
 
-  private async sendAvailableAiModels(communicator?: Communicator): Promise<void>
+  private async sendAvailableAiModels(): Promise<void>
   {
     if (this.geminiClient !== undefined)
     {
       const modelDetails = await this.geminiClient.getAvailableModelDetails();
-      const retrievedModels: AiModel[] = modelDetails.map(
-        (detail) =>
+      const retrievedModels: AiModel[] = modelDetails.map((detail) =>
         {
           return {
             technicalId: detail.id,
-            name: detail.name ?? detail.id,
+            name: detail.name,
             comment: detail.comment,
             modalities: [ AiModelModality.ImageCaptions, AiModelModality.ImageEligibleTags ]
           };
         }
       );
-
-      if (retrievedModels.length > 0)
-      {
-        await this.getExtensionApi().extensionSetAiModels(
-          {
-            id: this.extensionId,
-            aiModel: retrievedModels
-          }
-        );
-        communicator?.sendLog(`Registered ${retrievedModels.length} Gemini AI model(s) from the Gemini API`, "info");
-      }
+      await this.getExtensionApi().extensionSetAiModels(
+        {
+          id: this.extensionId,
+          aiModel: retrievedModels
+        }
+      );
     }
   }
 
@@ -610,12 +604,11 @@ class GeminiExtension extends PicteusExtension
 
     try
     {
-      await this.sendAvailableAiModels(communicator);
+      await this.sendAvailableAiModels();
     }
     catch (error: unknown)
     {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      communicator?.sendLog(`Could not fetch the models dynamically from the Gemini API. Reason: '${errorMessage}'`, "warn");
+      communicator?.sendLog(`Could not fetch the models dynamically from the Gemini API. Reason: '${error instanceof Error ? error.message : String(error)}'`, "warn");
     }
   }
 
@@ -626,8 +619,7 @@ class GeminiExtension extends PicteusExtension
       {
         extensionId: this.extensionId,
         name: name,
-        comment: `The ${name} repository`,
-        watch: true
+        comment: `The ${name} repository`
       }
     );
     communicator?.sendLog(`The repository '${name}' is available`, "info");

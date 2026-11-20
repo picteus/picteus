@@ -3,7 +3,7 @@
   "id": "freepik",
   "version": "1.6.0",
   "name": "Freepik",
-  "description": "Accesses to all sorts of Google Gemini image-related features.",
+  "description": "Accesses to Magnific image upscaling and expansion features.",
   "categories": [
     "capture",
     "generation"
@@ -151,7 +151,6 @@
                 "type": "string",
                 "title": "Prompt",
                 "description": "The additional prompt to add.",
-                "default": null,
                 "ui": {
                   "widget": "textarea"
                 }

@@ -320,8 +320,7 @@ class CivitaiExtension extends PicteusExtension
       {
         extensionId: this.extensionId,
         name: name,
-        comment: `The ${name} repository`,
-        watch: true
+        comment: `The ${name} repository`
       }
     );
     communicator?.sendLog(`The repository '${name}' is available`, "info");

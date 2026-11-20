@@ -303,7 +303,7 @@ class FreepikExtension extends PicteusExtension
                 value: JSON.stringify(recipe)
               }
             ];
-          if (prompt !== undefined)
+          if (generationParameters.prompt !== undefined && generationParameters.prompt.length > 0)
           {
             imageFeature.push(
               {
@@ -335,7 +335,7 @@ class FreepikExtension extends PicteusExtension
       const blob = await this.getImageApi().imageDownload({ id: imageId, stripMetadata: true });
       const buffer = Buffer.from(await blob.arrayBuffer());
       const generationParameters: FreepikGenerationParameters = invoker.computeGenerationParameters(parameters);
-      const extractGeneratedUrls = (response: GetStyleTransferTaskStatus200Response): string[] =>
+      const extractGeneratedUrls = (response: GetStyleTransferTaskStatus200Response): string[] | null | undefined =>
       {
         const status = response.data.status;
         if (status !== "COMPLETED" && status !== "FAILED")
@@ -350,33 +350,19 @@ class FreepikExtension extends PicteusExtension
 
       communicator.sendLog(`Running a processing via Freepik on the image with id '${imageId}'`, "info");
       const postResponse: GetStyleTransferTaskStatus200Response = await invoker.post(generationParameters, buffer);
+      let urls = extractGeneratedUrls(postResponse);
+      const taskId = postResponse.data.taskId;
+      while (urls === undefined)
       {
-        const urls = extractGeneratedUrls(postResponse);
-        const taskId = postResponse.data.taskId;
-        if (urls !== undefined)
+        await new Promise<void>(resolve =>
         {
-          await processImageUrls(imageId, taskId, generationParameters, urls);
-        }
-        else
-        {
-
-          const checkAndProcess = async () =>
-          {
-            communicator.sendLog(`Checking for the Freepik processing with id '${taskId}'`, "debug");
-            const idGetResponse: GetStyleTransferTaskStatus200Response = await invoker.idGet(taskId);
-            const urls = extractGeneratedUrls(idGetResponse);
-            if (urls !== undefined)
-            {
-              await processImageUrls(imageId, taskId, generationParameters, urls);
-            }
-            else
-            {
-              setTimeout(checkAndProcess, 1_000);
-            }
-          };
-          await checkAndProcess();
-        }
+          setTimeout(resolve, 1_000);
+        });
+        communicator.sendLog(`Checking for the Freepik processing with id '${taskId}'`, "debug");
+        const idGetResponse: GetStyleTransferTaskStatus200Response = await invoker.idGet(taskId);
+        urls = extractGeneratedUrls(idGetResponse);
       }
+      await processImageUrls(imageId, taskId, generationParameters, urls);
     }
   }
 
@@ -390,16 +376,15 @@ class FreepikExtension extends PicteusExtension
     this.freepikApiKey = value["apiKey"]!;
   }
 
-  private async ensureRepository(communicator: Communicator): Promise<void>
+  private async ensureRepository(communicator?: Communicator): Promise<void>
   {
     const name = PicteusExtension.getManifest().name;
     this.repository = await this.getRepositoryApi().repositoryEnsure({
       extensionId: this.extensionId,
       name,
-      comment: `The ${name} repository`,
-      watch: true
+      comment: `The ${name} repository`
     });
-    communicator.sendLog(`The repository '${name}' is available`, "info");
+    communicator?.sendLog(`The repository '${name}' is available`, "info");
   };
 }
 

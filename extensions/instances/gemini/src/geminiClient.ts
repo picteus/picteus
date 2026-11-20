@@ -119,8 +119,8 @@ export interface BaseModelDetail
 {
 
   readonly id: string;
-  readonly name?: string;
-  readonly comment?: string;
+  readonly name: string;
+  readonly comment: string;
 
 }
 
@@ -198,9 +198,9 @@ export class GeminiClient
 
       return retrievedModels;
     }
-    catch
+    catch (error: unknown)
     {
-      return [];
+      throw this.createGeminiError(error, "Failed to retrieve available models from the Gemini API");
     }
   }
 
@@ -520,6 +520,7 @@ export class GeminiClient
       "gemini-1.5",
       "gemini-2.0",
       "gemini-2.5",
+      "gemini-3",
       "gemini-pro",
       "gemini-flash"
     ];

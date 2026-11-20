@@ -149,7 +149,14 @@ class OllamaExtension extends PicteusExtension
       const isServerReady = await this.verifyOllamaServer(communicator, true);
       if (isServerReady === true)
       {
-        await this.sendAvailableAiModels();
+        try
+        {
+          await this.sendAvailableAiModels();
+        }
+        catch (error: unknown)
+        {
+          communicator?.sendLog(`Could not fetch the models dynamically from the Ollama server. Reason: '${error instanceof Error ? error.message : String(error)}'`, "warn");
+        }
       }
     }
   }

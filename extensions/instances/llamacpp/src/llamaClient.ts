@@ -870,9 +870,9 @@ export class LlamaClient
       const modelsPage = await this.openai.models.list();
       return modelsPage.data.map((item) => LlamaClient.buildServerModelDetail(item.id));
     }
-    catch
+    catch (error: unknown)
     {
-      return [];
+      throw new Error(`Failed to retrieve available models from the llama.cpp server: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

@@ -127,22 +127,25 @@ class AnthropicExtension extends PicteusExtension
       }
     }
 
-    await this.getImageApi().imageSetFeatures(
-      {
-        id: imageId,
-        extensionId: this.extensionId,
-        imageFeature: generatedFeatures.map((feature) =>
-          {
-            return {
-              type: ImageFeatureType.Caption,
-              format: ImageFeatureFormat.String,
-              name: feature.name,
-              value: feature.value
-            };
-          }
-        )
-      }
-    );
+    if (generatedFeatures.length > 0)
+    {
+      await this.getImageApi().imageEnsureFeatures(
+        {
+          id: imageId,
+          extensionId: this.extensionId,
+          imageFeature: generatedFeatures.map((feature) =>
+            {
+              return {
+                type: ImageFeatureType.Caption,
+                format: ImageFeatureFormat.String,
+                name: feature.name,
+                value: feature.value
+              };
+            }
+          )
+        }
+      );
+    }
   }
 
   private async setup(communicator: Communicator | undefined, value: SettingsValue): Promise<void>
