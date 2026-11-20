@@ -1,10 +1,11 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "${id}",
   "version": "${version}",
   "name": "${name}",
   "description": "${description}",
   "categories": [],
+  "author": "${author}",
   "runtimes": [
     {
       "environment": "python"

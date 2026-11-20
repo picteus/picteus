@@ -757,6 +757,7 @@ export class Base extends Core
         name: "Extension",
         description: "An extension for testing.",
         categories: [ ExtensionCategory.Other ],
+        author: "Author",
         runtimes: [ { environment: ManifestRuntimeEnvironment.Node } ],
         instructions: [
           {
@@ -954,6 +955,8 @@ export class ExtensionBuilder extends ExtensionBasisBuilder
 
   readonly categories: ExtensionCategory[];
 
+  readonly author: string;
+
   readonly extensionDirectoryPath: string;
 
   private readonly touchedFileName = "touched.txt";
@@ -970,7 +973,7 @@ export class ExtensionBuilder extends ExtensionBasisBuilder
 
   readonly errorListener: ListenerMock;
 
-  constructor(private readonly base: Base, isPrepareDirectory?: boolean, startedFileName?: string, extensionId?: string, extensionName?: string, extensionVersion?: string, categories: ExtensionCategory[] = [ ExtensionCategory.Other ])
+  constructor(private readonly base: Base, isPrepareDirectory?: boolean, startedFileName?: string, extensionId?: string, extensionName?: string, extensionVersion?: string, categories: ExtensionCategory[] = [ ExtensionCategory.Other ], author: string = "Author")
   {
     super();
     this.extensionId = extensionId ?? (`id-${Math.round(Math.random() * 1_000_000)}`);
@@ -978,6 +981,7 @@ export class ExtensionBuilder extends ExtensionBasisBuilder
     this.extensionName = extensionName ?? "Test";
     this.extensionVersion = extensionVersion ?? `1.${Math.round(Math.random() * 10)}.0`;
     this.categories = categories;
+    this.author = author;
     this.extensionDirectoryPath = path.join(paths.installedExtensionsDirectoryPath, this.extensionId);
     this.touchedFilePath = path.join(this.extensionDirectoryPath, this.touchedFileName);
     this.startedFileName = startedFileName === undefined ? "started.txt" : startedFileName;
@@ -1083,6 +1087,7 @@ export class ExtensionBuilder extends ExtensionBasisBuilder
       name: extensionName,
       description: extensionDescription,
       categories: this.categories,
+      author: this.author,
       runtimes: [ { environment: ManifestRuntimeEnvironment.Node } ],
       instructions,
       settings,

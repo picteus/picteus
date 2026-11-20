@@ -73,7 +73,7 @@ export class MarketplaceService implements OnModuleInit
       parametersChecker.throwBadParameter("category", undefined, "it should contain at least one item");
     }
     const normalizedSearch = search?.trim().toLocaleLowerCase();
-    return Array.from(this.perExtensionIdMarketplaceArchiveMap.values()).filter(archive => normalizedSearch === undefined || normalizedSearch.length === 0 || [ archive.manifest.id, archive.manifest.name, archive.manifest.description ].some(value => value.toLocaleLowerCase().includes(normalizedSearch))).filter(archive => categories === undefined || archive.manifest.categories.some(category => categories.includes(category))).map(archive => plainToInstanceViaJSON(MarketplaceExtension, {
+    return Array.from(this.perExtensionIdMarketplaceArchiveMap.values()).filter(archive => normalizedSearch === undefined || normalizedSearch.length === 0 || [ archive.manifest.id, archive.manifest.name, archive.manifest.description, archive.manifest.author ].some(value => value.toLocaleLowerCase().includes(normalizedSearch))).filter(archive => categories === undefined || archive.manifest.categories.some(category => categories.includes(category))).map(archive => plainToInstanceViaJSON(MarketplaceExtension, {
       manifest: archive.manifest,
       icon: archive.icon
     })).sort((firstExtension, secondExtension) => firstExtension.manifest.name.localeCompare(secondExtension.manifest.name) || firstExtension.manifest.id.localeCompare(secondExtension.manifest.id));

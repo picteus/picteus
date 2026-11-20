@@ -336,7 +336,7 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "A case-insensitive search applied to the extension identifier, name, and description",
+            "description": "A case-insensitive search applied to the extension identifier, name, description, and author",
             "schema": {
               "minLength": 1,
               "maxLength": 128,
@@ -1484,7 +1484,7 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "A case-insensitive search applied to the extension identifier, name, and description",
+            "description": "A case-insensitive search applied to the extension identifier, name, description, and author",
             "schema": {
               "minLength": 1,
               "maxLength": 128,
@@ -5717,6 +5717,13 @@
               "$ref": "#/components/schemas/ExtensionCategory"
             }
           },
+          "author": {
+            "type": "string",
+            "description": "The author of the extension",
+            "minLength": 1,
+            "maxLength": 128,
+            "example": "John Doe"
+          },
           "runtimes": {
             "description": "The required runtime environments",
             "type": "array",
@@ -5766,6 +5773,7 @@
           "name",
           "description",
           "categories",
+          "author",
           "runtimes",
           "instructions",
           "settings"

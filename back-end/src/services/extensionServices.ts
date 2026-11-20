@@ -736,7 +736,7 @@ export class ExtensionService
       parametersChecker.throwBadParameter("category", undefined, "it should contain at least one item");
     }
     const normalizedSearch = search?.trim().toLocaleLowerCase();
-    return (await this.extensionRegistry.list(true, true)).filter(manifest => (normalizedSearch === undefined || normalizedSearch.length === 0 || [ manifest.id, manifest.name, manifest.description ].some(value => value.toLocaleLowerCase().includes(normalizedSearch))) && (categories === undefined || manifest.categories.some(category => categories.includes(category)))).map((extendedManifest =>
+    return (await this.extensionRegistry.list(true, true)).filter(manifest => (normalizedSearch === undefined || normalizedSearch.length === 0 || [ manifest.id, manifest.name, manifest.description, manifest.author ].some(value => value.toLocaleLowerCase().includes(normalizedSearch))) && (categories === undefined || manifest.categories.some(category => categories.includes(category)))).map((extendedManifest =>
     {
       // We need to remove the "directoryPath" property from the extended manifest
       const { directoryPath, ...manifest } = extendedManifest;

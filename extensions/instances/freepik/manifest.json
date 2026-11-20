@@ -1,5 +1,5 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "freepik",
   "version": "1.6.0",
   "name": "Freepik",
@@ -8,6 +8,7 @@
     "capture",
     "generation"
   ],
+  "author": "KoppaSoft",
   "runtimes": [
     {
       "environment": "node"

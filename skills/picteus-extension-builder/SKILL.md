@@ -20,7 +20,7 @@ Focus on authoring valid, idiomatic extension source code (`src/main.ts` or `mai
 This skill bundles the complete Picteus extension reference documentation in `./references/`. Consult the relevant local reference file before writing or modifying contracts rather than duplicating or guessing schemas:
 
 - **[`references/overview.md`](./references/overview.md)**: extension anatomy, directory structure, exact `package.json`, `tsconfig.json`, `requirements.txt`, `src/main.ts`, and `main.py` starter templates, and best practices ;
-- **[`references/manifest.md`](./references/manifest.md)**: complete `manifest-v5.schema.json` contract, required properties, `execution` macros (`${node}`, `${venvPython}`), subscribed `events`, `capabilities` — including `details` markers —, `throttlingPolicies`, `commands`, `settings`, and `ui` ;
+- **[`references/manifest.md`](./references/manifest.md)**: complete `manifest-v6.schema.json` contract, required properties (including `author`), `execution` macros (`${node}`, `${venvPython}`), subscribed `events`, `capabilities` — including `details` markers —, `throttlingPolicies`, `commands`, `settings`, and `ui` ;
 - **[`references/class.md`](./references/class.md)**: `PicteusExtension` lifecycle methods, domain event handler hooks, `Communicator` logging and entity scoping, helper APIs, Python `run_in_executor`, and error types (`CommandError`, `InstructionReturnedError`, `ApiCallError`) ;
 - **[`references/api.md`](./references/api.md)**: all 7 embedded OpenAPI REST client getters (`getImageApi`, `getRepositoryApi`, `getCollectionApi`, `getExtensionApi`, `getApiSecretApi`, `getImageAttachmentApi`, `getMiscellaneousApi`) with TypeScript and Python examples for searching, downloading and converting images, storing generated images, and setting tags and features ;
 - **[`references/intents.md`](./references/intents.md)**: complete guide and generated TypeSpec model reference for front-end and back-end intents (`DialogIntent`, `FormIntent`, `UiIntent`, `ImagesIntent`, `ToastIntent`, `NotificationIntent`, `ShowIntent`, `OpenBrowserIntent`, `ActionIntent`, `ProcessCommandIntent`, `ReadFileIntent`, `WriteFileIntent`, `ServeBundleIntent`) ;
@@ -56,8 +56,8 @@ Do **not** override `onEvent` / `on_event` manually. The `PicteusExtension` base
 ## 3. Critical rules and conventions
 
 ### Manifest rules (`manifest.json`)
-1. **Schema v5**: always set `"$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json"` ;
-2. **Required top-level fields**: `id` — matching regex `^[a-z0-9A-Z-_.]{1,32}$` —, `version` — SemVer —, `name`, `description`, `categories` — non-empty array of `"capture"`, `"generation"`, `"enrichment"`, `"integration"`, `"utility"`, `"other"` —, `runtimes`, `instructions`, and `settings` — use `{"type": "object", "properties": {}}` if the extension has no settings ;
+1. **Schema v6**: always set `"$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json"` ;
+2. **Required top-level fields**: `id` — matching regex `^[a-z0-9A-Z-_.]{1,32}$` —, `version` — SemVer —, `name`, `description`, `categories` — non-empty array of `"capture"`, `"generation"`, `"enrichment"`, `"integration"`, `"utility"`, `"other"` —, `author` — 1–128 chars —, `runtimes`, `instructions`, and `settings` — use `{"type": "object", "properties": {}}` if the extension has no settings (optional top-level field: `ui`) ;
 3. **Directory name matching**: for unpacked extensions, the extension directory name **must strictly match `id`** — case-sensitive ;
 4. **Execution command**:
    - **Node.js / TypeScript**: `"runtimes": [{ "environment": "node" }]` and `"execution": { "executable": "${node}", "arguments": ["./dist/main.js"] }` ;
@@ -96,7 +96,7 @@ Do **not** override `onEvent` / `on_event` manually. The `PicteusExtension` base
 2. **Consult `./references/`**:
    - Read [`references/manifest.md`](./references/manifest.md) and [`references/class.md`](./references/class.md) ;
    - Read [`references/api.md`](./references/api.md) when calling back-end endpoints, [`references/intents.md`](./references/intents.md) when launching UI dialogs, forms, or toasts, and [`references/viewkit.md`](./references/viewkit.md) when building `ImageFeatureFormat.Ui` features.
-3. **Author or update `manifest.json`**: ensure `id`, `categories`, `runtimes`, `instructions` (`execution`, `events`, `capabilities`, `throttlingPolicies`, `commands`), and `settings` strictly match the v5 contract and the extension code ;
+3. **Author or update `manifest.json`**: ensure `id`, `categories`, `author`, `runtimes`, `instructions` (`execution`, `events`, `capabilities`, `throttlingPolicies`, `commands`), and `settings` strictly match the v6 contract and the extension code ;
 4. **Implement the `PicteusExtension` subclass**: override the specific domain hooks in `src/main.ts` or `main.py` ;
 5. **Document in `MANUAL.md`**: following [`references/manual.md`](./references/manual.md), document `# Summary`, `# Prerequisites`, `# Settings`, and each command under `# Commands` and `## <commandId>` ;
 6. **Verify and trigger HMR**:

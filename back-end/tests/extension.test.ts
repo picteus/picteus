@@ -270,6 +270,30 @@ describe("Extensions", () =>
         await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
       }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'description' is invalid, because description should not be null or undefined", BAD_REQUEST, base.badParameterCode));
     }
+    {
+      manifest.description = "An assessment extension.";
+      manifest.categories = [ ExtensionCategory.Other ];
+      const zip = new AdmZip();
+      zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
+      await expect(async () =>
+      {
+        await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
+      }).rejects.toThrow(new ServiceError("The manifest 'manifest.json' file does not respect the expected schema: the property 'author' is invalid, because author should not be null or undefined", BAD_REQUEST, base.badParameterCode));
+    }
+    {
+      for (const invalidAuthor of [ "", "a".repeat(129), 123 ])
+      {
+        const zip = new AdmZip();
+        zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify({
+          ...manifest,
+          author: invalidAuthor
+        }), "utf8"));
+        await expect(async () =>
+        {
+          await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
+        }).rejects.toThrow(/The manifest 'manifest\.json' file does not respect the expected schema: the property 'author' is invalid/);
+      }
+    }
   });
 
   test("install with '${node}'", async () =>
@@ -1666,10 +1690,11 @@ describe("Extensions", () =>
   {
     const manifest1Category = ExtensionCategory.Generation;
     const manifest2Category = ExtensionCategory.Other;
+    const manifest1Author = "KoppaSoft";
     let manifest1: Manifest;
     let manifest2: Manifest;
     {
-      const manifest = new ExtensionBuilder(base, false, undefined, "id2", "B", undefined, [ manifest1Category ]).computeSimpleManifest();
+      const manifest = new ExtensionBuilder(base, false, undefined, "id2", "B", undefined, [ manifest1Category ], manifest1Author).computeSimpleManifest();
       const zip = new AdmZip();
       zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
       await base.getExtensionController().install(ExtensionState.Enabled, false, zip.toBuffer());
@@ -1684,9 +1709,13 @@ describe("Extensions", () =>
     }
     const extensions = await base.getExtensionController().list();
     expect(extensions[0].manifest.name).toEqual(manifest2.name);
+    expect(extensions[0].manifest.author).toEqual(manifest2.author);
     expect(extensions[0].state).toEqual(ExtensionState.Enabled);
     expect(extensions[1].manifest.name).toEqual(manifest1.name);
+    expect(extensions[1].manifest.author).toEqual(manifest1Author);
     expect(extensions[1].state).toEqual(ExtensionState.Enabled);
+    expect((await base.getExtensionController().list("koppasoft")).map(extension => extension.manifest.id)).toEqual([ manifest1.id ]);
+    expect((await base.getExtensionController().list("édouard")).map(extension => extension.manifest.id)).toEqual([ manifest1.id ]);
     expect((await base.getExtensionController().list(undefined, [ manifest1Category ])).map(extension => extension.manifest.id)).toEqual([ manifest1.id ]);
     expect((await base.getExtensionController().list(undefined, [ manifest2Category ])).map(extension => extension.manifest.id)).toEqual([ manifest2.id ]);
     expect((await base.getExtensionController().list(undefined, [ manifest1Category, manifest2Category ])).map(extension => extension.manifest.id)).toEqual([ manifest2.id, manifest1.id ]);
@@ -2284,6 +2313,7 @@ describe("Extensions", () =>
     expect(manifest.name).toBe(options.name);
     expect(manifest.version).toBe(ExtensionGenerator.version);
     expect(manifest.description).toBe(options.description);
+    expect(manifest.author).toBe(options.author);
   });
 
   test.each(testEnvironmentAndPublicSdkCartesianProduct)("generate for %p environment with public SDK=%p", async (environment: ManifestRuntimeEnvironment, withPublicSdk: boolean) =>
@@ -2304,6 +2334,7 @@ describe("Extensions", () =>
       expect(manifest.name).toBe(options.name);
       expect(manifest.version).toBe(ExtensionGenerator.version);
       expect(manifest.description).toBe(options.description);
+      expect(manifest.author).toBe(options.author);
     }
     const sdkVersion = (await ExtensionRegistry.getSdkInfo(environment)).version;
     const findArchiveEntry = (fileName: string): AdmZip.IZipEntry | undefined =>

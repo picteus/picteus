@@ -1,5 +1,5 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "embeddings",
   "version": "0.9.0",
   "name": "Embeddings",
@@ -7,6 +7,7 @@
   "categories": [
     "enrichment"
   ],
+  "author": "KoppaSoft",
   "runtimes": [
     {
       "environment": "python"

@@ -48,6 +48,12 @@
         "description": "The categories the extension belongs to"
       }
     },
+    "author": {
+      "type": "string",
+      "description": "The author of the extension",
+      "minLength": 1,
+      "maxLength": 128
+    },
     "runtimes": {
       "description": "The required runtime environments",
       "type": "array",
@@ -540,6 +546,7 @@
     "name",
     "description",
     "categories",
+    "author",
     "runtimes",
     "instructions",
     "settings"

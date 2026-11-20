@@ -1024,13 +1024,14 @@ export enum ExtensionCategory
 class ExtensionBasis
 {
 
-  constructor(id: string, version: string, name: string, description: string, categories: ExtensionCategory[])
+  constructor(id: string, version: string, name: string, description: string, categories: ExtensionCategory[], author: string)
   {
     this.id = id;
     this.version = version;
     this.name = name;
     this.description = description;
     this.categories = categories;
+    this.author = author;
   }
 
   @ApiProperty(
@@ -1123,15 +1124,33 @@ class ExtensionBasis
   @Expose()
   readonly categories: ExtensionCategory[];
 
+  @ApiProperty(
+    {
+      description: "The author of the extension",
+      type: String,
+      minLength: 1,
+      maxLength: FieldLengths.l128,
+      required: true,
+      example: "John Doe"
+    }
+  )
+  @MinLength(1)
+  @MaxLength(FieldLengths.l128)
+  @IsDefined()
+  @NotEquals(null)
+  @IsString()
+  @Expose()
+  readonly author: string;
+
 }
 
 @ApiSchema({ description: "The manifest of an extension" })
 export class Manifest extends ExtensionBasis
 {
 
-  constructor(id: string, version: string, name: string, description: string, categories: ExtensionCategory[], runtimes: ManifestRuntime[], instructions: ManifestInstructions[], settings: Object, ui: ManifestUserInterface)
+  constructor(id: string, version: string, name: string, description: string, categories: ExtensionCategory[], author: string, runtimes: ManifestRuntime[], instructions: ManifestInstructions[], settings: Object, ui?: ManifestUserInterface)
   {
-    super(id, version, name, description, categories);
+    super(id, version, name, description, categories, author);
     this.runtimes = runtimes;
     this.instructions = instructions;
     this.settings = settings;
@@ -1212,29 +1231,10 @@ export class ExtensionGenerationOptions extends ExtensionBasis
 
   constructor(id: string, version: string, name: string, description: string, categories: ExtensionCategory[], author: string, environment: ManifestRuntimeEnvironment, sdkVersion: string | undefined)
   {
-    super(id, version, name, description, categories);
-    this.author = author;
+    super(id, version, name, description, categories, author);
     this.environment = environment;
     this.sdkVersion = sdkVersion;
   }
-
-  @ApiProperty(
-    {
-      description: "The author of the extension",
-      type: String,
-      minLength: 1,
-      maxLength: FieldLengths.l128,
-      required: true,
-      example: "John Doe"
-    }
-  )
-  @MinLength(1)
-  @MaxLength(FieldLengths.l128)
-  @IsDefined()
-  @NotEquals(null)
-  @IsString()
-  @Expose()
-  readonly author: string;
 
   @ApiProperty(
     {

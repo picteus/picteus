@@ -13,7 +13,7 @@ The marketplace endpoints let clients discover, inspect, install, and update pre
 
 `GET /marketplace/list` returns the extensions that match the supplied filters:
 
-- `search` is a case-insensitive substring search across the extension identifier, name, and description.
+- `search` is a case-insensitive substring search across the extension identifier, name, description, and author.
 - `category` accepts one or more extension categories: `capture`, `generation`, `enrichment`, `integration`, `utility`, or `other`. When multiple categories are supplied, an extension is included if it belongs to any of them.
 
 Results include each extension's manifest and, when available, its icon as an SVG or PNG data URI. Use `GET /marketplace/{id}/get` to retrieve the full details, including the optional manual instructions.

@@ -45,11 +45,12 @@ describe("Marketplace", () =>
     name: string;
     version: string;
     category: ExtensionCategory;
+    author?: string;
     manual?: string;
     icon?: { name: string; buffer: Buffer };
   }): Manifest
   {
-    const builder = new ExtensionBuilder(base, false, undefined, options.id, options.name, options.version, [ options.category ]);
+    const builder = new ExtensionBuilder(base, false, undefined, options.id, options.name, options.version, [ options.category ], options.author);
     const manifest = builder.computeSimpleManifest();
     const zip = new AdmZip();
     zip.addFile(ExtensionRegistry.manifestFileName, Buffer.from(stringify(manifest), "utf8"));
@@ -70,12 +71,14 @@ describe("Marketplace", () =>
   {
     const searchToken1 = "Generation";
     const searchToken2 = `Marketplace test manual`;
+    const authorToken = "KoppaSoft";
     const iconContent = `<svg><circle r="10"/></svg>`;
     const generationManifest = writeMarketplaceExtension(base, {
       id: "marketplace-generation",
       name: `${searchToken1} extension`,
       version: "1.0.0",
       category: ExtensionCategory.Generation,
+      author: authorToken,
       manual: `# ${searchToken1} extension\n${searchToken2}.`,
       icon: { name: "icon.svg", buffer: Buffer.from(iconContent, "utf8") }
     });
@@ -89,15 +92,19 @@ describe("Marketplace", () =>
 
     const marketplaceExtensions = await base.getMarketplaceController().list(undefined, undefined);
     expect(marketplaceExtensions.map(extension => extension.manifest.id)).toEqual([ generationManifest.id, utilityManifest.id ]);
+    expect(marketplaceExtensions[0].manifest.author).toEqual(authorToken);
+    expect(marketplaceExtensions[1].manifest.author).toEqual(utilityManifest.author);
     expect(marketplaceExtensions[0].icon).toEqual(`data:image/svg+xml;base64,${Buffer.from(iconContent, "utf8").toString("base64")}`);
     expect(marketplaceExtensions[1].icon?.startsWith("data:image/svg+xml;base64,")).toBe(true);
     expect((await base.getMarketplaceController().list(searchToken1.toUpperCase(), undefined)).map(extension => extension.manifest.id)).toEqual([ generationManifest.id ]);
+    expect((await base.getMarketplaceController().list(authorToken.toLowerCase(), undefined)).map(extension => extension.manifest.id)).toEqual([ generationManifest.id ]);
     expect((await base.getMarketplaceController().list(undefined, [ ExtensionCategory.Other ])).map(extension => extension.manifest.id)).toEqual([ utilityManifest.id ]);
     expect((await base.getMarketplaceController().list(undefined, [ ExtensionCategory.Generation, ExtensionCategory.Other ])).map(extension => extension.manifest.id)).toEqual([ generationManifest.id, utilityManifest.id ]);
 
     const details = await base.getMarketplaceController().get(generationManifest.id);
     expect(details.manifest.id).toEqual(generationManifest.id);
     expect(details.manifest.name).toEqual(generationManifest.name);
+    expect(details.manifest.author).toEqual(authorToken);
     expect(details.icon).toEqual(`data:image/svg+xml;base64,${Buffer.from(iconContent, "utf8").toString("base64")}`);
     expect(details.manual?.instructions).toContain(searchToken2);
 

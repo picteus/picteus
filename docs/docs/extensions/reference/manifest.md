@@ -29,6 +29,7 @@ Here is an overview of the manifest structure:
   "name": "My Extension Name",
   "description": "A clear description of what the extension does.",
   "categories": ["enrichment", "utility"],
+  "author": "KoppaSoft",
   "runtimes": [
     {
       "environment": "node"
@@ -122,6 +123,7 @@ Here is an overview of the manifest structure:
 - **`name`** *(required, string)*: display name in the application extension manager ;
 - **`description`** *(required, string)*: summary of extension features ;
 - **`categories`** *(required, array)*: categorization (`capture`, `generation`, `enrichment`, `integration`, `utility`, `other`) ;
+- **`author`** *(required, string, 1-128 chars)*: author or organization responsible for the extension (e.g. `KoppaSoft`) ;
 - **`runtimes`** *(required, array)*: execution environments (`"node"` or `"python"`) ;
 - **`instructions`** *(required, array)*: execution directives:
   - **`execution`**: defines how the back-end starts the extension process (`executable` with `${node}` for Node.js or `${venvPython}` for Python virtual environments, and `arguments` such as `["./dist/main.js"]` or `["./main.py"]`) ;

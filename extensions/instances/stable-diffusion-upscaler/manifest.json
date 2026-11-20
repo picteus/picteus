@@ -1,11 +1,12 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "stable-diffusion-upscaler",
   "version": "0.9.0",
   "name": "Stable Diffusion Upscaler",
   "categories": [
     "utility"
   ],
+  "author": "KoppaSoft",
   "description": "Upscales an image.",
   "runtimes": [
     {

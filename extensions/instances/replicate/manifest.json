@@ -1,5 +1,5 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "replicate",
   "version": "0.9.0",
   "name": "Replicate",
@@ -8,6 +8,7 @@
     "capture",
     "generation"
   ],
+  "author": "KoppaSoft",
   "runtimes": [
     {
       "environment": "node"

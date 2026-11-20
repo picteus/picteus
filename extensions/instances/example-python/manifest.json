@@ -1,5 +1,5 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "example-python",
   "version": "1.8.0",
   "name": "Python Example",
@@ -8,6 +8,7 @@
     "enrichment",
     "utility"
   ],
+  "author": "KoppaSoft",
   "runtimes": [
     {
       "environment": "python"

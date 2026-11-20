@@ -867,12 +867,14 @@ setTimeout(() => {}, 1_000_000);
     {
       // We assess the "Manifest"
       const id = "id";
+      const author = "KoppaSoft";
       const executable = "echo";
       const argument1 = "dummy";
-      const string = `{ "id": "${id}", "instructions": [ { "execution": { "executable": "${executable}", "arguments": ["${argument1}"] } } ] }`;
+      const string = `{ "id": "${id}", "author": "${author}", "instructions": [ { "execution": { "executable": "${executable}", "arguments": ["${argument1}"] } } ] }`;
       const object = JSON.parse(string);
       const manifest: Manifest = plainToInstanceViaJSON(Manifest, object);
       expect(manifest.id).toBe(id);
+      expect(manifest.author).toBe(author);
       expect(manifest.instructions).toBeDefined();
       expect(manifest.instructions.length).toEqual(1);
       const instruction = manifest.instructions[0];

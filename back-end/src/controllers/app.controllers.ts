@@ -545,7 +545,7 @@ export class ExtensionController
   )
   @ApiQuery({
     name: "search",
-    description: "A case-insensitive search applied to the extension identifier, name, and description",
+    description: "A case-insensitive search applied to the extension identifier, name, description, and author",
     type: String,
     minLength: 1,
     maxLength: FieldLengths.l128,
@@ -1275,7 +1275,7 @@ export class MarketplaceController
   )
   @ApiQuery({
     name: "search",
-    description: "A case-insensitive search applied to the extension identifier, name, and description",
+    description: "A case-insensitive search applied to the extension identifier, name, description, and author",
     type: String,
     minLength: 1,
     maxLength: FieldLengths.l128,

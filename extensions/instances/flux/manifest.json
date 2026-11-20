@@ -1,5 +1,5 @@
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "flux",
   "version": "1.7.0",
   "name": "Flux",
@@ -7,6 +7,7 @@
   "categories": [
     "generation"
   ],
+  "author": "KoppaSoft",
   "runtimes": [
     {
       "environment": "python"
