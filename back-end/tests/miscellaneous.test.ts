@@ -1347,6 +1347,27 @@ setTimeout(() => {}, 1_000_000);
           };
         validateSchema(ajv, schema, value);
       }
+      {
+        // We assess with the "date" format
+        const schema =
+          {
+            type: "object",
+            properties:
+              {
+                birthDate:
+                  {
+                    type: "string",
+                    format: "date"
+                  }
+              },
+            required: [ "birthDate" ]
+          };
+        validateSchema(ajv, schema, { birthDate: "2026-11-12" });
+        await expect(async () =>
+        {
+          validateSchema(ajv, schema, { birthDate: "invalid-date" });
+        }).rejects.toThrow();
+      }
     }
   });
 

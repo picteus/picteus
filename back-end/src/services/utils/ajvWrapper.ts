@@ -1,4 +1,5 @@
 import Ajv, { ErrorObject, Schema } from "ajv";
+import addFormats from "ajv-formats";
 
 
 type Json = Record<string, any>;
@@ -13,7 +14,8 @@ export function computeAjv(useDefaults?: boolean): Ajv
   {
     if (ajv === undefined || reUseAjv === false)
     {
-      ajv = new Ajv({ strict: true, formats: { "uri": true }, useDefaults });
+      ajv = new Ajv({ strict: true, useDefaults });
+      addFormats(ajv);
     }
     return ajv;
   })();
