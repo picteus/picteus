@@ -1,8 +1,8 @@
 import React, { ReactElement } from "react";
-import { IconFileText, IconPhoto, IconStack2, IconWorld } from "@tabler/icons-react";
+import { IconFileText, IconWorld } from "@tabler/icons-react";
 
 import { DeskTabType } from "types";
-import { Common, ExtensionIcon, ResourceIcon } from "app/components";
+import { Common, EntityIcons, ExtensionIcon, ResourceIcon } from "app/components";
 import { TabLocationType } from "..";
 
 
@@ -16,6 +16,8 @@ export default function DeskTabIcon({ tab, location }: DeskTabIconPropsType): Re
 {
   const resourceSize = location === "header" ? "md" : "lg";
   const iconSize = location === "header" ? Common.IconMediumSize : Common.IconLargeSize;
+  const ImageIcon = EntityIcons.image;
+  const DeskIcon = EntityIcons.desk;
   if (tab.icon)
   {
     return <ResourceIcon icon={tab.icon} size={resourceSize}/>;
@@ -26,7 +28,7 @@ export default function DeskTabIcon({ tab, location }: DeskTabIconPropsType): Re
   }
   else if (tab.content.kind === "image" || tab.content.kind === "images")
   {
-    return <IconPhoto size={iconSize} stroke={Common.IconStrokeSize}/>;
+    return <ImageIcon size={iconSize} stroke={Common.IconStrokeSize}/>;
   }
   else if (tab.content.kind === "html")
   {
@@ -40,5 +42,5 @@ export default function DeskTabIcon({ tab, location }: DeskTabIconPropsType): Re
   {
     return <ExtensionIcon idOrExtension={tab.extensionId} size="xs"/>;
   }
-  return <IconStack2 size={iconSize} stroke={Common.IconStrokeSize}/>;
+  return <DeskIcon size={iconSize} stroke={Common.IconStrokeSize}/>;
 }

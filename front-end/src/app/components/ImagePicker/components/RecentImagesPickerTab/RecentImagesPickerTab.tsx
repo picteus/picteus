@@ -10,7 +10,7 @@ import { useImageSummariesByIds } from "app/hooks";
 import { queryKeys } from "app/query";
 import { ImageService, StorageService } from "app/services";
 import { buildLibraryNewestFirstSearchFilter, normalizeTagsKey } from "../../ImagePickerUtils.ts";
-import ImagePickerEmptyState from "../ImagePickerEmptyState/ImagePickerEmptyState.tsx";
+import EmptyStateBox from "../../../EmptyStateBox/EmptyStateBox.tsx";
 import ImagePickerGrid from "../ImagePickerGrid/ImagePickerGrid.tsx";
 
 
@@ -71,7 +71,8 @@ export default function RecentImagesPickerTab({
   {
     const hasTagFilter = withTags !== undefined && withTags.length > 0;
     return (
-      <ImagePickerEmptyState
+      <EmptyStateBox
+        minHeight={200}
         title={hasTagFilter === true ? t("imagePicker.emptyMatchingTagsTitle") : t("imagePicker.emptyLibraryTitle")}
         description={hasTagFilter === true
           ? t("imagePicker.emptyMatchingTagsDescription", { tags: withTags.join(", ") })

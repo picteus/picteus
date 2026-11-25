@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Affix, Button, HoverCard, Transition } from "@mantine/core";
-import { IconPhoto } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "utils";
 import { useImagesSelectedContext } from "app/context";
+import { EntityIcons } from "app/components";
 import { SelectedImages } from "..";
 
 import style from "./SelectedImagesAffix.module.scss";
@@ -17,6 +17,7 @@ export default function SelectedImagesAffix()
   const location = useLocation();
   const { selectedImages } = useImagesSelectedContext();
   const [isProcessing, setIsProcessing] = useState(false);
+  const ImageIcon = EntityIcons.image;
 
   function shouldAffixBeVisible()
   {
@@ -40,7 +41,7 @@ export default function SelectedImagesAffix()
                 variant={"gradient"}
                 size="lg"
                 style={transitionStyles}
-                rightSection={<IconPhoto size={23}/>}
+                rightSection={<ImageIcon size={23}/>}
               >
                 {selectedImages?.length}{" "}
                 {t("selectedImages.buttonLabelWithCount", {

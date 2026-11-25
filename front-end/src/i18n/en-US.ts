@@ -532,7 +532,7 @@ export default {
       runsOnItsOwnSummaryNone: "No AI models are configured yet. Configure models to generate captions, tags, or embeddings for your images.",
       runsOnItsOwnSummaryManualOnly: "{{configuredCount}} model(s) configured. Auto-indexing is currently off, so models only run when you trigger synchronization.",
       runsOnItsOwnSummaryAuto: "{{configuredCount}} model(s) configured, with {{autoCount}} running automatically when new images are indexed.",
-      manageAiModels: "Manage AI models",
+      manageAiModels: "Manage AI models →",
       computesLabel: "Computes",
       computesCaptions: "Captions",
       aiModelsMoreAvailable: "{{count}} more available",
@@ -570,7 +570,7 @@ export default {
       resetFilters: "Reset filters"
     },
     settings: {
-      lookingForModelsTitle: "Looking for model settings?",
+      lookingForModelsTitle: "Looking for AI model settings?",
       lookingForModelsDescription: "Caption questions, eligible tags, and auto-indexing are configured per AI model.",
       goToAiModels: "Go to AI models →",
       resetConfirmTitle: "Reset settings",
@@ -604,7 +604,7 @@ export default {
     noManual: "No manual provided for this extension yet.",
     settingsCalloutTitle: "Change these settings",
     settingsCalloutDescription: "Values are edited in the Settings tab.",
-    openSettingsTab: "Open Settings tab"
+    openSettings: "Open Settings"
   },
   captionModelModal: {
     title: "{{extension}} • {{model}}",

@@ -1,15 +1,15 @@
 import React from "react";
 import { ActionIcon, HoverCard, Indicator } from "@mantine/core";
-import { IconPhoto } from "@tabler/icons-react";
 
 import { useImagesSelectedContext } from "app/context";
-import { Common } from "app/components";
+import { Common, EntityIcons } from "app/components";
 import { SelectedImages } from "..";
 
 
 export default function SelectedImagesHover()
 {
   const { selectedImages } = useImagesSelectedContext();
+  const ImageIcon = EntityIcons.image;
 
   return (<HoverCard
     withinPortal={true}
@@ -23,7 +23,7 @@ export default function SelectedImagesHover()
     <HoverCard.Target>
       <Indicator inline color="orange" label={selectedImages.length} size={16} disabled={selectedImages.length === 0}>
         <ActionIcon variant="outline" size="md">
-          <IconPhoto stroke={Common.IconStrokeSize}/>
+          <ImageIcon stroke={Common.IconStrokeSize}/>
         </ActionIcon>
       </Indicator>
     </HoverCard.Target>

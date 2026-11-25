@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button, Flex, Stack, Table, Text, Title } from "@mantine/core";
-import { IconLibrary, IconListSearch, IconPlus } from "@tabler/icons-react";
+import { IconListSearch, IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Collection } from "@picteus/ws-client";
@@ -13,6 +13,7 @@ import {
   Container,
   Drawer,
   EmptyResults,
+  EntityIcons,
   FormatedDate,
   NoValue,
   RefreshButton,
@@ -52,9 +53,10 @@ export default function CollectionsScreen()
 
   function openAddOrUpdateCollectionModal(collection?: Collection)
   {
+    const CollectionModalIcon = EntityIcons.collection;
     addModal({
       title: t(`addOrUpdateCollectionModal.${collection ? "updateTitle" : "addTitle"}`),
-      icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
+      icon: { icon: <CollectionModalIcon stroke={Common.IconStrokeSize}/> },
       size: "s",
       body: <AddOrUpdateCollection collection={collection}/>
     });

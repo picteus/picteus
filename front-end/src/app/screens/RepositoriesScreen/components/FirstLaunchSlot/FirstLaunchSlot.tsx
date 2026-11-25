@@ -31,8 +31,8 @@ export default function FirstLaunchSlot({ onChooseFolder }: FirstLaunchSlotType)
 
   return (
     <Flex
-      bd="1px solid var(--mantine-color-gray-2)"
-      bg="white"
+      bd="1px solid var(--mantine-color-default-border)"
+      bg="var(--mantine-color-body)"
       p="lg"
       gap="lg"
       align="center"
@@ -47,7 +47,7 @@ export default function FirstLaunchSlot({ onChooseFolder }: FirstLaunchSlotType)
           align="center"
           justify="center"
           gap="md"
-          bg="gray.1"
+          bg="light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))"
           flex="0 0 auto"
           bdrs="sm"
         >

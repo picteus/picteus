@@ -1,13 +1,13 @@
 import { ReactElement, ReactNode } from "react";
 import { Button, CopyButton, Divider, Flex, Stack, Text } from "@mantine/core";
-import { IconAppWindow, IconPhoto } from "@tabler/icons-react";
+import { IconAppWindow } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Repository, RepositoryActivity, RepositoryMode } from "@picteus/ws-client";
 
 import { removeFilePrefixFromUrl } from "utils";
 import { useOpenExplorer } from "app/hooks";
-import { ActionLink, Common, CopyText, FormatedDate, NoValue } from "app/components";
+import { ActionLink, Common, CopyText, EntityIcons, FormatedDate, NoValue } from "app/components";
 import { REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED } from "../../RepositoriesConstants.ts";
 import { RepositoryPreviews, RepositoryStatusPill } from "..";
 
@@ -39,6 +39,7 @@ export default function RepositoryDrawerContent({
   const isDisabled = repository.mode === RepositoryMode.Disabled;
   const path = removeFilePrefixFromUrl(repository.url) ?? repository.url;
   const hasActions = onViewImages !== undefined || (REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED && onOpenInNewWindow !== undefined);
+  const ImageIcon = EntityIcons.image;
 
   function renderDetailRow(label: string, value: ReactNode): ReactElement
   {
@@ -63,7 +64,7 @@ export default function RepositoryDrawerContent({
           {onViewImages !== undefined && (
             <Button
               disabled={isDisabled}
-              leftSection={<IconPhoto size={16} stroke={Common.IconStrokeSize}/>}
+              leftSection={<ImageIcon size={16} stroke={Common.IconStrokeSize}/>}
               onClick={onViewImages}
             >
               {t("repositoryScreen.drawer.viewImages")}

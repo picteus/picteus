@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import { Stack } from "@mantine/core";
-import { IconFolder, IconFolderOpen, IconFolders, IconFolderSearch } from "@tabler/icons-react";
+import { IconFolderOpen, IconFolderSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Repository, RepositoryActivity } from "@picteus/ws-client";
@@ -17,7 +17,16 @@ import {
   useRepositoryActivities
 } from "app/hooks";
 import { RepositoriesService, StorageService } from "app/services";
-import { CatalogScreenLayout, Common, Drawer, LoadingView, StackableScreen, useStackNavigator } from "app/components";
+import {
+  CatalogScreenLayout,
+  Common,
+  Drawer,
+  EntityIcons,
+  LoadingView,
+  RepositoryIdentity,
+  StackableScreen,
+  useStackNavigator
+} from "app/components";
 import RepositoryImagesScreen from "../RepositoryImagesScreen/RepositoryImagesScreen.tsx";
 import {
   AddOrUpdateRepository,
@@ -27,17 +36,14 @@ import {
   RepositoriesTable,
   RepositoriesToolbar,
   RepositoryDrawerContent,
-  RepositoryIdentity,
   RepositoryMenu
 } from "./components";
 
 
 export default function RepositoriesScreen(): ReactElement
 {
-  const [ t ] = useTranslation();
-
   return (
-    <StackableScreen title={t("menu.repositories")} icon={IconFolders}>
+    <StackableScreen screen="repositories">
       <RepositoriesScreenContent/>
     </StackableScreen>
   );
@@ -144,7 +150,7 @@ function RepositoriesScreenContent(): ReactElement
     setSelectedRepository(undefined);
     stackNavigator.push({
       title: repository.name,
-      icon: { icon: IconFolder },
+      icon: { icon: EntityIcons.repository },
       body: <RepositoryImagesScreen repositoryId={repository.id}/>
     });
   }

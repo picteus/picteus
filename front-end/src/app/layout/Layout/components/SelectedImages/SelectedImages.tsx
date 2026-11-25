@@ -12,7 +12,7 @@ import {
   Text
 } from "@mantine/core";
 import { useElementSize } from "@mantine/hooks";
-import { IconLibrary, IconLibraryPlus, IconPhotoOff } from "@tabler/icons-react";
+import { IconLibraryPlus, IconPhotoOff } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { CommandEntity, Manifest, SearchOriginNature, SearchSortingProperty } from "@picteus/ws-client";
@@ -26,6 +26,7 @@ import {
   Common,
   computeIcon,
   EmptyResults,
+  EntityIcons,
   ExtensionIcon,
   ImageMasonry,
   ImageMenuSelectCommandEntry,
@@ -186,12 +187,14 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
     }
   }
 
+  const CollectionIcon = EntityIcons.collection;
+
   function handleCreateCollection()
   {
     const imageIds = selectedImages.map((image) => image.id);
     addModal({
       title: t("addOrUpdateCollectionModal.addTitle"),
-      icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
+      icon: { icon: <CollectionIcon stroke={Common.IconStrokeSize}/> },
       size: "s",
       body: (
         <AddOrUpdateCollection
@@ -233,7 +236,7 @@ export default function SelectedImages({ onProcessing }: SelectedImagesType)
                 size="sm"
                 color="gray"
               >
-                <IconLibrary size={Common.IconXSmallSize}/>
+                <CollectionIcon size={Common.IconXSmallSize}/>
               </ActionIcon>
               <ActionIcon
                 onClick={handleAddToCollection}

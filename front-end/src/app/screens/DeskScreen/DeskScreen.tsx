@@ -1,13 +1,13 @@
 import React, { DragEvent, ReactElement, useEffect, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { ActionIcon, Box, Center, CloseButton, Divider, Group, ScrollArea, Stack, Text, Tooltip } from "@mantine/core";
-import { IconChevronLeft, IconChevronRight, IconStack2 } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
 import { DESK_TAB_QUERY_PARAMETER_NAME, ROUTES } from "utils";
 import { useDeskTabsContext } from "app/context";
-import { Common, EmptyResults } from "app/components";
+import { Common, EmptyResults, EntityIcons } from "app/components";
 import { useKey } from "app/hooks";
 import { DeskTabIcon, DeskTabPanel, DeskTabsMenu } from "./components";
 
@@ -342,7 +342,7 @@ export default function DeskScreen(): ReactElement
     return (
       <Center h="100%" w="100%">
         <EmptyResults
-          icon={IconStack2}
+          icon={EntityIcons.desk}
           title={t("emptyDesk.title")}
           description={t("emptyDesk.description")}
         />

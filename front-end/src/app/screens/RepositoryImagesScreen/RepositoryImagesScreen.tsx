@@ -8,8 +8,7 @@ import { RepositoryMode, SearchOriginNature, SearchSortingProperty } from "@pict
 import { ViewTabDataType } from "types";
 import { shortenPath, ToastService } from "utils";
 import { useRepository, useRepositorySummaries, useSetRepositoryModeMutation } from "app/hooks";
-import { EmptyResults, ImagesView, LoadingView } from "app/components";
-import { RepositoryIdentity } from "../RepositoriesScreen/components";
+import { EmptyResults, ImagesView, LoadingView, RepositoryIdentity } from "app/components";
 
 import variables from "assets/style/variablesExport.module.scss";
 

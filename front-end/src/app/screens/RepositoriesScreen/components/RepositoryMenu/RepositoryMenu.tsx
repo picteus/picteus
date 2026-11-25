@@ -6,7 +6,6 @@ import {
   IconExternalLink,
   IconEye,
   IconEyeOff,
-  IconPhoto,
   IconPlayerPause,
   IconPlayerPlay,
   IconReload,
@@ -24,7 +23,7 @@ import {
   useSetRepositoryModeMutation
 } from "app/hooks";
 import { RepositoriesService } from "app/services";
-import { Common, OverflowMenu } from "app/components";
+import { Common, EntityIcons, OverflowMenu } from "app/components";
 import { REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED } from "../../RepositoriesConstants.ts";
 
 
@@ -92,12 +91,14 @@ export default function RepositoryMenu({
     }
   }
 
+  const ImageIcon = EntityIcons.image;
+
   return (
     <OverflowMenu width={220}>
       {onViewImages !== undefined && (
         <Menu.Item
           disabled={isDisabled}
-          leftSection={<IconPhoto size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+          leftSection={<ImageIcon size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
           onClick={onViewImages}
         >
           {t("repositoryScreen.drawer.viewImages")}

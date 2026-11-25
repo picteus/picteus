@@ -11,12 +11,12 @@ import {
   Title,
   useMantineColorScheme
 } from "@mantine/core";
-import { IconActivity, IconDeviceLaptop, IconMoonStars, IconRotate, IconSun } from "@tabler/icons-react";
+import { IconDeviceLaptop, IconMoonStars, IconRotate, IconSun } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { ToastService } from "utils";
 import { StorageService } from "app/services";
-import { Common, Container } from "app/components";
+import { Common, Container, EntityIcons } from "app/components";
 
 
 export default function SettingsScreen()
@@ -54,6 +54,8 @@ export default function SettingsScreen()
     ToastService.success();
   }
 
+  const ExtensionsTabIcon = EntityIcons.extensions;
+
   return (
     <Container>
       <Stack gap="lg">
@@ -68,7 +70,7 @@ export default function SettingsScreen()
             </Tabs.Tab>
             <Tabs.Tab
               value="extensions"
-              leftSection={<IconActivity size={16}/>}
+              leftSection={<ExtensionsTabIcon size={16} stroke={Common.IconStrokeSize}/>}
             >
               {t("settingsScreen.tabs.extensions")}
             </Tabs.Tab>

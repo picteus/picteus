@@ -1,9 +1,15 @@
 import { ReactElement, useMemo } from "react";
-import { IconCalendarPlus, IconLetterCase, IconPhoto } from "@tabler/icons-react";
+import { IconCalendarPlus, IconLetterCase } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { CatalogViewModeType, RepositoriesOriginFilterType, RepositoriesSortCriterionType } from "types";
-import { CatalogToolbar, Common, CountedSegmentedControlItemType, SortCriterionOptionType } from "app/components";
+import {
+  CatalogToolbar,
+  Common,
+  CountedSegmentedControlItemType,
+  EntityIcons,
+  SortCriterionOptionType
+} from "app/components";
 
 
 type OriginCountsType = {
@@ -48,23 +54,27 @@ export default function RepositoriesToolbar({
     { value: "extensions", label: t("repositoryScreen.origin.extensions"), count: originCounts.extensions }
   ], [ originCounts.all, originCounts.extensions, originCounts.user, t ]);
 
-  const sortCriteria = useMemo<readonly SortCriterionOptionType<RepositoriesSortCriterionType>[]>(() => [
-    {
-      value: "name",
-      label: t("field.name"),
-      icon: <IconLetterCase size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
-    },
-    {
-      value: "imageCount",
-      label: t("field.imageCount"),
-      icon: <IconPhoto size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
-    },
-    {
-      value: "createdOn",
-      label: t("field.createdOn"),
-      icon: <IconCalendarPlus size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
-    }
-  ], [ t ]);
+  const sortCriteria = useMemo<readonly SortCriterionOptionType<RepositoriesSortCriterionType>[]>(() =>
+  {
+    const ImageIcon = EntityIcons.image;
+    return [
+      {
+        value: "name",
+        label: t("field.name"),
+        icon: <IconLetterCase size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
+      },
+      {
+        value: "imageCount",
+        label: t("field.imageCount"),
+        icon: <ImageIcon size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
+      },
+      {
+        value: "createdOn",
+        label: t("field.createdOn"),
+        icon: <IconCalendarPlus size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
+      }
+    ];
+  }, [ t ]);
 
   return (
     <CatalogToolbar

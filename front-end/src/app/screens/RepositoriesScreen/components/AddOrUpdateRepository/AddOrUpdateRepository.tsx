@@ -1,5 +1,5 @@
 import { type ReactElement } from "react";
-import { IconFolder, IconInfoCircle } from "@tabler/icons-react";
+import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Alert, Box, Button, Flex, Input, Stack, Text, Textarea, TextInput, UnstyledButton } from "@mantine/core";
 import { useForm } from "@mantine/form";
@@ -17,8 +17,7 @@ import {
   useRepositories,
   useUpdateRepositoryMutation
 } from "app/hooks";
-import { Common, ModalActions, ModalError } from "app/components";
-import RepositoryIdentity from "../RepositoryIdentity/RepositoryIdentity.tsx";
+import { Common, EntityIcons, ModalActions, ModalError, RepositoryIdentity } from "app/components";
 
 
 const initialValues: RepositoryApiRepositoryCreateRequest = {
@@ -175,6 +174,7 @@ export default function AddOrUpdateRepository(
   const hasUrlError = Boolean(folderError);
   const { hovered: isFolderHovered, ref: folderHoverRef } = useHover<HTMLButtonElement>();
   const formId = "add-or-update-repository-form";
+  const RepositoryIcon = EntityIcons.repository;
 
   return (
     <form id={formId} onSubmit={form.onSubmit(handleSubmit)}>
@@ -217,11 +217,11 @@ export default function AddOrUpdateRepository(
                     h={40}
                     align="center"
                     justify="center"
-                    bg="gray.1"
+                    bg="light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))"
                     bdrs="sm"
                     flex="0 0 auto"
                   >
-                    <IconFolder size={Common.IconMediumSize} stroke={Common.IconStrokeSize}/>
+                    <RepositoryIcon size={Common.IconMediumSize} stroke={Common.IconStrokeSize}/>
                   </Flex>
                   <Box flex={1} miw={0}>
                     <Text size="sm" c="dimmed" truncate>

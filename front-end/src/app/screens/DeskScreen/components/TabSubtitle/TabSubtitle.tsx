@@ -1,9 +1,8 @@
 import React, { ReactElement } from "react";
 import { Group, Text } from "@mantine/core";
-import { IconFolder } from "@tabler/icons-react";
 
 import { DeskTabType } from "types";
-import { Common, DotSeparated, ExtensionIcon, FormatedDate } from "app/components";
+import { Common, DotSeparated, EntityIcons, ExtensionIcon, FormatedDate } from "app/components";
 import { useImage, useRepository } from "app/hooks";
 
 import { TabLocationType } from "..";
@@ -32,6 +31,7 @@ export default function TabSubtitle({
   const { data: image } = useImage(imageId, { enabled: shouldFetchRepository });
   const { data: repository } = useRepository(image?.repositoryId, { enabled: Boolean(shouldFetchRepository && image?.repositoryId) });
   const repositoryName = repository?.name;
+  const RepositoryIcon = EntityIcons.repository;
 
   const subtitleAndDate = (
     <DotSeparated inline>
@@ -50,7 +50,7 @@ export default function TabSubtitle({
         )}
         {repositoryName && (
           <Group gap={4} wrap="nowrap" align="center" component="span" display="inline-flex">
-            <IconFolder size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
+            <RepositoryIcon size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
             <span>{repositoryName}</span>
           </Group>
         )}

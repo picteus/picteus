@@ -1,11 +1,12 @@
 import { ReactElement, useCallback, useMemo, useState } from "react";
 import { Box, Button, Group, Stack, Tabs, Text } from "@mantine/core";
-import { IconBooks, IconClock } from "@tabler/icons-react";
+import { IconClock } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { ImagePickerSelectionModeType } from "types";
 import { useImageSummariesByIds } from "app/hooks";
 import ActionLink from "../ActionLink/ActionLink.tsx";
+import { EntityIcons } from "../AppIcons/AppIcons.ts";
 import Common from "../Common/Common.ts";
 import FlexScrollArea from "../FlexScrollArea/FlexScrollArea.tsx";
 import ImageThumbnailStrip from "../ImageThumbnailStrip/ImageThumbnailStrip.tsx";
@@ -110,6 +111,8 @@ export default function ImagePicker({
     );
   }
 
+  const CollectionsIcon = EntityIcons.collections;
+
   return (
     <Box className={style.pickerRoot}>
       <Stack gap="xs" className={style.pickerHeader}>
@@ -136,7 +139,7 @@ export default function ImagePicker({
             </Tabs.Tab>
             <Tabs.Tab
               value="collections"
-              leftSection={<IconBooks size={Common.IconSmallSize} stroke={Common.IconStrokeSize}/>}
+              leftSection={<CollectionsIcon size={Common.IconSmallSize} stroke={Common.IconStrokeSize}/>}
             >
               {t("field.collections")}
             </Tabs.Tab>

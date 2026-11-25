@@ -1,10 +1,9 @@
 import React, { useCallback } from "react";
-import { IconPhoto } from "@tabler/icons-react";
 
 import { ImageOrSummary, ViewMode } from "types";
 import { useActionModalContext } from "app/context";
 import { ImageService } from "app/services";
-import { Common, ImageDetail, ImageSubtitle } from "app/components";
+import { Common, EntityIcons, ImageDetail, ImageSubtitle } from "app/components";
 
 
 export interface OpenImageDetailModalParameters
@@ -28,12 +27,13 @@ export default function useImageDetailModal(): OpenImageDetailModalFunctionType
     }: OpenImageDetailModalParameters): void =>
     {
       const imageUrl = image.url ? ImageService.getImageSrc(image.url, Common.BreadcrumbEdge, Common.BreadcrumbEdge) : undefined;
+      const ImageFallbackIcon = EntityIcons.image;
 
       addModal({
         isStackable: true,
         icon: imageUrl
           ? { url: imageUrl }
-          : { icon: <IconPhoto size={Common.BreadcrumbEdge} stroke={Common.IconStrokeSize}/> },
+          : { icon: <ImageFallbackIcon size={Common.BreadcrumbEdge} stroke={Common.IconStrokeSize}/> },
         subtitle: <ImageSubtitle image={image}/>,
         title: image.name,
         body: (

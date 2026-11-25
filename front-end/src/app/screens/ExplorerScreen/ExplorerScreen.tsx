@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { IconPhotoMinus, IconPhotoSearch } from "@tabler/icons-react";
+import { IconPhotoSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { RepositoryMode } from "@picteus/ws-client";
@@ -53,7 +53,7 @@ export default function ExplorerScreen(): ReactElement
   }, [ navigate, repositories, t ]);
 
   return (
-    <StackableScreen title={t("menu.explorer")} icon={IconPhotoMinus}>
+    <StackableScreen screen="explorer">
       <TitleBarPortal>
         {null}
       </TitleBarPortal>

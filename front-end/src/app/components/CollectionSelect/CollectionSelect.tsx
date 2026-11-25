@@ -103,6 +103,15 @@ export default function CollectionSelect({
       withAlignedLabels
       searchable
       nothingFoundMessage={t("filters.noMatching")}
+      scrollAreaProps={{
+        scrollbars: "y",
+        styles: {
+          content: {
+            minWidth: 0,
+            width: "100%"
+          }
+        }
+      }}
     />
   );
 }

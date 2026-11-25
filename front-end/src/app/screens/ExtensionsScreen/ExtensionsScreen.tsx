@@ -1,7 +1,7 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Stack } from "@mantine/core";
-import { IconBox, IconPuzzle } from "@tabler/icons-react";
+import { IconPuzzle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -38,6 +38,7 @@ import {
   CatalogScreenLayout,
   Common,
   EmptyResults,
+  EntityIcons,
   ExtensionPage,
   ExtensionPageTabType,
   ExtensionSettingsModal,
@@ -56,12 +57,26 @@ import {
 } from "./components";
 
 
+function resolveExtensionBreadcrumbIcon(
+  extensionId: string,
+  item: UnifiedExtensionItemType | undefined
+): ContentIconType
+{
+  if (item?.isInstalled === true)
+  {
+    return { url: ExtensionsService.getIconURL(extensionId) };
+  }
+  if (item?.marketplaceExtension?.icon !== undefined)
+  {
+    return { url: item.marketplaceExtension.icon };
+  }
+  return { icon: EntityIcons.extension };
+}
+
 export default function ExtensionsScreen(): ReactElement
 {
-  const [ t ] = useTranslation();
-
   return (
-    <StackableScreen title={t("menu.extensions")} icon={IconPuzzle}>
+    <StackableScreen screen="extensions">
       <ExtensionsScreenContent/>
     </StackableScreen>
   );
@@ -416,11 +431,7 @@ function ExtensionsScreenContent(): ReactElement
 
   const handleOpenExtension = useCallback((item: UnifiedExtensionItemType): void =>
   {
-    const icon: ContentIconType = item.isInstalled === true
-      ? { url: ExtensionsService.getIconURL(item.id) }
-      : (item.marketplaceExtension?.icon !== undefined
-        ? { url: item.marketplaceExtension.icon }
-        : { icon: IconPuzzle });
+    const icon = resolveExtensionBreadcrumbIcon(item.id, item);
 
     pushStackedExtension(item.id, item.manifest.name, icon, "overview", item.marketplaceExtension);
   }, [ pushStackedExtension ]);
@@ -451,11 +462,7 @@ function ExtensionsScreenContent(): ReactElement
 
     handledNavigationTimestampRef.current = requestKey;
     const title = matchedItem?.manifest.name ?? targetExtensionId;
-    const icon: ContentIconType = matchedItem?.isInstalled === true
-      ? { url: ExtensionsService.getIconURL(targetExtensionId) }
-      : (matchedItem?.marketplaceExtension?.icon !== undefined
-        ? { url: matchedItem.marketplaceExtension.icon }
-        : { icon: IconPuzzle });
+    const icon = resolveExtensionBreadcrumbIcon(targetExtensionId, matchedItem);
 
     pushStackedExtension(
       targetExtensionId,
@@ -469,10 +476,11 @@ function ExtensionsScreenContent(): ReactElement
 
   const handleOpenCreateExtensionModal = useCallback((): void =>
   {
+    const ExtensionModalIcon = EntityIcons.extension;
     addModal({
       title: t("createExtensionModal.title"),
       icon: {
-        icon: <IconBox stroke={Common.IconStrokeSize}/>
+        icon: <ExtensionModalIcon stroke={Common.IconStrokeSize}/>
       },
       size: "m",
       body: (

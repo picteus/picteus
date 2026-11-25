@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Repository, RepositoryActivity } from "@picteus/ws-client";
 
 import { RepositoriesSortCriterionType } from "types";
-import { FormatedDate, SortableTableHeader, TableHeaderCell } from "app/components";
-import { RepositoryIdentity, RepositoryMenu, RepositoryPreviews, RepositoryStatusPill } from "..";
+import { FormatedDate, RepositoryIdentity, SortableTableHeader, TableHeaderCell } from "app/components";
+import { RepositoryMenu, RepositoryPreviews, RepositoryStatusPill } from "..";
 
 
 type RepositoriesTableType = {

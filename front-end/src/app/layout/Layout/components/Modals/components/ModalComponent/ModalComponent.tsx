@@ -461,8 +461,9 @@ export default function ModalComponent({ modal, onClose }: ModalComponentType): 
   }
 
   const classNames = {
-    content: `${style.content}${isFullScreen ? ` ${style.contentFullScreen}` : ""}${isFullHeight ? ` ${style.contentFullHeight}` : ""}`,
-    body: `${style.body}${isFullScreen ? ` ${style.bodyFullScreen}` : ""}`,
+    inner: isFullScreen === true ? style.innerFullScreen : undefined,
+    content: `${style.content}${isFullScreen === true ? ` ${style.contentFullScreen}` : ""}${isFullHeight === true ? ` ${style.contentFullHeight}` : ""}`,
+    body: style.body,
     header: style.header,
     title: style.title
   };

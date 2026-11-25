@@ -41,8 +41,8 @@ import {
   useOpenWindow,
   useRepositories
 } from "app/hooks";
-import { Common, ExtensionSettingsModal, Iframe, Markdown } from "app/components";
-import { RepositoryDrawerContent, RepositoryIdentity, RepositoryMenu } from "app/screens/RepositoriesScreen/components";
+import { Common, ExtensionSettingsModal, Iframe, Markdown, RepositoryIdentity } from "app/components";
+import { RepositoryDrawerContent, RepositoryMenu } from "app/screens/RepositoriesScreen/components";
 
 
 const commandEntities = [ CommandEntity.Process ];
@@ -148,7 +148,7 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
       {
         const body = integration.nature === IntentDocumentNature.Markdown
           ? (
-            <ScrollArea h="100%" w="100%">
+            <ScrollArea h="100%" w="100%" bg="var(--mantine-color-body)">
               <Container size="md" py="xl">
                 <Markdown content={"inline" in documentContent ? documentContent.inline : ""}/>
               </Container>

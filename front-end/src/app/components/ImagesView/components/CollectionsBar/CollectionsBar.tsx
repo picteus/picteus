@@ -3,7 +3,6 @@ import { Box, Button, Center, Loader, Menu, Tooltip } from "@mantine/core";
 import {
   IconChevronDown,
   IconDeviceFloppy,
-  IconLibrary,
   IconLibraryPhoto,
   IconPlayerPlayFilled,
   IconPlus
@@ -30,7 +29,7 @@ import {
   useUpdateCollectionMutation
 } from "app/hooks";
 import { EventService } from "app/services";
-import { CollectionLabel, CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
+import { CollectionLabel, CommandIcon, Common, computeIcon, EntityIcons, MenuItemEntry } from "app/components";
 import AddOrUpdateCollection
   from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
@@ -118,9 +117,10 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
 
   function handleOnSaveCurrent()
   {
+    const CollectionModalIcon = EntityIcons.collection;
     addModal({
       title: t("addOrUpdateCollectionModal.addTitle"),
-      icon: { icon: <IconLibrary stroke={Common.IconStrokeSize}/> },
+      icon: { icon: <CollectionModalIcon stroke={Common.IconStrokeSize}/> },
       size: "s",
       body: (
         <AddOrUpdateCollection

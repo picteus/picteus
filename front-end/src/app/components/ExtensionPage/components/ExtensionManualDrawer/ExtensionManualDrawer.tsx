@@ -1,5 +1,6 @@
 import { ReactElement, ReactNode, useCallback, useId, useMemo, useRef, useState } from "react";
 import { Box, Button, CloseButton, Divider, Flex, Paper, Stack, Tabs, Text, Title } from "@mantine/core";
+import { IconAdjustmentsHorizontal } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Extension, Manifest, MarketplaceExtension } from "@picteus/ws-client";
@@ -7,6 +8,7 @@ import { Extension, Manifest, MarketplaceExtension } from "@picteus/ws-client";
 import { ManualSection } from "types";
 import { extractManualHeadings, splitMarkdownAfterSection, stripEmptyMarkdownSections } from "utils";
 import { ExtensionsService } from "app/services";
+import Common from "../../../Common/Common.ts";
 import Drawer from "../../../Drawer/Drawer.tsx";
 import ExtensionIcon from "../../../ExtensionIcon/ExtensionIcon.tsx";
 import FlexScrollArea from "../../../FlexScrollArea/FlexScrollArea.tsx";
@@ -141,9 +143,10 @@ export default function ExtensionManualDrawer({
         <Button
           size="xs"
           variant="default"
+          leftSection={<IconAdjustmentsHorizontal size={14} stroke={Common.IconStrokeSize}/>}
           onClick={handleOpenSettings}
         >
-          {t("extensionManualDrawer.openSettingsTab")}
+          {t("extensionManualDrawer.openSettings")}
         </Button>
       </Flex>
     </Paper>

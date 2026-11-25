@@ -1,6 +1,5 @@
 import { ReactElement, useCallback, useMemo, useState } from "react";
-import { Button, Group, Paper, Stack, Text, Title } from "@mantine/core";
-import { IconPhoto } from "@tabler/icons-react";
+import { Button, Group, Stack, Text, Title } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { CommandEntity, Extension, Manifest, ManifestExtensionCommand, MarketplaceExtension } from "@picteus/ws-client";
@@ -8,7 +7,9 @@ import { CommandEntity, Extension, Manifest, ManifestExtensionCommand, Marketpla
 import { UiExtensionCommandType } from "types";
 import { useExtensionCommandRunner, useExtensionCommands, useLibraryHasImages, useProcessCommands } from "app/hooks";
 import { ExtensionDerivedStatusType } from "app/services";
+import { EntityIcons } from "../../../AppIcons/AppIcons.ts";
 import Common from "../../../Common/Common.ts";
+import EmptyStateBox from "../../../EmptyStateBox/EmptyStateBox.tsx";
 import SearchInput from "../../../SearchInput/SearchInput.tsx";
 import { CommandCard } from "./components";
 import {
@@ -242,16 +243,14 @@ export default function ExtensionCommandsTab({
       </Stack>
 
       {groupedCommands.length === 0 ? (
-        <Paper withBorder radius="md" p="xl">
-          <Stack gap="xs" align="center">
-            <Text size="sm" c="dimmed">
-              {t("extensionPage.commands.emptyFiltered")}
-            </Text>
+        <EmptyStateBox
+          description={t("extensionPage.commands.emptyFiltered")}
+          action={(
             <Button size="xs" variant="default" onClick={handleResetFilters}>
               {t("extensionPage.commands.resetFilters")}
             </Button>
-          </Stack>
-        </Paper>
+          )}
+        />
       ) : (
         <Stack gap="lg">
           {groupedCommands.map(group =>
@@ -312,6 +311,8 @@ export default function ExtensionCommandsTab({
                       ? runDisabledTooltip
                       : (isLibraryEmpty === true ? t("extensionPage.commands.emptyLibraryNotice") : undefined);
 
+                    const ImageIcon = EntityIcons.image;
+
                     return (
                       <CommandCard
                         key={item.command.id}
@@ -323,7 +324,7 @@ export default function ExtensionCommandsTab({
                         isRunDisabled={isRunDisabled}
                         isRunLoading={isRunLoading}
                         runDisabledTooltip={imageRunDisabledTooltip}
-                        runLeftSection={<IconPhoto size={Common.IconSmallSize} stroke={Common.IconStrokeSize}/>}
+                        runLeftSection={<ImageIcon size={Common.IconSmallSize} stroke={Common.IconStrokeSize}/>}
                         onRun={readyImageCommand !== undefined && isLibraryEmpty === false ? () =>
                         {
                           handleRunImageCommand(item, readyImageCommand);

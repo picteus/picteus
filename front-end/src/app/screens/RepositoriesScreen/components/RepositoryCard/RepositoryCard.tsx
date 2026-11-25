@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 
 import { Repository, RepositoryActivity } from "@picteus/ws-client";
 
-import { InteractiveCard } from "app/components";
-import { RepositoryIdentity, RepositoryMenu, RepositoryPreviews, RepositoryStatusPill } from "..";
+import { InteractiveCard, RepositoryIdentity } from "app/components";
+import { RepositoryMenu, RepositoryPreviews, RepositoryStatusPill } from "..";
 
 
 type RepositoryCardType = {

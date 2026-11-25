@@ -1,17 +1,17 @@
 import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import { Flex, NumberFormatter, Paper, Stack, Text } from "@mantine/core";
-import { IconDots, IconPhoto } from "@tabler/icons-react";
+import { type Icon, IconDots } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { ImageSummary, SearchParameters } from "@picteus/ws-client";
 import { ToastService } from "utils";
 import { ImageService } from "app/services";
-import { Common, ImageThumbnail } from "app/components";
+import { Common, EntityIcons, ImageThumbnail } from "app/components";
 
 import style from "./ImagesCollection.module.scss";
 
 
 type IndicatorCardType = {
-  icon: typeof IconPhoto;
+  icon: Icon;
   content: ReactNode;
   label: string;
 };
@@ -87,7 +87,7 @@ export default function ImagesCollection({
       <Flex className={style.content} align="center" gap={10}>
         {totalCount !== undefined && totalCount > 1 && (
           <IndicatorCard
-            icon={IconPhoto}
+            icon={EntityIcons.image}
             content={
               <Text fw={700} size="md">
                 <NumberFormatter value={totalCount}/>

@@ -13,10 +13,10 @@ import { queryKeys } from "app/query";
 import { ImageService } from "app/services";
 import CollectionLabel from "../../../CollectionLabel/CollectionLabel.tsx";
 import Common from "../../../Common/Common.ts";
+import EmptyStateBox from "../../../EmptyStateBox/EmptyStateBox.tsx";
 import FlexScrollArea from "../../../FlexScrollArea/FlexScrollArea.tsx";
 import ImageThumbnail from "../../../ImageThumbnail/ImageThumbnail.tsx";
 import { buildSearchFilterWithTags, normalizeTagsKey } from "../../ImagePickerUtils.ts";
-import ImagePickerEmptyState from "../ImagePickerEmptyState/ImagePickerEmptyState.tsx";
 import ImagePickerGrid from "../ImagePickerGrid/ImagePickerGrid.tsx";
 import style from "../../ImagePicker.module.scss";
 
@@ -244,7 +244,8 @@ export default function CollectionsPickerTab({
                 <Loader size="sm"/>
               </Center>
             ) : nonEmptyCollections.length === 0 ? (
-              <ImagePickerEmptyState
+              <EmptyStateBox
+                minHeight={200}
                 title={hasTagFilter === true && collections.length > 0
                   ? t("imagePicker.emptyMatchingTagsTitle")
                   : t("imagePicker.noCollectionsTitle")}
@@ -318,7 +319,8 @@ export default function CollectionsPickerTab({
                   <Loader size="sm"/>
                 </Center>
               ) : collectionImages.length === 0 ? (
-                <ImagePickerEmptyState
+                <EmptyStateBox
+                  minHeight={200}
                   title={hasTagFilter === true ? t("imagePicker.emptyMatchingTagsTitle") : t("imagePicker.emptyCollectionTitle")}
                   description={hasTagFilter === true
                     ? t("imagePicker.emptyCollectionMatchingTagsDescription", { tags: withTags.join(", ") })

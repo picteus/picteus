@@ -6,7 +6,6 @@ export { default as RepositoriesTable } from "./RepositoriesTable/RepositoriesTa
 export { default as RepositoriesToolbar } from "./RepositoriesToolbar/RepositoriesToolbar.tsx";
 export { default as RepositoryCard } from "./RepositoryCard/RepositoryCard.tsx";
 export { default as RepositoryDrawerContent } from "./RepositoryDrawerContent/RepositoryDrawerContent.tsx";
-export { default as RepositoryIdentity } from "./RepositoryIdentity/RepositoryIdentity.tsx";
 export { default as RepositoryMenu } from "./RepositoryMenu/RepositoryMenu.tsx";
 export { default as RepositoryPreviews } from "./RepositoryPreviews/RepositoryPreviews.tsx";
 export { default as RepositoryStatusPill } from "./RepositoryStatusPill/RepositoryStatusPill.tsx";

@@ -1,11 +1,12 @@
 import { ReactElement, ReactNode } from "react";
 import { Badge, Box, Button, Flex, Group, Paper, Stack, Text, Tooltip } from "@mantine/core";
-import { IconBook, IconPhoto } from "@tabler/icons-react";
+import { IconBook } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { CommandEntity, Extension, MarketplaceExtension } from "@picteus/ws-client";
 
 import ActionLink from "../../../../../ActionLink/ActionLink.tsx";
+import { EntityIcons } from "../../../../../AppIcons/AppIcons.ts";
 import CommandIcon from "../../../../../CommandIcon/CommandIcon.tsx";
 import Common from "../../../../../Common/Common.ts";
 import IconTile from "../../../../../IconTile/IconTile.tsx";
@@ -42,6 +43,7 @@ export default function CommandCard({
 }: CommandCardPropsType): ReactElement
 {
   const [ t ] = useTranslation();
+  const ImageIcon = EntityIcons.image;
 
   const targetBadgeLabel = item.entity === CommandEntity.Image
     ? t("extensionPage.commands.targetOneImage")
@@ -102,7 +104,7 @@ export default function CommandCard({
                 radius="sm"
                 fw={500}
                 tt="none"
-                leftSection={<IconPhoto size={12} stroke={Common.IconStrokeSize}/>}
+                leftSection={<ImageIcon size={12} stroke={Common.IconStrokeSize}/>}
               >
                 {targetBadgeLabel}
               </Badge>

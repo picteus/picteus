@@ -1,5 +1,5 @@
-import { ReactElement } from "react";
-import { Flex, Skeleton, Text } from "@mantine/core";
+import { type ReactElement } from "react";
+import { Center, Flex, Skeleton, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { RepositoryMode } from "@picteus/ws-client";
@@ -9,9 +9,9 @@ import { ImageThumbnailStrip } from "app/components";
 
 
 type RepositoryPreviewsType = {
-  repositoryId: string;
-  count: number;
-  edge: number;
+  readonly repositoryId: string;
+  readonly count: number;
+  readonly edge: number;
 };
 
 export default function RepositoryPreviews({ repositoryId, count, edge }: RepositoryPreviewsType): ReactElement
@@ -21,13 +21,24 @@ export default function RepositoryPreviews({ repositoryId, count, edge }: Reposi
   const isDisabled = repository?.mode === RepositoryMode.Disabled;
   const { data: summaries, isLoading } = useRepositorySummaries(repositoryId, count, !isDisabled);
 
-  if (isDisabled === true)
+  function renderPlaceholder(message: string): ReactElement
   {
     return (
-      <Flex h={edge} align="center" justify="center" bg="gray.1" bdrs="sm" ta="center">
-        <Text size="xs" c="dimmed">{t("repositoryScreen.disabledPreview")}</Text>
-      </Flex>
+      <Center
+        h={edge}
+        px="xs"
+        bg="light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))"
+        bdrs="sm"
+        ta="center"
+      >
+        <Text size="xs" c="dimmed">{message}</Text>
+      </Center>
     );
+  }
+
+  if (isDisabled === true)
+  {
+    return renderPlaceholder(t("repositoryScreen.disabledPreview"));
   }
 
   const previews = summaries?.items ?? [];
@@ -43,11 +54,7 @@ export default function RepositoryPreviews({ repositoryId, count, edge }: Reposi
 
   if (previews.length === 0)
   {
-    return (
-      <Flex h={edge} align="center" justify="center" bg="gray.1" bdrs="sm" ta="center">
-        <Text size="xs" c="dimmed">{t("repositoryScreen.noImagesIndexed")}</Text>
-      </Flex>
-    );
+    return renderPlaceholder(t("repositoryScreen.noImagesIndexed"));
   }
 
   return (

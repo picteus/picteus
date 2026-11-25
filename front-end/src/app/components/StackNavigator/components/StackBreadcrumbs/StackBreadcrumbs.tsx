@@ -2,7 +2,6 @@ import React, { ReactElement, ReactNode, useCallback, useMemo } from "react";
 import { Anchor, Box, Breadcrumbs, Group, Menu, Stack, Text, Tooltip, UnstyledButton } from "@mantine/core";
 import { useElementSize } from "@mantine/hooks";
 import { IconChevronRight } from "@tabler/icons-react";
-import { useTranslation } from "react-i18next";
 
 import { ActionModalValue, ContentIconType } from "types";
 import { Common, ContentIcon } from "app/components";
@@ -11,6 +10,13 @@ import style from "./StackBreadcrumbs.module.scss";
 
 
 type StackedComponentType = ActionModalValue;
+
+const TOOLTIP_POSITION = "bottom" as const;
+
+function resolveItemTitle(rawTitle: ReactNode): ReactNode
+{
+  return (rawTitle !== undefined && rawTitle !== null && rawTitle !== "") ? rawTitle : "…";
+}
 
 interface StackBreadcrumbsPropsType
 {
@@ -33,17 +39,15 @@ export default function StackBreadcrumbs({
   popToRoot
 }: StackBreadcrumbsPropsType): ReactElement
 {
-  const [ t ] = useTranslation();
   const { ref: containerRef, width: availableWidth } = useElementSize();
   const { ref: probeRef, width: uncollapsedWidth } = useElementSize();
-  const tooltipPosition = "bottom";
 
-  const stackSlice = useMemo((): StackedComponentType[] =>
+  const ancestorStack = useMemo((): StackedComponentType[] =>
   {
-    return stack.slice(0, currentIndex + 1);
+    return stack.slice(0, currentIndex);
   }, [ stack, currentIndex ]);
 
-  const canCollapse = isVisible === true && stackSlice.length >= 2;
+  const canCollapse = isVisible === true && ancestorStack.length >= 2;
   const isCollapsed = canCollapse === true && availableWidth > 0 && uncollapsedWidth > 0 && uncollapsedWidth > availableWidth;
 
   const separatorElement = useMemo((): ReactNode =>
@@ -60,12 +64,17 @@ export default function StackBreadcrumbs({
     );
   }, []);
 
-  const renderRootAnchor = useCallback((): ReactNode =>
+  const renderAnchorItem = useCallback((
+    itemKey: string,
+    itemTitle: ReactNode,
+    itemIcon: ContentIconType | undefined,
+    onClick: () => void
+  ): ReactNode =>
   {
-    const isStringTitle = typeof title === "string";
-    const rootAnchorElement = (
+    const isStringTitle = typeof itemTitle === "string";
+    const anchorElement = (
       <Anchor
-        key="breadcrumb-root"
+        key={itemKey}
         component="button"
         type="button"
         underline="hover"
@@ -77,16 +86,16 @@ export default function StackBreadcrumbs({
         flex="0 1 auto"
         bdrs={5}
         className={style.crumbAnchor}
-        onClick={popToRoot}
+        onClick={onClick}
       >
         <Group gap={6} wrap="nowrap" maw="100%" miw={0}>
-          {icon !== undefined && (
+          {itemIcon !== undefined && (
             <Box flex="0 0 auto" display="flex">
-              <ContentIcon icon={icon} size={22}/>
+              <ContentIcon icon={itemIcon} size={22}/>
             </Box>
           )}
           <Text size="sm" fw={500} truncate="end" flex={1} miw={0} c="inherit">
-            {title}
+            {itemTitle}
           </Text>
         </Group>
       </Anchor>
@@ -96,128 +105,36 @@ export default function StackBreadcrumbs({
     {
       return (
         <Tooltip
-          key="breadcrumb-root"
-          label={title}
-          openDelay={500}
-          withArrow
-          position={tooltipPosition}
-        >
-          {rootAnchorElement}
-        </Tooltip>
-      );
-    }
-
-    return rootAnchorElement;
-  }, [ icon, title, popToRoot ]);
-
-  const renderStackedItem = useCallback((component: StackedComponentType, itemIndex: number, isCurrentItem: boolean): ReactNode =>
-  {
-    const rawTitle = component.title;
-    const itemTitle = (rawTitle !== undefined && rawTitle !== null && rawTitle !== "") ? rawTitle : "…";
-    const isStringTitle = typeof itemTitle === "string";
-
-    if (isCurrentItem === false)
-    {
-      const anchorElement = (
-        <Anchor
-          key={component.id ?? `breadcrumb-link-${itemIndex}`}
-          component="button"
-          type="button"
-          underline="hover"
-          size="sm"
-          px={6}
-          py={3}
-          miw={0}
-          maw="100%"
-          flex="0 1 auto"
-          bdrs={5}
-          className={style.crumbAnchor}
-          onClick={() => popToIndex(itemIndex)}
-        >
-          <Group gap={6} wrap="nowrap" maw="100%" miw={0}>
-            {component.icon !== undefined && (
-              <Box flex="0 0 auto" display="flex">
-                <ContentIcon icon={component.icon} size={22}/>
-              </Box>
-            )}
-            <Text size="sm" fw={500} truncate="end" flex={1} miw={0} c="inherit">
-              {itemTitle}
-            </Text>
-          </Group>
-        </Anchor>
-      );
-
-      if (isStringTitle === true)
-      {
-        return (
-          <Tooltip
-            key={component.id ?? `breadcrumb-item-${itemIndex}`}
-            label={itemTitle}
-            openDelay={500}
-            withArrow
-            position={tooltipPosition}
-          >
-            {anchorElement}
-          </Tooltip>
-        );
-      }
-
-      return anchorElement;
-    }
-
-    const currentElement = (
-      <Group
-        key={component.id ?? `breadcrumb-current-${itemIndex}`}
-        gap={6}
-        wrap="nowrap"
-        px={6}
-        py={3}
-        miw={0}
-        maw="100%"
-        flex="0 1 auto"
-      >
-        {component.icon !== undefined && (
-          <Box flex="0 0 auto" display="flex">
-            <ContentIcon icon={component.icon} size={22}/>
-          </Box>
-        )}
-        <Text size="sm" fw={700} truncate="end" flex={1} miw={0} c="var(--mantine-color-text)">
-          {itemTitle}
-        </Text>
-      </Group>
-    );
-
-    if (isStringTitle === true)
-    {
-      return (
-        <Tooltip
-          key={component.id ?? `breadcrumb-item-${itemIndex}`}
+          key={itemKey}
           label={itemTitle}
           openDelay={500}
           withArrow
-          position={tooltipPosition}
+          position={TOOLTIP_POSITION}
         >
-          {currentElement}
+          {anchorElement}
         </Tooltip>
       );
     }
 
-    return currentElement;
-  }, [ popToIndex ]);
+    return anchorElement;
+  }, []);
+
+  const renderStackedItem = useCallback((component: StackedComponentType, itemIndex: number): ReactNode =>
+  {
+    const itemKey = component.id ?? `breadcrumb-item-${itemIndex}`;
+    const itemTitle = resolveItemTitle(component.title);
+    return renderAnchorItem(itemKey, itemTitle, component.icon, () => popToIndex(itemIndex));
+  }, [ renderAnchorItem, popToIndex ]);
 
   const breadcrumbItems = useMemo((): ReactNode[] =>
   {
-    const items: ReactNode[] = [ renderRootAnchor() ];
+    const items: ReactNode[] = [ renderAnchorItem("breadcrumb-root", title, icon, popToRoot) ];
 
     if (isCollapsed === true)
     {
-      const hasParent = stackSlice.length >= 3;
-      const collapsedComponents = hasParent === true
-        ? stackSlice.slice(0, stackSlice.length - 2)
-        : stackSlice.slice(0, stackSlice.length - 1);
-      const parentIndex = stackSlice.length - 2;
-      const parentComponent = hasParent === true ? stackSlice[parentIndex] : null;
-      const currentComponent = stackSlice[stackSlice.length - 1];
+      const collapsedComponents = ancestorStack.slice(0, ancestorStack.length - 1);
+      const parentIndex = ancestorStack.length - 1;
+      const parentComponent = ancestorStack[parentIndex];
 
       items.push(
         <Menu
@@ -271,8 +188,7 @@ export default function StackBreadcrumbs({
           <Menu.Dropdown p={6} miw={260} maw={460}>
             {collapsedComponents.map((component, componentIndex) =>
             {
-              const rawTitle = component.title;
-              const itemTitle = (rawTitle !== undefined && rawTitle !== null && rawTitle !== "") ? rawTitle : "…";
+              const itemTitle = resolveItemTitle(component.title);
               const isStringTitle = typeof itemTitle === "string";
 
               const menuItemInner = (
@@ -317,7 +233,7 @@ export default function StackBreadcrumbs({
                       label={itemTitle}
                       openDelay={500}
                       withArrow
-                      position={tooltipPosition}
+                      position={TOOLTIP_POSITION}
                       withinPortal
                     >
                       {menuItemInner}
@@ -332,24 +248,18 @@ export default function StackBreadcrumbs({
         </Menu>
       );
 
-      if (parentComponent !== null)
-      {
-        items.push(renderStackedItem(parentComponent, parentIndex, false));
-      }
-      items.push(renderStackedItem(currentComponent, stackSlice.length - 1, true));
+      items.push(renderStackedItem(parentComponent, parentIndex));
 
       return items;
     }
 
-    for (let itemIndex = 0; itemIndex < stackSlice.length; itemIndex++)
+    for (let itemIndex = 0; itemIndex < ancestorStack.length; itemIndex++)
     {
-      const component = stackSlice[itemIndex];
-      const isCurrentItem = itemIndex === currentIndex;
-      items.push(renderStackedItem(component, itemIndex, isCurrentItem));
+      items.push(renderStackedItem(ancestorStack[itemIndex], itemIndex));
     }
 
     return items;
-  }, [ renderRootAnchor, renderStackedItem, isCollapsed, stackSlice, currentIndex, popToIndex, t ]);
+  }, [ renderAnchorItem, renderStackedItem, title, icon, popToRoot, isCollapsed, ancestorStack, popToIndex ]);
 
   const probeBreadcrumbItems = useMemo((): ReactNode[] =>
   {
@@ -365,12 +275,10 @@ export default function StackBreadcrumbs({
       </Group>
     ];
 
-    for (let itemIndex = 0; itemIndex < stackSlice.length; itemIndex++)
+    for (let itemIndex = 0; itemIndex < ancestorStack.length; itemIndex++)
     {
-      const component = stackSlice[itemIndex];
-      const isCurrentItem = itemIndex === currentIndex;
-      const rawTitle = component.title;
-      const itemTitle = (rawTitle !== undefined && rawTitle !== null && rawTitle !== "") ? rawTitle : "…";
+      const component = ancestorStack[itemIndex];
+      const itemTitle = resolveItemTitle(component.title);
       items.push(
         <Group
           key={component.id ?? `probe-item-${itemIndex}`}
@@ -380,7 +288,7 @@ export default function StackBreadcrumbs({
           py={3}
         >
           {component.icon !== undefined && <Box w={22} h={22} flex="0 0 auto"/>}
-          <Text size="sm" fw={isCurrentItem ? 700 : 500}>
+          <Text size="sm" fw={500}>
             {itemTitle}
           </Text>
         </Group>
@@ -388,7 +296,7 @@ export default function StackBreadcrumbs({
     }
 
     return items;
-  }, [ canCollapse, icon, title, stackSlice, currentIndex ]);
+  }, [ canCollapse, icon, title, ancestorStack ]);
 
   return (
     <Box ref={containerRef} pos="relative" flex={1} miw={0} className={style.breadcrumbsWrapper}>

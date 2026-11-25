@@ -1,11 +1,10 @@
 import React from "react";
 import { Flex, Stack, Text } from "@mantine/core";
-import { IconLibrary } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Collection } from "@picteus/ws-client";
 
-import { ContentTitle, CopyText, FieldValue, NoValue } from "app/components";
+import { ContentTitle, CopyText, EntityIcons, FieldValue, NoValue } from "app/components";
 import { CollectionActions } from "..";
 
 
@@ -20,7 +19,7 @@ export default function CollectionTop({ collection, onEdit, onDeleted }: Collect
   const { t } = useTranslation();
 
   return (<>
-      <ContentTitle text={collection.name} icon={{ icon: IconLibrary }}/>
+      <ContentTitle text={collection.name} icon={{ icon: EntityIcons.collection }}/>
       <Stack gap="md" pos="relative">
         <FieldValue name={t("field.id")} value={<CopyText value={collection.id.toString()} inline={true}>
           <Text size="xs" c="dimmed">{collection.id}</Text>

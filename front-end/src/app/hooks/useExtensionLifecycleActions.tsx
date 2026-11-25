@@ -1,5 +1,4 @@
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
-import { IconBox } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Extension, ExtensionState, Manifest } from "@picteus/ws-client";
@@ -7,6 +6,7 @@ import { Extension, ExtensionState, Manifest } from "@picteus/ws-client";
 import { ToastService } from "utils";
 import { useActionModalContext } from "app/context";
 import { ExtensionsService } from "app/services";
+import { EntityIcons } from "app/components/AppIcons/AppIcons.ts";
 import Common from "app/components/Common/Common.ts";
 import InstallOrUpdateExtension from "app/components/InstallOrUpdateExtension/InstallOrUpdateExtension.tsx";
 import MarketplaceUpdateModal from "app/components/MarketplaceUpdateModal/MarketplaceUpdateModal.tsx";
@@ -159,6 +159,7 @@ export default function useExtensionLifecycleActions(): UseExtensionLifecycleAct
     options?: OpenInstallOrUpdateModalOptionsType
   ): void =>
   {
+    const ExtensionModalIcon = EntityIcons.extension;
     addModal({
       title: extension !== undefined
         ? t("extension.updateTitleWithName", { name: extension.manifest.name })
@@ -168,7 +169,7 @@ export default function useExtensionLifecycleActions(): UseExtensionLifecycleAct
         : t("installExtensionModal.subtitle"),
       icon: extension !== undefined
         ? { url: ExtensionsService.getIconURL(extension) }
-        : { icon: <IconBox stroke={Common.IconStrokeSize}/> },
+        : { icon: <ExtensionModalIcon stroke={Common.IconStrokeSize}/> },
       size: "m",
       body: (
         <InstallOrUpdateExtension

@@ -57,22 +57,6 @@
   min-height: 0;
 }
 
-.emptyState
-{
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  width: 100%;
-  min-height: 200px;
-  margin: 0 auto;
-  padding: var(--mantine-spacing-xl);
-  gap: var(--mantine-spacing-xs);
-  border: 1px dashed var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-md);
-  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
-}
 
 .imageGrid
 {

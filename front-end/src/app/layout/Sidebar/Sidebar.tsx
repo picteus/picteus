@@ -2,13 +2,12 @@ import { useTranslation } from "react-i18next";
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Divider, ScrollArea, Stack } from "@mantine/core";
-import { IconBooks, IconBox, IconFolders, IconPhotoMinus, IconSettings, IconStack2 } from "@tabler/icons-react";
 
 import { UserInterfaceAnchor } from "@picteus/ws-client";
 
-import { computeExtensionSidebarRoute, ROUTES, ToastService } from "utils";
+import { computeExtensionSidebarRoute, ToastService } from "utils";
 import { useAdditionalUiContext, useCommandSocket } from "app/context";
-import { Common, ExtensionIcon } from "app/components";
+import { APP_SCREENS, Common, ExtensionIcon, PRIMARY_SIDEBAR_SCREENS } from "app/components";
 import { useOpenWindow } from "app/hooks";
 import { computeResourceTypeUrl } from "types";
 import { SidebarLink } from "./components";
@@ -27,46 +26,18 @@ export default function Sidebar()
 
   const commonIconStyle = useMemo(() => ({ stroke: Common.IconStrokeSize }), []);
 
-  const mainElementData = [
-    {
-      route: ROUTES.home,
-      label: "explorer",
-      icon: <IconPhotoMinus {...commonIconStyle} />
-    },
-    {
-      route: ROUTES.desk,
-      label: "desk",
-      icon: <IconStack2 {...commonIconStyle} />
-    },
-    {
-      route: ROUTES.repositories,
-      label: "repositories",
-      icon: <IconFolders {...commonIconStyle} />
-    },
-    {
-      route: ROUTES.collections,
-      label: "collections",
-      icon: <IconBooks {...commonIconStyle} />
-    },
-    {
-      route: ROUTES.extensions,
-      label: "extensions",
-      icon: <IconBox {...commonIconStyle} />
-    }
-    // { route: ROUTES.test, label: "test", icon: <IconFlask2 {...commonIconStyle} /> }
-  ];
-
-  const mainElements = useMemo(() => (mainElementData.map(element =>
+  const mainElements = useMemo(() => (PRIMARY_SIDEBAR_SCREENS.map(screen =>
   {
+    const ScreenIcon = screen.icon;
     return (
       <SidebarLink
-        key={element.route}
-        icon={element.icon}
-        label={t(`menu.${element.label}`)}
-        route={element.route}
+        key={screen.route}
+        icon={<ScreenIcon {...commonIconStyle} />}
+        label={t(screen.titleKey)}
+        route={screen.route}
       />
     );
-  })), [ mainElementData ]);
+  })), [ commonIconStyle, t ]);
 
   const additionalElements = useMemo(() =>
   {
@@ -128,6 +99,9 @@ export default function Sidebar()
     });
   }, [ additionalUiContextValue, isAvailable, navigate, openWindow ]);
 
+  const settingsScreen = APP_SCREENS.settings;
+  const SettingsIcon = settingsScreen.icon;
+
   return (
     <nav className={style.container}>
       <Stack gap={15} align="stretch" className={style.wrapper}>
@@ -144,9 +118,9 @@ export default function Sidebar()
           </Stack>
         </ScrollArea>
         <SidebarLink
-          icon={<IconSettings {...commonIconStyle} />}
-          label={t("menu.settings")}
-          route={ROUTES.settings}
+          icon={<SettingsIcon {...commonIconStyle} />}
+          label={t(settingsScreen.titleKey)}
+          route={settingsScreen.route}
         />
       </Stack>
     </nav>

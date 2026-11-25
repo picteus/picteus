@@ -1,12 +1,13 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef } from "react";
 import { ActionIcon, Badge, Box, Button, Group, Input, Paper, Text, Tooltip } from "@mantine/core";
 import { randomId } from "@mantine/hooks";
-import { IconPhoto, IconX } from "@tabler/icons-react";
+import { IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { ImagePickerSelectionModeType } from "types";
 import { useActionModalContext, useModalContext } from "app/context";
 import { useImageSummariesByIds } from "app/hooks";
+import { EntityIcons } from "../AppIcons/AppIcons.ts";
 import Common from "../Common/Common.ts";
 import ImagePicker from "../ImagePicker/ImagePicker.tsx";
 import ImageThumbnail from "../ImageThumbnail/ImageThumbnail.tsx";
@@ -54,6 +55,7 @@ export default function ImagePickerField({
 
   const closeOverlayRef = useRef<(() => void) | null>(null);
   const fallbackModalIdRef = useRef<string | null>(null);
+  const ImageIcon = EntityIcons.image;
 
   const visibleIds = useMemo<string[]>(
     () => value.slice(0, MAX_VISIBLE_MINI_THUMBS),
@@ -133,7 +135,7 @@ export default function ImagePickerField({
       id: modalId,
       size: "l",
       isFullHeight: true,
-      icon: { icon: <IconPhoto stroke={Common.IconStrokeSize}/> },
+      icon: { icon: <ImageIcon stroke={Common.IconStrokeSize}/> },
       title: resolvedTitle,
       body: pickerContent,
       onBeforeClose: (): void =>
@@ -195,7 +197,7 @@ export default function ImagePickerField({
         {value.length === 0 ? (
           <Group justify="space-between" align="center" gap="sm" wrap="wrap" mih={MINI_THUMB_HEIGHT}>
             <Group gap="xs" align="center">
-              <IconPhoto size={Common.IconMediumSize} stroke={Common.IconStrokeSize} color="var(--mantine-color-dimmed)"/>
+              <ImageIcon size={Common.IconMediumSize} stroke={Common.IconStrokeSize} color="var(--mantine-color-dimmed)"/>
               <Text size="sm" c="dimmed">
                 {selectionMode === "single"
                   ? t("imagePicker.emptyFieldSingle")
@@ -206,7 +208,7 @@ export default function ImagePickerField({
               size="xs"
               variant="default"
               disabled={disabled}
-              leftSection={<IconPhoto size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+              leftSection={<ImageIcon size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
               onClick={openPicker}
             >
               {selectionMode === "single"

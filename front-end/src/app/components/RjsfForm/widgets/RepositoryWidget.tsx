@@ -1,11 +1,22 @@
-import { ComboboxItem, ComboboxLikeRenderOptionInput, Select, SelectProps, Stack, Text } from "@mantine/core";
-import { WidgetProps } from "@rjsf/utils";
+import { type ReactElement } from "react";
+import {
+  CheckIcon,
+  Combobox,
+  type ComboboxItem,
+  type ComboboxLikeRenderOptionInput,
+  Group,
+  Select,
+  type SelectProps
+} from "@mantine/core";
+import { type WidgetProps } from "@rjsf/utils";
 import { useTranslation } from "react-i18next";
 
 import { useRepositories } from "app/hooks";
+import RepositoryIcon from "../../RepositoryIcon/RepositoryIcon.tsx";
+import RepositoryIdentity from "../../RepositoryIdentity/RepositoryIdentity.tsx";
 
 
-export default function RepositoryWidget(props: WidgetProps)
+export default function RepositoryWidget(props: WidgetProps): ReactElement
 {
   const [ t ] = useTranslation();
   const { id, value, required, disabled, readonly, onChange, onBlur, onFocus, schema } = props;
@@ -15,28 +26,27 @@ export default function RepositoryWidget(props: WidgetProps)
     value: repository.id,
     label: repository.name
   }));
+  const selectedRepository = value
+    ? repositories.find((repository) => repository.id === value)
+    : undefined;
 
-  const renderSelectOption: SelectProps["renderOption"] = (item: ComboboxLikeRenderOptionInput<ComboboxItem>) =>
+  const renderSelectOption: SelectProps["renderOption"] = (item: ComboboxLikeRenderOptionInput<ComboboxItem>): ReactElement | null =>
   {
     const repository = repositories.find((aRepository) => aRepository.id === item.option.value);
-    if (!repository)
+    if (repository === undefined)
     {
       return null;
     }
+
     return (
-      <Stack gap={2}>
-        <Text size="sm" fw={500}>{repository.name}</Text>
-        {repository.comment && (
-          <Text size="xs" opacity={0.65}>
-            {repository.comment}
-          </Text>
-        )}
-        {repository.url && (
-          <Text size="xs" opacity={0.65}>
-            {repository.url}
-          </Text>
-        )}
-      </Stack>
+      <Group gap="xs" wrap="nowrap" miw={0} flex={1}>
+        {item.checked === true && <CheckIcon className={Combobox.classes.optionsDropdownCheckIcon}/>}
+        <RepositoryIdentity
+          repository={repository}
+          description={repository.comment}
+          size="sm"
+        />
+      </Group>
     );
   };
 
@@ -48,14 +58,27 @@ export default function RepositoryWidget(props: WidgetProps)
       required={required}
       disabled={disabled || readonly}
       value={value || null}
-      onChange={(val) => onChange(val === null ? undefined : val)}
+      leftSection={selectedRepository !== undefined ? <RepositoryIcon repository={selectedRepository}/> : undefined}
+      onChange={(updatedValue) => onChange(updatedValue === null ? undefined : updatedValue)}
       onBlur={id && onBlur ? () => onBlur(id, value) : undefined}
       onFocus={id && onFocus ? () => onFocus(id, value) : undefined}
       data={selectData}
       renderOption={renderSelectOption}
+      withCheckIcon
+      withAlignedLabels
       searchable
+      nothingFoundMessage={t("filters.noMatching")}
       placeholder={t("widgets.repositoryPlaceHolder")}
       clearable
+      scrollAreaProps={{
+        scrollbars: "y",
+        styles: {
+          content: {
+            minWidth: 0,
+            width: "100%"
+          }
+        }
+      }}
       mb="md"
     />
   );

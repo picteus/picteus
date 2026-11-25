@@ -1,26 +1,30 @@
 import { ReactElement, ReactNode } from "react";
-import { Icon } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
-import { StackNavigator } from "app/components";
+import { APP_SCREENS, type AppScreenIdType } from "../AppScreens/AppScreens.ts";
+import StackNavigator from "../StackNavigator/StackNavigator.tsx";
 
 
 interface StackableScreenPropsType
 {
-  children: ReactNode;
-  title: ReactNode;
-  icon: Icon;
+  readonly screen: AppScreenIdType;
+  readonly title?: ReactNode;
+  readonly children: ReactNode;
 }
 
 export default function StackableScreen({
-  children,
+  screen,
   title,
-  icon
+  children
 }: StackableScreenPropsType): ReactElement
 {
+  const [ t ] = useTranslation();
+  const screenDescriptor = APP_SCREENS[screen];
+
   return (
     <StackNavigator
-      title={title}
-      icon={icon}
+      title={title ?? t(screenDescriptor.titleKey)}
+      icon={screenDescriptor.icon}
     >
       {children}
     </StackNavigator>

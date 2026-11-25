@@ -24,13 +24,9 @@ import { Image } from "@picteus/ws-client";
 import { ViewMode } from "types";
 import { useRepository } from "app/hooks";
 import { useActionModalContext } from "app/context";
-import { Common, freeForm, ImageItemWrapper, UiContainerView } from "app/components";
+import { Common, freeForm, ImageItemWrapper, RepositoryIdentity, UiContainerView } from "app/components";
 import ImageDataCard from "../ImageDataCard/ImageDataCard.tsx";
-import {
-  RepositoryDrawerContent,
-  RepositoryIdentity,
-  RepositoryMenu
-} from "../../../../../../screens/RepositoriesScreen/components";
+import { RepositoryDrawerContent, RepositoryMenu } from "../../../../../../screens/RepositoriesScreen/components";
 
 
 type ImageInformationCardPropsType =

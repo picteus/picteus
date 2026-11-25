@@ -1,20 +1,10 @@
-import { type ReactElement, useMemo, useState } from "react";
+import { type ReactElement, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Group, Kbd, Text, useMantineColorScheme } from "@mantine/core";
 import { randomId } from "@mantine/hooks";
-import { Spotlight } from "@mantine/spotlight";
+import { spotlight, Spotlight } from "@mantine/spotlight";
 import { useQuery } from "@tanstack/react-query";
-import {
-  IconActivity,
-  IconBooks,
-  IconFolderOpen,
-  IconLayout,
-  IconMoon,
-  IconPhoto,
-  IconSearch,
-  IconSettings,
-  IconSun
-} from "@tabler/icons-react";
+import { IconMoon, IconSearch, IconSun } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -28,9 +18,10 @@ import type { ProcessCommandType } from "types";
 import { computeDeskRoute, ROUTES } from "utils";
 import { queryKeys } from "app/query";
 import { ExtensionsService, ImageService, StorageService } from "app/services";
-import { useDeskTabsContext } from "app/context";
+import { useActionModalContext, useDeskTabsContext } from "app/context";
 import { useExtensions, useMarketplaceExtensions, useProcessCommands } from "app/hooks";
 import {
+  ALL_APP_SCREENS,
   Common,
   createOpenExtensionNavigationState,
   ExtensionIcon,
@@ -96,10 +87,20 @@ export default function UniversalActionCenter(): ReactElement
   const { commands } = useProcessCommands();
   const { data: extensions = [] } = useExtensions();
   const { data: marketplaceExtensions = [] } = useMarketplaceExtensions();
+  const { modals } = useActionModalContext();
   const { addTab } = useDeskTabsContext();
   const [ searchQuery, setSearchQuery ] = useState("");
+  const hasOpenModal = modals.length > 0;
   const isDark = colorScheme === "dark";
   const iconSize = 18;
+
+  useEffect(() =>
+  {
+    if (hasOpenModal === true)
+    {
+      spotlight.close();
+    }
+  }, [ hasOpenModal ]);
 
   const [ recentImageIds, setRecentImageIds ] = useState<string[]>(() =>
   {
@@ -108,71 +109,19 @@ export default function UniversalActionCenter(): ReactElement
 
   const screenActions = useMemo<ActionItemType[]>(() =>
   {
-    return [
-      {
-        id: "explorer",
-        label: t("actionsCenter.routes.explorer"),
-        icon: <IconPhoto size={iconSize}/>,
+    return ALL_APP_SCREENS.map((screen): ActionItemType =>
+    {
+      const ScreenIcon = screen.icon;
+      return {
+        id: screen.id,
+        label: t(screen.titleKey),
+        icon: <ScreenIcon size={iconSize} stroke={Common.IconStrokeSize}/>,
         execute: (): void =>
         {
-          navigate(ROUTES.home);
+          navigate(screen.route);
         }
-      },
-      {
-        id: "desk",
-        label: t("actionsCenter.routes.desk"),
-        icon: <IconLayout size={iconSize}/>,
-        execute: (): void =>
-        {
-          navigate(ROUTES.desk);
-        }
-      },
-      {
-        id: "repositories",
-        label: t("actionsCenter.routes.repositories"),
-        icon: <IconFolderOpen size={iconSize}/>,
-        execute: (): void =>
-        {
-          navigate(ROUTES.repositories);
-        }
-      },
-      {
-        id: "collections",
-        label: t("actionsCenter.routes.collections"),
-        icon: <IconBooks size={iconSize}/>,
-        execute: (): void =>
-        {
-          navigate(ROUTES.collections);
-        }
-      },
-      {
-        id: "extensions",
-        label: t("actionsCenter.routes.extensions"),
-        icon: <IconLayout size={iconSize}/>,
-        execute: (): void =>
-        {
-          navigate(ROUTES.extensions);
-        }
-      },
-      {
-        id: "activity",
-        label: t("actionsCenter.routes.activity"),
-        icon: <IconActivity size={iconSize}/>,
-        execute: (): void =>
-        {
-          navigate(ROUTES.activity);
-        }
-      },
-      {
-        id: "settings",
-        label: t("actionsCenter.routes.settings"),
-        icon: <IconSettings size={iconSize}/>,
-        execute: (): void =>
-        {
-          navigate(ROUTES.settings);
-        }
-      }
-    ];
+      };
+    });
   }, [ navigate, t ]);
 
   const toggleActions = useMemo<ActionItemType[]>(() =>
@@ -356,7 +305,7 @@ export default function UniversalActionCenter(): ReactElement
 
   return (
     <Spotlight.Root
-      shortcut="mod + k"
+      shortcut={hasOpenModal === true ? null : "mod + k"}
       query={searchQuery}
       onQueryChange={setSearchQuery}
       onSpotlightOpen={(): void =>

@@ -1,7 +1,7 @@
 import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge, Button, Flex, Stack, Table, Text, Title } from "@mantine/core";
-import { IconActivity, IconTrash } from "@tabler/icons-react";
+import { IconTrash } from "@tabler/icons-react";
 
 import { Image } from "@picteus/ws-client";
 
@@ -14,6 +14,7 @@ import {
   Common,
   Container,
   EmptyResults,
+  EntityIcons,
   EntityVisual,
   ExtensionIcon,
   FormatedDate,
@@ -235,7 +236,7 @@ function ActivityContent(): ReactElement
         }}
         emptyResults={
           <EmptyResults
-            icon={IconActivity}
+            icon={EntityIcons.activity}
             description={t("activityScreen.emptyActivity.description")}
             title={t("activityScreen.emptyActivity.title")}
           />
@@ -270,10 +271,8 @@ function ActivityContent(): ReactElement
 
 export default function ActivityScreen(): ReactElement
 {
-  const [ t ] = useTranslation();
-
   return (
-    <StackableScreen title={t("menu.activity")} icon={IconActivity}>
+    <StackableScreen screen="activity">
       <ActivityContent/>
     </StackableScreen>
   );

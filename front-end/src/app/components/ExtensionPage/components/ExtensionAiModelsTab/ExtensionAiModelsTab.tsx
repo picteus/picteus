@@ -42,6 +42,7 @@ import {
   ExtensionsService
 } from "app/services";
 import Common from "../../../Common/Common.ts";
+import EmptyStateBox from "../../../EmptyStateBox/EmptyStateBox.tsx";
 import ErrorAlert from "../../../ErrorAlert/ErrorAlert.tsx";
 import FlexScrollArea from "../../../FlexScrollArea/FlexScrollArea.tsx";
 import Loader from "../../../Loader/Loader.tsx";
@@ -582,15 +583,11 @@ export default function ExtensionAiModelsTab({
           )}
 
           {entries.length === 0 ? (
-            <Paper withBorder p="xl" radius="md">
-              <Stack align="center" gap="xs" ta="center">
-                <IconSparkles size={28} stroke={Common.IconStrokeSize}/>
-                <Title order={4}>{t("extensionPage.aiModels.emptyTitle")}</Title>
-                <Text size="sm" c="dimmed" maw={440}>
-                  {t("extensionPage.aiModels.emptyDescription", { name: extension.manifest.name })}
-                </Text>
-              </Stack>
-            </Paper>
+            <EmptyStateBox
+              icon={<IconSparkles size={28} stroke={Common.IconStrokeSize}/>}
+              title={t("extensionPage.aiModels.emptyTitle")}
+              description={t("extensionPage.aiModels.emptyDescription", { name: extension.manifest.name })}
+            />
           ) : (
             <Stack gap="xs">
               <Group gap="xs" align="center">

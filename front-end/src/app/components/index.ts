@@ -1,4 +1,17 @@
 export { default as Common } from "./Common/Common.ts";
+export {
+  EntityIcons,
+  ScreenIcons,
+  type EntityIconKeyType,
+  type ScreenIconKeyType
+} from "./AppIcons/AppIcons.ts";
+export {
+  APP_SCREENS,
+  PRIMARY_SIDEBAR_SCREENS,
+  ALL_APP_SCREENS,
+  type AppScreenIdType,
+  type AppScreenDescriptorType
+} from "./AppScreens/AppScreens.ts";
 export { default as Container } from "./Container/Container.tsx";
 export { default as Loader } from "./Loader/Loader.tsx";
 export { default as LoadingView } from "./LoadingView/LoadingView.tsx";
@@ -9,6 +22,7 @@ export { default as CodeViewer } from "./CodeViewer/CodeViewer.tsx";
 export { default as ActionLink } from "./ActionLink/ActionLink.tsx";
 export { default as DotSeparated } from "./DotSeparated/DotSeparated.tsx";
 export { default as EmptyResults } from "./EmptyResults/EmptyResults.tsx";
+export { default as EmptyStateBox } from "./EmptyStateBox/EmptyStateBox.tsx";
 export { default as ImagesView } from "./ImagesView/ImagesView.tsx";
 export { default as CommandForm } from "./CommandForm/CommandForm.tsx";
 export { CommandModalHeader } from "./CommandForm/components";
@@ -42,6 +56,8 @@ export { default as Markdown } from "./Markdown/Markdown.tsx";
 export { default as Manual } from "./Manual/Manual.tsx";
 export { default as CollectionIcon } from "./CollectionIcon/CollectionIcon.tsx";
 export { default as CollectionLabel } from "./CollectionLabel/CollectionLabel.tsx";
+export { default as RepositoryIcon } from "./RepositoryIcon/RepositoryIcon.tsx";
+export { default as RepositoryIdentity } from "./RepositoryIdentity/RepositoryIdentity.tsx";
 export { default as ExtensionIcon } from "./ExtensionIcon/ExtensionIcon.tsx";
 export { default as ExtensionBadge } from "./ExtensionBadge/ExtensionBadge.tsx";
 export { default as CommandIcon } from "./CommandIcon/CommandIcon.tsx";
@@ -103,7 +119,9 @@ export {
 } from "./ExtensionPage/ExtensionPage.tsx";
 export { default as ExtensionSettingsModal } from "./ExtensionSettingsModal/ExtensionSettingsModal.tsx";
 export { default as CaptionInstructionSection } from "./CaptionInstructionSection/CaptionInstructionSection.tsx";
-export { default as EligibleTagsInstructionSection } from "./EligibleTagsInstructionSection/EligibleTagsInstructionSection.tsx";
+export {
+  default as EligibleTagsInstructionSection
+} from "./EligibleTagsInstructionSection/EligibleTagsInstructionSection.tsx";
 export { default as CaptionModelModal } from "./CaptionModelModal/CaptionModelModal.tsx";
 export { default as ImagePicker } from "./ImagePicker/ImagePicker.tsx";
 export { default as ImagePickerField } from "./ImagePickerField/ImagePickerField.tsx";
