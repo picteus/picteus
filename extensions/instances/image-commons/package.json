@@ -33,7 +33,8 @@
     "dist",
     "manifest.json",
     "icon.svg",
-    "MANUAL.md"
+    "MANUAL.md",
+    "ui/**/*"
   ],
   "scripts": {
     "prepare": "cd front-end && npm --no-save install || exit 0",

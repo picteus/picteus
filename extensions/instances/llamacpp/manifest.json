@@ -5,7 +5,8 @@
   "name": "llama.cpp",
   "description": "Computes image facets through Vision Languages (VL) exposed by llama.cpp.",
   "categories": [
-    "enrichment"
+    "enrichment",
+    "integration"
   ],
   "author": "KoppaSoft",
   "runtimes": [
