@@ -7,7 +7,7 @@ import { computeRawFeatureContainers } from "../../ImageDataComputer.ts";
 import ImageFeatureCard from "../ImageFeatureCard/ImageFeatureCard.tsx";
 
 
-export type ImageRawFeaturesCardPropsType =
+type ImageRawFeaturesCardPropsType =
   {
     readonly rawFeatures: readonly ExtensionImageFeature[];
     readonly isOpened: boolean;

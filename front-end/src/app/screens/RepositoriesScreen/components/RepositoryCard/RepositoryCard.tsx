@@ -1,21 +1,21 @@
 import { ReactElement } from "react";
-import { Flex, Text, UnstyledButton } from "@mantine/core";
+import { Flex, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { Repository, RepositoryActivity } from "@picteus/ws-client";
 
-import { RepositoryIdentity, RepositoryMenu, RepositoryPreviews, RepositoryStatusPill } from "../index.ts";
-import style from "./RepositoryCard.module.scss";
+import { InteractiveCard } from "app/components";
+import { RepositoryIdentity, RepositoryMenu, RepositoryPreviews, RepositoryStatusPill } from "..";
 
 
 type RepositoryCardType = {
   repository: Repository;
-  imageCount?: number;
-  activity?: RepositoryActivity;
+  imageCount: number | undefined;
+  activity: RepositoryActivity | undefined;
   onOpen: (repository: Repository) => void;
-  onViewImages?: (repository: Repository) => void;
-  onOpenInNewWindow?: (repository: Repository) => void;
-  onEdit?: (repository: Repository) => void;
+  onViewImages: (repository: Repository) => void;
+  onOpenInNewWindow: (repository: Repository) => void;
+  onEdit: (repository: Repository) => void;
   onDeleted: () => void;
 };
 
@@ -33,22 +33,15 @@ export default function RepositoryCard({
   const [ t ] = useTranslation();
 
   return (
-    <UnstyledButton
-      className={style.card}
-      w="100%"
-      p={12}
-      bd="1px solid var(--mantine-color-gray-2)"
-      bdrs="md"
-      onClick={() => onOpen(repository)}
-    >
+    <InteractiveCard p={12} onClick={() => onOpen(repository)}>
       <Flex direction="column" gap={10}>
         <RepositoryIdentity
           repository={repository}
           footer={
             <RepositoryMenu
               repository={repository}
-              onViewImages={onViewImages !== undefined ? () => onViewImages(repository) : undefined}
-              onOpenInNewWindow={onOpenInNewWindow !== undefined ? () => onOpenInNewWindow(repository) : undefined}
+              onViewImages={() => onViewImages(repository)}
+              onOpenInNewWindow={() => onOpenInNewWindow(repository)}
               onEdit={onEdit}
               onDeleted={onDeleted}
             />
@@ -62,6 +55,6 @@ export default function RepositoryCard({
           <RepositoryStatusPill repository={repository} activity={activity}/>
         </Flex>
       </Flex>
-    </UnstyledButton>
+    </InteractiveCard>
   );
 }

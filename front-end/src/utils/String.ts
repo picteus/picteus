@@ -48,15 +48,6 @@ export function generateRandomId()
   return Math.random().toString(36).substring(2);
 }
 
-export function hexToRgb(hex)
-{
-  const bigint = parseInt(hex.replace("#", ""), 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-  return `${r}, ${g}, ${b}`;
-}
-
 function detectPlatformFromPath(filePath: string): "windows" | "unix"
 {
   if (filePath.includes("\\"))
@@ -107,29 +98,4 @@ export function shortenPath(filePath: string, homeDirectory?: string): string
   }
   const tailSegments = contentSegments.slice(-2);
   return `${headWithSeparator}…${separator}${tailSegments.join(separator)}`;
-}
-
-export function recursivelyIncludes(value: unknown, search: string): boolean
-{
-  if (value === null || value === undefined)
-  {
-    return false;
-  }
-
-  if (typeof value === "string")
-  {
-    return value.trim().toLowerCase().includes(search);
-  }
-
-  if (Array.isArray(value))
-  {
-    return value.some((item) => recursivelyIncludes(item, search));
-  }
-
-  if (typeof value === "object")
-  {
-    return Object.values(value).some((val) => recursivelyIncludes(val, search));
-  }
-
-  return false;
 }

@@ -8,7 +8,7 @@ import { ImageSummary } from "@picteus/ws-client";
 import { ImageCommandType, ViewMode } from "types";
 import { useImageCommands } from "app/hooks";
 import { Common, ImageCommand } from "app/components";
-import ImageCommandsMoreMenu from "./ImageCommandsMoreMenu.tsx";
+import { ImageCommandsMoreMenu } from "./components";
 
 
 type ImageCommandsBarPropsType = {
@@ -71,7 +71,7 @@ export default function ImageCommandsBar({ image, viewMode }: ImageCommandsBarPr
   return (
     <Stack gap="sm" w="100%">
       <Text size="xs" c="dimmed" fw={500}>
-        {t("imageDetail.commands", "Image commands")}
+        {t("imageDetail.commands")}
       </Text>
       <Box ref={ref} w="100%">
         <Group justify="space-between" align="center" wrap="nowrap" w="100%">
@@ -91,11 +91,7 @@ export default function ImageCommandsBar({ image, viewMode }: ImageCommandsBarPr
             )}
           </Group>
           {overflowCommands.length > 0 && (
-            <ImageCommandsMoreMenu
-              image={image}
-              viewMode={viewMode}
-              commands={overflowCommands}
-            />
+            <ImageCommandsMoreMenu commands={overflowCommands}/>
           )}
         </Group>
       </Box>

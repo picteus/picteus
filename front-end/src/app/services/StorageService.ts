@@ -1,6 +1,12 @@
 import { ManifestCapabilityId, SearchFilter } from "@picteus/ws-client";
 
-import { DeskTabType, FolderTypes, RepositoriesViewSettingsType, ViewTabDataType } from "types";
+import {
+  DeskTabType,
+  ExtensionsViewSettingsType,
+  FolderTypes,
+  RepositoriesViewSettingsType,
+  ViewTabDataType
+} from "types";
 
 
 export const prefix = "picteus_";
@@ -17,6 +23,7 @@ export const StorageKeys =
     DESK_ACTIVE_TAB: "deskActiveTab",
     DESK_TABS: "deskTabs",
     EXTENSION_INTENT_SHOW_SHOULD_CONFIRM_REDIRECTION: "extensionIntentShowShouldConfirmRedirection",
+    EXTENSIONS_VIEW_SETTINGS: "extensionsViewSettings",
     FOLDER_PICKER_LAST_LOCATION: "extensionPickerLastLocation",
     IMAGE_DELETE_SHOULD_DELETE_FILE: "imageDeleteShouldDeleteFile",
     IMAGE_DETAIL_HIDDEN_SECTIONS: "imageDetailHiddenSections",
@@ -248,6 +255,24 @@ function setRepositoriesViewSettings(viewSettings: RepositoriesViewSettingsType)
   setJson(StorageKeys.REPOSITORIES_VIEW_SETTINGS, viewSettings);
 }
 
+const DEFAULT_EXTENSIONS_VIEW_SETTINGS: ExtensionsViewSettingsType = {
+  installScope: "installed",
+  viewMode: "list",
+  sortCriterion: "name",
+  isSortAscending: true
+};
+
+function getExtensionsViewSettings(): ExtensionsViewSettingsType
+{
+  const storedSettings = getJson<Partial<ExtensionsViewSettingsType>>(StorageKeys.EXTENSIONS_VIEW_SETTINGS);
+  return { ...DEFAULT_EXTENSIONS_VIEW_SETTINGS, ...storedSettings };
+}
+
+function setExtensionsViewSettings(viewSettings: ExtensionsViewSettingsType): void
+{
+  setJson(StorageKeys.EXTENSIONS_VIEW_SETTINGS, viewSettings);
+}
+
 function getDeskTabs(): DeskTabType[]
 {
   return getJson<DeskTabType[]>(StorageKeys.DESK_TABS, []);
@@ -410,22 +435,6 @@ function setCommandParameters(extensionId: string, commandId: string, parameters
   setCommandsParameters(commandsParameters);
 }
 
-// noinspection JSUnusedLocalSymbols
-function _removeCommandParameters(extensionId: string, commandId: string): void
-{
-  const commandIdentifier = computeCommandStorageIdentifier(extensionId, commandId);
-  const commandsParameters = getCommandsParameters();
-  delete commandsParameters[commandIdentifier];
-  setCommandsParameters(commandsParameters);
-}
-
-// noinspection JSUnusedLocalSymbols
-function _resetCommandsParameters(): void
-{
-  remove(StorageKeys.COMMANDS_PARAMETERS);
-}
-
-
 function getRecentImageIds(): string[]
 {
   return getJson<string[]>(StorageKeys.RECENT_IMAGE_IDS, []);
@@ -477,6 +486,8 @@ export default {
   setMainViewTabData,
   getRepositoriesViewSettings,
   setRepositoriesViewSettings,
+  getExtensionsViewSettings,
+  setExtensionsViewSettings,
   getDeskTabs,
   setDeskTabs,
   getDeskActiveTab,

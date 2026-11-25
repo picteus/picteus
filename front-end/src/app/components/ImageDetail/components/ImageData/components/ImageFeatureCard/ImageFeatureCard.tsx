@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, ReactNode } from "react";
 import { Box, Flex } from "@mantine/core";
 
 import { UiContainerView } from "app/components";
@@ -11,19 +11,19 @@ export type ImageFeatureCardType =
   {
     readonly title: string;
     readonly featureContainers: ImageFeatureContainerType[];
-    readonly defaultExpanded?: boolean;
     readonly isOpened?: boolean;
     readonly onToggle?: () => void;
     readonly onHide?: () => void;
+    readonly renderItemRightSection?: (feature: ImageFeatureContainerType) => ReactNode;
   };
 
 export default function ImageFeatureCard({
   title,
   featureContainers,
-  defaultExpanded = true,
   isOpened,
   onToggle,
-  onHide
+  onHide,
+  renderItemRightSection
 }: ImageFeatureCardType): ReactElement | null
 {
   return (
@@ -32,7 +32,6 @@ export default function ImageFeatureCard({
       items={featureContainers}
       getExtensionId={(feature) => feature.extensionId}
       showExtensionBadge={false}
-      defaultExpanded={defaultExpanded}
       isOpened={isOpened}
       onToggle={onToggle}
       onHide={onHide}
@@ -46,6 +45,7 @@ export default function ImageFeatureCard({
                     extensionId={extensionId}
                     name={feature.name}
                     hasSingleExtension={hasSingleExtension}
+                    rightSection={renderItemRightSection?.(feature)}
                   />
                   <UiContainerView uiContainer={feature.uiContainer}/>
                 </Box>

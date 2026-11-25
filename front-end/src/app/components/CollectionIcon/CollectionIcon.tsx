@@ -1,27 +1,30 @@
-import React, { useMemo } from "react";
-import { Collection } from "@picteus/ws-client";
-import { Badge } from "@mantine/core";
-import { generateColorRGB } from "@marko19907/string-to-color";
+import { ReactElement } from "react";
 import { IconHandClick, IconWand } from "@tabler/icons-react";
 
+import { Collection, SearchOriginNature } from "@picteus/ws-client";
 
-type CollectionIconType = {
-  collection: Collection;
+import Common from "../Common/Common.ts";
+
+
+type CollectionIconPropsType = {
+  readonly collection: Collection;
+  readonly size?: number;
 };
 
-export default function CollectionIcon({ collection }: CollectionIconType)
+export default function CollectionIcon({
+  collection,
+  size = 14
+}: CollectionIconPropsType): ReactElement
 {
-  const color = useMemo(() =>
-  {
-    return generateColorRGB(collection.id.toString());
-  }, [ collection ]);
-
-  const isManual = collection.filter.origin?.kind === "images";
-  const Icon = isManual ? IconHandClick : IconWand;
+  const isManual = collection.filter.origin?.kind === SearchOriginNature.Images;
+  const Icon = isManual === true ? IconHandClick : IconWand;
 
   return (
-    <Badge autoContrast color={color} leftSection={<Icon size={12}/>}>
-      {collection.name.substring(0, 1).toUpperCase()}
-    </Badge>
+    <Icon
+      size={size}
+      stroke={Common.IconStrokeSize}
+      color="var(--mantine-color-dimmed)"
+      style={{ flexShrink: 0 }}
+    />
   );
 }

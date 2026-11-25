@@ -33,7 +33,7 @@ import {
 } from "../../../../../../screens/RepositoriesScreen/components";
 
 
-export type ImageInformationCardPropsType =
+type ImageInformationCardPropsType =
   {
     readonly image: Image;
     readonly viewMode: ViewMode;

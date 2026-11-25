@@ -6,13 +6,12 @@ import { ExtensionBadge, ExtensionIcon } from "app/components";
 import ImageDataCard from "../ImageDataCard/ImageDataCard.tsx";
 
 
-export type ExtensionGroupedCardPropsType<T> =
+type ExtensionGroupedCardPropsType<T> =
   {
     readonly title: string;
     readonly items: readonly T[];
     readonly getExtensionId: (item: T) => string;
     readonly showExtensionBadge: boolean;
-    readonly defaultExpanded: boolean;
     readonly isOpened: boolean;
     readonly onToggle: () => void;
     readonly onHide: () => void;
@@ -24,7 +23,6 @@ export default function ExtensionGroupedCard<T>({
   items,
   getExtensionId,
   showExtensionBadge,
-  defaultExpanded = true,
   isOpened,
   onToggle,
   onHide,
@@ -78,7 +76,6 @@ export default function ExtensionGroupedCard<T>({
       ) : undefined}
       title={title}
       count={hasSingleExtension === false ? resolvedEntries.length : undefined}
-      defaultExpanded={defaultExpanded}
       isOpened={isOpened}
       onToggle={onToggle}
       onHide={onHide}

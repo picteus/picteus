@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { Box, Button, Center, Loader, Menu, Text, Tooltip } from "@mantine/core";
+import { Box, Button, Center, Loader, Menu, Tooltip } from "@mantine/core";
 import {
   IconChevronDown,
   IconDeviceFloppy,
@@ -30,7 +30,7 @@ import {
   useUpdateCollectionMutation
 } from "app/hooks";
 import { EventService } from "app/services";
-import { CollectionIcon, CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
+import { CollectionLabel, CommandIcon, Common, computeIcon, MenuItemEntry } from "app/components";
 import AddOrUpdateCollection
   from "../../../../screens/CollectionsScreen/components/AddOrUpdateCollection/AddOrUpdateCollection.tsx";
 
@@ -172,11 +172,6 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
     }
   }
 
-  function truncateName(name: string)
-  {
-    return name.length > 32 ? name.substring(0, 32) + "..." : name;
-  }
-
   const width = 240;
   const hasCollections = collections.length > 0;
   return (
@@ -189,16 +184,19 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
         opened={menuOpened}
         onChange={setMenuOpened}
         disabled={!hasCollections}
+        styles={{ itemLabel: { minWidth: 0 } }}
       >
         <Menu.Target>
           <Button
             variant="default"
             w={width}
-            leftSection={<IconLibraryPhoto size={Common.IconXSmallSize}/>}
+            leftSection={selectedCollection === undefined ? <IconLibraryPhoto size={Common.IconXSmallSize}/> : undefined}
             rightSection={<IconChevronDown size={Common.IconXSmallSize}/>}
             disabled={!hasCollections}
           >
-            {selectedCollection ? truncateName(selectedCollection.name) : t("field.collections")}
+            {selectedCollection !== undefined
+              ? <CollectionLabel collection={selectedCollection}/>
+              : t("field.collections")}
           </Button>
         </Menu.Target>
         <Menu.Dropdown style={{ maxHeight: "75%", overflowY: "auto" }}>
@@ -206,10 +204,9 @@ export const CollectionsBar = forwardRef<CollectionsBarRef, CollectionsBarType>(
           {!loading && collections.map((collection) => (
             <Menu.Item
               key={collection.id}
-              leftSection={<CollectionIcon collection={collection}/>}
               onClick={() => handleOnSelectedCollection(collection)}
             >
-              <Text size="sm">{truncateName(collection.name)}</Text>
+              <CollectionLabel collection={collection}/>
             </Menu.Item>
           ))}
         </Menu.Dropdown>

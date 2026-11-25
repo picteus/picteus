@@ -8,10 +8,9 @@ import { ImageTag } from "app/components";
 import ExtensionGroupedCard from "../ExtensionGroupedCard/ExtensionGroupedCard.tsx";
 
 
-export type ImageTagsCardPropsType =
+type ImageTagsCardPropsType =
   {
     readonly tags: readonly ExtensionImageTag[];
-    readonly defaultExpanded?: boolean;
     readonly isOpened?: boolean;
     readonly onToggle?: () => void;
     readonly onHide?: () => void;
@@ -19,7 +18,6 @@ export type ImageTagsCardPropsType =
 
 export default function ImageTagsCard({
   tags,
-  defaultExpanded = true,
   isOpened,
   onToggle,
   onHide
@@ -33,7 +31,6 @@ export default function ImageTagsCard({
       items={tags}
       getExtensionId={(tag) => tag.id}
       showExtensionBadge={true}
-      defaultExpanded={defaultExpanded}
       isOpened={isOpened}
       onToggle={onToggle}
       onHide={onHide}

@@ -1,5 +1,4 @@
 import { ReactElement } from "react";
-import { Badge, Box } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -10,10 +9,12 @@ import {
   RepositoryState
 } from "@picteus/ws-client";
 
+import { StatusPill } from "app/components";
+
 
 type RepositoryStatusPillType = {
   repository: Repository;
-  activity?: RepositoryActivity;
+  activity: RepositoryActivity | undefined;
 };
 
 export default function RepositoryStatusPill({ repository, activity }: RepositoryStatusPillType): ReactElement
@@ -50,13 +51,9 @@ export default function RepositoryStatusPill({ repository, activity }: Repositor
   }
 
   return (
-    <Badge
+    <StatusPill
+      label={t(i18nLabel)}
       color={color}
-      variant="light"
-      size="sm"
-      leftSection={<Box w={6} h={6} bg={`var(--mantine-color-${color}-filled)`} bdrs={6}/>}
-    >
-      {t(i18nLabel)}
-    </Badge>
+    />
   );
 }

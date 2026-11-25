@@ -20,7 +20,7 @@ export function useImageSelection(image: ImageOrSummary): UseImageSelectionResul
   return { isSelected, toggleSelectedImage };
 }
 
-export type ImageSelectCheckboxPropsType = {
+type ImageSelectCheckboxPropsType = {
   image: ImageOrSummary;
   isCompact: boolean;
   withTooltip?: boolean;

@@ -1,20 +1,18 @@
 import React, { ReactElement, ReactNode } from "react";
 import { ActionIcon, Badge, Card, Collapse, Flex, Text, Tooltip } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
 import { IconChevronDown, IconEyeOff } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Common } from "app/components";
 
 
-export type ImageDataCardPropsType =
+type ImageDataCardPropsType =
   {
     readonly title?: string;
     readonly icon?: ReactNode;
     readonly count?: number;
     readonly subtitle?: string;
     readonly children: ReactNode;
-    readonly defaultExpanded?: boolean;
     readonly isOpened: boolean;
     readonly onToggle: () => void;
     readonly onHide: () => void;
@@ -26,27 +24,12 @@ export default function ImageDataCard({
   count,
   subtitle,
   children,
-  defaultExpanded = true,
-  isOpened: controlledIsOpened,
+  isOpened,
   onToggle,
   onHide
 }: ImageDataCardPropsType): ReactElement
 {
   const [ t ] = useTranslation();
-  const [ uncontrolledIsOpened, { toggle: toggleOpened } ] = useDisclosure(defaultExpanded);
-  const isOpened = controlledIsOpened !== undefined ? controlledIsOpened : uncontrolledIsOpened;
-
-  function handleToggle(): void
-  {
-    if (onToggle !== undefined)
-    {
-      onToggle();
-    }
-    else
-    {
-      toggleOpened();
-    }
-  }
 
   const renderedHeader = (
     <>
@@ -69,7 +52,7 @@ export default function ImageDataCard({
           align="center"
           justify="space-between"
           style={{ cursor: "pointer", userSelect: "none" }}
-          onClick={handleToggle}
+          onClick={onToggle}
         >
           <Flex align="center" gap="xs">
             {renderedHeader}
@@ -98,7 +81,7 @@ export default function ImageDataCard({
               onClick={(event) =>
               {
                 event.stopPropagation();
-                handleToggle();
+                onToggle();
               }}
             >
               <IconChevronDown

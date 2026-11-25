@@ -106,7 +106,7 @@ type MetadataSourceGroupType =
     readonly entries: MetadataSourceEntryType[];
   };
 
-export type ImageMetadataCardPropsType =
+type ImageMetadataCardPropsType =
   {
     readonly metadata: PicteusImageMetadata;
     readonly isOpened: boolean;

@@ -5,8 +5,9 @@ import { toast, ToastContent, ToastOptions } from "react-toastify";
 import { IconCancel, IconCheck, IconProgress, IconX } from "@tabler/icons-react";
 import i18n from "i18next";
 
-import { Common, CopyText } from "app/components";
 import { type ApiCallError, ErrorService } from "app/services";
+import Common from "app/components/Common/Common.ts";
+import CopyText from "app/components/CopyText/CopyText.tsx";
 
 
 export type { ApiCallError };
@@ -60,7 +61,7 @@ function cancel(subtitle?: string): void
 
 function warning(subtitle?: string): void
 {
-  return withTitleAndSubtitle("warn", i18n.t("message.toastWarningTitle", "Warning"), subtitle);
+  return withTitleAndSubtitle("warn", i18n.t("message.toastWarningTitle"), subtitle);
 }
 
 function internalFailure(subtitle?: ReactNode): void

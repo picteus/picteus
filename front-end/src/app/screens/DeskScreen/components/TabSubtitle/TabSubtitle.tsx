@@ -1,15 +1,15 @@
 import React, { ReactElement } from "react";
-import { Flex, Group, Text } from "@mantine/core";
+import { Group, Text } from "@mantine/core";
 import { IconFolder } from "@tabler/icons-react";
 
 import { DeskTabType } from "types";
-import { Common, ExtensionIcon, FormatedDate } from "app/components";
+import { Common, DotSeparated, ExtensionIcon, FormatedDate } from "app/components";
 import { useImage, useRepository } from "app/hooks";
 
-import { TabLocationType } from "../index.ts";
+import { TabLocationType } from "..";
 
 
-export interface TabSubtitlePropsType
+interface TabSubtitlePropsType
 {
 
   readonly tab: DeskTabType;
@@ -34,34 +34,28 @@ export default function TabSubtitle({
   const repositoryName = repository?.name;
 
   const subtitleAndDate = (
-    <>
-      {subtitle && (<span>{subtitle}{Common.DotSeparator}</span>)}
+    <DotSeparated inline>
+      {subtitle}
       <FormatedDate timestamp={tab.timestampInMilliseconds}/>
-    </>
+    </DotSeparated>
   );
 
   const color = "dimmed";
   if (isMenu)
   {
     return (
-      <Flex align="center">
+      <DotSeparated size="xs" wrap="nowrap">
         {tab.extensionId && (
-          <>
-            <ExtensionIcon idOrExtension={tab.extensionId} size="xs" withText/>
-            <span>{Common.DotSeparator}</span>
-          </>
+          <ExtensionIcon idOrExtension={tab.extensionId} size="xs" withText/>
         )}
-        {(repositoryName &&
-          <>
-            <Group gap={4} wrap="nowrap" align="center" component="span" display="inline-flex">
-              <IconFolder size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
-              <span>{repositoryName}</span>
-            </Group>
-            <span>{Common.DotSeparator}</span>
-          </>
+        {repositoryName && (
+          <Group gap={4} wrap="nowrap" align="center" component="span" display="inline-flex">
+            <IconFolder size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>
+            <span>{repositoryName}</span>
+          </Group>
         )}
         <Text size="xs" truncate miw={0}>{subtitleAndDate}</Text>
-      </Flex>
+      </DotSeparated>
     );
   }
 

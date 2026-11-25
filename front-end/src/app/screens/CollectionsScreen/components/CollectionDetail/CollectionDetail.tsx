@@ -6,7 +6,7 @@ import { Collection, ImageSummary, SearchSortingProperty } from "@picteus/ws-cli
 
 import { ToastService } from "utils";
 import { ImageService } from "app/services";
-import { FieldValue, FormatedDate, ImagesStack, LoadingView } from "app/components";
+import { FieldValue, FormatedDate, ImageThumbnailStrip, LoadingView } from "app/components";
 
 
 type CollectionDetailType = {
@@ -60,7 +60,15 @@ export default function CollectionDetail({ collection }: CollectionDetailType)
       return <Text c="dimmed">{t("emptyImages.title")}</Text>;
     }
 
-    return (<ImagesStack images={images}/>);
+    return (
+      <ImageThumbnailStrip
+        images={images}
+        edge={80}
+        gap={-40}
+        fit="cover"
+        radius="md"
+      />
+    );
   }
 
   return (

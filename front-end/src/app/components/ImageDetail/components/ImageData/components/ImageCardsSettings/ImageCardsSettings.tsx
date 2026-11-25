@@ -1,5 +1,5 @@
-import React, { ReactElement, useRef, useState } from "react";
-import { ActionIcon, Badge, Button, Divider, Drawer, Group, Paper, Stack, Switch, Text, Tooltip } from "@mantine/core";
+import React, { ReactElement, useState } from "react";
+import { ActionIcon, Badge, Button, Divider, Group, Paper, Stack, Switch, Text, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconAdjustmentsHorizontal,
@@ -11,8 +11,8 @@ import {
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { useEscapeKey } from "app/hooks";
-import { Common } from "app/components";
+import Common from "../../../../../Common/Common.ts";
+import Drawer from "../../../../../Drawer/Drawer.tsx";
 
 import { useImageDataSectionsContext } from "../../../../context/ImageDataSectionsContext.tsx";
 
@@ -31,8 +31,6 @@ export default function ImageCardsSettings(): ReactElement
   const context = useImageDataSectionsContext();
   const [ drawerOpened, { open: openDrawer, close: closeDrawer } ] = useDisclosure(false);
   const sections = context.sections;
-  const contentRef = useRef<HTMLDivElement>(null);
-  useEscapeKey(contentRef, closeDrawer, drawerOpened);
   const [ draggedIndex, setDraggedIndex ] = useState<number | null>(null);
   const [ dragOverIndex, setDragOverIndex ] = useState<number | null>(null);
 
@@ -124,8 +122,6 @@ export default function ImageCardsSettings(): ReactElement
       <Drawer
         opened={drawerOpened}
         onClose={closeDrawer}
-        closeOnEscape={false}
-        position="right"
         title={
           <Text fw={600} size="md">
             {t("imageDetail.settings.title")}
@@ -133,9 +129,9 @@ export default function ImageCardsSettings(): ReactElement
         }
         size="sm"
         padding="md"
+        zIndex={200}
       >
-        {drawerOpened && (
-          <Stack ref={contentRef} gap="md">
+        <Stack gap="md">
             <Text size="xs" c="dimmed">
               {t("imageDetail.settings.description")}
             </Text>
@@ -213,7 +209,6 @@ export default function ImageCardsSettings(): ReactElement
                         color="gray"
                         size="sm"
                         style={{ cursor: "grab" }}
-                        aria-label="Drag to reorder"
                       >
                         <IconGripVertical size={16}/>
                       </ActionIcon>
@@ -278,7 +273,6 @@ export default function ImageCardsSettings(): ReactElement
               })}
             </Stack>
           </Stack>
-        )}
       </Drawer>
     </>);
 }

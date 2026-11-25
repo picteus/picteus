@@ -9,7 +9,7 @@ import { useExtensions } from "app/hooks";
 import { ExtensionsService } from "app/services";
 
 
-export interface ExtensionIconPropsType
+interface ExtensionIconPropsType
 {
 
   readonly idOrExtension: string | Extension | MarketplaceExtension;

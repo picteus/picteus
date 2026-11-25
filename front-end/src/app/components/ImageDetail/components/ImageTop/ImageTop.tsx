@@ -8,8 +8,8 @@ import { Image, ImageFeatureType } from "@picteus/ws-client";
 import { ViewMode } from "types";
 import { capitalizeText } from "utils";
 import { useExtensions } from "app/hooks";
-import { Common, CopyText, ExtensionBadge } from "app/components";
-import { ImageCardsSettings, ImageCommandsBar, ImageDimensions, ImageRatio, ImageWeight } from "../index.ts";
+import { Common, CopyText, ExtensionBadge, ImageSubtitle } from "app/components";
+import { ImageCardsSettings, ImageCommandsBar } from "..";
 
 import style from "./ImageTop.module.scss";
 
@@ -103,8 +103,7 @@ export default function ImageTop({
         </Group>
 
         <Text c="dimmed" size="xs" truncate="end">
-          {image.format} · <ImageWeight image={image}/> · <ImageDimensions dimensions={image.dimensions}/> (<ImageRatio
-          dimensions={image.dimensions}/>)
+          <ImageSubtitle image={image} withFormat withWeight withRatio/>
         </Text>
 
         <Box pt={4}>

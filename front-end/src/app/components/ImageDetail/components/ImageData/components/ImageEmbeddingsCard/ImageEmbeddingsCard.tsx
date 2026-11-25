@@ -45,7 +45,7 @@ function EmbeddingModelSection({
   return <UiContainerView uiContainer={uiContainer}/>;
 }
 
-export type ImageEmbeddingsCardPropsType =
+type ImageEmbeddingsCardPropsType =
   {
     readonly image: Image;
     readonly embeddings: readonly ExtensionImageEmbeddings[];

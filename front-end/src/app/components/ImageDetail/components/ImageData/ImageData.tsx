@@ -19,13 +19,16 @@ import {
   isDisplayedInFeatureTypeCards,
   isDisplayedInRecipeCard
 } from "./ImageDataComputer.ts";
-import ImageInformationCard from "./components/ImageInformationCard/ImageInformationCard.tsx";
-import ImageTagsCard from "./components/ImageTagsCard/ImageTagsCard.tsx";
-import ImageRecipeCard from "./components/ImageRecipeCard/ImageRecipeCard.tsx";
-import ImageFeatureTypeCard from "./components/ImageFeatureTypeCard/ImageFeatureTypeCard.tsx";
-import ImageRawFeaturesCard from "./components/ImageRawFeaturesCard/ImageRawFeaturesCard.tsx";
-import ImageMetadataCard, { getMetadataEntriesCount } from "./components/ImageMetadataCard/ImageMetadataCard.tsx";
-import ImageEmbeddingsCard from "./components/ImageEmbeddingsCard/ImageEmbeddingsCard.tsx";
+import {
+  getMetadataEntriesCount,
+  ImageEmbeddingsCard,
+  ImageFeatureTypeCard,
+  ImageInformationCard,
+  ImageMetadataCard,
+  ImageRawFeaturesCard,
+  ImageRecipeCard,
+  ImageTagsCard
+} from "./components";
 
 import style from "./ImageData.module.scss";
 

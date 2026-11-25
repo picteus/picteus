@@ -17,15 +17,27 @@ import {
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
-import { type ImageSummary, type SearchImageSummaryResult, SearchOriginNature } from "@picteus/ws-client";
+import {
+  type ImageSummary,
+  type Manifest,
+  type SearchImageSummaryResult,
+  SearchOriginNature
+} from "@picteus/ws-client";
 
 import type { ProcessCommandType } from "types";
 import { computeDeskRoute, ROUTES } from "utils";
 import { queryKeys } from "app/query";
-import { ImageService, StorageService } from "app/services";
+import { ExtensionsService, ImageService, StorageService } from "app/services";
 import { useDeskTabsContext } from "app/context";
-import { useProcessCommands } from "app/hooks";
-import { Common, ImageSubtitle, ImageThumbnail, ProcessCommand } from "app/components";
+import { useExtensions, useMarketplaceExtensions, useProcessCommands } from "app/hooks";
+import {
+  Common,
+  createOpenExtensionNavigationState,
+  ExtensionIcon,
+  ImageSubtitle,
+  ImageThumbnail,
+  ProcessCommand
+} from "app/components";
 
 import style from "./UniversalActionCenter.module.scss";
 
@@ -69,6 +81,12 @@ type ActionItemType = {
   readonly execute: () => void;
 };
 
+type ExtensionSpotlightItemType = {
+  readonly id: string;
+  readonly manifest: Manifest;
+  readonly iconUrl?: string;
+};
+
 
 export default function UniversalActionCenter(): ReactElement
 {
@@ -76,6 +94,8 @@ export default function UniversalActionCenter(): ReactElement
   const navigate = useNavigate();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const { commands } = useProcessCommands();
+  const { data: extensions = [] } = useExtensions();
+  const { data: marketplaceExtensions = [] } = useMarketplaceExtensions();
   const { addTab } = useDeskTabsContext();
   const [ searchQuery, setSearchQuery ] = useState("");
   const isDark = colorScheme === "dark";
@@ -153,7 +173,7 @@ export default function UniversalActionCenter(): ReactElement
         }
       }
     ];
-  }, [ navigate ]);
+  }, [ navigate, t ]);
 
   const toggleActions = useMemo<ActionItemType[]>(() =>
   {
@@ -168,7 +188,7 @@ export default function UniversalActionCenter(): ReactElement
         }
       }
     ];
-  }, [ isDark, setColorScheme ]);
+  }, [ isDark, setColorScheme, t ]);
 
   const query = searchQuery.trim().toLowerCase();
 
@@ -183,6 +203,36 @@ export default function UniversalActionCenter(): ReactElement
       return action.label.toLowerCase().includes(query);
     });
   }, [ screenActions, query ]);
+
+  const filteredExtensions = useMemo<ExtensionSpotlightItemType[]>(() =>
+  {
+    const installedIds = new Set<string>(extensions.map(extension => extension.manifest.id));
+    const items: ExtensionSpotlightItemType[] = extensions.map(extension => ({
+      id: extension.manifest.id,
+      manifest: extension.manifest
+    }));
+
+    if (query.length > 0)
+    {
+      for (const marketplaceExtension of marketplaceExtensions)
+      {
+        if (installedIds.has(marketplaceExtension.manifest.id) === false)
+        {
+          items.push({
+            id: marketplaceExtension.manifest.id,
+            manifest: marketplaceExtension.manifest,
+            iconUrl: marketplaceExtension.icon
+          });
+        }
+      }
+    }
+
+    const filtered = query.length === 0
+      ? items
+      : items.filter(item => ExtensionsService.matchesSearch(item.manifest, query));
+
+    return filtered.sort((first, second) => first.manifest.name.localeCompare(second.manifest.name));
+  }, [ extensions, marketplaceExtensions, query ]);
 
   const filteredCommands = useMemo<ProcessCommandType[]>(() =>
   {
@@ -272,7 +322,19 @@ export default function UniversalActionCenter(): ReactElement
     [ recentImages, query ]
   );
 
-  const totalResults = filteredScreenActions.length + filteredCommands.length + filteredToggleActions.length + filteredRecentImages.length;
+  const totalResults =
+    filteredScreenActions.length +
+    filteredExtensions.length +
+    filteredCommands.length +
+    filteredToggleActions.length +
+    filteredRecentImages.length;
+
+  function handleSelectExtension(extensionId: string): void
+  {
+    navigate(ROUTES.extensions, {
+      state: createOpenExtensionNavigationState(extensionId)
+    });
+  }
 
   async function handleSelectRecentImage(imageId: string, image?: ImageSummary): Promise<void>
   {
@@ -334,6 +396,20 @@ export default function UniversalActionCenter(): ReactElement
                 onClick={navAction.execute}
                 leftSection={navAction.icon}
                 label={navAction.label}
+              />
+            ))}
+          </Spotlight.ActionsGroup>
+        )}
+
+        {filteredExtensions.length > 0 && (
+          <Spotlight.ActionsGroup label={t("actionsCenter.sections.extensions")}>
+            {filteredExtensions.map(extensionItem => (
+              <Spotlight.Action
+                key={`extension-${extensionItem.id}`}
+                onClick={() => handleSelectExtension(extensionItem.id)}
+                leftSection={<ExtensionIcon idOrExtension={extensionItem.id} url={extensionItem.iconUrl} size="sm"/>}
+                label={extensionItem.manifest.name}
+                description={extensionItem.manifest.description}
               />
             ))}
           </Spotlight.ActionsGroup>

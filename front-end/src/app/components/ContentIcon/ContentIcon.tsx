@@ -53,7 +53,7 @@ function isResourceType(candidate: unknown): candidate is ResourceType
   return typeof candidate === "object" && candidate !== null && ("url" in candidate || "content" in candidate);
 }
 
-export type ContentIconPropsType = {
+type ContentIconPropsType = {
   icon?: ContentIconType;
   size?: IconSizeType | number;
   withBorder?: boolean;

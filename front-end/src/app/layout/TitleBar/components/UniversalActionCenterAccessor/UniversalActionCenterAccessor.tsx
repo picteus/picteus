@@ -18,7 +18,6 @@ export default function UniversalActionCenterAccessor(): ReactElement
       className={style.accessor}
       onClick={spotlight.open}
       data-no-drag
-      aria-label={t("actionsCenter.searchOrJump")}
     >
       <Group gap={6} wrap="nowrap" style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
         <IconSearch size={14} style={{ flexShrink: 0, opacity: 0.6 }}/>

@@ -2,7 +2,10 @@ import { useMutation, UseMutationResult, useQuery, useQueryClient, UseQueryResul
 import { useMemo } from "react";
 import i18n from "i18next";
 import {
+  CaptionInstruction,
   CommandEntity,
+  EligibleTagsInstruction,
+  EmbeddingInstruction,
   Extension,
   ExtensionActivity,
   ExtensionActivityState,
@@ -19,7 +22,7 @@ import {
 } from "@picteus/ws-client";
 
 import { UiExtensionCommandType } from "types";
-import { ExtensionsService } from "app/services";
+import { ExtensionInstructionCapabilitiesType, ExtensionsService } from "app/services";
 import { queryKeys } from "app/query";
 
 
@@ -55,29 +58,6 @@ export function useExtensions(): UseQueryResult<Extension[], Error>
       }): Extension[] =>
       {
         return data.extensions;
-      }
-    }
-  );
-}
-
-export function useExtensionsConfiguration(): UseQueryResult<ExtensionsConfiguration, Error>
-{
-  return useQuery(
-    {
-      queryKey: queryKeys.extensions.all,
-      queryFn: (): Promise<{
-        extensions: Extension[];
-        extensionsConfiguration: ExtensionsConfiguration;
-      }> =>
-      {
-        return ExtensionsService.fetchAll();
-      },
-      select: (data: {
-        extensions: Extension[];
-        extensionsConfiguration: ExtensionsConfiguration;
-      }): ExtensionsConfiguration =>
-      {
-        return data.extensionsConfiguration;
       }
     }
   );
@@ -186,7 +166,10 @@ export function useExtensionCommands(commandEntities: CommandEntity[]): UiExtens
       command: {
         id: entity.command.id,
         withTags: entity.command.on?.withTags,
-        label: ExtensionsService.findCommandSpecification(entity.command.specifications, i18n.language)?.label ?? entity.command.id,
+        label: ExtensionsService.resolveCommandLabel(
+          entity.command.id,
+          ExtensionsService.findCommandSpecification(entity.command.specifications, i18n.language)
+        ),
         form: { parameters: entity.command.parameters },
         iconUri: entity.command.ui?.iconUri
       }
@@ -257,7 +240,6 @@ export function useInstallExtensionMutation(): UseMutationResult<Extension,
       onSuccess: (): void =>
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.configuration });
       }
     }
   );
@@ -276,7 +258,6 @@ export function useUpdateExtensionMutation(): UseMutationResult<Extension, Error
       onSuccess: (updatedExtension: Extension): void =>
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.configuration });
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.detail(updatedExtension.manifest.id) });
       }
     }
@@ -296,8 +277,10 @@ export function useUninstallExtensionMutation(): UseMutationResult<void, Error, 
       onSuccess: (_data, extensionId): void =>
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.configuration });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.aiModels });
         void queryClient.removeQueries({ queryKey: queryKeys.extensions.detail(extensionId) });
+        void queryClient.removeQueries({ queryKey: queryKeys.extensions.settings(extensionId) });
+        void queryClient.removeQueries({ queryKey: queryKeys.extensions.instructions(extensionId) });
       }
     }
   );
@@ -316,9 +299,25 @@ export function useChangeExtensionStateMutation(): UseMutationResult<void, Error
       onSuccess: (_data, parameters): void =>
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.configuration });
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.detail(parameters.id) });
       }
+    }
+  );
+}
+
+export function useExtensionSettings(
+  extensionId: string,
+  enabled = true
+): UseQueryResult<ExtensionSettings, Error>
+{
+  return useQuery(
+    {
+      queryKey: queryKeys.extensions.settings(extensionId),
+      queryFn: (): Promise<ExtensionSettings> =>
+      {
+        return ExtensionsService.getSettings({ id: extensionId });
+      },
+      enabled: enabled === true && extensionId.length > 0
     }
   );
 }
@@ -338,6 +337,8 @@ export function useSetExtensionSettingsMutation(): UseMutationResult<void, Error
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.detail(parameters.id) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.settings(parameters.id) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.aiModels });
       }
     }
   );
@@ -357,6 +358,8 @@ export function useResetExtensionSettingsMutation(): UseMutationResult<Extension
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.detail(parameters.id) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.settings(parameters.id) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.aiModels });
       }
     }
   );
@@ -374,3 +377,103 @@ export function useAiModels(): UseQueryResult<ExtensionAiModel[], Error>
     }
   );
 }
+
+export type ExtensionInstructionsDataType =
+  {
+    readonly captionInstructions: CaptionInstruction[];
+    readonly eligibleTagsInstructions: EligibleTagsInstruction[];
+    readonly embeddingInstructions: EmbeddingInstruction[];
+  };
+
+export function useExtensionInstructions(
+  extensionId: string,
+  capabilities: ExtensionInstructionCapabilitiesType,
+  enabled = true
+): UseQueryResult<ExtensionInstructionsDataType, Error>
+{
+  return useQuery(
+    {
+      queryKey: queryKeys.extensions.instructions(extensionId),
+      queryFn: async (): Promise<ExtensionInstructionsDataType> =>
+      {
+        const [ captionInstructions, eligibleTagsInstructions, embeddingInstructions ] = await Promise.all([
+          capabilities.hasCaptionCapability === true
+            ? ExtensionsService.getCaptionInstructions({ id: extensionId })
+            : Promise.resolve([]),
+          capabilities.hasEligibleTagsCapability === true
+            ? ExtensionsService.getEligibleTagsInstructions({ id: extensionId })
+            : Promise.resolve([]),
+          capabilities.hasEmbeddingsCapability === true
+            ? ExtensionsService.getEmbeddingInstructions({ id: extensionId })
+            : Promise.resolve([])
+        ]);
+        return {
+          captionInstructions,
+          eligibleTagsInstructions,
+          embeddingInstructions
+        };
+      },
+      enabled: enabled === true && extensionId.length > 0 && capabilities.hasAnyInstructionCapability === true
+    }
+  );
+}
+
+export type SaveExtensionInstructionsParametersType =
+  {
+    readonly extensionId: string;
+    readonly captionInstructions?: CaptionInstruction[];
+    readonly eligibleTagsInstructions?: EligibleTagsInstruction[];
+    readonly embeddingInstructions?: EmbeddingInstruction[];
+  };
+
+export function useSaveExtensionInstructionsMutation(): UseMutationResult<
+  void,
+  Error,
+  SaveExtensionInstructionsParametersType
+>
+{
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    {
+      mutationFn: async (parameters: SaveExtensionInstructionsParametersType): Promise<void> =>
+      {
+        const calls: Promise<unknown>[] = [];
+        if (parameters.captionInstructions !== undefined)
+        {
+          calls.push(
+            ExtensionsService.setCaptionInstructions({
+              id: parameters.extensionId,
+              captionInstruction: parameters.captionInstructions
+            })
+          );
+        }
+        if (parameters.eligibleTagsInstructions !== undefined)
+        {
+          calls.push(
+            ExtensionsService.setEligibleTagsInstructions({
+              id: parameters.extensionId,
+              eligibleTagsInstruction: parameters.eligibleTagsInstructions
+            })
+          );
+        }
+        if (parameters.embeddingInstructions !== undefined)
+        {
+          calls.push(
+            ExtensionsService.setEmbeddingInstructions({
+              id: parameters.extensionId,
+              embeddingInstruction: parameters.embeddingInstructions
+            })
+          );
+        }
+        await Promise.all(calls);
+      },
+      onSuccess: (_data, parameters): void =>
+      {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.instructions(parameters.extensionId) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.aiModels });
+      }
+    }
+  );
+}
+

@@ -35,6 +35,7 @@ export default function ExtensionBadge({
       color={color}
       radius="sm"
       tt="none"
+      maw="100%"
       leftSection={<ExtensionIcon idOrExtension={extensionId} size="xs"/>}
     >
       {extensionName}
@@ -48,7 +49,7 @@ export default function ExtensionBadge({
 
   return (
     <Tooltip label={tooltip} position="bottom" withArrow>
-      <Box style={{ display: "inline-flex" }}>
+      <Box display="inline-flex" maw="100%" miw={0}>
         {badgeElement}
       </Box>
     </Tooltip>

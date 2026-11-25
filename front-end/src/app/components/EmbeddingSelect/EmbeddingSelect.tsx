@@ -8,7 +8,7 @@ import { StorageService } from "app/services";
 import { ExtensionIcon, MenuItemEntry, StandardMenu } from "app/components";
 
 
-export type EmbeddingSelectPropsType =
+type EmbeddingSelectPropsType =
   {
     readonly initialEmbeddingName?: ExtensionIdImageEmbeddingName;
     readonly extensionId?: string;

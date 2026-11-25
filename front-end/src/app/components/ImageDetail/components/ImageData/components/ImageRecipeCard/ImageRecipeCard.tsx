@@ -8,7 +8,7 @@ import { computeRecipeFeatureContainers } from "../../ImageDataComputer.ts";
 import ImageFeatureCard from "../ImageFeatureCard/ImageFeatureCard.tsx";
 
 
-export type ImageRecipeCardPropsType =
+type ImageRecipeCardPropsType =
   {
     readonly recipeFeatures: readonly ExtensionImageFeature[];
     readonly viewMode: ViewMode;

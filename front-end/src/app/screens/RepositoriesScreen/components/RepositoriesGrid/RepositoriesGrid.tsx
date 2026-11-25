@@ -3,7 +3,7 @@ import { SimpleGrid } from "@mantine/core";
 
 import { Repository, RepositoryActivity } from "@picteus/ws-client";
 
-import { RepositoryCard } from "../index.ts";
+import { RepositoryCard } from "..";
 
 
 type RepositoriesGridType = {
@@ -11,9 +11,9 @@ type RepositoriesGridType = {
   imageCounts: Record<string, number>;
   activities: Map<string, RepositoryActivity>;
   onOpen: (repository: Repository) => void;
-  onViewImages?: (repository: Repository) => void;
-  onOpenInNewWindow?: (repository: Repository) => void;
-  onEdit?: (repository: Repository) => void;
+  onViewImages: (repository: Repository) => void;
+  onOpenInNewWindow: (repository: Repository) => void;
+  onEdit: (repository: Repository) => void;
   onDeleted: () => void;
 };
 

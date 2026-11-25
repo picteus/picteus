@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useFileOrDirectoryPicker } from "app/hooks";
 
 
-export type FileOrDirectoryPickerWidgetPropsType = WidgetProps & {
+type FileOrDirectoryPickerWidgetPropsType = WidgetProps & {
   readonly kind: "file" | "directory";
 };
 
@@ -60,7 +60,6 @@ export default function FileOrDirectoryPickerWidget(props: FileOrDirectoryPicker
             }}
             variant="default"
             size="lg"
-            aria-label={t(`useFileOrDirectoryPicker.${kind}`)}
             title={t(`useFileOrDirectoryPicker.${kind}`)}
           >
             {kind === "file" ? <IconFileSearch stroke={1.5}/> : <IconFolderSearch stroke={1.5}/>}

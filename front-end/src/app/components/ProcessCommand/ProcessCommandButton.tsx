@@ -48,7 +48,6 @@ export default function ProcessCommandButton({
         disabled={disabled ?? !isAvailable}
         size={size}
         px={px ?? "xs"}
-        aria-label={resolvedCommand.label}
         {...others}
       >
         {resolvedCommand.icon(size)}

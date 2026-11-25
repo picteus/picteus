@@ -4,7 +4,7 @@ import { IconPhoto } from "@tabler/icons-react";
 
 import { useImagesSelectedContext } from "app/context";
 import { Common } from "app/components";
-import { SelectedImages } from "../index.ts";
+import { SelectedImages } from "..";
 
 
 export default function SelectedImagesHover()

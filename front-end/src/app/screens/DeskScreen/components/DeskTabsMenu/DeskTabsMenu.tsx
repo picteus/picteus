@@ -11,15 +11,14 @@ import {
   Popover,
   ScrollArea,
   Stack,
-  Text,
-  TextInput
+  Text
 } from "@mantine/core";
-import { IconChevronDown, IconSearch } from "@tabler/icons-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
-import { ShortcutBadge } from "app/components";
-import { DeskTabIcon, TabSubtitle } from "../index";
+import { DotSeparated, SearchInput, ShortcutBadge } from "app/components";
+import { DeskTabIcon, TabSubtitle } from "..";
 
 import classes from "./DeskTabsMenu.module.scss";
 
@@ -46,7 +45,7 @@ function matchesTabSearch(tab: DeskTabType, searchCriterion: string): boolean
   });
 }
 
-export interface DeskTabsMenuPropsType
+interface DeskTabsMenuPropsType
 {
 
   tabs: DeskTabType[];
@@ -213,7 +212,10 @@ export default function DeskTabsMenu({
             handleOpenChange(!isOpened);
           }}
         >
-          {t("deskTabsMenu.allTabs", "All tabs")} · {tabs.length}
+          <DotSeparated inline>
+            {t("deskTabsMenu.allTabs")}
+            {tabs.length}
+          </DotSeparated>
         </Button>
       </Popover.Target>
 
@@ -223,33 +225,17 @@ export default function DeskTabsMenu({
         maw="calc(100vw - 32px)"
       >
         <Box p="xs">
-          <TextInput
-            placeholder={t("deskTabsMenu.searchPlaceholder", "Search open tabs")}
-            value={searchCriterion}
-            onChange={event =>
-            {
-              setSearchCriterion(event.currentTarget.value);
-            }}
-            onKeyDown={handleInputKeyDown}
-            leftSection={<IconSearch size={14} stroke={1.5}/>}
-            rightSection={
-              isSearching ? (
-                <CloseButton
-                  size="xs"
-                  onClick={() =>
-                  {
-                    setSearchCriterion("");
-                  }}
-                />
-              ) : (
-                <ShortcutBadge combo="mod + d" size="xs"/>
-              )
-            }
-            rightSectionWidth={isSearching ? undefined : 70}
-            rightSectionPointerEvents={isSearching ? "all" : "none"}
+          <SearchInput
+            w="100%"
             size="xs"
             variant="filled"
             autoFocus
+            placeholder={t("deskTabsMenu.searchPlaceholder")}
+            value={searchCriterion}
+            onChange={setSearchCriterion}
+            onKeyDown={handleInputKeyDown}
+            emptyRightSection={<ShortcutBadge combo="mod + d" size="xs"/>}
+            rightSectionWidth={70}
           />
         </Box>
 

@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useTitleBarContext } from "app/context";
 
 
-export interface TitleBarPortalPropsType
+interface TitleBarPortalPropsType
 {
   readonly children: ReactNode;
 }

@@ -14,16 +14,16 @@ type IndicatorCardType = {
   icon: typeof IconPhoto;
   content: ReactNode;
   label: string;
-  edge?: number;
 };
 
 function IndicatorCard({
   icon: IconComponent,
   content,
-  label,
-  edge
+  label
 }: IndicatorCardType): ReactElement
 {
+  const edge = Common.ImageThumbnailEdge;
+
   return (
     <Paper
       withBorder
@@ -41,54 +41,23 @@ function IndicatorCard({
   );
 }
 
-type CommonImagesCollectionPropsType = {
-  count?: number;
-  explanation?: string;
+type ImagesCollectionPropsType = {
+  readonly searchParameters: SearchParameters;
+  readonly explanation?: string;
 };
-
-type WithSearchParametersImagesCollectionPropsType = CommonImagesCollectionPropsType & {
-  searchParameters: SearchParameters;
-  images?: never;
-  totalCount?: never;
-};
-
-type WithImagesImagesCollectionPropsType = CommonImagesCollectionPropsType & {
-  images: ImageSummary[];
-  totalCount?: number;
-  searchParameters?: never;
-};
-
-export type ImagesCollectionPropsType =
-  | WithSearchParametersImagesCollectionPropsType
-  | WithImagesImagesCollectionPropsType;
 
 export default function ImagesCollection({
-  count = 20,
   explanation,
-  searchParameters,
-  images: initialImages,
-  totalCount: initialTotalCount
+  searchParameters
 }: ImagesCollectionPropsType): ReactElement
 {
   const [ t ] = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [ images, setImages ] = useState<ImageSummary[]>(initialImages ?? []);
-  const [ totalCount, setTotalCount ] = useState<number | undefined>(initialTotalCount);
+  const [ images, setImages ] = useState<ImageSummary[]>([]);
+  const [ totalCount, setTotalCount ] = useState<number | undefined>(undefined);
 
   useEffect(() =>
   {
-    if (initialImages !== undefined)
-    {
-      setImages(initialImages);
-      setTotalCount(initialTotalCount);
-      return;
-    }
-
-    if (searchParameters === undefined)
-    {
-      return;
-    }
-
     async function load(): Promise<void>
     {
       try
@@ -97,7 +66,7 @@ export default function ImagesCollection({
           ...searchParameters,
           range: {
             ...searchParameters.range,
-            take: count
+            take: 20
           }
         });
         setImages(result.items);
@@ -110,7 +79,7 @@ export default function ImagesCollection({
     }
 
     void load();
-  }, [ searchParameters, initialImages, initialTotalCount, count ]);
+  }, [ searchParameters ]);
 
   return (
     <div ref={containerRef} className={style.container}>
@@ -125,7 +94,6 @@ export default function ImagesCollection({
               </Text>
             }
             label={t("imagesCollection.images")}
-            edge={Common.ImageThumbnailEdge}
           />
         )}
         {images.map((image) => (
@@ -136,7 +104,6 @@ export default function ImagesCollection({
             icon={IconDots}
             content={<Text size="sm" fw={600} c="dimmed">+{totalCount - images.length}</Text>}
             label={t("imagesCollection.more")}
-            edge={Common.ImageThumbnailEdge}
           />
         )}
       </Flex>

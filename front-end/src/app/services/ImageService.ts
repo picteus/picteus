@@ -1,11 +1,9 @@
 import {
   ExtensionImageEmbeddings,
-  ExtensionImageFeature,
   ExtensionImageTag,
   type Image,
   ImageApi,
   ImageApiImageClosestImagesRequest,
-  ImageApiImageGetAllFeaturesRequest,
   ImageApiImageGetRequest,
   ImageApiImageRunCapabilitiesRequest,
   ImageApiImageSearchRunCapabilitiesRequest,
@@ -14,6 +12,7 @@ import {
   ImageDistance,
   ImageFormat,
   ImageResizeRender,
+  SearchImageIdResult,
   SearchImageResult,
   SearchImageSummaryResult,
   SearchParameters
@@ -39,6 +38,13 @@ const defaultSearchCriteria: SearchParameters = {
   },
   range: { take: 1000 }
 };
+
+async function searchIds(
+  parameters?: SearchParameters
+): Promise<SearchImageIdResult>
+{
+  return await imageApi.imageSearchIds({ searchParameters: parameters ?? defaultSearchCriteria });
+}
 
 async function searchImages(
   parameters?: SearchParameters
@@ -70,13 +76,6 @@ function getImageSrc(url: string, width?: number, height?: number, render?: Imag
   const heightParameter = height ? `&h=${height}` : "";
   const renderParameter = render ? `&r=${render}` : "";
   return `${BASE_PATH}/resize/?u=${encodeURIComponent(url)}${widthParameter}${heightParameter}${renderParameter}`;
-}
-
-async function getAllFeatures(
-  parameters: ImageApiImageGetAllFeaturesRequest
-): Promise<Array<ExtensionImageFeature>>
-{
-  return imageApi.imageGetAllFeatures(parameters);
 }
 
 async function getAllEmbeddings(id: string): Promise<ExtensionImageEmbeddings[]>
@@ -320,12 +319,12 @@ function computeImageDimensions(imageDimensions: ImageDimensions, areaDimensions
 }
 
 export default {
+  searchIds,
   searchImages,
   searchSummaries,
   get,
   download,
   getImageSrc,
-  getAllFeatures,
   getAllEmbeddings,
   getClosestImages,
   runCapabilities,

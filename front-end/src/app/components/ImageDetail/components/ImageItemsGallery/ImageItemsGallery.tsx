@@ -6,20 +6,19 @@ import { ImageOrSummary, ViewMode } from "types";
 import { Common, ImageItemWrapper } from "app/components";
 
 
-export type ImageItemsGalleryPropsType =
+type ImageItemsGalleryPropsType =
   {
     readonly idsOrImages: readonly (string | ImageOrSummary)[];
-    readonly edge?: number;
     readonly viewMode: ViewMode;
   };
 
 export default function ImageItemsGallery({
   idsOrImages,
-  edge = Common.ImageThumbnailEdge,
   viewMode
 }: ImageItemsGalleryPropsType): ReactElement | null
 {
   const [ hostRef, hostRefRectangle ] = useResizeObserver();
+  const edge = Common.ImageThumbnailEdge;
   const gap = 10;
 
   const visibleCount = useMemo<number>(() =>

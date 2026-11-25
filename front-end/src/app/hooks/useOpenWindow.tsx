@@ -1,6 +1,6 @@
 import { IntentInlineContent, IntentUrlContent } from "@picteus/shared-core";
 
-import { useCommandSocket } from "app/context/CommandSocketContext";
+import { useCommandSocket } from "app/context/CommandSocketContext.tsx";
 
 
 type OpenWindowType = (id: string, content: IntentUrlContent | IntentInlineContent, automaticallyReopen: boolean) => Promise<string>;

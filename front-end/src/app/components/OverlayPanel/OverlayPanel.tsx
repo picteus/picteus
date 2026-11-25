@@ -9,7 +9,7 @@ import { useEscapeKey } from "app/hooks";
 import style from "./OverlayPanel.module.scss";
 
 
-export interface OverlayPanelPropsType
+interface OverlayPanelPropsType
 {
 
   readonly isOpened: boolean;

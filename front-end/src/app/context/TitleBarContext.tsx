@@ -24,7 +24,7 @@ export function useTitleBarContext(): TitleBarContextType
   return context;
 }
 
-export interface TitleBarProviderPropsType
+interface TitleBarProviderPropsType
 {
   readonly children?: ReactNode;
 }

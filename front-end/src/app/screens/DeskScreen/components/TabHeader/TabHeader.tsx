@@ -5,10 +5,10 @@ import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
 import { Common, ExtensionBadge, ShortcutBadge } from "app/components";
-import { TabSubtitle } from "../index";
+import { TabSubtitle } from "..";
 
 
-export interface TabHeaderPropsType
+interface TabHeaderPropsType
 {
 
   readonly tab: DeskTabType;

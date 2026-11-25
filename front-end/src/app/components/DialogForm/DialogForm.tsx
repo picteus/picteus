@@ -10,7 +10,7 @@ import { useKey } from "app/hooks";
 import { Iframe, ImagesCollection, Markdown, ModalActions } from "app/components";
 
 
-export type DialogFormPropsType =
+type DialogFormPropsType =
   {
     readonly dialog: IntentDialog;
     readonly imageIds?: string[];

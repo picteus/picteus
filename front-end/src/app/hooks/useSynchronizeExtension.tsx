@@ -35,7 +35,7 @@ async function synchronizeExtension(extension: Extension): Promise<void>
 {
   try
   {
-    ToastService.progress(i18n.t("extensionsScreen.synchronizing", { name: extension.manifest.name }));
+    ToastService.progress(i18n.t("extension.synchronizing", { name: extension.manifest.name }));
     await ExtensionsService.synchronize({ id: extension.manifest.id });
   }
   catch (error)

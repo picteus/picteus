@@ -11,19 +11,21 @@ import "@mantine/dates/styles.css";
 import "@mantine/dropzone/styles.css";
 
 import { JsonType } from "types";
-import RepositoryWidget from "./widgets/RepositoryWidget";
-import CollectionWidget from "./widgets/CollectionWidget";
-import TagsWidget from "./widgets/TagsWidget";
-import FilePickerWidget from "./widgets/FilePickerWidget";
-import DirectoryPickerWidget from "./widgets/DirectoryPickerWidget";
-import RangeWidget from "./widgets/RangeWidget";
-import SelectWidget from "./widgets/SelectWidget";
+import RepositoryWidget from "./widgets/RepositoryWidget.tsx";
+import CollectionWidget from "./widgets/CollectionWidget.tsx";
+import TagsWidget from "./widgets/TagsWidget.tsx";
+import FilePickerWidget from "./widgets/FilePickerWidget.tsx";
+import DirectoryPickerWidget from "./widgets/DirectoryPickerWidget.tsx";
+import RangeWidget from "./widgets/RangeWidget.tsx";
+import SelectWidget from "./widgets/SelectWidget.tsx";
+import { MultipleImagesPickerWidget, SingleImagePickerWidget } from "./widgets/ImagePickerWidget.tsx";
 
 
 type RsfjFormType = {
   initialFormData?: object;
   schema: RJSFSchema;
   uiSchema?: UiSchema;
+  autoFocus?: boolean;
   onChange: (formData: object) => void;
   onValidationChange?: (isValid: boolean) => void;
 };
@@ -257,48 +259,63 @@ function cleanFormDataWithSchema(
   return filterByPathSchema(withDefaults as JsonType, pathSchema as JsonType);
 }
 
+// Ensures boolean schema properties default to false when undefined and normalizes float and double types to number
+function ensureSchemaBooleanDefaultValuesInPlace(schema: RJSFSchema): RJSFSchema
+{
+  if (schema.type === "object" && schema.properties)
+  {
+    for (const key in schema.properties)
+    {
+      const property: JsonType = schema.properties[key] as JsonType;
+      if (property.type === "boolean" && property.default === undefined)
+      {
+        property.default = false;
+      }
+      if (property.type === "float" || property.type === "double")
+      {
+        if (property.format === undefined)
+        {
+          property.format = property.type;
+        }
+        property.type = "number";
+      }
+      if (property.type === "object")
+      {
+        ensureSchemaBooleanDefaultValuesInPlace(property);
+      }
+    }
+  }
+  return schema;
+}
+
+function normalizeSchemaForForm(schema: RJSFSchema): RJSFSchema
+{
+  const clonedSchema = JSON.parse(JSON.stringify(schema)) as RJSFSchema;
+  return ensureSchemaBooleanDefaultValuesInPlace(clonedSchema);
+}
+
+export function normalizeFormDataWithSchema(
+  formData: object | undefined,
+  schema: RJSFSchema
+): object | undefined
+{
+  return cleanFormDataWithSchema(formData, normalizeSchemaForForm(schema));
+}
+
 export default function RjsfForm({
   initialFormData,
   schema,
   uiSchema,
+  autoFocus = true,
   onChange,
   onValidationChange
 }: RsfjFormType)
 {
   const formRef = useRef(null);
 
-  // Ensures boolean schema properties default to false when undefined and normalizes float and double types to number
-  function ensureSchemaBooleanDefaultValues(schema: RJSFSchema): RJSFSchema
-  {
-    if (schema.type === "object" && schema.properties)
-    {
-      for (const key in schema.properties)
-      {
-        const property: JsonType = schema.properties[key] as JsonType;
-        if (property.type === "boolean" && property.default === undefined)
-        {
-          property.default = false;
-        }
-        if (property.type === "float" || property.type === "double")
-        {
-          if (property.format === undefined)
-          {
-            property.format = property.type;
-          }
-          property.type = "number";
-        }
-        if (property.type === "object")
-        {
-          ensureSchemaBooleanDefaultValues(property);
-        }
-      }
-    }
-    return schema;
-  }
-
   const withBooleanDefaultValueSchema = useMemo<RJSFSchema>(() =>
   {
-    return ensureSchemaBooleanDefaultValues(schema);
+    return normalizeSchemaForForm(schema);
   }, [ schema ]);
 
   // We sanitize the initial data once on mount so that stored settings pass validation immediately
@@ -324,6 +341,10 @@ export default function RjsfForm({
 
   useEffect(() =>
   {
+    if (autoFocus === false)
+    {
+      return;
+    }
     const firstInput = formRef?.current?.formElement?.current?.querySelector(
       "input.mantine-TextInput-input, textarea"
     ) as HTMLElement | null;
@@ -334,13 +355,15 @@ export default function RjsfForm({
         firstInput.focus();
       }, 100);
     }
-  }, [ formRef ]);
+  }, [ formRef, autoFocus ]);
 
   const widgets: RegistryWidgetsType =
     {
       repository: RepositoryWidget,
       collection: CollectionWidget,
       tags: TagsWidget,
+      image: SingleImagePickerWidget,
+      images: MultipleImagesPickerWidget,
       file: FilePickerWidget,
       filePicker: FilePickerWidget,
       directory: DirectoryPickerWidget,

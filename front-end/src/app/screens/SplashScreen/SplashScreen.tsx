@@ -78,7 +78,7 @@ function formatElapsedTime(totalSeconds: number): string
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-function AnimatedViewfinderLogo({ label }: { readonly label: string }): ReactNode
+function AnimatedViewfinderLogo(): ReactNode
 {
   return (
     <Flex
@@ -91,8 +91,6 @@ function AnimatedViewfinderLogo({ label }: { readonly label: string }): ReactNod
       bg="light-dark(rgba(255, 255, 255, 0.86), rgba(36, 36, 41, 0.82))"
       bd="1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))"
       className={style.logoFrame}
-      role="img"
-      aria-label={label}
     >
       <svg
         viewBox="-6 -6 88 88"
@@ -299,7 +297,7 @@ export default function SplashScreen({ logs }: SplashScreenPropsType): ReactNode
       >
         {/* Brand Identity & Animated Viewfinder Logo */}
         <Stack align="center" gap={10} mt="xs">
-          <AnimatedViewfinderLogo label={t("splashscreen.applicationName")}/>
+          <AnimatedViewfinderLogo/>
           <Group gap={10} align="baseline" justify="center" mt={4}>
             <Title
               order={1}
@@ -487,7 +485,6 @@ export default function SplashScreen({ logs }: SplashScreenPropsType): ReactNode
                   color="gray"
                   size="sm"
                   onClick={handlePreviousFeature}
-                  aria-label={t("splashscreen.previousTip")}
                 >
                   <IconChevronLeft size={15}/>
                 </ActionIcon>
@@ -503,7 +500,6 @@ export default function SplashScreen({ logs }: SplashScreenPropsType): ReactNode
                           ? "var(--mantine-color-blue-5)"
                           : "light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3))"
                       }
-                      aria-label={feature.badge}
                       onClick={() => setActiveFeatureIndex(index)}
                       className={style.dotIndicator}
                     />
@@ -514,7 +510,6 @@ export default function SplashScreen({ logs }: SplashScreenPropsType): ReactNode
                   color="gray"
                   size="sm"
                   onClick={handleNextFeature}
-                  aria-label={t("splashscreen.nextTip")}
                 >
                   <IconChevronRight size={15}/>
                 </ActionIcon>

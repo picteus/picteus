@@ -2,7 +2,7 @@ import { type ReactElement, type ReactNode, useCallback } from "react";
 import { Box, Group } from "@mantine/core";
 
 import { useTitleBarContext } from "app/context";
-import { UniversalActionCenterAccessor } from "./components/index.ts";
+import { UniversalActionCenterAccessor } from "./components";
 import style from "./TitleBar.module.scss";
 
 

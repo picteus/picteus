@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import AppRouter from "app/routes/Router";
+import AppRouter from "app/routes/Router.tsx";
 import { ApplicationService } from "app/services";
 
 

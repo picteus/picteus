@@ -12,7 +12,7 @@ import { FiltersService } from "app/services";
 import { ModalActions } from "app/components";
 
 
-export type AddOrUpdateCollectionPropsType =
+type AddOrUpdateCollectionPropsType =
   {
     readonly collection?: PicteusCollection;
     readonly searchFilter?: SearchFilter;

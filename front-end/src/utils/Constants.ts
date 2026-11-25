@@ -16,12 +16,9 @@ export const ROUTES = {
 
 export const DESK_TAB_QUERY_PARAMETER_NAME = "tabId";
 
-export const REPOSITORIES_ONBOARDING_VIDEO_URL = "https://youtu.be/_wuDYBDr3Zs";
-
-// "Open in new window" is implemented but hidden: set to true to show the menu entry and drawer button again
-export const REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED = false;
-
 export const APPLICATION_MANUAL_URL = "https://picteus.github.io/picteus";
+
+export const EXTENSIONS_MANUAL_URL = `${APPLICATION_MANUAL_URL}/docs/extensions`;
 
 export function computeExtensionSidebarUuid(extensionId: string, id: string): string
 {

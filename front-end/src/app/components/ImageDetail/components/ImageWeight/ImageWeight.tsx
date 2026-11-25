@@ -1,33 +1,16 @@
-import React from "react";
+import { type ReactElement } from "react";
 import { NumberFormatter } from "@mantine/core";
 
 import { ImageOrSummary } from "types";
+import { computeBinaryWeight } from "utils";
 
 
 type ImageWeightType = {
   image: ImageOrSummary;
 };
 
-export default function ImageWeight({ image }: ImageWeightType)
+export default function ImageWeight({ image }: ImageWeightType): ReactElement
 {
-  const bytes = image.sizeInBytes;
-  let value: number;
-  let unit: string;
-  if (bytes < 1024)
-  {
-    value = bytes;
-    unit = "B";
-  }
-  else if (bytes < 1024 * 1024)
-  {
-    value = bytes / 1024;
-    unit = "kB";
-  }
-  else
-  {
-    value = bytes / (1024 * 1024);
-    unit = "MB";
-  }
+  const { value, unit } = computeBinaryWeight(image.sizeInBytes);
   return <NumberFormatter value={value} decimalScale={2} suffix={` ${unit}`} thousandSeparator/>;
-
 }

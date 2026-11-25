@@ -50,7 +50,7 @@ function normalizeDirectoryPath(directoryPath: string): string
   return trimmedPath.replace(/[\\/]+$/, "");
 }
 
-export type AddOrUpdateRepositoryPropsType =
+type AddOrUpdateRepositoryPropsType =
   {
     readonly repository?: Repository;
     readonly initialUrl?: string;

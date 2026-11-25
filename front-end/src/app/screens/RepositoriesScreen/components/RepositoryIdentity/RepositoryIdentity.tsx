@@ -8,7 +8,7 @@ import { Repository } from "@picteus/ws-client";
 import { shortenPath } from "utils";
 import { useExtensionDisplayName } from "app/hooks";
 import { RepositoriesService } from "app/services";
-import { Common, ExtensionIcon } from "app/components";
+import { Common, ExtensionIcon, IconTile } from "app/components";
 
 
 type RepositoryIdentityBaseType =
@@ -47,19 +47,15 @@ export default function RepositoryIdentity(props: RepositoryIdentityType): React
 
   return (
     <Flex gap="sm" align="center" wrap="nowrap">
-      <Flex
-        w={40}
-        h={40}
-        align="center"
-        justify="center"
-        bg="gray.1"
-        bdrs="sm"
-        flex="0 0 auto"
+      <IconTile
+        size={40}
+        isBordered={false}
+        bg="light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6))"
       >
         {isFromExtension === true && props.repository?.extensionId !== undefined
           ? <ExtensionIcon idOrExtension={props.repository.extensionId} size="md"/>
           : <IconFolder size={Common.IconMediumSize} stroke={Common.IconStrokeSize}/>}
-      </Flex>
+      </IconTile>
       <Box flex={1} miw={0}>
         <Text size="sm" fw={500} truncate>{name}</Text>
         <Text size="xs" c="dimmed" truncate>{source}</Text>

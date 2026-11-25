@@ -1,23 +1,27 @@
-import React from "react";
-import { Flex, Text } from "@mantine/core";
+import { useCallback } from "react";
 import { randomId } from "@mantine/hooks";
-import { useTranslation } from "react-i18next";
 
 import { SearchFilter } from "@picteus/ws-client";
 
-import { UiCommandType } from "types";
+import { ImagePickerSelectionModeType, UiCommandType } from "types";
 import { ToastService } from "utils";
 import { useActionModalContext } from "app/context";
 import { ExtensionsService, StorageService } from "app/services";
-import { CommandForm, ExtensionBadge } from "app/components";
+import { CommandForm, CommandModalHeader } from "app/components";
 
 
-export default function useExtensionCommandRunner(): (extensionId: string, command: UiCommandType, searchFilter?: SearchFilter, onRunning?: () => void, onCompleted?: (wasAborted: boolean) => void) => Promise<void>
+export default function useExtensionCommandRunner(): (
+  extensionId: string,
+  command: UiCommandType,
+  searchFilter?: SearchFilter,
+  onRunning?: () => void,
+  onCompleted?: (wasAborted: boolean) => void,
+  imageSelectionMode?: ImagePickerSelectionModeType
+) => Promise<void>
 {
-  const { t } = useTranslation();
   const { addModal, removeModal } = useActionModalContext();
 
-  async function handleOnSendCommand(
+  const handleOnSendCommand = useCallback(async (
     extensionId: string,
     commandId: string,
     parameters?: object,
@@ -25,7 +29,7 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
     onRunning?: () => void,
     modalId?: string,
     onCompleted?: (wasAborted: boolean) => void
-  ): Promise<void>
+  ): Promise<void> =>
   {
     let wasError = false;
     try
@@ -63,19 +67,21 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
     {
       onCompleted(wasError);
     }
-  }
+  }, [ removeModal ]);
 
-  async function callCommand(
+  return useCallback(async (
     extensionId: string,
     command: UiCommandType,
     searchFilter?: SearchFilter,
     onRunning?: () => void,
-    onCompleted?: (wasAborted: boolean) => void
-  ): Promise<void>
+    onCompleted?: (wasAborted: boolean) => void,
+    imageSelectionMode?: ImagePickerSelectionModeType
+  ): Promise<void> =>
   {
     console.debug(`Triggering command '${command.id}' of extension '${extensionId}'`);
     const form = command.form;
     const hasNoParameters = form === undefined || form.parameters === undefined;
+    const needsImageSelection = searchFilter === undefined && imageSelectionMode !== undefined;
 
     let hasCompletedBeenCalled = false;
     const handleOnCompleted = (wasAborted: boolean): void =>
@@ -90,7 +96,12 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
       }
     };
 
-    if (command.id !== undefined && hasNoParameters === true && StorageService.isCommandDoNotAskAgain(extensionId, command.id) === true)
+    if (
+      needsImageSelection === false &&
+      command.id !== undefined &&
+      hasNoParameters === true &&
+      StorageService.isCommandDoNotAskAgain(extensionId, command.id) === true
+    )
     {
       await handleOnSendCommand(
         extensionId,
@@ -104,32 +115,35 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
       return;
     }
 
+    const isInlineManualMode =
+      hasNoParameters === true &&
+      needsImageSelection === false &&
+      form?.dialogContent === undefined;
+
     const modalId = randomId();
     addModal({
       id: modalId,
-      // TODO: make this customizable in the definition of a command
       size: "m",
-      icon: form?.dialogContent?.icon ?? {
-        url: command.iconUri
-          ? ExtensionsService.getCommandIconURL(extensionId, command.iconUri)
-          : ExtensionsService.getIconURL(extensionId)
-      },
-      title: command.label,
-      subtitle: (<Flex>
-        <Text size="sm" c="dimmed" mr="xs">{t("commands.providedBy")}</Text>
-        <ExtensionBadge idOrExtension={extensionId} color="gray"/>
-      </Flex>),
+      isFullHeight: needsImageSelection === true ? true : undefined,
+      title: (
+        <CommandModalHeader
+          command={command}
+          extensionId={extensionId}
+          showHowItWorks={isInlineManualMode === false}
+        />
+      ),
       body: (
         <CommandForm
           extensionId={extensionId}
           searchFilter={searchFilter}
+          imageSelectionMode={needsImageSelection === true ? imageSelectionMode : undefined}
           command={command}
-          onSend={(extensionId, commandId, commandParameters) =>
+          onSend={(targetExtensionId, commandId, commandParameters, selectedSearchFilter) =>
             void handleOnSendCommand(
-              extensionId,
+              targetExtensionId,
               commandId,
               commandParameters,
-              searchFilter,
+              selectedSearchFilter ?? searchFilter,
               onRunning,
               modalId,
               handleOnCompleted
@@ -142,7 +156,5 @@ export default function useExtensionCommandRunner(): (extensionId: string, comma
         handleOnCompleted(viaOnSuccess === false);
       }
     });
-  }
-
-  return callCommand;
+  }, [ addModal, handleOnSendCommand ]);
 }

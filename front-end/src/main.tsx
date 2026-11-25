@@ -1,5 +1,5 @@
 // This is a polyfill for ReactDOM.findDOMNode removed in React 19
-import "./react-dom-polyfill";
+import "./react-dom-polyfill.ts";
 import React from "react";
 import ReactDOM from "react-dom/client";
 

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { RepositoryMode } from "@picteus/ws-client";
 
 import { useRepository, useRepositorySummaries } from "app/hooks";
-import { ImageThumbnail } from "app/components";
+import { ImageThumbnailStrip } from "app/components";
 
 
 type RepositoryPreviewsType = {
@@ -51,8 +51,6 @@ export default function RepositoryPreviews({ repositoryId, count, edge }: Reposi
   }
 
   return (
-    <Flex gap={4} wrap="wrap">
-      {previews.map((image) => <ImageThumbnail key={image.id} imageOrUrl={image} edge={edge}/>)}
-    </Flex>
+    <ImageThumbnailStrip images={previews} edge={edge} gap={4} wrap={true}/>
   );
 }

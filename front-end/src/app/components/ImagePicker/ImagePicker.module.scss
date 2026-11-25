@@ -1,0 +1,200 @@
+.pickerRoot
+{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pickerHeader
+{
+  flex-shrink: 0;
+}
+
+.pickerTabPanels
+{
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pickerTabPanel
+{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pickerTabPanelHidden
+{
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.pickerTabContent
+{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding-top: var(--mantine-spacing-md);
+}
+
+.pickerScrollBody
+{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.emptyState
+{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  width: 100%;
+  min-height: 200px;
+  margin: 0 auto;
+  padding: var(--mantine-spacing-xl);
+  gap: var(--mantine-spacing-xs);
+  border: 1px dashed var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+.imageGrid
+{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
+  gap: var(--mantine-spacing-sm);
+}
+
+.imageTile
+{
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--mantine-radius-sm);
+  overflow: hidden;
+  background-color: var(--mantine-color-default);
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease;
+
+  &:hover
+  {
+    border-color: var(--mantine-color-blue-light-color);
+  }
+
+  &:focus-visible
+  {
+    outline: 2px solid var(--mantine-color-blue-filled);
+    outline-offset: 2px;
+  }
+}
+
+.imageTileSelected
+{
+  border-color: var(--mantine-color-blue-filled);
+  box-shadow: 0 0 0 1px var(--mantine-color-blue-filled);
+
+  &:hover
+  {
+    border-color: var(--mantine-color-blue-filled);
+  }
+}
+
+.checkIndicator
+{
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--mantine-color-default-border);
+  background-color: color-mix(in srgb, var(--mantine-color-body) 85%, transparent);
+  color: var(--mantine-color-white);
+  pointer-events: none;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.checkIndicatorSelected
+{
+  border-color: var(--mantine-color-blue-filled);
+  background-color: var(--mantine-color-blue-filled);
+}
+
+.collectionsGrid
+{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+  gap: var(--mantine-spacing-md);
+}
+
+.collectionCard
+{
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 6px 6px 8px;
+  gap: var(--mantine-spacing-xs);
+  border: none;
+  border-radius: calc(var(--mantine-radius-md) + 2px);
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+
+  &:hover
+  {
+    background-color: light-dark(var(--mantine-color-blue-0), var(--mantine-color-blue-light));
+  }
+
+  &:focus-visible
+  {
+    outline: 2px solid var(--mantine-color-blue-filled);
+    outline-offset: 2px;
+  }
+}
+
+.collectionMosaic
+{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  width: 100%;
+  aspect-ratio: 191 / 140;
+  border-radius: var(--mantine-radius-md);
+  background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));
+  overflow: hidden;
+}
+
+.collectionMosaicSingle
+{
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.collectionMosaicPair
+{
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+}

@@ -12,9 +12,7 @@ import {
   defaultOrderSectionIds,
   ImageDataSectionDescriptorType
 } from "../components/ImageData/ImageDataComputer.ts";
-import {
-  ImageDataDrawerSectionItemType
-} from "../components/ImageData/components/ImageCardsSettings/ImageCardsSettings.tsx";
+import type { ImageDataDrawerSectionItemType } from "../components/ImageData/components";
 
 
 export type ImageDataSectionsContextType =
@@ -28,7 +26,7 @@ export type ImageDataSectionsContextType =
     readonly resetDefaults: () => void;
   };
 
-export type ImageDataSectionsProviderPropsType =
+type ImageDataSectionsProviderPropsType =
   {
     readonly image: Image;
     readonly children: ReactNode;

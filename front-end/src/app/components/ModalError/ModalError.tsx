@@ -1,27 +1,27 @@
 import { type ReactElement } from "react";
 import { createPortal } from "react-dom";
-import { Alert, Text } from "@mantine/core";
-import { IconAlertCircle } from "@tabler/icons-react";
-import { useTranslation } from "react-i18next";
 
 import { useModalContext } from "app/context";
-import Common from "../Common/Common.ts";
+import ErrorAlert from "../ErrorAlert/ErrorAlert.tsx";
 
 
-export type ModalErrorPropsType =
+type ModalErrorPropsType =
   {
     readonly error?: string;
     readonly title?: string;
     readonly onClose?: () => void;
+    readonly onRetry?: () => void;
+    readonly isRetrying?: boolean;
   };
 
 export default function ModalError({
   error,
   title,
-  onClose
+  onClose,
+  onRetry,
+  isRetrying
 }: ModalErrorPropsType): ReactElement | null
 {
-  const [ t ] = useTranslation();
   const modalContext = useModalContext();
 
   if (error === undefined)
@@ -31,22 +31,15 @@ export default function ModalError({
 
   const isInline = modalContext?.errorElement === null || modalContext?.errorElement === undefined;
   const alert = (
-    <Alert
-      color="red"
-      variant="light"
-      radius={6}
-      p="sm"
-      mt={isInline ? "md" : undefined}
-      mb={isInline ? "md" : undefined}
-      title={title === undefined ? t("titles.error") : title}
-      icon={<IconAlertCircle size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-      withCloseButton={onClose !== undefined}
+    <ErrorAlert
+      title={title}
+      message={error}
       onClose={onClose}
-    >
-      <Text fz={13} lh={1.45} c="inherit">
-        {error}
-      </Text>
-    </Alert>
+      onRetry={onRetry}
+      isRetrying={isRetrying}
+      mt={isInline === true ? "md" : undefined}
+      mb={isInline === true ? "md" : undefined}
+    />
   );
 
   if (modalContext?.errorElement)

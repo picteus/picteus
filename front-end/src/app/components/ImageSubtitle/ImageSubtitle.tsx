@@ -1,47 +1,40 @@
-import React, { Fragment, ReactElement, ReactNode } from "react";
+import React, { ReactElement } from "react";
 
 import { ImageOrSummary } from "types";
-import { Common } from "app/components";
-import { ImageDimensions, ImageWeight } from "app/components/ImageDetail/components";
+import DotSeparated from "../DotSeparated/DotSeparated.tsx";
+import ImageDimensions from "../ImageDetail/components/ImageDimensions/ImageDimensions.tsx";
+import ImageRatio from "../ImageDetail/components/ImageRatio/ImageRatio.tsx";
+import ImageWeight from "../ImageDetail/components/ImageWeight/ImageWeight.tsx";
 
 
-export interface ImageSubtitlePropsType
+interface ImageSubtitlePropsType
 {
   readonly image: ImageOrSummary;
   readonly withFormat?: boolean;
   readonly withWeight?: boolean;
+  readonly withRatio?: boolean;
 }
 
 export default function ImageSubtitle({
   image,
   withFormat,
-  withWeight
+  withWeight,
+  withRatio
 }: ImageSubtitlePropsType): ReactElement
 {
-  const elements: ReactNode[] = [];
-  elements.push(
-    <ImageDimensions
-      key="dimensions"
-      dimensions={image.dimensions}
-    />
+  const dimensions = withRatio === true ? (
+    <span>
+      <ImageDimensions dimensions={image.dimensions}/> (<ImageRatio dimensions={image.dimensions}/>)
+    </span>
+  ) : (
+    <ImageDimensions dimensions={image.dimensions}/>
   );
-  if (withFormat)
-  {
-    elements.push(<Fragment key="format">{image.format}</Fragment>);
-  }
-  if (withWeight)
-  {
-    elements.push(<ImageWeight key="weight" image={image}/>);
-  }
 
   return (
-    <>
-      {elements.map((element, index) => (
-        <Fragment key={index}>
-          {index > 0 && Common.DotSeparator}
-          {element}
-        </Fragment>
-      ))}
-    </>
+    <DotSeparated inline>
+      {dimensions}
+      {withFormat && image.format}
+      {withWeight && <ImageWeight image={image}/>}
+    </DotSeparated>
   );
 }

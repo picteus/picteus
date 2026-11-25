@@ -74,7 +74,7 @@ function parseShortcutKeys(combo: string): string[]
   return combo.split("+").map((part) => part.trim()).filter((part) => part.length > 0);
 }
 
-export type ShortcutBadgePropsType =
+type ShortcutBadgePropsType =
   {
     readonly combo: string;
     readonly size: MantineSize;

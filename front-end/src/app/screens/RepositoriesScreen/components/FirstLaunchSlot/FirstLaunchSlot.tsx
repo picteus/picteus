@@ -2,11 +2,12 @@ import { ReactElement, useState } from "react";
 import { Button, Flex, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
-import { APPLICATION_MANUAL_URL, REPOSITORIES_ONBOARDING_VIDEO_URL } from "utils";
+import { APPLICATION_MANUAL_URL } from "utils";
 import { useOpenBrowser } from "app/hooks";
 
 
-export const REPOSITORIES_ONBOARDING_VIDEO_DIMENSIONS = { width: 400, height: 225 } as const;
+const REPOSITORIES_ONBOARDING_VIDEO_URL = "https://youtu.be/_wuDYBDr3Zs";
+const REPOSITORIES_ONBOARDING_VIDEO_DIMENSIONS = { width: 400, height: 225 } as const;
 
 type FirstLaunchSlotType = {
   onChooseFolder: () => void;
@@ -72,7 +73,7 @@ export default function FirstLaunchSlot({ onChooseFolder }: FirstLaunchSlotType)
         />
       )}
       <Stack gap="sm" flex={1} miw={280}>
-        <Text size="xs" fw={700} c="blue" lts="0.05em">
+        <Text size="xs" fw={700} tt="uppercase" c="blue" lts="0.05em">
           {t("repositoryScreen.firstLaunch.caption")}
         </Text>
         <Text size="lg" fw={600}>{t("repositoryScreen.firstLaunch.title")}</Text>

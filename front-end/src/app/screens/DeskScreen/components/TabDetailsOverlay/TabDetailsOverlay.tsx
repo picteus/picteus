@@ -3,10 +3,10 @@ import { Box, Divider, Flex, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import { DeskTabType } from "types";
-import { Common, ExtensionIcon, FormatedDate, Markdown, OverlayPanel } from "app/components";
+import { DotSeparated, ExtensionIcon, FormatedDate, Markdown, OverlayPanel } from "app/components";
 
 
-export interface TabDetailsOverlayPropsType
+interface TabDetailsOverlayPropsType
 {
 
   readonly tab: DeskTabType;
@@ -72,21 +72,21 @@ export default function TabDetailsOverlay({
           </>
         )}
         <Divider/>
-        <Flex gap={4}>
+        <DotSeparated size="xs" gap={4}>
           {tab.extensionId && (
-            <>
+            <Flex align="center" gap={4}>
               <Text size="xs" c="dimmed">
                 {t("deskTabDetails.openedBy")}
               </Text>
               <Text size="xs" c="dimmed">
                 <ExtensionIcon idOrExtension={tab.extensionId} size="xs" withText/>
               </Text>
-            </>
+            </Flex>
           )}
           <Text size="xs" c="dimmed">
-            {Common.DotSeparator}<FormatedDate timestamp={tab.timestampInMilliseconds}/>
+            <FormatedDate timestamp={tab.timestampInMilliseconds}/>
           </Text>
-        </Flex>
+        </DotSeparated>
       </Stack>
     </OverlayPanel>
   );

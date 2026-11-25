@@ -1,0 +1,26 @@
+.miniThumbWrap
+{
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: var(--mantine-radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--mantine-color-default-border);
+  background-color: var(--mantine-color-default);
+}
+
+.miniThumbRemove
+{
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+
+  .miniThumbWrap:hover &,
+  .miniThumbWrap:focus-within &
+  {
+    opacity: 1;
+  }
+}

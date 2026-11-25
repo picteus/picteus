@@ -6,10 +6,12 @@ export { default as Spinner } from "./Spinner/Spinner.tsx";
 export { default as OverlayIndicator } from "./OverlayIndicator/OverlayIndicator.tsx";
 export { default as RjsfForm, extractSchemaAndUiSchema } from "./RjsfForm/RjsfForm.tsx";
 export { default as CodeViewer } from "./CodeViewer/CodeViewer.tsx";
-export { default as ExternalLink } from "./ExternalLink/ExternalLink.tsx";
+export { default as ActionLink } from "./ActionLink/ActionLink.tsx";
+export { default as DotSeparated } from "./DotSeparated/DotSeparated.tsx";
 export { default as EmptyResults } from "./EmptyResults/EmptyResults.tsx";
 export { default as ImagesView } from "./ImagesView/ImagesView.tsx";
 export { default as CommandForm } from "./CommandForm/CommandForm.tsx";
+export { CommandModalHeader } from "./CommandForm/components";
 export {
   computeIcon, MenuItemEntry, ImageMenuSelectEntry, ImageMenuSelectCommandEntry
 } from "./ActionEntry/ActionEntry.tsx";
@@ -19,7 +21,6 @@ export { ImageItemWrapper, ImageItemsGallery } from "./ImageDetail/components";
 export {
   default as ImageSelectCheckbox,
   useImageSelection,
-  type  ImageSelectCheckboxPropsType,
   type UseImageSelectionResultType
 } from "./ImageSelectCheckbox/ImageSelectCheckbox.tsx";
 export { default as ImageCommand } from "./ImageCommand/ImageCommand.ts";
@@ -32,23 +33,23 @@ export { default as ImageTable } from "./ImageTable/ImageTable.tsx";
 export { default as ImagesCollection } from "./ImagesCollection/ImagesCollection.tsx";
 export { default as RunCapabilitiesConfirm } from "./RunCapabilitiesConfirm/RunCapabilitiesConfirm.tsx";
 export { default as SynchronizeExtensionConfirm } from "./SynchronizeExtensionConfirm/SynchronizeExtensionConfirm.tsx";
-export { default as ImagesStack } from "./ImagesStack/ImagesStack.tsx";
 export { default as EntityVisual } from "./EntityVisual/EntityVisual.tsx";
 export { default as Notification } from "./Notification/Notification.tsx";
 export { default as RefreshButton } from "./RefreshButton/RefreshButton.tsx";
-export { default as DialogForm, type DialogFormPropsType } from "./DialogForm/DialogForm.tsx";
+export { default as DialogForm } from "./DialogForm/DialogForm.tsx";
 export { default as CopyText } from "./CopyText/CopyText.tsx";
 export { default as Markdown } from "./Markdown/Markdown.tsx";
 export { default as Manual } from "./Manual/Manual.tsx";
 export { default as CollectionIcon } from "./CollectionIcon/CollectionIcon.tsx";
+export { default as CollectionLabel } from "./CollectionLabel/CollectionLabel.tsx";
 export { default as ExtensionIcon } from "./ExtensionIcon/ExtensionIcon.tsx";
 export { default as ExtensionBadge } from "./ExtensionBadge/ExtensionBadge.tsx";
 export { default as CommandIcon } from "./CommandIcon/CommandIcon.tsx";
 export { default as ResourceIcon } from "./ResourceIcon/ResourceIcon.tsx";
 export { default as ImageThumbnail } from "./ImageThumbnail/ImageThumbnail.tsx";
+export { default as ImageThumbnailStrip } from "./ImageThumbnailStrip/ImageThumbnailStrip.tsx";
 export { default as ImageTag } from "./ImageTag/ImageTag.tsx";
 export { default as ImageSubtitle } from "./ImageSubtitle/ImageSubtitle.tsx";
-export { default as EntityState } from "./EntityState/EntityState.tsx";
 export { default as ExtensionCapability } from "./ExtensionCapability/ExtensionCapability.tsx";
 export { default as Iframe } from "./Iframe/Iframe.tsx";
 export { default as TextToImages } from "./TextToImages/TextToImages.tsx";
@@ -56,18 +57,54 @@ export { default as FormatedDate } from "./FormatedDate/FormatedDate.tsx";
 export { default as NoValue } from "./NoValue/NoValue.tsx";
 export { default as FieldValue } from "./FieldValue/FieldValue.tsx";
 export { default as ContentTitle } from "./ContentTitle/ContentTitle.tsx";
-export { default as ContentIcon, type ContentIconPropsType } from "./ContentIcon/ContentIcon.tsx";
-export { default as TopPanel } from "./TopPanel/TopPanel.tsx";
+export { default as ContentIcon } from "./ContentIcon/ContentIcon.tsx";
 export { default as StandardTable } from "./StandardTable/StandardTable.tsx";
 export { default as Drawer } from "./Drawer/Drawer.tsx";
 export { default as OverlayPanel } from "./OverlayPanel/OverlayPanel.tsx";
-export { default as StackNavigator, useStackNavigator } from "./StackNavigator/StackNavigator.tsx";
+export {
+  default as StackNavigator, useStackNavigator, useOptionalStackNavigator
+} from "./StackNavigator/StackNavigator.tsx";
 export { default as StackableScreen } from "./StackableScreen/StackableScreen.tsx";
 export { CaptionDistance } from "./ImageMasonry/components";
 export { default as StandardMenu } from "./StandardMenu/StandardMenu.tsx";
 export { default as CollectionSelect } from "./CollectionSelect/CollectionSelect.tsx";
 export { default as EmbeddingSelect } from "./EmbeddingSelect/EmbeddingSelect.tsx";
 export { default as ModalActions } from "./ModalActions/ModalActions.tsx";
-export { default as ModalError, type ModalErrorPropsType } from "./ModalError/ModalError.tsx";
-export { default as ShortcutBadge, type ShortcutBadgePropsType } from "./ShortcutBadge/ShortcutBadge.tsx";
+export { default as ErrorAlert } from "./ErrorAlert/ErrorAlert.tsx";
+export { default as ModalError } from "./ModalError/ModalError.tsx";
+export { default as ShortcutBadge } from "./ShortcutBadge/ShortcutBadge.tsx";
+export { default as ScreenHeader } from "./ScreenHeader/ScreenHeader.tsx";
+export { default as ViewModeSwitch } from "./ViewModeSwitch/ViewModeSwitch.tsx";
+export {
+  default as CountedSegmentedControl,
+  type CountedSegmentedControlItemType
+} from "./CountedSegmentedControl/CountedSegmentedControl.tsx";
+export { default as SortControl, type SortCriterionOptionType } from "./SortControl/SortControl.tsx";
+export { default as SearchInput } from "./SearchInput/SearchInput.tsx";
+export { default as SortableTableHeader } from "./SortableTableHeader/SortableTableHeader.tsx";
+export { default as TableHeaderCell } from "./TableHeaderCell/TableHeaderCell.tsx";
+export { default as StatusPill } from "./StatusPill/StatusPill.tsx";
+export { default as InteractiveCard } from "./InteractiveCard/InteractiveCard.tsx";
+export { default as OverflowMenu } from "./OverflowMenu/OverflowMenu.tsx";
+export { default as IconTile } from "./IconTile/IconTile.tsx";
+export { default as CatalogScreenLayout } from "./CatalogScreenLayout/CatalogScreenLayout.tsx";
+export { default as CatalogToolbar } from "./CatalogToolbar/CatalogToolbar.tsx";
+export { default as ExtensionCategories } from "./ExtensionCategories/ExtensionCategories.tsx";
+export { default as ExtensionStatusPill, EXTENSION_STATUS_COLORS } from "./ExtensionStatusPill/ExtensionStatusPill.tsx";
+export { default as ExtensionMenu } from "./ExtensionMenu/ExtensionMenu.tsx";
+export { default as InstallOrUpdateExtension } from "./InstallOrUpdateExtension/InstallOrUpdateExtension.tsx";
+export { default as MarketplaceUpdateModal } from "./MarketplaceUpdateModal/MarketplaceUpdateModal.tsx";
+export { default as FlexScrollArea } from "./FlexScrollArea/FlexScrollArea.tsx";
+export {
+  default as ExtensionPage,
+  createOpenExtensionNavigationState,
+  type ExtensionPageTabType,
+  type OpenExtensionNavigationStateType
+} from "./ExtensionPage/ExtensionPage.tsx";
+export { default as ExtensionSettingsModal } from "./ExtensionSettingsModal/ExtensionSettingsModal.tsx";
+export { default as CaptionInstructionSection } from "./CaptionInstructionSection/CaptionInstructionSection.tsx";
+export { default as EligibleTagsInstructionSection } from "./EligibleTagsInstructionSection/EligibleTagsInstructionSection.tsx";
+export { default as CaptionModelModal } from "./CaptionModelModal/CaptionModelModal.tsx";
+export { default as ImagePicker } from "./ImagePicker/ImagePicker.tsx";
+export { default as ImagePickerField } from "./ImagePickerField/ImagePickerField.tsx";
 export * from "../../generated/ViewKit.tsx";

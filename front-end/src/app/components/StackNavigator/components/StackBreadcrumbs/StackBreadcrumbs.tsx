@@ -12,7 +12,7 @@ import style from "./StackBreadcrumbs.module.scss";
 
 type StackedComponentType = ActionModalValue;
 
-export interface StackBreadcrumbsPropsType
+interface StackBreadcrumbsPropsType
 {
   title: ReactNode;
   icon?: ContentIconType;

@@ -14,10 +14,7 @@ export { default as useRunCapabilities } from "./useRunCapabilities.tsx";
 export { default as useSynchronizeExtension } from "./useSynchronizeExtension.tsx";
 export { default as useImageNavigation } from "./useImageNavigation.tsx";
 export { default as useInterceptedState } from "./useInterceptedState.tsx";
-export { default as useAsyncInitialize } from "./useAsyncInitialize.tsx";
 export { default as useImageDateChanged } from "./useImageDateChanged.tsx";
-export { default as useReadyRef } from "./useReadyRef.tsx";
-export { default as useTraceUpdate } from "./useTraceUpdate.tsx";
 export { default as useThrottledAsyncAction } from "./useThrottledAsyncAction.tsx";
 export { default as useImageCommands, type UseImageCommandsResultType } from "./useImageCommands.tsx";
 export { default as useImageCommand, type UseImageCommandResultType } from "./useImageCommand.tsx";
@@ -28,4 +25,13 @@ export { default as useProcessCommand, type UseProcessCommandResultType } from "
 export { default as useImageDetailModal } from "./useImageDetailModal.tsx";
 export { default as useModalSubmit, type UseModalSubmitResultType } from "./useModalSubmit.tsx";
 export { default as useRepositoryUnavailableEvent } from "./useRepositoryUnavailableEvent.tsx";
+export {
+  default as useCatalogViewSettings,
+  type CatalogViewSettingsBaseType,
+  type UseCatalogViewSettingsOptionsType,
+  type UseCatalogViewSettingsResultType
+} from "./useCatalogViewSettings.ts";
+export { default as useExtensionLifecycleActions } from "./useExtensionLifecycleActions.tsx";
+export { default as useExtensionSettingsForm } from "./useExtensionSettingsForm.ts";
+export { default as useModalDiscardGuard } from "./useModalDiscardGuard.ts";
 export * from "./queries";

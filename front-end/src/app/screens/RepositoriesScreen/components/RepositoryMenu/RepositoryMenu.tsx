@@ -1,8 +1,7 @@
 import { ReactElement } from "react";
-import { ActionIcon, Box, Menu } from "@mantine/core";
+import { Menu } from "@mantine/core";
 import {
   IconAppWindow,
-  IconDots,
   IconEdit,
   IconExternalLink,
   IconEye,
@@ -17,7 +16,7 @@ import { useTranslation } from "react-i18next";
 
 import { Repository, RepositoryMode, RepositoryState } from "@picteus/ws-client";
 
-import { removeFilePrefixFromUrl, REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED, ToastService } from "utils";
+import { removeFilePrefixFromUrl, ToastService } from "utils";
 import {
   useConfirmAction,
   useDeleteRepositoryMutation,
@@ -25,7 +24,8 @@ import {
   useSetRepositoryModeMutation
 } from "app/hooks";
 import { RepositoriesService } from "app/services";
-import { Common } from "app/components";
+import { Common, OverflowMenu } from "app/components";
+import { REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED } from "../../RepositoriesConstants.ts";
 
 
 interface RepositoryMenuType
@@ -93,135 +93,124 @@ export default function RepositoryMenu({
   }
 
   return (
-    // The wrapper stops the click from bubbling to a clickable ancestor (card, table row);
-    // the dropdown handler does the same for menu item clicks, which bubble through the React tree despite the portal
-    <Box onClick={(event) => event.stopPropagation()}>
-      <Menu shadow="md" width={220} withinPortal>
-        <Menu.Target>
-          <ActionIcon variant="subtle" color="gray">
-            <IconDots size={Common.IconSmallSize} stroke={Common.IconStrokeSize}/>
-          </ActionIcon>
-        </Menu.Target>
-        <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
-          {onViewImages !== undefined && (
-            <Menu.Item
-              disabled={isDisabled}
-              leftSection={<IconPhoto size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-              onClick={onViewImages}
-            >
-              {t("repositoryScreen.drawer.viewImages")}
-            </Menu.Item>
-          )}
-          {REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED && onOpenInNewWindow !== undefined && (
-            <Menu.Item
-              disabled={isDisabled}
-              leftSection={<IconAppWindow size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-              onClick={onOpenInNewWindow}
-            >
-              {t("repositoryScreen.drawer.openInNewWindow")}
-            </Menu.Item>
-          )}
-          <Menu.Item
-            leftSection={<IconExternalLink size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-            onClick={() => void openExplorer(removeFilePrefixFromUrl(repository.url) ?? repository.url)}
-          >
-            {t("button.externalLinkOpen")}
-          </Menu.Item>
-          {onEdit && (
-            <Menu.Item
-              leftSection={<IconEdit size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-              onClick={() => onEdit(repository)}
-            >
-              {t("button.edit")}
-            </Menu.Item>
-          )}
-          <Menu.Item
-            disabled={!canSynchronize}
-            leftSection={<IconReload size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-            onClick={() =>
-              confirmAction({
-                onConfirm: () => void handleOnSynchronizeRepository(repository.id),
-                options: {
-                  title: t("repositoryScreen.confirmSynchronizeTitle"),
-                  message: t("repositoryScreen.confirmSynchronizeMessage", {
-                    name: repository.name
-                  }),
-                  content: t("repositoryScreen.confirmSynchronizeConsequences")
-                }
-              })
+    <OverflowMenu width={220}>
+      {onViewImages !== undefined && (
+        <Menu.Item
+          disabled={isDisabled}
+          leftSection={<IconPhoto size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+          onClick={onViewImages}
+        >
+          {t("repositoryScreen.drawer.viewImages")}
+        </Menu.Item>
+      )}
+      {REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED && onOpenInNewWindow !== undefined && (
+        <Menu.Item
+          disabled={isDisabled}
+          leftSection={<IconAppWindow size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+          onClick={onOpenInNewWindow}
+        >
+          {t("repositoryScreen.drawer.openInNewWindow")}
+        </Menu.Item>
+      )}
+      <Menu.Item
+        leftSection={<IconExternalLink size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+        onClick={() => void openExplorer(removeFilePrefixFromUrl(repository.url) ?? repository.url)}
+      >
+        {t("button.externalLinkOpen")}
+      </Menu.Item>
+      {onEdit && (
+        <Menu.Item
+          leftSection={<IconEdit size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+          onClick={() => onEdit(repository)}
+        >
+          {t("button.edit")}
+        </Menu.Item>
+      )}
+      <Menu.Item
+        disabled={!canSynchronize}
+        leftSection={<IconReload size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+        onClick={() =>
+          confirmAction({
+            onConfirm: () => void handleOnSynchronizeRepository(repository.id),
+            options: {
+              title: t("repositoryScreen.confirmSynchronizeTitle"),
+              message: t("repositoryScreen.confirmSynchronizeMessage", {
+                name: repository.name
+              }),
+              content: t("repositoryScreen.confirmSynchronizeConsequences")
             }
-          >
-            {t("button.synchronize")}
-          </Menu.Item>
-          {isDisabled ? (
-            <Menu.Item
-              leftSection={<IconPlayerPlay size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-              onClick={() => void handleOnSetRepositoryMode(repository.id, RepositoryMode.Enabled, "repositoryScreen.successEnable")}
-            >
-              {t("repositoryScreen.menu.enable")}
-            </Menu.Item>
-          ) : (
-            <Menu.Item
-              leftSection={<IconPlayerPause size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-              onClick={() =>
-                confirmAction({
-                  onConfirm: () => void handleOnSetRepositoryMode(repository.id, RepositoryMode.Disabled, "repositoryScreen.successDisable"),
-                  options: {
-                    title: t("repositoryScreen.confirmDisableTitle"),
-                    message: t("repositoryScreen.confirmDisableMessage", {
-                      name: repository.name
-                    }),
-                    content: t("repositoryScreen.confirmDisableConsequences")
-                  }
-                })
+          })
+        }
+      >
+        {t("button.synchronize")}
+      </Menu.Item>
+      {isDisabled ? (
+        <Menu.Item
+          leftSection={<IconPlayerPlay size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+          onClick={() => void handleOnSetRepositoryMode(repository.id, RepositoryMode.Enabled, "repositoryScreen.successEnable")}
+        >
+          {t("repositoryScreen.menu.enable")}
+        </Menu.Item>
+      ) : (
+        <Menu.Item
+          leftSection={<IconPlayerPause size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+          onClick={() =>
+            confirmAction({
+              onConfirm: () => void handleOnSetRepositoryMode(repository.id, RepositoryMode.Disabled, "repositoryScreen.successDisable"),
+              options: {
+                title: t("repositoryScreen.confirmDisableTitle"),
+                message: t("repositoryScreen.confirmDisableMessage", {
+                  name: repository.name
+                }),
+                content: t("repositoryScreen.confirmDisableConsequences")
               }
-            >
-              {t("repositoryScreen.menu.disable")}
-            </Menu.Item>
-          )}
-          <Menu.Item
-            leftSection={isWatching === true ?
-              <IconEyeOff size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/> :
-              <IconEye size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-            onClick={() =>
-              confirmAction({
-                onConfirm: () => void handleOnSetRepositoryMode(
-                  repository.id,
-                  isWatching === true ? RepositoryMode.Enabled : RepositoryMode.Watching,
-                  isWatching === true ? "repositoryScreen.successStopWatching" : "repositoryScreen.successWatch"
-                ),
-                options: {
-                  title: t(isWatching === true ? "repositoryScreen.confirmStopWatchingTitle" : "repositoryScreen.confirmWatchTitle"),
-                  message: t(isWatching === true ? "repositoryScreen.confirmStopWatchingMessage" : "repositoryScreen.confirmWatchMessage", {
-                    name: repository.name
-                  }),
-                  content: t(isWatching === true ? "repositoryScreen.confirmStopWatchingConsequences" : "repositoryScreen.confirmWatchConsequences")
-                }
-              })
+            })
+          }
+        >
+          {t("repositoryScreen.menu.disable")}
+        </Menu.Item>
+      )}
+      <Menu.Item
+        leftSection={isWatching === true ?
+          <IconEyeOff size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/> :
+          <IconEye size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+        onClick={() =>
+          confirmAction({
+            onConfirm: () => void handleOnSetRepositoryMode(
+              repository.id,
+              isWatching === true ? RepositoryMode.Enabled : RepositoryMode.Watching,
+              isWatching === true ? "repositoryScreen.successStopWatching" : "repositoryScreen.successWatch"
+            ),
+            options: {
+              title: t(isWatching === true ? "repositoryScreen.confirmStopWatchingTitle" : "repositoryScreen.confirmWatchTitle"),
+              message: t(isWatching === true ? "repositoryScreen.confirmStopWatchingMessage" : "repositoryScreen.confirmWatchMessage", {
+                name: repository.name
+              }),
+              content: t(isWatching === true ? "repositoryScreen.confirmStopWatchingConsequences" : "repositoryScreen.confirmWatchConsequences")
             }
-          >
-            {isWatching === true ? t("repositoryScreen.menu.stopWatching") : t("repositoryScreen.menu.watch")}
-          </Menu.Item>
-          <Menu.Item
-            color="red"
-            leftSection={<IconTrash size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
-            onClick={() =>
-              confirmAction({
-                onConfirm: () => void handleOnDeleteRepository(repository.id),
-                options: {
-                  title: t("repositoryScreen.confirmDeleteTitle"),
-                  message: t("repositoryScreen.confirmDeleteMessage", {
-                    name: repository.name
-                  }),
-                  content: t("repositoryScreen.confirmDeleteConsequences")
-                }
-              })
+          })
+        }
+      >
+        {isWatching === true ? t("repositoryScreen.menu.stopWatching") : t("repositoryScreen.menu.watch")}
+      </Menu.Item>
+      <Menu.Item
+        color="red"
+        leftSection={<IconTrash size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+        onClick={() =>
+          confirmAction({
+            onConfirm: () => void handleOnDeleteRepository(repository.id),
+            options: {
+              title: t("repositoryScreen.confirmDeleteTitle"),
+              message: t("repositoryScreen.confirmDeleteMessage", {
+                name: repository.name
+              }),
+              content: t("repositoryScreen.confirmDeleteConsequences")
             }
-          >
-            {t("button.delete")}
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
-    </Box>
+          })
+        }
+      >
+        {t("button.delete")}
+      </Menu.Item>
+    </OverflowMenu>
   );
 }

@@ -5,10 +5,10 @@ import { IconStack2 } from "@tabler/icons-react";
 import { DeskTabType } from "types";
 import { StackableScreen } from "app/components";
 import DeskTabContent from "../DeskTabContent/DeskTabContent.tsx";
-import { TabDetailsOverlay, TabHeader } from "../index.ts";
+import { TabDetailsOverlay, TabHeader } from "..";
 
 
-export interface DeskTabPanelPropsType
+interface DeskTabPanelPropsType
 {
 
   readonly tab: DeskTabType;

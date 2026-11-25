@@ -3,10 +3,10 @@ import { IconFileText, IconPhoto, IconStack2, IconWorld } from "@tabler/icons-re
 
 import { DeskTabType } from "types";
 import { Common, ExtensionIcon, ResourceIcon } from "app/components";
-import { TabLocationType } from "../index.ts";
+import { TabLocationType } from "..";
 
 
-export interface DeskTabIconPropsType
+interface DeskTabIconPropsType
 {
   readonly tab: DeskTabType;
   location: TabLocationType;

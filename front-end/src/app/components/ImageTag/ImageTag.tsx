@@ -1,17 +1,16 @@
 import React, { ReactNode } from "react";
-import { Badge, Group, MantineColor, MantineSize } from "@mantine/core";
+import { Badge, Group, MantineColor } from "@mantine/core";
 
 import { ExtensionImageTag } from "@picteus/ws-client";
 
-import { ExtensionIcon } from "../index.ts";
+import { ExtensionIcon } from "..";
 
 
-export type ImageTagPropsType =
+type ImageTagPropsType =
   {
     readonly tag: ExtensionImageTag;
     readonly kind?: "badge" | "plain";
     readonly withExtensionPrefix?: boolean;
-    readonly size?: MantineSize;
     readonly variant?: "light" | "outline" | "filled" | "subtle" | "default";
     readonly color?: MantineColor;
   };
@@ -20,7 +19,6 @@ export default function ImageTag({
   tag,
   kind = "badge",
   withExtensionPrefix = true,
-  size = "md",
   variant = "outline",
   color
 }: ImageTagPropsType): ReactNode
@@ -33,7 +31,7 @@ export default function ImageTag({
     return (
       <Badge
         fw={400}
-        size={size}
+        size="md"
         variant={variant}
         color={color}
         tt="none"

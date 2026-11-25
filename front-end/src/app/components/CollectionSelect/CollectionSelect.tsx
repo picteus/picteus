@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { Collection } from "@picteus/ws-client";
 
 import CollectionIcon from "../CollectionIcon/CollectionIcon.tsx";
+import CollectionLabel from "../CollectionLabel/CollectionLabel.tsx";
 
 
 type CollectionSelectType = {
@@ -52,14 +53,18 @@ export default function CollectionSelect({
   const renderSelectOption: SelectProps["renderOption"] = (item: ComboboxLikeRenderOptionInput<ComboboxItem>) =>
   {
     const collection = collections.find((aCollection) => aCollection.id.toString() === item.option.value);
+    if (collection === undefined)
+    {
+      return null;
+    }
+
     return (
-      <Group gap={8}>
+      <Group gap="xs" wrap="nowrap" miw={0} flex={1}>
         {item.checked && <CheckIcon className={Combobox.classes.optionsDropdownCheckIcon}/>}
-        <CollectionIcon collection={collection}/>
-        <Stack gap={2}>
-          <Text size="sm" fw={500}>{collection.name}</Text>
+        <Stack gap={2} miw={0} flex={1}>
+          <CollectionLabel collection={collection}/>
           {collection.comment && (
-            <Text size="xs" opacity={0.65}>
+            <Text size="xs" c="dimmed" truncate="end">
               {collection.comment}
             </Text>
           )}
@@ -83,7 +88,6 @@ export default function CollectionSelect({
       label={label}
       description={description}
       leftSection={selectedCollection ? <CollectionIcon collection={selectedCollection}/> : undefined}
-      leftSectionWidth={60}
       renderOption={renderSelectOption}
       placeholder={t("widgets.collectionPlaceHolder")}
       data={data}

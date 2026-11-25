@@ -4,7 +4,7 @@ import { AdditionalUi } from "types";
 import style from "./SidebarAnchorScreen.module.scss";
 
 
-export type SidebarAnchorScreenPropsType =
+type SidebarAnchorScreenPropsType =
   {
     readonly element: AdditionalUi;
   };

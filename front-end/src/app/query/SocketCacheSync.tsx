@@ -18,7 +18,7 @@ export function SocketCacheSync(): null
     {
       const channel = event.channel;
 
-      if (channel === ChannelEnum.IMAGE_DELETED || channel === ChannelEnum.IMAGE_UPDATED)
+      if (channel === ChannelEnum.IMAGE_CREATED || channel === ChannelEnum.IMAGE_DELETED || channel === ChannelEnum.IMAGE_UPDATED)
       {
         const imageId = EventService.computeEventEntityId<string>(event);
         if (imageId)
@@ -71,7 +71,6 @@ export function SocketCacheSync(): null
             void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.detail(extensionId) });
           }
           void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
-          void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.configuration });
           void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.aiModels });
         }
         if (isActivityEvent === true)

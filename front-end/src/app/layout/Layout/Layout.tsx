@@ -2,8 +2,15 @@ import React, { ReactNode, useCallback, useRef } from "react";
 import { Flex } from "@mantine/core";
 
 import { Sidebar } from "app/layout";
-import { BottomBar, IntentCenter, Modals, NotificationCenter, Notifications } from "./components";
-import { SelectedImagesHover, UniversalActionCenter } from "./components/index.ts";
+import {
+  BottomBar,
+  IntentCenter,
+  Modals,
+  NotificationCenter,
+  Notifications,
+  SelectedImagesHover,
+  UniversalActionCenter
+} from "./components";
 
 import style from "./Layout.module.scss";
 

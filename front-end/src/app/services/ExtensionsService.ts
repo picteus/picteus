@@ -1,13 +1,14 @@
+import { TFunction } from "i18next";
 import {
   CaptionInstruction,
   EligibleTagsInstruction,
   EmbeddingInstruction,
   Extension,
   ExtensionActivity,
+  ExtensionActivityState,
   ExtensionAiModel,
   ExtensionAndManual,
   ExtensionApi,
-  ExtensionApiExtensionBuildRequest,
   ExtensionApiExtensionChangeStateRequest,
   ExtensionApiExtensionGenerateRequest,
   ExtensionApiExtensionGetCaptionInstructionsRequest,
@@ -26,17 +27,22 @@ import {
   ExtensionApiExtensionSynchronizeRequest,
   ExtensionApiExtensionUninstallRequest,
   ExtensionApiExtensionUpdateRequest,
+  ExtensionCategory,
   ExtensionsConfiguration,
   ExtensionSettings,
   ExtensionState,
+  Manifest,
   ManifestCapability,
   ManifestCapabilityId,
+  ManifestExtensionCommand,
   ManifestExtensionCommandSpecification,
   ManifestImageFeaturesCapability,
-  ManifestImageTagsCapability
+  ManifestImageTagsCapability,
+  MarketplaceExtension
 } from "@picteus/ws-client";
 
-import { BASE_PATH } from "utils";
+import { ExtensionsSortCriterionType, ManualSection } from "types";
+import { BASE_PATH, extractMarkdownParagraph, isPlainRecord } from "utils";
 
 
 const extensionApi = new ExtensionApi();
@@ -114,11 +120,6 @@ async function synchronize(requestParameters: ExtensionApiExtensionSynchronizeRe
 async function generate(parameters: ExtensionApiExtensionGenerateRequest): Promise<Blob>
 {
   return extensionApi.extensionGenerate(parameters);
-}
-
-async function build(parameters: ExtensionApiExtensionBuildRequest): Promise<Blob>
-{
-  return extensionApi.extensionBuild(parameters);
 }
 
 async function listAiModels(): Promise<ExtensionAiModel[]>
@@ -257,8 +258,18 @@ export type ExtensionInstructionCapabilitiesType =
     readonly hasAnyInstructionCapability: boolean;
   };
 
-function computeInstructionCapabilities(extension: Extension): ExtensionInstructionCapabilitiesType
+function computeInstructionCapabilities(extension?: Extension): ExtensionInstructionCapabilitiesType
 {
+  if (extension === undefined)
+  {
+    return {
+      hasCaptionCapability: false,
+      hasEligibleTagsCapability: false,
+      hasEmbeddingsCapability: false,
+      hasAnyInstructionCapability: false
+    };
+  }
+
   let hasCaptionCapability = false;
   let hasEligibleTagsCapability = false;
   let hasEmbeddingsCapability = false;
@@ -299,6 +310,29 @@ function computeInstructionCapabilities(extension: Extension): ExtensionInstruct
   };
 }
 
+export type CommandManualSectionsType =
+  {
+    readonly summary: string | undefined;
+    readonly details: string | undefined;
+    readonly full: string | undefined;
+  };
+
+function extractManifestCommands(manifest: Manifest): ManifestExtensionCommand[]
+{
+  const commandsById = new Map<string, ManifestExtensionCommand>();
+  for (const instructions of manifest.instructions ?? [])
+  {
+    for (const command of instructions.commands ?? [])
+    {
+      if (commandsById.has(command.id) === false)
+      {
+        commandsById.set(command.id, command);
+      }
+    }
+  }
+  return Array.from(commandsById.values());
+}
+
 function findCommandSpecification(
   specifications: ManifestExtensionCommandSpecification[],
   language: string
@@ -313,12 +347,344 @@ function findCommandSpecification(
   );
 }
 
+function findManifestCommandSpecification(
+  manifest: Manifest | undefined,
+  commandId: string | undefined,
+  language: string
+): ManifestExtensionCommandSpecification | undefined
+{
+  if (manifest === undefined || commandId === undefined)
+  {
+    return undefined;
+  }
+  const manifestCommand = extractManifestCommands(manifest).find(
+    (candidateCommand) => candidateCommand.id === commandId
+  );
+  if (manifestCommand === undefined)
+  {
+    return undefined;
+  }
+  return findCommandSpecification(manifestCommand.specifications, language);
+}
+
+function resolveCommandLabel(
+  commandId: string | undefined,
+  specification?: ManifestExtensionCommandSpecification,
+  explicitLabel?: string
+): string
+{
+  return explicitLabel?.trim() || specification?.label?.trim() || commandId || "";
+}
+
+function extractCommandManualSections(
+  manualInstructions: string | undefined,
+  commandId: string | undefined
+): CommandManualSectionsType
+{
+  if (commandId === undefined || manualInstructions === undefined || manualInstructions.trim().length === 0)
+  {
+    return {
+      summary: undefined,
+      details: undefined,
+      full: undefined
+    };
+  }
+
+  const summary = extractMarkdownParagraph(manualInstructions, [ ManualSection.Commands, commandId ], false)?.trim();
+  const details = extractMarkdownParagraph(manualInstructions, [ ManualSection.Commands, commandId, "Details" ], true)?.trim();
+  const full = extractMarkdownParagraph(manualInstructions, [ ManualSection.Commands, commandId ], true)?.trim();
+
+  return {
+    summary: summary !== undefined && summary.length > 0 ? summary : undefined,
+    details: details !== undefined && details.length > 0 ? details : undefined,
+    full: full !== undefined && full.length > 0 ? full : undefined
+  };
+}
+
+export type ExtensionDerivedStatusType =
+  | "running"
+  | "starting"
+  | "paused"
+  | "error"
+  | "notInstalled"
+  | "installing"
+  | "updating";
+
+export type ExtensionFilterableStatusType = "running" | "starting" | "paused" | "error";
+
+export type UnifiedExtensionItemType = {
+  readonly id: string;
+  readonly manifest: Manifest;
+  readonly extension?: Extension;
+  readonly marketplaceExtension?: MarketplaceExtension;
+  readonly activity?: ExtensionActivity;
+  readonly isInstalled: boolean;
+  readonly status: ExtensionDerivedStatusType;
+  readonly availableUpdateVersion?: string;
+};
+
+export const allExtensionCategories: readonly ExtensionCategory[] = Object.values(ExtensionCategory);
+
+export const filterableExtensionStatuses: readonly ExtensionFilterableStatusType[] = [
+  "running",
+  "starting",
+  "paused",
+  "error"
+] as const;
+
+const statusSortOrder: Record<ExtensionDerivedStatusType, number> = {
+  error: 0,
+  updating: 1,
+  installing: 2,
+  starting: 3,
+  running: 4,
+  paused: 5,
+  notInstalled: 6
+};
+
+function deriveStatus(
+  extension: Extension | undefined,
+  activity: ExtensionActivity | undefined,
+  isInstalling: boolean,
+  isUpdating: boolean
+): ExtensionDerivedStatusType
+{
+  if (isInstalling === true)
+  {
+    return "installing";
+  }
+  if (isUpdating === true)
+  {
+    return "updating";
+  }
+  if (extension === undefined)
+  {
+    return "notInstalled";
+  }
+  if (extension.state === ExtensionState.Paused)
+  {
+    return "paused";
+  }
+  if (activity?.isInError === true)
+  {
+    return "error";
+  }
+  if (
+    activity !== undefined &&
+    activity.process === ExtensionActivityState.Started &&
+    activity.connection === ExtensionActivityState.Started
+  )
+  {
+    return "running";
+  }
+  return "starting";
+}
+
+function parseSemver(version: string): { core: number[]; prerelease: string[] }
+{
+  const sanitized = version.trim().replace(/^v/i, "").split("+")[0];
+  const [ corePart, ...prereleaseParts ] = sanitized.split("-");
+  const core = corePart.split(".").map(segment =>
+  {
+    const parsed = Number.parseInt(segment, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  });
+  const prerelease = prereleaseParts.length > 0 ? prereleaseParts.join("-").split(".") : [];
+  return { core, prerelease };
+}
+
+function compareSemver(versionA: string, versionB: string): number
+{
+  const parsedA = parseSemver(versionA);
+  const parsedB = parseSemver(versionB);
+  const maxLength = Math.max(parsedA.core.length, parsedB.core.length);
+
+  for (let index = 0; index < maxLength; index++)
+  {
+    const partA = parsedA.core[index] ?? 0;
+    const partB = parsedB.core[index] ?? 0;
+    if (partA !== partB)
+    {
+      return partA > partB ? 1 : -1;
+    }
+  }
+
+  // A release version has higher precedence than a prerelease with the same core numbers
+  const hasPrereleaseA = parsedA.prerelease.length > 0;
+  const hasPrereleaseB = parsedB.prerelease.length > 0;
+  if (hasPrereleaseA === false && hasPrereleaseB === false)
+  {
+    return 0;
+  }
+  if (hasPrereleaseA === false)
+  {
+    return 1;
+  }
+  if (hasPrereleaseB === false)
+  {
+    return -1;
+  }
+
+  const maxPreLength = Math.max(parsedA.prerelease.length, parsedB.prerelease.length);
+  for (let index = 0; index < maxPreLength; index++)
+  {
+    const preA = parsedA.prerelease[index];
+    const preB = parsedB.prerelease[index];
+    if (preA === undefined)
+    {
+      return -1;
+    }
+    if (preB === undefined)
+    {
+      return 1;
+    }
+    if (preA === preB)
+    {
+      continue;
+    }
+    const isNumericA = /^\d+$/.test(preA);
+    const isNumericB = /^\d+$/.test(preB);
+    if (isNumericA === true && isNumericB === true)
+    {
+      return Number(preA) > Number(preB) ? 1 : -1;
+    }
+    if (isNumericA === true)
+    {
+      return -1;
+    }
+    if (isNumericB === true)
+    {
+      return 1;
+    }
+    return preA.localeCompare(preB);
+  }
+
+  return 0;
+}
+
+function findMarketplaceUpdateVersion(
+  extension: Extension | undefined,
+  marketplaceExtension: MarketplaceExtension | undefined
+): string | undefined
+{
+  if (extension === undefined || marketplaceExtension === undefined)
+  {
+    return undefined;
+  }
+  return compareSemver(marketplaceExtension.manifest.version, extension.manifest.version) > 0
+    ? marketplaceExtension.manifest.version
+    : undefined;
+}
+
+function matchesSearch(manifest: Manifest, normalizedSearch: string): boolean
+{
+  if (normalizedSearch.length === 0)
+  {
+    return true;
+  }
+  const searchableFields = [
+    manifest.id,
+    manifest.name,
+    manifest.description,
+    manifest.author ?? ""
+  ];
+  return searchableFields.some(field => field.toLowerCase().includes(normalizedSearch));
+}
+
+function compareItems(
+  firstItem: UnifiedExtensionItemType,
+  secondItem: UnifiedExtensionItemType,
+  sortCriterion: ExtensionsSortCriterionType,
+  isSortAscending: boolean
+): number
+{
+  const direction = isSortAscending === true ? 1 : -1;
+  if (sortCriterion === "status")
+  {
+    const statusDelta = statusSortOrder[firstItem.status] - statusSortOrder[secondItem.status];
+    if (statusDelta !== 0)
+    {
+      return direction * statusDelta;
+    }
+    return firstItem.manifest.name.localeCompare(secondItem.manifest.name);
+  }
+  return direction * firstItem.manifest.name.localeCompare(secondItem.manifest.name);
+}
+
+const settingsPropertiesKey = "properties";
+
+function hasSettings(extension: Extension): boolean
+{
+  const settingsProperties = extension.manifest.settings?.[settingsPropertiesKey];
+  return settingsProperties !== undefined && Object.keys(settingsProperties).length > 0;
+}
+
+function hasMissingRequiredSettings(manifest: Manifest, settingsValue: unknown): boolean
+{
+  const schema = manifest.settings as { required?: unknown } | undefined;
+  const requiredFields = schema?.required;
+  if (Array.isArray(requiredFields) === false || requiredFields.length === 0)
+  {
+    return false;
+  }
+
+  const record = isPlainRecord(settingsValue) === true
+    ? settingsValue
+    : undefined;
+
+  for (const fieldKey of requiredFields)
+  {
+    if (typeof fieldKey !== "string")
+    {
+      continue;
+    }
+    const fieldValue = record?.[fieldKey];
+    if (fieldValue === undefined || fieldValue === null)
+    {
+      return true;
+    }
+    if (typeof fieldValue === "string" && fieldValue.trim().length === 0)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function hasSynchronizationCapabilities(extension: Extension): boolean
+{
+  return computeCapabilities(extension).length > 0;
+}
+
+function formatExtensionSubtitle(manifest: Manifest, t: TFunction): string
+{
+  const author = manifest.author?.trim();
+  return author !== undefined && author.length > 0
+    ? t("extension.byAuthorVersion", { author, version: manifest.version })
+    : t("extension.versionOnly", { version: manifest.version });
+}
+
 export default {
   synchronizationCapabilityIds,
+  allExtensionCategories,
+  filterableExtensionStatuses,
   computeCapabilities,
   computeEligibleExtensions,
   computeInstructionCapabilities,
+  extractManifestCommands,
   findCommandSpecification,
+  findManifestCommandSpecification,
+  resolveCommandLabel,
+  extractCommandManualSections,
+  formatExtensionSubtitle,
+  deriveStatus,
+  findMarketplaceUpdateVersion,
+  matchesSearch,
+  compareItems,
+  hasSettings,
+  hasMissingRequiredSettings,
+  hasSynchronizationCapabilities,
   fetchAll,
   get,
   install,
@@ -329,7 +695,6 @@ export default {
   uninstall,
   synchronize,
   generate,
-  build,
   startOrStop,
   getSettings,
   setSettings,

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Collection } from "@picteus/ws-client";
 
 import { ContentTitle, CopyText, FieldValue, NoValue } from "app/components";
-import { CollectionActions } from "../index.ts";
+import { CollectionActions } from "..";
 
 
 type CollectionTopType = {

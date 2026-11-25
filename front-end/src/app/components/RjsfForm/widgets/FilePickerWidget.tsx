@@ -1,7 +1,7 @@
 import { ReactElement } from "react";
 import { WidgetProps } from "@rjsf/utils";
 
-import FileOrDirectoryPickerWidget from "./FileOrDirectoryPickerWidget";
+import FileOrDirectoryPickerWidget from "./FileOrDirectoryPickerWidget.tsx";
 
 
 export default function FilePickerWidget(props: WidgetProps): ReactElement

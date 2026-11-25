@@ -284,7 +284,7 @@ function DeskTabMarkdownContent({ content }: DeskTabMarkdownContentPropsType): R
   );
 }
 
-export interface DeskTabContentPropsType
+interface DeskTabContentPropsType
 {
 
   readonly tab: DeskTabType;

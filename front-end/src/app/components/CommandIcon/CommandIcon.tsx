@@ -1,27 +1,36 @@
-import React from "react";
+import { ReactElement } from "react";
 import { Image } from "@mantine/core";
 
-import { ManifestExtensionCommand } from "@picteus/ws-client";
+import { Extension, ManifestExtensionCommand, MarketplaceExtension } from "@picteus/ws-client";
 
 import { IconSizeType, UiCommandType } from "types";
-import { Common, ExtensionIcon } from "app/components";
 import { ExtensionsService } from "app/services";
+import Common from "../Common/Common.ts";
+import ExtensionIcon from "../ExtensionIcon/ExtensionIcon.tsx";
 
 
-type CommandIconType = {
-  extensionId: string;
-  command: UiCommandType | ManifestExtensionCommand;
-  size: IconSizeType;
+type CommandIconPropsType = {
+  readonly extensionId: string;
+  readonly command: UiCommandType | ManifestExtensionCommand;
+  readonly size: IconSizeType;
+  readonly isInstalled?: boolean;
+  readonly fallbackIconSource?: string | Extension | MarketplaceExtension;
 };
 
-export default function CommandIcon({ extensionId, command, size }: CommandIconType)
+export default function CommandIcon({
+  extensionId,
+  command,
+  size,
+  isInstalled = true,
+  fallbackIconSource
+}: CommandIconPropsType): ReactElement
 {
-  const iconUri: string = "on" in command ? command.ui?.iconUri : (command as UiCommandType).iconUri;
-  if (iconUri === undefined)
+  const iconUri = "on" in command ? command.ui?.iconUri : command.iconUri;
+  if (isInstalled === false || iconUri === undefined || iconUri.trim().length === 0)
   {
-    return <ExtensionIcon idOrExtension={extensionId} size={size}/>;
+    return <ExtensionIcon idOrExtension={fallbackIconSource ?? extensionId} size={size}/>;
   }
   const imageSrc = ExtensionsService.getCommandIconURL(extensionId, iconUri);
   const edge = Common.IconFromStringToNumberSize(size);
-  return (<Image src={imageSrc} w={edge} h={edge} fit="contain" radius="sm"/>);
+  return <Image src={imageSrc} w={edge} h={edge} fit="contain" radius="sm"/>;
 }

@@ -1,14 +1,15 @@
 import { ReactElement, ReactNode } from "react";
-import { Button, CopyButton, Divider, Flex, Stack, Text, UnstyledButton } from "@mantine/core";
+import { Button, CopyButton, Divider, Flex, Stack, Text } from "@mantine/core";
 import { IconAppWindow, IconPhoto } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Repository, RepositoryActivity, RepositoryMode } from "@picteus/ws-client";
 
-import { removeFilePrefixFromUrl, REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED } from "utils";
+import { removeFilePrefixFromUrl } from "utils";
 import { useOpenExplorer } from "app/hooks";
-import { Common, CopyText, FormatedDate, NoValue } from "app/components";
-import { RepositoryPreviews, RepositoryStatusPill } from "../index.ts";
+import { ActionLink, Common, CopyText, FormatedDate, NoValue } from "app/components";
+import { REPOSITORY_OPEN_IN_NEW_WINDOW_ENABLED } from "../../RepositoriesConstants.ts";
+import { RepositoryPreviews, RepositoryStatusPill } from "..";
 
 
 const DRAWER_PREVIEWS_COUNT = 6;
@@ -83,9 +84,9 @@ export default function RepositoryDrawerContent({
       <Flex justify="space-between" align="center">
         <Text size="sm" fw={600}>{t("repositoryScreen.drawer.recentImages")}</Text>
         {!isDisabled && onViewImages !== undefined && imageCount !== undefined && (
-          <UnstyledButton onClick={onViewImages}>
-            <Text size="xs" c="blue">{t("repositoryScreen.drawer.viewAll", { number: imageCount })}</Text>
-          </UnstyledButton>
+          <ActionLink size="xs" onClick={onViewImages}>
+            {t("repositoryScreen.drawer.viewAll", { number: imageCount })}
+          </ActionLink>
         )}
       </Flex>
       <RepositoryPreviews repositoryId={repository.id} count={DRAWER_PREVIEWS_COUNT} edge={DRAWER_PREVIEW_EDGE}/>
@@ -94,14 +95,14 @@ export default function RepositoryDrawerContent({
         <Text size="xs" fw={500} c="dimmed">{t("repositoryScreen.drawer.folder")}</Text>
         <Text size="sm">{path}</Text>
         <Flex gap="md" align="center">
-          <UnstyledButton onClick={() => void openExplorer(path)}>
-            <Text size="sm" c="blue">{t("repositoryScreen.drawer.showInFinder")}</Text>
-          </UnstyledButton>
+          <ActionLink onClick={() => void openExplorer(path)}>
+            {t("repositoryScreen.drawer.showInFinder")}
+          </ActionLink>
           <CopyButton value={path} timeout={1200}>
             {({ copy }) => (
-              <UnstyledButton onClick={copy}>
-                <Text size="sm" c="blue">{t("repositoryScreen.drawer.copyPath")}</Text>
-              </UnstyledButton>
+              <ActionLink onClick={copy}>
+                {t("repositoryScreen.drawer.copyPath")}
+              </ActionLink>
             )}
           </CopyButton>
         </Flex>

@@ -1,0 +1,4 @@
+[*.{ts,tsx}]
+# With moduleResolution: "bundler" + allowImportingTsExtensions: true in tsconfig.app.json,
+ij_typescript_use_explicit_js_extension = auto
+ij_typescript_import_use_node_resolution = true

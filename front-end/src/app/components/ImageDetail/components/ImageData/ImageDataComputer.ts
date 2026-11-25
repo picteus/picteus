@@ -464,13 +464,13 @@ export function computeRecipeFeatureContainers(
         }
 
         const recipe = extractRecipe(feature);
-        return recipe?.prompt.kind === "instructions" ? [ json(JSON.stringify(recipe.prompt.value, undefined, 2), copyableOptions) ] : [];
+        return recipe?.prompt?.kind === "instructions" ? [ json(JSON.stringify(recipe.prompt.value, undefined, 2), copyableOptions) ] : [];
       }
     );
 
     if (instructionsElements.length > 0)
     {
-      container.elements.push(collapsibleGroup(t("deskTabHeader.tabDetails"), instructionsElements));
+      container.elements.push(collapsibleGroup(t("field.details"), instructionsElements));
     }
   }
 
@@ -717,7 +717,6 @@ export function computeEmbeddingModelUiContainer(
       freeForm(
         React.createElement(ImageItemsGallery, {
           idsOrImages: closestImages,
-          edge: Common.ImageThumbnailEdge,
           viewMode
         })
       )

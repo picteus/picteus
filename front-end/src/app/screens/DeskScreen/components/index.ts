@@ -1,4 +1,5 @@
 export { default as DeskTabsMenu } from "./DeskTabsMenu/DeskTabsMenu.tsx";
+export { default as DeskTabContent } from "./DeskTabContent/DeskTabContent.tsx";
 export { default as DeskTabPanel } from "./DeskTabPanel/DeskTabPanel.tsx";
 export { default as DeskTabIcon } from "./DeskTabIcon/DeskTabIcon.tsx";
 export { default as TabSubtitle } from "./TabSubtitle/TabSubtitle.tsx";

@@ -2,7 +2,6 @@ import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, use
 import { ActionIcon, Box, CloseButton, Divider, Flex } from "@mantine/core";
 import { randomId, useFocusTrap } from "@mantine/hooks";
 import { Icon, IconArrowLeft } from "@tabler/icons-react";
-import { useTranslation } from "react-i18next";
 
 import { ActionModalValue, ContentIconType } from "types";
 import { ActionModalContext, ActionModalContextType, useActionModalContext } from "app/context";
@@ -24,6 +23,11 @@ export const useStackNavigator = (): StackContextType =>
     throw new Error("useStackNavigator must be used within a StackNavigator");
   }
   return context;
+};
+
+export const useOptionalStackNavigator = (): StackContextType | null =>
+{
+  return useContext(StackContext);
 };
 
 interface StackedElementPropsType
@@ -53,7 +57,6 @@ function StackedElement({
   popToRoot
 }: StackedElementPropsType): ReactElement
 {
-  const [ t ] = useTranslation();
   const focusTrapRef = useFocusTrap(isVisible);
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
@@ -89,7 +92,6 @@ function StackedElement({
               size={28}
               radius={5}
               onClick={pop}
-              aria-label={t("stackNavigator.back")}
               flex="0 0 auto"
             >
               <IconArrowLeft size={16} stroke={Common.IconStrokeSize}/>
@@ -122,19 +124,17 @@ function StackedElement({
   );
 }
 
-export interface StackNavigatorPropsType
+interface StackNavigatorPropsType
 {
   children: ReactNode;
   title: ReactNode;
   icon: Icon;
-  resetTrigger?: unknown;
 }
 
 export default function StackNavigator({
   children,
   title,
-  icon,
-  resetTrigger
+  icon
 }: StackNavigatorPropsType): ReactElement
 {
   const [ stack, setStack ] = useState<StackedComponentType[]>([]);
@@ -213,11 +213,6 @@ export default function StackNavigator({
       }
     }
   }, []);
-
-  useEffect(() =>
-  {
-    popToRoot();
-  }, [ resetTrigger, popToRoot ]);
 
   const set = useCallback((stackedComponents: StackedComponentType[]): void =>
   {

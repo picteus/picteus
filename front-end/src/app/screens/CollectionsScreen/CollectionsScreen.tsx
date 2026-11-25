@@ -8,7 +8,7 @@ import { Collection } from "@picteus/ws-client";
 import { useActionModalContext } from "app/context";
 import { useCollections } from "app/hooks";
 import {
-  CollectionIcon,
+  CollectionLabel,
   Common,
   Container,
   Drawer,
@@ -67,10 +67,7 @@ export default function CollectionsScreen()
       style={{ cursor: "pointer" }}
     >
       <Table.Td>
-        <CollectionIcon collection={collection}/>
-      </Table.Td>
-      <Table.Td>
-        <Text size="md">{collection.name}</Text>
+        <CollectionLabel collection={collection} size="md"/>
       </Table.Td>
       <Table.Td>
         {collection.comment ? <Text size="md">{collection.comment}</Text> : <NoValue/>}
@@ -95,7 +92,7 @@ export default function CollectionsScreen()
   {
     return (
       <StandardTable
-        head={[ "", "field.name", "field.comment", "field.createdOn", "field.modifiedOn", "" ]}
+        head={[ "field.name", "field.comment", "field.createdOn", "field.modifiedOn", "" ]}
         loading={isLoading || isFetching}
         emptyResults={
           <EmptyResults

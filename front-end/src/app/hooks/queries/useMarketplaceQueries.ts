@@ -2,6 +2,7 @@ import { useMutation, UseMutationResult, useQuery, useQueryClient, UseQueryResul
 import {
   Extension,
   MarketplaceApiMarketplaceInstallRequest,
+  MarketplaceApiMarketplaceUpdateRequest,
   MarketplaceExtension,
   MarketplaceExtensionDetails
 } from "@picteus/ws-client";
@@ -55,7 +56,34 @@ export function useInstallMarketplaceExtensionMutation(): UseMutationResult<
       {
         void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
         void queryClient.invalidateQueries({ queryKey: queryKeys.marketplace.all });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.configuration });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.activities });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.aiModels });
+      }
+    }
+  );
+}
+
+export function useUpdateMarketplaceExtensionMutation(): UseMutationResult<
+  Extension,
+  Error,
+  MarketplaceApiMarketplaceUpdateRequest
+>
+{
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    {
+      mutationFn: (parameters: MarketplaceApiMarketplaceUpdateRequest): Promise<Extension> =>
+      {
+        return MarketplaceService.update(parameters);
+      },
+      onSuccess: (updatedExtension: Extension): void =>
+      {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.all });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.detail(updatedExtension.manifest.id) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.activities });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.extensions.aiModels });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.marketplace.all });
       }
     }
   );

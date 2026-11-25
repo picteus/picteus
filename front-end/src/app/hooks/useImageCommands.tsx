@@ -240,7 +240,7 @@ export default function useImageCommands({
         const tabId = addTab({
           id: randomId(),
           label: image.name,
-          icon: { url: await ImageService.computeImageUriFromUrls([ image.url ], Common.NotificationIllustrationEdge) },
+          icon: { url: illustrationUri },
           content: {
             kind: "image",
             imageId: image.id

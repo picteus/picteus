@@ -1,15 +1,15 @@
-import React, { ReactElement, useEffect, useMemo, useState } from "react";
-import { Box, ScrollArea, Stack } from "@mantine/core";
+import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import { Stack } from "@mantine/core";
 import { IconFolder, IconFolderOpen, IconFolders, IconFolderSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Repository, RepositoryActivity } from "@picteus/ws-client";
 
 import { FolderTypes, RepositoriesSortCriterionType, RepositoriesViewSettingsType } from "types";
-import variables from "assets/style/variablesExport.module.scss";
 import { computeMainRoute, computeRepositoryRoute } from "utils";
 import { useActionModalContext } from "app/context";
 import {
+  useCatalogViewSettings,
   useFolderPicker,
   useOpenWindow,
   useRepositories,
@@ -17,15 +17,7 @@ import {
   useRepositoryActivities
 } from "app/hooks";
 import { RepositoriesService, StorageService } from "app/services";
-import {
-  Common,
-  Container,
-  Drawer,
-  EmptyResults,
-  LoadingView,
-  StackableScreen,
-  useStackNavigator
-} from "app/components";
+import { CatalogScreenLayout, Common, Drawer, LoadingView, StackableScreen, useStackNavigator } from "app/components";
 import RepositoryImagesScreen from "../RepositoryImagesScreen/RepositoryImagesScreen.tsx";
 import {
   AddOrUpdateRepository,
@@ -62,18 +54,25 @@ function RepositoriesScreenContent(): ReactElement
   const stackNavigator = useStackNavigator();
   const openWindow = useOpenWindow();
 
-  const [ viewSettings, setViewSettings ] = useState<RepositoriesViewSettingsType>(() => StorageService.getRepositoriesViewSettings());
-
-  useEffect(() =>
-  {
-    StorageService.setRepositoriesViewSettings(viewSettings);
-  }, [ viewSettings ]);
+  const {
+    viewSettings,
+    updateSettings,
+    setViewMode,
+    setSortCriterion,
+    toggleSortDirection,
+    handleHeaderSort
+  } = useCatalogViewSettings<RepositoriesViewSettingsType, RepositoriesSortCriterionType>({
+    load: StorageService.getRepositoriesViewSettings,
+    save: StorageService.setRepositoriesViewSettings,
+    // A new criterion starts with its natural direction: A to Z for the name, most first for counts and dates
+    getDefaultAscending: criterion => criterion === "name"
+  });
 
   useEffect(() =>
   {
     if (selectedRepository)
     {
-      const updated = repositories.find((repositoryItem) => repositoryItem.id === selectedRepository.id);
+      const updated = repositories.find(repositoryItem => repositoryItem.id === selectedRepository.id);
       if (updated && updated !== selectedRepository)
       {
         setSelectedRepository(updated);
@@ -86,7 +85,7 @@ function RepositoriesScreenContent(): ReactElement
   }, [ repositories, selectedRepository ]);
 
   const activitiesByRepositoryId = useMemo(
-    () => new Map<string, RepositoryActivity>(activities.map((activity) => [ activity.id, activity ])),
+    () => new Map<string, RepositoryActivity>(activities.map(activity => [ activity.id, activity ])),
     [ activities ]
   );
 
@@ -95,8 +94,8 @@ function RepositoriesScreenContent(): ReactElement
   const originCounts = useMemo(
     () => ({
       all: repositories.length,
-      user: repositories.filter((repository) => RepositoriesService.isFromExtension(repository) === false).length,
-      extensions: repositories.filter((repository) => RepositoriesService.isFromExtension(repository) === true).length
+      user: repositories.filter(repository => RepositoriesService.isFromExtension(repository) === false).length,
+      extensions: repositories.filter(repository => RepositoriesService.isFromExtension(repository) === true).length
     }),
     [ repositories ]
   );
@@ -105,7 +104,7 @@ function RepositoriesScreenContent(): ReactElement
     () =>
     {
       const searchText = viewSettings.searchText.trim().toLowerCase();
-      const filtered = repositories.filter((repository) =>
+      const filtered = repositories.filter(repository =>
       {
         if (viewSettings.originFilter === "user" && RepositoriesService.isFromExtension(repository) === true)
         {
@@ -176,126 +175,101 @@ function RepositoriesScreenContent(): ReactElement
     openAddOrUpdateRepositoryModal(undefined, directoryPath);
   }
 
-  function handleOnViewModeChange(viewMode: RepositoriesViewSettingsType["viewMode"]): void
+  const handleOnSearchTextChange = useCallback((searchText: string): void =>
   {
-    setViewSettings((previous) => ({ ...previous, viewMode }));
-  }
+    updateSettings(previous => ({ ...previous, searchText }));
+  }, [ updateSettings ]);
 
-  function handleOnSearchTextChange(searchText: string): void
+  const handleOnOriginFilterChange = useCallback((originFilter: RepositoriesViewSettingsType["originFilter"]): void =>
   {
-    setViewSettings((previous) => ({ ...previous, searchText }));
-  }
+    updateSettings(previous => ({ ...previous, originFilter }));
+  }, [ updateSettings ]);
 
-  function handleOnOriginFilterChange(originFilter: RepositoriesViewSettingsType["originFilter"]): void
-  {
-    setViewSettings((previous) => ({ ...previous, originFilter }));
-  }
+  const isBusyLoading = isLoading === true || isFetching === true;
+  const hasSearchText = viewSettings.searchText.trim().length > 0;
 
-  function handleOnSortCriterionChange(sortCriterion: RepositoriesSortCriterionType): void
-  {
-    setViewSettings((previous) => ({ ...previous, sortCriterion }));
-  }
-
-  function handleOnSortDirectionToggle(): void
-  {
-    setViewSettings((previous) => ({ ...previous, isSortAscending: !previous.isSortAscending }));
-  }
-
-  function handleOnHeaderSort(criterion: RepositoriesSortCriterionType): void
-  {
-    setViewSettings((previous) =>
-    {
-      if (previous.sortCriterion === criterion)
-      {
-        return { ...previous, isSortAscending: !previous.isSortAscending };
-      }
-      // A new criterion starts with its natural direction: A to Z for the name, most first for counts and dates
-      return { ...previous, sortCriterion: criterion, isSortAscending: criterion === "name" };
-    });
-  }
-
-  const margin = 6;
   return (
     <>
-      <Container>
-        <Stack gap="lg" h="100%">
+      <CatalogScreenLayout
+        header={(
           <RepositoriesHeader
             repositoriesCount={repositories.length}
-            viewMode={viewSettings.viewMode}
-            onViewModeChange={handleOnViewModeChange}
             onAddRepository={() => openAddOrUpdateRepositoryModal()}
           />
+        )}
+        toolbar={(
           <RepositoriesToolbar
             searchText={viewSettings.searchText}
             onSearchTextChange={handleOnSearchTextChange}
             originFilter={viewSettings.originFilter}
             onOriginFilterChange={handleOnOriginFilterChange}
             originCounts={originCounts}
+            viewMode={viewSettings.viewMode}
+            onViewModeChange={setViewMode}
             sortCriterion={viewSettings.sortCriterion}
             isSortAscending={viewSettings.isSortAscending}
-            onSortCriterionChange={handleOnSortCriterionChange}
-            onSortDirectionToggle={handleOnSortDirectionToggle}
+            onSortCriterionChange={setSortCriterion}
+            onSortDirectionToggle={toggleSortDirection}
           />
-          <ScrollArea
-            flex={1}
-            mt={-margin}
-            ml={-margin}
-            mb={-margin}
-            mr={`-${variables.contentPaddingHorizontal}`}
-          >
-            <Box
-              pt={margin}
-              pl={margin}
-              pb={margin}
-              pr={variables.contentPaddingHorizontal}
-            >
-              {repositories.length === 0 ? (
-                <EmptyResults
-                  icon={IconFolderSearch}
-                  description={t("emptyRepositories.description")}
-                  title={t("emptyRepositories.title")}
-                  buttonText={t("emptyRepositories.buttonText")}
-                  buttonAction={() => openAddOrUpdateRepositoryModal()}
-                />
-              ) : (
-                <LoadingView visible={isLoading || isFetching}>
-                  <Stack gap="lg">
-                    {showFirstLaunchSlot === true && (
-                      <FirstLaunchSlot onChooseFolder={() => void handleOnChooseFolder()}/>
-                    )}
-                    {viewSettings.viewMode === "cards" ? (
-                      <RepositoriesGrid
-                        repositories={visibleRepositories}
-                        imageCounts={imageCounts}
-                        activities={activitiesByRepositoryId}
-                        onOpen={setSelectedRepository}
-                        onViewImages={handleOnViewImages}
-                        onOpenInNewWindow={handleOnOpenInNewWindow}
-                        onEdit={openAddOrUpdateRepositoryModal}
-                        onDeleted={nothing}
-                      />
-                    ) : (
-                      <RepositoriesTable
-                        repositories={visibleRepositories}
-                        imageCounts={imageCounts}
-                        activities={activitiesByRepositoryId}
-                        sortCriterion={viewSettings.sortCriterion}
-                        isSortAscending={viewSettings.isSortAscending}
-                        onSort={handleOnHeaderSort}
-                        onOpen={setSelectedRepository}
-                        onViewImages={handleOnViewImages}
-                        onOpenInNewWindow={handleOnOpenInNewWindow}
-                        onEdit={openAddOrUpdateRepositoryModal}
-                        onDeleted={nothing}
-                      />
-                    )}
-                  </Stack>
-                </LoadingView>
-              )}
-            </Box>
-          </ScrollArea>
+        )}
+        isInitialLoading={isLoading}
+        isBusyLoading={isBusyLoading}
+        totalCount={repositories.length}
+        visibleCount={visibleRepositories.length}
+        hasActiveFilters={hasSearchText}
+        emptyIcon={IconFolderSearch}
+        emptyState={{
+          title: t("emptyRepositories.title"),
+          description: t("emptyRepositories.description"),
+          buttonText: t("emptyRepositories.buttonText"),
+          buttonAction: () => openAddOrUpdateRepositoryModal()
+        }}
+        filteredEmptyState={{
+          title: t("repositoryScreen.emptyFiltered.title"),
+          description: t("repositoryScreen.emptyFiltered.description"),
+          clearButtonText: t("button.clearSearch"),
+          onClear: () => handleOnSearchTextChange("")
+        }}
+        emptyScopeFallback={
+          showFirstLaunchSlot === true ? (
+            <LoadingView visible={isBusyLoading}>
+              <FirstLaunchSlot onChooseFolder={() => void handleOnChooseFolder()}/>
+            </LoadingView>
+          ) : undefined
+        }
+      >
+        <Stack gap="lg">
+          {showFirstLaunchSlot === true && (
+            <FirstLaunchSlot onChooseFolder={() => void handleOnChooseFolder()}/>
+          )}
+          {viewSettings.viewMode === "cards" ? (
+            <RepositoriesGrid
+              repositories={visibleRepositories}
+              imageCounts={imageCounts}
+              activities={activitiesByRepositoryId}
+              onOpen={setSelectedRepository}
+              onViewImages={handleOnViewImages}
+              onOpenInNewWindow={handleOnOpenInNewWindow}
+              onEdit={openAddOrUpdateRepositoryModal}
+              onDeleted={nothing}
+            />
+          ) : (
+            <RepositoriesTable
+              repositories={visibleRepositories}
+              imageCounts={imageCounts}
+              activities={activitiesByRepositoryId}
+              sortCriterion={viewSettings.sortCriterion}
+              isSortAscending={viewSettings.isSortAscending}
+              onSort={handleHeaderSort}
+              onOpen={setSelectedRepository}
+              onViewImages={handleOnViewImages}
+              onOpenInNewWindow={handleOnOpenInNewWindow}
+              onEdit={openAddOrUpdateRepositoryModal}
+              onDeleted={nothing}
+            />
+          )}
         </Stack>
-      </Container>
+      </CatalogScreenLayout>
       <Drawer
         opened={selectedRepository !== undefined}
         onClose={() => setSelectedRepository(undefined)}

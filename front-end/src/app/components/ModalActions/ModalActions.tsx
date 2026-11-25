@@ -6,15 +6,19 @@ import { useTranslation } from "react-i18next";
 import { useModalContext } from "app/context";
 
 
-export type ModalActionsPropsType =
+type ModalActionsPropsType =
   {
     readonly children: ReactNode;
+    readonly leftSection?: ReactNode;
+    readonly status?: ReactNode;
     readonly withCancelButton?: boolean;
     readonly isBusy?: boolean;
   };
 
 export default function ModalActions({
   children,
+  leftSection,
+  status,
   withCancelButton = true,
   isBusy = false
 }: ModalActionsPropsType): ReactElement
@@ -36,39 +40,48 @@ export default function ModalActions({
 
   function handleCancel(): void
   {
-    modalContext?.closeModal(false);
+    modalContext?.requestClose();
   }
 
-  const justify = "flex-end";
   const gap = "sm";
-  const content = (
-    <>
+  const rightContent = (
+    <Flex justify="flex-end" gap={gap} align="center" wrap="wrap">
+      {status}
       {withCancelButton && (
         <Button
           variant="subtle"
-          disabled={isBusy}
+          disabled={isBusy === true || modalContext?.isOverlayActive === true}
           onClick={handleCancel}
         >
           {t("button.cancel")}
         </Button>
       )}
       {children}
-    </>
+    </Flex>
+  );
+
+  const footerRow = leftSection !== undefined ? (
+    <Flex justify="space-between" gap={gap} align="center" wrap="wrap" w="100%">
+      {leftSection}
+      {rightContent}
+    </Flex>
+  ) : (
+    <Flex justify="flex-end" gap={gap} align="center" wrap="wrap" w="100%">
+      {rightContent}
+    </Flex>
   );
 
   if (!modalContext?.footerElement)
   {
     return (
-      <Flex justify={justify} gap={gap} mt="md">
-        {content}
+      <Flex mt="md" w="100%">
+        {footerRow}
       </Flex>
     );
   }
 
   return createPortal(
-    <Flex justify={justify} gap={gap} align="center" w="100%">
-      {content}
-    </Flex>,
+    footerRow,
     modalContext.footerElement
   );
 }

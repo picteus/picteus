@@ -5,7 +5,6 @@ import { Icon } from "@tabler/icons-react";
 import {
   FrontIntent,
   IntentContext,
-  IntentDescriptionDetails,
   IntentDialog,
   IntentDialogIconSizeContent,
   IntentImages,
@@ -255,6 +254,8 @@ export type ExtensionIntentType = {
   intent: FrontIntent;
 };
 
+export type ImagePickerSelectionModeType = "single" | "multiple";
+
 export type FilterOrCollectionId = { filter: SearchFilter } | { collectionId: number };
 
 export type ViewMode = "masonry" | "gallery" | "table";
@@ -264,25 +265,29 @@ export type ViewTabDataType = {
   filterOrCollectionId: FilterOrCollectionId;
 };
 
-export type RepositoriesViewModeType = "cards" | "list";
+export type CatalogViewModeType = "cards" | "list";
 
 export type RepositoriesSortCriterionType = "name" | "imageCount" | "createdOn";
 
 export type RepositoriesOriginFilterType = "all" | "user" | "extensions";
 
 export type RepositoriesViewSettingsType = {
-  viewMode: RepositoriesViewModeType;
+  viewMode: CatalogViewModeType;
   sortCriterion: RepositoriesSortCriterionType;
   isSortAscending: boolean;
   originFilter: RepositoriesOriginFilterType;
   searchText: string;
 };
 
-export type TabsType = {
-  id?: string;
-  extensionId?: string;
-  content: IntentDescriptionDetails;
-  data: ViewTabDataType;
+export type ExtensionsInstallScopeType = "installed" | "notInstalled" | "all";
+
+export type ExtensionsSortCriterionType = "name" | "status";
+
+export type ExtensionsViewSettingsType = {
+  installScope: ExtensionsInstallScopeType;
+  viewMode: CatalogViewModeType;
+  sortCriterion: ExtensionsSortCriterionType;
+  isSortAscending: boolean;
 };
 
 export type DeskTabImageContentType = {

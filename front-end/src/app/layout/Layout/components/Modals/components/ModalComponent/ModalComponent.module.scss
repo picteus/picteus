@@ -8,14 +8,15 @@
 .contentFullHeight
 {
   height: calc(100dvh - var(--modal-y-offset, 5dvh) * 2);
+}
 
-  .scrollArea
+.contentFullHeight .scrollArea,
+.overlayLayer > .scrollArea
+{
+  > :global(.mantine-ScrollArea-viewport) > div
   {
-    :global(.mantine-ScrollArea-viewport > div)
-    {
-      display: block !important;
-      height: 100%;
-    }
+    display: block !important;
+    height: 100%;
   }
 }
 
@@ -30,8 +31,10 @@
 
 .body
 {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -56,16 +59,29 @@
   min-height: 0;
   height: 100%;
 
-  :global(.mantine-ScrollArea-viewport)
+  > :global(.mantine-ScrollArea-viewport)
   {
     min-height: 0;
     flex: 1;
+
+    > div
+    {
+      display: block !important;
+    }
   }
 }
 
 .header
 {
   align-items: flex-start;
+  flex-shrink: 0;
+  gap: var(--mantine-spacing-sm);
+}
+
+.title
+{
+  flex: 1;
+  min-width: 0;
 }
 
 .error
@@ -90,6 +106,8 @@
 
 .footer
 {
+  grid-row: 2;
+  grid-column: 1;
   padding: var(--mantine-spacing-md);
   border-top: 1px solid var(--mantine-color-default-border);
   flex-shrink: 0;
@@ -100,4 +118,44 @@
     padding: 0;
     border-top: none;
   }
+}
+
+.surface
+{
+  grid-row: 1;
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+
+  &:has(.error:not(:empty)) + .footer
+  {
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+.surfaceHidden
+{
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.overlayLayer
+{
+  position: absolute;
+  inset: 0;
+  grid-row: 1 / 2;
+  grid-column: 1 / 2;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.overlayLayerFullBody
+{
+  grid-row: 1 / -1;
 }

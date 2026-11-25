@@ -4,7 +4,7 @@ import { NumberFormatter } from "@mantine/core";
 import { ImageDimensions as PicteusImageDimensions } from "@picteus/ws-client";
 
 
-export type ImageDimensionsPropsType = {
+type ImageDimensionsPropsType = {
   dimensions: PicteusImageDimensions;
 };
 

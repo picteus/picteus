@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 
 import { ImageCommandType, ImageOrSummary, ViewMode } from "types";
 import { useImageCommands } from "app/hooks";
-import { ImageCommandTargetType } from "../components/ImageCommand/types";
+import { ImageCommandTargetType } from "../components/ImageCommand/types.ts";
 
 
 type UseImageCommandOptionsType = {

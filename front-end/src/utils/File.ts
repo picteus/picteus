@@ -1,35 +1,36 @@
-export const mimeTypes = {
-  zip: "application/zip",
-  tarGz: "application/gzip",
-  gzip: "application/gzip"
-  // Add more MIME types as needed
+const BINARY_WEIGHT_UNITS = [ "B", "kB", "MB", "GB", "TB" ] as const;
+
+type BinaryWeightUnitType = (typeof BINARY_WEIGHT_UNITS)[number];
+
+type BinaryWeightType = {
+  readonly value: number;
+  readonly unit: BinaryWeightUnitType;
 };
 
-export const fileSignatures = {
-  zip: [ 0x50, 0x4b ], // "PK" in ASCII for ZIP files
-  tarGz: [ 0x1f, 0x8b ] // GZIP files start with 0x1F 0x8B
-};
+const BYTES_PER_KILOBYTE = 1_024;
 
-export async function fileToBlob(file: File): Promise<Blob>
+export function computeBinaryWeight(byteCount: number): BinaryWeightType
 {
-  return new Promise((resolve, reject) =>
+  let value = byteCount;
+  let unitIndex = 0;
+  while (Math.abs(value) >= BYTES_PER_KILOBYTE && unitIndex < BINARY_WEIGHT_UNITS.length - 1)
   {
-    try
-    {
-      // As File is a subtype of Blob, we can directly resolve it as a Blob
-      resolve(new Blob([ file ], { type: file.type }));
-    }
-    catch (error)
-    {
-      reject(new Error(`Failed to convert file to Blob. Reason: '${error.message}'`));
-    }
-  });
+    value /= BYTES_PER_KILOBYTE;
+    unitIndex += 1;
+  }
+  return {
+    value,
+    unit: BINARY_WEIGHT_UNITS[unitIndex]
+  };
 }
 
-export function bytesHasSignature(
-  bytes: Uint8Array,
-  signature: number[]
-): boolean
+export function formatFileSize(byteCount: number): string
 {
-  return signature.every((byte, index) => bytes[index] === byte);
+  const { value, unit } = computeBinaryWeight(byteCount);
+  if (unit === "B")
+  {
+    return `${value} ${unit}`;
+  }
+  const formatted = value >= 100 ? value.toFixed(0) : value.toFixed(1).replace(/\.0$/, "");
+  return `${formatted} ${unit}`;
 }

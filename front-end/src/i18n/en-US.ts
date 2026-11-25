@@ -11,8 +11,6 @@ export default {
     stepsCompleted_one: "{{count}} step completed",
     stepsCompleted_other: "{{count}} steps completed",
     firstStartNotice: "The first time the application starts, it may take between 2 and 5 minutes to initialize.",
-    previousTip: "Previous tip",
-    nextTip: "Next tip",
     features: {
       spotlight: {
         badge: "Quick Actions",
@@ -77,6 +75,7 @@ export default {
     },
     sections: {
       jumpTo: "JUMP TO",
+      extensions: "EXTENSIONS",
       commands: "COMMANDS",
       quickToggles: "QUICK TOGGLES",
       recentImages: "RECENT IMAGES"
@@ -101,6 +100,7 @@ export default {
     toastSuccessTitle: "Operation successful",
     toastProgressTitle: "Operation ongoing",
     toastCancelTitle: "Operation cancelled",
+    toastWarningTitle: "Warning",
     toastFailureTitle: "Operation failed",
     notFoundImage: "The image no longer exists"
   },
@@ -185,7 +185,10 @@ export default {
     author: "Author",
     image: "Image",
     images: "Images",
-    process: "Server"
+    process: "Server",
+    details: "Details",
+    status: "Status",
+    enabled: "Enabled"
   },
   filters: {
     title: "Filters",
@@ -212,6 +215,10 @@ export default {
     sortByPlaceholder: "Choose sorting criteria",
     sortOrderPlaceholder: "Choose sorting order"
   },
+  viewMode: {
+    cards: "Cards",
+    list: "List"
+  },
   button: {
     add: "Add",
     remove: "Remove",
@@ -222,6 +229,7 @@ export default {
     copied: "Copied",
     externalLinkOpen: "Show on filesystem",
     clearAll: "Clear all",
+    clearSearch: "Clear search",
     synchronize: "Synchronize",
     delete: "Delete",
     apply: "Apply",
@@ -239,7 +247,13 @@ export default {
     resume: "Resume",
     settings: "Settings",
     cancel: "Cancel",
+    back: "Back",
+    next: "Next",
+    close: "Close",
     refresh: "Refresh",
+    retry: "Retry",
+    show: "Show",
+    hide: "Hide",
     addToSelection: "Add to selection",
     removeFromSelection: "Remove from selection"
   },
@@ -249,6 +263,33 @@ export default {
     tagsPlaceHolder: "Select tags",
     filePlaceHolder: "Select a file",
     directoryPlaceHolder: "Select a directory"
+  },
+  imagePicker: {
+    defaultTitleSingle: "Pick an image",
+    defaultTitleMultiple: "Pick images",
+    pickTitleSingle: "Pick the image for {{command}}",
+    pickTitleMultiple: "Pick the images for {{command}}",
+    tabRecent: "Recent images",
+    recentCaptionSingle: "Images you opened recently, newest first. Pick one.",
+    recentCaptionMultiple: "Images you opened recently, newest first. Pick one or more.",
+    recentFallbackCaption: "Nothing opened yet, so here is your whole library, newest first.",
+    emptyLibraryTitle: "No images yet",
+    emptyLibraryDescription: "Add images to a repository and they will show up here.",
+    emptyMatchingTagsTitle: "No matching images",
+    emptyMatchingTagsDescription: "No images match the required tag(s): {{tags}}.",
+    noCollectionsTitle: "No collections yet",
+    noCollectionsDescription: "Make one in Explore and it shows up here.",
+    emptyCollectionTitle: "No images in this collection",
+    emptyCollectionDescription: "Add images to this collection in Explore and they will show up here.",
+    emptyCollectionMatchingTagsDescription: "No images in this collection match the required tag(s): {{tags}}.",
+    selectedCount: "{{count}} selected",
+    clear: "Clear",
+    emptyFieldSingle: "No image selected",
+    emptyFieldMultiple: "No images selected",
+    pickSingle: "Pick image…",
+    pickMultiple: "Pick images…",
+    change: "Change…",
+    overflowCount: "+{{count}}"
   },
   emptyImages: {
     title: "No available image",
@@ -363,82 +404,90 @@ export default {
     successAdd: "The extension has been successfully installed",
     errorAdd: "An error occurred while installing the extension",
     title: "Install extension",
-    filePlaceholder: "Select a .ZIP file",
+    subtitle: "Add an extension from a .zip, .tar.gz or .tgz file, or from a URL.",
+    confirmMessage: "Are you sure you want to install the extension from '{{source}}'?",
     sourceFile: "File",
     sourceUrl: "URL",
     urlLabel: "URL of the extension file",
     urlPlaceholder: "https://example.com/extension.zip",
+    extensionGuideHint: "Looking for extensions or building your own? Read the extension guide",
     dropzone: {
-      select: "Select file",
-      dragAndDrop: "Or drag and drop"
+      select: "Choose a file",
+      dragAndDrop: "Drop the extension file here",
+      acceptedExtensions: ".zip, .tar.gz or .tgz",
+      acceptedFormatsList: "ZIP, GZIP, or TAR.GZ"
     }
   },
   updateExtensionModal: {
     successAdd: "The extension has been successfully updated",
-    errorAdd: "An error occurred while adding the extension",
-    title: "Update extension",
-    filePlaceholder: "Select a .ZIP file",
+    errorAdd: "An error occurred while updating the extension",
+    subtitle: "Install another version of {{name}} from a .zip, .tar.gz or .tgz file, or from a URL.",
+    installedVersionLabel: "Installed version",
+    confirmMessage: "Are you sure you want to update the extension '{{name}}'?",
     warning:
       "You are about to update the extension with ID : <strong>{{name}}</strong>. This will terminate all related processes, which may result in data loss. Please ensure you understand the implications before proceeding."
+  },
+  marketplaceUpdateModal: {
+    subtitle: "A newer version is ready in the marketplace.",
+    installedLabel: "Installed",
+    newVersionLabel: "New version",
+    latestBadge: "Latest",
+    stopWarning: "{{name}} stops while it updates, so anything it's running right now ends."
   },
   createExtensionModal: {
     success: "The extension has been successfully generated",
     error: "An error occurred while generating the extension",
+    errorLoadConfiguration: "Failed to load the application configuration",
     title: "Create an extension",
+    subtitle: "The application generates a starter extension and installs it, so you can edit its files with your code editor or an AI agent.",
+    readExtensionGuide: "Read the extension guide",
     unpackedExtensionsDirectoryPathNotDefinedAlert: "The unpacked extensions directory path is not configured. You will be prompted to select a directory manually upon submission.",
     extensionAlreadyExistsError: "An extension with the identifier '{{id}}' already exists.",
+    sections: {
+      about: "About",
+      technical: "Technical"
+    },
     fields: {
       id: {
-        description: "The identifier of the extension",
+        description: "Made from the name. Letters, numbers, - _ and . only.",
         placeholder: "my-extension",
         invalid: "The identifier must be 1-32 characters long and contain only lowercase letters, uppercase letters, numbers, dashes, underscores, and dots."
       },
       version: {
-        description: "The version of the extension, which should follow the semver convention",
-        placeholder: "1.0.0",
+        description: "Semver format (e.g. 0.1.0)",
+        placeholder: "0.1.0",
         invalid: "The version must be 5-32 characters long and follow the semver convention."
       },
       name: {
-        description: "The name of the extension",
         placeholder: "My Extension",
         invalid: "The name must be 1-128 characters long and contain only letters, numbers, spaces, and standard symbols."
       },
       description: {
-        description: "The description of the extension's purpose",
         placeholder: "Computes tags on images.",
         invalid: "The description must be 1-1024 characters long."
       },
       categories: {
-        description: "The categories the extension belongs to",
-        placeholder: "utility"
+        placeholder: "Add a category"
       },
       author: {
-        description: "The author of the extension",
-        placeholder: "Jonh Doe",
+        placeholder: "Your name",
         invalid: "The author must be 1-128 characters long."
-      },
-      environment: {
-        description: "The runtime the extension relies on"
       }
     }
   },
   extensionConfiguration: {
-    title: "Extension settings",
-    warning:
-      "This enables to define the settings of the <strong>{{name}}</strong> extension.",
-    error:
-      "There is no settings schema set for the  extension with ID : <strong>{{name}}</strong>.",
-    jsonInvalid: "The text you entered is not in a valid JSON format.",
     errorLoading: "An error occurred while loading the extension settings",
     errorSaving: "An error occurred while saving the extension settings",
     successSaving: "The extension settings have been successfully saved",
+    saveErrorTitle: "Couldn't save settings",
     reset: "Reset",
     errorResetting: "An error occurred while resetting the extension settings",
     successResetting: "The extension settings have been successfully reset",
-    tabs: {
-      settings: "General settings",
-      instructions: "AI model instructions"
-    },
+    prerequisitesHeading: "Before you start",
+    discardTitle: "Discard unsaved changes?",
+    unsavedCount_zero: "No unsaved changes",
+    unsavedCount_one: "1 unsaved change",
+    unsavedCount_other: "Not saved • {{count}} unsaved changes",
     instructions: {
       batchTitle: "Batch configuration",
       batchDescription: "Define instructions to quickly apply to all enabled AI models below.",
@@ -447,26 +496,125 @@ export default {
       commonEligibleTagsQuestion: "Eligible tags question template. Should contain the {{tags}} string.",
       commonEligibleTags: "Eligible tags template",
       enableCaptions: "Enable captions",
-      isAutoCaptions: "Run automatically on image indexing",
+      isAuto: "Run automatically on image indexing",
       captionQuestion: "Caption question",
       captionQuestionPlaceholder: "Describe this image in one concise sentence in plain text.",
+      changedBadge: "Changed",
       enableEligibleTags: "Enable eligible tags",
-      iAutoEligibleTags: "Run automatically on image indexing",
       eligibleTagsQuestionPlaceholder: "Which of the candidate following tags best describe this image: {{tags}}?",
       eligibleTags: "Candidate tags",
       eligibleTagsPlaceholder: "Type a tag and press Enter…",
+      eligibleTagsOnSummary_one: "Eligible tags • on • 1 tag",
+      eligibleTagsOnSummary_other: "Eligible tags • on • {{count}} tags",
+      eligibleTagsOffSummary: "Eligible tags • off",
       enableEmbeddings: "Enable embeddings",
-      isAutoEmbeddings: "Run automatically on image indexing",
-      noModels: "No AI models have been declared by this extension yet.",
       configuredModelsTitle: "Configured models",
       availableModelsTitle: "Available models",
-      noConfiguredModels: "No AI models have been configured yet. Select a model below to configure it.",
       allModelsConfigured: "All available AI models are currently configured.",
       noMatchingModels: "No matching models found.",
-      configureModel: "Configure",
       deleteModel: "Remove model configuration",
-      searchModelsPlaceholder: "Search available models…"
+      searchModelsPlaceholder: "Search available models…",
+      loadErrorTitle: "Couldn't load {{name}}'s models"
     }
+  },
+  extensionPage: {
+    tabs: {
+      overview: "Overview",
+      aiModels: "AI models"
+    },
+    unsavedConfirmTitle: "Unsaved changes",
+    unsavedConfirmMessage: "You have unsaved changes. Discard them and leave?",
+    overview: {
+      whatItDoes: "What it does",
+      readFullManual: "Read the full manual",
+      checkSettings: "Check settings →",
+      runsOnItsOwn: "Runs on its own",
+      runsOnItsOwnSummaryNone: "No AI models are configured yet. Configure models to generate captions, tags, or embeddings for your images.",
+      runsOnItsOwnSummaryManualOnly: "{{configuredCount}} model(s) configured. Auto-indexing is currently off, so models only run when you trigger synchronization.",
+      runsOnItsOwnSummaryAuto: "{{configuredCount}} model(s) configured, with {{autoCount}} running automatically when new images are indexed.",
+      manageAiModels: "Manage AI models",
+      computesLabel: "Computes",
+      computesCaptions: "Captions",
+      aiModelsMoreAvailable: "{{count}} more available",
+      aiModelsNoneConfigured: "No models configured yet.",
+      aiModelLine: "{{model}} • {{capabilities}}",
+      aiModelCaptionsAuto: "captions on new images",
+      aiModelCaptionsManual: "captions when you run them",
+      aiModelTagsAuto: "tags on new images",
+      aiModelTagsManual: "tags when you run them",
+      aiModelEmbeddingsAuto: "embeddings on new images",
+      aiModelEmbeddingsManual: "embeddings when you run them"
+    },
+    commands: {
+      headerNote: "What each command does, word for word from the extension.",
+      headerNoteSingle: "What this command does, word for word from the extension.",
+      scopeAll: "All",
+      scopeProcess: "No selection",
+      scopeImage: "On one image",
+      scopeImages: "On one or more images",
+      groupProcessTitle: "Runs without a selection",
+      groupImageTitle: "Runs on one image",
+      groupImageCaption: "You pick one image first.",
+      groupImagesTitle: "Runs on one or more images",
+      groupImagesCaption: "You pick the images first.",
+      emptyLibraryNotice: "Index some images in Explore first.",
+      targetOneImage: "One image",
+      targetImages: "One or more images",
+      asksFor: "Asks for: {{parameters}}",
+      optionalParameter: "{{name}} (optional)",
+      runDisabledPaused: "Enable {{name}} to run commands.",
+      runDisabledStarting: "{{name}} is starting…",
+      runDisabledError: "{{name}} is in an error state.",
+      runDisabledNotReady: "{{name}} is not ready yet.",
+      emptyFiltered: "No commands match your search.",
+      resetFilters: "Reset filters"
+    },
+    settings: {
+      lookingForModelsTitle: "Looking for model settings?",
+      lookingForModelsDescription: "Caption questions, eligible tags, and auto-indexing are configured per AI model.",
+      goToAiModels: "Go to AI models →",
+      resetConfirmTitle: "Reset settings",
+      resetConfirmMessage: "Reset {{name}}'s settings back to their default values?"
+    },
+    aiModels: {
+      missingSettingsTitle: "Add your required settings to see {{name}}'s models",
+      missingSettingsDescription: "{{name}} lists its models only once its required settings are configured. No images are sent until you add a model and turn it on.",
+      noModelsAvailableTitle: "No models available from {{name}}",
+      noModelsAvailableWithSettingsDescription: "{{name}} hasn't listed any models yet. Check its settings so the application can load them. No images are sent until you add a model and turn it on.",
+      noModelsAvailableDescription: "{{name}} hasn't listed any AI models yet.",
+      noModelsDisabledTitle: "Enable {{name}} to see its models",
+      noModelsDisabledDescription: "{{name}} is currently disabled. Turn it on to load its available AI models.",
+      openSettings: "Open Settings",
+      emptyTitle: "No AI models set up yet",
+      emptyDescription: "Add a model from {{name}} to configure caption questions, eligible tags, or embeddings.",
+      addModel: "Add model",
+      saveSuccess: "AI model instructions have been saved.",
+      saveError: "Couldn't save AI model instructions."
+    }
+  },
+  extensionSettingsModal: {
+    title: "{{name}} • Settings",
+    intentSubtitle: "Requested by the extension",
+    openFullPage: "Open the full page →",
+    discardMessage: "Your edits to {{name}}'s settings haven't been saved yet."
+  },
+  extensionManualDrawer: {
+    title: "{{name}} manual",
+    commandSubtitle: "{{extension}} • v{{version}}",
+    noManual: "No manual provided for this extension yet.",
+    settingsCalloutTitle: "Change these settings",
+    settingsCalloutDescription: "Values are edited in the Settings tab.",
+    openSettingsTab: "Open Settings tab"
+  },
+  captionModelModal: {
+    title: "{{extension}} • {{model}}",
+    subtitle: "The model that wrote this caption",
+    editQuestionAction: "Edit question",
+    futureCaptionsNotice: "This changes the question used for future captions from this model, across the application. This caption stays as it is.",
+    allAiModelsLink: "All of {{extension}}'s AI models →",
+    discardMessage: "Your changes to {{model}}'s caption question haven't been saved yet.",
+    saveSuccess: "Caption question updated for {{model}}.",
+    saveError: "Couldn't update the caption question."
   },
   imageDetail: {
     aiGenerated: "AI-generated",
@@ -480,7 +628,6 @@ export default {
     exploreSimilar: "Explore similar",
     commands: "Image commands",
     moreCommands: "More commands",
-    searchCommands: "Search commands",
     noCommandsFound: "No commands found",
     features: "Features",
     rawFeatures: "Raw",
@@ -527,15 +674,11 @@ export default {
     repositoriesCount_other: "{{count}} repositories",
     subtitle: "Folders you add, and the ones your extensions fill.",
     addRepository: "Add repository",
-    view: {
-      cards: "Cards",
-      list: "List"
-    },
     searchPlaceholder: "Search names and comments",
     origin: {
-      all: "All  {{number}}",
-      user: "Added by you  {{number}}",
-      extensions: "From extensions  {{number}}"
+      all: "All",
+      user: "Added by you",
+      extensions: "From extensions"
     },
     imagesCount_one: "{{count}} image",
     imagesCount_other: "{{count}} images",
@@ -566,7 +709,7 @@ export default {
       unavailable: "Unavailable"
     },
     firstLaunch: {
-      caption: "NEW TO APPLICATION? START HERE",
+      caption: "New to the application? Start here",
       title: "Add your own folders",
       description: "Add the folders where you save your generations, like your ComfyUI outputs. The application indexes them and watches for new images. Your files stay where they are.",
       chooseFolder: "Choose a folder",
@@ -579,13 +722,16 @@ export default {
       watch: "Watch",
       stopWatching: "Stop watching"
     },
+    emptyFiltered: {
+      title: "No repositories match",
+      description: "Try changing your search query or switching repository origin."
+    },
     successRemove: "The repository has been successfully removed",
-    errorRemove: "An error occured while removing the repository",
+    errorRemove: "An error occurred while removing the repository",
     successEnable: "The repository has been enabled",
     successDisable: "The repository has been disabled",
     successWatch: "The repository is now watched for new images",
     successStopWatching: "The repository is no longer watched for new images",
-    errorWatch: "An error occured while updating the watch state of the repository",
     errorMode: "An error occurred while updating the mode of the repository",
     confirmSynchronizeTitle: "Synchronize repository",
     confirmSynchronizeMessage: "Are you sure you want to synchronize the repository '{{name}}'?",
@@ -622,18 +768,85 @@ export default {
   collectionDetail: {
     latestImages: "Latest images"
   },
-  extensionsScreen: {
-    title: "Extensions",
-    notInstalled: "Not installed",
+  extension: {
+    categories: {
+      capture: "Capture",
+      enrichment: "Enrichment",
+      generation: "Generation",
+      integration: "Integration",
+      utility: "Utility",
+      other: "Other"
+    },
+    runtimes: {
+      node: "Node.js",
+      python: "Python"
+    },
+    status: {
+      running: "Running",
+      starting: "Starting…",
+      paused: "Paused",
+      error: "Error",
+      notInstalled: "Not installed",
+      installing: "Installing…",
+      updating: "Updating…"
+    },
+    updatePill: "Update {{version}}",
+    byAuthorVersion: "By {{author}} • v{{version}}",
+    versionOnly: "v{{version}}",
+    updateTitleWithName: "Update {{name}}",
+    updateToVersion: "Update to {{version}}",
+    menu: {
+      updateFromFileOrLink: "Update from file or link…"
+    },
     successInstall: "The extension has been installed.",
+    successUpdate: "The extension has been updated to v{{version}}.",
     successUninstall: "The extension has been successfully uninstalled",
-    errorLoading: "The marketplace extensions could not be loaded.",
     errorInstall: "The extension could not be installed.",
+    errorUpdate: "The extension could not be updated.",
     errorUninstall: "An error occurred while uninstalling the extension",
     errorToggleStatus: "An error occurred while changing the extension state.",
+    confirmInstallTitle: "Install extension",
+    confirmInstallMessage: "Are you sure you want to install the '{{name}}' extension?",
+    confirmInstallConsequences:
+      "The application will download and install the extension along with its runtime dependencies, enable it, and start its processes. Only install extensions from sources you trust.",
+    confirmUpdateTitle: "Update extension",
+    confirmUpdateConsequences:
+      "Any running processes will be stopped while the new version and its runtime dependencies are installed, then the extension will be restarted. Your saved settings and existing computed data will be preserved.",
     confirmDeleteTitle: "Uninstall extension",
     confirmDeleteMessage: "Are you sure you want to uninstall the extension '{{name}}'?",
+    confirmDeleteConsequences:
+      "Any running processes will stop and the extension, along with its settings, declared AI models, computed features, embeddings, tags, and attachments, will be permanently removed from the application. Your repositories and image files will not be deleted.",
     synchronizing: "The extension '{{name}}' is now synchronizing…"
+  },
+  extensionsScreen: {
+    title: "Extensions",
+    subtitle: "They add features to the application. Install more, or pause the ones you don't use.",
+    extensionsCount_one: "{{count}} extension",
+    extensionsCount_other: "{{count}} extensions",
+    createExtension: "Create extension",
+    installExtension: "Install extension",
+    searchPlaceholder: "Search extensions",
+    scope: {
+      installed: "Installed",
+      notInstalled: "Not installed",
+      all: "All"
+    },
+    filters: {
+      categoryHeading: "Category",
+      categorySearchPlaceholder: "Filter categories",
+      statusNotUsedHint: "Not used for extensions that are not installed. Your Status choice comes back when you switch to Installed.",
+      footerHint: "Shows extensions in any ticked category AND with any ticked status. Counts show what you would get.",
+      clearFilters: "Clear filters",
+      categoryPill: "Category: {{values}}",
+      statusPill: "Status: {{values}}",
+      statusPillNotUsed: "Status: {{values}} • not used here",
+      resultsCounter: "{{shown}} of {{total}}"
+    },
+    emptyFiltered: {
+      title: "No extensions match",
+      description: "Try clearing a filter, switching install view, or changing your search query."
+    },
+    errorLoading: "The marketplace extensions could not be loaded."
   },
   eventInformation: {
     idle: "Listening to events…",
@@ -808,8 +1021,12 @@ export default {
     noCommandsAvailable: "No commands available",
     textToImages: "Text to images",
     doNotAskAgain: "Do not ask again",
-    about: "About this command",
-    providedBy: "Provided by",
+    by: "By",
+    howItWorks: "How it works",
+    searchPlaceholder: "Search commands",
+    runsOnImages_one: "Runs on 1 image",
+    runsOnImages_other: "Runs on {{count}} images",
+    confirmRun: "Ready to run {{command}}.",
     extensionCommandFailed:
       "The command '{{command}}' of extension '{{extension}}' failed to trigger",
     confirmImageDeleteTitle: "Image deletion",
@@ -862,7 +1079,8 @@ export default {
     repositoryMessage: "You are about to be redirecting you to a repository detail screen.",
     showImageMessage: "An image is about to be displayed.",
     showSidebarMessage: "A new sidebar is about to be opened.",
-    openBrowserMessage: "Your browser is about to be opened with the '{{url}}' URL."
+    openBrowserMessage: "Your browser is about to be opened with the '{{url}}' URL.",
+    unsupportedUiIntegration: "Cannot handle a UI intent with integration '{{integration}}'"
   },
   utils: {
     timeAgo: {

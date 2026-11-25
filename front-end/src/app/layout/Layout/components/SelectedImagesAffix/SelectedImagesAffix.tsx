@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "utils";
 import { useImagesSelectedContext } from "app/context";
-import { SelectedImages } from "../index.ts";
+import { SelectedImages } from "..";
 
 import style from "./SelectedImagesAffix.module.scss";
 

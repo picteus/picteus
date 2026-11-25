@@ -4,26 +4,23 @@ import { Icon } from "@tabler/icons-react";
 import { StackNavigator } from "app/components";
 
 
-export interface StackableScreenPropsType
+interface StackableScreenPropsType
 {
   children: ReactNode;
   title: ReactNode;
   icon: Icon;
-  resetTrigger?: unknown;
 }
 
 export default function StackableScreen({
   children,
   title,
-  icon,
-  resetTrigger
+  icon
 }: StackableScreenPropsType): ReactElement
 {
   return (
     <StackNavigator
       title={title}
       icon={icon}
-      resetTrigger={resetTrigger}
     >
       {children}
     </StackNavigator>

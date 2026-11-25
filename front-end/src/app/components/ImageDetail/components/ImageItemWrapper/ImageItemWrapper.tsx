@@ -10,7 +10,7 @@ import { Common, ImageItem } from "app/components";
 import style from "./ImageItemWrapper.module.scss";
 
 
-export type ImageItemWrapperPropsType =
+type ImageItemWrapperPropsType =
   {
     readonly idOrImage: string | ImageOrSummary;
     readonly edge?: number;

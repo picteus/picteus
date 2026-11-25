@@ -5,7 +5,7 @@ import { TitleBarProvider } from "app/context";
 import TitleBar from "../TitleBar/TitleBar.tsx";
 
 
-export interface WindowContainerPropsType
+interface WindowContainerPropsType
 {
   readonly children: ReactNode;
   readonly titleBarContent?: ReactNode;

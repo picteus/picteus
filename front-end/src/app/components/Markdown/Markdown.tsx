@@ -19,36 +19,85 @@ import { type Components, default as ReactMarkdown } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { useOpenBrowser } from "app/hooks";
-import { ToastService } from "../../../utils";
+import { detectManualTocHeadingLevel, slugifyMarkdownHeading, ToastService } from "utils";
 
 
-export type MarkdownPropsType = {
+type MarkdownPropsType = {
   readonly content: string;
   readonly size?: MantineSize;
   readonly withBoldTitles?: boolean;
+  readonly headingIdPrefix?: string;
+  readonly headingLevelOffset?: number;
 };
 
 const REMARK_PLUGINS = [ remarkGfm ];
 
-function createMarkdownComponents(openBrowser: (url: string) => Promise<void>, size?: MantineSize, withBoldTitles?: boolean): Components
+function extractPlainText(node: ReactNode): string
 {
+  if (typeof node === "string" || typeof node === "number")
+  {
+    return String(node);
+  }
+  if (Array.isArray(node))
+  {
+    return node.map(extractPlainText).join("");
+  }
+  if (node !== null && typeof node === "object" && "props" in node)
+  {
+    const props = (node as { props?: { children?: ReactNode } }).props;
+    return extractPlainText(props?.children);
+  }
+  return "";
+}
+
+function createMarkdownComponents(
+  openBrowser: (url: string) => Promise<void>,
+  size?: MantineSize,
+  withBoldTitles?: boolean,
+  headingIdPrefix?: string,
+  tocHeadingLevel?: 1 | 2,
+  usedHeadingIds?: Map<string, number>,
+  headingLevelOffset?: number
+): Components
+{
+  function computeHeadingAnchorId(level: TitleOrder, children: ReactNode): string | undefined
+  {
+    if (level !== tocHeadingLevel || headingIdPrefix === undefined || usedHeadingIds === undefined)
+    {
+      return undefined;
+    }
+    const baseSlug = slugifyMarkdownHeading(extractPlainText(children));
+    const count = usedHeadingIds.get(baseSlug) ?? 0;
+    usedHeadingIds.set(baseSlug, count + 1);
+    const suffix = count === 0 ? baseSlug : `${baseSlug}-${count + 1}`;
+    return `${headingIdPrefix}-${suffix}`;
+  }
+
   function renderHeading(level: TitleOrder, children: ReactNode): ReactElement
   {
+    const anchorId = computeHeadingAnchorId(level, children);
     if (withBoldTitles)
     {
       return (
-        <Text span fw={700} size={size}>
+        <Text id={anchorId} span fw={700} size={size}>
           {children}
         </Text>
       );
     }
 
+    const effectiveOrder = headingLevelOffset !== undefined
+      ? (Math.min(6, Math.max(1, level + headingLevelOffset)) as TitleOrder)
+      : level;
+
     return (
       <Title
-        order={level}
+        id={anchorId}
+        order={effectiveOrder}
+        fw={headingLevelOffset !== undefined ? 500 : undefined}
         style={{
           overflowWrap: "anywhere",
-          wordBreak: "break-word"
+          wordBreak: "break-word",
+          scrollMarginTop: anchorId !== undefined ? 16 : undefined
         }}
       >
         {children}
@@ -345,7 +394,9 @@ function createMarkdownComponents(openBrowser: (url: string) => Promise<void>, s
 export default function Markdown({
   content,
   size = "sm",
-  withBoldTitles = true
+  withBoldTitles = true,
+  headingIdPrefix,
+  headingLevelOffset
 }: MarkdownPropsType): ReactElement
 {
   const openBrowser = useOpenBrowser();
@@ -355,9 +406,19 @@ export default function Markdown({
   const components = useMemo<Components>(
     () =>
     {
-      return createMarkdownComponents(openBrowser, size, withBoldTitles);
+      const tocHeadingLevel = headingIdPrefix !== undefined ? detectManualTocHeadingLevel(sanitizedContent) : undefined;
+      const usedHeadingIds = headingIdPrefix !== undefined ? new Map<string, number>() : undefined;
+      return createMarkdownComponents(
+        openBrowser,
+        size,
+        withBoldTitles,
+        headingIdPrefix,
+        tocHeadingLevel,
+        usedHeadingIds,
+        headingLevelOffset
+      );
     },
-    [ openBrowser, size, withBoldTitles ]
+    [ openBrowser, size, withBoldTitles, headingIdPrefix, headingLevelOffset, sanitizedContent ]
   );
 
   return (

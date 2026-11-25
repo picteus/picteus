@@ -7,7 +7,7 @@ import { Collection, SearchFilterFromJSON } from "@picteus/ws-client";
 import { FilterOrCollectionId, ViewMode } from "types";
 import { FiltersService } from "app/services";
 import { RefreshButton } from "app/components";
-import { CollectionsBar, CollectionsBarRef, FiltersBar, FiltersBarRef } from "../index.ts";
+import { CollectionsBar, CollectionsBarRef, FiltersBar, FiltersBarRef } from "..";
 
 import style from "./ControllerBar.module.scss";
 

@@ -3,6 +3,7 @@ import {
   MarketplaceApi,
   MarketplaceApiMarketplaceGetRequest,
   MarketplaceApiMarketplaceInstallRequest,
+  MarketplaceApiMarketplaceUpdateRequest,
   MarketplaceExtension,
   MarketplaceExtensionDetails
 } from "@picteus/ws-client";
@@ -25,8 +26,14 @@ async function install(parameters: MarketplaceApiMarketplaceInstallRequest): Pro
   return marketplaceApi.marketplaceInstall(parameters);
 }
 
+async function update(parameters: MarketplaceApiMarketplaceUpdateRequest): Promise<Extension>
+{
+  return marketplaceApi.marketplaceUpdate(parameters);
+}
+
 export default {
   list,
   get,
-  install
+  install,
+  update
 };

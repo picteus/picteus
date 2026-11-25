@@ -41,8 +41,7 @@ import {
   useOpenWindow,
   useRepositories
 } from "app/hooks";
-import { Common, Iframe, Markdown } from "app/components";
-import { ExtensionConfiguration } from "app/screens/ExtensionsScreen/components";
+import { Common, ExtensionSettingsModal, Iframe, Markdown } from "app/components";
 import { RepositoryDrawerContent, RepositoryIdentity, RepositoryMenu } from "app/screens/RepositoriesScreen/components";
 
 
@@ -194,7 +193,9 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
       }
       else
       {
-        ToastService.failure("Cannot handle a UI intent with integration '" + JSON.stringify(integration) + "'");
+        ToastService.failure(
+          t("extensionIntent.unsupportedUiIntegration", { integration: JSON.stringify(integration) })
+        );
       }
     }
 
@@ -226,10 +227,12 @@ export default function useExtensionIntentRunner(): (extensionId: string, intent
               return listener.onFailure(`The extension with id '${show.id}' is not installed`);
             }
             addModal({
-              title: t("extensionConfiguration.title"),
+              title: t("extensionSettingsModal.title", { name: extension.manifest.name }),
+              subtitle: t("extensionSettingsModal.intentSubtitle"),
+              icon: { url: ExtensionsService.getIconURL(extension.manifest.id) },
               size: "m",
               body: (
-                <ExtensionConfiguration
+                <ExtensionSettingsModal
                   extension={extension}
                   onSuccess={(settings?: ExtensionSettings) =>
                   {
