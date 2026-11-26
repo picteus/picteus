@@ -33,17 +33,28 @@ disabled.
 
 Each result is stored as a new image with the original as its parent. The command returns the converted images.
 
-## askForSomething
+## form
 
-Collects an age and follow-up answers, then logs the answers.
+Demonstrates the dynamic form grammar through a two-stage interactive workflow: exercises entity pickers (images, image, collection, repository) and JSON Schema controls, followed by a dynamically generated second form that responds to the initial inputs
 
 ### Details
 
-The command first receives an age from 1 to 128. It then asks for a favorite color and whether chocolate is liked. The
-favorite color can be pink, blue, yellow, or green; the chocolate answer is optional. The age is included in the
-follow-up prompt's explanatory text and does not affect the available choices. The follow-up prompt receives up to three
-image IDs returned by an image search as context, but does not modify those images. On completion, the chosen color and
-chocolate answer are written to the application log.
+This command serves as an interactive showcase of the Picteus form engine, demonstrating how standard JSON Schema
+definitions pair with specialized application widgets and dynamic server-side intent generation to create responsive forms.
+
+The first stage exercises parameter schema declaration in `manifest.json`, combining:
+- specialized Picteus entity pickers: single image selection (`image`), multi-image selection (`images`), collection selection (`collection`), and repository selection (`repository`);
+- UI control widgets: inline radio buttons (`radio`), slider bounds (`range`), and masked password entry (`password`);
+- standard JSON Schema property types and validation formats, such as a past start date (`date`, defaulting to May 4th, 2023).
+
+The extension evaluates the submitted parameters and dynamically generates a second JSON Schema form via a `form` intent,
+showcasing the grammar's power to adapt at runtime:
+- contextual adaptation: project title, theme color (`color`), default tool options (`checkboxes`), and tags (`tags`) are computed dynamically from the chosen role;
+- numerical constraints: stepper ranges (`updown`) adjust based on the experience level provided in the first stage;
+- context integration: images selected in the first stage are passed into the dialog's visual context and referenced in the generated briefing notes (`textarea`);
+- structured data: local folder selection (`directory`), nested objects (`preferences`), and string format validations (`email`, `uri`).
+
+Upon completing the second form, the extension logs a structured session configuration summary to the application log.
 
 ## dialog
 
@@ -131,7 +142,7 @@ The required `intent` parameter determines the action:
 - `show` opens this extension's settings;
 - `ui` opens a modal containing the example HTML content;
 - `openBrowser` opens `https://www.picteus.com` in the browser;
-- `command` runs this extension's `askForSomething` command.
+- `command` runs this extension's `form` command.
 
 The notification uses the extension icon. Selecting an intent may open a Picteus view, open the browser, or run the
 command; creating the notification alone does not perform the selected action.

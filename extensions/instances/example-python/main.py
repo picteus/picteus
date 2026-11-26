@@ -88,11 +88,13 @@ class PythonExtension(PicteusExtension):
                     f"The image with URL '{image.url}' has dimensions {image.dimensions.width}x{image.dimensions.height}",
                     "info", {"type": "image", "id": image_id})
             elif command_id == "convert":
-                image_format: ImageFormat = parameters["format"]
+                image_format: ImageFormat = ImageFormat(parameters["format"].upper())
                 strip_metadata: bool = parameters["stripMetadata"]
-                width: int | None = parameters["width"]
-                height: int | None = parameters["height"]
-                resize_render: ImageResizeRender | None = parameters["resizeRender"]
+                width: int | None = parameters.get("width")
+                height: int | None = parameters.get("height")
+                resize_render_raw: str | None = parameters.get("resizeRender")
+                resize_render: ImageResizeRender | None = ImageResizeRender(
+                    resize_render_raw.lower()) if resize_render_raw is not None else None
                 if (width is not None or height is not None) and strip_metadata is False:
                     await communicator.launch_intent(DialogIntent(dialog=IntentDialog(
                         type=IntentDialogType.ERROR,
@@ -108,7 +110,7 @@ class PythonExtension(PicteusExtension):
                                                                              resize_render=resize_render,
                                                                              strip_metadata=strip_metadata)
                 new_image: Image = self.get_repository_api().repository_store_image(id=image.repository_id,
-                                                                                    body=image_bytes,
+                                                                                    body=bytes(image_bytes),
                                                                                     parent_id=image.id)
                 new_images.append(IntentImage(imageId=new_image.id))
 
@@ -126,8 +128,8 @@ class PythonExtension(PicteusExtension):
         communicator.send_log(
             f"Received a process command with id '{command_id}' with parameters '{json.dumps(parameters)}'",
             "debug")
-        if command_id == "askForSomething":
-            await self._handle_ask_for_something(communicator, parameters)
+        if command_id == "form":
+            await self._handle_form(communicator, parameters)
         elif command_id == "dialog":
             await self._handle_dialog(communicator, parameters)
         elif command_id == "ui":
@@ -178,56 +180,198 @@ class PythonExtension(PicteusExtension):
 
                                                 ])
 
-    async def _handle_ask_for_something(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
-        intent_parameters: Dict[str, Any] = \
-            {
-                "type": "object",
-                "properties":
-                    {
-                        "favoriteColor":
-                            {
-                                "title": "Favorite color",
-                                "description": "What is your favorite color?",
-                                "type": "string",
-                                "enum": ["pink", "blue", "yellow", "green"],
-                                "default": "pink",
-                                "ui":
-                                    {
-                                        "widget": "radio",
-                                        "inline": True
-                                    }
-                            },
-                        "likeChocolate":
-                            {
-                                "title": "Chocolate?",
-                                "description": "Do you like chocolate?",
-                                "type": "boolean"
-                            }
-                    },
-                "required": ["favoriteColor"]
+    async def _handle_form(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
+        role_themes: Dict[str, Dict[str, Any]] = {
+            "Cyberpunk Artist": {
+                "themeColor": "#00ffcc",
+                "equipment": ["Neural Link", "Holo Deck", "Cybernetic Lens", "Neon Shifter"],
+                "defaultEquipment": ["Neural Link", "Cybernetic Lens"],
+                "missionTitle": "Neo-Tokyo Skyline Overhaul",
+                "tag": "cyberpunk"
+            },
+            "Space Explorer": {
+                "themeColor": "#8b5cf6",
+                "equipment": ["Warp Drive", "Star Chart", "Quantum Sensor", "Gravity Anchor"],
+                "defaultEquipment": ["Star Chart", "Quantum Sensor"],
+                "missionTitle": "Orion Nebula Deep Survey",
+                "tag": "deep-space"
+            },
+            "Fantasy Alchemist": {
+                "themeColor": "#f59e0b",
+                "equipment": ["Philosopher Crucible", "Astral Mortar", "Rune Slate", "Elixir Flask"],
+                "defaultEquipment": ["Philosopher Crucible", "Rune Slate"],
+                "missionTitle": "Transmutation of Golden Light",
+                "tag": "alchemy"
             }
-        image_ids = [image.id for image in self.get_image_api().image_search_summaries(
-            search_parameters=SearchParameters(range=SearchRange(take=3))).items]
+        }
+
+        creator_name: str = parameters.get("creatorName") or "Ada Lovelace"
+        creative_role: str = parameters.get("creativeRole") or "Cyberpunk Artist"
+        experience_level = parameters.get("experienceLevel")
+        if not isinstance(experience_level, int):
+            experience_level = 42
+        start_date: str = parameters.get("startDate") or "2023-05-04"
+        hero_image_id: Optional[str] = parameters.get("heroImageId")
+        reference_image_ids: List[str] = parameters.get("referenceImageIds") or []
+        source_collection_id: Optional[str] = parameters.get("sourceCollectionId")
+        target_repository_id: Optional[str] = parameters.get("targetRepositoryId")
+
+        theme = role_themes.get(creative_role, role_themes["Cyberpunk Artist"])
+
+        entity_summaries: List[str] = []
+        if source_collection_id is not None:
+            entity_summaries.append(f"collection '{source_collection_id}'")
+        if target_repository_id is not None:
+            entity_summaries.append(f"repository '{target_repository_id}'")
+        if hero_image_id is not None:
+            entity_summaries.append(f"hero image '{hero_image_id}'")
+        if len(reference_image_ids) > 0:
+            entity_summaries.append(f"{len(reference_image_ids)} reference image(s)")
+        entity_summary_text: str = f" Selected assets: {', '.join(entity_summaries)}." if len(entity_summaries) > 0 else ""
+
+        intent_parameters: Dict[str, Any] = {
+            "type": "object",
+            "properties": {
+                "missionTitle": {
+                    "type": "string",
+                    "title": "Project title",
+                    "description": "Name of the creative mission.",
+                    "default": theme["missionTitle"]
+                },
+                "themeColor": {
+                    "type": "string",
+                    "title": "Theme color",
+                    "description": "Primary accent color for the session.",
+                    "default": theme["themeColor"],
+                    "ui": {
+                        "widget": "color"
+                    }
+                },
+                "equipment": {
+                    "type": "array",
+                    "title": "Equipped tools",
+                    "description": "Select the tools to bring into the studio.",
+                    "items": {
+                        "type": "string",
+                        "enum": theme["equipment"]
+                    },
+                    "default": theme["defaultEquipment"],
+                    "uniqueItems": True,
+                    "ui": {
+                        "widget": "checkboxes"
+                    }
+                },
+                "batchCount": {
+                    "type": "integer",
+                    "title": "Batch count",
+                    "description": "Number of assets to process (adapted from your experience level).",
+                    "minimum": 1,
+                    "maximum": 20,
+                    "default": 8 if experience_level > 50 else 3,
+                    "ui": {
+                        "widget": "updown"
+                    }
+                },
+                "projectTags": {
+                    "type": "string",
+                    "title": "Project tags",
+                    "description": "Tags associated with the generated assets.",
+                    "default": theme["tag"],
+                    "ui": {
+                        "widget": "tags"
+                    }
+                },
+                "exportDirectory": {
+                    "type": "string",
+                    "title": "Export directory",
+                    "description": "Directory on disk to save exports.",
+                    "default": "",
+                    "ui": {
+                        "widget": "directory"
+                    }
+                },
+                "missionNotes": {
+                    "type": "string",
+                    "title": "Mission briefing notes",
+                    "description": "Notes recorded for this session.",
+                    "default": f"Initiated by {creator_name} for the {creative_role} expedition (journey started on {start_date}).{entity_summary_text}",
+                    "ui": {
+                        "widget": "textarea"
+                    }
+                },
+                "publishToGallery": {
+                    "type": "boolean",
+                    "title": "Publish to showcase gallery?",
+                    "description": "Make the resulting images publicly visible.",
+                    "default": True
+                },
+                "preferences": {
+                    "type": "object",
+                    "title": "Communication preferences",
+                    "description": "Contact channels for session logs.",
+                    "properties": {
+                        "contactEmail": {
+                            "type": "string",
+                            "title": "Notification email",
+                            "format": "email",
+                            "default": "creator@example.com"
+                        },
+                        "portfolioUrl": {
+                            "type": "string",
+                            "title": "Portfolio website",
+                            "format": "uri",
+                            "default": "https://picteus.io"
+                        }
+                    },
+                    "required": ["contactEmail"]
+                }
+            },
+            "required": ["missionTitle", "themeColor"]
+        }
+
         try:
+            image_ids: List[str] = []
+            if hero_image_id is not None:
+                image_ids.append(hero_image_id)
+            for image_id in reference_image_ids:
+                if image_id not in image_ids:
+                    image_ids.append(image_id)
+            if len(image_ids) == 0:
+                image_ids = [image.id for image in self.get_image_api().image_search_summaries(
+                    search_parameters=SearchParameters(range=SearchRange(take=3))).items]
+
             user_parameters: Dict[str, Any] = await communicator.launch_intent(
-                FormIntent(context=IntentContext(imageIds=image_ids),
-                           form=IntentFormContent(parameters=intent_parameters,
-                                                  dialogContent=IntentDialogIconSizeContent(
-                                                      title="Favorite color and chocolate",
-                                                      description="This shows how an extension can input parameters from the user.",
-                                                      details=f"""This dialog box has been dynamically generated from the extension source code, based on the previous dialog box answer with value '{parameters["age"]}'.""",
-                                                      icon=IntentResourceContent(
-                                                          content=bytearray(base64.b64decode(
-                                                              "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"))),
-                                                      size="m"))
-                           ))
+                FormIntent(
+                    context=IntentContext(imageIds=image_ids),
+                    form=IntentFormContent(
+                        parameters=intent_parameters,
+                        dialogContent=IntentDialogIconSizeContent(
+                            title=f"{creative_role} Studio: {creator_name}",
+                            description=f"Configuring studio session for Level {experience_level} {creative_role}.{entity_summary_text}",
+                            details=f"Customized dynamically based on your Form 1 inputs (Journey started: {start_date}).",
+                            icon=IntentResourceContent(
+                                content=bytearray(base64.b64decode(
+                                    "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"))),
+                            size="m"
+                        )
+                    )
+                )
+            )
+            equipment_count = len(user_parameters.get("equipment") or [])
             communicator.send_log(
-                f"""You picked the '{user_parameters["favoriteColor"]}' color and {"declared that you like chocolate" if user_parameters["likeChocolate"] == True else "did not mention that you liked chocolate"}""",
-                "info")
+                f"Studio session '{user_parameters['missionTitle']}' configured for {creator_name} ({creative_role}, Level {experience_level}) with theme color {user_parameters['themeColor']}, {equipment_count} tool(s) equipped, and {len(image_ids)} image reference(s) attached!",
+                "info"
+            )
         except InstructionReturnedError as exception:
             communicator.send_log(
                 f"Received the intent error '{str(exception)}' with reason '{exception.reason}'",
-                "error")
+                "error"
+            )
+        except Exception as exception:
+            communicator.send_log(
+                f"Received the unexpected intent error '{exception}'",
+                "error"
+            )
 
     async def _handle_dialog(self, communicator: Communicator, parameters: dict[str, Any]) -> None:
         result = await communicator.launch_intent(DialogIntent(
@@ -379,7 +523,7 @@ class PythonExtension(PicteusExtension):
             description: str = "This is an action which opens the browser"
         elif intent == "command":
             intent: ProcessCommandIntent = ProcessCommandIntent(
-                processCommand=IntentProcessCommand(extensionId=self.extension_id, commandId="askForSomething"))
+                processCommand=IntentProcessCommand(extensionId=self.extension_id, commandId="form"))
             description: str = "This is an action which runs a command"
         else:
             return await communicator.launch_intent(DialogIntent(

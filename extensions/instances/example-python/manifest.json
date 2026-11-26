@@ -157,39 +157,113 @@
           }
         },
         {
-          "id": "askForSomething",
+          "id": "form",
           "on": {
             "entity": "Process"
           },
           "parameters": {
             "type": "object",
             "properties": {
-              "age": {
+              "creatorName": {
+                "type": "string",
+                "title": "Creator name",
+                "description": "What is your creator or artist name?",
+                "default": "Ada Lovelace"
+              },
+              "creativeRole": {
+                "type": "string",
+                "title": "Creative role",
+                "description": "Choose your primary creative persona.",
+                "enum": [
+                  "Cyberpunk Artist",
+                  "Space Explorer",
+                  "Fantasy Alchemist"
+                ],
+                "default": "Cyberpunk Artist",
+                "ui": {
+                  "widget": "radio",
+                  "inline": true
+                }
+              },
+              "experienceLevel": {
                 "type": "integer",
-                "title": "Age",
-                "description": "What is your age?",
+                "title": "Experience level",
+                "description": "Your creative proficiency level (1-100).",
                 "minimum": 1,
-                "maximum": 128,
-                "default": 35,
+                "maximum": 100,
+                "default": 42,
                 "ui": {
                   "widget": "range"
+                }
+              },
+              "passcode": {
+                "type": "string",
+                "title": "Studio passcode",
+                "description": "A secret passphrase to lock your session.",
+                "default": "my-secret",
+                "ui": {
+                  "widget": "password"
+                }
+              },
+              "startDate": {
+                "type": "string",
+                "title": "Start date",
+                "description": "When did your creative journey begin?",
+                "format": "date",
+                "default": "2023-05-04"
+              },
+              "heroImageId": {
+                "type": "string",
+                "title": "Hero image",
+                "description": "Select the primary hero image for this project.",
+                "ui": {
+                  "widget": "image"
+                }
+              },
+              "referenceImageIds": {
+                "type": "array",
+                "title": "Reference images",
+                "description": "Select one or more inspiration images from your library.",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "ui": {
+                  "widget": "images"
+                }
+              },
+              "sourceCollectionId": {
+                "type": "string",
+                "title": "Source collection",
+                "description": "Which collection would you like to use as a source?",
+                "ui": {
+                  "widget": "collection"
+                }
+              },
+              "targetRepositoryId": {
+                "type": "string",
+                "title": "Target repository",
+                "description": "Which repository would you like to use for outputs?",
+                "ui": {
+                  "widget": "repository"
                 }
               }
             },
             "required": [
-              "age"
+              "creatorName",
+              "creativeRole"
             ]
           },
           "specifications": [
             {
               "locale": "en",
-              "label": "Ask",
-              "name": "Ask something",
-              "description": "Asks questions to the user and if the answer on whether she likes chocolate, opens a modal on a website."
+              "label": "Form",
+              "name": "Dynamic Form",
+              "description": "Demonstrates the dynamic form grammar."
             }
           ],
           "ui": {
-            "iconUri": "/ui/icons/askForSomething.svg"
+            "iconUri": "/ui/icons/form.svg"
           }
         },
         {
