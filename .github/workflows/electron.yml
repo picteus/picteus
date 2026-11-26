@@ -9,13 +9,14 @@ on:
         type: choice
         required: true
         options:
+          - '["windows-latest"]'
+          - '["macos-26"]'
+          - '["windows-latest", "macos-26"]'
           - '["windows-2025"]'
           - '["windows-11-arm"]'
-          - '["macos-26"]'
           - '["macos-15-intel"]'
           - '["ubuntu-latest"]'
-          - '["windows-2025", "macos-26"]'
-        default: '["windows-2025", "macos-26"]'
+        default: '["windows-latest", "macos-26"]'
       deploy:
         description: 'Deploy?'
         type: boolean
@@ -66,6 +67,16 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+      - id: npm-setup
+        # The node-gyp bundled with the npm of Node 22 does not recognize Visual Studio 2026, which the "windows-latest" and "windows-2025" runners provide.
+        # npm 11.6.3 or later bundles a node-gyp which does
+        if: ${{ runner.os == 'Windows' }}
+        name: Upgrades npm
+        shell: bash
+        run: |
+          npm install --global npm@11
+          npm --version
+          node "$(npm root --global)/npm/node_modules/node-gyp/bin/node-gyp.js" --version
       - id: install
         name: Installs the root dependencies
         run: npm install
