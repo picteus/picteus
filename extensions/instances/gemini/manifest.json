@@ -3,7 +3,7 @@
   "id": "gemini",
   "version": "1.8.0",
   "name": "Google Gemini",
-  "description": "Accesses to all sorts of Google Gemini image-related features.",
+  "description": "Generate and modify images using Google Gemini AI, and compute image captions and eligible tags for enhanced image organization.",
   "categories": [
     "capture",
     "generation",
@@ -69,10 +69,11 @@
               "model": {
                 "type": "string",
                 "title": "Model",
-                "description": "The Machine Learning model to use for image generation.",
+                "description": "The Gemini image-generation model to use.",
                 "enum": [
                   "gemini-3-pro-image-preview",
-                  "gemini-2.5-flash-image"
+                  "gemini-2.5-flash-image",
+                  "gemini-nano-banana-2.1"
                 ],
                 "default": "gemini-3-pro-image-preview",
                 "ui": {
@@ -82,7 +83,7 @@
               },
               "aspectRatio": {
                 "type": "string",
-                "title": "Aspect Ratio",
+                "title": "Aspect ratio",
                 "description": "The aspect ratio of the generated image.",
                 "enum": [
                   "1:1",
@@ -105,7 +106,7 @@
               "prompt": {
                 "type": "string",
                 "title": "Prompt",
-                "description": "What do you want to generate?",
+                "description": "Describe the image to generate.",
                 "default": "a cat eating a nano-banana in a fancy restaurant under the Gemini constellation",
                 "ui": {
                   "widget": "textarea"
@@ -121,9 +122,9 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Generate from text",
+              "label": "Generate image",
               "name": "Generate an image from text",
-              "description": "Asks the user a textual prompt and an aspect ratio and then sends a request to Google Gemini (Nano Banana) to generate an image with that prompt, saves the image in the extension repository with all its metadata, and eventually shows the generated image."
+              "description": "Generates an image from a text prompt with the selected Gemini image model and aspect ratio, saves it with generation metadata in the extension repository, and displays the result."
             }
           ]
         },
@@ -138,10 +139,11 @@
               "model": {
                 "type": "string",
                 "title": "Model",
-                "description": "The Machine Learning model to use for image generation.",
+                "description": "The Gemini image-generation model to use.",
                 "enum": [
+                  "gemini-3-pro-image-preview",
                   "gemini-2.5-flash-image",
-                  "gemini-3-pro-image-preview"
+                  "gemini-nano-banana-2.1"
                 ],
                 "default": "gemini-3-pro-image-preview",
                 "ui": {
@@ -151,7 +153,7 @@
               },
               "aspectRatio": {
                 "type": "string",
-                "title": "Aspect Ratio",
+                "title": "Aspect ratio",
                 "description": "The aspect ratio of the generated image.",
                 "enum": [
                   "1:1",
@@ -174,7 +176,7 @@
               "prompt": {
                 "type": "string",
                 "title": "Prompt",
-                "description": "What do you want to generate?",
+                "description": "Describe the image to generate. The selected images are sent to Gemini as visual references.",
                 "default": "a cat eating a nano-banana in a fancy restaurant under the Gemini constellation",
                 "ui": {
                   "widget": "textarea"
@@ -190,9 +192,9 @@
           "specifications": [
             {
               "locale": "en",
-              "label": "Generate multimodal",
-              "name": "Generate an image from text and images",
-              "description": "Takes reference images and a prompt, generates an image via Google Gemini (Nano Banana), saves the image in the extension repository with all its metadata, and eventually shows the generated image."
+              "label": "Modify images",
+              "name": "Generate an image using selected images",
+              "description": "Uses the selected images as visual references and generates an image from your prompt with the selected Gemini image model and aspect ratio. Saves the result with generation metadata in the extension repository and displays it."
             }
           ]
         }
@@ -217,7 +219,7 @@
       "apiKey": {
         "type": "string",
         "title": "Google Gemini API Key",
-        "description": "The Google Gemini API key used when interacting with Gemini.",
+        "description": "Required Gemini API key used for image generation, image modification, captions, and eligible-tag computation.",
         "ui": {
           "widget": "password"
         }
@@ -225,7 +227,7 @@
       "maximumTokens": {
         "type": "integer",
         "title": "Maximum tokens",
-        "description": "The maximum number of tokens in the generated response.",
+        "description": "Maximum output tokens for caption and eligible-tag responses. Does not limit image generation.",
         "default": 2048,
         "minimum": 256,
         "maximum": 16384,
