@@ -78,13 +78,17 @@ The embedding endpoints store and retrieve extension-owned vectors and support s
 | Method | Endpoint | Permission |
 |:---|:---|:---|
 | `PUT` | `/image/{id}/setEmbeddings` | `image:embedding:write` |
+| `PUT` | `/image/{id}/ensureEmbeddings` | `image:embedding:write` |
 | `GET` | `/image/{id}/getEmbeddings` | `image:read` |
 | `GET` | `/image/{id}/getAllEmbeddings` | `image:read` |
 | `GET` | `/repository/embeddingsNames` | `repository:read` |
 | `GET` | `/image/textToImages` | `image:read` |
 | `PUT` | `/image/closestEmbeddingsImages` | `image:read` |
 
-Embedding payloads contain named floating-point vectors. For vector storage, dimensionality rules, similarity thresholds, and examples, see [Embeddings](../embedding.md).
+Embedding payloads contain vectors with an `id` and a `values` array. `setEmbeddings` replaces the selected
+extension's vectors for the image; `ensureEmbeddings` adds or updates the submitted vector identifiers without
+removing other vectors stored by that extension. For storage, model instructions, and similarity search, see
+[Embeddings](../embedding.md).
 
 ## Request and response details
 

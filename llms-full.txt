@@ -40,7 +40,7 @@ This document explains how to build and run the application from the source code
 The following commands will install dependencies and build the components. They should be run from the root `package.json` file.
 
 - Run the traditional `npm run install` script for resolving the hereby package dependencies.
-- Run the `npm run prerequisites` script for resolving all submodules' dependencies: do not run individually the `npm install` script on every module, because it will not properly install the "back-end" and "electron" components since the  `prerequisites` npm script resorts to the `--install-link` option, which installed the "shared/back-end" module dependencies.
+- Run the `npm run prerequisites` script for resolving all submodules' dependencies: do not run individually the `npm install` script on every module, because it will not properly install the "back-end" and "electron" components since the  `prerequisites` npm script resorts to the `--install-links` option, which installed the "shared/back-end" module dependencies.
 - Run the `npm run build` script for building all artifacts.
 
 Most of the artifact files are located under the `build` directory, which is a symbolic link pointing to the `electron/build` directory.
@@ -316,7 +316,7 @@ You may start your unpacked extension — supposedly already installed — from 
 
 | Symptom                                  | Cause & solution                                                                                                                                                                                                             |
 |:-----------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Extension does not start or load**     | The `manifest.json` does not strictly validate against `manifest-v4.schema.json`. Check for missing required fields (`categories`, `runtimes`, `instructions`, `settings`), regex mismatches on IDs, or invalid JSON syntax. |
+| **Extension does not start or load**     | The `manifest.json` does not strictly validate against `manifest-v6.schema.json`. Check for missing required fields (`categories`, `runtimes`, `instructions`, `settings`), regex mismatches on IDs, or invalid JSON syntax. |
 | **Command button does not appear in UI** | Ensure the command `id` is properly declared under `instructions[].commands` with a valid `on.entity` (`"Process"`, `"Images"`, or `"Image"`), and verify `events` contains `process.runCommand` or `image.runCommand`.      |
 | **Event hook method is not triggered**   | Verify that the corresponding event name (e.g. `image.created`, `image.computeTags`) is explicitly listed in `instructions[].events` in `manifest.json`.                                                                     |
 
@@ -595,14 +595,7 @@ log. Supported entity values have a `type` of `"image"`, `"repository"`, or `"co
 `id`. Logs sent without an entity context retain the existing payload format.
 
 ```typescript
-protected async
-onImageCreated(communicator
-:
-Communicator, imageId
-:
-string
-):
-Promise<void>
+protected async onImageCreated(communicator: Communicator, imageId: string): Promise<void>
 {
   communicator.forEntity({ type: "image", id: imageId });
   communicator.sendLog("Processing the image", "info");
@@ -619,7 +612,7 @@ async def on_image_created(self, communicator: Communicator, image_id: str) -> N
 
 ### Event routing & domain handlers
 
-The base class implements `onEvent` / `on_event`, which automatically dispatches incoming events to specialized domain handler methods. You can override individual hook methods directly without needing to write manual event dispatching logic:
+The base class implements `onEvent` / `on_event`, which automatically dispatches incoming events to specialized domain handler methods. You should override these individual hook methods directly rather than overriding `onEvent` / `on_event`:
 
 #### Image lifecycle events
 
@@ -636,17 +629,19 @@ The base class implements `onEvent` / `on_event`, which automatically dispatches
 
 | Method (TypeScript) | Method (Python) | Description |
 |:---|:---|:---|
-| `onComputeImageTags(communicator, imageId)` | `on_compute_image_tags(self, communicator, image_id)` | Triggered to generate tags for an image. |
-| `onComputeImageFeatures(communicator, imageId)` | `on_compute_image_features(self, communicator, image_id)` | Triggered to extract structured features or metadata for an image. |
-| `onComputeImageEmbeddings(communicator, imageId)` | `on_compute_image_embeddings(self, communicator, image_id)` | Triggered to compute vector embeddings for similarity search. |
-| `onComputeTextEmbeddings(communicator, text)` | `on_compute_text_embeddings(self, communicator, text)` | Triggered to compute text embeddings — returns `number[]` / `list[float]`. |
+| `onComputeImageTags(communicator, imageId)` | `on_compute_image_tags(self, communicator, image_id)` | Triggered on `image.computeTags` to generate tags for an image. |
+| `onComputeImageEligibleTags(communicator, imageId, eligibleTags)` | `on_compute_image_eligible_tags(self, communicator, image_id, eligible_tags)` | Triggered on `image.computeTags` when the `image.tags` capability declares `details: { eligibleTags: true }`, passing candidate tags and AI model prompts (`ComputeImageEligibleTags[]`). |
+| `onComputeImageFeatures(communicator, imageId)` | `on_compute_image_features(self, communicator, image_id)` | Triggered on `image.computeFeatures` to extract structured features or metadata for an image. |
+| `onComputeImageCaptions(communicator, imageId, captions)` | `on_compute_image_captions(self, communicator, image_id, captions)` | Triggered on `image.computeFeatures` when the `image.features` capability declares `details: { caption: true }`, passing AI model prompts (`ComputeImageCaption[]`). |
+| `onComputeImageEmbeddings(communicator, imageId, embeddings)` | `on_compute_image_embeddings(self, communicator, image_id, embeddings)` | Triggered on `image.computeEmbeddings` to compute image vectors for the requested AI models. `embeddings` contains `ComputeImageEmbedding` entries with an `aiModel`. |
+| `onComputeTextEmbeddings(communicator, text, aiModel?)` | `on_compute_text_embeddings(self, communicator, text, ai_model=None)` | Triggered on `text.computeEmbeddings` to compute text embeddings for the selected AI model — returns `number[]` / `list[float]`. |
 
 #### Command execution handlers
 
 | Method (TypeScript) | Method (Python) | Description |
 |:---|:---|:---|
-| `onImagesCommand(communicator, commandId, imageIds, parameters)` | `on_images_command(self, communicator, command_id, image_ids, parameters)` | Triggered when a user executes a command on one or more selected images. |
-| `onProcessCommand(communicator, commandId, parameters)` | `on_process_command(self, communicator, command_id, parameters)` | Triggered when a user executes a global process-level command. |
+| `onImagesCommand(communicator, commandId, imageIds, parameters)` | `on_images_command(self, communicator, command_id, image_ids, parameters)` | Triggered when a user executes a command on one or more selected images (`image.runCommand`). |
+| `onProcessCommand(communicator, commandId, parameters)` | `on_process_command(self, communicator, command_id, parameters)` | Triggered when a user executes a global process-level command (`process.runCommand`). |
 
 ---
 
@@ -658,8 +653,9 @@ The base class provides several static and instance helper methods to simplify c
 - `PicteusExtension.getSdkVersion()` / `PicteusExtension.get_sdk_version()`: returns the SDK version string ;
 - `PicteusExtension.getExtensionHomeDirectoryPath()` / `PicteusExtension.get_extension_home_directory_path()`: returns the extension's working root path ;
 - `PicteusExtension.getCacheDirectoryPath()` / `PicteusExtension.get_cache_directory_path()`: returns the path to the `.cache` directory ;
-- `this.getSettings()` / `self.get_settings()`: retrieves the current persistent user settings for this extension ;
-- `this.logger` / `self.logger`: process logger with leveled logging (`debug`, `info`, `warn`, `error`).
+- `await this.getSettings()` (TypeScript, async) / `self.get_settings()` (Python, synchronous): retrieves the current persistent user settings for this extension ;
+- `await self.run_in_executor(fn)` *(Python only)*: runs a synchronous or CPU-bound callable in the extension's thread pool executor so it does not block the `asyncio` event loop ;
+- `this.logger` / `self.logger`: process logger with leveled logging (`debug`, `info`, `warn`, `error` in TypeScript; standard `logging.Logger` in Python with `debug`, `info`, `warning`, `error`).
 
 ---
 
@@ -1748,7 +1744,7 @@ The extension identifier declared through the `id` property must be unique with 
 > [!CAUTION]
 > **Strict JSON Schema compliance required**
 > : the `manifest.json` file is strictly validated against the Picteus manifest schema, accessible online
-at https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json, which should be specified through the `$schema`
+at https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json, which should be specified through the `$schema`
 property. If any property fails validation — invalid types, missing required fields, illegal characters, or incorrect
 regex patterns —, **the server will reject the manifest and the extension will not start.**
 
@@ -1760,12 +1756,13 @@ Here is an overview of the manifest structure:
 
 ```json
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "my-extension",
   "version": "1.0.0",
   "name": "My Extension Name",
   "description": "A clear description of what the extension does.",
   "categories": ["enrichment", "utility"],
+  "author": "KoppaSoft",
   "runtimes": [
     {
       "environment": "node"
@@ -1778,6 +1775,7 @@ Here is an overview of the manifest structure:
         "arguments": ["./dist/main.js"]
       },
       "events": [
+        "process.started",
         "process.runCommand",
         "image.created",
         "image.runCommand"
@@ -1858,21 +1856,20 @@ Here is an overview of the manifest structure:
 - **`name`** *(required, string)*: display name in the application extension manager ;
 - **`description`** *(required, string)*: summary of extension features ;
 - **`categories`** *(required, array)*: categorization (`capture`, `generation`, `enrichment`, `integration`, `utility`, `other`) ;
+- **`author`** *(required, string, 1-128 chars)*: author or organization responsible for the extension (e.g. `KoppaSoft`) ;
 - **`runtimes`** *(required, array)*: execution environments (`"node"` or `"python"`) ;
 - **`instructions`** *(required, array)*: execution directives:
-  - **`execution`**: defines how the back-end starts the extension process (`executable` with `${node}` / `${python}` macros, and `arguments`) ;
-  - **`events`**: subscribed event topics (e.g. `image.created`, `image.updated`, `image.deleted`, `image.runCommand`, `process.runCommand`, `text.computeEmbeddings`) ;
+  - **`execution`**: defines how the back-end starts the extension process (`executable` with `${node}` for Node.js or `${venvPython}` for Python virtual environments, and `arguments` such as `["./dist/main.js"]` or `["./main.py"]`) ;
+  - **`events`**: subscribed event topics (`process.started`, `process.runCommand`, `extension.settings`, `image.created`, `image.updated`, `image.tags.updated`, `image.features.updated`, `image.embeddings.updated`, `image.deleted`, `image.computeFeatures`, `image.computeEmbeddings`, `image.computeTags`, `image.runCommand`, `text.computeEmbeddings`) ;
   - **`capabilities`**: declared feature capabilities (`image.features`, `image.embeddings`, `image.tags`,
-    `text.embeddings`). An `image.features` or `image.tags` capability may carry an optional `details` marker object —
-    `{ "details": {} }` — which tells Picteus that the capability also computes captions, respectively eligible tags, on
-    top of its default computation ;
+    `text.embeddings`). An `image.features` capability may carry `{ "details": { "caption": true } }` to indicate it supports AI caption computation (`onComputeImageCaptions`), and an `image.tags` capability may carry `{ "details": { "eligibleTags": true } }` to indicate it supports AI eligible-tags computation (`onComputeImageEligibleTags`) ;
   - **`throttlingPolicies`**: rate limits defining `durationInMilliseconds` and `maximumCount` for specified events ;
   - **`commands`**: action commands registered in the UI:
     - `id`: identifier sent to `onImagesCommand` or `onProcessCommand` ;
     - `on`: scope where the command appears (`entity`: `"Process"`, `"Images"`, or `"Image"`, optional `withTags` filter) ;
     - `parameters`: JSON Schema defining the form presented to the user when triggering the command ;
     - `specifications`: localized labels, titles, and descriptions ;
-    - `ui`: command labels and icon URI.
+    - `ui`: command icon URI.
 - **`settings`** *(required, object)*: JSON Schema for global extension configuration ;
 - **`ui`** *(optional, object)*: pre-registered UI fragments (`sidebar`, `window`, `imageDetail`).
 
@@ -2178,11 +2175,11 @@ For TypeScript extensions, the `package.json` file is **mandatory**. It must:
     "build": "tsc"
   },
   "dependencies": {
-    "@picteus/extension-sdk": "0.15.0"
+    "@picteus/extension-sdk": "0.21.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^22.0.0"
+    "typescript": "5.9.2",
+    "@types/node": "22.17.1"
   }
 }
 ```
@@ -2190,17 +2187,19 @@ For TypeScript extensions, the `package.json` file is **mandatory**. It must:
 ##### 3. `tsconfig.json`
 ```json
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "esnext",
+    "moduleResolution": "Node",
+    "target": "es2022",
     "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    "declaration": false,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": false,
+    "noImplicitAny": true,
+    "sourceMap": false
   },
-  "include": ["src/**/*"]
+  "include": ["./src"]
 }
 ```
 
@@ -2274,7 +2273,7 @@ my-py-extension/
 For Python extensions, the `requirements.txt` file is **mandatory**. It lists all Python package dependencies required by the extension (including `picteus-extension-sdk`):
 
 ```text
-picteus-extension-sdk == 0.15.0
+picteus-extension-sdk == 0.21.0
 ```
 
 ##### 3. `main.py`
@@ -2414,9 +2413,9 @@ represent extracted or computed values that can be indexed, compared, searched, 
 ViewKit does not replace those values and is not an image embedding. It is a structured view of feature information for
 people.
 
-> See its ["ViewKit" v2 JSON Schema](https://picteus.github.io/picteus/jsonschema/viewkit-v2.schema.json), which may be
+> See its ["ViewKit" v4 JSON Schema](https://picteus.github.io/picteus/jsonschema/viewkit-v4.schema.json), which may be
 > used to validate ViewKit documents — its source file being located at [
-`docs/static/jsonschema/viewkit-v2.schema.json`](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/static/jsonschema/viewkit-v2.schema.json).
+`docs/static/jsonschema/viewkit-v4.schema.json`](https://raw.githubusercontent.com/picteus/picteus/refs/heads/main/docs/static/jsonschema/viewkit-v4.schema.json).
 >
 > See its generated ["ViewKit" model reference](./models-reference.md) for the TypeSpec models and UI metadata.
 
@@ -3858,333 +3857,86 @@ Because both database systems use standard formats and protocols, advanced users
 
 ## Embeddings
 
-In Picteus, a **vector embedding** is a high-dimensional numerical representation of an image, computed by a machine learning encoder model and stored in the embedded Chroma DB vector database. Embeddings capture semantic, aesthetic, or perceptual properties of images as floating-point vectors, enabling cross-modal similarity searches — such as finding images matching a text prompt or visually similar to a reference image — that are not achievable with relational keyword-based queries alone. Vector embeddings are part of the image enrichment facets triplet of Picteus — the high-level overview of which is documented in [Facets](facets.md).
+An image embedding is a numerical vector produced by an encoder model. Picteus stores image embeddings in its vector
+database and uses them for image similarity search and text-to-image search. Embeddings are one of the enrichment
+facets described in [Facets](facets.md).
 
----
+### Storage and identifiers
 
-### The role of vector embeddings
+Image vectors are stored in Chroma DB. Each collection belongs to an extension and one embedding name, so vectors
+produced by different models or extensions are kept in separate vector spaces. A collection uses cosine distance, and
+all vectors in it must have the same dimension.
 
-Traditional metadata, tags, and structured features operate on explicitly defined, human-readable values. However, many meaningful image properties — such as visual atmosphere, compositional similarity, or abstract aesthetic qualities — cannot be expressed as discrete categorical labels or exact numeric ranges.
+An image embedding contains an `id` and a `values` array:
 
-Vector embeddings address this:
-
-- **encoding latent visual meaning**: encoder models such as CLIP, SigLIP, or domain-specific networks compress the full visual content of an image into a compact, structured latent vector, retaining similarity relationships between semantically related images ;
-- **enabling natural language image search**: text queries are encoded into the same vector space as images, allowing users to search using arbitrary prompts — such as "a misty forest at dawn" — without any pre-existing text annotation ;
-- **powering reverse image search**: given a reference image, Picteus queries Chroma DB using its embedding vector to retrieve visually and semantically similar images within the repository ;
-- **supporting multi-encoder architectures**: a single image can carry multiple named embedding vectors produced by different encoder models, each capturing a distinct representational dimension — visual aesthetics, facial identity, color distribution, or domain-specific features.
-
----
-
-### Storage in Chroma DB
-
-Unlike tags and structured features — which are persisted in the relational SQLite database — vector embeddings are stored in **Chroma DB**, an embedded open-source vector database that ships alongside the Picteus back-end.
-
-#### Chroma DB architecture
-
-Chroma DB maintains vector collections indexed using **Hierarchical Navigable Small World (HNSW)** graphs. HNSW graphs allow approximate nearest-neighbor queries to execute in sub-linear time across millions of stored vectors, using cosine distance as the similarity metric.
-
-#### Collection naming and isolation
-
-Each embedding collection in Chroma DB is scoped to a specific extension and embedding name combination. This isolation ensures that:
-
-- different extension models do not interfere with each other's vector spaces ;
-- each collection maintains a consistent embedding dimensionality — all vectors within a collection must share the same number of dimensions ;
-- collections can be queried, updated, or deleted independently per extension.
-
-#### Embedding record structure
-
-Each vector entry stored in Chroma DB consists of the following fields:
-
-| Field | Description |
+| Property | Description |
 |:---|:---|
-| `imageId` | The UUID of the image this vector represents. Serves as the Chroma DB document identifier. |
-| `extensionId` | The identifier of the extension that computed and owns the embedding. |
-| `name` | A short technical identifier distinguishing multiple embeddings from the same extension (e.g., `"clip"`, `"color"`, `"face"`). |
-| `values` | The raw floating-point vector — an array of `float` values whose length is fixed per collection (e.g., 512 for CLIP ViT-B/32, 768 for SigLIP, 256 for a custom color histogram). |
+| `id` | The embedding identifier within the extension. It is up to 128 characters. |
+| `values` | A non-empty array of numbers, with up to 4,096 dimensions. |
 
-#### Persistence mechanics
+Each request can include up to 16 embedding identifiers per extension. In the search selector, an image vector's
+identifier is represented by `name`, paired with an `extensionId` to identify the corresponding vector collection.
 
-When an extension calls `setEmbeddings()`:
+When an extension writes embeddings, `setEmbeddings` replaces that extension's embeddings for the image with the
+submitted vectors. `ensureEmbeddings` adds or updates only the submitted embedding identifiers and preserves other
+vectors already stored by the extension. Deleting an image removes its vectors from Chroma DB; uninstalling an extension
+removes the extension's collections.
 
-1. **Collection resolution**: Chroma DB resolves or creates the collection for the given extension and embedding name ;
-2. **Upsert operation**: the vector for the image is upserted — created on first insertion, replaced on subsequent calls — ensuring idempotent behavior ;
-3. **Event emission**: an `ImageEventAction.EmbeddingsUpdated` event is emitted to notify real-time subscribers and connected front-end clients.
+### Model instructions
 
-> [!NOTE]
-> **Referential integrity and cascade deletion**
-> : Because Chroma DB is a vector database, it does not maintain foreign key constraints. When an image is deleted from the relational SQL database, the Picteus back-end explicitly purges corresponding Chroma DB entries across all extension collections for that image. This ensures the vector database does not accumulate orphaned vectors for images that no longer exist.
+Extensions can declare AI models and the modalities each model supports, including `image.embeddings` and
+`text.embeddings`. In the extension settings, users can enable embedding instructions and choose which declared model
+to use. Each instruction identifies an AI model and has `enabled` and `isAuto` flags. An enabled automatic instruction
+can run when images are indexed; enabled instructions are also used when the user requests image capability
+synchronization.
 
----
+When Picteus requests image embeddings, the extension receives the requested model information with the
+`image.computeEmbeddings` event. Extensions implement the corresponding hook and store vectors through the image API.
+For text-to-image search, Picteus sends the query text to an enabled extension that supports `text.embeddings`, then
+uses the returned text vector to search the matching image embedding collection.
 
-### Anatomy of an embedding
+The image detail view includes an embeddings card for vectors stored on the image. From the image view, users can also
+search for images that are similar to the selected image. The main search interface supports text-to-image search when
+a compatible text embedding model is available.
 
-An embedding record submitted by an extension consists of two required fields.
+See the [manifest reference](../extensions/reference/manifest.md) for capability declarations, the
+[extension class reference](../extensions/reference/class.md) for the corresponding hooks, and
+[extension synchronization](webservicesapi/extensions.md#extension-synchronization) for how capability runs are
+requested.
 
-#### 1. Embedding name: `name`
+### Similarity search
 
-The `name` field is a short technical identifier distinguishing different embedding models or strategies within the same extension namespace:
-- Must conform to technical identifier conventions (alphanumeric characters, hyphens, underscores) ;
-- Maximum 64 characters ;
-- Unique per extension — two embeddings from the same extension with the same name are treated as the same vector slot and upserted ;
-- Examples: `"clip"`, `"color"`, `"siglip"`, `"face"`.
+Image-to-image search compares an image's stored vector with vectors in the selected collection. Text-to-image search
+first computes a text vector with the selected model, then searches the collection associated with that model. Searches
+can return fewer results when no matching collection or vectors exist.
 
-#### 2. Embedding values: `values`
+The image API exposes these operations:
 
-The `values` field is the raw floating-point vector produced by the encoder model:
-- A non-empty array of JavaScript `number` values ;
-- All embeddings with the same `name` and `extensionId` must share the same fixed vector length — the dimensionality is locked per collection upon first insertion ;
-- Common dimensions: 512 (CLIP ViT-B/32), 768 (SigLIP), 1024 (larger CLIP variants), or custom dimensions for specialized encoders.
+| Method | Endpoint | Purpose |
+|:---|:---|:---|
+| `GET` | `/image/{id}/closestImages` | Finds images close to an image vector identified by `extensionId` and `name`. |
+| `GET` | `/image/textToImages` | Computes text embeddings through a selected extension model and searches for matching images. |
+| `PUT` | `/image/closestEmbeddingsImages` | Finds images close to supplied embedding vectors. |
+| `GET` | `/repository/embeddingsNames` | Lists available extension and embedding-name pairs. |
 
----
+For endpoint parameters and security requirements, see [Images — embeddings](webservicesapi/images.md#embeddings).
 
-### Extension-driven computation
+### Web services API
 
-Embeddings are computed by Picteus extensions that implement a dedicated encoder model. The extension receives lifecycle events, executes the encoder, and writes the resulting vectors to Chroma DB via the SDK.
+The image API stores and reads vectors owned by an extension:
 
-#### Extension capability declaration
+| Method | Endpoint | Purpose |
+|:---|:---|:---|
+| `GET` | `/image/{id}/getEmbeddings` | Gets an image's vectors for one extension. |
+| `GET` | `/image/{id}/getAllEmbeddings` | Gets an image's vectors for all extensions. |
+| `PUT` | `/image/{id}/setEmbeddings` | Replaces the vectors stored by an extension for an image. |
+| `PUT` | `/image/{id}/ensureEmbeddings` | Adds or updates supplied vectors without replacing other vectors for the image. |
 
-An extension capable of computing embeddings declares the `image.embeddings` capability in its `manifest.json`:
+Each vector in a request body has an `id` and a `values` array. The complete request and response schemas are available
+in the [generated API reference](webservicesapi/reference/picteus).
 
-```json title="manifest.json"
-{
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
-  "id": "my-embedding-extension",
-  "name": "Embeddings Computer",
-  "instructions": [
-    {
-      "events": [
-        "image.created",
-        "image.updated",
-        "image.computeEmbeddings"
-      ],
-      "capabilities": [
-        {
-          "id": "image.embeddings"
-        }
-      ]
-    }
-  ]
-}
-```
-
-#### Event lifecycle & SDK hooks
-
-Picteus extensions interact with embeddings via standardized lifecycle events and strongly typed SDK methods:
-
-1. **Triggering computation**:
-   - When a new image is ingested or modified, or when the user triggers capability runs, Picteus emits the `image.computeEmbeddings` event to registered extensions ;
-   - Extensions implement the corresponding hook:
-     - **TypeScript SDK**: `protected async onComputeImageEmbeddings(communicator: Communicator, imageId: string): Promise<void>` ;
-     - **Python SDK**: `async def on_compute_image_embeddings(self, communicator: Communicator, image_id: str) -> None` ;
-2. **Downloading the image**:
-   - The extension retrieves the image binary via `imageDownload()`, typically resizing it to the input resolution expected by the encoder (e.g., 224×224 pixels for CLIP, 512×512 for custom color encoders) ;
-3. **Running the encoder**:
-   - The extension passes the image through its encoder model to produce the floating-point vector ;
-4. **Persisting the embedding**:
-   - The extension calls `imageSetEmbeddings()` with an array of named `ImageEmbedding` objects ;
-5. **Broadcasting updates**:
-   - Setting embeddings automatically triggers an `image.embeddings.updated` event across the Picteus event bus, notifying connected front-end clients and other interested extensions via `onImageEmbeddingsUpdated()`.
-
----
-
-### Similarity search integration
-
-#### How the front-end leverages embeddings
-
-The Picteus web interface exposes embedding-powered search through the main search bar and the similarity search feature:
-
-- **Text-to-image search**: when a user types a natural language prompt in the search bar, the front-end issues a search request with an `embeddings` query criteria; the back-end encodes the text using the configured encoder and queries Chroma DB for nearest neighbors ;
-- **Image-to-image search**: when a user triggers a "search similar images" action from the contextual image menu, the stored embedding vector for that image is retrieved and used as the query vector for a Chroma DB nearest-neighbor lookup ;
-- **Combined search**: embedding similarity results can be combined with tag filters and structured feature conditions using `AND` or `OR` logical operators in the query builder.
-
-#### Cosine distance threshold
-
-Embedding queries in Picteus use **cosine distance** to measure vector similarity — two vectors with cosine distance `0` are identical, while vectors approaching `1` are semantically dissimilar. The API supports a configurable `maxDistance` threshold to control how broadly matched results should be.
-
----
-
-### OpenAPI web services API
-
-The endpoint reference for embeddings is maintained in [Images — embeddings](webservicesapi/images.md#embeddings). This section provides the embedding-specific background and examples that explain how those endpoints behave.
-
-The Picteus back-end exposes dedicated REST web service endpoints for reading, writing, and deleting vector embeddings. These endpoints conform to OpenAPI 3.1 specifications.
-
-#### Endpoint reference summary
-
-| Method | Endpoint path | Scope required | Description |
-|:---|:---|:---|:---|
-| `PUT` | `/image/{id}/setEmbeddings` | `image:embedding:write` | Stores or replaces embedding vectors for an image for a specific extension. |
-| `GET` | `/image/{id}/getEmbeddings` | `image:read` | Returns the embedding vectors stored for an image by a specific extension. |
-| `PUT` | `/image/{id}/deleteEmbeddings` | `image:embedding:write` | Deletes all embedding vectors stored for an image by a specific extension. |
-| `GET` | `/repository/embeddingsNames` | `repository:read` | Returns all distinct extension embedding identifiers and names across the repository. |
-| `PUT` | `/image/{id}/runCapabilities` | `image:tag:write` `image:feature:write` `image:embedding:write` | Runs all extension capabilities (including `image.embeddings`) against an image. |
-| `PUT` | `/image/search/runCapabilities` | `image:tag:write` `image:feature:write` `image:embedding:write` | Runs extension capabilities against all images matching search criteria. |
-
----
-
-#### Detailed endpoint specifications
-
-##### 1. Set image embeddings: `PUT /image/{id}/setEmbeddings`
-
-Stores or replaces the embedding vectors for image `{id}` for a specific extension. Each named vector slot is upserted individually — only the named embeddings included in the payload are affected.
-
-- **URL parameters**:
-  - `id` (`string`, required): The UUID of the image.
-- **Query parameters**:
-  - `extensionId` (`string`, required): The identifier of the extension owning the embeddings.
-- **Security**: Requires `image:embedding:write` policy scope. If using an extension-scoped API token, `policyContext.extensionId` must match the `extensionId` query parameter.
-- **Request body**: `ImageEmbedding[]` (JSON array of objects, each with a `name` string and a `values` number array).
-- **HTTP status**: `204 No Content` on success.
-- **Emitted event**: `ImageEventAction.EmbeddingsUpdated` (`image.embeddings.updated`).
-
-```bash title="Example request: setEmbeddings"
-curl -X PUT "http://localhost:3001/image/3c8f8b89-a29d-4e2a-9418-0518dc3f6293/setEmbeddings?extensionId=com.picteus.clip" \
-  -H "Authorization: Bearer <API_SECRET>" \
-  -H "Content-Type: application/json" \
-  -d '[
-    {
-      "name": "clip",
-      "values": [0.023, -0.117, 0.445, 0.031, -0.228]
-    }
-  ]'
-```
-
-##### 2. Get image embeddings: `GET /image/{id}/getEmbeddings`
-
-Returns the embedding vectors stored for image `{id}` by a specific extension.
-
-- **URL parameters**: `id` (`string`, required).
-- **Query parameters**: `extensionId` (`string`, required).
-- **Security**: Requires `image:read`.
-- **Response**: `200 OK` with body `{ embeddings: ImageEmbedding[] }`.
-
-```json title="Example response"
-{
-  "embeddings": [
-    {
-      "name": "clip",
-      "values": [0.023, -0.117, 0.445, 0.031, -0.228]
-    },
-    {
-      "name": "color",
-      "values": [0.12, 0.08, 0.33, 0.21, 0.05, 0.41, 0.09, 0.19]
-    }
-  ]
-}
-```
-
-##### 3. Delete image embeddings: `PUT /image/{id}/deleteEmbeddings`
-
-Deletes all embedding vectors for image `{id}` stored by a specific extension across all Chroma DB collections owned by that extension.
-
-- **URL parameters**: `id` (`string`, required).
-- **Query parameters**: `extensionId` (`string`, required).
-- **Security**: Requires `image:embedding:write`.
-- **HTTP status**: `204 No Content` on success.
-
-```bash title="Example request: deleteEmbeddings"
-curl -X PUT "http://localhost:3001/image/3c8f8b89-a29d-4e2a-9418-0518dc3f6293/deleteEmbeddings?extensionId=com.picteus.clip" \
-  -H "Authorization: Bearer <API_SECRET>"
-```
-
-##### 4. Get repository embedding names: `GET /repository/embeddingsNames`
-
-Returns distinct pairs of extension identifiers and embedding names declared across all images in all repositories. This powers the embedding selector in the front-end search UI.
-
-- **Security**: Requires `repository:read`.
-- **Response**: `200 OK` with body `ExtensionImageEmbeddingName[]`.
-
-```json title="Example response"
-[
-  {
-    "id": "com.picteus.clip",
-    "name": "clip"
-  },
-  {
-    "id": "com.picteus.color",
-    "name": "color"
-  }
-]
-```
-
----
-
-### SDK client usage
-
-Developers building extensions can use the official pre-built SDKs to store and retrieve embedding vectors without manually invoking HTTP endpoints.
-
-#### TypeScript extension SDK
-
-```typescript
-import {
-  Communicator,
-  type ImageEmbedding,
-  PicteusExtension
-} from "@picteus/extension-sdk";
-
-export class MyExtension extends PicteusExtension {
-
-  // React to embedding computation requests
-  protected async onComputeImageEmbeddings(communicator: Communicator, imageId: string): Promise<void> {
-    // Download the image and run the encoder model
-    const embeddingValues: number[] = await this.runEncoder(imageId);
-
-    // Persist the embedding vector
-    await this.getImageApi().imageSetEmbeddings({
-      id: imageId,
-      extensionId: this.extensionId,
-      imageEmbedding: [
-        {
-          name: "clip",
-          values: embeddingValues
-        }
-      ]
-    });
-  }
-
-  // React to embedding updates from other extensions
-  protected async onImageEmbeddingsUpdated(communicator: Communicator, imageId: string): Promise<void> {
-    communicator.log(`Embeddings updated for image ${imageId}`);
-  }
-
-  private async runEncoder(_imageId: string): Promise<number[]> {
-    // Encoder model invocation — returns a fixed-length float array
-    return [];
-  }
-}
-```
-
-#### Python extension SDK
-
-```python
-from picteus_extension_sdk import PicteusExtension, Communicator
-from picteus_ws_client.models import ImageEmbedding
-
-class MyPythonExtension(PicteusExtension):
-
-    async def on_compute_image_embeddings(self, communicator: Communicator, image_id: str) -> None:
-        # Run the encoder model to produce the embedding vector
-        embedding_values: list[float] = await self.run_encoder(image_id)
-
-        embedding = ImageEmbedding(
-            name="clip",
-            values=embedding_values
-        )
-
-        # Persist the embedding via the embedded web services client
-        await self.get_image_api().image_set_embeddings(
-            id=image_id,
-            extension_id=self.extension_id,
-            image_embedding=[embedding]
-        )
-
-    async def on_image_embeddings_updated(self, communicator: Communicator, image_id: str) -> None:
-        communicator.log(f"Embeddings updated on image {image_id}")
-
-    async def run_encoder(self, image_id: str) -> list[float]:
-        # Encoder model invocation — returns a fixed-length float list
-        return []
-```
+Extensions configure available AI models and embedding instructions through the extension API. See
+[Extensions](webservicesapi/extensions.md#ai-models-and-capability-instructions) for those endpoints.
 
 ---
 
@@ -5189,11 +4941,11 @@ The manifest schema validates an extension's `manifest.json` file. It defines th
 requirements, event instructions, capabilities, commands, settings, user-interface declarations, and other contracts
 with Picteus.
 
-The current extension manifest contract is version 4:
+The current extension manifest contract is version 6:
 
 - [GitHub source:
-  `manifest-v4.schema.json`](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v4.schema.json);
-- [Published manifest schema](https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json);
+  `manifest-v6.schema.json`](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v6.schema.json);
+- [Published manifest schema](https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json);
 - [Manifest reference](../extensions/reference/manifest.md).
 
 Add this top-level property to a manifest to enable schema-aware editor support. The snippet shows the property only,
@@ -5201,7 +4953,7 @@ not a complete manifest:
 
 ```json
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json"
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json"
 }
 ```
 
@@ -5209,7 +4961,9 @@ Previous manifest schema versions remain available for compatibility:
 
 - [Manifest version 1 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v1.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v1.schema.json);
 - [Manifest version 2 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v2.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v2.schema.json);
-- [Manifest version 3 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v3.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json).
+- [Manifest version 3 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v3.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json);
+- [Manifest version 4 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v4.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json);
+- [Manifest version 5 on GitHub](https://github.com/picteus/picteus/blob/main/docs/static/jsonschema/manifest-v5.schema.json) — [published schema](https://picteus.github.io/picteus/jsonschema/manifest-v5.schema.json).
 
 ### Generation recipe schema
 
@@ -5342,7 +5096,7 @@ An extension capable of computing tags declares the `image.tags` capability in i
 
 ```json title="manifest.json"
 {
-  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v3.schema.json",
+  "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "my-tagger-extension",
   "name": "Vision AI Tagger",
   "instructions": [
@@ -5791,12 +5545,30 @@ Extension endpoints install, build, compile, configure, run, and remove Picteus 
 | `GET` | `/extension/{id}/getSettings` | Gets extension settings. |
 | `PUT` | `/extension/{id}/setSettings` | Sets extension settings. |
 | `PUT` | `/extension/{id}/resetSettings` | Resets extension settings. |
+| `GET` | `/extension/listAiModels` | Lists AI models declared by installed extensions. |
+| `PUT` | `/extension/{id}/setAiModels` | Sets the AI models declared by an extension. |
+| `GET` | `/extension/{id}/getCaptionInstructions` | Gets the extension's caption instructions. |
+| `PUT` | `/extension/{id}/setCaptionInstructions` | Sets the extension's caption instructions. |
+| `GET` | `/extension/{id}/getEligibleTagsInstructions` | Gets the extension's eligible-tag instructions. |
+| `PUT` | `/extension/{id}/setEligibleTagsInstructions` | Sets the extension's eligible-tag instructions. |
+| `GET` | `/extension/{id}/getEmbeddingInstructions` | Gets the extension's embedding instructions. |
+| `PUT` | `/extension/{id}/setEmbeddingInstructions` | Sets the extension's embedding instructions. |
 | `GET` | `/extension/activities` | Reports extension activities. |
 | `PUT` | `/extension/{id}/runImageCommand` | Runs an extension command on images. |
 | `PUT` | `/extension/{id}/runProcessCommand` | Runs an extension command for the process. |
 | `PUT` | `/extension/{id}/synchronize` | Synchronizes images through an extension. |
 
 See the [extensions documentation](../../extensions/guide.md) for extension authoring concepts. Endpoint contracts are defined in [`back-end/openapi.json`](https://github.com/picteus/picteus/blob/main/back-end/openapi.json).
+
+### AI models and capability instructions
+
+Extensions declare AI models with the modalities they support. The extension API can list those models and replace an
+extension's declarations. For an extension that supports captions, eligible tags, or embeddings, the corresponding
+instruction endpoints get or replace its configured model instructions. Instructions include the selected model and
+whether it is enabled and should run automatically during image indexing. Caption and eligible-tag instructions also
+include their question; eligible-tag instructions include the candidate tags.
+
+For embedding behavior and model modalities, see [Embeddings](../embedding.md#model-instructions). Endpoint payloads and scopes are defined in the [generated API reference](reference/picteus).
 
 ### Extension synchronization
 
@@ -5909,13 +5681,17 @@ The embedding endpoints store and retrieve extension-owned vectors and support s
 | Method | Endpoint | Permission |
 |:---|:---|:---|
 | `PUT` | `/image/{id}/setEmbeddings` | `image:embedding:write` |
+| `PUT` | `/image/{id}/ensureEmbeddings` | `image:embedding:write` |
 | `GET` | `/image/{id}/getEmbeddings` | `image:read` |
 | `GET` | `/image/{id}/getAllEmbeddings` | `image:read` |
 | `GET` | `/repository/embeddingsNames` | `repository:read` |
 | `GET` | `/image/textToImages` | `image:read` |
 | `PUT` | `/image/closestEmbeddingsImages` | `image:read` |
 
-Embedding payloads contain named floating-point vectors. For vector storage, dimensionality rules, similarity thresholds, and examples, see [Embeddings](../embedding.md).
+Embedding payloads contain vectors with an `id` and a `values` array. `setEmbeddings` replaces the selected
+extension's vectors for the image; `ensureEmbeddings` adds or updates the submitted vector identifiers without
+removing other vectors stored by that extension. For storage, model instructions, and similarity search, see
+[Embeddings](../embedding.md).
 
 ### Request and response details
 
@@ -6032,7 +5808,7 @@ The marketplace endpoints let clients discover, inspect, install, and update pre
 
 `GET /marketplace/list` returns the extensions that match the supplied filters:
 
-- `search` is a case-insensitive substring search across the extension identifier, name, and description.
+- `search` is a case-insensitive substring search across the extension identifier, name, description, and author.
 - `category` accepts one or more extension categories: `capture`, `generation`, `enrichment`, `integration`, `utility`, or `other`. When multiple categories are supplied, an extension is included if it belongs to any of them.
 
 Results include each extension's manifest and, when available, its icon as an SVG or PNG data URI. Use `GET /marketplace/{id}/get` to retrieve the full details, including the optional manual instructions.
@@ -6420,6 +6196,26 @@ Returns the eligible tags instructions declared for an extension.
 
 ---
 
+## Gets the embedding instructions for an extension
+
+Returns the embedding instructions declared for an extension.
+
+  Request
+
+<ParamsDetails
+  {...require("./extension-get-embedding-instructions.ParamsDetails.json")}
+>
+
+<RequestSchema
+  {...require("./extension-get-embedding-instructions.RequestSchema.json")}
+>
+
+<StatusCodes
+  {...require("./extension-get-embedding-instructions.StatusCodes.json")}
+>
+
+---
+
 ## Gets an extension settings
 
 Returns the settings of an extension.
@@ -6660,6 +6456,26 @@ Overwrites the eligible tags instructions declared for an extension.
 
 ---
 
+## Sets the embedding instructions for an extension
+
+Overwrites the embedding instructions declared for an extension.
+
+  Request
+
+<ParamsDetails
+  {...require("./extension-set-embedding-instructions.ParamsDetails.json")}
+>
+
+<RequestSchema
+  {...require("./extension-set-embedding-instructions.RequestSchema.json")}
+>
+
+<StatusCodes
+  {...require("./extension-set-embedding-instructions.StatusCodes.json")}
+>
+
+---
+
 ## Sets an extension settings
 
 Defines the settings of an extension.
@@ -6856,6 +6672,26 @@ Returns the binary form of an image.
 
 <StatusCodes
   {...require("./image-download.StatusCodes.json")}
+>
+
+---
+
+## Ensures the image embeddings
+
+Ensures the given embeddings for an image and an extension without removing existing embeddings of other collections.
+
+  Request
+
+<ParamsDetails
+  {...require("./image-ensure-embeddings.ParamsDetails.json")}
+>
+
+<RequestSchema
+  {...require("./image-ensure-embeddings.RequestSchema.json")}
+>
+
+<StatusCodes
+  {...require("./image-ensure-embeddings.StatusCodes.json")}
 >
 
 ---
@@ -7788,6 +7624,26 @@ Renames the file of an image in a repository.
 
 ---
 
+## Sets the operating mode of a repository
+
+Changes the operating mode of a repository.
+
+  Request
+
+<ParamsDetails
+  {...require("./repository-set-mode.ParamsDetails.json")}
+>
+
+<RequestSchema
+  {...require("./repository-set-mode.RequestSchema.json")}
+>
+
+<StatusCodes
+  {...require("./repository-set-mode.StatusCodes.json")}
+>
+
+---
+
 ## Starts or stop the repositories
 
 Starts all the repositories, resumes synchronization if necessary and starts watching them, or stops them.
@@ -7894,6 +7750,16 @@ An AI model declared by an extension
 
 <Schema
   {...require("./aimodel.Schema.json")}
+>
+
+---
+
+## AiModelModality
+
+The task modalities the AI model is compatible with
+
+<Schema
+  {...require("./aimodelmodality.Schema.json")}
 >
 
 ---
@@ -8054,6 +7920,16 @@ An instruction for computing eligible tags with an AI model
 
 <Schema
   {...require("./eligibletagsinstruction.Schema.json")}
+>
+
+---
+
+## EmbeddingInstruction
+
+An instruction for computing embeddings with an AI model
+
+<Schema
+  {...require("./embeddinginstruction.Schema.json")}
 >
 
 ---
@@ -8446,6 +8322,16 @@ The identifier of the extension capability
 
 ---
 
+## ManifestEmbeddingsCapability
+
+A capability to compute image or text embeddings
+
+<Schema
+  {...require("./manifestembeddingscapability.Schema.json")}
+>
+
+---
+
 ## ManifestEvent
 
 The events which will trigger the instructions
@@ -8652,6 +8538,16 @@ The possible types of repositories
 
 <Schema
   {...require("./repositorylocationtype.Schema.json")}
+>
+
+---
+
+## RepositoryMode
+
+The operating mode of the repository
+
+<Schema
+  {...require("./repositorymode.Schema.json")}
 >
 
 ---
@@ -9070,118 +8966,153 @@ The [Web services API](manual/webservicesapi/index.md) is the entry point for pr
 
 ## Files
 
-The application takes great care not to pollute the computer it is installed. To that extent, it isolates and places all the files it downloads, installs and handles within a single folder.
+Picteus uses a per-user application folder for its databases and other application-managed data. Your image files can remain in their existing locations; Picteus records the paths of image repositories that you add to the application. These locations serve different purposes and should be considered separately when backing up or removing data.
 
 ### Application's folder
 
-It installs the Python and Node.js runtimes, the extensions, their dependencies, the tensor files within a dedicated folder, the "Application's folder", which is located in the Operating System traditional directory, namely:
-- Windows: `C:\Users\<user>\AppData\Roaming\Picteus`,
-- macOS: `/Users/<user>/Library/Application Support/Picteus`,
+The desktop application stores its internal data in the following per-user folder:
 
-where `<user>` is the user's login.
+- **Windows**: `C:\Users\<user>\AppData\Roaming\Picteus`;
+- **macOS**: `/Users/<user>/Library/Application Support/Picteus`.
 
-The application offers the "Picteus > Application Folder" menu entry which opens that opens the files' explorer to that location.
+Here, `<user>` is the name of the user's account. In the desktop application, choose **Picteus > Application Folder** to open this folder.
 
-This folder holds the following resources:
-- the SQLite regular SQL database `database.db` ;
-- the Chroma vectorial database in folder `chroma` ;
-- the `runtimes` folder, which contains a `node` and a `python` folder, which are additional runtimes for the extensions ;
-- the `models` folder, which will contain the downloaded tensor files required by some extension resorting to AI models ;
-- the `repositories` folder, which is an internal folder that will contain repositories dedicated to some extensions.
+The folder contains application-managed files, including:
+
+- `database.db` — the SQLite database, which stores application data such as settings, repository definitions, image records, and extension data;
+- `chroma` — the Chroma vector database, which stores embeddings used for similarity search;
+- `repositories` — files in repositories created or managed by extensions. This is not the location of every image repository added to Picteus;
+- `extensions` — installed extensions;
+- `models` — downloaded model files used by some extensions;
+- `runtimes` — the Python and Node.js runtimes used by extensions.
+
+The database and Chroma directory work together with the application. Avoid editing their contents directly; for database details and safe direct access, see [Databases](../manual/databases.md).
+
+Application logs are stored separately from this folder. See [Traces](traces.md#accessing-logs-via-the-electron-menu) for their locations.
 
 ### Your images files
 
-Picteus will access to the image files that are stored on the computer, hence you do not need to change their location or copy them elsewhere. You will need to declare image repositories within the application.
+Image repositories are folders on your computer that you add to Picteus. Picteus indexes files in those folders and stores repository paths and image records in its database; it does not generally copy the original images into the application's folder. Keep the original image folders if you want to retain access to those images, and back them up separately.
+
+Some extensions create or manage files in the internal `repositories` folder. Those files are distinct from the original images in repositories that you added from elsewhere on your computer.
+
+### Backing up and restoring
+
+To preserve Picteus's internal data, back up the application folder. This includes the database, vector index, extension-managed repository content, installed extensions, runtimes, and downloaded models. Back up any original image folders you need separately.
+
+#### Creating a backup
+
+1. Quit Picteus completely before copying its files.
+2. Copy the entire application folder to a separate backup location, keeping its directory structure intact.
+3. If you also need the original images, back up their repository folders separately.
+
+Copying the full application folder captures the SQLite database and Chroma data together. For SQLite-specific considerations, including write-ahead log files, see [Database backups](../manual/databases.md#performing-backups).
+
+#### Restoring a backup
+
+1. Install Picteus, if it is not already installed, and make sure it is not running.
+2. Locate the application folder using the path for your operating system above.
+3. If an application folder already exists, move it aside as a temporary backup. Restore the backed-up `Picteus` folder to its expected location rather than merging its contents with another copy.
+4. Restore any separately backed-up original image folders to their expected locations, then start Picteus.
+
+Restoring only the database without its corresponding Chroma directory can leave vector search data out of sync. For database-only backup and restore details, see [Database backups](../manual/databases.md#performing-backups).
+
+> [!NOTE]
+> Container deployments use configured volume mounts rather than the desktop application's per-user paths. See the [container documentation](../manual/container.md#volume-mounts) for those locations.
 
 ---
 
 ## Installation
 
-Let's see how to download and install the application.
+This page covers the supported platforms, installation prerequisites, and installer steps.
 
 ### Supported machines
 
-Currently, only the **Windows x64** and **macOS ARM 64** (Apple Silicon) Operating Systems are supported:
-- Windows ARM 64 is on the roadmap ;
-- Linux as well ;
-- unfortunately, Intel-based macOS will probably not be supported because most of the latest versions of the Machine Learning execution runtimes like PyTorch are not available for this architecture.
+Picteus currently supports Windows x64 and macOS ARM64 (Apple Silicon). Windows ARM64 and Linux are not currently supported.
+
+#### Unsupported platforms
+
+There are no prebuilt releases for Windows ARM64 or Linux. Intel-based Macs are also unsupported because the machine-learning runtimes used by Picteus extensions are not available for this architecture. You can build Picteus from its source code; this is a developer workflow and does not imply that unsupported platforms are officially supported. See the [build guide](../developer/build.md) and the [Picteus GitHub project](https://github.com/picteus/picteus).
 
 ### Prerequisites
 
-The application requires the minimal footprint:
-- at least a 4-core CPU ;
-- a "descent" GPU, because some extensions will perform some noticeable computations via AI models.
+Before installing, make sure the computer has:
 
-It will consume the following minimal resources:
-- about 3 GB. of disk space (once all the built-in extensions are installed) ;
-- about 2 GB. of memory (RAM): the application itself consumes about 0.5 GB, some extensions require picks of memory during their computation.
+- an internet connection to download the installer and complete the initial setup. On first launch Picteus downloads its Python and Node.js runtimes, installs the shipped core extensions and their dependencies, and downloads model files required by some extensions. Installing or using additional extensions may require further downloads; see [Starting Picteus](start.md) for details;
+- a 4-core CPU or better;
+- at least 3 GB of free disk space for the application and shipped components. Additional extensions and model files require more space;
+- at least 2 GB of available RAM. Some extensions may require more while processing;
+- a dedicated GPU for extensions that run local inference models. Hardware requirements vary by extension.
 
 ### Download
 
-Download the installer of the latest version of the application from the ["Releases"](https://github.com/picteus/picteus/releases) page of the GitHub repository project, in the "Assets" section.
+Download the installer for your operating system from the "Assets" section of the [latest release](https://github.com/picteus/picteus/releases).
 
 ### Install
 
-Once downloaded:
-- Windows: double-click on the ".exe" file, which will open an installer ;
-- macOS: open the ".zip" file, which contains the ".app" file, and drop it into the usual "Applications" folder.
+After downloading:
+
+- **Windows**: run the `.exe` installer and follow its instructions;
+- **macOS**: open the `.zip` archive and drag the included `.app` into the Applications folder.
+
+Launch Picteus from the Start menu on Windows or the Applications folder on macOS.
 
 ---
 
 ## Start
 
-Once the application is installed, you can launch it:
-- Windows: from the "Start Menu" or from `C:\Program Files\Picteus\Picteus.exe` ;
-- macOS: from the "Applications" folder or from `/Applications/Picteus.app`.
+Once installed, launch Picteus from the Windows Start menu or the macOS Applications folder. To start it from a terminal, see the CLI instructions below.
 
-Only one instance of the application is authorized to be running at the same time, and if you attempt to start another instance, you will get an error.
+Only one instance can run at a time. Starting another instance while Picteus is running returns an error.
 
 ### First launch
 
-During the first start-up of the application:
-1. because the application relies on Python and Node.js runtimes, it will download those runtimes ;
-2. because the application is extensible and ships built-in extensions, it will install them along with their dependencies ;
-3. because some extensions rely on Machine Learning libraries, some large tensor files will be downloaded.
+During its first launch, Picteus downloads the Python and Node.js runtimes and installs only the core extensions shipped with the application, along with their dependencies. It also downloads large tensor files required by some extensions. An internet connection is required for these downloads.
 
-This is the reason why the first launch takes time, about 2 minutes, provided you have a descent Internet connection.
+The first launch usually takes about 3 minutes with a decent internet connection. The actual time depends on the connection and the downloads required.
+
+### Installing extensions
+
+Only the core extensions shipped with Picteus are installed automatically. Install other extensions to add capabilities and integrations that expand the application's functional scope; deferring these installs keeps the initial setup shorter. Some tasks and workflows require a specific extension.
+
+To add extensions, open **Extensions** from the application's main navigation. Install an available marketplace extension from the list, or use **Install** to add an extension package. Review an extension's description and requirements before installing it; some extensions may need additional downloads, credentials, or external services. For extension development and unpacked extensions, see the [Extensions documentation](../extensions.md).
 
 ### CLI
 
-You can start the application from the command line in your favorite terminal and fine-tune its configuration and behavior via options and commands. To discover what those options are, run the following command:
-- Windows:
-```batch title="Windows Command Prompt"
-start /wait "" "C:\Program Files\Picteus\Picteus.exe" --help
-```
+The CLI starts Picteus and lets you set options. The `run` command is the default, so it can be omitted when starting the application without options.
+
+#### Help
+
+Use `--help` to display the available commands and general usage. Use `run --help` to display the options for the `run` command.
+
+**General help — Windows**:
 ```powershell title="Windows PowerShell"
-Start-Process "C:\Program Files\Picteus\Picteus.exe" "--help" -Wait
+& "C:\Program Files\Picteus\Picteus.exe" --help
 ```
-- macOS:
+
+**General help — macOS**:
 ```bash title="macOS shell"
 /Applications/Picteus.app/Contents/MacOS/Picteus --help
 ```
 
-For now, there is only one `run` command, which starts the application and to get the documentation of its options, run the following command:
-- Windows:
-```batch title="Windows Command Prompt"
-start /wait "" "C:\Program Files\Picteus\Picteus.exe" run --help
-```
+**`run` command help — Windows**:
 ```powershell title="Windows PowerShell"
-Start-Process "C:\Program Files\Picteus\Picteus.exe" "run --help" -Wait
+& "C:\Program Files\Picteus\Picteus.exe" run --help
 ```
-- macOS:
+
+**`run` command help — macOS**:
 ```bash title="macOS shell"
 /Applications/Picteus.app/Contents/MacOS/Picteus run --help
 ```
 
-Simply use the following command if you do not need to set options:
-- Windows:
-```batch title="Windows Command Prompt"
-start /wait "" "C:\Program Files\Picteus\Picteus.exe"
-```
+To start Picteus without setting options:
+
+**Windows**:
 ```powershell title="Windows PowerShell"
-Start-Process "C:\Program Files\Picteus\Picteus.exe" -Wait
+& "C:\Program Files\Picteus\Picteus.exe"
 ```
-- macOS:
+
+**macOS**:
 ```bash title="macOS shell"
 /Applications/Picteus.app/Contents/MacOS/Picteus
 ```
@@ -9190,20 +9121,21 @@ Starting the application from the command line enables you to access its log out
 
 #### Network access
 
-By default, the application servers bind to `127.0.0.1` and are available only from the same machine. The `--host`
-option changes the network interface address used by the internal servers. For example, `--host 0.0.0.0` binds to
-all network interfaces, allowing other devices that can reach the machine to connect.
+By default, the application servers bind to `127.0.0.1` and are available only from the same machine. The web interface is served at `http://127.0.0.1:2999`, and the API server uses port `3001`. The `--host` option changes the network interface address used by the internal servers. For example, `--host 0.0.0.0` binds to all network interfaces. Other devices can then access the application using the host machine's network address, provided the required ports are allowed by its firewall. The address `0.0.0.0` is a bind address, not an address to enter in a browser.
 
-When the web interface is accessed from an additional origin, use `--allowedOrigins` to add its full origin to the
-CORS and WebSocket allowlist. Specify the scheme, host, and port, with no path; separate multiple origins with commas:
+When accessing the web interface from an additional origin, use `--allowedOrigins` to add its full origin to the CORS and WebSocket allowlist. Specify the scheme, host, and port, with no path. Separate multiple origins with commas. Replace the example address with the origin from which the web interface is served:
 
-```bash
-Picteus run --host 0.0.0.0 --allowedOrigins http://192.168.1.20:2999
+**Windows**:
+```powershell title="Windows PowerShell"
+& "C:\Program Files\Picteus\Picteus.exe" run --host 0.0.0.0 --allowedOrigins http://192.168.1.20:2999
 ```
 
-Replace the example address with the origin from which the web interface is served. Add only origins you trust.
-Binding to a non-loopback interface can expose the application to other devices on the network; use it only on a
-trusted network and configure appropriate transport security and API access controls for your deployment.
+**macOS**:
+```bash title="macOS shell"
+/Applications/Picteus.app/Contents/MacOS/Picteus run --host 0.0.0.0 --allowedOrigins http://192.168.1.20:2999
+```
+
+Add only origins you trust. The allowlist does not authenticate users or prevent non-browser clients from connecting. Binding to a non-loopback interface can expose the application to other devices on the network; use it only on a trusted network and configure appropriate transport security and API access controls for your deployment.
 
 ---
 
@@ -9354,7 +9286,7 @@ Refer to [Accessing front-end logs via Chromium Developer Tools](traces.md#acces
 If the issue specifically relates to an extension failing to install, start, or respond to events:
 
 - **Manifest validation**: ensure that `manifest.json` complies strictly with the [
-  `manifest-v4.schema.json`](https://picteus.github.io/picteus/jsonschema/manifest-v4.schema.json) contract. Refer
+  `manifest-v6.schema.json`](https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json) contract. Refer
   to [Manifest](../extensions/reference/manifest.md) for schema details ;
 - **Troubleshooting checklist**: consult the [Extension troubleshooting checklist](../extensions/guide.md#troubleshooting-checklist) for common symptoms — such as missing command buttons or unhandled event hooks ;
 - **Debugging unpacked extensions**: run the extension in debug mode from your IDE as an unpacked extension. Refer to [Unpacked extensions](../extensions/unpacked.md) for development workflows.
@@ -9392,6 +9324,41 @@ To help maintainers reproduce and resolve the problem efficiently, please includ
 
 ---
 
+## Uninstallation
+
+Before uninstalling Picteus, decide whether you need to keep its data. The application stores its databases and some extension-managed files in its internal directory. Deleting that directory permanently deletes those files.
+
+### Back up important files
+
+Quit Picteus before copying its data. Open the application's internal directory from the application's **Picteus > Application Folder** menu, or locate it using the paths in the [Files](files.md#applications-folder) documentation.
+
+Copy any files you want to keep to a location outside the Picteus internal directory. In particular, consider saving:
+
+- `database.db` — the SQLite database containing application data;
+- the `chroma` directory — the vector database;
+- the `repositories` directory — files created or managed by extensions.
+
+Some image repositories refer to image files in other locations on your computer. Those original files are not deleted when the Picteus internal directory is removed, but they will no longer be available to Picteus after uninstalling. See [Your images files](files.md#your-images-files) for how repositories work.
+
+> [!WARNING]
+> Deleting the Picteus internal directory permanently removes `database.db`, the Chroma database, and any repository image files stored under `repositories`. Back up anything you need before deleting the directory. Copying the database files while Picteus is running may produce an inconsistent backup.
+
+### Remove Picteus
+
+Uninstall or remove the application using the usual method for your operating system:
+
+- **Windows**: open **Settings > Apps > Installed apps**, select Picteus, and choose **Uninstall**;
+- **macOS**: quit Picteus, then move `Picteus.app` from the Applications folder to the Trash. This removes the application bundle, but does not delete the application's folder — Picteus's internal data directory. See [Application's folder](files.md#applications-folder) for details.
+
+Removing the application does not delete its internal data directory. To remove that data as well, first make and verify any needed backups, then delete the Picteus directory:
+
+- **Windows**: `%APPDATA%\Picteus` — usually `C:\Users\<user>\AppData\Roaming\Picteus`;
+- **macOS**: `~/Library/Application Support/Picteus` — usually `/Users/<user>/Library/Application Support/Picteus`.
+
+Deleting the internal directory is optional if you want to preserve the data for later use. The directory also contains installed extensions, runtimes, and downloaded model files; see [Files](files.md#applications-folder) for its contents.
+
+---
+
 ## Setup documentation
 
 The setup documentation covers the steps required to install Picteus, start it, prepare its file system, inspect traces, and resolve common installation or runtime problems.
@@ -9401,12 +9368,13 @@ The setup documentation covers the steps required to install Picteus, start it, 
 - [Installation](setup/install.md) — install Picteus and its required components;
 - [Starting Picteus](setup/start.md) — launch the application and verify that it is available;
 - [Files](setup/files.md) — understand the directories and files used by Picteus;
+- [Uninstallation](setup/uninstall.md) — remove Picteus and back up data before deleting its internal directory;
 - [Traces](setup/traces.md) — locate and interpret application logs and diagnostic traces;
 - [Troubleshooting](setup/troubleshooting.md) — diagnose common setup and runtime issues.
 
 ### Guidance
 
-Follow [Installation](setup/install.md) first, then use [Starting Picteus](setup/start.md) to verify the installation. Read [Files](setup/files.md) when configuring paths, backups, or mounted storage. Consult [Traces](setup/traces.md) before troubleshooting, and use [Troubleshooting](setup/troubleshooting.md) for issue-specific checks.
+Follow [Installation](setup/install.md) first, then use [Starting Picteus](setup/start.md) to verify the installation. Read [Files](setup/files.md) when configuring paths, backups, or mounted storage. Before uninstalling Picteus, follow [Uninstallation](setup/uninstall.md) to back up any data you want to retain. Consult [Traces](setup/traces.md) before troubleshooting, and use [Troubleshooting](setup/troubleshooting.md) for issue-specific checks.
 
 ---
 

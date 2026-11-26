@@ -24,7 +24,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Extensions documentation](https://picteus.github.io/picteus/docs/extensions.md): Extensions are a central part of Picteus because they allow the application to evolve without requiring changes to its core. An extension can add o...
 - [Container image](https://picteus.github.io/picteus/docs/manual/container.md): Picteus can run inside containerized environments — such as Docker, Podman, or LXC / LXD. The container image bundles the back-end REST server, the...
 - [Databases](https://picteus.github.io/picteus/docs/manual/databases.md): The Picteus back-end embeds two distinct, complementary database systems to manage and persist all application data: a relational SQL database for ...
-- [Embeddings](https://picteus.github.io/picteus/docs/manual/embedding.md): In Picteus, a **vector embedding** is a high-dimensional numerical representation of an image, computed by a machine learning encoder model and sto...
+- [Embeddings](https://picteus.github.io/picteus/docs/manual/embedding.md): An image embedding is a numerical vector produced by an encoder model. Picteus stores image embeddings in its vector database and uses them for ima...
 - [Facets](https://picteus.github.io/picteus/docs/manual/facets.md): In Picteus, **facets** represent the distinct dimensions of data and metadata that qualify an image beyond its raw binary file. Picteus distinguish...
 - [Features](https://picteus.github.io/picteus/docs/manual/features.md): In Picteus, an image **feature** is a structured, typed, and attributed metadata entity attached to an image, generated programmatically by extensi...
 - [Image generation recipes](https://picteus.github.io/picteus/docs/manual/recipe.md): An image generation recipe is a specialized image feature that records the instructions and context used to create an AI-generated image. The share...
@@ -57,6 +57,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Gets the caption instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get-caption-instructions.md): Returns the caption instructions declared for an extension.
 - [Provides the extensions configuration](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get-configuration.md): Returns the details in terms of all installed extensions capabilities, i.e. what they can offer, and the command they offer.
 - [Gets the eligible tags instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get-eligible-tags-instructions.md): Returns the eligible tags instructions declared for an extension.
+- [Gets the embedding instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get-embedding-instructions.md): Returns the embedding instructions declared for an extension.
 - [Gets an extension settings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get-settings.md): Returns the settings of an extension.
 - [Gets an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-get.md): Returns the details about an extension.
 - [Installs a Chrome extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-install-chrome-extension.md): It will only work provided the server is hosted by an Electron application.
@@ -69,6 +70,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Sets the AI models declared for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-set-ai-models.md): Overwrites the AI models previously declared for an extension and returns them. An empty array clears them.
 - [Sets the caption instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-set-caption-instructions.md): Overwrites the caption instructions declared for an extension.
 - [Sets the eligible tags instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-set-eligible-tags-instructions.md): Overwrites the eligible tags instructions declared for an extension.
+- [Sets the embedding instructions for an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-set-embedding-instructions.md): Overwrites the embedding instructions declared for an extension.
 - [Sets an extension settings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-set-settings.md): Defines the settings of an extension.
 - [Synchronizes the images via an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-synchronize.md): Iterates over all images available in the repositories and asks the extension to operate its work if the image is not indexed by it.
 - [Uninstalls an extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/extension-uninstall.md): Stops the extension and uninstalls it.
@@ -79,6 +81,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Converts an image into a format](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-convert.md): Converts the provided image into the requested format and returns it.
 - [Deletes an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-delete.md): Deletes the image from the back-end and from the databases.
 - [Downloads an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-download.md): Returns the binary form of an image.
+- [Ensures the image embeddings](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-ensure-embeddings.md): Ensures the given embeddings for an image and an extension without removing existing embeddings of other collections.
 - [Ensures that features are set on an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-ensure-features.md): Ensures that the provided features are set on an image for a given extension, potentially overwriting existing ones with the same type, format and ...
 - [Ensures that tags are set on an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-ensure-tags.md): Ensures that some tags are set on an image for a given extension.
 - [Gets all the embeddings of an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/image-get-all-embeddings.md): Returns the computed embeddings of an image for all extensions.
@@ -125,12 +128,14 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Gets a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-get.md): Returns a single repository.
 - [Lists repositories](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-list.md): Lists all the declared repositories.
 - [Renames an image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-rename-image.md): Renames the file of an image in a repository.
+- [Sets the operating mode of a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-set-mode.md): Changes the operating mode of a repository.
 - [Starts or stop the repositories](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-start-or-stop.md): Starts all the repositories, resumes synchronization if necessary and starts watching them, or stops them.
 - [Creates an image in the repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-store-image.md): Declares an image in the repository and returns it.
 - [Synchronizes a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-synchronize.md): Synchronizes a repository against its back-end.
 - [Updates a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-update.md): Updates the name and comment of a repository.
 - [Starts or stops watching a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-watch.md): Starts or stops listening to the repository back-end images changes.
 - [AiModel](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/aimodel.md): An AI model declared by an extension
+- [AiModelModality](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/aimodelmodality.md): The task modalities the AI model is compatible with
 - [ApiSecret](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/apisecret.md): Detailed information about an API secret, including its secret and its scope
 - [ApiSecretSummary](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/apisecretsummary.md): Basic information about an API secret, i.e. the API secret summary
 - [ApiSecretType](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/apisecrettype.md): The secret type
@@ -147,6 +152,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [ConstantsRegistry](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/constantsregistry.md): Contains the definition of all the application constants
 - [Dates](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/dates.md): A pair of creation and modification dates
 - [EligibleTagsInstruction](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/eligibletagsinstruction.md): An instruction for computing eligible tags with an AI model
+- [EmbeddingInstruction](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/embeddinginstruction.md): An instruction for computing embeddings with an AI model
 - [Extension](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extension.md): The full definition of an extension
 - [ExtensionActivity](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionactivity.md): The activity of an extension
 - [ExtensionActivityState](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/extensionactivitystate.md): The state of the extension
@@ -186,6 +192,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [ManifestCapabilityCaptionsDetails](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestcapabilitycaptionsdetails.md): A marker to indicate the capability to compute captions
 - [ManifestCapabilityEligibleTagsDetails](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestcapabilityeligibletagsdetails.md): A marker to indicate the capability to compute eligible tags
 - [ManifestCapabilityId](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestcapabilityid.md): The identifier of the extension capability
+- [ManifestEmbeddingsCapability](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestembeddingscapability.md): A capability to compute image or text embeddings
 - [ManifestEvent](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestevent.md): The events which will trigger the instructions
 - [ManifestExecution](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestexecution.md): The specifications regarding the execution of an extension
 - [ManifestExtensionCommand](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/manifestextensioncommand.md): The definition of an extension's command
@@ -207,6 +214,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [RepositoryActivity](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repositoryactivity.md): The activity of a repository
 - [RepositoryActivityKind](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repositoryactivitykind.md): The kind of activity of the repository
 - [RepositoryLocationType](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repositorylocationtype.md): The possible types of repositories
+- [RepositoryMode](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repositorymode.md): The operating mode of the repository
 - [RepositoryState](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/repositorystate.md): The state of the repository
 - [RunCommandParameters](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/runcommandparameters.md): A pair of command parameters and search parameters
 - [SearchCriteria](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/searchcriteria.md): Criteria when searching for images
@@ -243,10 +251,11 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Repositories](https://picteus.github.io/picteus/docs/manual/webservicesapi/repositories.md): Repository endpoints manage image storage locations, synchronization, monitoring, and repository-wide facet discovery. The complete schemas and sec...
 - [Settings](https://picteus.github.io/picteus/docs/manual/webservicesapi/settings.md): Global application settings can be read and updated through these endpoints:
 - [User manual](https://picteus.github.io/picteus/docs/manual.md): The user manual explains the conceptual entities that make up Picteus and how to operate and configure the application after installation. Understa...
-- [Files](https://picteus.github.io/picteus/docs/setup/files.md): The application takes great care not to pollute the computer it is installed. To that extent, it isolates and places all the files it downloads, in...
-- [Installation](https://picteus.github.io/picteus/docs/setup/install.md): Let's see how to download and install the application.
-- [Start](https://picteus.github.io/picteus/docs/setup/start.md): Once the application is installed, you can launch it: - Windows: from the "Start Menu" or from `C:\Program Files\Picteus\Picteus.exe` ; - macOS: fr...
+- [Files](https://picteus.github.io/picteus/docs/setup/files.md): Picteus uses a per-user application folder for its databases and other application-managed data. Your image files can remain in their existing loca...
+- [Installation](https://picteus.github.io/picteus/docs/setup/install.md): This page covers the supported platforms, installation prerequisites, and installer steps.
+- [Start](https://picteus.github.io/picteus/docs/setup/start.md): Once installed, launch Picteus from the Windows Start menu or the macOS Applications folder. To start it from a terminal, see the CLI instructions ...
 - [Traces](https://picteus.github.io/picteus/docs/setup/traces.md): Picteus provides two complementary forms of traces that report on what the application is doing: **activities**, a user-friendly real-time feed exp...
 - [Troubleshooting](https://picteus.github.io/picteus/docs/setup/troubleshooting.md): When encountering an unexpected behavior, processing failure, or extension issue in Picteus, a structured diagnostic workflow enables you to rapidl...
+- [Uninstallation](https://picteus.github.io/picteus/docs/setup/uninstall.md): Before uninstalling Picteus, decide whether you need to keep its data. The application stores its databases and some extension-managed files in its...
 - [Setup documentation](https://picteus.github.io/picteus/docs/setup.md): The setup documentation covers the steps required to install Picteus, start it, prepare its file system, inspect traces, and resolve common install...
 - [Vision](https://picteus.github.io/picteus/docs/vision.md): Picteus is best understood as an extensible, local-first platform for managing, transforming, and understanding image assets at scale. It is not me...
